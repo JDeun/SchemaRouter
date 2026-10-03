@@ -64,6 +64,7 @@ nav:
       - Provider-aware fallback: guides/provider-fallback.md
       - 다중 provider 근거: guides/multi-provider-evidence.md
       - 스키마 변경 분석: guides/schema-drift.md
+      - Contract-aware fallback: guides/contract-aware-fallback.md
       - Retry 정책: guides/retry.md
       - 신뢰 실행 hook: guides/execution-hooks.md
       - 영속 실행 trace: guides/run-traces.md
