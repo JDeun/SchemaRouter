@@ -3063,7 +3063,10 @@ class SchemaRouter:
         config: RunConfig | dict[str, Any] | None = None,
     ) -> AsyncIterator[ToolResult]:
         run_config = _coerce_config(config)
-        plan = await self.aplan_executable(request)
+        plan = await self.aplan_executable(
+            request,
+            principal=run_config.principal,
+        )
         if run_config.execution_mode == "parallel_read_only":
             async for _, result in self.executor.execute_parallel_read_only_iter(
                 plan,
@@ -3125,7 +3128,10 @@ class SchemaRouter:
         sequence += 1
 
         try:
-            plan = await self.aplan_executable(request)
+            plan = await self.aplan_executable(
+                request,
+                principal=run_config.principal,
+            )
         except Exception as exc:
             data = {"error_type": type(exc).__name__, "stage": "planning"}
             if run_config.include_payloads:
