@@ -43,6 +43,11 @@ from .python import (
     schema_tool,
     tool_from_callable,
 )
+from .sqlite_database import (
+    SQLiteTableBinding,
+    SQLiteTableInvoker,
+    introspect_sqlite_database,
+)
 
 __all__ = [
     "AdapterContext",
@@ -71,6 +76,8 @@ __all__ = [
     "OpenRPCSourceAdapter",
     "PythonCallableInvoker",
     "SourceAdapter",
+    "SQLiteTableBinding",
+    "SQLiteTableInvoker",
     "analyze_openapi_compatibility",
     "build_http_json_invoker",
     "callable_options",
@@ -78,6 +85,7 @@ __all__ = [
     "inspect_mcp_client_factory",
     "inspect_mcp_stdio",
     "inspect_mcp_url",
+    "introspect_sqlite_database",
     "load_adapter_plugins",
     "prepare_http_json_tool",
     "resolve_openapi_base_url",
