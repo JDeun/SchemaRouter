@@ -77,15 +77,16 @@ def _introspection() -> dict:
         "enumValues": None,
         "possibleTypes": None,
     }
-    scalar = lambda name: {
-        "kind": "SCALAR",
-        "name": name,
-        "description": None,
-        "fields": None,
-        "inputFields": None,
-        "enumValues": None,
-        "possibleTypes": None,
-    }
+    def scalar(name: str) -> dict[str, object]:
+        return {
+            "kind": "SCALAR",
+            "name": name,
+            "description": None,
+            "fields": None,
+            "inputFields": None,
+            "enumValues": None,
+            "possibleTypes": None,
+        }
     return {
         "data": {
             "__schema": {
