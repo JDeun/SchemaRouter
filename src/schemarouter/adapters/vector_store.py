@@ -8,6 +8,7 @@ from typing import Any, Protocol
 
 from pydantic import Field, model_validator
 
+from ..data_scope import _current_data_scope_decision
 from ..errors import RegistrationError, SchemaValidationError
 from ..models import (
     EndpointSpec,
@@ -125,6 +126,11 @@ class VectorCollectionInvoker:
         self._metadata_fields = {
             field.name for field in collection.metadata_fields
         }
+        self._filterable_metadata_fields = {
+            field.name
+            for field in collection.metadata_fields
+            if field.filterable
+        }
 
     async def invoke_call(self, call: ToolCall) -> list[dict[str, Any]]:
         if call.endpoint != _SEARCH_ENDPOINT:
@@ -159,14 +165,44 @@ class VectorCollectionInvoker:
             for field in selected_fields
             if field in self._metadata_fields
         )
-        raw_results = await _await_if_needed(
-            self._backend.search(
-                collection=self._collection.name,
-                vector=vector,
-                top_k=top_k,
-                include_fields=selected_metadata,
-            )
+        decision = _current_data_scope_decision(call.tool, call.endpoint)
+        trusted_predicates = (
+            decision.trusted_predicates if decision is not None else ()
         )
+        if trusted_predicates:
+            unsupported_fields = sorted(
+                predicate.field
+                for predicate in trusted_predicates
+                if predicate.field not in self._filterable_metadata_fields
+            )
+            if unsupported_fields:
+                raise RuntimeError(
+                    "vector trusted predicates require filterable metadata fields: "
+                    + ", ".join(unsupported_fields)
+                )
+            scoped_search = getattr(self._backend, "search_scoped", None)
+            if not callable(scoped_search):
+                raise RuntimeError(
+                    "vector backend does not support trusted data predicates"
+                )
+            raw_results = await _await_if_needed(
+                scoped_search(
+                    collection=self._collection.name,
+                    vector=vector,
+                    top_k=top_k,
+                    include_fields=selected_metadata,
+                    trusted_predicates=trusted_predicates,
+                )
+            )
+        else:
+            raw_results = await _await_if_needed(
+                self._backend.search(
+                    collection=self._collection.name,
+                    vector=vector,
+                    top_k=top_k,
+                    include_fields=selected_metadata,
+                )
+            )
         if not isinstance(raw_results, list):
             raise SchemaValidationError("vector backend search must return a list")
 
