@@ -198,8 +198,15 @@ def introspect_sqlalchemy_engine(
         columns = inspector.get_columns(table_name, schema=schema)
         if not columns:
             continue
-        primary_key = inspector.get_pk_constraint(table_name, schema=schema) or {}
-        pk_columns = tuple(str(value) for value in (primary_key.get("constrained_columns") or ()))
+        primary_key = (
+            inspector.get_pk_constraint(table_name, schema=schema) or {}
+            if relation_kind == "table"
+            else {}
+        )
+        pk_columns = tuple(
+            str(value)
+            for value in (primary_key.get("constrained_columns") or ())
+        )
 
         fields: list[FieldSpec] = []
         properties: dict[str, Any] = {}
