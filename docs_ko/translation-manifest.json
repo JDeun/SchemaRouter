@@ -216,6 +216,10 @@
       "source_blob": "709fa5b2e108a4bc2cfff783b1312594312df73f"
     },
     {
+      "path": "guides/state-aware-retrieval.md",
+      "source_blob": "ab6382e72ea426247137260acee9096304005fe2"
+    },
+    {
       "path": "guides/universal-ingestion.md",
       "source_blob": "737753d2e66b57c9215f8cde7a27bc1bfa317712"
     },
