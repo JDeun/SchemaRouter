@@ -175,7 +175,7 @@ def test_vector_store_introspection_compiles_collection_contracts() -> None:
 async def test_vector_store_search_embeds_projects_and_bounds_results() -> None:
     backend = FakeVectorBackend()
     router = SchemaRouter()
-    router.add_vector_store(
+    await router.aadd_vector_store(
         backend,
         lambda query: [0.1, 0.2, 0.3],
         database_name="vectors",
@@ -212,7 +212,7 @@ async def test_vector_store_search_embeds_projects_and_bounds_results() -> None:
 @pytest.mark.asyncio
 async def test_vector_dimension_mismatch_fails_closed() -> None:
     router = SchemaRouter()
-    router.add_vector_store(
+    await router.aadd_vector_store(
         FakeVectorBackend(),
         lambda query: [0.1, 0.2],
         database_name="vectors",
@@ -253,7 +253,7 @@ async def test_vector_collections_compose_with_principal_authorization() -> None
         )
     )
     router = SchemaRouter(authorization_policy=policy)
-    router.add_vector_store(
+    await router.aadd_vector_store(
         FakeVectorBackend(),
         lambda query: [0.1, 0.2, 0.3],
         database_name="vectors",
@@ -340,7 +340,7 @@ async def test_vector_store_supports_async_discovery_embedding_and_search() -> N
 async def test_vector_store_returns_declared_fields_when_projection_is_omitted() -> None:
     backend = FakeVectorBackend()
     router = SchemaRouter()
-    router.add_vector_store(
+    await router.aadd_vector_store(
         backend,
         lambda query: [0.1, 0.2, 0.3],
         database_name="vectors",
