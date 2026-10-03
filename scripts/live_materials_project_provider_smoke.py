@@ -13,7 +13,7 @@ from schemarouter import PlanRequest, SchemaRouter
 from schemarouter.adapters.optimade import _base_info_attributes, _bounded_get
 
 PROVIDER_ID = "materials-project"
-EXPECTED_OPTIMADE_URL = "https://optimade.materialsproject.org"
+EXPECTED_OPTIMADE_URL = "https://optimade.materialsproject.org/v1"
 
 
 async def run_smoke() -> dict[str, object]:
