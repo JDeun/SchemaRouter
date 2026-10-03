@@ -18,6 +18,9 @@ automatically classified as a SchemaRouter regression.
 | Provider profile: Materials Project | Yes | Live public provider | Provider identity -> public OPTIMADE -> read-only structure query | Materials Project OPTIMADE | Authenticated OpenAPI/SDK paths remain separately gated. |
 | Provider profile: Crossref | Yes | Live public provider | Provider identity -> public REST -> works query | Crossref REST API | Public provider availability is external state. |
 | Provider profile: Tavily | Yes | Auth-contract + optional live execution | Provider identity -> auth-required REST; live search when `TAVILY_API_KEY` is configured | Tavily Search API | No secret means explicit auth-required evidence, not fabricated execution success. |
+| Provider profile: APIs.guru | Yes | Live public provider | Provider identity -> OpenAPI -> read-only metrics request | APIs.guru | Public provider availability is external state. |
+| Provider profile: Rick and Morty API | Yes | Live public provider | Provider identity -> GraphQL -> read-only location query | Rick and Morty GraphQL API | Public third-party service; introspection availability can change. |
+| Provider profile: OData V4 reference | Yes | Live public provider | Provider identity -> OData -> read-only Products query | OData.org V4 reference service | Reference-service availability is external state. |
 
 The compatibility workflow records a timestamp, SchemaRouter version, source, discovery and
 execution success, endpoint count, binding state, returned-data shape, latency, auth state, and
@@ -46,6 +49,9 @@ python scripts/live_reference_mcp_smoke.py --json-out /tmp/mcp-compatibility.jso
 python scripts/live_materials_project_provider_smoke.py
 python scripts/live_crossref_provider_smoke.py
 python scripts/live_tavily_provider_smoke.py
+python scripts/live_provider_first_protocol_smoke.py --provider apis-guru
+python scripts/live_provider_first_protocol_smoke.py --provider rick-and-morty-api
+python scripts/live_provider_first_protocol_smoke.py --provider odata-v4-reference
 ```
 
 MCP reference evidence requires the optional MCP dependency:
@@ -60,5 +66,5 @@ A green public-provider row means the provider was reachable and compatible at t
 `generated_at` timestamp. It is not a permanent availability guarantee. A public-provider
 failure should first be classified as provider/network/infrastructure state.
 
-Pinned OpenRPC and MCP rows are reproducible compatibility evidence owned by this repository.
+Pinned OpenRPC and MCP rows are reproducible provider-first compatibility evidence owned by this repository: each reference source is registered through a process-local `ProviderProfile` before it reaches the normal OpenRPC/MCP adapter.
 A failure there is actionable as a likely SchemaRouter or dependency compatibility regression.
