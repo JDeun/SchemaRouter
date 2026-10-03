@@ -1,3 +1,4 @@
+# Issue #708 regression coverage.
 from schemarouter.capability_contracts import CapabilityContract, CapabilityFieldContract
 from schemarouter.capability_drift import (
     capability_contract_fingerprint,
