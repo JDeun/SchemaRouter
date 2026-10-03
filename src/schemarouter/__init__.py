@@ -61,15 +61,6 @@ from .capability_contracts import (
     compare_capability_composition,
     compare_capability_fields,
 )
-from .capability_constraints import (
-    CapabilityOperationalMetadata,
-    ExecutionLocality,
-    HostCapabilityConstraints,
-    OperationalConstraintCode,
-    OperationalConstraintReason,
-    OperationalConstraintResult,
-    evaluate_operational_constraints,
-)
 from .capability_graph import (
     CapabilityDependencyEdge,
     CapabilityDependencyGraph,
