@@ -210,7 +210,7 @@ async def test_database_tools_compose_with_employee_and_executive_authorization(
     manager = PrincipalContext(subject="manager", roles=("manager",))
     executive = PrincipalContext(subject="ceo", roles=("executive",))
 
-    employee_retrieval = router.retrieve(
+    employee_retrieval = router.retrieve_authorized(
         "board forecast finance",
         principal=employee,
         k=5,
@@ -220,7 +220,7 @@ async def test_database_tools_compose_with_employee_and_executive_authorization(
         for candidate in employee_retrieval.candidates
     )
 
-    manager_retrieval = router.retrieve(
+    manager_retrieval = router.retrieve_authorized(
         "employee salary",
         principal=manager,
         k=5,
