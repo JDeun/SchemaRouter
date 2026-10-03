@@ -6,17 +6,23 @@ to embed in larger ecosystems.
 
 This document tracks framework-level maturity rather than research metrics.
 
-> **0.13.0 maturity note:** the 0.12 stable-core boundary remains intact while universal
-> ingestion, trusted SDK/client binding, nested field contracts, and schema lifecycle operations
-> complete the main product surface. Retrieval returns registered capability contracts and never
-> grants execution authority. The active 0.14 agent-utility research evaluates downstream
-> quality/efficiency separately from the stable runtime surface. See
+> **0.14.0 maturity note:** the 0.12 stable-core boundary remains intact. The current main branch
+> adds provider-first onboarding, explicit typed-state retrieval/backfill, scalable capability-graph
+> infrastructure, atomic/versioned snapshot and artifact lifecycles, and privacy-safe unified
+> decision traces. Retrieval still returns registered capability contracts and never grants
+> execution authority. Active agent-utility research evaluates downstream quality/efficiency
+> separately from the stable runtime surface. See
 > [Routing research status](research/routing-status.md).
 
 | Capability | Current main | Direction |
 | --- | --- | --- |
 | Typed tool / endpoint / parameter / field contracts | Implemented | Core invariant |
 | Capability retrieval | First-class deterministic `retrieve` / `aretrieve` + executable-ready variants over registered routes | Add alternate indexes/representations only behind explicit contracts and evidence |
+| Provider-first onboarding | Built-in/local/plugin `ProviderProfile` registry with explicit method/credential/dependency status; Materials Project, Crossref, and Tavily acceptance coverage | Expand provider catalog without adding provider branches to planner |
+| State-aware capability retrieval | Explicit fixed-Top-K filtering plus separate eligible-Top-K corrective backfill over the same visible surface | Keep host state explicit and orchestration authority outside core |
+| Capability dependency graph | Semantic-indexed construction, incremental rebuild, deterministic SCCs, bounded cycle witnesses, sparse 1k/10k/50k benchmark | Add distributed storage only if real registry scale requires it |
+| Capability snapshots / artifacts | Content-addressed snapshots, atomic CAS publication, versioned portable artifacts/snapshot documents, deterministic legacy migration | Add external artifact stores/signing only behind host-owned infrastructure |
+| Unified decision traces | Privacy-safe aggregation of retrieval/eligibility/state/health/drift/policy/constraint/negotiation/fallback/lineage results with CLI/dashboard inspection | Add trusted export sinks without hidden-inventory or payload leakage |
 | Natural-language planning | Deterministic scoring + exact-recall candidate index cached by registry version | Keep planning/execution authority separate from external agent selection |
 | Sync / async invocation | Implemented | Stable public surface |
 | Batch execution | Implemented, including completion-order APIs | Stable public surface |
@@ -133,6 +139,11 @@ Completed locally:
 - conservative evidence-sufficiency contract with local provenance/license/unit/source-type precheck
   and provider veto-only semantics;
 - provider-neutral decision benchmark harness;
+- provider-first registration profiles with live Materials Project/Crossref acceptance and explicit Tavily auth handling;
+- explicit state-conditioned re-retrieval that preserves the stable stateless retrieval facade;
+- indexed/incremental capability dependency graphs with bounded SCC cycle analysis;
+- atomic capability snapshot publication plus versioned artifact/snapshot migration and integrity checks;
+- unified privacy-safe capability decision traces integrated with inspection, CLI, and dashboard;
 - exact-recall candidate index with registry-version cache invalidation and exhaustive parity tests;
 - 1,200-case multilingual/adversarial v2 benchmark corpus plus separate frozen calibration/holdout corpora for capability-fit, endpoint disambiguation, and operation-fit evaluation;
 - OpenAPI compatibility reporting;
