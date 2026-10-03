@@ -3333,16 +3333,34 @@ class ConfiguredSchemaRouter:
         request: PlanRequest | str,
         *,
         k: int = 5,
-    ) -> CapabilityRetrieval:
-        return self.router.retrieve(request, k=k)
+        execution_state: TypedExecutionState | None = None,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> CapabilityRetrieval | StateAwareCapabilityRetrieval:
+        return self.router.retrieve(
+            request,
+            k=k,
+            execution_state=execution_state,
+            state_requirements=state_requirements,
+            state_preconditions=state_preconditions,
+        )
 
     async def aretrieve(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
-    ) -> CapabilityRetrieval:
-        return await self.router.aretrieve(request, k=k)
+        execution_state: TypedExecutionState | None = None,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> CapabilityRetrieval | StateAwareCapabilityRetrieval:
+        return await self.router.aretrieve(
+            request,
+            k=k,
+            execution_state=execution_state,
+            state_requirements=state_requirements,
+            state_preconditions=state_preconditions,
+        )
 
     def retrieve_executable(
         self,
