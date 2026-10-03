@@ -47,15 +47,21 @@ def create_capability_graph_snapshot(
     """Create immutable routing-contract state; live health is intentionally excluded."""
 
     ordered_contracts = tuple(sorted(contracts, key=lambda item: item.capability_id))
+    normalized_graph = CapabilityDependencyGraph(
+        capability_ids=tuple(sorted(graph.capability_ids)),
+        edges=sorted(
+            graph.edges,
+            key=lambda edge: (edge.producer_id, edge.consumer_id),
+        ),
+    )
     payload = {
-        "graph": graph.model_dump(mode="json"),
+        "graph": normalized_graph.model_dump(mode="json"),
         "contracts": [item.model_dump(mode="json") for item in ordered_contracts],
         "source_schema_fingerprints": dict(source_schema_fingerprints or {}),
-        "build_metadata": dict(build_metadata or {}),
     }
     return CapabilityGraphSnapshot(
         snapshot_id=_canonical_digest(payload),
-        graph=graph.model_copy(deep=True),
+        graph=normalized_graph,
         contracts=ordered_contracts,
         source_schema_fingerprints=dict(source_schema_fingerprints or {}),
         build_metadata=dict(build_metadata or {}),
