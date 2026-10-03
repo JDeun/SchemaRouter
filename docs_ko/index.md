@@ -5,7 +5,7 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.14.0</span>
+<span class="sr-kicker">SchemaRouter 0.15.0</span>
 
 # 에이전트와 도구 사이에 타입 기반 실행 경계를 두세요
 
@@ -103,7 +103,7 @@ Tavily입니다.
 
 ## 현재 안정판과 연구
 
-현재 안정판은 **0.14.0 (Beta / pre-1.0)** 입니다. Python 3.10–3.14는 릴리스 차단 CI에서
+현재 안정판은 **0.15.0 (Beta / pre-1.0)** 입니다. Python 3.10–3.14는 릴리스 차단 CI에서
 검증하고, Python 3.15는 별도 preview job으로 확인합니다.
 
 현재 `main`에는 안정판 경계를 유지하는 호환 기능으로 provider-first 등록,
