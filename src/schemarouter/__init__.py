@@ -61,6 +61,15 @@ from .capability_contracts import (
     compare_capability_composition,
     compare_capability_fields,
 )
+from .capability_constraints import (
+    CapabilityOperationalMetadata,
+    ExecutionLocality,
+    HostCapabilityConstraints,
+    OperationalConstraintCode,
+    OperationalConstraintReason,
+    OperationalConstraintResult,
+    evaluate_operational_constraints,
+)
 from .capability_graph import (
     CapabilityDependencyEdge,
     CapabilityDependencyGraph,
@@ -299,6 +308,12 @@ __all__ = [
     "CapabilityOperationalMetadata",
     "CapabilityCompatibility",
     "CapabilityDependencyEdge",
+    "CapabilityOperationalMetadata",
+    "ExecutionLocality",
+    "HostCapabilityConstraints",
+    "OperationalConstraintCode",
+    "OperationalConstraintReason",
+    "OperationalConstraintResult",
     "CapabilityDependencyGraph",
     "CapabilityComposition",
     "CapabilityContract",
@@ -456,6 +471,7 @@ __all__ = [
     "build_capability_dependency_graph",
     "compare_capability_composition",
     "compare_capability_fields",
+    "evaluate_operational_constraints",
     "evaluate_operational_constraints",
     "evaluate_state_eligibility",
     "validate_capability_inputs",
