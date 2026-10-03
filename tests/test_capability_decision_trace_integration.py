@@ -69,7 +69,7 @@ def test_router_inspection_accepts_explicit_decision_traces_only() -> None:
 def test_decision_trace_inspection_summary_is_privacy_safe() -> None:
     summary = inspect_capability_decision_trace(_trace())
 
-    assert set(summary.model_fields) == {
+    assert set(type(summary).model_fields) == {
         "trace_id",
         "snapshot_id",
         "registry_version",
