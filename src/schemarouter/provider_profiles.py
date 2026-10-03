@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 from pydantic import model_validator
 
-from .models import StrictModel
+from .models import EndpointSpec, FieldSpec, ParameterSpec, StrictModel, ToolSpec
 
 PROVIDER_PROFILE_ENTRY_POINT_GROUP = "schemarouter.providers"
 
@@ -46,6 +46,7 @@ class ProviderAccessMethod(StrictModel):
     enabled_by_default: bool = True
     auto_register: bool = True
     description: str = ""
+    tool: ToolSpec | None = None
 
     @model_validator(mode="after")
     def validate_method(self) -> ProviderAccessMethod:
@@ -57,6 +58,10 @@ class ProviderAccessMethod(StrictModel):
             raise ValueError("provider access method access_mode must be non-empty")
         if self.auto_register and self.url is None:
             raise ValueError("auto-registerable provider methods require a URL")
+        if self.kind == "http_json" and self.auto_register and self.tool is None:
+            raise ValueError("auto-registerable http_json methods require a ToolSpec")
+        if self.tool is not None and self.kind != "http_json":
+            raise ValueError("inline ToolSpec is only supported for http_json provider methods")
         if self.optional_dependency is not None and not self.optional_dependency.strip():
             raise ValueError("optional_dependency must be non-empty when supplied")
         if any(not name.strip() for name in self.credential_names):
@@ -401,6 +406,61 @@ def built_in_provider_profile_registry() -> ProviderProfileRegistry:
                     description=(
                         "Official mp-api Python client. Automatic binding is intentionally "
                         "not inferred from package introspection."
+                    ),
+                ),
+            ),
+        )
+    )
+    registry.register(
+        ProviderProfile(
+            provider_id="crossref",
+            display_name="Crossref",
+            aliases=("cross-ref",),
+            profile_version="1",
+            profile_source="schemarouter:builtin",
+            homepage="https://www.crossref.org",
+            methods=(
+                ProviderAccessMethod(
+                    method_id="rest",
+                    kind="http_json",
+                    access_mode="http_json",
+                    url="https://api.crossref.org/v1",
+                    tool=_crossref_tool(),
+                    description=(
+                        "Public Crossref REST API. No sign-up is required for normal access."
+                    ),
+                ),
+            ),
+        )
+    )
+    registry.register(
+        ProviderProfile(
+            provider_id="tavily",
+            display_name="Tavily",
+            aliases=("tavily-search",),
+            profile_version="1",
+            profile_source="schemarouter:builtin",
+            homepage="https://tavily.com",
+            methods=(
+                ProviderAccessMethod(
+                    method_id="rest",
+                    kind="http_json",
+                    access_mode="http_json",
+                    url="https://api.tavily.com",
+                    credential_names=("Authorization",),
+                    tool=_tavily_tool(),
+                    description=(
+                        "Tavily Search REST API. Use an Authorization: Bearer API key."
+                    ),
+                ),
+                ProviderAccessMethod(
+                    method_id="python-sdk",
+                    kind="python",
+                    access_mode="python",
+                    optional_dependency="tavily",
+                    auto_register=False,
+                    description=(
+                        "Official Tavily Python SDK; explicit trusted binding is required."
                     ),
                 ),
             ),
