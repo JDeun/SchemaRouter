@@ -183,10 +183,21 @@ def test_record_store_introspection_covers_all_four_models() -> None:
         "nosql.metrics",
         "nosql.executive_docs",
     }
-    assert router.registry.get("nosql.documents").endpoint("query").metadata["record_model"] == "document"
-    assert router.registry.get("nosql.search_logs").endpoint("query").metadata["record_model"] == "search"
-    assert router.registry.get("nosql.cache").endpoint("query").metadata["record_model"] == "key_value"
-    assert router.registry.get("nosql.metrics").endpoint("query").metadata["record_model"] == "time_series"
+    models = {
+        key: router.registry.get(key).endpoint("query").metadata["record_model"]
+        for key in (
+            "nosql.documents",
+            "nosql.search_logs",
+            "nosql.cache",
+            "nosql.metrics",
+        )
+    }
+    assert models == {
+        "nosql.documents": "document",
+        "nosql.search_logs": "search",
+        "nosql.cache": "key_value",
+        "nosql.metrics": "time_series",
+    }
 
     document_parameters = {
         value.name for value in router.registry.get("nosql.documents").endpoint("query").parameters
