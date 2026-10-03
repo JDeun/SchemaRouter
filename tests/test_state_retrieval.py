@@ -141,7 +141,13 @@ def test_state_filter_applies_explicit_preconditions() -> None:
 
 def test_state_aware_retrieval_surface_has_no_execution_authority() -> None:
     result = filter_retrieval_by_state(
-        _retrieval([_candidate("read", 1)]),
+        CapabilityRetrieval(
+            query="read",
+            registry_version=1,
+            requested_k=1,
+            total_ranked=1,
+            candidates=[_candidate("read", 1)],
+        ),
         TypedExecutionState(),
     )
 
