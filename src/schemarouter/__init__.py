@@ -465,5 +465,8 @@ __all__ = [
     "record_run_events",
     "render_dashboard",
     "replay_run_events",
+    "validate_capability_input",
+    "validate_capability_output",
+    "validate_contract_fields",
     "write_dashboard",
 ]
