@@ -157,6 +157,7 @@ nav:
   - Runtime:
       - Batch, streaming, and events: guides/runtime.md
       - Execution policy: guides/execution-policy.md
+      - Principal authorization: guides/authorization.md
       - Provider-aware fallback: guides/provider-fallback.md
       - State-aware retrieval: guides/state-aware-retrieval.md
       - Capability constraints: guides/capability-constraints.md
