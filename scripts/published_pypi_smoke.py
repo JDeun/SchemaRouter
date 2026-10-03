@@ -27,6 +27,7 @@ def run_smoke(
     *,
     framework_integrations: bool = False,
     lightweight_extras: bool = False,
+    database_integration: bool = False,
     expected_version: str | None = None,
 ) -> dict[str, object]:
     distribution_version = version("schemarouter")
@@ -112,6 +113,13 @@ def run_smoke(
         assert extra_report["status"] == "success"
         details["lightweight_extras"] = extra_report["dependencies"]
 
+    if database_integration:
+        from installed_database_smoke import run_smoke as run_database_smoke
+
+        database_report = run_database_smoke()
+        assert database_report["status"] == "success"
+        details["database_integration"] = database_report["dependencies"]
+
     return details
 
 
@@ -130,6 +138,11 @@ def main() -> None:
         "--lightweight-extras",
         action="store_true",
         help="Also validate the published MCP, Jev, and OpenTelemetry extras.",
+    )
+    parser.add_argument(
+        "--database-integration",
+        action="store_true",
+        help="Also validate the published SQLAlchemy database integration extra.",
     )
     parser.add_argument(
         "--expected-version",
@@ -151,16 +164,19 @@ def main() -> None:
         report["details"] = run_smoke(
             framework_integrations=args.framework_integrations,
             lightweight_extras=args.lightweight_extras,
+            database_integration=args.database_integration,
             expected_version=args.expected_version,
         )
         report["artifact_kind"] = args.artifact_kind
         report["framework_integrations"] = args.framework_integrations
         report["lightweight_extras"] = args.lightweight_extras
+        report["database_integration"] = args.database_integration
         report["status"] = "success"
     except Exception as exc:
         report["artifact_kind"] = args.artifact_kind
         report["framework_integrations"] = args.framework_integrations
         report["lightweight_extras"] = args.lightweight_extras
+        report["database_integration"] = args.database_integration
         report["status"] = "failure"
         report["error_type"] = type(exc).__name__
         write_report(args.json_out, report)
