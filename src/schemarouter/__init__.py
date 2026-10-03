@@ -22,6 +22,15 @@ from .adapters.plugins import (
     load_adapter_plugins,
 )
 from .adapters.python import schema_tool, tool_from_callable
+from .adapters.vector_store import (
+    VectorCollectionBinding,
+    VectorCollectionInvoker,
+    VectorCollectionSpec,
+    VectorMetadataField,
+    VectorQueryEmbedder,
+    VectorStoreBackend,
+    introspect_vector_backend,
+)
 from .aggregation import (
     AggregatedField,
     CanonicalEntity,
@@ -615,6 +624,12 @@ __all__ = [
     "ToolRegistry",
     "ToolResult",
     "ToolSpec",
+    "VectorCollectionBinding",
+    "VectorCollectionInvoker",
+    "VectorCollectionSpec",
+    "VectorMetadataField",
+    "VectorQueryEmbedder",
+    "VectorStoreBackend",
     "UnitNormalizationSpec",
     "TraceError",
     "UnsupportedSchemaSourceError",
@@ -653,6 +668,7 @@ __all__ = [
     "inspect_tool_spec",
     "inspect_trace",
     "inspect_traces",
+    "introspect_vector_backend",
     "load_adapter_plugins",
     "tool_spec_document",
     "record_run_events",
