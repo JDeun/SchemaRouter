@@ -237,7 +237,7 @@ class SchemaRouter:
             self.arefresh_schema,
             self.loader.adapters,
         )
-
+        self.provider_profiles = built_in_provider_profile_registry()\n
     def _is_snapshot_access_available(self, tool: ToolSpec, endpoint: Any) -> bool:
         return self.executor.is_access_available_for_contract(
             tool.key,
@@ -1260,6 +1260,158 @@ class SchemaRouter:
     @property
     def adapter_registry(self) -> AdapterRegistry:
         return self.loader.adapters
+
+    @property
+    def provider_profile_registry(self) -> ProviderProfileRegistry:
+        """Return the process-local provider profile registry."""
+
+        return self.provider_profiles
+
+    def register_provider_profile(
+        self,
+        profile: ProviderProfile,
+        *,
+        replace: bool = False,
+    ) -> str:
+        """Register declarative provider identity metadata.
+
+        Provider profiles contain no credentials or executable authority. Access methods
+        still compile through the existing source adapters or explicit trusted bindings.
+        """
+
+        return self.provider_profiles.register(profile, replace=replace)
+
+    def resolve_provider(
+        self,
+        provider: str,
+        *,
+        methods: set[str] | list[str] | tuple[str, ...] | None = None,
+    ) -> ProviderResolution:
+        """Resolve one provider identity into known access methods without network I/O."""
+
+        return self.provider_profiles.resolve(provider, methods=methods)
+
+    def load_provider_profile_plugins(
+        self,
+        *,
+        allowlist: set[str] | list[str] | tuple[str, ...],
+        replace: bool = False,
+    ) -> tuple[str, ...]:
+        """Load explicitly trusted installed provider-profile plugins."""
+
+        return _load_provider_profile_plugins(
+            self.provider_profiles,
+            allowlist=allowlist,
+            replace=replace,
+        )
+
+    async def add_provider(
+        self,
+        provider: str,
+        *,
+        methods: set[str] | list[str] | tuple[str, ...] | None = None,
+        trusted_headers_by_method: Mapping[str, Mapping[str, str]] | None = None,
+        replace: bool = False,
+        timeout: float = 20.0,
+    ) -> ProviderRegistrationResult:
+        """Register every safely usable declarative access method for one provider.
+
+        This is an onboarding layer over the existing adapters, not a second schema
+        compiler. Methods that need credentials, optional dependencies, or an explicit
+        trusted SDK binding are reported and skipped rather than guessed or auto-installed.
+        """
+
+        resolution = self.resolve_provider(provider, methods=methods)
+        headers_by_method = trusted_headers_by_method or {}
+        registrations: list[ProviderMethodRegistration] = []
+        registered_keys: list[str] = []
+
+        for method in resolution.methods:
+            if method.status != "available":
+                registrations.append(
+                    ProviderMethodRegistration(
+                        method_id=method.method_id,
+                        kind=method.kind,
+                        access_mode=method.access_mode,
+                        status=method.status,
+                        detail=method.detail,
+                    )
+                )
+                continue
+
+            trusted_headers = dict(headers_by_method.get(method.method_id, {}))
+            provided_header_names = {name.lower() for name in trusted_headers}
+            missing_credentials = tuple(
+                name
+                for name in method.credential_names
+                if name.lower() not in provided_header_names
+            )
+            if missing_credentials:
+                registrations.append(
+                    ProviderMethodRegistration(
+                        method_id=method.method_id,
+                        kind=method.kind,
+                        access_mode=method.access_mode,
+                        status="auth_required",
+                        detail=(
+                            "credential header(s) required: "
+                            + ", ".join(missing_credentials)
+                        ),
+                    )
+                )
+                continue
+
+            if method.url is None:
+                registrations.append(
+                    ProviderMethodRegistration(
+                        method_id=method.method_id,
+                        kind=method.kind,
+                        access_mode=method.access_mode,
+                        status="manual_binding_required",
+                        detail="method has no declarative URL source",
+                    )
+                )
+                continue
+
+            try:
+                tool = await self.add_url(
+                    method.url,
+                    kind=method.kind,
+                    provider=resolution.provider_id,
+                    access_mode=method.access_mode,
+                    trusted_headers=trusted_headers or None,
+                    replace=replace,
+                    timeout=timeout,
+                )
+            except Exception as exc:  # noqa: BLE001
+                registrations.append(
+                    ProviderMethodRegistration(
+                        method_id=method.method_id,
+                        kind=method.kind,
+                        access_mode=method.access_mode,
+                        status="unavailable",
+                        error_type=type(exc).__name__,
+                        detail="provider access method could not be registered",
+                    )
+                )
+                continue
+
+            registered_keys.append(tool.key)
+            registrations.append(
+                ProviderMethodRegistration(
+                    method_id=method.method_id,
+                    kind=method.kind,
+                    access_mode=method.access_mode,
+                    status="registered",
+                    tool_key=tool.key,
+                )
+            )
+
+        return ProviderRegistrationResult(
+            provider_id=resolution.provider_id,
+            registered_tool_keys=tuple(registered_keys),
+            methods=tuple(registrations),
+        )
 
     def load_adapter_plugins(
         self,
