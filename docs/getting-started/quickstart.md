@@ -23,15 +23,16 @@ result = await router.add_provider("materials-project")
 ```
 
 SchemaRouter resolves the provider's known access methods and registers only methods that are usable
-in the current environment. The built-in acceptance profiles cover Materials Project, Crossref, and
-Tavily. Missing credentials or optional SDKs are reported explicitly.
+in the current environment. The built-in acceptance profiles cover Materials Project, Crossref, Tavily, APIs.guru, and the
+OData.org V4 reference service. Missing credentials or optional SDKs are reported explicitly.
 
 [Provider-first registration details →](../guides/provider-first-registration.md)
 
-## 3. Discover and execute a real OpenAPI capability
+## 3. Resolve and execute a real provider capability
 
-The example below uses the same APIs.guru source that SchemaRouter's scheduled compatibility smoke
-checks. The provider owns the schema and returned data.
+The example below starts from the built-in `apis-guru` provider profile. SchemaRouter resolves that
+identity to the same public OpenAPI source used by the compatibility smoke, then sends it through the
+normal OpenAPI adapter. The provider owns the schema and returned data.
 
 --8<-- "examples/live_openapi_quickstart.py"
 
@@ -44,6 +45,7 @@ python examples/live_openapi_quickstart.py
 The exact count changes over time. A successful run has this shape:
 
 ```text
+provider: apis-guru
 source: https://api.apis.guru/v2/openapi.yaml
 discovered: apis.guru:getMetrics (... endpoints on this tool)
 selected: apis.guru:getMetrics
@@ -52,8 +54,8 @@ current numAPIs: <current positive integer>
 
 Four product boundaries are visible in that short program:
 
-1. `from_url(..., kind="openapi")` inspects an external machine-readable contract;
-2. SchemaRouter registers typed tools/endpoints with stable fingerprints;
+1. `add_provider("apis-guru")` resolves a provider profile without requiring the caller to know its protocol URL;
+2. the declared OpenAPI method flows through the ordinary OpenAPI adapter and becomes typed tools/endpoints with stable fingerprints;
 3. the planner selects one bounded capability from that catalog;
 4. execution validates the call and raw response before returning a `ToolResult`.
 
@@ -114,12 +116,13 @@ The promoted path is intentionally bounded:
 
 - **1 install command**: `pip install schemarouter`;
 - **1 executable Python snippet** with no credentials;
-- **4 concepts before the first useful result**: source URL, discovered capability, selected plan,
+- **4 concepts before the first useful result**: provider name, resolved capability, selected plan,
   validated result;
 - no database, model API, vector store, or agent framework is required.
 
 The live request itself depends on internet/provider latency; the local setup path has no hidden
-infrastructure requirement.
+infrastructure requirement. Lower-level `from_url(...)` remains available when the caller already
+owns a concrete protocol endpoint.
 
 ## Choose your path
 
@@ -134,8 +137,8 @@ infrastructure requirement.
 | LlamaIndex tools | `pip install "schemarouter[llamaindex]"` | `examples/llamaindex_quickstart.py` |
 | Human-readable API docs only | core install | [inspect → proposal → approval](../guides/html-documentation.md) |
 
-The framework examples are executed in dedicated CI jobs. The OpenAPI live path is checked by the
-scheduled compatibility workflow and by an offline contract-equivalent wheel/sdist smoke.
+The framework examples are executed in dedicated CI jobs. The provider-first APIs.guru/OpenAPI path
+is checked by the compatibility workflow and by an offline contract-equivalent quickstart smoke.
 
 ## Troubleshooting
 
