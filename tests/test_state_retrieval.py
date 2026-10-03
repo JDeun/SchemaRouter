@@ -100,3 +100,13 @@ def test_missing_requirement_metadata_does_not_infer_workflow_state() -> None:
         "stateless",
         "needs-token",
     ]
+
+
+def test_state_filter_is_data_only_and_has_no_execution_surface() -> None:
+    result = filter_retrieval_by_state(_retrieval(), TypedExecutionState())
+
+    assert not hasattr(result, "execute")
+    assert not hasattr(result, "commit")
+    assert not hasattr(result, "rollback")
+    assert not hasattr(result, "retry")
+    assert not hasattr(result, "compensate")
