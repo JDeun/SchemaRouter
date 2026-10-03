@@ -1,4 +1,4 @@
-from schemarouter.capability_fallback import evaluate_fallback_eligibility
+from schemarouter.capability_fallback import eligible_fallback_ids, evaluate_fallback_eligibility
 from schemarouter.contract_validation import CapabilityContractValidation
 from schemarouter.execution_state import StateEligibility
 
@@ -60,3 +60,21 @@ def test_retrieval_membership_is_part_of_effective_candidate_intersection() -> N
 
     assert result.eligible is False
     assert result.reasons == ["not_retrieved"]
+
+
+def test_provider_method_fixture_filters_alive_but_incompatible_route() -> None:
+    rest = evaluate_fallback_eligibility(
+        authorized=True,
+        healthy=True,
+        contract_validation=CapabilityContractValidation(status="incompatible", fields=[]),
+    )
+    mcp = evaluate_fallback_eligibility(
+        authorized=True,
+        healthy=True,
+        contract_validation=CapabilityContractValidation(status="valid", fields=[]),
+    )
+
+    assert eligible_fallback_ids([
+        ("materials.rest.summary", rest),
+        ("materials.mcp.summary", mcp),
+    ]) == ("materials.mcp.summary",)
