@@ -257,6 +257,8 @@ OData.org V4 reference service를 포함합니다. Credential과 optional depend
 | 소스 | 적합한 경우 | 진입점 |
 | --- | --- | --- |
 | Provider identity | 서비스/provider는 알지만 protocol 구성을 모를 때 | `await router.add_provider("materials-project")` |
+| SQLite DB | 로컬/embedded RDB의 schema를 자동 파악할 때 | `router.add_sqlite_database(connection, ...)` |
+| SQLAlchemy Engine | RDB/warehouse connection을 caller가 소유할 때 | `router.add_sqlalchemy_database(engine, ...)` |
 | 직접 ToolSpec | 애플리케이션이 이미 정규 계약을 갖고 있을 때 | `router.add_tool(...)` |
 | Python | capability가 로컬에 있고 타입이 붙어 있을 때 | `router.add_callable(...)` |
 | ToolSpec + SDK/client | transport는 신뢰하지만 안전한 자동 introspection이 어려울 때 | `router.add_bound_tool(...)` |
@@ -289,7 +291,7 @@ LangChain, LangGraph, LlamaIndex 브리지와 선택형 OpenTelemetry 내보내�
 
 - 타입이 붙은 Tool / Endpoint / Parameter / Field 레지스트리 계약
 - `retrieve` / `aretrieve`와 실행 준비 확인 변형을 통한 first-class bounded Top-K capability 검색
-- 직접 ToolSpec/Python/SDK binding과 OpenAPI, MCP, OPTIMADE, GraphQL, OData, OpenRPC, declarative HTTP/JSON, LangChain/LlamaIndex tool 수집 경로
+- 직접 ToolSpec/Python/SDK binding, schema introspection 기반 SQLite/SQLAlchemy DB, OpenAPI, MCP, OPTIMADE, GraphQL, OData, OpenRPC, declarative HTTP/JSON, LangChain/LlamaIndex tool 수집 경로
 - field-first 계획 수립과 bounded 다중 제공자 필드 커버리지
 - 입력과 원본 출력의 JSON Schema 검증
 - 스키마 fingerprint와 바인딩 드리프트 차단
