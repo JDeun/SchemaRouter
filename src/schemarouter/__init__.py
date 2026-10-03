@@ -222,6 +222,11 @@ from .schema_diff import (
     compare_endpoint_specs,
     compare_tool_specs,
 )
+from .state_retrieval import (
+    StateAwareCapabilityCandidate,
+    StateAwareCapabilityRetrieval,
+    filter_retrieval_by_state,
+)
 from .storage import (
     CURRENT_REGISTRY_DOCUMENT_VERSION,
     CURRENT_STORAGE_FORMAT_VERSION,
@@ -403,6 +408,8 @@ __all__ = [
     "SchemaSourceError",
     "SQLiteRegistry",
     "SchemaValidationError",
+    "StateAwareCapabilityCandidate",
+    "StateAwareCapabilityRetrieval",
     "StateEligibility",
     "StateEligibilityReason",
     "StorageFormatError",
