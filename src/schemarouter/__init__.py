@@ -59,6 +59,15 @@ from .capability_graph import (
     dependency_cycles,
     satisfiable_capability_ids,
 )
+from .capability_snapshot import (
+    CapabilityGraphSnapshot,
+    CapabilitySnapshotDiff,
+    CapabilitySourceRevision,
+    SnapshotComparison,
+    build_capability_snapshot,
+    compare_capability_snapshots,
+    require_snapshot,
+)
 from .contract_validation import (
     CapabilityContractValidation,
     CapabilityObservation,
@@ -403,6 +412,7 @@ __all__ = [
     "SchemaSourceError",
     "SQLiteRegistry",
     "SchemaValidationError",
+    "SnapshotComparison",
     "StateEligibility",
     "StateEligibilityReason",
     "StorageFormatError",
@@ -466,6 +476,7 @@ __all__ = [
     "load_adapter_plugins",
     "tool_spec_document",
     "record_run_events",
+    "require_snapshot",
     "render_dashboard",
     "replay_run_events",
     "write_dashboard",
