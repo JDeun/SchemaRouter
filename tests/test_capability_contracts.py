@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 from schemarouter import (
+    CapabilityContract,
     CapabilityFieldContract,
+    CompatibilityContext,
     FieldSpec,
+    SemanticEquivalence,
+    UnitConversion,
     UnitNormalizationSpec,
+    compare_capability_composition,
     compare_capability_fields,
 )
 
@@ -109,3 +114,97 @@ def test_unitless_text_contract_remains_valid() -> None:
     assert converted is not None
     assert converted.unit is None
     assert converted.dimension is None
+
+
+def test_semantic_alias_requires_explicit_equivalence() -> None:
+    required = contract("material.band_gap", json_schema={"type": "number"})
+    produced = contract("material.bandgap", json_schema={"type": "number"})
+    context = CompatibilityContext(
+        semantic_equivalences=[
+            SemanticEquivalence(
+                canonical_id="material.band_gap",
+                aliases={"material.bandgap"},
+            )
+        ]
+    )
+    result = compare_capability_fields(required, produced, context=context)
+    assert result.status == "compatible"
+    assert result.reasons[0].code == "semantic_equivalence_declared"
+
+
+def test_unit_conversion_requires_explicit_directed_relation() -> None:
+    required = contract(
+        "elastic_modulus",
+        json_schema={"type": "number"},
+        unit="Pa",
+        dimension="pressure",
+    )
+    produced = contract(
+        "elastic_modulus",
+        json_schema={"type": "number"},
+        unit="GPa",
+        dimension="pressure",
+    )
+    context = CompatibilityContext(
+        unit_conversions=[
+            UnitConversion(dimension="pressure", from_unit="GPa", to_unit="Pa")
+        ]
+    )
+    result = compare_capability_fields(required, produced, context=context)
+    assert result.status == "convertible"
+    assert result.satisfies
+    assert result.reasons[0].code == "conversion_declared"
+
+
+def test_composition_requires_every_consumer_requirement() -> None:
+    producer = CapabilityContract(
+        capability_id="find_material",
+        produces=[
+            contract("resource.material_id", json_schema={"type": "string"}),
+            contract("material.band_gap", json_schema={"type": "number"}, unit="eV"),
+        ],
+    )
+    consumer = CapabilityContract(
+        capability_id="get_structure",
+        requires=[
+            contract("resource.material_id", json_schema={"type": "string"}),
+            contract("auth.scope", json_schema={"type": "string"}),
+        ],
+    )
+    result = compare_capability_composition(producer, consumer)
+    assert result.status == "incompatible"
+    assert result.requirements["resource.material_id"].status == "exact"
+    assert result.requirements["auth.scope"].reasons[0].code == "missing_requirement"
+
+
+def test_composition_can_be_convertible_without_executing_conversion() -> None:
+    producer = CapabilityContract(
+        capability_id="get_elasticity_gpa",
+        produces=[
+            contract(
+                "elastic_modulus",
+                json_schema={"type": "number"},
+                unit="GPa",
+                dimension="pressure",
+            )
+        ],
+    )
+    consumer = CapabilityContract(
+        capability_id="consume_elasticity_pa",
+        requires=[
+            contract(
+                "elastic_modulus",
+                json_schema={"type": "number"},
+                unit="Pa",
+                dimension="pressure",
+            )
+        ],
+    )
+    context = CompatibilityContext(
+        unit_conversions=[
+            UnitConversion(dimension="pressure", from_unit="GPa", to_unit="Pa")
+        ]
+    )
+    result = compare_capability_composition(producer, consumer, context=context)
+    assert result.status == "convertible"
+    assert result.satisfies
