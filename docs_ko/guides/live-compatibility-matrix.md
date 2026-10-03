@@ -8,7 +8,7 @@ SchemaRouter는 필수 CI에서 deterministic fixture coverage를 유지하고, 
 | --- | --- | --- | --- | --- | --- |
 | OpenAPI | Yes | Live public provider | Read-only metrics request | APIs.guru | 공개 provider availability는 외부 상태 |
 | OPTIMADE | Yes | Live public provider | Read-only structure search | COD OPTIMADE | availability와 dataset latency가 달라질 수 있음 |
-| GraphQL | Yes | Live public provider | Read-only location query | AniList | introspection availability가 바뀔 수 있음 |
+| GraphQL | Yes | Live public provider | Read-only media query | AniList | introspection availability가 바뀔 수 있음 |
 | OData | Yes | Live public provider | Read-only Products query with `$top=1` | OData.org V4 reference service | 제한된 read query만 검증 |
 | OpenRPC | Yes | Pinned reference implementation | Harmless local echo method | in-repo local JSON-RPC server | 안정적인 unauthenticated public endpoint를 가정하지 않음 |
 | MCP Streamable HTTP | Yes | Pinned reference implementation | Local `add` tool | in-repo MCP SDK fixture server | public MCP endpoint 대신 reference server 사용 |
