@@ -65,6 +65,7 @@ from .models import (
 )
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
+from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
 from .provider_profiles import (
     ProviderMethodRegistration,
     ProviderProfile,
@@ -74,7 +75,6 @@ from .provider_profiles import (
     built_in_provider_profile_registry,
     load_provider_profile_plugins as _load_provider_profile_plugins,
 )
-from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
 from .registry import (
     InMemoryRegistry,
     ToolRegistry,
