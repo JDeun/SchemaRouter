@@ -36,7 +36,15 @@ and preserves PyPI Trusted Publishing on the stable `.github/workflows/release.y
 The following are treated as public when they are documented and exported from the top-level
 `schemarouter` package or an explicitly documented integration module:
 
-- typed contracts such as `ToolSpec`, `EndpointSpec`, `PlanRequest`, `CapabilityCandidate`,\n  `CapabilityRetrieval`, and `ExecutionPlan`;\n- `SchemaRouter` public retrieval/planning/execution methods, including `retrieve`, `aretrieve`,\n  `retrieve_executable`, `aretrieve_executable`, and the execution verbs;
+- typed contracts such as `ToolSpec`, `EndpointSpec`, `PlanRequest`, `CapabilityCandidate`,
+  `CapabilityRetrieval`, `StateAwareCapabilityRetrieval`,
+  `StateConditionedCapabilityRetrieval`, and `ExecutionPlan`;
+- `SchemaRouter` public registration/retrieval/planning/execution methods, including
+  `add_provider`, `retrieve`, `aretrieve`, `retrieve_executable`,
+  `aretrieve_executable`, `retrieve_state_aware`, `reretrieve_state_aware`, and the execution
+  verbs;
+- documented provider-profile, capability-snapshot/publication, portable artifact/migration, and
+  capability decision-trace contracts;
 - `RunConfig`, `RetryPolicy`, `ExecutionBudget`, `RunEvent`, and `ExecutionPolicy`;
 - documented approval, MCP transport-factory, compatibility-report, and adapter-plugin contracts;
 - documented adapters and optional integration entry points.
@@ -79,6 +87,29 @@ that backup until the upgraded service has passed application-level verification
 
 A future migration that rewrites or drops persisted document content must provide an explicit
 backup/recovery path and release-note migration guidance before it can become automatic.
+
+## Portable capability artifact and snapshot compatibility
+
+Portable capability graph data has an explicit format lifecycle separate from both the Python
+package version and SQLite storage versions.
+
+During the pre-1.0 series:
+
+- the current `CapabilityGraphArtifact` format is `1.1`;
+- artifact `1.0` is a supported migration source and is validated before conversion;
+- legacy 1.0 edge metadata migrates as `origin="external"` rather than being promoted to derived
+  execution authority;
+- the current versioned snapshot document format is `1.0`;
+- a raw JSON dump of the pre-envelope public `CapabilityGraphSnapshot` model is supported as the
+  `legacy-unversioned` migration source after its existing `snapshot_id` is verified;
+- unknown/newer artifact or snapshot document versions fail closed;
+- migration is deterministic and idempotent for supported inputs;
+- credentials, invokers, live health state, and execution authority are never reconstructed by a
+  format migration.
+
+Use `schemarouter artifact inspect/migrate` and `schemarouter snapshot inspect/migrate` for
+operator-facing validation and conversion. Migration writes a new file by default and requires
+explicit `--overwrite` before replacing an existing destination.
 
 ## Deprecation policy
 

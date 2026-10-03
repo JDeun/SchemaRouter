@@ -47,3 +47,11 @@
 ::: schemarouter.RouterInspection
 ## CapabilityDecisionTraceInspection
 ::: schemarouter.CapabilityDecisionTraceInspection
+
+## CapabilitySnapshotProvenance
+
+::: schemarouter.CapabilitySnapshotProvenance
+
+## CapabilityDecisionCandidateInspection
+
+::: schemarouter.CapabilityDecisionCandidateInspection

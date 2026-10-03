@@ -23,6 +23,10 @@ evidence.
 | LlamaIndex | [LlamaIndex quickstart](https://github.com/JDeun/SchemaRouter/blob/main/examples/llamaindex_quickstart.py) | `FunctionTool` bridge |
 | Persisted registry/traces | [inspection dashboard](https://github.com/JDeun/SchemaRouter/blob/main/examples/inspection_dashboard.py) | live inspection + static HTML dashboard |
 | Changing provider schema | [schema drift demo](https://github.com/JDeun/SchemaRouter/blob/main/examples/schema_drift_demo.py) | conservative compatibility classification |
+| Typed execution state | [state-aware retrieval](../guides/state-aware-retrieval.md) | fixed Top-K filtering vs eligible Top-K corrective backfill |
+| Large capability registry | [graph scalability guide](../guides/capability-graph-scalability.md) | indexed/incremental graph construction + benchmark |
+| Portable graph files | [artifacts and snapshots](../guides/capability-artifacts.md) | inspect, validate, migrate versioned capability files |
+| Decision observability | [decision trace guide](../guides/capability-decision-traces.md) | privacy-safe candidate/exclusion/fallback explanation |
 
 The repository-level
 [examples README](https://github.com/JDeun/SchemaRouter/tree/main/examples)
@@ -146,3 +150,33 @@ registered capabilities.
 Mandatory CI runs deterministic examples with installed wheel/sdist artifacts. Optional integration
 jobs execute framework and MCP examples with the relevant extras. Live public providers stay in the
 separate compatibility workflow so external outages do not block a release.
+
+
+## Post-0.14 infrastructure checks
+
+Provider-first acceptance, state-conditioned retrieval, graph scalability, versioned
+artifact/snapshot migration, and decision traces are additive infrastructure around the stable
+execution boundary.
+
+Useful commands:
+
+```bash
+python scripts/live_materials_project_provider_smoke.py
+python scripts/live_crossref_provider_smoke.py
+python scripts/live_tavily_provider_smoke.py
+python scripts/benchmark_capability_graph.py --sizes 1000,10000,50000
+```
+
+For persisted portable files:
+
+```bash
+schemarouter artifact inspect graph.json --json
+schemarouter artifact migrate graph.json --json
+schemarouter snapshot inspect snapshot.json --json
+schemarouter snapshot migrate snapshot.json --json
+```
+
+Decision traces and typed-state retrieval are covered by focused guides rather than a second
+workflow runtime:
+[state-aware retrieval](../guides/state-aware-retrieval.md) ·
+[decision traces](../guides/capability-decision-traces.md).

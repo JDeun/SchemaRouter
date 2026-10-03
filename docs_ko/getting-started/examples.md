@@ -20,6 +20,10 @@
 | LangGraph | [quickstart](https://github.com/JDeun/SchemaRouter/blob/main/examples/langgraph_quickstart.py) | graph node로서의 SchemaRouter |
 | LlamaIndex | [quickstart](https://github.com/JDeun/SchemaRouter/blob/main/examples/llamaindex_quickstart.py) | `FunctionTool` bridge |
 | Registry/trace | [inspection dashboard](https://github.com/JDeun/SchemaRouter/blob/main/examples/inspection_dashboard.py) | live inspection + static HTML dashboard |
+| Typed execution state | [state-aware retrieval](../guides/state-aware-retrieval.md) | fixed Top-K filtering과 eligible Top-K corrective backfill 구분 |
+| 대규모 capability registry | [graph scalability](../guides/capability-graph-scalability.md) | indexed/incremental graph 생성과 benchmark |
+| Portable graph file | [artifact/snapshot](../guides/capability-artifacts.md) | versioned capability file inspect/validate/migrate |
+| Decision observability | [decision trace](../guides/capability-decision-traces.md) | privacy-safe candidate/exclusion/fallback 설명 |
 
 정확한 실행 명령과 optional extras는
 [repository examples README](https://github.com/JDeun/SchemaRouter/tree/main/examples)에 있습니다.
@@ -83,3 +87,32 @@ python examples/inspection_dashboard.py
 실제 registry와 trace store로 static HTML dashboard를 생성합니다.
 
 [운영 상태 확인 가이드 →](../guides/inspection.md)
+
+
+## 0.14 이후 infrastructure 확인
+
+Provider-first 등록, state-conditioned retrieval, graph scalability, versioned
+artifact/snapshot migration, decision trace는 stable execution boundary 주위의 additive
+infrastructure입니다.
+
+실행 가능한 확인 경로:
+
+```bash
+python scripts/live_materials_project_provider_smoke.py
+python scripts/live_crossref_provider_smoke.py
+python scripts/live_tavily_provider_smoke.py
+python scripts/benchmark_capability_graph.py --sizes 1000,10000,50000
+```
+
+Portable file은 다음 CLI로 확인하고 migration할 수 있습니다.
+
+```bash
+schemarouter artifact inspect graph.json --json
+schemarouter artifact migrate graph.json --json
+schemarouter snapshot inspect snapshot.json --json
+schemarouter snapshot migrate snapshot.json --json
+```
+
+Typed state와 decision trace는 별도 workflow runtime을 추가하지 않고 다음 가이드에서 다룹니다.
+[state-aware retrieval](../guides/state-aware-retrieval.md) ·
+[decision trace](../guides/capability-decision-traces.md).
