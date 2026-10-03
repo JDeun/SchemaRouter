@@ -3343,19 +3343,24 @@ class SchemaRouter:
         run_config: RunConfig,
     ) -> list[ToolResult]:
         self._validate_plan_authorization(plan, run_config.principal)
+        data_scope_decisions = self._validate_plan_data_scope(
+            plan,
+            run_config.principal,
+        )
         with _principal_execution_context(run_config.principal):
-            if run_config.execution_mode == "parallel_read_only":
-                return await self.executor.execute_parallel_read_only(
+            with _data_scope_execution_context(data_scope_decisions):
+                if run_config.execution_mode == "parallel_read_only":
+                    return await self.executor.execute_parallel_read_only(
+                        plan,
+                        retry=run_config.retry,
+                        budget=run_config.budget,
+                        max_concurrency=run_config.max_parallel_calls,
+                    )
+                return await self.executor.execute(
                     plan,
                     retry=run_config.retry,
                     budget=run_config.budget,
-                    max_concurrency=run_config.max_parallel_calls,
                 )
-            return await self.executor.execute(
-                plan,
-                retry=run_config.retry,
-                budget=run_config.budget,
-            )
 
     async def execute(
         self,
