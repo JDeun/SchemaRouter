@@ -42,7 +42,7 @@ The built-in acceptance profiles deliberately cover different access shapes:
 - **Crossref** — public declarative HTTP/JSON REST access.
 - **Tavily** — authenticated declarative HTTP/JSON search plus an optional Python SDK path.
 - **APIs.guru** — public OpenAPI discovery and read-only metrics execution.
-- **Rick and Morty GraphQL API** — public GraphQL introspection and read-only query execution.
+- **Countries GraphQL API** — public GraphQL introspection and read-only country query execution.
 - **OData.org V4 reference service** — public OData metadata discovery and read-only query execution.
 
 For authenticated methods, supply trusted process-local headers:
