@@ -7,8 +7,8 @@ SchemaRouter 문서에서는 **안정판이 보장하는 동작**, **릴리스 �
 
 | 항목 | 공개 상태 |
 | --- | --- |
-| 안정판 | `0.14.0` |
-| 릴리스 날짜 | 2026-10-02 |
+| 안정판 | `0.15.0` |
+| 릴리스 날짜 | 2026-10-03 |
 | 상태 | Beta / pre-1.0 |
 | Python | 3.10–3.14는 릴리스 차단 대상, 3.15는 preview |
 | License | MIT |
@@ -41,7 +41,7 @@ Release workflow는 CI를 통과한 `main` commit만 사용합니다. wheel/sdis
 manifest에는 버전, tag, source commit, artifact 이름·크기·SHA-256이 기록됩니다.
 
 ```bash
-gh attestation verify schemarouter-0.14.0-py3-none-any.whl --repo JDeun/SchemaRouter
+gh attestation verify schemarouter-0.15.0-py3-none-any.whl --repo JDeun/SchemaRouter
 ```
 
 ## CI / Security
