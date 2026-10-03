@@ -21,12 +21,12 @@
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml"><img alt="Docs" src="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml/badge.svg"></a>
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/codeql.yml"><img alt="CodeQL" src="https://github.com/JDeun/SchemaRouter/actions/workflows/codeql.yml/badge.svg"></a>
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/security.yml"><img alt="Security Audit" src="https://github.com/JDeun/SchemaRouter/actions/workflows/security.yml/badge.svg"></a>
-  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.14.0"></a>
+  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.15.0"></a>
   <a href="https://pypi.org/project/schemarouter/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/schemarouter"></a>
   <a href="https://github.com/JDeun/SchemaRouter/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
-> **Stable release: 0.14.0** · Beta / pre-1.0
+> **Stable release: 0.15.0** · Beta / pre-1.0
 
 SchemaRouter is a **typed capability retrieval and schema-aware execution layer for LLM/RAG agents**
 across MCP, OpenAPI, Python, and framework tools.
@@ -56,7 +56,7 @@ It is **not** a general agent framework, an LLM provider layer, or a RAG generat
 
 ## Stability and verification
 
-SchemaRouter `0.14.0` is **Beta / pre-1.0**. Python 3.10–3.14 are release-blocking CI targets;
+SchemaRouter `0.15.0` is **Beta / pre-1.0**. Python 3.10–3.14 are release-blocking CI targets;
 Python 3.15 is a non-blocking preview.
 
 Plans and retrieved candidates do not grant execution authority. The runtime revalidates current

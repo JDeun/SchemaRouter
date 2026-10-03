@@ -7,6 +7,8 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+## 0.15.0 - 2026-10-03
+
 ### Added
 
 - expanded provider-first onboarding acceptance across live OpenAPI and OData providers plus

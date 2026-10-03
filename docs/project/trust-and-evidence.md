@@ -8,12 +8,12 @@ relying on marketing copy.
 
 | Item | Verified public state |
 | --- | --- |
-| Stable version | `0.14.0` |
-| Release date | 2026-10-02 |
+| Stable version | `0.15.0` |
+| Release date | 2026-10-03 |
 | Status | Beta / pre-1.0 |
 | Python | 3.10–3.14 are release-blocking CI targets; 3.15 is a non-blocking preview |
 | License | MIT |
-| Release | [SchemaRouter 0.14.0](https://github.com/JDeun/SchemaRouter/releases/tag/v0.14.0) |
+| Release | [SchemaRouter 0.15.0](https://github.com/JDeun/SchemaRouter/releases/tag/v0.15.0) |
 | Stable-core contract | [Stable core](../stable-core.md) |
 | Security policy | [SECURITY.md](https://github.com/JDeun/SchemaRouter/blob/main/SECURITY.md) |
 
@@ -53,7 +53,7 @@ For 0.14.0 and later, verify artifact digests against the `release-manifest.json
 `SHA256SUMS.txt` attached to that release. When GitHub CLI attestation verification is available:
 
 ```bash
-gh attestation verify schemarouter-0.14.0-py3-none-any.whl --repo JDeun/SchemaRouter
+gh attestation verify schemarouter-0.15.0-py3-none-any.whl --repo JDeun/SchemaRouter
 ```
 
 The repository release checklist treats provenance, SBOM, public-PyPI digest equivalence, and
