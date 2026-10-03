@@ -11,7 +11,7 @@ automatically classified as a SchemaRouter regression.
 | --- | --- | --- | --- | --- | --- |
 | OpenAPI | Yes | Live public provider | Read-only metrics request | APIs.guru | Public provider availability is external state. |
 | OPTIMADE | Yes | Live public provider | Read-only structure search | COD OPTIMADE | Public provider availability and dataset latency vary. |
-| GraphQL | Yes | Live public provider | Read-only media query | AniList | Public third-party service; introspection availability can change. |
+| GraphQL | Yes | Live public provider + pinned reference | Read-only media/reference query | AniList + in-repo GraphQL reference | Public introspection may change; pinned reference is release-gated. |
 | OData | Yes | Live public provider | Read-only Products query with `$top=1` | OData.org V4 reference service | Only a read-only Products query with `$top=1` is exercised. |
 | OpenRPC | Yes | Pinned reference implementation | Harmless local echo method | In-repo local JSON-RPC server | No stable unauthenticated public execution endpoint is assumed. |
 | MCP Streamable HTTP | Yes | Pinned reference implementation | Local `add` tool | In-repo MCP SDK fixture server | Reference server is used instead of assuming a stable public MCP endpoint. |
@@ -46,6 +46,7 @@ python scripts/live_graphql_smoke.py --json-out /tmp/graphql-compatibility.json
 python scripts/live_odata_smoke.py --json-out /tmp/odata-compatibility.json
 python scripts/live_reference_openrpc_smoke.py --json-out /tmp/openrpc-compatibility.json
 python scripts/live_reference_mcp_smoke.py --json-out /tmp/mcp-compatibility.json
+python scripts/live_reference_graphql_smoke.py --json-out /tmp/graphql-reference-compatibility.json
 python scripts/live_materials_project_provider_smoke.py
 python scripts/live_crossref_provider_smoke.py
 python scripts/live_tavily_provider_smoke.py
@@ -66,5 +67,5 @@ A green public-provider row means the provider was reachable and compatible at t
 `generated_at` timestamp. It is not a permanent availability guarantee. A public-provider
 failure should first be classified as provider/network/infrastructure state.
 
-Pinned OpenRPC and MCP rows are reproducible provider-first compatibility evidence owned by this repository: each reference source is registered through a process-local `ProviderProfile` before it reaches the normal OpenRPC/MCP adapter.
+Pinned GraphQL, OpenRPC, and MCP rows are reproducible provider-first compatibility evidence owned by this repository: each reference source is registered through a process-local `ProviderProfile` before it reaches the normal protocol adapter.
 A failure there is actionable as a likely SchemaRouter or dependency compatibility regression.
