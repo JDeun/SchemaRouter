@@ -66,6 +66,7 @@ nav:
       - State-aware retrieval: guides/state-aware-retrieval.md
       - Capability 제약: guides/capability-constraints.md
       - Capability drift: guides/capability-graph-drift.md
+      - Capability graph 확장성: guides/capability-graph-scalability.md
       - Capability eligibility: guides/capability-eligibility.md
       - Capability lineage: guides/capability-lineage.md
       - Contract-aware fallback: guides/contract-aware-fallback.md
