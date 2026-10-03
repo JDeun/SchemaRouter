@@ -70,6 +70,10 @@ ProviderProfile
     |
     +-- OpenAPI
     +-- OPTIMADE
+    +-- GraphQL
+    +-- OData
+    +-- OpenRPC
+    +-- MCP (URL-backed)
     +-- HTTP/JSON
     +-- Python / plugin binding
     |
