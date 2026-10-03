@@ -22,6 +22,11 @@ from .adapters.plugins import (
     load_adapter_plugins,
 )
 from .adapters.python import schema_tool, tool_from_callable
+from .adapters.sqlite_database import (
+    SQLiteTableBinding,
+    SQLiteTableInvoker,
+    introspect_sqlite_database,
+)
 from .aggregation import (
     AggregatedField,
     CanonicalEntity,
@@ -581,6 +586,8 @@ __all__ = [
     "SchemaProposal",
     "SchemaRouter",
     "SchemaRouterError",
+    "SQLiteTableBinding",
+    "SQLiteTableInvoker",
     "SchemaSourceError",
     "SQLiteRegistry",
     "SchemaValidationError",
@@ -640,6 +647,7 @@ __all__ = [
     "render_schema_explorer",
     "write_schema_explorer",
     "inspect_sqlite_storage",
+    "introspect_sqlite_database",
     "migrate_sqlite_storage",
     "dependency_cycles",
     "dependency_strongly_connected_components",
