@@ -54,6 +54,15 @@ from .python import (
     schema_tool,
     tool_from_callable,
 )
+from .record_store import (
+    RecordFieldSpec,
+    RecordModel,
+    RecordSourceBinding,
+    RecordSourceInvoker,
+    RecordSourceSpec,
+    RecordStoreBackend,
+    introspect_record_backend,
+)
 from .sqlalchemy_database import (
     SQLAlchemyTableBinding,
     SQLAlchemyTableInvoker,
@@ -108,6 +117,12 @@ __all__ = [
     "OpenRPCRemoteInvoker",
     "OpenRPCSourceAdapter",
     "PythonCallableInvoker",
+    "RecordFieldSpec",
+    "RecordModel",
+    "RecordSourceBinding",
+    "RecordSourceInvoker",
+    "RecordSourceSpec",
+    "RecordStoreBackend",
     "SourceAdapter",
     "VectorCollectionBinding",
     "VectorCollectionInvoker",
@@ -129,6 +144,7 @@ __all__ = [
     "introspect_sqlite_database",
     "introspect_vector_backend",
     "introspect_graph_backend",
+    "introspect_record_backend",
     "introspect_sqlalchemy_engine",
     "load_adapter_plugins",
     "prepare_http_json_tool",

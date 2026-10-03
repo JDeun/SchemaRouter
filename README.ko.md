@@ -261,6 +261,7 @@ OData.org V4 reference service를 포함합니다. Credential과 optional depend
 | SQLAlchemy Engine | RDB/warehouse connection을 caller가 소유할 때 | `router.add_sqlalchemy_database(engine, ...)` |
 | Vector store | collection/index discovery + bounded similarity search | `router.add_vector_store(backend, embed_query, ...)` |
 | Graph/RDF store | graph schema discovery + bounded traversal | `router.add_graph_store(backend, ...)` |
+| NoSQL record store | document/search/KV/time-series schema discovery + bounded query | `router.add_record_store(backend, ...)` |
 | 직접 ToolSpec | 애플리케이션이 이미 정규 계약을 갖고 있을 때 | `router.add_tool(...)` |
 | Python | capability가 로컬에 있고 타입이 붙어 있을 때 | `router.add_callable(...)` |
 | ToolSpec + SDK/client | transport는 신뢰하지만 안전한 자동 introspection이 어려울 때 | `router.add_bound_tool(...)` |

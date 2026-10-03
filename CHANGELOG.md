@@ -9,6 +9,10 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- added a provider-neutral non-relational record-store contract covering document, search,
+  key-value and time-series sources with schema discovery, exact-match filters, optional bounded
+  text/time queries, field projection, and principal-aware source non-disclosure without exposing
+  raw vendor query DSLs;
 - added a provider-neutral property-graph/RDF capability contract with graph schema discovery,
   relationship whitelisting, bounded traversal depth/result limits, field projection, and
   principal-aware graph non-disclosure without exposing arbitrary Cypher/Gremlin/SPARQL execution;
