@@ -8,6 +8,7 @@ from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
     ExecutionPlan,
+    PlanValidationError,
     PolicyViolationError,
     PrincipalContext,
     RunConfig,
@@ -337,7 +338,7 @@ async def test_vector_store_supports_async_discovery_embedding_and_search() -> N
 
 
 @pytest.mark.asyncio
-async def test_vector_store_returns_declared_fields_when_projection_is_omitted() -> None:
+async def test_vector_store_requires_explicit_output_projection() -> None:
     backend = FakeVectorBackend()
     router = SchemaRouter()
     await router.aadd_vector_store(
@@ -349,23 +350,18 @@ async def test_vector_store_returns_declared_fields_when_projection_is_omitted()
         remote=False,
     )
 
-    result = await router.execute(
-        _plan(
-            router,
-            "vectors.public_docs",
-            query="schema routing",
-            fields=[],
+    with pytest.raises(
+        PlanValidationError,
+        match="explicit output projection required",
+    ):
+        await router.execute(
+            _plan(
+                router,
+                "vectors.public_docs",
+                query="schema routing",
+                fields=[],
+            )
         )
-    )
-
-    assert result[0].data == [
-        {
-            "id": "doc-1",
-            "score": 0.98,
-            "title": "SchemaRouter",
-            "department": "engineering",
-        }
-    ]
 
 
 def test_vector_collection_rejects_reserved_metadata_fields() -> None:
