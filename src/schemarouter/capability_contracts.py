@@ -19,7 +19,7 @@ class CapabilityFieldContract(StrictModel):
     qualifiers: dict[str, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")
-    def validate_contract(self) -> "CapabilityFieldContract":
+    def validate_contract(self) -> CapabilityFieldContract:
         if not self.semantic_id.strip() or self.semantic_id != self.semantic_id.strip():
             raise ValueError("semantic_id must be non-empty and have no surrounding whitespace")
         if self.unit is not None and (not self.unit.strip() or self.unit != self.unit.strip()):
@@ -31,7 +31,7 @@ class CapabilityFieldContract(StrictModel):
         return self
 
     @classmethod
-    def from_field(cls, field: FieldSpec) -> "CapabilityFieldContract | None":
+    def from_field(cls, field: FieldSpec) -> CapabilityFieldContract | None:
         if field.semantic_id is None:
             return None
         normalization = field.unit_normalization
