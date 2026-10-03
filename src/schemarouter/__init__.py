@@ -21,6 +21,15 @@ from .adapters.plugins import (
     discover_adapter_plugins,
     load_adapter_plugins,
 )
+from .adapters.record_store import (
+    RecordFieldSpec,
+    RecordModel,
+    RecordSourceBinding,
+    RecordSourceInvoker,
+    RecordSourceSpec,
+    RecordStoreBackend,
+    introspect_record_backend,
+)
 from .adapters.python import schema_tool, tool_from_callable
 from .adapters.sqlalchemy_database import (
     SQLAlchemyTableBinding,
@@ -573,6 +582,12 @@ __all__ = [
     "QueryIntent",
     "ResultFieldContract",
     "RetrievalMode",
+    "RecordFieldSpec",
+    "RecordModel",
+    "RecordSourceBinding",
+    "RecordSourceInvoker",
+    "RecordSourceSpec",
+    "RecordStoreBackend",
     "RegistrationError",
     "RefreshProfile",
     "RegistryExecutor",
@@ -654,6 +669,7 @@ __all__ = [
     "render_schema_explorer",
     "write_schema_explorer",
     "inspect_sqlite_storage",
+    "introspect_record_backend",
     "introspect_sqlite_database",
     "introspect_sqlalchemy_engine",
     "migrate_sqlite_storage",
