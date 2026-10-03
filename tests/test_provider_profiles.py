@@ -22,7 +22,7 @@ def test_builtin_profiles_resolve_provider_first() -> None:
     assert materials.provider_id == "materials-project"
     material_methods = {method.method_id: method for method in materials.methods}
     assert material_methods["optimade"].status == "available"
-    assert material_methods["optimade"].url == "https://optimade.materialsproject.org"
+    assert material_methods["optimade"].url == "https://optimade.materialsproject.org/v1"
     assert material_methods["openapi"].credential_names == ("X-API-KEY",)
     assert material_methods["python-sdk"].status in {
         "dependency_missing",
@@ -67,7 +67,7 @@ async def test_add_materials_project_registers_usable_methods_and_reports_skips(
 
     assert calls == [
         (
-            "https://optimade.materialsproject.org",
+            "https://optimade.materialsproject.org/v1",
             {
                 "kind": "optimade",
                 "provider": "materials-project",
