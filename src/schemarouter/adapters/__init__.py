@@ -5,6 +5,7 @@ from ..openapi_compatibility import (
 )
 from .base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
 from .graph_store import (
+    GraphDirection,
     GraphModel,
     GraphNodeTypeSpec,
     GraphPropertySpec,
@@ -73,6 +74,7 @@ __all__ = [
     "AdapterRegistry",
     "DefaultMCPClientFactory",
     "HTTPJSONRemoteInvoker",
+    "GraphDirection",
     "GraphModel",
     "GraphNodeTypeSpec",
     "GraphPropertySpec",
