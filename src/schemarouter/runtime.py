@@ -809,6 +809,71 @@ class SchemaRouter:
             for binding in bindings
         )
 
+    async def aadd_graph_store(
+        self,
+        backend: Any,
+        *,
+        database_name: str,
+        namespace: str | None = None,
+        graphs: set[str] | tuple[str, ...] | list[str] | None = None,
+        default_limit: int = 100,
+        default_max_hops: int = 1,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Discover and register a caller-owned property-graph or RDF backend."""
+
+        from .adapters.graph_store import introspect_graph_backend
+
+        bindings = await introspect_graph_backend(
+            backend,
+            database_name=database_name,
+            namespace=namespace,
+            graphs=graphs,
+            default_limit=default_limit,
+            default_max_hops=default_max_hops,
+            remote=remote,
+        )
+        existing_keys = set(self.registry.keys())
+        duplicate_keys = sorted(
+            binding.tool.key
+            for binding in bindings
+            if binding.tool.key in existing_keys
+        )
+        if duplicate_keys:
+            raise RegistrationError(
+                "graph introspection would replace existing tools: "
+                + ", ".join(duplicate_keys)
+            )
+        return tuple(
+            self.add_bound_tool(binding.tool, binding.invoker)
+            for binding in bindings
+        )
+
+    def add_graph_store(
+        self,
+        backend: Any,
+        *,
+        database_name: str,
+        namespace: str | None = None,
+        graphs: set[str] | tuple[str, ...] | list[str] | None = None,
+        default_limit: int = 100,
+        default_max_hops: int = 1,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_graph_store`."""
+
+        return _run_sync(
+            lambda: self.aadd_graph_store(
+                backend,
+                database_name=database_name,
+                namespace=namespace,
+                graphs=graphs,
+                default_limit=default_limit,
+                default_max_hops=default_max_hops,
+                remote=remote,
+            )
+        )
+
     def amend_capability(self, tool_key: str, amended: ToolSpec) -> str:
         """Declare or annotate the result contract of an already registered capability.
 
