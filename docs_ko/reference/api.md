@@ -83,3 +83,35 @@
 ::: schemarouter.render_capability_decision_trace
 ## inspect_capability_decision_trace
 ::: schemarouter.inspect_capability_decision_trace
+
+## ProviderProfileRegistry
+
+::: schemarouter.ProviderProfileRegistry
+
+## ProviderAccessMethod
+
+::: schemarouter.ProviderAccessMethod
+
+## update_capability_dependency_graph
+
+::: schemarouter.update_capability_dependency_graph
+
+## dependency_strongly_connected_components
+
+::: schemarouter.dependency_strongly_connected_components
+
+## validate_capability_publication
+
+::: schemarouter.validate_capability_publication
+
+## validate_capability_artifact
+
+::: schemarouter.validate_capability_artifact
+
+## validate_capability_snapshot
+
+::: schemarouter.validate_capability_snapshot
+
+## serialize_capability_snapshot
+
+::: schemarouter.serialize_capability_snapshot
