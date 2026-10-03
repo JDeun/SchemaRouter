@@ -58,6 +58,15 @@ from .capability_graph import (
     build_capability_dependency_graph,
     dependency_cycles,
 )
+from .contract_validation import (
+    ContractObservation,
+    ContractValidationItem,
+    ContractValidationResult,
+    ValidationStatus,
+    validate_capability_input,
+    validate_capability_output,
+    validate_contract_fields,
+)
 from .dashboard import render_dashboard, write_dashboard
 from .decision_plugins import (
     DECISION_BACKEND_ENTRY_POINT_GROUP,
@@ -273,6 +282,9 @@ __all__ = [
     "ExplorerUnitNormalization",
     "ExplorerWatchStatus",
     "ContractAmendmentError",
+    "ContractObservation",
+    "ContractValidationItem",
+    "ContractValidationResult",
     "DECISION_BACKEND_ENTRY_POINT_GROUP",
     "DecisionBackendPluginInfo",
     "discover_decision_backend_plugins",
@@ -418,6 +430,7 @@ __all__ = [
     "ToolResult",
     "ToolSpec",
     "UnitNormalizationSpec",
+    "ValidationStatus",
     "TraceError",
     "UnsupportedSchemaSourceError",
     "schema_tool",
