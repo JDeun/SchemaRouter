@@ -182,6 +182,15 @@ jobs:
             --json-out artifacts/openrpc-compatibility.json
           run_smoke scripts/live_reference_mcp_smoke.py \
             --json-out artifacts/mcp-compatibility.json
+          run_smoke scripts/live_provider_first_protocol_smoke.py \
+            --provider apis-guru \
+            --json-out artifacts/provider-apis-guru-compatibility.json
+          run_smoke scripts/live_provider_first_protocol_smoke.py \
+            --provider rick-and-morty-api \
+            --json-out artifacts/provider-rick-and-morty-api-compatibility.json
+          run_smoke scripts/live_provider_first_protocol_smoke.py \
+            --provider odata-v4-reference \
+            --json-out artifacts/provider-odata-v4-reference-compatibility.json
 
           python scripts/aggregate_compatibility_matrix.py \
             --reports-dir artifacts \
