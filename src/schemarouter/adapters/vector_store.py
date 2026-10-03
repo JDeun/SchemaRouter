@@ -125,6 +125,7 @@ class VectorCollectionInvoker:
         self._metadata_fields = {
             field.name for field in collection.metadata_fields
         }
+        self._all_fields = ("id", "score", *sorted(self._metadata_fields))
 
     async def invoke_call(self, call: ToolCall) -> list[dict[str, Any]]:
         if call.endpoint != _SEARCH_ENDPOINT:
@@ -153,9 +154,10 @@ class VectorCollectionInvoker:
                 f"expected {self._collection.dimension}, got {len(vector)}"
             )
 
+        selected_fields = tuple(call.fields) or self._all_fields
         selected_metadata = tuple(
             field
-            for field in call.fields
+            for field in selected_fields
             if field in self._metadata_fields
         )
         raw_results = await _await_if_needed(
@@ -169,7 +171,7 @@ class VectorCollectionInvoker:
         if not isinstance(raw_results, list):
             raise SchemaValidationError("vector backend search must return a list")
 
-        selected = set(call.fields)
+        selected = set(selected_fields)
         rows: list[dict[str, Any]] = []
         for index, raw in enumerate(raw_results):
             if not isinstance(raw, dict):
