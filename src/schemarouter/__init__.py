@@ -48,6 +48,16 @@ from .capability_constraints import (
     OperationalConstraintResult,
     evaluate_operational_constraints,
 )
+from .capability_artifact import (
+    CAPABILITY_ARTIFACT_FORMAT_VERSION,
+    ArtifactSourceKind,
+    CapabilityArtifactEdge,
+    CapabilityArtifactSource,
+    CapabilityGraphArtifact,
+    build_capability_artifact,
+    dump_capability_artifact,
+    load_capability_artifact,
+)
 from .capability_contracts import (
     CapabilityCompatibility,
     CapabilityComposition,
@@ -254,6 +264,14 @@ from .traces import (
 )
 
 __all__ = [
+    "CAPABILITY_ARTIFACT_FORMAT_VERSION",
+    "ArtifactSourceKind",
+    "CapabilityArtifactEdge",
+    "CapabilityArtifactSource",
+    "CapabilityGraphArtifact",
+    "build_capability_artifact",
+    "dump_capability_artifact",
+    "load_capability_artifact",
     "__version__",
     "ADAPTER_ENTRY_POINT_GROUP",
     "AggregatedField",
