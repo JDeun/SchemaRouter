@@ -157,6 +157,7 @@ nav:
       - Batch, streaming, and events: guides/runtime.md
       - Execution policy: guides/execution-policy.md
       - Provider-aware fallback: guides/provider-fallback.md
+      - Host operational constraints: guides/capability-constraints.md
       - Multi-provider evidence: guides/multi-provider-evidence.md
       - Schema drift analysis: guides/schema-drift.md
       - Retry policy: guides/retry.md
