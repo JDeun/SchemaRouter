@@ -186,8 +186,8 @@ jobs:
             --provider apis-guru \
             --json-out artifacts/provider-apis-guru-compatibility.json
           run_smoke scripts/live_provider_first_protocol_smoke.py \
-            --provider countries-graphql \
-            --json-out artifacts/provider-countries-graphql-compatibility.json
+            --provider anilist \
+            --json-out artifacts/provider-anilist-compatibility.json
           run_smoke scripts/live_provider_first_protocol_smoke.py \
             --provider odata-v4-reference \
             --json-out artifacts/provider-odata-v4-reference-compatibility.json
