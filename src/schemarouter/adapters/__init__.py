@@ -43,6 +43,15 @@ from .python import (
     schema_tool,
     tool_from_callable,
 )
+from .vector_store import (
+    VectorCollectionBinding,
+    VectorCollectionInvoker,
+    VectorCollectionSpec,
+    VectorMetadataField,
+    VectorQueryEmbedder,
+    VectorStoreBackend,
+    introspect_vector_backend,
+)
 from .sqlalchemy_database import (
     SQLAlchemyTableBinding,
     SQLAlchemyTableInvoker,
@@ -81,6 +90,12 @@ __all__ = [
     "OpenRPCSourceAdapter",
     "PythonCallableInvoker",
     "SourceAdapter",
+    "VectorCollectionBinding",
+    "VectorCollectionInvoker",
+    "VectorCollectionSpec",
+    "VectorMetadataField",
+    "VectorQueryEmbedder",
+    "VectorStoreBackend",
     "SQLiteTableBinding",
     "SQLiteTableInvoker",
     "SQLAlchemyTableBinding",
@@ -93,6 +108,7 @@ __all__ = [
     "inspect_mcp_stdio",
     "inspect_mcp_url",
     "introspect_sqlite_database",
+    "introspect_vector_backend",
     "introspect_sqlalchemy_engine",
     "load_adapter_plugins",
     "prepare_http_json_tool",
