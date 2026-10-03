@@ -1,3 +1,4 @@
+import gzip
 import json
 
 import httpx
@@ -14,6 +15,7 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.adapters import OPTIMADERemoteInvoker
+from schemarouter.adapters.optimade import _bounded_get
 
 
 def base_info() -> dict:
@@ -505,3 +507,32 @@ async def test_optimade_projection_maps_provider_wire_field_to_canonical_name() 
 
     assert seen_queries == [{"response_fields": "_provider_b_elasticity", "page_limit": "20"}]
     assert result == [{"elastic_modulus": 145.0}]
+
+
+@pytest.mark.asyncio
+async def test_bounded_get_drops_transport_framing_after_httpx_decode() -> None:
+    payload = json.dumps(base_info()).encode("utf-8")
+    compressed = gzip.compress(payload)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            headers={
+                "Content-Encoding": "gzip",
+                "Content-Length": str(len(compressed)),
+            },
+            content=compressed,
+            request=request,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        response = await _bounded_get(
+            client,
+            "https://materials.example/optimade/v1/info",
+            headers=None,
+            max_bytes=1024 * 1024,
+        )
+
+    assert response.json() == base_info()
+    assert "content-encoding" not in response.headers
+    assert "content-length" not in response.headers
