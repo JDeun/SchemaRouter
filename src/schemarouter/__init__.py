@@ -39,6 +39,16 @@ from .binding_reconciliation import (
     BindingResolver,
     TrustedBindingConfig,
 )
+from .capability_artifact import (
+    CAPABILITY_ARTIFACT_FORMAT_VERSION,
+    ArtifactSourceKind,
+    CapabilityArtifactEdge,
+    CapabilityArtifactSource,
+    CapabilityGraphArtifact,
+    build_capability_artifact,
+    load_capability_artifact,
+    serialize_capability_artifact,
+)
 from .capability_contracts import (
     CapabilityCompatibility,
     CapabilityComposition,
@@ -292,7 +302,12 @@ __all__ = [
     "CapabilityDependencyEdge",
     "CapabilityDependencyGraph",
     "CapabilityComposition",
+    "CAPABILITY_ARTIFACT_FORMAT_VERSION",
+    "ArtifactSourceKind",
+    "CapabilityArtifactEdge",
+    "CapabilityArtifactSource",
     "CapabilityContract",
+    "CapabilityGraphArtifact",
     "CapabilityContractValidation",
     "CapabilityObservation",
     "ContractFieldValidation",
@@ -439,6 +454,7 @@ __all__ = [
     "analyze_openapi_compatibility",
     "choose_async",
     "choose_sync",
+    "build_capability_artifact",
     "build_capability_dependency_graph",
     "compare_capability_composition",
     "compare_capability_fields",
