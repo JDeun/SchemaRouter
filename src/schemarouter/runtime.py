@@ -80,12 +80,12 @@ from .schema_diff import (
     compare_tool_specs,
 )
 from .schema_watch import SchemaWatchManager, SchemaWatchSnapshot
-from .state_retrieval import StateAwareCapabilityRetrieval
 from .source_identity import (
     StructuredSourceIdentity,
     structured_source_identity,
     structured_source_identity_digest_for,
 )
+from .state_retrieval import StateAwareCapabilityRetrieval
 from .traces import RunTraceStore
 
 _T = TypeVar("_T")
