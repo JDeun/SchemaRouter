@@ -8,13 +8,13 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from .capability_decision_trace import (
-    CapabilityDecisionTrace,
-    render_capability_decision_trace,
-)
 from .capability_artifact import (
     migrate_capability_artifact,
     serialize_capability_artifact,
+)
+from .capability_decision_trace import (
+    CapabilityDecisionTrace,
+    render_capability_decision_trace,
 )
 from .capability_snapshot import (
     migrate_capability_snapshot,
