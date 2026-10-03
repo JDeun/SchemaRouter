@@ -72,3 +72,24 @@
 ## replay_run_events
 
 ::: schemarouter.replay_run_events
+
+
+## CapabilitySnapshotStore
+
+::: schemarouter.CapabilitySnapshotStore
+
+## CapabilitySnapshotPublication
+
+::: schemarouter.CapabilitySnapshotPublication
+
+## CapabilityPublicationConflictError
+
+::: schemarouter.CapabilityPublicationConflictError
+
+## RouterInspection
+
+::: schemarouter.RouterInspection
+
+## CapabilityDecisionTraceInspection
+
+::: schemarouter.CapabilityDecisionTraceInspection
