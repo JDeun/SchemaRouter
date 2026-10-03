@@ -56,6 +56,48 @@ from .capability_contracts import (
     compare_capability_composition,
     compare_capability_fields,
 )
+from .capability_constraints import (
+    CapabilityOperationalMetadata,
+    HostCapabilityConstraints,
+    OperationalConstraintReason,
+    OperationalConstraintResult,
+    evaluate_operational_constraints,
+)
+from .capability_drift import (
+    CapabilityDriftChange,
+    CapabilityGraphDrift,
+    capability_contract_fingerprint,
+    compare_capability_graph_snapshot,
+)
+from .capability_eligibility import (
+    CapabilityEligibilityExplanation,
+    CapabilityEligibilityReason,
+    explain_capability_eligibility,
+)
+from .capability_fallback import (
+    CapabilityFallbackEligibility,
+    eligible_fallback_ids,
+    evaluate_fallback_eligibility,
+)
+from .capability_lineage import (
+    CapabilityLineage,
+    CapabilityLineageHop,
+    build_capability_lineage,
+)
+from .capability_negotiation import (
+    CapabilityNegotiationCandidate,
+    CapabilityNegotiationRequest,
+    CapabilityNegotiationResult,
+    negotiate_capabilities,
+)
+from .capability_snapshot import (
+    CapabilityGraphSnapshot,
+    CapabilitySnapshotDiff,
+    CapabilitySourceRevision,
+    build_capability_snapshot,
+    compare_capability_snapshots,
+    require_snapshot,
+)
 from .capability_graph import (
     CapabilityDependencyEdge,
     CapabilityDependencyGraph,
@@ -255,6 +297,34 @@ from .traces import (
 )
 
 __all__ = [
+    "CapabilityOperationalMetadata",
+    "HostCapabilityConstraints",
+    "OperationalConstraintReason",
+    "OperationalConstraintResult",
+    "evaluate_operational_constraints",
+    "CapabilityDriftChange",
+    "CapabilityGraphDrift",
+    "capability_contract_fingerprint",
+    "compare_capability_graph_snapshot",
+    "CapabilityEligibilityExplanation",
+    "CapabilityEligibilityReason",
+    "explain_capability_eligibility",
+    "CapabilityFallbackEligibility",
+    "eligible_fallback_ids",
+    "evaluate_fallback_eligibility",
+    "CapabilityLineage",
+    "CapabilityLineageHop",
+    "build_capability_lineage",
+    "CapabilityNegotiationCandidate",
+    "CapabilityNegotiationRequest",
+    "CapabilityNegotiationResult",
+    "negotiate_capabilities",
+    "CapabilityGraphSnapshot",
+    "CapabilitySnapshotDiff",
+    "CapabilitySourceRevision",
+    "build_capability_snapshot",
+    "compare_capability_snapshots",
+    "require_snapshot",
     "__version__",
     "ADAPTER_ENTRY_POINT_GROUP",
     "AggregatedField",
