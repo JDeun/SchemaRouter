@@ -126,6 +126,7 @@ from .execution_state import (
     StateEligibility,
     StateEligibilityReason,
     TypedExecutionState,
+    evaluate_preconditions,
     evaluate_state_eligibility,
 )
 from .executor import RegistryExecutor
@@ -457,6 +458,7 @@ __all__ = [
     "build_capability_dependency_graph",
     "compare_capability_composition",
     "compare_capability_fields",
+    "evaluate_preconditions",
     "evaluate_state_eligibility",
     "validate_capability_inputs",
     "validate_capability_outputs",
