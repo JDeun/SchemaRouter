@@ -473,6 +473,29 @@ class SchemaRouter:
                 raise PolicyViolationError(
                     "trusted data predicate targets undeclared fields"
                 )
+
+            for predicate in decision.trusted_predicates:
+                supplied_values = [
+                    call.arguments[name]
+                    for name in (
+                        predicate.field,
+                        f"filter__{predicate.field}",
+                    )
+                    if name in call.arguments
+                ]
+                for supplied in supplied_values:
+                    if predicate.operator == "eq" and supplied != predicate.value:
+                        raise PolicyViolationError(
+                            "model argument conflicts with trusted data predicate"
+                        )
+                    if (
+                        predicate.operator == "in"
+                        and isinstance(predicate.value, tuple)
+                        and supplied not in predicate.value
+                    ):
+                        raise PolicyViolationError(
+                            "model argument conflicts with trusted data predicate"
+                        )
             decisions[f"{call.tool}.{call.endpoint}"] = decision
         return decisions
 
