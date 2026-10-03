@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
-from collections.abc import Collection, Iterable
+import json
+from collections.abc import Callable, Collection, Iterable
 from importlib import metadata
 from typing import Any, Literal
 
@@ -133,6 +135,58 @@ class ProviderRegistrationResult(StrictModel):
     methods: tuple[ProviderMethodRegistration, ...] = ()
 
 
+ProviderDiscoveryStatus = Literal["resolved", "ambiguous", "unknown"]
+
+
+class ProviderDiscoveryCandidate(StrictModel):
+    """One inspectable provider-discovery candidate without execution authority."""
+
+    candidate_id: str
+    display_name: str
+    source: str
+    reason: str = ""
+    profile: ProviderProfile | None = None
+
+    @property
+    def registrable(self) -> bool:
+        return self.profile is not None
+
+    @property
+    def approval_digest(self) -> str | None:
+        if self.profile is None:
+            return None
+        payload = self.profile.model_dump(mode="json")
+        canonical = json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        )
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+class ProviderDiscoveryProposal(StrictModel):
+    """Non-authoritative discovery result that must be reviewed before registration."""
+
+    query: str
+    status: ProviderDiscoveryStatus
+    candidates: tuple[ProviderDiscoveryCandidate, ...] = ()
+
+
+ProviderDiscoveryBackend = Callable[[str], Iterable[ProviderDiscoveryCandidate]]
+
+
+_PROVIDER_SERVICE_FAMILIES: dict[str, tuple[tuple[str, str], ...]] = {
+    "google": (
+        ("google-drive", "Google Drive"),
+        ("google-calendar", "Google Calendar"),
+        ("google-maps", "Google Maps Platform"),
+        ("google-gemini", "Google Gemini API"),
+        ("google-bigquery", "Google BigQuery"),
+    ),
+}
+
+
 class ProviderProfileRegistry:
     """Deterministic provider/alias resolver.
 
@@ -195,6 +249,109 @@ class ProviderProfileRegistry:
 
     def provider_ids(self) -> tuple[str, ...]:
         return tuple(sorted(self._profiles))
+
+    def discover(
+        self,
+        identifier: str,
+        *,
+        external_candidates: Iterable[ProviderDiscoveryCandidate] = (),
+        limit: int = 8,
+    ) -> ProviderDiscoveryProposal:
+        """Return inspectable candidates without registering or probing anything."""
+
+        if limit < 1:
+            raise ValueError("provider discovery limit must be positive")
+        normalized = _normalize_provider_name(identifier)
+
+        canonical = self._aliases.get(normalized)
+        if canonical is not None:
+            profile = self._profiles[canonical].model_copy(deep=True)
+            return ProviderDiscoveryProposal(
+                query=identifier,
+                status="resolved",
+                candidates=(
+                    ProviderDiscoveryCandidate(
+                        candidate_id=profile.provider_id,
+                        display_name=profile.display_name,
+                        source=profile.profile_source,
+                        reason="exact built-in or registered provider identity match",
+                        profile=profile,
+                    ),
+                ),
+            )
+
+        family = _PROVIDER_SERVICE_FAMILIES.get(normalized, ())
+        candidates: list[ProviderDiscoveryCandidate] = [
+            ProviderDiscoveryCandidate(
+                candidate_id=candidate_id,
+                display_name=display_name,
+                source="schemarouter:service-family",
+                reason=(
+                    f"{identifier!r} names an organization/service family; "
+                    "select a concrete service before discovering an executable profile"
+                ),
+            )
+            for candidate_id, display_name in family
+        ]
+
+        if not candidates:
+            for profile in self.profiles():
+                names = {
+                    _normalize_provider_name(profile.provider_id),
+                    *(_normalize_provider_name(alias) for alias in profile.aliases),
+                    _normalize_provider_name(profile.display_name),
+                }
+                if any(normalized in name or name in normalized for name in names):
+                    candidates.append(
+                        ProviderDiscoveryCandidate(
+                            candidate_id=profile.provider_id,
+                            display_name=profile.display_name,
+                            source=profile.profile_source,
+                            reason="local provider catalog name match",
+                            profile=profile,
+                        )
+                    )
+
+        seen = {candidate.candidate_id for candidate in candidates}
+        for candidate in external_candidates:
+            if candidate.candidate_id in seen:
+                continue
+            seen.add(candidate.candidate_id)
+            candidates.append(candidate.model_copy(deep=True))
+            if len(candidates) >= limit:
+                break
+
+        candidates = candidates[:limit]
+        if not candidates:
+            status: ProviderDiscoveryStatus = "unknown"
+        elif len(candidates) == 1 and candidates[0].registrable:
+            status = "resolved"
+        else:
+            status = "ambiguous"
+        return ProviderDiscoveryProposal(
+            query=identifier,
+            status=status,
+            candidates=tuple(candidates),
+        )
+
+    def approve_discovery_candidate(
+        self,
+        candidate: ProviderDiscoveryCandidate,
+        *,
+        expected_digest: str,
+        replace: bool = False,
+    ) -> str:
+        """Register one reviewed candidate after an exact profile-digest check."""
+
+        profile = candidate.profile
+        if profile is None:
+            raise ValueError(
+                "provider discovery candidate has no executable profile to approve"
+            )
+        digest = candidate.approval_digest
+        if digest is None or digest != expected_digest:
+            raise ValueError("provider discovery candidate changed before approval")
+        return self.register(profile, replace=replace)
 
     def resolve(
         self,
