@@ -5,8 +5,6 @@ import json
 from datetime import datetime
 from typing import Literal
 
-from pydantic import Field
-
 from .capability_contracts import CapabilityContract
 from .capability_graph import CapabilityDependencyGraph, build_capability_dependency_graph
 from .models import StrictModel
