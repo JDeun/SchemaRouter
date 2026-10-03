@@ -6,7 +6,6 @@ from types import SimpleNamespace
 import httpx
 import pytest
 
-import schemarouter.provider_profiles as provider_profiles
 from schemarouter import (
     PlanRequest,
     ProviderAccessMethod,
@@ -15,6 +14,7 @@ from schemarouter import (
     ProviderProfileRegistry,
     SchemaRouter,
 )
+import schemarouter.provider_profiles as provider_profiles
 
 
 def test_unknown_provider_discovery_is_non_authoritative_and_ambiguous() -> None:
