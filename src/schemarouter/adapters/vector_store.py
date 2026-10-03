@@ -125,7 +125,6 @@ class VectorCollectionInvoker:
         self._metadata_fields = {
             field.name for field in collection.metadata_fields
         }
-        self._all_fields = ("id", "score", *sorted(self._metadata_fields))
 
     async def invoke_call(self, call: ToolCall) -> list[dict[str, Any]]:
         if call.endpoint != _SEARCH_ENDPOINT:
@@ -154,7 +153,7 @@ class VectorCollectionInvoker:
                 f"expected {self._collection.dimension}, got {len(vector)}"
             )
 
-        selected_fields = tuple(call.fields) or self._all_fields
+        selected_fields = tuple(call.fields)
         selected_metadata = tuple(
             field
             for field in selected_fields
