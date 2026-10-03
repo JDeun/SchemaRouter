@@ -186,7 +186,9 @@ async def main() -> None:
     source = resolution.methods[0].url or "provider-profile"
 
     report = new_report(
-        adapter=(\n            f"provider-profile:{args.provider}:{resolution.methods[0].kind}"\n        ),
+        adapter=(
+            f"provider-profile:{args.provider}:{resolution.methods[0].kind}"
+        ),
         source=source,
     )
     report["details"] = {
