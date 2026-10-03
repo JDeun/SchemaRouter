@@ -43,6 +43,16 @@ from .python import (
     schema_tool,
     tool_from_callable,
 )
+from .sqlalchemy_database import (
+    SQLAlchemyTableBinding,
+    SQLAlchemyTableInvoker,
+    introspect_sqlalchemy_engine,
+)
+from .sqlite_database import (
+    SQLiteTableBinding,
+    SQLiteTableInvoker,
+    introspect_sqlite_database,
+)
 
 __all__ = [
     "AdapterContext",
@@ -71,6 +81,10 @@ __all__ = [
     "OpenRPCSourceAdapter",
     "PythonCallableInvoker",
     "SourceAdapter",
+    "SQLiteTableBinding",
+    "SQLiteTableInvoker",
+    "SQLAlchemyTableBinding",
+    "SQLAlchemyTableInvoker",
     "analyze_openapi_compatibility",
     "build_http_json_invoker",
     "callable_options",
@@ -78,6 +92,8 @@ __all__ = [
     "inspect_mcp_client_factory",
     "inspect_mcp_stdio",
     "inspect_mcp_url",
+    "introspect_sqlite_database",
+    "introspect_sqlalchemy_engine",
     "load_adapter_plugins",
     "prepare_http_json_tool",
     "resolve_openapi_base_url",

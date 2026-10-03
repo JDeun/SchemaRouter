@@ -22,6 +22,16 @@ from .adapters.plugins import (
     load_adapter_plugins,
 )
 from .adapters.python import schema_tool, tool_from_callable
+from .adapters.sqlalchemy_database import (
+    SQLAlchemyTableBinding,
+    SQLAlchemyTableInvoker,
+    introspect_sqlalchemy_engine,
+)
+from .adapters.sqlite_database import (
+    SQLiteTableBinding,
+    SQLiteTableInvoker,
+    introspect_sqlite_database,
+)
 from .aggregation import (
     AggregatedField,
     CanonicalEntity,
@@ -572,6 +582,10 @@ __all__ = [
     "RunTrace",
     "RunTraceStore",
     "SQLiteRunTraceStore",
+    "SQLiteTableBinding",
+    "SQLiteTableInvoker",
+    "SQLAlchemyTableBinding",
+    "SQLAlchemyTableInvoker",
     "SchemaDriftError",
     "SchemaChange",
     "SchemaChangeSeverity",
@@ -640,6 +654,8 @@ __all__ = [
     "render_schema_explorer",
     "write_schema_explorer",
     "inspect_sqlite_storage",
+    "introspect_sqlite_database",
+    "introspect_sqlalchemy_engine",
     "migrate_sqlite_storage",
     "dependency_cycles",
     "dependency_strongly_connected_components",

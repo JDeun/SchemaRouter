@@ -30,6 +30,7 @@ jobs:
       - run: ruff check .
       - run: pytest -q -m "not mcp_integration"
       - run: python examples/quickstart.py
+      - run: python examples/database_quickstart.py
       - run: python scripts/consumer_acceptance.py
 
   windows-smoke:
@@ -44,6 +45,7 @@ jobs:
       - run: ruff check .
       - run: pytest -q -m "not mcp_integration"
       - run: python examples/quickstart.py
+      - run: python examples/database_quickstart.py
       - run: python scripts/consumer_acceptance.py
 
   typecheck:
@@ -54,7 +56,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel]"
+      - run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel,database]"
       - run: pyright
 
   coverage:
@@ -65,7 +67,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel]"
+      - run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel,database]"
       - run: pytest -q --cov=schemarouter --cov-branch --cov-report=term-missing --cov-report=xml:coverage.xml
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -87,6 +89,7 @@ jobs:
       - run: pip install -e . --no-deps
       - run: pytest -q -m "not mcp_integration"
       - run: python examples/quickstart.py
+      - run: python examples/database_quickstart.py
       - run: python scripts/consumer_acceptance.py
 
   dependency-audit:
@@ -107,7 +110,7 @@ jobs:
     # "package" is a protected-main required check. Transitive dependencies make
     # Laya contract tests and dependency vulnerability auditing release-blocking
     # even when the repository ruleset has not caught up with newer job names.
-    needs: [laya-integration, dependency-audit]
+    needs: [laya-integration, dependency-audit, database-integration]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -205,6 +208,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
       - run: /tmp/schemarouter-wheel/bin/python examples/quickstart.py
+      - run: /tmp/schemarouter-wheel/bin/python examples/database_quickstart.py
       - run: /tmp/schemarouter-wheel/bin/python examples/sdk_bound_demo.py
       - run: /tmp/schemarouter-wheel/bin/python examples/mixed_provider_demo.py
       - run: /tmp/schemarouter-wheel/bin/python examples/schema_drift_demo.py
@@ -253,9 +257,10 @@ jobs:
       - name: Install wheel with combined integration extras
         run: |
           WHEEL="$(pwd)/$(ls dist/*.whl)"
-          /tmp/schemarouter-wheel-integrations/bin/pip install "schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel] @ file://${WHEEL}"
+          /tmp/schemarouter-wheel-integrations/bin/pip install "schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel,database] @ file://${WHEEL}"
           /tmp/schemarouter-wheel-integrations/bin/pip check
       - run: /tmp/schemarouter-wheel-integrations/bin/python scripts/installed_extras_smoke.py
+      - run: /tmp/schemarouter-wheel-integrations/bin/python scripts/installed_database_smoke.py
       - run: /tmp/schemarouter-wheel-integrations/bin/python examples/langchain_quickstart.py
       - run: /tmp/schemarouter-wheel-integrations/bin/python examples/langgraph_quickstart.py
       - run: /tmp/schemarouter-wheel-integrations/bin/python examples/llamaindex_quickstart.py
@@ -264,6 +269,7 @@ jobs:
       - run: /tmp/schemarouter-sdist/bin/pip install dist/*.tar.gz
       - run: /tmp/schemarouter-sdist/bin/python -c "from importlib.metadata import version; import schemarouter; assert schemarouter.__version__ == version('schemarouter')"
       - run: /tmp/schemarouter-sdist/bin/python examples/quickstart.py
+      - run: /tmp/schemarouter-sdist/bin/python examples/database_quickstart.py
       - run: /tmp/schemarouter-sdist/bin/python scripts/quickstart_provider_contract_smoke.py
       - run: /tmp/schemarouter-sdist/bin/python scripts/consumer_acceptance.py --json-out artifacts/consumer-acceptance-sdist.json
       - run: /tmp/schemarouter-sdist/bin/schemarouter --help
@@ -348,6 +354,18 @@ jobs:
       - run: pip install -e ".[dev,mcp]"
       - run: pytest -q tests/test_mcp_integration.py
       - run: python examples/mcp_stdio_quickstart.py
+
+  database-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev,database]"
+      - run: pytest -q tests/test_sqlite_database_adapter.py tests/test_sqlalchemy_database_adapter.py
+      - run: python scripts/installed_database_smoke.py
 
   docs:
     runs-on: ubuntu-latest

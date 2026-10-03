@@ -72,6 +72,9 @@ otel = [
   "opentelemetry-api>=1.44,<2",
   "opentelemetry-sdk>=1.44,<2",
 ]
+database = [
+  "sqlalchemy>=2.0,<3",
+]
 docs = [
   "mkdocs-material>=9.7,<10",
   "mkdocstrings>=1,<2",
