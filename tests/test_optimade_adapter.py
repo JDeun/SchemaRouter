@@ -577,15 +577,15 @@ async def test_bounded_get_drops_transport_framing_after_httpx_decode() -> None:
 @pytest.mark.asyncio
 async def test_optimade_untyped_list_unit_is_preserved_but_not_promoted() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
-        if request.url.path == "/v1/info":
+        if request.url.path == "/optimade/v1/info":
             return httpx.Response(200, json=base_info(), request=request)
-        if request.url.path == "/v1/info/structures":
+        if request.url.path == "/optimade/v1/info/structures":
             return httpx.Response(
                 200,
                 json=materials_project_style_structures_info(),
                 request=request,
             )
-        if request.url.path == "/v1/info/references":
+        if request.url.path == "/optimade/v1/info/references":
             return httpx.Response(200, json=references_info(), request=request)
         raise AssertionError(str(request.url))
 
