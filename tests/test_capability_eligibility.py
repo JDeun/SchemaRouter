@@ -1,3 +1,4 @@
+# Issue #712 regression coverage.
 from schemarouter.capability_eligibility import (
     CapabilityEligibilityReason,
     explain_capability_eligibility,
