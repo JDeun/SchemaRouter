@@ -9,6 +9,7 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Protocol, cast
 
+from .authorization import AuthorizationPolicy, _current_principal_context
 from .errors import (
     ApprovalDeniedError,
     BindingDriftError,
@@ -196,6 +197,7 @@ class RegistryExecutor:
         registry: ToolRegistry,
         *,
         policy: ExecutionPolicy | None = None,
+        authorization_policy: AuthorizationPolicy | None = None,
         approval_callback: ApprovalCallback | None = None,
         hooks: ExecutionHooks | None = None,
         unavailable_cooldown_seconds: float = 30.0,
@@ -209,6 +211,7 @@ class RegistryExecutor:
             raise ValueError("unavailable_cooldown_seconds must be a finite non-negative number")
         self.registry = registry
         self.policy = policy or ExecutionPolicy()
+        self.authorization_policy = authorization_policy
         self.approval_callback = approval_callback
         self.hooks = hooks or ExecutionHooks()
         self.unavailable_cooldown_seconds = float(unavailable_cooldown_seconds)
@@ -567,6 +570,19 @@ class RegistryExecutor:
         )
 
         self.policy.validate(tool, endpoint, call)
+
+        if self.authorization_policy is not None:
+            principal = _current_principal_context()
+            if principal is None:
+                raise PolicyViolationError(
+                    "authorization denied for requested capability"
+                )
+            self.authorization_policy.validate(
+                principal,
+                tool,
+                endpoint,
+                call,
+            )
 
         declared_fields = {field.name for field in endpoint.output_fields}
         unknown_fields = sorted(set(call.fields) - declared_fields)
