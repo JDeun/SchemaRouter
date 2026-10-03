@@ -33,7 +33,6 @@ def test_negotiation_distinguishes_exact_convertible_and_incompatible() -> None:
                 from_unit="meV",
                 to_unit="eV",
                 dimension="energy",
-                scale=0.001,
             )
         ]
     )
