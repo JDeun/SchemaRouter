@@ -52,18 +52,18 @@ from .capability_contracts import (
     compare_capability_composition,
     compare_capability_fields,
 )
+from .capability_eligibility import (
+    CapabilityEligibilityCode,
+    CapabilityEligibilityExplanation,
+    CapabilityEligibilityReason,
+    explain_capability_eligibility,
+)
 from .capability_graph import (
     CapabilityDependencyEdge,
     CapabilityDependencyGraph,
     build_capability_dependency_graph,
     dependency_cycles,
     satisfiable_capability_ids,
-)
-from .capability_lineage import (
-    CapabilityLineage,
-    CapabilityLineageHop,
-    CapabilityLineageReason,
-    build_capability_lineage,
 )
 from .contract_validation import (
     CapabilityContractValidation,
@@ -164,7 +164,7 @@ from .inspection import (
     RouterInspection,
     ToolInspection,
     TraceInspection,
-    inspect_capability_lineage,
+    inspect_capability_eligibility,
     inspect_registry,
     inspect_router,
     inspect_run_trace,
@@ -297,9 +297,9 @@ __all__ = [
     "CapabilityCandidate",
     "CapabilityCompatibility",
     "CapabilityDependencyEdge",
-    "CapabilityLineage",
-    "CapabilityLineageHop",
-    "CapabilityLineageReason",
+    "CapabilityEligibilityCode",
+    "CapabilityEligibilityExplanation",
+    "CapabilityEligibilityReason",
     "CapabilityDependencyGraph",
     "CapabilityComposition",
     "CapabilityContract",
@@ -450,10 +450,10 @@ __all__ = [
     "choose_async",
     "choose_sync",
     "build_capability_dependency_graph",
-    "build_capability_lineage",
     "compare_capability_composition",
     "compare_capability_fields",
     "evaluate_state_eligibility",
+    "explain_capability_eligibility",
     "validate_capability_inputs",
     "validate_capability_outputs",
     "compare_endpoint_specs",
@@ -467,7 +467,7 @@ __all__ = [
     "dependency_cycles",
     "satisfiable_capability_ids",
     "discover_adapter_plugins",
-    "inspect_capability_lineage",
+    "inspect_capability_eligibility",
     "inspect_registry",
     "inspect_router",
     "inspect_run_trace",

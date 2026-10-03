@@ -7,7 +7,7 @@ from typing import Any
 from pydantic import Field
 
 from ._url_safety import safe_provenance_url
-from .capability_lineage import CapabilityLineage
+from .capability_eligibility import CapabilityEligibilityExplanation
 from .models import StrictModel, ToolSpec
 from .registry import ToolRegistry
 from .traces import RunTrace, RunTraceStore
@@ -526,7 +526,9 @@ def tool_spec_document(tool: ToolSpec) -> dict[str, object]:
     }
 
 
-def inspect_capability_lineage(lineage: CapabilityLineage) -> CapabilityLineage:
-    """Return a detached privacy-safe lineage document for observability surfaces."""
+def inspect_capability_eligibility(
+    explanation: CapabilityEligibilityExplanation,
+) -> CapabilityEligibilityExplanation:
+    """Return a detached explanation for a capability already visible to the host."""
 
-    return lineage.model_copy(deep=True)
+    return explanation.model_copy(deep=True)
