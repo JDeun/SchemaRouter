@@ -4,6 +4,7 @@ from itertools import permutations
 
 import pytest
 
+import schemarouter.capability_graph as capability_graph_module
 from schemarouter import (
     CapabilityContract,
     CapabilityDependencyEdge,
@@ -90,6 +91,37 @@ def test_dependency_graph_does_not_create_edges_for_unknown_contracts() -> None:
     )
     graph = build_capability_dependency_graph([producer, consumer])
     assert graph.edges == []
+
+
+def test_index_prunes_full_comparison_calls_on_sparse_registry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    capabilities = [
+        CapabilityContract(
+            capability_id=f"cap-{index:03d}",
+            requires=[] if index == 0 else [field(f"state.{index - 1}")],
+            produces=[field(f"state.{index}")],
+        )
+        for index in range(200)
+    ]
+    original = capability_graph_module.compare_capability_composition
+    calls = 0
+
+    def counted(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        capability_graph_module,
+        "compare_capability_composition",
+        counted,
+    )
+
+    graph = capability_graph_module.build_capability_dependency_graph(capabilities)
+
+    assert len(graph.edges) == 199
+    assert calls == 199
 
 
 def test_dependency_graph_rejects_duplicate_capability_ids() -> None:
