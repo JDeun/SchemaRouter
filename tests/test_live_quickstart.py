@@ -114,6 +114,7 @@ async def test_live_openapi_quickstart_path_with_offline_fixture(
     assert result.endpoint == "getMetrics"
     assert result.data["numAPIs"] == 123
     output = capsys.readouterr().out
+    assert "provider: quickstart-openapi" in output
     assert f"source: {source}" in output
     assert "discovered:" in output
     assert "selected:" in output
