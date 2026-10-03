@@ -126,7 +126,7 @@ def test_state_filter_applies_explicit_preconditions() -> None:
         state,
         preconditions_by_route={
             "needs-id": [CapabilityPrecondition(
-                semantic_id="auth.scope",
+                semantic_id="resource.status",
                 operator="contains",
                 value="committed",
             )]
