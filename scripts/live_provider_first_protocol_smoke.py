@@ -8,7 +8,7 @@ from typing import Any
 
 from compatibility_report import new_report, write_report
 
-from schemarouter import ExecutionPlan, SchemaRouter, ToolCall
+from schemarouter import ExecutionPlan, PlanRequest, SchemaRouter, ToolCall
 
 
 async def _execute_apis_guru(
@@ -17,19 +17,17 @@ async def _execute_apis_guru(
 ) -> tuple[str, str, bool, object]:
     tool = router.registry.get(tool_key)
     endpoint = tool.endpoint("getMetrics")
-    call = ToolCall(
-        tool=tool.key,
-        endpoint=endpoint.name,
-        arguments={},
-        schema_fingerprint=endpoint.fingerprint,
-        tool_fingerprint=tool.fingerprint,
+    plan = router.plan(
+        PlanRequest(
+            query="APIs.guru directory metrics",
+            preferred_tools=[tool.key],
+            max_calls=32,
+        )
     )
-    plan = ExecutionPlan(
-        query="APIs.guru directory metrics",
-        registry_version=router.registry.version,
-        calls=[call],
-    )
-    results = await router.execute(plan)
+    call = next(candidate for candidate in plan.calls if candidate.endpoint == endpoint.name)
+    assert call.fields
+    selected_plan = plan.model_copy(update={"calls": [call]}, deep=True)
+    results = await router.execute(selected_plan)
     assert len(results) == 1
     assert isinstance(results[0].data, dict)
     assert isinstance(results[0].data.get("numAPIs"), int)
@@ -37,36 +35,36 @@ async def _execute_apis_guru(
     return endpoint.name, "object", endpoint.auth_required, results[0].data["numAPIs"]
 
 
-async def _execute_rick_and_morty(
+async def _execute_countries_graphql(
     router: SchemaRouter,
     tool_key: str,
 ) -> tuple[str, str, bool, object]:
     tool = router.registry.get(tool_key)
-    endpoint = tool.endpoint("location")
+    endpoint = tool.endpoint("country")
     available_fields = {field.name for field in endpoint.output_fields}
     fields = [
         field
-        for field in ("id", "name", "type", "dimension")
+        for field in ("code", "name", "capital", "currency")
         if field in available_fields
     ]
-    assert {"id", "name"} <= set(fields)
+    assert {"code", "name"} <= set(fields)
     call = ToolCall(
         tool=tool.key,
         endpoint=endpoint.name,
-        arguments={"id": "1"},
+        arguments={"code": "KR"},
         fields=fields,
         schema_fingerprint=endpoint.fingerprint,
         tool_fingerprint=tool.fingerprint,
     )
     plan = ExecutionPlan(
-        query="Rick and Morty location identity",
+        query="South Korea country identity",
         registry_version=router.registry.version,
         calls=[call],
     )
     results = await router.execute(plan)
     assert len(results) == 1
     assert isinstance(results[0].data, dict)
-    assert str(results[0].data.get("id")) == "1"
+    assert results[0].data.get("code") == "KR"
     assert isinstance(results[0].data.get("name"), str)
     return endpoint.name, "object", endpoint.auth_required, fields
 
@@ -109,7 +107,7 @@ async def _execute_odata_reference(
 
 _EXECUTORS = {
     "apis-guru": _execute_apis_guru,
-    "rick-and-morty-api": _execute_rick_and_morty,
+    "countries-graphql": _execute_countries_graphql,
     "odata-v4-reference": _execute_odata_reference,
 }
 
