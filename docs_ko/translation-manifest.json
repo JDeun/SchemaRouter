@@ -124,6 +124,10 @@
       "source_blob": "a97a522420df659298fc7267e1dcc2749c9f4add"
     },
     {
+      "path": "guides/capability-decision-traces.md",
+      "source_blob": "f7bd9f5685ea123376c0335ab232dc1920004b52"
+    },
+    {
       "path": "guides/capability-eligibility.md",
       "source_blob": "4a995bc7fcf2736f10594d6f7f40812f8a9b365f"
     },
@@ -185,7 +189,7 @@
     },
     {
       "path": "guides/inspection.md",
-      "source_blob": "573bee5ed0a75cc532255e96bb9ca0e9c0af64ab"
+      "source_blob": "7ee4e108b67245d08fb350b822473fcac06cebb2"
     },
     {
       "path": "guides/live-compatibility-matrix.md",
