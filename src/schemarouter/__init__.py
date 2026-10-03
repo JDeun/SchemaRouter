@@ -39,6 +39,10 @@ from .binding_reconciliation import (
     BindingResolver,
     TrustedBindingConfig,
 )
+from .capability_drift import CapabilityDriftReport, compare_capability_contracts
+from .capability_eligibility import CapabilityEligibilityExplanation, explain_capability_eligibility
+from .capability_fallback import CapabilityFallbackDecision, choose_contract_aware_fallback
+from .capability_lineage import CapabilityLineage, CapabilityLineageHop, capability_lineage_id
 from .capability_contracts import (
     CapabilityCompatibility,
     CapabilityComposition,
