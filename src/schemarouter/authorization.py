@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from fnmatch import fnmatchcase
 from typing import Literal
@@ -41,6 +43,27 @@ class PrincipalContext(StrictModel):
         if any(not key.strip() for key in self.attributes):
             raise ValueError("principal attribute names must be non-empty")
         return self
+
+
+_CURRENT_PRINCIPAL: ContextVar[PrincipalContext | None] = ContextVar(
+    "schemarouter_current_principal",
+    default=None,
+)
+
+
+@contextmanager
+def _principal_execution_context(principal: PrincipalContext | None):
+    """Bind trusted principal claims to the current async/thread execution context."""
+
+    token = _CURRENT_PRINCIPAL.set(principal)
+    try:
+        yield
+    finally:
+        _CURRENT_PRINCIPAL.reset(token)
+
+
+def _current_principal_context() -> PrincipalContext | None:
+    return _CURRENT_PRINCIPAL.get()
 
 
 AuthorizationEffect = Literal["allow", "deny"]
