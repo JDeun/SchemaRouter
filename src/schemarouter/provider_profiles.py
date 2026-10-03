@@ -612,21 +612,21 @@ def built_in_provider_profile_registry() -> ProviderProfileRegistry:
     )
     registry.register(
         ProviderProfile(
-            provider_id="rick-and-morty-api",
-            display_name="Rick and Morty GraphQL API",
-            aliases=("rick and morty", "rick-and-morty", "rickandmorty"),
+            provider_id="countries-graphql",
+            display_name="Countries GraphQL API",
+            aliases=("countries", "countries-api", "countries graphql"),
             profile_version="1",
             profile_source="schemarouter:builtin",
-            homepage="https://rickandmortyapi.com",
+            homepage="https://github.com/trevorblades/countries",
             methods=(
                 ProviderAccessMethod(
                     method_id="graphql",
                     kind="graphql",
                     access_mode="graphql",
-                    url="https://rickandmortyapi.com/graphql",
+                    url="https://countries.trevorblades.com/",
                     description=(
-                        "Public GraphQL API used for provider-first introspection and "
-                        "read-only acceptance."
+                        "Public countries GraphQL API used for provider-first "
+                        "introspection and read-only acceptance."
                     ),
                 ),
             ),
