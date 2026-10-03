@@ -13,6 +13,35 @@ result = await router.add_provider("materials-project")
 
 내장 profile은 provider를 알려진 access method로 해석하고, 현재 프로세스에서 안전하게 사용할 수 있는 방법만 등록합니다. 필요한 credential이나 optional dependency가 없으면 임의로 추측하거나 설치하지 않고 상태로 보고합니다.
 
+## 알 수 없거나 모호한 provider 이름
+
+등록된 profile은 계속 로컬에서 결정론적으로 해석합니다. 모르는 이름을 입력했다고 해서 네트워크 검색 결과를 곧바로 실행 권한으로 바꾸지는 않습니다.
+
+먼저 `discover_provider()`로 검토 가능한 proposal을 얻습니다.
+
+```python
+proposal = router.discover_provider("google")
+
+for candidate in proposal.candidates:
+    print(candidate.candidate_id, candidate.display_name, candidate.registrable)
+```
+
+`google`처럼 조직 전체를 가리키는 이름은 의도적으로 ambiguous로 처리합니다. 현재 내장 service-family hint는 Google Drive, Calendar, Maps, Gemini, BigQuery처럼 구체적인 서비스 후보를 제시하고 하나를 임의로 선택하지 않습니다.
+
+사내 service catalog, 문서 검색 또는 다른 신뢰된 소스를 쓰고 싶다면 host가 discovery backend를 명시적으로 연결할 수 있습니다.
+
+```python
+proposal = router.discover_provider("catalog", backend=my_discovery_backend)
+candidate = proposal.candidates[0]
+
+router.approve_provider_candidate(
+    candidate,
+    expected_digest=candidate.approval_digest,
+)
+```
+
+Backend가 `ProviderProfile`을 제안하더라도 proposal 자체는 실행 권한이 없습니다. 정확한 profile digest를 사용한 명시적 approval 이후에만 profile이 등록되고, 그 뒤에도 기존 adapter/binding/credential 규칙을 그대로 적용합니다. 즉 흐름은 **discover → inspect → approve → register**이지 **search → execute**가 아닙니다.
+
 ## 등록 전 확인
 
 Provider 해석 자체는 로컬에서 이루어지며 네트워크 요청을 하지 않습니다.

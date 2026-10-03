@@ -10,11 +10,85 @@ import schemarouter.provider_profiles as provider_profiles
 from schemarouter import (
     PlanRequest,
     ProviderAccessMethod,
+    ProviderDiscoveryCandidate,
     ProviderProfile,
     ProviderProfileRegistry,
     SchemaRouter,
 )
 
+
+def test_unknown_provider_discovery_is_non_authoritative_and_ambiguous() -> None:
+    router = SchemaRouter()
+
+    proposal = router.discover_provider("google")
+
+    assert proposal.status == "ambiguous"
+    assert [candidate.candidate_id for candidate in proposal.candidates] == [
+        "google-drive",
+        "google-calendar",
+        "google-maps",
+        "google-gemini",
+        "google-bigquery",
+    ]
+    assert all(not candidate.registrable for candidate in proposal.candidates)
+    assert "google" not in router.provider_profile_registry.provider_ids()
+
+
+def test_external_provider_discovery_requires_digest_approval() -> None:
+    router = SchemaRouter()
+    profile = ProviderProfile(
+        provider_id="internal-catalog-service",
+        display_name="Internal Catalog Service",
+        profile_source="host:catalog",
+        methods=(
+            ProviderAccessMethod(
+                method_id="openapi",
+                kind="openapi",
+                access_mode="openapi",
+                url="https://catalog.example.test/openapi.json",
+            ),
+        ),
+    )
+
+    def backend(query: str) -> tuple[ProviderDiscoveryCandidate, ...]:
+        assert query == "catalog"
+        return (
+            ProviderDiscoveryCandidate(
+                candidate_id=profile.provider_id,
+                display_name=profile.display_name,
+                source="host:catalog",
+                reason="trusted enterprise service catalog match",
+                profile=profile,
+            ),
+        )
+
+    proposal = router.discover_provider("catalog", backend=backend)
+    assert proposal.status == "resolved"
+    candidate = proposal.candidates[0]
+    assert candidate.registrable is True
+    digest = candidate.approval_digest
+    assert digest is not None
+
+    with pytest.raises(ValueError, match="changed before approval"):
+        router.approve_provider_candidate(
+            candidate,
+            expected_digest="0" * 64,
+        )
+
+    registered = router.approve_provider_candidate(
+        candidate,
+        expected_digest=digest,
+    )
+    assert registered == "internal-catalog-service"
+    assert router.resolve_provider("internal-catalog-service").provider_id == registered
+
+
+def test_unknown_provider_discovery_without_backend_stays_unknown() -> None:
+    router = SchemaRouter()
+    proposal = router.discover_provider("provider-that-does-not-exist")
+
+    assert proposal.status == "unknown"
+    assert proposal.candidates == ()
 
 def test_builtin_profiles_resolve_provider_first() -> None:
     router = SchemaRouter()
