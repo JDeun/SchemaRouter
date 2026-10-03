@@ -4,11 +4,20 @@ from typing import Literal
 
 from pydantic import Field, model_validator
 
-from .capability_contracts import (\n    CapabilityFieldContract,\n    CapabilityPrecondition,\n    compare_capability_fields,\n)
+from .capability_contracts import (
+    CapabilityFieldContract,
+    CapabilityPrecondition,
+    compare_capability_fields,
+)
 from .models import StrictModel
 
 ExecutionStatus = Literal["success", "failure", "partial", "unknown"]
-EligibilityStatus = Literal[\n    "eligible",\n    "missing_required_state",\n    "incompatible_state",\n    "precondition_failed",\n]
+EligibilityStatus = Literal[
+    "eligible",
+    "missing_required_state",
+    "incompatible_state",
+    "precondition_failed",
+]
 
 
 class ObservedStateField(StrictModel):
