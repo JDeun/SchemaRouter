@@ -12,7 +12,13 @@ from time import perf_counter
 
 from compatibility_report import new_report, write_report
 
-from schemarouter import (\n    ExecutionPolicy,\n    PlanRequest,\n    ProviderAccessMethod,\n    ProviderProfile,\n    SchemaRouter,\n)
+from schemarouter import (
+    ExecutionPolicy,
+    PlanRequest,
+    ProviderAccessMethod,
+    ProviderProfile,
+    SchemaRouter,
+)
 
 
 def _free_port() -> int:
@@ -26,8 +32,12 @@ async def _wait_for_port(port: int, process: subprocess.Popen[str]) -> None:
         if process.poll() is not None:
             stdout, stderr = process.communicate()
             raise RuntimeError(
-                "MCP reference server exited before becoming ready\n"
-                f"stdout:\n{stdout}\nstderr:\n{stderr}"
+                "MCP reference server exited before becoming ready
+"
+                f"stdout:
+{stdout}
+stderr:
+{stderr}"
             )
         try:
             reader, writer = await asyncio.open_connection("127.0.0.1", port)
