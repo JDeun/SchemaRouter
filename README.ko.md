@@ -73,8 +73,9 @@ attestation을 만들고, 공개 PyPI에서 다시 내려받은 wheel/sdist의 d
 
 ## 빠른 시작
 
-첫 사용자용 예제는 인증키가 필요 없는 공개 APIs.guru OpenAPI 문서를 사용합니다. 따라서 출력값은
-하드코딩한 데모 값이 아니라 외부 제공자가 실제로 돌려주는 데이터입니다.
+첫 사용자용 예제는 공개 provider 이름 `apis-guru`에서 시작합니다. SchemaRouter가 내장
+provider profile을 해석해 OpenAPI adapter와 schema URL을 연결하므로 사용자가 먼저 프로토콜과
+URL을 알 필요가 없습니다. 출력값은 하드코딩한 데모 값이 아니라 외부 provider의 실제 데이터입니다.
 
 ```python
 import asyncio
@@ -83,16 +84,11 @@ from schemarouter import PlanRequest, SchemaRouter
 
 
 async def main():
-    router = await SchemaRouter.from_url(
-        "https://api.apis.guru/v2/openapi.yaml",
-        kind="openapi",
-    )
+    router = SchemaRouter()
     async with router:
-        tool = next(
-            tool
-            for tool in router.registry.tools()
-            if any(endpoint.name == "getMetrics" for endpoint in tool.endpoints)
-        )
+        registration = await router.add_provider("apis-guru")
+        tool = router.registry.get(registration.registered_tool_keys[0])
+
         plan = router.plan(
             PlanRequest(
                 query="API directory metrics total number of APIs",
@@ -107,12 +103,12 @@ async def main():
 asyncio.run(main())
 ```
 
-이 예제는 **외부 schema 읽기 → capability 등록 → 후보 선택 → 검증 후 실행 → 결과 반환**의
+이 예제는 **provider identity → adapter/schema 해석 → capability 등록 → 후보 선택 → 검증 후 실행 → 결과 반환**의
 전체 흐름을 보여 줍니다. APIs.guru 데이터가 바뀌면 출력되는 숫자도 달라집니다.
 
 필수 CI와 패키지 검증은 외부 서비스 장애에 영향을 받지 않도록
 [`examples/quickstart.py`](examples/quickstart.py)의 결정론적 로컬 예제를 사용합니다. 위 실데이터
-예제는 [`examples/live_openapi_quickstart.py`](examples/live_openapi_quickstart.py)에서 그대로
+provider-first 실데이터 예제는 [`examples/live_openapi_quickstart.py`](examples/live_openapi_quickstart.py)에서 그대로
 실행할 수 있습니다.
 
 [실행 가능한 예제·데모 갤러리 보기 →](examples/README.md)
@@ -239,12 +235,28 @@ Laya, Ollama, Jev/System-One, 호스팅 모델, 임베딩, pairwise 결정 백�
 
 ## capability 연결
 
+원하는 **provider**는 알지만 그 provider가 제공하는 모든 protocol/SDK는 모른다면 provider
+identity에서 시작할 수 있습니다.
+
+```python
+router = SchemaRouter()
+result = await router.add_provider("materials-project")
+```
+
+SchemaRouter는 알려진 access method를 해석해 현재 환경에서 안전하고 사용할 수 있는 method만
+등록합니다. 내장 acceptance set은 Materials Project, Crossref, Tavily, APIs.guru,
+OData.org V4 reference service를 포함합니다. Credential과 optional dependency는 추측하거나
+자동 설치하지 않고 명시적인 상태로 보고합니다.
+
+[Provider 중심 등록 →](docs_ko/guides/provider-first-registration.md)
+
 현재 `main`은 여러 범용 수집 경로를 지원합니다. 가능한 경우 가장 풍부하고 권위 있는
 기계 판독 계약을 우선하고, SDK나 스키마가 약한 REST만 제공되는 경우에는 신뢰된 wrapper/binding을
 사용합니다.
 
 | 소스 | 적합한 경우 | 진입점 |
 | --- | --- | --- |
+| Provider identity | 서비스/provider는 알지만 protocol 구성을 모를 때 | `await router.add_provider("materials-project")` |
 | 직접 ToolSpec | 애플리케이션이 이미 정규 계약을 갖고 있을 때 | `router.add_tool(...)` |
 | Python | capability가 로컬에 있고 타입이 붙어 있을 때 | `router.add_callable(...)` |
 | ToolSpec + SDK/client | transport는 신뢰하지만 안전한 자동 introspection이 어려울 때 | `router.add_bound_tool(...)` |
@@ -271,7 +283,7 @@ Laya, Ollama, Jev/System-One, 호스팅 모델, 임베딩, pairwise 결정 백�
 LangChain, LangGraph, LlamaIndex 브리지와 선택형 OpenTelemetry 내보내기를 제공합니다. 표준이
 아닌 결정 런타임은 `schemarouter.decision_backends` entry-point 플러그인으로 연결할 수 있습니다.
 
-## 0.14.0에서 실제로 작동하는 것
+## 0.15.0에서 실제로 작동하는 것
 
 지금 배포된 패키지는 핵심 아키텍처가 실제로 도는 베타 구현입니다.
 
@@ -289,12 +301,12 @@ LangChain, LangGraph, LlamaIndex 브리지와 선택형 OpenTelemetry 내보내�
 - LangChain, LangGraph, LlamaIndex, Jev/System-One, Laya, Ollama, OpenTelemetry 연동 지점
 
 그래서 등록된 capability와 지원되는 라우팅 상황에서는 **지금도 아키텍처가 동작합니다**.
-0.14.0에는 source probe, startup rebinding, storage migration, 명시적인 schema-drift review, 통합 shutdown, Capability Explorer와 0.13에서 추가된 field/schema lifecycle 기능이 함께 포함됩니다.
+0.15.0에는 0.14의 source probe, startup rebinding, storage migration, 명시적인 schema-drift review, 통합 shutdown, Capability Explorer에 더해 provider-first onboarding, state-aware corrective retrieval, incremental capability graph/snapshot, versioned artifact, unified decision trace가 포함됩니다.
 
 
 ## 현재 연구 방향: 에이전트를 위한 압축된 capability 검색
 
-0.12.0에서 확립한 stable-core 실행 경계는 0.14.0에서도 그대로입니다. 바뀐 것은 연구 질문입니다. SchemaRouter 자체를 최종
+0.12.0에서 확립한 stable-core 실행 경계는 0.15.0에서도 그대로입니다. 바뀐 것은 연구 질문입니다. SchemaRouter 자체를 최종
 open-set 분류기로 만드는 쪽에서, 하위 LLM 에이전트에 **타입이 붙은 capability를 공급하는 검색
 기반**으로 평가하는 쪽으로 옮겼습니다.
 
@@ -321,7 +333,7 @@ structural K3-vs-K5 최적화는 사전 등록한 task-pass 승격 게이트를 
 780-task held-out 벤치마크(#432)와 최종 답변 품질(#424)이 자동 컨베이어의 후속 확인 단계로
 이어집니다.
 
-앞선 0.11–0.13 open-set 분류기·veto 실험은 여전히 값진 부정적 증거입니다. 0.14.0에서는 실험적
+앞선 0.11–0.13 open-set 분류기·veto 실험은 여전히 값진 부정적 증거입니다. 0.15.0에서는 실험적
 learned router도, structural retrieval 프로필도 무조건적인 운영 기본값으로 올리지 않습니다.
 
 자세한 내용:
@@ -330,6 +342,7 @@ learned router도, structural retrieval 프로필도 무조건적인 운영 기�
 - [선행연구 로드맵](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/)
 - [전체 실험 인덱스](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
 - [0.14 논문 근거 체크포인트](https://jdeun.github.io/SchemaRouter/research/0.14-paper-evidence-checkpoint/)
+- [0.15.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/ko/releases/0.15.0/)
 - [0.14.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/ko/releases/0.14.0/)
 - [변경 이력](CHANGELOG.md)
 
