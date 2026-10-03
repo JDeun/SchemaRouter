@@ -58,6 +58,13 @@ from .capability_graph import (
     build_capability_dependency_graph,
     dependency_cycles,
 )
+from .capability_snapshot import (
+    CapabilityGraphSnapshot,
+    CapabilitySnapshotComparison,
+    compare_capability_snapshots,
+    create_capability_graph_snapshot,
+    require_capability_snapshot,
+)
 from .contract_validation import (
     CapabilityContractValidation,
     CapabilityObservation,
@@ -297,6 +304,8 @@ __all__ = [
     "ContractFieldValidation",
     "ContractValidationStatus",
     "CapabilityFieldContract",
+    "CapabilityGraphSnapshot",
+    "CapabilitySnapshotComparison",
     "CompatibilityContext",
     "CompatibilityReason",
     "CompatibilityStatus",
@@ -441,6 +450,7 @@ __all__ = [
     "build_capability_dependency_graph",
     "compare_capability_composition",
     "compare_capability_fields",
+    "compare_capability_snapshots",
     "evaluate_state_eligibility",
     "validate_capability_inputs",
     "validate_capability_outputs",
@@ -452,6 +462,7 @@ __all__ = [
     "write_schema_explorer",
     "inspect_sqlite_storage",
     "migrate_sqlite_storage",
+    "create_capability_graph_snapshot",
     "dependency_cycles",
     "discover_adapter_plugins",
     "inspect_registry",
@@ -465,6 +476,7 @@ __all__ = [
     "tool_spec_document",
     "record_run_events",
     "render_dashboard",
+    "require_capability_snapshot",
     "replay_run_events",
     "write_dashboard",
 ]
