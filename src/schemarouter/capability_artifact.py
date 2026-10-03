@@ -88,7 +88,20 @@ def build_capability_artifact(
     digest = hashlib.sha256(
         json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
     ).hexdigest()
-    return CapabilityGraphArtifact(artifact_digest=digest, **payload)
+    return CapabilityGraphArtifact(
+        artifact_digest=digest,
+        graph_digest=graph_digest,
+        capabilities=tuple(sorted(capabilities, key=lambda item: item.capability_id)),
+        sources=tuple(sorted(
+            sources or [],
+            key=lambda item: (item.kind, item.provider, item.access_method or ""),
+        )),
+        edges=tuple(sorted(
+            edges or [],
+            key=lambda item: (item.producer_id, item.consumer_id, item.compatibility),
+        )),
+        provenance=dict(sorted((provenance or {}).items())),
+    )
 
 
 def serialize_capability_artifact(artifact: CapabilityGraphArtifact) -> str:
