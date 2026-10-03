@@ -809,6 +809,67 @@ class SchemaRouter:
             for binding in bindings
         )
 
+    async def aadd_record_store(
+        self,
+        backend: Any,
+        *,
+        database_name: str,
+        namespace: str | None = None,
+        sources: set[str] | tuple[str, ...] | list[str] | None = None,
+        default_limit: int = 100,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Discover and register document/search/key-value/time-series sources."""
+
+        from .adapters.record_store import introspect_record_backend
+
+        bindings = await introspect_record_backend(
+            backend,
+            database_name=database_name,
+            namespace=namespace,
+            sources=sources,
+            default_limit=default_limit,
+            remote=remote,
+        )
+        existing_keys = set(self.registry.keys())
+        duplicate_keys = sorted(
+            binding.tool.key
+            for binding in bindings
+            if binding.tool.key in existing_keys
+        )
+        if duplicate_keys:
+            raise RegistrationError(
+                "record-store introspection would replace existing tools: "
+                + ", ".join(duplicate_keys)
+            )
+        return tuple(
+            self.add_bound_tool(binding.tool, binding.invoker)
+            for binding in bindings
+        )
+
+    def add_record_store(
+        self,
+        backend: Any,
+        *,
+        database_name: str,
+        namespace: str | None = None,
+        sources: set[str] | tuple[str, ...] | list[str] | None = None,
+        default_limit: int = 100,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_record_store`."""
+
+        return _run_sync(
+            lambda: self.aadd_record_store(
+                backend,
+                database_name=database_name,
+                namespace=namespace,
+                sources=sources,
+                default_limit=default_limit,
+                remote=remote,
+            )
+        )
+
     def amend_capability(self, tool_key: str, amended: ToolSpec) -> str:
         """Declare or annotate the result contract of an already registered capability.
 
