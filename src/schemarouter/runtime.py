@@ -593,6 +593,7 @@ class SchemaRouter:
             analyzer=analyzer,
             http_client=http_client,
             policy=policy,
+            authorization_policy=authorization_policy,
             approval_callback=approval_callback,
             execution_hooks=execution_hooks,
             registry=registry,
