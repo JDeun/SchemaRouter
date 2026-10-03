@@ -43,10 +43,10 @@ def test_builtin_profiles_resolve_provider_first() -> None:
 
     protocol_profiles = {
         "apis-guru": ("openapi", "openapi", "https://api.apis.guru/v2/openapi.yaml"),
-        "rick-and-morty-api": (
+        "countries-graphql": (
             "graphql",
             "graphql",
-            "https://rickandmortyapi.com/graphql",
+            "https://countries.trevorblades.com/",
         ),
         "odata-v4-reference": (
             "odata",
