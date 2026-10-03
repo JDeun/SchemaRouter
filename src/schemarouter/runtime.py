@@ -30,6 +30,7 @@ from .amendment_overlay import (
     reapply_amendment_overlay,
     strip_amendment_overlay,
 )
+from .authorization import AuthorizationPolicy, PrincipalContext
 from .binding_reconciliation import (
     BindingReconciliationError,
     BindingReconciliationItem,
@@ -44,6 +45,7 @@ from .errors import (
     ContractAmendmentError,
     ExecutionInvariantError,
     InvocationUnavailableError,
+    PolicyViolationError,
     ProposalApprovalError,
     RegistrationError,
     SchemaNotModifiedError,
@@ -222,6 +224,7 @@ class SchemaRouter:
         analyzer: QueryAnalyzer | None = None,
         http_client: httpx.AsyncClient | None = None,
         policy: ExecutionPolicy | None = None,
+        authorization_policy: AuthorizationPolicy | None = None,
         approval_callback: ApprovalCallback | None = None,
         execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
@@ -230,9 +233,11 @@ class SchemaRouter:
         unavailable_cooldown_seconds: float = 30.0,
     ) -> None:
         self.registry = registry if registry is not None else InMemoryRegistry()
+        self.authorization_policy = authorization_policy
         self.executor = RegistryExecutor(
             self.registry,
             policy=policy,
+            authorization_policy=authorization_policy,
             approval_callback=approval_callback,
             hooks=execution_hooks,
             unavailable_cooldown_seconds=unavailable_cooldown_seconds,
@@ -262,6 +267,62 @@ class SchemaRouter:
             endpoint.name,
             self.planner._snapshot_tool_fingerprint(tool),
         )
+
+    def _authorization_predicate(
+        self,
+        principal: PrincipalContext | None,
+    ) -> Callable[[ToolSpec, Any], bool] | None:
+        if self.authorization_policy is None:
+            return None
+        if principal is None:
+            raise PolicyViolationError(
+                "principal context is required when authorization_policy is configured"
+            )
+        return lambda tool, endpoint: self.authorization_policy.visible(
+            principal,
+            tool,
+            endpoint,
+        )
+
+    def _combined_availability_predicate(
+        self,
+        principal: PrincipalContext | None,
+        predicate: Callable[[ToolSpec, Any], bool] | None = None,
+    ) -> Callable[[ToolSpec, Any], bool] | None:
+        authorization = self._authorization_predicate(principal)
+        if authorization is None:
+            return predicate
+        if predicate is None:
+            return authorization
+        return lambda tool, endpoint: (
+            authorization(tool, endpoint) and predicate(tool, endpoint)
+        )
+
+    def _validate_plan_authorization(
+        self,
+        plan: ExecutionPlan,
+        principal: PrincipalContext | None,
+    ) -> None:
+        if self.authorization_policy is None:
+            return
+        if principal is None:
+            raise PolicyViolationError(
+                "principal context is required when authorization_policy is configured"
+            )
+        for call in plan.calls:
+            try:
+                tool = self.registry.get(call.tool)
+                endpoint = tool.endpoint(call.endpoint)
+            except KeyError as exc:
+                raise PolicyViolationError(
+                    "authorization denied for requested capability"
+                ) from exc
+            self.authorization_policy.validate(
+                principal,
+                tool,
+                endpoint,
+                call,
+            )
 
     async def __aenter__(self) -> SchemaRouter:
         return self
@@ -512,6 +573,7 @@ class SchemaRouter:
         analyzer: QueryAnalyzer | None = None,
         http_client: httpx.AsyncClient | None = None,
         policy: ExecutionPolicy | None = None,
+        authorization_policy: AuthorizationPolicy | None = None,
         approval_callback: ApprovalCallback | None = None,
         execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
@@ -2596,55 +2658,103 @@ class SchemaRouter:
             )
         )
 
-    def plan(self, request: PlanRequest | str) -> ExecutionPlan:
-        """Schema-aware planning without requiring a currently bound invoker."""
+    def plan(
+        self,
+        request: PlanRequest | str,
+        *,
+        principal: PrincipalContext | None = None,
+    ) -> ExecutionPlan:
+        """Schema-aware planning under the configured principal authorization boundary."""
 
-        return self.planner.plan(request)
+        predicate = self._authorization_predicate(principal)
+        if predicate is None:
+            return self.planner.plan(request)
+        return self.planner.plan_with_additional_availability(request, predicate)
 
-    async def aplan(self, request: PlanRequest | str) -> ExecutionPlan:
-        """Async schema-aware planning without requiring a currently bound invoker."""
+    async def aplan(
+        self,
+        request: PlanRequest | str,
+        *,
+        principal: PrincipalContext | None = None,
+    ) -> ExecutionPlan:
+        """Async schema-aware planning under principal authorization."""
 
-        return await self.planner.aplan(request)
+        predicate = self._authorization_predicate(principal)
+        if predicate is None:
+            return await self.planner.aplan(request)
+        return await self.planner.aplan_with_additional_availability(request, predicate)
 
     def retrieve_routes(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
+        principal: PrincipalContext | None = None,
     ) -> CapabilityRouteRetrieval:
-        """Return lightweight Top-K route references without schema materialization."""
+        """Return lightweight Top-K route references under principal authorization."""
 
-        return self.planner.retrieve_routes(request, k=k)
+        predicate = self._authorization_predicate(principal)
+        if predicate is None:
+            return self.planner.retrieve_routes(request, k=k)
+        return self.planner.retrieve_routes_with_additional_availability(
+            request,
+            predicate,
+            k=k,
+        )
 
     async def aretrieve_routes(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
+        principal: PrincipalContext | None = None,
     ) -> CapabilityRouteRetrieval:
         """Async counterpart to :meth:`retrieve_routes`."""
 
-        return await self.planner.aretrieve_routes(request, k=k)
+        predicate = self._authorization_predicate(principal)
+        if predicate is None:
+            return await self.planner.aretrieve_routes(request, k=k)
+        return await self.planner.aretrieve_routes_with_additional_availability(
+            request,
+            predicate,
+            k=k,
+        )
 
     def retrieve(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
+        principal: PrincipalContext | None = None,
     ) -> CapabilityRetrieval:
-        """Return Top-K typed registered capabilities without executing them."""
+        """Return Top-K typed capabilities under principal authorization."""
 
-        return self.planner.retrieve(request, k=k)
+        predicate = self._authorization_predicate(principal)
+        if predicate is None:
+            return self.planner.retrieve(request, k=k)
+        return self.planner.retrieve_with_additional_availability(
+            request,
+            predicate,
+            k=k,
+        )
 
     async def aretrieve(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
+        principal: PrincipalContext | None = None,
     ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve`."""
 
-        return await self.planner.aretrieve(request, k=k)
+        predicate = self._authorization_predicate(principal)
+        if predicate is None:
+            return await self.planner.aretrieve(request, k=k)
+        return await self.planner.aretrieve_with_additional_availability(
+            request,
+            predicate,
+            k=k,
+        )
 
     def reretrieve_state_aware(
         self,
