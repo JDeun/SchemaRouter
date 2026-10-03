@@ -516,6 +516,29 @@ class SchemaPlanner:
         if self.decision_policy.enabled and self.decision_backend is None:
             raise PlanningError("decision policy is enabled but no decision backend is configured")
 
+    def _clone_for_registry(
+        self,
+        registry: ToolRegistry,
+        *,
+        availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
+    ) -> SchemaPlanner:
+        """Clone planner configuration onto a read-only registry snapshot."""
+
+        return SchemaPlanner(
+            registry,
+            analyzer=self.analyzer,
+            decision_backend=self.decision_backend,
+            decision_policy=self.decision_policy,
+            candidate_recall_backend=self.candidate_recall_backend,
+            candidate_recall_limit=self.candidate_recall_limit,
+            candidate_fit_backend=self.candidate_fit_backend,
+            operation_fit_backend=self.operation_fit_backend,
+            endpoint_disambiguation_backend=self.endpoint_disambiguation_backend,
+            candidate_index=self.candidate_index,
+            structural_retrieval=self.structural_retrieval,
+            availability_predicate=availability_predicate,
+        )
+
     def plan(self, request: PlanRequest | str) -> ExecutionPlan:
         request = self._prepare_request(request)
         intent = self.analyzer.analyze(request, self.registry)
