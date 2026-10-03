@@ -107,6 +107,13 @@ from .capability_negotiation import (
     CapabilityNegotiationResult,
     negotiate_capabilities,
 )
+from .capability_snapshot import (
+    CapabilityGraphSnapshot,
+    CapabilitySnapshotComparison,
+    compare_capability_snapshots,
+    create_capability_graph_snapshot,
+    require_capability_snapshot,
+)
 from .contract_validation import (
     CapabilityContractValidation,
     CapabilityObservation,
@@ -560,5 +567,10 @@ __all__ = [
     "serialize_capability_artifact",
     "build_capability_artifact",
     "load_capability_artifact",
+    "CapabilityGraphSnapshot",
+    "CapabilitySnapshotComparison",
+    "compare_capability_snapshots",
+    "create_capability_graph_snapshot",
+    "require_capability_snapshot",
 
 ]
