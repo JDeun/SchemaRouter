@@ -336,6 +336,73 @@ async def test_vector_store_supports_async_discovery_embedding_and_search() -> N
     assert result[0].data == [{"id": "doc-1", "title": "SchemaRouter"}]
 
 
+@pytest.mark.asyncio
+async def test_vector_store_returns_declared_fields_when_projection_is_omitted() -> None:
+    backend = FakeVectorBackend()
+    router = SchemaRouter()
+    router.add_vector_store(
+        backend,
+        lambda query: [0.1, 0.2, 0.3],
+        database_name="vectors",
+        collections={"public_docs"},
+        default_top_k=1,
+        remote=False,
+    )
+
+    result = await router.execute(
+        _plan(
+            router,
+            "vectors.public_docs",
+            query="schema routing",
+            fields=[],
+        )
+    )
+
+    assert result[0].data == [
+        {
+            "id": "doc-1",
+            "score": 0.98,
+            "title": "SchemaRouter",
+            "department": "engineering",
+        }
+    ]
+
+
+def test_vector_collection_rejects_reserved_metadata_fields() -> None:
+    with pytest.raises(ValueError, match="reserved names"):
+        VectorCollectionSpec(
+            name="bad",
+            dimension=3,
+            metadata_fields=(
+                VectorMetadataField(name="id", json_schema={"type": "string"}),
+            ),
+        )
+
+
+def test_vector_public_metadata_is_namespaced_in_model_visible_contract() -> None:
+    class MetadataBackend(FakeVectorBackend):
+        def list_collections(self) -> tuple[VectorCollectionSpec, ...]:
+            return (
+                VectorCollectionSpec(
+                    name="public_docs",
+                    dimension=3,
+                    metric="cosine",
+                    public_metadata={"region": "apac"},
+                ),
+            )
+
+    router = SchemaRouter()
+    router.add_vector_store(
+        MetadataBackend(),
+        lambda query: [0.1, 0.2, 0.3],
+        database_name="vectors",
+        remote=False,
+    )
+    metadata = router.registry.get("vectors.public_docs").endpoint("search").metadata
+    assert metadata["public_metadata"] == {"region": "apac"}
+    assert "region" not in metadata
+
+
 def test_vector_store_can_limit_collections_before_registration() -> None:
     router = SchemaRouter()
     keys = router.add_vector_store(
