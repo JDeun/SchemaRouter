@@ -36,11 +36,14 @@ Credential requirements are declarations only. Secret values are never stored in
 
 ## Built-in acceptance providers
 
-The initial built-in profiles deliberately cover different access shapes:
+The built-in acceptance profiles deliberately cover different access shapes:
 
 - **Materials Project** — public OPTIMADE, authenticated OpenAPI, and optional `mp-api` SDK.
 - **Crossref** — public declarative HTTP/JSON REST access.
 - **Tavily** — authenticated declarative HTTP/JSON search plus an optional Python SDK path.
+- **APIs.guru** — public OpenAPI discovery and read-only metrics execution.
+- **Rick and Morty GraphQL API** — public GraphQL introspection and read-only query execution.
+- **OData.org V4 reference service** — public OData metadata discovery and read-only query execution.
 
 For authenticated methods, supply trusted process-local headers:
 
@@ -80,5 +83,22 @@ All methods keep a shared `provider` identity and a distinct `access_mode`. Shar
 ## Extending the catalog
 
 Applications can register a local `ProviderProfile`, and installed packages can expose provider profiles through the `schemarouter.providers` entry-point group. Plugin loading is explicit and allowlisted because importing a Python entry point executes trusted local code.
+
+## Method support
+
+Provider profiles can target every URL-backed adapter in the default registry. The provider-first layer forwards the declared method into the existing adapter instead of implementing protocol-specific registration logic.
+
+| Profile method kind | Provider-first behavior |
+| --- | --- |
+| `openapi` | automatic URL registration |
+| `optimade` | automatic URL registration |
+| `graphql` | automatic URL registration |
+| `odata` | automatic URL registration |
+| `openrpc` | automatic URL registration |
+| `mcp` | automatic URL registration for URL-backed MCP transports |
+| `http_json` | automatic registration from an explicitly trusted declarative `ToolSpec` |
+| `python` / SDK | explicit trusted binding required; package presence alone never grants execution authority |
+
+Caller-owned transports, Python clients, and framework objects remain explicit trust boundaries. Applications can still describe them in a provider profile, but core SchemaRouter does not infer executable authority from an installed package or importable object.
 
 Provider profiles are not an execution planner. They describe how a named provider can be ingested; routing and execution continue through the normal SchemaRouter contracts.
