@@ -2974,20 +2974,26 @@ class SchemaRouter:
         )
 
     def plan(self, request: PlanRequest | str) -> ExecutionPlan:
-        """Schema-aware planning under any active trusted principal context."""
+        """Schema-aware planning under any active trusted principal/data scope."""
 
-        predicate = self._authorization_predicate(_current_principal_context())
-        if predicate is None:
-            return self.planner.plan(request)
-        return self.planner.plan_with_additional_availability(request, predicate)
+        planner, scoped_registry = self._scoped_planner_for_principal(
+            _current_principal_context()
+        )
+        return self._restamp_scoped_plan(
+            planner.plan(request),
+            scoped_registry,
+        )
 
     async def aplan(self, request: PlanRequest | str) -> ExecutionPlan:
-        """Async schema-aware planning under any active trusted principal context."""
+        """Async schema-aware planning under any active trusted principal/data scope."""
 
-        predicate = self._authorization_predicate(_current_principal_context())
-        if predicate is None:
-            return await self.planner.aplan(request)
-        return await self.planner.aplan_with_additional_availability(request, predicate)
+        planner, scoped_registry = self._scoped_planner_for_principal(
+            _current_principal_context()
+        )
+        return self._restamp_scoped_plan(
+            await planner.aplan(request),
+            scoped_registry,
+        )
 
     def plan_authorized(
         self,
@@ -3017,15 +3023,14 @@ class SchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRouteRetrieval:
-        """Return lightweight Top-K route references under active authorization."""
+        """Return lightweight routes from a principal-scoped registry snapshot."""
 
-        predicate = self._authorization_predicate(_current_principal_context())
-        if predicate is None:
-            return self.planner.retrieve_routes(request, k=k)
-        return self.planner.retrieve_routes_with_additional_availability(
-            request,
-            predicate,
-            k=k,
+        planner, scoped_registry = self._scoped_planner_for_principal(
+            _current_principal_context()
+        )
+        return self._restamp_scoped_routes(
+            planner.retrieve_routes(request, k=k),
+            scoped_registry,
         )
 
     async def aretrieve_routes(
@@ -3036,13 +3041,12 @@ class SchemaRouter:
     ) -> CapabilityRouteRetrieval:
         """Async counterpart to :meth:`retrieve_routes`."""
 
-        predicate = self._authorization_predicate(_current_principal_context())
-        if predicate is None:
-            return await self.planner.aretrieve_routes(request, k=k)
-        return await self.planner.aretrieve_routes_with_additional_availability(
-            request,
-            predicate,
-            k=k,
+        planner, scoped_registry = self._scoped_planner_for_principal(
+            _current_principal_context()
+        )
+        return self._restamp_scoped_routes(
+            await planner.aretrieve_routes(request, k=k),
+            scoped_registry,
         )
 
     def retrieve_routes_authorized(
@@ -3075,15 +3079,14 @@ class SchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRetrieval:
-        """Return Top-K typed capabilities under any active principal context."""
+        """Return Top-K capabilities from a principal-scoped registry snapshot."""
 
-        predicate = self._authorization_predicate(_current_principal_context())
-        if predicate is None:
-            return self.planner.retrieve(request, k=k)
-        return self.planner.retrieve_with_additional_availability(
-            request,
-            predicate,
-            k=k,
+        planner, scoped_registry = self._scoped_planner_for_principal(
+            _current_principal_context()
+        )
+        return self._restamp_scoped_retrieval(
+            planner.retrieve(request, k=k),
+            scoped_registry,
         )
 
     async def aretrieve(
@@ -3094,13 +3097,12 @@ class SchemaRouter:
     ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve`."""
 
-        predicate = self._authorization_predicate(_current_principal_context())
-        if predicate is None:
-            return await self.planner.aretrieve(request, k=k)
-        return await self.planner.aretrieve_with_additional_availability(
-            request,
-            predicate,
-            k=k,
+        planner, scoped_registry = self._scoped_planner_for_principal(
+            _current_principal_context()
+        )
+        return self._restamp_scoped_retrieval(
+            await planner.aretrieve(request, k=k),
+            scoped_registry,
         )
 
     def retrieve_authorized(
