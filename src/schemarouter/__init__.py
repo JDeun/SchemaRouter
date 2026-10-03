@@ -109,10 +109,11 @@ from .capability_negotiation import (
 )
 from .capability_snapshot import (
     CapabilityGraphSnapshot,
-    CapabilitySnapshotComparison,
+    CapabilitySnapshotDiff,
+    CapabilitySourceRevision,
+    build_capability_snapshot,
     compare_capability_snapshots,
-    create_capability_graph_snapshot,
-    require_capability_snapshot,
+    require_snapshot,
 )
 from .contract_validation import (
     CapabilityContractValidation,
@@ -568,9 +569,10 @@ __all__ = [
     "build_capability_artifact",
     "load_capability_artifact",
     "CapabilityGraphSnapshot",
-    "CapabilitySnapshotComparison",
     "compare_capability_snapshots",
-    "create_capability_graph_snapshot",
-    "require_capability_snapshot",
 
+    "CapabilitySnapshotDiff",
+    "CapabilitySourceRevision",
+    "build_capability_snapshot",
+    "require_snapshot",
 ]
