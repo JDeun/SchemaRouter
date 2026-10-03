@@ -296,6 +296,9 @@ from .schema_diff import (
 from .state_retrieval import (
     StateAwareCapabilityCandidate,
     StateAwareCapabilityRetrieval,
+    StateConditionedCapabilityRetrieval,
+    backfill_ranked_candidates_by_state,
+    evaluate_candidate_state,
     filter_retrieval_by_state,
 )
 from .storage import (
@@ -518,6 +521,7 @@ __all__ = [
     "SchemaValidationError",
     "StateAwareCapabilityCandidate",
     "StateAwareCapabilityRetrieval",
+    "StateConditionedCapabilityRetrieval",
     "StateEligibility",
     "StateEligibilityReason",
     "StorageFormatError",
@@ -558,6 +562,7 @@ __all__ = [
     "build_capability_dependency_graph",
     "compare_capability_composition",
     "compare_capability_fields",
+    "evaluate_candidate_state",
     "evaluate_preconditions",
     "filter_retrieval_by_state",
     "evaluate_state_eligibility",
@@ -593,6 +598,7 @@ __all__ = [
     "CapabilityArtifactSource",
     "CapabilityGraphArtifact",
     "serialize_capability_artifact",
+    "backfill_ranked_candidates_by_state",
     "build_capability_artifact",
     "load_capability_artifact",
     "CapabilityGraphSnapshot",
