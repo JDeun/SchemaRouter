@@ -6,6 +6,7 @@ from typing import Any, Literal
 
 from pydantic import Field, model_validator
 
+from .authorization import PrincipalContext
 from .models import StrictModel
 
 
@@ -54,6 +55,7 @@ ExecutionMode = Literal["sequential", "parallel_read_only"]
 class RunConfig(StrictModel):
     """Per-run metadata and execution controls."""
 
+    principal: PrincipalContext | None = None
     tags: list[str] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
     max_concurrency: int = Field(default=8, ge=1, le=128)

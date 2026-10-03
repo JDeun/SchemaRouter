@@ -7,6 +7,16 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+### Added
+
+- added safe unknown-provider discovery proposals through `discover_provider()` with explicit
+  inspect/approve registration, ambiguous service-family hints, caller-supplied trusted discovery
+  backends, and digest-bound approval that never grants execution authority directly;
+- added host-supplied principal authorization with deny-by-default RBAC/ABAC rules over roles,
+  departments, teams, attributes, provider/access-mode and capability operations, including
+  non-disclosure before retrieval and execution-boundary revalidation while preserving the stable
+  unscoped retrieval facade.
+
 ## 0.15.0 - 2026-10-03
 
 ### Added

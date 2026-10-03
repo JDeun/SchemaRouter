@@ -112,6 +112,10 @@
       "source_blob": "419f48e71d82a22a10b879b535f5123250904818"
     },
     {
+      "path": "guides/authorization.md",
+      "source_blob": "a6aafa565c33765aad1e928ab3dbe6aaa72ed89e"
+    },
+    {
       "path": "guides/candidate-indexing.md",
       "source_blob": "3ed905d10b68702c8d5dff53b8a4d33fc3fcfdce"
     },
