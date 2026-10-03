@@ -277,3 +277,23 @@ SQLiteRegistry / SQLiteRunTraceStore       live SchemaRouter
 
 A future TUI or long-running web console should consume these same inspection contracts instead of
 querying SchemaRouter's SQLite tables directly.
+
+
+## Inspect capability decision traces
+
+Decision traces are explicit host-provided observability records. SchemaRouter does not persist them automatically.
+
+```python
+inspection = router.inspect(decision_traces=[trace])
+```
+
+The live inspection model exposes only compact candidate summaries: visible capability ID, final disposition, and normalized reason codes. Hidden capabilities, score/rank values, payloads, credentials, private headers, and execution bindings are not reconstructed.
+
+A serialized trace can be inspected directly:
+
+```bash
+schemarouter inspect decision-trace decision-trace.json --json
+schemarouter inspect decision-trace decision-trace.json --detailed --json
+```
+
+When decision traces are supplied to a live `RouterInspection`, the HTML dashboard adds a compact decision-trace table. See [Capability decision traces](capability-decision-traces.md) for the full contract and privacy boundary.
