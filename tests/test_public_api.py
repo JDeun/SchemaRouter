@@ -204,6 +204,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "build_capability_dependency_graph",
         "compare_capability_composition",
         "compare_capability_fields",
+        "evaluate_preconditions",
         "evaluate_state_eligibility",
         "validate_capability_inputs",
         "validate_capability_outputs",
