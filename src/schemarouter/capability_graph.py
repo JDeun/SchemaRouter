@@ -5,6 +5,7 @@ from pydantic import Field
 from .capability_contracts import (
     CapabilityComposition,
     CapabilityContract,
+    CapabilityFieldContract,
     CompatibilityContext,
     compare_capability_composition,
 )
@@ -95,7 +96,7 @@ def dependency_cycles(graph: CapabilityDependencyGraph) -> list[tuple[str, ...]]
 
 def satisfiable_capability_ids(
     capabilities: list[CapabilityContract],
-    available_fields: list,
+    available_fields: list[CapabilityFieldContract],
     *,
     context: CompatibilityContext | None = None,
 ) -> tuple[str, ...]:
