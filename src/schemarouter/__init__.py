@@ -27,6 +27,11 @@ from .adapters.sqlite_database import (
     SQLiteTableInvoker,
     introspect_sqlite_database,
 )
+from .adapters.sqlalchemy_database import (
+    SQLAlchemyTableBinding,
+    SQLAlchemyTableInvoker,
+    introspect_sqlalchemy_engine,
+)
 from .aggregation import (
     AggregatedField,
     CanonicalEntity,
@@ -588,6 +593,8 @@ __all__ = [
     "SchemaRouterError",
     "SQLiteTableBinding",
     "SQLiteTableInvoker",
+    "SQLAlchemyTableBinding",
+    "SQLAlchemyTableInvoker",
     "SchemaSourceError",
     "SQLiteRegistry",
     "SchemaValidationError",
@@ -648,6 +655,7 @@ __all__ = [
     "write_schema_explorer",
     "inspect_sqlite_storage",
     "introspect_sqlite_database",
+    "introspect_sqlalchemy_engine",
     "migrate_sqlite_storage",
     "dependency_cycles",
     "dependency_strongly_connected_components",
