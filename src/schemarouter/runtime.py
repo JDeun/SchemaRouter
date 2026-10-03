@@ -758,6 +758,55 @@ class SchemaRouter:
             )
         return tuple(registered)
 
+    def add_sqlalchemy_database(
+        self,
+        engine: Any,
+        *,
+        database_name: str,
+        namespace: str | None = None,
+        schemas: tuple[str | None, ...] | list[str | None] | None = None,
+        tables: set[str] | tuple[str, ...] | list[str] | None = None,
+        include_views: bool = True,
+        max_default_rows: int = 100,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Introspect and register a caller-owned SQLAlchemy Engine.
+
+        SQLAlchemy performs dialect-specific schema discovery and parameter binding while the live
+        Engine, connection URL, credentials, pools, and driver state remain process-local. The
+        generated model-visible contract contains only relation/column metadata and bounded
+        projected read operations.
+        """
+
+        from .adapters.sqlalchemy_database import introspect_sqlalchemy_engine
+
+        bindings = introspect_sqlalchemy_engine(
+            engine,
+            database_name=database_name,
+            namespace=namespace,
+            schemas=schemas,
+            tables=tables,
+            include_views=include_views,
+            max_default_rows=max_default_rows,
+            remote=remote,
+        )
+        existing_keys = set(self.registry.keys())
+        duplicate_keys = sorted(
+            binding.tool.key
+            for binding in bindings
+            if binding.tool.key in existing_keys
+        )
+        if duplicate_keys:
+            raise RegistrationError(
+                "database introspection would replace existing tools: "
+                + ", ".join(duplicate_keys)
+            )
+
+        return tuple(
+            self.add_bound_tool(binding.tool, binding.invoker)
+            for binding in bindings
+        )
+
     def amend_capability(self, tool_key: str, amended: ToolSpec) -> str:
         """Declare or annotate the result contract of an already registered capability.
 
