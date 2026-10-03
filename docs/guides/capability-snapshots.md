@@ -1,21 +1,17 @@
 # Versioned capability graph snapshots
 
-A capability graph snapshot captures immutable routing-contract state separately from mutable runtime health.
+A capability graph snapshot pins the provider-neutral contracts and source schema revisions used to build a graph. Its SHA-256 identity is deterministic: contract/source ordering and observational build time do not affect the digest.
 
 ```python
-from schemarouter import create_capability_graph_snapshot, require_capability_snapshot
+from schemarouter import build_capability_snapshot, require_snapshot
 
-snapshot = create_capability_graph_snapshot(
-    graph,
-    contracts,
-    source_schema_fingerprints={"provider": "..."},
-    build_metadata={"builder": "ci"},
-)
-require_capability_snapshot(snapshot, requested_snapshot_id)
+snapshot = build_capability_snapshot(contracts, sources=source_revisions)
+require_snapshot(requested_snapshot_id, snapshot)
+graph = snapshot.build_graph()
 ```
 
-The snapshot ID is a SHA-256 digest of canonical graph, contract, and source-schema fingerprint data. Capability and edge order are normalized. Informational build metadata is retained but excluded from identity, so the same routing contract compiled in different environments remains reproducible.
+A pinned request fails closed when the requested snapshot ID differs from the loaded graph revision. `compare_capability_snapshots()` identifies added, removed, and changed capability IDs and therefore supports controlled successor snapshots after drift.
 
-`compare_capability_snapshots()` reports added, removed, and changed capability IDs. A host can pin retrieval/runtime work to an exact snapshot with `require_capability_snapshot()`, which fails closed on mismatch.
+## Immutable vs mutable state
 
-Live provider health is deliberately excluded. A snapshot records what the routing contract was, not whether a provider is healthy now. SchemaRouter does not deploy, roll back, execute, or silently accept stale breaking schemas; those lifecycle decisions remain with the host.
+Contracts, provider/schema revision references, and builder identity belong to the immutable snapshot. Runtime health does not: health is a mutable overlay and must be evaluated at routing time. A snapshot therefore supports reproducibility without pretending that a provider remains healthy forever. SchemaRouter does not deploy, roll back, or execute snapshots; those lifecycle decisions remain with the host.
