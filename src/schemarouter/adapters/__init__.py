@@ -37,6 +37,15 @@ from .plugins import (
     discover_adapter_plugins,
     load_adapter_plugins,
 )
+from .record_store import (
+    RecordFieldSpec,
+    RecordModel,
+    RecordSourceBinding,
+    RecordSourceInvoker,
+    RecordSourceSpec,
+    RecordStoreBackend,
+    introspect_record_backend,
+)
 from .python import (
     PythonCallableInvoker,
     callable_options,
@@ -80,6 +89,12 @@ __all__ = [
     "OpenRPCRemoteInvoker",
     "OpenRPCSourceAdapter",
     "PythonCallableInvoker",
+    "RecordFieldSpec",
+    "RecordModel",
+    "RecordSourceBinding",
+    "RecordSourceInvoker",
+    "RecordSourceSpec",
+    "RecordStoreBackend",
     "SourceAdapter",
     "SQLiteTableBinding",
     "SQLiteTableInvoker",
@@ -92,6 +107,7 @@ __all__ = [
     "inspect_mcp_client_factory",
     "inspect_mcp_stdio",
     "inspect_mcp_url",
+    "introspect_record_backend",
     "introspect_sqlite_database",
     "introspect_sqlalchemy_engine",
     "load_adapter_plugins",
