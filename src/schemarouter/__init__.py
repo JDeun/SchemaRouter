@@ -39,6 +39,19 @@ from .binding_reconciliation import (
     BindingResolver,
     TrustedBindingConfig,
 )
+from .capability_contracts import (
+    CapabilityCompatibility,
+    CapabilityComposition,
+    CapabilityContract,
+    CapabilityFieldContract,
+    CompatibilityContext,
+    CompatibilityReason,
+    CompatibilityStatus,
+    SemanticEquivalence,
+    UnitConversion,
+    compare_capability_composition,
+    compare_capability_fields,
+)
 from .capability_drift import (
     CapabilityDriftChange,
     CapabilityDriftCompatibility,
@@ -58,19 +71,6 @@ from .capability_lineage import (
     CapabilityLineageHop,
     CapabilityLineageReason,
     build_capability_lineage,
-)
-from .capability_contracts import (
-    CapabilityCompatibility,
-    CapabilityComposition,
-    CapabilityContract,
-    CapabilityFieldContract,
-    CompatibilityContext,
-    CompatibilityReason,
-    CompatibilityStatus,
-    SemanticEquivalence,
-    UnitConversion,
-    compare_capability_composition,
-    compare_capability_fields,
 )
 from .capability_graph import (
     CapabilityDependencyEdge,
