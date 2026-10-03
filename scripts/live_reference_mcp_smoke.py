@@ -32,12 +32,8 @@ async def _wait_for_port(port: int, process: subprocess.Popen[str]) -> None:
         if process.poll() is not None:
             stdout, stderr = process.communicate()
             raise RuntimeError(
-                "MCP reference server exited before becoming ready
-"
-                f"stdout:
-{stdout}
-stderr:
-{stderr}"
+                "MCP reference server exited before becoming ready\n"
+                f"stdout:\n{stdout}\nstderr:\n{stderr}"
             )
         try:
             reader, writer = await asyncio.open_connection("127.0.0.1", port)
