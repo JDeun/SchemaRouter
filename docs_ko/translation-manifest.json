@@ -116,6 +116,10 @@
       "source_blob": "3ed905d10b68702c8d5dff53b8a4d33fc3fcfdce"
     },
     {
+      "path": "guides/capability-graph-drift.md",
+      "source_blob": "71c5f1164fa703ab7056c2dbd52c2ecb58da1a95"
+    },
+    {
       "path": "guides/consumer-acceptance.md",
       "source_blob": "da49405aea26d8b4e8116236ffe20c7933cea525"
     },
