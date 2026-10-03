@@ -256,6 +256,8 @@ SDK or weakly described REST surface.
 | Source | Use when | Entry point |
 | --- | --- | --- |
 | Provider identity | you know the service/provider, not its protocols | `await router.add_provider("materials-project")` |
+| SQLite database | local/embedded relational data should be schema-introspected | `router.add_sqlite_database(connection, ...)` |
+| SQLAlchemy Engine | RDB/warehouse connection is caller-owned | `router.add_sqlalchemy_database(engine, ...)` |
 | Direct ToolSpec | the application already owns the canonical contract | `router.add_tool(...)` |
 | Python | capability is local and typed | `router.add_callable(...)` |
 | ToolSpec + SDK/client | transport is trusted but not safely introspectable | `router.add_bound_tool(...)` |
@@ -289,7 +291,7 @@ The released package provides a working beta implementation of the core architec
 
 - typed Tool / Endpoint / Parameter / Field registry contracts;
 - first-class bounded Top-K capability retrieval through `retrieve` / `aretrieve`, explicit state-aware filtering, and state-conditioned corrective backfill;
-- provider-first registration for known services plus direct ToolSpec/Python/SDK binding and OpenAPI, MCP, OPTIMADE, GraphQL, OData, OpenRPC, declarative HTTP/JSON, and inbound LangChain/LlamaIndex ingestion paths;
+- provider-first registration for known services plus direct ToolSpec/Python/SDK binding, schema-introspected SQLite/SQLAlchemy databases, and OpenAPI, MCP, OPTIMADE, GraphQL, OData, OpenRPC, declarative HTTP/JSON, and inbound LangChain/LlamaIndex ingestion paths;
 - field-first planning and bounded multi-provider field coverage;
 - input and raw-output JSON Schema validation;
 - schema fingerprints and binding-drift rejection;
