@@ -58,6 +58,14 @@ from .capability_graph import (
     build_capability_dependency_graph,
     dependency_cycles,
 )
+from .contract_validation import (
+    CapabilityContractValidation,
+    CapabilityObservation,
+    ContractFieldValidation,
+    ContractValidationStatus,
+    validate_capability_inputs,
+    validate_capability_outputs,
+)
 from .dashboard import render_dashboard, write_dashboard
 from .decision_plugins import (
     DECISION_BACKEND_ENTRY_POINT_GROUP,
@@ -284,6 +292,10 @@ __all__ = [
     "CapabilityDependencyGraph",
     "CapabilityComposition",
     "CapabilityContract",
+    "CapabilityContractValidation",
+    "CapabilityObservation",
+    "ContractFieldValidation",
+    "ContractValidationStatus",
     "CapabilityFieldContract",
     "CompatibilityContext",
     "CompatibilityReason",
@@ -430,6 +442,8 @@ __all__ = [
     "compare_capability_composition",
     "compare_capability_fields",
     "evaluate_state_eligibility",
+    "validate_capability_inputs",
+    "validate_capability_outputs",
     "compare_endpoint_specs",
     "compare_tool_specs",
     "backup_sqlite_storage",
