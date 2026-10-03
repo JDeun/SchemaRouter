@@ -311,7 +311,7 @@ async def introspect_vector_backend(
                     field.model_dump(mode="json")
                     for field in collection.metadata_fields
                 ],
-                **dict(collection.public_metadata),
+                "public_metadata": dict(collection.public_metadata),
             },
         )
 
