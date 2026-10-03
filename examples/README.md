@@ -190,7 +190,10 @@ The scheduled/manual compatibility workflow records timestamped evidence for:
 - Rick and Morty GraphQL;
 - OData.org V4;
 - pinned OpenRPC;
-- pinned MCP Streamable HTTP.
+- pinned MCP Streamable HTTP;
+- provider-first Materials Project through public OPTIMADE;
+- provider-first Crossref through public REST;
+- provider-first Tavily auth-contract validation and live search when `TAVILY_API_KEY` is configured.
 
 See the [live compatibility matrix](../docs/guides/live-compatibility-matrix.md).
 
