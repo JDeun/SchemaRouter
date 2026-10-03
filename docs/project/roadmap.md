@@ -8,11 +8,20 @@ work and acceptance criteria.
 
 ## Stable product
 
-**Current stable release:** SchemaRouter 0.13.0 (Beta / pre-1.0).
+**Current stable release:** SchemaRouter 0.14.0 (Beta / pre-1.0).
 
 The stable core is a typed capability retrieval and schema-aware execution boundary. Product work
 should preserve local execution authority, schema/fingerprint validation, explicit side-effect
 policy, and protocol-neutral contracts.
+
+Recent product follow-ups on current `main`:
+
+- #743 — explicit state-conditioned corrective re-retrieval;
+- #744 — scalable indexed/incremental capability dependency graphs;
+- #745 — atomic validated snapshot rebuild/publication;
+- #746 — versioned capability artifact/snapshot migration and semantic integrity;
+- #747 — unified privacy-safe capability decision traces;
+- #748 — provider-first registration with Materials Project, Crossref, and Tavily acceptance.
 
 Current coordination:
 

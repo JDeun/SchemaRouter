@@ -60,3 +60,26 @@
 ::: schemarouter.load_decision_backend_plugin
 ## ContractAmendmentError
 ::: schemarouter.ContractAmendmentError
+
+## ProviderProfile
+::: schemarouter.ProviderProfile
+## ProviderResolution
+::: schemarouter.ProviderResolution
+## ProviderRegistrationResult
+::: schemarouter.ProviderRegistrationResult
+## CapabilitySnapshotStore
+::: schemarouter.CapabilitySnapshotStore
+## build_capability_artifact_from_graph
+::: schemarouter.build_capability_artifact_from_graph
+## migrate_capability_artifact
+::: schemarouter.migrate_capability_artifact
+## migrate_capability_snapshot
+::: schemarouter.migrate_capability_snapshot
+## CapabilityDecisionTrace
+::: schemarouter.CapabilityDecisionTrace
+## build_capability_decision_trace
+::: schemarouter.build_capability_decision_trace
+## render_capability_decision_trace
+::: schemarouter.render_capability_decision_trace
+## inspect_capability_decision_trace
+::: schemarouter.inspect_capability_decision_trace

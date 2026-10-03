@@ -24,6 +24,7 @@ claim that every historical version inside the range is exhaustively tested.
 | OData | Built-in adapter | Deterministic CSDL/$select fixtures + scheduled OData.org smoke | No OData SDK dependency |
 | OpenRPC / JSON-RPC | Built-in adapter | Deterministic schema/RPC transport fixtures + scheduled pinned-reference execution | No stable unauthenticated public execution endpoint is assumed |
 | OPTIMADE | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OPTIMADE client dependency |
+| Provider profiles | Built-in/local/plugin registry | Deterministic profile tests + live Materials Project/Crossref evidence + Tavily auth/live evidence | Profiles declare access methods; credentials remain process-local and SDK installation is never automatic |
 | Published PyPI package | Latest stable wheel + sdist | Scheduled/manual external smoke | Installs from PyPI in a fresh runner, runs `pip check`, and executes a public API scenario outside the checkout |
 | Published lightweight extras | Latest stable `mcp` + `jev` + `otel` extras | Scheduled/manual external smoke | Installs only those three extras from PyPI and validates their SDK integration surface without relying on framework transitive dependencies |
 | Published integration extras | Latest stable `mcp` + `langchain` + `langgraph` + `llamaindex` + `jev` + `otel` extras | Scheduled/manual external smoke | Resolves the combined published extras from PyPI, validates MCP/Jev/OpenTelemetry SDK integration imports, and executes the three framework bridges outside the checkout |
@@ -58,6 +59,9 @@ Every pull request runs the blocking `CI` workflow with:
 - real MCP Streamable HTTP integration using the official SDK and a local HTTP server;
 - real MCP stdio subprocess discovery/execution plus transport-neutral client-factory contract tests;
 - deterministic GraphQL, OData, and OpenRPC protocol-adapter tests;
+- provider-first resolution/registration tests for Materials Project, Crossref, and Tavily;
+- state-conditioned retrieval, indexed/incremental capability graph, atomic snapshot publication,
+  format migration, and decision-trace privacy/integration tests;
 - OpenTelemetry integration tests using the SDK in-memory exporter;
 - strict MkDocs build.
 
@@ -109,8 +113,9 @@ likewise remains an optional
 ## External compatibility checks
 
 The `Compatibility Smoke` workflow runs weekly and can also be triggered manually for the
-protocol compatibility matrix (OpenAPI, OPTIMADE, GraphQL, OData, OpenRPC, and MCP) plus the
-latest stable SchemaRouter package published on PyPI. The PyPI
+protocol compatibility matrix (OpenAPI, OPTIMADE, GraphQL, OData, OpenRPC, and MCP), provider-first
+Materials Project/Crossref/Tavily evidence, plus the latest stable SchemaRouter package published on
+PyPI. The PyPI
 smoke separately forces wheel and sdist installation, runs `pip check`, and executes a public API
 scenario from outside the repository checkout. A dedicated isolated smoke installs only
 `schemarouter[mcp,jev,otel]` so those integrations cannot accidentally rely on framework
@@ -147,8 +152,9 @@ services. Both should be reviewed before a release candidate is promoted.
 
 ## Scheduled live-smoke artifacts
 
-The non-blocking adapter matrix, published-PyPI, and published-integration compatibility jobs emit
-machine-readable JSON artifacts. The adapter matrix includes public OpenAPI, OPTIMADE, GraphQL, and
+The non-blocking adapter/provider matrix, published-PyPI, and published-integration compatibility
+jobs emit machine-readable JSON artifacts. Provider-first jobs retain separate Materials Project,
+Crossref, and Tavily compatibility reports in addition to the adapter reports. The adapter matrix includes public OpenAPI, OPTIMADE, GraphQL, and
 OData evidence plus pinned-reference OpenRPC and MCP Streamable HTTP evidence. Reports include a schema version, UTC generation time, SchemaRouter version,
 adapter/source identity, runtime environment, success/failure state, and bounded success details.
 On failure, only the exception type is recorded; exception messages are omitted.

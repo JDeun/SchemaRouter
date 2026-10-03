@@ -4,6 +4,13 @@
 
 ## Stable product
 
+현재 안정판은 **SchemaRouter 0.14.0 (Beta / pre-1.0)** 입니다.
+
+0.14 이후 current main의 product follow-up은 #743~#748에서 state-conditioned re-retrieval,
+scalable capability graph, atomic snapshot publication, artifact/snapshot migration,
+privacy-safe decision trace, provider-first 등록을 추가했습니다. 이 작업은 stable execution
+boundary를 유지하는 호환 확장입니다.
+
 stable core는 typed capability retrieval과 schema-aware execution boundary입니다. local execution authority, schema/fingerprint validation, explicit side-effect policy, protocol-neutral contract를 보존해야 합니다. provider 하나를 지원하기 위해 core architecture를 다시 열지 말고 adapter, trusted SDK binding, framework bridge, decision plugin을 우선합니다.
 
 ## Research

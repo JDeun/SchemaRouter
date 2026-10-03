@@ -15,6 +15,9 @@ automatically classified as a SchemaRouter regression.
 | OData | Yes | Live public provider | Read-only Products query with `$top=1` | OData.org V4 reference service | Only a read-only Products query with `$top=1` is exercised. |
 | OpenRPC | Yes | Pinned reference implementation | Harmless local echo method | In-repo local JSON-RPC server | No stable unauthenticated public execution endpoint is assumed. |
 | MCP Streamable HTTP | Yes | Pinned reference implementation | Local `add` tool | In-repo MCP SDK fixture server | Reference server is used instead of assuming a stable public MCP endpoint. |
+| Provider profile: Materials Project | Yes | Live public provider | Provider identity -> public OPTIMADE -> read-only structure query | Materials Project OPTIMADE | Authenticated OpenAPI/SDK paths remain separately gated. |
+| Provider profile: Crossref | Yes | Live public provider | Provider identity -> public REST -> works query | Crossref REST API | Public provider availability is external state. |
+| Provider profile: Tavily | Yes | Auth-contract + optional live execution | Provider identity -> auth-required REST; live search when `TAVILY_API_KEY` is configured | Tavily Search API | No secret means explicit auth-required evidence, not fabricated execution success. |
 
 The compatibility workflow records a timestamp, SchemaRouter version, source, discovery and
 execution success, endpoint count, binding state, returned-data shape, latency, auth state, and
@@ -40,6 +43,9 @@ python scripts/live_graphql_smoke.py --json-out /tmp/graphql-compatibility.json
 python scripts/live_odata_smoke.py --json-out /tmp/odata-compatibility.json
 python scripts/live_reference_openrpc_smoke.py --json-out /tmp/openrpc-compatibility.json
 python scripts/live_reference_mcp_smoke.py --json-out /tmp/mcp-compatibility.json
+python scripts/live_materials_project_provider_smoke.py
+python scripts/live_crossref_provider_smoke.py
+python scripts/live_tavily_provider_smoke.py
 ```
 
 MCP reference evidence requires the optional MCP dependency:

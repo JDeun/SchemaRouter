@@ -2,8 +2,14 @@
 
 가능하면 가장 권위 있는 스키마 원본을 사용하세요. SchemaRouter는 모든 입력을 **동일하게 취급하지 않습니다**.
 
+사용자가 protocol 세부사항보다 **provider 이름**을 알고 있다면 먼저 `router.add_provider(...)`를
+사용하세요. `ProviderProfile`이 provider를 알려진 OpenAPI, OPTIMADE, HTTP/JSON, SDK access
+method로 해석한 뒤 기존 protocol-neutral ingestion pipeline에 위임합니다. Provider-specific
+planner가 아니라 onboarding 편의 계층입니다.
+
 | 원본 | 등록 | 실행 바인딩 | 신뢰 수준 |
 | --- | --- | --- | --- |
+| 알려진 provider profile | provider identity를 선언된 access method로 해석 | method별 기존 binding 규칙 | profile metadata는 trusted local configuration, credential은 process-local |
 | 타입이 지정된 Python callable | 자동 | 자동 | 로컬 코드 |
 | OpenAPI 3.x | 일반적인 하위 집합 자동 지원 | 동일 origin은 자동, cross-origin은 명시적 승인 | 원격 스키마는 설명 정보 |
 | OpenRPC / JSON-RPC | method/result 자동 탐색 | 동일 origin은 자동, cross-origin은 명시적 승인 | 인터페이스 스키마만으로 side effect 권한을 부여하지 않음 |

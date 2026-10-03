@@ -244,3 +244,26 @@ provider B -> {"chemical_formula": "Si"}
 
 The value `"Si"` is not transformed. Ambiguous alias relationships stay unbound, required
 parameters stay missing, and planning warnings identify the ambiguous input key.
+
+
+## Retrieval with explicit host state is separate from workflow planning
+
+The stable `retrieve(...)` / `aretrieve(...)` surface remains stateless.
+
+When a host runtime already owns typed execution state, it can request explicit eligibility filtering:
+
+```python
+eligible = router.retrieve_state_aware(
+    query,
+    execution_state=state,
+    k=5,
+    state_requirements=requirements,
+)
+```
+
+If filtering the initial Top-K leaves too few candidates, the corrective
+`reretrieve_state_aware(...)` surface can backfill from the same visible ranked candidate surface.
+It preserves original ranks and records excluded candidates with typed state reasons.
+
+This is capability retrieval, not workflow planning. SchemaRouter does not infer state transitions,
+schedule retries, execute transactions, or choose a multi-step orchestration path.

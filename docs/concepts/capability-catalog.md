@@ -54,6 +54,11 @@ Use `retrieve_executable(..., k=5)` when the candidate set should be limited to 
 execution binding is currently ready. Async counterparts are `aretrieve` and
 `aretrieve_executable`.
 
+When a host has explicit typed execution state, `retrieve_state_aware(...)` filters the fixed Top-K
+without changing the stable stateless facade. `reretrieve_state_aware(...)` is the separate
+corrective surface for collecting the best K state-eligible candidates from the same host-visible
+ranked surface.
+
 The returned bundle carries the full effective input/output JSON Schemas together with registered
 parameters, output fields, semantic IDs, units, qualifiers, read/write/destructive classification,
 provider/access identity and schema fingerprints.
@@ -167,14 +172,19 @@ may legitimately be unitless. The field semantics, not the source type, decide w
 
 ## Registration should be generic
 
+Users should be able to start from the identity they actually know. If that identity is a provider
+rather than a protocol URL, `add_provider(...)` resolves a trusted `ProviderProfile` into its
+declared access methods before those methods enter the same canonical adapter pipeline.
+
 The intended product boundary is that an application can register a capability source and use it
 without writing benchmark-specific routing rules.
 
 ```text
-new OpenAPI / MCP / Python capability
+provider identity or new OpenAPI / MCP / Python capability
+  -> resolve declared access method when needed
   -> parse declared schema
   -> compile the same typed registry contracts
-  -> update indexes
+  -> update indexes / dependency graph
   -> immediately participate in bounded routing
 ```
 

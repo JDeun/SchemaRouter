@@ -9,7 +9,7 @@
     },
     {
       "path": "architecture.md",
-      "source_blob": "275bd9bfb75d55c5300b0867fcef09aa0475fce8"
+      "source_blob": "d27a4f546fb1118b20a6994484a5990590ed9d1f"
     },
     {
       "path": "assets/brand/README.md",
@@ -21,7 +21,7 @@
     },
     {
       "path": "compatibility.md",
-      "source_blob": "f3d42dd4a208eee849590a8f54e4040a78d8e0eb"
+      "source_blob": "4d2e279720b5fcd38aa8bb6ef5e284c093c4bcc8"
     },
     {
       "path": "concepts/adapters.md",
@@ -29,7 +29,7 @@
     },
     {
       "path": "concepts/capability-catalog.md",
-      "source_blob": "d85caca43c29755fcdd752e70f12dfb5fd266408"
+      "source_blob": "266139f38718c3212bdaec199c889a93649ee9fe"
     },
     {
       "path": "concepts/decision-backends.md",
@@ -37,7 +37,7 @@
     },
     {
       "path": "concepts/design-principles.md",
-      "source_blob": "9fe6b02814c59de7d030d102a6fe333ac8b5d575"
+      "source_blob": "ee4174cb6f1f0788c19d6a83c0abd70e05a8670d"
     },
     {
       "path": "concepts/execution.md",
@@ -49,7 +49,7 @@
     },
     {
       "path": "concepts/planning.md",
-      "source_blob": "2636189c3d24e430c8fc43063f027328960a5762"
+      "source_blob": "0cdd06d08876c8f0f5565700a5468e7a829e5bdb"
     },
     {
       "path": "concepts/protocol-ingestion-decisions.md",
@@ -73,15 +73,15 @@
     },
     {
       "path": "framework-maturity.md",
-      "source_blob": "a2d3dd6fd35bff6598fa1bf7435830d744f2bb41"
+      "source_blob": "9126f0ded318b6cdfb609208c5dde83f866803ae"
     },
     {
       "path": "getting-started/examples.md",
-      "source_blob": "7a942bda525e77bb875ec280eda5afb57bf6e142"
+      "source_blob": "59da54e5c25afe5acc2cb0d357e2b1a4eea087af"
     },
     {
       "path": "getting-started/ingestion-paths.md",
-      "source_blob": "6287b80cdb60de264bd4070625b0f6118d0932b4"
+      "source_blob": "88895ea7dd81425b97f85ae72201551d2d2cf11a"
     },
     {
       "path": "getting-started/installation.md",
@@ -89,7 +89,7 @@
     },
     {
       "path": "getting-started/quickstart.md",
-      "source_blob": "376d174b205e0682202f0f237d00cb03299d04d8"
+      "source_blob": "17aee2d5dd482a954403e3f89bd0ce337e534634"
     },
     {
       "path": "getting-started/runtime-lifecycle.md",
@@ -122,6 +122,10 @@
     {
       "path": "guides/capability-constraints.md",
       "source_blob": "a97a522420df659298fc7267e1dcc2749c9f4add"
+    },
+    {
+      "path": "guides/capability-decision-traces.md",
+      "source_blob": "f7bd9f5685ea123376c0335ab232dc1920004b52"
     },
     {
       "path": "guides/capability-eligibility.md",
@@ -185,11 +189,11 @@
     },
     {
       "path": "guides/inspection.md",
-      "source_blob": "573bee5ed0a75cc532255e96bb9ca0e9c0af64ab"
+      "source_blob": "7ee4e108b67245d08fb350b822473fcac06cebb2"
     },
     {
       "path": "guides/live-compatibility-matrix.md",
-      "source_blob": "1f75231e74d8db1189502b8ed527b44c4698b81b"
+      "source_blob": "0a80b435d4587f3527b7e603ded1f4fe8e57b2b5"
     },
     {
       "path": "guides/mcp.md",
@@ -261,11 +265,11 @@
     },
     {
       "path": "guides/universal-ingestion.md",
-      "source_blob": "737753d2e66b57c9215f8cde7a27bc1bfa317712"
+      "source_blob": "ac0ae907e8bee5b393993a1da071e3613f78b68f"
     },
     {
       "path": "index.md",
-      "source_blob": "d11423fc4175fe84ca8073f08d7a81081daa61ab"
+      "source_blob": "6082355639b61a682aab01989cbbc66103c26059"
     },
     {
       "path": "integrations/decision-backend-plugins.md",
@@ -353,7 +357,7 @@
     },
     {
       "path": "project/roadmap.md",
-      "source_blob": "2faaafed4e7f5d8b9026d5d247d9b3eee6a12c62"
+      "source_blob": "2a65b2809c07854b6f96dd4a68a360185f99e828"
     },
     {
       "path": "project/trust-and-evidence.md",
@@ -373,19 +377,19 @@
     },
     {
       "path": "reference/api.md",
-      "source_blob": "e5742229b91fb5c74f22ab2020cdb20c9a15b8dc"
+      "source_blob": "e9f74eaa9ff4735a27c8776275382749947311ae"
     },
     {
       "path": "reference/models.md",
-      "source_blob": "a33279cc0adc08c78b7f5be7a68b7fefa4688d06"
+      "source_blob": "37924e83d45874ccd2306b16b76ef811b5593b3d"
     },
     {
       "path": "reference/planning.md",
-      "source_blob": "a597a73baf17eba12fdef645f427fd53c6a80121"
+      "source_blob": "76dfdfc8e5f1f2e86d095717c9f2041545e48349"
     },
     {
       "path": "reference/runtime.md",
-      "source_blob": "60dbef11ae8cd8a3d746224d31f2671ac40d67de"
+      "source_blob": "99cec390bf49ea3c475f13f5f8cdc68bcc8e99cd"
     },
     {
       "path": "release-checklist.md",
@@ -529,7 +533,7 @@
     },
     {
       "path": "stable-core.md",
-      "source_blob": "24fb55e97da9dbfa779f926d82c00ef8d361515e"
+      "source_blob": "68d8c335f684c77255dd3cdbd3b95ca4aaf356e6"
     },
     {
       "path": "versioning.md",

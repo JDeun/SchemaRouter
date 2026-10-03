@@ -160,6 +160,7 @@ nav:
       - Provider-aware fallback: guides/provider-fallback.md
       - State-aware retrieval: guides/state-aware-retrieval.md
       - Capability constraints: guides/capability-constraints.md
+      - Capability decision traces: guides/capability-decision-traces.md
       - Capability drift: guides/capability-graph-drift.md
       - Capability graph scalability: guides/capability-graph-scalability.md
       - Capability eligibility: guides/capability-eligibility.md

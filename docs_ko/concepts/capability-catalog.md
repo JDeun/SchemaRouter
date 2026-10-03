@@ -132,3 +132,15 @@ new source
 SchemaRouter는 더 좁은 질문에 답합니다.
 
 > 등록된 capability 중에서 이 요청을 만족할 수 있는 가장 작은 trusted executable data surface는 무엇인가?
+
+
+## Provider-first와 state-aware retrieval
+
+사용자가 protocol이 아니라 provider 이름을 알고 있다면 `add_provider(...)`가 trusted
+`ProviderProfile`을 기존 protocol-neutral ingestion으로 해석합니다. Materials Project 같은
+provider의 OpenAPI/OPTIMADE/Python 경로를 사용자가 모두 직접 열거할 필요는 없습니다.
+
+기존 `retrieve(..., k=5)`는 stateless 계약을 유지합니다. Host가 explicit typed state를
+제공할 때는 `retrieve_state_aware(...)`로 fixed Top-K를 filter하고, visible ranked
+surface에서 eligible Top-K를 다시 채워야 할 때만 `reretrieve_state_aware(...)`를 사용합니다.
+두 경로 모두 execution authority를 부여하지 않습니다.

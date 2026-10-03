@@ -10,6 +10,7 @@ evidence.
 
 | You have | Example | What it demonstrates |
 | --- | --- | --- |
+| Provider name | [provider-first guide](../guides/provider-first-registration.md) | provider identity -> safe usable access methods |
 | Python function | [typed callable](https://github.com/JDeun/SchemaRouter/blob/main/examples/quickstart.py) | typed local discovery + execution |
 | SDK/client object | [SDK-bound demo](https://github.com/JDeun/SchemaRouter/blob/main/examples/sdk_bound_demo.py) | explicit contract around opaque trusted runtime state |
 | Many tools | [context reduction](https://github.com/JDeun/SchemaRouter/blob/main/examples/context_reduction_demo.py) | full catalog versus bounded Top-K retrieval |
@@ -35,7 +36,18 @@ The user-facing quickstart uses APIs.guru because it is public, read-only, and n
 python examples/live_openapi_quickstart.py
 ```
 
-Additional public compatibility examples cover domains outside materials science:
+Provider-first acceptance additionally exercises Materials Project, Crossref, and Tavily:
+
+```bash
+python scripts/live_materials_project_provider_smoke.py
+python scripts/live_crossref_provider_smoke.py
+python scripts/live_tavily_provider_smoke.py
+```
+
+The Materials Project and Crossref paths execute real read-only provider queries. Tavily validates
+the auth contract without a secret and executes a real search when `TAVILY_API_KEY` is configured.
+
+Additional public compatibility examples cover other protocol surfaces:
 
 ```bash
 python scripts/live_graphql_smoke.py

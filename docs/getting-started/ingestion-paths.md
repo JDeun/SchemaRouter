@@ -3,8 +3,14 @@
 Use the most authoritative schema source available. SchemaRouter does **not** treat all
 inputs as equivalent.
 
+If the user knows a **provider identity** rather than its protocol details, prefer
+`router.add_provider(...)` first. A `ProviderProfile` maps that provider to known OpenAPI,
+OPTIMADE, HTTP/JSON, or SDK access methods and then delegates to the same protocol-neutral ingestion
+pipeline. It is an onboarding convenience layer, not a provider-specific planner.
+
 | Source | Registration | Execution binding | Trust level |
 | --- | --- | --- | --- |
+| Known provider profile | Resolve provider identity into declared access methods | Per-method existing binding rules | Profile metadata is trusted local configuration; credentials remain process-local |
 | Typed Python callable | Automatic | Automatic | Local code |
 | OpenAPI 3.x | Automatic common subset | Same-origin automatic; cross-origin explicit | Remote schema is descriptive |
 | OpenRPC / JSON-RPC | Automatic method/result discovery | Same-origin automatic; cross-origin explicit | Interface schema does not grant side-effect authority |

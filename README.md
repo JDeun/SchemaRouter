@@ -238,12 +238,28 @@ cannot invent tools, fields, credentials, permissions, or side effects.
 
 ## Connect capabilities
 
-Current `main` supports several equivalent ingress styles. Prefer the richest authoritative
+If you know the **provider** you want but not every protocol or SDK it exposes, start from provider
+identity:
+
+```python
+router = SchemaRouter()
+result = await router.add_provider("materials-project")
+```
+
+SchemaRouter resolves known access methods for that provider and registers only the methods that are
+safe and usable in the current process. The built-in acceptance set covers Materials Project,
+Crossref, and Tavily. Credentials and optional dependencies are reported explicitly rather than
+guessed, installed, or persisted.
+
+[Provider-first registration →](docs/guides/provider-first-registration.md)
+
+Current `main` also supports the lower-level ingress styles below. Prefer the richest authoritative
 machine-readable contract available; use a trusted wrapper/binding when a provider exposes only an
 SDK or weakly described REST surface.
 
 | Source | Use when | Entry point |
 | --- | --- | --- |
+| Provider identity | you know the service/provider, not its protocols | `await router.add_provider("materials-project")` |
 | Direct ToolSpec | the application already owns the canonical contract | `router.add_tool(...)` |
 | Python | capability is local and typed | `router.add_callable(...)` |
 | ToolSpec + SDK/client | transport is trusted but not safely introspectable | `router.add_bound_tool(...)` |
@@ -276,8 +292,8 @@ Third-party bounded decision backends can be published through the
 The released package provides a working beta implementation of the core architecture:
 
 - typed Tool / Endpoint / Parameter / Field registry contracts;
-- first-class bounded Top-K capability retrieval through `retrieve` / `aretrieve` and executable-ready variants;
-- direct ToolSpec/Python/SDK binding plus OpenAPI, MCP, OPTIMADE, GraphQL, OData, OpenRPC, declarative HTTP/JSON, and inbound LangChain/LlamaIndex ingestion paths;
+- first-class bounded Top-K capability retrieval through `retrieve` / `aretrieve`, explicit state-aware filtering, and state-conditioned corrective backfill;
+- provider-first registration for known services plus direct ToolSpec/Python/SDK binding and OpenAPI, MCP, OPTIMADE, GraphQL, OData, OpenRPC, declarative HTTP/JSON, and inbound LangChain/LlamaIndex ingestion paths;
 - field-first planning and bounded multi-provider field coverage;
 - input and raw-output JSON Schema validation;
 - schema fingerprints and binding-drift rejection;
@@ -285,7 +301,8 @@ The released package provides a working beta implementation of the core architec
 - explicit server-side field projection plus final local projection;
 - optional datatype/unit normalization and exact scientific qualifiers;
 - provider/access fallback with finite cooldown and trusted health recovery;
-- sync/async invocation, batch, streaming, typed events, traces, and inspection/dashboard surfaces;
+- indexed/incremental capability dependency graphs, atomic versioned snapshot publication, and validated artifact/snapshot migration;
+- sync/async invocation, batch, streaming, typed events, unified capability decision traces, and inspection/dashboard surfaces;
 - LangChain, LangGraph, LlamaIndex, Jev/System-One, Laya, Ollama, and OpenTelemetry integration
   surfaces.
 
@@ -344,6 +361,7 @@ schemarouter inspect diff materials \
   --new-db ./registry-current.sqlite3
 schemarouter inspect traces --db ./traces.sqlite3
 schemarouter inspect trace <RUN_ID> --db ./traces.sqlite3
+schemarouter inspect decision-trace ./decision-trace.json --json
 schemarouter dashboard \
   --registry ./registry.sqlite3 \
   --traces ./traces.sqlite3 \
@@ -359,6 +377,9 @@ schemarouter dashboard \
 - [Field-first execution](https://jdeun.github.io/SchemaRouter/concepts/field-first-execution/)
 - [OpenAPI](https://jdeun.github.io/SchemaRouter/guides/openapi/)
 - [MCP](https://jdeun.github.io/SchemaRouter/guides/mcp/)
+- [Provider-first registration](https://jdeun.github.io/SchemaRouter/guides/provider-first-registration/)
+- [State-aware retrieval](https://jdeun.github.io/SchemaRouter/guides/state-aware-retrieval/)
+- [Capability decision traces](https://jdeun.github.io/SchemaRouter/guides/capability-decision-traces/)
 - [Architecture and maturity](https://jdeun.github.io/SchemaRouter/architecture/)
 - [Security model](https://jdeun.github.io/SchemaRouter/security/threat-model/)
 - [Prior-art roadmap](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/)

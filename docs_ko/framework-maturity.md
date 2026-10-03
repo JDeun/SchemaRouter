@@ -7,3 +7,19 @@ SchemaRouter는 의도적으로 LangChain보다 좁습니다. 목표는 general 
 DAG/workflow checkpoint, general chat/message abstraction, prompt ecosystem, unrelated model wrapper, second graph runtime은 core 범위 밖입니다. mature framework에서 가져올 것은 일관된 execution vocabulary, machine-readable introspection, 낮은 tool-authoring 비용, optional integration, privacy-preserving observability입니다.
 
 다음 maturity는 외부 ecosystem listing/usage, 더 넓은 live provider evidence, 조직별 policy integration처럼 repository 밖 근거가 필요한 영역입니다. stable runtime surface와 active research metric은 분리해 해석합니다.
+
+
+## 0.14 이후 current main 보강
+
+안정된 실행 경계를 다시 열지 않고 다음 repository-local maturity가 추가되었습니다.
+
+- provider 이름만으로 시작하는 `ProviderProfile` 등록 경로와 Materials Project/Crossref/Tavily
+  acceptance coverage;
+- 기존 stateless retrieval을 유지하는 explicit state-aware filtering 및 corrective backfill;
+- semantic-indexed/incremental capability dependency graph와 bounded SCC cycle 분석;
+- content-addressed snapshot, atomic CAS publication, versioned artifact/snapshot migration;
+- eligibility/state/health/drift/policy/constraint/negotiation/fallback/lineage를 합치는 privacy-safe
+  capability decision trace와 CLI/dashboard inspection.
+
+이 기능들은 agent loop, workflow engine, transaction coordinator, autonomous authorization을
+core에 추가하지 않습니다.

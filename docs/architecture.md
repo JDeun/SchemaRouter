@@ -63,6 +63,13 @@ flowchart LR
 
 ```text
 schemarouter.models        typed tool / endpoint / plan contracts
+schemarouter.capability_contracts  provider-neutral typed capability/effect/precondition contracts
+schemarouter.capability_graph      indexed/incremental dependency graph + bounded SCC cycle analysis
+schemarouter.capability_snapshot   content-addressed graph snapshots + versioned document envelope
+schemarouter.capability_publication  atomic validated successor snapshot publication
+schemarouter.capability_artifact   portable versioned graph artifacts + migration/integrity checks
+schemarouter.capability_decision_trace  privacy-safe aggregation of existing decision explanations
+schemarouter.provider_profiles     provider identity -> declared protocol/SDK access methods
 schemarouter.registry      versioned namespaced catalog + optional SQLite persistence
 schemarouter.planner       exact-recall candidate indexing + deterministic scoring + recall-first projection
 schemarouter.analyzers     optional model-assisted intent extraction
@@ -78,7 +85,7 @@ schemarouter.ingestion     AdapterRegistry dispatch, safe source loading, regist
 schemarouter.proposals     evidence-grounded HTML documentation proposals
 schemarouter.integrations  optional LangChain/LlamaIndex/System One/Laya/OpenTelemetry integrations
 schemarouter.decision_plugins  explicit third-party bounded decision-backend discovery/loading
-schemarouter.runtime       high-level invoke/batch/stream facade
+schemarouter.runtime       high-level registration/retrieval/invoke/batch/stream facade
 ```
 
 ## Adversarial findings and responses

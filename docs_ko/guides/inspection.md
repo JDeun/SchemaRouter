@@ -105,3 +105,23 @@ python examples/inspection_dashboard.py
 ```
 
 [Capability Explorer →](../getting-started/schema-explorer.md)
+
+
+## Capability decision trace 확인
+
+Decision trace는 host가 명시적으로 전달하는 observability record입니다. SchemaRouter가 자동으로 저장하지 않습니다.
+
+```python
+inspection = router.inspect(decision_traces=[trace])
+```
+
+Live inspection model은 visible capability ID, final disposition, normalized reason code만 compact summary로 노출합니다. Hidden capability, score/rank 값, payload, credential, private header, execution binding은 복원하지 않습니다.
+
+직렬화된 trace는 직접 inspect할 수 있습니다.
+
+```bash
+schemarouter inspect decision-trace decision-trace.json --json
+schemarouter inspect decision-trace decision-trace.json --detailed --json
+```
+
+Decision trace를 live `RouterInspection` 에 전달하면 HTML dashboard에도 compact decision-trace table이 추가됩니다. 전체 contract와 privacy 경계는 [Capability decision trace](capability-decision-traces.md)를 참고하세요.

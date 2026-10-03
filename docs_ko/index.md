@@ -85,10 +85,30 @@ flowchart LR
 SchemaRouter는 범용 agent framework나 LLM gateway가 아니며, 메모리나 최종 답변 생성도
 담당하지 않습니다. LangChain, LangGraph, LlamaIndex 같은 상위 계층 아래에 붙여 쓰는 구조입니다.
 
+## Provider 이름으로 시작하기
+
+사용자가 Materials Project를 쓰고 싶은 것뿐이라면 OPTIMADE, OpenAPI, `mp-api`를 먼저
+구분해서 알 필요가 없습니다.
+
+```python
+router = SchemaRouter()
+result = await router.add_provider("materials-project")
+```
+
+SchemaRouter가 알려진 access method를 provider profile에서 해석하고, 현재 환경에서 안전하게
+사용 가능한 method만 등록합니다. 초기 실제 검증 대상은 Materials Project, Crossref,
+Tavily입니다.
+
+[Provider 중심 등록 →](guides/provider-first-registration.md)
+
 ## 현재 안정판과 연구
 
 현재 안정판은 **0.14.0 (Beta / pre-1.0)** 입니다. Python 3.10–3.14는 릴리스 차단 CI에서
 검증하고, Python 3.15는 별도 preview job으로 확인합니다.
+
+현재 `main`에는 안정판 경계를 유지하는 호환 기능으로 provider-first 등록,
+state-conditioned re-retrieval, indexed/incremental capability graph, atomic snapshot publication,
+artifact/snapshot migration, privacy-safe decision trace가 추가되어 있습니다.
 
 진행 중인 연구는 안정판의 제품 계약과 분리되어 있습니다. 실험 결과가 좋아도 검증 절차 없이
 제품 기본값으로 들어가지는 않습니다.

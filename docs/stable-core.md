@@ -30,6 +30,12 @@ contracts. They do not execute tools and do not grant permission to execute them
 `retrieve_executable` and `aretrieve_executable` additionally filter for current local
 binding readiness. They still do not execute or authorize a side effect.
 
+Explicit state-aware surfaces are additive rather than replacements for the stable stateless facade:
+`retrieve_state_aware` filters a fixed Top-K against host-supplied typed state, while
+`reretrieve_state_aware` backfills from the same host-visible ranked surface until K eligible
+candidates are found or the visible surface is exhausted. Neither method infers workflow state,
+widens visibility, or executes a capability.
+
 ### Candidate contracts preserve executable schema
 
 `CapabilityCandidate` preserves:
@@ -76,6 +82,8 @@ Research may change internal ranking/index implementations while preserving thes
 - `SchemaRouter.aretrieve(..., k=5)`
 - `SchemaRouter.retrieve_executable(..., k=5)`
 - `SchemaRouter.aretrieve_executable(..., k=5)`
+- additive `retrieve_state_aware` / `aretrieve_state_aware` and
+  `reretrieve_state_aware` / `areretrieve_state_aware` typed-state surfaces;
 - equivalent `ConfiguredSchemaRouter` retrieval methods;
 - existing planning, invocation, batch, streaming, policy and inspection APIs.
 
@@ -94,6 +102,10 @@ Evidence may justify compatible changes such as:
 - new optional adapters.
 
 These should normally remain behind the same typed retrieval and execution boundary.
+
+Provider-first registration, versioned capability artifacts/snapshots, atomic snapshot publication,
+dependency-graph indexing, and decision traces are also infrastructure around that boundary. They do
+not create a second planner or grant execution authority.
 
 ## What requires reopening product architecture
 

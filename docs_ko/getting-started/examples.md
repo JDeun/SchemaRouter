@@ -9,6 +9,7 @@
 
 | 가지고 있는 것 | 예제 | 보여주는 내용 |
 | --- | --- | --- |
+| Provider 이름 | [Provider 중심 등록](../guides/provider-first-registration.md) | provider identity에서 안전하게 사용 가능한 access method 등록 |
 | Python function | [typed callable](https://github.com/JDeun/SchemaRouter/blob/main/examples/quickstart.py) | typed local discovery + execution |
 | SDK/client object | [SDK-bound demo](https://github.com/JDeun/SchemaRouter/blob/main/examples/sdk_bound_demo.py) | opaque trusted runtime state 주위의 explicit contract |
 | 많은 tool | [context reduction](https://github.com/JDeun/SchemaRouter/blob/main/examples/context_reduction_demo.py) | 전체 catalog와 bounded Top-K 비교 |
@@ -30,6 +31,17 @@
 ```bash
 python examples/live_openapi_quickstart.py
 ```
+
+Provider-first acceptance:
+
+```bash
+python scripts/live_materials_project_provider_smoke.py
+python scripts/live_crossref_provider_smoke.py
+python scripts/live_tavily_provider_smoke.py
+```
+
+Materials Project와 Crossref는 실제 read-only provider query를 실행합니다. Tavily는 secret이
+없으면 auth contract를 검증하고, `TAVILY_API_KEY`가 있을 때 실제 search까지 실행합니다.
 
 GraphQL / OData / OPTIMADE live smoke:
 
