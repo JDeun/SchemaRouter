@@ -11,7 +11,7 @@ automatically classified as a SchemaRouter regression.
 | --- | --- | --- | --- | --- | --- |
 | OpenAPI | Yes | Live public provider | Read-only metrics request | APIs.guru | Public provider availability is external state. |
 | OPTIMADE | Yes | Live public provider | Read-only structure search | COD OPTIMADE | Public provider availability and dataset latency vary. |
-| GraphQL | Yes | Live public provider | Read-only location query | AniList | Public third-party service; introspection availability can change. |
+| GraphQL | Yes | Live public provider | Read-only media query | AniList | Public third-party service; introspection availability can change. |
 | OData | Yes | Live public provider | Read-only Products query with `$top=1` | OData.org V4 reference service | Only a read-only Products query with `$top=1` is exercised. |
 | OpenRPC | Yes | Pinned reference implementation | Harmless local echo method | In-repo local JSON-RPC server | No stable unauthenticated public execution endpoint is assumed. |
 | MCP Streamable HTTP | Yes | Pinned reference implementation | Local `add` tool | In-repo MCP SDK fixture server | Reference server is used instead of assuming a stable public MCP endpoint. |
