@@ -205,6 +205,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "compare_capability_composition",
         "compare_capability_fields",
         "evaluate_preconditions",
+        "filter_retrieval_by_state",
         "evaluate_state_eligibility",
         "validate_capability_inputs",
         "validate_capability_outputs",
