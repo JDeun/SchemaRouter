@@ -277,6 +277,54 @@ async def test_vector_collections_compose_with_principal_authorization() -> None
     assert result[0].data == [{"id": "memo-1", "title": "Board forecast"}]
 
 
+@pytest.mark.asyncio
+async def test_vector_store_supports_async_discovery_embedding_and_search() -> None:
+    class AsyncBackend(FakeVectorBackend):
+        async def list_collections(self) -> tuple[VectorCollectionSpec, ...]:
+            return super().list_collections()
+
+        async def search(
+            self,
+            *,
+            collection: str,
+            vector: list[float],
+            top_k: int,
+            include_fields: tuple[str, ...],
+        ) -> list[dict[str, Any]]:
+            return super().search(
+                collection=collection,
+                vector=vector,
+                top_k=top_k,
+                include_fields=include_fields,
+            )
+
+    async def embed(query: str) -> tuple[float, float, float]:
+        assert query == "async vector"
+        return (0.1, 0.2, 0.3)
+
+    backend = AsyncBackend()
+    router = SchemaRouter()
+    keys = await router.aadd_vector_store(
+        backend,
+        embed,
+        database_name="vectors",
+        collections={"public_docs"},
+        remote=False,
+    )
+    assert keys == ("vectors.public_docs",)
+
+    result = await router.execute(
+        _plan(
+            router,
+            "vectors.public_docs",
+            query="async vector",
+            fields=["id", "title"],
+            top_k=1,
+        )
+    )
+    assert result[0].data == [{"id": "doc-1", "title": "SchemaRouter"}]
+
+
 def test_vector_store_can_limit_collections_before_registration() -> None:
     router = SchemaRouter()
     keys = router.add_vector_store(
