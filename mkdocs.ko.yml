@@ -62,6 +62,7 @@ nav:
   - 런타임:
       - Batch/stream/event: guides/runtime.md
       - 실행 정책: guides/execution-policy.md
+      - Principal 권한 관리: guides/authorization.md
       - Provider-aware fallback: guides/provider-fallback.md
       - State-aware retrieval: guides/state-aware-retrieval.md
       - Capability 제약: guides/capability-constraints.md
