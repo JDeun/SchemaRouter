@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import json
 from types import SimpleNamespace
 
+import httpx
 import pytest
 
 from schemarouter import (
+    PlanRequest,
     ProviderAccessMethod,
     ProviderProfile,
     ProviderProfileRegistry,
@@ -12,24 +15,34 @@ from schemarouter import (
 )
 
 
-def test_materials_project_profile_resolves_provider_first() -> None:
+def test_builtin_profiles_resolve_provider_first() -> None:
     router = SchemaRouter()
 
-    resolution = router.resolve_provider("mp")
-    assert resolution.provider_id == "materials-project"
-    by_id = {method.method_id: method for method in resolution.methods}
-
-    assert by_id["optimade"].status == "available"
-    assert by_id["optimade"].url == "https://optimade.materialsproject.org"
-    assert by_id["openapi"].credential_names == ("X-API-KEY",)
-    assert by_id["python-sdk"].status in {
+    materials = router.resolve_provider("mp")
+    assert materials.provider_id == "materials-project"
+    material_methods = {method.method_id: method for method in materials.methods}
+    assert material_methods["optimade"].status == "available"
+    assert material_methods["optimade"].url == "https://optimade.materialsproject.org"
+    assert material_methods["openapi"].credential_names == ("X-API-KEY",)
+    assert material_methods["python-sdk"].status in {
         "dependency_missing",
         "manual_binding_required",
     }
 
+    crossref = router.resolve_provider("crossref")
+    assert crossref.provider_id == "crossref"
+    assert [(method.method_id, method.status) for method in crossref.methods] == [
+        ("rest", "available")
+    ]
+
+    tavily = router.resolve_provider("tavily", methods={"rest"})
+    assert tavily.provider_id == "tavily"
+    assert tavily.methods[0].status == "available"
+    assert tavily.methods[0].credential_names == ("Authorization",)
+
 
 @pytest.mark.asyncio
-async def test_add_provider_registers_usable_methods_and_reports_skips(
+async def test_add_materials_project_registers_usable_methods_and_reports_skips(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     router = SchemaRouter()
@@ -68,7 +81,7 @@ async def test_add_provider_registers_usable_methods_and_reports_skips(
 
 
 @pytest.mark.asyncio
-async def test_add_provider_never_echoes_credentials(
+async def test_provider_registration_never_echoes_credentials(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     router = SchemaRouter()
@@ -94,6 +107,121 @@ async def test_add_provider_never_echoes_credentials(
     assert seen_headers["X-API-KEY"] == "test-secret-that-must-not-leak"
     assert result.registered_tool_keys == ("materials-project-openapi",)
     assert "test-secret-that-must-not-leak" not in result.model_dump_json()
+
+
+@pytest.mark.asyncio
+async def test_crossref_provider_first_registration_and_execution() -> None:
+    seen_urls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen_urls.append(str(request.url))
+        return httpx.Response(
+            200,
+            json={
+                "status": "ok",
+                "message": {
+                    "items": [
+                        {
+                            "DOI": "10.1234/example",
+                            "title": ["Example work"],
+                        }
+                    ]
+                },
+            },
+            request=request,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        registration = await router.add_provider("crossref")
+
+        assert registration.provider_id == "crossref"
+        assert len(registration.registered_tool_keys) == 1
+        assert registration.methods[0].status == "registered"
+
+        key = registration.registered_tool_keys[0]
+        plan = router.plan_executable(
+            PlanRequest(
+                query="search Crossref works metadata",
+                preferred_tools=[key],
+                arguments={"query": "SchemaRouter", "rows": 1},
+            )
+        )
+        assert plan.executable
+        assert plan.calls[0].endpoint == "search_works"
+        results = await router.execute(plan)
+
+    assert results[0].data["message"]["items"][0]["DOI"] == "10.1234/example"
+    assert "query=SchemaRouter" in seen_urls[0]
+    assert "rows=1" in seen_urls[0]
+
+
+@pytest.mark.asyncio
+async def test_tavily_provider_reports_auth_then_executes_with_trusted_header() -> None:
+    router = SchemaRouter()
+    missing = await router.add_provider("tavily", methods={"rest"})
+    assert missing.registered_tool_keys == ()
+    assert missing.methods[0].status == "auth_required"
+    assert "Authorization" in missing.methods[0].detail
+
+    seen_headers: list[dict[str, str]] = []
+    seen_bodies: list[dict[str, object]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen_headers.append(dict(request.headers))
+        seen_bodies.append(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={
+                "results": [
+                    {
+                        "title": "SchemaRouter",
+                        "url": "https://example.test",
+                        "content": "Typed capability routing",
+                    }
+                ],
+                "response_time": "0.1",
+            },
+            request=request,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        registration = await router.add_provider(
+            "tavily",
+            methods={"rest"},
+            trusted_headers_by_method={
+                "rest": {"Authorization": "Bearer test-token"}
+            },
+        )
+        assert len(registration.registered_tool_keys) == 1
+        assert registration.methods[0].status == "registered"
+
+        key = registration.registered_tool_keys[0]
+        plan = router.plan_executable(
+            PlanRequest(
+                query="search Tavily web",
+                preferred_tools=[key],
+                arguments={
+                    "query": "SchemaRouter",
+                    "max_results": 1,
+                    "search_depth": "basic",
+                },
+            )
+        )
+        assert plan.executable
+        assert plan.calls[0].endpoint == "search"
+        results = await router.execute(plan)
+
+    assert results[0].data["results"][0]["title"] == "SchemaRouter"
+    assert seen_headers[0]["authorization"] == "Bearer test-token"
+    assert seen_bodies == [
+        {
+            "query": "SchemaRouter",
+            "max_results": 1,
+            "search_depth": "basic",
+        }
+    ]
 
 
 def test_provider_registry_rejects_alias_collision() -> None:
