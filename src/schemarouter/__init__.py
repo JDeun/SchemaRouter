@@ -645,7 +645,8 @@ __all__ = [
     "CapabilitySnapshotDiff",
     "CapabilitySourceRevision",
     "build_capability_snapshot",
-    "require_snapshot",    "LEGACY_CAPABILITY_ARTIFACT_FORMAT_VERSION",
+    "require_snapshot",
+    "LEGACY_CAPABILITY_ARTIFACT_FORMAT_VERSION",
     "SUPPORTED_CAPABILITY_ARTIFACT_FORMAT_VERSIONS",
     "ArtifactEdgeOrigin",
     "CapabilityArtifactMigrationRecord",
@@ -665,5 +666,4 @@ __all__ = [
     "migrate_capability_snapshot",
     "serialize_capability_snapshot",
     "validate_capability_snapshot",
-
 ]
