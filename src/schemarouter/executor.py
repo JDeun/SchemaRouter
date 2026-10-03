@@ -19,6 +19,7 @@ from .errors import (
     InvocationUnavailableError,
     NonRetryableInvocationError,
     PlanValidationError,
+    PolicyViolationError,
     SchemaDriftError,
     SchemaValidationError,
 )
