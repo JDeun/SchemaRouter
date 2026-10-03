@@ -258,6 +258,7 @@ jobs:
           /tmp/schemarouter-wheel-integrations/bin/pip install "schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel,database] @ file://${WHEEL}"
           /tmp/schemarouter-wheel-integrations/bin/pip check
       - run: /tmp/schemarouter-wheel-integrations/bin/python scripts/installed_extras_smoke.py
+      - run: /tmp/schemarouter-wheel-integrations/bin/python scripts/installed_database_smoke.py
       - run: /tmp/schemarouter-wheel-integrations/bin/python examples/langchain_quickstart.py
       - run: /tmp/schemarouter-wheel-integrations/bin/python examples/langgraph_quickstart.py
       - run: /tmp/schemarouter-wheel-integrations/bin/python examples/llamaindex_quickstart.py
@@ -362,6 +363,7 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev,database]"
       - run: pytest -q tests/test_sqlite_database_adapter.py tests/test_sqlalchemy_database_adapter.py
+      - run: python scripts/installed_database_smoke.py
 
   docs:
     runs-on: ubuntu-latest
