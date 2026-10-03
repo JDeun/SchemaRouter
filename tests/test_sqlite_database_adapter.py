@@ -163,6 +163,29 @@ async def test_sqlite_execution_is_projected_parameterized_and_bounded() -> None
     connection.close()
 
 
+@pytest.mark.asyncio
+async def test_sqlite_execution_honors_configured_default_limit() -> None:
+    connection = _connection()
+    router = SchemaRouter()
+    router.add_sqlite_database(
+        connection,
+        database_name="company",
+        tables={"employees"},
+        max_default_rows=1,
+    )
+
+    result = await router.execute(
+        _plan(
+            router,
+            "company.employees",
+            fields=["id", "name"],
+        )
+    )
+
+    assert len(result[0].data) == 1
+    connection.close()
+
+
 def test_sqlite_registration_can_limit_visible_tables_before_model_exposure() -> None:
     connection = _connection()
     router = SchemaRouter()
