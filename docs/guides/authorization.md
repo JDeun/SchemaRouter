@@ -51,13 +51,13 @@ executive = PrincipalContext(subject="ceo", roles=("executive",))
 When an authorization policy is configured, planning and retrieval without a principal fail closed.
 
 ```python
-employee_candidates = router.retrieve(
+employee_candidates = router.retrieve_authorized(
     "quarterly finance",
     principal=employee,
     k=5,
 )
 
-executive_candidates = router.retrieve(
+executive_candidates = router.retrieve_authorized(
     "quarterly finance",
     principal=executive,
     k=5,
