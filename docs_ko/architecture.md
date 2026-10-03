@@ -30,3 +30,25 @@ persistent registry는 schema/catalog state만 저장합니다. invoker, credent
 
 이 계층들은 orchestration, autonomous retry, transaction coordination, authorization 확대를
 수행하지 않습니다.
+
+
+## 추가 불변조건
+
+현재 typed capability infrastructure는 다음 경계를 추가로 지킵니다.
+
+1. Provider-first 등록은 알려진 access method를 해석할 수 있지만 SDK를 자동 설치하거나
+   credential을 저장하거나 execution authority를 부여하지 않습니다.
+2. State-conditioned corrective re-retrieval은 같은 host-visible/available capability surface
+   안에서만 backfill하며 stable stateless retrieval facade를 바꾸지 않습니다.
+3. Capability graph indexing/incremental rebuild는 탐색·갱신 최적화일 뿐이며 canonical
+   compatibility comparator가 계속 최종 권한을 가집니다. Compatibility context가 바뀌면
+   full rebuild가 필요합니다.
+4. Capability snapshot publication은 atomic합니다. Reader는 완성된 predecessor 또는 successor
+   중 하나만 보며 partially rebuilt graph를 관측하지 않습니다. Runtime health는 immutable
+   snapshot identity에 포함되지 않습니다.
+5. Capability artifact/snapshot migration은 명시적 version contract를 사용하고 corrupt/unknown
+   future format을 fail-closed합니다. Migration은 secret, invoker, execution authority를
+   복원하지 않습니다.
+6. Decision trace는 host-visible structured result만 합칠 수 있으며 hidden inventory, rank
+   score, payload, credential, chain-of-thought를 노출하거나 policy/execution 결정을 바꾸지
+   않습니다.
