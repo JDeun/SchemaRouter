@@ -16,7 +16,6 @@ SchemaRouter는 필수 CI에서 deterministic fixture coverage를 유지하고, 
 | Provider profile: Crossref | Yes | Live public provider | provider identity -> public REST works query | Crossref REST API | public availability는 외부 상태 |
 | Provider profile: Tavily | Yes | Auth-contract + optional live | provider identity -> auth-required REST, key가 있으면 live search | Tavily Search API | secret이 없으면 auth-required를 명시하고 실행 성공을 꾸미지 않음 |
 | Provider profile: APIs.guru | Yes | Live public provider | provider identity -> OpenAPI -> read-only metrics request | APIs.guru | public availability는 외부 상태 |
-| Provider profile: AniList | Yes | Live public provider | provider identity -> GraphQL -> read-only media query | AniList | introspection availability가 바뀔 수 있음 |
 | Provider profile: OData V4 reference | Yes | Live public provider | provider identity -> OData -> read-only Products query | OData.org V4 reference service | reference service availability는 외부 상태 |
 
 workflow는 timestamp, SchemaRouter version, source, discovery/execution success, endpoint count, binding state, returned-data shape, latency, auth state, provider-specific note를 machine-readable JSON으로 기록합니다.
@@ -43,6 +42,5 @@ python scripts/live_materials_project_provider_smoke.py
 python scripts/live_crossref_provider_smoke.py
 python scripts/live_tavily_provider_smoke.py
 python scripts/live_provider_first_protocol_smoke.py --provider apis-guru
-python scripts/live_provider_first_protocol_smoke.py --provider anilist
 python scripts/live_provider_first_protocol_smoke.py --provider odata-v4-reference
 ```
