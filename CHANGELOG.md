@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- added a provider-neutral property-graph/RDF capability contract with graph schema discovery,
+  relationship whitelisting, bounded traversal depth/result limits, field projection, and
+  principal-aware graph non-disclosure without exposing arbitrary Cypher/Gremlin/SPARQL execution;
 - added schema-introspected read-only database onboarding through dependency-free SQLite connections
   and caller-owned SQLAlchemy Engines, compiling tables/views/columns into typed capabilities while
   keeping credentials and live connection state outside model-visible contracts; added the optional
