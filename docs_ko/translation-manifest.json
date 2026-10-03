@@ -116,12 +116,12 @@
       "source_blob": "3ed905d10b68702c8d5dff53b8a4d33fc3fcfdce"
     },
     {
-      "path": "guides/capability-eligibility.md",
-      "source_blob": "4a995bc7fcf2736f10594d6f7f40812f8a9b365f"
-    },
-    {
       "path": "guides/consumer-acceptance.md",
       "source_blob": "da49405aea26d8b4e8116236ffe20c7933cea525"
+    },
+    {
+      "path": "guides/contract-aware-fallback.md",
+      "source_blob": "b15bf6ba51c20519ba89b770ea99619175d2b82a"
     },
     {
       "path": "guides/decision-benchmark.md",
