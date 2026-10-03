@@ -641,8 +641,13 @@ class SchemaPlanner:
         intent: QueryIntent,
         *,
         k: int,
+        additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> CapabilityRouteRetrieval:
-        candidates = self._semantic_recall_catalog(request, intent)
+        candidates = self._semantic_recall_catalog(
+            request,
+            intent,
+            additional_availability_predicate=additional_availability_predicate,
+        )
         candidates.sort(key=self._candidate_sort_key)
         return CapabilityRouteRetrieval(
             query=request.query,
@@ -734,8 +739,13 @@ class SchemaPlanner:
         k: int,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+        additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> StateConditionedCapabilityRetrieval:
-        ranked = self._semantic_recall_catalog(request, intent)
+        ranked = self._semantic_recall_catalog(
+            request,
+            intent,
+            additional_availability_predicate=additional_availability_predicate,
+        )
         ranked.sort(key=self._candidate_sort_key)
         visible = [
             self._retrieval_candidate(candidate, rank=index)
@@ -759,6 +769,7 @@ class SchemaPlanner:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+        additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> StateConditionedCapabilityRetrieval:
         """Return the best K state-eligible capabilities from the visible ranked surface."""
 
@@ -779,6 +790,7 @@ class SchemaPlanner:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            additional_availability_predicate=additional_availability_predicate,
         )
 
     async def areretrieve_state_aware(
@@ -789,6 +801,7 @@ class SchemaPlanner:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+        additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> StateConditionedCapabilityRetrieval:
         """Async counterpart to :meth:`reretrieve_state_aware`."""
 
@@ -804,6 +817,7 @@ class SchemaPlanner:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            additional_availability_predicate=additional_availability_predicate,
         )
 
     def retrieve_state_aware(
@@ -814,10 +828,19 @@ class SchemaPlanner:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+        additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> StateAwareCapabilityRetrieval:
         """Return Top-K capabilities filtered by explicit observable typed state."""
 
-        retrieval = self.retrieve(request, k=k)
+        retrieval = (
+            self.retrieve(request, k=k)
+            if additional_availability_predicate is None
+            else self.retrieve_with_additional_availability(
+                request,
+                additional_availability_predicate,
+                k=k,
+            )
+        )
         return filter_retrieval_by_state(
             retrieval,
             execution_state,
@@ -833,15 +856,71 @@ class SchemaPlanner:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+        additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> StateAwareCapabilityRetrieval:
         """Async counterpart to :meth:`retrieve_state_aware`."""
 
-        retrieval = await self.aretrieve(request, k=k)
+        retrieval = (
+            await self.aretrieve(request, k=k)
+            if additional_availability_predicate is None
+            else await self.aretrieve_with_additional_availability(
+                request,
+                additional_availability_predicate,
+                k=k,
+            )
+        )
         return filter_retrieval_by_state(
             retrieval,
             execution_state,
             requirements_by_route=state_requirements,
             preconditions_by_route=state_preconditions,
+        )
+
+    def retrieve_routes_with_additional_availability(
+        self,
+        request: PlanRequest | str,
+        predicate: Callable[[ToolSpec, EndpointSpec], bool],
+        *,
+        k: int = 5,
+    ) -> CapabilityRouteRetrieval:
+        """Retrieve Top-K route references under one extra local visibility rule."""
+
+        k = self._validate_retrieval_k(k)
+        request = self._prepare_request(request)
+        intent = self.analyzer.analyze(request, self.registry)
+        if inspect.isawaitable(intent):
+            if inspect.iscoroutine(intent):
+                intent.close()
+            raise PlanningError(
+                "the configured analyzer is asynchronous; use "
+                "await planner.aretrieve_routes_with_additional_availability(...)"
+            )
+        return self._retrieve_routes_from_intent(
+            request,
+            intent,
+            k=k,
+            additional_availability_predicate=predicate,
+        )
+
+    async def aretrieve_routes_with_additional_availability(
+        self,
+        request: PlanRequest | str,
+        predicate: Callable[[ToolSpec, EndpointSpec], bool],
+        *,
+        k: int = 5,
+    ) -> CapabilityRouteRetrieval:
+        """Async counterpart to :meth:`retrieve_routes_with_additional_availability`."""
+
+        k = self._validate_retrieval_k(k)
+        request = self._prepare_request(request)
+        intent = self.analyzer.analyze(request, self.registry)
+        if inspect.isawaitable(intent):
+            intent = await intent
+        return self._retrieve_routes_from_intent(
+            request,
+            intent,
+            k=k,
+            additional_availability_predicate=predicate,
         )
 
     def retrieve_with_additional_availability(
