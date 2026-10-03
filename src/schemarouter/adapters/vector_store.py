@@ -45,7 +45,7 @@ class VectorCollectionSpec(StrictModel):
     metric: str = "unknown"
     description: str = ""
     metadata_fields: tuple[VectorMetadataField, ...] = ()
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    public_metadata: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_collection(self) -> VectorCollectionSpec:
@@ -56,6 +56,12 @@ class VectorCollectionSpec(StrictModel):
         names = [field.name for field in self.metadata_fields]
         if len(names) != len(set(names)):
             raise ValueError("vector collection metadata field names must be unique")
+        reserved = sorted({"id", "score"} & set(names))
+        if reserved:
+            raise ValueError(
+                "vector collection metadata fields use reserved names: "
+                + ", ".join(reserved)
+            )
         return self
 
 
@@ -305,7 +311,7 @@ async def introspect_vector_backend(
                     field.model_dump(mode="json")
                     for field in collection.metadata_fields
                 ],
-                **dict(collection.metadata),
+                **dict(collection.public_metadata),
             },
         )
 
