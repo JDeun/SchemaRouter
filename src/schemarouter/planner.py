@@ -690,10 +690,7 @@ class SchemaPlanner:
         request: PlanRequest | str,
         *,
         k: int = 5,
-        execution_state: TypedExecutionState | None = None,
-        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
-        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
-    ) -> CapabilityRetrieval | StateAwareCapabilityRetrieval:
+    ) -> CapabilityRetrieval:
         """Return Top-K registered capabilities without planning or execution."""
 
         k = self._validate_retrieval_k(k)
@@ -706,25 +703,14 @@ class SchemaPlanner:
                 "the configured analyzer is asynchronous; use "
                 "await planner.aretrieve(...)"
             )
-        retrieval = self._retrieve_from_intent(request, intent, k=k)
-        if execution_state is None:
-            return retrieval
-        return filter_retrieval_by_state(
-            retrieval,
-            execution_state,
-            requirements_by_route=state_requirements,
-            preconditions_by_route=state_preconditions,
-        )
+        return self._retrieve_from_intent(request, intent, k=k)
 
     async def aretrieve(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
-        execution_state: TypedExecutionState | None = None,
-        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
-        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
-    ) -> CapabilityRetrieval | StateAwareCapabilityRetrieval:
+    ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve`."""
 
         k = self._validate_retrieval_k(k)
@@ -732,9 +718,39 @@ class SchemaPlanner:
         intent = self.analyzer.analyze(request, self.registry)
         if inspect.isawaitable(intent):
             intent = await intent
-        retrieval = self._retrieve_from_intent(request, intent, k=k)
-        if execution_state is None:
-            return retrieval
+        return self._retrieve_from_intent(request, intent, k=k)
+
+    def retrieve_state_aware(
+        self,
+        request: PlanRequest | str,
+        *,
+        execution_state: TypedExecutionState,
+        k: int = 5,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> StateAwareCapabilityRetrieval:
+        """Return Top-K capabilities filtered by explicit observable typed state."""
+
+        retrieval = self.retrieve(request, k=k)
+        return filter_retrieval_by_state(
+            retrieval,
+            execution_state,
+            requirements_by_route=state_requirements,
+            preconditions_by_route=state_preconditions,
+        )
+
+    async def aretrieve_state_aware(
+        self,
+        request: PlanRequest | str,
+        *,
+        execution_state: TypedExecutionState,
+        k: int = 5,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> StateAwareCapabilityRetrieval:
+        """Async counterpart to :meth:`retrieve_state_aware`."""
+
+        retrieval = await self.aretrieve(request, k=k)
         return filter_retrieval_by_state(
             retrieval,
             execution_state,
