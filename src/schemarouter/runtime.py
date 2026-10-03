@@ -30,6 +30,11 @@ from .amendment_overlay import (
     reapply_amendment_overlay,
     strip_amendment_overlay,
 )
+from .authorization import (
+    AuthorizationPolicy,
+    PrincipalContext,
+    _principal_execution_context,
+)
 from .binding_reconciliation import (
     BindingReconciliationError,
     BindingReconciliationItem,
@@ -44,6 +49,7 @@ from .errors import (
     ContractAmendmentError,
     ExecutionInvariantError,
     InvocationUnavailableError,
+    PolicyViolationError,
     ProposalApprovalError,
     RegistrationError,
     SchemaNotModifiedError,
@@ -222,6 +228,7 @@ class SchemaRouter:
         analyzer: QueryAnalyzer | None = None,
         http_client: httpx.AsyncClient | None = None,
         policy: ExecutionPolicy | None = None,
+        authorization_policy: AuthorizationPolicy | None = None,
         approval_callback: ApprovalCallback | None = None,
         execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
@@ -230,9 +237,11 @@ class SchemaRouter:
         unavailable_cooldown_seconds: float = 30.0,
     ) -> None:
         self.registry = registry if registry is not None else InMemoryRegistry()
+        self.authorization_policy = authorization_policy
         self.executor = RegistryExecutor(
             self.registry,
             policy=policy,
+            authorization_policy=authorization_policy,
             approval_callback=approval_callback,
             hooks=execution_hooks,
             unavailable_cooldown_seconds=unavailable_cooldown_seconds,
@@ -262,6 +271,62 @@ class SchemaRouter:
             endpoint.name,
             self.planner._snapshot_tool_fingerprint(tool),
         )
+
+    def _authorization_predicate(
+        self,
+        principal: PrincipalContext | None,
+    ) -> Callable[[ToolSpec, Any], bool] | None:
+        if self.authorization_policy is None:
+            return None
+        if principal is None:
+            raise PolicyViolationError(
+                "principal context is required when authorization_policy is configured"
+            )
+        return lambda tool, endpoint: self.authorization_policy.visible(
+            principal,
+            tool,
+            endpoint,
+        )
+
+    def _combined_availability_predicate(
+        self,
+        principal: PrincipalContext | None,
+        predicate: Callable[[ToolSpec, Any], bool] | None = None,
+    ) -> Callable[[ToolSpec, Any], bool] | None:
+        authorization = self._authorization_predicate(principal)
+        if authorization is None:
+            return predicate
+        if predicate is None:
+            return authorization
+        return lambda tool, endpoint: (
+            authorization(tool, endpoint) and predicate(tool, endpoint)
+        )
+
+    def _validate_plan_authorization(
+        self,
+        plan: ExecutionPlan,
+        principal: PrincipalContext | None,
+    ) -> None:
+        if self.authorization_policy is None:
+            return
+        if principal is None:
+            raise PolicyViolationError(
+                "principal context is required when authorization_policy is configured"
+            )
+        for call in plan.calls:
+            try:
+                tool = self.registry.get(call.tool)
+                endpoint = tool.endpoint(call.endpoint)
+            except KeyError as exc:
+                raise PolicyViolationError(
+                    "authorization denied for requested capability"
+                ) from exc
+            self.authorization_policy.validate(
+                principal,
+                tool,
+                endpoint,
+                call,
+            )
 
     async def __aenter__(self) -> SchemaRouter:
         return self
@@ -512,6 +577,7 @@ class SchemaRouter:
         analyzer: QueryAnalyzer | None = None,
         http_client: httpx.AsyncClient | None = None,
         policy: ExecutionPolicy | None = None,
+        authorization_policy: AuthorizationPolicy | None = None,
         approval_callback: ApprovalCallback | None = None,
         execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
@@ -531,6 +597,7 @@ class SchemaRouter:
             analyzer=analyzer,
             http_client=http_client,
             policy=policy,
+            authorization_policy=authorization_policy,
             approval_callback=approval_callback,
             execution_hooks=execution_hooks,
             registry=registry,
@@ -2596,55 +2663,103 @@ class SchemaRouter:
             )
         )
 
-    def plan(self, request: PlanRequest | str) -> ExecutionPlan:
-        """Schema-aware planning without requiring a currently bound invoker."""
+    def plan(
+        self,
+        request: PlanRequest | str,
+        *,
+        principal: PrincipalContext | None = None,
+    ) -> ExecutionPlan:
+        """Schema-aware planning under the configured principal authorization boundary."""
 
-        return self.planner.plan(request)
+        predicate = self._authorization_predicate(principal)
+        if predicate is None:
+            return self.planner.plan(request)
+        return self.planner.plan_with_additional_availability(request, predicate)
 
-    async def aplan(self, request: PlanRequest | str) -> ExecutionPlan:
-        """Async schema-aware planning without requiring a currently bound invoker."""
+    async def aplan(
+        self,
+        request: PlanRequest | str,
+        *,
+        principal: PrincipalContext | None = None,
+    ) -> ExecutionPlan:
+        """Async schema-aware planning under principal authorization."""
 
-        return await self.planner.aplan(request)
+        predicate = self._authorization_predicate(principal)
+        if predicate is None:
+            return await self.planner.aplan(request)
+        return await self.planner.aplan_with_additional_availability(request, predicate)
 
     def retrieve_routes(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
+        principal: PrincipalContext | None = None,
     ) -> CapabilityRouteRetrieval:
-        """Return lightweight Top-K route references without schema materialization."""
+        """Return lightweight Top-K route references under principal authorization."""
 
-        return self.planner.retrieve_routes(request, k=k)
+        predicate = self._authorization_predicate(principal)
+        if predicate is None:
+            return self.planner.retrieve_routes(request, k=k)
+        return self.planner.retrieve_routes_with_additional_availability(
+            request,
+            predicate,
+            k=k,
+        )
 
     async def aretrieve_routes(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
+        principal: PrincipalContext | None = None,
     ) -> CapabilityRouteRetrieval:
         """Async counterpart to :meth:`retrieve_routes`."""
 
-        return await self.planner.aretrieve_routes(request, k=k)
+        predicate = self._authorization_predicate(principal)
+        if predicate is None:
+            return await self.planner.aretrieve_routes(request, k=k)
+        return await self.planner.aretrieve_routes_with_additional_availability(
+            request,
+            predicate,
+            k=k,
+        )
 
     def retrieve(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
+        principal: PrincipalContext | None = None,
     ) -> CapabilityRetrieval:
-        """Return Top-K typed registered capabilities without executing them."""
+        """Return Top-K typed capabilities under principal authorization."""
 
-        return self.planner.retrieve(request, k=k)
+        predicate = self._authorization_predicate(principal)
+        if predicate is None:
+            return self.planner.retrieve(request, k=k)
+        return self.planner.retrieve_with_additional_availability(
+            request,
+            predicate,
+            k=k,
+        )
 
     async def aretrieve(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
+        principal: PrincipalContext | None = None,
     ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve`."""
 
-        return await self.planner.aretrieve(request, k=k)
+        predicate = self._authorization_predicate(principal)
+        if predicate is None:
+            return await self.planner.aretrieve(request, k=k)
+        return await self.planner.aretrieve_with_additional_availability(
+            request,
+            predicate,
+            k=k,
+        )
 
     def reretrieve_state_aware(
         self,
@@ -2654,8 +2769,9 @@ class SchemaRouter:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+        principal: PrincipalContext | None = None,
     ) -> StateConditionedCapabilityRetrieval:
-        """Backfill to the best K state-eligible capabilities without executing them."""
+        """Backfill to the best K state-eligible capabilities under authorization."""
 
         return self.planner.reretrieve_state_aware(
             request,
@@ -2663,6 +2779,7 @@ class SchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            additional_availability_predicate=self._authorization_predicate(principal),
         )
 
     async def areretrieve_state_aware(
@@ -2673,6 +2790,7 @@ class SchemaRouter:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+        principal: PrincipalContext | None = None,
     ) -> StateConditionedCapabilityRetrieval:
         """Async counterpart to :meth:`reretrieve_state_aware`."""
 
@@ -2682,6 +2800,7 @@ class SchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            additional_availability_predicate=self._authorization_predicate(principal),
         )
 
     def retrieve_state_aware(
@@ -2692,8 +2811,9 @@ class SchemaRouter:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+        principal: PrincipalContext | None = None,
     ) -> StateAwareCapabilityRetrieval:
-        """Retrieve registered capabilities under explicit observable typed state."""
+        """Retrieve registered capabilities under state and principal authorization."""
 
         return self.planner.retrieve_state_aware(
             request,
@@ -2701,6 +2821,7 @@ class SchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            additional_availability_predicate=self._authorization_predicate(principal),
         )
 
     async def aretrieve_state_aware(
@@ -2711,6 +2832,7 @@ class SchemaRouter:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+        principal: PrincipalContext | None = None,
     ) -> StateAwareCapabilityRetrieval:
         """Async counterpart to :meth:`retrieve_state_aware`."""
 
@@ -2720,6 +2842,7 @@ class SchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            additional_availability_predicate=self._authorization_predicate(principal),
         )
 
     def _binding_ready(self, tool: ToolSpec, endpoint: Any) -> bool:
@@ -2729,20 +2852,37 @@ class SchemaRouter:
             tool.fingerprint,
         )
 
-    def plan_executable(self, request: PlanRequest | str) -> ExecutionPlan:
-        """Plan only across routes that are currently executable by this router instance."""
+    def plan_executable(
+        self,
+        request: PlanRequest | str,
+        *,
+        principal: PrincipalContext | None = None,
+    ) -> ExecutionPlan:
+        """Plan only across routes that are authorized and currently executable."""
 
-        return self.planner.plan_with_additional_availability(
-            request,
+        predicate = self._combined_availability_predicate(
+            principal,
             self._binding_ready,
         )
+        assert predicate is not None
+        return self.planner.plan_with_additional_availability(request, predicate)
 
-    async def aplan_executable(self, request: PlanRequest | str) -> ExecutionPlan:
+    async def aplan_executable(
+        self,
+        request: PlanRequest | str,
+        *,
+        principal: PrincipalContext | None = None,
+    ) -> ExecutionPlan:
         """Async counterpart to :meth:`plan_executable`."""
 
+        predicate = self._combined_availability_predicate(
+            principal,
+            self._binding_ready,
+        )
+        assert predicate is not None
         return await self.planner.aplan_with_additional_availability(
             request,
-            self._binding_ready,
+            predicate,
         )
 
     def retrieve_executable(
@@ -2750,12 +2890,18 @@ class SchemaRouter:
         request: PlanRequest | str,
         *,
         k: int = 5,
+        principal: PrincipalContext | None = None,
     ) -> CapabilityRetrieval:
-        """Return Top-K capabilities with a currently ready local binding."""
+        """Return Top-K authorized capabilities with a ready local binding."""
 
+        predicate = self._combined_availability_predicate(
+            principal,
+            self._binding_ready,
+        )
+        assert predicate is not None
         return self.planner.retrieve_with_additional_availability(
             request,
-            self._binding_ready,
+            predicate,
             k=k,
             executable_only=True,
         )
@@ -2765,12 +2911,18 @@ class SchemaRouter:
         request: PlanRequest | str,
         *,
         k: int = 5,
+        principal: PrincipalContext | None = None,
     ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve_executable`."""
 
+        predicate = self._combined_availability_predicate(
+            principal,
+            self._binding_ready,
+        )
+        assert predicate is not None
         return await self.planner.aretrieve_with_additional_availability(
             request,
-            self._binding_ready,
+            predicate,
             k=k,
             executable_only=True,
         )
@@ -2780,18 +2932,20 @@ class SchemaRouter:
         plan: ExecutionPlan,
         run_config: RunConfig,
     ) -> list[ToolResult]:
-        if run_config.execution_mode == "parallel_read_only":
-            return await self.executor.execute_parallel_read_only(
+        self._validate_plan_authorization(plan, run_config.principal)
+        with _principal_execution_context(run_config.principal):
+            if run_config.execution_mode == "parallel_read_only":
+                return await self.executor.execute_parallel_read_only(
+                    plan,
+                    retry=run_config.retry,
+                    budget=run_config.budget,
+                    max_concurrency=run_config.max_parallel_calls,
+                )
+            return await self.executor.execute(
                 plan,
                 retry=run_config.retry,
                 budget=run_config.budget,
-                max_concurrency=run_config.max_parallel_calls,
             )
-        return await self.executor.execute(
-            plan,
-            retry=run_config.retry,
-            budget=run_config.budget,
-        )
 
     async def execute(
         self,
@@ -2809,7 +2963,10 @@ class SchemaRouter:
         config: RunConfig | dict[str, Any] | None = None,
     ) -> list[ToolResult]:
         run_config = _coerce_config(config)
-        plan = await self.aplan_executable(request)
+        plan = await self.aplan_executable(
+            request,
+            principal=run_config.principal,
+        )
         return await self._execute_plan(plan, run_config)
 
     def invoke(
@@ -2912,23 +3069,27 @@ class SchemaRouter:
         config: RunConfig | dict[str, Any] | None = None,
     ) -> AsyncIterator[ToolResult]:
         run_config = _coerce_config(config)
-        plan = await self.aplan_executable(request)
-        if run_config.execution_mode == "parallel_read_only":
-            async for _, result in self.executor.execute_parallel_read_only_iter(
+        plan = await self.aplan_executable(
+            request,
+            principal=run_config.principal,
+        )
+        with _principal_execution_context(run_config.principal):
+            if run_config.execution_mode == "parallel_read_only":
+                async for _, result in self.executor.execute_parallel_read_only_iter(
+                    plan,
+                    retry=run_config.retry,
+                    budget=run_config.budget,
+                    max_concurrency=run_config.max_parallel_calls,
+                ):
+                    yield result
+                return
+
+            async for result in self.executor.execute_iter(
                 plan,
                 retry=run_config.retry,
                 budget=run_config.budget,
-                max_concurrency=run_config.max_parallel_calls,
             ):
                 yield result
-            return
-
-        async for result in self.executor.execute_iter(
-            plan,
-            retry=run_config.retry,
-            budget=run_config.budget,
-        ):
-            yield result
 
     def stream(
         self,
@@ -2974,7 +3135,10 @@ class SchemaRouter:
         sequence += 1
 
         try:
-            plan = await self.aplan_executable(request)
+            plan = await self.aplan_executable(
+                request,
+                principal=run_config.principal,
+            )
         except Exception as exc:
             data = {"error_type": type(exc).__name__, "stage": "planning"}
             if run_config.include_payloads:
@@ -3074,12 +3238,13 @@ class SchemaRouter:
                             ("start", index, call, original_candidate_index)
                         )
                         try:
-                            result = await self.executor.execute_call(
-                                call,
-                                retry=run_config.retry,
-                                budget=run_config.budget,
-                                _tracker=budget_tracker,
-                            )
+                            with _principal_execution_context(run_config.principal):
+                                result = await self.executor.execute_call(
+                                    call,
+                                    retry=run_config.retry,
+                                    budget=run_config.budget,
+                                    _tracker=budget_tracker,
+                                )
                         except InvocationUnavailableError as exc:
                             has_next = candidate_index + 1 < len(chain)
                             next_call = (
@@ -3453,12 +3618,13 @@ class SchemaRouter:
                 sequence += 1
 
                 try:
-                    result = await self.executor.execute_call(
-                        call,
-                        retry=run_config.retry,
-                        budget=run_config.budget,
-                        _tracker=budget_tracker,
-                    )
+                    with _principal_execution_context(run_config.principal):
+                        result = await self.executor.execute_call(
+                            call,
+                            retry=run_config.retry,
+                            budget=run_config.budget,
+                            _tracker=budget_tracker,
+                        )
                 except InvocationUnavailableError as exc:
                     has_next = candidate_index + 1 < len(chain)
                     error_data: dict[str, Any] = {
@@ -3609,7 +3775,11 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRouteRetrieval:
-        return self.router.retrieve_routes(request, k=k)
+        return self.router.retrieve_routes(
+            request,
+            k=k,
+            principal=self.config.principal,
+        )
 
     async def aretrieve_routes(
         self,
@@ -3617,7 +3787,11 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRouteRetrieval:
-        return await self.router.aretrieve_routes(request, k=k)
+        return await self.router.aretrieve_routes(
+            request,
+            k=k,
+            principal=self.config.principal,
+        )
 
     def retrieve(
         self,
@@ -3625,7 +3799,11 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRetrieval:
-        return self.router.retrieve(request, k=k)
+        return self.router.retrieve(
+            request,
+            k=k,
+            principal=self.config.principal,
+        )
 
     async def aretrieve(
         self,
@@ -3633,7 +3811,11 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRetrieval:
-        return await self.router.aretrieve(request, k=k)
+        return await self.router.aretrieve(
+            request,
+            k=k,
+            principal=self.config.principal,
+        )
 
     def reretrieve_state_aware(
         self,
@@ -3650,6 +3832,7 @@ class ConfiguredSchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            principal=self.config.principal,
         )
 
     async def areretrieve_state_aware(
@@ -3667,6 +3850,7 @@ class ConfiguredSchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            principal=self.config.principal,
         )
 
     def retrieve_state_aware(
@@ -3684,6 +3868,7 @@ class ConfiguredSchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            principal=self.config.principal,
         )
 
     async def aretrieve_state_aware(
@@ -3701,6 +3886,7 @@ class ConfiguredSchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            principal=self.config.principal,
         )
 
     def retrieve_executable(
@@ -3709,7 +3895,11 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRetrieval:
-        return self.router.retrieve_executable(request, k=k)
+        return self.router.retrieve_executable(
+            request,
+            k=k,
+            principal=self.config.principal,
+        )
 
     async def aretrieve_executable(
         self,
@@ -3717,7 +3907,11 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRetrieval:
-        return await self.router.aretrieve_executable(request, k=k)
+        return await self.router.aretrieve_executable(
+            request,
+            k=k,
+            principal=self.config.principal,
+        )
 
     def invoke(self, request: PlanRequest | str) -> list[ToolResult]:
         return self.router.invoke(request, config=self.config)
