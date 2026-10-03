@@ -612,20 +612,20 @@ def built_in_provider_profile_registry() -> ProviderProfileRegistry:
     )
     registry.register(
         ProviderProfile(
-            provider_id="countries-graphql",
-            display_name="Countries GraphQL API",
-            aliases=("countries", "countries-api", "countries graphql"),
+            provider_id="anilist",
+            display_name="AniList",
+            aliases=("anilist-graphql",),
             profile_version="1",
             profile_source="schemarouter:builtin",
-            homepage="https://github.com/trevorblades/countries",
+            homepage="https://anilist.co",
             methods=(
                 ProviderAccessMethod(
                     method_id="graphql",
                     kind="graphql",
                     access_mode="graphql",
-                    url="https://countries.trevorblades.com/",
+                    url="https://graphql.anilist.co",
                     description=(
-                        "Public countries GraphQL API used for provider-first "
+                        "Public AniList GraphQL API used for provider-first "
                         "introspection and read-only acceptance."
                     ),
                 ),
