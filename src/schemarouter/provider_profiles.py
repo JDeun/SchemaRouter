@@ -82,7 +82,7 @@ class ProviderProfile(StrictModel):
 
     @model_validator(mode="after")
     def validate_profile(self) -> ProviderProfile:
-        canonical = _normalize_provider_name(self.provider_id)
+        _normalize_provider_name(self.provider_id)
         method_ids = [method.method_id for method in self.methods]
         if len(method_ids) != len(set(method_ids)):
             raise ValueError("provider access method IDs must be unique")
