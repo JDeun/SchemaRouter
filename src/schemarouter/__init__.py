@@ -89,6 +89,20 @@ from .capability_drift import (
     capability_contract_fingerprint,
     compare_capability_graph_snapshot,
 )
+from .capability_decision_trace import (
+    CapabilityDecisionCandidate,
+    CapabilityDecisionCandidateInput,
+    CapabilityDecisionDisposition,
+    CapabilityDecisionReason,
+    CapabilityDecisionStage,
+    CapabilityDecisionTrace,
+    CapabilityDriftDisposition,
+    CapabilityHealthDisposition,
+    CapabilityPolicyDisposition,
+    CapabilityRetrievalDisposition,
+    build_capability_decision_trace,
+    render_capability_decision_trace,
+)
 from .capability_eligibility import (
     CapabilityEligibilityExplanation,
     CapabilityEligibilityReason,
@@ -236,6 +250,8 @@ from .ingestion import (
     SourceProbeResult,
 )
 from .inspection import (
+    CapabilityDecisionCandidateInspection,
+    CapabilityDecisionTraceInspection,
     EndpointInspection,
     ExecutionInspection,
     FieldInspection,
@@ -245,6 +261,7 @@ from .inspection import (
     RouterInspection,
     ToolInspection,
     TraceInspection,
+    inspect_capability_decision_trace,
     inspect_registry,
     inspect_router,
     inspect_run_trace,
@@ -665,5 +682,20 @@ __all__ = [
     "load_capability_snapshot",
     "migrate_capability_snapshot",
     "serialize_capability_snapshot",
-    "validate_capability_snapshot",
+    "validate_capability_snapshot",    "CapabilityDecisionCandidate",
+    "CapabilityDecisionCandidateInput",
+    "CapabilityDecisionDisposition",
+    "CapabilityDecisionReason",
+    "CapabilityDecisionStage",
+    "CapabilityDecisionTrace",
+    "CapabilityDriftDisposition",
+    "CapabilityHealthDisposition",
+    "CapabilityPolicyDisposition",
+    "CapabilityRetrievalDisposition",
+    "build_capability_decision_trace",
+    "render_capability_decision_trace",
+    "CapabilityDecisionCandidateInspection",
+    "CapabilityDecisionTraceInspection",
+    "inspect_capability_decision_trace",
+
 ]
