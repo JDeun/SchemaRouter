@@ -3,7 +3,12 @@ from __future__ import annotations
 from pydantic import Field
 
 from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
-from .execution_state import (\n    StateEligibility,\n    TypedExecutionState,\n    evaluate_preconditions,\n    evaluate_state_eligibility,\n)
+from .execution_state import (
+    StateEligibility,
+    TypedExecutionState,
+    evaluate_preconditions,
+    evaluate_state_eligibility,
+)
 from .models import CapabilityCandidate, CapabilityRetrieval, StrictModel
 
 
@@ -24,28 +29,35 @@ def filter_retrieval_by_state(
     retrieval: CapabilityRetrieval,
     state: TypedExecutionState,
     *,
-    requirements_by_route: dict[str, list[CapabilityFieldContract]] | None = None,\n    preconditions_by_route: dict[str, list[CapabilityPrecondition]] | None = None,
+    requirements_by_route: dict[str, list[CapabilityFieldContract]] | None = None,
+    preconditions_by_route: dict[str, list[CapabilityPrecondition]] | None = None,
 ) -> StateAwareCapabilityRetrieval:
-    """Filter an existing retrieval result against host-supplied typed state.
+    """Filter retrieval against explicit host-supplied typed state contracts.
 
-    The host may supply route-specific requirements. If omitted, only explicit
-    semantic IDs on required parameters are considered. Ranking among surviving
-    candidates is preserved and no execution or workflow planning occurs.
+    Missing route metadata means no state precondition. SchemaRouter never infers
+    workflow state from route names, parameter names, descriptions, or call history.
     """
 
-    overrides = requirements_by_route or {}\n    precondition_overrides = preconditions_by_route or {}
+    requirements = requirements_by_route or {}
+    preconditions = preconditions_by_route or {}
     candidates: list[StateAwareCapabilityCandidate] = []
     for candidate in retrieval.candidates:
-        requirements = overrides.get(
-            candidate.route_id,
-            candidate_state_requirements(candidate),
+        eligibility = evaluate_state_eligibility(
+            requirements.get(candidate.route_id, []),
+            state,
         )
-        eligibility = evaluate_state_eligibility(requirements, state)
         if eligibility.eligible:
-            candidates.append(StateAwareCapabilityCandidate(
-                candidate=candidate,
-                eligibility=eligibility,
-            ))
+            eligibility = evaluate_preconditions(
+                preconditions.get(candidate.route_id, []),
+                state,
+            )
+        if eligibility.eligible:
+            candidates.append(
+                StateAwareCapabilityCandidate(
+                    candidate=candidate,
+                    eligibility=eligibility,
+                )
+            )
     return StateAwareCapabilityRetrieval(
         query=retrieval.query,
         registry_version=retrieval.registry_version,
