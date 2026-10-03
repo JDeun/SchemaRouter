@@ -59,6 +59,13 @@ from .capability_graph import (
     dependency_cycles,
     satisfiable_capability_ids,
 )
+from .capability_negotiation import (
+    CapabilityNegotiationCandidate,
+    CapabilityNegotiationRequest,
+    CapabilityNegotiationResult,
+    NegotiationStatus,
+    negotiate_capabilities,
+)
 from .contract_validation import (
     CapabilityContractValidation,
     CapabilityObservation,
@@ -294,6 +301,9 @@ __all__ = [
     "CapabilityComposition",
     "CapabilityContract",
     "CapabilityContractValidation",
+    "CapabilityNegotiationCandidate",
+    "CapabilityNegotiationRequest",
+    "CapabilityNegotiationResult",
     "CapabilityObservation",
     "ContractFieldValidation",
     "ContractValidationStatus",
@@ -359,6 +369,7 @@ __all__ = [
     "ModelAnalysisError",
     "ModelCallable",
     "ModelQueryAnalyzer",
+    "NegotiationStatus",
     "MutableToolRegistry",
     "NonRetryableInvocationError",
     "ODataSourceAdapter",
@@ -453,6 +464,7 @@ __all__ = [
     "write_schema_explorer",
     "inspect_sqlite_storage",
     "migrate_sqlite_storage",
+    "negotiate_capabilities",
     "dependency_cycles",
     "satisfiable_capability_ids",
     "discover_adapter_plugins",
