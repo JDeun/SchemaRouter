@@ -52,6 +52,13 @@ from .capability_contracts import (
     compare_capability_composition,
     compare_capability_fields,
 )
+from .capability_drift import (
+    CapabilityDriftChange,
+    CapabilityDriftCompatibility,
+    CapabilityGraphDrift,
+    capability_contract_fingerprint,
+    compare_capability_graph_snapshot,
+)
 from .capability_graph import (
     CapabilityDependencyEdge,
     CapabilityDependencyGraph,
@@ -289,6 +296,9 @@ __all__ = [
     "CapabilityCandidate",
     "CapabilityCompatibility",
     "CapabilityDependencyEdge",
+    "CapabilityDriftChange",
+    "CapabilityDriftCompatibility",
+    "CapabilityGraphDrift",
     "CapabilityDependencyGraph",
     "CapabilityComposition",
     "CapabilityContract",
@@ -439,6 +449,8 @@ __all__ = [
     "choose_async",
     "choose_sync",
     "build_capability_dependency_graph",
+    "capability_contract_fingerprint",
+    "compare_capability_graph_snapshot",
     "compare_capability_composition",
     "compare_capability_fields",
     "evaluate_state_eligibility",
