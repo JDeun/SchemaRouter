@@ -138,6 +138,14 @@ evidence, not a release-blocking dependency.
 
 <div class="grid cards" markdown>
 
+-   **Provider identity**
+
+    Best when you know the service you want, but not every protocol or SDK it exposes.
+
+    `await router.add_provider("materials-project")`
+
+    [Provider-first registration →](guides/provider-first-registration.md)
+
 -   **Python**
 
     Best when the capability is local and typed.
@@ -185,10 +193,11 @@ flow and never becomes executable automatically.
 
 ## Current release
 
-Version `0.14.0` is the **operability and ecosystem-validation release** on top of the stable-core
-boundary. It adds source probing, startup rebinding, storage migrations, explicit schema-drift
-review, unified shutdown, the Capability Explorer, bilingual documentation, and broader
-installed-package ecosystem validation without reopening the core architecture.
+Version `0.14.0` is the current stable **operability and ecosystem-validation release**.
+Current `main` adds compatible follow-up infrastructure without reopening the execution boundary:
+provider-first onboarding, explicit state-conditioned re-retrieval, indexed/incremental capability
+graphs, atomic snapshot publication, versioned artifact/snapshot migration, and unified
+privacy-safe decision traces.
 
 Version `0.12.0` established the frozen **stable core** and `0.11.0` introduced first-class
 bounded Top-K capability retrieval. Research may improve ranking, index implementations, shortlist
