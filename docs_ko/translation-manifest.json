@@ -276,6 +276,10 @@
       "source_blob": "ac0ae907e8bee5b393993a1da071e3613f78b68f"
     },
     {
+      "path": "guides/vector-store-onboarding.md",
+      "source_blob": "2fc260701c32cb3689a26def094274d28934bf3a"
+    },
+    {
       "path": "index.md",
       "source_blob": "533bb1356ce95249bddde1ed33d16371bb35592e"
     },

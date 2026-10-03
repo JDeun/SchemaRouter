@@ -51,6 +51,7 @@ nav:
       - 선언형 HTTP/JSON: guides/http-json.md
       - Provider 중심 등록: guides/provider-first-registration.md
       - 데이터베이스 등록: guides/database-onboarding.md
+      - Vector store 등록: guides/vector-store-onboarding.md
       - 범용 입력 매트릭스: guides/universal-ingestion.md
       - 실서비스 호환성 매트릭스: guides/live-compatibility-matrix.md
       - 사람이 읽는 API 문서: guides/html-documentation.md

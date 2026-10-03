@@ -32,6 +32,15 @@ from .adapters.sqlite_database import (
     SQLiteTableInvoker,
     introspect_sqlite_database,
 )
+from .adapters.vector_store import (
+    VectorCollectionBinding,
+    VectorCollectionInvoker,
+    VectorCollectionSpec,
+    VectorMetadataField,
+    VectorQueryEmbedder,
+    VectorStoreBackend,
+    introspect_vector_backend,
+)
 from .aggregation import (
     AggregatedField,
     CanonicalEntity,
@@ -629,6 +638,12 @@ __all__ = [
     "ToolRegistry",
     "ToolResult",
     "ToolSpec",
+    "VectorCollectionBinding",
+    "VectorCollectionInvoker",
+    "VectorCollectionSpec",
+    "VectorMetadataField",
+    "VectorQueryEmbedder",
+    "VectorStoreBackend",
     "UnitNormalizationSpec",
     "TraceError",
     "UnsupportedSchemaSourceError",
@@ -655,6 +670,7 @@ __all__ = [
     "write_schema_explorer",
     "inspect_sqlite_storage",
     "introspect_sqlite_database",
+    "introspect_vector_backend",
     "introspect_sqlalchemy_engine",
     "migrate_sqlite_storage",
     "dependency_cycles",
