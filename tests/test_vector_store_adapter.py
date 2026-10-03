@@ -8,6 +8,7 @@ from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
     ExecutionPlan,
+    PolicyViolationError,
     PrincipalContext,
     RunConfig,
     SchemaRouter,
@@ -266,7 +267,7 @@ async def test_vector_collections_compose_with_principal_authorization() -> None
         query="board forecast",
         fields=["id", "title"],
     )
-    with pytest.raises(Exception, match="authorization denied"):
+    with pytest.raises(PolicyViolationError, match="authorization denied"):
         await router.execute(plan, config=RunConfig(principal=employee))
 
     result = await router.execute(
