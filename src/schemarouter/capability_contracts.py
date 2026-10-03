@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import Literal
 
 from pydantic import Field, model_validator
@@ -44,15 +45,55 @@ class CapabilityFieldContract(StrictModel):
         )
 
 
+class SemanticEquivalence(StrictModel):
+    """Explicit semantic equivalence; never inferred from spelling similarity."""
+
+    canonical_id: str
+    aliases: set[str] = Field(default_factory=set)
+
+    def contains(self, semantic_id: str) -> bool:
+        return semantic_id == self.canonical_id or semantic_id in self.aliases
+
+
+class UnitConversion(StrictModel):
+    """Declared safe unit conversion relation for one dimension."""
+
+    dimension: str
+    from_unit: str
+    to_unit: str
+
+
+class CompatibilityContext(StrictModel):
+    semantic_equivalences: list[SemanticEquivalence] = Field(default_factory=list)
+    unit_conversions: list[UnitConversion] = Field(default_factory=list)
+
+    def semantics_equivalent(self, left: str, right: str) -> bool:
+        if left == right:
+            return True
+        return any(item.contains(left) and item.contains(right) for item in self.semantic_equivalences)
+
+    def unit_convertible(self, dimension: str, from_unit: str, to_unit: str) -> bool:
+        if from_unit == to_unit:
+            return True
+        return any(
+            item.dimension == dimension
+            and item.from_unit == from_unit
+            and item.to_unit == to_unit
+            for item in self.unit_conversions
+        )
+
+
 class CompatibilityReason(StrictModel):
     code: Literal[
         "semantic_id_mismatch",
+        "semantic_equivalence_declared",
         "type_incompatible",
         "unit_incompatible",
         "dimension_incompatible",
         "qualifier_mismatch",
         "conversion_declared",
         "metadata_incomplete",
+        "missing_requirement",
     ]
     detail: str
 
@@ -60,6 +101,21 @@ class CompatibilityReason(StrictModel):
 class CapabilityCompatibility(StrictModel):
     status: CompatibilityStatus
     reasons: list[CompatibilityReason] = Field(default_factory=list)
+
+    @property
+    def satisfies(self) -> bool:
+        return self.status in {"exact", "compatible", "convertible"}
+
+
+class CapabilityContract(StrictModel):
+    capability_id: str
+    requires: list[CapabilityFieldContract] = Field(default_factory=list)
+    produces: list[CapabilityFieldContract] = Field(default_factory=list)
+
+
+class CapabilityComposition(StrictModel):
+    status: CompatibilityStatus
+    requirements: dict[str, CapabilityCompatibility] = Field(default_factory=dict)
 
     @property
     def satisfies(self) -> bool:
@@ -92,18 +148,28 @@ def _type_compatible(required: dict, produced: dict) -> bool | None:
 def compare_capability_fields(
     required: CapabilityFieldContract,
     produced: CapabilityFieldContract,
+    *,
+    context: CompatibilityContext | None = None,
 ) -> CapabilityCompatibility:
     """Compare one produced field against one required field without executing anything."""
 
     reasons: list[CompatibilityReason] = []
-    if required.semantic_id != produced.semantic_id:
-        return CapabilityCompatibility(
-            status="incompatible",
-            reasons=[CompatibilityReason(
-                code="semantic_id_mismatch",
-                detail=f"{produced.semantic_id!r} does not satisfy {required.semantic_id!r}",
-            )],
-        )
+    semantic_exact = required.semantic_id == produced.semantic_id
+    if not semantic_exact:
+        if context is None or not context.semantics_equivalent(
+            required.semantic_id, produced.semantic_id
+        ):
+            return CapabilityCompatibility(
+                status="incompatible",
+                reasons=[CompatibilityReason(
+                    code="semantic_id_mismatch",
+                    detail=f"{produced.semantic_id!r} does not satisfy {required.semantic_id!r}",
+                )],
+            )
+        reasons.append(CompatibilityReason(
+            code="semantic_equivalence_declared",
+            detail="semantic compatibility is explicitly declared",
+        ))
 
     type_compatible = _type_compatible(required.json_schema, produced.json_schema)
     if type_compatible is False:
@@ -125,13 +191,32 @@ def compare_capability_fields(
             detail=f"{produced.dimension!r} does not match required {required.dimension!r}",
         ))
 
+    unit_convertible = False
     if required.unit and produced.unit and required.unit != produced.unit:
-        reasons.append(CompatibilityReason(
-            code="unit_incompatible",
-            detail=f"{produced.unit!r} does not match required {required.unit!r}",
-        ))
+        dimension = required.dimension or produced.dimension
+        if (
+            dimension is not None
+            and context is not None
+            and context.unit_convertible(dimension, produced.unit, required.unit)
+        ):
+            unit_convertible = True
+            reasons.append(CompatibilityReason(
+                code="conversion_declared",
+                detail=f"declared conversion {produced.unit!r} -> {required.unit!r}",
+            ))
+        else:
+            reasons.append(CompatibilityReason(
+                code="unit_incompatible",
+                detail=f"{produced.unit!r} does not match required {required.unit!r}",
+            ))
 
-    if reasons:
+    incompatible_codes = {
+        "type_incompatible",
+        "qualifier_mismatch",
+        "dimension_incompatible",
+        "unit_incompatible",
+    }
+    if any(reason.code in incompatible_codes for reason in reasons):
         return CapabilityCompatibility(status="incompatible", reasons=reasons)
 
     incomplete = (
@@ -140,14 +225,71 @@ def compare_capability_fields(
         or (required.dimension is not None and produced.dimension is None)
     )
     if incomplete:
-        return CapabilityCompatibility(
-            status="unknown",
-            reasons=[CompatibilityReason(
-                code="metadata_incomplete",
-                detail="declared metadata is insufficient to prove compatibility",
-            )],
-        )
+        reasons.append(CompatibilityReason(
+            code="metadata_incomplete",
+            detail="declared metadata is insufficient to prove compatibility",
+        ))
+        return CapabilityCompatibility(status="unknown", reasons=reasons)
 
+    if unit_convertible:
+        return CapabilityCompatibility(status="convertible", reasons=reasons)
     if required.model_dump() == produced.model_dump():
-        return CapabilityCompatibility(status="exact")
-    return CapabilityCompatibility(status="compatible")
+        return CapabilityCompatibility(status="exact", reasons=reasons)
+    return CapabilityCompatibility(status="compatible", reasons=reasons)
+
+
+def compare_capability_composition(
+    producer: CapabilityContract,
+    consumer: CapabilityContract,
+    *,
+    context: CompatibilityContext | None = None,
+) -> CapabilityComposition:
+    """Check whether producer outputs can satisfy every consumer requirement."""
+
+    results: dict[str, CapabilityCompatibility] = {}
+    statuses: list[CompatibilityStatus] = []
+    for required in consumer.requires:
+        candidates = [
+            compare_capability_fields(required, produced, context=context)
+            for produced in producer.produces
+        ]
+        satisfiable = [candidate for candidate in candidates if candidate.satisfies]
+        unknown = [candidate for candidate in candidates if candidate.status == "unknown"]
+        if satisfiable:
+            result = min(satisfiable, key=lambda item: _status_rank(item.status))
+        elif unknown:
+            result = unknown[0]
+        else:
+            result = CapabilityCompatibility(
+                status="incompatible",
+                reasons=[CompatibilityReason(
+                    code="missing_requirement",
+                    detail=f"producer does not satisfy required semantic field {required.semantic_id!r}",
+                )],
+            )
+        results[required.semantic_id] = result
+        statuses.append(result.status)
+
+    return CapabilityComposition(
+        status=_composition_status(statuses),
+        requirements=results,
+    )
+
+
+def _status_rank(status: CompatibilityStatus) -> int:
+    return {"exact": 0, "compatible": 1, "convertible": 2, "unknown": 3, "incompatible": 4}[status]
+
+
+def _composition_status(statuses: Iterable[CompatibilityStatus]) -> CompatibilityStatus:
+    values = list(statuses)
+    if not values:
+        return "exact"
+    if "incompatible" in values:
+        return "incompatible"
+    if "unknown" in values:
+        return "unknown"
+    if "convertible" in values:
+        return "convertible"
+    if "compatible" in values:
+        return "compatible"
+    return "exact"
