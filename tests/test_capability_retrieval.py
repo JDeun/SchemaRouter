@@ -4,6 +4,9 @@ import pytest
 
 from schemarouter import (
     CallableDecisionBackend,
+    CapabilityFieldContract,
+    ObservedStateField,
+    TypedExecutionState,
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
@@ -556,3 +559,47 @@ def test_semantic_namespace_token_does_not_count_as_field_evidence() -> None:
         component.kind not in {"field_exact", "field_lexical", "field_substring"}
         for component in unsupported.candidates[0].score_components
     )
+
+
+def test_retrieve_accepts_optional_typed_execution_state() -> None:
+    router = make_retrieval_router()
+    state = TypedExecutionState(
+        observed_fields=[
+            ObservedStateField(
+                contract=CapabilityFieldContract(
+                    semantic_id="resource.material_id",
+                    json_schema={"type": "string"},
+                ),
+                stable_identifier="MAT-7",
+            )
+        ]
+    )
+
+    result = router.retrieve(
+        "Young's modulus",
+        k=3,
+        execution_state=state,
+        state_requirements={
+            "materials.current": [CapabilityFieldContract(
+                semantic_id="resource.material_id",
+                json_schema={"type": "string"},
+            )],
+            "materials.history": [CapabilityFieldContract(
+                semantic_id="missing.future.state",
+                json_schema={"type": "string"},
+            )],
+        },
+    )
+
+    route_ids = [item.candidate.route_id for item in result.candidates]
+    assert "materials.current" in route_ids
+    assert "materials.history" not in route_ids
+
+
+def test_retrieve_without_execution_state_preserves_stateless_contract() -> None:
+    router = make_retrieval_router()
+
+    result = router.retrieve("Young's modulus", k=2)
+
+    assert result.executable_only is False
+    assert all(hasattr(candidate, "route_id") for candidate in result.candidates)
