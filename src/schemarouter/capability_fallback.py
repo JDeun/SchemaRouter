@@ -63,3 +63,11 @@ def evaluate_fallback_eligibility(
     if reasons:
         return CapabilityFallbackEligibility(eligible=False, reasons=reasons)
     return CapabilityFallbackEligibility(eligible=True, reasons=["eligible"])
+
+
+def eligible_fallback_ids(
+    candidates: list[tuple[str, CapabilityFallbackEligibility]],
+) -> tuple[str, ...]:
+    """Return eligible fallback IDs in host-supplied deterministic order."""
+
+    return tuple(candidate_id for candidate_id, result in candidates if result.eligible)
