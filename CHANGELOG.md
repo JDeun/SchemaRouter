@@ -9,6 +9,10 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- added a provider-neutral non-relational record-store contract covering document, search,
+  key-value and time-series sources with schema discovery, exact-match filters, optional bounded
+  text/time queries, field projection, and principal-aware source non-disclosure without exposing
+  raw vendor query DSLs;
 - added schema-introspected read-only database onboarding through dependency-free SQLite connections
   and caller-owned SQLAlchemy Engines, compiling tables/views/columns into typed capabilities while
   keeping credentials and live connection state outside model-visible contracts; added the optional
