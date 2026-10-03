@@ -11,7 +11,24 @@ pip install schemarouter
 
 이 예제에는 API key가 필요하지 않습니다.
 
-## 2. 실제 OpenAPI capability 탐색 및 실행
+## 2. Provider 이름으로 시작하기
+
+사용자가 원하는 provider만 알고 protocol/SDK 구성은 모른다면 provider-first 등록을 사용합니다.
+
+```python
+from schemarouter import SchemaRouter
+
+router = SchemaRouter()
+result = await router.add_provider("materials-project")
+```
+
+SchemaRouter가 알려진 access method를 해석하고 현재 환경에서 안전하게 사용할 수 있는 method만
+등록합니다. 초기 실제 acceptance provider는 Materials Project, Crossref, Tavily입니다.
+Credential이나 optional SDK가 없으면 추측하거나 설치하지 않고 상태로 보고합니다.
+
+[Provider 중심 등록 자세히 보기 →](../guides/provider-first-registration.md)
+
+## 3. 실제 OpenAPI capability 탐색 및 실행
 
 아래 예제는 APIs.guru가 공개한 OpenAPI 문서를 그대로 읽습니다. 예제용으로 꾸며 낸 스키마나
 고정된 응답값이 아니라, 외부 서비스가 실제로 공개한 계약과 데이터를 사용합니다.
@@ -40,7 +57,7 @@ current numAPIs: <current positive integer>
 3. planner가 등록된 catalog 안에서 bounded capability를 선택합니다.
 4. executor가 호출과 raw response를 검증한 뒤 `ToolResult`를 반환합니다.
 
-## 3. 왜 live provider를 필수 CI로 쓰지 않나
+## 4. 왜 live provider를 필수 CI로 쓰지 않나
 
 공개 서비스에는 rate limit, schema 변경, 장애가 생길 수 있습니다. 그래서 필수 CI에서는
 `tests/test_live_quickstart.py`의 고정 OpenAPI fixture로 같은 동작을 검증합니다.
@@ -51,7 +68,7 @@ current numAPIs: <current positive integer>
 
 이 파일은 source/wheel/sdist acceptance에서 실행됩니다.
 
-## 4. 일반 웹사이트는 조용히 tool로 변환되지 않습니다
+## 5. 일반 웹사이트는 조용히 tool로 변환되지 않습니다
 
 ```python
 from schemarouter import SchemaRouter, UnsupportedSchemaSourceError
@@ -70,7 +87,7 @@ async def inspect_docs_page():
 사람이 읽는 API 문서는 곧바로 실행 가능한 도구로 만들지 않습니다. 먼저 내용을 확인하고
 제안된 계약을 검토한 뒤 명시적으로 승인해야 합니다.
 
-## 5. Async / batch / streaming
+## 6. Async / batch / streaming
 
 ```python
 result = await router.ainvoke(request)
@@ -90,6 +107,7 @@ async for event in router.astream_events(request):
 
 | 이미 가지고 있는 것 | 설치 | 권장 시작점 |
 | --- | --- | --- |
+| Provider 이름 | core | `await router.add_provider("materials-project")` 및 [Provider 중심 등록](../guides/provider-first-registration.md) |
 | OpenAPI URL | `pip install schemarouter` | 이 페이지의 live OpenAPI quickstart |
 | typed Python function | core | [Python tools](../guides/python-tools.md) |
 | MCP server | `schemarouter[mcp]` | [MCP](../guides/mcp.md) |
