@@ -62,9 +62,9 @@ nav:
       - Batch/stream/event: guides/runtime.md
       - 실행 정책: guides/execution-policy.md
       - Provider-aware fallback: guides/provider-fallback.md
+      - State-aware retrieval: guides/state-aware-retrieval.md
       - 다중 provider 근거: guides/multi-provider-evidence.md
       - 스키마 변경 분석: guides/schema-drift.md
-      - Host operational constraints: guides/capability-constraints.md
       - Retry 정책: guides/retry.md
       - 신뢰 실행 hook: guides/execution-hooks.md
       - 영속 실행 trace: guides/run-traces.md

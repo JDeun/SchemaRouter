@@ -116,10 +116,6 @@
       "source_blob": "3ed905d10b68702c8d5dff53b8a4d33fc3fcfdce"
     },
     {
-      "path": "guides/capability-constraints.md",
-      "source_blob": "a97a522420df659298fc7267e1dcc2749c9f4add"
-    },
-    {
       "path": "guides/consumer-acceptance.md",
       "source_blob": "da49405aea26d8b4e8116236ffe20c7933cea525"
     },
@@ -218,6 +214,10 @@
     {
       "path": "guides/schema-drift.md",
       "source_blob": "709fa5b2e108a4bc2cfff783b1312594312df73f"
+    },
+    {
+      "path": "guides/state-aware-retrieval.md",
+      "source_blob": "ecbd1b9136975c83c2d77c33d398d7cda6ceb6bc"
     },
     {
       "path": "guides/universal-ingestion.md",
