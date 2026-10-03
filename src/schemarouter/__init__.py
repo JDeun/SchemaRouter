@@ -31,6 +31,13 @@ from .aggregation import (
     canonical_identity,
 )
 from .analyzers import ModelCallable, ModelQueryAnalyzer
+from .authorization import (
+    AuthorizationDecision,
+    AuthorizationEffect,
+    AuthorizationPolicy,
+    AuthorizationRule,
+    PrincipalContext,
+)
 from .binding_reconciliation import (
     BindingReconciliationError,
     BindingReconciliationItem,
@@ -416,6 +423,11 @@ __all__ = [
     "AuthSchemeRequirement",
     "BeforeExecutionHook",
     "BindingDriftError",
+    "AuthorizationDecision",
+    "AuthorizationEffect",
+    "AuthorizationPolicy",
+    "AuthorizationRule",
+    "PrincipalContext",
     "BindingReconciliationError",
     "BindingReconciliationItem",
     "BindingReconciliationReport",
