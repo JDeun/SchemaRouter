@@ -132,6 +132,10 @@
       "source_blob": "71c5f1164fa703ab7056c2dbd52c2ecb58da1a95"
     },
     {
+      "path": "guides/capability-graph-scalability.md",
+      "source_blob": "ae52774094b218c3da06418ae8d6321e95e4203d"
+    },
+    {
       "path": "guides/capability-lineage.md",
       "source_blob": "6da047d5bc83c36aeddbd3756c9751b6bdc7ade6"
     },
