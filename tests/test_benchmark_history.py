@@ -132,6 +132,9 @@ def test_compatibility_workflow_retains_json_artifacts() -> None:
     assert "pypi-${{ matrix.artifact-kind }}-compatibility.json" in workflow
     assert "pypi-lightweight-compatibility.json" in workflow
     assert "pypi-integrations-compatibility.json" in workflow
+    assert "materials-project-provider-compatibility.json" in workflow
+    assert "crossref-provider-compatibility.json" in workflow
+    assert "tavily-provider-compatibility.json" in workflow
     assert '"schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]"' in workflow
     assert "--framework-integrations" in workflow
     assert "--lightweight-extras" in workflow
@@ -139,7 +142,7 @@ def test_compatibility_workflow_retains_json_artifacts() -> None:
         workflow.count(
             "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
         )
-        == 6
+        == 9
     )
-    assert workflow.count("if: always()") == 6
-    assert workflow.count("retention-days: 30") == 6
+    assert workflow.count("if: always()") == 9
+    assert workflow.count("retention-days: 30") == 9

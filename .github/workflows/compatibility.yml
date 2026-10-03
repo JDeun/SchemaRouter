@@ -8,6 +8,8 @@ on:
     paths:
       - "src/schemarouter/adapters/**"
       - "src/schemarouter/ingestion.py"
+      - "src/schemarouter/provider_profiles.py"
+      - "src/schemarouter/runtime.py"
       - "scripts/live_*"
       - "scripts/aggregate_compatibility_matrix.py"
       - "scripts/published_pypi_smoke.py"
@@ -58,6 +60,83 @@ jobs:
         with:
           name: compatibility-optimade-${{ github.run_id }}
           path: artifacts/optimade-compatibility.json
+          if-no-files-found: warn
+          retention-days: 30
+
+
+  public-materials-project-provider:
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install .
+      - run: python -m pip check
+      - name: Register and execute Materials Project by provider identity
+        run: |
+          python scripts/live_materials_project_provider_smoke.py \
+            --json-out artifacts/materials-project-provider-compatibility.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: compatibility-materials-project-provider-${{ github.run_id }}
+          path: artifacts/materials-project-provider-compatibility.json
+          if-no-files-found: warn
+          retention-days: 30
+
+
+  public-crossref-provider:
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install .
+      - run: python -m pip check
+      - name: Register and execute Crossref by provider identity
+        run: |
+          python scripts/live_crossref_provider_smoke.py \
+            --json-out artifacts/crossref-provider-compatibility.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: compatibility-crossref-provider-${{ github.run_id }}
+          path: artifacts/crossref-provider-compatibility.json
+          if-no-files-found: warn
+          retention-days: 30
+
+
+  public-tavily-provider:
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install .
+      - run: python -m pip check
+      - name: Validate Tavily provider identity and execute when key is available
+        run: |
+          python scripts/live_tavily_provider_smoke.py \
+            --json-out artifacts/tavily-provider-compatibility.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: compatibility-tavily-provider-${{ github.run_id }}
+          path: artifacts/tavily-provider-compatibility.json
           if-no-files-found: warn
           retention-days: 30
 

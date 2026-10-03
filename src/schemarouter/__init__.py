@@ -268,6 +268,20 @@ from .policy import (
     PolicyRule,
 )
 from .proposals import SchemaProposal
+from .provider_profiles import (
+    PROVIDER_PROFILE_ENTRY_POINT_GROUP,
+    ProviderAccessMethod,
+    ProviderMethodRegistration,
+    ProviderMethodResolution,
+    ProviderProfile,
+    ProviderProfilePluginInfo,
+    ProviderProfileRegistry,
+    ProviderRegistrationResult,
+    ProviderResolution,
+    built_in_provider_profile_registry,
+    discover_provider_profile_plugins,
+    load_provider_profile_plugins,
+)
 from .registry import InMemoryRegistry, MutableToolRegistry, SQLiteRegistry, ToolRegistry
 from .runs import ExecutionBudget, ExecutionMode, RetryPolicy, RunConfig, RunEvent
 from .runtime import ConfiguredSchemaRouter, SchemaRouter
@@ -465,6 +479,18 @@ __all__ = [
     "PolicyEffect",
     "PolicyRule",
     "ProposalApprovalError",
+    "PROVIDER_PROFILE_ENTRY_POINT_GROUP",
+    "ProviderAccessMethod",
+    "ProviderMethodRegistration",
+    "ProviderMethodResolution",
+    "ProviderProfile",
+    "ProviderProfilePluginInfo",
+    "ProviderProfileRegistry",
+    "ProviderRegistrationResult",
+    "ProviderResolution",
+    "built_in_provider_profile_registry",
+    "discover_provider_profile_plugins",
+    "load_provider_profile_plugins",
     "QueryAnalyzer",
     "QueryIntent",
     "ResultFieldContract",
