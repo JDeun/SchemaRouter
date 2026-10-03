@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import datetime
 from dataclasses import asdict
+from collections.abc import Sequence
 from typing import Any
 
 from pydantic import Field
 
 from ._url_safety import safe_provenance_url
+from .capability_decision_trace import CapabilityDecisionTrace
 from .models import StrictModel, ToolSpec
 from .registry import ToolRegistry
 from .traces import RunTrace, RunTraceStore
@@ -215,12 +217,27 @@ class ExecutionInspection(StrictModel):
     schema_watches: list[SchemaWatchInspection] = Field(default_factory=list)
 
 
+class CapabilityDecisionCandidateInspection(StrictModel):
+    capability_id: str
+    final_disposition: str
+    reason_codes: tuple[str, ...] = ()
+
+
+class CapabilityDecisionTraceInspection(StrictModel):
+    trace_id: str
+    snapshot_id: str | None = None
+    registry_version: int | None = Field(default=None, ge=0)
+    candidate_count: int = Field(ge=0)
+    candidates: tuple[CapabilityDecisionCandidateInspection, ...] = ()
+
+
 class RouterInspection(StrictModel):
     """Live operational snapshot of one SchemaRouter instance."""
 
     registry: RegistryInspection
     planner: PlannerInspection
     execution: ExecutionInspection
+    decision_traces: tuple[CapabilityDecisionTraceInspection, ...] = ()
 
 
 class TraceInspection(StrictModel):
@@ -349,7 +366,32 @@ def inspect_tool(registry: ToolRegistry, key: str) -> ToolInspection:
     return inspect_tool_spec(registry.get(key))
 
 
-def inspect_router(router: Any) -> RouterInspection:
+def inspect_capability_decision_trace(
+    trace: CapabilityDecisionTrace,
+) -> CapabilityDecisionTraceInspection:
+    """Return a compact privacy-safe decision trace summary."""
+
+    return CapabilityDecisionTraceInspection(
+        trace_id=trace.trace_id,
+        snapshot_id=trace.snapshot_id,
+        registry_version=trace.registry_version,
+        candidate_count=len(trace.candidates),
+        candidates=tuple(
+            CapabilityDecisionCandidateInspection(
+                capability_id=item.capability_id,
+                final_disposition=item.final_disposition,
+                reason_codes=tuple(reason.code for reason in item.reasons),
+            )
+            for item in trace.candidates
+        ),
+    )
+
+
+def inspect_router(
+    router: Any,
+    *,
+    decision_traces: Sequence[CapabilityDecisionTrace] = (),
+) -> RouterInspection:
     """Inspect a live SchemaRouter without exposing invokers, credentials, or payload values."""
 
     planner = router.planner
@@ -385,6 +427,10 @@ def inspect_router(router: Any) -> RouterInspection:
                 else None
             ),
             decision_policy=planner.decision_policy.model_dump(mode="json"),
+        ),
+        decision_traces=tuple(
+            inspect_capability_decision_trace(trace)
+            for trace in decision_traces
         ),
         execution=ExecutionInspection(
             policy=asdict(router.executor.policy),
