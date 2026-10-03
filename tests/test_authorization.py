@@ -86,12 +86,12 @@ def test_principal_authorization_hides_ineligible_capabilities_before_retrieval(
     employee = PrincipalContext(subject="alice", roles=("employee",))
     executive = PrincipalContext(subject="ceo", roles=("executive",))
 
-    employee_view = router.retrieve(
+    employee_view = router.retrieve_authorized(
         "board financial forecast",
         principal=employee,
         k=5,
     )
-    executive_view = router.retrieve(
+    executive_view = router.retrieve_authorized(
         "board financial forecast",
         principal=executive,
         k=5,
@@ -117,7 +117,7 @@ async def test_execution_revalidates_principal_against_forged_or_stale_plan() ->
     employee = PrincipalContext(subject="alice", roles=("employee",))
     executive = PrincipalContext(subject="ceo", roles=("executive",))
 
-    plan = router.plan(
+    plan = router.plan_authorized(
         PlanRequest(query="board financial forecast"),
         principal=executive,
     )
@@ -186,7 +186,7 @@ async def test_with_config_applies_principal_to_retrieval_and_invoke() -> None:
 async def test_direct_executor_call_cannot_bypass_router_authorization() -> None:
     router = _router()
     executive = PrincipalContext(subject="ceo", roles=("executive",))
-    plan = router.plan("board financial forecast", principal=executive)
+    plan = router.plan_authorized("board financial forecast", principal=executive)
     assert plan.calls and plan.calls[0].tool == "board_financials"
 
     with pytest.raises(PolicyViolationError, match="authorization denied"):
