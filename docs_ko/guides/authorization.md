@@ -52,13 +52,13 @@ Authorization policy를 설정한 router에서 principal 없이 planning/retriev
 fail-closed합니다.
 
 ```python
-employee_candidates = router.retrieve(
+employee_candidates = router.retrieve_authorized(
     "quarterly finance",
     principal=employee,
     k=5,
 )
 
-executive_candidates = router.retrieve(
+executive_candidates = router.retrieve_authorized(
     "quarterly finance",
     principal=executive,
     k=5,
