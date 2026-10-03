@@ -34,10 +34,23 @@ async def run_smoke() -> dict[str, object]:
     )
     discovery_ms = round((perf_counter() - discovery_started) * 1000, 2)
 
-    assert len(registration.registered_tool_keys) == 1
     registration_status = {
         method.method_id: method.status for method in registration.methods
     }
+    if len(registration.registered_tool_keys) != 1:
+        safe_diagnostics = [
+            {
+                "method_id": method.method_id,
+                "status": method.status,
+                "error_type": method.error_type,
+                "detail": method.detail,
+            }
+            for method in registration.methods
+        ]
+        raise RuntimeError(
+            "Materials Project provider registration did not yield one live tool: "
+            + json.dumps(safe_diagnostics, sort_keys=True)
+        )
     assert registration_status == {"optimade": "registered"}
 
     tool_key = registration.registered_tool_keys[0]
