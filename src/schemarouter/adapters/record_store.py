@@ -28,7 +28,7 @@ class RecordFieldSpec(StrictModel):
     filterable: bool = False
 
     @model_validator(mode="after")
-    def validate_field(self) -> "RecordFieldSpec":
+    def validate_field(self) -> RecordFieldSpec:
         if not self.name.strip():
             raise ValueError("record field name must be non-empty")
         return self
@@ -46,7 +46,7 @@ class RecordSourceSpec(StrictModel):
     public_metadata: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
-    def validate_source(self) -> "RecordSourceSpec":
+    def validate_source(self) -> RecordSourceSpec:
         if not self.name.strip():
             raise ValueError("record source name must be non-empty")
         names = [field.name for field in self.fields]
@@ -95,7 +95,7 @@ async def _await_if_needed(value: Any) -> Any:
 @dataclass(frozen=True)
 class RecordSourceBinding:
     tool: ToolSpec
-    invoker: "RecordSourceInvoker"
+    invoker: RecordSourceInvoker
 
 
 class RecordSourceInvoker:
