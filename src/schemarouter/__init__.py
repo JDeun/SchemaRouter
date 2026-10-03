@@ -296,6 +296,10 @@ from .schema_diff import (
 from .state_retrieval import (
     StateAwareCapabilityCandidate,
     StateAwareCapabilityRetrieval,
+    StateConditionedCapabilityCandidate,
+    StateConditionedCapabilityRetrieval,
+    StateConditionedExcludedCandidate,
+    backfill_retrieval_by_state,
     filter_retrieval_by_state,
 )
 from .storage import (
@@ -518,6 +522,9 @@ __all__ = [
     "SchemaValidationError",
     "StateAwareCapabilityCandidate",
     "StateAwareCapabilityRetrieval",
+    "StateConditionedCapabilityCandidate",
+    "StateConditionedCapabilityRetrieval",
+    "StateConditionedExcludedCandidate",
     "StateEligibility",
     "StateEligibilityReason",
     "StorageFormatError",
@@ -559,6 +566,7 @@ __all__ = [
     "compare_capability_composition",
     "compare_capability_fields",
     "evaluate_preconditions",
+    "backfill_retrieval_by_state",
     "filter_retrieval_by_state",
     "evaluate_state_eligibility",
     "validate_capability_inputs",
