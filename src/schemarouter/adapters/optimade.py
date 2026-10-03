@@ -245,15 +245,50 @@ def _property_schema(spec: dict[str, Any]) -> dict[str, Any]:
     return _normalize_optimade_schema(deepcopy(spec))
 
 
+def _schema_supports_numeric_unit(schema: dict[str, Any]) -> bool:
+    raw_type = schema.get("type")
+    if isinstance(raw_type, str):
+        types = {raw_type}
+    elif isinstance(raw_type, list):
+        types = {item for item in raw_type if isinstance(item, str)}
+    else:
+        types = set()
+    types.discard("null")
+
+    if types <= {"number", "integer"} and types:
+        return True
+    if types == {"array"}:
+        items = schema.get("items")
+        return (
+            isinstance(items, dict)
+            and _schema_supports_numeric_unit(items)
+        )
+    return False
+
+
+def _promoted_unit(
+    spec: dict[str, Any],
+    normalized_schema: dict[str, Any],
+) -> str | None:
+    """Promote a provider unit only when the declared JSON shape proves it numeric."""
+
+    unit = spec.get("x-optimade-unit") or spec.get("unit")
+    if unit in {None, "inapplicable"}:
+        return None
+    if not _schema_supports_numeric_unit(normalized_schema):
+        return None
+    return str(unit)
+
+
 def _field_from_property(name: str, spec: dict[str, Any]) -> FieldSpec:
     description = str(spec.get("description") or spec.get("title") or "")
-    unit = spec.get("x-optimade-unit") or spec.get("unit")
+    schema = _property_schema(spec)
     return FieldSpec(
         name=name,
         description=description,
-        json_schema=_property_schema(spec),
+        json_schema=schema,
         aliases=[name.replace("_", " ")],
-        unit=str(unit) if unit not in {None, "inapplicable"} else None,
+        unit=_promoted_unit(spec, schema),
         identifier=False,
         source_type="optimade",
     )
@@ -338,7 +373,6 @@ def _nested_property_fields(
                 or child_schema.get("title")
                 or ""
             )
-            unit = raw_child.get("x-optimade-unit") or raw_child.get("unit")
             discovered.append(
                 FieldSpec(
                     name=field_name,
@@ -355,11 +389,7 @@ def _nested_property_fields(
                         if "*" in child_path
                         else [field_name]
                     ),
-                    unit=(
-                        str(unit)
-                        if unit not in {None, "inapplicable"}
-                        else None
-                    ),
+                    unit=_promoted_unit(raw_child, child_schema),
                     identifier=False,
                     source_type="optimade",
                 )
