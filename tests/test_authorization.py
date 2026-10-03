@@ -182,6 +182,17 @@ async def test_with_config_applies_principal_to_retrieval_and_invoke() -> None:
     assert result[0].tool == "employee_records"
 
 
+@pytest.mark.asyncio
+async def test_direct_executor_call_cannot_bypass_router_authorization() -> None:
+    router = _router()
+    executive = PrincipalContext(subject="ceo", roles=("executive",))
+    plan = router.plan("board financial forecast", principal=executive)
+    assert plan.calls and plan.calls[0].tool == "board_financials"
+
+    with pytest.raises(PolicyViolationError, match="authorization denied"):
+        await router.executor.execute(plan)
+
+
 def test_no_authorization_policy_preserves_existing_no_principal_behavior() -> None:
     router = SchemaRouter()
     tool = _tool("public", "public information")
