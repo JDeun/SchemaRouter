@@ -68,6 +68,9 @@ from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
 from .provider_profiles import (
+    ProviderDiscoveryBackend,
+    ProviderDiscoveryCandidate,
+    ProviderDiscoveryProposal,
     ProviderMethodRegistration,
     ProviderProfile,
     ProviderProfileRegistry,
@@ -1313,6 +1316,42 @@ class SchemaRouter:
         """Resolve one provider identity into known access methods without network I/O."""
 
         return self.provider_profiles.resolve(provider, methods=methods)
+
+    def discover_provider(
+        self,
+        provider: str,
+        *,
+        backend: ProviderDiscoveryBackend | None = None,
+        limit: int = 8,
+    ) -> ProviderDiscoveryProposal:
+        """Propose provider identities without registering or granting authority.
+
+        Built-in discovery is deterministic and local. A caller may supply a trusted
+        discovery backend (for example one backed by an internal catalog or web search),
+        but its candidates remain inert until explicitly approved or registered.
+        """
+
+        external = tuple(backend(provider)) if backend is not None else ()
+        return self.provider_profiles.discover(
+            provider,
+            external_candidates=external,
+            limit=limit,
+        )
+
+    def approve_provider_candidate(
+        self,
+        candidate: ProviderDiscoveryCandidate,
+        *,
+        expected_digest: str,
+        replace: bool = False,
+    ) -> str:
+        """Register one reviewed discovery candidate after a digest check."""
+
+        return self.provider_profiles.approve_discovery_candidate(
+            candidate,
+            expected_digest=expected_digest,
+            replace=replace,
+        )
 
     def load_provider_profile_plugins(
         self,
