@@ -1,3 +1,4 @@
+# Issue #707 regression coverage.
 from schemarouter.capability_constraints import (
     CapabilityOperationalMetadata,
     HostCapabilityConstraints,
