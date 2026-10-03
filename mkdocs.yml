@@ -146,6 +146,7 @@ nav:
       - Declarative HTTP/JSON: guides/http-json.md
       - Provider-first registration: guides/provider-first-registration.md
       - Database onboarding: guides/database-onboarding.md
+      - Graph/RDF onboarding: guides/graph-store-onboarding.md
       - Universal ingestion matrix: guides/universal-ingestion.md
       - Live compatibility matrix: guides/live-compatibility-matrix.md
       - Human-readable documentation: guides/html-documentation.md
