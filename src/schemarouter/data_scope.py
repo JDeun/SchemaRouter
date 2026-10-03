@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
+from contextvars import ContextVar
 from copy import deepcopy
 from dataclasses import dataclass
 from fnmatch import fnmatchcase
@@ -210,6 +212,33 @@ class DataScopeDecision:
     visible_fields: tuple[str, ...]
     trusted_predicates: tuple[ResolvedDataPredicate, ...]
     matched: bool
+
+
+_CURRENT_DATA_SCOPES: ContextVar[dict[str, DataScopeDecision] | None] = ContextVar(
+    "schemarouter_current_data_scopes",
+    default=None,
+)
+
+
+@contextmanager
+def _data_scope_execution_context(
+    decisions: dict[str, DataScopeDecision] | None,
+):
+    token = _CURRENT_DATA_SCOPES.set(decisions)
+    try:
+        yield
+    finally:
+        _CURRENT_DATA_SCOPES.reset(token)
+
+
+def _current_data_scope_decision(
+    tool_key: str,
+    endpoint_name: str,
+) -> DataScopeDecision | None:
+    decisions = _CURRENT_DATA_SCOPES.get()
+    if not decisions:
+        return None
+    return decisions.get(f"{tool_key}.{endpoint_name}")
 
 
 @dataclass(frozen=True)
