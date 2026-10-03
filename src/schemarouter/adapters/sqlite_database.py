@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from hashlib import sha256
 from typing import Any
 
+from ..data_scope import _current_data_scope_decision
 from ..errors import RegistrationError
 from ..models import (
     EndpointSpec,
@@ -112,6 +113,19 @@ class SQLiteTableInvoker:
                 continue
             where_parts.append(f"{_quote_identifier(column)} = ?")
             values.append(call.arguments[column])
+
+        decision = _current_data_scope_decision(call.tool, call.endpoint)
+        if decision is not None:
+            for predicate in decision.trusted_predicates:
+                column = _quote_identifier(predicate.field)
+                if predicate.operator == "eq":
+                    where_parts.append(f"{column} = ?")
+                    values.append(predicate.value)
+                else:
+                    trusted_values = tuple(predicate.value)
+                    placeholders = ", ".join("?" for _ in trusted_values)
+                    where_parts.append(f"{column} IN ({placeholders})")
+                    values.extend(trusted_values)
 
         limit = int(call.arguments.get("limit", self._default_limit))
         offset = int(call.arguments.get("offset", 0))
