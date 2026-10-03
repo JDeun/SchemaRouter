@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass
 from fnmatch import fnmatchcase
 from typing import Literal
 
-from .authorization import PrincipalContext
-from .errors import PolicyViolationError
+from .authorization import AuthorizationPolicy, PrincipalContext
+from .errors import PolicyViolationError, RegistrationError
 from .models import EndpointSpec, ToolSpec
+from .registry import ToolRegistry
 
 
 TrustedPredicateOperator = Literal["eq", "in"]
@@ -283,3 +285,189 @@ class DataScopePolicy:
         requested = set(fields)
         if not requested or not requested.issubset(visible):
             raise PolicyViolationError("data scope denied for requested fields")
+
+
+
+def _project_object_schema(
+    schema: dict[str, object],
+    visible_fields: set[str],
+) -> dict[str, object]:
+    projected = deepcopy(schema)
+    target: dict[str, object] = projected
+
+    if projected.get("type") == "array":
+        items = projected.get("items")
+        if isinstance(items, dict):
+            target = items
+
+    properties = target.get("properties")
+    if isinstance(properties, dict):
+        target["properties"] = {
+            key: value
+            for key, value in properties.items()
+            if key in visible_fields
+        }
+    required = target.get("required")
+    if isinstance(required, list):
+        target["required"] = [
+            value
+            for value in required
+            if isinstance(value, str) and value in visible_fields
+        ]
+    return projected
+
+
+def _project_endpoint_fields(
+    endpoint: EndpointSpec,
+    visible_fields: tuple[str, ...],
+) -> EndpointSpec:
+    visible = set(visible_fields)
+    declared = {field.name for field in endpoint.output_fields}
+
+    parameters = []
+    for parameter in endpoint.parameters:
+        candidate_field = (
+            parameter.name.removeprefix("filter__")
+            if parameter.name.startswith("filter__")
+            else parameter.name
+        )
+        if candidate_field in declared and candidate_field not in visible:
+            continue
+        parameters.append(parameter.model_copy(deep=True))
+
+    server_projection = (
+        endpoint.server_projection.model_copy(deep=True)
+        if endpoint.server_projection is not None
+        else None
+    )
+    if server_projection is not None:
+        server_projection.field_map = {
+            field: wire_name
+            for field, wire_name in server_projection.field_map.items()
+            if field in visible
+        }
+
+    return endpoint.model_copy(
+        update={
+            "parameters": parameters,
+            "output_fields": [
+                field.model_copy(deep=True)
+                for field in endpoint.output_fields
+                if field.name in visible
+            ],
+            "output_schema": _project_object_schema(
+                endpoint.output_schema,
+                visible,
+            ),
+            "server_projection": server_projection,
+        },
+        deep=True,
+    )
+
+
+class PrincipalScopedRegistry:
+    """Read-only principal-scoped registry snapshot for analyzer/planner non-disclosure.
+
+    Capability authorization removes whole endpoints. Data-scope authorization additionally
+    projects database output fields and field-derived filter parameters before any analyzer
+    receives the registry.
+    """
+
+    def __init__(
+        self,
+        registry: ToolRegistry,
+        *,
+        principal: PrincipalContext,
+        authorization_policy: AuthorizationPolicy | None = None,
+        data_scope_policy: DataScopePolicy | None = None,
+    ) -> None:
+        self._version = registry.version
+        self._tools: dict[str, ToolSpec] = {}
+        self._original_tool_fingerprints: dict[str, str] = {}
+        self._original_endpoint_fingerprints: dict[tuple[str, str], str] = {}
+
+        for original_tool in registry.tools():
+            projected_endpoints: list[EndpointSpec] = []
+            for original_endpoint in original_tool.endpoints:
+                if (
+                    authorization_policy is not None
+                    and not authorization_policy.visible(
+                        principal,
+                        original_tool,
+                        original_endpoint,
+                    )
+                ):
+                    continue
+
+                projected_endpoint = original_endpoint.model_copy(deep=True)
+                if (
+                    data_scope_policy is not None
+                    and original_tool.source_type == "database"
+                ):
+                    decision = data_scope_policy.evaluate(
+                        principal,
+                        original_tool,
+                        original_endpoint,
+                    )
+                    if not decision.matched or not decision.visible_fields:
+                        continue
+                    projected_endpoint = _project_endpoint_fields(
+                        original_endpoint,
+                        decision.visible_fields,
+                    )
+
+                projected_endpoints.append(projected_endpoint)
+                self._original_endpoint_fingerprints[
+                    (original_tool.key, original_endpoint.name)
+                ] = original_endpoint.fingerprint
+
+            if not projected_endpoints:
+                continue
+
+            projected_tool = original_tool.model_copy(
+                update={"endpoints": projected_endpoints},
+                deep=True,
+            )
+            self._tools[projected_tool.key] = projected_tool
+            self._original_tool_fingerprints[
+                projected_tool.key
+            ] = original_tool.fingerprint
+
+    @property
+    def version(self) -> int:
+        return self._version
+
+    def register(self, tool: ToolSpec, *, replace: bool = False) -> str:
+        del tool, replace
+        raise RegistrationError("principal-scoped registry is read-only")
+
+    def get(self, key: str) -> ToolSpec:
+        try:
+            return self._tools[key].model_copy(deep=True)
+        except KeyError as exc:
+            raise KeyError(key) from exc
+
+    def tools(self) -> tuple[ToolSpec, ...]:
+        return tuple(tool.model_copy(deep=True) for tool in self._tools.values())
+
+    def keys(self) -> tuple[str, ...]:
+        return tuple(self._tools)
+
+    def endpoint(self, tool_key: str, endpoint_name: str) -> EndpointSpec:
+        return self.get(tool_key).endpoint(endpoint_name)
+
+    def original_tool_fingerprint(self, tool_key: str) -> str:
+        try:
+            return self._original_tool_fingerprints[tool_key]
+        except KeyError as exc:
+            raise KeyError(tool_key) from exc
+
+    def original_endpoint_fingerprint(
+        self,
+        tool_key: str,
+        endpoint_name: str,
+    ) -> str:
+        try:
+            return self._original_endpoint_fingerprints[(tool_key, endpoint_name)]
+        except KeyError as exc:
+            raise KeyError(f"{tool_key}.{endpoint_name}") from exc
