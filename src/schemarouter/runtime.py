@@ -710,6 +710,62 @@ class SchemaRouter:
         )
         return key
 
+    def add_sqlite_database(
+        self,
+        connection: Any,
+        *,
+        database_name: str = "sqlite",
+        namespace: str | None = None,
+        tables: set[str] | tuple[str, ...] | list[str] | None = None,
+        max_default_rows: int = 100,
+    ) -> tuple[str, ...]:
+        """Introspect and register a caller-owned SQLite database as read-only capabilities.
+
+        The live connection remains in trusted process-local invokers and is never persisted
+        or copied into ToolSpec metadata. One ToolSpec is registered per selected table/view.
+        The generated invokers support bounded projected SELECT operations only; callers cannot
+        supply arbitrary SQL text through the model-visible contract.
+        """
+
+        from .adapters.sqlite_database import introspect_sqlite_database
+
+        bindings = introspect_sqlite_database(
+            connection,
+            database_name=database_name,
+            namespace=namespace,
+            tables=tables,
+            max_default_rows=max_default_rows,
+        )
+        duplicate_keys = sorted(
+            binding.tool.key
+            for binding in bindings
+            if binding.tool.key in set(self.registry.keys())
+        )
+        if duplicate_keys:
+            raise RegistrationError(
+                "database introspection would replace existing tools: "
+                + ", ".join(duplicate_keys)
+            )
+
+        registered: list[str] = []
+        try:
+            for binding in bindings:
+                registered.append(
+                    self.add_bound_tool(
+                        binding.tool,
+                        binding.invoker,
+                    )
+                )
+        except Exception:
+            for tool_key in reversed(registered):
+                try:
+                    self.registry.unregister(tool_key)
+                except Exception:
+                    pass
+                self.executor.purge_tool_runtime_state(tool_key)
+            raise
+        return tuple(registered)
+
     def amend_capability(self, tool_key: str, amended: ToolSpec) -> str:
         """Declare or annotate the result contract of an already registered capability.
 
