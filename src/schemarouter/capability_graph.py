@@ -5,6 +5,7 @@ from pydantic import Field
 from .capability_contracts import (
     CapabilityComposition,
     CapabilityContract,
+    CapabilityFieldContract,
     CompatibilityContext,
     compare_capability_composition,
 )
@@ -91,3 +92,26 @@ def dependency_cycles(graph: CapabilityDependencyGraph) -> list[tuple[str, ...]]
     for capability_id in graph.capability_ids:
         visit(capability_id, capability_id, (capability_id,))
     return sorted(cycles)
+
+
+def satisfiable_capability_ids(
+    capabilities: list[CapabilityContract],
+    available_fields: list[CapabilityFieldContract],
+    *,
+    context: CompatibilityContext | None = None,
+) -> tuple[str, ...]:
+    """Return contracts whose declared requirements are satisfied by available fields.
+
+    This is a graph/query primitive only. It does not rank, select, or execute capabilities.
+    """
+
+    available = CapabilityContract(
+        capability_id="__available_state__",
+        produces=list(available_fields),
+    )
+    result = [
+        capability.capability_id
+        for capability in capabilities
+        if compare_capability_composition(available, capability, context=context).satisfies
+    ]
+    return tuple(sorted(result))
