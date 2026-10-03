@@ -10,7 +10,7 @@ from compatibility_report import new_report, write_report
 
 from schemarouter import ExecutionPlan, SchemaRouter, ToolCall
 
-DEFAULT_URL = "https://countries.trevorblades.com/"
+DEFAULT_URL = "https://graphql.anilist.co"
 
 
 async def run_smoke(url: str) -> dict[str, object]:
@@ -21,27 +21,27 @@ async def run_smoke(url: str) -> dict[str, object]:
     tools = router.registry.tools()
     assert len(tools) == 1
     tool = tools[0]
-    endpoint = tool.endpoint("country")
+    endpoint = tool.endpoint("Media")
     assert endpoint.read_only is True
 
     available_fields = {field.name for field in endpoint.output_fields}
     fields = [
         field
-        for field in ("code", "name", "capital", "currency")
+        for field in ("id", "title.romaji", "title.english", "format")
         if field in available_fields
     ]
-    assert {"code", "name"} <= set(fields)
+    assert {"id", "title.romaji"} <= set(fields)
 
     call = ToolCall(
         tool=tool.key,
         endpoint=endpoint.name,
-        arguments={"code": "KR"},
+        arguments={"id": 1},
         fields=fields,
         schema_fingerprint=endpoint.fingerprint,
         tool_fingerprint=tool.fingerprint,
     )
     plan = ExecutionPlan(
-        query="South Korea country identity",
+        query="AniList media identity",
         registry_version=router.registry.version,
         calls=[call],
     )
@@ -52,12 +52,12 @@ async def run_smoke(url: str) -> dict[str, object]:
 
     assert len(results) == 1
     assert isinstance(results[0].data, dict)
-    assert results[0].data.get("code") == "KR"
-    assert isinstance(results[0].data.get("name"), str)
+    assert results[0].data.get("id") == 1
+    assert isinstance(results[0].data.get("title.romaji"), str)
 
     return {
         "evidence_kind": "live_public_provider",
-        "provider": "Countries GraphQL API",
+        "provider": "AniList",
         "discovery_success": True,
         "tool_count": len(tools),
         "endpoint_count": len(tool.endpoints),
