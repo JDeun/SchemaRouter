@@ -1,0 +1,111 @@
+from __future__ import annotations
+
+from schemarouter import (
+    CapabilityFieldContract,
+    FieldSpec,
+    UnitNormalizationSpec,
+    compare_capability_fields,
+)
+
+
+def contract(semantic_id: str, **kwargs) -> CapabilityFieldContract:
+    return CapabilityFieldContract(semantic_id=semantic_id, **kwargs)
+
+
+def test_exact_contract_is_satisfied() -> None:
+    required = contract(
+        "elastic_modulus",
+        json_schema={"type": "number"},
+        unit="Pa",
+        dimension="pressure",
+        qualifiers={"temperature": "300 K"},
+    )
+    result = compare_capability_fields(required, required)
+    assert result.status == "exact"
+    assert result.satisfies
+
+
+def test_integer_output_satisfies_number_requirement() -> None:
+    result = compare_capability_fields(
+        contract("sample_count", json_schema={"type": "number"}),
+        contract("sample_count", json_schema={"type": "integer"}),
+    )
+    assert result.status == "compatible"
+    assert result.satisfies
+
+
+def test_semantic_identity_is_not_inferred_from_similar_names() -> None:
+    result = compare_capability_fields(
+        contract("material.band_gap", json_schema={"type": "number"}),
+        contract("material.bandgap", json_schema={"type": "number"}),
+    )
+    assert result.status == "incompatible"
+    assert [reason.code for reason in result.reasons] == ["semantic_id_mismatch"]
+
+
+def test_unit_dimension_and_qualifier_mismatch_fail_closed() -> None:
+    result = compare_capability_fields(
+        contract(
+            "elastic_modulus",
+            json_schema={"type": "number"},
+            unit="Pa",
+            dimension="pressure",
+            qualifiers={"temperature": "300 K"},
+        ),
+        contract(
+            "elastic_modulus",
+            json_schema={"type": "number"},
+            unit="m",
+            dimension="length",
+            qualifiers={"temperature": "500 K"},
+        ),
+    )
+    assert result.status == "incompatible"
+    assert {reason.code for reason in result.reasons} == {
+        "unit_incompatible",
+        "dimension_incompatible",
+        "qualifier_mismatch",
+    }
+
+
+def test_missing_required_metadata_is_unknown_not_compatible() -> None:
+    result = compare_capability_fields(
+        contract("elastic_modulus", json_schema={"type": "number"}, unit="Pa"),
+        contract("elastic_modulus"),
+    )
+    assert result.status == "unknown"
+    assert not result.satisfies
+    assert result.reasons[0].code == "metadata_incomplete"
+
+
+def test_field_contract_uses_declared_canonical_unit() -> None:
+    field = FieldSpec(
+        name="elastic_modulus",
+        semantic_id="elastic_modulus",
+        json_schema={"type": "number"},
+        unit="GPa",
+        unit_normalization=UnitNormalizationSpec(
+            dimension="pressure",
+            canonical_unit="Pa",
+            scale=1e9,
+        ),
+        qualifiers={"temperature": "300 K"},
+    )
+    converted = CapabilityFieldContract.from_field(field)
+    assert converted is not None
+    assert converted.unit == "Pa"
+    assert converted.dimension == "pressure"
+    assert converted.qualifiers == {"temperature": "300 K"}
+
+
+def test_unitless_text_contract_remains_valid() -> None:
+    field = FieldSpec(
+        name="abstract",
+        semantic_id="document_text",
+        json_schema={"type": "string"},
+        qualifiers={"language": "en"},
+    )
+    converted = CapabilityFieldContract.from_field(field)
+    assert converted is not None
+    assert converted.unit is None
+    assert converted.dimension is None

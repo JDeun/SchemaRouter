@@ -39,6 +39,13 @@ from .binding_reconciliation import (
     BindingResolver,
     TrustedBindingConfig,
 )
+from .capability_contracts import (
+    CapabilityCompatibility,
+    CapabilityFieldContract,
+    CompatibilityReason,
+    CompatibilityStatus,
+    compare_capability_fields,
+)
 from .dashboard import render_dashboard, write_dashboard
 from .decision_plugins import (
     DECISION_BACKEND_ENTRY_POINT_GROUP,
@@ -251,6 +258,10 @@ __all__ = [
     "load_decision_backend_plugin",
     "CallableDecisionBackend",
     "CapabilityCandidate",
+    "CapabilityCompatibility",
+    "CapabilityFieldContract",
+    "CompatibilityReason",
+    "CompatibilityStatus",
     "CapabilityRetrieval",
     "CapabilityRouteCandidate",
     "CapabilityRouteRetrieval",
@@ -381,6 +392,7 @@ __all__ = [
     "analyze_openapi_compatibility",
     "choose_async",
     "choose_sync",
+    "compare_capability_fields",
     "compare_endpoint_specs",
     "compare_tool_specs",
     "backup_sqlite_storage",
