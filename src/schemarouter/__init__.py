@@ -52,18 +52,19 @@ from .capability_contracts import (
     compare_capability_composition,
     compare_capability_fields,
 )
-from .capability_fallback import (
-    CapabilityFallbackEligibility,
-    FallbackEligibilityReason,
-    eligible_fallback_ids,
-    evaluate_fallback_eligibility,
-)
 from .capability_graph import (
     CapabilityDependencyEdge,
     CapabilityDependencyGraph,
     build_capability_dependency_graph,
     dependency_cycles,
     satisfiable_capability_ids,
+)
+from .capability_negotiation import (
+    CapabilityNegotiationCandidate,
+    CapabilityNegotiationRequest,
+    CapabilityNegotiationResult,
+    NegotiationStatus,
+    negotiate_capabilities,
 )
 from .contract_validation import (
     CapabilityContractValidation,
@@ -296,11 +297,13 @@ __all__ = [
     "CapabilityCandidate",
     "CapabilityCompatibility",
     "CapabilityDependencyEdge",
-    "CapabilityFallbackEligibility",
     "CapabilityDependencyGraph",
     "CapabilityComposition",
     "CapabilityContract",
     "CapabilityContractValidation",
+    "CapabilityNegotiationCandidate",
+    "CapabilityNegotiationRequest",
+    "CapabilityNegotiationResult",
     "CapabilityObservation",
     "ContractFieldValidation",
     "ContractValidationStatus",
@@ -342,7 +345,6 @@ __all__ = [
     "HealthProbeSnapshot",
     "HealthStatus",
     "ExecutionPlan",
-    "FallbackEligibilityReason",
     "FallbackRoute",
     "FallbackScope",
     "ExecutionPolicy",
@@ -367,6 +369,7 @@ __all__ = [
     "ModelAnalysisError",
     "ModelCallable",
     "ModelQueryAnalyzer",
+    "NegotiationStatus",
     "MutableToolRegistry",
     "NonRetryableInvocationError",
     "ODataSourceAdapter",
@@ -450,8 +453,6 @@ __all__ = [
     "build_capability_dependency_graph",
     "compare_capability_composition",
     "compare_capability_fields",
-    "eligible_fallback_ids",
-    "evaluate_fallback_eligibility",
     "evaluate_state_eligibility",
     "validate_capability_inputs",
     "validate_capability_outputs",
@@ -463,6 +464,7 @@ __all__ = [
     "write_schema_explorer",
     "inspect_sqlite_storage",
     "migrate_sqlite_storage",
+    "negotiate_capabilities",
     "dependency_cycles",
     "satisfiable_capability_ids",
     "discover_adapter_plugins",

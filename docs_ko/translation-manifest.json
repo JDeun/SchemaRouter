@@ -116,12 +116,12 @@
       "source_blob": "3ed905d10b68702c8d5dff53b8a4d33fc3fcfdce"
     },
     {
-      "path": "guides/consumer-acceptance.md",
-      "source_blob": "da49405aea26d8b4e8116236ffe20c7933cea525"
+      "path": "guides/capability-negotiation.md",
+      "source_blob": "890d8c32eef8f09e3f477686c0728fc224f1871a"
     },
     {
-      "path": "guides/contract-aware-fallback.md",
-      "source_blob": "b15bf6ba51c20519ba89b770ea99619175d2b82a"
+      "path": "guides/consumer-acceptance.md",
+      "source_blob": "da49405aea26d8b4e8116236ffe20c7933cea525"
     },
     {
       "path": "guides/decision-benchmark.md",
