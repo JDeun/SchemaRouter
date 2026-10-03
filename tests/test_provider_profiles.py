@@ -16,6 +16,7 @@ from schemarouter import (
     SchemaRouter,
 )
 
+
 def test_unknown_provider_discovery_is_non_authoritative_and_ambiguous() -> None:
     router = SchemaRouter()
 
