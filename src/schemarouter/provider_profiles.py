@@ -5,7 +5,7 @@ from collections.abc import Collection, Iterable
 from importlib import metadata
 from typing import Any, Literal
 
-from pydantic import Field, model_validator
+from pydantic import model_validator
 
 from .models import StrictModel
 
