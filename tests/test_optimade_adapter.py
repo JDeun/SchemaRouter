@@ -82,6 +82,42 @@ def structures_info() -> dict:
     }
 
 
+def materials_project_style_structures_info() -> dict:
+    return {
+        "data": {
+            "type": "info",
+            "id": "structures",
+            "description": "materials structures",
+            "formats": ["json"],
+            "properties": {
+                "lattice_vectors": {
+                    "type": "list",
+                    "description": "Lattice vectors.",
+                    "unit": "angstrom",
+                },
+                "cartesian_site_positions": {
+                    "type": "list",
+                    "description": "Cartesian site positions.",
+                    "unit": "angstrom",
+                },
+                "_typed_numeric_vector": {
+                    "type": "list",
+                    "items": {"type": "float"},
+                    "description": "Provider extension with declared numeric items.",
+                    "unit": "eV",
+                },
+            },
+            "output_fields_by_format": {
+                "json": [
+                    "lattice_vectors",
+                    "cartesian_site_positions",
+                    "_typed_numeric_vector",
+                ]
+            },
+        }
+    }
+
+
 def references_info() -> dict:
     return {
         "data": {
@@ -536,3 +572,40 @@ async def test_bounded_get_drops_transport_framing_after_httpx_decode() -> None:
     assert response.json() == base_info()
     assert "content-encoding" not in response.headers
     assert int(response.headers["content-length"]) == len(payload)
+
+
+@pytest.mark.asyncio
+async def test_optimade_untyped_list_unit_is_preserved_but_not_promoted() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/info":
+            return httpx.Response(200, json=base_info(), request=request)
+        if request.url.path == "/v1/info/structures":
+            return httpx.Response(
+                200,
+                json=materials_project_style_structures_info(),
+                request=request,
+            )
+        if request.url.path == "/v1/info/references":
+            return httpx.Response(200, json=references_info(), request=request)
+        raise AssertionError(str(request.url))
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        tool = await router.add_url(
+            "https://materials.example/optimade/v1",
+            kind="optimade",
+        )
+
+    endpoint = tool.endpoint("search_structures")
+    fields = {field.name: field for field in endpoint.output_fields}
+
+    # OPTIMADE may declare only "list" plus a unit. That does not prove the
+    # item type is numeric, so the trusted typed-unit field stays unset.
+    assert fields["lattice_vectors"].unit is None
+    assert fields["lattice_vectors"].json_schema["unit"] == "angstrom"
+    assert fields["cartesian_site_positions"].unit is None
+    assert fields["cartesian_site_positions"].json_schema["unit"] == "angstrom"
+
+    # When item numericity is actually declared, the unit is promoted.
+    assert fields["_typed_numeric_vector"].unit == "eV"
+    assert fields["_typed_numeric_vector"].json_schema["items"]["type"] == "number"
