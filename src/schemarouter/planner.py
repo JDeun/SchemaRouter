@@ -739,8 +739,13 @@ class SchemaPlanner:
         k: int,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+        additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> StateConditionedCapabilityRetrieval:
-        ranked = self._semantic_recall_catalog(request, intent)
+        ranked = self._semantic_recall_catalog(
+            request,
+            intent,
+            additional_availability_predicate=additional_availability_predicate,
+        )
         ranked.sort(key=self._candidate_sort_key)
         visible = [
             self._retrieval_candidate(candidate, rank=index)
@@ -764,6 +769,7 @@ class SchemaPlanner:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+        additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> StateConditionedCapabilityRetrieval:
         """Return the best K state-eligible capabilities from the visible ranked surface."""
 
@@ -784,6 +790,7 @@ class SchemaPlanner:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            additional_availability_predicate=additional_availability_predicate,
         )
 
     async def areretrieve_state_aware(
@@ -794,6 +801,7 @@ class SchemaPlanner:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+        additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> StateConditionedCapabilityRetrieval:
         """Async counterpart to :meth:`reretrieve_state_aware`."""
 
@@ -809,6 +817,7 @@ class SchemaPlanner:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            additional_availability_predicate=additional_availability_predicate,
         )
 
     def retrieve_state_aware(
@@ -819,10 +828,19 @@ class SchemaPlanner:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+        additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> StateAwareCapabilityRetrieval:
         """Return Top-K capabilities filtered by explicit observable typed state."""
 
-        retrieval = self.retrieve(request, k=k)
+        retrieval = (
+            self.retrieve(request, k=k)
+            if additional_availability_predicate is None
+            else self.retrieve_with_additional_availability(
+                request,
+                additional_availability_predicate,
+                k=k,
+            )
+        )
         return filter_retrieval_by_state(
             retrieval,
             execution_state,
@@ -838,10 +856,19 @@ class SchemaPlanner:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+        additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> StateAwareCapabilityRetrieval:
         """Async counterpart to :meth:`retrieve_state_aware`."""
 
-        retrieval = await self.aretrieve(request, k=k)
+        retrieval = (
+            await self.aretrieve(request, k=k)
+            if additional_availability_predicate is None
+            else await self.aretrieve_with_additional_availability(
+                request,
+                additional_availability_predicate,
+                k=k,
+            )
+        )
         return filter_retrieval_by_state(
             retrieval,
             execution_state,
