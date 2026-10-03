@@ -63,6 +63,7 @@ from .capability_graph import (
     CapabilityDependencyGraph,
     build_capability_dependency_graph,
     dependency_cycles,
+    satisfiable_capability_ids,
 )
 from .contract_validation import (
     CapabilityContractValidation,
@@ -463,6 +464,7 @@ __all__ = [
     "inspect_sqlite_storage",
     "migrate_sqlite_storage",
     "dependency_cycles",
+    "satisfiable_capability_ids",
     "discover_adapter_plugins",
     "inspect_registry",
     "inspect_router",
