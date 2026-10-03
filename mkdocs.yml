@@ -144,6 +144,7 @@ nav:
       - OPTIMADE: guides/optimade.md
       - MCP: guides/mcp.md
       - Declarative HTTP/JSON: guides/http-json.md
+      - Provider-first registration: guides/provider-first-registration.md
       - Universal ingestion matrix: guides/universal-ingestion.md
       - Live compatibility matrix: guides/live-compatibility-matrix.md
       - Human-readable documentation: guides/html-documentation.md
