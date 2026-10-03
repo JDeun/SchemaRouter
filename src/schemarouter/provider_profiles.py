@@ -625,7 +625,8 @@ def built_in_provider_profile_registry() -> ProviderProfileRegistry:
                     access_mode="graphql",
                     url="https://rickandmortyapi.com/graphql",
                     description=(
-                        "Public GraphQL API used for provider-first introspection and read-only acceptance."
+                        "Public GraphQL API used for provider-first introspection and "
+                        "read-only acceptance."
                     ),
                 ),
             ),
@@ -646,7 +647,8 @@ def built_in_provider_profile_registry() -> ProviderProfileRegistry:
                     access_mode="odata",
                     url="https://services.odata.org/V4/OData/OData.svc/",
                     description=(
-                        "Public OData V4 reference service used for read-only provider-first acceptance."
+                        "Public OData V4 reference service used for read-only "
+                        "provider-first acceptance."
                     ),
                 ),
             ),
