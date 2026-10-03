@@ -217,7 +217,6 @@ def introspect_sqlalchemy_engine(
 
         fields: list[FieldSpec] = []
         properties: dict[str, Any] = {}
-        required: list[str] = []
         for column in columns:
             name = str(column["name"])
             nullable = bool(column.get("nullable", True))
@@ -236,17 +235,12 @@ def introspect_sqlalchemy_engine(
                 )
             )
             properties[name] = column_schema
-            if not nullable or name in pk_columns:
-                required.append(name)
 
         row_schema: dict[str, Any] = {
             "type": "object",
             "properties": properties,
             "additionalProperties": False,
         }
-        if required:
-            row_schema["required"] = required
-
         parameters = [
             ParameterSpec(
                 name=name,
