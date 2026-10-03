@@ -52,6 +52,12 @@ from .capability_contracts import (
     compare_capability_composition,
     compare_capability_fields,
 )
+from .capability_eligibility import (
+    CapabilityEligibilityCode,
+    CapabilityEligibilityExplanation,
+    CapabilityEligibilityReason,
+    explain_capability_eligibility,
+)
 from .capability_graph import (
     CapabilityDependencyEdge,
     CapabilityDependencyGraph,
@@ -157,6 +163,7 @@ from .inspection import (
     RouterInspection,
     ToolInspection,
     TraceInspection,
+    inspect_capability_eligibility,
     inspect_registry,
     inspect_router,
     inspect_run_trace,
@@ -289,6 +296,9 @@ __all__ = [
     "CapabilityCandidate",
     "CapabilityCompatibility",
     "CapabilityDependencyEdge",
+    "CapabilityEligibilityCode",
+    "CapabilityEligibilityExplanation",
+    "CapabilityEligibilityReason",
     "CapabilityDependencyGraph",
     "CapabilityComposition",
     "CapabilityContract",
@@ -442,6 +452,7 @@ __all__ = [
     "compare_capability_composition",
     "compare_capability_fields",
     "evaluate_state_eligibility",
+    "explain_capability_eligibility",
     "validate_capability_inputs",
     "validate_capability_outputs",
     "compare_endpoint_specs",
@@ -454,6 +465,7 @@ __all__ = [
     "migrate_sqlite_storage",
     "dependency_cycles",
     "discover_adapter_plugins",
+    "inspect_capability_eligibility",
     "inspect_registry",
     "inspect_router",
     "inspect_run_trace",
