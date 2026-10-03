@@ -60,3 +60,44 @@
 ## PlanExplanation
 
 ::: schemarouter.PlanExplanation
+
+
+## CapabilityGraphSnapshot
+
+::: schemarouter.CapabilityGraphSnapshot
+
+## CapabilitySnapshotPublication
+
+::: schemarouter.CapabilitySnapshotPublication
+
+## CapabilityGraphArtifact
+
+::: schemarouter.CapabilityGraphArtifact
+
+## CapabilityArtifactEdge
+
+::: schemarouter.CapabilityArtifactEdge
+
+## StateAwareCapabilityCandidate
+
+::: schemarouter.StateAwareCapabilityCandidate
+
+## StateAwareCapabilityRetrieval
+
+::: schemarouter.StateAwareCapabilityRetrieval
+
+## StateConditionedCapabilityRetrieval
+
+::: schemarouter.StateConditionedCapabilityRetrieval
+
+## CapabilityDecisionCandidate
+
+::: schemarouter.CapabilityDecisionCandidate
+
+## CapabilityDecisionReason
+
+::: schemarouter.CapabilityDecisionReason
+
+## CapabilityDecisionTrace
+
+::: schemarouter.CapabilityDecisionTrace
