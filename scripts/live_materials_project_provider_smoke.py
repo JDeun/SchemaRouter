@@ -6,7 +6,6 @@ import json
 from time import perf_counter
 
 import httpx
-
 from compatibility_report import new_report, write_report
 
 from schemarouter import PlanRequest, SchemaRouter
