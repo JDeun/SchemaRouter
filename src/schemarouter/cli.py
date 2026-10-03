@@ -267,7 +267,14 @@ def _render_decision_trace(document: dict[str, object]) -> str:
     lines = [
         f"Capability decision trace {document['trace_id']}",
         f"snapshot: {document.get('snapshot_id') or '-'}",
-        f"registry_version: {document.get('registry_version') if document.get('registry_version') is not None else '-'}",
+        (
+            "registry_version: "
+            + (
+                str(document.get("registry_version"))
+                if document.get("registry_version") is not None
+                else "-"
+            )
+        ),
     ]
     candidates = document.get("candidates")
     if not isinstance(candidates, list) or not candidates:
