@@ -30,6 +30,7 @@ jobs:
       - run: ruff check .
       - run: pytest -q -m "not mcp_integration"
       - run: python examples/quickstart.py
+      - run: python examples/database_quickstart.py
       - run: python scripts/consumer_acceptance.py
 
   windows-smoke:
@@ -205,6 +206,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
       - run: /tmp/schemarouter-wheel/bin/python examples/quickstart.py
+      - run: /tmp/schemarouter-wheel/bin/python examples/database_quickstart.py
       - run: /tmp/schemarouter-wheel/bin/python examples/sdk_bound_demo.py
       - run: /tmp/schemarouter-wheel/bin/python examples/mixed_provider_demo.py
       - run: /tmp/schemarouter-wheel/bin/python examples/schema_drift_demo.py
@@ -264,6 +266,7 @@ jobs:
       - run: /tmp/schemarouter-sdist/bin/pip install dist/*.tar.gz
       - run: /tmp/schemarouter-sdist/bin/python -c "from importlib.metadata import version; import schemarouter; assert schemarouter.__version__ == version('schemarouter')"
       - run: /tmp/schemarouter-sdist/bin/python examples/quickstart.py
+      - run: /tmp/schemarouter-sdist/bin/python examples/database_quickstart.py
       - run: /tmp/schemarouter-sdist/bin/python scripts/quickstart_provider_contract_smoke.py
       - run: /tmp/schemarouter-sdist/bin/python scripts/consumer_acceptance.py --json-out artifacts/consumer-acceptance-sdist.json
       - run: /tmp/schemarouter-sdist/bin/schemarouter --help
