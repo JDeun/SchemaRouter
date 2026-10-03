@@ -612,28 +612,6 @@ def built_in_provider_profile_registry() -> ProviderProfileRegistry:
     )
     registry.register(
         ProviderProfile(
-            provider_id="anilist",
-            display_name="AniList",
-            aliases=("anilist-graphql",),
-            profile_version="1",
-            profile_source="schemarouter:builtin",
-            homepage="https://anilist.co",
-            methods=(
-                ProviderAccessMethod(
-                    method_id="graphql",
-                    kind="graphql",
-                    access_mode="graphql",
-                    url="https://graphql.anilist.co",
-                    description=(
-                        "Public AniList GraphQL API used for provider-first "
-                        "introspection and read-only acceptance."
-                    ),
-                ),
-            ),
-        )
-    )
-    registry.register(
-        ProviderProfile(
             provider_id="odata-v4-reference",
             display_name="OData.org V4 reference service",
             aliases=("odata-reference", "odata.org", "odata-org"),
