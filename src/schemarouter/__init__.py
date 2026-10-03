@@ -61,6 +61,24 @@ from .capability_contracts import (
     compare_capability_composition,
     compare_capability_fields,
 )
+from .capability_drift import (
+    CapabilityDriftChange,
+    CapabilityDriftCompatibility,
+    CapabilityGraphDrift,
+    capability_contract_fingerprint,
+    compare_capability_graph_snapshot,
+)
+from .capability_eligibility import (
+    CapabilityEligibilityExplanation,
+    CapabilityEligibilityReason,
+    explain_capability_eligibility,
+)
+from .capability_fallback import (
+    CapabilityFallbackEligibility,
+    FallbackEligibilityReason,
+    eligible_fallback_ids,
+    evaluate_fallback_eligibility,
+)
 from .capability_graph import (
     CapabilityDependencyEdge,
     CapabilityDependencyGraph,
@@ -254,6 +272,22 @@ from .traces import (
 )
 
 __all__ = [
+    "CapabilityDriftChange",
+    "CapabilityDriftCompatibility",
+    "CapabilityGraphDrift",
+    "capability_contract_fingerprint",
+    "compare_capability_graph_snapshot",
+    "CapabilityEligibilityExplanation",
+    "CapabilityEligibilityReason",
+    "explain_capability_eligibility",
+    "CapabilityFallbackEligibility",
+    "FallbackEligibilityReason",
+    "eligible_fallback_ids",
+    "evaluate_fallback_eligibility",
+    "CapabilityLineage",
+    "CapabilityLineageHop",
+    "CapabilityLineageReason",
+    "build_capability_lineage",
     "__version__",
     "ADAPTER_ENTRY_POINT_GROUP",
     "AggregatedField",
@@ -485,4 +519,10 @@ __all__ = [
     "render_dashboard",
     "replay_run_events",
     "write_dashboard",
-]
+]from .capability_lineage import (
+    CapabilityLineage,
+    CapabilityLineageHop,
+    CapabilityLineageReason,
+    build_capability_lineage,
+)
+
