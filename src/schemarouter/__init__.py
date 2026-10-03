@@ -22,6 +22,15 @@ from .adapters.plugins import (
     load_adapter_plugins,
 )
 from .adapters.python import schema_tool, tool_from_callable
+from .adapters.vector_store import (
+    VectorCollectionBinding,
+    VectorCollectionInvoker,
+    VectorCollectionSpec,
+    VectorMetadataField,
+    VectorQueryEmbedder,
+    VectorStoreBackend,
+    introspect_vector_backend,
+)
 from .adapters.sqlalchemy_database import (
     SQLAlchemyTableBinding,
     SQLAlchemyTableInvoker,
@@ -629,6 +638,12 @@ __all__ = [
     "ToolRegistry",
     "ToolResult",
     "ToolSpec",
+    "VectorCollectionBinding",
+    "VectorCollectionInvoker",
+    "VectorCollectionSpec",
+    "VectorMetadataField",
+    "VectorQueryEmbedder",
+    "VectorStoreBackend",
     "UnitNormalizationSpec",
     "TraceError",
     "UnsupportedSchemaSourceError",
@@ -655,6 +670,7 @@ __all__ = [
     "write_schema_explorer",
     "inspect_sqlite_storage",
     "introspect_sqlite_database",
+    "introspect_vector_backend",
     "introspect_sqlalchemy_engine",
     "migrate_sqlite_storage",
     "dependency_cycles",
