@@ -3766,7 +3766,11 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRouteRetrieval:
-        return self.router.retrieve_routes(request, k=k)
+        return self.router.retrieve_routes(
+            request,
+            k=k,
+            principal=self.config.principal,
+        )
 
     async def aretrieve_routes(
         self,
@@ -3774,7 +3778,11 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRouteRetrieval:
-        return await self.router.aretrieve_routes(request, k=k)
+        return await self.router.aretrieve_routes(
+            request,
+            k=k,
+            principal=self.config.principal,
+        )
 
     def retrieve(
         self,
@@ -3782,7 +3790,11 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRetrieval:
-        return self.router.retrieve(request, k=k)
+        return self.router.retrieve(
+            request,
+            k=k,
+            principal=self.config.principal,
+        )
 
     async def aretrieve(
         self,
@@ -3790,7 +3802,11 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRetrieval:
-        return await self.router.aretrieve(request, k=k)
+        return await self.router.aretrieve(
+            request,
+            k=k,
+            principal=self.config.principal,
+        )
 
     def reretrieve_state_aware(
         self,
@@ -3807,6 +3823,7 @@ class ConfiguredSchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            principal=self.config.principal,
         )
 
     async def areretrieve_state_aware(
@@ -3824,6 +3841,7 @@ class ConfiguredSchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            principal=self.config.principal,
         )
 
     def retrieve_state_aware(
@@ -3841,6 +3859,7 @@ class ConfiguredSchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            principal=self.config.principal,
         )
 
     async def aretrieve_state_aware(
@@ -3858,6 +3877,7 @@ class ConfiguredSchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            principal=self.config.principal,
         )
 
     def retrieve_executable(
@@ -3866,7 +3886,11 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRetrieval:
-        return self.router.retrieve_executable(request, k=k)
+        return self.router.retrieve_executable(
+            request,
+            k=k,
+            principal=self.config.principal,
+        )
 
     async def aretrieve_executable(
         self,
@@ -3874,7 +3898,11 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRetrieval:
-        return await self.router.aretrieve_executable(request, k=k)
+        return await self.router.aretrieve_executable(
+            request,
+            k=k,
+            principal=self.config.principal,
+        )
 
     def invoke(self, request: PlanRequest | str) -> list[ToolResult]:
         return self.router.invoke(request, config=self.config)
