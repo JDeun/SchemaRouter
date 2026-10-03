@@ -21,6 +21,7 @@ from .adapters.plugins import (
     discover_adapter_plugins,
     load_adapter_plugins,
 )
+from .adapters.python import schema_tool, tool_from_callable
 from .adapters.record_store import (
     RecordFieldSpec,
     RecordModel,
@@ -30,7 +31,6 @@ from .adapters.record_store import (
     RecordStoreBackend,
     introspect_record_backend,
 )
-from .adapters.python import schema_tool, tool_from_callable
 from .adapters.sqlalchemy_database import (
     SQLAlchemyTableBinding,
     SQLAlchemyTableInvoker,
