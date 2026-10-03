@@ -36,6 +36,12 @@ from .authorization import (
     _current_principal_context,
     _principal_execution_context,
 )
+from .data_scope import (
+    DataScopeDecision,
+    DataScopePolicy,
+    PrincipalScopedRegistry,
+    _data_scope_execution_context,
+)
 from .binding_reconciliation import (
     BindingReconciliationError,
     BindingReconciliationItem,
@@ -230,6 +236,7 @@ class SchemaRouter:
         http_client: httpx.AsyncClient | None = None,
         policy: ExecutionPolicy | None = None,
         authorization_policy: AuthorizationPolicy | None = None,
+        data_scope_policy: DataScopePolicy | None = None,
         approval_callback: ApprovalCallback | None = None,
         execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
@@ -239,6 +246,7 @@ class SchemaRouter:
     ) -> None:
         self.registry = registry if registry is not None else InMemoryRegistry()
         self.authorization_policy = authorization_policy
+        self.data_scope_policy = data_scope_policy
         self.executor = RegistryExecutor(
             self.registry,
             policy=policy,
@@ -272,6 +280,98 @@ class SchemaRouter:
             endpoint.name,
             self.planner._snapshot_tool_fingerprint(tool),
         )
+
+    def _scoped_planner_for_principal(
+        self,
+        principal: PrincipalContext | None,
+    ) -> tuple[SchemaPlanner, PrincipalScopedRegistry | None]:
+        if self.authorization_policy is None and self.data_scope_policy is None:
+            return self.planner, None
+        if principal is None:
+            raise PolicyViolationError(
+                "principal context is required when authorization or data-scope policy is configured"
+            )
+
+        scoped_registry = PrincipalScopedRegistry(
+            self.registry,
+            principal=principal,
+            authorization_policy=self.authorization_policy,
+            data_scope_policy=self.data_scope_policy,
+        )
+
+        def scoped_availability(tool: ToolSpec, endpoint: Any) -> bool:
+            try:
+                original_tool = self.registry.get(tool.key)
+                original_endpoint = original_tool.endpoint(endpoint.name)
+            except KeyError:
+                return False
+            return self._is_snapshot_access_available(
+                original_tool,
+                original_endpoint,
+            )
+
+        return (
+            self.planner._clone_for_registry(
+                scoped_registry,
+                availability_predicate=scoped_availability,
+            ),
+            scoped_registry,
+        )
+
+    @staticmethod
+    def _restamp_scoped_retrieval(
+        retrieval: CapabilityRetrieval,
+        scoped_registry: PrincipalScopedRegistry | None,
+    ) -> CapabilityRetrieval:
+        if scoped_registry is None:
+            return retrieval
+        for candidate in retrieval.candidates:
+            candidate.tool_fingerprint = scoped_registry.original_tool_fingerprint(
+                candidate.tool
+            )
+            candidate.endpoint_fingerprint = (
+                scoped_registry.original_endpoint_fingerprint(
+                    candidate.tool,
+                    candidate.endpoint,
+                )
+            )
+        return retrieval
+
+    @staticmethod
+    def _restamp_scoped_routes(
+        retrieval: CapabilityRouteRetrieval,
+        scoped_registry: PrincipalScopedRegistry | None,
+    ) -> CapabilityRouteRetrieval:
+        if scoped_registry is None:
+            return retrieval
+        for candidate in retrieval.candidates:
+            candidate.tool_fingerprint = scoped_registry.original_tool_fingerprint(
+                candidate.tool
+            )
+            candidate.endpoint_fingerprint = (
+                scoped_registry.original_endpoint_fingerprint(
+                    candidate.tool,
+                    candidate.endpoint,
+                )
+            )
+        return retrieval
+
+    @staticmethod
+    def _restamp_scoped_plan(
+        plan: ExecutionPlan,
+        scoped_registry: PrincipalScopedRegistry | None,
+    ) -> ExecutionPlan:
+        if scoped_registry is None:
+            return plan
+        for call in plan.calls:
+            call.tool_fingerprint = scoped_registry.original_tool_fingerprint(
+                call.tool
+            )
+            call.schema_fingerprint = scoped_registry.original_endpoint_fingerprint(
+                call.tool,
+                call.endpoint,
+            )
+        return plan
 
     def _authorization_predicate(
         self,
@@ -329,6 +429,80 @@ class SchemaRouter:
                 endpoint,
                 call,
             )
+
+    def _validate_plan_data_scope(
+        self,
+        plan: ExecutionPlan,
+        principal: PrincipalContext | None,
+    ) -> dict[str, DataScopeDecision] | None:
+        policy = self.data_scope_policy
+        if policy is None:
+            return None
+        if principal is None:
+            raise PolicyViolationError(
+                "principal context is required when data_scope_policy is configured"
+            )
+
+        decisions: dict[str, DataScopeDecision] = {}
+        for call in plan.calls:
+            try:
+                tool = self.registry.get(call.tool)
+                endpoint = tool.endpoint(call.endpoint)
+            except KeyError as exc:
+                raise PolicyViolationError(
+                    "data scope denied for requested capability"
+                ) from exc
+            if tool.source_type != "database":
+                continue
+            policy.validate_fields(
+                principal,
+                tool,
+                endpoint,
+                call.fields,
+            )
+            decision = policy.evaluate(principal, tool, endpoint)
+            declared_fields = {field.name for field in endpoint.output_fields}
+            scoped_fields = endpoint.execution_metadata.get("data_scope_fields", ())
+            if isinstance(scoped_fields, list):
+                declared_fields.update(
+                    value for value in scoped_fields if isinstance(value, str)
+                )
+            unknown_predicate_fields = sorted(
+                {
+                    predicate.field
+                    for predicate in decision.trusted_predicates
+                    if predicate.field not in declared_fields
+                }
+            )
+            if unknown_predicate_fields:
+                raise PolicyViolationError(
+                    "trusted data predicate targets undeclared fields"
+                )
+
+            for predicate in decision.trusted_predicates:
+                supplied_values = [
+                    call.arguments[name]
+                    for name in (
+                        predicate.field,
+                        f"filter__{predicate.field}",
+                    )
+                    if name in call.arguments
+                ]
+                for supplied in supplied_values:
+                    if predicate.operator == "eq" and supplied != predicate.value:
+                        raise PolicyViolationError(
+                            "model argument conflicts with trusted data predicate"
+                        )
+                    if (
+                        predicate.operator == "in"
+                        and isinstance(predicate.value, tuple)
+                        and supplied not in predicate.value
+                    ):
+                        raise PolicyViolationError(
+                            "model argument conflicts with trusted data predicate"
+                        )
+            decisions[f"{call.tool}.{call.endpoint}"] = decision
+        return decisions
 
     async def __aenter__(self) -> SchemaRouter:
         return self
