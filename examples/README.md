@@ -36,6 +36,10 @@ materials-science examples used elsewhere in the project.
 | OData public provider | `python scripts/live_odata_smoke.py` | core | live OData.org V4 |
 | OpenRPC / JSON-RPC | `python scripts/live_reference_openrpc_smoke.py` | core | pinned local reference |
 | MCP Streamable HTTP | `python scripts/live_reference_mcp_smoke.py` | `mcp` | pinned local MCP server |
+| Provider-first: Materials Project | `python scripts/live_materials_project_provider_smoke.py` | core | live public provider |
+| Provider-first: Crossref | `python scripts/live_crossref_provider_smoke.py` | core | live public provider |
+| Provider-first: Tavily | `python scripts/live_tavily_provider_smoke.py` | core + optional `TAVILY_API_KEY` | auth contract / optional live provider |
+| Capability graph scale | `python scripts/benchmark_capability_graph.py --sizes 1000,10000,50000` | core | offline deterministic benchmark |
 
 Install an extra with, for example:
 
@@ -196,3 +200,29 @@ Required CI executes the deterministic examples from the installed package. Fram
 run the LangChain, LangGraph, LlamaIndex, and MCP examples with their optional dependencies.
 
 This keeps the gallery executable without making third-party network uptime a release gate.
+
+
+## Post-0.14 capability infrastructure
+
+The following additive surfaces are intentionally split between executable examples and focused
+guides:
+
+- **Provider-first onboarding:** use `await router.add_provider("materials-project")` or the live
+  Materials Project/Crossref/Tavily smoke scripts above. See
+  [provider-first registration](../docs/guides/provider-first-registration.md).
+- **State-conditioned retrieval:** fixed Top-K filtering remains
+  `retrieve_state_aware(...)`; eligible Top-K backfill is the separate
+  `reretrieve_state_aware(...)` surface. See
+  [state-aware retrieval](../docs/guides/state-aware-retrieval.md).
+- **Capability graph scale:** run `scripts/benchmark_capability_graph.py` for sparse 1k/10k/50k
+  construction/update measurements. See
+  [capability graph scalability](../docs/guides/capability-graph-scalability.md).
+- **Snapshot/artifact lifecycle:** use `schemarouter artifact inspect/migrate` and
+  `schemarouter snapshot inspect/migrate`. See
+  [capability artifacts](../docs/guides/capability-artifacts.md) and
+  [capability snapshots](../docs/guides/capability-snapshots.md).
+- **Decision trace observability:** build a `CapabilityDecisionTrace`, pass it explicitly to
+  `router.inspect(decision_traces=[trace])`, or inspect a serialized trace through the CLI. See
+  [capability decision traces](../docs/guides/capability-decision-traces.md).
+
+These surfaces do not add workflow orchestration, autonomous authorization, or execution authority.
