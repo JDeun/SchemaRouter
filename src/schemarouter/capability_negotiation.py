@@ -75,7 +75,10 @@ def negotiate_capabilities(
     results: list[CapabilityNegotiationCandidate] = []
     for capability in sorted(capabilities, key=lambda item: item.capability_id):
         capability_id = capability.capability_id
-        if (\n            request.allowed_capability_ids is not None\n            and capability_id not in request.allowed_capability_ids\n        ):
+        if (
+            request.allowed_capability_ids is not None
+            and capability_id not in request.allowed_capability_ids
+        ):
             results.append(CapabilityNegotiationCandidate(
                 capability_id=capability_id,
                 status="policy_denied",
