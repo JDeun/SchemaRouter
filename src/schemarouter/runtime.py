@@ -30,7 +30,11 @@ from .amendment_overlay import (
     reapply_amendment_overlay,
     strip_amendment_overlay,
 )
-from .authorization import AuthorizationPolicy, PrincipalContext
+from .authorization import (
+    AuthorizationPolicy,
+    PrincipalContext,
+    _principal_execution_context,
+)
 from .binding_reconciliation import (
     BindingReconciliationError,
     BindingReconciliationItem,
@@ -2929,18 +2933,19 @@ class SchemaRouter:
         run_config: RunConfig,
     ) -> list[ToolResult]:
         self._validate_plan_authorization(plan, run_config.principal)
-        if run_config.execution_mode == "parallel_read_only":
-            return await self.executor.execute_parallel_read_only(
+        with _principal_execution_context(run_config.principal):
+            if run_config.execution_mode == "parallel_read_only":
+                return await self.executor.execute_parallel_read_only(
+                    plan,
+                    retry=run_config.retry,
+                    budget=run_config.budget,
+                    max_concurrency=run_config.max_parallel_calls,
+                )
+            return await self.executor.execute(
                 plan,
                 retry=run_config.retry,
                 budget=run_config.budget,
-                max_concurrency=run_config.max_parallel_calls,
             )
-        return await self.executor.execute(
-            plan,
-            retry=run_config.retry,
-            budget=run_config.budget,
-        )
 
     async def execute(
         self,
@@ -3068,22 +3073,23 @@ class SchemaRouter:
             request,
             principal=run_config.principal,
         )
-        if run_config.execution_mode == "parallel_read_only":
-            async for _, result in self.executor.execute_parallel_read_only_iter(
+        with _principal_execution_context(run_config.principal):
+            if run_config.execution_mode == "parallel_read_only":
+                async for _, result in self.executor.execute_parallel_read_only_iter(
+                    plan,
+                    retry=run_config.retry,
+                    budget=run_config.budget,
+                    max_concurrency=run_config.max_parallel_calls,
+                ):
+                    yield result
+                return
+
+            async for result in self.executor.execute_iter(
                 plan,
                 retry=run_config.retry,
                 budget=run_config.budget,
-                max_concurrency=run_config.max_parallel_calls,
             ):
                 yield result
-            return
-
-        async for result in self.executor.execute_iter(
-            plan,
-            retry=run_config.retry,
-            budget=run_config.budget,
-        ):
-            yield result
 
     def stream(
         self,
@@ -3232,12 +3238,13 @@ class SchemaRouter:
                             ("start", index, call, original_candidate_index)
                         )
                         try:
-                            result = await self.executor.execute_call(
-                                call,
-                                retry=run_config.retry,
-                                budget=run_config.budget,
-                                _tracker=budget_tracker,
-                            )
+                            with _principal_execution_context(run_config.principal):
+                                result = await self.executor.execute_call(
+                                    call,
+                                    retry=run_config.retry,
+                                    budget=run_config.budget,
+                                    _tracker=budget_tracker,
+                                )
                         except InvocationUnavailableError as exc:
                             has_next = candidate_index + 1 < len(chain)
                             next_call = (
@@ -3611,12 +3618,13 @@ class SchemaRouter:
                 sequence += 1
 
                 try:
-                    result = await self.executor.execute_call(
-                        call,
-                        retry=run_config.retry,
-                        budget=run_config.budget,
-                        _tracker=budget_tracker,
-                    )
+                    with _principal_execution_context(run_config.principal):
+                        result = await self.executor.execute_call(
+                            call,
+                            retry=run_config.retry,
+                            budget=run_config.budget,
+                            _tracker=budget_tracker,
+                        )
                 except InvocationUnavailableError as exc:
                     has_next = candidate_index + 1 < len(chain)
                     error_data: dict[str, Any] = {
