@@ -9,7 +9,7 @@ from schemarouter.data_scope import (
     PrincipalScopedRegistry,
     TrustedDataPredicate,
 )
-from schemarouter.errors import PolicyViolationError
+from schemarouter.errors import PolicyViolationError, RegistrationError
 from schemarouter.models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
 from schemarouter.registry import InMemoryRegistry
 
@@ -363,7 +363,7 @@ def test_principal_scoped_registry_is_read_only() -> None:
         data_scope_policy=_policy(),
     )
 
-    with pytest.raises(Exception, match="read-only"):
+    with pytest.raises(RegistrationError, match="read-only"):
         scoped.register(_tool())
 
 
