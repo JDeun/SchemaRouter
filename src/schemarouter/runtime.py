@@ -277,13 +277,14 @@ class SchemaRouter:
         self,
         principal: PrincipalContext | None,
     ) -> Callable[[ToolSpec, Any], bool] | None:
-        if self.authorization_policy is None:
+        policy = self.authorization_policy
+        if policy is None:
             return None
         if principal is None:
             raise PolicyViolationError(
                 "principal context is required when authorization_policy is configured"
             )
-        return lambda tool, endpoint: self.authorization_policy.visible(
+        return lambda tool, endpoint: policy.visible(
             principal,
             tool,
             endpoint,
@@ -3880,11 +3881,8 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRouteRetrieval:
-        return self.router.retrieve_routes_authorized(
-            request,
-            principal=self.config.principal,
-            k=k,
-        )
+        with _principal_execution_context(self.config.principal):
+            return self.router.retrieve_routes(request, k=k)
 
     async def aretrieve_routes(
         self,
@@ -3892,11 +3890,8 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRouteRetrieval:
-        return await self.router.aretrieve_routes_authorized(
-            request,
-            principal=self.config.principal,
-            k=k,
-        )
+        with _principal_execution_context(self.config.principal):
+            return await self.router.aretrieve_routes(request, k=k)
 
     def retrieve(
         self,
@@ -3904,11 +3899,8 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRetrieval:
-        return self.router.retrieve_authorized(
-            request,
-            principal=self.config.principal,
-            k=k,
-        )
+        with _principal_execution_context(self.config.principal):
+            return self.router.retrieve(request, k=k)
 
     async def aretrieve(
         self,
@@ -3916,11 +3908,8 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRetrieval:
-        return await self.router.aretrieve_authorized(
-            request,
-            principal=self.config.principal,
-            k=k,
-        )
+        with _principal_execution_context(self.config.principal):
+            return await self.router.aretrieve(request, k=k)
 
     def reretrieve_state_aware(
         self,
@@ -4000,11 +3989,8 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRetrieval:
-        return self.router.retrieve_executable_authorized(
-            request,
-            principal=self.config.principal,
-            k=k,
-        )
+        with _principal_execution_context(self.config.principal):
+            return self.router.retrieve_executable(request, k=k)
 
     async def aretrieve_executable(
         self,
@@ -4012,11 +3998,8 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRetrieval:
-        return await self.router.aretrieve_executable_authorized(
-            request,
-            principal=self.config.principal,
-            k=k,
-        )
+        with _principal_execution_context(self.config.principal):
+            return await self.router.aretrieve_executable(request, k=k)
 
     def invoke(self, request: PlanRequest | str) -> list[ToolResult]:
         return self.router.invoke(request, config=self.config)
