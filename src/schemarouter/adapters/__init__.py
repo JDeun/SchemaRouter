@@ -37,6 +37,12 @@ from .plugins import (
     discover_adapter_plugins,
     load_adapter_plugins,
 )
+from .python import (
+    PythonCallableInvoker,
+    callable_options,
+    schema_tool,
+    tool_from_callable,
+)
 from .record_store import (
     RecordFieldSpec,
     RecordModel,
@@ -45,12 +51,6 @@ from .record_store import (
     RecordSourceSpec,
     RecordStoreBackend,
     introspect_record_backend,
-)
-from .python import (
-    PythonCallableInvoker,
-    callable_options,
-    schema_tool,
-    tool_from_callable,
 )
 from .sqlalchemy_database import (
     SQLAlchemyTableBinding,
