@@ -1,6 +1,13 @@
 import json
 
-from schemarouter import EndpointSpec, SQLiteRegistry, ToolSpec
+from schemarouter import (
+    EndpointSpec,
+    SQLiteRegistry,
+    ToolSpec,
+    build_capability_artifact,
+    build_capability_snapshot,
+    serialize_capability_artifact,
+)
 from schemarouter.cli import _run, build_parser
 
 
@@ -76,3 +83,85 @@ def test_cli_schema_diff_endpoint_json_output(tmp_path) -> None:
         change["kind"] == "execution_semantics_changed"
         for change in payload["changes"]
     )
+
+
+def test_cli_artifact_inspect_and_migrate_current_document(tmp_path) -> None:
+    source = tmp_path / "graph.json"
+    artifact = build_capability_artifact(
+        graph_digest="g",
+        capabilities=[],
+    )
+    source.write_text(
+        serialize_capability_artifact(artifact),
+        encoding="utf-8",
+    )
+
+    inspect_args = build_parser().parse_args(
+        ["artifact", "inspect", str(source), "--json"]
+    )
+    inspection = json.loads(_run(inspect_args))
+
+    assert inspection["kind"] == "capability_artifact"
+    assert inspection["migration_required"] is False
+    assert source.read_text(encoding="utf-8") == serialize_capability_artifact(artifact)
+
+    migrate_args = build_parser().parse_args(
+        ["artifact", "migrate", str(source), "--json"]
+    )
+    migrated = json.loads(_run(migrate_args))
+    destination = tmp_path / "graph.json.migrated.json"
+
+    assert migrated["output"] == str(destination)
+    assert destination.exists()
+    assert source.exists()
+
+
+def test_cli_snapshot_migrates_raw_public_snapshot_without_overwrite(tmp_path) -> None:
+    source = tmp_path / "snapshot.json"
+    snapshot = build_capability_snapshot([])
+    source.write_text(
+        json.dumps(snapshot.model_dump(mode="json")),
+        encoding="utf-8",
+    )
+
+    args = build_parser().parse_args(
+        ["snapshot", "migrate", str(source), "--json"]
+    )
+    migrated = json.loads(_run(args))
+    destination = tmp_path / "snapshot.json.migrated.json"
+
+    assert migrated["migration_required"] is True
+    assert destination.exists()
+    payload = json.loads(destination.read_text(encoding="utf-8"))
+    assert payload["format_version"] == "1.0"
+    assert payload["snapshot"]["snapshot_id"] == snapshot.snapshot_id
+
+
+def test_cli_format_migration_refuses_existing_destination_without_overwrite(
+    tmp_path,
+) -> None:
+    source = tmp_path / "snapshot.json"
+    output = tmp_path / "existing.json"
+    snapshot = build_capability_snapshot([])
+    source.write_text(
+        json.dumps(snapshot.model_dump(mode="json")),
+        encoding="utf-8",
+    )
+    output.write_text("keep", encoding="utf-8")
+
+    args = build_parser().parse_args(
+        [
+            "snapshot",
+            "migrate",
+            str(source),
+            "--output",
+            str(output),
+        ]
+    )
+
+    import pytest
+
+    with pytest.raises(FileExistsError, match="already exists"):
+        _run(args)
+
+    assert output.read_text(encoding="utf-8") == "keep"
