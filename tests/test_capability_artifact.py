@@ -17,6 +17,7 @@ from schemarouter.capability_contracts import CapabilityContract
         ("openapi", "provider-a", "rest"),
         ("mcp", "provider-b", "mcp"),
         ("optimade", "materials", "optimade"),
+        ("python", "materials", "mp-api"),
     ],
 )
 def test_provider_fixture_artifact_round_trip(kind: str, provider: str, access_method: str) -> None:
