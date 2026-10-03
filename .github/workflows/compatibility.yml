@@ -168,7 +168,6 @@ jobs:
 
 
   adapter-compatibility-matrix:
-    continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
