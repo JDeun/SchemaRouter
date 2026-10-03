@@ -8,7 +8,14 @@ from hashlib import sha256
 from typing import Any
 
 from ..errors import RegistrationError
-from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
+from ..models import (
+    EndpointSpec,
+    FieldSpec,
+    ParameterSpec,
+    ServerProjectionSpec,
+    ToolCall,
+    ToolSpec,
+)
 
 _SELECT_ENDPOINT = "select"
 _MAX_LIMIT = 1000
@@ -70,6 +77,8 @@ class SQLiteTableBinding:
 class SQLiteTableInvoker:
     """Read-only call-aware invoker for one introspected SQLite table or view."""
 
+    projects_fields = True
+
     def __init__(
         self,
         connection: sqlite3.Connection,
@@ -87,9 +96,7 @@ class SQLiteTableInvoker:
         if call.endpoint != _SELECT_ENDPOINT:
             raise RuntimeError(f"unknown SQLite endpoint: {call.endpoint!r}")
 
-        selected = tuple(call.fields)
-        if not selected:
-            raise RuntimeError("SQLite selection requires explicit output fields")
+        selected = tuple(call.fields) or self._columns
         unknown = sorted(set(selected) - set(self._columns))
         if unknown:
             raise RuntimeError(
@@ -287,6 +294,10 @@ def introspect_sqlite_database(
             parameters=parameters,
             output_fields=fields,
             output_schema={"type": "array", "items": row_schema},
+            server_projection=ServerProjectionSpec(
+                parameter="fields",
+                field_map={field.name: field.name for field in fields},
+            ),
             read_only=True,
             destructive=False,
             execution_metadata={
