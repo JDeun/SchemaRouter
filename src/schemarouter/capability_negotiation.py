@@ -55,7 +55,7 @@ def _match_required_output(
     if not matches:
         return "incompatible", f"missing semantic output {required.semantic_id}"
 
-    outcomes = [compare_capability_fields(field, required, context=context) for field in matches]
+    outcomes = [compare_capability_fields(required, field, context=context) for field in matches]
     order = {"exact": 0, "compatible": 1, "convertible": 2, "unknown": 3, "incompatible": 4}
     best = min(outcomes, key=lambda item: order[item.status])
     return best.status, "; ".join(reason.detail for reason in best.reasons)
