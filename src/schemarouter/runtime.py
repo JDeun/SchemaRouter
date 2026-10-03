@@ -33,6 +33,7 @@ from .amendment_overlay import (
 from .authorization import (
     AuthorizationPolicy,
     PrincipalContext,
+    _current_principal_context,
     _principal_execution_context,
 )
 from .binding_reconciliation import (
@@ -2663,42 +2664,53 @@ class SchemaRouter:
             )
         )
 
-    def plan(
-        self,
-        request: PlanRequest | str,
-        *,
-        principal: PrincipalContext | None = None,
-    ) -> ExecutionPlan:
-        """Schema-aware planning under the configured principal authorization boundary."""
+    def plan(self, request: PlanRequest | str) -> ExecutionPlan:
+        """Schema-aware planning under any active trusted principal context."""
 
-        predicate = self._authorization_predicate(principal)
+        predicate = self._authorization_predicate(_current_principal_context())
         if predicate is None:
             return self.planner.plan(request)
         return self.planner.plan_with_additional_availability(request, predicate)
 
-    async def aplan(
-        self,
-        request: PlanRequest | str,
-        *,
-        principal: PrincipalContext | None = None,
-    ) -> ExecutionPlan:
-        """Async schema-aware planning under principal authorization."""
+    async def aplan(self, request: PlanRequest | str) -> ExecutionPlan:
+        """Async schema-aware planning under any active trusted principal context."""
 
-        predicate = self._authorization_predicate(principal)
+        predicate = self._authorization_predicate(_current_principal_context())
         if predicate is None:
             return await self.planner.aplan(request)
         return await self.planner.aplan_with_additional_availability(request, predicate)
+
+    def plan_authorized(
+        self,
+        request: PlanRequest | str,
+        *,
+        principal: PrincipalContext,
+    ) -> ExecutionPlan:
+        """Plan with one explicitly supplied trusted principal."""
+
+        with _principal_execution_context(principal):
+            return self.plan(request)
+
+    async def aplan_authorized(
+        self,
+        request: PlanRequest | str,
+        *,
+        principal: PrincipalContext,
+    ) -> ExecutionPlan:
+        """Async counterpart to :meth:`plan_authorized`."""
+
+        with _principal_execution_context(principal):
+            return await self.aplan(request)
 
     def retrieve_routes(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
-        principal: PrincipalContext | None = None,
     ) -> CapabilityRouteRetrieval:
-        """Return lightweight Top-K route references under principal authorization."""
+        """Return lightweight Top-K route references under active authorization."""
 
-        predicate = self._authorization_predicate(principal)
+        predicate = self._authorization_predicate(_current_principal_context())
         if predicate is None:
             return self.planner.retrieve_routes(request, k=k)
         return self.planner.retrieve_routes_with_additional_availability(
@@ -2712,11 +2724,10 @@ class SchemaRouter:
         request: PlanRequest | str,
         *,
         k: int = 5,
-        principal: PrincipalContext | None = None,
     ) -> CapabilityRouteRetrieval:
         """Async counterpart to :meth:`retrieve_routes`."""
 
-        predicate = self._authorization_predicate(principal)
+        predicate = self._authorization_predicate(_current_principal_context())
         if predicate is None:
             return await self.planner.aretrieve_routes(request, k=k)
         return await self.planner.aretrieve_routes_with_additional_availability(
@@ -2725,16 +2736,39 @@ class SchemaRouter:
             k=k,
         )
 
+    def retrieve_routes_authorized(
+        self,
+        request: PlanRequest | str,
+        *,
+        principal: PrincipalContext,
+        k: int = 5,
+    ) -> CapabilityRouteRetrieval:
+        """Retrieve route references for one explicitly supplied principal."""
+
+        with _principal_execution_context(principal):
+            return self.retrieve_routes(request, k=k)
+
+    async def aretrieve_routes_authorized(
+        self,
+        request: PlanRequest | str,
+        *,
+        principal: PrincipalContext,
+        k: int = 5,
+    ) -> CapabilityRouteRetrieval:
+        """Async counterpart to :meth:`retrieve_routes_authorized`."""
+
+        with _principal_execution_context(principal):
+            return await self.aretrieve_routes(request, k=k)
+
     def retrieve(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
-        principal: PrincipalContext | None = None,
     ) -> CapabilityRetrieval:
-        """Return Top-K typed capabilities under principal authorization."""
+        """Return Top-K typed capabilities under any active principal context."""
 
-        predicate = self._authorization_predicate(principal)
+        predicate = self._authorization_predicate(_current_principal_context())
         if predicate is None:
             return self.planner.retrieve(request, k=k)
         return self.planner.retrieve_with_additional_availability(
@@ -2748,11 +2782,10 @@ class SchemaRouter:
         request: PlanRequest | str,
         *,
         k: int = 5,
-        principal: PrincipalContext | None = None,
     ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve`."""
 
-        predicate = self._authorization_predicate(principal)
+        predicate = self._authorization_predicate(_current_principal_context())
         if predicate is None:
             return await self.planner.aretrieve(request, k=k)
         return await self.planner.aretrieve_with_additional_availability(
@@ -2760,6 +2793,30 @@ class SchemaRouter:
             predicate,
             k=k,
         )
+
+    def retrieve_authorized(
+        self,
+        request: PlanRequest | str,
+        *,
+        principal: PrincipalContext,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        """Retrieve capabilities for one explicitly supplied trusted principal."""
+
+        with _principal_execution_context(principal):
+            return self.retrieve(request, k=k)
+
+    async def aretrieve_authorized(
+        self,
+        request: PlanRequest | str,
+        *,
+        principal: PrincipalContext,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        """Async counterpart to :meth:`retrieve_authorized`."""
+
+        with _principal_execution_context(principal):
+            return await self.aretrieve(request, k=k)
 
     def reretrieve_state_aware(
         self,
@@ -2769,9 +2826,8 @@ class SchemaRouter:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
-        principal: PrincipalContext | None = None,
     ) -> StateConditionedCapabilityRetrieval:
-        """Backfill to the best K state-eligible capabilities under authorization."""
+        """Backfill to state-eligible capabilities under active authorization."""
 
         return self.planner.reretrieve_state_aware(
             request,
@@ -2779,7 +2835,9 @@ class SchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
-            additional_availability_predicate=self._authorization_predicate(principal),
+            additional_availability_predicate=self._authorization_predicate(
+                _current_principal_context()
+            ),
         )
 
     async def areretrieve_state_aware(
@@ -2790,7 +2848,6 @@ class SchemaRouter:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
-        principal: PrincipalContext | None = None,
     ) -> StateConditionedCapabilityRetrieval:
         """Async counterpart to :meth:`reretrieve_state_aware`."""
 
@@ -2800,7 +2857,9 @@ class SchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
-            additional_availability_predicate=self._authorization_predicate(principal),
+            additional_availability_predicate=self._authorization_predicate(
+                _current_principal_context()
+            ),
         )
 
     def retrieve_state_aware(
@@ -2811,9 +2870,8 @@ class SchemaRouter:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
-        principal: PrincipalContext | None = None,
     ) -> StateAwareCapabilityRetrieval:
-        """Retrieve registered capabilities under state and principal authorization."""
+        """Retrieve state-eligible capabilities under active authorization."""
 
         return self.planner.retrieve_state_aware(
             request,
@@ -2821,7 +2879,9 @@ class SchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
-            additional_availability_predicate=self._authorization_predicate(principal),
+            additional_availability_predicate=self._authorization_predicate(
+                _current_principal_context()
+            ),
         )
 
     async def aretrieve_state_aware(
@@ -2832,7 +2892,6 @@ class SchemaRouter:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
-        principal: PrincipalContext | None = None,
     ) -> StateAwareCapabilityRetrieval:
         """Async counterpart to :meth:`retrieve_state_aware`."""
 
@@ -2842,7 +2901,9 @@ class SchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
-            additional_availability_predicate=self._authorization_predicate(principal),
+            additional_availability_predicate=self._authorization_predicate(
+                _current_principal_context()
+            ),
         )
 
     def _binding_ready(self, tool: ToolSpec, endpoint: Any) -> bool:
@@ -2852,53 +2913,67 @@ class SchemaRouter:
             tool.fingerprint,
         )
 
-    def plan_executable(
-        self,
-        request: PlanRequest | str,
-        *,
-        principal: PrincipalContext | None = None,
-    ) -> ExecutionPlan:
-        """Plan only across routes that are authorized and currently executable."""
+    def plan_executable(self, request: PlanRequest | str) -> ExecutionPlan:
+        """Plan only across authorized routes with a ready local binding."""
 
         predicate = self._combined_availability_predicate(
-            principal,
+            _current_principal_context(),
             self._binding_ready,
         )
-        assert predicate is not None
+        if predicate is None:
+            raise RuntimeError("executable planning requires an availability predicate")
         return self.planner.plan_with_additional_availability(request, predicate)
 
-    async def aplan_executable(
-        self,
-        request: PlanRequest | str,
-        *,
-        principal: PrincipalContext | None = None,
-    ) -> ExecutionPlan:
+    async def aplan_executable(self, request: PlanRequest | str) -> ExecutionPlan:
         """Async counterpart to :meth:`plan_executable`."""
 
         predicate = self._combined_availability_predicate(
-            principal,
+            _current_principal_context(),
             self._binding_ready,
         )
-        assert predicate is not None
+        if predicate is None:
+            raise RuntimeError("executable planning requires an availability predicate")
         return await self.planner.aplan_with_additional_availability(
             request,
             predicate,
         )
+
+    def plan_executable_authorized(
+        self,
+        request: PlanRequest | str,
+        *,
+        principal: PrincipalContext,
+    ) -> ExecutionPlan:
+        """Plan executable routes for one explicitly supplied principal."""
+
+        with _principal_execution_context(principal):
+            return self.plan_executable(request)
+
+    async def aplan_executable_authorized(
+        self,
+        request: PlanRequest | str,
+        *,
+        principal: PrincipalContext,
+    ) -> ExecutionPlan:
+        """Async counterpart to :meth:`plan_executable_authorized`."""
+
+        with _principal_execution_context(principal):
+            return await self.aplan_executable(request)
 
     def retrieve_executable(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
-        principal: PrincipalContext | None = None,
     ) -> CapabilityRetrieval:
         """Return Top-K authorized capabilities with a ready local binding."""
 
         predicate = self._combined_availability_predicate(
-            principal,
+            _current_principal_context(),
             self._binding_ready,
         )
-        assert predicate is not None
+        if predicate is None:
+            raise RuntimeError("executable retrieval requires an availability predicate")
         return self.planner.retrieve_with_additional_availability(
             request,
             predicate,
@@ -2911,21 +2986,45 @@ class SchemaRouter:
         request: PlanRequest | str,
         *,
         k: int = 5,
-        principal: PrincipalContext | None = None,
     ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve_executable`."""
 
         predicate = self._combined_availability_predicate(
-            principal,
+            _current_principal_context(),
             self._binding_ready,
         )
-        assert predicate is not None
+        if predicate is None:
+            raise RuntimeError("executable retrieval requires an availability predicate")
         return await self.planner.aretrieve_with_additional_availability(
             request,
             predicate,
             k=k,
             executable_only=True,
         )
+
+    def retrieve_executable_authorized(
+        self,
+        request: PlanRequest | str,
+        *,
+        principal: PrincipalContext,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        """Retrieve executable capabilities for one explicitly supplied principal."""
+
+        with _principal_execution_context(principal):
+            return self.retrieve_executable(request, k=k)
+
+    async def aretrieve_executable_authorized(
+        self,
+        request: PlanRequest | str,
+        *,
+        principal: PrincipalContext,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        """Async counterpart to :meth:`retrieve_executable_authorized`."""
+
+        with _principal_execution_context(principal):
+            return await self.aretrieve_executable(request, k=k)
 
     async def _execute_plan(
         self,
