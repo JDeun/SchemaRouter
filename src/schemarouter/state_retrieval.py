@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from .capability_contracts import CapabilityFieldContract
-from .execution_state import StateEligibility, TypedExecutionState, evaluate_state_eligibility
+from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
+from .execution_state import (\n    StateEligibility,\n    TypedExecutionState,\n    evaluate_preconditions,\n    evaluate_state_eligibility,\n)
 from .models import CapabilityCandidate, CapabilityRetrieval, StrictModel
 
 
@@ -24,7 +24,7 @@ def filter_retrieval_by_state(
     retrieval: CapabilityRetrieval,
     state: TypedExecutionState,
     *,
-    requirements_by_route: dict[str, list[CapabilityFieldContract]] | None = None,
+    requirements_by_route: dict[str, list[CapabilityFieldContract]] | None = None,\n    preconditions_by_route: dict[str, list[CapabilityPrecondition]] | None = None,
 ) -> StateAwareCapabilityRetrieval:
     """Filter an existing retrieval result against host-supplied typed state.
 
@@ -33,7 +33,7 @@ def filter_retrieval_by_state(
     candidates is preserved and no execution or workflow planning occurs.
     """
 
-    overrides = requirements_by_route or {}
+    overrides = requirements_by_route or {}\n    precondition_overrides = preconditions_by_route or {}
     candidates: list[StateAwareCapabilityCandidate] = []
     for candidate in retrieval.candidates:
         requirements = overrides.get(
