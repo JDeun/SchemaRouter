@@ -9,7 +9,14 @@ from typing import Any
 from uuid import UUID
 
 from ..errors import RegistrationError
-from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
+from ..models import (
+    EndpointSpec,
+    FieldSpec,
+    ParameterSpec,
+    ServerProjectionSpec,
+    ToolCall,
+    ToolSpec,
+)
 
 _SELECT_ENDPOINT = "select"
 _MAX_LIMIT = 1000
@@ -81,6 +88,8 @@ class SQLAlchemyTableBinding:
 class SQLAlchemyTableInvoker:
     """Read-only call-aware invoker using SQLAlchemy Core parameter binding."""
 
+    projects_fields = True
+
     def __init__(
         self,
         engine: Any,
@@ -98,9 +107,7 @@ class SQLAlchemyTableInvoker:
         if call.endpoint != _SELECT_ENDPOINT:
             raise RuntimeError(f"unknown SQLAlchemy endpoint: {call.endpoint!r}")
 
-        selected = tuple(call.fields)
-        if not selected:
-            raise RuntimeError("database selection requires explicit output fields")
+        selected = tuple(call.fields) or self._columns
         unknown = sorted(set(selected) - set(self._columns))
         if unknown:
             raise RuntimeError(
@@ -293,6 +300,10 @@ def introspect_sqlalchemy_engine(
             parameters=parameters,
             output_fields=fields,
             output_schema={"type": "array", "items": row_schema},
+            server_projection=ServerProjectionSpec(
+                parameter="fields",
+                field_map={field.name: field.name for field in fields},
+            ),
             read_only=True,
             destructive=False,
             execution_metadata={
