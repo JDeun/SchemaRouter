@@ -589,4 +589,67 @@ def built_in_provider_profile_registry() -> ProviderProfileRegistry:
             ),
         )
     )
+    registry.register(
+        ProviderProfile(
+            provider_id="apis-guru",
+            display_name="APIs.guru",
+            aliases=("apis guru", "apisguru"),
+            profile_version="1",
+            profile_source="schemarouter:builtin",
+            homepage="https://apis.guru",
+            methods=(
+                ProviderAccessMethod(
+                    method_id="openapi",
+                    kind="openapi",
+                    access_mode="openapi",
+                    url="https://api.apis.guru/v2/openapi.yaml",
+                    description=(
+                        "Public APIs.guru directory OpenAPI document with read-only metrics."
+                    ),
+                ),
+            ),
+        )
+    )
+    registry.register(
+        ProviderProfile(
+            provider_id="rick-and-morty-api",
+            display_name="Rick and Morty GraphQL API",
+            aliases=("rick and morty", "rick-and-morty", "rickandmorty"),
+            profile_version="1",
+            profile_source="schemarouter:builtin",
+            homepage="https://rickandmortyapi.com",
+            methods=(
+                ProviderAccessMethod(
+                    method_id="graphql",
+                    kind="graphql",
+                    access_mode="graphql",
+                    url="https://rickandmortyapi.com/graphql",
+                    description=(
+                        "Public GraphQL API used for provider-first introspection and read-only acceptance."
+                    ),
+                ),
+            ),
+        )
+    )
+    registry.register(
+        ProviderProfile(
+            provider_id="odata-v4-reference",
+            display_name="OData.org V4 reference service",
+            aliases=("odata-reference", "odata.org", "odata-org"),
+            profile_version="1",
+            profile_source="schemarouter:builtin",
+            homepage="https://www.odata.org",
+            methods=(
+                ProviderAccessMethod(
+                    method_id="odata",
+                    kind="odata",
+                    access_mode="odata",
+                    url="https://services.odata.org/V4/OData/OData.svc/",
+                    description=(
+                        "Public OData V4 reference service used for read-only provider-first acceptance."
+                    ),
+                ),
+            ),
+        )
+    )
     return registry
