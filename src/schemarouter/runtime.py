@@ -712,6 +712,71 @@ class SchemaRouter:
         )
         return key
 
+    async def aadd_vector_store(
+        self,
+        backend: Any,
+        embed_query: Any,
+        *,
+        database_name: str,
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Discover and register a caller-owned vector store as bounded search capabilities."""
+
+        from .adapters.vector_store import introspect_vector_backend
+
+        bindings = await introspect_vector_backend(
+            backend,
+            embed_query,
+            database_name=database_name,
+            namespace=namespace,
+            collections=collections,
+            default_top_k=default_top_k,
+            remote=remote,
+        )
+        existing_keys = set(self.registry.keys())
+        duplicate_keys = sorted(
+            binding.tool.key
+            for binding in bindings
+            if binding.tool.key in existing_keys
+        )
+        if duplicate_keys:
+            raise RegistrationError(
+                "vector introspection would replace existing tools: "
+                + ", ".join(duplicate_keys)
+            )
+        return tuple(
+            self.add_bound_tool(binding.tool, binding.invoker)
+            for binding in bindings
+        )
+
+    def add_vector_store(
+        self,
+        backend: Any,
+        embed_query: Any,
+        *,
+        database_name: str,
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_vector_store`."""
+
+        return _run_sync(
+            lambda: self.aadd_vector_store(
+                backend,
+                embed_query,
+                database_name=database_name,
+                namespace=namespace,
+                collections=collections,
+                default_top_k=default_top_k,
+                remote=remote,
+            )
+        )
+
     def amend_capability(self, tool_key: str, amended: ToolSpec) -> str:
         """Declare or annotate the result contract of an already registered capability.
 
