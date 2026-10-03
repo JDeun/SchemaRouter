@@ -52,6 +52,12 @@ from .capability_contracts import (
     compare_capability_composition,
     compare_capability_fields,
 )
+from .capability_fallback import (
+    CapabilityFallbackEligibility,
+    FallbackEligibilityReason,
+    eligible_fallback_ids,
+    evaluate_fallback_eligibility,
+)
 from .capability_graph import (
     CapabilityDependencyEdge,
     CapabilityDependencyGraph,
@@ -289,6 +295,7 @@ __all__ = [
     "CapabilityCandidate",
     "CapabilityCompatibility",
     "CapabilityDependencyEdge",
+    "CapabilityFallbackEligibility",
     "CapabilityDependencyGraph",
     "CapabilityComposition",
     "CapabilityContract",
@@ -334,6 +341,7 @@ __all__ = [
     "HealthProbeSnapshot",
     "HealthStatus",
     "ExecutionPlan",
+    "FallbackEligibilityReason",
     "FallbackRoute",
     "FallbackScope",
     "ExecutionPolicy",
@@ -441,6 +449,8 @@ __all__ = [
     "build_capability_dependency_graph",
     "compare_capability_composition",
     "compare_capability_fields",
+    "eligible_fallback_ids",
+    "evaluate_fallback_eligibility",
     "evaluate_state_eligibility",
     "validate_capability_inputs",
     "validate_capability_outputs",
