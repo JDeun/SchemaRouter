@@ -43,6 +43,15 @@ from .python import (
     schema_tool,
     tool_from_callable,
 )
+from .vector_store import (
+    VectorCollectionBinding,
+    VectorCollectionInvoker,
+    VectorCollectionSpec,
+    VectorMetadataField,
+    VectorQueryEmbedder,
+    VectorStoreBackend,
+    introspect_vector_backend,
+)
 
 __all__ = [
     "AdapterContext",
@@ -71,6 +80,12 @@ __all__ = [
     "OpenRPCSourceAdapter",
     "PythonCallableInvoker",
     "SourceAdapter",
+    "VectorCollectionBinding",
+    "VectorCollectionInvoker",
+    "VectorCollectionSpec",
+    "VectorMetadataField",
+    "VectorQueryEmbedder",
+    "VectorStoreBackend",
     "analyze_openapi_compatibility",
     "build_http_json_invoker",
     "callable_options",
@@ -78,6 +93,7 @@ __all__ = [
     "inspect_mcp_client_factory",
     "inspect_mcp_stdio",
     "inspect_mcp_url",
+    "introspect_vector_backend",
     "load_adapter_plugins",
     "prepare_http_json_tool",
     "resolve_openapi_base_url",
