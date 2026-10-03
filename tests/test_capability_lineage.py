@@ -1,3 +1,4 @@
+# Issue #703 regression coverage.
 from schemarouter.capability_lineage import (
     CapabilityLineageHop,
     build_capability_lineage,
