@@ -148,6 +148,7 @@ nav:
       - Database onboarding: guides/database-onboarding.md
       - Vector store onboarding: guides/vector-store-onboarding.md
       - Graph/RDF onboarding: guides/graph-store-onboarding.md
+      - NoSQL record-store onboarding: guides/record-store-onboarding.md
       - Universal ingestion matrix: guides/universal-ingestion.md
       - Live compatibility matrix: guides/live-compatibility-matrix.md
       - Human-readable documentation: guides/html-documentation.md
