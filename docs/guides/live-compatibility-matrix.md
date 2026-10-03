@@ -11,7 +11,7 @@ automatically classified as a SchemaRouter regression.
 | --- | --- | --- | --- | --- | --- |
 | OpenAPI | Yes | Live public provider | Read-only metrics request | APIs.guru | Public provider availability is external state. |
 | OPTIMADE | Yes | Live public provider | Read-only structure search | COD OPTIMADE | Public provider availability and dataset latency vary. |
-| GraphQL | Yes | Live public provider | Read-only location query | Rick and Morty GraphQL API | Public third-party service; introspection availability can change. |
+| GraphQL | Yes | Live public provider | Read-only location query | Countries GraphQL API | Public third-party service; introspection availability can change. |
 | OData | Yes | Live public provider | Read-only Products query with `$top=1` | OData.org V4 reference service | Only a read-only Products query with `$top=1` is exercised. |
 | OpenRPC | Yes | Pinned reference implementation | Harmless local echo method | In-repo local JSON-RPC server | No stable unauthenticated public execution endpoint is assumed. |
 | MCP Streamable HTTP | Yes | Pinned reference implementation | Local `add` tool | In-repo MCP SDK fixture server | Reference server is used instead of assuming a stable public MCP endpoint. |
@@ -19,7 +19,7 @@ automatically classified as a SchemaRouter regression.
 | Provider profile: Crossref | Yes | Live public provider | Provider identity -> public REST -> works query | Crossref REST API | Public provider availability is external state. |
 | Provider profile: Tavily | Yes | Auth-contract + optional live execution | Provider identity -> auth-required REST; live search when `TAVILY_API_KEY` is configured | Tavily Search API | No secret means explicit auth-required evidence, not fabricated execution success. |
 | Provider profile: APIs.guru | Yes | Live public provider | Provider identity -> OpenAPI -> read-only metrics request | APIs.guru | Public provider availability is external state. |
-| Provider profile: Rick and Morty API | Yes | Live public provider | Provider identity -> GraphQL -> read-only location query | Rick and Morty GraphQL API | Public third-party service; introspection availability can change. |
+| Provider profile: Countries GraphQL API | Yes | Live public provider | Provider identity -> GraphQL -> read-only location query | Countries GraphQL API | Public third-party service; introspection availability can change. |
 | Provider profile: OData V4 reference | Yes | Live public provider | Provider identity -> OData -> read-only Products query | OData.org V4 reference service | Reference-service availability is external state. |
 
 The compatibility workflow records a timestamp, SchemaRouter version, source, discovery and
@@ -50,7 +50,7 @@ python scripts/live_materials_project_provider_smoke.py
 python scripts/live_crossref_provider_smoke.py
 python scripts/live_tavily_provider_smoke.py
 python scripts/live_provider_first_protocol_smoke.py --provider apis-guru
-python scripts/live_provider_first_protocol_smoke.py --provider rick-and-morty-api
+python scripts/live_provider_first_protocol_smoke.py --provider countries-graphql
 python scripts/live_provider_first_protocol_smoke.py --provider odata-v4-reference
 ```
 
