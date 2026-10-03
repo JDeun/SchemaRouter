@@ -1,21 +1,17 @@
-# Versioned capability graph snapshot
+# Versioned capability graph snapshots
 
-Capability graph snapshot은 immutable routing-contract state를 mutable runtime health와 분리하여 기록합니다.
+Capability graph snapshot은 graph를 만들 때 사용한 provider-neutral contract와 source schema revision을 고정합니다. SHA-256 identity는 결정적이며 contract/source 순서와 관측용 build time은 digest에 영향을 주지 않습니다.
 
 ```python
-from schemarouter import create_capability_graph_snapshot, require_capability_snapshot
+from schemarouter import build_capability_snapshot, require_snapshot
 
-snapshot = create_capability_graph_snapshot(
-    graph,
-    contracts,
-    source_schema_fingerprints={"provider": "..."},
-    build_metadata={"builder": "ci"},
-)
-require_capability_snapshot(snapshot, requested_snapshot_id)
+snapshot = build_capability_snapshot(contracts, sources=source_revisions)
+require_snapshot(requested_snapshot_id, snapshot)
+graph = snapshot.build_graph()
 ```
 
-Snapshot ID는 canonical graph, contract, source-schema fingerprint 데이터의 SHA-256 digest입니다. Capability와 edge 순서는 정규화됩니다. Informational build metadata는 보존하지만 identity에서는 제외하므로 동일한 routing contract를 다른 환경에서 컴파일해도 재현 가능한 ID를 얻습니다.
+Pinned request의 snapshot ID가 현재 로드된 graph revision과 다르면 fail-closed합니다. `compare_capability_snapshots()`는 추가·제거·변경된 capability ID를 식별하여 drift 이후 controlled successor snapshot을 만들 수 있게 합니다.
 
-`compare_capability_snapshots()`는 추가, 제거, 변경된 capability ID를 보고합니다. Host는 `require_capability_snapshot()`으로 retrieval/runtime 작업을 정확한 snapshot에 고정할 수 있으며 mismatch는 fail closed합니다.
+## Immutable state와 mutable state
 
-Live provider health는 의도적으로 제외됩니다. Snapshot은 routing contract가 무엇이었는지를 기록할 뿐 현재 provider health를 고정하지 않습니다. SchemaRouter는 deploy, rollback, execution 또는 stale breaking schema의 묵시적 수용을 수행하지 않습니다.
+Contract, provider/schema revision reference, builder identity는 immutable snapshot에 속합니다. Runtime health는 포함하지 않으며 routing 시점에 평가하는 mutable overlay입니다. 따라서 snapshot은 provider가 영원히 healthy하다고 가정하지 않으면서 reproducibility를 제공합니다. SchemaRouter는 snapshot을 배포·rollback·실행하지 않으며 lifecycle 결정은 host 책임입니다.
