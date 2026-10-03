@@ -15,6 +15,9 @@ SchemaRouter는 필수 CI에서 deterministic fixture coverage를 유지하고, 
 | Provider profile: Materials Project | Yes | Live public provider | provider identity -> public OPTIMADE -> read-only structure query | Materials Project OPTIMADE | 인증 OpenAPI/SDK는 별도 gate |
 | Provider profile: Crossref | Yes | Live public provider | provider identity -> public REST works query | Crossref REST API | public availability는 외부 상태 |
 | Provider profile: Tavily | Yes | Auth-contract + optional live | provider identity -> auth-required REST, key가 있으면 live search | Tavily Search API | secret이 없으면 auth-required를 명시하고 실행 성공을 꾸미지 않음 |
+| Provider profile: APIs.guru | Yes | Live public provider | provider identity -> OpenAPI -> read-only metrics request | APIs.guru | public availability는 외부 상태 |
+| Provider profile: Rick and Morty API | Yes | Live public provider | provider identity -> GraphQL -> read-only location query | Rick and Morty GraphQL API | introspection availability가 바뀔 수 있음 |
+| Provider profile: OData V4 reference | Yes | Live public provider | provider identity -> OData -> read-only Products query | OData.org V4 reference service | reference service availability는 외부 상태 |
 
 workflow는 timestamp, SchemaRouter version, source, discovery/execution success, endpoint count, binding state, returned-data shape, latency, auth state, provider-specific note를 machine-readable JSON으로 기록합니다.
 
@@ -30,7 +33,7 @@ public-provider job은 의도적으로 non-blocking입니다. pinned-reference f
 
 green public-provider row는 report의 `generated_at` 시점에 provider가 reachable/compatible했다는 뜻이지 영구 availability 보장이 아닙니다. 실패하면 먼저 provider/network/infrastructure 상태인지 분류해야 합니다.
 
-pinned OpenRPC/MCP row는 repository가 소유하는 재현 가능한 compatibility evidence이므로 실패 시 SchemaRouter 또는 dependency compatibility regression 가능성을 조사해야 합니다.
+pinned OpenRPC/MCP row는 process-local `ProviderProfile`을 통해 등록한 뒤 기존 adapter로 연결하는 재현 가능한 provider-first compatibility evidence입니다. 실패 시 SchemaRouter 또는 dependency compatibility regression 가능성을 조사해야 합니다.
 
 
 Provider-first smoke는 다음 스크립트로 개별 실행할 수 있습니다.
@@ -39,4 +42,7 @@ Provider-first smoke는 다음 스크립트로 개별 실행할 수 있습니다
 python scripts/live_materials_project_provider_smoke.py
 python scripts/live_crossref_provider_smoke.py
 python scripts/live_tavily_provider_smoke.py
+python scripts/live_provider_first_protocol_smoke.py --provider apis-guru
+python scripts/live_provider_first_protocol_smoke.py --provider rick-and-morty-api
+python scripts/live_provider_first_protocol_smoke.py --provider odata-v4-reference
 ```
