@@ -47,9 +47,24 @@ async def run_smoke() -> dict[str, object]:
             }
             for method in registration.methods
         ]
+        probe_diagnostic = None
+        try:
+            await router.probe_url(
+                EXPECTED_OPTIMADE_URL,
+                kind="optimade",
+                timeout=30.0,
+            )
+        except Exception as exc:  # noqa: BLE001
+            chain: list[str] = []
+            current: BaseException | None = exc
+            while current is not None and len(chain) < 4:
+                chain.append(f"{type(current).__name__}: {current}")
+                current = current.__cause__
+            probe_diagnostic = " <- ".join(chain)
         raise RuntimeError(
             "Materials Project provider registration did not yield one live tool: "
             + json.dumps(safe_diagnostics, sort_keys=True)
+            + f"; probe={probe_diagnostic}"
         )
     assert registration_status == {"optimade": "registered"}
 
