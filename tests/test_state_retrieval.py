@@ -137,3 +137,17 @@ def test_state_filter_applies_explicit_preconditions() -> None:
         "stateless",
         "needs-token",
     ]
+
+
+def test_state_aware_retrieval_surface_has_no_execution_authority() -> None:
+    result = filter_retrieval_by_state(
+        _retrieval([_candidate("read", 1)]),
+        TypedExecutionState(),
+    )
+
+    forbidden_verbs = {
+        "execute", "invoke", "commit", "rollback", "retry", "compensate",
+        "plan", "schedule", "authorize",
+    }
+    assert forbidden_verbs.isdisjoint(dir(result))
+    assert forbidden_verbs.isdisjoint(dir(result.candidates[0]))
