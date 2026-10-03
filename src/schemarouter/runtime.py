@@ -2764,8 +2764,9 @@ class SchemaRouter:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+        principal: PrincipalContext | None = None,
     ) -> StateConditionedCapabilityRetrieval:
-        """Backfill to the best K state-eligible capabilities without executing them."""
+        """Backfill to the best K state-eligible capabilities under authorization."""
 
         return self.planner.reretrieve_state_aware(
             request,
@@ -2773,6 +2774,7 @@ class SchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            additional_availability_predicate=self._authorization_predicate(principal),
         )
 
     async def areretrieve_state_aware(
@@ -2783,6 +2785,7 @@ class SchemaRouter:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+        principal: PrincipalContext | None = None,
     ) -> StateConditionedCapabilityRetrieval:
         """Async counterpart to :meth:`reretrieve_state_aware`."""
 
@@ -2792,6 +2795,7 @@ class SchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            additional_availability_predicate=self._authorization_predicate(principal),
         )
 
     def retrieve_state_aware(
@@ -2802,8 +2806,9 @@ class SchemaRouter:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+        principal: PrincipalContext | None = None,
     ) -> StateAwareCapabilityRetrieval:
-        """Retrieve registered capabilities under explicit observable typed state."""
+        """Retrieve registered capabilities under state and principal authorization."""
 
         return self.planner.retrieve_state_aware(
             request,
@@ -2811,6 +2816,7 @@ class SchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            additional_availability_predicate=self._authorization_predicate(principal),
         )
 
     async def aretrieve_state_aware(
@@ -2821,6 +2827,7 @@ class SchemaRouter:
         k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+        principal: PrincipalContext | None = None,
     ) -> StateAwareCapabilityRetrieval:
         """Async counterpart to :meth:`retrieve_state_aware`."""
 
@@ -2830,6 +2837,7 @@ class SchemaRouter:
             k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
+            additional_availability_predicate=self._authorization_predicate(principal),
         )
 
     def _binding_ready(self, tool: ToolSpec, endpoint: Any) -> bool:
