@@ -73,7 +73,10 @@ def build_capability_dependency_graph(
 def dependency_cycles(graph: CapabilityDependencyGraph) -> list[tuple[str, ...]]:
     """Return deterministic simple cycle witnesses without planning around them."""
 
-    adjacency = {capability_id: graph.successors(capability_id) for capability_id in graph.capability_ids}
+    adjacency = {
+        capability_id: graph.successors(capability_id)
+        for capability_id in graph.capability_ids
+    }
     cycles: set[tuple[str, ...]] = set()
 
     def visit(start: str, current: str, path: tuple[str, ...]) -> None:
