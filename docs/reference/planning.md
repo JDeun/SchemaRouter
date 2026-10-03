@@ -68,3 +68,32 @@
 ## PolicyDecision
 
 ::: schemarouter.PolicyDecision
+
+
+## CapabilityContract
+
+::: schemarouter.CapabilityContract
+
+## CapabilityFieldContract
+
+::: schemarouter.CapabilityFieldContract
+
+## CapabilityDependencyGraph
+
+::: schemarouter.CapabilityDependencyGraph
+
+## build_capability_dependency_graph
+
+::: schemarouter.build_capability_dependency_graph
+
+## update_capability_dependency_graph
+
+::: schemarouter.update_capability_dependency_graph
+
+## StateAwareCapabilityRetrieval
+
+::: schemarouter.StateAwareCapabilityRetrieval
+
+## StateConditionedCapabilityRetrieval
+
+::: schemarouter.StateConditionedCapabilityRetrieval
