@@ -109,6 +109,14 @@ from .capability_negotiation import (
     CapabilityNegotiationResult,
     negotiate_capabilities,
 )
+from .capability_publication import (
+    CapabilityPublicationConflictError,
+    CapabilityRebuildMode,
+    CapabilitySnapshotProvenance,
+    CapabilitySnapshotPublication,
+    CapabilitySnapshotStore,
+    validate_capability_publication,
+)
 from .capability_snapshot import (
     CapabilityGraphSnapshot,
     CapabilitySnapshotDiff,
@@ -606,6 +614,12 @@ __all__ = [
     "build_capability_artifact",
     "load_capability_artifact",
     "CapabilityGraphSnapshot",
+    "validate_capability_publication",
+    "CapabilitySnapshotStore",
+    "CapabilitySnapshotPublication",
+    "CapabilitySnapshotProvenance",
+    "CapabilityRebuildMode",
+    "CapabilityPublicationConflictError",
     "compare_capability_snapshots",
 
     "CapabilitySnapshotDiff",
