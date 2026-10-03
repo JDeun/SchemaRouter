@@ -184,6 +184,10 @@
       "source_blob": "0e873c2dd6132f6cd7ee8bdf24f22413ae0f8ce3"
     },
     {
+      "path": "guides/graph-store-onboarding.md",
+      "source_blob": "e66ea3422ab6b51f3182c0c884a12910e3d5e3ea"
+    },
+    {
       "path": "guides/graphql.md",
       "source_blob": "ff1995b17558248727f92d8e884babba4e3029c9"
     },
