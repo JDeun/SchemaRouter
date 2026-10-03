@@ -56,6 +56,23 @@ def _validate_entry_type(entry_type: str) -> str:
     return entry_type
 
 
+def _decoded_response_headers(
+    headers: httpx.Headers,
+) -> dict[str, str]:
+    """Drop transport framing after httpx has already decoded streamed bytes."""
+
+    excluded = {
+        "content-encoding",
+        "content-length",
+        "transfer-encoding",
+    }
+    return {
+        name: value
+        for name, value in headers.items()
+        if name.casefold() not in excluded
+    }
+
+
 async def _bounded_get(
     client: httpx.AsyncClient,
     url: str,
@@ -127,7 +144,7 @@ async def _bounded_get(
 
             return httpx.Response(
                 status_code=response.status_code,
-                headers=response.headers,
+                headers=_decoded_response_headers(response.headers),
                 content=b"".join(chunks),
                 request=response.request,
             )
