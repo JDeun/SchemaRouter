@@ -41,6 +41,27 @@ def test_builtin_profiles_resolve_provider_first() -> None:
     assert tavily.methods[0].status == "available"
     assert tavily.methods[0].credential_names == ("Authorization",)
 
+    protocol_profiles = {
+        "apis-guru": ("openapi", "openapi", "https://api.apis.guru/v2/openapi.yaml"),
+        "rick-and-morty-api": (
+            "graphql",
+            "graphql",
+            "https://rickandmortyapi.com/graphql",
+        ),
+        "odata-v4-reference": (
+            "odata",
+            "odata",
+            "https://services.odata.org/V4/OData/OData.svc/",
+        ),
+    }
+    for provider_id, expected in protocol_profiles.items():
+        resolved = router.resolve_provider(provider_id)
+        assert resolved.provider_id == provider_id
+        assert len(resolved.methods) == 1
+        method = resolved.methods[0]
+        assert (method.method_id, method.kind, method.url) == expected
+        assert method.status == "available"
+
 
 @pytest.mark.asyncio
 async def test_add_materials_project_registers_usable_methods_and_reports_skips(
@@ -73,6 +94,66 @@ async def test_add_materials_project_registers_usable_methods_and_reports_skips(
                 "kind": "optimade",
                 "provider": "materials-project",
                 "access_mode": "optimade",
+                "trusted_headers": None,
+                "replace": False,
+                "timeout": 20.0,
+            },
+        )
+    ]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("kind", "provider_id"),
+    [
+        ("openapi", "example-openapi"),
+        ("optimade", "example-optimade"),
+        ("graphql", "example-graphql"),
+        ("odata", "example-odata"),
+        ("openrpc", "example-openrpc"),
+        ("mcp", "example-mcp"),
+    ],
+)
+async def test_provider_first_forwards_every_url_adapter_kind(
+    monkeypatch: pytest.MonkeyPatch,
+    kind: str,
+    provider_id: str,
+) -> None:
+    router = SchemaRouter()
+    source = f"https://example.test/{kind}"
+    router.register_provider_profile(
+        ProviderProfile(
+            provider_id=provider_id,
+            display_name=provider_id,
+            methods=(
+                ProviderAccessMethod(
+                    method_id=kind,
+                    kind=kind,
+                    access_mode=kind,
+                    url=source,
+                ),
+            ),
+        )
+    )
+    calls: list[tuple[str, dict[str, object]]] = []
+
+    async def fake_add_url(url: str, **kwargs: object) -> SimpleNamespace:
+        calls.append((url, kwargs))
+        return SimpleNamespace(key=f"{provider_id}-{kind}")
+
+    monkeypatch.setattr(router, "add_url", fake_add_url)
+
+    result = await router.add_provider(provider_id)
+
+    assert result.registered_tool_keys == (f"{provider_id}-{kind}",)
+    assert result.methods[0].status == "registered"
+    assert calls == [
+        (
+            source,
+            {
+                "kind": kind,
+                "provider": provider_id,
+                "access_mode": kind,
                 "trusted_headers": None,
                 "replace": False,
                 "timeout": 20.0,
