@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from typing import Literal
 
 from pydantic import Field
@@ -32,7 +34,13 @@ class CapabilityGraphDrift(StrictModel):
 def capability_contract_fingerprint(contract: CapabilityContract) -> str:
     """Return the deterministic Pydantic fingerprint for a capability contract."""
 
-    return contract.model_dump_json(exclude_none=False, by_alias=True)
+    payload = json.dumps(
+        contract.model_dump(mode="json", exclude_none=False, by_alias=True),
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
 
 
 def compare_capability_graph_snapshot(
