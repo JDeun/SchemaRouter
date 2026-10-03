@@ -5,6 +5,8 @@ import asyncio
 import json
 from time import perf_counter
 
+import httpx
+
 from compatibility_report import new_report, write_report
 
 from schemarouter import PlanRequest, SchemaRouter
@@ -61,10 +63,43 @@ async def run_smoke() -> dict[str, object]:
                 chain.append(f"{type(current).__name__}: {current}")
                 current = current.__cause__
             probe_diagnostic = " <- ".join(chain)
+        raw_shape = None
+        try:
+            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+                response = await client.get(f"{EXPECTED_OPTIMADE_URL}/v1/info")
+                document = response.json()
+                data = document.get("data") if isinstance(document, dict) else None
+                attributes = data.get("attributes") if isinstance(data, dict) else None
+                raw_shape = {
+                    "status_code": response.status_code,
+                    "data_type": data.get("type") if isinstance(data, dict) else None,
+                    "data_id": data.get("id") if isinstance(data, dict) else None,
+                    "attribute_keys": (
+                        sorted(attributes) if isinstance(attributes, dict) else None
+                    ),
+                    "api_version_type": (
+                        type(attributes.get("api_version")).__name__
+                        if isinstance(attributes, dict)
+                        else None
+                    ),
+                    "available_endpoints_type": (
+                        type(attributes.get("available_endpoints")).__name__
+                        if isinstance(attributes, dict)
+                        else None
+                    ),
+                    "entry_types_by_format_type": (
+                        type(attributes.get("entry_types_by_format")).__name__
+                        if isinstance(attributes, dict)
+                        else None
+                    ),
+                }
+        except Exception as exc:  # noqa: BLE001
+            raw_shape = {"diagnostic_error": type(exc).__name__}
         raise RuntimeError(
             "Materials Project provider registration did not yield one live tool: "
             + json.dumps(safe_diagnostics, sort_keys=True)
-            + f"; probe={probe_diagnostic}"
+            + f"; probe={probe_diagnostic}; raw_shape="
+            + json.dumps(raw_shape, sort_keys=True)
         )
     assert registration_status == {"optimade": "registered"}
 
