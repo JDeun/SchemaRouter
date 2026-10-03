@@ -5,7 +5,11 @@ from datetime import datetime
 from threading import RLock
 from typing import Literal
 
-from .capability_contracts import CapabilityContract, CompatibilityContext
+from .capability_contracts import (
+    CapabilityContract,
+    CompatibilityContext,
+    compare_capability_composition,
+)
 from .capability_drift import CapabilityGraphDrift, compare_capability_graph_snapshot
 from .capability_graph import (
     CapabilityDependencyGraph,
@@ -95,8 +99,6 @@ def validate_capability_publication(
             raise ValueError("published graph contains an edge to an unknown capability")
         if edge.producer_id == edge.consumer_id:
             raise ValueError("published graph must not contain self dependency edges")
-        from .capability_contracts import compare_capability_composition
-
         expected = compare_capability_composition(
             by_id[edge.producer_id],
             by_id[edge.consumer_id],
@@ -136,10 +138,15 @@ class CapabilitySnapshotStore:
         self._validator = validator
 
         _validate_source_revisions(snapshot.sources)
-        initial_graph = graph or build_capability_dependency_graph(
+        expected_graph = build_capability_dependency_graph(
             list(snapshot.contracts),
             context=self._context,
         )
+        if graph is not None and graph != expected_graph:
+            raise ValueError(
+                "initial capability graph does not match the supplied snapshot contracts"
+            )
+        initial_graph = graph or expected_graph
         publication = CapabilitySnapshotPublication(
             publication_revision=1,
             snapshot=snapshot.model_copy(deep=True),
