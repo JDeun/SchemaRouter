@@ -43,15 +43,15 @@ from .python import (
     schema_tool,
     tool_from_callable,
 )
-from .sqlite_database import (
-    SQLiteTableBinding,
-    SQLiteTableInvoker,
-    introspect_sqlite_database,
-)
 from .sqlalchemy_database import (
     SQLAlchemyTableBinding,
     SQLAlchemyTableInvoker,
     introspect_sqlalchemy_engine,
+)
+from .sqlite_database import (
+    SQLiteTableBinding,
+    SQLiteTableInvoker,
+    introspect_sqlite_database,
 )
 
 __all__ = [
