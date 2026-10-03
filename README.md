@@ -258,6 +258,7 @@ SDK or weakly described REST surface.
 | Provider identity | you know the service/provider, not its protocols | `await router.add_provider("materials-project")` |
 | SQLite database | local/embedded relational data should be schema-introspected | `router.add_sqlite_database(connection, ...)` |
 | SQLAlchemy Engine | RDB/warehouse connection is caller-owned | `router.add_sqlalchemy_database(engine, ...)` |
+| NoSQL record store | document/search/KV/time-series source discovery | `router.add_record_store(backend, ...)` |
 | Direct ToolSpec | the application already owns the canonical contract | `router.add_tool(...)` |
 | Python | capability is local and typed | `router.add_callable(...)` |
 | ToolSpec + SDK/client | transport is trusted but not safely introspectable | `router.add_bound_tool(...)` |
