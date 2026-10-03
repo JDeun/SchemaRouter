@@ -4,6 +4,17 @@ from ..openapi_compatibility import (
     analyze_openapi_compatibility,
 )
 from .base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
+from .graph_store import (
+    GraphModel,
+    GraphNodeTypeSpec,
+    GraphPropertySpec,
+    GraphRelationshipTypeSpec,
+    GraphSourceBinding,
+    GraphSourceInvoker,
+    GraphSourceSpec,
+    GraphStoreBackend,
+    introspect_graph_backend,
+)
 from .graphql import (
     GraphQLRemoteInvoker,
     GraphQLSourceAdapter,
@@ -62,6 +73,14 @@ __all__ = [
     "AdapterRegistry",
     "DefaultMCPClientFactory",
     "HTTPJSONRemoteInvoker",
+    "GraphModel",
+    "GraphNodeTypeSpec",
+    "GraphPropertySpec",
+    "GraphRelationshipTypeSpec",
+    "GraphSourceBinding",
+    "GraphSourceInvoker",
+    "GraphSourceSpec",
+    "GraphStoreBackend",
     "GraphQLRemoteInvoker",
     "GraphQLSourceAdapter",
     "MCPBoundClientFactory",
@@ -92,6 +111,7 @@ __all__ = [
     "inspect_mcp_client_factory",
     "inspect_mcp_stdio",
     "inspect_mcp_url",
+    "introspect_graph_backend",
     "introspect_sqlite_database",
     "introspect_sqlalchemy_engine",
     "load_adapter_plugins",
