@@ -65,5 +65,5 @@ def test_pinned_snapshot_fails_closed_on_mismatch() -> None:
 def test_runtime_health_is_not_snapshot_state() -> None:
     snapshot = build_capability_snapshot([CapabilityContract(capability_id="a")])
 
-    assert "health" not in snapshot.model_fields
+    assert "health" not in type(snapshot).model_fields
     assert snapshot.build_graph().capability_ids == ("a",)
