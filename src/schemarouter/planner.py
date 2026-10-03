@@ -37,7 +37,12 @@ from .models import (
     ToolSpec,
 )
 from .registry import ToolRegistry
-from .state_retrieval import StateAwareCapabilityRetrieval, filter_retrieval_by_state
+from .state_retrieval import (
+    StateAwareCapabilityRetrieval,
+    StateConditionedCapabilityRetrieval,
+    backfill_retrieval_by_state,
+    filter_retrieval_by_state,
+)
 from .validation import (
     canonical_field_value_schema,
     effective_input_schema,
@@ -719,6 +724,96 @@ class SchemaPlanner:
         if inspect.isawaitable(intent):
             intent = await intent
         return self._retrieve_from_intent(request, intent, k=k)
+
+    def _reretrieve_state_aware_from_intent(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        *,
+        execution_state: TypedExecutionState,
+        k: int,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None,
+    ) -> StateConditionedCapabilityRetrieval:
+        candidates = self._semantic_recall_catalog(request, intent)
+        candidates.sort(key=self._candidate_sort_key)
+        full_retrieval = CapabilityRetrieval(
+            query=request.query,
+            registry_version=self.registry.version,
+            requested_k=max(1, len(candidates)),
+            total_ranked=len(candidates),
+            candidates=[
+                self._retrieval_candidate(candidate, rank=index)
+                for index, candidate in enumerate(candidates, start=1)
+            ],
+        )
+        return backfill_retrieval_by_state(
+            full_retrieval,
+            execution_state,
+            k=k,
+            requirements_by_route=state_requirements,
+            preconditions_by_route=state_preconditions,
+        )
+
+    def reretrieve_state_aware(
+        self,
+        request: PlanRequest | str,
+        *,
+        execution_state: TypedExecutionState,
+        k: int = 5,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> StateConditionedCapabilityRetrieval:
+        """Return the best K eligible capabilities from the visible ranked surface.
+
+        Unlike retrieve_state_aware(), this method does not stop at the initial Top-K.
+        It scans the same authorized/available ranking until K state-eligible candidates
+        have been found or the visible candidate surface is exhausted.
+        """
+
+        k = self._validate_retrieval_k(k)
+        request = self._prepare_request(request)
+        intent = self.analyzer.analyze(request, self.registry)
+        if inspect.isawaitable(intent):
+            if inspect.iscoroutine(intent):
+                intent.close()
+            raise PlanningError(
+                "the configured analyzer is asynchronous; use "
+                "await planner.areretrieve_state_aware(...)"
+            )
+        return self._reretrieve_state_aware_from_intent(
+            request,
+            intent,
+            execution_state=execution_state,
+            k=k,
+            state_requirements=state_requirements,
+            state_preconditions=state_preconditions,
+        )
+
+    async def areretrieve_state_aware(
+        self,
+        request: PlanRequest | str,
+        *,
+        execution_state: TypedExecutionState,
+        k: int = 5,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> StateConditionedCapabilityRetrieval:
+        """Async counterpart to :meth:`reretrieve_state_aware`."""
+
+        k = self._validate_retrieval_k(k)
+        request = self._prepare_request(request)
+        intent = self.analyzer.analyze(request, self.registry)
+        if inspect.isawaitable(intent):
+            intent = await intent
+        return self._reretrieve_state_aware_from_intent(
+            request,
+            intent,
+            execution_state=execution_state,
+            k=k,
+            state_requirements=state_requirements,
+            state_preconditions=state_preconditions,
+        )
 
     def retrieve_state_aware(
         self,
