@@ -3379,28 +3379,49 @@ class SchemaRouter:
         )
 
     def plan_executable(self, request: PlanRequest | str) -> ExecutionPlan:
-        """Plan only across authorized routes with a ready local binding."""
+        """Plan only across principal-scoped routes with a ready local binding."""
 
-        predicate = self._combined_availability_predicate(
-            _current_principal_context(),
-            self._binding_ready,
+        planner, scoped_registry = self._scoped_planner_for_principal(
+            _current_principal_context()
         )
-        if predicate is None:
-            raise RuntimeError("executable planning requires an availability predicate")
-        return self.planner.plan_with_additional_availability(request, predicate)
+
+        def scoped_binding_ready(tool: ToolSpec, endpoint: Any) -> bool:
+            try:
+                original_tool = self.registry.get(tool.key)
+                original_endpoint = original_tool.endpoint(endpoint.name)
+            except KeyError:
+                return False
+            return self._binding_ready(original_tool, original_endpoint)
+
+        return self._restamp_scoped_plan(
+            planner.plan_with_additional_availability(
+                request,
+                scoped_binding_ready,
+            ),
+            scoped_registry,
+        )
 
     async def aplan_executable(self, request: PlanRequest | str) -> ExecutionPlan:
         """Async counterpart to :meth:`plan_executable`."""
 
-        predicate = self._combined_availability_predicate(
-            _current_principal_context(),
-            self._binding_ready,
+        planner, scoped_registry = self._scoped_planner_for_principal(
+            _current_principal_context()
         )
-        if predicate is None:
-            raise RuntimeError("executable planning requires an availability predicate")
-        return await self.planner.aplan_with_additional_availability(
-            request,
-            predicate,
+
+        def scoped_binding_ready(tool: ToolSpec, endpoint: Any) -> bool:
+            try:
+                original_tool = self.registry.get(tool.key)
+                original_endpoint = original_tool.endpoint(endpoint.name)
+            except KeyError:
+                return False
+            return self._binding_ready(original_tool, original_endpoint)
+
+        return self._restamp_scoped_plan(
+            await planner.aplan_with_additional_availability(
+                request,
+                scoped_binding_ready,
+            ),
+            scoped_registry,
         )
 
     def plan_executable_authorized(
@@ -3431,19 +3452,28 @@ class SchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRetrieval:
-        """Return Top-K authorized capabilities with a ready local binding."""
+        """Return Top-K principal-scoped capabilities with a ready local binding."""
 
-        predicate = self._combined_availability_predicate(
-            _current_principal_context(),
-            self._binding_ready,
+        planner, scoped_registry = self._scoped_planner_for_principal(
+            _current_principal_context()
         )
-        if predicate is None:
-            raise RuntimeError("executable retrieval requires an availability predicate")
-        return self.planner.retrieve_with_additional_availability(
-            request,
-            predicate,
-            k=k,
-            executable_only=True,
+
+        def scoped_binding_ready(tool: ToolSpec, endpoint: Any) -> bool:
+            try:
+                original_tool = self.registry.get(tool.key)
+                original_endpoint = original_tool.endpoint(endpoint.name)
+            except KeyError:
+                return False
+            return self._binding_ready(original_tool, original_endpoint)
+
+        return self._restamp_scoped_retrieval(
+            planner.retrieve_with_additional_availability(
+                request,
+                scoped_binding_ready,
+                k=k,
+                executable_only=True,
+            ),
+            scoped_registry,
         )
 
     async def aretrieve_executable(
@@ -3454,17 +3484,26 @@ class SchemaRouter:
     ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve_executable`."""
 
-        predicate = self._combined_availability_predicate(
-            _current_principal_context(),
-            self._binding_ready,
+        planner, scoped_registry = self._scoped_planner_for_principal(
+            _current_principal_context()
         )
-        if predicate is None:
-            raise RuntimeError("executable retrieval requires an availability predicate")
-        return await self.planner.aretrieve_with_additional_availability(
-            request,
-            predicate,
-            k=k,
-            executable_only=True,
+
+        def scoped_binding_ready(tool: ToolSpec, endpoint: Any) -> bool:
+            try:
+                original_tool = self.registry.get(tool.key)
+                original_endpoint = original_tool.endpoint(endpoint.name)
+            except KeyError:
+                return False
+            return self._binding_ready(original_tool, original_endpoint)
+
+        return self._restamp_scoped_retrieval(
+            await planner.aretrieve_with_additional_availability(
+                request,
+                scoped_binding_ready,
+                k=k,
+                executable_only=True,
+            ),
+            scoped_registry,
         )
 
     def retrieve_executable_authorized(
