@@ -6,11 +6,25 @@ from typing import Literal
 
 from pydantic import Field
 
-from .capability_contracts import CapabilityContract
+from .capability_contracts import (
+    CapabilityContract,
+    compare_capability_composition,
+)
+from .capability_graph import (
+    CapabilityDependencyGraph,
+    build_capability_dependency_graph,
+)
 from .models import StrictModel
 
-CAPABILITY_ARTIFACT_FORMAT_VERSION = "1.0"
+LEGACY_CAPABILITY_ARTIFACT_FORMAT_VERSION = "1.0"
+CAPABILITY_ARTIFACT_FORMAT_VERSION = "1.1"
+SUPPORTED_CAPABILITY_ARTIFACT_FORMAT_VERSIONS = (
+    LEGACY_CAPABILITY_ARTIFACT_FORMAT_VERSION,
+    CAPABILITY_ARTIFACT_FORMAT_VERSION,
+)
+
 ArtifactSourceKind = Literal["openapi", "mcp", "optimade", "python", "other"]
+ArtifactEdgeOrigin = Literal["derived", "external"]
 
 
 class CapabilityArtifactSource(StrictModel):
@@ -25,6 +39,7 @@ class CapabilityArtifactEdge(StrictModel):
     consumer_id: str
     compatibility: str
     reasons: tuple[str, ...] = ()
+    origin: ArtifactEdgeOrigin = "external"
 
 
 class CapabilityGraphArtifact(StrictModel):
@@ -37,8 +52,33 @@ class CapabilityGraphArtifact(StrictModel):
     provenance: dict[str, str] = Field(default_factory=dict)
 
 
+class CapabilityArtifactMigrationRecord(StrictModel):
+    from_format: str
+    to_format: str
+    source_digest: str
+    result_digest: str
+    migrated: bool
+
+
+class CapabilityArtifactMigrationResult(StrictModel):
+    artifact: CapabilityGraphArtifact
+    migration: CapabilityArtifactMigrationRecord
+
+
+def _edge_payload(
+    edge: CapabilityArtifactEdge,
+    *,
+    format_version: str,
+) -> dict[str, object]:
+    payload = edge.model_dump(mode="json")
+    if format_version == LEGACY_CAPABILITY_ARTIFACT_FORMAT_VERSION:
+        payload.pop("origin", None)
+    return payload
+
+
 def _canonical_payload(
     *,
+    format_version: str,
     graph_digest: str,
     capabilities: list[CapabilityContract],
     sources: list[CapabilityArtifactSource],
@@ -46,7 +86,7 @@ def _canonical_payload(
     provenance: dict[str, str],
 ) -> dict[str, object]:
     return {
-        "format_version": CAPABILITY_ARTIFACT_FORMAT_VERSION,
+        "format_version": format_version,
         "graph_digest": graph_digest,
         "capabilities": [
             item.model_dump(mode="json")
@@ -60,14 +100,90 @@ def _canonical_payload(
             )
         ],
         "edges": [
-            item.model_dump(mode="json")
+            _edge_payload(item, format_version=format_version)
             for item in sorted(
                 edges,
-                key=lambda item: (item.producer_id, item.consumer_id, item.compatibility),
+                key=lambda item: (
+                    item.producer_id,
+                    item.consumer_id,
+                    item.compatibility,
+                    item.origin,
+                ),
             )
         ],
         "provenance": dict(sorted(provenance.items())),
     }
+
+
+def _payload_digest(payload: dict[str, object]) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def _artifact_digest(
+    artifact: CapabilityGraphArtifact,
+    *,
+    format_version: str | None = None,
+) -> str:
+    version = format_version or artifact.format_version
+    return _payload_digest(
+        _canonical_payload(
+            format_version=version,
+            graph_digest=artifact.graph_digest,
+            capabilities=list(artifact.capabilities),
+            sources=list(artifact.sources),
+            edges=list(artifact.edges),
+            provenance=artifact.provenance,
+        )
+    )
+
+
+def capability_dependency_graph_digest(
+    graph: CapabilityDependencyGraph,
+) -> str:
+    payload = {
+        "capability_ids": list(graph.capability_ids),
+        "edges": [
+            {
+                "producer_id": edge.producer_id,
+                "consumer_id": edge.consumer_id,
+                "compatibility": edge.compatibility.model_dump(mode="json"),
+            }
+            for edge in sorted(
+                graph.edges,
+                key=lambda item: (item.producer_id, item.consumer_id),
+            )
+        ],
+    }
+    return _payload_digest(payload)
+
+
+def artifact_edges_from_graph(
+    graph: CapabilityDependencyGraph,
+) -> list[CapabilityArtifactEdge]:
+    return [
+        CapabilityArtifactEdge(
+            producer_id=edge.producer_id,
+            consumer_id=edge.consumer_id,
+            compatibility=edge.compatibility.status,
+            reasons=tuple(
+                reason.detail
+                for compatibility in edge.compatibility.requirements.values()
+                for reason in compatibility.reasons
+            ),
+            origin="derived",
+        )
+        for edge in sorted(
+            graph.edges,
+            key=lambda item: (item.producer_id, item.consumer_id),
+        )
+    ]
 
 
 def build_capability_artifact(
@@ -78,29 +194,57 @@ def build_capability_artifact(
     edges: list[CapabilityArtifactEdge] | None = None,
     provenance: dict[str, str] | None = None,
 ) -> CapabilityGraphArtifact:
+    source_items = list(sources or [])
+    edge_items = list(edges or [])
+    provenance_items = dict(provenance or {})
     payload = _canonical_payload(
+        format_version=CAPABILITY_ARTIFACT_FORMAT_VERSION,
         graph_digest=graph_digest,
         capabilities=capabilities,
-        sources=list(sources or []),
-        edges=list(edges or []),
-        provenance=dict(provenance or {}),
+        sources=source_items,
+        edges=edge_items,
+        provenance=provenance_items,
     )
-    digest = hashlib.sha256(
-        json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
-    ).hexdigest()
     return CapabilityGraphArtifact(
-        artifact_digest=digest,
+        format_version=CAPABILITY_ARTIFACT_FORMAT_VERSION,
+        artifact_digest=_payload_digest(payload),
         graph_digest=graph_digest,
         capabilities=tuple(sorted(capabilities, key=lambda item: item.capability_id)),
         sources=tuple(sorted(
-            sources or [],
+            source_items,
             key=lambda item: (item.kind, item.provider, item.access_method or ""),
         )),
         edges=tuple(sorted(
-            edges or [],
-            key=lambda item: (item.producer_id, item.consumer_id, item.compatibility),
+            edge_items,
+            key=lambda item: (
+                item.producer_id,
+                item.consumer_id,
+                item.compatibility,
+                item.origin,
+            ),
         )),
-        provenance=dict(sorted((provenance or {}).items())),
+        provenance=dict(sorted(provenance_items.items())),
+    )
+
+
+def build_capability_artifact_from_graph(
+    *,
+    graph: CapabilityDependencyGraph,
+    capabilities: list[CapabilityContract],
+    sources: list[CapabilityArtifactSource] | None = None,
+    provenance: dict[str, str] | None = None,
+) -> CapabilityGraphArtifact:
+    expected = build_capability_dependency_graph(capabilities)
+    if expected != graph:
+        raise ValueError(
+            "capability graph does not match the supplied capability contracts"
+        )
+    return build_capability_artifact(
+        graph_digest=capability_dependency_graph_digest(graph),
+        capabilities=capabilities,
+        sources=sources,
+        edges=artifact_edges_from_graph(graph),
+        provenance=provenance,
     )
 
 
@@ -113,18 +257,144 @@ def serialize_capability_artifact(artifact: CapabilityGraphArtifact) -> str:
     )
 
 
-def load_capability_artifact(document: str) -> CapabilityGraphArtifact:
-    raw = json.loads(document)
-    artifact = CapabilityGraphArtifact.model_validate(raw)
+def validate_capability_artifact(
+    artifact: CapabilityGraphArtifact,
+) -> CapabilityGraphArtifact:
     if artifact.format_version != CAPABILITY_ARTIFACT_FORMAT_VERSION:
-        raise ValueError(f"unsupported capability artifact format: {artifact.format_version}")
-    expected = build_capability_artifact(
+        raise ValueError(
+            "semantic integrity validation requires current capability artifact format"
+        )
+
+    capability_ids = [item.capability_id for item in artifact.capabilities]
+    if len(capability_ids) != len(set(capability_ids)):
+        raise ValueError("capability artifact contains duplicate capability IDs")
+
+    source_ids = [
+        (item.kind, item.provider, item.access_method or "")
+        for item in artifact.sources
+    ]
+    if len(source_ids) != len(set(source_ids)):
+        raise ValueError("capability artifact contains duplicate source identities")
+
+    edge_ids = [
+        (item.producer_id, item.consumer_id)
+        for item in artifact.edges
+    ]
+    if len(edge_ids) != len(set(edge_ids)):
+        raise ValueError("capability artifact contains duplicate dependency edges")
+
+    known = set(capability_ids)
+    by_id = {item.capability_id: item for item in artifact.capabilities}
+    derived_pairs: set[tuple[str, str]] = set()
+    for edge in artifact.edges:
+        if edge.producer_id not in known or edge.consumer_id not in known:
+            raise ValueError(
+                "capability artifact edge references an unknown capability"
+            )
+        if edge.producer_id == edge.consumer_id:
+            raise ValueError("capability artifact contains a self dependency edge")
+        if edge.origin != "derived":
+            continue
+        compatibility = compare_capability_composition(
+            by_id[edge.producer_id],
+            by_id[edge.consumer_id],
+        )
+        if not compatibility.satisfies:
+            raise ValueError(
+                "derived capability artifact edge is not contract-compatible"
+            )
+        if edge.compatibility != compatibility.status:
+            raise ValueError(
+                "derived capability artifact edge compatibility is stale"
+            )
+        derived_pairs.add((edge.producer_id, edge.consumer_id))
+
+    if artifact.edges and all(edge.origin == "derived" for edge in artifact.edges):
+        graph = build_capability_dependency_graph(list(artifact.capabilities))
+        expected_pairs = {
+            (edge.producer_id, edge.consumer_id)
+            for edge in graph.edges
+        }
+        if derived_pairs != expected_pairs:
+            raise ValueError(
+                "derived capability artifact edges do not match the canonical graph"
+            )
+        if artifact.graph_digest != capability_dependency_graph_digest(graph):
+            raise ValueError(
+                "capability artifact graph digest does not match the canonical graph"
+            )
+
+    return artifact
+
+
+def _parse_and_validate_known_artifact(
+    document: str,
+) -> CapabilityGraphArtifact:
+    raw = json.loads(document)
+    if not isinstance(raw, dict):
+        raise ValueError("capability artifact document must be a JSON object")
+    version = raw.get("format_version")
+    if version not in SUPPORTED_CAPABILITY_ARTIFACT_FORMAT_VERSIONS:
+        raise ValueError(f"unsupported capability artifact format: {version}")
+
+    artifact = CapabilityGraphArtifact.model_validate(raw)
+    expected_digest = _artifact_digest(
+        artifact,
+        format_version=str(version),
+    )
+    if expected_digest != artifact.artifact_digest:
+        raise ValueError("capability artifact digest mismatch")
+    return artifact
+
+
+def migrate_capability_artifact(
+    document: str,
+) -> CapabilityArtifactMigrationResult:
+    artifact = _parse_and_validate_known_artifact(document)
+    source_digest = artifact.artifact_digest
+
+    if artifact.format_version == CAPABILITY_ARTIFACT_FORMAT_VERSION:
+        validate_capability_artifact(artifact)
+        return CapabilityArtifactMigrationResult(
+            artifact=artifact,
+            migration=CapabilityArtifactMigrationRecord(
+                from_format=artifact.format_version,
+                to_format=artifact.format_version,
+                source_digest=source_digest,
+                result_digest=artifact.artifact_digest,
+                migrated=False,
+            ),
+        )
+
+    # Version 1.0 had no edge-origin field and accepted caller-supplied edge metadata.
+    # Preserve that exact authority boundary by classifying every migrated edge as
+    # external rather than inventing stronger "derived" semantics.
+    provenance = dict(artifact.provenance)
+    provenance.setdefault("migration.from_format", artifact.format_version)
+    provenance.setdefault("migration.source_digest", source_digest)
+    migrated = build_capability_artifact(
         graph_digest=artifact.graph_digest,
         capabilities=list(artifact.capabilities),
         sources=list(artifact.sources),
-        edges=list(artifact.edges),
-        provenance=artifact.provenance,
+        edges=[
+            edge.model_copy(update={"origin": "external"})
+            for edge in artifact.edges
+        ],
+        provenance=provenance,
     )
-    if expected.artifact_digest != artifact.artifact_digest:
-        raise ValueError("capability artifact digest mismatch")
-    return artifact
+    validate_capability_artifact(migrated)
+    return CapabilityArtifactMigrationResult(
+        artifact=migrated,
+        migration=CapabilityArtifactMigrationRecord(
+            from_format=artifact.format_version,
+            to_format=CAPABILITY_ARTIFACT_FORMAT_VERSION,
+            source_digest=source_digest,
+            result_digest=migrated.artifact_digest,
+            migrated=True,
+        ),
+    )
+
+
+def load_capability_artifact(document: str) -> CapabilityGraphArtifact:
+    result = migrate_capability_artifact(document)
+    return result.artifact

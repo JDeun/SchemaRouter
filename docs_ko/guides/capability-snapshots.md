@@ -44,3 +44,24 @@ Publication은 process-local serialized compare-and-swap 경계를 사용합니�
 Validation 실패, stale CAS precondition, rebuild 오류가 발생하면 predecessor publication은 그대로 유지됩니다. 따라서 reader는 이전의 완전한 publication 또는 새로운 완전한 publication만 보며 중간 상태의 graph를 관측하지 않습니다.
 
 `CapabilitySnapshotPublication.provenance` 는 predecessor/successor snapshot ID와 source revision을 기록합니다. Runtime health는 immutable snapshot과 publication identity에 포함되지 않습니다. 따라서 health 재확인만으로 snapshot digest나 publication revision이 바뀌지 않습니다.
+
+
+## Versioned snapshot document
+
+메모리의 `CapabilityGraphSnapshot` identity는 기존 content-addressed 의미와 하위 호환성을 유지합니다. Persistence에는 명시적인 document envelope를 추가합니다.
+
+```python
+from schemarouter import serialize_capability_snapshot, load_capability_snapshot
+
+document = serialize_capability_snapshot(snapshot)
+loaded = load_capability_snapshot(document)
+```
+
+현재 snapshot document format은 `1.0`입니다. Envelope 도입 전 공개 `CapabilityGraphSnapshot` 모델을 그대로 JSON dump한 형태는 지원되는 `legacy-unversioned` 표현으로 처리합니다. 현재 document로 감싸기 전에 기존 `snapshot_id`를 검증합니다.
+
+```bash
+schemarouter snapshot inspect snapshot.json --json
+schemarouter snapshot migrate snapshot.json --json
+```
+
+Artifact와 마찬가지로 migration은 기본적으로 새 파일을 만들며, 알 수 없는 미래 format version은 fail-closed합니다.

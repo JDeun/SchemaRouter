@@ -44,3 +44,24 @@ Publication uses a process-local serialized compare-and-swap boundary. The succe
 A failed validation, stale CAS precondition, or rebuild error leaves the predecessor publication active. Readers therefore observe either the previous complete publication or the new complete publication, never an intermediate graph.
 
 `CapabilitySnapshotPublication.provenance` records predecessor/successor snapshot IDs and source revisions. Runtime health remains outside the immutable snapshot and publication identity. Rechecking health alone therefore cannot change the snapshot digest or publication revision.
+
+
+## Versioned snapshot documents
+
+The in-memory `CapabilityGraphSnapshot` identity remains content-addressed and backward-compatible. Persistence now has an explicit document envelope:
+
+```python
+from schemarouter import serialize_capability_snapshot, load_capability_snapshot
+
+document = serialize_capability_snapshot(snapshot)
+loaded = load_capability_snapshot(document)
+```
+
+The current snapshot document format is `1.0`. A raw JSON dump of the public pre-envelope `CapabilityGraphSnapshot` model is treated as the supported `legacy-unversioned` representation. Its `snapshot_id` is validated before it is wrapped in the current document format.
+
+```bash
+schemarouter snapshot inspect snapshot.json --json
+schemarouter snapshot migrate snapshot.json --json
+```
+
+As with artifacts, migration writes a new file by default and unknown future format versions fail closed.

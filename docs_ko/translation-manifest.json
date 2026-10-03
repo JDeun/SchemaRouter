@@ -117,7 +117,7 @@
     },
     {
       "path": "guides/capability-artifacts.md",
-      "source_blob": "7fb64d655b2e7d61563068dda6e7db7a49acffa8"
+      "source_blob": "18157d03f74805248443297235bc177b2d9fb447"
     },
     {
       "path": "guides/capability-constraints.md",
@@ -145,7 +145,7 @@
     },
     {
       "path": "guides/capability-snapshots.md",
-      "source_blob": "7ad38444f4f97b84d1804b04fce6cd4fb51f9ee7"
+      "source_blob": "33e0d0e36a97a01fd39b7624f28b296d8a58d034"
     },
     {
       "path": "guides/consumer-acceptance.md",

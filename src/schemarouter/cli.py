@@ -8,6 +8,14 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+from .capability_artifact import (
+    migrate_capability_artifact,
+    serialize_capability_artifact,
+)
+from .capability_snapshot import (
+    migrate_capability_snapshot,
+    serialize_capability_snapshot,
+)
 from .dashboard import write_dashboard
 from .errors import (
     SchemaSourceError,
@@ -354,6 +362,31 @@ def _render_trace_detail(
     return "\n".join(lines)
 
 
+def _existing_document(path: Path) -> Path:
+    if not path.exists():
+        raise FileNotFoundError(f"document does not exist: {path}")
+    if not path.is_file():
+        raise ValueError(f"document path is not a file: {path}")
+    return path
+
+
+def _migration_destination(
+    source: Path,
+    output: Path | None,
+    *,
+    overwrite: bool,
+) -> Path:
+    destination = output or source.with_name(source.name + ".migrated.json")
+    if destination == source and not overwrite:
+        raise ValueError("refusing to overwrite source document without --overwrite")
+    if destination.exists() and not overwrite:
+        raise FileExistsError(
+            f"migration destination already exists: {destination}; use --overwrite"
+        )
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    return destination
+
+
 def _existing_db(path: Path) -> Path:
     if not path.exists():
         raise FileNotFoundError(f"database does not exist: {path}")
@@ -531,6 +564,46 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_json_flag(storage_migrate)
 
+    artifact = subparsers.add_parser(
+        "artifact",
+        help="Inspect or migrate portable capability graph artifacts.",
+    )
+    artifact_subparsers = artifact.add_subparsers(dest="surface", required=True)
+    artifact_inspect = artifact_subparsers.add_parser(
+        "inspect",
+        help="Validate and inspect a capability graph artifact without rewriting it.",
+    )
+    artifact_inspect.add_argument("document", type=Path)
+    _add_json_flag(artifact_inspect)
+    artifact_migrate = artifact_subparsers.add_parser(
+        "migrate",
+        help="Migrate a supported older capability graph artifact to the current format.",
+    )
+    artifact_migrate.add_argument("document", type=Path)
+    artifact_migrate.add_argument("--output", type=Path, default=None)
+    artifact_migrate.add_argument("--overwrite", action="store_true")
+    _add_json_flag(artifact_migrate)
+
+    snapshot = subparsers.add_parser(
+        "snapshot",
+        help="Inspect or migrate capability snapshot documents.",
+    )
+    snapshot_subparsers = snapshot.add_subparsers(dest="surface", required=True)
+    snapshot_inspect = snapshot_subparsers.add_parser(
+        "inspect",
+        help="Validate and inspect a capability snapshot document.",
+    )
+    snapshot_inspect.add_argument("document", type=Path)
+    _add_json_flag(snapshot_inspect)
+    snapshot_migrate = snapshot_subparsers.add_parser(
+        "migrate",
+        help="Wrap/migrate a supported older capability snapshot representation.",
+    )
+    snapshot_migrate.add_argument("document", type=Path)
+    snapshot_migrate.add_argument("--output", type=Path, default=None)
+    snapshot_migrate.add_argument("--overwrite", action="store_true")
+    _add_json_flag(snapshot_migrate)
+
     explorer = subparsers.add_parser(
         "explorer",
         help="Export a self-contained Swagger-style capability explorer.",
@@ -614,6 +687,68 @@ def _run(args: argparse.Namespace) -> str:
                 else _render_storage_migration(result)
             )
         raise ValueError(f"unsupported storage surface: {args.surface}")
+
+    if args.command == "artifact":
+        source = _existing_document(args.document)
+        result = migrate_capability_artifact(source.read_text(encoding="utf-8"))
+        inspection = {
+            "kind": "capability_artifact",
+            "source": str(source),
+            "from_format": result.migration.from_format,
+            "current_format": result.migration.to_format,
+            "migration_required": result.migration.migrated,
+            "source_digest": result.migration.source_digest,
+            "result_digest": result.migration.result_digest,
+            "capabilities": len(result.artifact.capabilities),
+            "sources": len(result.artifact.sources),
+            "edges": len(result.artifact.edges),
+        }
+        if args.surface == "inspect":
+            return _json_dump(inspection)
+        if args.surface == "migrate":
+            destination = _migration_destination(
+                source,
+                args.output,
+                overwrite=args.overwrite,
+            )
+            destination.write_text(
+                serialize_capability_artifact(result.artifact) + "\n",
+                encoding="utf-8",
+            )
+            inspection["output"] = str(destination)
+            return _json_dump(inspection)
+        raise ValueError(f"unsupported artifact surface: {args.surface}")
+
+    if args.command == "snapshot":
+        source = _existing_document(args.document)
+        result = migrate_capability_snapshot(source.read_text(encoding="utf-8"))
+        inspection = {
+            "kind": "capability_snapshot",
+            "source": str(source),
+            "from_format": result.migration.from_format,
+            "current_format": result.migration.to_format,
+            "migration_required": result.migration.migrated,
+            "source_digest": result.migration.source_digest,
+            "result_digest": result.migration.result_digest,
+            "snapshot_id": result.document.snapshot.snapshot_id,
+            "capabilities": len(result.document.snapshot.contracts),
+            "sources": len(result.document.snapshot.sources),
+        }
+        if args.surface == "inspect":
+            return _json_dump(inspection)
+        if args.surface == "migrate":
+            destination = _migration_destination(
+                source,
+                args.output,
+                overwrite=args.overwrite,
+            )
+            destination.write_text(
+                serialize_capability_snapshot(result.document) + "\n",
+                encoding="utf-8",
+            )
+            inspection["output"] = str(destination)
+            return _json_dump(inspection)
+        raise ValueError(f"unsupported snapshot surface: {args.surface}")
 
     if args.command == "explorer":
         with SQLiteRegistry(_existing_db(args.registry)) as registry:
