@@ -236,15 +236,28 @@ def update_capability_dependency_graph(
     )
 
 
+def _adjacency(
+    graph: CapabilityDependencyGraph,
+) -> dict[str, tuple[str, ...]]:
+    values: dict[str, list[str]] = {
+        capability_id: []
+        for capability_id in graph.capability_ids
+    }
+    for edge in graph.edges:
+        if edge.producer_id in values:
+            values[edge.producer_id].append(edge.consumer_id)
+    return {
+        capability_id: tuple(sorted(set(successors)))
+        for capability_id, successors in values.items()
+    }
+
+
 def dependency_strongly_connected_components(
     graph: CapabilityDependencyGraph,
 ) -> tuple[tuple[str, ...], ...]:
     """Return deterministic strongly connected components using Tarjan's algorithm."""
 
-    adjacency = {
-        capability_id: tuple(sorted(graph.successors(capability_id)))
-        for capability_id in graph.capability_ids
-    }
+    adjacency = _adjacency(graph)
     index = 0
     stack: list[str] = []
     on_stack: set[str] = set()
