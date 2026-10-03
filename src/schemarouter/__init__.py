@@ -41,9 +41,15 @@ from .binding_reconciliation import (
 )
 from .capability_contracts import (
     CapabilityCompatibility,
+    CapabilityComposition,
+    CapabilityContract,
     CapabilityFieldContract,
+    CompatibilityContext,
     CompatibilityReason,
     CompatibilityStatus,
+    SemanticEquivalence,
+    UnitConversion,
+    compare_capability_composition,
     compare_capability_fields,
 )
 from .dashboard import render_dashboard, write_dashboard
@@ -259,9 +265,14 @@ __all__ = [
     "CallableDecisionBackend",
     "CapabilityCandidate",
     "CapabilityCompatibility",
+    "CapabilityComposition",
+    "CapabilityContract",
     "CapabilityFieldContract",
+    "CompatibilityContext",
     "CompatibilityReason",
     "CompatibilityStatus",
+    "SemanticEquivalence",
+    "UnitConversion",
     "CapabilityRetrieval",
     "CapabilityRouteCandidate",
     "CapabilityRouteRetrieval",
@@ -392,6 +403,7 @@ __all__ = [
     "analyze_openapi_compatibility",
     "choose_async",
     "choose_sync",
+    "compare_capability_composition",
     "compare_capability_fields",
     "compare_endpoint_specs",
     "compare_tool_specs",
