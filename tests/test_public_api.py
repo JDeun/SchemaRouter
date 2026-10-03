@@ -266,10 +266,11 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "evaluate_preconditions",
         "filter_retrieval_by_state",
         "CapabilityGraphSnapshot",
-        "CapabilitySnapshotComparison",
         "compare_capability_snapshots",
-        "create_capability_graph_snapshot",
-        "require_capability_snapshot",
+        "CapabilitySnapshotDiff",
+        "CapabilitySourceRevision",
+        "build_capability_snapshot",
+        "require_snapshot",
     }
 
     assert len(schemarouter.__all__) == len(set(schemarouter.__all__))
