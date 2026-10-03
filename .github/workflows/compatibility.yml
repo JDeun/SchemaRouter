@@ -186,8 +186,8 @@ jobs:
             --provider apis-guru \
             --json-out artifacts/provider-apis-guru-compatibility.json
           run_smoke scripts/live_provider_first_protocol_smoke.py \
-            --provider rick-and-morty-api \
-            --json-out artifacts/provider-rick-and-morty-api-compatibility.json
+            --provider countries-graphql \
+            --json-out artifacts/provider-countries-graphql-compatibility.json
           run_smoke scripts/live_provider_first_protocol_smoke.py \
             --provider odata-v4-reference \
             --json-out artifacts/provider-odata-v4-reference-compatibility.json
