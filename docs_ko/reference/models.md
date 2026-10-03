@@ -51,3 +51,43 @@
 ::: schemarouter.CapabilityDecisionReason
 ## CapabilityDecisionTrace
 ::: schemarouter.CapabilityDecisionTrace
+
+## ProviderAccessMethod
+
+::: schemarouter.ProviderAccessMethod
+
+## ProviderMethodResolution
+
+::: schemarouter.ProviderMethodResolution
+
+## ProviderMethodRegistration
+
+::: schemarouter.ProviderMethodRegistration
+
+## ProviderRegistrationResult
+
+::: schemarouter.ProviderRegistrationResult
+
+## CapabilitySnapshotDocument
+
+::: schemarouter.CapabilitySnapshotDocument
+
+## CapabilitySnapshotProvenance
+
+::: schemarouter.CapabilitySnapshotProvenance
+
+## CapabilityArtifactMigrationResult
+
+::: schemarouter.CapabilityArtifactMigrationResult
+
+## CapabilitySnapshotMigrationResult
+
+::: schemarouter.CapabilitySnapshotMigrationResult
+
+## CapabilityDecisionCandidateInput
+
+::: schemarouter.CapabilityDecisionCandidateInput
+
+## CapabilityDecisionTraceInspection
+
+::: schemarouter.CapabilityDecisionTraceInspection
