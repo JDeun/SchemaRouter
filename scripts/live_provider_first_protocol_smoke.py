@@ -21,7 +21,6 @@ async def _execute_apis_guru(
         tool=tool.key,
         endpoint=endpoint.name,
         arguments={},
-        fields=["numAPIs"],
         schema_fingerprint=endpoint.fingerprint,
         tool_fingerprint=tool.fingerprint,
     )
