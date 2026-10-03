@@ -246,7 +246,7 @@ class SchemaRouter:
             self.arefresh_schema,
             self.loader.adapters,
         )
-        self.provider_profiles = built_in_provider_profile_registry()\n
+        self.provider_profiles = built_in_provider_profile_registry()
     def _is_snapshot_access_available(self, tool: ToolSpec, endpoint: Any) -> bool:
         return self.executor.is_access_available_for_contract(
             tool.key,
