@@ -1,8 +1,12 @@
 # State-aware capability retrieval
 
-External runtimes can filter ordinary capability retrieval against explicit typed execution state without giving SchemaRouter workflow or execution authority.
+External runtimes can apply explicit typed execution state to capability retrieval without giving SchemaRouter workflow or execution authority.
 
-The stable `retrieve(request, *, k=5)` facade remains stateless and backward-compatible. Use the explicit state-aware surface when host state must participate in eligibility:
+The stable `retrieve(request, *, k=5)` facade remains stateless and backward-compatible.
+
+## Filter a fixed Top-K
+
+Use `retrieve_state_aware(...)` when the host already wants the ordinary Top-K ranking and only needs to remove candidates that are not eligible under observable state:
 
 ```python
 from schemarouter import CapabilityFieldContract, TypedExecutionState
@@ -10,6 +14,7 @@ from schemarouter import CapabilityFieldContract, TypedExecutionState
 eligible = router.retrieve_state_aware(
     "continue the material lookup",
     execution_state=TypedExecutionState(...),
+    k=5,
     state_requirements={
         "materials.summary": [
             CapabilityFieldContract(
@@ -21,10 +26,59 @@ eligible = router.retrieve_state_aware(
 )
 ```
 
-The asynchronous counterpart is `await router.aretrieve_state_aware(...)`. The lower-level `filter_retrieval_by_state(...)` helper remains available when a host already has a `CapabilityRetrieval` object.
+This path is intentionally:
 
-`state_requirements` and `state_preconditions` are explicit host-supplied contract metadata. SchemaRouter does not infer workflow preconditions from route names, parameter names, descriptions, previous rank positions, or hidden future routes.
+```text
+ordinary Top-K -> state eligibility filter
+```
 
-A declared requirement with missing or incompatible typed state is excluded fail-closed; routes with no declared state requirement retain stateless behavior. Existing `router.retrieve(query, k=...)` and `router.aretrieve(...)` callers therefore keep the original `CapabilityRetrieval` contract and signature.
+It does **not** refill candidates removed from that fixed Top-K.
 
-This surface returns capability information only. It does not select a workflow, execute a capability, commit or roll back a transaction, mutate host state, schedule retries, compensate an operation, or widen authorization. Host runtimes remain responsible for policy, availability, execution, retry, and compensation.
+## Re-retrieve and backfill eligible Top-K
+
+Use `reretrieve_state_aware(...)` when the host needs the best K eligible candidates from the complete visible ranking:
+
+```python
+eligible = router.reretrieve_state_aware(
+    "continue the material lookup",
+    execution_state=TypedExecutionState(...),
+    k=5,
+    state_requirements=state_requirements,
+    state_preconditions=state_preconditions,
+)
+```
+
+This path is:
+
+```text
+visible ranked capability surface
+        |
+        v
+explicit state requirements / preconditions
+        |
+        v
+first K eligible candidates
+```
+
+If an initial candidate is excluded, SchemaRouter continues down the already visible ranking until K eligible candidates are found or the visible surface is exhausted.
+
+The result records:
+
+- the selected candidate's `original_rank` before state filtering;
+- its compact eligible rank in `candidate.rank`;
+- excluded visible candidates and their structured `StateEligibility` reasons;
+- `examined_count` and whether the visible surface was exhausted.
+
+Candidates hidden by registry/availability policy are never introduced by backfill and are not leaked through the exclusion trace.
+
+The asynchronous counterparts are `await router.aretrieve_state_aware(...)` and `await router.areretrieve_state_aware(...)`.
+
+The lower-level `filter_retrieval_by_state(...)` and `backfill_retrieval_by_state(...)` helpers remain available when a host already owns a `CapabilityRetrieval` object.
+
+## State boundary
+
+`state_requirements` and `state_preconditions` are explicit host-supplied contract metadata. SchemaRouter does not infer workflow preconditions from route names, parameter names, descriptions, previous rank positions, undocumented payload text, or hidden future routes.
+
+A declared requirement with missing or incompatible typed state is excluded fail-closed. Routes with no declared state requirement retain stateless behavior.
+
+Neither state-aware surface chooses a workflow, executes a capability, commits or rolls back a transaction, mutates host state, schedules retries, compensates an operation, or widens authorization. Host runtimes remain responsible for policy, availability, execution, retry, and compensation.
