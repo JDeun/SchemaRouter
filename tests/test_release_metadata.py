@@ -115,7 +115,7 @@ def test_release_workflow_keeps_trusted_publishing_top_level_and_isolates_build(
     assert 'package="schemarouter==$RELEASE_VERSION"' in workflow
     assert 'package="schemarouter[mcp,jev,otel]==$RELEASE_VERSION"' in workflow
     assert (
-        'package="schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]==$RELEASE_VERSION"'
+        'package="schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel,database]==$RELEASE_VERSION"'
         in workflow
     )
     assert "--lightweight-extras" in workflow
@@ -147,15 +147,19 @@ def test_external_package_smokes_cover_lightweight_integration_extras() -> None:
     ).read_text(encoding="utf-8")
 
     lightweight_extras = "schemarouter[mcp,jev,otel]"
-    combined_extras = "schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]"
+    compatibility_combined_extras = "schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]"
+    release_combined_extras = (
+        "schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel,database]"
+    )
     assert "published-pypi-lightweight:" in compatibility
     assert lightweight_extras in compatibility
     assert lightweight_extras in release
-    assert combined_extras in compatibility
-    assert combined_extras in release
+    assert compatibility_combined_extras in compatibility
+    assert release_combined_extras in release
     assert "--framework-integrations" in compatibility
     assert "--lightweight-extras" in compatibility
     assert "--framework-integrations --lightweight-extras" in release
+    assert "--database-integration" in release
     assert (
         'verification: ["wheel", "sdist", "lightweight-extras", "integration-extras"]'
         in release
@@ -165,6 +169,8 @@ def test_external_package_smokes_cover_lightweight_integration_extras() -> None:
         in published_smoke
     )
     assert 'report["lightweight_extras"] = args.lightweight_extras' in published_smoke
+    assert 'report["database_integration"] = args.database_integration' in published_smoke
+    assert "from installed_database_smoke import run_smoke as run_database_smoke" in published_smoke
 
 
 def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
@@ -180,7 +186,9 @@ def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
     assert "--cov-branch" in workflow
     assert "dependency-audit:" in workflow
     assert "pip-audit --strict ." in workflow
-    assert "needs: [laya-integration, dependency-audit]" in workflow
+    assert "needs: [laya-integration, dependency-audit, database-integration]" in workflow
+    assert "database-integration:" in workflow
+    assert 'pip install -e ".[dev,database]"' in workflow
     assert "--html-out /tmp/decision-benchmark.html" in workflow
     assert "schemarouter inspect registry --db /tmp/inspection-registry.sqlite3 --json" in workflow
     assert (
