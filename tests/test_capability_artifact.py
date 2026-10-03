@@ -71,7 +71,7 @@ def test_unknown_format_version_fails_closed() -> None:
 
 
 def test_artifact_model_has_no_runtime_or_secret_transport_fields() -> None:
-    fields = set(build_capability_artifact(graph_digest="g", capabilities=[]).model_fields)
+    fields = set(type(build_capability_artifact(graph_digest="g", capabilities=[])).model_fields)
     assert "health" not in fields
     assert "credentials" not in fields
     assert "headers" not in fields
