@@ -217,6 +217,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "dependency_cycles",
         "discover_adapter_plugins",
         "discover_decision_backend_plugins",
+        "inspect_capability_graph_drift",
         "inspect_registry",
         "inspect_router",
         "inspect_run_trace",
