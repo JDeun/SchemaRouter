@@ -3062,10 +3062,8 @@ class SchemaRouter:
         config: RunConfig | dict[str, Any] | None = None,
     ) -> list[ToolResult]:
         run_config = _coerce_config(config)
-        plan = await self.aplan_executable(
-            request,
-            principal=run_config.principal,
-        )
+        with _principal_execution_context(run_config.principal):
+            plan = await self.aplan_executable(request)
         return await self._execute_plan(plan, run_config)
 
     def invoke(
@@ -3168,27 +3166,37 @@ class SchemaRouter:
         config: RunConfig | dict[str, Any] | None = None,
     ) -> AsyncIterator[ToolResult]:
         run_config = _coerce_config(config)
-        plan = await self.aplan_executable(
-            request,
-            principal=run_config.principal,
-        )
         with _principal_execution_context(run_config.principal):
-            if run_config.execution_mode == "parallel_read_only":
-                async for _, result in self.executor.execute_parallel_read_only_iter(
-                    plan,
-                    retry=run_config.retry,
-                    budget=run_config.budget,
-                    max_concurrency=run_config.max_parallel_calls,
-                ):
-                    yield result
-                return
+            plan = await self.aplan_executable(request)
 
-            async for result in self.executor.execute_iter(
+        if run_config.execution_mode == "parallel_read_only":
+            iterator = self.executor.execute_parallel_read_only_iter(
                 plan,
                 retry=run_config.retry,
                 budget=run_config.budget,
-            ):
+                max_concurrency=run_config.max_parallel_calls,
+            )
+            while True:
+                try:
+                    with _principal_execution_context(run_config.principal):
+                        _, result = await anext(iterator)
+                except StopAsyncIteration:
+                    break
                 yield result
+            return
+
+        iterator = self.executor.execute_iter(
+            plan,
+            retry=run_config.retry,
+            budget=run_config.budget,
+        )
+        while True:
+            try:
+                with _principal_execution_context(run_config.principal):
+                    result = await anext(iterator)
+            except StopAsyncIteration:
+                break
+            yield result
 
     def stream(
         self,
@@ -3234,10 +3242,8 @@ class SchemaRouter:
         sequence += 1
 
         try:
-            plan = await self.aplan_executable(
-                request,
-                principal=run_config.principal,
-            )
+            with _principal_execution_context(run_config.principal):
+                plan = await self.aplan_executable(request)
         except Exception as exc:
             data = {"error_type": type(exc).__name__, "stage": "planning"}
             if run_config.include_payloads:
@@ -3874,10 +3880,10 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRouteRetrieval:
-        return self.router.retrieve_routes(
+        return self.router.retrieve_routes_authorized(
             request,
-            k=k,
             principal=self.config.principal,
+            k=k,
         )
 
     async def aretrieve_routes(
@@ -3886,10 +3892,10 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRouteRetrieval:
-        return await self.router.aretrieve_routes(
+        return await self.router.aretrieve_routes_authorized(
             request,
-            k=k,
             principal=self.config.principal,
+            k=k,
         )
 
     def retrieve(
@@ -3898,10 +3904,10 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRetrieval:
-        return self.router.retrieve(
+        return self.router.retrieve_authorized(
             request,
-            k=k,
             principal=self.config.principal,
+            k=k,
         )
 
     async def aretrieve(
@@ -3910,10 +3916,10 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRetrieval:
-        return await self.router.aretrieve(
+        return await self.router.aretrieve_authorized(
             request,
-            k=k,
             principal=self.config.principal,
+            k=k,
         )
 
     def reretrieve_state_aware(
@@ -3925,14 +3931,15 @@ class ConfiguredSchemaRouter:
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
     ) -> StateConditionedCapabilityRetrieval:
-        return self.router.reretrieve_state_aware(
-            request,
-            execution_state=execution_state,
-            k=k,
-            state_requirements=state_requirements,
-            state_preconditions=state_preconditions,
-            principal=self.config.principal,
-        )
+        with _principal_execution_context(self.config.principal):
+    return self.router.reretrieve_state_aware(
+                request,
+                execution_state=execution_state,
+                k=k,
+                state_requirements=state_requirements,
+                state_preconditions=state_preconditions,
+            )
+    
 
     async def areretrieve_state_aware(
         self,
@@ -3943,14 +3950,15 @@ class ConfiguredSchemaRouter:
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
     ) -> StateConditionedCapabilityRetrieval:
-        return await self.router.areretrieve_state_aware(
-            request,
-            execution_state=execution_state,
-            k=k,
-            state_requirements=state_requirements,
-            state_preconditions=state_preconditions,
-            principal=self.config.principal,
-        )
+        with _principal_execution_context(self.config.principal):
+    return await self.router.areretrieve_state_aware(
+                request,
+                execution_state=execution_state,
+                k=k,
+                state_requirements=state_requirements,
+                state_preconditions=state_preconditions,
+            )
+    
 
     def retrieve_state_aware(
         self,
@@ -3961,14 +3969,15 @@ class ConfiguredSchemaRouter:
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
     ) -> StateAwareCapabilityRetrieval:
-        return self.router.retrieve_state_aware(
-            request,
-            execution_state=execution_state,
-            k=k,
-            state_requirements=state_requirements,
-            state_preconditions=state_preconditions,
-            principal=self.config.principal,
-        )
+        with _principal_execution_context(self.config.principal):
+    return self.router.retrieve_state_aware(
+                request,
+                execution_state=execution_state,
+                k=k,
+                state_requirements=state_requirements,
+                state_preconditions=state_preconditions,
+            )
+    
 
     async def aretrieve_state_aware(
         self,
@@ -3979,14 +3988,15 @@ class ConfiguredSchemaRouter:
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
     ) -> StateAwareCapabilityRetrieval:
-        return await self.router.aretrieve_state_aware(
-            request,
-            execution_state=execution_state,
-            k=k,
-            state_requirements=state_requirements,
-            state_preconditions=state_preconditions,
-            principal=self.config.principal,
-        )
+        with _principal_execution_context(self.config.principal):
+    return await self.router.aretrieve_state_aware(
+                request,
+                execution_state=execution_state,
+                k=k,
+                state_requirements=state_requirements,
+                state_preconditions=state_preconditions,
+            )
+    
 
     def retrieve_executable(
         self,
@@ -3994,10 +4004,10 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRetrieval:
-        return self.router.retrieve_executable(
+        return self.router.retrieve_executable_authorized(
             request,
-            k=k,
             principal=self.config.principal,
+            k=k,
         )
 
     async def aretrieve_executable(
@@ -4006,10 +4016,10 @@ class ConfiguredSchemaRouter:
         *,
         k: int = 5,
     ) -> CapabilityRetrieval:
-        return await self.router.aretrieve_executable(
+        return await self.router.aretrieve_executable_authorized(
             request,
-            k=k,
             principal=self.config.principal,
+            k=k,
         )
 
     def invoke(self, request: PlanRequest | str) -> list[ToolResult]:
