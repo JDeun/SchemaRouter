@@ -86,7 +86,7 @@ async def main() -> None:
     report = new_report(adapter="graphql", source=url)
     report["details"] = {
         "evidence_kind": "live_public_provider",
-        "provider": "Rick and Morty GraphQL API",
+        "provider": "AniList",
     }
 
     try:
