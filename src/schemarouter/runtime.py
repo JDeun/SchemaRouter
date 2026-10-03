@@ -3932,14 +3932,13 @@ class ConfiguredSchemaRouter:
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
     ) -> StateConditionedCapabilityRetrieval:
         with _principal_execution_context(self.config.principal):
-    return self.router.reretrieve_state_aware(
+            return self.router.reretrieve_state_aware(
                 request,
                 execution_state=execution_state,
                 k=k,
                 state_requirements=state_requirements,
                 state_preconditions=state_preconditions,
             )
-    
 
     async def areretrieve_state_aware(
         self,
@@ -3951,14 +3950,13 @@ class ConfiguredSchemaRouter:
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
     ) -> StateConditionedCapabilityRetrieval:
         with _principal_execution_context(self.config.principal):
-    return await self.router.areretrieve_state_aware(
+            return await self.router.areretrieve_state_aware(
                 request,
                 execution_state=execution_state,
                 k=k,
                 state_requirements=state_requirements,
                 state_preconditions=state_preconditions,
             )
-    
 
     def retrieve_state_aware(
         self,
@@ -3970,14 +3968,13 @@ class ConfiguredSchemaRouter:
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
     ) -> StateAwareCapabilityRetrieval:
         with _principal_execution_context(self.config.principal):
-    return self.router.retrieve_state_aware(
+            return self.router.retrieve_state_aware(
                 request,
                 execution_state=execution_state,
                 k=k,
                 state_requirements=state_requirements,
                 state_preconditions=state_preconditions,
             )
-    
 
     async def aretrieve_state_aware(
         self,
@@ -3989,14 +3986,13 @@ class ConfiguredSchemaRouter:
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
     ) -> StateAwareCapabilityRetrieval:
         with _principal_execution_context(self.config.principal):
-    return await self.router.aretrieve_state_aware(
+            return await self.router.aretrieve_state_aware(
                 request,
                 execution_state=execution_state,
                 k=k,
                 state_requirements=state_requirements,
                 state_preconditions=state_preconditions,
             )
-    
 
     def retrieve_executable(
         self,
