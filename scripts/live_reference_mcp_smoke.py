@@ -12,7 +12,7 @@ from time import perf_counter
 
 from compatibility_report import new_report, write_report
 
-from schemarouter import ExecutionPolicy, PlanRequest, SchemaRouter
+from schemarouter import (\n    ExecutionPolicy,\n    PlanRequest,\n    ProviderAccessMethod,\n    ProviderProfile,\n    SchemaRouter,\n)
 
 
 def _free_port() -> int:
@@ -66,12 +66,31 @@ async def run_smoke() -> dict[str, object]:
         router = SchemaRouter(
             policy=ExecutionPolicy(allow_unclassified_remote=True)
         )
+        router.register_provider_profile(
+            ProviderProfile(
+                provider_id="local-mcp-reference",
+                display_name="SchemaRouter pinned MCP Streamable HTTP reference server",
+                methods=(
+                    ProviderAccessMethod(
+                        method_id="mcp",
+                        kind="mcp",
+                        access_mode="mcp",
+                        url=source,
+                    ),
+                ),
+            )
+        )
 
         started = perf_counter()
-        tool = await router.add_url(source, kind="mcp")
+        registration = await router.add_provider("local-mcp-reference")
         discovery_ms = round((perf_counter() - started) * 1000, 2)
+        assert registration.methods[0].status == "registered"
+        assert len(registration.registered_tool_keys) == 1
+        tool = router.registry.get(registration.registered_tool_keys[0])
 
         assert tool.metadata["adapter"] == "mcp"
+        assert tool.provider == "local-mcp-reference"
+        assert tool.access_mode == "mcp"
         assert tool.metadata["protocol_version"]
         endpoint = tool.endpoint("add")
 
@@ -90,6 +109,7 @@ async def run_smoke() -> dict[str, object]:
         return {
             "evidence_kind": "pinned_reference_implementation",
             "provider": "SchemaRouter pinned MCP Streamable HTTP reference server",
+            "provider_first": True,
             "protocol_version": tool.metadata["protocol_version"],
             "discovery_success": True,
             "tool_count": 1,
