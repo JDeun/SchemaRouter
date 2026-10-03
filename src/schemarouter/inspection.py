@@ -7,6 +7,7 @@ from typing import Any
 from pydantic import Field
 
 from ._url_safety import safe_provenance_url
+from .capability_drift import CapabilityGraphDrift
 from .models import StrictModel, ToolSpec
 from .registry import ToolRegistry
 from .traces import RunTrace, RunTraceStore
@@ -523,3 +524,9 @@ def tool_spec_document(tool: ToolSpec) -> dict[str, object]:
             for endpoint in tool.endpoints
         ],
     }
+
+
+def inspect_capability_graph_drift(drift: CapabilityGraphDrift) -> CapabilityGraphDrift:
+    """Return a detached capability-drift report for observability surfaces."""
+
+    return drift.model_copy(deep=True)
