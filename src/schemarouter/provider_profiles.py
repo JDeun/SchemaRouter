@@ -81,9 +81,12 @@ class ProviderProfile(StrictModel):
         method_ids = [method.method_id for method in self.methods]
         if len(method_ids) != len(set(method_ids)):
             raise ValueError("provider access method IDs must be unique")
-        names = [canonical, *(_normalize_provider_name(alias) for alias in self.aliases)]
-        if len(names) != len(set(names)):
-            raise ValueError("provider ID and aliases must be unique within a profile")
+        # Aliases may intentionally normalize to the canonical provider ID
+        # (for example "materials project" -> "materials-project"). The registry
+        # deduplicates those names locally while still rejecting collisions with
+        # a different provider profile.
+        for alias in self.aliases:
+            _normalize_provider_name(alias)
         if not self.display_name.strip():
             raise ValueError("provider display_name must be non-empty")
         return self
