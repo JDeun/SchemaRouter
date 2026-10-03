@@ -37,6 +37,7 @@ from .binding_reconciliation import (
     BindingResolver,
     TrustedBindingConfig,
 )
+from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
 from .errors import (
     BindingDriftError,
     ContractAmendmentError,
@@ -47,6 +48,7 @@ from .errors import (
     SchemaNotModifiedError,
     SchemaSourceError,
 )
+from .execution_state import TypedExecutionState
 from .executor import BoundEndpointInvoker, ExecutionBudgetTracker, RegistryExecutor
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot
 from .hooks import ExecutionHooks
@@ -78,6 +80,7 @@ from .schema_diff import (
     compare_tool_specs,
 )
 from .schema_watch import SchemaWatchManager, SchemaWatchSnapshot
+from .state_retrieval import StateAwareCapabilityRetrieval
 from .source_identity import (
     StructuredSourceIdentity,
     structured_source_identity,
@@ -2395,20 +2398,38 @@ class SchemaRouter:
         request: PlanRequest | str,
         *,
         k: int = 5,
-    ) -> CapabilityRetrieval:
+        execution_state: TypedExecutionState | None = None,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> CapabilityRetrieval | StateAwareCapabilityRetrieval:
         """Return Top-K typed registered capabilities without executing them."""
 
-        return self.planner.retrieve(request, k=k)
+        return self.planner.retrieve(
+            request,
+            k=k,
+            execution_state=execution_state,
+            state_requirements=state_requirements,
+            state_preconditions=state_preconditions,
+        )
 
     async def aretrieve(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
-    ) -> CapabilityRetrieval:
+        execution_state: TypedExecutionState | None = None,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> CapabilityRetrieval | StateAwareCapabilityRetrieval:
         """Async counterpart to :meth:`retrieve`."""
 
-        return await self.planner.aretrieve(request, k=k)
+        return await self.planner.aretrieve(
+            request,
+            k=k,
+            execution_state=execution_state,
+            state_requirements=state_requirements,
+            state_preconditions=state_preconditions,
+        )
 
     def _binding_ready(self, tool: ToolSpec, endpoint: Any) -> bool:
         del endpoint
