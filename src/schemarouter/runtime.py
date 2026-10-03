@@ -748,22 +748,13 @@ class SchemaRouter:
             )
 
         registered: list[str] = []
-        try:
-            for binding in bindings:
-                registered.append(
-                    self.add_bound_tool(
-                        binding.tool,
-                        binding.invoker,
-                    )
+        for binding in bindings:
+            registered.append(
+                self.add_bound_tool(
+                    binding.tool,
+                    binding.invoker,
                 )
-        except Exception:
-            for tool_key in reversed(registered):
-                try:
-                    self.registry.unregister(tool_key)
-                except Exception:
-                    pass
-                self.executor.purge_tool_runtime_state(tool_key)
-            raise
+            )
         return tuple(registered)
 
     def amend_capability(self, tool_key: str, amended: ToolSpec) -> str:
