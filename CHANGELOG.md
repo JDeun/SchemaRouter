@@ -12,10 +12,7 @@ The project is pre-1.0 and follows the compatibility rules in
 - added schema-introspected read-only database onboarding through dependency-free SQLite connections
   and caller-owned SQLAlchemy Engines, compiling tables/views/columns into typed capabilities while
   keeping credentials and live connection state outside model-visible contracts; added the optional
-  `database` extra and release-blocking integration coverage.
-
-### Added
-
+  `database` extra and release-blocking integration coverage;
 - added safe unknown-provider discovery proposals through `discover_provider()` with explicit
   inspect/approve registration, ambiguous service-family hints, caller-supplied trusted discovery
   backends, and digest-bound approval that never grants execution authority directly;
