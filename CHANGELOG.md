@@ -7,6 +7,37 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+### Added
+
+- added provider-first onboarding through `resolve_provider()` / `add_provider()`, with built-in
+  acceptance profiles for Materials Project, Crossref, and Tavily while preserving the existing
+  protocol-neutral adapter and trusted-secret boundaries;
+- added explicit state-conditioned corrective retrieval through
+  `reretrieve_state_aware()` / `areretrieve_state_aware()` without changing the stable
+  `retrieve()` / `aretrieve()` facade;
+- added indexed and incremental capability dependency-graph construction, deterministic SCC
+  analysis, bounded cycle witnesses, and a 1k/10k/50k sparse graph benchmark;
+- added atomic compare-and-swap capability snapshot publication with validated incremental rebuild,
+  full-rebuild fallback, source provenance, and predecessor preservation on failure;
+- versioned portable capability artifacts and snapshot documents, including deterministic legacy
+  migration, semantic-integrity validation, and non-overwriting inspect/migrate CLI commands;
+- added unified privacy-safe capability decision traces with compact/detailed rendering,
+  `router.inspect(...)`, CLI inspection, and HTML dashboard integration.
+
+### Fixed
+
+- fixed OPTIMADE streamed compressed-response reconstruction uncovered by the live Materials Project
+  provider-first acceptance smoke.
+
+### Compatibility and migration
+
+- the stable `retrieve(request, *, k=5)` / `aretrieve(request, *, k=5)` signatures remain
+  unchanged; state-aware filtering and corrective backfill are explicit additive APIs;
+- capability artifact 1.0 documents migrate to 1.1 with legacy edges preserved as `external`
+  rather than being silently promoted to derived authority;
+- raw pre-envelope `CapabilityGraphSnapshot` JSON remains readable and migrates into the versioned
+  snapshot document envelope after validating its existing snapshot ID.
+
 ## 0.14.0 - 2026-10-02
 
 ### Added
