@@ -8,6 +8,7 @@ from typing import Any, Literal, Protocol
 
 from pydantic import Field, model_validator
 
+from ..data_scope import _current_data_scope_decision
 from ..errors import RegistrationError, SchemaValidationError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, StrictModel, ToolCall, ToolSpec
 
@@ -198,17 +199,40 @@ class GraphSourceInvoker:
         if limit < 1 or limit > _MAX_LIMIT:
             raise RuntimeError(f"graph limit must be between 1 and {_MAX_LIMIT}")
 
-        raw_results = await _await_if_needed(
-            self._backend.traverse(
-                graph=self._graph.name,
-                start_id=start_id,
-                relationship_types=relationship_types,
-                direction=direction,
-                max_hops=max_hops,
-                limit=limit,
-                include_fields=tuple(call.fields),
-            )
+        decision = _current_data_scope_decision(call.tool, call.endpoint)
+        trusted_predicates = (
+            decision.trusted_predicates if decision is not None else ()
         )
+        if trusted_predicates:
+            scoped_traverse = getattr(self._backend, "traverse_scoped", None)
+            if not callable(scoped_traverse):
+                raise RuntimeError(
+                    "graph backend does not support trusted data predicates"
+                )
+            raw_results = await _await_if_needed(
+                scoped_traverse(
+                    graph=self._graph.name,
+                    start_id=start_id,
+                    relationship_types=relationship_types,
+                    direction=direction,
+                    max_hops=max_hops,
+                    limit=limit,
+                    include_fields=tuple(call.fields),
+                    trusted_predicates=trusted_predicates,
+                )
+            )
+        else:
+            raw_results = await _await_if_needed(
+                self._backend.traverse(
+                    graph=self._graph.name,
+                    start_id=start_id,
+                    relationship_types=relationship_types,
+                    direction=direction,
+                    max_hops=max_hops,
+                    limit=limit,
+                    include_fields=tuple(call.fields),
+                )
+            )
         if not isinstance(raw_results, list):
             raise SchemaValidationError("graph backend traversal must return a list")
 
@@ -265,6 +289,25 @@ async def introspect_graph_backend(
 
         relationship_names = sorted(
             relationship.name for relationship in graph.relationship_types
+        )
+        data_scope_fields = sorted(
+            {
+                property_spec.name
+                for node in graph.node_types
+                for property_spec in node.properties
+            }
+            | {
+                property_spec.name
+                for relationship in graph.relationship_types
+                for property_spec in relationship.properties
+            }
+            | {
+                "source_id",
+                "target_id",
+                "relationship",
+                "source_type",
+                "target_type",
+            }
         )
         output_fields = [
             FieldSpec(
@@ -392,6 +435,7 @@ async def introspect_graph_backend(
                 "graph": graph.name,
                 "default_limit": default_limit,
                 "default_max_hops": default_max_hops,
+                "data_scope_fields": data_scope_fields,
             },
             metadata={
                 "database_family": "graph",
