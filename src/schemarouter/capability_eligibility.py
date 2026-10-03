@@ -24,7 +24,7 @@ CapabilityEligibilityCode = Literal[
 class CapabilityEligibilityReason(StrictModel):
     code: CapabilityEligibilityCode
     detail: str = ""
-    children: list["CapabilityEligibilityReason"] = Field(default_factory=list)
+    children: list[CapabilityEligibilityReason] = Field(default_factory=list)
 
 
 class CapabilityEligibilityExplanation(StrictModel):
