@@ -52,17 +52,17 @@ from .capability_contracts import (
     compare_capability_composition,
     compare_capability_fields,
 )
-from .capability_lineage import (
-    CapabilityLineage,
-    CapabilityLineageHop,
-    CapabilityLineageReason,
-    build_capability_lineage,
-)
 from .capability_graph import (
     CapabilityDependencyEdge,
     CapabilityDependencyGraph,
     build_capability_dependency_graph,
     dependency_cycles,
+)
+from .capability_lineage import (
+    CapabilityLineage,
+    CapabilityLineageHop,
+    CapabilityLineageReason,
+    build_capability_lineage,
 )
 from .contract_validation import (
     CapabilityContractValidation,
