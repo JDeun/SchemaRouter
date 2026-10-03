@@ -39,10 +39,26 @@ from .binding_reconciliation import (
     BindingResolver,
     TrustedBindingConfig,
 )
-from .capability_drift import CapabilityDriftReport, compare_capability_contracts
+from .capability_drift import (
+    CapabilityDriftChange,
+    CapabilityDriftCompatibility,
+    CapabilityGraphDrift,
+    capability_contract_fingerprint,
+    compare_capability_graph_snapshot,
+)
 from .capability_eligibility import CapabilityEligibilityExplanation, explain_capability_eligibility
-from .capability_fallback import CapabilityFallbackDecision, choose_contract_aware_fallback
-from .capability_lineage import CapabilityLineage, CapabilityLineageHop, capability_lineage_id
+from .capability_fallback import (
+    CapabilityFallbackEligibility,
+    FallbackEligibilityReason,
+    eligible_fallback_ids,
+    evaluate_fallback_eligibility,
+)
+from .capability_lineage import (
+    CapabilityLineage,
+    CapabilityLineageHop,
+    CapabilityLineageReason,
+    build_capability_lineage,
+)
 from .capability_contracts import (
     CapabilityCompatibility,
     CapabilityComposition,
@@ -256,6 +272,21 @@ from .traces import (
 )
 
 __all__ = [
+    "CapabilityDriftChange",
+    "CapabilityDriftCompatibility",
+    "CapabilityGraphDrift",
+    "capability_contract_fingerprint",
+    "compare_capability_graph_snapshot",
+    "CapabilityEligibilityExplanation",
+    "explain_capability_eligibility",
+    "CapabilityFallbackEligibility",
+    "FallbackEligibilityReason",
+    "eligible_fallback_ids",
+    "evaluate_fallback_eligibility",
+    "CapabilityLineage",
+    "CapabilityLineageHop",
+    "CapabilityLineageReason",
+    "build_capability_lineage",
     "__version__",
     "ADAPTER_ENTRY_POINT_GROUP",
     "AggregatedField",
