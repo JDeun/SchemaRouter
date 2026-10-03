@@ -39,12 +39,6 @@ from .binding_reconciliation import (
     BindingResolver,
     TrustedBindingConfig,
 )
-from .capability_graph import (
-    CapabilityDependencyEdge,
-    CapabilityDependencyGraph,
-    build_capability_dependency_graph,
-    dependency_cycles,
-)
 from .capability_contracts import (
     CapabilityCompatibility,
     CapabilityComposition,
@@ -57,6 +51,12 @@ from .capability_contracts import (
     UnitConversion,
     compare_capability_composition,
     compare_capability_fields,
+)
+from .capability_graph import (
+    CapabilityDependencyEdge,
+    CapabilityDependencyGraph,
+    build_capability_dependency_graph,
+    dependency_cycles,
 )
 from .dashboard import render_dashboard, write_dashboard
 from .decision_plugins import (
