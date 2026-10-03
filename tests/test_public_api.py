@@ -217,6 +217,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "inspect_sqlite_storage",
         "migrate_sqlite_storage",
         "dependency_cycles",
+        "satisfiable_capability_ids",
         "discover_adapter_plugins",
         "discover_decision_backend_plugins",
         "inspect_registry",
