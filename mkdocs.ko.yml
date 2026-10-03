@@ -143,6 +143,7 @@ nav:
       - 외부 사례 템플릿: project/case-study-template.md
       - 버전 정책: versioning.md
       - 릴리스 노트:
+          - 0.15.0: releases/0.15.0.md
           - 0.14.0: releases/0.14.0.md
           - 0.13.0: releases/0.13.0.md
           - 0.12.0: releases/0.12.0.md
