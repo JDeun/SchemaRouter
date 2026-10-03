@@ -11,7 +11,24 @@ pip install schemarouter
 
 No API key is required for this example.
 
-## 2. Discover and execute a real OpenAPI capability
+## 2. Start from a provider name
+
+If the user knows the provider rather than its protocol surface, use provider-first registration:
+
+```python
+from schemarouter import SchemaRouter
+
+router = SchemaRouter()
+result = await router.add_provider("materials-project")
+```
+
+SchemaRouter resolves the provider's known access methods and registers only methods that are usable
+in the current environment. The built-in acceptance profiles cover Materials Project, Crossref, and
+Tavily. Missing credentials or optional SDKs are reported explicitly.
+
+[Provider-first registration details →](../guides/provider-first-registration.md)
+
+## 3. Discover and execute a real OpenAPI capability
 
 The example below uses the same APIs.guru source that SchemaRouter's scheduled compatibility smoke
 checks. The provider owns the schema and returned data.
@@ -40,7 +57,7 @@ Four product boundaries are visible in that short program:
 3. the planner selects one bounded capability from that catalog;
 4. execution validates the call and raw response before returning a `ToolResult`.
 
-## 3. Why the live example is not a required CI dependency
+## 4. Why the live example is not a required CI dependency
 
 Public services can rate-limit, change, or go offline. Required CI therefore validates the same
 quickstart path with a deterministic OpenAPI fixture in `tests/test_live_quickstart.py`.
@@ -52,7 +69,7 @@ The older local callable example remains deliberately boring and deterministic:
 That file is executed from source, wheel, and sdist acceptance jobs. It proves packaging and local
 execution without pretending that a fixed weather value is real provider data.
 
-## 4. Unsupported ordinary websites fail loudly
+## 5. Unsupported ordinary websites fail loudly
 
 SchemaRouter does not silently turn arbitrary HTML into executable tools:
 
@@ -73,7 +90,7 @@ async def inspect_docs_page():
 For human-readable API documentation, use the explicit inspect/proposal/approval path instead of
 automatic execution authority.
 
-## 5. Use async, batch, or streaming
+## 6. Use async, batch, or streaming
 
 Once a router is configured, the same request model supports the larger runtime surface:
 
@@ -108,7 +125,8 @@ infrastructure requirement.
 
 | You already have | Install | Minimal tested path |
 | --- | --- | --- |
-| OpenAPI URL | `pip install schemarouter` | [live OpenAPI quickstart](#2-discover-and-execute-a-real-openapi-capability) |
+| Provider name | `pip install schemarouter` | `await router.add_provider("materials-project")` and [provider-first registration](../guides/provider-first-registration.md) |
+| OpenAPI URL | `pip install schemarouter` | [live OpenAPI quickstart](#3-discover-and-execute-a-real-openapi-capability) |
 | Typed Python function | core install | [Python tools](../guides/python-tools.md) and `examples/quickstart.py` |
 | MCP server | `pip install "schemarouter[mcp]"` | [MCP HTTP / stdio guide](../guides/mcp.md) |
 | LangChain tools | `pip install "schemarouter[langchain]"` | `examples/langchain_quickstart.py` |
