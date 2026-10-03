@@ -158,6 +158,13 @@ nav:
       - Execution policy: guides/execution-policy.md
       - Provider-aware fallback: guides/provider-fallback.md
       - State-aware retrieval: guides/state-aware-retrieval.md
+      - Capability constraints: guides/capability-constraints.md
+      - Capability drift: guides/capability-graph-drift.md
+      - Capability eligibility: guides/capability-eligibility.md
+      - Capability lineage: guides/capability-lineage.md
+      - Contract-aware fallback: guides/contract-aware-fallback.md
+      - Capability negotiation: guides/capability-negotiation.md
+      - Capability snapshots: guides/capability-snapshots.md
       - Multi-provider evidence: guides/multi-provider-evidence.md
       - Schema drift analysis: guides/schema-drift.md
       - Retry policy: guides/retry.md
