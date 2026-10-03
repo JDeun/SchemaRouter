@@ -127,6 +127,7 @@ def test_compatibility_workflow_retains_json_artifacts() -> None:
     assert "--json-out artifacts/odata-compatibility.json" in workflow
     assert "--json-out artifacts/openrpc-compatibility.json" in workflow
     assert "--json-out artifacts/mcp-compatibility.json" in workflow
+    assert "--json-out artifacts/graphql-reference-compatibility.json" in workflow
     assert "artifacts/adapter-compatibility-matrix.json" in workflow
     assert "artifacts/adapter-compatibility-matrix.md" in workflow
     assert "pypi-${{ matrix.artifact-kind }}-compatibility.json" in workflow
@@ -142,7 +143,7 @@ def test_compatibility_workflow_retains_json_artifacts() -> None:
         workflow.count(
             "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
         )
-        == 9
+        == 10
     )
-    assert workflow.count("if: always()") == 9
-    assert workflow.count("retention-days: 30") == 9
+    assert workflow.count("if: always()") == 10
+    assert workflow.count("retention-days: 30") == 10

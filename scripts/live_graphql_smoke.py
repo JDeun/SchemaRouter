@@ -10,7 +10,7 @@ from compatibility_report import new_report, write_report
 
 from schemarouter import ExecutionPlan, SchemaRouter, ToolCall
 
-DEFAULT_URL = "https://rickandmortyapi.com/graphql"
+DEFAULT_URL = "https://graphql.anilist.co"
 
 
 async def run_smoke(url: str) -> dict[str, object]:
@@ -21,27 +21,27 @@ async def run_smoke(url: str) -> dict[str, object]:
     tools = router.registry.tools()
     assert len(tools) == 1
     tool = tools[0]
-    endpoint = tool.endpoint("location")
+    endpoint = tool.endpoint("Media")
     assert endpoint.read_only is True
 
     available_fields = {field.name for field in endpoint.output_fields}
     fields = [
         field
-        for field in ("id", "name", "type", "dimension")
+        for field in ("id", "title.romaji", "title.english", "format")
         if field in available_fields
     ]
-    assert {"id", "name"} <= set(fields)
+    assert {"id", "title.romaji"} <= set(fields)
 
     call = ToolCall(
         tool=tool.key,
         endpoint=endpoint.name,
-        arguments={"id": "1"},
+        arguments={"id": 1},
         fields=fields,
         schema_fingerprint=endpoint.fingerprint,
         tool_fingerprint=tool.fingerprint,
     )
     plan = ExecutionPlan(
-        query="country identity",
+        query="AniList media identity",
         registry_version=router.registry.version,
         calls=[call],
     )
@@ -52,12 +52,12 @@ async def run_smoke(url: str) -> dict[str, object]:
 
     assert len(results) == 1
     assert isinstance(results[0].data, dict)
-    assert str(results[0].data.get("id")) == "1"
-    assert isinstance(results[0].data.get("name"), str)
+    assert results[0].data.get("id") == 1
+    assert isinstance(results[0].data.get("title.romaji"), str)
 
     return {
         "evidence_kind": "live_public_provider",
-        "provider": "Rick and Morty GraphQL API",
+        "provider": "AniList",
         "discovery_success": True,
         "tool_count": len(tools),
         "endpoint_count": len(tool.endpoints),
@@ -73,7 +73,7 @@ async def run_smoke(url: str) -> dict[str, object]:
         "execution_latency_ms": execution_ms,
         "auth_required": endpoint.auth_required,
         "known_quirks": [
-            "Public third-party service availability is external infrastructure state."
+            "Public GraphQL service availability is external infrastructure state."
         ],
     }
 
@@ -86,7 +86,7 @@ async def main() -> None:
     report = new_report(adapter="graphql", source=url)
     report["details"] = {
         "evidence_kind": "live_public_provider",
-        "provider": "Rick and Morty GraphQL API",
+        "provider": "AniList",
     }
 
     try:

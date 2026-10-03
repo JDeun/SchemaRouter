@@ -193,7 +193,7 @@
     },
     {
       "path": "guides/live-compatibility-matrix.md",
-      "source_blob": "0a80b435d4587f3527b7e603ded1f4fe8e57b2b5"
+      "source_blob": "071e7c10ed57b2cd1b29815dfb98a6e93b109674"
     },
     {
       "path": "guides/mcp.md",
@@ -237,7 +237,7 @@
     },
     {
       "path": "guides/provider-first-registration.md",
-      "source_blob": "e327058ddbad2e5c0563186122cf7c7e3cae6b17"
+      "source_blob": "10716963bebe5c0cd5eb0391bcceecdd2c8c18ef"
     },
     {
       "path": "guides/python-tools.md",

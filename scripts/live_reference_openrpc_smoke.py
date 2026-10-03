@@ -9,7 +9,14 @@ from time import perf_counter
 
 from compatibility_report import new_report, write_report
 
-from schemarouter import ExecutionPlan, ExecutionPolicy, SchemaRouter, ToolCall
+from schemarouter import (
+    ExecutionPlan,
+    ExecutionPolicy,
+    ProviderAccessMethod,
+    ProviderProfile,
+    SchemaRouter,
+    ToolCall,
+)
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -94,17 +101,33 @@ async def run_smoke() -> dict[str, object]:
     router: SchemaRouter | None = None
 
     try:
-        started = perf_counter()
-        router = await SchemaRouter.from_url(
-            source,
-            kind="openrpc",
-            policy=ExecutionPolicy(allow_unclassified_remote=True),
+        router = SchemaRouter(
+            policy=ExecutionPolicy(allow_unclassified_remote=True)
         )
-        discovery_ms = round((perf_counter() - started) * 1000, 2)
+        router.register_provider_profile(
+            ProviderProfile(
+                provider_id="local-openrpc-reference",
+                display_name="SchemaRouter local OpenRPC JSON-RPC reference",
+                methods=(
+                    ProviderAccessMethod(
+                        method_id="openrpc",
+                        kind="openrpc",
+                        access_mode="openrpc",
+                        url=source,
+                    ),
+                ),
+            )
+        )
 
-        tools = router.registry.tools()
-        assert len(tools) == 1
-        tool = tools[0]
+        started = perf_counter()
+        registration = await router.add_provider("local-openrpc-reference")
+        discovery_ms = round((perf_counter() - started) * 1000, 2)
+        assert registration.methods[0].status == "registered"
+        assert len(registration.registered_tool_keys) == 1
+
+        tool = router.registry.get(registration.registered_tool_keys[0])
+        assert tool.provider == "local-openrpc-reference"
+        assert tool.access_mode == "openrpc"
         endpoint = tool.endpoint("reference.echo")
 
         call = ToolCall(
@@ -131,6 +154,7 @@ async def run_smoke() -> dict[str, object]:
             "source": source,
             "evidence_kind": "pinned_reference_implementation",
             "provider": "SchemaRouter local OpenRPC JSON-RPC reference",
+            "provider_first": True,
             "openrpc_version": "1.4.0",
             "discovery_success": True,
             "tool_count": 1,

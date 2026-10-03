@@ -36,11 +36,13 @@ Credential requirement는 선언 정보일 뿐입니다. 실제 secret 값은 pr
 
 ## 초기 내장 provider
 
-초기 profile은 서로 다른 접근 형태를 검증하도록 구성합니다.
+내장 acceptance profile은 서로 다른 접근 형태를 검증하도록 구성합니다.
 
 - **Materials Project** — 공개 OPTIMADE, 인증이 필요한 OpenAPI, optional `mp-api` SDK.
 - **Crossref** — 공개 declarative HTTP/JSON REST.
 - **Tavily** — 인증이 필요한 declarative HTTP/JSON search와 optional Python SDK.
+- **APIs.guru** — 공개 OpenAPI discovery와 read-only metrics 실행.
+- **OData.org V4 reference service** — 공개 OData metadata discovery와 read-only query 실행.
 
 인증이 필요한 method는 process-local trusted header로 전달합니다.
 
@@ -68,6 +70,10 @@ ProviderProfile
     |
     +-- OpenAPI
     +-- OPTIMADE
+    +-- GraphQL
+    +-- OData
+    +-- OpenRPC
+    +-- MCP (URL-backed)
     +-- HTTP/JSON
     +-- Python / plugin binding
     |
@@ -80,5 +86,22 @@ ProviderProfile
 ## Provider catalog 확장
 
 애플리케이션은 로컬 `ProviderProfile`을 등록할 수 있고, 설치된 패키지는 `schemarouter.providers` entry-point group으로 provider profile을 제공할 수 있습니다. Python entry point import는 trusted local code를 실행하므로 plugin loading은 명시적 allowlist 방식입니다.
+
+## Method 지원 범위
+
+Provider profile은 기본 registry의 모든 URL 기반 adapter를 대상으로 할 수 있습니다. Provider-first 계층이 프로토콜별 등록기를 다시 구현하는 것이 아니라, 선언된 method를 기존 adapter로 전달합니다.
+
+| Profile method kind | Provider-first 동작 |
+| --- | --- |
+| `openapi` | URL 자동 등록 |
+| `optimade` | URL 자동 등록 |
+| `graphql` | URL 자동 등록 |
+| `odata` | URL 자동 등록 |
+| `openrpc` | URL 자동 등록 |
+| `mcp` | URL 기반 MCP transport 자동 등록 |
+| `http_json` | 명시적으로 신뢰된 declarative `ToolSpec`으로 자동 등록 |
+| `python` / SDK | explicit trusted binding 필요. 패키지가 설치되어 있다는 이유만으로 실행 권한을 부여하지 않음 |
+
+Caller-owned transport, Python client, framework object는 계속 explicit trust boundary입니다. Provider profile에 이런 방법을 기술할 수는 있지만, core SchemaRouter가 설치된 패키지나 import 가능한 객체에서 실행 권한을 추론하지는 않습니다.
 
 Provider profile은 execution planner가 아닙니다. 이름이 있는 provider를 기존 ingestion 계층에 연결하는 방법만 기술하며, routing과 execution은 기존 SchemaRouter contract를 그대로 사용합니다.

@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- expanded provider-first onboarding acceptance across live OpenAPI and OData providers plus
+  provider-profile-routed GraphQL, OpenRPC and MCP reference execution, with deterministic coverage
+  that every default URL-backed adapter kind flows through the same `add_provider()` path;
 - added provider-first onboarding through `resolve_provider()` / `add_provider()`, with built-in
   acceptance profiles for Materials Project, Crossref, and Tavily while preserving the existing
   protocol-neutral adapter and trusted-secret boundaries;

@@ -19,6 +19,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: compatibility-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   public-openapi:
     continue-on-error: true
@@ -60,6 +64,29 @@ jobs:
         with:
           name: compatibility-optimade-${{ github.run_id }}
           path: artifacts/optimade-compatibility.json
+          if-no-files-found: warn
+          retention-days: 30
+
+
+  public-graphql:
+    if: github.event_name != 'pull_request'
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install .
+      - run: python -m pip check
+      - run: python scripts/live_graphql_smoke.py --json-out artifacts/graphql-compatibility.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: compatibility-graphql-${{ github.run_id }}
+          path: artifacts/graphql-compatibility.json
           if-no-files-found: warn
           retention-days: 30
 
@@ -142,7 +169,6 @@ jobs:
 
 
   adapter-compatibility-matrix:
-    continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -174,14 +200,20 @@ jobs:
             --json-out artifacts/openapi-compatibility.json
           run_smoke scripts/live_optimade_smoke.py \
             --json-out artifacts/optimade-compatibility.json
-          run_smoke scripts/live_graphql_smoke.py \
-            --json-out artifacts/graphql-compatibility.json
           run_smoke scripts/live_odata_smoke.py \
             --json-out artifacts/odata-compatibility.json
           run_smoke scripts/live_reference_openrpc_smoke.py \
             --json-out artifacts/openrpc-compatibility.json
           run_smoke scripts/live_reference_mcp_smoke.py \
             --json-out artifacts/mcp-compatibility.json
+          run_smoke scripts/live_reference_graphql_smoke.py \
+            --json-out artifacts/graphql-reference-compatibility.json
+          run_smoke scripts/live_provider_first_protocol_smoke.py \
+            --provider apis-guru \
+            --json-out artifacts/provider-apis-guru-compatibility.json
+          run_smoke scripts/live_provider_first_protocol_smoke.py \
+            --provider odata-v4-reference \
+            --json-out artifacts/provider-odata-v4-reference-compatibility.json
 
           python scripts/aggregate_compatibility_matrix.py \
             --reports-dir artifacts \
