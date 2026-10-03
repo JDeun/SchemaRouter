@@ -535,4 +535,4 @@ async def test_bounded_get_drops_transport_framing_after_httpx_decode() -> None:
 
     assert response.json() == base_info()
     assert "content-encoding" not in response.headers
-    assert "content-length" not in response.headers
+    assert int(response.headers["content-length"]) == len(payload)
