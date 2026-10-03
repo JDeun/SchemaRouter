@@ -120,8 +120,36 @@
       "source_blob": "7fb64d655b2e7d61563068dda6e7db7a49acffa8"
     },
     {
+      "path": "guides/capability-constraints.md",
+      "source_blob": "a97a522420df659298fc7267e1dcc2749c9f4add"
+    },
+    {
+      "path": "guides/capability-eligibility.md",
+      "source_blob": "4a995bc7fcf2736f10594d6f7f40812f8a9b365f"
+    },
+    {
+      "path": "guides/capability-graph-drift.md",
+      "source_blob": "71c5f1164fa703ab7056c2dbd52c2ecb58da1a95"
+    },
+    {
+      "path": "guides/capability-lineage.md",
+      "source_blob": "6da047d5bc83c36aeddbd3756c9751b6bdc7ade6"
+    },
+    {
+      "path": "guides/capability-negotiation.md",
+      "source_blob": "890d8c32eef8f09e3f477686c0728fc224f1871a"
+    },
+    {
+      "path": "guides/capability-snapshots.md",
+      "source_blob": "e97619811a7885411b6ab4f4a0f57a8166242683"
+    },
+    {
       "path": "guides/consumer-acceptance.md",
       "source_blob": "da49405aea26d8b4e8116236ffe20c7933cea525"
+    },
+    {
+      "path": "guides/contract-aware-fallback.md",
+      "source_blob": "b15bf6ba51c20519ba89b770ea99619175d2b82a"
     },
     {
       "path": "guides/decision-benchmark.md",
@@ -218,6 +246,10 @@
     {
       "path": "guides/schema-drift.md",
       "source_blob": "709fa5b2e108a4bc2cfff783b1312594312df73f"
+    },
+    {
+      "path": "guides/state-aware-retrieval.md",
+      "source_blob": "7f86259b5dc717eed12d6a304d52180c39a5c72e"
     },
     {
       "path": "guides/universal-ingestion.md",

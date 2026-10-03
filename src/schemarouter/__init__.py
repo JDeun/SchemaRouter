@@ -49,18 +49,45 @@ from .capability_artifact import (
     load_capability_artifact,
     serialize_capability_artifact,
 )
+from .capability_constraints import (
+    CapabilityOperationalMetadata,
+    HostCapabilityConstraints,
+    OperationalConstraintReason,
+    OperationalConstraintResult,
+    evaluate_operational_constraints,
+)
 from .capability_contracts import (
     CapabilityCompatibility,
     CapabilityComposition,
     CapabilityContract,
+    CapabilityEffects,
     CapabilityFieldContract,
+    CapabilityPrecondition,
     CompatibilityContext,
     CompatibilityReason,
     CompatibilityStatus,
+    EffectKind,
     SemanticEquivalence,
+    TriState,
     UnitConversion,
     compare_capability_composition,
     compare_capability_fields,
+)
+from .capability_drift import (
+    CapabilityDriftChange,
+    CapabilityGraphDrift,
+    capability_contract_fingerprint,
+    compare_capability_graph_snapshot,
+)
+from .capability_eligibility import (
+    CapabilityEligibilityExplanation,
+    CapabilityEligibilityReason,
+    explain_capability_eligibility,
+)
+from .capability_fallback import (
+    CapabilityFallbackEligibility,
+    eligible_fallback_ids,
+    evaluate_fallback_eligibility,
 )
 from .capability_graph import (
     CapabilityDependencyEdge,
@@ -68,6 +95,25 @@ from .capability_graph import (
     build_capability_dependency_graph,
     dependency_cycles,
     satisfiable_capability_ids,
+)
+from .capability_lineage import (
+    CapabilityLineage,
+    CapabilityLineageHop,
+    build_capability_lineage,
+)
+from .capability_negotiation import (
+    CapabilityNegotiationCandidate,
+    CapabilityNegotiationRequest,
+    CapabilityNegotiationResult,
+    negotiate_capabilities,
+)
+from .capability_snapshot import (
+    CapabilityGraphSnapshot,
+    CapabilitySnapshotDiff,
+    CapabilitySourceRevision,
+    build_capability_snapshot,
+    compare_capability_snapshots,
+    require_snapshot,
 )
 from .contract_validation import (
     CapabilityContractValidation,
@@ -132,6 +178,7 @@ from .execution_state import (
     StateEligibility,
     StateEligibilityReason,
     TypedExecutionState,
+    evaluate_preconditions,
     evaluate_state_eligibility,
 )
 from .executor import RegistryExecutor
@@ -232,6 +279,11 @@ from .schema_diff import (
     compare_endpoint_specs,
     compare_tool_specs,
 )
+from .state_retrieval import (
+    StateAwareCapabilityCandidate,
+    StateAwareCapabilityRetrieval,
+    filter_retrieval_by_state,
+)
 from .storage import (
     CURRENT_REGISTRY_DOCUMENT_VERSION,
     CURRENT_STORAGE_FORMAT_VERSION,
@@ -255,6 +307,28 @@ from .traces import (
 )
 
 __all__ = [
+    "CapabilityOperationalMetadata",
+    "HostCapabilityConstraints",
+    "OperationalConstraintReason",
+    "OperationalConstraintResult",
+    "evaluate_operational_constraints",
+    "CapabilityDriftChange",
+    "CapabilityGraphDrift",
+    "capability_contract_fingerprint",
+    "compare_capability_graph_snapshot",
+    "CapabilityEligibilityExplanation",
+    "CapabilityEligibilityReason",
+    "explain_capability_eligibility",
+    "CapabilityFallbackEligibility",
+    "eligible_fallback_ids",
+    "evaluate_fallback_eligibility",
+    "CapabilityLineage",
+    "CapabilityLineageHop",
+    "build_capability_lineage",
+    "CapabilityNegotiationCandidate",
+    "CapabilityNegotiationRequest",
+    "CapabilityNegotiationResult",
+    "negotiate_capabilities",
     "__version__",
     "ADAPTER_ENTRY_POINT_GROUP",
     "AggregatedField",
@@ -302,17 +376,14 @@ __all__ = [
     "CapabilityDependencyEdge",
     "CapabilityDependencyGraph",
     "CapabilityComposition",
-    "CAPABILITY_ARTIFACT_FORMAT_VERSION",
-    "ArtifactSourceKind",
-    "CapabilityArtifactEdge",
-    "CapabilityArtifactSource",
     "CapabilityContract",
-    "CapabilityGraphArtifact",
+    "CapabilityEffects",
     "CapabilityContractValidation",
     "CapabilityObservation",
     "ContractFieldValidation",
     "ContractValidationStatus",
     "CapabilityFieldContract",
+    "CapabilityPrecondition",
     "CompatibilityContext",
     "CompatibilityReason",
     "CompatibilityStatus",
@@ -334,6 +405,7 @@ __all__ = [
     "EmbeddingCallable",
     "EmbeddingDecisionBackend",
     "DefaultMCPClientFactory",
+    "EffectKind",
     "EligibilityStatus",
     "EndpointSpec",
     "EvidenceRequirements",
@@ -418,6 +490,8 @@ __all__ = [
     "SchemaSourceError",
     "SQLiteRegistry",
     "SchemaValidationError",
+    "StateAwareCapabilityCandidate",
+    "StateAwareCapabilityRetrieval",
     "StateEligibility",
     "StateEligibilityReason",
     "StorageFormatError",
@@ -441,6 +515,7 @@ __all__ = [
     "SourceProbeResult",
     "OPTIMADESourceAdapter",
     "ToolCall",
+    "TriState",
     "TypedExecutionState",
     "ToolRegistry",
     "ToolResult",
@@ -449,16 +524,16 @@ __all__ = [
     "TraceError",
     "UnsupportedSchemaSourceError",
     "schema_tool",
-    "serialize_capability_artifact",
     "tool_from_callable",
     "tool_from_odata_metadata",
     "analyze_openapi_compatibility",
     "choose_async",
     "choose_sync",
-    "build_capability_artifact",
     "build_capability_dependency_graph",
     "compare_capability_composition",
     "compare_capability_fields",
+    "evaluate_preconditions",
+    "filter_retrieval_by_state",
     "evaluate_state_eligibility",
     "validate_capability_inputs",
     "validate_capability_outputs",
@@ -481,10 +556,24 @@ __all__ = [
     "inspect_trace",
     "inspect_traces",
     "load_adapter_plugins",
-    "load_capability_artifact",
     "tool_spec_document",
     "record_run_events",
     "render_dashboard",
     "replay_run_events",
     "write_dashboard",
+    "CAPABILITY_ARTIFACT_FORMAT_VERSION",
+    "ArtifactSourceKind",
+    "CapabilityArtifactEdge",
+    "CapabilityArtifactSource",
+    "CapabilityGraphArtifact",
+    "serialize_capability_artifact",
+    "build_capability_artifact",
+    "load_capability_artifact",
+    "CapabilityGraphSnapshot",
+    "compare_capability_snapshots",
+
+    "CapabilitySnapshotDiff",
+    "CapabilitySourceRevision",
+    "build_capability_snapshot",
+    "require_snapshot",
 ]

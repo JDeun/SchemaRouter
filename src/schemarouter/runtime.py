@@ -37,6 +37,7 @@ from .binding_reconciliation import (
     BindingResolver,
     TrustedBindingConfig,
 )
+from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
 from .errors import (
     BindingDriftError,
     ContractAmendmentError,
@@ -47,6 +48,7 @@ from .errors import (
     SchemaNotModifiedError,
     SchemaSourceError,
 )
+from .execution_state import TypedExecutionState
 from .executor import BoundEndpointInvoker, ExecutionBudgetTracker, RegistryExecutor
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot
 from .hooks import ExecutionHooks
@@ -83,6 +85,7 @@ from .source_identity import (
     structured_source_identity,
     structured_source_identity_digest_for,
 )
+from .state_retrieval import StateAwareCapabilityRetrieval
 from .traces import RunTraceStore
 
 _T = TypeVar("_T")
@@ -2410,6 +2413,44 @@ class SchemaRouter:
 
         return await self.planner.aretrieve(request, k=k)
 
+    def retrieve_state_aware(
+        self,
+        request: PlanRequest | str,
+        *,
+        execution_state: TypedExecutionState,
+        k: int = 5,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> StateAwareCapabilityRetrieval:
+        """Retrieve registered capabilities under explicit observable typed state."""
+
+        return self.planner.retrieve_state_aware(
+            request,
+            execution_state=execution_state,
+            k=k,
+            state_requirements=state_requirements,
+            state_preconditions=state_preconditions,
+        )
+
+    async def aretrieve_state_aware(
+        self,
+        request: PlanRequest | str,
+        *,
+        execution_state: TypedExecutionState,
+        k: int = 5,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> StateAwareCapabilityRetrieval:
+        """Async counterpart to :meth:`retrieve_state_aware`."""
+
+        return await self.planner.aretrieve_state_aware(
+            request,
+            execution_state=execution_state,
+            k=k,
+            state_requirements=state_requirements,
+            state_preconditions=state_preconditions,
+        )
+
     def _binding_ready(self, tool: ToolSpec, endpoint: Any) -> bool:
         del endpoint
         return self.executor.is_binding_ready_for_contract(
@@ -3322,6 +3363,40 @@ class ConfiguredSchemaRouter:
         k: int = 5,
     ) -> CapabilityRetrieval:
         return await self.router.aretrieve(request, k=k)
+
+    def retrieve_state_aware(
+        self,
+        request: PlanRequest | str,
+        *,
+        execution_state: TypedExecutionState,
+        k: int = 5,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> StateAwareCapabilityRetrieval:
+        return self.router.retrieve_state_aware(
+            request,
+            execution_state=execution_state,
+            k=k,
+            state_requirements=state_requirements,
+            state_preconditions=state_preconditions,
+        )
+
+    async def aretrieve_state_aware(
+        self,
+        request: PlanRequest | str,
+        *,
+        execution_state: TypedExecutionState,
+        k: int = 5,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> StateAwareCapabilityRetrieval:
+        return await self.router.aretrieve_state_aware(
+            request,
+            execution_state=execution_state,
+            k=k,
+            state_requirements=state_requirements,
+            state_preconditions=state_preconditions,
+        )
 
     def retrieve_executable(
         self,
