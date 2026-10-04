@@ -9,6 +9,7 @@ from schemarouter import SchemaRouter, VectorMetadataField
 from schemarouter.adapters.vector_native import (
     ChromaVectorBackend,
     MilvusVectorBackend,
+    PgvectorVectorBackend,
     PineconeVectorBackend,
     QdrantVectorBackend,
     RedisVectorBackend,
@@ -663,15 +664,8 @@ class _FakeRedisQuery:
 
 
 @dataclass
-class _RedisDoc:
-    id: str
-    __vector_distance: str
-    title: str
-
-
-@dataclass
 class _RedisSearchResult:
-    docs: list[_RedisDoc]
+    docs: list[dict[str, Any]]
 
 
 class _FakeRedisFT:
@@ -704,7 +698,13 @@ class _FakeRedisFT:
         self.query = query
         self.params = dict(query_params)
         return _RedisSearchResult(
-            [_RedisDoc("r1", "0.15", "Router")]
+            [
+                {
+                    "id": "r1",
+                    "__vector_distance": "0.15",
+                    "title": "Router",
+                }
+            ]
         )
 
 
@@ -750,6 +750,16 @@ def test_redis_vector_adapter_discovers_dim_and_normalizes_search() -> None:
     assert rows == [{"id": "r1", "score": 0.15, "title": "Router"}]
     assert "$query_vector" in client.ft_client.query.text
     assert isinstance(client.ft_client.params["query_vector"], bytes)
+
+
+def test_pgvector_dimension_contract_reads_reflected_type_dimension() -> None:
+    class _Type:
+        dim = 3
+
+    class _Column:
+        type = _Type()
+
+    assert PgvectorVectorBackend._dimension(_Column()) == 3
 
 
 def test_router_remaining_native_vector_registration_helpers() -> None:
