@@ -77,6 +77,7 @@ from .vector_native import (
     MilvusVectorBackend,
     PineconeVectorBackend,
     QdrantVectorBackend,
+    WeaviateVectorBackend,
 )
 from .vector_store import (
     VectorCollectionBinding,
@@ -131,6 +132,7 @@ __all__ = [
     "MilvusVectorBackend",
     "PineconeVectorBackend",
     "QdrantVectorBackend",
+    "WeaviateVectorBackend",
     "SourceAdapter",
     "VectorCollectionBinding",
     "VectorCollectionInvoker",
