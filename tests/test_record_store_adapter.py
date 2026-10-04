@@ -370,6 +370,180 @@ def test_record_store_can_limit_sources_before_registration() -> None:
 
 
 @pytest.mark.asyncio
+async def test_native_record_schema_refresh_applies_compatible_drift_and_rebinds() -> None:
+    class MutableBackend(FakeRecordBackend):
+        def __init__(self) -> None:
+            super().__init__()
+            self.updated_description = False
+
+        def list_sources(self) -> tuple[RecordSourceSpec, ...]:
+            sources = list(super().list_sources())
+            if not self.updated_description:
+                return tuple(sources)
+            sources[0] = sources[0].model_copy(
+                deep=True,
+                update={"description": "updated document source"},
+            )
+            return tuple(sources)
+
+    backend = MutableBackend()
+    router = SchemaRouter()
+    await router.aadd_record_store(
+        backend,
+        database_name="nosql",
+        sources={"documents"},
+        remote=False,
+    )
+    before = router.registry.get("nosql.documents")
+    backend.updated_description = True
+
+    result = await router.arefresh_native_schema("nosql.documents")
+
+    after = router.registry.get("nosql.documents")
+    assert result.action == "applied"
+    assert result.report.compatibility == "compatible"
+    assert after.fingerprint != before.fingerprint
+    assert after.description == "updated document source"
+    assert router.executor.is_binding_ready_for_contract(
+        "nosql.documents",
+        after.fingerprint,
+    )
+
+
+@pytest.mark.asyncio
+async def test_native_schema_refresh_rolls_back_registry_and_binding_on_rebind_failure() -> None:
+    class MutableBackend(FakeRecordBackend):
+        def __init__(self) -> None:
+            super().__init__()
+            self.updated_description = False
+
+        def list_sources(self) -> tuple[RecordSourceSpec, ...]:
+            sources = list(super().list_sources())
+            if not self.updated_description:
+                return tuple(sources)
+            sources[0] = sources[0].model_copy(
+                deep=True,
+                update={"description": "updated document source"},
+            )
+            return tuple(sources)
+
+    backend = MutableBackend()
+    router = SchemaRouter()
+    await router.aadd_record_store(
+        backend,
+        database_name="nosql",
+        sources={"documents"},
+        remote=False,
+    )
+    before = router.registry.get("nosql.documents")
+    backend.updated_description = True
+
+    original_bind = router.executor.bind
+
+    def fail_candidate_bind(
+        tool_key: str,
+        invoker: Any,
+        *,
+        expected_fingerprint: str | None = None,
+        offload_sync: bool = False,
+    ) -> None:
+        if expected_fingerprint != before.fingerprint:
+            raise RuntimeError("synthetic bind failure")
+        original_bind(
+            tool_key,
+            invoker,
+            expected_fingerprint=expected_fingerprint,
+            offload_sync=offload_sync,
+        )
+
+    router.executor.bind = fail_candidate_bind  # type: ignore[method-assign]
+
+    with pytest.raises(RuntimeError, match="synthetic bind failure"):
+        await router.arefresh_native_schema("nosql.documents")
+
+    after = router.registry.get("nosql.documents")
+    assert after.fingerprint == before.fingerprint
+    assert router.executor.is_binding_ready_for_contract(
+        "nosql.documents",
+        before.fingerprint,
+    )
+
+
+@pytest.mark.asyncio
+async def test_native_record_schema_refresh_quarantines_breaking_drift() -> None:
+    class MutableBackend(FakeRecordBackend):
+        def __init__(self) -> None:
+            super().__init__()
+            self.break_schema = False
+
+        def list_sources(self) -> tuple[RecordSourceSpec, ...]:
+            sources = list(super().list_sources())
+            if not self.break_schema:
+                return tuple(sources)
+            current = sources[0]
+            sources[0] = current.model_copy(
+                deep=True,
+                update={
+                    "fields": tuple(
+                        field for field in current.fields if field.name != "title"
+                    )
+                },
+            )
+            return tuple(sources)
+
+    backend = MutableBackend()
+    router = SchemaRouter()
+    await router.aadd_record_store(
+        backend,
+        database_name="nosql",
+        sources={"documents"},
+    )
+    before = router.registry.get("nosql.documents")
+    backend.break_schema = True
+
+    result = await router.arefresh_native_schema("nosql.documents")
+
+    assert result.action == "pending_review"
+    assert result.report.compatibility == "breaking"
+    assert router.registry.get("nosql.documents").fingerprint == before.fingerprint
+    assert "nosql.documents" in router._native_schema_pending
+
+
+@pytest.mark.asyncio
+async def test_native_schema_refresh_lifecycle_controls() -> None:
+    backend = FakeRecordBackend()
+    router = SchemaRouter()
+    await router.aadd_record_store(
+        backend,
+        database_name="nosql",
+        sources={"documents"},
+    )
+
+    unchanged = await router.arefresh_native_schema("nosql.documents")
+    assert unchanged.action == "unchanged"
+    assert not unchanged.applied
+
+    report_only = await router.check_native_schema_watches_once(
+        apply_compatible=False,
+    )
+    assert len(report_only) == 1
+    assert report_only[0].action == "unchanged"
+
+    await router.start_native_schema_watcher(interval_seconds=3600)
+    with pytest.raises(RuntimeError, match="already running"):
+        await router.start_native_schema_watcher(interval_seconds=3600)
+    await router.stop_native_schema_watcher()
+    await router.stop_native_schema_watcher()
+
+    with pytest.raises(ValueError, match="interval_seconds"):
+        await router.start_native_schema_watcher(interval_seconds=0)
+
+    await router.aremove_tool("nosql.documents")
+    assert "nosql.documents" not in router._native_schema_refreshers
+    with pytest.raises(Exception, match="no process-local native schema refresh binding"):
+        await router.arefresh_native_schema("nosql.documents")
+
+@pytest.mark.asyncio
 async def test_remote_sync_record_backend_does_not_block_event_loop() -> None:
     class BlockingBackend(FakeRecordBackend):
         def __init__(self) -> None:
@@ -434,3 +608,4 @@ async def test_remote_sync_record_backend_does_not_block_event_loop() -> None:
         timer.cancel()
 
     assert result[0].data == [{"id": "doc-1", "title": "Router design"}]
+

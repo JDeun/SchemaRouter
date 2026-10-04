@@ -158,3 +158,23 @@ def test_sqlalchemy_engine_object_and_url_are_not_model_visible() -> None:
     assert "engine" not in serialized["execution_metadata"]
 
     engine.dispose()
+
+@pytest.mark.asyncio
+async def test_native_sqlalchemy_schema_refresh_reintrospects_current_contract() -> None:
+    engine = _engine()
+    router = SchemaRouter()
+    try:
+        router.add_sqlalchemy_database(
+            engine,
+            database_name="warehouse",
+            remote=False,
+        )
+
+        result = await router.arefresh_native_schema("warehouse.orders")
+
+        tool = router.registry.get("warehouse.orders")
+        assert result.action == "unchanged"
+        assert router.executor.is_binding_ready_for_contract(tool.key, tool.fingerprint)
+    finally:
+        engine.dispose()
+
