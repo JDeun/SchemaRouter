@@ -21,7 +21,7 @@
     },
     {
       "path": "compatibility.md",
-      "source_blob": "4d2e279720b5fcd38aa8bb6ef5e284c093c4bcc8"
+      "source_blob": "fe9599192126239aaf429eebeb8c6922ef998a50"
     },
     {
       "path": "concepts/adapters.md",
@@ -417,7 +417,7 @@
     },
     {
       "path": "release-checklist.md",
-      "source_blob": "1180e4106644217a90c8634b2f499e01ce4b533c"
+      "source_blob": "855308419408998f721f925d88d74718f845688b"
     },
     {
       "path": "releases/0.10.0.md",

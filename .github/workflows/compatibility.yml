@@ -245,6 +245,124 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  mongodb-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install . "pymongo==4.18.2"
+      - run: python -m pip check
+      - name: Start MongoDB
+        run: docker run -d --name schemarouter-mongodb -p 27017:27017 mongo:8.0.32-noble
+      - name: Wait for MongoDB
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+
+          last_error = None
+          for _ in range(30):
+              try:
+                  client = MongoClient("mongodb://127.0.0.1:27017", serverSelectionTimeoutMS=1000)
+                  client.admin.command("ping")
+                  client.close()
+                  raise SystemExit(0)
+              except Exception as exc:
+                  last_error = exc
+                  time.sleep(1)
+          raise SystemExit(f"MongoDB did not become ready: {last_error}")
+          PY
+      - name: Exercise MongoDB discovery, projection, and trusted filtering
+        run: >-
+          python scripts/live_mongodb_smoke.py
+          --json-out artifacts/mongodb-compatibility.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: compatibility-mongodb-${{ github.run_id }}
+          path: artifacts/mongodb-compatibility.json
+          if-no-files-found: error
+          retention-days: 30
+
+  chroma-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install . "chromadb==1.5.2"
+      - run: python -m pip check
+      - name: Exercise in-process Chroma discovery, projection, and trusted filtering
+        run: >-
+          python scripts/live_chroma_smoke.py
+          --json-out artifacts/chroma-compatibility.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: compatibility-chroma-${{ github.run_id }}
+          path: artifacts/chroma-compatibility.json
+          if-no-files-found: error
+          retention-days: 30
+
+  clickhouse-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install . "clickhouse-connect==1.9.0"
+      - run: python -m pip check
+      - name: Start ClickHouse
+        run: >-
+          docker run -d --name schemarouter-clickhouse
+          -e CLICKHOUSE_PASSWORD=schemarouter
+          -p 8123:8123
+          clickhouse/clickhouse-server:26.8.11.7
+      - name: Wait for ClickHouse
+        run: |
+          python - <<'PY'
+          import time
+          import clickhouse_connect
+
+          last_error = None
+          for _ in range(30):
+              try:
+                  client = clickhouse_connect.get_client(
+                      host="127.0.0.1",
+                      port=8123,
+                      username="default",
+                      password="schemarouter",
+                  )
+                  client.command("SELECT 1")
+                  client.close()
+                  raise SystemExit(0)
+              except Exception as exc:
+                  last_error = exc
+                  time.sleep(1)
+          raise SystemExit(f"ClickHouse did not become ready: {last_error}")
+          PY
+      - name: Exercise ClickHouse discovery, time bounds, projection, and trusted filtering
+        run: >-
+          python scripts/live_clickhouse_smoke.py
+          --json-out artifacts/clickhouse-compatibility.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: compatibility-clickhouse-${{ github.run_id }}
+          path: artifacts/clickhouse-compatibility.json
+          if-no-files-found: error
+          retention-days: 30
+
   falkordb-live:
     runs-on: ubuntu-latest
     timeout-minutes: 10
