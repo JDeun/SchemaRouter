@@ -10,6 +10,7 @@ from schemarouter.adapters.vector_native import (
     MilvusVectorBackend,
     PineconeVectorBackend,
     QdrantVectorBackend,
+    WeaviateVectorBackend,
 )
 
 
@@ -331,6 +332,164 @@ def test_router_pinecone_convenience_registration_uses_native_backend() -> None:
 
     assert keys == ("pinecone.docs",)
     endpoint = router.registry.get("pinecone.docs").endpoint("search")
+    assert endpoint.execution_metadata["dimension"] == 3
+    assert endpoint.execution_metadata["metric"] == "cosine"
+
+
+@dataclass
+class _WeaviateProperty:
+    name: str
+    data_type: str
+    index_filterable: bool = False
+    description: str = ""
+
+
+@dataclass
+class _WeaviateConfig:
+    properties: list[_WeaviateProperty]
+    vector_config: dict[str, object]
+
+
+@dataclass
+class _WeaviateMetadata:
+    distance: float
+
+
+@dataclass
+class _WeaviateObject:
+    uuid: str
+    properties: dict[str, Any]
+    metadata: _WeaviateMetadata
+
+
+@dataclass
+class _WeaviateResponse:
+    objects: list[_WeaviateObject]
+
+
+class _WeaviateQuery:
+    def __init__(self) -> None:
+        self.kwargs: dict[str, Any] = {}
+
+    def near_vector(self, **kwargs: Any) -> _WeaviateResponse:
+        self.kwargs = dict(kwargs)
+        return _WeaviateResponse(
+            objects=[
+                _WeaviateObject(
+                    uuid="w-1",
+                    properties={
+                        "title": "Weaviate",
+                        "tenant": "tenant-a",
+                    },
+                    metadata=_WeaviateMetadata(distance=0.12),
+                )
+            ]
+        )
+
+
+class _WeaviateConfigApi:
+    def get(self) -> _WeaviateConfig:
+        return _WeaviateConfig(
+            properties=[
+                _WeaviateProperty("title", "TEXT"),
+                _WeaviateProperty("tenant", "TEXT", index_filterable=True),
+            ],
+            vector_config={"text": object()},
+        )
+
+
+class _WeaviateCollection:
+    def __init__(self) -> None:
+        self.config = _WeaviateConfigApi()
+        self.query = _WeaviateQuery()
+
+
+class _WeaviateCollections:
+    def __init__(self) -> None:
+        self.collection = _WeaviateCollection()
+
+    def list_all(self, *, simple: bool = False) -> dict[str, object]:
+        assert simple is False
+        return {"Article": object()}
+
+    def use(self, name: str) -> _WeaviateCollection:
+        assert name == "Article"
+        return self.collection
+
+
+class FakeWeaviateClient:
+    def __init__(self) -> None:
+        self.collections = _WeaviateCollections()
+
+
+def test_weaviate_adapter_discovers_properties_and_normalizes_near_vector() -> None:
+    client = FakeWeaviateClient()
+    built_filters: list[dict[str, Any]] = []
+
+    def build_filter(filters: dict[str, Any]) -> dict[str, Any]:
+        built_filters.append(dict(filters))
+        return {"trusted": dict(filters)}
+
+    backend = WeaviateVectorBackend(
+        client,
+        dimension_by_collection={"Article": 3},
+        metric_by_collection={"Article": "cosine"},
+        filter_builder=build_filter,
+        metadata_query_factory=lambda **kwargs: dict(kwargs),
+    )
+
+    spec = backend.list_collections()[0]
+    assert spec.name == "Article"
+    assert spec.dimension == 3
+    assert spec.metric == "cosine"
+    assert spec.public_metadata == {"target_vector": "text"}
+    assert [field.name for field in spec.metadata_fields] == ["title", "tenant"]
+    assert next(field for field in spec.metadata_fields if field.name == "tenant").filterable
+
+    rows = backend.search(
+        collection="Article",
+        vector=[0.1, 0.2, 0.3],
+        top_k=3,
+        include_fields=("title",),
+        filters={"tenant": "tenant-a"},
+    )
+    assert rows == [{"id": "w-1", "score": 0.12, "title": "Weaviate"}]
+    assert built_filters == [{"tenant": "tenant-a"}]
+    assert client.collections.collection.query.kwargs == {
+        "near_vector": [0.1, 0.2, 0.3],
+        "limit": 3,
+        "return_properties": ["title"],
+        "return_metadata": {"distance": True},
+        "target_vector": "text",
+        "filters": {"trusted": {"tenant": "tenant-a"}},
+    }
+
+
+def test_weaviate_requires_explicit_external_vector_dimension() -> None:
+    client = FakeWeaviateClient()
+    with pytest.raises(Exception, match="dimension_by_collection"):
+        WeaviateVectorBackend(
+            client,
+            dimension_by_collection={},
+            metadata_query_factory=lambda **kwargs: dict(kwargs),
+        ).list_collections()
+
+
+def test_router_weaviate_convenience_registration_uses_native_backend() -> None:
+    client = FakeWeaviateClient()
+    router = SchemaRouter()
+
+    keys = router.add_weaviate_vector_store(
+        client,
+        lambda query: [0.1, 0.2, 0.3],
+        dimension_by_collection={"Article": 3},
+        metric_by_collection={"Article": "cosine"},
+        metadata_query_factory=lambda **kwargs: dict(kwargs),
+        remote=False,
+    )
+
+    assert keys == ("weaviate.article",)
+    endpoint = router.registry.get("weaviate.article").endpoint("search")
     assert endpoint.execution_metadata["dimension"] == 3
     assert endpoint.execution_metadata["metric"] == "cosine"
 
