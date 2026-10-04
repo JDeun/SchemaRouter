@@ -8,4 +8,4 @@ def test_hyset_retraining_protocol_preserves_independent_label_and_holdout() -> 
     assert "reasonwang/ToolGen-Qwen2.5-1.5B-Tool-Retriever" in text
     normalized = " ".join(text.split())
     assert "do not tune against the six held-out test splits" in normalized
-    assert "Do not infer output-field labels from ToolBench" in text
+    assert "Do not infer output-field labels from ToolBench" in normalized
