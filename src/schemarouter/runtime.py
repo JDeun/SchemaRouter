@@ -1153,6 +1153,7 @@ class SchemaRouter:
         bindings: Any,
         *,
         expected_version: int,
+        offload_sync: bool = False,
     ) -> tuple[str, ...]:
         staged = tuple(bindings)
         keys = update_many_if_current(
@@ -1167,6 +1168,7 @@ class SchemaRouter:
                     key,
                     binding.invoker,
                     expected_fingerprint=binding.tool.fingerprint,
+                    offload_sync=offload_sync,
                 )
                 bound.append(key)
         except Exception:
@@ -1271,6 +1273,7 @@ class SchemaRouter:
         return self._register_bound_batch(
             bindings,
             expected_version=expected_version,
+            offload_sync=remote,
         )
 
     async def aadd_vector_store(
