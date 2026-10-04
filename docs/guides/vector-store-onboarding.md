@@ -77,7 +77,8 @@ A vendor adapter must not allow model arguments to override those tenant or depa
 The core contract is vendor-neutral so Pinecone, Milvus, Qdrant, Weaviate, Chroma, and pgvector can implement thin adapters without changing SchemaRouter's execution authority model. Redis-specific vector/search support is intentionally left to plugins or adopter-specific adapters rather than the first-class core surface.
 
 The provider-neutral contract does **not** by itself claim that every named vendor SDK has completed
-native/live acceptance. Vendor-specific adapter acceptance is tracked under #767.
+live acceptance. Native adapter contracts and SDK-shape coverage are release-gated; live external
+acceptance remains deployment-specific.
 
 ## Native vendor clients
 
