@@ -105,7 +105,7 @@ class GraphSourceSpec(StrictModel):
 
 
 class GraphStoreBackend(Protocol):
-    """Trusted backend contract for Neo4j/Neptune/ArangoDB/SPARQL-style adapters."""
+    """Trusted backend contract for Neo4j/Neptune/ArangoDB/FalkorDB/SPARQL adapters."""
 
     def list_graphs(
         self,
