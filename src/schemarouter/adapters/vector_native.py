@@ -465,6 +465,8 @@ class WeaviateVectorBackend:
         dimension_by_collection: Mapping[str, int],
         target_vector_by_collection: Mapping[str, str] | None = None,
         metric_by_collection: Mapping[str, str] | None = None,
+        filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
+        metadata_query_factory: Callable[..., Any] | None = None,
     ) -> None:
         self._client = client
         self._dimension_by_collection = {
@@ -473,6 +475,8 @@ class WeaviateVectorBackend:
         }
         self._target_vector_by_collection = dict(target_vector_by_collection or {})
         self._metric_by_collection = dict(metric_by_collection or {})
+        self._filter_builder = filter_builder
+        self._metadata_query_factory = metadata_query_factory
         self._collection_cache: dict[str, Any] = {}
         self._config_cache: dict[str, Any] = {}
 
@@ -613,8 +617,9 @@ class WeaviateVectorBackend:
             )
         return tuple(results)
 
-    @staticmethod
-    def _weaviate_filter(filters: Mapping[str, Any]) -> Any:
+    def _weaviate_filter(self, filters: Mapping[str, Any]) -> Any:
+        if self._filter_builder is not None:
+            return self._filter_builder(filters)
         try:
             query_module = importlib.import_module("weaviate.classes.query")
         except ImportError as exc:
@@ -676,23 +681,27 @@ class WeaviateVectorBackend:
                     + ", ".join(unknown_filters)
                 )
 
-        try:
-            query_module = importlib.import_module("weaviate.classes.query")
-        except ImportError as exc:
-            raise RegistrationError(
-                "Weaviate native search requires weaviate-client"
-            ) from exc
-        metadata_query = _read(query_module, "MetadataQuery")
-        if metadata_query is None:
-            raise RegistrationError(
-                "weaviate.classes.query.MetadataQuery is unavailable"
-            )
+        if self._metadata_query_factory is None:
+            try:
+                query_module = importlib.import_module("weaviate.classes.query")
+            except ImportError as exc:
+                raise RegistrationError(
+                    "Weaviate native search requires weaviate-client"
+                ) from exc
+            metadata_query = _read(query_module, "MetadataQuery")
+            if metadata_query is None:
+                raise RegistrationError(
+                    "weaviate.classes.query.MetadataQuery is unavailable"
+                )
+            metadata = metadata_query(distance=True)
+        else:
+            metadata = self._metadata_query_factory(distance=True)
 
         kwargs: dict[str, Any] = {
             "near_vector": list(vector),
             "limit": top_k,
             "return_properties": list(include_fields),
-            "return_metadata": metadata_query(distance=True),
+            "return_metadata": metadata,
         }
         target_vector = self._target_vector(collection, config)
         if target_vector is not None:
