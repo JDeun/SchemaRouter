@@ -47,7 +47,6 @@ from .adapters.record_native import (
     ElasticRecordBackend,
     InfluxRecordBackend,
     MongoRecordBackend,
-    RedisRecordBackend,
 )
 from .adapters.record_store import (
     RecordFieldSpec,
@@ -652,7 +651,6 @@ __all__ = [
     "RecordSourceInvoker",
     "RecordSourceSpec",
     "RecordStoreBackend",
-    "RedisRecordBackend",
     "RegistrationError",
     "RefreshProfile",
     "RegistryExecutor",
