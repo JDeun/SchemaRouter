@@ -124,8 +124,11 @@ jobs:
       - name: Recreate exact frozen corrective corpus
         run: |
           mkdir -p artifacts/corrective
-          python scripts/generate_agent_utility_v6_corrective_corpus.py             --source-revision "${{ inputs.source_sha }}"             --out artifacts/corrective/corrective-corpus.json
-          python scripts/validate_agent_utility_v6_corrective_corpus.py             --corpus artifacts/corrective/corrective-corpus.json
+          python scripts/generate_agent_utility_v6_corrective_corpus.py \
+            --source-revision "${{ inputs.source_sha }}" \
+            --out artifacts/corrective/corrective-corpus.json
+          python scripts/validate_agent_utility_v6_corrective_corpus.py \
+            --corpus artifacts/corrective/corrective-corpus.json
       - id: matrix
         name: Select only requested frozen shards
         env:
@@ -247,7 +250,11 @@ jobs:
       - name: Evaluate selected frozen corrective shard
         run: |
           mkdir -p artifacts/corrective-shard
-          python -u scripts/evaluate_agent_utility_v6_corrective.py             --corpus artifacts/corrective/corrective-corpus.json             --catalog-size "${{ matrix.catalog_size }}"             --task-ids "${{ matrix.task_ids }}"             --out "artifacts/corrective-shard/${{ matrix.job_id }}.json"
+          python -u scripts/evaluate_agent_utility_v6_corrective.py \
+            --corpus artifacts/corrective/corrective-corpus.json \
+            --catalog-size "${{ matrix.catalog_size }}" \
+            --task-ids "${{ matrix.task_ids }}" \
+            --out "artifacts/corrective-shard/${{ matrix.job_id }}.json"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
@@ -292,7 +299,10 @@ jobs:
           path: artifacts/corrective-shards/recovery
       - name: Aggregate exact complete parent plus recovery surface
         run: |
-          python scripts/aggregate_agent_utility_v6_corrective.py             --input-dir artifacts/corrective-shards             --corpus artifacts/corrective/corrective-corpus.json             --out artifacts/corrective-reretrieval-canonical.json
+          python scripts/aggregate_agent_utility_v6_corrective.py \
+            --input-dir artifacts/corrective-shards \
+            --corpus artifacts/corrective/corrective-corpus.json \
+            --out artifacts/corrective-reretrieval-canonical.json
       - name: Record recovery provenance
         env:
           PARENT_RUN_ID: "${{ inputs.parent_run_id }}"
