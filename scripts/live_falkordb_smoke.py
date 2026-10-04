@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import time
 from pathlib import Path
@@ -82,7 +83,7 @@ def run(host: str, port: int) -> dict[str, Any]:
             )
         ],
     )
-    result = router.execute_sync(plan)[0].data
+    result = asyncio.run(router.execute(plan))[0].data
     if not result or result[0].get("relationship") != "MEMBER_OF":
         raise RuntimeError(f"unexpected FalkorDB traversal result: {result!r}")
 
