@@ -16,6 +16,7 @@ on:
     - cron: "17 * * * *"
   workflow_run:
     workflows:
+      - CI
       - Research 0.14 B2 SmolLM3 Full
       - Research 0.14 Structural K3 Agent Utility
       - Research 0.14 Corrective Re-retrieval
@@ -25,6 +26,8 @@ on:
       - Research 0.14 Field Projection Confirmation
     types:
       - completed
+    branches:
+      - main
 
 permissions:
   contents: read
