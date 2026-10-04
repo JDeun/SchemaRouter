@@ -204,6 +204,47 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  pgvector-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install . "sqlalchemy>=2,<3" "psycopg[binary]>=3,<4" "pgvector>=0.4,<1"
+      - run: python -m pip check
+      - name: Start PostgreSQL with pgvector
+        run: >-
+          docker run -d --name schemarouter-pgvector
+          -e POSTGRES_PASSWORD=schemarouter
+          -e POSTGRES_DB=schemarouter
+          -p 5432:5432
+          pgvector/pgvector:pg16
+      - name: Wait for PostgreSQL
+        run: |
+          for attempt in {1..30}; do
+            if docker exec schemarouter-pgvector pg_isready -U postgres -d schemarouter; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs schemarouter-pgvector
+          exit 1
+      - name: Exercise pgvector discovery, projection, and trusted filtering
+        run: >-
+          python scripts/live_pgvector_smoke.py
+          --url postgresql+psycopg://postgres:schemarouter@127.0.0.1:5432/schemarouter
+          --json-out artifacts/pgvector-compatibility.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: compatibility-pgvector-${{ github.run_id }}
+          path: artifacts/pgvector-compatibility.json
+          if-no-files-found: error
+          retention-days: 30
+
   falkordb-live:
     runs-on: ubuntu-latest
     timeout-minutes: 10
