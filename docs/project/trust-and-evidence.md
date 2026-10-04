@@ -8,8 +8,8 @@ relying on marketing copy.
 
 | Item | Verified public state |
 | --- | --- |
-| Stable version | `0.15.0` |
-| Release date | 2026-10-03 |
+| Stable version | `0.16.0` |
+| Release date | 2026-10-04 |
 | Status | Beta / pre-1.0 |
 | Python | 3.10–3.14 are release-blocking CI targets; 3.15 is a non-blocking preview |
 | License | MIT |
