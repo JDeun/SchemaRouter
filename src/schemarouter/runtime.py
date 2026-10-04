@@ -1143,6 +1143,66 @@ class SchemaRouter:
             )
         )
 
+    async def aadd_pinecone_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        database_name: str = "pinecone",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        metadata_fields_by_index: Mapping[str, Sequence[Any]] | None = None,
+        namespace_by_index: Mapping[str, str] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned Pinecone client through the vector capability contract."""
+
+        from .adapters.vector_native import PineconeVectorBackend
+
+        return await self.aadd_vector_store(
+            PineconeVectorBackend(
+                client,
+                metadata_fields_by_index=metadata_fields_by_index,
+                namespace_by_index=namespace_by_index,
+            ),
+            embed_query,
+            database_name=database_name,
+            namespace=namespace,
+            collections=collections,
+            default_top_k=default_top_k,
+            remote=remote,
+        )
+
+    def add_pinecone_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        database_name: str = "pinecone",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        metadata_fields_by_index: Mapping[str, Sequence[Any]] | None = None,
+        namespace_by_index: Mapping[str, str] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_pinecone_vector_store`."""
+
+        return _run_sync(
+            lambda: self.aadd_pinecone_vector_store(
+                client,
+                embed_query,
+                database_name=database_name,
+                namespace=namespace,
+                collections=collections,
+                metadata_fields_by_index=metadata_fields_by_index,
+                namespace_by_index=namespace_by_index,
+                default_top_k=default_top_k,
+                remote=remote,
+            )
+        )
+
     async def aadd_milvus_vector_store(
         self,
         client: Any,
