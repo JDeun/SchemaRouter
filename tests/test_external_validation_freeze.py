@@ -1,16 +1,28 @@
-import copy
+from __future__ import annotations
+
+import importlib.util
 import json
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
 
-from scripts.validate_external_validation_freeze import (
-    ExternalValidationFreezeError,
-    validate_manifest,
-)
-
-
 ROOT = Path(__file__).resolve().parents[1]
+SCRIPT = ROOT / "scripts" / "validate_external_validation_freeze.py"
+
+
+def _module():
+    spec = importlib.util.spec_from_file_location(
+        "validate_external_validation_freeze",
+        SCRIPT,
+    )
+    if spec is None or spec.loader is None:
+        raise RuntimeError("cannot load external validation freeze validator")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 TEMPLATE = ROOT / "benchmarks" / "external-validation-freeze-manifest.template.json"
 
 
@@ -73,7 +85,7 @@ def frozen_manifest() -> dict:
 
 
 def test_complete_frozen_manifest_is_valid() -> None:
-    validate_manifest(frozen_manifest())
+    _module().validate_manifest(frozen_manifest())
 
 
 @pytest.mark.parametrize(
@@ -97,7 +109,8 @@ def test_complete_frozen_manifest_is_valid() -> None:
     ],
 )
 def test_incomplete_or_unsafe_manifest_fails_closed(mutator, message: str) -> None:
-    data = copy.deepcopy(frozen_manifest())
+    data = deepcopy(frozen_manifest())
     mutator(data)
-    with pytest.raises(ExternalValidationFreezeError, match=message):
-        validate_manifest(data)
+    module = _module()
+    with pytest.raises(module.ExternalValidationFreezeError, match=message):
+        module.validate_manifest(data)
