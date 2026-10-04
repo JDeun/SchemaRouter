@@ -110,6 +110,46 @@ The Jev and Laya providers follow the same principle: they remain optional `sche
 likewise remains an optional
 `schemarouter[otel]` exporter integration.
 
+## Native database live-acceptance tiers
+
+Native database support has two separate evidence levels:
+
+- **Contract / SDK-shape coverage** is deterministic and release-blocking where it is part of the
+  required CI suite. It proves SchemaRouter's bounded adapter contract against controlled client
+  shapes and fixtures.
+- **Live acceptance** runs the real client against a real local/container runtime. It proves the
+  current client/service combination still supports discovery, bounded reads/search/traversal,
+  projection, trusted principal/DataScope filters where applicable, and the no-raw-query authority
+  boundary.
+
+Tier A uses deterministic local containers or in-process runtimes and is reviewed as release
+evidence when native database adapters change. The compatibility workflow records exact service
+tags and resolved client versions in JSON artifacts.
+
+| Tier A runtime | Evidence surface |
+| --- | --- |
+| PostgreSQL + pgvector | real container; vector discovery/search, projection, trusted tenant filter |
+| Qdrant | real container; collection discovery/search, projection, trusted metadata filter |
+| FalkorDB | real container; graph discovery and bounded read-only traversal |
+| MongoDB | real container; document discovery/query, field projection, trusted tenant filter |
+| Chroma | in-process client/runtime; vector discovery/search, field projection, trusted metadata filter |
+| ClickHouse | real container; record/time-series discovery, bounded time range, projection, trusted tenant filter |
+
+A green Tier A smoke is **not** a blanket claim for every native adapter. Elasticsearch/OpenSearch,
+Neo4j, ArangoDB, InfluxDB, Milvus, and Couchbase retain deterministic contract/SDK-shape coverage
+until dedicated live acceptance is added.
+
+Tier B covers hosted-only or credential-gated vendors such as Pinecone, DynamoDB, Azure Cosmos DB,
+and Amazon Neptune. These checks remain manual or scheduled with repository/environment secrets and
+must not become ordinary pull-request requirements. Their artifacts must record the exact client
+version, target/service identity that is safe to disclose, and the same bounded-contract outcomes as
+Tier A. Missing hosted credentials are a documented non-goal for ordinary CI, not evidence of live
+vendor acceptance.
+
+For a release that changes native database adapters, the release checklist requires a recent green
+current-`main` Tier A compatibility run for the affected representative families. Public Internet
+provider smokes remain non-blocking because external availability is outside SchemaRouter's control.
+
 ## External compatibility checks
 
 The `Compatibility Smoke` workflow runs weekly and can also be triggered manually for the

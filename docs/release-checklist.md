@@ -39,6 +39,7 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 
 - [ ] A recent public OpenAPI live smoke is green.
 - [ ] A recent public OPTIMADE live smoke is green.
+- [ ] For releases that change native database adapters, a recent current-`main` Compatibility Smoke is green for the affected representative Tier A native-database runtimes.
 - [ ] The real MCP Streamable HTTP integration job is green when the MCP extra is part of the release.
 - [ ] Optional framework/provider integration jobs are green for every extra included in the release.
 - [ ] The merge-blocking CI dependency audit passes; the latest independent audit, PR/main CodeQL analysis, and OpenSSF Scorecard findings are green or explicitly triaged.
