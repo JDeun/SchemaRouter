@@ -132,6 +132,40 @@ dimensions and scalar metadata fields. If a collection has multiple vector field
 Trusted filters use Milvus filter templates plus `filter_params`; principal-derived values are not
 interpolated into the expression string.
 
+### Pinecone
+
+```python
+from pinecone import Pinecone
+
+client = Pinecone(api_key=PINECONE_API_KEY)
+
+keys = router.add_pinecone_vector_store(
+    client,
+    embed_query,
+    database_name="pinecone",
+    metadata_fields_by_index={
+        "docs": (
+            VectorMetadataField(
+                name="tenant",
+                json_schema={"type": "string"},
+                filterable=True,
+            ),
+        )
+    },
+)
+```
+
+The control-plane client supplies index names plus dense dimension/metric metadata. The adapter
+creates data-plane index clients through the caller-owned Pinecone client and normalizes
+`index.query(...)` results into the common vector contract.
+
+Pinecone metadata is flexible and an index description does not guarantee a complete typed contract
+for every metadata key stored in every record. SchemaRouter therefore does not invent metadata
+fields. Declare model-visible/filterable metadata explicitly with `metadata_fields_by_index`.
+
+Optional `namespace_by_index` pins one trusted namespace per index. Data-scope filters are passed
+only for metadata fields explicitly declared `filterable=True`.
+
 These adapters are SDK-shape tested with caller-owned fake clients. They do not make vendor
 credentials part of SchemaRouter state and do not imply that every deployment topology has been
 live-tested.
