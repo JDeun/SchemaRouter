@@ -262,7 +262,7 @@ SDK or weakly described REST surface.
 | Qdrant | caller-owned Qdrant client | `router.add_qdrant_vector_store(client, embed_query, ...)` |
 | Milvus | caller-owned MilvusClient | `router.add_milvus_vector_store(client, embed_query, ...)` |
 | Graph/RDF store | graph schema discovery + bounded traversal | `router.add_graph_store(backend, ...)` |
-| NoSQL record store | document/search/KV/time-series schema discovery + bounded query | `router.add_record_store(backend, ...)` |
+| NoSQL record store | document/search/KV/time-series discovery + bounded query; native MongoDB/Elastic/OpenSearch/Redis/DynamoDB/Cosmos/Couchbase/ClickHouse/InfluxDB helpers | `router.add_record_store(...)` / `add_mongodb_record_store(...)` |
 | Direct ToolSpec | the application already owns the canonical contract | `router.add_tool(...)` |
 | Python | capability is local and typed | `router.add_callable(...)` |
 | ToolSpec + SDK/client | transport is trusted but not safely introspectable | `router.add_bound_tool(...)` |
