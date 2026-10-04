@@ -77,3 +77,60 @@ vendor-neutral하게 설계했습니다.
 
 다만 provider-neutral contract 구현만으로 위 모든 vendor SDK의 native/live acceptance가
 끝났다는 뜻은 아닙니다. Vendor별 adapter acceptance는 #767에서 계속 추적합니다.
+
+## Native Qdrant / Milvus client
+
+Qdrant와 Milvus는 caller-owned client를 감싸는 thin adapter를 제공합니다. Connection URL,
+API key, token, client pool은 해당 client object 내부에 남고 SchemaRouter의 ToolSpec으로
+복사되지 않습니다.
+
+### Qdrant
+
+```python
+from qdrant_client import QdrantClient
+
+client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
+
+keys = router.add_qdrant_vector_store(
+    client,
+    embed_query,
+    database_name="qdrant",
+)
+```
+
+Adapter가 collection의 vector size/distance와 indexed payload schema를 읽고
+`query_points()` 결과를 공통 vector capability contract로 정규화합니다. Dense named vector가
+여러 개라면 추측하지 않고 `vector_name_by_collection`으로 명시해야 합니다.
+
+Qdrant payload schema는 indexed/filterable payload field를 나타내며 모든 point에 저장된 모든
+payload field를 완전히 기술하지 않을 수 있습니다. 추가 model-visible metadata는
+`metadata_fields_by_collection`으로 명시할 수 있습니다.
+
+Trusted data-scope filter는 adapter 내부에서 Qdrant Filter로 변환합니다. 별도의 trusted
+filter abstraction이 필요한 application은 `filter_builder`를 주입할 수 있습니다.
+
+### Milvus
+
+```python
+from pymilvus import MilvusClient
+
+client = MilvusClient(uri=MILVUS_URI, token=MILVUS_TOKEN)
+
+keys = router.add_milvus_vector_store(
+    client,
+    embed_query,
+    database_name="milvus",
+)
+```
+
+Adapter는 `list_collections()`와 `describe_collection()`으로 dense vector dimension과
+scalar metadata field를 파악합니다. Vector field가 여러 개라면
+`vector_field_by_collection`으로 명시합니다.
+
+Trusted filter는 Milvus filter template과 `filter_params`를 사용하므로 principal-derived
+값을 expression 문자열에 직접 삽입하지 않습니다.
+
+이 adapter들은 caller-owned fake client로 SDK-shape contract를 검증합니다. Vendor credential은
+SchemaRouter state에 들어가지 않으며, 모든 deployment topology의 live acceptance가 끝났다는
+의미는 아닙니다.
+
