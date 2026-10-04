@@ -36,7 +36,7 @@ The built-in acceptance profiles are Materials Project, Crossref, and Tavily.
 | Provider profile | user knows the provider, not every protocol/SDK | `await router.add_provider(...)` |
 | Direct ToolSpec | the application already owns a canonical contract | router.add_tool(...) |
 | Typed Python callable | an SDK/function has a stable typed signature | router.add_callable(...) |
-| ToolSpec + trusted invoker | an SDK/client is not safely introspectable | router.add_bound_tool(...) |
+| ToolSpec + SDK/client | an SDK/client is not safely introspectable | router.add_bound_tool(...) |
 | OpenAPI / Swagger | an HTTP API publishes OpenAPI | from_url(..., kind="openapi") |
 | MCP Streamable HTTP | a remote server publishes MCP tools over HTTP | from_url(..., kind="mcp") |
 | MCP stdio | a local MCP server is launched as a trusted subprocess | router.add_mcp_stdio(...) |
@@ -47,8 +47,8 @@ The built-in acceptance profiles are Materials Project, Crossref, and Tavily.
 | OpenRPC / JSON-RPC | a JSON-RPC service publishes OpenRPC | from_url(..., kind="openrpc") |
 | LangChain tool import | the capability already exists as a LangChain tool | router.add_langchain_tool(...) |
 | LlamaIndex tool import | the capability already exists as a LlamaIndex tool | router.add_llamaindex_tool(...) |
-| Declarative HTTP/JSON | REST is stable but no discoverable schema exists | router.add_http_tool(...) |
-| SourceAdapter plugin | another protocol needs custom discovery/transport | router.register_adapter(...) |
+| REST/JSON | REST is stable but no discoverable schema exists | router.add_http_tool(...) |
+| Custom protocol | another protocol needs custom discovery/transport | router.register_adapter(...) |
 | Human-readable docs | only documentation exists | inspect -> proposal -> explicit approval |
 
 Protocol-specific code is added to core only when it preserves useful machine-readable semantics
