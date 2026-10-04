@@ -18,4 +18,9 @@ typed list result는 native adapter와 같은 record-preserving item-field contr
 
 `to_llamaindex_tool(router, "materials", "search")`, `to_llamaindex_tools(router)`를 사용할 수 있습니다. repository의 `examples/llamaindex_quickstart.py`를 CI에서 integration contract test와 함께 실행합니다.
 
+Enterprise authorization을 켠 경우에는 `run_config=RunConfig(principal=...)`를 함께 전달합니다.
+Principal에게 허용된 endpoint만 export하며 DataScope가 숨긴 field/parameter는 LlamaIndex-visible
+schema에서도 제거합니다. 실행은 다시 `SchemaRouter.execute(...)`를 거치므로 trusted
+row/tenant filter와 execution-time authorization이 유지됩니다.
+
 LlamaIndex는 agent/workflow orchestration을, SchemaRouter는 registered schema identity/policy/validation/binding/execution을 담당합니다. bridge는 현재 main distribution의 optional `llamaindex` extra로 유지합니다.
