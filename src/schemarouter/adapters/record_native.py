@@ -125,7 +125,14 @@ class MongoRecordBackend:
     ) -> list[dict[str, Any]]:
         if source not in set(self._names()):
             raise RegistrationError(f"unknown MongoDB collection {source!r}")
-        query: dict[str, Any] = dict(filters)
+        query: dict[str, Any] = {
+            field: (
+                {"$in": list(value)}
+                if isinstance(value, tuple)
+                else value
+            )
+            for field, value in filters.items()
+        }
         if text_query is not None:
             if source not in self._text_search:
                 raise SchemaValidationError("MongoDB text search is not enabled for this collection")
@@ -297,7 +304,13 @@ class ElasticRecordBackend:
         for field, value in sorted(filters.items()):
             if field not in allowed:
                 raise SchemaValidationError(f"index filter field {field!r} is not filterable")
-            filter_clauses.append({"term": {field: value}})
+            filter_clauses.append(
+                (
+                    {"terms": {field: list(value)}}
+                    if isinstance(value, tuple)
+                    else {"term": {field: value}}
+                )
+            )
 
         time_field = self._time_fields.get(source)
         if time_field is None:
@@ -447,7 +460,12 @@ class RedisRecordBackend:
             raise SchemaValidationError("Redis key-value adapter does not expose text/time queries")
 
         if "key" in filters:
-            raw_keys = [filters["key"]]
+            requested = filters["key"]
+            raw_keys = (
+                list(requested)
+                if isinstance(requested, tuple)
+                else [requested]
+            )
         else:
             raw_keys = []
             for key in self._client.scan_iter(match=self._pattern, count=min(limit, 1000)):
@@ -626,8 +644,22 @@ class DynamoDBRecordBackend:
             name_token = f"#f{index}"
             value_token = f":v{index}"
             expression_names[name_token] = field
-            expression_values[value_token] = _ddb_encode(value)
-            clauses.append(f"{name_token} = {value_token}")
+            if isinstance(value, tuple):
+                tokens: list[str] = []
+                for member_index, member in enumerate(value):
+                    member_token = f"{value_token}_{member_index}"
+                    expression_values[member_token] = _ddb_encode(member)
+                    tokens.append(member_token)
+                if not tokens:
+                    raise SchemaValidationError(
+                        "DynamoDB membership filter cannot be empty"
+                    )
+                clauses.append(
+                    f"{name_token} IN (" + ", ".join(tokens) + ")"
+                )
+            else:
+                expression_values[value_token] = _ddb_encode(value)
+                clauses.append(f"{name_token} = {value_token}")
 
         time_field = self._time_fields.get(source)
         if start_time is not None or end_time is not None:
