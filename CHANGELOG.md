@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- added caller-owned native record-store adapters for MongoDB, Elasticsearch/OpenSearch, Redis,
+  DynamoDB, Azure Cosmos DB, Couchbase, ClickHouse and InfluxDB, compiling vendor discovery/query
+  shapes into the bounded record contract without exposing raw vendor query languages to model output;
 - added native caller-owned Qdrant and Milvus vector backends with collection/schema
   discovery, bounded query normalization, explicit multi-vector selection, and trusted metadata
   filtering while keeping vendor credentials and clients outside model-visible contracts;
