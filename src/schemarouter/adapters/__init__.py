@@ -6,6 +6,7 @@ from ..openapi_compatibility import (
 from .base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
 from .graph_native import (
     ArangoGraphBackend,
+    FalkorGraphBackend,
     Neo4jGraphBackend,
     NeptuneOpenCypherBackend,
     SparqlGraphBackend,
@@ -116,6 +117,7 @@ __all__ = [
     "DefaultMCPClientFactory",
     "HTTPJSONRemoteInvoker",
     "ArangoGraphBackend",
+    "FalkorGraphBackend",
     "GraphModel",
     "GraphNodeTypeSpec",
     "GraphPropertySpec",
