@@ -56,6 +56,7 @@ from .adapters.vector_native import (
     MilvusVectorBackend,
     PineconeVectorBackend,
     QdrantVectorBackend,
+    WeaviateVectorBackend,
 )
 from .adapters.vector_store import (
     VectorCollectionBinding,
@@ -589,6 +590,7 @@ __all__ = [
     "PineconeVectorBackend",
     "ODataSourceAdapter",
     "QdrantVectorBackend",
+    "WeaviateVectorBackend",
     "ObservedStateField",
     "OpenAPICompatibilityIssue",
     "OpenAPICompatibilityReport",
