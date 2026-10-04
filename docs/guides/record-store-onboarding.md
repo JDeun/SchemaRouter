@@ -79,7 +79,8 @@ AuthorizationRule(
 )
 ```
 
-Field/tenant predicates that must never be overridden by model arguments are extended in #770.
+Field/tenant predicates that must never be overridden by model arguments are enforced through
+principal DataScope trusted filters and are revalidated at execution.
 
 ## Native vendor adapters
 

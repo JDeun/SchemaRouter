@@ -74,8 +74,9 @@ Principal DataScope 규칙에서 나온 metadata/tenant filter는 execution 시 
 
 Core contract는 Pinecone, Milvus, Qdrant, Weaviate, Chroma, pgvector가 SchemaRouter의 execution-authority model을 바꾸지 않고 thin adapter로 붙을 수 있도록 vendor-neutral하게 설계했습니다. Redis 계열 vector/search 지원은 first-class core가 아니라 plugin 또는 adopter-specific adapter 범위로 둡니다.
 
-다만 provider-neutral contract 구현만으로 위 모든 vendor SDK의 native/live acceptance가
-끝났다는 뜻은 아닙니다. Vendor별 adapter acceptance는 #767에서 계속 추적합니다.
+다만 provider-neutral contract와 native adapter가 존재한다는 사실이 모든 vendor/deployment의
+live acceptance가 끝났다는 뜻은 아닙니다. SDK-shape/contract 검증은 release gate에 포함하고
+외부 live acceptance는 deployment별로 구분합니다.
 
 ## Native vendor client
 

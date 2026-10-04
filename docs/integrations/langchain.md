@@ -69,6 +69,29 @@ tool = to_langchain_tool(
 )
 ```
 
+When `AuthorizationPolicy` is configured, pass the same trusted run configuration used by the
+host application:
+
+```python
+from schemarouter import PrincipalContext, RunConfig
+
+employee = PrincipalContext(
+    subject="alice",
+    roles=("employee",),
+    attributes={"department": "sales"},
+)
+
+tools = to_langchain_tools(
+    router,
+    run_config=RunConfig(principal=employee),
+)
+```
+
+Only principal-visible endpoints are exported. DataScope field/parameter projection is applied
+before LangChain receives the tool schema, and invocation returns through
+`SchemaRouter.execute(..., config=...)` so trusted row/tenant filters and execution-time
+authorization remain active.
+
 ## Runnable example
 
 The repository includes a minimal executable integration example:
@@ -88,6 +111,7 @@ The integration does **not** call the original transport directly.
 LangChain StructuredTool
  -> SchemaRouter ToolCall
  -> current schema validation
+ -> AuthorizationPolicy / DataScope
  -> ExecutionPolicy
  -> binding-drift check
  -> trusted invoker

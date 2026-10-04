@@ -71,7 +71,8 @@ AuthorizationRule(
 Unauthorized graph capabilities are non-disclosed before model selection and are revalidated before
 execution.
 
-Node/property/relationship sub-scopes and trusted traversal predicates are extended in #770.
+Node/property/relationship visibility, allowed relationship sets, and maximum traversal depth are
+applied through principal DataScope rules and revalidated at execution.
 
 ## Native vendor adapters
 

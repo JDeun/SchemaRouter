@@ -71,7 +71,8 @@ AuthorizationRule(
 권한 없는 graph capability는 model selection 전에 non-disclosure 처리하고 실행 전 다시
 검증합니다.
 
-Node/property/relationship 세부 scope와 trusted traversal predicate는 #770에서 확장합니다.
+Node/property/relationship visibility, 허용 relationship 집합, 최대 traversal depth는 principal
+DataScope rule로 적용하고 실행 시점에 다시 검증합니다.
 
 ## Native vendor adapter
 

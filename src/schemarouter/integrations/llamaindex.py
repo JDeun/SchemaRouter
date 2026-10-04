@@ -10,7 +10,16 @@ from typing import Any, Literal, cast, get_type_hints
 
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
-from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
+from ..errors import PolicyViolationError
+from ..models import (
+    EndpointSpec,
+    ExecutionPlan,
+    FieldSpec,
+    ParameterSpec,
+    ToolCall,
+    ToolSpec,
+)
+from ..runs import RunConfig
 from ..runtime import SchemaRouter
 from ..validation import effective_input_schema
 
@@ -416,6 +425,43 @@ class LlamaIndexToolInvoker:
         return value
 
 
+
+def _coerce_export_run_config(
+    config: RunConfig | dict[str, Any] | None,
+) -> RunConfig:
+    if config is None:
+        return RunConfig()
+    if isinstance(config, RunConfig):
+        return config
+    return RunConfig.model_validate(config)
+
+
+def _authorized_endpoint_view(
+    router: SchemaRouter,
+    tool_key: str,
+    endpoint_name: str,
+    run_config: RunConfig,
+) -> tuple[ToolSpec, EndpointSpec, EndpointSpec]:
+    tool = router.registry.get(tool_key)
+    endpoint = tool.endpoint(endpoint_name)
+    policy = router.authorization_policy
+    if policy is None:
+        return tool, endpoint, endpoint
+
+    principal = run_config.principal
+    if principal is None:
+        raise PolicyViolationError(
+            "principal context is required when authorization_policy is configured"
+        )
+    if not policy.visible(principal, tool, endpoint):
+        raise PolicyViolationError("authorization denied for requested capability")
+
+    projected = router._data_scope_endpoint_view(principal, tool, endpoint)
+    if projected is None:
+        raise PolicyViolationError("authorization denied for requested data scope")
+    return tool, endpoint, projected
+
+
 def to_llamaindex_tool(
     router: SchemaRouter,
     tool_key: str,
@@ -423,8 +469,9 @@ def to_llamaindex_tool(
     *,
     name: str | None = None,
     description: str | None = None,
+    run_config: RunConfig | dict[str, Any] | None = None,
 ):
-    """Expose one registered endpoint as a LlamaIndex FunctionTool."""
+    """Expose one principal-aware endpoint as a LlamaIndex FunctionTool."""
     try:
         from llama_index.core.tools import FunctionTool
     except ImportError as exc:
@@ -432,10 +479,15 @@ def to_llamaindex_tool(
             'LlamaIndex integration requires: pip install "schemarouter[llamaindex]"'
         ) from exc
 
-    tool = router.registry.get(tool_key)
-    endpoint = tool.endpoint(endpoint_name)
-    fields = [field.name for field in endpoint.output_fields]
-    schema = effective_input_schema(endpoint)
+    resolved_config = _coerce_export_run_config(run_config)
+    tool, endpoint, visible_endpoint = _authorized_endpoint_view(
+        router,
+        tool_key,
+        endpoint_name,
+        resolved_config,
+    )
+    fields = [field.name for field in visible_endpoint.output_fields]
+    schema = effective_input_schema(visible_endpoint)
     tool_name = name or _llamaindex_name(tool_key, endpoint_name)
     schema_model = _llamaindex_schema_model(
         schema,
@@ -451,8 +503,13 @@ def to_llamaindex_tool(
             schema_fingerprint=endpoint.fingerprint,
             tool_fingerprint=tool.fingerprint,
         )
-        result = await router.executor.execute_call(call)
-        return result.data
+        plan = ExecutionPlan(
+            query=f"LlamaIndex invocation of {tool_key}.{endpoint_name}",
+            registry_version=router.registry.version,
+            calls=[call],
+        )
+        result = await router.execute(plan, config=resolved_config)
+        return result[0].data
 
     def invoke_endpoint(**arguments: Any) -> Any:
         return _sync_await(lambda: ainvoke_endpoint(**arguments))
@@ -475,13 +532,29 @@ def to_llamaindex_tools(
     router: SchemaRouter,
     *,
     tool_keys: Sequence[str] | None = None,
+    run_config: RunConfig | dict[str, Any] | None = None,
 ) -> list[Any]:
-    """Expose all selected registered endpoints as LlamaIndex FunctionTool objects."""
+    """Expose principal-visible endpoints as LlamaIndex FunctionTool objects."""
+    resolved_config = _coerce_export_run_config(run_config)
+    if router.authorization_policy is not None and resolved_config.principal is None:
+        raise PolicyViolationError(
+            "principal context is required when authorization_policy is configured"
+        )
+
     selected = set(tool_keys) if tool_keys is not None else None
     tools = []
     for tool in router.registry.tools():
         if selected is not None and tool.key not in selected:
             continue
         for endpoint in tool.endpoints:
-            tools.append(to_llamaindex_tool(router, tool.key, endpoint.name))
+            try:
+                exported = to_llamaindex_tool(
+                    router,
+                    tool.key,
+                    endpoint.name,
+                    run_config=resolved_config,
+                )
+            except PolicyViolationError:
+                continue
+            tools.append(exported)
     return tools

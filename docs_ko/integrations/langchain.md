@@ -33,6 +33,27 @@ declared input/output schema를 읽되 tool description에서 read/write authori
 
 `to_langchain_tools(router)` 또는 `to_langchain_tool(router, "weather", "current")`로 SchemaRouter endpoint를 LangChain `StructuredTool`로 노출할 수 있습니다.
 
+`AuthorizationPolicy`를 사용하는 경우 host가 검증한 principal을 `RunConfig`로 함께 전달합니다.
+
+```python
+from schemarouter import PrincipalContext, RunConfig
+
+employee = PrincipalContext(
+    subject="alice",
+    roles=("employee",),
+    attributes={"department": "sales"},
+)
+
+tools = to_langchain_tools(
+    router,
+    run_config=RunConfig(principal=employee),
+)
+```
+
+이 경우 principal에게 보이는 endpoint만 export하고, DataScope가 숨기는 field/parameter는
+LangChain tool schema에도 노출하지 않습니다. 실제 호출도 `SchemaRouter.execute(...)` 경로로
+돌아가므로 trusted row/tenant filter와 execution-time authorization이 유지됩니다.
+
 ## 실행 경계
 
 LangChain tool 호출도 SchemaRouter `ToolCall` → current schema validation → `ExecutionPolicy` → binding-drift check → trusted invoker → output validation을 거칩니다. 따라서 direct 사용과 같은 fail-closed contract가 적용됩니다.

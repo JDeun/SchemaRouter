@@ -79,7 +79,8 @@ AuthorizationRule(
 )
 ```
 
-모델 argument가 절대로 덮어쓸 수 없는 field/tenant predicate는 #770에서 확장합니다.
+모델 argument가 덮어쓸 수 없는 field/tenant predicate는 principal DataScope의 trusted filter로
+적용하고 실행 시점에 다시 검증합니다.
 
 ## Native vendor adapter
 

@@ -1,20 +1,81 @@
+import sqlite3
+
 import pytest
 
 pytest.importorskip("llama_index.core")
 
 from schemarouter import (
+    AuthorizationPolicy,
+    AuthorizationRule,
+    DataScopeRule,
     PlanRequest,
     PolicyViolationError,
+    PrincipalContext,
+    RunConfig,
     SchemaRouter,
     SchemaValidationError,
+    TrustedFilterBinding,
     schema_tool,
 )
-from schemarouter.integrations import (
+from schemarouter.integrations.llamaindex import (
+    _llamaindex_schema_model,
     to_llamaindex_tool,
     to_llamaindex_tools,
     tool_from_llamaindex,
 )
-from schemarouter.integrations.llamaindex import _llamaindex_schema_model
+
+
+def make_authorized_database_router() -> tuple[SchemaRouter, sqlite3.Connection]:
+    connection = sqlite3.connect(":memory:")
+    connection.execute(
+        """
+        CREATE TABLE employees (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            department TEXT NOT NULL,
+            salary REAL NOT NULL
+        )
+        """
+    )
+    connection.executemany(
+        "INSERT INTO employees(id, name, department, salary) VALUES (?, ?, ?, ?)",
+        [
+            (1, "Alice", "sales", 100.0),
+            (2, "Bob", "engineering", 120.0),
+        ],
+    )
+    connection.commit()
+
+    policy = AuthorizationPolicy(
+        rules=(
+            AuthorizationRule(
+                effect="allow",
+                operation="company.employees.select",
+                roles_any=("employee", "executive"),
+            ),
+        ),
+        data_rules=(
+            DataScopeRule(
+                operation="company.employees.select",
+                roles_any=("employee",),
+                visible_fields=("id", "name"),
+                trusted_filters=(
+                    TrustedFilterBinding(
+                        field="department",
+                        principal_value="attribute:department",
+                    ),
+                ),
+            ),
+            DataScopeRule(
+                operation="company.employees.select",
+                roles_any=("executive",),
+                visible_fields=("id", "name", "department", "salary"),
+            ),
+        ),
+    )
+    router = SchemaRouter(authorization_policy=policy)
+    router.add_sqlite_database(connection, database_name="company")
+    return router, connection
 
 
 @schema_tool(read_only=True)
@@ -142,3 +203,61 @@ def test_llamaindex_tool_can_be_imported_back_into_schemarouter() -> None:
     )
 
     assert result[0].data == "found:hello"
+
+def test_llamaindex_export_requires_principal_when_authorization_is_enabled() -> None:
+    router, connection = make_authorized_database_router()
+    try:
+        with pytest.raises(PolicyViolationError, match="principal context is required"):
+            to_llamaindex_tool(router, "company.employees", "select")
+        with pytest.raises(PolicyViolationError, match="principal context is required"):
+            to_llamaindex_tools(router)
+    finally:
+        connection.close()
+
+
+def test_llamaindex_export_projects_data_scope_and_executes_with_principal() -> None:
+    router, connection = make_authorized_database_router()
+    principal = PrincipalContext(
+        subject="alice",
+        roles=("employee",),
+        attributes={"department": "sales"},
+    )
+    try:
+        tool = to_llamaindex_tool(
+            router,
+            "company.employees",
+            "select",
+            run_config=RunConfig(principal=principal),
+        )
+        parameters = tool.metadata.get_parameters_dict()["properties"]
+        assert "filter__salary" not in parameters
+        assert "filter__department" not in parameters
+
+        result = tool(limit=10)
+        assert result.raw_output == [{"id": 1, "name": "Alice"}]
+    finally:
+        connection.close()
+
+
+def test_llamaindex_collection_filters_denied_endpoints() -> None:
+    router, connection = make_authorized_database_router()
+    denied = PrincipalContext(subject="guest", roles=("guest",))
+    employee = PrincipalContext(
+        subject="alice",
+        roles=("employee",),
+        attributes={"department": "sales"},
+    )
+    try:
+        assert to_llamaindex_tools(
+            router,
+            run_config=RunConfig(principal=denied),
+        ) == []
+        assert len(
+            to_llamaindex_tools(
+                router,
+                run_config=RunConfig(principal=employee),
+            )
+        ) == 1
+    finally:
+        connection.close()
+

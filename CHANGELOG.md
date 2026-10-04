@@ -7,6 +7,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+### Fixed
+- wired PrincipalContext/DataScope through exported LangChain and LlamaIndex tools so principal-visible schemas, trusted filters, and execution-time authorization remain enforced outside the native SchemaRouter invocation path;
+
 ## 0.16.0 - 2026-10-04
 
 ### Added
