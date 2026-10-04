@@ -165,7 +165,8 @@ def lint_authorization_config(config: AuthorizationPolicyConfig) -> tuple[str, .
         ):
             if index < len(config.data_rules) - 1:
                 issues.append(
-                    f"data_rules[{index}] is an unconditional catch-all; later rules are unreachable"
+                    f"data_rules[{index}] is an unconditional catch-all; "
+                    "later rules are unreachable"
                 )
     return tuple(issues)
 
