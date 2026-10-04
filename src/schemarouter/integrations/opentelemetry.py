@@ -26,7 +26,7 @@ class OpenTelemetryRunExporter:
         self._trace = trace
         self.tracer = tracer or trace.get_tracer("schemarouter")
         self._run_spans: dict[str, Any] = {}
-        self._tool_spans: dict[tuple[str, str, str], Any] = {}
+        self._tool_spans: dict[tuple[str, int, int], Any] = {}
 
     @staticmethod
     def _timestamp_ns(event: RunEvent) -> int:
@@ -38,10 +38,12 @@ class OpenTelemetryRunExporter:
             "schemarouter.sequence": event.sequence,
         }
 
-    def _tool_key(self, event: RunEvent) -> tuple[str, str, str] | None:
-        if event.tool is None or event.endpoint is None:
+    def _tool_key(self, event: RunEvent) -> tuple[str, int, int] | None:
+        primary = event.data.get("primary_call_index")
+        candidate = event.data.get("fallback_candidate_index")
+        if not isinstance(primary, int) or not isinstance(candidate, int):
             return None
-        return event.run_id, event.tool, event.endpoint
+        return event.run_id, primary, candidate
 
     def export(self, event: RunEvent) -> None:
         from opentelemetry.trace import Status, StatusCode
@@ -81,7 +83,9 @@ class OpenTelemetryRunExporter:
             endpoint = event.endpoint
             if tool is None or endpoint is None:
                 raise SchemaRouterError("tool.start requires tool and endpoint")
-            key = (event.run_id, tool, endpoint)
+            key = self._tool_key(event)
+            if key is None:
+                raise SchemaRouterError("tool.start requires stable call identity")
             if key in self._tool_spans:
                 raise SchemaRouterError(
                     f"duplicate tool.start for {tool}.{endpoint}"
@@ -96,6 +100,8 @@ class OpenTelemetryRunExporter:
                     "schemarouter.sequence": event.sequence,
                     "schemarouter.tool": tool,
                     "schemarouter.endpoint": endpoint,
+                    "schemarouter.primary_call_index": key[1],
+                    "schemarouter.fallback_candidate_index": key[2],
                     "schemarouter.argument_count": len(event.data.get("argument_names", [])),
                     "schemarouter.selected_field_count": len(event.data.get("fields", [])),
                 },

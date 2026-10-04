@@ -5579,6 +5579,7 @@ class SchemaRouter:
                             "argument_names": sorted(call.arguments),
                             "fields": list(call.fields),
                             "fallback_candidate_index": candidate_index,
+                            "primary_call_index": index,
                         }
                         if run_config.include_payloads:
                             start_data["arguments"] = dict(call.arguments)
@@ -5601,6 +5602,8 @@ class SchemaRouter:
                         error_data: dict[str, Any] = {
                             "error_type": type(exc).__name__,
                             "fallback_eligible": next_call is not None,
+                            "primary_call_index": index,
+                            "fallback_candidate_index": candidate_index,
                         }
                         if run_config.include_payloads:
                             error_data["message"] = str(exc)
@@ -5700,6 +5703,8 @@ class SchemaRouter:
                     end_data: dict[str, Any] = {
                         "projected_fields": list(result.projected_fields),
                         "fallback_used": candidate_index > 0,
+                        "primary_call_index": index,
+                        "fallback_candidate_index": candidate_index,
                     }
                     if run_config.include_payloads:
                         end_data["result"] = result.model_dump(mode="json")
@@ -5824,6 +5829,7 @@ class SchemaRouter:
                     "argument_names": sorted(call.arguments),
                     "fields": list(call.fields),
                     "fallback_candidate_index": original_candidate_index,
+                    "primary_call_index": primary_index,
                 }
                 if run_config.include_payloads:
                     start_data["arguments"] = dict(call.arguments)
@@ -5851,6 +5857,8 @@ class SchemaRouter:
                     error_data: dict[str, Any] = {
                         "error_type": type(exc).__name__,
                         "fallback_eligible": has_next,
+                        "primary_call_index": primary_index,
+                        "fallback_candidate_index": original_candidate_index,
                     }
                     if run_config.include_payloads:
                         error_data["message"] = str(exc)
@@ -5908,7 +5916,11 @@ class SchemaRouter:
                     fallback_count += 1
                     continue
                 except Exception as exc:
-                    error_data = {"error_type": type(exc).__name__}
+                    error_data = {
+                        "error_type": type(exc).__name__,
+                        "primary_call_index": primary_index,
+                        "fallback_candidate_index": original_candidate_index,
+                    }
                     if run_config.include_payloads:
                         error_data["message"] = str(exc)
                     yield await emit(RunEvent.create(
@@ -5936,6 +5948,8 @@ class SchemaRouter:
                 end_data: dict[str, Any] = {
                     "projected_fields": list(result.projected_fields),
                     "fallback_used": candidate_index > 0,
+                    "primary_call_index": primary_index,
+                    "fallback_candidate_index": original_candidate_index,
                 }
                 if run_config.include_payloads:
                     end_data["result"] = result.model_dump(mode="json")
