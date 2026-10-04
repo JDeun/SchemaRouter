@@ -9,7 +9,11 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Protocol, cast
 
-from .authorization import AuthorizationPolicy, _current_principal_context
+from .authorization import (
+    AuthorizationPolicy,
+    _current_principal_context,
+    _data_scope_execution_context,
+)
 from .errors import (
     ApprovalDeniedError,
     BindingDriftError,
@@ -821,6 +825,19 @@ class RegistryExecutor:
         if before_hooks_ran:
             tool, endpoint, invoker = self._execution_state(call)
 
+        data_scope = None
+        if self.authorization_policy is not None:
+            principal = _current_principal_context()
+            if principal is None:
+                raise PolicyViolationError(
+                    "authorization denied for requested data scope"
+                )
+            data_scope = self.authorization_policy.data_scope(
+                principal,
+                tool,
+                endpoint,
+            )
+
         retry = retry or RetryPolicy()
         can_retry = endpoint.read_only is True or retry.retry_non_read_only
         max_attempts = retry.max_attempts if can_retry else 1
@@ -832,18 +849,19 @@ class RegistryExecutor:
             try:
                 invoke_call = getattr(invoker, "invoke_call", None)
                 call_aware = callable(invoke_call)
-                if call_aware:
-                    value = invoke_call(call)
-                else:
-                    value = cast(EndpointInvoker, invoker)(
-                        call.endpoint,
-                        dict(call.arguments),
-                    )
-                if inspect.isawaitable(value):
-                    value = await tracker.wait_awaitable(
-                        value,
-                        stage="invocation",
-                    )
+                with _data_scope_execution_context(data_scope):
+                    if call_aware:
+                        value = invoke_call(call)
+                    else:
+                        value = cast(EndpointInvoker, invoker)(
+                            call.endpoint,
+                            dict(call.arguments),
+                        )
+                    if inspect.isawaitable(value):
+                        value = await tracker.wait_awaitable(
+                            value,
+                            stage="invocation",
+                        )
                 tracker.after_attempt()
 
                 server_projected = (
