@@ -10,7 +10,7 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.authorization_audit import AuthorizationAuditEvent
-from schemarouter.models import EndpointSpec, OutputField
+from schemarouter.models import EndpointSpec, FieldSpec
 
 
 def tool() -> ToolSpec:
@@ -23,7 +23,7 @@ def tool() -> ToolSpec:
             EndpointSpec(
                 name="read",
                 description="read records",
-                output_fields=[OutputField(name="id", json_schema={"type": "string"})],
+                output_fields=[FieldSpec(name="id", json_schema={"type": "string"})],
             )
         ],
     )
