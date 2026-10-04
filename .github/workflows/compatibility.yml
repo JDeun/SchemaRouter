@@ -168,6 +168,42 @@ jobs:
           retention-days: 30
 
 
+
+  qdrant-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install . "qdrant-client>=1.15,<2"
+      - run: python -m pip check
+      - name: Start Qdrant
+        run: docker run -d --name schemarouter-qdrant -p 6333:6333 qdrant/qdrant:v1.15.4
+      - name: Wait for Qdrant
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:6333/readyz; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs schemarouter-qdrant
+          exit 1
+      - name: Exercise Qdrant discovery, projection, and trusted filtering
+        run: >-
+          python scripts/live_qdrant_smoke.py
+          --json-out artifacts/qdrant-compatibility.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: compatibility-qdrant-${{ github.run_id }}
+          path: artifacts/qdrant-compatibility.json
+          if-no-files-found: error
+          retention-days: 30
+
   falkordb-live:
     runs-on: ubuntu-latest
     timeout-minutes: 10
