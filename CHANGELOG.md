@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- added a native caller-owned Pinecone vector backend with dense index dimension/metric
+  discovery, explicit metadata contracts, trusted namespace/filter forwarding, and normalized
+  query results without persisting Pinecone credentials or client state;
 - added native caller-owned Qdrant and Milvus vector backends with collection/schema
   discovery, bounded query normalization, explicit multi-vector selection, and trusted metadata
   filtering while keeping vendor credentials and clients outside model-visible contracts;
