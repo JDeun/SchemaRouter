@@ -1020,7 +1020,12 @@ class PgVectorBackend:
     def list_collections(self) -> tuple[VectorCollectionSpec, ...]:
         results: list[VectorCollectionSpec] = []
         for name in self._table_names():
-            table, vector_column, primary, metadata, dimension = self._reflect(name)
+            try:
+                table, vector_column, primary, metadata, dimension = self._reflect(name)
+            except RegistrationError:
+                if self._tables is None and name not in self._vector_columns:
+                    continue
+                raise
             results.append(
                 VectorCollectionSpec(
                     name=name,
