@@ -16,6 +16,7 @@ from scripts.generate_agent_utility_v6_corrective_corpus import (
 from scripts.research_014_conveyor import (
     DOWNSTREAM_IMPLEMENTATION_SHA,
     StageRun,
+    active_run_with_jobs,
     combine_digests,
     retry_infrastructure_failure,
     source_sha_from_run,
@@ -249,11 +250,19 @@ def test_stale_pending_wrapper_recovery_preserves_scientific_source_contract() -
     assert stale_pending_wrapper(
         queued,
         wrapper_sha="e" * 40,
+        job_count=0,
         min_age_seconds=0.0,
     )
     assert not stale_pending_wrapper(
         queued,
         wrapper_sha="d" * 40,
+        job_count=0,
+        min_age_seconds=0.0,
+    )
+    assert not stale_pending_wrapper(
+        queued,
+        wrapper_sha="e" * 40,
+        job_count=182,
         min_age_seconds=0.0,
     )
     assert source_sha_from_run(queued) == "c" * 40
@@ -274,8 +283,42 @@ def test_stale_pending_wrapper_recovery_preserves_scientific_source_contract() -
     assert stale_pending_wrapper(
         pending,
         wrapper_sha="e" * 40,
+        job_count=0,
         min_age_seconds=0.0,
     )
+
+
+class _JobCountAPI:
+    def __init__(self, counts: dict[int, int]) -> None:
+        self.counts = counts
+
+    def workflow_run_job_count(self, run_id: int) -> int:
+        return self.counts.get(run_id, 0)
+
+
+def test_active_run_with_jobs_wins_over_newer_pending_duplicate() -> None:
+    pending = StageRun(
+        id=96,
+        status="pending",
+        conclusion=None,
+        display_title="fixture",
+        created_at="2026-10-04T21:26:55Z",
+        html_url="",
+        run_attempt=1,
+        head_sha="f" * 40,
+    )
+    active = StageRun(
+        id=95,
+        status="queued",
+        conclusion=None,
+        display_title="fixture",
+        created_at="2026-10-01T21:49:55Z",
+        html_url="",
+        run_attempt=1,
+        head_sha="e" * 40,
+    )
+    api = _JobCountAPI({96: 0, 95: 182})
+    assert active_run_with_jobs(api, [pending, active]) == active
 
 
 def test_zero_job_pending_is_recoverable_only_prejob() -> None:
@@ -340,12 +383,11 @@ def test_conveyor_can_supersede_stale_pending_corrective_wrapper() -> None:
         encoding="utf-8"
     )
     assert "recover_dispatch_stale_pending_corrective_wrapper" in controller
-    assert "stale_pending_wrapper(corrective, wrapper_sha=_wrapper_sha)" in controller
+    assert "active_run_with_jobs(api, corrective_runs)" in controller
+    assert "cancel_redundant_zero_job_pending_corrective" in controller
+    assert "job_count=corrective_job_count" in controller
     assert "recover_dispatch_zero_job_pending_corrective" in controller
     assert "api.cancel_run_and_wait(corrective.id)" in controller
-    assert controller.index("elif stale_zero_job_pending(") < controller.index(
-        "elif stale_pending_wrapper(corrective, wrapper_sha=_wrapper_sha):"
-    )
 
 
 def test_issue_15_is_registered_as_nonblocking_external_dag_node() -> None:
