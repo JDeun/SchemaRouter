@@ -87,7 +87,6 @@ The bounded record contract now has caller-owned native adapters for:
 
 - **MongoDB**: collection discovery, sampled document schema, bounded `find()`, optional configured text/time paths;
 - **Elasticsearch / OpenSearch**: mapping discovery, bounded `multi_match`/term/range queries and field projection;
-- **Redis**: bounded key discovery or exact-key reads for string/hash/list/set/zset values;
 - **Amazon DynamoDB**: table/key discovery, sampled fields, parameterized filter/projection expressions;
 - **Azure Cosmos DB for NoSQL**: container discovery, sampled item schema and parameterized `query_items()`;
 - **Couchbase**: keyspace discovery and bounded named-parameter SQL++ queries;
@@ -100,7 +99,6 @@ Typical registration remains caller-owned:
 router.add_mongodb_record_store(mongo_database)
 router.add_elasticsearch_record_store(elastic_client)
 router.add_opensearch_record_store(opensearch_client)
-router.add_redis_record_store(redis_client)
 router.add_dynamodb_record_store(dynamodb_client)
 router.add_cosmos_record_store(cosmos_database)
 router.add_couchbase_record_store(couchbase_cluster)
@@ -114,7 +112,7 @@ router.add_influxdb_record_store(
 
 SchemaRouter stores none of those clients or credentials in model-visible contracts. Native
 adapters translate only the already bounded record-store surface; raw Mongo query documents,
-Elasticsearch/OpenSearch Query DSL, Redis commands, Dynamo expressions, Cosmos SQL, SQL++, raw
+Elasticsearch/OpenSearch Query DSL, Dynamo expressions, Cosmos SQL, SQL++, raw
 ClickHouse SQL, and arbitrary Flux remain outside model authority.
 
 Deterministic SDK-shape tests are release-gated. Native adapter availability is distinct from
