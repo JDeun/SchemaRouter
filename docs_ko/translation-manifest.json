@@ -508,6 +508,10 @@
       "source_blob": "90d7634d7cd024d302b9349de893796f1f7761a5"
     },
     {
+      "path": "research/external-validation-freeze.md",
+      "source_blob": "e02cd98208f749ccd2fe6cfd33e31b9099429611"
+    },
+    {
       "path": "research/field-projection-answer-quality.md",
       "source_blob": "d51da188c660890c508115cb376741813f94d762"
     },
@@ -518,6 +522,10 @@
     {
       "path": "research/governance.md",
       "source_blob": "2e96519aefec562bef293cb724bfa0e051be38c4"
+    },
+    {
+      "path": "research/hyset-external-validation.md",
+      "source_blob": "395064d5150d8f6280778219d5c21f8e68494797"
     },
     {
       "path": "research/intent-manual-dev-result.md",
@@ -570,10 +578,6 @@
     {
       "path": "versioning.md",
       "source_blob": "61f82f452188aec2f74fde20f09243a9dbbb1497"
-    },
-    {
-      "path": "research/external-validation-freeze.md",
-      "source_blob": "e02cd98208f749ccd2fe6cfd33e31b9099429611"
     }
   ]
 }
