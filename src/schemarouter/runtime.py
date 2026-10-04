@@ -1203,6 +1203,78 @@ class SchemaRouter:
             )
         )
 
+    async def aadd_weaviate_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        dimension_by_collection: Mapping[str, int],
+        database_name: str = "weaviate",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        target_vector_by_collection: Mapping[str, str] | None = None,
+        metric_by_collection: Mapping[str, str] | None = None,
+        filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
+        metadata_query_factory: Callable[..., Any] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned Weaviate v4 client through the vector contract."""
+
+        from .adapters.vector_native import WeaviateVectorBackend
+
+        return await self.aadd_vector_store(
+            WeaviateVectorBackend(
+                client,
+                dimension_by_collection=dimension_by_collection,
+                target_vector_by_collection=target_vector_by_collection,
+                metric_by_collection=metric_by_collection,
+                filter_builder=filter_builder,
+                metadata_query_factory=metadata_query_factory,
+            ),
+            embed_query,
+            database_name=database_name,
+            namespace=namespace,
+            collections=collections,
+            default_top_k=default_top_k,
+            remote=remote,
+        )
+
+    def add_weaviate_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        dimension_by_collection: Mapping[str, int],
+        database_name: str = "weaviate",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        target_vector_by_collection: Mapping[str, str] | None = None,
+        metric_by_collection: Mapping[str, str] | None = None,
+        filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
+        metadata_query_factory: Callable[..., Any] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_weaviate_vector_store`."""
+
+        return _run_sync(
+            lambda: self.aadd_weaviate_vector_store(
+                client,
+                embed_query,
+                dimension_by_collection=dimension_by_collection,
+                database_name=database_name,
+                namespace=namespace,
+                collections=collections,
+                target_vector_by_collection=target_vector_by_collection,
+                metric_by_collection=metric_by_collection,
+                filter_builder=filter_builder,
+                metadata_query_factory=metadata_query_factory,
+                default_top_k=default_top_k,
+                remote=remote,
+            )
+        )
+
     async def aadd_milvus_vector_store(
         self,
         client: Any,
