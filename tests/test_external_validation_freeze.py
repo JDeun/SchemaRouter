@@ -5,8 +5,8 @@ from pathlib import Path
 import pytest
 
 from scripts.validate_external_validation_freeze import (
-    validate_manifest,
     ExternalValidationFreezeError,
+    validate_manifest,
 )
 
 
