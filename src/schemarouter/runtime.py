@@ -1205,6 +1205,120 @@ class SchemaRouter:
             )
         )
 
+    def add_neo4j_graph(
+        self,
+        driver: Any,
+        *,
+        database: str,
+        graph_name: str | None = None,
+        namespace: str | None = None,
+        graphs: set[str] | tuple[str, ...] | list[str] | None = None,
+        default_limit: int = 100,
+        default_max_hops: int = 1,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned Neo4j driver through the bounded graph contract."""
+
+        from .adapters.graph_native import Neo4jGraphBackend
+
+        return self.add_graph_store(
+            Neo4jGraphBackend(
+                driver,
+                database=database,
+                graph_name=graph_name,
+            ),
+            database_name=database,
+            namespace=namespace,
+            graphs=graphs,
+            default_limit=default_limit,
+            default_max_hops=default_max_hops,
+            remote=remote,
+        )
+
+    def add_neptune_graph(
+        self,
+        client: Any,
+        *,
+        graph_name: str = "neptune",
+        graph_identifier: str | None = None,
+        database_name: str = "neptune",
+        namespace: str | None = None,
+        default_limit: int = 100,
+        default_max_hops: int = 1,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned Neptune Database/Analytics client."""
+
+        from .adapters.graph_native import NeptuneOpenCypherBackend
+
+        return self.add_graph_store(
+            NeptuneOpenCypherBackend(
+                client,
+                graph_name=graph_name,
+                graph_identifier=graph_identifier,
+            ),
+            database_name=database_name,
+            namespace=namespace,
+            graphs={graph_name},
+            default_limit=default_limit,
+            default_max_hops=default_max_hops,
+            remote=remote,
+        )
+
+    def add_arango_graph(
+        self,
+        database: Any,
+        *,
+        database_name: str = "arangodb",
+        namespace: str | None = None,
+        graphs: set[str] | tuple[str, ...] | list[str] | None = None,
+        default_limit: int = 100,
+        default_max_hops: int = 1,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned python-arango Database wrapper."""
+
+        from .adapters.graph_native import ArangoGraphBackend
+
+        return self.add_graph_store(
+            ArangoGraphBackend(database),
+            database_name=database_name,
+            namespace=namespace,
+            graphs=graphs,
+            default_limit=default_limit,
+            default_max_hops=default_max_hops,
+            remote=remote,
+        )
+
+    def add_sparql_graph(
+        self,
+        client: Any,
+        *,
+        endpoint: str,
+        graph_name: str = "sparql",
+        database_name: str = "sparql",
+        namespace: str | None = None,
+        default_limit: int = 100,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned HTTP client for a SPARQL 1.1 query endpoint."""
+
+        from .adapters.graph_native import SparqlGraphBackend
+
+        return self.add_graph_store(
+            SparqlGraphBackend(
+                client,
+                endpoint=endpoint,
+                graph_name=graph_name,
+            ),
+            database_name=database_name,
+            namespace=namespace,
+            graphs={graph_name},
+            default_limit=default_limit,
+            default_max_hops=1,
+            remote=remote,
+        )
+
     def amend_capability(self, tool_key: str, amended: ToolSpec) -> str:
         """Declare or annotate the result contract of an already registered capability.
 
