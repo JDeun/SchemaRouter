@@ -18,7 +18,7 @@ on:
         required: true
         type: string
       shard_ids:
-        description: Comma-separated frozen shard IDs, for example c250-g10,c250-g17
+        description: Comma-separated frozen shard IDs, for example c500-g01,c500-g04
         required: true
         type: string
 
@@ -56,7 +56,7 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev]"
-      - name: Verify recovery provenance
+      - name: Verify terminal parent and frozen recovery provenance
         env:
           GH_TOKEN: "${{ github.token }}"
           GH_REPOSITORY: "${{ github.repository }}"
@@ -75,46 +75,107 @@ jobs:
               "X-GitHub-Api-Version": "2022-11-28",
           }
           base = "https://api.github.com/repos/" + os.environ["GH_REPOSITORY"]
+
           def get(url):
-              with urllib.request.urlopen(urllib.request.Request(url, headers=headers)) as response:
+              with urllib.request.urlopen(
+                  urllib.request.Request(url, headers=headers)
+              ) as response:
                   return json.load(response)
 
           parent = get(base + "/actions/runs/" + os.environ["PARENT_RUN_ID"])
-          assert parent["path"].endswith("research-0.14-corrective-reretrieval.yml")
-          assert parent["head_sha"] == os.environ["SOURCE_SHA"]
+          assert parent["path"].endswith(
+              "research-0.14-corrective-reretrieval.yml"
+          )
+          assert parent["status"] == "completed"
+          expected_title = (
+              "Research 0.14 Corrective "
+              + os.environ["EXPECTED_DIGEST"]
+              + " source="
+              + os.environ["SOURCE_SHA"]
+          )
+          assert (parent.get("display_title") or parent.get("name")) == expected_title
 
           b2 = get(base + "/actions/runs/" + os.environ["CANONICAL_B2_RUN"])
           assert b2["status"] == "completed" and b2["conclusion"] == "success"
-          artifacts = get(
-              base + "/actions/runs/" + os.environ["CANONICAL_B2_RUN"]
-              + "/artifacts?per_page=100"
-          )["artifacts"]
-          matches = [
-              item for item in artifacts
-              if item["name"].startswith("b2-smollm3-canonical-")
-              and not item["expired"]
-          ]
+
+          page = 1
+          matches = []
+          while True:
+              data = get(
+                  base
+                  + "/actions/runs/"
+                  + os.environ["CANONICAL_B2_RUN"]
+                  + f"/artifacts?per_page=100&page={page}"
+              )
+              batch = data.get("artifacts", [])
+              matches.extend(
+                  item
+                  for item in batch
+                  if item["name"].startswith("b2-smollm3-canonical-")
+                  and not item["expired"]
+              )
+              if len(batch) < 100:
+                  break
+              page += 1
           assert len(matches) == 1
           assert matches[0]["digest"] == os.environ["EXPECTED_DIGEST"]
-          print("parent run, source SHA, and canonical B2 digest verified")
+          print("terminal parent, frozen source marker, and B2 digest verified")
           PY
       - name: Recreate exact frozen corrective corpus
         run: |
           mkdir -p artifacts/corrective
-          python scripts/generate_agent_utility_v6_corrective_corpus.py \
-            --source-revision "${{ inputs.source_sha }}" \
-            --out artifacts/corrective/corrective-corpus.json
-          python scripts/validate_agent_utility_v6_corrective_corpus.py \
-            --corpus artifacts/corrective/corrective-corpus.json
+          python scripts/generate_agent_utility_v6_corrective_corpus.py             --source-revision "${{ inputs.source_sha }}"             --out artifacts/corrective/corrective-corpus.json
+          python scripts/validate_agent_utility_v6_corrective_corpus.py             --corpus artifacts/corrective/corrective-corpus.json
       - id: matrix
         name: Select only requested frozen shards
         env:
           SHARD_IDS: "${{ inputs.shard_ids }}"
         run: |
-          python scripts/select_corrective_recovery_shards.py \
-            --corpus artifacts/corrective/corrective-corpus.json \
-            --shard-ids "$SHARD_IDS" \
-            --github-output "$GITHUB_OUTPUT"
+          python - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          data = json.loads(
+              Path("artifacts/corrective/corrective-corpus.json")
+              .read_text(encoding="utf-8")
+          )
+          ids = [str(task["semantic_task_id"]) for task in data["tasks"]]
+          chunks = [ids[index:index + 3] for index in range(0, len(ids), 3)]
+          assert len(chunks) == 60
+          matrix = {
+              f"c{catalog}-g{index:02d}": {
+                  "job_id": f"c{catalog}-g{index:02d}",
+                  "catalog_size": catalog,
+                  "task_ids": ",".join(chunk),
+              }
+              for catalog in (100, 250, 500)
+              for index, chunk in enumerate(chunks)
+          }
+          requested = [
+              item.strip()
+              for item in os.environ["SHARD_IDS"].split(",")
+              if item.strip()
+          ]
+          assert requested
+          assert len(requested) == len(set(requested))
+          shard_re = re.compile(r"^c(100|250|500)-g([0-5][0-9])$")
+          unknown = [
+              item
+              for item in requested
+              if shard_re.fullmatch(item) is None or item not in matrix
+          ]
+          assert not unknown, unknown
+          include = [matrix[item] for item in requested]
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(
+                  "matrix="
+                  + json.dumps({"include": include}, separators=(",", ":"))
+                  + "\n"
+              )
+          print({"selected": requested})
+          PY
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: "corrective-recovery-corpus-${{ github.run_id }}"
@@ -129,7 +190,7 @@ jobs:
       max-parallel: 16
       matrix: "${{ fromJSON(needs.prepare.outputs.matrix) }}"
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 240
+    timeout-minutes: 360
     env:
       HF_HUB_OFFLINE: "1"
       TRANSFORMERS_OFFLINE: "1"
@@ -145,11 +206,26 @@ jobs:
       - run: pip install "torch==2.14.0+cpu" --index-url https://download.pytorch.org/whl/cpu
       - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
       - run: pip install -e .
-      - uses: actions/cache@0057852bfaa89a56745b974a628896c90dbdf5c8093 # v4
+      - id: evaluator-hf-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .hf-cache
           key: "${{ env.B2_CACHE_KEY }}"
-          fail-on-cache-miss: true
+      - name: Recover exact model revision after cache eviction
+        if: steps.evaluator-hf-cache.outputs.cache-hit != 'true'
+        env:
+          HF_HUB_OFFLINE: "0"
+          TRANSFORMERS_OFFLINE: "0"
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import snapshot_download
+
+          snapshot_download(
+              repo_id=os.environ["B2_MODEL"],
+              revision=os.environ["B2_REVISION"],
+          )
+          PY
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
         with:
           name: "corrective-recovery-corpus-${{ github.run_id }}"
@@ -157,7 +233,11 @@ jobs:
       - name: Verify exact ARM64 SDPA runtime
         run: |
           python - <<'PY'
-          import os, platform, torch, transformers
+          import os
+          import platform
+          import torch
+          import transformers
+
           assert platform.python_version() == "3.12.14"
           assert platform.machine() in {"aarch64", "arm64"}
           assert os.environ["B2_ATTN_IMPLEMENTATION"] == "sdpa"
@@ -167,15 +247,88 @@ jobs:
       - name: Evaluate selected frozen corrective shard
         run: |
           mkdir -p artifacts/corrective-shard
-          python -u scripts/evaluate_agent_utility_v6_corrective.py \
-            --corpus artifacts/corrective/corrective-corpus.json \
-            --catalog-size "${{ matrix.catalog_size }}" \
-            --task-ids "${{ matrix.task_ids }}" \
-            --out "artifacts/corrective-shard/${{ matrix.job_id }}.json"
+          python -u scripts/evaluate_agent_utility_v6_corrective.py             --corpus artifacts/corrective/corrective-corpus.json             --catalog-size "${{ matrix.catalog_size }}"             --task-ids "${{ matrix.task_ids }}"             --out "artifacts/corrective-shard/${{ matrix.job_id }}.json"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: "corrective-recovery-shard-${{ matrix.job_id }}-${{ github.run_id }}"
           path: artifacts/corrective-shard/
           if-no-files-found: warn
+          retention-days: 30
+
+  aggregate:
+    needs:
+      - prepare
+      - recover
+    if: "${{ success() }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ inputs.source_sha }}"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+        with:
+          name: "corrective-recovery-corpus-${{ github.run_id }}"
+          path: artifacts/corrective
+      - name: Download successful parent shards
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+        with:
+          pattern: "corrective-shard-*-${{ inputs.parent_run_id }}"
+          path: artifacts/corrective-shards/parent
+          github-token: "${{ github.token }}"
+          repository: "${{ github.repository }}"
+          run-id: "${{ inputs.parent_run_id }}"
+      - name: Download recovered shards
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+        with:
+          pattern: "corrective-recovery-shard-*-${{ github.run_id }}"
+          path: artifacts/corrective-shards/recovery
+      - name: Aggregate exact complete parent plus recovery surface
+        run: |
+          python scripts/aggregate_agent_utility_v6_corrective.py             --input-dir artifacts/corrective-shards             --corpus artifacts/corrective/corrective-corpus.json             --out artifacts/corrective-reretrieval-canonical.json
+      - name: Record recovery provenance
+        env:
+          PARENT_RUN_ID: "${{ inputs.parent_run_id }}"
+          EVIDENCE_DIGEST: "${{ inputs.evidence_digest }}"
+          SOURCE_SHA: "${{ inputs.source_sha }}"
+          SHARD_IDS: "${{ inputs.shard_ids }}"
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          payload = {
+              "schema_version": 1,
+              "parent_run_id": int(os.environ["PARENT_RUN_ID"]),
+              "recovery_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "evidence_digest": os.environ["EVIDENCE_DIGEST"],
+              "source_sha": os.environ["SOURCE_SHA"],
+              "recovered_shard_ids": [
+                  item.strip()
+                  for item in os.environ["SHARD_IDS"].split(",")
+                  if item.strip()
+              ],
+          }
+          Path("artifacts/corrective-recovery-provenance.json").write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "corrective-reretrieval-canonical-${{ github.run_id }}"
+          path: |
+            artifacts/corrective-reretrieval-canonical.json
+            artifacts/corrective/corrective-corpus.json
+            artifacts/corrective-recovery-provenance.json
+            benchmarks/agent-utility-v6-corrective-reretrieval-preregistration.json
+          if-no-files-found: error
           retention-days: 30
