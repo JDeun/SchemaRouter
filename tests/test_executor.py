@@ -1,9 +1,15 @@
+import asyncio
+import threading
+import time
+
 import pytest
 
 from schemarouter import (
     BindingDriftError,
     EndpointSpec,
     EvidenceRequirements,
+    ExecutionBudget,
+    ExecutionBudgetExceededError,
     ExecutionError,
     ExecutionPlan,
     ExecutionPolicy,
@@ -1598,3 +1604,123 @@ def test_executor_rejects_partial_global_provenance_requirement() -> None:
         match="required evidence unavailable.*provenance",
     ):
         RegistryExecutor(reg).validate_call(call)
+
+
+@pytest.mark.asyncio
+async def test_sync_invoker_offload_keeps_event_loop_responsive() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="blocking",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_fields=[FieldSpec(name="value")],
+            )
+        ],
+    )
+    registry.register(tool)
+    endpoint = registry.endpoint("blocking", "read")
+    plan = ExecutionPlan(
+        query="blocking read",
+        registry_version=registry.version,
+        calls=[
+            ToolCall(
+                tool="blocking",
+                endpoint="read",
+                fields=["value"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=tool.fingerprint,
+            )
+        ],
+    )
+    started = threading.Event()
+    release = threading.Event()
+
+    def invoker(endpoint_name: str, arguments: dict) -> dict:
+        del endpoint_name, arguments
+        started.set()
+        release.wait(timeout=0.25)
+        return {"value": "ok"}
+
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        "blocking",
+        invoker,
+        expected_fingerprint=tool.fingerprint,
+        offload_sync=True,
+    )
+    timer = threading.Timer(0.2, release.set)
+    timer.start()
+    observed = time.monotonic()
+    task = asyncio.create_task(executor.execute(plan))
+    try:
+        while not started.is_set() and time.monotonic() - observed < 0.1:
+            await asyncio.sleep(0.001)
+        assert started.is_set()
+        assert time.monotonic() - observed < 0.1
+        release.set()
+        result = await task
+    finally:
+        release.set()
+        timer.cancel()
+
+    assert result[0].data == {"value": "ok"}
+
+
+@pytest.mark.asyncio
+async def test_offloaded_sync_invoker_respects_elapsed_budget_from_caller() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="budgeted_blocking",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_fields=[FieldSpec(name="value")],
+            )
+        ],
+    )
+    registry.register(tool)
+    endpoint = registry.endpoint("budgeted_blocking", "read")
+    plan = ExecutionPlan(
+        query="budgeted blocking read",
+        registry_version=registry.version,
+        calls=[
+            ToolCall(
+                tool="budgeted_blocking",
+                endpoint="read",
+                fields=["value"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=tool.fingerprint,
+            )
+        ],
+    )
+    release = threading.Event()
+
+    def invoker(endpoint_name: str, arguments: dict) -> dict:
+        del endpoint_name, arguments
+        release.wait(timeout=0.25)
+        return {"value": "ok"}
+
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        "budgeted_blocking",
+        invoker,
+        expected_fingerprint=tool.fingerprint,
+        offload_sync=True,
+    )
+    timer = threading.Timer(0.2, release.set)
+    timer.start()
+    started = time.monotonic()
+    try:
+        with pytest.raises(ExecutionBudgetExceededError, match="during invocation"):
+            await executor.execute(
+                plan,
+                budget=ExecutionBudget(max_elapsed_seconds=0.02),
+            )
+    finally:
+        release.set()
+        timer.cancel()
+
+    assert time.monotonic() - started < 0.15
