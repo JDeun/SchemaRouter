@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- added caller-owned native graph/RDF adapters for Neo4j, Amazon Neptune Database/Analytics,
+  ArangoDB, and SPARQL 1.1 endpoints, translating vendor SDK/protocol shapes into the bounded graph
+  contract without exposing raw query languages to model output;
 - added unified principal data scopes across relational, vector, record-store and graph/RDF
   adapters, including pre-scoring field non-disclosure, trusted principal-derived row/tenant
   predicates, graph relationship/hop restrictions, and execution-boundary revalidation;
