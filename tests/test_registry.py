@@ -466,3 +466,33 @@ def test_inmemory_cas_detects_metadata_only_concurrent_write_even_when_fingerpri
         )
 
     assert reg.get("demo").metadata["note"] == "concurrent writer"
+
+
+def test_inmemory_registry_batch_cas_is_atomic() -> None:
+    reg = InMemoryRegistry()
+    expected_version = reg.version
+    tools = (
+        ToolSpec(name="batch_a", endpoints=[EndpointSpec(name="run")]),
+        ToolSpec(name="batch_b", endpoints=[EndpointSpec(name="run")]),
+    )
+
+    keys = reg.update_many_if_version(tools, expected_version=expected_version)
+
+    assert keys == ("batch_a", "batch_b")
+    assert reg.keys() == keys
+    assert reg.version == expected_version + 1
+
+
+def test_inmemory_registry_batch_cas_rejects_stale_version_without_partial_write() -> None:
+    reg = InMemoryRegistry()
+    expected_version = reg.version
+    reg.register(ToolSpec(name="concurrent", endpoints=[EndpointSpec(name="run")]))
+    tools = (
+        ToolSpec(name="batch_a", endpoints=[EndpointSpec(name="run")]),
+        ToolSpec(name="batch_b", endpoints=[EndpointSpec(name="run")]),
+    )
+
+    with pytest.raises(RegistrationError, match="registry changed concurrently"):
+        reg.update_many_if_version(tools, expected_version=expected_version)
+
+    assert reg.keys() == ("concurrent",)

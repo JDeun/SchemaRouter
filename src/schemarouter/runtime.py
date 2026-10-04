@@ -99,6 +99,7 @@ from .registry import (
     ToolRegistry,
     replace_if_current,
     unregister_if_current,
+    update_many_if_current,
 )
 from .runs import RunConfig, RunEvent
 from .schema_diff import (
@@ -1147,6 +1148,45 @@ class SchemaRouter:
         )
         return key
 
+    def _register_bound_batch(
+        self,
+        bindings: Any,
+        *,
+        expected_version: int,
+    ) -> tuple[str, ...]:
+        staged = tuple(bindings)
+        keys = update_many_if_current(
+            self.registry,
+            (binding.tool for binding in staged),
+            expected_version=expected_version,
+        )
+        bound: list[str] = []
+        try:
+            for key, binding in zip(keys, staged, strict=True):
+                self.executor.bind(
+                    key,
+                    binding.invoker,
+                    expected_fingerprint=binding.tool.fingerprint,
+                )
+                bound.append(key)
+        except Exception:
+            for key in bound:
+                self.executor.purge_tool_runtime_state(key)
+            current_version = self.registry.version
+            for key, binding in reversed(tuple(zip(keys, staged, strict=True))):
+                try:
+                    unregister_if_current(
+                        self.registry,
+                        key,
+                        expected_fingerprint=binding.tool.fingerprint,
+                        expected_version=current_version,
+                    )
+                except (KeyError, RegistrationError):
+                    break
+                current_version += 1
+            raise
+        return keys
+
     def add_sqlite_database(
         self,
         connection: Any,
@@ -1227,25 +1267,10 @@ class SchemaRouter:
             max_default_rows=max_default_rows,
             remote=remote,
         )
-        existing_keys = set(self.registry.keys())
-        duplicate_keys = sorted(
-            binding.tool.key
-            for binding in bindings
-            if binding.tool.key in existing_keys
-        )
-        if duplicate_keys:
-            raise RegistrationError(
-                "database introspection would replace existing tools: "
-                + ", ".join(duplicate_keys)
-            )
-
-        return tuple(
-            self.add_bound_tool(
-                binding.tool,
-                binding.invoker,
-                offload_sync=remote,
-            )
-            for binding in bindings
+        expected_version = self.registry.version
+        return self._register_bound_batch(
+            bindings,
+            expected_version=expected_version,
         )
 
     async def aadd_vector_store(
@@ -1273,20 +1298,10 @@ class SchemaRouter:
             remote=remote,
             offload_sync_backend=remote,
         )
-        existing_keys = set(self.registry.keys())
-        duplicate_keys = sorted(
-            binding.tool.key
-            for binding in bindings
-            if binding.tool.key in existing_keys
-        )
-        if duplicate_keys:
-            raise RegistrationError(
-                "vector introspection would replace existing tools: "
-                + ", ".join(duplicate_keys)
-            )
-        return tuple(
-            self.add_bound_tool(binding.tool, binding.invoker)
-            for binding in bindings
+        expected_version = self.registry.version
+        return self._register_bound_batch(
+            bindings,
+            expected_version=expected_version,
         )
 
     def add_vector_store(
@@ -1711,20 +1726,10 @@ class SchemaRouter:
             remote=remote,
             offload_sync_backend=remote,
         )
-        existing_keys = set(self.registry.keys())
-        duplicate_keys = sorted(
-            binding.tool.key
-            for binding in bindings
-            if binding.tool.key in existing_keys
-        )
-        if duplicate_keys:
-            raise RegistrationError(
-                "graph introspection would replace existing tools: "
-                + ", ".join(duplicate_keys)
-            )
-        return tuple(
-            self.add_bound_tool(binding.tool, binding.invoker)
-            for binding in bindings
+        expected_version = self.registry.version
+        return self._register_bound_batch(
+            bindings,
+            expected_version=expected_version,
         )
 
     def add_graph_store(
@@ -1775,20 +1780,10 @@ class SchemaRouter:
             remote=remote,
             offload_sync_backend=remote,
         )
-        existing_keys = set(self.registry.keys())
-        duplicate_keys = sorted(
-            binding.tool.key
-            for binding in bindings
-            if binding.tool.key in existing_keys
-        )
-        if duplicate_keys:
-            raise RegistrationError(
-                "record-store introspection would replace existing tools: "
-                + ", ".join(duplicate_keys)
-            )
-        return tuple(
-            self.add_bound_tool(binding.tool, binding.invoker)
-            for binding in bindings
+        expected_version = self.registry.version
+        return self._register_bound_batch(
+            bindings,
+            expected_version=expected_version,
         )
 
     def add_record_store(

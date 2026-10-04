@@ -50,6 +50,47 @@ class ToolRegistry(Protocol):
     def endpoint(self, tool_key: str, endpoint_name: str) -> EndpointSpec: ...
 
 
+class BatchToolRegistry(ToolRegistry, Protocol):
+    """Optional registry capability for atomic version-guarded batch registration."""
+
+    def update_many_if_version(
+        self,
+        tools: Iterable[ToolSpec],
+        *,
+        expected_version: int,
+        replace: bool = False,
+    ) -> tuple[str, ...]: ...
+
+
+def update_many_if_current(
+    registry: ToolRegistry,
+    tools: Iterable[ToolSpec],
+    *,
+    expected_version: int,
+    replace: bool = False,
+) -> tuple[str, ...]:
+    """Atomically apply a staged tool batch only to the captured registry version."""
+
+    update = getattr(registry, "update_many_if_version", None)
+    if not callable(update):
+        raise RegistrationError(
+            "registry does not support atomic version-guarded batch registration; "
+            "this operation requires BatchToolRegistry semantics"
+        )
+    result = update(
+        tools,
+        expected_version=expected_version,
+        replace=replace,
+    )
+    if not isinstance(result, tuple) or not all(
+        isinstance(key, str) for key in result
+    ):
+        raise RegistrationError(
+            "atomic version-guarded batch registration returned invalid tool keys"
+        )
+    return result
+
+
 class MutableToolRegistry(ToolRegistry, Protocol):
     """Optional registry capability for atomic remove-if-current semantics."""
 
@@ -230,6 +271,35 @@ class InMemoryRegistry:
 
     def endpoint(self, tool_key: str, endpoint_name: str) -> EndpointSpec:
         return self.get(tool_key).endpoint(endpoint_name)
+
+    def update_many_if_version(
+        self,
+        tools: Iterable[ToolSpec],
+        *,
+        expected_version: int,
+        replace: bool = False,
+    ) -> tuple[str, ...]:
+        staged = [_validated_tool_snapshot(tool) for tool in tools]
+        staged_keys = [tool.key for tool in staged]
+        if len(staged_keys) != len(set(staged_keys)):
+            raise RegistrationError("duplicate tool keys in batch")
+        with self._lock:
+            if self._version != expected_version:
+                raise RegistrationError(
+                    f"registry changed concurrently; expected version "
+                    f"{expected_version}, found {self._version}"
+                )
+            if not replace:
+                collisions = sorted(set(staged_keys) & set(self._tools))
+                if collisions:
+                    raise RegistrationError(
+                        f"tools already registered: {', '.join(collisions)}"
+                    )
+            for tool in staged:
+                self._tools[tool.key] = self._snapshot(tool)
+            if staged:
+                self._version += 1
+        return tuple(staged_keys)
 
     def update_many(self, tools: Iterable[ToolSpec], *, replace: bool = False) -> None:
         staged = [_validated_tool_snapshot(tool) for tool in tools]
@@ -715,6 +785,77 @@ class SQLiteRegistry:
 
     def endpoint(self, tool_key: str, endpoint_name: str) -> EndpointSpec:
         return self.get(tool_key).endpoint(endpoint_name)
+
+    def update_many_if_version(
+        self,
+        tools: Iterable[ToolSpec],
+        *,
+        expected_version: int,
+        replace: bool = False,
+    ) -> tuple[str, ...]:
+        staged = [_validated_tool_snapshot(tool) for tool in tools]
+        staged_keys = [tool.key for tool in staged]
+        if len(staged_keys) != len(set(staged_keys)):
+            raise RegistrationError("duplicate tool keys in batch")
+        if not staged:
+            return ()
+        documents = [(tool, self._serialize(tool)) for tool in staged]
+
+        with self._lock:
+            self._begin_write()
+            try:
+                current_version = self._validated_logical_version()
+                if current_version != expected_version:
+                    raise RegistrationError(
+                        f"registry changed concurrently; expected version "
+                        f"{expected_version}, found {current_version}"
+                    )
+                placeholders = ",".join("?" for _ in staged_keys)
+                existing_rows = self._connection.execute(
+                    f"""
+                    SELECT key, position
+                    FROM schemarouter_registry_tools
+                    WHERE key IN ({placeholders})
+                    """,
+                    staged_keys,
+                ).fetchall()
+                existing = {
+                    str(row["key"]): int(row["position"])
+                    for row in existing_rows
+                }
+                if existing and not replace:
+                    collisions = sorted(existing)
+                    raise RegistrationError(
+                        f"tools already registered: {', '.join(collisions)}"
+                    )
+                next_position = self._next_position()
+                for tool, document in documents:
+                    position = existing.get(tool.key)
+                    if position is None:
+                        self._connection.execute(
+                            """
+                            INSERT INTO schemarouter_registry_tools (key, position, document)
+                            VALUES (?, ?, ?)
+                            """,
+                            (tool.key, next_position, document),
+                        )
+                        next_position += 1
+                    else:
+                        self._connection.execute(
+                            """
+                            UPDATE schemarouter_registry_tools
+                            SET document = ?
+                            WHERE key = ?
+                            """,
+                            (document, tool.key),
+                        )
+                self._bump_version()
+            except Exception:
+                self._connection.rollback()
+                raise
+            else:
+                self._connection.commit()
+        return tuple(staged_keys)
 
     def update_many(self, tools: Iterable[ToolSpec], *, replace: bool = False) -> None:
         staged = [_validated_tool_snapshot(tool) for tool in tools]
