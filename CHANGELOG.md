@@ -11,7 +11,7 @@ The project is pre-1.0 and follows the compatibility rules in
 - added a native caller-owned FalkorDB property-graph adapter with graph/label/relationship/property discovery, read-only `ro_query()` traversal, and existing principal graph-scope enforcement;
 
 - expanded native vector-store coverage with caller-owned Pinecone, Weaviate, Chroma,
-  Redis Vector Search and PostgreSQL/pgvector adapters, preserving bounded search, explicit
+  PostgreSQL/pgvector adapters, preserving bounded search, explicit
   schema/dimension handling and trusted principal-derived metadata filters;
 - added caller-owned native record-store adapters for MongoDB, Elasticsearch/OpenSearch,
   DynamoDB, Azure Cosmos DB, Couchbase, ClickHouse and InfluxDB, compiling vendor discovery/query
