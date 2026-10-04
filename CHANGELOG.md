@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- expanded native vector-store coverage with caller-owned Pinecone, Weaviate, Chroma,
+  Redis Vector Search and PostgreSQL/pgvector adapters, preserving bounded search, explicit
+  schema/dimension handling and trusted principal-derived metadata filters;
 - added caller-owned native graph/RDF adapters for Neo4j, Amazon Neptune Database/Analytics,
   ArangoDB, and SPARQL 1.1 endpoints, translating vendor SDK/protocol shapes into the bounded graph
   contract without exposing raw query languages to model output;
