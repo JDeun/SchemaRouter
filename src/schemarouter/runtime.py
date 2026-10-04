@@ -65,6 +65,7 @@ from .inspection import RouterInspection, inspect_router
 from .models import (
     CapabilityRetrieval,
     CapabilityRouteRetrieval,
+    EndpointSpec,
     ExecutionPlan,
     PlanRequest,
     ToolCall,
@@ -289,6 +290,75 @@ class SchemaRouter:
             principal,
             tool,
             endpoint,
+        )
+
+    def _data_scope_endpoint_view(
+        self,
+        principal: PrincipalContext,
+        tool: ToolSpec,
+        endpoint: EndpointSpec,
+    ) -> EndpointSpec | None:
+        policy = self.authorization_policy
+        if policy is None or not policy.data_rules:
+            return endpoint
+        scope = policy.data_scope(principal, tool, endpoint)
+        if scope.visible_fields is None:
+            return endpoint
+
+        visible_fields = [
+            field.model_copy(deep=True)
+            for field in endpoint.output_fields
+            if field.name in scope.visible_fields
+        ]
+        if endpoint.output_fields and not visible_fields:
+            return None
+
+        hidden_field_names = {
+            field.name
+            for field in endpoint.output_fields
+            if field.name not in scope.visible_fields
+        }
+        parameters = []
+        for parameter in endpoint.parameters:
+            mapped_field = (
+                parameter.name.split("filter__", 1)[1]
+                if parameter.name.startswith("filter__")
+                else parameter.name
+            )
+            if mapped_field in hidden_field_names:
+                continue
+            clone = parameter.model_copy(deep=True)
+            if (
+                parameter.name == "relationship_types"
+                and scope.allowed_relationships is not None
+            ):
+                schema = dict(clone.json_schema)
+                items = dict(schema.get("items", {}))
+                items["enum"] = sorted(scope.allowed_relationships)
+                schema["items"] = items
+                clone.json_schema = schema
+            if parameter.name == "max_hops" and scope.max_hops is not None:
+                schema = dict(clone.json_schema)
+                current_max = schema.get("maximum")
+                schema["maximum"] = (
+                    scope.max_hops
+                    if current_max is None
+                    else min(int(current_max), scope.max_hops)
+                )
+                clone.json_schema = schema
+            parameters.append(clone)
+
+        selected_names = [field.name for field in visible_fields]
+        return endpoint.model_copy(
+            deep=True,
+            update={
+                "parameters": parameters,
+                "output_fields": visible_fields,
+                "output_schema": projected_output_schema(
+                    endpoint,
+                    selected_names,
+                ),
+            },
         )
 
     def _project_retrieval_data_scope(
@@ -3209,15 +3279,29 @@ class SchemaRouter:
 
         principal = _current_principal_context()
         predicate = self._authorization_predicate(principal)
-        retrieval = (
-            self.planner.retrieve(request, k=k)
-            if predicate is None
-            else self.planner.retrieve_with_additional_availability(
+        if predicate is None:
+            retrieval = self.planner.retrieve(request, k=k)
+        elif (
+            self.authorization_policy is not None
+            and self.authorization_policy.data_rules
+            and principal is not None
+        ):
+            retrieval = self.planner.retrieve_with_scoped_schema(
+                request,
+                predicate,
+                lambda tool, endpoint: self._data_scope_endpoint_view(
+                    principal,
+                    tool,
+                    endpoint,
+                ),
+                k=k,
+            )
+        else:
+            retrieval = self.planner.retrieve_with_additional_availability(
                 request,
                 predicate,
                 k=k,
             )
-        )
         return self._project_retrieval_data_scope(retrieval, principal)
 
     async def aretrieve(
@@ -3230,15 +3314,29 @@ class SchemaRouter:
 
         principal = _current_principal_context()
         predicate = self._authorization_predicate(principal)
-        retrieval = (
-            await self.planner.aretrieve(request, k=k)
-            if predicate is None
-            else await self.planner.aretrieve_with_additional_availability(
+        if predicate is None:
+            retrieval = await self.planner.aretrieve(request, k=k)
+        elif (
+            self.authorization_policy is not None
+            and self.authorization_policy.data_rules
+            and principal is not None
+        ):
+            retrieval = await self.planner.aretrieve_with_scoped_schema(
+                request,
+                predicate,
+                lambda tool, endpoint: self._data_scope_endpoint_view(
+                    principal,
+                    tool,
+                    endpoint,
+                ),
+                k=k,
+            )
+        else:
+            retrieval = await self.planner.aretrieve_with_additional_availability(
                 request,
                 predicate,
                 k=k,
             )
-        )
         return self._project_retrieval_data_scope(retrieval, principal)
 
     def retrieve_authorized(
