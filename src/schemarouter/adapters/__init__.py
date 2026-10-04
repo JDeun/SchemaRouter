@@ -73,7 +73,11 @@ from .sqlite_database import (
     SQLiteTableInvoker,
     introspect_sqlite_database,
 )
-from .vector_native import MilvusVectorBackend, QdrantVectorBackend
+from .vector_native import (
+    MilvusVectorBackend,
+    PineconeVectorBackend,
+    QdrantVectorBackend,
+)
 from .vector_store import (
     VectorCollectionBinding,
     VectorCollectionInvoker,
@@ -125,6 +129,7 @@ __all__ = [
     "RecordSourceSpec",
     "RecordStoreBackend",
     "MilvusVectorBackend",
+    "PineconeVectorBackend",
     "QdrantVectorBackend",
     "SourceAdapter",
     "VectorCollectionBinding",
