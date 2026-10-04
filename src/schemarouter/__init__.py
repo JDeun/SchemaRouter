@@ -39,6 +39,16 @@ from .adapters.plugins import (
     load_adapter_plugins,
 )
 from .adapters.python import schema_tool, tool_from_callable
+from .adapters.record_native import (
+    ClickHouseRecordBackend,
+    CosmosRecordBackend,
+    CouchbaseRecordBackend,
+    DynamoDBRecordBackend,
+    ElasticRecordBackend,
+    InfluxRecordBackend,
+    MongoRecordBackend,
+    RedisRecordBackend,
+)
 from .adapters.record_store import (
     RecordFieldSpec,
     RecordModel,
@@ -629,12 +639,20 @@ __all__ = [
     "QueryIntent",
     "ResultFieldContract",
     "RetrievalMode",
+    "ClickHouseRecordBackend",
+    "CosmosRecordBackend",
+    "CouchbaseRecordBackend",
+    "DynamoDBRecordBackend",
+    "ElasticRecordBackend",
+    "InfluxRecordBackend",
+    "MongoRecordBackend",
     "RecordFieldSpec",
     "RecordModel",
     "RecordSourceBinding",
     "RecordSourceInvoker",
     "RecordSourceSpec",
     "RecordStoreBackend",
+    "RedisRecordBackend",
     "RegistrationError",
     "RefreshProfile",
     "RegistryExecutor",
