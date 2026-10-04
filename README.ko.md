@@ -188,7 +188,7 @@ Retrieval 결과나 모델의 선택만으로 실행 권한이 생기지 않습�
 
 ## 안정성
 
-현재 안정 패키지는 **0.15.0**입니다. 아직 pre-1.0이므로 public API는 발전할 수 있지만,
+SchemaRouter `0.15.0`은 **Beta / pre-1.0**입니다. Public API는 발전할 수 있지만,
 breaking change는 문서화하고 release gate를 통과하도록 관리합니다.
 
 Python 3.10–3.14는 release-blocking 대상이며 Python 3.15는 preview 대상입니다.
