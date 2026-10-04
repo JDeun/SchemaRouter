@@ -18,6 +18,7 @@ from scripts.research_014_conveyor import (
     StageRun,
     combine_digests,
     retry_infrastructure_failure,
+    select_corrective_run,
     source_sha_from_run,
     stale_pending_wrapper,
     stale_zero_job_pending,
@@ -313,6 +314,70 @@ def test_zero_job_pending_is_recoverable_only_prejob() -> None:
     )
 
 
+class _JobCountAPI:
+    def __init__(self, counts: dict[int, int]) -> None:
+        self.counts = counts
+
+    def workflow_run_job_count(self, run_id: int) -> int:
+        return self.counts[run_id]
+
+
+def test_corrective_selection_prefers_materialized_execution_over_pending_duplicate() -> None:
+    active = StageRun(
+        id=5,
+        status="queued",
+        conclusion=None,
+        display_title="corrective source=" + "c" * 40,
+        created_at="2026-10-01T00:00:00Z",
+        html_url="",
+        run_attempt=1,
+        head_sha="a" * 40,
+    )
+    duplicate = StageRun(
+        id=12,
+        status="pending",
+        conclusion=None,
+        display_title="corrective source=" + "c" * 40,
+        created_at="2026-10-04T00:00:00Z",
+        html_url="",
+        run_attempt=1,
+        head_sha="b" * 40,
+    )
+    selected = select_corrective_run(
+        _JobCountAPI({5: 182, 12: 0}),
+        [duplicate, active],
+    )
+    assert selected == active
+
+
+def test_corrective_selection_prefers_success_over_later_duplicate() -> None:
+    success = StageRun(
+        id=5,
+        status="completed",
+        conclusion="success",
+        display_title="corrective source=" + "c" * 40,
+        created_at="2026-10-01T00:00:00Z",
+        html_url="",
+        run_attempt=1,
+        head_sha="a" * 40,
+    )
+    duplicate = StageRun(
+        id=12,
+        status="pending",
+        conclusion=None,
+        display_title="corrective source=" + "c" * 40,
+        created_at="2026-10-04T00:00:00Z",
+        html_url="",
+        run_attempt=1,
+        head_sha="b" * 40,
+    )
+    selected = select_corrective_run(
+        _JobCountAPI({12: 0}),
+        [duplicate, success],
+    )
+    assert selected == success
+
+
 def test_downstream_workflows_recover_model_cache_eviction() -> None:
     root = Path(__file__).resolve().parents[1]
     workflow_names = (
@@ -343,6 +408,8 @@ def test_conveyor_can_supersede_stale_pending_corrective_wrapper() -> None:
     assert "stale_pending_wrapper(corrective, wrapper_sha=_wrapper_sha)" in controller
     assert "recover_dispatch_zero_job_pending_corrective" in controller
     assert "api.cancel_run_and_wait(corrective.id)" in controller
+    assert "cancel_zero_job_duplicate_corrective" in controller
+    assert "select_corrective_run(api, corrective_runs)" in controller
     assert controller.index("elif stale_zero_job_pending(") < controller.index(
         "elif stale_pending_wrapper(corrective, wrapper_sha=_wrapper_sha):"
     )
