@@ -54,6 +54,12 @@ from .python import (
     schema_tool,
     tool_from_callable,
 )
+from .record_native import (
+    DynamoDBRecordBackend,
+    ElasticRecordBackend,
+    MongoRecordBackend,
+    RedisRecordBackend,
+)
 from .record_store import (
     RecordFieldSpec,
     RecordModel,
@@ -118,12 +124,16 @@ __all__ = [
     "OpenRPCRemoteInvoker",
     "OpenRPCSourceAdapter",
     "PythonCallableInvoker",
+    "DynamoDBRecordBackend",
+    "ElasticRecordBackend",
+    "MongoRecordBackend",
     "RecordFieldSpec",
     "RecordModel",
     "RecordSourceBinding",
     "RecordSourceInvoker",
     "RecordSourceSpec",
     "RecordStoreBackend",
+    "RedisRecordBackend",
     "MilvusVectorBackend",
     "QdrantVectorBackend",
     "SourceAdapter",
