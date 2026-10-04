@@ -5,8 +5,8 @@ from typing import Any
 
 import pytest
 
+from schemarouter import SchemaRouter, VectorMetadataField
 from schemarouter.adapters.vector_native import MilvusVectorBackend, QdrantVectorBackend
-from schemarouter import VectorMetadataField
 
 
 @dataclass
@@ -307,6 +307,49 @@ def test_milvus_adapter_uses_filter_templates_not_value_interpolation() -> None:
         "p0": "x' OR true",
         "p1": [2025, 2026],
     }
+
+
+def test_router_qdrant_convenience_registration_uses_native_backend() -> None:
+    client = FakeQdrantClient()
+    router = SchemaRouter()
+
+    keys = router.add_qdrant_vector_store(
+        client,
+        lambda query: [0.1, 0.2, 0.3],
+        database_name="qdrant",
+        metadata_fields_by_collection={
+            "docs": (
+                VectorMetadataField(
+                    name="title",
+                    json_schema={"type": "string"},
+                ),
+            )
+        },
+        remote=False,
+    )
+
+    assert keys == ("qdrant.docs",)
+    endpoint = router.registry.get("qdrant.docs").endpoint("search")
+    assert endpoint.execution_metadata["dimension"] == 3
+    assert endpoint.execution_metadata["metric"] == "cosine"
+
+
+def test_router_milvus_convenience_registration_uses_native_backend() -> None:
+    client = FakeMilvusClient()
+    router = SchemaRouter()
+
+    keys = router.add_milvus_vector_store(
+        client,
+        lambda query: [0.1, 0.2, 0.3],
+        database_name="milvus",
+        metric_by_collection={"docs": "cosine"},
+        remote=False,
+    )
+
+    assert keys == ("milvus.docs",)
+    endpoint = router.registry.get("milvus.docs").endpoint("search")
+    assert endpoint.execution_metadata["dimension"] == 3
+    assert endpoint.execution_metadata["metric"] == "cosine"
 
 
 def test_milvus_multiple_vector_fields_require_explicit_selection() -> None:
