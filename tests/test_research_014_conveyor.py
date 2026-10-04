@@ -18,6 +18,7 @@ from scripts.research_014_conveyor import (
     StageRun,
     active_run_with_jobs,
     combine_digests,
+    missing_corrective_shards,
     retry_infrastructure_failure,
     source_sha_from_run,
     stale_pending_wrapper,
@@ -93,6 +94,12 @@ def test_conveyor_workflows_encode_expected_stage_contracts() -> None:
         / "workflows"
         / "research-0.14-corrective-reretrieval.yml"
     ).read_text(encoding="utf-8")
+    corrective_recovery = (
+        root
+        / ".github"
+        / "workflows"
+        / "research-0.14-corrective-recovery.yml"
+    ).read_text(encoding="utf-8")
     heldout = (
         root
         / ".github"
@@ -107,12 +114,21 @@ def test_conveyor_workflows_encode_expected_stage_contracts() -> None:
     assert "Research 0.14 B2 SmolLM3 Full" in conveyor
     assert "Research 0.14 Structural K3 Agent Utility" in conveyor
     assert "Research 0.14 Corrective Re-retrieval" in conveyor
+    assert "Research 0.14 Corrective Shard Recovery" in conveyor
     assert "Research 0.14 Held-out Generalization" in conveyor
     assert "Research 0.14 Final Answer" in conveyor
 
     assert "CANONICAL_B2_RUN" in corrective
     assert "evidence_digest" in corrective
     assert "timeout-minutes: 360" in corrective
+
+    assert "timeout-minutes: 360" in corrective_recovery
+    assert 'parent["status"] == "completed"' in corrective_recovery
+    assert 'parent["head_sha"] == os.environ["SOURCE_SHA"]' not in corrective_recovery
+    assert "select_corrective_recovery_shards.py" not in corrective_recovery
+    assert 'run-id: "${{ inputs.parent_run_id }}"' in corrective_recovery
+    assert "Aggregate exact complete parent plus recovery surface" in corrective_recovery
+    assert "corrective-reretrieval-canonical-" in corrective_recovery
     assert "include_struct_fixed3" in heldout
     assert "include_state_aware" in heldout
     assert "heldout_run_id" in final
@@ -297,6 +313,31 @@ class _JobCountAPI:
         return self.counts.get(run_id, 0)
 
 
+class _ArtifactAPI:
+    def __init__(self, artifacts: list[dict[str, object]]) -> None:
+        self._artifacts = artifacts
+
+    def artifacts(self, run_id: int) -> list[dict[str, object]]:
+        return self._artifacts
+
+
+def test_corrective_recovery_selects_only_missing_parent_artifacts() -> None:
+    run_id = 123
+    api = _ArtifactAPI(
+        [
+            {"name": f"corrective-shard-c100-g00-{run_id}", "expired": False},
+            {"name": f"corrective-shard-c250-g17-{run_id}", "expired": False},
+            {"name": f"corrective-shard-c500-g59-{run_id}", "expired": True},
+            {"name": "unrelated", "expired": False},
+        ]
+    )
+    missing = missing_corrective_shards(api, run_id)
+    assert len(missing) == 178
+    assert "c100-g00" not in missing
+    assert "c250-g17" not in missing
+    assert "c500-g59" in missing
+
+
 def test_active_run_with_jobs_wins_over_newer_pending_duplicate() -> None:
     pending = StageRun(
         id=96,
@@ -376,6 +417,18 @@ def test_downstream_workflows_recover_model_cache_eviction() -> None:
         assert "fail-on-cache-miss: true" not in workflow
         assert "Recover exact model revision after cache eviction" in workflow
         assert 'revision=os.environ["B2_REVISION"]' in workflow
+
+
+    recovery = (
+        root
+        / ".github"
+        / "workflows"
+        / "research-0.14-corrective-recovery.yml"
+    ).read_text(encoding="utf-8")
+    assert recovery.count(f"uses: actions/cache/restore@{cache_sha}") == 1
+    assert "fail-on-cache-miss: true" not in recovery
+    assert "Recover exact model revision after cache eviction" in recovery
+    assert 'revision=os.environ["B2_REVISION"]' in recovery
 
 
 def test_conveyor_can_supersede_stale_pending_corrective_wrapper() -> None:
