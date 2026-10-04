@@ -1,4 +1,5 @@
 import sqlite3
+
 import pytest
 
 pytest.importorskip("langchain_core")
@@ -21,8 +22,6 @@ from schemarouter.integrations import (
     to_langchain_tools,
     tool_from_langchain,
 )
-
-
 
 
 def make_authorized_database_router() -> tuple[SchemaRouter, sqlite3.Connection]:
