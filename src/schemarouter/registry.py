@@ -272,6 +272,29 @@ class InMemoryRegistry:
     def endpoint(self, tool_key: str, endpoint_name: str) -> EndpointSpec:
         return self.get(tool_key).endpoint(endpoint_name)
 
+    def unregister_many_if_version(
+        self,
+        expected: dict[str, str],
+        *,
+        expected_version: int,
+    ) -> None:
+        with self._lock:
+            if self._version != expected_version:
+                raise RegistrationError(
+                    f"registry changed concurrently; expected version "
+                    f"{expected_version}, found {self._version}"
+                )
+            for key, fingerprint in expected.items():
+                current = self._tools.get(key)
+                if current is None or current.fingerprint != fingerprint:
+                    raise RegistrationError(
+                        f"tool {key!r} changed before atomic batch rollback"
+                    )
+            for key in expected:
+                del self._tools[key]
+            if expected:
+                self._version += 1
+
     def update_many_if_version(
         self,
         tools: Iterable[ToolSpec],
@@ -785,6 +808,49 @@ class SQLiteRegistry:
 
     def endpoint(self, tool_key: str, endpoint_name: str) -> EndpointSpec:
         return self.get(tool_key).endpoint(endpoint_name)
+
+    def unregister_many_if_version(
+        self,
+        expected: dict[str, str],
+        *,
+        expected_version: int,
+    ) -> None:
+        if not expected:
+            return
+        with self._lock:
+            self._begin_write()
+            try:
+                current_version = self._validated_logical_version()
+                if current_version != expected_version:
+                    raise RegistrationError(
+                        f"registry changed concurrently; expected version "
+                        f"{expected_version}, found {current_version}"
+                    )
+                for key, fingerprint in expected.items():
+                    row = self._connection.execute(
+                        "SELECT document FROM schemarouter_registry_tools WHERE key = ?",
+                        (key,),
+                    ).fetchone()
+                    if row is None:
+                        raise RegistrationError(
+                            f"tool {key!r} disappeared before atomic batch rollback"
+                        )
+                    current = self._deserialize(key, str(row["document"]))
+                    if current.fingerprint != fingerprint:
+                        raise RegistrationError(
+                            f"tool {key!r} changed before atomic batch rollback"
+                        )
+                placeholders = ",".join("?" for _ in expected)
+                self._connection.execute(
+                    f"DELETE FROM schemarouter_registry_tools WHERE key IN ({placeholders})",
+                    tuple(expected),
+                )
+                self._bump_version()
+            except Exception:
+                self._connection.rollback()
+                raise
+            else:
+                self._connection.commit()
 
     def update_many_if_version(
         self,
