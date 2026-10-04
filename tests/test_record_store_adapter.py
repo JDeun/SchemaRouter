@@ -386,6 +386,7 @@ async def test_native_record_schema_refresh_applies_compatible_drift_and_rebinds
                         RecordFieldSpec(
                             name="summary",
                             json_schema={},
+                            description="Optional additive summary field.",
                         ),
                     )
                 },
