@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- added caller-owned native record-store adapters for MongoDB, Elasticsearch/OpenSearch, Redis,
+  DynamoDB, Azure Cosmos DB, Couchbase, ClickHouse and InfluxDB, compiling vendor discovery/query
+  shapes into the bounded record contract without exposing raw vendor query languages to model output;
 - added caller-owned native graph/RDF adapters for Neo4j, Amazon Neptune Database/Analytics,
   ArangoDB, and SPARQL 1.1 endpoints, translating vendor SDK/protocol shapes into the bounded graph
   contract without exposing raw query languages to model output;
