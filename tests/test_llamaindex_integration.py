@@ -17,12 +17,12 @@ from schemarouter import (
     TrustedFilterBinding,
     schema_tool,
 )
-from schemarouter.integrations import (
+from schemarouter.integrations.llamaindex import (
+    _llamaindex_schema_model,
     to_llamaindex_tool,
     to_llamaindex_tools,
     tool_from_llamaindex,
 )
-from schemarouter.integrations.llamaindex import _llamaindex_schema_model
 
 
 
