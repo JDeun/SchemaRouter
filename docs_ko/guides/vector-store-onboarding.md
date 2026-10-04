@@ -134,3 +134,65 @@ Trusted filter는 Milvus filter template과 `filter_params`를 사용하므로 p
 SchemaRouter state에 들어가지 않으며, 모든 deployment topology의 live acceptance가 끝났다는
 의미는 아닙니다.
 
+
+
+### Pinecone
+
+```python
+keys = router.add_pinecone_vector_store(
+    pinecone_client,
+    embed_query,
+    metadata_fields_by_index={"docs": metadata_fields},
+)
+```
+
+Pinecone control plane에서 index dimension과 metric을 읽습니다. Pinecone이 index의 전체
+metadata schema를 제공하지 않으므로 projection이나 trusted principal filter에 사용할
+metadata field는 명시적으로 선언합니다.
+
+### Weaviate
+
+```python
+keys = router.add_weaviate_vector_store(
+    weaviate_client,
+    embed_query,
+    dimension_by_collection={"Docs": 1536},
+)
+```
+
+Collection/property는 자동 탐색하고 vector dimension은 명시적으로 제공합니다. Weaviate
+schema metadata에서 dimension을 일관되게 얻기 어렵기 때문입니다. Trusted authorization
+filter는 adapter 내부 또는 caller-supplied `filter_builder`에서 컴파일합니다.
+
+### Chroma
+
+```python
+keys = router.add_chroma_vector_store(
+    chroma_client,
+    embed_query,
+    dimension_by_collection={"docs": 1536},
+)
+```
+
+Collection을 탐색하고 bounded `peek(limit=1)`로 metadata key를 추론할 수 있습니다.
+Dimension은 명시하거나 trusted collection metadata에서 읽습니다.
+
+### pgvector / PostgreSQL
+
+```python
+keys = router.add_pgvector_store(
+    sqlalchemy_engine,
+    embed_query,
+    tables=["documents"],
+    metric_by_table={"documents": "cosine"},
+)
+```
+
+Caller-selected SQLAlchemy table을 reflection하여 dense vector column과 dimension을
+파악하고 SQLAlchemy expression으로 similarity search를 구성합니다. 모델에는 SQL text나
+raw vector를 노출하지 않습니다. PostgreSQL role/RLS가 최종 권한 경계로 유지됩니다.
+
+모든 native vector adapter의 credential과 connection object는 caller-owned 상태로
+유지됩니다. SDK-shape test는 discovery, bounded top-k search, metadata projection,
+trusted-filter 처리를 검증하며 live acceptance는 deployment 환경의 실제 credential에
+의존합니다.
