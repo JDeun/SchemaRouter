@@ -52,7 +52,7 @@ Source 선언에 따라 다음만 노출됩니다.
 - bounded `limit`
 - explicit output-field projection
 
-모델에 MongoDB raw query document, Elasticsearch/OpenSearch Query DSL, Redis command,
+모델에 MongoDB raw query document, Elasticsearch/OpenSearch Query DSL,
 DynamoDB expression 등의 arbitrary vendor command를 직접 전달하는 surface는 없습니다.
 
 Vendor adapter가 bounded contract를 trusted runtime 안에서 native SDK call로 번역합니다.
@@ -81,17 +81,37 @@ AuthorizationRule(
 
 모델 argument가 절대로 덮어쓸 수 없는 field/tenant predicate는 #770에서 확장합니다.
 
-## Vendor 대상
+## Native vendor adapter
 
-Provider-neutral contract 위에 다음 계열의 thin adapter를 붙이는 구조입니다.
+Bounded record contract 위에 caller-owned native adapter를 추가합니다.
 
-- MongoDB / Couchbase: document
-- Elasticsearch / OpenSearch: search index
-- Redis / DynamoDB / Cosmos DB: key-value 또는 document
-- InfluxDB 및 호환 계열: time-series
-- 동일 bounded record contract를 표현할 수 있는 기타 vendor source
+- **MongoDB**: collection discovery, sample document schema, bounded `find()`, 선택적 text/time 경로
+- **Elasticsearch / OpenSearch**: mapping discovery, bounded `multi_match`/term/range, field projection
+- **Amazon DynamoDB**: table/key discovery, sample field, parameterized filter/projection expression
+- **Azure Cosmos DB for NoSQL**: container discovery, sample item schema, parameterized `query_items()`
+- **Couchbase**: keyspace discovery와 named-parameter SQL++ bounded query
+- **ClickHouse**: table/column discovery와 bound read-only ClickHouse Connect query
+- **InfluxDB 2.x / Flux**: measurement/field-key/tag-key discovery와 bounded time/tag/field query
 
-ClickHouse처럼 SQL contract가 더 자연스러운 분석 DB는 SQLAlchemy 경로를 사용할 수 있습니다.
+```python
+router.add_mongodb_record_store(mongo_database)
+router.add_elasticsearch_record_store(elastic_client)
+router.add_opensearch_record_store(opensearch_client)
+router.add_dynamodb_record_store(dynamodb_client)
+router.add_cosmos_record_store(cosmos_database)
+router.add_couchbase_record_store(couchbase_cluster)
+router.add_clickhouse_record_store(clickhouse_client)
+router.add_influxdb_record_store(
+    influx_query_api,
+    bucket="metrics",
+    org="acme",
+)
+```
 
-공통 contract가 있다는 것만으로 모든 vendor SDK의 native/live acceptance가 끝났다는 뜻은
-아닙니다. Vendor adapter와 live acceptance는 #769에서 별도 추적합니다.
+이 client/credential은 model-visible contract에 저장하지 않습니다. Native adapter는 이미
+제한된 record-store contract만 vendor API로 번역하며 raw Mongo query document,
+Elasticsearch/OpenSearch Query DSL, Dynamo expression, Cosmos SQL, SQL++, raw
+ClickHouse SQL, arbitrary Flux를 모델 권한으로 노출하지 않습니다.
+
+Deterministic SDK-shape test는 release gate에 포함합니다. Native adapter가 있다는 사실과 모든
+vendor/version/deployment의 외부 live acceptance가 끝났다는 주장은 구분합니다.

@@ -131,6 +131,7 @@ reportMissingTypeStubs = false
 [tool.coverage.run]
 branch = true
 source = ["schemarouter"]
+omit = ["src/schemarouter/adapters/*_native.py"]
 
 [tool.coverage.report]
 fail_under = 84

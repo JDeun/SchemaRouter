@@ -60,6 +60,15 @@ from .python import (
     schema_tool,
     tool_from_callable,
 )
+from .record_native import (
+    ClickHouseRecordBackend,
+    CosmosRecordBackend,
+    CouchbaseRecordBackend,
+    DynamoDBRecordBackend,
+    ElasticRecordBackend,
+    InfluxRecordBackend,
+    MongoRecordBackend,
+)
 from .record_store import (
     RecordFieldSpec,
     RecordModel,
@@ -128,6 +137,13 @@ __all__ = [
     "OpenRPCRemoteInvoker",
     "OpenRPCSourceAdapter",
     "PythonCallableInvoker",
+    "ClickHouseRecordBackend",
+    "CosmosRecordBackend",
+    "CouchbaseRecordBackend",
+    "DynamoDBRecordBackend",
+    "ElasticRecordBackend",
+    "InfluxRecordBackend",
+    "MongoRecordBackend",
     "RecordFieldSpec",
     "RecordModel",
     "RecordSourceBinding",
