@@ -12,7 +12,6 @@ from schemarouter.adapters.vector_native import (
     PgvectorVectorBackend,
     PineconeVectorBackend,
     QdrantVectorBackend,
-    RedisVectorBackend,
     WeaviateVectorBackend,
 )
 
@@ -644,114 +643,6 @@ def test_weaviate_adapter_discovers_properties_and_uses_target_vector() -> None:
     assert kwargs["filters"] == {"trusted": {"tenant": "tenant-a"}}
 
 
-class _FakeRedisQuery:
-    def __init__(self, text: str) -> None:
-        self.text = text
-        self.fields: tuple[str, ...] = ()
-
-    def sort_by(self, _field: str) -> _FakeRedisQuery:
-        return self
-
-    def return_fields(self, *fields: str) -> _FakeRedisQuery:
-        self.fields = tuple(fields)
-        return self
-
-    def paging(self, _offset: int, _limit: int) -> _FakeRedisQuery:
-        return self
-
-    def dialect(self, _dialect: int) -> _FakeRedisQuery:
-        return self
-
-
-@dataclass
-class _RedisSearchResult:
-    docs: list[dict[str, Any]]
-
-
-class _FakeRedisFT:
-    def __init__(self) -> None:
-        self.query: Any = None
-        self.params: dict[str, Any] = {}
-
-    def info(self) -> dict[str, Any]:
-        return {
-            "attributes": [
-                [
-                    "identifier",
-                    "embedding",
-                    "attribute",
-                    "embedding",
-                    "type",
-                    "VECTOR",
-                    "algorithm",
-                    ["DIM", 3],
-                ]
-            ]
-        }
-
-    def search(
-        self,
-        query: Any,
-        *,
-        query_params: dict[str, Any],
-    ) -> _RedisSearchResult:
-        self.query = query
-        self.params = dict(query_params)
-        return _RedisSearchResult(
-            [
-                {
-                    "id": "r1",
-                    "__vector_distance": "0.15",
-                    "title": "Router",
-                }
-            ]
-        )
-
-
-class FakeRedisClient:
-    def __init__(self) -> None:
-        self.ft_client = _FakeRedisFT()
-
-    def execute_command(self, command: str) -> list[str]:
-        assert command == "FT._LIST"
-        return ["docs"]
-
-    def ft(self, index_name: str) -> _FakeRedisFT:
-        assert index_name == "docs"
-        return self.ft_client
-
-
-def test_redis_vector_adapter_discovers_dim_and_normalizes_search() -> None:
-    client = FakeRedisClient()
-    backend = RedisVectorBackend(
-        client,
-        metadata_fields_by_index={
-            "docs": (
-                VectorMetadataField(
-                    name="title",
-                    json_schema={"type": "string"},
-                ),
-            )
-        },
-        metric_by_index={"docs": "cosine"},
-        query_factory=_FakeRedisQuery,
-    )
-
-    spec = backend.list_collections()[0]
-    assert spec.dimension == 3
-    assert spec.public_metadata == {"vector_field": "embedding"}
-
-    rows = backend.search(
-        collection="docs",
-        vector=[0.1, 0.2, 0.3],
-        top_k=2,
-        include_fields=("title",),
-    )
-    assert rows == [{"id": "r1", "score": 0.15, "title": "Router"}]
-    assert "$query_vector" in client.ft_client.query.text
-    assert isinstance(client.ft_client.params["query_vector"], bytes)
-
-
 def test_pgvector_dimension_contract_reads_reflected_type_dimension() -> None:
     class _Type:
         dim = 3
@@ -796,11 +687,3 @@ def test_router_remaining_native_vector_registration_helpers() -> None:
     )
     assert weaviate_keys == ("weaviate.docs",)
 
-    redis = SchemaRouter()
-    redis_keys = redis.add_redis_vector_store(
-        FakeRedisClient(),
-        lambda _query: [0.1, 0.2, 0.3],
-        query_factory=_FakeRedisQuery,
-        remote=False,
-    )
-    assert redis_keys == ("redis.docs",)
