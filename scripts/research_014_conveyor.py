@@ -424,10 +424,25 @@ def stale_zero_job_pending(
     )
 
 
+def active_run_with_jobs(
+    api: GitHubAPI,
+    runs: list[StageRun],
+) -> StageRun | None:
+    """Return the newest non-terminal run that has created scientific jobs."""
+
+    for run in runs:
+        if run.status == "completed":
+            continue
+        if api.workflow_run_job_count(run.id) > 0:
+            return run
+    return None
+
+
 def stale_pending_wrapper(
     run: StageRun | None,
     *,
     wrapper_sha: str,
+    job_count: int,
     min_age_seconds: float = STALE_QUEUED_WRAPPER_SECONDS,
 ) -> bool:
     """Whether a queued/pending run is pinned to an obsolete workflow wrapper.
@@ -439,6 +454,7 @@ def stale_pending_wrapper(
     return bool(
         run is not None
         and run.status in {"queued", "pending"}
+        and job_count == 0
         and run.head_sha != wrapper_sha
         and _age_seconds(run.created_at) >= min_age_seconds
     )
@@ -659,7 +675,36 @@ def run_controller(
             }
 
     corrective_runs = find_marked_runs(api, CORRECTIVE_WORKFLOW, b2_digest)
-    corrective = corrective_runs[0] if corrective_runs else None
+    active_corrective = active_run_with_jobs(api, corrective_runs)
+    if active_corrective is not None:
+        # GitHub can report a workflow as queued while its matrix jobs are
+        # already running. Preserve that scientific run and remove only newer
+        # pre-job pending duplicates created by earlier recovery attempts.
+        redundant_pending = [
+            run
+            for run in corrective_runs
+            if run.id != active_corrective.id
+            and run.status == "pending"
+            and api.workflow_run_job_count(run.id) == 0
+        ]
+        if execute:
+            for redundant in redundant_pending:
+                api.cancel_run_and_wait(redundant.id)
+        actions.extend(
+            "cancel_redundant_zero_job_pending_corrective:"
+            f"run={run.id}:active={active_corrective.id}"
+            for run in redundant_pending
+        )
+        corrective = active_corrective
+    else:
+        corrective = corrective_runs[0] if corrective_runs else None
+
+    corrective_job_count = (
+        api.workflow_run_job_count(corrective.id)
+        if corrective is not None
+        else 0
+    )
+
     if corrective is None:
         if execute:
             api.dispatch(
@@ -673,7 +718,7 @@ def run_controller(
         actions.append("dispatch_corrective")
     elif stale_zero_job_pending(
         corrective,
-        job_count=api.workflow_run_job_count(corrective.id),
+        job_count=corrective_job_count,
     ):
         # A workflow-level pending run with zero jobs has not begun scientific
         # work, regardless of which wrapper revision dispatched it. Cancel it
@@ -711,7 +756,11 @@ def run_controller(
             f"source={retry_source_sha}:wrapper={_wrapper_sha}"
         )
         corrective = None
-    elif stale_pending_wrapper(corrective, wrapper_sha=_wrapper_sha):
+    elif stale_pending_wrapper(
+        corrective,
+        wrapper_sha=_wrapper_sha,
+        job_count=corrective_job_count,
+    ):
         # A long-queued run keeps the workflow wrapper SHA from dispatch time.
         # If an infrastructure-only wrapper fix has since landed, issue a fresh
         # dispatch while preserving the exact frozen scientific source input.
