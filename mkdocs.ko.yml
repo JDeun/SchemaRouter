@@ -132,6 +132,7 @@ nav:
           - 0.14 논문 근거 체크포인트: research/0.14-paper-evidence-checkpoint.md
           - 논문 근거 패키지: research/paper-evidence-package.md
           - 연구 거버넌스: research/governance.md
+          - 외부 검증 동결: research/external-validation-freeze.md
           - 연구 freeze protocol: research/operation-routing-freeze-protocol.md
           - 0.11 terminal report: research/operation-routing-v4-terminal-report.md
       - 선행연구 로드맵: research/prior-art-roadmap.md

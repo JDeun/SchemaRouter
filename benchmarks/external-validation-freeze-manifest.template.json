@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "kind": "external-validation-freeze-manifest",
+  "status": "template",
+  "comparison_id": null,
+  "schema_router": {
+    "repository": "JDeun/SchemaRouter",
+    "commit": null
+  },
+  "upstream": {
+    "repository": null,
+    "commit": null,
+    "license": null,
+    "source_artifacts": []
+  },
+  "catalog": {
+    "path": null,
+    "sha256": null,
+    "license": null,
+    "tool_count": null,
+    "field_contract_source": null,
+    "field_contract_sha256": null
+  },
+  "cases": {
+    "path": null,
+    "sha256": null,
+    "supported_count": null,
+    "unsupported_count": null,
+    "ambiguous_count": null,
+    "labels_frozen": false
+  },
+  "budget": {
+    "top_k": null,
+    "schema_budget_definition": null,
+    "schema_budget_bytes": null
+  },
+  "latency": {
+    "clock": "perf_counter",
+    "cold_definition": null,
+    "hot_definition": null,
+    "warmup_runs": null,
+    "measured_runs": null
+  },
+  "metrics": {
+    "candidate_recall": true,
+    "activation_recall": false,
+    "tool_recall": true,
+    "field_recall": true,
+    "unsupported_rejection": true,
+    "ambiguous_abstention": true,
+    "exposed_schema_bytes": true,
+    "latency_ms": true
+  },
+  "boundary": {
+    "schema_router_role": "retrieval-only unless explicitly frozen otherwise",
+    "upstream_execution_authority_preserved": true,
+    "external_tool_execution": false,
+    "paid_model_dependency": false
+  },
+  "governance": {
+    "frozen_before_scoring": false,
+    "negative_results_publishable_unchanged": true,
+    "post_freeze_semantic_tuning_allowed": false
+  },
+  "created_at_utc": null,
+  "notes": null
+}
