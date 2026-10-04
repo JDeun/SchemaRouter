@@ -87,7 +87,6 @@ Bounded record contract 위에 caller-owned native adapter를 추가합니다.
 
 - **MongoDB**: collection discovery, sample document schema, bounded `find()`, 선택적 text/time 경로
 - **Elasticsearch / OpenSearch**: mapping discovery, bounded `multi_match`/term/range, field projection
-- **Redis**: bounded key discovery 또는 exact-key read, string/hash/list/set/zset 지원
 - **Amazon DynamoDB**: table/key discovery, sample field, parameterized filter/projection expression
 - **Azure Cosmos DB for NoSQL**: container discovery, sample item schema, parameterized `query_items()`
 - **Couchbase**: keyspace discovery와 named-parameter SQL++ bounded query
@@ -98,7 +97,6 @@ Bounded record contract 위에 caller-owned native adapter를 추가합니다.
 router.add_mongodb_record_store(mongo_database)
 router.add_elasticsearch_record_store(elastic_client)
 router.add_opensearch_record_store(opensearch_client)
-router.add_redis_record_store(redis_client)
 router.add_dynamodb_record_store(dynamodb_client)
 router.add_cosmos_record_store(cosmos_database)
 router.add_couchbase_record_store(couchbase_cluster)
@@ -112,7 +110,7 @@ router.add_influxdb_record_store(
 
 이 client/credential은 model-visible contract에 저장하지 않습니다. Native adapter는 이미
 제한된 record-store contract만 vendor API로 번역하며 raw Mongo query document,
-Elasticsearch/OpenSearch Query DSL, Redis command, Dynamo expression, Cosmos SQL, SQL++, raw
+Elasticsearch/OpenSearch Query DSL, Dynamo expression, Cosmos SQL, SQL++, raw
 ClickHouse SQL, arbitrary Flux를 모델 권한으로 노출하지 않습니다.
 
 Deterministic SDK-shape test는 release gate에 포함합니다. Native adapter가 있다는 사실과 모든
