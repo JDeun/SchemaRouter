@@ -134,23 +134,25 @@ DB 자체의 role, grant, RLS, ACL은 계속 최종 권한 경계입니다. Sche
 
 즉 schema discovery와 query authority를 분리합니다.
 
-## DB family 확장 계획
+## 현재 DB family 지원 범위
 
-서로 다른 DB를 억지로 SQL 하나로 통일하지 않습니다.
+서로 다른 DB 계열을 억지로 SQL 하나로 통일하지 않고 각 데이터 모델의 native execution
+방식을 유지합니다.
 
-| 계열 | 구조 | 상태 |
-| --- | --- | --- |
-| SQLite | stdlib introspection + bounded SELECT | reference implementation |
-| RDB / warehouse | caller-owned SQLAlchemy Engine | generic adapter 구현, vendor live acceptance는 별도 확대 |
-| Vector | collection/index/schema discovery + bounded vector/hybrid search | #767 |
-| Property graph / RDF | label/type/relationship/property + bounded traversal/query template | #768 |
-| Document / search / key-value / time-series | native collection/index/mapping discovery | #769 |
-| DB 전 계열 세부 권한 | column/row/collection/graph scope | #770 |
+| 계열 | 현재 core 경로 |
+| --- | --- |
+| SQLite | stdlib introspection + bounded SELECT |
+| RDB / warehouse | caller-owned SQLAlchemy Engine + dialect reflection |
+| Vector | 공통 contract + Qdrant, Milvus, Pinecone, Weaviate, Chroma, PostgreSQL/pgvector adapter |
+| Property graph / RDF | 공통 contract + Neo4j, Neptune, ArangoDB, FalkorDB, SPARQL adapter |
+| Document / search / key-value / time-series | 공통 contract + MongoDB, Elasticsearch/OpenSearch, DynamoDB, Cosmos DB, Couchbase, ClickHouse, InfluxDB adapter |
+| DB 전 계열 권한 | capability, field, row/tenant, collection/source, relationship, hop scope 공유 |
 
-대상 벤더에는 PostgreSQL/pgvector, MySQL/MariaDB, SQL Server, Oracle, Snowflake, BigQuery,
-Redshift, Databricks SQL, Pinecone, Milvus, Qdrant, Weaviate, Chroma, Redis, Neo4j, Neptune,
-ArangoDB, MongoDB, Elasticsearch/OpenSearch, DynamoDB, Cosmos DB, Couchbase, ClickHouse,
-호환 SPARQL 시스템 등이 포함됩니다.
+계열 전체 구조는 [Enterprise data onboarding](enterprise-data-onboarding.md)을 참고하고,
+벤더별 동작은 vector/graph/record-store 가이드를 참고하세요.
+
+여기서 지원은 core adapter와 bounded contract가 존재한다는 뜻입니다. 실제 외부 환경의
+live acceptance 범위는 vendor/version/deployment별로 다르며 별도로 관리합니다.
 
 벤더별 credential과 client object는 SchemaRouter의 model-visible graph에 넣지 않고
 adapter/plugin 뒤의 trusted runtime state로 유지합니다.
