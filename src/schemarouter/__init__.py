@@ -7,6 +7,12 @@ from .adapters.base import (
     RefreshProfile,
     SourceAdapter,
 )
+from .adapters.graph_native import (
+    ArangoGraphBackend,
+    Neo4jGraphBackend,
+    NeptuneOpenCypherBackend,
+    SparqlGraphBackend,
+)
 from .adapters.graph_store import (
     GraphModel,
     GraphNodeTypeSpec,
@@ -566,6 +572,7 @@ __all__ = [
     "TrustedBindingConfig",
     "KeywordAnalyzer",
     "MCPBoundClientFactory",
+    "ArangoGraphBackend",
     "GraphModel",
     "GraphNodeTypeSpec",
     "GraphPropertySpec",
@@ -574,6 +581,9 @@ __all__ = [
     "GraphSourceInvoker",
     "GraphSourceSpec",
     "GraphStoreBackend",
+    "Neo4jGraphBackend",
+    "NeptuneOpenCypherBackend",
+    "SparqlGraphBackend",
     "MCPClientFactory",
     "MCPStdioConfig",
     "ModelAnalysisError",
