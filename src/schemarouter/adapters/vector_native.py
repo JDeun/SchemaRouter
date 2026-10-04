@@ -838,6 +838,7 @@ class RedisVectorBackend:
         metadata_fields_by_index: Mapping[str, Sequence[VectorMetadataField]] | None = None,
         metric_by_index: Mapping[str, str] | None = None,
         trusted_filter_builder: Callable[[Mapping[str, Any]], str] | None = None,
+        query_factory: Callable[[str], Any] | None = None,
     ) -> None:
         self._client = client
         self._index_names = None if index_names is None else tuple(index_names)
@@ -848,6 +849,7 @@ class RedisVectorBackend:
         }
         self._metric_by_index = dict(metric_by_index or {})
         self._trusted_filter_builder = trusted_filter_builder
+        self._query_factory = query_factory
         self._dimension_by_index: dict[str, int] = {}
 
     def _indexes(self) -> tuple[str, ...]:
@@ -967,15 +969,20 @@ class RedisVectorBackend:
             f"({prefix})=>[KNN {top_k} @{vector_field} $query_vector "
             "AS __vector_distance]"
         )
-        try:
-            query_cls = importlib.import_module("redis.commands.search.query").Query
-        except (ImportError, AttributeError) as exc:
-            raise RegistrationError(
-                "Redis vector search requires redis-py search support"
-            ) from exc
+        if self._query_factory is None:
+            try:
+                query_factory = importlib.import_module(
+                    "redis.commands.search.query"
+                ).Query
+            except (ImportError, AttributeError) as exc:
+                raise RegistrationError(
+                    "Redis vector search requires redis-py search support"
+                ) from exc
+        else:
+            query_factory = self._query_factory
         return_fields = [*include_fields, "__vector_distance"]
         query = (
-            query_cls(query_text)
+            query_factory(query_text)
             .sort_by("__vector_distance")
             .return_fields(*return_fields)
             .paging(0, top_k)
