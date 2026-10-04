@@ -69,8 +69,8 @@ AuthorizationRule(
 Unauthorized collections are non-disclosed before model selection and revalidated before
 execution.
 
-Metadata/tenant filter enforcement is the next cross-family data-scope layer in #770. A vendor
-adapter must not allow model arguments to override trusted tenant or department filters.
+Metadata/tenant filters from principal DataScope rules are applied as trusted filters at execution.
+A vendor adapter must not allow model arguments to override those tenant or department filters.
 
 ## Vendor adapters
 
@@ -81,7 +81,7 @@ authority model.
 The provider-neutral contract does **not** by itself claim that every named vendor SDK has completed
 native/live acceptance. Vendor-specific adapter acceptance is tracked under #767.
 
-## Native Qdrant and Milvus clients
+## Native vendor clients
 
 For Qdrant and Milvus, SchemaRouter ships thin adapters around caller-owned clients. Connection
 URLs, API keys, tokens, and client pools remain inside those client objects.
@@ -135,4 +135,78 @@ interpolated into the expression string.
 These adapters are SDK-shape tested with caller-owned fake clients. They do not make vendor
 credentials part of SchemaRouter state and do not imply that every deployment topology has been
 live-tested.
+
+### Pinecone
+
+```python
+keys = router.add_pinecone_vector_store(
+    pinecone_client,
+    embed_query,
+    database_name="pinecone",
+)
+```
+
+The adapter discovers index names, dimension and metric through the caller-owned Pinecone client.
+Pinecone does not expose a complete metadata schema, so model-visible metadata fields may be
+declared with `metadata_fields_by_index`. Trusted DataScope filters are passed through Pinecone's
+structured `filter` argument rather than interpolated query text.
+
+### Weaviate
+
+```python
+keys = router.add_weaviate_vector_store(
+    weaviate_client,
+    embed_query,
+    dimension_by_collection={"Article": 1536},
+)
+```
+
+Weaviate collection properties are discovered through the v4 collections API. Vector dimension is
+explicit because it is not reliably available from every collection configuration. Named vectors
+can be selected with `vector_name_by_collection`.
+
+### Chroma
+
+```python
+keys = router.add_chroma_vector_store(
+    chroma_client,
+    embed_query,
+)
+```
+
+The adapter discovers collections and can infer vector dimension from an existing embedding. Empty
+collections require `dimension_by_collection`. Metadata fields can be declared explicitly when the
+collection does not expose a stable schema.
+
+### Redis Vector Search
+
+```python
+keys = router.add_redis_vector_store(
+    redis_client,
+    embed_query,
+)
+```
+
+The adapter reads Redis Search index information, discovers the vector field and dimension, and
+builds a bounded KNN query with a binary vector parameter. Trusted metadata filtering requires a
+trusted filter builder rather than exposing RediSearch query syntax to model output.
+
+### PostgreSQL / pgvector
+
+```python
+keys = router.add_pgvector_store(
+    sqlalchemy_engine,
+    embed_query,
+    tables=["document_embeddings"],
+)
+```
+
+The adapter reflects VECTOR columns and primary keys through caller-owned SQLAlchemy/pgvector
+runtime state, then uses SQLAlchemy expressions for bounded distance ordering and trusted metadata
+filters. If a table has multiple VECTOR columns, select one explicitly with
+`vector_field_by_table`.
+
+The native adapter surface now covers Qdrant, Milvus, Pinecone, Weaviate, Chroma, Redis Vector
+Search, and PostgreSQL/pgvector. These are SDK-shape and contract tests, not a claim that every
+deployment topology or hosted account has been live-tested.
 
