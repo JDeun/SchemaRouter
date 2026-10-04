@@ -208,3 +208,42 @@ DB-native role/grant/RLS/ACL, tenant credential, network boundary는 계속 최�
 Data-scope rule도 선언 순서대로 첫 번째 match를 적용합니다. 넓은 rule은 사원/팀/부서별
 구체적인 rule 뒤에 두는 것이 안전합니다.
 
+
+
+## Authorization audit event
+
+Enterprise host는 opt-in trusted callback을 통해 authorization 결정을 관측할 수 있습니다.
+기본 이벤트에는 raw principal claim이나 trusted-filter 값이 저장되지 않습니다.
+
+```python
+from schemarouter import RunConfig, SchemaRouter
+
+audit_events = []
+
+router = SchemaRouter(
+    authorization_policy=policy,
+    authorization_audit_hook=audit_events.append,
+)
+
+result = await router.execute(
+    plan,
+    config=RunConfig(
+        principal=employee,
+        principal_audit_id="directory-user-7f3a",
+    ),
+)
+```
+
+`AuthorizationAuditEvent`에는 allow/deny 결과, rule/default 결정 출처, match한 rule 이름,
+data-scope rule 이름, visible field 개수, trusted-filter의 **field 이름**, graph scope 요약,
+tool/endpoint identity, phase, run ID가 포함됩니다. Host가 `principal_audit_id`를 제공하면
+그 opaque identifier도 같은 이벤트에 포함됩니다.
+
+Host가 run ID를 지정하지 않으면 runtime이 생성합니다. LangChain/LlamaIndex export는 export
+결정과 실제 execution 결정에 같은 run ID를 재사용하므로, trusted audit sink에서 두 경계를
+연결해 볼 수 있고 raw `PrincipalContext`를 넘길 필요는 없습니다.
+
+기본값에서는 audit hook이 꺼져 있습니다. SchemaRouter는 subject, role, department, team,
+principal attribute, resolved trusted-filter 값을 자동 저장하지 않습니다. Host가 별도 audit
+sink에 추가 identity 정보를 기록한다면 그 sink 자체가 host의 trusted security boundary가
+됩니다.
