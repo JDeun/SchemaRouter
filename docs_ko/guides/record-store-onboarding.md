@@ -52,7 +52,7 @@ Source 선언에 따라 다음만 노출됩니다.
 - bounded `limit`
 - explicit output-field projection
 
-모델에 MongoDB raw query document, Elasticsearch/OpenSearch Query DSL, Redis command,
+모델에 MongoDB raw query document, Elasticsearch/OpenSearch Query DSL,
 DynamoDB expression 등의 arbitrary vendor command를 직접 전달하는 surface는 없습니다.
 
 Vendor adapter가 bounded contract를 trusted runtime 안에서 native SDK call로 번역합니다.
