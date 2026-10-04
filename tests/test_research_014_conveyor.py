@@ -278,7 +278,7 @@ def test_stale_pending_wrapper_recovery_preserves_scientific_source_contract() -
     )
 
 
-def test_current_wrapper_zero_job_pending_is_recoverable_only_prejob() -> None:
+def test_zero_job_pending_is_recoverable_only_prejob() -> None:
     pending = StageRun(
         id=94,
         status="pending",
@@ -343,6 +343,9 @@ def test_conveyor_can_supersede_stale_pending_corrective_wrapper() -> None:
     assert "stale_pending_wrapper(corrective, wrapper_sha=_wrapper_sha)" in controller
     assert "recover_dispatch_zero_job_pending_corrective" in controller
     assert "api.cancel_run_and_wait(corrective.id)" in controller
+    assert controller.index("elif stale_zero_job_pending(") < controller.index(
+        "elif stale_pending_wrapper(corrective, wrapper_sha=_wrapper_sha):"
+    )
 
 
 def test_issue_15_is_registered_as_nonblocking_external_dag_node() -> None:
