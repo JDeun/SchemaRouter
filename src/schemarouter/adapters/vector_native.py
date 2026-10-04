@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
+import re
 from typing import Any
 
 from ..errors import RegistrationError, SchemaValidationError
@@ -382,6 +383,10 @@ class MilvusVectorBackend:
         expressions: list[str] = []
         values: dict[str, Any] = {}
         for index, (field, value) in enumerate(sorted(filters.items())):
+            if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", field) is None:
+                raise SchemaValidationError(
+                    "Milvus trusted filter field has an unsafe identifier"
+                )
             placeholder = f"p{index}"
             if isinstance(value, tuple):
                 expressions.append(f"{field} IN {{{placeholder}}}")
