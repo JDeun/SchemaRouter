@@ -4,6 +4,12 @@ from ..openapi_compatibility import (
     analyze_openapi_compatibility,
 )
 from .base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
+from .graph_native import (
+    ArangoGraphBackend,
+    Neo4jGraphBackend,
+    NeptuneOpenCypherBackend,
+    SparqlGraphBackend,
+)
 from .graph_store import (
     GraphModel,
     GraphNodeTypeSpec,
@@ -92,6 +98,7 @@ __all__ = [
     "AdapterRegistry",
     "DefaultMCPClientFactory",
     "HTTPJSONRemoteInvoker",
+    "ArangoGraphBackend",
     "GraphModel",
     "GraphNodeTypeSpec",
     "GraphPropertySpec",
@@ -100,6 +107,9 @@ __all__ = [
     "GraphSourceInvoker",
     "GraphSourceSpec",
     "GraphStoreBackend",
+    "Neo4jGraphBackend",
+    "NeptuneOpenCypherBackend",
+    "SparqlGraphBackend",
     "GraphQLRemoteInvoker",
     "GraphQLSourceAdapter",
     "MCPBoundClientFactory",
