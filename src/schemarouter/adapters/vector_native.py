@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 from ..errors import RegistrationError, SchemaValidationError
@@ -55,6 +55,7 @@ class QdrantVectorBackend:
             Sequence[VectorMetadataField],
         ]
         | None = None,
+        filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
     ) -> None:
         self._client = client
         self._vector_name_by_collection = dict(vector_name_by_collection or {})
@@ -62,6 +63,7 @@ class QdrantVectorBackend:
             name: tuple(fields)
             for name, fields in (metadata_fields_by_collection or {}).items()
         }
+        self._filter_builder = filter_builder
 
     def _collection_names(self) -> list[str]:
         response = self._client.get_collections()
@@ -216,7 +218,11 @@ class QdrantVectorBackend:
         if vector_name is not None:
             kwargs["using"] = vector_name
         if filters:
-            kwargs["query_filter"] = self._qdrant_filter(filters)
+            kwargs["query_filter"] = (
+                self._filter_builder(filters)
+                if self._filter_builder is not None
+                else self._qdrant_filter(filters)
+            )
 
         response = self._client.query_points(**kwargs)
         points = _read(response, "points", response)
