@@ -6,7 +6,11 @@ from typing import Any
 import pytest
 
 from schemarouter import SchemaRouter, VectorMetadataField
-from schemarouter.adapters.vector_native import MilvusVectorBackend, QdrantVectorBackend
+from schemarouter.adapters.vector_native import (
+    MilvusVectorBackend,
+    PineconeVectorBackend,
+    QdrantVectorBackend,
+)
 
 
 @dataclass
@@ -190,6 +194,145 @@ def test_qdrant_named_vector_requires_explicit_selection() -> None:
     spec = backend.list_collections()[0]
     assert spec.dimension == 3
     assert spec.public_metadata == {"vector_name": "text"}
+
+
+class _PineconeIndex:
+    def __init__(self) -> None:
+        self.query_kwargs: dict[str, Any] = {}
+
+    def query(self, **kwargs: Any) -> dict[str, Any]:
+        self.query_kwargs = dict(kwargs)
+        return {
+            "matches": [
+                {
+                    "id": "pc-1",
+                    "score": 0.95,
+                    "metadata": {
+                        "title": "Pinecone",
+                        "tenant": "tenant-a",
+                    },
+                }
+            ]
+        }
+
+
+class _PineconeIndexList:
+    def names(self) -> list[str]:
+        return ["docs"]
+
+
+class FakePineconeClient:
+    def __init__(self) -> None:
+        self.index = _PineconeIndex()
+        self.index_args: list[dict[str, Any]] = []
+
+    def list_indexes(self) -> _PineconeIndexList:
+        return _PineconeIndexList()
+
+    def describe_index(self, *, name: str) -> dict[str, Any]:
+        assert name == "docs"
+        return {
+            "name": "docs",
+            "dimension": 3,
+            "metric": "cosine",
+            "vector_type": "dense",
+            "host": "docs.example.svc.pinecone.io",
+        }
+
+    def Index(self, **kwargs: Any) -> _PineconeIndex:  # noqa: N802
+        self.index_args.append(dict(kwargs))
+        return self.index
+
+
+def test_pinecone_adapter_discovers_index_and_normalizes_query() -> None:
+    client = FakePineconeClient()
+    backend = PineconeVectorBackend(
+        client,
+        metadata_fields_by_index={
+            "docs": (
+                VectorMetadataField(
+                    name="title",
+                    json_schema={"type": "string"},
+                ),
+                VectorMetadataField(
+                    name="tenant",
+                    json_schema={"type": "string"},
+                    filterable=True,
+                ),
+            )
+        },
+        namespace_by_index={"docs": "production"},
+    )
+
+    collections = backend.list_collections()
+    assert len(collections) == 1
+    spec = collections[0]
+    assert spec.name == "docs"
+    assert spec.dimension == 3
+    assert spec.metric == "cosine"
+    assert spec.public_metadata == {"namespace": "production"}
+
+    rows = backend.search(
+        collection="docs",
+        vector=[0.1, 0.2, 0.3],
+        top_k=4,
+        include_fields=("title",),
+        filters={"tenant": "tenant-a"},
+    )
+    assert rows == [
+        {
+            "id": "pc-1",
+            "score": 0.95,
+            "title": "Pinecone",
+        }
+    ]
+    assert client.index_args == [{"host": "docs.example.svc.pinecone.io"}]
+    assert client.index.query_kwargs == {
+        "vector": [0.1, 0.2, 0.3],
+        "top_k": 4,
+        "include_metadata": True,
+        "include_values": False,
+        "namespace": "production",
+        "filter": {"tenant": "tenant-a"},
+    }
+
+
+def test_pinecone_requires_explicit_metadata_contract() -> None:
+    client = FakePineconeClient()
+    backend = PineconeVectorBackend(client)
+
+    with pytest.raises(Exception, match="undeclared metadata fields"):
+        backend.search(
+            collection="docs",
+            vector=[0.1, 0.2, 0.3],
+            top_k=2,
+            include_fields=("title",),
+        )
+
+
+def test_router_pinecone_convenience_registration_uses_native_backend() -> None:
+    client = FakePineconeClient()
+    router = SchemaRouter()
+
+    keys = router.add_pinecone_vector_store(
+        client,
+        lambda query: [0.1, 0.2, 0.3],
+        database_name="pinecone",
+        metadata_fields_by_index={
+            "docs": (
+                VectorMetadataField(
+                    name="title",
+                    json_schema={"type": "string"},
+                ),
+            )
+        },
+        remote=False,
+    )
+
+    assert keys == ("pinecone.docs",)
+    endpoint = router.registry.get("pinecone.docs").endpoint("search")
+    assert endpoint.execution_metadata["dimension"] == 3
+    assert endpoint.execution_metadata["metric"] == "cosine"
 
 
 class FakeMilvusClient:
