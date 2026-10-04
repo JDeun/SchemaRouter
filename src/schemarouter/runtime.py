@@ -4996,13 +4996,26 @@ class SchemaRouter:
             ))
             raise
 
-        self._validate_plan_authorization(
-            plan,
-            run_config.principal,
-            run_id=run_id,
-            principal_audit_id=run_config.principal_audit_id,
-            phase="execution",
-        )
+        try:
+            self._validate_plan_authorization(
+                plan,
+                run_config.principal,
+                run_id=run_id,
+                principal_audit_id=run_config.principal_audit_id,
+                phase="execution",
+            )
+        except Exception as exc:
+            data = {"error_type": type(exc).__name__, "stage": "authorization"}
+            if run_config.include_payloads:
+                data["message"] = str(exc)
+            yield await emit(RunEvent.create(
+                event="run.error",
+                run_id=run_id,
+                sequence=sequence,
+                config=run_config,
+                data=data,
+            ))
+            raise
 
         plan_data: dict[str, Any] = {
             "call_count": len(plan.calls),
