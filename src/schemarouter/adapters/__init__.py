@@ -68,7 +68,6 @@ from .record_native import (
     ElasticRecordBackend,
     InfluxRecordBackend,
     MongoRecordBackend,
-    RedisRecordBackend,
 )
 from .record_store import (
     RecordFieldSpec,
@@ -151,7 +150,6 @@ __all__ = [
     "RecordSourceInvoker",
     "RecordSourceSpec",
     "RecordStoreBackend",
-    "RedisRecordBackend",
     "MilvusVectorBackend",
     "QdrantVectorBackend",
     "SourceAdapter",
