@@ -466,3 +466,74 @@ def test_inmemory_cas_detects_metadata_only_concurrent_write_even_when_fingerpri
         )
 
     assert reg.get("demo").metadata["note"] == "concurrent writer"
+
+
+def test_inmemory_registry_batch_cas_is_atomic() -> None:
+    reg = InMemoryRegistry()
+    expected_version = reg.version
+    tools = (
+        ToolSpec(name="batch_a", endpoints=[EndpointSpec(name="run")]),
+        ToolSpec(name="batch_b", endpoints=[EndpointSpec(name="run")]),
+    )
+
+    keys = reg.update_many_if_version(tools, expected_version=expected_version)
+
+    assert keys == ("batch_a", "batch_b")
+    assert reg.keys() == keys
+    assert reg.version == expected_version + 1
+
+
+def test_inmemory_registry_batch_cas_rejects_stale_version_without_partial_write() -> None:
+    reg = InMemoryRegistry()
+    expected_version = reg.version
+    reg.register(ToolSpec(name="concurrent", endpoints=[EndpointSpec(name="run")]))
+    tools = (
+        ToolSpec(name="batch_a", endpoints=[EndpointSpec(name="run")]),
+        ToolSpec(name="batch_b", endpoints=[EndpointSpec(name="run")]),
+    )
+
+    with pytest.raises(RegistrationError, match="registry changed concurrently"):
+        reg.update_many_if_version(tools, expected_version=expected_version)
+
+    assert reg.keys() == ("concurrent",)
+
+
+def test_inmemory_registry_batch_rollback_is_atomic() -> None:
+    reg = InMemoryRegistry()
+    tools = (
+        ToolSpec(name="batch_a", endpoints=[EndpointSpec(name="run")]),
+        ToolSpec(name="batch_b", endpoints=[EndpointSpec(name="run")]),
+    )
+    keys = reg.update_many_if_version(tools, expected_version=reg.version)
+    expected_version = reg.version
+
+    reg.unregister_many_if_version(
+        {
+            key: reg.get(key).fingerprint
+            for key in keys
+        },
+        expected_version=expected_version,
+    )
+
+    assert reg.keys() == ()
+    assert reg.version == expected_version + 1
+
+
+def test_inmemory_registry_batch_rollback_rejects_stale_version_without_partial_delete() -> None:
+    reg = InMemoryRegistry()
+    tools = (
+        ToolSpec(name="batch_a", endpoints=[EndpointSpec(name="run")]),
+        ToolSpec(name="batch_b", endpoints=[EndpointSpec(name="run")]),
+    )
+    keys = reg.update_many_if_version(tools, expected_version=reg.version)
+    expected = {key: reg.get(key).fingerprint for key in keys}
+    stale_version = reg.version
+    reg.register(ToolSpec(name="concurrent", endpoints=[EndpointSpec(name="run")]))
+
+    with pytest.raises(RegistrationError, match="registry changed concurrently"):
+        reg.unregister_many_if_version(
+            expected,
+            expected_version=stale_version,
+        )
+
+    assert set(reg.keys()) == {"batch_a", "batch_b", "concurrent"}
