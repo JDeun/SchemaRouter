@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- added caller-owned native graph/RDF adapters for Neo4j, Amazon Neptune Database/Analytics,
+  ArangoDB, and SPARQL 1.1 endpoints, translating vendor SDK/protocol shapes into the bounded graph
+  contract without exposing raw query languages to model output;
 - added native caller-owned Qdrant and Milvus vector backends with collection/schema
   discovery, bounded query normalization, explicit multi-vector selection, and trusted metadata
   filtering while keeping vendor credentials and clients outside model-visible contracts;

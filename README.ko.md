@@ -262,7 +262,7 @@ OData.org V4 reference service를 포함합니다. Credential과 optional depend
 | Vector store | collection/index discovery + bounded similarity search | `router.add_vector_store(backend, embed_query, ...)` |
 | Qdrant | caller-owned Qdrant client | `router.add_qdrant_vector_store(client, embed_query, ...)` |
 | Milvus | caller-owned MilvusClient | `router.add_milvus_vector_store(client, embed_query, ...)` |
-| Graph/RDF store | graph schema discovery + bounded traversal | `router.add_graph_store(backend, ...)` |
+| Graph/RDF store | graph schema discovery + bounded traversal; Neo4j/Neptune/ArangoDB/SPARQL native helper | `router.add_graph_store(...)` / `add_neo4j_graph(...)` |
 | NoSQL record store | document/search/KV/time-series schema discovery + bounded query | `router.add_record_store(backend, ...)` |
 | 직접 ToolSpec | 애플리케이션이 이미 정규 계약을 갖고 있을 때 | `router.add_tool(...)` |
 | Python | capability가 로컬에 있고 타입이 붙어 있을 때 | `router.add_callable(...)` |

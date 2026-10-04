@@ -261,7 +261,7 @@ SDK or weakly described REST surface.
 | Vector store | collection/index discovery + bounded similarity search | `router.add_vector_store(backend, embed_query, ...)` |
 | Qdrant | caller-owned Qdrant client | `router.add_qdrant_vector_store(client, embed_query, ...)` |
 | Milvus | caller-owned MilvusClient | `router.add_milvus_vector_store(client, embed_query, ...)` |
-| Graph/RDF store | graph schema discovery + bounded traversal | `router.add_graph_store(backend, ...)` |
+| Graph/RDF store | graph schema discovery + bounded traversal; native Neo4j/Neptune/ArangoDB/SPARQL helpers | `router.add_graph_store(...)` / `add_neo4j_graph(...)` |
 | NoSQL record store | document/search/KV/time-series schema discovery + bounded query | `router.add_record_store(backend, ...)` |
 | Direct ToolSpec | the application already owns the canonical contract | `router.add_tool(...)` |
 | Python | capability is local and typed | `router.add_callable(...)` |

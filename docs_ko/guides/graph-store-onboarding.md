@@ -73,15 +73,29 @@ AuthorizationRule(
 
 Node/property/relationship 세부 scope와 trusted traversal predicate는 #770에서 확장합니다.
 
-## Vendor 대상
+## Native vendor adapter
 
-Provider-neutral contract 위에 다음 계열의 thin adapter를 붙이는 구조입니다.
+Provider-neutral contract 위에 caller-owned native adapter가 추가됩니다.
 
-- Neo4j
-- Amazon Neptune
-- ArangoDB
-- GraphDB/Stardog 계열을 포함한 호환 SPARQL 1.1 endpoint
+- **Neo4j**: Python driver의 `execute_query()` 경계
+- **Amazon Neptune Database / Neptune Analytics**: 지원되는 openCypher Data API
+- **ArangoDB**: `python-arango` graph discovery와 parameter-bound AQL traversal
+- **SPARQL 1.1 query endpoint**: caller-owned HTTP client를 사용하며 GraphDB/Stardog 계열과
+  같은 호환 RDF store에 연결 가능
 
-먼저 공통 contract를 구현하고 native vendor SDK/live acceptance는 별도 vendor-adapter 단계로
-진행합니다. 따라서 공통 contract가 있다는 것만으로 위 모든 DB의 end-to-end 검증이 끝났다는
-뜻은 아닙니다.
+```python
+router.add_neo4j_graph(driver, database="neo4j", graph_name="org")
+router.add_neptune_graph(neptune_client, graph_name="social")
+router.add_arango_graph(arango_database)
+router.add_sparql_graph(
+    http_client,
+    endpoint="https://example.org/sparql",
+    graph_name="rdf",
+)
+```
+
+이 adapter들은 SchemaRouter의 bounded traversal contract만 native 호출로 번역합니다.
+모델 출력에 raw Cypher, AQL, Gremlin, SPARQL 문자열 실행 권한을 주지 않습니다.
+
+Deterministic SDK-shape test는 release gate에 포함합니다. Native adapter가 존재한다는 사실과
+모든 vendor/version/deployment의 외부 live acceptance가 완료됐다는 주장은 구분합니다.
