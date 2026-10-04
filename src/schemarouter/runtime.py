@@ -36,6 +36,7 @@ from .authorization import (
     _current_principal_context,
     _principal_execution_context,
 )
+from .authorization_audit import AuthorizationAuditEvent, AuthorizationAuditHook
 from .binding_reconciliation import (
     BindingReconciliationError,
     BindingReconciliationItem,
@@ -232,6 +233,7 @@ class SchemaRouter:
         http_client: httpx.AsyncClient | None = None,
         policy: ExecutionPolicy | None = None,
         authorization_policy: AuthorizationPolicy | None = None,
+        authorization_audit_hook: AuthorizationAuditHook | None = None,
         approval_callback: ApprovalCallback | None = None,
         execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
@@ -241,6 +243,7 @@ class SchemaRouter:
     ) -> None:
         self.registry = registry if registry is not None else InMemoryRegistry()
         self.authorization_policy = authorization_policy
+        self.authorization_audit_hook = authorization_audit_hook
         self.executor = RegistryExecutor(
             self.registry,
             policy=policy,
