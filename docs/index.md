@@ -5,7 +5,7 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.15.0</span>
+<span class="sr-kicker">SchemaRouter 0.16.0</span>
 
 # Put a typed execution boundary between agents and tools
 
@@ -193,14 +193,14 @@ flow and never becomes executable automatically.
 
 ## Current release
 
-**0.15.0** is the current stable Beta / pre-1.0 release. Python 3.10–3.14 are
+**0.16.0** is the current stable Beta / pre-1.0 release. Python 3.10–3.14 are
 release-blocking targets and Python 3.15 is a preview target.
 
-Current development on `main` is the 0.16 line. It extends the same execution boundary with
-enterprise authorization and schema-introspected relational, vector, graph/RDF, and non-relational
-data onboarding. Research experiments remain separate from the stable product contract.
+0.16 adds enterprise authorization and schema-introspected relational, vector, graph/RDF, and
+non-relational data onboarding while keeping authentication, credentials, native database
+permissions, and raw query authority outside the model-visible boundary.
 
-[0.15.0 release notes →](releases/0.15.0.md) ·
+[0.16.0 release notes →](releases/0.16.0.md) ·
 [Enterprise data onboarding →](guides/enterprise-data-onboarding.md) ·
 [Research status →](research/routing-status.md)
 
