@@ -4,14 +4,13 @@ from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
     ExecutionPlan,
-    OutputField,
     PrincipalContext,
     SchemaRouter,
     ToolCall,
-    ToolEndpoint,
     ToolSpec,
 )
 from schemarouter.authorization_audit import AuthorizationAuditEvent
+from schemarouter.models import EndpointSpec, OutputField
 
 
 def tool() -> ToolSpec:
@@ -21,7 +20,7 @@ def tool() -> ToolSpec:
         provider="company",
         access_mode="python",
         endpoints=[
-            ToolEndpoint(
+            EndpointSpec(
                 name="read",
                 description="read records",
                 output_fields=[OutputField(name="id", json_schema={"type": "string"})],
