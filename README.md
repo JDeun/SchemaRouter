@@ -146,6 +146,7 @@ Credentials, connection pools, database clients, and transport state remain call
 query languages are not exposed as model authority.
 
 [Choose an ingestion path →](docs/getting-started/ingestion-paths.md) ·
+[Full ingestion matrix →](docs/guides/universal-ingestion.md) ·
 [Provider-first registration →](docs/guides/provider-first-registration.md) ·
 [Enterprise data onboarding →](docs/guides/enterprise-data-onboarding.md)
 
