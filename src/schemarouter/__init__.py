@@ -9,6 +9,7 @@ from .adapters.base import (
 )
 from .adapters.graph_native import (
     ArangoGraphBackend,
+    FalkorGraphBackend,
     Neo4jGraphBackend,
     NeptuneOpenCypherBackend,
     SparqlGraphBackend,
@@ -590,6 +591,7 @@ __all__ = [
     "KeywordAnalyzer",
     "MCPBoundClientFactory",
     "ArangoGraphBackend",
+    "FalkorGraphBackend",
     "GraphModel",
     "GraphNodeTypeSpec",
     "GraphPropertySpec",
