@@ -1079,6 +1079,130 @@ class SchemaRouter:
             )
         )
 
+    async def aadd_qdrant_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        database_name: str = "qdrant",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        vector_name_by_collection: Mapping[str, str] | None = None,
+        metadata_fields_by_collection: Mapping[str, Sequence[Any]] | None = None,
+        filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned Qdrant client through the vector capability contract."""
+
+        from .adapters.vector_native import QdrantVectorBackend
+
+        return await self.aadd_vector_store(
+            QdrantVectorBackend(
+                client,
+                vector_name_by_collection=vector_name_by_collection,
+                metadata_fields_by_collection=metadata_fields_by_collection,
+                filter_builder=filter_builder,
+            ),
+            embed_query,
+            database_name=database_name,
+            namespace=namespace,
+            collections=collections,
+            default_top_k=default_top_k,
+            remote=remote,
+        )
+
+    def add_qdrant_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        database_name: str = "qdrant",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        vector_name_by_collection: Mapping[str, str] | None = None,
+        metadata_fields_by_collection: Mapping[str, Sequence[Any]] | None = None,
+        filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_qdrant_vector_store`."""
+
+        return _run_sync(
+            lambda: self.aadd_qdrant_vector_store(
+                client,
+                embed_query,
+                database_name=database_name,
+                namespace=namespace,
+                collections=collections,
+                vector_name_by_collection=vector_name_by_collection,
+                metadata_fields_by_collection=metadata_fields_by_collection,
+                filter_builder=filter_builder,
+                default_top_k=default_top_k,
+                remote=remote,
+            )
+        )
+
+    async def aadd_milvus_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        database_name: str = "milvus",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        vector_field_by_collection: Mapping[str, str] | None = None,
+        metric_by_collection: Mapping[str, str] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned MilvusClient through the vector capability contract."""
+
+        from .adapters.vector_native import MilvusVectorBackend
+
+        return await self.aadd_vector_store(
+            MilvusVectorBackend(
+                client,
+                vector_field_by_collection=vector_field_by_collection,
+                metric_by_collection=metric_by_collection,
+            ),
+            embed_query,
+            database_name=database_name,
+            namespace=namespace,
+            collections=collections,
+            default_top_k=default_top_k,
+            remote=remote,
+        )
+
+    def add_milvus_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        database_name: str = "milvus",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        vector_field_by_collection: Mapping[str, str] | None = None,
+        metric_by_collection: Mapping[str, str] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_milvus_vector_store`."""
+
+        return _run_sync(
+            lambda: self.aadd_milvus_vector_store(
+                client,
+                embed_query,
+                database_name=database_name,
+                namespace=namespace,
+                collections=collections,
+                vector_field_by_collection=vector_field_by_collection,
+                metric_by_collection=metric_by_collection,
+                default_top_k=default_top_k,
+                remote=remote,
+            )
+        )
+
     async def aadd_graph_store(
         self,
         backend: Any,
