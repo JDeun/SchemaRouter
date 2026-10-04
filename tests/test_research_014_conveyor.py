@@ -112,6 +112,7 @@ def test_conveyor_workflows_encode_expected_stage_contracts() -> None:
 
     assert "CANONICAL_B2_RUN" in corrective
     assert "evidence_digest" in corrective
+    assert "timeout-minutes: 360" in corrective
     assert "include_struct_fixed3" in heldout
     assert "include_state_aware" in heldout
     assert "heldout_run_id" in final
