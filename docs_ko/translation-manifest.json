@@ -570,6 +570,10 @@
     {
       "path": "versioning.md",
       "source_blob": "61f82f452188aec2f74fde20f09243a9dbbb1497"
+    },
+    {
+      "path": "research/external-validation-freeze.md",
+      "source_blob": "e02cd98208f749ccd2fe6cfd33e31b9099429611"
     }
   ]
 }
