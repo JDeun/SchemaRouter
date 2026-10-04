@@ -14,8 +14,8 @@ from schemarouter import (
     RunConfig,
     SchemaRouter,
     SchemaValidationError,
-    schema_tool,
     TrustedFilterBinding,
+    schema_tool,
 )
 from schemarouter.integrations import (
     to_langchain_tool,
