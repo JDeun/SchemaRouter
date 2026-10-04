@@ -7,6 +7,8 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+## 0.16.0 - 2026-10-04
+
 ### Added
 - added a native caller-owned FalkorDB property-graph adapter with graph/label/relationship/property discovery, read-only `ro_query()` traversal, and existing principal graph-scope enforcement;
 
