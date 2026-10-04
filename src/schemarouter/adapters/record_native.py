@@ -715,3 +715,721 @@ class DynamoDBRecordBackend:
                 }
             )
         return rows
+
+
+def _cosmos_property(name: str) -> str:
+    if not name or "\x00" in name:
+        raise SchemaValidationError("Cosmos DB field name is unsafe")
+    return "c[" + json.dumps(name, ensure_ascii=True) + "]"
+
+
+class CosmosRecordBackend:
+    """Thin adapter over a caller-owned synchronous Azure Cosmos DatabaseProxy."""
+
+    def __init__(
+        self,
+        database: Any,
+        *,
+        containers: Sequence[str] | None = None,
+        time_field_by_container: Mapping[str, str] | None = None,
+    ) -> None:
+        self._database = database
+        self._containers = None if containers is None else tuple(containers)
+        self._time_fields = dict(time_field_by_container or {})
+        self._field_names: dict[str, frozenset[str]] = {}
+
+    def _container_names(self) -> tuple[str, ...]:
+        if self._containers is not None:
+            return self._containers
+        names: list[str] = []
+        for raw in self._database.list_containers():
+            if isinstance(raw, Mapping) and raw.get("id"):
+                names.append(str(raw["id"]))
+        return tuple(names)
+
+    def _sample(self, container_name: str) -> dict[str, Any]:
+        container = self._database.get_container_client(container_name)
+        rows = container.query_items(
+            query="SELECT TOP 1 * FROM c",
+            enable_cross_partition_query=True,
+        )
+        for row in rows:
+            if not isinstance(row, Mapping):
+                raise SchemaValidationError("Cosmos DB sample item must be an object")
+            return dict(row)
+        return {}
+
+    def list_sources(self) -> tuple[RecordSourceSpec, ...]:
+        results: list[RecordSourceSpec] = []
+        for container_name in self._container_names():
+            sample = self._sample(container_name)
+            names = list(sample)
+            if "id" not in names:
+                names.insert(0, "id")
+            fields: list[RecordFieldSpec] = []
+            for name in names:
+                value = sample.get(name)
+                scalar = not isinstance(value, (Mapping, list, tuple, set, frozenset))
+                fields.append(
+                    RecordFieldSpec(
+                        name=name,
+                        json_schema=_json_schema_from_value(value),
+                        identifier=name == "id",
+                        filterable=name == "id" or scalar,
+                    )
+                )
+            self._field_names[container_name] = frozenset(names)
+            results.append(
+                RecordSourceSpec(
+                    name=container_name,
+                    model="document",
+                    fields=tuple(fields),
+                    time_field=self._time_fields.get(container_name),
+                    public_metadata={"vendor": "azure-cosmos-db"},
+                )
+            )
+        return tuple(results)
+
+    def query(
+        self,
+        *,
+        source: str,
+        text_query: str | None,
+        filters: dict[str, Any],
+        start_time: str | None,
+        end_time: str | None,
+        limit: int,
+        include_fields: tuple[str, ...],
+    ) -> list[dict[str, Any]]:
+        if text_query is not None:
+            raise SchemaValidationError("Cosmos DB adapter does not expose free-text query text")
+        if source not in self._field_names:
+            self.list_sources()
+        if source not in self._field_names:
+            raise RegistrationError(f"unknown Cosmos DB container {source!r}")
+
+        clauses: list[str] = []
+        parameters: list[dict[str, Any]] = []
+        parameter_index = 0
+        for field, value in sorted(filters.items()):
+            if field not in self._field_names[source]:
+                raise SchemaValidationError(f"unknown Cosmos DB filter field {field!r}")
+            prop = _cosmos_property(field)
+            if isinstance(value, tuple):
+                members: list[str] = []
+                for member in value:
+                    param_name = f"@p{parameter_index}"
+                    parameter_index += 1
+                    parameters.append({"name": param_name, "value": _json_safe(member)})
+                    members.append(f"{prop} = {param_name}")
+                if not members:
+                    raise SchemaValidationError("Cosmos DB membership filter cannot be empty")
+                clauses.append("(" + " OR ".join(members) + ")")
+            else:
+                param_name = f"@p{parameter_index}"
+                parameter_index += 1
+                parameters.append({"name": param_name, "value": _json_safe(value)})
+                clauses.append(f"{prop} = {param_name}")
+
+        time_field = self._time_fields.get(source)
+        if start_time is not None or end_time is not None:
+            if time_field is None:
+                raise SchemaValidationError("Cosmos DB time bounds are not enabled for this container")
+            prop = _cosmos_property(time_field)
+            if start_time is not None:
+                parameters.append({"name": "@start", "value": start_time})
+                clauses.append(f"{prop} >= @start")
+            if end_time is not None:
+                parameters.append({"name": "@end", "value": end_time})
+                clauses.append(f"{prop} < @end")
+
+        parameters.append({"name": "@limit", "value": limit})
+        statement = "SELECT * FROM c"
+        if clauses:
+            statement += " WHERE " + " AND ".join(clauses)
+        statement += " OFFSET 0 LIMIT @limit"
+
+        container = self._database.get_container_client(source)
+        rows = container.query_items(
+            query=statement,
+            parameters=parameters,
+            enable_cross_partition_query=True,
+        )
+        result: list[dict[str, Any]] = []
+        for raw in rows:
+            if not isinstance(raw, Mapping):
+                raise SchemaValidationError("Cosmos DB query item must be an object")
+            result.append(
+                {
+                    field: _json_safe(raw[field])
+                    for field in include_fields
+                    if field in raw
+                }
+            )
+            if len(result) >= limit:
+                break
+        return result
+
+
+def _n1ql_identifier(value: str) -> str:
+    if not value or "\x00" in value or "`" in value:
+        raise SchemaValidationError("Couchbase identifier is unsafe")
+    return f"`{value}`"
+
+
+def _query_rows(result: Any) -> list[dict[str, Any]]:
+    rows = result.rows() if hasattr(result, "rows") else result
+    return [dict(_as_mapping(row)) for row in rows]
+
+
+class CouchbaseRecordBackend:
+    """Thin adapter over a caller-owned Couchbase Cluster."""
+
+    def __init__(
+        self,
+        cluster: Any,
+        *,
+        keyspaces: Sequence[str] | None = None,
+        time_field_by_source: Mapping[str, str] | None = None,
+    ) -> None:
+        self._cluster = cluster
+        self._configured = None if keyspaces is None else tuple(keyspaces)
+        self._time_fields = dict(time_field_by_source or {})
+        self._paths: dict[str, tuple[str, str, str]] = {}
+        self._field_names: dict[str, frozenset[str]] = {}
+
+    def _discover_paths(self) -> dict[str, tuple[str, str, str]]:
+        if self._configured is not None:
+            paths: dict[str, tuple[str, str, str]] = {}
+            for value in self._configured:
+                parts = value.split(".")
+                if len(parts) != 3:
+                    raise RegistrationError(
+                        "Couchbase keyspaces must use bucket.scope.collection"
+                    )
+                paths[value] = (parts[0], parts[1], parts[2])
+            return paths
+
+        result = self._cluster.query(
+            "SELECT bucket, scope, name FROM system:keyspaces "
+            "WHERE namespace = 'default' AND bucket IS NOT MISSING "
+            "AND scope IS NOT MISSING ORDER BY bucket, scope, name"
+        )
+        paths = {}
+        for row in _query_rows(result):
+            bucket = str(row.get("bucket") or "")
+            scope = str(row.get("scope") or "")
+            name = str(row.get("name") or "")
+            if not bucket or not scope or not name:
+                continue
+            source = f"{bucket}.{scope}.{name}"
+            paths[source] = (bucket, scope, name)
+        return paths
+
+    @staticmethod
+    def _keyspace(path: tuple[str, str, str]) -> str:
+        return ".".join(_n1ql_identifier(value) for value in path)
+
+    def list_sources(self) -> tuple[RecordSourceSpec, ...]:
+        self._paths = self._discover_paths()
+        results: list[RecordSourceSpec] = []
+        for source, path in sorted(self._paths.items()):
+            statement = f"SELECT RAW c FROM {self._keyspace(path)} AS c LIMIT 1"
+            rows = _query_rows(self._cluster.query(statement))
+            sample = rows[0] if rows else {}
+            names = list(sample)
+            fields = []
+            for name in names:
+                value = sample.get(name)
+                scalar = not isinstance(value, (Mapping, list, tuple, set, frozenset))
+                safe_filter = re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name) is not None
+                fields.append(
+                    RecordFieldSpec(
+                        name=name,
+                        json_schema=_json_schema_from_value(value),
+                        identifier=name == "id",
+                        filterable=safe_filter and (name == "id" or scalar),
+                    )
+                )
+            if not fields:
+                fields.append(
+                    RecordFieldSpec(
+                        name="id",
+                        json_schema={"type": "string"},
+                        identifier=True,
+                        filterable=True,
+                    )
+                )
+            self._field_names[source] = frozenset(field.name for field in fields)
+            results.append(
+                RecordSourceSpec(
+                    name=source,
+                    model="document",
+                    fields=tuple(fields),
+                    time_field=self._time_fields.get(source),
+                    public_metadata={"vendor": "couchbase"},
+                )
+            )
+        return tuple(results)
+
+    def query(
+        self,
+        *,
+        source: str,
+        text_query: str | None,
+        filters: dict[str, Any],
+        start_time: str | None,
+        end_time: str | None,
+        limit: int,
+        include_fields: tuple[str, ...],
+    ) -> list[dict[str, Any]]:
+        if text_query is not None:
+            raise SchemaValidationError("Couchbase native adapter does not expose raw/full-text query text")
+        if source not in self._paths:
+            self.list_sources()
+        path = self._paths.get(source)
+        if path is None:
+            raise RegistrationError(f"unknown Couchbase keyspace {source!r}")
+
+        clauses: list[str] = []
+        params: dict[str, Any] = {"limit": limit}
+        for index, (field, value) in enumerate(sorted(filters.items())):
+            if field not in self._field_names[source]:
+                raise SchemaValidationError(f"unknown Couchbase filter field {field!r}")
+            if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", field) is None:
+                raise SchemaValidationError("Couchbase filter field is not safely addressable")
+            identifier = _n1ql_identifier(field)
+            param_name = f"p{index}"
+            if isinstance(value, tuple):
+                params[param_name] = list(value)
+                clauses.append(f"c.{identifier} IN $" + param_name)
+            else:
+                params[param_name] = _json_safe(value)
+                clauses.append(f"c.{identifier} = $" + param_name)
+
+        time_field = self._time_fields.get(source)
+        if start_time is not None or end_time is not None:
+            if time_field is None or re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", time_field) is None:
+                raise SchemaValidationError("Couchbase time bounds are not enabled for this keyspace")
+            identifier = _n1ql_identifier(time_field)
+            if start_time is not None:
+                params["start"] = start_time
+                clauses.append(f"c.{identifier} >= $start")
+            if end_time is not None:
+                params["end"] = end_time
+                clauses.append(f"c.{identifier} < $end")
+
+        statement = f"SELECT RAW c FROM {self._keyspace(path)} AS c"
+        if clauses:
+            statement += " WHERE " + " AND ".join(clauses)
+        statement += " LIMIT $limit"
+        rows = _query_rows(self._cluster.query(statement, **params))
+        return [
+            {
+                field: _json_safe(row[field])
+                for field in include_fields
+                if field in row
+            }
+            for row in rows[:limit]
+        ]
+
+
+def _clickhouse_identifier(value: str) -> str:
+    if not value or "\x00" in value or "`" in value:
+        raise SchemaValidationError("ClickHouse identifier is unsafe")
+    return f"`{value}`"
+
+
+def _clickhouse_type_schema(value: str) -> dict[str, Any]:
+    normalized = value.strip()
+    while normalized.startswith("Nullable(") and normalized.endswith(")"):
+        normalized = normalized[9:-1]
+    upper = normalized.upper()
+    if upper.startswith(("UINT", "INT")):
+        return {"type": "integer"}
+    if upper.startswith(("FLOAT", "DECIMAL")):
+        return {"type": "number"}
+    if upper.startswith(("DATE", "DATETIME")):
+        return {"type": "string"}
+    if upper.startswith(("STRING", "FIXEDSTRING", "UUID", "ENUM", "LOWCARDINALITY")):
+        return {"type": "string"}
+    if upper.startswith("BOOL"):
+        return {"type": "boolean"}
+    if upper.startswith(("ARRAY", "TUPLE")):
+        return {"type": "array"}
+    if upper.startswith(("MAP", "JSON", "OBJECT")):
+        return {"type": "object"}
+    return {}
+
+
+def _safe_clickhouse_type(value: str) -> str:
+    if not value or re.fullmatch(r"[A-Za-z0-9_(),.' ]+", value) is None:
+        raise SchemaValidationError("ClickHouse column type is unsafe for parameter binding")
+    return value
+
+
+class ClickHouseRecordBackend:
+    """Thin adapter over a caller-owned clickhouse-connect Client."""
+
+    def __init__(
+        self,
+        client: Any,
+        *,
+        tables: Sequence[str] | None = None,
+        time_field_by_table: Mapping[str, str] | None = None,
+    ) -> None:
+        self._client = client
+        self._configured = None if tables is None else tuple(tables)
+        self._time_fields = dict(time_field_by_table or {})
+        self._fields: dict[str, dict[str, str]] = {}
+
+    @staticmethod
+    def _rows(result: Any) -> list[tuple[Any, ...]]:
+        rows = getattr(result, "result_set", None)
+        if rows is None:
+            raise SchemaValidationError("ClickHouse query result has no result_set")
+        return [tuple(row) for row in rows]
+
+    def _table_names(self) -> tuple[str, ...]:
+        if self._configured is not None:
+            return self._configured
+        result = self._client.query(
+            "SELECT database, name FROM system.tables "
+            "WHERE is_temporary = 0 AND database NOT IN "
+            "('system', 'INFORMATION_SCHEMA', 'information_schema') "
+            "ORDER BY database, name"
+        )
+        return tuple(
+            f"{str(database)}.{str(name)}"
+            for database, name in self._rows(result)
+        )
+
+    @staticmethod
+    def _split_table(value: str) -> tuple[str, str]:
+        parts = value.split(".", 1)
+        if len(parts) != 2 or not all(parts):
+            raise RegistrationError("ClickHouse tables must use database.table")
+        return parts[0], parts[1]
+
+    def list_sources(self) -> tuple[RecordSourceSpec, ...]:
+        results: list[RecordSourceSpec] = []
+        for source in self._table_names():
+            database, table = self._split_table(source)
+            describe = self._client.query(
+                f"DESCRIBE TABLE {_clickhouse_identifier(database)}."
+                f"{_clickhouse_identifier(table)}"
+            )
+            fields: list[RecordFieldSpec] = []
+            types: dict[str, str] = {}
+            for row in self._rows(describe):
+                if len(row) < 2:
+                    continue
+                name = str(row[0])
+                ch_type = str(row[1])
+                types[name] = ch_type
+                schema = _clickhouse_type_schema(ch_type)
+                scalar = schema.get("type") not in {"array", "object"}
+                fields.append(
+                    RecordFieldSpec(
+                        name=name,
+                        json_schema=schema,
+                        filterable=scalar,
+                    )
+                )
+            if not fields:
+                continue
+            self._fields[source] = types
+            results.append(
+                RecordSourceSpec(
+                    name=source,
+                    model=("time_series" if source in self._time_fields else "document"),
+                    fields=tuple(fields),
+                    time_field=self._time_fields.get(source),
+                    public_metadata={"vendor": "clickhouse"},
+                )
+            )
+        return tuple(results)
+
+    def query(
+        self,
+        *,
+        source: str,
+        text_query: str | None,
+        filters: dict[str, Any],
+        start_time: str | None,
+        end_time: str | None,
+        limit: int,
+        include_fields: tuple[str, ...],
+    ) -> list[dict[str, Any]]:
+        if text_query is not None:
+            raise SchemaValidationError("ClickHouse adapter does not expose free-text SQL")
+        if source not in self._fields:
+            self.list_sources()
+        types = self._fields.get(source)
+        if types is None:
+            raise RegistrationError(f"unknown ClickHouse table {source!r}")
+        database, table = self._split_table(source)
+
+        selected = list(include_fields) or list(types)
+        unknown_fields = sorted(set(selected) - set(types))
+        if unknown_fields:
+            raise SchemaValidationError(
+                "ClickHouse projection requested unknown fields: "
+                + ", ".join(unknown_fields)
+            )
+
+        params: dict[str, Any] = {"limit": limit}
+        clauses: list[str] = []
+        for index, (field, value) in enumerate(sorted(filters.items())):
+            if field not in types:
+                raise SchemaValidationError(f"unknown ClickHouse filter field {field!r}")
+            identifier = _clickhouse_identifier(field)
+            ch_type = _safe_clickhouse_type(types[field])
+            if isinstance(value, tuple):
+                names: list[str] = []
+                for member_index, member in enumerate(value):
+                    param_name = f"p{index}_{member_index}"
+                    params[param_name] = member
+                    names.append(f"{{{param_name}:{ch_type}}}")
+                if not names:
+                    raise SchemaValidationError("ClickHouse membership filter cannot be empty")
+                clauses.append(f"{identifier} IN (" + ", ".join(names) + ")")
+            else:
+                param_name = f"p{index}"
+                params[param_name] = value
+                clauses.append(f"{identifier} = {{{param_name}:{ch_type}}}")
+
+        time_field = self._time_fields.get(source)
+        if start_time is not None or end_time is not None:
+            if time_field is None or time_field not in types:
+                raise SchemaValidationError("ClickHouse time bounds are not enabled for this table")
+            identifier = _clickhouse_identifier(time_field)
+            ch_type = _safe_clickhouse_type(types[time_field])
+            if start_time is not None:
+                params["start"] = start_time
+                clauses.append(f"{identifier} >= {{start:{ch_type}}}")
+            if end_time is not None:
+                params["end"] = end_time
+                clauses.append(f"{identifier} < {{end:{ch_type}}}")
+
+        projection = ", ".join(_clickhouse_identifier(field) for field in selected)
+        statement = (
+            f"SELECT {projection} FROM {_clickhouse_identifier(database)}."
+            f"{_clickhouse_identifier(table)}"
+        )
+        if clauses:
+            statement += " WHERE " + " AND ".join(clauses)
+        statement += " LIMIT {limit:UInt64}"
+
+        result = self._client.query(statement, parameters=params)
+        rows = self._rows(result)
+        return [
+            {
+                field: _json_safe(value)
+                for field, value in zip(selected, row, strict=True)
+            }
+            for row in rows[:limit]
+        ]
+
+
+def _flux_string(value: str) -> str:
+    if "\x00" in value:
+        raise SchemaValidationError("InfluxDB string contains a null byte")
+    return json.dumps(value, ensure_ascii=True)
+
+
+def _flux_identifier_access(field: str) -> str:
+    return "r[" + _flux_string(field) + "]"
+
+
+class InfluxRecordBackend:
+    """Thin adapter over a caller-owned InfluxDB 2.x QueryApi."""
+
+    def __init__(
+        self,
+        query_api: Any,
+        *,
+        bucket: str,
+        org: str,
+        measurements: Sequence[str] | None = None,
+        default_start: str = "-30d",
+    ) -> None:
+        if not bucket.strip() or not org.strip():
+            raise ValueError("InfluxDB bucket and org must be non-empty")
+        if re.fullmatch(r"-[1-9][0-9]*[smhdw]", default_start) is None:
+            raise ValueError("InfluxDB default_start must be a negative Flux duration")
+        self._query_api = query_api
+        self._bucket = bucket
+        self._org = org
+        self._configured = None if measurements is None else tuple(measurements)
+        self._default_start = default_start
+        self._tag_fields: dict[str, frozenset[str]] = {}
+        self._field_keys: dict[str, frozenset[str]] = {}
+
+    def _query(self, flux: str) -> list[Any]:
+        raw = self._query_api.query(org=self._org, query=flux)
+        return list(raw)
+
+    @staticmethod
+    def _record_values(tables: Sequence[Any]) -> list[Any]:
+        values: list[Any] = []
+        for table in tables:
+            for record in getattr(table, "records", ()):
+                values.append(record)
+        return values
+
+    def _schema_values(self, flux: str) -> tuple[str, ...]:
+        records = self._record_values(self._query(flux))
+        result: list[str] = []
+        for record in records:
+            value = record.get_value()
+            if value is not None:
+                result.append(str(value))
+        return tuple(result)
+
+    def _measurement_names(self) -> tuple[str, ...]:
+        if self._configured is not None:
+            return self._configured
+        return self._schema_values(
+            'import "influxdata/influxdb/schema"\n'
+            f"schema.measurements(bucket: {_flux_string(self._bucket)})"
+        )
+
+    def list_sources(self) -> tuple[RecordSourceSpec, ...]:
+        results: list[RecordSourceSpec] = []
+        for measurement in self._measurement_names():
+            predicate = "fn: (r) => r._measurement == " + _flux_string(measurement)
+            fields = self._schema_values(
+                'import "influxdata/influxdb/schema"\n'
+                "schema.fieldKeys("
+                f"bucket: {_flux_string(self._bucket)}, predicate: {predicate})"
+            )
+            tags = self._schema_values(
+                'import "influxdata/influxdb/schema"\n'
+                "schema.tagKeys("
+                f"bucket: {_flux_string(self._bucket)}, predicate: {predicate})"
+            )
+            tag_set = frozenset(value for value in tags if not value.startswith("_"))
+            self._tag_fields[measurement] = tag_set
+            self._field_keys[measurement] = frozenset(fields)
+            output_fields = [
+                RecordFieldSpec(name="timestamp", json_schema={"type": "string"}),
+                RecordFieldSpec(
+                    name="field",
+                    json_schema={"type": "string"},
+                    filterable=True,
+                ),
+                RecordFieldSpec(name="value", json_schema={}),
+                *[
+                    RecordFieldSpec(
+                        name=tag,
+                        json_schema={"type": "string"},
+                        filterable=True,
+                    )
+                    for tag in sorted(tag_set)
+                ],
+            ]
+            results.append(
+                RecordSourceSpec(
+                    name=measurement,
+                    model="time_series",
+                    fields=tuple(output_fields),
+                    time_field="timestamp",
+                    public_metadata={
+                        "vendor": "influxdb",
+                        "bucket": self._bucket,
+                        "field_keys": sorted(fields),
+                    },
+                )
+            )
+        return tuple(results)
+
+    def query(
+        self,
+        *,
+        source: str,
+        text_query: str | None,
+        filters: dict[str, Any],
+        start_time: str | None,
+        end_time: str | None,
+        limit: int,
+        include_fields: tuple[str, ...],
+    ) -> list[dict[str, Any]]:
+        if text_query is not None:
+            raise SchemaValidationError("InfluxDB adapter does not expose free-text Flux")
+        if source not in self._tag_fields:
+            self.list_sources()
+        tags = self._tag_fields.get(source)
+        field_keys = self._field_keys.get(source)
+        if tags is None or field_keys is None:
+            raise RegistrationError(f"unknown InfluxDB measurement {source!r}")
+
+        start_expr = (
+            f"time(v: {_flux_string(start_time)})"
+            if start_time is not None
+            else self._default_start
+        )
+        range_args = f"start: {start_expr}"
+        if end_time is not None:
+            range_args += f", stop: time(v: {_flux_string(end_time)})"
+
+        predicates = [f"r._measurement == {_flux_string(source)}"]
+        for field, value in sorted(filters.items()):
+            if field == "field":
+                values = value if isinstance(value, tuple) else (value,)
+                unknown = sorted(set(str(item) for item in values) - field_keys)
+                if unknown:
+                    raise SchemaValidationError(
+                        "InfluxDB filter requested unknown field keys: "
+                        + ", ".join(unknown)
+                    )
+                predicates.append(
+                    "("
+                    + " or ".join(
+                        f"r._field == {_flux_string(str(item))}"
+                        for item in values
+                    )
+                    + ")"
+                )
+            elif field in tags:
+                values = value if isinstance(value, tuple) else (value,)
+                predicates.append(
+                    "("
+                    + " or ".join(
+                        f"{_flux_identifier_access(field)} == {_flux_string(str(item))}"
+                        for item in values
+                    )
+                    + ")"
+                )
+            else:
+                raise SchemaValidationError(
+                    f"InfluxDB filter field {field!r} is not a discovered tag/field"
+                )
+
+        predicate = " and ".join(predicates)
+        flux = (
+            f"from(bucket: {_flux_string(self._bucket)})\n"
+            f"  |> range({range_args})\n"
+            f"  |> filter(fn: (r) => {predicate})\n"
+            f"  |> limit(n: {int(limit)})"
+        )
+        records = self._record_values(self._query(flux))
+        rows: list[dict[str, Any]] = []
+        for record in records[:limit]:
+            values = getattr(record, "values", {}) or {}
+            row = {
+                "timestamp": _json_safe(record.get_time()),
+                "field": str(record.get_field()),
+                "value": _json_safe(record.get_value()),
+            }
+            for tag in tags:
+                if tag in values:
+                    row[tag] = _json_safe(values[tag])
+            rows.append(
+                {
+                    field: row[field]
+                    for field in include_fields
+                    if field in row
+                }
+            )
+        return rows
