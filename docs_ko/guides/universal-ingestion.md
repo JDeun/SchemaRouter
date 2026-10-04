@@ -24,3 +24,29 @@ OpenAPI/OPTIMADE/HTTP-JSON/Python/plugin ingestion으로 위임합니다. Provid
 현재 built-in acceptance profile은 Materials Project, Crossref, Tavily입니다. Materials
 Project는 공개 OPTIMADE + 인증 OpenAPI + optional mp-api, Crossref는 공개 HTTP/JSON,
 Tavily는 인증 HTTP/JSON + optional Python SDK 경로를 갖습니다.
+
+
+## 지원 ingestion mode
+
+| Mode | 사용 시점 | Public entry point |
+| --- | --- | --- |
+| Provider profile | provider는 알지만 protocol/SDK 전체를 모를 때 | `await router.add_provider(...)` |
+| Direct ToolSpec | application이 canonical contract를 이미 소유할 때 | `router.add_tool(...)` |
+| Python | SDK/function이 안정적인 typed signature를 가질 때 | `router.add_callable(...)` |
+| ToolSpec + SDK/client | SDK/client를 안전하게 introspect하기 어려울 때 | `router.add_bound_tool(...)` |
+| OpenAPI | HTTP API가 OpenAPI/Swagger를 제공할 때 | `from_url(..., kind="openapi")` |
+| MCP Streamable HTTP | remote MCP server를 HTTP로 연결할 때 | `from_url(..., kind="mcp")` |
+| MCP stdio | local MCP server를 trusted subprocess로 실행할 때 | `router.add_mcp_stdio(...)` |
+| MCP custom transport | application이 MCP client lifecycle을 직접 소유할 때 | `router.add_mcp_client_factory(...)` |
+| OPTIMADE | materials data가 OPTIMADE로 제공될 때 | `from_url(..., kind="optimade")` |
+| GraphQL | introspection + native selection set을 사용할 수 있을 때 | `from_url(..., kind="graphql")` |
+| OData | CSDL/`$metadata`와 `$select`가 있을 때 | `from_url(..., kind="odata")` |
+| OpenRPC | JSON-RPC service가 OpenRPC를 제공할 때 | `from_url(..., kind="openrpc")` |
+| LangChain tool | 기존 LangChain tool을 가져올 때 | `router.add_langchain_tool(...)` |
+| LlamaIndex tool | 기존 LlamaIndex tool을 가져올 때 | `router.add_llamaindex_tool(...)` |
+| REST/JSON | discoverable schema는 없지만 trusted REST contract가 있을 때 | `router.add_http_tool(...)` |
+| Custom protocol | custom discovery/transport가 필요할 때 | `router.register_adapter(...)` |
+| Human-readable docs | machine-readable contract가 없을 때 | inspect → proposal → explicit approval |
+
+Core에 protocol-specific adapter를 추가하는 기준은 generic HTTP/Python/plugin 경로로는 보존하기
+어려운 machine-readable schema 의미가 실제로 있는가입니다.
