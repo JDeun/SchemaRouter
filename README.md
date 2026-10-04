@@ -188,7 +188,7 @@ Remote mutation/destructive operations fail closed unless explicitly authorized 
 
 ## Stability
 
-The current stable package is **0.15.0**. The project is pre-1.0, so public APIs may still evolve,
+SchemaRouter `0.15.0` is **Beta / pre-1.0**. Public APIs may still evolve,
 but breaking changes are documented and release-gated.
 
 Python 3.10–3.14 are release-blocking targets. Python 3.15 is a preview target.
