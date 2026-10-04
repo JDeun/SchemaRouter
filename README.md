@@ -28,55 +28,43 @@
 
 > **Stable release: 0.15.0** · Beta / pre-1.0
 
-SchemaRouter is a **typed capability retrieval and schema-aware execution layer for LLM/RAG agents**
-across MCP, OpenAPI, Python, and framework tools.
+SchemaRouter is a **typed capability retrieval and schema-aware execution layer for LLM/RAG agents**.
 
-Tool routing gets harder when a catalog mixes providers and protocols with overlapping operations,
-different field semantics, units, qualifiers, and policy constraints. SchemaRouter works out
-**which declared data fields are needed**, exposes a bounded set of registered capabilities that
-can supply them, and keeps only declared output fields before the result reaches the model. Typed
-contracts can carry units, qualifiers, provenance, and validation rules so one value cannot
-silently stand in for another.
+It sits between an orchestrator and external tools/data sources, compiles heterogeneous schemas into
+one capability model, retrieves a bounded candidate set, and validates the selected call again at
+execution time. It is not an agent framework, identity provider, database proxy, or LLM gateway.
 
-The measured break-even matrix shows that **catalog size alone is not the deciding factor**. A
-strong schema-aware lexical baseline was sufficient on the low/medium-ambiguity synthetic fixtures,
-while SchemaRouter preserved 100% required-tool recall and unsupported rejection on the
-high-ambiguity fixtures where that baseline's recall fell to about 58–67%. The result is a
-positioning boundary, not a production-utility claim: SchemaRouter is most useful when capabilities
-are heterogeneous or difficult to distinguish by names and descriptions alone.
+```bash
+pip install schemarouter
+```
 
-[Read the frozen break-even matrix, latency trade-offs, and provenance →](docs/research/realistic-break-even-result.md)
+## Why SchemaRouter
 
-`pip install schemarouter`
+A normal tool router mainly answers **which tool should I call?** SchemaRouter also keeps track of
+**which endpoint, parameters, output fields, schema version, access path, policy, and execution
+binding make that call valid**.
 
-It is **not** a general agent framework, an LLM provider layer, or a RAG generator.
+```text
+user query
+  -> required semantic fields
+  -> bounded capability candidates
+  -> endpoint + parameters + output fields
+  -> policy / availability / schema validation
+  -> trusted execution
+  -> projected typed result
+```
 
-[Declare a result contract for an MCP server that does not publish one →](docs/guides/mcp.md#declare-a-result-contract-the-server-does-not-publish) ·
-[See the measured agent-utility result →](docs/research/agent-utility-b1-result.md)
+This is useful when a catalog mixes APIs, MCP servers, SDKs, databases, and framework tools whose
+names overlap but whose schemas and execution constraints differ.
 
-## Stability and verification
-
-SchemaRouter `0.15.0` is **Beta / pre-1.0**. Python 3.10–3.14 are release-blocking CI targets;
-Python 3.15 is a non-blocking preview.
-
-Plans and retrieved candidates do not grant execution authority. The runtime revalidates current
-schema/tool fingerprints, bindings, arguments, policy, raw output, and field projection before a
-result crosses the execution boundary. Destructive and unclassified remote operations fail closed
-unless local policy explicitly authorizes them.
-
-The public release includes wheel, sdist, and an SPDX SBOM. The release pipeline creates GitHub
-artifact attestations and verifies that public PyPI wheel/sdist digests match the trusted build
-artifacts. Research results remain separate from stable product guarantees; live decision-backend
-evidence is still tracked in #15.
-
-[Verify release artifacts, CI/security controls, hardening history, and research claim boundaries →](docs/project/trust-and-evidence.md)
+[Concepts →](docs/concepts/schema-router.md) ·
+[Capability retrieval →](docs/concepts/capability-catalog.md) ·
+[Execution boundary →](docs/concepts/execution.md)
 
 ## Quickstart
 
-This first example starts from the public provider name `apis-guru`. SchemaRouter resolves
-its built-in provider profile to the underlying OpenAPI adapter, so the user does not need to know
-the schema URL first. The returned number is provider-owned live data rather than a hard-coded demo
-value.
+Provider-first onboarding lets an application start from the service it wants rather than knowing
+every underlying protocol first.
 
 ```python
 import asyncio
@@ -86,6 +74,7 @@ from schemarouter import PlanRequest, SchemaRouter
 
 async def main():
     router = SchemaRouter()
+
     async with router:
         registration = await router.add_provider("apis-guru")
         tool = router.registry.get(registration.registered_tool_keys[0])
@@ -97,6 +86,7 @@ async def main():
                 max_calls=1,
             )
         )
+
         result = (await router.execute(plan))[0]
         print(result.tool, result.endpoint, result.data["numAPIs"])
 
@@ -104,306 +94,133 @@ async def main():
 asyncio.run(main())
 ```
 
-The flow is the product in miniature: **provider identity → resolved adapter/schema → typed registered capabilities → bounded selection → validated execution → typed result**. The final integer changes as APIs.guru changes.
+The flow is:
 
-For network-independent CI/package acceptance, the repository keeps
-[`examples/quickstart.py`](examples/quickstart.py) as a deterministic local smoke. The complete
-live provider-first version above is [`examples/live_openapi_quickstart.py`](examples/live_openapi_quickstart.py).
+**provider identity → schema/adaptor resolution → typed capability registration → bounded selection → validated execution → typed result**
 
-[Browse the runnable example and demo gallery →](examples/README.md)
+[Quickstart →](docs/getting-started/quickstart.md) ·
+[Runnable examples →](examples/README.md)
 
-## Retrieve a compact tool set for an agent
+## Where it fits
 
-SchemaRouter can return registered capability candidates **without planning or executing them**:
+```mermaid
+flowchart LR
+    Q["User"] --> A["Agent / RAG / application"]
+    A --> SR["SchemaRouter"]
+    SR --> S["APIs / MCP / SDKs / databases"]
+    S --> SR
+    SR --> A
+```
+
+The surrounding application owns conversation, decomposition, memory, checkpoints, and final
+generation. SchemaRouter owns the **registered capability and execution boundary**.
+
+Retrieval is side-effect free:
 
 ```python
-candidates = router.retrieve(
-    "current Young's modulus for MAT-7",
-    k=5,
-)
+candidates = router.retrieve("current Young's modulus for MAT-7", k=5)
 
 for candidate in candidates.candidates:
     print(candidate.route_id, candidate.output_fields)
 ```
 
-Use `retrieve_executable(..., k=5)` when candidates must also have a currently ready local
-execution binding. Async counterparts are `aretrieve` and `aretrieve_executable`.
+Use `retrieve_executable(...)` when the shortlist must also have a currently valid execution
+binding.
 
-Current `main` also includes an **experimental, default-off** structural retrieval profile:
+## Connect tools and data
 
-```python
-router = SchemaRouter(structural_retrieval=True)
-candidates = router.retrieve("cancel this registered job", k=3)
-```
+SchemaRouter supports several ingress families behind the same capability model.
 
-This profile adds conservative tool-identifier and operation-family evidence plus a schema-specificity
-tie-break. It does **not** change execution authority, and it is not the product default. Independent
-retrieval confirmation passed for a fixed Top-3 shortlist, but the preregistered strong-agent
-K3-vs-K5 downstream gate later failed its -2pp task-pass promotion floor. So Top-3 is **not**
-promoted into the held-out benchmark. Treat structural retrieval as an opt-in research surface until
-a later release changes that status.
+| Family | Typical entry points |
+| --- | --- |
+| Provider identity | `await router.add_provider(...)` |
+| Typed Python / ToolSpec | `add_callable(...)`, `add_tool(...)`, `add_bound_tool(...)` |
+| API protocols | OpenAPI, MCP, OPTIMADE, GraphQL, OData, OpenRPC |
+| Relational databases | SQLite, caller-owned SQLAlchemy Engine |
+| Vector databases | Qdrant, Milvus, Pinecone, Weaviate, Chroma, PostgreSQL/pgvector |
+| Graph / RDF | Neo4j, Neptune, ArangoDB, FalkorDB, SPARQL |
+| Document / search / KV / time-series | MongoDB, Elasticsearch/OpenSearch, DynamoDB, Cosmos DB, Couchbase, ClickHouse, InfluxDB |
+| Framework bridges | LangChain, LangGraph, LlamaIndex |
 
-The returned candidates retain the full effective input/output JSON Schemas plus registered
-parameters/output fields, semantic IDs, optional units and qualifiers, provider/access identity,
-read/write/destructive metadata, and schema fingerprints. Retrieval has no side effect and does not grant execution authority; the surrounding
-agent still chooses among candidates and execution is still subject to SchemaRouter validation and
-policy.
+Credentials, connection pools, database clients, and transport state remain caller-owned. Vendor
+query languages are not exposed as model authority.
 
-## How it works
+[Choose an ingestion path →](docs/getting-started/ingestion-paths.md) ·
+[Provider-first registration →](docs/guides/provider-first-registration.md) ·
+[Enterprise data onboarding →](docs/guides/enterprise-data-onboarding.md)
 
-### Where SchemaRouter fits in RAG
+## Authorization and enterprise data
 
-SchemaRouter does not perform final generation. It provides a structured retrieval and execution
-boundary for applications that need live external data from APIs and tools under explicit schemas
-and policy.
+SchemaRouter consumes a verified `PrincipalContext` from the host application and can apply
+deny-by-default RBAC/ABAC before retrieval and again at execution.
 
-```mermaid
-flowchart LR
-    Q["User query"] --> A["RAG / agent / application"]
-    A -- "I need elastic modulus + provenance" --> SR
-    subgraph SR["SchemaRouter"]
-        direction TB
-        R1["Retrieve a registered capability"] --> R2["Select endpoint + required fields"]
-        R2 --> R3["Validate parameters / policy / health"]
-        R3 --> R4["Execute trusted transport"]
-        R4 --> R5["Validate raw output"]
-        R5 --> R6["Normalize declared units / project fields"]
-    end
-    SR --> D["Typed external data"]
-    D --> G["RAG generation / agent reasoning"]
-```
+The same policy model can narrow:
 
-For document-centric RAG, a retriever commonly searches chunks or records. SchemaRouter addresses a
-different retrieval surface: **executable capabilities and the structured data they can return**.
+- visible tools/endpoints;
+- database tables and fields;
+- trusted row/tenant filters;
+- vector metadata filters;
+- document/search fields;
+- graph relationships and hop depth.
 
-[Read the RAG positioning and capability model](https://jdeun.github.io/SchemaRouter/concepts/capability-catalog/)
+SchemaRouter does not authenticate users and does not replace database-native roles, grants, RLS,
+ACLs, or network controls.
 
-### Field-first, route-second
+[Authorization →](docs/guides/authorization.md) ·
+[Database onboarding →](docs/guides/database-onboarding.md)
 
-SchemaRouter first resolves **what data is required**, then chooses a registered route that can
-provide it.
+## Execution boundary
 
-For example:
+A retrieved candidate or model choice never grants authority by itself. Before a result crosses the
+runtime boundary, SchemaRouter can revalidate:
 
-```text
-Query: "What is the elastic modulus of this material at 300 K?"
+- tool/endpoint/schema fingerprints;
+- arguments and JSON Schema contracts;
+- principal policy and data scope;
+- current execution binding and availability;
+- raw output schema;
+- final field projection.
 
-Required field
-  semantic_id: mechanical.elastic_modulus
-  datatype: number
-  unit: optional but declared when applicable
-  qualifiers:
-    temperature: 300 K
+Remote mutation/destructive operations fail closed unless explicitly authorized by local policy.
 
-Possible routes
-  provider A / REST endpoint
-  provider A / OPTIMADE access
-  provider B / MCP tool
-```
+[Security model →](docs/security/threat-model.md) ·
+[Trust and release evidence →](docs/project/trust-and-evidence.md)
 
-Availability can change the route. It must not silently change the requested data contract.
+## Stability
 
-A field contract can carry:
+The current stable package is **0.15.0**. The project is pre-1.0, so public APIs may still evolve,
+but breaking changes are documented and release-gated.
 
-- JSON datatype / shape;
-- semantic ID and aliases;
-- optional source unit;
-- explicit canonical unit normalization;
-- exact qualifiers such as temperature, pressure, phase, orientation, or method;
-- provenance, license, or source-type evidence;
-- provider/access identity and availability metadata.
+Python 3.10–3.14 are release-blocking targets. Python 3.15 is a preview target.
 
-Units are optional because many legitimate fields are text, identifiers, booleans, structured
-objects, or dimensionless values. SchemaRouter does not infer scientific equivalence or conversion
-factors from a unit string alone.
+Research benchmarks are kept separate from stable product guarantees. Experimental retrieval
+profiles or ranking methods are not promoted solely because one benchmark improves.
 
-### Execution boundary
-
-```mermaid
-flowchart TD
-    F["LangChain / LangGraph / LlamaIndex / your application"] --> SR["SchemaRouter"]
-    SR --> T["OpenAPI / MCP / OPTIMADE / GraphQL / OData / OpenRPC / Python / SDK"]
-```
-
-The surrounding framework owns conversation, decomposition, generation, memory, graphs, and agent
-loops. SchemaRouter owns the typed capability and execution boundary.
-
-Optional Laya, Ollama, Jev/System-One, hosted-model, embedding, or pairwise decision backends may
-assist selection over locally registered candidates. They do not become execution authority and
-cannot invent tools, fields, credentials, permissions, or side effects.
-
-## Connect capabilities
-
-If you know the **provider** you want but not every protocol or SDK it exposes, start from provider
-identity:
-
-```python
-router = SchemaRouter()
-result = await router.add_provider("materials-project")
-```
-
-SchemaRouter resolves known access methods for that provider and registers only the methods that are
-safe and usable in the current process. The built-in acceptance set covers Materials Project,
-Crossref, Tavily, APIs.guru, and the OData.org V4 reference service. Credentials and optional dependencies are reported explicitly rather than
-guessed, installed, or persisted.
-
-[Provider-first registration →](docs/guides/provider-first-registration.md)
-
-Current `main` also supports the lower-level ingress styles below. Prefer the richest authoritative
-machine-readable contract available; use a trusted wrapper/binding when a provider exposes only an
-SDK or weakly described REST surface.
-
-| Source | Use when | Entry point |
-| --- | --- | --- |
-| Provider identity | you know the service/provider, not its protocols | `await router.add_provider("materials-project")` |
-| SQLite database | local/embedded relational data should be schema-introspected | `router.add_sqlite_database(connection, ...)` |
-| SQLAlchemy Engine | RDB/warehouse connection is caller-owned | `router.add_sqlalchemy_database(engine, ...)` |
-| Vector store | collection/index discovery + bounded similarity search | `router.add_vector_store(backend, embed_query, ...)` |
-| Qdrant | caller-owned Qdrant client | `router.add_qdrant_vector_store(client, embed_query, ...)` |
-| Milvus | caller-owned MilvusClient | `router.add_milvus_vector_store(client, embed_query, ...)` |
-| Pinecone | caller-owned Pinecone client | `router.add_pinecone_vector_store(client, embed_query, ...)` |
-| Weaviate | caller-owned Weaviate v4 client | `router.add_weaviate_vector_store(client, embed_query, ...)` |
-| Chroma | caller-owned Chroma client | `router.add_chroma_vector_store(client, embed_query, ...)` |
-| PostgreSQL/pgvector | caller-owned SQLAlchemy Engine | `router.add_pgvector_store(engine, embed_query, ...)` |
-| Graph/RDF store | graph schema discovery + bounded traversal; native Neo4j/Neptune/ArangoDB/FalkorDB/SPARQL helpers | `router.add_graph_store(...)` / `add_neo4j_graph(...)` / `add_falkordb_graph(...)` |
-| NoSQL record store | document/search/KV/time-series schema discovery + bounded query; native MongoDB/Elastic/OpenSearch/DynamoDB/Cosmos/Couchbase/ClickHouse/InfluxDB helpers | `router.add_record_store(backend, ...)` / `add_mongodb_record_store(...)` |
-| Direct ToolSpec | the application already owns the canonical contract | `router.add_tool(...)` |
-| Python | capability is local and typed | `router.add_callable(...)` |
-| ToolSpec + SDK/client | transport is trusted but not safely introspectable | `router.add_bound_tool(...)` |
-| OpenAPI | HTTP API publishes OpenAPI/Swagger | `SchemaRouter.from_url(..., kind="openapi")` |
-| MCP Streamable HTTP | server is reachable by MCP over HTTP | `SchemaRouter.from_url(..., kind="mcp")` |
-| MCP stdio | local MCP server is a trusted subprocess | `router.add_mcp_stdio(...)` |
-| MCP custom transport | application already owns an MCP client lifecycle | `router.add_mcp_client_factory(...)` |
-| OPTIMADE | materials data is exposed through OPTIMADE | `SchemaRouter.from_url(..., kind="optimade")` |
-| GraphQL | introspection + native selection sets are available | `SchemaRouter.from_url(..., kind="graphql")` |
-| OData | CSDL/`$metadata` + `$select` are available | `SchemaRouter.from_url(..., kind="odata")` |
-| OpenRPC | JSON-RPC service publishes OpenRPC | `SchemaRouter.from_url(..., kind="openrpc")` |
-| LangChain tool | capability already exists as a LangChain tool | `router.add_langchain_tool(...)` |
-| LlamaIndex tool | capability already exists as a LlamaIndex tool | `router.add_llamaindex_tool(...)` |
-| REST/JSON | contract is trusted locally but no discoverable schema exists | `router.add_http_tool(...)` |
-| Custom protocol | custom discovery/transport is required | `router.register_adapter(...)` |
-| Human-readable docs | no machine-readable contract exists | inspect → proposal → explicit approval |
-
-A provider may expose multiple access paths at once. Materials Project, for example, can be
-represented through OpenAPI, OPTIMADE, Python/mp-api, or an explicit SDK binding under one provider
-identity with different `access_mode` values.
-
-[See the universal ingestion matrix and broad-domain examples →](docs/guides/universal-ingestion.md)
-
-Framework bridges are available for LangChain, LangGraph, and LlamaIndex. OpenTelemetry is optional.
-Third-party bounded decision backends can be published through the
-`schemarouter.decision_backends` entry-point group.
-
-## What works in 0.15.0
-
-The released package provides a working beta implementation of the core architecture:
-
-- typed Tool / Endpoint / Parameter / Field registry contracts;
-- first-class bounded Top-K capability retrieval through `retrieve` / `aretrieve`, explicit state-aware filtering, and state-conditioned corrective backfill;
-- provider-first registration for known services plus direct ToolSpec/Python/SDK binding, schema-introspected SQLite/SQLAlchemy databases, and OpenAPI, MCP, OPTIMADE, GraphQL, OData, OpenRPC, declarative HTTP/JSON, and inbound LangChain/LlamaIndex ingestion paths;
-- field-first planning and bounded multi-provider field coverage;
-- input and raw-output JSON Schema validation;
-- schema fingerprints and binding-drift rejection;
-- read/write/destructive local policy gates and per-call approval hooks;
-- explicit server-side field projection plus final local projection;
-- optional datatype/unit normalization and exact scientific qualifiers;
-- provider/access fallback with finite cooldown and trusted health recovery;
-- indexed/incremental capability dependency graphs, atomic versioned snapshot publication, and validated artifact/snapshot migration;
-- sync/async invocation, batch, streaming, typed events, unified capability decision traces, and inspection/dashboard surfaces;
-- LangChain, LangGraph, LlamaIndex, Jev/System-One, Laya, Ollama, and OpenTelemetry integration
-  surfaces.
-
-So **the architecture works today** for declared capabilities and supported routing cases.
-0.15.0 includes the 0.14 operational surface—source probing, startup rebinding, storage migrations, explicit schema-drift review, unified shutdown, and the Capability Explorer—plus provider-first onboarding, state-aware corrective retrieval, incremental capability graphs/snapshots, versioned artifacts, and unified decision traces.
-
-
-## Current research direction: compact capability retrieval for agents
-
-The stable-core execution boundary established in 0.12.0 remains unchanged in 0.15.0. The active research question has shifted from
-making SchemaRouter itself the final open-set classifier to evaluating it as a **typed capability
-retrieval substrate** for a downstream LLM agent.
-
-The intended separation is:
-
-```text
-registered capability catalog
-  -> SchemaRouter Top-K typed candidates
-  -> downstream agent chooses among candidates
-  -> local schema / argument / permission / destructive policy
-  -> execution
-```
-
-Why this matters: on the corrected frozen 0.14 Phase-A benchmark, Top-1 required-route recall was
-68.97%, while Top-5 preserved 100% of required capabilities. At 250 registered endpoints,
-Top-5 exposed only 2.38% of the FULL serialized schema context on average.
-
-The canonical B1 Qwen3-0.6B agent benchmark is terminal: SR-5 achieved 91.30% task pass
-versus 68.48% for FULL while using 5.42% of FULL tool-schema tokens, with 0
-unauthorized destructive executions. This is controlled mechanism evidence rather than a broad
-production claim. The materially stronger SmolLM3-3B B2 replication (#423) is also terminal
-success. A separate structural K3-vs-K5 optimization failed its preregistered task-pass promotion
-gate, so K3 is not carried into the held-out benchmark. Execution-state-aware corrective retrieval
-(#431) is the active gate; the 780-task held-out benchmark (#432) and final-answer quality benchmark
-(#424) are downstream confirmation stages.
-
-The earlier 0.11–0.13 open-set classifier/veto experiments are still valuable negative evidence. No
-experimental learned router or structural retrieval profile is promoted as an unconditional production default in 0.15.0.
-
-See:
-
-- [Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
-- [Prior-art roadmap](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/)
-- [Complete experiment index](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
-- [0.14 paper-evidence checkpoint](https://jdeun.github.io/SchemaRouter/research/0.14-paper-evidence-checkpoint/)
-- [0.15.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.15.0/)
-- [0.14.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.14.0/)
-- [Changelog](CHANGELOG.md)
-
-## Inspect the registry and runs
-
-```bash
-schemarouter inspect registry --db ./registry.sqlite3
-schemarouter inspect tool materials --db ./registry.sqlite3
-schemarouter inspect diff materials \
-  --old-db ./registry-before.sqlite3 \
-  --new-db ./registry-current.sqlite3
-schemarouter inspect traces --db ./traces.sqlite3
-schemarouter inspect trace <RUN_ID> --db ./traces.sqlite3
-schemarouter inspect decision-trace ./decision-trace.json --json
-schemarouter dashboard \
-  --registry ./registry.sqlite3 \
-  --traces ./traces.sqlite3 \
-  --output ./artifacts/schemarouter-dashboard.html
-```
+[Versioning policy →](docs/versioning.md) ·
+[Research status →](docs/research/routing-status.md) ·
+[Changelog →](CHANGELOG.md)
 
 ## Documentation
 
-- [Installation](https://jdeun.github.io/SchemaRouter/getting-started/installation/)
-- [Quickstart](https://jdeun.github.io/SchemaRouter/getting-started/quickstart/)
-- [What SchemaRouter is](https://jdeun.github.io/SchemaRouter/concepts/schema-router/)
-- [RAG positioning and capability model](https://jdeun.github.io/SchemaRouter/concepts/capability-catalog/)
-- [Field-first execution](https://jdeun.github.io/SchemaRouter/concepts/field-first-execution/)
-- [OpenAPI](https://jdeun.github.io/SchemaRouter/guides/openapi/)
-- [MCP](https://jdeun.github.io/SchemaRouter/guides/mcp/)
-- [Provider-first registration](https://jdeun.github.io/SchemaRouter/guides/provider-first-registration/)
-- [State-aware retrieval](https://jdeun.github.io/SchemaRouter/guides/state-aware-retrieval/)
-- [Capability decision traces](https://jdeun.github.io/SchemaRouter/guides/capability-decision-traces/)
-- [Architecture and maturity](https://jdeun.github.io/SchemaRouter/architecture/)
-- [Security model](https://jdeun.github.io/SchemaRouter/security/threat-model/)
-- [Prior-art roadmap](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/)
-- [Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
-- [Complete experiment index](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
+| Topic | Guide |
+| --- | --- |
+| Installation and first use | [Getting started](docs/getting-started/installation.md) |
+| Architecture and concepts | [What SchemaRouter is](docs/concepts/schema-router.md) |
+| Provider/API ingestion | [Connect guides](docs/guides/provider-first-registration.md) |
+| Enterprise databases and access scope | [Enterprise data onboarding](docs/guides/enterprise-data-onboarding.md) |
+| Runtime policy and authorization | [Authorization](docs/guides/authorization.md) |
+| Operational inspection | [Inspection](docs/guides/inspection.md) |
+| Public API | [Reference](docs/reference/api.md) |
+| Research evidence | [Research index](docs/research/experiment-index.md) |
+
+Full documentation: **https://jdeun.github.io/SchemaRouter/**
 
 ## Scope
 
-SchemaRouter does not implement another chat abstraction, prompt framework,
-model-provider layer, conversation memory, checkpoint store, or graph runtime.
+SchemaRouter deliberately does **not** own agent loops, final answer generation, identity
+authentication, credential storage, or arbitrary database/query execution. Those remain outside the
+capability boundary.
 
-> **Natural-language request → typed capability plan → validated external data → surrounding RAG/agent**
+## License
 
-## Research and license
-
-SchemaRouter originated from
-[SchemaRouter: Field-Aware Tool Routing for Efficient Heterogeneous Agentic RAG](https://github.com/JDeun/paper_SchemaRouter).
-
-[MIT](LICENSE) © 2026 Yong-eun Cho
+MIT. See [LICENSE](LICENSE).
