@@ -226,6 +226,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "SourceProbeFailureReport",
         "SourceProbeResult",
         "MilvusVectorBackend",
+        "PineconeVectorBackend",
         "ODataSourceAdapter",
         "QdrantVectorBackend",
         "OPTIMADESourceAdapter",
