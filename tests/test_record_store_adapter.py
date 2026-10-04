@@ -484,7 +484,7 @@ async def test_native_schema_refresh_lifecycle_controls() -> None:
     with pytest.raises(ValueError, match="interval_seconds"):
         await router.start_native_schema_watcher(interval_seconds=0)
 
-    router.remove_tool("nosql.documents")
+    await router.aremove_tool("nosql.documents")
     assert "nosql.documents" not in router._native_schema_refreshers
     with pytest.raises(Exception, match="no process-local native schema refresh binding"):
         await router.arefresh_native_schema("nosql.documents")
