@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "package_id": "hope-agent-offline-v1",
+  "purpose": "Frozen pure-retrieval decision package requested in shiwenwen/hope-agent#802.",
+  "source_revisions": {
+    "schemarouter": "060a9accdea5be7601e274be8987c98160253fa9",
+    "hope_agent": "2784abba5823922dba06a3c722eba0ca91f69fd6"
+  },
+  "licenses": [
+    {
+      "project": "SchemaRouter",
+      "license": "MIT",
+      "source": "LICENSE"
+    },
+    {
+      "project": "hope-agent",
+      "license": "MIT",
+      "source_at_pinned_commit": "LICENSE"
+    }
+  ],
+  "annotation_provenance": {
+    "catalog_contract_source": "benchmarks/agent_utility_v5_catalog.py",
+    "source_commit": "060a9accdea5be7601e274be8987c98160253fa9",
+    "license": "MIT",
+    "policy": "All tool names, descriptions, parameter contracts, semantic field IDs, units, and supported/unsupported topic boundaries are frozen before any hope-agent result is observed. No model-generated labels are used."
+  },
+  "files": {
+    "catalog": "catalog.json",
+    "cases": "cases.json",
+    "result_template": "result-template.json"
+  },
+  "frozen_counts": {
+    "tools": 12,
+    "cases": 16,
+    "supported": 10,
+    "unsupported": 3,
+    "ambiguous": 3
+  },
+  "comparison_boundary": {
+    "execution": "disabled",
+    "paid_models": "disabled",
+    "eligible_catalog": "The full catalog remains eligible for both systems. Preselection/deferral must not be interpreted as deleting other eligible capabilities.",
+    "top_k": 3,
+    "schema_budget_bytes": 4096,
+    "schema_budget_encoding": "UTF-8 bytes of canonical JSON (sort_keys=true, separators=(',', ':')) for actually exposed schemas.",
+    "stages": {
+      "candidate": "Compact retrieval/search matches before activation.",
+      "activation": "Tools made callable/active for the next model turn.",
+      "exposed_schema": "Exact schemas actually inserted into model-visible context after activation or SchemaRouter projection."
+    },
+    "unsupported": "No tool should be activated.",
+    "ambiguous": "No tool should be activated without disambiguating information; acceptable_candidate_tools may appear as candidates."
+  },
+  "latency": {
+    "clock": "monotonic high-resolution clock",
+    "cold_start": "For each case, create a fresh router/index instance from the frozen catalog; include catalog parsing and index construction through retrieval/activation result; exclude operating-system process launch.",
+    "hot_path": "Reuse one initialized router/index, perform 3 unmeasured warmups, then report the median of 20 measured retrieval/activation runs for the same case.",
+    "external_io": "forbidden",
+    "report_units": "milliseconds"
+  },
+  "metrics": [
+    "supported candidate tool recall",
+    "supported activation tool recall",
+    "supported required-field recall from actually exposed schemas",
+    "unsupported false-activation rate",
+    "ambiguous false-activation rate",
+    "mean candidate count",
+    "mean activation count",
+    "mean actually exposed schema bytes",
+    "schema-budget compliance rate",
+    "cold-start latency",
+    "hot-path latency"
+  ],
+  "hope_agent_semantics": {
+    "reference_path": "docs/architecture/core/tool-system.md",
+    "note": "Preserve resolve_tool_fate eligibility and native deferred/tool_search behavior. Candidate, activation, and actual schema exposure are scored separately."
+  }
+}

@@ -1,0 +1,345 @@
+{
+  "schema_version": 1,
+  "catalog_id": "hope-agent-offline-v1",
+  "provenance": {
+    "repository": "https://github.com/JDeun/SchemaRouter",
+    "source_commit": "060a9accdea5be7601e274be8987c98160253fa9",
+    "source_path": "benchmarks/agent_utility_v5_catalog.py",
+    "license": "MIT",
+    "note": "Frozen subset of pre-existing SchemaRouter 0.14 synthetic capability semantics; no external data or model output is used."
+  },
+  "tools": [
+    {
+      "name": "literature.search",
+      "description": "Search scientific literature by topic or keywords",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "id",
+          "semantic_id": "resource.identifier",
+          "json_schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "literature.retrieve",
+      "description": "Retrieve one literature document by identifier",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "document_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "document_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "text",
+          "semantic_id": "literature.full_text",
+          "json_schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "literature.summarize",
+      "description": "Summarize one literature document by identifier",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "document_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "document_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "summary",
+          "semantic_id": "literature.summary",
+          "json_schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "datasets.search",
+      "description": "Search registered research datasets",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "id",
+          "semantic_id": "resource.identifier",
+          "json_schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "datasets.retrieve",
+      "description": "Retrieve metadata for one registered dataset",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "dataset_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "metadata",
+          "semantic_id": "dataset.metadata",
+          "json_schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "samples.get",
+      "description": "Read one laboratory sample record without modifying it",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "sample_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sample_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "id",
+          "semantic_id": "resource.identifier",
+          "json_schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "samples.update",
+      "description": "Update fields on one laboratory sample record",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "sample_id": {
+            "type": "string"
+          },
+          "patch": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sample_id",
+          "patch"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "id",
+          "semantic_id": "resource.identifier",
+          "json_schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "read_only": false,
+      "destructive": false
+    },
+    {
+      "name": "jobs.status",
+      "description": "Read the current status of a computation job",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "status",
+          "semantic_id": "job.status",
+          "json_schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "mechanics.elastic_modulus",
+      "description": "Read Young elastic modulus for a sample",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "sample_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sample_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "value",
+          "semantic_id": "mechanics.elastic_modulus",
+          "json_schema": {
+            "type": "number"
+          },
+          "unit": "GPa"
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "thermal.conductivity",
+      "description": "Read thermal conductivity for a sample",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "sample_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sample_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "value",
+          "semantic_id": "thermal.conductivity",
+          "json_schema": {
+            "type": "number"
+          },
+          "unit": "W/(m*K)"
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "spectroscopy.raman_peak",
+      "description": "Read Raman peak position for a sample",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "sample_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sample_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "value",
+          "semantic_id": "spectroscopy.raman_peak",
+          "json_schema": {
+            "type": "number"
+          },
+          "unit": "cm^-1"
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "optics.refractive_index",
+      "description": "Read refractive index for a sample",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "sample_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sample_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "value",
+          "semantic_id": "optics.refractive_index",
+          "json_schema": {
+            "type": "number"
+          },
+          "unit": "1"
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    }
+  ]
+}
