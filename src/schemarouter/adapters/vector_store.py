@@ -181,7 +181,7 @@ class VectorCollectionInvoker:
                 raise PolicyViolationError(
                     "authorization denied for requested data scope"
                 )
-            search = getattr(self._backend, "search")
+            search: Any = self._backend.search
             try:
                 parameters = inspect.signature(search).parameters
             except (TypeError, ValueError):
@@ -193,7 +193,7 @@ class VectorCollectionInvoker:
             search_kwargs["filters"] = trusted_filters
 
         raw_results = await _await_if_needed(
-            getattr(self._backend, "search")(**search_kwargs)
+            self._backend.search(**search_kwargs)
         )
         if not isinstance(raw_results, list):
             raise SchemaValidationError("vector backend search must return a list")
