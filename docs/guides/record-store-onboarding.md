@@ -52,7 +52,7 @@ Depending on the source declaration it may expose:
 - bounded `limit`;
 - explicit output-field projection.
 
-There is no model-visible MongoDB query document, Elasticsearch/OpenSearch Query DSL, Redis command,
+There is no model-visible MongoDB query document, Elasticsearch/OpenSearch Query DSL,
 DynamoDB expression, or other arbitrary vendor command surface.
 
 Vendor adapters translate the bounded contract into native SDK calls inside trusted runtime state.
