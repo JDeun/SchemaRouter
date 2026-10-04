@@ -2,12 +2,30 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import re
 from collections.abc import Mapping, Sequence
 from decimal import Decimal
 from typing import Any
 
 from ..errors import RegistrationError, SchemaValidationError
 from .record_store import RecordFieldSpec, RecordSourceSpec
+
+
+def _record_mapping(value: Any) -> Mapping[str, Any]:
+    if isinstance(value, Mapping):
+        return value
+    data = getattr(value, "data", None)
+    if callable(data):
+        result = data()
+        if isinstance(result, Mapping):
+            return result
+    if hasattr(value, "items"):
+        try:
+            result = dict(value.items())
+        except Exception as exc:  # pragma: no cover - vendor object defensive path
+            raise SchemaValidationError("record result row is not mapping-like") from exc
+        return result
+    raise SchemaValidationError("record result row is not mapping-like")
 
 
 def _json_schema_from_value(value: Any) -> dict[str, Any]:
@@ -879,7 +897,7 @@ def _n1ql_identifier(value: str) -> str:
 
 def _query_rows(result: Any) -> list[dict[str, Any]]:
     rows = result.rows() if hasattr(result, "rows") else result
-    return [dict(_as_mapping(row)) for row in rows]
+    return [dict(_record_mapping(row)) for row in rows]
 
 
 class CouchbaseRecordBackend:
