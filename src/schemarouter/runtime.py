@@ -1536,6 +1536,158 @@ class SchemaRouter:
 
         return _run_sync(lambda: self.aadd_dynamodb_record_store(client, **kwargs))
 
+    async def aadd_cosmos_record_store(
+        self,
+        database: Any,
+        *,
+        database_name: str = "cosmos",
+        namespace: str | None = None,
+        containers: tuple[str, ...] | list[str] | None = None,
+        time_field_by_container: Mapping[str, str] | None = None,
+        default_limit: int = 100,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned Azure Cosmos DB DatabaseProxy."""
+
+        from .adapters.record_native import CosmosRecordBackend
+
+        return await self.aadd_record_store(
+            CosmosRecordBackend(
+                database,
+                containers=containers,
+                time_field_by_container=time_field_by_container,
+            ),
+            database_name=database_name,
+            namespace=namespace,
+            sources=None if containers is None else set(containers),
+            default_limit=default_limit,
+            remote=remote,
+        )
+
+    def add_cosmos_record_store(
+        self,
+        database: Any,
+        **kwargs: Any,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_cosmos_record_store`."""
+
+        return _run_sync(lambda: self.aadd_cosmos_record_store(database, **kwargs))
+
+    async def aadd_couchbase_record_store(
+        self,
+        cluster: Any,
+        *,
+        database_name: str = "couchbase",
+        namespace: str | None = None,
+        keyspaces: tuple[str, ...] | list[str] | None = None,
+        time_field_by_source: Mapping[str, str] | None = None,
+        default_limit: int = 100,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned Couchbase Cluster."""
+
+        from .adapters.record_native import CouchbaseRecordBackend
+
+        return await self.aadd_record_store(
+            CouchbaseRecordBackend(
+                cluster,
+                keyspaces=keyspaces,
+                time_field_by_source=time_field_by_source,
+            ),
+            database_name=database_name,
+            namespace=namespace,
+            sources=None if keyspaces is None else set(keyspaces),
+            default_limit=default_limit,
+            remote=remote,
+        )
+
+    def add_couchbase_record_store(
+        self,
+        cluster: Any,
+        **kwargs: Any,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_couchbase_record_store`."""
+
+        return _run_sync(lambda: self.aadd_couchbase_record_store(cluster, **kwargs))
+
+    async def aadd_clickhouse_record_store(
+        self,
+        client: Any,
+        *,
+        database_name: str = "clickhouse",
+        namespace: str | None = None,
+        tables: tuple[str, ...] | list[str] | None = None,
+        time_field_by_table: Mapping[str, str] | None = None,
+        default_limit: int = 100,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned clickhouse-connect client."""
+
+        from .adapters.record_native import ClickHouseRecordBackend
+
+        return await self.aadd_record_store(
+            ClickHouseRecordBackend(
+                client,
+                tables=tables,
+                time_field_by_table=time_field_by_table,
+            ),
+            database_name=database_name,
+            namespace=namespace,
+            sources=None if tables is None else set(tables),
+            default_limit=default_limit,
+            remote=remote,
+        )
+
+    def add_clickhouse_record_store(
+        self,
+        client: Any,
+        **kwargs: Any,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_clickhouse_record_store`."""
+
+        return _run_sync(lambda: self.aadd_clickhouse_record_store(client, **kwargs))
+
+    async def aadd_influxdb_record_store(
+        self,
+        query_api: Any,
+        *,
+        bucket: str,
+        org: str,
+        database_name: str = "influxdb",
+        namespace: str | None = None,
+        measurements: tuple[str, ...] | list[str] | None = None,
+        default_start: str = "-30d",
+        default_limit: int = 100,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned InfluxDB QueryApi."""
+
+        from .adapters.record_native import InfluxRecordBackend
+
+        return await self.aadd_record_store(
+            InfluxRecordBackend(
+                query_api,
+                bucket=bucket,
+                org=org,
+                measurements=measurements,
+                default_start=default_start,
+            ),
+            database_name=database_name,
+            namespace=namespace,
+            sources=None if measurements is None else set(measurements),
+            default_limit=default_limit,
+            remote=remote,
+        )
+
+    def add_influxdb_record_store(
+        self,
+        query_api: Any,
+        **kwargs: Any,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_influxdb_record_store`."""
+
+        return _run_sync(lambda: self.aadd_influxdb_record_store(query_api, **kwargs))
+
     def amend_capability(self, tool_key: str, amended: ToolSpec) -> str:
         """Declare or annotate the result contract of an already registered capability.
 
