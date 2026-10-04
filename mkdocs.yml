@@ -145,6 +145,7 @@ nav:
       - MCP: guides/mcp.md
       - Declarative HTTP/JSON: guides/http-json.md
       - Provider-first registration: guides/provider-first-registration.md
+      - Enterprise data onboarding: guides/enterprise-data-onboarding.md
       - Database onboarding: guides/database-onboarding.md
       - Vector store onboarding: guides/vector-store-onboarding.md
       - Graph/RDF onboarding: guides/graph-store-onboarding.md
