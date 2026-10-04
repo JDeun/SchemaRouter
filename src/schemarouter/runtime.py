@@ -1203,6 +1203,324 @@ class SchemaRouter:
             )
         )
 
+    async def aadd_pinecone_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        database_name: str = "pinecone",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        metadata_fields_by_index: Mapping[str, Sequence[Any]] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned Pinecone client."""
+
+        from .adapters.vector_native import PineconeVectorBackend
+
+        return await self.aadd_vector_store(
+            PineconeVectorBackend(
+                client,
+                metadata_fields_by_index=metadata_fields_by_index,
+            ),
+            embed_query,
+            database_name=database_name,
+            namespace=namespace,
+            collections=collections,
+            default_top_k=default_top_k,
+            remote=remote,
+        )
+
+    def add_pinecone_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        database_name: str = "pinecone",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        metadata_fields_by_index: Mapping[str, Sequence[Any]] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        return _run_sync(
+            lambda: self.aadd_pinecone_vector_store(
+                client,
+                embed_query,
+                database_name=database_name,
+                namespace=namespace,
+                collections=collections,
+                metadata_fields_by_index=metadata_fields_by_index,
+                default_top_k=default_top_k,
+                remote=remote,
+            )
+        )
+
+    async def aadd_chroma_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        database_name: str = "chroma",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        dimension_by_collection: Mapping[str, int] | None = None,
+        metadata_fields_by_collection: Mapping[str, Sequence[Any]] | None = None,
+        metric_by_collection: Mapping[str, str] | None = None,
+        default_top_k: int = 10,
+        remote: bool = False,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned Chroma client."""
+
+        from .adapters.vector_native import ChromaVectorBackend
+
+        return await self.aadd_vector_store(
+            ChromaVectorBackend(
+                client,
+                dimension_by_collection=dimension_by_collection,
+                metadata_fields_by_collection=metadata_fields_by_collection,
+                metric_by_collection=metric_by_collection,
+            ),
+            embed_query,
+            database_name=database_name,
+            namespace=namespace,
+            collections=collections,
+            default_top_k=default_top_k,
+            remote=remote,
+        )
+
+    def add_chroma_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        database_name: str = "chroma",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        dimension_by_collection: Mapping[str, int] | None = None,
+        metadata_fields_by_collection: Mapping[str, Sequence[Any]] | None = None,
+        metric_by_collection: Mapping[str, str] | None = None,
+        default_top_k: int = 10,
+        remote: bool = False,
+    ) -> tuple[str, ...]:
+        return _run_sync(
+            lambda: self.aadd_chroma_vector_store(
+                client,
+                embed_query,
+                database_name=database_name,
+                namespace=namespace,
+                collections=collections,
+                dimension_by_collection=dimension_by_collection,
+                metadata_fields_by_collection=metadata_fields_by_collection,
+                metric_by_collection=metric_by_collection,
+                default_top_k=default_top_k,
+                remote=remote,
+            )
+        )
+
+    async def aadd_weaviate_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        dimension_by_collection: Mapping[str, int],
+        database_name: str = "weaviate",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        vector_name_by_collection: Mapping[str, str] | None = None,
+        metric_by_collection: Mapping[str, str] | None = None,
+        filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned Weaviate v4 client."""
+
+        from .adapters.vector_native import WeaviateVectorBackend
+
+        return await self.aadd_vector_store(
+            WeaviateVectorBackend(
+                client,
+                dimension_by_collection=dimension_by_collection,
+                vector_name_by_collection=vector_name_by_collection,
+                metric_by_collection=metric_by_collection,
+                filter_builder=filter_builder,
+            ),
+            embed_query,
+            database_name=database_name,
+            namespace=namespace,
+            collections=collections,
+            default_top_k=default_top_k,
+            remote=remote,
+        )
+
+    def add_weaviate_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        dimension_by_collection: Mapping[str, int],
+        database_name: str = "weaviate",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        vector_name_by_collection: Mapping[str, str] | None = None,
+        metric_by_collection: Mapping[str, str] | None = None,
+        filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        return _run_sync(
+            lambda: self.aadd_weaviate_vector_store(
+                client,
+                embed_query,
+                dimension_by_collection=dimension_by_collection,
+                database_name=database_name,
+                namespace=namespace,
+                collections=collections,
+                vector_name_by_collection=vector_name_by_collection,
+                metric_by_collection=metric_by_collection,
+                filter_builder=filter_builder,
+                default_top_k=default_top_k,
+                remote=remote,
+            )
+        )
+
+    async def aadd_redis_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        database_name: str = "redis",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        index_names: Sequence[str] | None = None,
+        vector_field_by_index: Mapping[str, str] | None = None,
+        metadata_fields_by_index: Mapping[str, Sequence[Any]] | None = None,
+        metric_by_index: Mapping[str, str] | None = None,
+        trusted_filter_builder: Callable[[Mapping[str, Any]], str] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned redis-py client with Redis Search."""
+
+        from .adapters.vector_native import RedisVectorBackend
+
+        return await self.aadd_vector_store(
+            RedisVectorBackend(
+                client,
+                index_names=index_names,
+                vector_field_by_index=vector_field_by_index,
+                metadata_fields_by_index=metadata_fields_by_index,
+                metric_by_index=metric_by_index,
+                trusted_filter_builder=trusted_filter_builder,
+            ),
+            embed_query,
+            database_name=database_name,
+            namespace=namespace,
+            collections=collections,
+            default_top_k=default_top_k,
+            remote=remote,
+        )
+
+    def add_redis_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        database_name: str = "redis",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        index_names: Sequence[str] | None = None,
+        vector_field_by_index: Mapping[str, str] | None = None,
+        metadata_fields_by_index: Mapping[str, Sequence[Any]] | None = None,
+        metric_by_index: Mapping[str, str] | None = None,
+        trusted_filter_builder: Callable[[Mapping[str, Any]], str] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        return _run_sync(
+            lambda: self.aadd_redis_vector_store(
+                client,
+                embed_query,
+                database_name=database_name,
+                namespace=namespace,
+                collections=collections,
+                index_names=index_names,
+                vector_field_by_index=vector_field_by_index,
+                metadata_fields_by_index=metadata_fields_by_index,
+                metric_by_index=metric_by_index,
+                trusted_filter_builder=trusted_filter_builder,
+                default_top_k=default_top_k,
+                remote=remote,
+            )
+        )
+
+    async def aadd_pgvector_store(
+        self,
+        engine: Any,
+        embed_query: Any,
+        *,
+        database_name: str = "pgvector",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        tables: Sequence[str] | None = None,
+        vector_field_by_table: Mapping[str, str] | None = None,
+        metric_by_table: Mapping[str, str] | None = None,
+        schema: str | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register caller-owned PostgreSQL/pgvector Engine."""
+
+        from .adapters.vector_native import PgvectorVectorBackend
+
+        return await self.aadd_vector_store(
+            PgvectorVectorBackend(
+                engine,
+                tables=tables,
+                vector_field_by_table=vector_field_by_table,
+                metric_by_table=metric_by_table,
+                schema=schema,
+            ),
+            embed_query,
+            database_name=database_name,
+            namespace=namespace,
+            collections=collections,
+            default_top_k=default_top_k,
+            remote=remote,
+        )
+
+    def add_pgvector_store(
+        self,
+        engine: Any,
+        embed_query: Any,
+        *,
+        database_name: str = "pgvector",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        tables: Sequence[str] | None = None,
+        vector_field_by_table: Mapping[str, str] | None = None,
+        metric_by_table: Mapping[str, str] | None = None,
+        schema: str | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        return _run_sync(
+            lambda: self.aadd_pgvector_store(
+                engine,
+                embed_query,
+                database_name=database_name,
+                namespace=namespace,
+                collections=collections,
+                tables=tables,
+                vector_field_by_table=vector_field_by_table,
+                metric_by_table=metric_by_table,
+                schema=schema,
+                default_top_k=default_top_k,
+                remote=remote,
+            )
+        )
+
     async def aadd_graph_store(
         self,
         backend: Any,
