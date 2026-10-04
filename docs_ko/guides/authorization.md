@@ -120,3 +120,91 @@ Database onboarding은 이 principal boundary 위에 구성합니다. DB adapter
 scope에 허용된 table/column schema만 노출하고, row predicate는 trusted database invoker
 내부에서 강제해야 합니다. Model이 전달하는 argument가 row predicate를 제거하거나 약화할 수
 없어야 합니다.
+
+## Field, row, tenant, traversal 세부 scope
+
+Capability authorization은 **해당 principal이 endpoint 자체를 사용할 수 있는가**를 결정합니다.
+Data-scope rule은 이미 허용된 endpoint가 실제로 보여 주거나 실행할 수 있는 데이터 범위를 더
+좁힙니다.
+
+```python
+from schemarouter import DataScopeRule, TrustedFilterBinding
+
+policy = AuthorizationPolicy(
+    rules=(
+        AuthorizationRule(
+            effect="allow",
+            operation="company.employees.select",
+            roles_any=("employee", "manager", "executive"),
+        ),
+    ),
+    data_rules=(
+        DataScopeRule(
+            name="employee-row-scope",
+            operation="company.employees.select",
+            roles_any=("employee",),
+            visible_fields=("id", "name"),
+            trusted_filters=(
+                TrustedFilterBinding(
+                    field="department",
+                    principal_value="attribute:department",
+                ),
+            ),
+        ),
+        DataScopeRule(
+            name="manager-row-scope",
+            operation="company.employees.select",
+            roles_any=("manager",),
+            visible_fields=("id", "name", "department", "salary"),
+            trusted_filters=(
+                TrustedFilterBinding(
+                    field="department",
+                    principal_value="attribute:department",
+                ),
+            ),
+        ),
+        DataScopeRule(
+            name="executive-scope",
+            operation="company.employees.select",
+            roles_any=("executive",),
+            visible_fields=("id", "name", "department", "salary"),
+        ),
+    ),
+)
+```
+
+위 employee rule에서는 다음이 적용됩니다.
+
+- `salary`와 `department`는 scoring 전에 model-visible retrieval schema에서 제거됩니다.
+- trusted department predicate는 검증된 principal context에서 결정됩니다.
+- predicate는 trusted DB invoker 내부에서 강제되며 model argument가 제거하거나 약화할 수 없습니다.
+- 숨긴 field를 직접 요청하도록 위조한 stale plan도 실행 단계에서 fail-closed합니다.
+
+`TrustedFilterBinding`은 `subject`, `role`, `department`, `team`,
+`attribute:<name>`에서 값을 가져올 수 있습니다. 필요한 attribute가 없으면 fail-closed합니다.
+
+동일한 scope contract를 DB 계열별로 다음처럼 적용합니다.
+
+| 데이터 계열 | Scope 강제 방식 |
+| --- | --- |
+| SQLite / SQLAlchemy RDB | visible column + trusted equality/IN row predicate |
+| Vector store | visible result/metadata field + trusted filterable metadata predicate |
+| Document/search/KV/time-series | visible field + trusted exact-match predicate |
+| Graph / RDF | visible result field + 허용 relationship/predicate + 최대 hop depth |
+
+Vector backend가 trusted tenant filter를 실제로 강제하려면 명시적인 `filters` 인자를
+지원해야 합니다. 지원하지 못하면 unscoped search를 실행하지 않고 호출을 거부합니다.
+
+Graph/RDF에서 `relationship_types`를 생략해도 접근 범위가 넓어지지 않습니다. Invoker는
+principal에 허용된 relationship 집합을 기본값으로 사용하고, `max_hops`도 정책 상한으로
+제한합니다.
+
+### 보안 경계
+
+Data-scope rule은 application-visible 범위를 더 좁힐 뿐 DB 권한을 부여하지 않습니다.
+DB-native role/grant/RLS/ACL, tenant credential, network boundary는 계속 최종 권한 경계이며
+별도로 구성해야 합니다.
+
+Data-scope rule도 선언 순서대로 첫 번째 match를 적용합니다. 넓은 rule은 사원/팀/부서별
+구체적인 rule 뒤에 두는 것이 안전합니다.
+

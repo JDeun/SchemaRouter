@@ -65,6 +65,7 @@ from .inspection import RouterInspection, inspect_router
 from .models import (
     CapabilityRetrieval,
     CapabilityRouteRetrieval,
+    EndpointSpec,
     ExecutionPlan,
     PlanRequest,
     ToolCall,
@@ -112,6 +113,7 @@ from .state_retrieval import (
     StateConditionedCapabilityRetrieval,
 )
 from .traces import RunTraceStore
+from .validation import projected_output_schema
 
 _T = TypeVar("_T")
 
@@ -288,6 +290,209 @@ class SchemaRouter:
             principal,
             tool,
             endpoint,
+        )
+
+    def _data_scope_endpoint_view(
+        self,
+        principal: PrincipalContext,
+        tool: ToolSpec,
+        endpoint: EndpointSpec,
+    ) -> EndpointSpec | None:
+        policy = self.authorization_policy
+        if policy is None or not policy.data_rules:
+            return endpoint
+        scope = policy.data_scope(principal, tool, endpoint)
+        if scope.visible_fields is None:
+            return endpoint
+
+        visible_fields = [
+            field.model_copy(deep=True)
+            for field in endpoint.output_fields
+            if field.name in scope.visible_fields
+        ]
+        if endpoint.output_fields and not visible_fields:
+            return None
+
+        hidden_field_names = {
+            field.name
+            for field in endpoint.output_fields
+            if field.name not in scope.visible_fields
+        }
+        parameters = []
+        for parameter in endpoint.parameters:
+            mapped_field = (
+                parameter.name.split("filter__", 1)[1]
+                if parameter.name.startswith("filter__")
+                else parameter.name
+            )
+            if mapped_field in hidden_field_names:
+                continue
+            clone = parameter.model_copy(deep=True)
+            if (
+                parameter.name == "relationship_types"
+                and scope.allowed_relationships is not None
+            ):
+                schema = dict(clone.json_schema)
+                items = dict(schema.get("items", {}))
+                items["enum"] = sorted(scope.allowed_relationships)
+                schema["items"] = items
+                clone.json_schema = schema
+            if parameter.name == "max_hops" and scope.max_hops is not None:
+                schema = dict(clone.json_schema)
+                current_max = schema.get("maximum")
+                schema["maximum"] = (
+                    scope.max_hops
+                    if current_max is None
+                    else min(int(current_max), scope.max_hops)
+                )
+                clone.json_schema = schema
+            parameters.append(clone)
+
+        selected_names = [field.name for field in visible_fields]
+        return endpoint.model_copy(
+            deep=True,
+            update={
+                "parameters": parameters,
+                "output_fields": visible_fields,
+                "output_schema": projected_output_schema(
+                    endpoint,
+                    selected_names,
+                ),
+            },
+        )
+
+    def _project_retrieval_data_scope(
+        self,
+        retrieval: CapabilityRetrieval,
+        principal: PrincipalContext | None,
+    ) -> CapabilityRetrieval:
+        policy = self.authorization_policy
+        if policy is None or not policy.data_rules:
+            return retrieval
+        if principal is None:
+            raise PolicyViolationError(
+                "principal context is required when authorization_policy is configured"
+            )
+
+        projected_candidates = []
+        for candidate in retrieval.candidates:
+            tool = self.registry.get(candidate.tool)
+            endpoint = tool.endpoint(candidate.endpoint)
+            scope = policy.data_scope(principal, tool, endpoint)
+            if scope.visible_fields is None:
+                projected_candidates.append(candidate)
+                continue
+
+            visible_fields = [
+                field
+                for field in endpoint.output_fields
+                if field.name in scope.visible_fields
+            ]
+            if endpoint.output_fields and not visible_fields:
+                continue
+
+            visible_names: set[str] = set()
+            for field in visible_fields:
+                visible_names.add(field.name.casefold())
+                if field.semantic_id:
+                    visible_names.add(field.semantic_id.casefold())
+                visible_names.update(alias.casefold() for alias in field.aliases)
+
+            hidden_field_names = {
+                field.name
+                for field in endpoint.output_fields
+                if field.name not in scope.visible_fields
+            }
+            parameters = []
+            for parameter in candidate.parameters:
+                mapped_field = (
+                    parameter.name.split("filter__", 1)[1]
+                    if parameter.name.startswith("filter__")
+                    else parameter.name
+                )
+                if mapped_field in hidden_field_names:
+                    continue
+                clone = parameter.model_copy(deep=True)
+                if (
+                    parameter.name == "relationship_types"
+                    and scope.allowed_relationships is not None
+                ):
+                    schema = dict(clone.json_schema)
+                    items = dict(schema.get("items", {}))
+                    items["enum"] = sorted(scope.allowed_relationships)
+                    schema["items"] = items
+                    clone.json_schema = schema
+                if parameter.name == "max_hops" and scope.max_hops is not None:
+                    schema = dict(clone.json_schema)
+                    current_max = schema.get("maximum")
+                    schema["maximum"] = (
+                        scope.max_hops
+                        if current_max is None
+                        else min(int(current_max), scope.max_hops)
+                    )
+                    clone.json_schema = schema
+                parameters.append(clone)
+
+            input_schema = dict(candidate.input_schema)
+            properties = dict(input_schema.get("properties", {}))
+            allowed_parameter_names = {parameter.name for parameter in parameters}
+            if properties:
+                input_schema["properties"] = {
+                    name: value
+                    for name, value in properties.items()
+                    if name in allowed_parameter_names
+                }
+            if isinstance(input_schema.get("required"), list):
+                input_schema["required"] = [
+                    name
+                    for name in input_schema["required"]
+                    if name in allowed_parameter_names
+                ]
+
+            selected_names = [field.name for field in visible_fields]
+            matched_fields = [
+                value
+                for value in candidate.matched_fields
+                if value.casefold() in visible_names
+            ]
+            score_components = [
+                component
+                for component in candidate.score_components
+                if component.matched is None
+                or component.matched.casefold() in visible_names
+                or component.matched.casefold()
+                not in {field.name.casefold() for field in endpoint.output_fields}
+            ]
+            projected_candidates.append(
+                candidate.model_copy(
+                    deep=True,
+                    update={
+                        "parameters": parameters,
+                        "input_schema": input_schema,
+                        "output_fields": [
+                            field.model_copy(deep=True)
+                            for field in visible_fields
+                        ],
+                        "output_schema": projected_output_schema(
+                            endpoint,
+                            selected_names,
+                        ),
+                        "matched_fields": matched_fields,
+                        "score_components": score_components,
+                    },
+                )
+            )
+
+        ranked = [
+            candidate.model_copy(update={"rank": index})
+            for index, candidate in enumerate(projected_candidates, start=1)
+        ]
+        return retrieval.model_copy(
+            deep=True,
+            update={
+                "total_ranked": len(ranked),
+                "candidates": ranked,
+            },
         )
 
     def _combined_availability_predicate(
@@ -2956,18 +3161,33 @@ class SchemaRouter:
     def plan(self, request: PlanRequest | str) -> ExecutionPlan:
         """Schema-aware planning under any active trusted principal context."""
 
-        predicate = self._authorization_predicate(_current_principal_context())
-        if predicate is None:
-            return self.planner.plan(request)
-        return self.planner.plan_with_additional_availability(request, predicate)
+        principal = _current_principal_context()
+        predicate = self._authorization_predicate(principal)
+        plan = (
+            self.planner.plan(request)
+            if predicate is None
+            else self.planner.plan_with_additional_availability(request, predicate)
+        )
+        if self.authorization_policy is not None:
+            self._validate_plan_authorization(plan, principal)
+        return plan
 
     async def aplan(self, request: PlanRequest | str) -> ExecutionPlan:
         """Async schema-aware planning under any active trusted principal context."""
 
-        predicate = self._authorization_predicate(_current_principal_context())
-        if predicate is None:
-            return await self.planner.aplan(request)
-        return await self.planner.aplan_with_additional_availability(request, predicate)
+        principal = _current_principal_context()
+        predicate = self._authorization_predicate(principal)
+        plan = (
+            await self.planner.aplan(request)
+            if predicate is None
+            else await self.planner.aplan_with_additional_availability(
+                request,
+                predicate,
+            )
+        )
+        if self.authorization_policy is not None:
+            self._validate_plan_authorization(plan, principal)
+        return plan
 
     def plan_authorized(
         self,
@@ -3057,14 +3277,32 @@ class SchemaRouter:
     ) -> CapabilityRetrieval:
         """Return Top-K typed capabilities under any active principal context."""
 
-        predicate = self._authorization_predicate(_current_principal_context())
+        principal = _current_principal_context()
+        predicate = self._authorization_predicate(principal)
         if predicate is None:
-            return self.planner.retrieve(request, k=k)
-        return self.planner.retrieve_with_additional_availability(
-            request,
-            predicate,
-            k=k,
-        )
+            retrieval = self.planner.retrieve(request, k=k)
+        elif (
+            self.authorization_policy is not None
+            and self.authorization_policy.data_rules
+            and principal is not None
+        ):
+            retrieval = self.planner.retrieve_with_scoped_schema(
+                request,
+                predicate,
+                lambda tool, endpoint: self._data_scope_endpoint_view(
+                    principal,
+                    tool,
+                    endpoint,
+                ),
+                k=k,
+            )
+        else:
+            retrieval = self.planner.retrieve_with_additional_availability(
+                request,
+                predicate,
+                k=k,
+            )
+        return self._project_retrieval_data_scope(retrieval, principal)
 
     async def aretrieve(
         self,
@@ -3074,14 +3312,32 @@ class SchemaRouter:
     ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve`."""
 
-        predicate = self._authorization_predicate(_current_principal_context())
+        principal = _current_principal_context()
+        predicate = self._authorization_predicate(principal)
         if predicate is None:
-            return await self.planner.aretrieve(request, k=k)
-        return await self.planner.aretrieve_with_additional_availability(
-            request,
-            predicate,
-            k=k,
-        )
+            retrieval = await self.planner.aretrieve(request, k=k)
+        elif (
+            self.authorization_policy is not None
+            and self.authorization_policy.data_rules
+            and principal is not None
+        ):
+            retrieval = await self.planner.aretrieve_with_scoped_schema(
+                request,
+                predicate,
+                lambda tool, endpoint: self._data_scope_endpoint_view(
+                    principal,
+                    tool,
+                    endpoint,
+                ),
+                k=k,
+            )
+        else:
+            retrieval = await self.planner.aretrieve_with_additional_availability(
+                request,
+                predicate,
+                k=k,
+            )
+        return self._project_retrieval_data_scope(retrieval, principal)
 
     def retrieve_authorized(
         self,

@@ -8,7 +8,8 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from ..errors import RegistrationError
+from ..authorization import _current_data_scope
+from ..errors import PolicyViolationError, RegistrationError
 from ..models import (
     EndpointSpec,
     FieldSpec,
@@ -123,6 +124,23 @@ class SQLAlchemyTableInvoker:
                 statement = statement.where(
                     self._table.c[column] == call.arguments[column]
                 )
+
+        scope = _current_data_scope()
+        if scope is not None:
+            for column, value in scope.trusted_filters:
+                if column not in self._columns:
+                    raise PolicyViolationError(
+                        "authorization denied for requested data scope"
+                    )
+                if isinstance(value, tuple):
+                    if not value:
+                        statement = statement.where(False)
+                    else:
+                        statement = statement.where(
+                            self._table.c[column].in_(value)
+                        )
+                else:
+                    statement = statement.where(self._table.c[column] == value)
 
         limit = int(call.arguments.get("limit", self._default_limit))
         offset = int(call.arguments.get("offset", 0))

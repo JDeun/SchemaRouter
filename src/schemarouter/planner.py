@@ -337,6 +337,7 @@ class _Candidate:
     score_components: tuple[ScoreComponent, ...] = ()
     field_reasons: tuple[tuple[str, FieldSelectionReason], ...] = ()
     selection_source: CandidateSelectionSource = "deterministic"
+    visible_endpoint: EndpointSpec | None = None
 
 
 @dataclass(frozen=True, order=True)
@@ -548,27 +549,28 @@ class SchemaPlanner:
     ) -> CapabilityCandidate:
         tool = candidate.tool
         endpoint = candidate.endpoint
+        visible_endpoint = candidate.visible_endpoint or endpoint
         return CapabilityCandidate(
             rank=rank,
             route_id=f"{tool.key}.{endpoint.name}",
             tool=tool.key,
             endpoint=endpoint.name,
             tool_description=tool.description,
-            endpoint_description=endpoint.description,
+            endpoint_description=visible_endpoint.description,
             score=candidate.score,
             matched_fields=list(candidate.matched_fields),
             score_components=list(candidate.score_components),
             selection_source=candidate.selection_source,
             parameters=[
                 parameter.model_copy(deep=True)
-                for parameter in endpoint.parameters
+                for parameter in visible_endpoint.parameters
             ],
-            input_schema=deepcopy(effective_input_schema(endpoint)),
+            input_schema=deepcopy(effective_input_schema(visible_endpoint)),
             output_fields=[
                 field.model_copy(deep=True)
-                for field in endpoint.output_fields
+                for field in visible_endpoint.output_fields
             ],
-            output_schema=deepcopy(effective_output_schema(endpoint)),
+            output_schema=deepcopy(effective_output_schema(visible_endpoint)),
             read_only=endpoint.read_only,
             destructive=endpoint.destructive,
             source_type=tool.source_type,
@@ -616,11 +618,17 @@ class SchemaPlanner:
             bool,
         ]
         | None = None,
+        scoring_endpoint_transform: Callable[
+            [ToolSpec, EndpointSpec],
+            EndpointSpec | None,
+        ]
+        | None = None,
     ) -> CapabilityRetrieval:
         candidates = self._semantic_recall_catalog(
             request,
             intent,
             additional_availability_predicate=additional_availability_predicate,
+            scoring_endpoint_transform=scoring_endpoint_transform,
         )
         candidates.sort(key=self._candidate_sort_key)
         return CapabilityRetrieval(
@@ -977,6 +985,61 @@ class SchemaPlanner:
             additional_availability_predicate=predicate,
         )
 
+    def retrieve_with_scoped_schema(
+        self,
+        request: PlanRequest | str,
+        predicate: Callable[[ToolSpec, EndpointSpec], bool],
+        endpoint_transform: Callable[[ToolSpec, EndpointSpec], EndpointSpec | None],
+        *,
+        k: int = 5,
+        executable_only: bool = False,
+    ) -> CapabilityRetrieval:
+        """Retrieve under local availability and a non-authoritative visible schema view."""
+
+        k = self._validate_retrieval_k(k)
+        request = self._prepare_request(request)
+        intent = self.analyzer.analyze(request, self.registry)
+        if inspect.isawaitable(intent):
+            if inspect.iscoroutine(intent):
+                intent.close()
+            raise PlanningError(
+                "the configured analyzer is asynchronous; use "
+                "await planner.aretrieve_with_scoped_schema(...)"
+            )
+        return self._retrieve_from_intent(
+            request,
+            intent,
+            k=k,
+            executable_only=executable_only,
+            additional_availability_predicate=predicate,
+            scoring_endpoint_transform=endpoint_transform,
+        )
+
+    async def aretrieve_with_scoped_schema(
+        self,
+        request: PlanRequest | str,
+        predicate: Callable[[ToolSpec, EndpointSpec], bool],
+        endpoint_transform: Callable[[ToolSpec, EndpointSpec], EndpointSpec | None],
+        *,
+        k: int = 5,
+        executable_only: bool = False,
+    ) -> CapabilityRetrieval:
+        """Async counterpart to :meth:`retrieve_with_scoped_schema`."""
+
+        k = self._validate_retrieval_k(k)
+        request = self._prepare_request(request)
+        intent = self.analyzer.analyze(request, self.registry)
+        if inspect.isawaitable(intent):
+            intent = await intent
+        return self._retrieve_from_intent(
+            request,
+            intent,
+            k=k,
+            executable_only=executable_only,
+            additional_availability_predicate=predicate,
+            scoring_endpoint_transform=endpoint_transform,
+        )
+
     def plan_with_additional_availability(
         self,
         request: PlanRequest | str,
@@ -1254,6 +1317,11 @@ class SchemaPlanner:
             bool,
         ]
         | None = None,
+        scoring_endpoint_transform: Callable[
+            [ToolSpec, EndpointSpec],
+            EndpointSpec | None,
+        ]
+        | None = None,
     ) -> list[_Candidate]:
         def is_available(tool: ToolSpec, endpoint: EndpointSpec) -> bool:
             if (
@@ -1284,38 +1352,69 @@ class SchemaPlanner:
             for tool, endpoint in endpoint_pairs
             if is_available(tool, endpoint)
         )
+        scoped_pairs: list[tuple[ToolSpec, EndpointSpec, EndpointSpec]] = []
+        for tool, endpoint in available_pairs:
+            visible_endpoint = (
+                endpoint
+                if scoring_endpoint_transform is None
+                else scoring_endpoint_transform(tool, endpoint)
+            )
+            if visible_endpoint is None:
+                continue
+            scoped_pairs.append((tool, endpoint, visible_endpoint))
 
         scoring_context = self._scoring_context(request.query, intent)
         if index is None or self.structural_retrieval:
-            return [
-                self._score_endpoint(
+            result: list[_Candidate] = []
+            for tool, endpoint, visible_endpoint in scoped_pairs:
+                scored = self._score_endpoint(
                     tool,
-                    endpoint,
+                    visible_endpoint,
                     request.query,
                     intent,
                     _context=scoring_context,
                 )
-                for tool, endpoint in available_pairs
-            ]
+                result.append(
+                    replace(
+                        scored,
+                        endpoint=endpoint,
+                        visible_endpoint=visible_endpoint,
+                    )
+                )
+            return result
 
         positive_refs = {
             (tool.key, endpoint.name)
             for tool, endpoint in index.endpoint_pairs(request, intent)
         }
-        return [
-            (
-                self._score_endpoint(
+        result: list[_Candidate] = []
+        for tool, endpoint, visible_endpoint in scoped_pairs:
+            if (tool.key, endpoint.name) in positive_refs:
+                scored = self._score_endpoint(
                     tool,
-                    endpoint,
+                    visible_endpoint,
                     request.query,
                     intent,
                     _context=scoring_context,
                 )
-                if (tool.key, endpoint.name) in positive_refs
-                else _Candidate(tool, endpoint, 0.0, ())
-            )
-            for tool, endpoint in available_pairs
-        ]
+                result.append(
+                    replace(
+                        scored,
+                        endpoint=endpoint,
+                        visible_endpoint=visible_endpoint,
+                    )
+                )
+            else:
+                result.append(
+                    _Candidate(
+                        tool,
+                        endpoint,
+                        0.0,
+                        (),
+                        visible_endpoint=visible_endpoint,
+                    )
+                )
+        return result
 
     def _semantic_recall_request(
         self,
@@ -1324,14 +1423,15 @@ class SchemaPlanner:
     ) -> DecisionRequest:
         options: list[DecisionOption] = []
         for index, candidate in enumerate(catalog):
+            visible_endpoint = candidate.visible_endpoint or candidate.endpoint
             field_labels = [
                 field.semantic_id or field.name
-                for field in candidate.endpoint.output_fields
+                for field in visible_endpoint.output_fields
                 if not field.identifier
             ]
             parts = [
                 candidate.tool.description.strip(),
-                candidate.endpoint.description.strip(),
+                visible_endpoint.description.strip(),
             ]
             if field_labels:
                 parts.append("Fields: " + ", ".join(field_labels))

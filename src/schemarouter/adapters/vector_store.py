@@ -8,7 +8,8 @@ from typing import Any, Protocol
 
 from pydantic import Field, model_validator
 
-from ..errors import RegistrationError, SchemaValidationError
+from ..authorization import _current_data_scope
+from ..errors import PolicyViolationError, RegistrationError, SchemaValidationError
 from ..models import (
     EndpointSpec,
     FieldSpec,
@@ -125,6 +126,11 @@ class VectorCollectionInvoker:
         self._metadata_fields = {
             field.name for field in collection.metadata_fields
         }
+        self._filterable_metadata = {
+            field.name
+            for field in collection.metadata_fields
+            if field.filterable
+        }
 
     async def invoke_call(self, call: ToolCall) -> list[dict[str, Any]]:
         if call.endpoint != _SEARCH_ENDPOINT:
@@ -159,13 +165,35 @@ class VectorCollectionInvoker:
             for field in selected_fields
             if field in self._metadata_fields
         )
-        raw_results = await _await_if_needed(
-            self._backend.search(
-                collection=self._collection.name,
-                vector=vector,
-                top_k=top_k,
-                include_fields=selected_metadata,
+        search_kwargs: dict[str, Any] = {
+            "collection": self._collection.name,
+            "vector": vector,
+            "top_k": top_k,
+            "include_fields": selected_metadata,
+        }
+        scope = _current_data_scope()
+        if scope is not None and scope.trusted_filters:
+            trusted_filters = scope.filter_dict()
+            unknown_filters = sorted(
+                set(trusted_filters) - self._filterable_metadata
             )
+            if unknown_filters:
+                raise PolicyViolationError(
+                    "authorization denied for requested data scope"
+                )
+            search: Any = self._backend.search
+            try:
+                parameters = inspect.signature(search).parameters
+            except (TypeError, ValueError):
+                parameters = {}
+            if "filters" not in parameters:
+                raise PolicyViolationError(
+                    "authorization denied for requested data scope"
+                )
+            search_kwargs["filters"] = trusted_filters
+
+        raw_results = await _await_if_needed(
+            self._backend.search(**search_kwargs)
         )
         if not isinstance(raw_results, list):
             raise SchemaValidationError("vector backend search must return a list")

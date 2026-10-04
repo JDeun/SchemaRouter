@@ -8,7 +8,8 @@ from typing import Any, Literal, Protocol
 
 from pydantic import Field, model_validator
 
-from ..errors import RegistrationError, SchemaValidationError
+from ..authorization import _current_data_scope
+from ..errors import PolicyViolationError, RegistrationError, SchemaValidationError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, StrictModel, ToolCall, ToolSpec
 
 _TRAVERSE_ENDPOINT = "traverse"
@@ -167,9 +168,16 @@ class GraphSourceInvoker:
         if not isinstance(start_id, str) or not start_id.strip():
             raise RuntimeError("graph traversal requires a non-empty start_id")
 
+        scope = _current_data_scope()
+        allowed_relationships = (
+            self._relationship_types
+            if scope is None or scope.allowed_relationships is None
+            else self._relationship_types.intersection(scope.allowed_relationships)
+        )
+
         raw_relationships = call.arguments.get("relationship_types")
         if raw_relationships is None:
-            relationship_types = tuple(sorted(self._relationship_types))
+            relationship_types = tuple(sorted(allowed_relationships))
         elif isinstance(raw_relationships, list) and all(
             isinstance(value, str) for value in raw_relationships
         ):
@@ -185,14 +193,25 @@ class GraphSourceInvoker:
                 "graph traversal requested unknown relationship types: "
                 + ", ".join(unknown_relationships)
             )
+        if not set(relationship_types).issubset(allowed_relationships):
+            raise PolicyViolationError(
+                "authorization denied for requested data scope"
+            )
 
         direction = call.arguments.get("direction", "out")
         if direction not in {"out", "in", "both"}:
             raise RuntimeError("graph direction must be out, in, or both")
 
-        max_hops = int(call.arguments.get("max_hops", self._default_max_hops))
+        scoped_default_hops = self._default_max_hops
+        if scope is not None and scope.max_hops is not None:
+            scoped_default_hops = min(scoped_default_hops, scope.max_hops)
+        max_hops = int(call.arguments.get("max_hops", scoped_default_hops))
         if max_hops < 1 or max_hops > _MAX_HOPS:
             raise RuntimeError(f"graph max_hops must be between 1 and {_MAX_HOPS}")
+        if scope is not None and scope.max_hops is not None and max_hops > scope.max_hops:
+            raise PolicyViolationError(
+                "authorization denied for requested data scope"
+            )
 
         limit = int(call.arguments.get("limit", self._default_limit))
         if limit < 1 or limit > _MAX_LIMIT:

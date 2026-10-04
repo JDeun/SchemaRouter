@@ -75,7 +75,10 @@ from .authorization import (
     AuthorizationEffect,
     AuthorizationPolicy,
     AuthorizationRule,
+    DataScopeDecision,
+    DataScopeRule,
     PrincipalContext,
+    TrustedFilterBinding,
 )
 from .binding_reconciliation import (
     BindingReconciliationError,
@@ -466,7 +469,10 @@ __all__ = [
     "AuthorizationEffect",
     "AuthorizationPolicy",
     "AuthorizationRule",
+    "DataScopeDecision",
+    "DataScopeRule",
     "PrincipalContext",
+    "TrustedFilterBinding",
     "BindingReconciliationError",
     "BindingReconciliationItem",
     "BindingReconciliationReport",
