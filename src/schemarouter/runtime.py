@@ -1203,6 +1203,191 @@ class SchemaRouter:
             )
         )
 
+
+    async def aadd_pinecone_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        database_name: str = "pinecone",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        indexes: Sequence[str] | None = None,
+        namespace_by_index: Mapping[str, str] | None = None,
+        metadata_fields_by_index: Mapping[str, Sequence[Any]] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned Pinecone client through the vector capability contract."""
+
+        from .adapters.vector_native import PineconeVectorBackend
+
+        return await self.aadd_vector_store(
+            PineconeVectorBackend(
+                client,
+                indexes=indexes,
+                namespace_by_index=namespace_by_index,
+                metadata_fields_by_index=metadata_fields_by_index,
+            ),
+            embed_query,
+            database_name=database_name,
+            namespace=namespace,
+            collections=collections,
+            default_top_k=default_top_k,
+            remote=remote,
+        )
+
+    def add_pinecone_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        **kwargs: Any,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_pinecone_vector_store`."""
+
+        return _run_sync(
+            lambda: self.aadd_pinecone_vector_store(client, embed_query, **kwargs)
+        )
+
+    async def aadd_weaviate_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        dimension_by_collection: Mapping[str, int],
+        database_name: str = "weaviate",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        metric_by_collection: Mapping[str, str] | None = None,
+        metadata_fields_by_collection: Mapping[str, Sequence[Any]] | None = None,
+        filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
+        metadata_query_factory: Callable[[], Any] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned Weaviate client through the vector capability contract."""
+
+        from .adapters.vector_native import WeaviateVectorBackend
+
+        return await self.aadd_vector_store(
+            WeaviateVectorBackend(
+                client,
+                dimension_by_collection=dimension_by_collection,
+                metric_by_collection=metric_by_collection,
+                metadata_fields_by_collection=metadata_fields_by_collection,
+                filter_builder=filter_builder,
+                metadata_query_factory=metadata_query_factory,
+            ),
+            embed_query,
+            database_name=database_name,
+            namespace=namespace,
+            collections=collections,
+            default_top_k=default_top_k,
+            remote=remote,
+        )
+
+    def add_weaviate_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        **kwargs: Any,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_weaviate_vector_store`."""
+
+        return _run_sync(
+            lambda: self.aadd_weaviate_vector_store(client, embed_query, **kwargs)
+        )
+
+    async def aadd_chroma_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        *,
+        database_name: str = "chroma",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        dimension_by_collection: Mapping[str, int] | None = None,
+        metadata_fields_by_collection: Mapping[str, Sequence[Any]] | None = None,
+        default_top_k: int = 10,
+        remote: bool = False,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned Chroma client through the vector capability contract."""
+
+        from .adapters.vector_native import ChromaVectorBackend
+
+        return await self.aadd_vector_store(
+            ChromaVectorBackend(
+                client,
+                dimension_by_collection=dimension_by_collection,
+                metadata_fields_by_collection=metadata_fields_by_collection,
+            ),
+            embed_query,
+            database_name=database_name,
+            namespace=namespace,
+            collections=collections,
+            default_top_k=default_top_k,
+            remote=remote,
+        )
+
+    def add_chroma_vector_store(
+        self,
+        client: Any,
+        embed_query: Any,
+        **kwargs: Any,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_chroma_vector_store`."""
+
+        return _run_sync(
+            lambda: self.aadd_chroma_vector_store(client, embed_query, **kwargs)
+        )
+
+    async def aadd_pgvector_store(
+        self,
+        engine: Any,
+        embed_query: Any,
+        *,
+        database_name: str = "pgvector",
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        tables: Sequence[str] | None = None,
+        schema: str | None = None,
+        vector_column_by_table: Mapping[str, str] | None = None,
+        metric_by_table: Mapping[str, str] | None = None,
+        default_top_k: int = 10,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned SQLAlchemy pgvector engine as bounded vector search."""
+
+        from .adapters.vector_native import PgVectorBackend
+
+        return await self.aadd_vector_store(
+            PgVectorBackend(
+                engine,
+                tables=tables,
+                schema=schema,
+                vector_column_by_table=vector_column_by_table,
+                metric_by_table=metric_by_table,
+            ),
+            embed_query,
+            database_name=database_name,
+            namespace=namespace,
+            collections=collections,
+            default_top_k=default_top_k,
+            remote=remote,
+        )
+
+    def add_pgvector_store(
+        self,
+        engine: Any,
+        embed_query: Any,
+        **kwargs: Any,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_pgvector_store`."""
+
+        return _run_sync(
+            lambda: self.aadd_pgvector_store(engine, embed_query, **kwargs)
+        )
+
     async def aadd_graph_store(
         self,
         backend: Any,
