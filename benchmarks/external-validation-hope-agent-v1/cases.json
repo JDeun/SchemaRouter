@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "case_set_id": "hope-agent-offline-v1",
+  "cases": [
+    {
+      "id": "ha-001",
+      "label": "supported",
+      "query": "Read the Young elastic modulus for sample S-201 in GPa.",
+      "required_tools": [
+        "mechanics.elastic_modulus"
+      ],
+      "required_fields": {
+        "mechanics.elastic_modulus": [
+          "value"
+        ]
+      }
+    },
+    {
+      "id": "ha-002",
+      "label": "supported",
+      "query": "Get the thermal conductivity for sample S-202.",
+      "required_tools": [
+        "thermal.conductivity"
+      ],
+      "required_fields": {
+        "thermal.conductivity": [
+          "value"
+        ]
+      }
+    },
+    {
+      "id": "ha-003",
+      "label": "supported",
+      "query": "Find the Raman peak position for sample S-203.",
+      "required_tools": [
+        "spectroscopy.raman_peak"
+      ],
+      "required_fields": {
+        "spectroscopy.raman_peak": [
+          "value"
+        ]
+      }
+    },
+    {
+      "id": "ha-004",
+      "label": "supported",
+      "query": "Read the refractive index for sample S-204.",
+      "required_tools": [
+        "optics.refractive_index"
+      ],
+      "required_fields": {
+        "optics.refractive_index": [
+          "value"
+        ]
+      }
+    },
+    {
+      "id": "ha-005",
+      "label": "supported",
+      "query": "Search the scientific literature for typed capability routing.",
+      "required_tools": [
+        "literature.search"
+      ],
+      "required_fields": {
+        "literature.search": [
+          "id"
+        ]
+      }
+    },
+    {
+      "id": "ha-006",
+      "label": "supported",
+      "query": "Retrieve the full text of literature document DOC-42.",
+      "required_tools": [
+        "literature.retrieve"
+      ],
+      "required_fields": {
+        "literature.retrieve": [
+          "text"
+        ]
+      }
+    },
+    {
+      "id": "ha-007",
+      "label": "supported",
+      "query": "Summarize literature document DOC-42.",
+      "required_tools": [
+        "literature.summarize"
+      ],
+      "required_fields": {
+        "literature.summarize": [
+          "summary"
+        ]
+      }
+    },
+    {
+      "id": "ha-008",
+      "label": "supported",
+      "query": "Search registered datasets for thermal transport measurements.",
+      "required_tools": [
+        "datasets.search"
+      ],
+      "required_fields": {
+        "datasets.search": [
+          "id"
+        ]
+      }
+    },
+    {
+      "id": "ha-009",
+      "label": "supported",
+      "query": "Retrieve metadata for dataset DS-7.",
+      "required_tools": [
+        "datasets.retrieve"
+      ],
+      "required_fields": {
+        "datasets.retrieve": [
+          "metadata"
+        ]
+      }
+    },
+    {
+      "id": "ha-010",
+      "label": "supported",
+      "query": "Check the current status of job JOB-5.",
+      "required_tools": [
+        "jobs.status"
+      ],
+      "required_fields": {
+        "jobs.status": [
+          "status"
+        ]
+      }
+    },
+    {
+      "id": "ha-011",
+      "label": "unsupported",
+      "query": "Read the Poisson ratio for sample S-205.",
+      "required_tools": [],
+      "required_fields": {}
+    },
+    {
+      "id": "ha-012",
+      "label": "unsupported",
+      "query": "Give the electrochemical impedance spectrum for cell CELL-9.",
+      "required_tools": [],
+      "required_fields": {}
+    },
+    {
+      "id": "ha-013",
+      "label": "unsupported",
+      "query": "Compose a jazz chord progression in D minor.",
+      "required_tools": [],
+      "required_fields": {}
+    },
+    {
+      "id": "ha-014",
+      "label": "ambiguous",
+      "query": "Get information from literature document DOC-42.",
+      "required_tools": [],
+      "required_fields": {},
+      "acceptable_candidate_tools": [
+        "literature.retrieve",
+        "literature.summarize"
+      ]
+    },
+    {
+      "id": "ha-015",
+      "label": "ambiguous",
+      "query": "Find or retrieve dataset DS-7.",
+      "required_tools": [],
+      "required_fields": {},
+      "acceptable_candidate_tools": [
+        "datasets.search",
+        "datasets.retrieve"
+      ]
+    },
+    {
+      "id": "ha-016",
+      "label": "ambiguous",
+      "query": "Handle sample S-9 without specifying whether it should be read or changed.",
+      "required_tools": [],
+      "required_fields": {},
+      "acceptable_candidate_tools": [
+        "samples.get",
+        "samples.update"
+      ]
+    }
+  ]
+}

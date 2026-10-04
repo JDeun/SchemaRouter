@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "package_id": "hope-agent-offline-v1",
+  "implementation": {
+    "name": "",
+    "commit": "",
+    "configuration": {}
+  },
+  "results": [
+    {
+      "id": "ha-001",
+      "candidate_tools": [],
+      "activated_tools": [],
+      "exposed_schemas": [],
+      "cold_start_ms": null,
+      "hot_path_ms": null
+    },
+    {
+      "id": "ha-002",
+      "candidate_tools": [],
+      "activated_tools": [],
+      "exposed_schemas": [],
+      "cold_start_ms": null,
+      "hot_path_ms": null
+    },
+    {
+      "id": "ha-003",
+      "candidate_tools": [],
+      "activated_tools": [],
+      "exposed_schemas": [],
+      "cold_start_ms": null,
+      "hot_path_ms": null
+    },
+    {
+      "id": "ha-004",
+      "candidate_tools": [],
+      "activated_tools": [],
+      "exposed_schemas": [],
+      "cold_start_ms": null,
+      "hot_path_ms": null
+    },
+    {
+      "id": "ha-005",
+      "candidate_tools": [],
+      "activated_tools": [],
+      "exposed_schemas": [],
+      "cold_start_ms": null,
+      "hot_path_ms": null
+    },
+    {
+      "id": "ha-006",
+      "candidate_tools": [],
+      "activated_tools": [],
+      "exposed_schemas": [],
+      "cold_start_ms": null,
+      "hot_path_ms": null
+    },
+    {
+      "id": "ha-007",
+      "candidate_tools": [],
+      "activated_tools": [],
+      "exposed_schemas": [],
+      "cold_start_ms": null,
+      "hot_path_ms": null
+    },
+    {
+      "id": "ha-008",
+      "candidate_tools": [],
+      "activated_tools": [],
+      "exposed_schemas": [],
+      "cold_start_ms": null,
+      "hot_path_ms": null
+    },
+    {
+      "id": "ha-009",
+      "candidate_tools": [],
+      "activated_tools": [],
+      "exposed_schemas": [],
+      "cold_start_ms": null,
+      "hot_path_ms": null
+    },
+    {
+      "id": "ha-010",
+      "candidate_tools": [],
+      "activated_tools": [],
+      "exposed_schemas": [],
+      "cold_start_ms": null,
+      "hot_path_ms": null
+    },
+    {
+      "id": "ha-011",
+      "candidate_tools": [],
+      "activated_tools": [],
+      "exposed_schemas": [],
+      "cold_start_ms": null,
+      "hot_path_ms": null
+    },
+    {
+      "id": "ha-012",
+      "candidate_tools": [],
+      "activated_tools": [],
+      "exposed_schemas": [],
+      "cold_start_ms": null,
+      "hot_path_ms": null
+    },
+    {
+      "id": "ha-013",
+      "candidate_tools": [],
+      "activated_tools": [],
+      "exposed_schemas": [],
+      "cold_start_ms": null,
+      "hot_path_ms": null
+    },
+    {
+      "id": "ha-014",
+      "candidate_tools": [],
+      "activated_tools": [],
+      "exposed_schemas": [],
+      "cold_start_ms": null,
+      "hot_path_ms": null
+    },
+    {
+      "id": "ha-015",
+      "candidate_tools": [],
+      "activated_tools": [],
+      "exposed_schemas": [],
+      "cold_start_ms": null,
+      "hot_path_ms": null
+    },
+    {
+      "id": "ha-016",
+      "candidate_tools": [],
+      "activated_tools": [],
+      "exposed_schemas": [],
+      "cold_start_ms": null,
+      "hot_path_ms": null
+    }
+  ]
+}
