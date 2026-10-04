@@ -104,7 +104,8 @@ from .authorization import (
     PrincipalContext,
     TrustedFilterBinding,
 )
-from .authorization_audit import AuthorizationAuditEvent, AuthorizationAuditHook
+from .authorization_audit import AuthorizationAuditEvent as AuthorizationAuditEvent
+from .authorization_audit import AuthorizationAuditHook as AuthorizationAuditHook
 from .binding_reconciliation import (
     BindingReconciliationError,
     BindingReconciliationItem,
