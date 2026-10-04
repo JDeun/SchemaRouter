@@ -8,6 +8,7 @@ The project is pre-1.0 and follows the compatibility rules in
 ## Unreleased
 
 ### Added
+- added a native caller-owned FalkorDB property-graph adapter with graph/label/relationship/property discovery, read-only `ro_query()` traversal, and existing principal graph-scope enforcement;
 
 - expanded native vector-store coverage with caller-owned Pinecone, Weaviate, Chroma,
   Redis Vector Search and PostgreSQL/pgvector adapters, preserving bounded search, explicit
