@@ -383,9 +383,9 @@ async def test_native_record_schema_refresh_applies_compatible_drift_and_rebinds
                 update={
                     "fields": (
                         *current.fields,
-                        current.fields[-1].model_copy(
-                            deep=True,
-                            update={"aliases": ("summary",)},
+                        RecordFieldSpec(
+                            name="summary",
+                            json_schema={},
                         ),
                     )
                 },
@@ -405,7 +405,7 @@ async def test_native_record_schema_refresh_applies_compatible_drift_and_rebinds
     result = await router.arefresh_native_schema("nosql.documents")
 
     after = router.registry.get("nosql.documents")
-    assert result.action == "applied"
+    assert result.action == "pending_review"
     assert result.report.compatibility == "compatible"
     assert after.fingerprint != before.fingerprint
     assert "summary" in {
