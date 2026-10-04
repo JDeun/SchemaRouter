@@ -80,3 +80,59 @@ authority model.
 
 The provider-neutral contract does **not** by itself claim that every named vendor SDK has completed
 native/live acceptance. Vendor-specific adapter acceptance is tracked under #767.
+
+## Native Qdrant and Milvus clients
+
+For Qdrant and Milvus, SchemaRouter ships thin adapters around caller-owned clients. Connection
+URLs, API keys, tokens, and client pools remain inside those client objects.
+
+### Qdrant
+
+```python
+from qdrant_client import QdrantClient
+
+client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
+
+keys = router.add_qdrant_vector_store(
+    client,
+    embed_query,
+    database_name="qdrant",
+)
+```
+
+The adapter reads collection vector size/distance and indexed payload schema, then normalizes
+`query_points()` results into the common vector capability contract. When a collection has
+multiple named dense vectors, set `vector_name_by_collection` explicitly rather than guessing.
+
+Qdrant payload schema describes indexed/filterable payload fields, not necessarily every payload
+field stored in every point. Additional model-visible metadata may therefore be supplied explicitly
+with `metadata_fields_by_collection`.
+
+Trusted data-scope filters are converted to Qdrant Filter objects inside the adapter. Applications
+with a custom Qdrant filter abstraction may inject a trusted `filter_builder`.
+
+### Milvus
+
+```python
+from pymilvus import MilvusClient
+
+client = MilvusClient(uri=MILVUS_URI, token=MILVUS_TOKEN)
+
+keys = router.add_milvus_vector_store(
+    client,
+    embed_query,
+    database_name="milvus",
+)
+```
+
+The adapter uses `list_collections()` and `describe_collection()` to discover dense vector
+dimensions and scalar metadata fields. If a collection has multiple vector fields, use
+`vector_field_by_collection` explicitly.
+
+Trusted filters use Milvus filter templates plus `filter_params`; principal-derived values are not
+interpolated into the expression string.
+
+These adapters are SDK-shape tested with caller-owned fake clients. They do not make vendor
+credentials part of SchemaRouter state and do not imply that every deployment topology has been
+live-tested.
+
