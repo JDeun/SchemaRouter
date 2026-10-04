@@ -136,3 +136,64 @@ These adapters are SDK-shape tested with caller-owned fake clients. They do not 
 credentials part of SchemaRouter state and do not imply that every deployment topology has been
 live-tested.
 
+
+
+### Pinecone
+
+```python
+keys = router.add_pinecone_vector_store(
+    pinecone_client,
+    embed_query,
+    metadata_fields_by_index={"docs": metadata_fields},
+)
+```
+
+Index dimension and metric are read from the Pinecone control plane. Metadata fields that may be
+projected or used for trusted principal filters are declared explicitly because Pinecone does not
+provide a complete metadata schema for an index.
+
+### Weaviate
+
+```python
+keys = router.add_weaviate_vector_store(
+    weaviate_client,
+    embed_query,
+    dimension_by_collection={"Docs": 1536},
+)
+```
+
+Weaviate collection/property discovery is automatic. Vector dimensions are supplied explicitly
+because they are not consistently exposed through collection schema metadata. Trusted authorization
+filters are compiled inside the adapter or by a caller-supplied `filter_builder`.
+
+### Chroma
+
+```python
+keys = router.add_chroma_vector_store(
+    chroma_client,
+    embed_query,
+    dimension_by_collection={"docs": 1536},
+)
+```
+
+The adapter discovers collections and can infer metadata keys from a bounded `peek(limit=1)`.
+Dimensions may be provided explicitly or through trusted collection metadata.
+
+### pgvector / PostgreSQL
+
+```python
+keys = router.add_pgvector_store(
+    sqlalchemy_engine,
+    embed_query,
+    tables=["documents"],
+    metric_by_table={"documents": "cosine"},
+)
+```
+
+The pgvector adapter reflects caller-selected SQLAlchemy tables, discovers a single dense vector
+column and its dimension, and builds similarity search using SQLAlchemy expressions. The model never
+receives SQL text or a vector value. Native PostgreSQL roles/RLS remain authoritative.
+
+All native vector adapters keep credentials and connection objects caller-owned. SDK-shape tests
+cover discovery, bounded top-k search, metadata projection, and trusted-filter handling. Live
+acceptance remains environment-dependent and should use deployment-owned credentials.
