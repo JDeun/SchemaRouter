@@ -7,7 +7,8 @@ from dataclasses import dataclass
 from hashlib import sha256
 from typing import Any
 
-from ..errors import RegistrationError
+from ..authorization import _current_data_scope
+from ..errors import PolicyViolationError, RegistrationError
 from ..models import (
     EndpointSpec,
     FieldSpec,
@@ -112,6 +113,26 @@ class SQLiteTableInvoker:
                 continue
             where_parts.append(f"{_quote_identifier(column)} = ?")
             values.append(call.arguments[column])
+
+        scope = _current_data_scope()
+        if scope is not None:
+            for column, value in scope.trusted_filters:
+                if column not in self._columns:
+                    raise PolicyViolationError(
+                        "authorization denied for requested data scope"
+                    )
+                if isinstance(value, tuple):
+                    if not value:
+                        where_parts.append("1 = 0")
+                        continue
+                    placeholders = ", ".join("?" for _ in value)
+                    where_parts.append(
+                        f"{_quote_identifier(column)} IN ({placeholders})"
+                    )
+                    values.extend(value)
+                else:
+                    where_parts.append(f"{_quote_identifier(column)} = ?")
+                    values.append(value)
 
         limit = int(call.arguments.get("limit", self._default_limit))
         offset = int(call.arguments.get("offset", 0))
