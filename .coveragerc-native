@@ -1,0 +1,11 @@
+[run]
+branch = True
+source =
+    schemarouter.adapters.graph_native
+    schemarouter.adapters.vector_native
+    schemarouter.adapters.record_native
+
+[report]
+fail_under = 60
+show_missing = True
+skip_covered = False
