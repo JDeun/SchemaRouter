@@ -55,6 +55,28 @@ tool = to_llamaindex_tool(router, "materials", "search")
 tools = to_llamaindex_tools(router)
 ```
 
+With enterprise authorization enabled, export with a trusted principal:
+
+```python
+from schemarouter import PrincipalContext, RunConfig
+
+employee = PrincipalContext(
+    subject="alice",
+    roles=("employee",),
+    attributes={"department": "sales"},
+)
+
+tools = to_llamaindex_tools(
+    router,
+    run_config=RunConfig(principal=employee),
+)
+```
+
+The exported catalog contains only principal-visible endpoints. DataScope projection removes hidden
+fields/parameters from the LlamaIndex-visible schema, and calls re-enter
+`SchemaRouter.execute(..., config=...)` so authorization and trusted data filters are enforced
+again at execution.
+
 ## Runnable example
 
 The repository includes a minimal executable integration example:
