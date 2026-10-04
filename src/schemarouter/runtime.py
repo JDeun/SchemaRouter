@@ -89,7 +89,6 @@ from .provider_profiles import (
 from .provider_profiles import (
     load_provider_profile_plugins as _load_provider_profile_plugins,
 )
-from .validation import projected_output_schema
 from .registry import (
     InMemoryRegistry,
     ToolRegistry,
@@ -114,6 +113,7 @@ from .state_retrieval import (
     StateConditionedCapabilityRetrieval,
 )
 from .traces import RunTraceStore
+from .validation import projected_output_schema
 
 _T = TypeVar("_T")
 
