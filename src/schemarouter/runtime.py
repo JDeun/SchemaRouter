@@ -1174,18 +1174,15 @@ class SchemaRouter:
         except Exception:
             for key in bound:
                 self.executor.purge_tool_runtime_state(key)
-            current_version = self.registry.version
-            for key, binding in reversed(tuple(zip(keys, staged, strict=True))):
-                try:
-                    unregister_if_current(
-                        self.registry,
-                        key,
-                        expected_fingerprint=binding.tool.fingerprint,
-                        expected_version=current_version,
-                    )
-                except (KeyError, RegistrationError):
-                    break
-                current_version += 1
+            rollback = getattr(self.registry, "unregister_many_if_version", None)
+            if callable(rollback):
+                rollback(
+                    {
+                        key: binding.tool.fingerprint
+                        for key, binding in zip(keys, staged, strict=True)
+                    },
+                    expected_version=self.registry.version,
+                )
             raise
         return keys
 
