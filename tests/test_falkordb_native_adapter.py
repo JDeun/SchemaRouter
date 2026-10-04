@@ -152,6 +152,8 @@ async def test_falkordb_discovers_schema_and_uses_read_only_bounded_traversal() 
     query, params = client.graph.calls[-1]
     assert "MATCH p=(start)-[rels:`MEMBER_OF`*1..1]->(target)" in query
     assert "id(start) = $start_id" in query
+    assert "type(last(relationships(p))) AS relationship" in query
+    assert "length(p) AS depth" in query
     assert "LIMIT $limit" in query
     assert params == {"start_id": 1, "limit": 5}
 
