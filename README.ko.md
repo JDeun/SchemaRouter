@@ -26,7 +26,7 @@
   <a href="https://github.com/JDeun/SchemaRouter/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
-> **안정 릴리스: 0.15.0** · Beta / pre-1.0
+> **현재 안정판: 0.15.0** · Beta / pre-1.0
 
 SchemaRouter는 LLM/RAG 애플리케이션을 위한 **typed capability retrieval + schema-aware execution
 layer**입니다.
