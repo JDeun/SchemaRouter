@@ -453,3 +453,38 @@ async def test_native_record_schema_refresh_quarantines_breaking_drift() -> None
     assert result.report.compatibility == "breaking"
     assert router.registry.get("nosql.documents").fingerprint == before.fingerprint
     assert "nosql.documents" in router._native_schema_pending
+
+
+@pytest.mark.asyncio
+async def test_native_schema_refresh_lifecycle_controls() -> None:
+    backend = FakeRecordBackend()
+    router = SchemaRouter()
+    await router.aadd_record_store(
+        backend,
+        database_name="nosql",
+        sources={"documents"},
+    )
+
+    unchanged = await router.arefresh_native_schema("nosql.documents")
+    assert unchanged.action == "unchanged"
+    assert not unchanged.applied
+
+    report_only = await router.check_native_schema_watches_once(
+        apply_compatible=False,
+    )
+    assert len(report_only) == 1
+    assert report_only[0].action == "unchanged"
+
+    await router.start_native_schema_watcher(interval_seconds=3600)
+    with pytest.raises(RuntimeError, match="already running"):
+        await router.start_native_schema_watcher(interval_seconds=3600)
+    await router.stop_native_schema_watcher()
+    await router.stop_native_schema_watcher()
+
+    with pytest.raises(ValueError, match="interval_seconds"):
+        await router.start_native_schema_watcher(interval_seconds=0)
+
+    router.remove_tool("nosql.documents")
+    assert "nosql.documents" not in router._native_schema_refreshers
+    with pytest.raises(Exception, match="no process-local native schema refresh binding"):
+        await router.arefresh_native_schema("nosql.documents")
