@@ -6,7 +6,14 @@ from typing import Any
 import pytest
 
 from schemarouter import SchemaRouter, VectorMetadataField
-from schemarouter.adapters.vector_native import MilvusVectorBackend, QdrantVectorBackend
+from schemarouter.adapters.vector_native import (
+    ChromaVectorBackend,
+    MilvusVectorBackend,
+    PineconeVectorBackend,
+    QdrantVectorBackend,
+    RedisVectorBackend,
+    WeaviateVectorBackend,
+)
 
 
 @dataclass
@@ -375,3 +382,415 @@ def test_milvus_multiple_vector_fields_require_explicit_selection() -> None:
     spec = backend.list_collections()[0]
     assert spec.dimension == 4
     assert spec.public_metadata == {"vector_field": "image_vec"}
+
+
+class _PineconeIndexList:
+    def names(self) -> list[str]:
+        return ["docs"]
+
+
+class _PineconeIndex:
+    def __init__(self) -> None:
+        self.query_kwargs: dict[str, Any] = {}
+
+    def query(self, **kwargs: Any) -> dict[str, Any]:
+        self.query_kwargs = dict(kwargs)
+        return {
+            "matches": [
+                {
+                    "id": "p1",
+                    "score": 0.97,
+                    "metadata": {
+                        "title": "Router",
+                        "tenant": "tenant-a",
+                    },
+                }
+            ]
+        }
+
+
+class FakePineconeClient:
+    def __init__(self) -> None:
+        self.index = _PineconeIndex()
+
+    def list_indexes(self) -> _PineconeIndexList:
+        return _PineconeIndexList()
+
+    def describe_index(self, name: str) -> dict[str, Any]:
+        assert name == "docs"
+        return {"name": "docs", "dimension": 3, "metric": "cosine"}
+
+    def Index(self, name: str) -> _PineconeIndex:  # noqa: N802
+        assert name == "docs"
+        return self.index
+
+
+def test_pinecone_adapter_discovers_index_and_normalizes_query() -> None:
+    client = FakePineconeClient()
+    backend = PineconeVectorBackend(
+        client,
+        metadata_fields_by_index={
+            "docs": (
+                VectorMetadataField(
+                    name="title",
+                    json_schema={"type": "string"},
+                ),
+                VectorMetadataField(
+                    name="tenant",
+                    json_schema={"type": "string"},
+                    filterable=True,
+                ),
+            )
+        },
+    )
+
+    spec = backend.list_collections()[0]
+    assert spec.name == "docs"
+    assert spec.dimension == 3
+    assert spec.metric == "cosine"
+
+    rows = backend.search(
+        collection="docs",
+        vector=[0.1, 0.2, 0.3],
+        top_k=4,
+        include_fields=("title",),
+        filters={"tenant": "tenant-a"},
+    )
+    assert rows == [{"id": "p1", "score": 0.97, "title": "Router"}]
+    assert client.index.query_kwargs["filter"] == {"tenant": "tenant-a"}
+
+
+@dataclass
+class _ChromaCollection:
+    name: str = "docs"
+    metadata: dict[str, Any] | None = None
+
+    def peek(self, *, limit: int) -> dict[str, Any]:
+        assert limit == 1
+        return {"embeddings": [[0.1, 0.2, 0.3]]}
+
+    def query(self, **kwargs: Any) -> dict[str, Any]:
+        assert kwargs["n_results"] == 2
+        return {
+            "ids": [["c1"]],
+            "distances": [[0.11]],
+            "metadatas": [[{"title": "Router", "tenant": "tenant-a"}]],
+            "documents": [["typed routing"]],
+        }
+
+
+class FakeChromaClient:
+    def __init__(self) -> None:
+        self.collection = _ChromaCollection(
+            metadata={"hnsw:space": "cosine"}
+        )
+
+    def list_collections(self) -> list[_ChromaCollection]:
+        return [self.collection]
+
+    def get_collection(self, *, name: str) -> _ChromaCollection:
+        assert name == "docs"
+        return self.collection
+
+
+def test_chroma_adapter_infers_dimension_and_normalizes_query() -> None:
+    backend = ChromaVectorBackend(
+        FakeChromaClient(),
+        metadata_fields_by_collection={
+            "docs": (
+                VectorMetadataField(
+                    name="title",
+                    json_schema={"type": "string"},
+                ),
+                VectorMetadataField(
+                    name="tenant",
+                    json_schema={"type": "string"},
+                    filterable=True,
+                ),
+                VectorMetadataField(
+                    name="document",
+                    json_schema={"type": "string"},
+                ),
+            )
+        },
+    )
+    spec = backend.list_collections()[0]
+    assert spec.dimension == 3
+    assert spec.metric == "cosine"
+
+    rows = backend.search(
+        collection="docs",
+        vector=[0.1, 0.2, 0.3],
+        top_k=2,
+        include_fields=("title", "document"),
+        filters={"tenant": "tenant-a"},
+    )
+    assert rows == [
+        {
+            "id": "c1",
+            "score": 0.11,
+            "title": "Router",
+            "document": "typed routing",
+        }
+    ]
+
+
+@dataclass
+class _WeaviateProperty:
+    name: str
+    data_type: list[str]
+
+
+@dataclass
+class _WeaviateConfig:
+    properties: list[_WeaviateProperty]
+
+
+@dataclass
+class _WeaviateMetadata:
+    distance: float
+
+
+@dataclass
+class _WeaviateObject:
+    uuid: str
+    properties: dict[str, Any]
+    metadata: _WeaviateMetadata
+
+
+@dataclass
+class _WeaviateResponse:
+    objects: list[_WeaviateObject]
+
+
+class _WeaviateQuery:
+    def __init__(self) -> None:
+        self.kwargs: dict[str, Any] = {}
+
+    def near_vector(self, **kwargs: Any) -> _WeaviateResponse:
+        self.kwargs = dict(kwargs)
+        return _WeaviateResponse(
+            [
+                _WeaviateObject(
+                    uuid="w1",
+                    properties={"title": "Router", "tenant": "tenant-a"},
+                    metadata=_WeaviateMetadata(distance=0.08),
+                )
+            ]
+        )
+
+
+class _WeaviateCollection:
+    def __init__(self) -> None:
+        self.query = _WeaviateQuery()
+
+        class _Config:
+            @staticmethod
+            def get() -> _WeaviateConfig:
+                return _WeaviateConfig(
+                    properties=[
+                        _WeaviateProperty("title", ["text"]),
+                        _WeaviateProperty("tenant", ["text"]),
+                    ]
+                )
+
+        self.config = _Config()
+
+
+class _WeaviateCollections:
+    def __init__(self) -> None:
+        self.collection = _WeaviateCollection()
+
+    def list_all(self, *, simple: bool = False) -> dict[str, Any]:
+        assert simple is False
+        return {"Docs": {}}
+
+    def get(self, name: str) -> _WeaviateCollection:
+        assert name == "Docs"
+        return self.collection
+
+
+class FakeWeaviateClient:
+    def __init__(self) -> None:
+        self.collections = _WeaviateCollections()
+
+
+def test_weaviate_adapter_discovers_properties_and_uses_target_vector() -> None:
+    client = FakeWeaviateClient()
+    backend = WeaviateVectorBackend(
+        client,
+        dimension_by_collection={"Docs": 3},
+        vector_name_by_collection={"Docs": "title_vec"},
+        metric_by_collection={"Docs": "cosine"},
+        filter_builder=lambda filters: {"trusted": dict(filters)},
+    )
+
+    spec = backend.list_collections()[0]
+    assert spec.dimension == 3
+    assert spec.public_metadata == {"vector_name": "title_vec"}
+    assert [field.name for field in spec.metadata_fields] == ["title", "tenant"]
+
+    rows = backend.search(
+        collection="Docs",
+        vector=[0.1, 0.2, 0.3],
+        top_k=3,
+        include_fields=("title",),
+        filters={"tenant": "tenant-a"},
+    )
+    assert rows == [{"id": "w1", "score": 0.08, "title": "Router"}]
+    kwargs = client.collections.collection.query.kwargs
+    assert kwargs["target_vector"] == "title_vec"
+    assert kwargs["filters"] == {"trusted": {"tenant": "tenant-a"}}
+
+
+class _FakeRedisQuery:
+    def __init__(self, text: str) -> None:
+        self.text = text
+        self.fields: tuple[str, ...] = ()
+
+    def sort_by(self, _field: str) -> "_FakeRedisQuery":
+        return self
+
+    def return_fields(self, *fields: str) -> "_FakeRedisQuery":
+        self.fields = tuple(fields)
+        return self
+
+    def paging(self, _offset: int, _limit: int) -> "_FakeRedisQuery":
+        return self
+
+    def dialect(self, _dialect: int) -> "_FakeRedisQuery":
+        return self
+
+
+@dataclass
+class _RedisDoc:
+    id: str
+    __vector_distance: str
+    title: str
+
+
+@dataclass
+class _RedisSearchResult:
+    docs: list[_RedisDoc]
+
+
+class _FakeRedisFT:
+    def __init__(self) -> None:
+        self.query: Any = None
+        self.params: dict[str, Any] = {}
+
+    def info(self) -> dict[str, Any]:
+        return {
+            "attributes": [
+                [
+                    "identifier",
+                    "embedding",
+                    "attribute",
+                    "embedding",
+                    "type",
+                    "VECTOR",
+                    "algorithm",
+                    ["DIM", 3],
+                ]
+            ]
+        }
+
+    def search(
+        self,
+        query: Any,
+        *,
+        query_params: dict[str, Any],
+    ) -> _RedisSearchResult:
+        self.query = query
+        self.params = dict(query_params)
+        return _RedisSearchResult(
+            [_RedisDoc("r1", "0.15", "Router")]
+        )
+
+
+class FakeRedisClient:
+    def __init__(self) -> None:
+        self.ft_client = _FakeRedisFT()
+
+    def execute_command(self, command: str) -> list[str]:
+        assert command == "FT._LIST"
+        return ["docs"]
+
+    def ft(self, index_name: str) -> _FakeRedisFT:
+        assert index_name == "docs"
+        return self.ft_client
+
+
+def test_redis_vector_adapter_discovers_dim_and_normalizes_search() -> None:
+    client = FakeRedisClient()
+    backend = RedisVectorBackend(
+        client,
+        metadata_fields_by_index={
+            "docs": (
+                VectorMetadataField(
+                    name="title",
+                    json_schema={"type": "string"},
+                ),
+            )
+        },
+        metric_by_index={"docs": "cosine"},
+        query_factory=_FakeRedisQuery,
+    )
+
+    spec = backend.list_collections()[0]
+    assert spec.dimension == 3
+    assert spec.public_metadata == {"vector_field": "embedding"}
+
+    rows = backend.search(
+        collection="docs",
+        vector=[0.1, 0.2, 0.3],
+        top_k=2,
+        include_fields=("title",),
+    )
+    assert rows == [{"id": "r1", "score": 0.15, "title": "Router"}]
+    assert "$query_vector" in client.ft_client.query.text
+    assert isinstance(client.ft_client.params["query_vector"], bytes)
+
+
+def test_router_remaining_native_vector_registration_helpers() -> None:
+    pinecone = SchemaRouter()
+    pinecone_keys = pinecone.add_pinecone_vector_store(
+        FakePineconeClient(),
+        lambda _query: [0.1, 0.2, 0.3],
+        metadata_fields_by_index={
+            "docs": (
+                VectorMetadataField(
+                    name="title",
+                    json_schema={"type": "string"},
+                ),
+            )
+        },
+        remote=False,
+    )
+    assert pinecone_keys == ("pinecone.docs",)
+
+    chroma = SchemaRouter()
+    chroma_keys = chroma.add_chroma_vector_store(
+        FakeChromaClient(),
+        lambda _query: [0.1, 0.2, 0.3],
+        remote=False,
+    )
+    assert chroma_keys == ("chroma.docs",)
+
+    weaviate = SchemaRouter()
+    weaviate_keys = weaviate.add_weaviate_vector_store(
+        FakeWeaviateClient(),
+        lambda _query: [0.1, 0.2, 0.3],
+        dimension_by_collection={"Docs": 3},
+        remote=False,
+    )
+    assert weaviate_keys == ("weaviate.docs",)
+
+    redis = SchemaRouter()
+    redis_keys = redis.add_redis_vector_store(
+        FakeRedisClient(),
+        lambda _query: [0.1, 0.2, 0.3],
+        query_factory=_FakeRedisQuery,
+        remote=False,
+    )
+    assert redis_keys == ("redis.docs",)
