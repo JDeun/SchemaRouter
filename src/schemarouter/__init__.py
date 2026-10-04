@@ -33,6 +33,12 @@ from .adapters.plugins import (
     load_adapter_plugins,
 )
 from .adapters.python import schema_tool, tool_from_callable
+from .adapters.record_native import (
+    DynamoDBRecordBackend,
+    ElasticRecordBackend,
+    MongoRecordBackend,
+    RedisRecordBackend,
+)
 from .adapters.record_store import (
     RecordFieldSpec,
     RecordModel,
@@ -619,12 +625,16 @@ __all__ = [
     "QueryIntent",
     "ResultFieldContract",
     "RetrievalMode",
+    "DynamoDBRecordBackend",
+    "ElasticRecordBackend",
+    "MongoRecordBackend",
     "RecordFieldSpec",
     "RecordModel",
     "RecordSourceBinding",
     "RecordSourceInvoker",
     "RecordSourceSpec",
     "RecordStoreBackend",
+    "RedisRecordBackend",
     "RegistrationError",
     "RefreshProfile",
     "RegistryExecutor",
