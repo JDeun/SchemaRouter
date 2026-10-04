@@ -1680,43 +1680,6 @@ class SchemaRouter:
 
         return _run_sync(lambda: self.aadd_opensearch_record_store(client, **kwargs))
 
-    async def aadd_redis_record_store(
-        self,
-        client: Any,
-        *,
-        database_name: str = "redis",
-        namespace: str | None = None,
-        source_name: str = "keys",
-        pattern: str = "*",
-        default_limit: int = 100,
-        remote: bool = True,
-    ) -> tuple[str, ...]:
-        """Register a caller-owned redis-py client as a bounded key-value source."""
-
-        from .adapters.record_native import RedisRecordBackend
-
-        return await self.aadd_record_store(
-            RedisRecordBackend(
-                client,
-                source_name=source_name,
-                pattern=pattern,
-            ),
-            database_name=database_name,
-            namespace=namespace,
-            sources={source_name},
-            default_limit=default_limit,
-            remote=remote,
-        )
-
-    def add_redis_record_store(
-        self,
-        client: Any,
-        **kwargs: Any,
-    ) -> tuple[str, ...]:
-        """Synchronous wrapper for :meth:`aadd_redis_record_store`."""
-
-        return _run_sync(lambda: self.aadd_redis_record_store(client, **kwargs))
-
     async def aadd_dynamodb_record_store(
         self,
         client: Any,
