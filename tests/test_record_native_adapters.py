@@ -46,7 +46,7 @@ class FakeMongoCursor:
     def __init__(self, rows: list[dict[str, Any]]) -> None:
         self._rows = rows
 
-    def limit(self, value: int) -> "FakeMongoCursor":
+    def limit(self, value: int) -> FakeMongoCursor:
         self._rows = self._rows[:value]
         return self
 
