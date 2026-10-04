@@ -514,7 +514,7 @@ class SparqlGraphBackend:
             raise SchemaValidationError("SPARQL response must be an object")
         results = payload.get("results", {})
         bindings = results.get("bindings", []) if isinstance(results, Mapping) else []
-        if not isinstance(bindings, Sequence):
+        if not isinstance(bindings, Sequence) or isinstance(bindings, (str, bytes)):
             raise SchemaValidationError("SPARQL bindings must be a list")
 
         rows: list[dict[str, Any]] = []
