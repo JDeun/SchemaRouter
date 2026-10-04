@@ -398,8 +398,11 @@ def _authorized_endpoint_view(
         principal_audit_id=run_config.principal_audit_id,
     )
     if not authorized:
+        if principal is None:
+            raise PolicyViolationError(
+                "principal context is required when authorization_policy is configured"
+            )
         raise PolicyViolationError("authorization denied for requested capability")
-    assert principal is not None
 
     projected = router._data_scope_endpoint_view(principal, tool, endpoint)
     if projected is None:
