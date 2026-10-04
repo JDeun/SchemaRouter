@@ -18,6 +18,8 @@ The project is pre-1.0 and follows the compatibility rules in
 - added native caller-owned Qdrant and Milvus vector backends with collection/schema
   discovery, bounded query normalization, explicit multi-vector selection, and trusted metadata
   filtering while keeping vendor credentials and clients outside model-visible contracts;
+- added native Pinecone, Weaviate, Chroma, and pgvector adapters while keeping generic Redis
+  vector/search outside the first-class core surface;
 - added unified principal data scopes across relational, vector, record-store and graph/RDF
   adapters, including pre-scoring field non-disclosure, trusted principal-derived row/tenant
   predicates, graph relationship/hop restrictions, and execution-boundary revalidation;
