@@ -282,7 +282,7 @@ class PineconeVectorBackend:
 
     def _index_names(self) -> list[str]:
         response = self._client.list_indexes()
-        names_method = getattr(response, "names", None)
+        names_method = _read(response, "names")
         if callable(names_method):
             raw_names = names_method()
         else:
@@ -317,7 +317,7 @@ class PineconeVectorBackend:
 
         info = self._describe_index(index_name)
         host = _read(info, "host")
-        index_factory = getattr(self._client, "Index", None)
+        index_factory = _read(self._client, "Index")
         if not callable(index_factory):
             raise RegistrationError(
                 "Pinecone client does not expose an Index(...) factory"
