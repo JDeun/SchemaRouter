@@ -649,17 +649,17 @@ class _FakeRedisQuery:
         self.text = text
         self.fields: tuple[str, ...] = ()
 
-    def sort_by(self, _field: str) -> "_FakeRedisQuery":
+    def sort_by(self, _field: str) -> _FakeRedisQuery:
         return self
 
-    def return_fields(self, *fields: str) -> "_FakeRedisQuery":
+    def return_fields(self, *fields: str) -> _FakeRedisQuery:
         self.fields = tuple(fields)
         return self
 
-    def paging(self, _offset: int, _limit: int) -> "_FakeRedisQuery":
+    def paging(self, _offset: int, _limit: int) -> _FakeRedisQuery:
         return self
 
-    def dialect(self, _dialect: int) -> "_FakeRedisQuery":
+    def dialect(self, _dialect: int) -> _FakeRedisQuery:
         return self
 
 
