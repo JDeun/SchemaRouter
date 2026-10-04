@@ -95,7 +95,6 @@ from .vector_native import (
     PgvectorVectorBackend,
     PineconeVectorBackend,
     QdrantVectorBackend,
-    RedisVectorBackend,
     WeaviateVectorBackend,
 )
 from .vector_store import (
@@ -165,7 +164,6 @@ __all__ = [
     "PgvectorVectorBackend",
     "PineconeVectorBackend",
     "QdrantVectorBackend",
-    "RedisVectorBackend",
     "WeaviateVectorBackend",
     "SourceAdapter",
     "VectorCollectionBinding",
