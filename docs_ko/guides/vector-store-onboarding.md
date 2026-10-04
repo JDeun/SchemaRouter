@@ -66,8 +66,9 @@ AuthorizationRule(
 
 권한이 없는 collection은 model selection 이전에 숨기고 실행 직전에 다시 검증합니다.
 
-Metadata/tenant filter 강제는 #770의 cross-family data-scope 단계에서 추가합니다. Vendor
-adapter는 모델 argument가 trusted tenant/department filter를 덮어쓰게 해서는 안 됩니다.
+Principal DataScope 규칙에서 나온 metadata/tenant filter는 execution 시 trusted filter로
+적용합니다. Vendor adapter는 모델 argument가 trusted tenant/department filter를 덮어쓰게
+해서는 안 됩니다.
 
 ## Vendor adapter
 
@@ -78,7 +79,7 @@ vendor-neutral하게 설계했습니다.
 다만 provider-neutral contract 구현만으로 위 모든 vendor SDK의 native/live acceptance가
 끝났다는 뜻은 아닙니다. Vendor별 adapter acceptance는 #767에서 계속 추적합니다.
 
-## Native Qdrant / Milvus client
+## Native vendor client
 
 Qdrant와 Milvus는 caller-owned client를 감싸는 thin adapter를 제공합니다. Connection URL,
 API key, token, client pool은 해당 client object 내부에 남고 SchemaRouter의 ToolSpec으로
@@ -133,4 +134,76 @@ Trusted filter는 Milvus filter template과 `filter_params`를 사용하므로 p
 이 adapter들은 caller-owned fake client로 SDK-shape contract를 검증합니다. Vendor credential은
 SchemaRouter state에 들어가지 않으며, 모든 deployment topology의 live acceptance가 끝났다는
 의미는 아닙니다.
+
+### Pinecone
+
+```python
+keys = router.add_pinecone_vector_store(
+    pinecone_client,
+    embed_query,
+    database_name="pinecone",
+)
+```
+
+Caller-owned Pinecone client에서 index 이름, dimension, metric을 읽습니다. Pinecone은 완전한
+metadata schema를 제공하지 않으므로 필요한 model-visible metadata는
+`metadata_fields_by_index`로 보완할 수 있습니다.
+
+### Weaviate
+
+```python
+keys = router.add_weaviate_vector_store(
+    weaviate_client,
+    embed_query,
+    dimension_by_collection={"Article": 1536},
+)
+```
+
+v4 collection API에서 property를 발견합니다. 모든 구성에서 vector dimension을 안정적으로
+얻을 수 있는 것은 아니므로 dimension은 명시할 수 있게 하고, named vector는
+`vector_name_by_collection`으로 선택합니다.
+
+### Chroma
+
+```python
+keys = router.add_chroma_vector_store(
+    chroma_client,
+    embed_query,
+)
+```
+
+기존 embedding이 있는 collection은 dimension을 자동 추론합니다. 비어 있는 collection은
+`dimension_by_collection`을 명시해야 하며 metadata schema가 불완전하면 field를 명시적으로
+보완할 수 있습니다.
+
+### Redis Vector Search
+
+```python
+keys = router.add_redis_vector_store(
+    redis_client,
+    embed_query,
+)
+```
+
+Redis Search index 정보를 읽어 vector field와 dimension을 파악하고 binary vector parameter를
+사용하는 bounded KNN query로 변환합니다. Trusted metadata filter는 별도의 trusted filter
+builder를 통해서만 추가합니다.
+
+### PostgreSQL / pgvector
+
+```python
+keys = router.add_pgvector_store(
+    sqlalchemy_engine,
+    embed_query,
+    tables=["document_embeddings"],
+)
+```
+
+Caller-owned SQLAlchemy/pgvector runtime에서 VECTOR column과 primary key를 reflection하고,
+SQLAlchemy expression으로 bounded distance ordering과 trusted metadata filter를 적용합니다.
+VECTOR column이 여러 개면 `vector_field_by_table`로 명시합니다.
+
+현재 native adapter surface는 Qdrant, Milvus, Pinecone, Weaviate, Chroma, Redis Vector Search,
+PostgreSQL/pgvector를 포함합니다. 이는 SDK-shape/contract 검증 범위이며 모든 hosted
+deployment의 live acceptance가 끝났다는 뜻은 아닙니다.
 
