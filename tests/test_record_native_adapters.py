@@ -420,4 +420,4 @@ async def test_native_record_backend_receives_hidden_principal_filter() -> None:
     )
     assert result[0].data == [{"_id": "doc-1", "title": "Routing"}]
     query, _projection = database.collections["documents"].calls[-1]
-    assert query["department"] == ("engineering",)
+    assert query["department"] == {"$in": ["engineering"]}
