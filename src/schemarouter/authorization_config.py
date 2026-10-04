@@ -23,8 +23,11 @@ class TrustedFilterConfig(StrictModel):
 
     @model_validator(mode="after")
     def validate_source(self) -> TrustedFilterConfig:
-        TrustedFilterBinding(field=self.field, principal_value=self.principal_value)
-        if self.principal_value.startswith("attribute:") and not self.principal_value[10:]:
+        valid = self.principal_value in {"subject", "role", "department", "team"}
+        attribute = self.principal_value.startswith("attribute:")
+        if not valid and not attribute:
+            raise ValueError("invalid trusted-filter principal_value")
+        if attribute and not self.principal_value[10:]:
             raise ValueError("attribute trusted-filter source must name an attribute")
         return self
 
