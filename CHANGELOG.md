@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- added unified principal data scopes across relational, vector, record-store and graph/RDF
+  adapters, including pre-scoring field non-disclosure, trusted principal-derived row/tenant
+  predicates, graph relationship/hop restrictions, and execution-boundary revalidation;
 - added a provider-neutral non-relational record-store contract covering document, search,
   key-value and time-series sources with schema discovery, exact-match filters, optional bounded
   text/time queries, field projection, and principal-aware source non-disclosure without exposing
