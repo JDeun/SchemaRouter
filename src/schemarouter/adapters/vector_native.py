@@ -526,7 +526,9 @@ class PineconeVectorBackend:
                     metric=_enum_text(_read(description, "metric")),
                     metadata_fields=self._metadata_fields.get(name, ()),
                     public_metadata=(
-                        {} if name not in self._namespaces else {"namespace": self._namespaces[name]}
+                        {}
+                        if name not in self._namespaces
+                        else {"namespace": self._namespaces[name]}
                     ),
                 )
             )
@@ -752,7 +754,13 @@ class WeaviateVectorBackend:
                 "id": str(_read(obj, "uuid", _read(obj, "id", ""))),
                 "score": float(score),
             }
-            row.update({field: properties[field] for field in include_fields if field in properties})
+            row.update(
+                {
+                    field: properties[field]
+                    for field in include_fields
+                    if field in properties
+                }
+            )
             rows.append(row)
         return rows
 
