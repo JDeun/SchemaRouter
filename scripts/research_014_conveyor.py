@@ -405,14 +405,14 @@ def _age_seconds(value: str) -> float:
 
 
 STALE_QUEUED_WRAPPER_SECONDS = 1800.0
-CURRENT_WRAPPER_ZERO_JOB_PENDING_SECONDS = 180.0
+ZERO_JOB_PENDING_SECONDS = 180.0
 
 
 def stale_zero_job_pending(
     run: StageRun | None,
     *,
     job_count: int,
-    min_age_seconds: float = CURRENT_WRAPPER_ZERO_JOB_PENDING_SECONDS,
+    min_age_seconds: float = ZERO_JOB_PENDING_SECONDS,
 ) -> bool:
     """Whether a workflow is stuck before GitHub has created any jobs."""
 
@@ -671,43 +671,18 @@ def run_controller(
                 },
             )
         actions.append("dispatch_corrective")
-    elif stale_pending_wrapper(corrective, wrapper_sha=_wrapper_sha):
-        # A long-queued run keeps the workflow wrapper SHA from dispatch time.
-        # If an infrastructure-only wrapper fix has since landed, issue a fresh
-        # dispatch while preserving the exact frozen scientific source input.
-        # GitHub's concurrency group keeps only the newest pending run.
-        retry_source_sha = source_sha_from_run(corrective)
-        if execute:
-            api.dispatch(
-                CORRECTIVE_WORKFLOW,
-                ref=ref,
-                inputs={
-                    "evidence_digest": b2_digest,
-                    "source_sha": retry_source_sha,
-                },
-            )
-        actions.append(
-            "recover_dispatch_stale_pending_corrective_wrapper:"
-            f"prior_run={corrective.id}:source={retry_source_sha}:"
-            f"wrapper={_wrapper_sha}"
-        )
-        corrective = None
-    elif (
-        corrective.head_sha == _wrapper_sha
-        and stale_zero_job_pending(
-            corrective,
-            job_count=api.workflow_run_job_count(corrective.id),
-        )
+    elif stale_zero_job_pending(
+        corrective,
+        job_count=api.workflow_run_job_count(corrective.id),
     ):
-        # A current-wrapper run may itself stall before GitHub creates its first
-        # job. This is distinct from ordinary runner queuing: no scientific job
-        # exists yet. Explicitly cancel it to release the concurrency group
-        # before dispatching the exact same frozen scientific inputs again.
+        # A workflow-level pending run with zero jobs has not begun scientific
+        # work, regardless of which wrapper revision dispatched it. Cancel it
+        # explicitly to release the concurrency group, then redispatch the exact
+        # same frozen scientific inputs on current main.
         prior_zero_job_cancellations = [
             run
             for run in corrective_runs[1:]
-            if run.head_sha == _wrapper_sha
-            and run.status == "completed"
+            if run.status == "completed"
             and run.conclusion == "cancelled"
             and api.workflow_run_job_count(run.id) == 0
         ]
@@ -734,6 +709,26 @@ def run_controller(
             f"prior_run={corrective.id}:"
             f"attempt={len(prior_zero_job_cancellations) + 2}:"
             f"source={retry_source_sha}:wrapper={_wrapper_sha}"
+        )
+        corrective = None
+    elif stale_pending_wrapper(corrective, wrapper_sha=_wrapper_sha):
+        # A long-queued run keeps the workflow wrapper SHA from dispatch time.
+        # If an infrastructure-only wrapper fix has since landed, issue a fresh
+        # dispatch while preserving the exact frozen scientific source input.
+        retry_source_sha = source_sha_from_run(corrective)
+        if execute:
+            api.dispatch(
+                CORRECTIVE_WORKFLOW,
+                ref=ref,
+                inputs={
+                    "evidence_digest": b2_digest,
+                    "source_sha": retry_source_sha,
+                },
+            )
+        actions.append(
+            "recover_dispatch_stale_pending_corrective_wrapper:"
+            f"prior_run={corrective.id}:source={retry_source_sha}:"
+            f"wrapper={_wrapper_sha}"
         )
         corrective = None
     elif terminal_failure(corrective):
