@@ -14,6 +14,7 @@ from schemarouter import (
     ParameterSpec,
     PlanRequest,
     RunConfig,
+    RunEvent,
     SchemaRouter,
     ToolSpec,
 )
@@ -150,3 +151,71 @@ async def test_otel_exporter_marks_tool_and_run_errors_without_exporting_message
     rendered = repr([(dict(span.attributes), span.status.description) for span in spans])
     assert "secret-city" not in rendered
     assert "provider-secret-error" not in rendered
+
+
+def test_otel_exporter_disambiguates_parallel_calls_to_same_endpoint() -> None:
+    tracer, memory = _tracer()
+    exporter = OpenTelemetryRunExporter(tracer)
+    config = RunConfig()
+    events = [
+        RunEvent.create(event="run.start", run_id="parallel-run", sequence=0, config=config),
+        RunEvent.create(
+            event="tool.start",
+            run_id="parallel-run",
+            sequence=1,
+            config=config,
+            tool="weather",
+            endpoint="current",
+            data={
+                "primary_call_index": 0,
+                "fallback_candidate_index": 0,
+            },
+        ),
+        RunEvent.create(
+            event="tool.start",
+            run_id="parallel-run",
+            sequence=2,
+            config=config,
+            tool="weather",
+            endpoint="current",
+            data={
+                "primary_call_index": 1,
+                "fallback_candidate_index": 0,
+            },
+        ),
+        RunEvent.create(
+            event="tool.end",
+            run_id="parallel-run",
+            sequence=3,
+            config=config,
+            tool="weather",
+            endpoint="current",
+            data={
+                "primary_call_index": 1,
+                "fallback_candidate_index": 0,
+            },
+        ),
+        RunEvent.create(
+            event="tool.end",
+            run_id="parallel-run",
+            sequence=4,
+            config=config,
+            tool="weather",
+            endpoint="current",
+            data={
+                "primary_call_index": 0,
+                "fallback_candidate_index": 0,
+            },
+        ),
+        RunEvent.create(event="run.end", run_id="parallel-run", sequence=5, config=config),
+    ]
+    for event in events:
+        exporter.export(event)
+
+    spans = memory.get_finished_spans()
+    tool_spans = [span for span in spans if span.name.startswith("schemarouter.tool ")]
+    assert len(tool_spans) == 2
+    assert {
+        span.attributes["schemarouter.primary_call_index"]
+        for span in tool_spans
+    } == {0, 1}
