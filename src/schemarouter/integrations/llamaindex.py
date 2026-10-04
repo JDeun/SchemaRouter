@@ -548,12 +548,23 @@ def to_llamaindex_tools(
 ) -> list[Any]:
     """Expose principal-visible endpoints as LlamaIndex FunctionTool objects."""
     resolved_config = _coerce_export_run_config(run_config)
+    selected = set(tool_keys) if tool_keys is not None else None
     if router.authorization_policy is not None and resolved_config.principal is None:
+        for tool in router.registry.tools():
+            if selected is not None and tool.key not in selected:
+                continue
+            for endpoint in tool.endpoints:
+                router._audit_export_authorization(
+                    None,
+                    tool,
+                    endpoint,
+                    run_id=resolved_config.run_id,
+                    principal_audit_id=resolved_config.principal_audit_id,
+                )
         raise PolicyViolationError(
             "principal context is required when authorization_policy is configured"
         )
 
-    selected = set(tool_keys) if tool_keys is not None else None
     tools = []
     for tool in router.registry.tools():
         if selected is not None and tool.key not in selected:
