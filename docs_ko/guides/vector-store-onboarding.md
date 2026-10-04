@@ -72,9 +72,7 @@ Principal DataScope 규칙에서 나온 metadata/tenant filter는 execution 시 
 
 ## Vendor adapter
 
-Core contract는 Pinecone, Milvus, Qdrant, Weaviate, Chroma, Redis vector/search, pgvector가
-SchemaRouter의 execution-authority model을 바꾸지 않고 thin adapter로 붙을 수 있도록
-vendor-neutral하게 설계했습니다.
+Core contract는 Pinecone, Milvus, Qdrant, Weaviate, Chroma, pgvector가 SchemaRouter의 execution-authority model을 바꾸지 않고 thin adapter로 붙을 수 있도록 vendor-neutral하게 설계했습니다. Redis 계열 vector/search 지원은 first-class core가 아니라 plugin 또는 adopter-specific adapter 범위로 둡니다.
 
 다만 provider-neutral contract 구현만으로 위 모든 vendor SDK의 native/live acceptance가
 끝났다는 뜻은 아닙니다. Vendor별 adapter acceptance는 #767에서 계속 추적합니다.
@@ -176,19 +174,6 @@ keys = router.add_chroma_vector_store(
 `dimension_by_collection`을 명시해야 하며 metadata schema가 불완전하면 field를 명시적으로
 보완할 수 있습니다.
 
-### Redis Vector Search
-
-```python
-keys = router.add_redis_vector_store(
-    redis_client,
-    embed_query,
-)
-```
-
-Redis Search index 정보를 읽어 vector field와 dimension을 파악하고 binary vector parameter를
-사용하는 bounded KNN query로 변환합니다. Trusted metadata filter는 별도의 trusted filter
-builder를 통해서만 추가합니다.
-
 ### PostgreSQL / pgvector
 
 ```python
@@ -203,7 +188,6 @@ Caller-owned SQLAlchemy/pgvector runtime에서 VECTOR column과 primary key를 r
 SQLAlchemy expression으로 bounded distance ordering과 trusted metadata filter를 적용합니다.
 VECTOR column이 여러 개면 `vector_field_by_table`로 명시합니다.
 
-현재 native adapter surface는 Qdrant, Milvus, Pinecone, Weaviate, Chroma, Redis Vector Search,
-PostgreSQL/pgvector를 포함합니다. 이는 SDK-shape/contract 검증 범위이며 모든 hosted
+현재 native adapter surface는 Qdrant, Milvus, Pinecone, Weaviate, Chroma, PostgreSQL/pgvector를 포함합니다. 이는 SDK-shape/contract 검증 범위이며 모든 hosted
 deployment의 live acceptance가 끝났다는 뜻은 아닙니다.
 

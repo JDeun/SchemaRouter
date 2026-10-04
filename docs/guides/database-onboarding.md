@@ -134,23 +134,24 @@ The first database execution surface is deliberately narrow:
 
 This keeps schema discovery separate from query authority.
 
-## Database-family roadmap
+## Current database-family coverage
 
-Different database families should not be forced into a SQL abstraction.
+Different database families keep their native execution model instead of being forced into SQL.
 
-| Family | Architecture | Status |
-| --- | --- | --- |
-| SQLite | stdlib introspection + bounded SELECT | reference implementation |
-| RDB / warehouse | caller-owned SQLAlchemy Engine | generic adapter implemented; vendor live acceptance expands separately |
-| Vector | collection/index/schema discovery + bounded vector/hybrid search | tracked in #767 |
-| Property graph / RDF | labels/types/relationships/properties + bounded traversal/query templates | tracked in #768 |
-| Document / search / key-value / time-series | native collection/index/mapping discovery | tracked in #769 |
-| Cross-family data authorization | column/row/collection/graph scopes | tracked in #770 |
+| Family | Current core path |
+| --- | --- |
+| SQLite | stdlib introspection + bounded SELECT |
+| RDB / warehouse | caller-owned SQLAlchemy Engine with dialect reflection |
+| Vector | provider-neutral contract plus Qdrant, Milvus, Pinecone, Weaviate, Chroma, PostgreSQL/pgvector adapters |
+| Property graph / RDF | provider-neutral contract plus Neo4j, Neptune, ArangoDB, FalkorDB, SPARQL adapters |
+| Document / search / key-value / time-series | provider-neutral contract plus MongoDB, Elasticsearch/OpenSearch, DynamoDB, Cosmos DB, Couchbase, ClickHouse, InfluxDB adapters |
+| Cross-family authorization | shared capability, field, row/tenant, collection/source, relationship and hop scopes |
 
-Planned vendor targets include PostgreSQL/pgvector, MySQL/MariaDB, SQL Server, Oracle, Snowflake,
-BigQuery, Redshift, Databricks SQL, Pinecone, Milvus, Qdrant, Weaviate, Chroma, Redis,
-Neo4j, Neptune, ArangoDB, MongoDB, Elasticsearch/OpenSearch, DynamoDB, Cosmos DB, Couchbase,
-ClickHouse, and compatible SPARQL systems.
+See [enterprise data onboarding](enterprise-data-onboarding.md) for the cross-family model and the
+vector, graph, and record-store guides for vendor-specific behavior.
+
+Support means the adapter and bounded contract exist in core. Live external acceptance still varies
+by vendor/version/deployment and is reported separately from that architectural support.
 
 Vendor-specific credentials and client objects stay behind adapters/plugins rather than becoming
 part of SchemaRouter's model-visible graph.

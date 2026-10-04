@@ -80,6 +80,7 @@ The provider-neutral contract now has thin caller-owned adapters for:
 - **Neo4j** via the Python driver's `execute_query()` surface;
 - **Amazon Neptune Database / Neptune Analytics** via the supported openCypher Data APIs;
 - **ArangoDB** via `python-arango` graph discovery and parameter-bound AQL traversal;
+- **FalkorDB** via the official caller-owned Python client, `GRAPH.LIST`, and read-only `ro_query()` openCypher traversal;
 - **SPARQL 1.1 query endpoints** through a caller-owned HTTP client, suitable for compatible
   RDF stores such as GraphDB/Stardog deployments.
 
@@ -90,6 +91,7 @@ view:
 router.add_neo4j_graph(driver, database="neo4j", graph_name="org")
 router.add_neptune_graph(neptune_client, graph_name="social")
 router.add_arango_graph(arango_database)
+router.add_falkordb_graph(falkordb_client, graphs={"social"})
 router.add_sparql_graph(
     http_client,
     endpoint="https://example.org/sparql",
@@ -98,7 +100,7 @@ router.add_sparql_graph(
 ```
 
 These adapters translate only SchemaRouter's bounded traversal contract. They do not expose raw
-Cypher, AQL, Gremlin, or SPARQL text to model output.
+Cypher, AQL, Gremlin, or SPARQL text to model output. The FalkorDB adapter discovers graph names, labels, relationship types, and visible property names, and executes only through `ro_query()`.
 
 Deterministic SDK-shape tests are release-gated. A native adapter being present does not imply that
 every vendor/version/deployment has completed live external acceptance.

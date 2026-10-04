@@ -193,49 +193,16 @@ flow and never becomes executable automatically.
 
 ## Current release
 
-Version `0.14.0` is the current stable **operability and ecosystem-validation release**.
-Current `main` adds compatible follow-up infrastructure without reopening the execution boundary:
-provider-first onboarding, explicit state-conditioned re-retrieval, indexed/incremental capability
-graphs, atomic snapshot publication, versioned artifact/snapshot migration, and unified
-privacy-safe decision traces.
+**0.15.0** is the current stable Beta / pre-1.0 release. Python 3.10–3.14 are
+release-blocking targets and Python 3.15 is a preview target.
 
-Version `0.12.0` established the frozen **stable core** and `0.11.0` introduced first-class
-bounded Top-K capability retrieval. Research may improve ranking, index implementations, shortlist
-defaults and re-retrieval behind that boundary, but benchmark gains alone are not a reason to
-redesign the public facade.
+Current development on `main` is the 0.16 line. It extends the same execution boundary with
+enterprise authorization and schema-introspected relational, vector, graph/RDF, and non-relational
+data onboarding. Research experiments remain separate from the stable product contract.
 
-Retrieval is side-effect free and non-authoritative: the surrounding agent chooses among
-registered candidates, while SchemaRouter still owns schema validation, policy and execution
-authority. Ongoing 0.14 agent-utility research is reported separately and is not required for the
-stable package to function.
-
-[Read the 0.14.0 release notes →](releases/0.14.0.md) ·
-[Read the stable-core contract →](stable-core.md) ·
-[Read the routing research status →](research/routing-status.md)
-
-## Current research checkpoint
-
-The stable `0.14.0` package preserves the 0.12 stable-core public API while the 0.14 research
-cycle evaluates the retrieval boundary more rigorously.
-
-- **B1** is terminal: SR-5 reached 91.30% task pass vs 68.48% for FULL while using
-  5.42% of FULL tool-schema tokens on the controlled Qwen3-0.6B surface.
-- **B2** is terminal success on the frozen SmolLM3-3B replication protocol.
-- A separate **structural K3-vs-K5** downstream gate failed its preregistered -2pp task-pass
-  promotion floor, so K3 is not promoted into the large held-out benchmark.
-- **#431 corrective re-retrieval** is the active conveyor gate. The current recovery run preserves
-  the frozen scientific source and does not permit partial-row interpretation.
-- The separate **#510 runtime qualification** line is also active as instrument evidence for the
-  output-field-projection successor. Infrastructure-only recovery attempts do not count as model
-  qualification or projection evidence.
-- The 780-task **#432 held-out** benchmark and **#424 final-answer quality** benchmark remain
-  downstream confirmation stages.
-
-These results are kept separate from the stable product contract and from any broad production
-claim.
-
-[Research status →](research/routing-status.md) ·
-[0.14 evidence checkpoint →](research/0.14-paper-evidence-checkpoint.md)
+[0.15.0 release notes →](releases/0.15.0.md) ·
+[Enterprise data onboarding →](guides/enterprise-data-onboarding.md) ·
+[Research status →](research/routing-status.md)
 
 ## Go deeper
 

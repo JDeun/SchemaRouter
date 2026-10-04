@@ -72,6 +72,7 @@ jobs:
       - run: >-
           pytest -q
           tests/test_graph_native_adapters.py
+          tests/test_falkordb_native_adapter.py
           tests/test_vector_native_adapters.py
           tests/test_record_native_adapters.py
           tests/test_record_native_extended_adapters.py

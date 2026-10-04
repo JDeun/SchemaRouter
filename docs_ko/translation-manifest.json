@@ -165,11 +165,15 @@
     },
     {
       "path": "guides/database-onboarding.md",
-      "source_blob": "3ee51a75fb97703da9b116a9ca680928b6a7c9fd"
+      "source_blob": "dec80467f7c3889fa93f48da4e91503d8fa85ce5"
     },
     {
       "path": "guides/decision-benchmark.md",
       "source_blob": "bd1fe26cee4c3ca90944bc701d065d66f93404a4"
+    },
+    {
+      "path": "guides/enterprise-data-onboarding.md",
+      "source_blob": "28a31836cd100eb1d8477d951bf6d1ac452114ba"
     },
     {
       "path": "guides/execution-hooks.md",
@@ -185,7 +189,7 @@
     },
     {
       "path": "guides/graph-store-onboarding.md",
-      "source_blob": "8230e0bd577a7c81b388b3d36d959fbfcf4feac2"
+      "source_blob": "3f96e66998494e3f3a6f95a9b6d8baf0baa3d040"
     },
     {
       "path": "guides/graphql.md",
@@ -281,15 +285,15 @@
     },
     {
       "path": "guides/universal-ingestion.md",
-      "source_blob": "ac0ae907e8bee5b393993a1da071e3613f78b68f"
+      "source_blob": "b01647e3f39d9a172fd78de119674fca49503e3c"
     },
     {
       "path": "guides/vector-store-onboarding.md",
-      "source_blob": "622c00c2ab2036ed7022715f411e7ab86c558780"
+      "source_blob": "3f0fcca38a38b3f3604ba5de1bbcecf7e94af386"
     },
     {
       "path": "index.md",
-      "source_blob": "533bb1356ce95249bddde1ed33d16371bb35592e"
+      "source_blob": "fa4ba018792da97b73fc46dd49e2f9e7f0efdabe"
     },
     {
       "path": "integrations/decision-backend-plugins.md",
@@ -438,6 +442,10 @@
     {
       "path": "releases/0.15.0.md",
       "source_blob": "19df112858c7206cc91bf1b482aa0d23d16dd545"
+    },
+    {
+      "path": "releases/0.16.0.md",
+      "source_blob": "03e99f7303b53ef8a9f33c2456c63e23c3db0dcc"
     },
     {
       "path": "releases/0.2.0a1.md",

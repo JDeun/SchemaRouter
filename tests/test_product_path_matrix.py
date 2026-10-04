@@ -8,6 +8,7 @@ from schemarouter import SchemaRouter
 ROOT = Path(__file__).resolve().parents[1]
 MATRIX_PATH = ROOT / "tests" / "fixtures" / "product_path_matrix.json"
 README_PATH = ROOT / "README.md"
+INGRESS_DOC_PATH = ROOT / "docs" / "guides" / "universal-ingestion.md"
 REQUIRED_EXECUTION_STAGES = {
     "register",
     "bind",
@@ -25,11 +26,13 @@ def _matrix() -> list[dict]:
 
 def test_documented_ingress_surfaces_have_machine_checked_product_paths() -> None:
     readme = README_PATH.read_text(encoding="utf-8")
+    ingress_docs = INGRESS_DOC_PATH.read_text(encoding="utf-8")
     rows = _matrix()
     assert rows
+    assert "docs/guides/universal-ingestion.md" in readme
 
     for row in rows:
-        assert row["source"] in readme
+        assert row["source"] in ingress_docs
         entrypoint = getattr(SchemaRouter, row["entrypoint"], None)
         assert callable(entrypoint), row
         assert (ROOT / row["test_file"]).is_file(), row

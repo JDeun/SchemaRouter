@@ -1385,80 +1385,6 @@ class SchemaRouter:
             )
         )
 
-    async def aadd_redis_vector_store(
-        self,
-        client: Any,
-        embed_query: Any,
-        *,
-        database_name: str = "redis",
-        namespace: str | None = None,
-        collections: set[str] | tuple[str, ...] | list[str] | None = None,
-        index_names: Sequence[str] | None = None,
-        vector_field_by_index: Mapping[str, str] | None = None,
-        metadata_fields_by_index: Mapping[str, Sequence[Any]] | None = None,
-        metric_by_index: Mapping[str, str] | None = None,
-        trusted_filter_builder: Callable[[Mapping[str, Any]], str] | None = None,
-        query_factory: Callable[[str], Any] | None = None,
-        default_top_k: int = 10,
-        remote: bool = True,
-    ) -> tuple[str, ...]:
-        """Register a caller-owned redis-py client with Redis Search."""
-
-        from .adapters.vector_native import RedisVectorBackend
-
-        return await self.aadd_vector_store(
-            RedisVectorBackend(
-                client,
-                index_names=index_names,
-                vector_field_by_index=vector_field_by_index,
-                metadata_fields_by_index=metadata_fields_by_index,
-                metric_by_index=metric_by_index,
-                trusted_filter_builder=trusted_filter_builder,
-                query_factory=query_factory,
-            ),
-            embed_query,
-            database_name=database_name,
-            namespace=namespace,
-            collections=collections,
-            default_top_k=default_top_k,
-            remote=remote,
-        )
-
-    def add_redis_vector_store(
-        self,
-        client: Any,
-        embed_query: Any,
-        *,
-        database_name: str = "redis",
-        namespace: str | None = None,
-        collections: set[str] | tuple[str, ...] | list[str] | None = None,
-        index_names: Sequence[str] | None = None,
-        vector_field_by_index: Mapping[str, str] | None = None,
-        metadata_fields_by_index: Mapping[str, Sequence[Any]] | None = None,
-        metric_by_index: Mapping[str, str] | None = None,
-        trusted_filter_builder: Callable[[Mapping[str, Any]], str] | None = None,
-        query_factory: Callable[[str], Any] | None = None,
-        default_top_k: int = 10,
-        remote: bool = True,
-    ) -> tuple[str, ...]:
-        return _run_sync(
-            lambda: self.aadd_redis_vector_store(
-                client,
-                embed_query,
-                database_name=database_name,
-                namespace=namespace,
-                collections=collections,
-                index_names=index_names,
-                vector_field_by_index=vector_field_by_index,
-                metadata_fields_by_index=metadata_fields_by_index,
-                metric_by_index=metric_by_index,
-                trusted_filter_builder=trusted_filter_builder,
-                query_factory=query_factory,
-                default_top_k=default_top_k,
-                remote=remote,
-            )
-        )
-
     async def aadd_pgvector_store(
         self,
         engine: Any,
@@ -1700,6 +1626,57 @@ class SchemaRouter:
                 driver,
                 database=database,
                 graph_name=graph_name,
+                namespace=namespace,
+                graphs=graphs,
+                default_limit=default_limit,
+                default_max_hops=default_max_hops,
+                remote=remote,
+            )
+        )
+
+    async def aadd_falkordb_graph(
+        self,
+        client: Any,
+        *,
+        database_name: str = "falkordb",
+        namespace: str | None = None,
+        graphs: set[str] | tuple[str, ...] | list[str] | None = None,
+        default_limit: int = 100,
+        default_max_hops: int = 1,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned FalkorDB client through the bounded graph contract."""
+
+        from .adapters.graph_native import FalkorGraphBackend
+
+        graph_names = None if graphs is None else tuple(sorted(graphs))
+        return await self.aadd_graph_store(
+            FalkorGraphBackend(client, graphs=graph_names),
+            database_name=database_name,
+            namespace=namespace,
+            graphs=graphs,
+            default_limit=default_limit,
+            default_max_hops=default_max_hops,
+            remote=remote,
+        )
+
+    def add_falkordb_graph(
+        self,
+        client: Any,
+        *,
+        database_name: str = "falkordb",
+        namespace: str | None = None,
+        graphs: set[str] | tuple[str, ...] | list[str] | None = None,
+        default_limit: int = 100,
+        default_max_hops: int = 1,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_falkordb_graph`."""
+
+        return _run_sync(
+            lambda: self.aadd_falkordb_graph(
+                client,
+                database_name=database_name,
                 namespace=namespace,
                 graphs=graphs,
                 default_limit=default_limit,

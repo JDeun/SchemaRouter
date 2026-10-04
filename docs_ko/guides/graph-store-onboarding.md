@@ -80,6 +80,7 @@ Provider-neutral contract 위에 caller-owned native adapter가 추가됩니다.
 - **Neo4j**: Python driver의 `execute_query()` 경계
 - **Amazon Neptune Database / Neptune Analytics**: 지원되는 openCypher Data API
 - **ArangoDB**: `python-arango` graph discovery와 parameter-bound AQL traversal
+- **FalkorDB**: 공식 caller-owned Python client의 `GRAPH.LIST`/`ro_query()` 기반 openCypher discovery와 read-only traversal
 - **SPARQL 1.1 query endpoint**: caller-owned HTTP client를 사용하며 GraphDB/Stardog 계열과
   같은 호환 RDF store에 연결 가능
 
@@ -87,6 +88,7 @@ Provider-neutral contract 위에 caller-owned native adapter가 추가됩니다.
 router.add_neo4j_graph(driver, database="neo4j", graph_name="org")
 router.add_neptune_graph(neptune_client, graph_name="social")
 router.add_arango_graph(arango_database)
+router.add_falkordb_graph(falkordb_client, graphs={"social"})
 router.add_sparql_graph(
     http_client,
     endpoint="https://example.org/sparql",
@@ -95,7 +97,7 @@ router.add_sparql_graph(
 ```
 
 이 adapter들은 SchemaRouter의 bounded traversal contract만 native 호출로 번역합니다.
-모델 출력에 raw Cypher, AQL, Gremlin, SPARQL 문자열 실행 권한을 주지 않습니다.
+모델 출력에 raw Cypher, AQL, Gremlin, SPARQL 문자열 실행 권한을 주지 않습니다. FalkorDB adapter는 graph 이름, label, relationship type, 공개 가능한 property 이름을 탐색하고 실행은 `ro_query()`로만 제한합니다.
 
 Deterministic SDK-shape test는 release gate에 포함합니다. Native adapter가 존재한다는 사실과
 모든 vendor/version/deployment의 외부 live acceptance가 완료됐다는 주장은 구분합니다.

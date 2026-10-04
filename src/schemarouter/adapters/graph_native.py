@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 from ..errors import RegistrationError, SchemaValidationError
 from .graph_store import (
     GraphNodeTypeSpec,
+    GraphPropertySpec,
     GraphRelationshipTypeSpec,
     GraphSourceSpec,
 )
@@ -73,6 +74,28 @@ def _json_payload_rows(payload: Any) -> list[dict[str, Any]]:
         raise SchemaValidationError("graph query response must contain a list of rows")
     return [dict(_as_mapping(row)) for row in payload]
 
+
+def _falkor_rows(result: Any, columns: tuple[str, ...]) -> list[dict[str, Any]]:
+    rows = getattr(result, "result_set", None)
+    if not isinstance(rows, Sequence) or isinstance(rows, (str, bytes)):
+        raise SchemaValidationError("FalkorDB query returned an unexpected result")
+    normalized: list[dict[str, Any]] = []
+    for raw in rows:
+        if isinstance(raw, Mapping):
+            normalized.append(
+                {column: raw.get(column) for column in columns}
+            )
+            continue
+        if isinstance(raw, Sequence) and not isinstance(raw, (str, bytes)):
+            if len(raw) < len(columns):
+                raise SchemaValidationError("FalkorDB query row has too few columns")
+            normalized.append(dict(zip(columns, raw, strict=False)))
+            continue
+        if len(columns) == 1:
+            normalized.append({columns[0]: raw})
+            continue
+        raise SchemaValidationError("FalkorDB query row has an unexpected shape")
+    return normalized
 
 class Neo4jGraphBackend:
     """Thin adapter over a caller-owned Neo4j Python driver."""
@@ -476,6 +499,238 @@ class ArangoGraphBackend:
             rows.append({key: value for key, value in row.items() if key in selected})
         return rows
 
+
+class FalkorGraphBackend:
+    """Bounded property-graph adapter over a caller-owned FalkorDB client."""
+
+    def __init__(
+        self,
+        client: Any,
+        *,
+        graphs: Sequence[str] | None = None,
+    ) -> None:
+        self._client = client
+        self._graphs = None if graphs is None else tuple(str(value) for value in graphs)
+        self._relationships: dict[str, tuple[str, ...]] = {}
+
+    def _graph_names(self) -> tuple[str, ...]:
+        if self._graphs is not None:
+            return self._graphs
+        raw = self._client.list_graphs()
+        if not isinstance(raw, Sequence) or isinstance(raw, (str, bytes)):
+            raise SchemaValidationError("FalkorDB list_graphs() must return a list")
+        names = tuple(str(value) for value in raw if str(value))
+        if len(names) != len(set(names)):
+            raise SchemaValidationError("FalkorDB returned duplicate graph names")
+        return names
+
+    def _read(
+        self,
+        graph_name: str,
+        query: str,
+        *,
+        columns: tuple[str, ...],
+        params: Mapping[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        graph = self._client.select_graph(graph_name)
+        ro_query = getattr(graph, "ro_query", None)
+        if not callable(ro_query):
+            raise RegistrationError(
+                "FalkorDB graph must expose ro_query() for read-only execution"
+            )
+        result = ro_query(query, params=dict(params or {}))
+        return _falkor_rows(result, columns)
+
+    def _properties(
+        self,
+        graph_name: str,
+        *,
+        variable: str,
+        pattern: str,
+    ) -> tuple[GraphPropertySpec, ...]:
+        rows = self._read(
+            graph_name,
+            f"MATCH {pattern} UNWIND keys({variable}) AS property "
+            "RETURN DISTINCT property ORDER BY property LIMIT 1000",
+            columns=("property",),
+        )
+        return tuple(
+            GraphPropertySpec(name=str(row["property"]))
+            for row in rows[:_MAX_SCHEMA_ITEMS]
+            if row.get("property")
+        )
+
+    def list_graphs(self) -> tuple[GraphSourceSpec, ...]:
+        results: list[GraphSourceSpec] = []
+        for graph_name in self._graph_names():
+            label_rows = self._read(
+                graph_name,
+                "MATCH (n) UNWIND labels(n) AS label "
+                "RETURN DISTINCT label ORDER BY label LIMIT 1000",
+                columns=("label",),
+            )
+            relationship_rows = self._read(
+                graph_name,
+                "MATCH ()-[r]->() RETURN DISTINCT type(r) AS relationshipType "
+                "ORDER BY relationshipType LIMIT 1000",
+                columns=("relationshipType",),
+            )
+            labels = tuple(
+                str(row["label"])
+                for row in label_rows[:_MAX_SCHEMA_ITEMS]
+                if row.get("label")
+            )
+            relationships = tuple(
+                str(row["relationshipType"])
+                for row in relationship_rows[:_MAX_SCHEMA_ITEMS]
+                if row.get("relationshipType")
+            )
+            self._relationships[graph_name] = relationships
+
+            node_types = []
+            for label in labels:
+                escaped = _cypher_identifier(label)
+                node_types.append(
+                    GraphNodeTypeSpec(
+                        name=label,
+                        properties=self._properties(
+                            graph_name,
+                            variable="n",
+                            pattern=f"(n:{escaped})",
+                        ),
+                    )
+                )
+
+            relationship_types = []
+            for relationship in relationships:
+                escaped = _cypher_identifier(relationship)
+                endpoint_rows = self._read(
+                    graph_name,
+                    f"MATCH (source)-[r:{escaped}]->(target) "
+                    "UNWIND labels(source) AS sourceType "
+                    "UNWIND labels(target) AS targetType "
+                    "RETURN DISTINCT sourceType, targetType LIMIT 1000",
+                    columns=("sourceType", "targetType"),
+                )
+                relationship_types.append(
+                    GraphRelationshipTypeSpec(
+                        name=relationship,
+                        source_types=tuple(
+                            sorted(
+                                {
+                                    str(row["sourceType"])
+                                    for row in endpoint_rows
+                                    if row.get("sourceType")
+                                }
+                            )
+                        ),
+                        target_types=tuple(
+                            sorted(
+                                {
+                                    str(row["targetType"])
+                                    for row in endpoint_rows
+                                    if row.get("targetType")
+                                }
+                            )
+                        ),
+                        properties=self._properties(
+                            graph_name,
+                            variable="r",
+                            pattern=f"()-[r:{escaped}]->()",
+                        ),
+                    )
+                )
+
+            results.append(
+                GraphSourceSpec(
+                    name=graph_name,
+                    model="property_graph",
+                    node_types=tuple(node_types),
+                    relationship_types=tuple(relationship_types),
+                    public_metadata={
+                        "vendor": "falkordb",
+                        "protocol": "openCypher",
+                    },
+                )
+            )
+        return tuple(results)
+
+    def traverse(
+        self,
+        *,
+        graph: str,
+        start_id: str,
+        relationship_types: tuple[str, ...],
+        direction: str,
+        max_hops: int,
+        limit: int,
+        include_fields: tuple[str, ...],
+    ) -> list[dict[str, Any]]:
+        known = self._relationships.get(graph)
+        if known is None:
+            self.list_graphs()
+            known = self._relationships.get(graph)
+        if known is None:
+            raise RegistrationError(f"unknown FalkorDB graph {graph!r}")
+        unknown = sorted(set(relationship_types) - set(known))
+        if unknown:
+            raise SchemaValidationError(
+                "FalkorDB traversal requested unknown relationship types: "
+                + ", ".join(unknown)
+            )
+        if not relationship_types:
+            return []
+
+        rel_expr = "|".join(_cypher_identifier(value) for value in relationship_types)
+        if direction == "out":
+            pattern = f"(start)-[rels:{rel_expr}*1..{max_hops}]->(target)"
+        elif direction == "in":
+            pattern = f"(start)<-[rels:{rel_expr}*1..{max_hops}]-(target)"
+        elif direction == "both":
+            pattern = f"(start)-[rels:{rel_expr}*1..{max_hops}]-(target)"
+        else:
+            raise SchemaValidationError("FalkorDB traversal direction is invalid")
+
+        try:
+            native_start_id = int(start_id)
+        except ValueError as exc:
+            raise SchemaValidationError(
+                "FalkorDB start_id must be a numeric node id"
+            ) from exc
+
+        rows = self._read(
+            graph,
+            (
+                f"MATCH p={pattern} "
+                "WHERE id(start) = $start_id "
+                "RETURN id(start) AS source_id, "
+                "id(target) AS target_id, "
+                "type(last(relationships(p))) AS relationship, "
+                "length(p) AS depth, "
+                "coalesce(head(labels(start)), '') AS source_type, "
+                "coalesce(head(labels(target)), '') AS target_type "
+                "LIMIT $limit"
+            ),
+            columns=(
+                "source_id",
+                "target_id",
+                "relationship",
+                "depth",
+                "source_type",
+                "target_type",
+            ),
+            params={"start_id": native_start_id, "limit": limit},
+        )
+        selected = set(include_fields)
+        normalized: list[dict[str, Any]] = []
+        for row in rows:
+            projected = {key: value for key, value in row.items() if key in selected}
+            if "source_id" in projected:
+                projected["source_id"] = str(projected["source_id"])
+            if "target_id" in projected:
+                projected["target_id"] = str(projected["target_id"])
+            normalized.append(projected)
+        return normalized
 
 class SparqlGraphBackend:
     """Generic SPARQL 1.1 query adapter over a caller-owned HTTP client.

@@ -101,19 +101,18 @@ Tavily입니다.
 
 [Provider 중심 등록 →](guides/provider-first-registration.md)
 
-## 현재 안정판과 연구
+## 현재 안정판과 개발선
 
-현재 안정판은 **0.15.0 (Beta / pre-1.0)** 입니다. Python 3.10–3.14는 릴리스 차단 CI에서
-검증하고, Python 3.15는 별도 preview job으로 확인합니다.
+현재 안정판은 **0.15.0 (Beta / pre-1.0)** 입니다. Python 3.10–3.14는 release-blocking
+대상이고 Python 3.15는 preview 대상입니다.
 
-현재 `main`에는 안정판 경계를 유지하는 호환 기능으로 provider-first 등록,
-state-conditioned re-retrieval, indexed/incremental capability graph, atomic snapshot publication,
-artifact/snapshot migration, privacy-safe decision trace가 추가되어 있습니다.
+현재 `main`은 0.16 개발선으로, 기존 실행 경계를 유지하면서 enterprise authorization과
+관계형/vector/graph/RDF/비관계형 데이터 onboarding을 확장하고 있습니다. 연구 실험은 안정
+제품 계약과 분리합니다.
 
-진행 중인 연구는 안정판의 제품 계약과 분리되어 있습니다. 실험 결과가 좋아도 검증 절차 없이
-제품 기본값으로 들어가지는 않습니다.
-
-[0.14.0 릴리스 노트 →](releases/0.14.0.md)
+[0.15.0 릴리스 노트 →](releases/0.15.0.md) ·
+[Enterprise data onboarding →](guides/enterprise-data-onboarding.md) ·
+[연구 현황 →](research/routing-status.md)
 
 [설치하기 →](getting-started/installation.md) ·
 [SchemaRouter의 역할 →](concepts/schema-router.md) ·

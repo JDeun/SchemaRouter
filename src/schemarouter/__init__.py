@@ -9,6 +9,7 @@ from .adapters.base import (
 )
 from .adapters.graph_native import (
     ArangoGraphBackend,
+    FalkorGraphBackend,
     Neo4jGraphBackend,
     NeptuneOpenCypherBackend,
     SparqlGraphBackend,
@@ -73,7 +74,6 @@ from .adapters.vector_native import (
     PgvectorVectorBackend,
     PineconeVectorBackend,
     QdrantVectorBackend,
-    RedisVectorBackend,
     WeaviateVectorBackend,
 )
 from .adapters.vector_store import (
@@ -590,6 +590,7 @@ __all__ = [
     "KeywordAnalyzer",
     "MCPBoundClientFactory",
     "ArangoGraphBackend",
+    "FalkorGraphBackend",
     "GraphModel",
     "GraphNodeTypeSpec",
     "GraphPropertySpec",
@@ -614,7 +615,6 @@ __all__ = [
     "PineconeVectorBackend",
     "ODataSourceAdapter",
     "QdrantVectorBackend",
-    "RedisVectorBackend",
     "WeaviateVectorBackend",
     "ObservedStateField",
     "OpenAPICompatibilityIssue",
