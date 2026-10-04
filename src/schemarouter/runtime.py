@@ -512,14 +512,29 @@ class SchemaRouter:
             authorization(tool, endpoint) and predicate(tool, endpoint)
         )
 
+    def _emit_authorization_audit(self, event: AuthorizationAuditEvent) -> None:
+        if self.authorization_audit_hook is not None:
+            self.authorization_audit_hook(event)
+
     def _validate_plan_authorization(
         self,
         plan: ExecutionPlan,
         principal: PrincipalContext | None,
     ) -> None:
-        if self.authorization_policy is None:
+        policy = self.authorization_policy
+        if policy is None:
             return
         if principal is None:
+            for call in plan.calls:
+                self._emit_authorization_audit(
+                    AuthorizationAuditEvent(
+                        effect="deny",
+                        operation=f"{call.tool}.{call.endpoint}",
+                        decision_source="missing_principal",
+                        tool=call.tool,
+                        endpoint=call.endpoint,
+                    )
+                )
             raise PolicyViolationError(
                 "principal context is required when authorization_policy is configured"
             )
@@ -528,14 +543,58 @@ class SchemaRouter:
                 tool = self.registry.get(call.tool)
                 endpoint = tool.endpoint(call.endpoint)
             except KeyError as exc:
+                self._emit_authorization_audit(
+                    AuthorizationAuditEvent(
+                        effect="deny",
+                        operation=f"{call.tool}.{call.endpoint}",
+                        decision_source="missing_capability",
+                        tool=call.tool,
+                        endpoint=call.endpoint,
+                    )
+                )
                 raise PolicyViolationError(
                     "authorization denied for requested capability"
                 ) from exc
-            self.authorization_policy.validate(
-                principal,
-                tool,
-                endpoint,
-                call,
+
+            decision = policy.evaluate(principal, tool, endpoint, call)
+            if decision.effect != "allow":
+                self._emit_authorization_audit(
+                    AuthorizationAuditEvent(
+                        effect="deny",
+                        operation=decision.operation,
+                        decision_source=decision.source,
+                        rule_name=decision.rule_name,
+                        tool=tool.key,
+                        endpoint=endpoint.name,
+                    )
+                )
+                raise PolicyViolationError(
+                    "authorization denied for requested capability"
+                )
+
+            scope = policy.validate_data_scope(principal, tool, endpoint, call)
+            self._emit_authorization_audit(
+                AuthorizationAuditEvent(
+                    effect="allow",
+                    operation=decision.operation,
+                    decision_source=decision.source,
+                    rule_name=decision.rule_name,
+                    data_scope_rule_name=scope.rule_name,
+                    visible_field_count=(
+                        None if scope.visible_fields is None else len(scope.visible_fields)
+                    ),
+                    trusted_filter_fields=tuple(
+                        field for field, _value in scope.trusted_filters
+                    ),
+                    allowed_relationship_count=(
+                        None
+                        if scope.allowed_relationships is None
+                        else len(scope.allowed_relationships)
+                    ),
+                    max_hops=scope.max_hops,
+                    tool=tool.key,
+                    endpoint=endpoint.name,
+                )
             )
 
     async def __aenter__(self) -> SchemaRouter:
