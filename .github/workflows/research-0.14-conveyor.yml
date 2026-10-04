@@ -20,6 +20,7 @@ on:
       - Research 0.14 B2 SmolLM3 Full
       - Research 0.14 Structural K3 Agent Utility
       - Research 0.14 Corrective Re-retrieval
+      - Research 0.14 Corrective Shard Recovery
       - Research 0.14 Held-out Generalization
       - Research 0.14 Final Answer
       - Research 0.14 Field Projection DEV
