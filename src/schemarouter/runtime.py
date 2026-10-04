@@ -1329,6 +1329,213 @@ class SchemaRouter:
             )
         )
 
+    async def aadd_mongodb_record_store(
+        self,
+        database: Any,
+        *,
+        database_name: str = "mongodb",
+        namespace: str | None = None,
+        collections: tuple[str, ...] | list[str] | None = None,
+        text_search_collections: tuple[str, ...] | list[str] = (),
+        time_field_by_collection: Mapping[str, str] | None = None,
+        default_limit: int = 100,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned PyMongo Database through the bounded record contract."""
+
+        from .adapters.record_native import MongoRecordBackend
+
+        return await self.aadd_record_store(
+            MongoRecordBackend(
+                database,
+                collections=collections,
+                text_search_collections=text_search_collections,
+                time_field_by_collection=time_field_by_collection,
+            ),
+            database_name=database_name,
+            namespace=namespace,
+            sources=None if collections is None else set(collections),
+            default_limit=default_limit,
+            remote=remote,
+        )
+
+    def add_mongodb_record_store(
+        self,
+        database: Any,
+        *,
+        database_name: str = "mongodb",
+        namespace: str | None = None,
+        collections: tuple[str, ...] | list[str] | None = None,
+        text_search_collections: tuple[str, ...] | list[str] = (),
+        time_field_by_collection: Mapping[str, str] | None = None,
+        default_limit: int = 100,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_mongodb_record_store`."""
+
+        return _run_sync(
+            lambda: self.aadd_mongodb_record_store(
+                database,
+                database_name=database_name,
+                namespace=namespace,
+                collections=collections,
+                text_search_collections=text_search_collections,
+                time_field_by_collection=time_field_by_collection,
+                default_limit=default_limit,
+                remote=remote,
+            )
+        )
+
+    async def aadd_elasticsearch_record_store(
+        self,
+        client: Any,
+        *,
+        database_name: str = "elasticsearch",
+        namespace: str | None = None,
+        indices: tuple[str, ...] | list[str] | None = None,
+        time_field_by_index: Mapping[str, str] | None = None,
+        default_limit: int = 100,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned Elasticsearch client."""
+
+        from .adapters.record_native import ElasticRecordBackend
+
+        return await self.aadd_record_store(
+            ElasticRecordBackend(
+                client,
+                indices=indices,
+                time_field_by_index=time_field_by_index,
+                vendor="elasticsearch",
+            ),
+            database_name=database_name,
+            namespace=namespace,
+            sources=None if indices is None else set(indices),
+            default_limit=default_limit,
+            remote=remote,
+        )
+
+    def add_elasticsearch_record_store(
+        self,
+        client: Any,
+        **kwargs: Any,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_elasticsearch_record_store`."""
+
+        return _run_sync(lambda: self.aadd_elasticsearch_record_store(client, **kwargs))
+
+    async def aadd_opensearch_record_store(
+        self,
+        client: Any,
+        *,
+        database_name: str = "opensearch",
+        namespace: str | None = None,
+        indices: tuple[str, ...] | list[str] | None = None,
+        time_field_by_index: Mapping[str, str] | None = None,
+        default_limit: int = 100,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned OpenSearch client."""
+
+        from .adapters.record_native import ElasticRecordBackend
+
+        return await self.aadd_record_store(
+            ElasticRecordBackend(
+                client,
+                indices=indices,
+                time_field_by_index=time_field_by_index,
+                vendor="opensearch",
+            ),
+            database_name=database_name,
+            namespace=namespace,
+            sources=None if indices is None else set(indices),
+            default_limit=default_limit,
+            remote=remote,
+        )
+
+    def add_opensearch_record_store(
+        self,
+        client: Any,
+        **kwargs: Any,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_opensearch_record_store`."""
+
+        return _run_sync(lambda: self.aadd_opensearch_record_store(client, **kwargs))
+
+    async def aadd_redis_record_store(
+        self,
+        client: Any,
+        *,
+        database_name: str = "redis",
+        namespace: str | None = None,
+        source_name: str = "keys",
+        pattern: str = "*",
+        default_limit: int = 100,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned redis-py client as a bounded key-value source."""
+
+        from .adapters.record_native import RedisRecordBackend
+
+        return await self.aadd_record_store(
+            RedisRecordBackend(
+                client,
+                source_name=source_name,
+                pattern=pattern,
+            ),
+            database_name=database_name,
+            namespace=namespace,
+            sources={source_name},
+            default_limit=default_limit,
+            remote=remote,
+        )
+
+    def add_redis_record_store(
+        self,
+        client: Any,
+        **kwargs: Any,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_redis_record_store`."""
+
+        return _run_sync(lambda: self.aadd_redis_record_store(client, **kwargs))
+
+    async def aadd_dynamodb_record_store(
+        self,
+        client: Any,
+        *,
+        database_name: str = "dynamodb",
+        namespace: str | None = None,
+        tables: tuple[str, ...] | list[str] | None = None,
+        time_field_by_table: Mapping[str, str] | None = None,
+        default_limit: int = 100,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned low-level boto3 DynamoDB client."""
+
+        from .adapters.record_native import DynamoDBRecordBackend
+
+        return await self.aadd_record_store(
+            DynamoDBRecordBackend(
+                client,
+                tables=tables,
+                time_field_by_table=time_field_by_table,
+            ),
+            database_name=database_name,
+            namespace=namespace,
+            sources=None if tables is None else set(tables),
+            default_limit=default_limit,
+            remote=remote,
+        )
+
+    def add_dynamodb_record_store(
+        self,
+        client: Any,
+        **kwargs: Any,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_dynamodb_record_store`."""
+
+        return _run_sync(lambda: self.aadd_dynamodb_record_store(client, **kwargs))
+
     def amend_capability(self, tool_key: str, amended: ToolSpec) -> str:
         """Declare or annotate the result contract of an already registered capability.
 
