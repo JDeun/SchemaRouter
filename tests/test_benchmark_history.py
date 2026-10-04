@@ -138,6 +138,7 @@ def test_compatibility_workflow_retains_json_artifacts() -> None:
     assert "tavily-provider-compatibility.json" in workflow
     assert "falkordb-compatibility.json" in workflow
     assert "qdrant-compatibility.json" in workflow
+    assert "pgvector-compatibility.json" in workflow
     assert '"schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]"' in workflow
     assert "--framework-integrations" in workflow
     assert "--lightweight-extras" in workflow
@@ -145,7 +146,7 @@ def test_compatibility_workflow_retains_json_artifacts() -> None:
         workflow.count(
             "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
         )
-        == 12
+        == 13
     )
-    assert workflow.count("if: always()") == 12
-    assert workflow.count("retention-days: 30") == 12
+    assert workflow.count("if: always()") == 13
+    assert workflow.count("retention-days: 30") == 13
