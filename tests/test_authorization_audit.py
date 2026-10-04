@@ -3,6 +3,7 @@ import pytest
 from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
+    DataScopeRule,
     ExecutionPlan,
     PrincipalContext,
     SchemaRouter,
@@ -176,17 +177,62 @@ async def test_authorization_audit_stream_events_reuses_stream_run_id() -> None:
 @pytest.mark.asyncio
 async def test_authorization_audit_stream_events_emits_terminal_error_on_denial() -> None:
     audit_events: list[AuthorizationAuditEvent] = []
+    scoped_tool = ToolSpec(
+        name="company_records",
+        provider="company",
+        access_mode="python",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                description="read records",
+                output_fields=[
+                    FieldSpec(
+                        name="id",
+                        json_schema={"type": "string"},
+                    ),
+                    FieldSpec(
+                        name="secret_note",
+                        aliases=["secret"],
+                        json_schema={"type": "string"},
+                    ),
+                ],
+            )
+        ],
+    )
     router = SchemaRouter(
-        authorization_policy=AuthorizationPolicy(),
+        authorization_policy=AuthorizationPolicy(
+            rules=(
+                AuthorizationRule(
+                    name="read-policy",
+                    effect="allow",
+                    operation="company_records.read",
+                    roles_any=("employee",),
+                ),
+            ),
+            data_rules=(
+                DataScopeRule(
+                    name="employee-scope",
+                    operation="company_records.read",
+                    roles_any=("employee",),
+                    visible_fields=("id",),
+                ),
+            ),
+        ),
         authorization_audit_hook=audit_events.append,
     )
-    router.add_bound_tool(tool(), lambda endpoint, arguments: {"id": "1"})
-    principal = PrincipalContext(subject="blocked-stream-user")
+    router.add_bound_tool(
+        scoped_tool,
+        lambda endpoint, arguments: {"id": "1", "secret_note": "private"},
+    )
+    principal = PrincipalContext(
+        subject="blocked-stream-user",
+        roles=("employee",),
+    )
 
     run_events = []
     with pytest.raises(Exception, match="authorization denied"):
         async for event in router.astream_events(
-            "read records",
+            "secret",
             config={
                 "principal": principal,
                 "run_id": "stream-denied-1",
