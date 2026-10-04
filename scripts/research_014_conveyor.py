@@ -29,6 +29,7 @@ B2_ARTIFACT_PREFIX = "b2-smollm3-canonical-"
 K3_WORKFLOW = "research-0.14-structural-k3-agent.yml"
 K3_ARTIFACT_PREFIX = "structural-k3-agent-canonical-"
 CORRECTIVE_WORKFLOW = "research-0.14-corrective-reretrieval.yml"
+CORRECTIVE_RECOVERY_WORKFLOW = "research-0.14-corrective-recovery.yml"
 CORRECTIVE_ARTIFACT_PREFIX = "corrective-reretrieval-canonical-"
 HELDOUT_WORKFLOW = "research-0.14-heldout-generalization.yml"
 HELDOUT_ARTIFACT_PREFIX = "heldout-generalization-canonical-"
@@ -324,6 +325,35 @@ def source_sha_from_run(run: StageRun) -> str:
     if re.fullmatch(r"[0-9a-f]{40}", run.head_sha):
         return run.head_sha
     raise RuntimeError(f"unable to recover frozen source SHA from run {run.id}")
+
+
+def expected_corrective_shard_ids() -> set[str]:
+    return {
+        f"c{catalog}-g{index:02d}"
+        for catalog in (100, 250, 500)
+        for index in range(60)
+    }
+
+
+def missing_corrective_shards(api: GitHubAPI, run_id: int) -> list[str]:
+    """Return shard IDs without a non-expired parent artifact.
+
+    This is infrastructure-only completeness metadata. Artifact contents and
+    row-level scientific outcomes are intentionally never opened here.
+    """
+
+    observed: set[str] = set()
+    suffix = f"-{run_id}"
+    for artifact in api.artifacts(run_id):
+        if bool(artifact.get("expired")):
+            continue
+        name = str(artifact.get("name") or "")
+        if not name.startswith("corrective-shard-") or not name.endswith(suffix):
+            continue
+        shard_id = name[len("corrective-shard-") : -len(suffix)]
+        if shard_id in expected_corrective_shard_ids():
+            observed.add(shard_id)
+    return sorted(expected_corrective_shard_ids() - observed)
 
 
 def find_k3_runs_after(api: GitHubAPI, *, not_before: str) -> list[StageRun]:
@@ -781,32 +811,130 @@ def run_controller(
         )
         corrective = None
     elif terminal_failure(corrective):
-        failed_corrective_runs = [
-            run for run in corrective_runs if terminal_failure(run)
-        ]
-        if len(failed_corrective_runs) < MAX_INFRA_ATTEMPTS:
+        missing_shards = missing_corrective_shards(api, corrective.id)
+        if missing_shards:
             retry_source_sha = source_sha_from_run(corrective)
-            if execute:
-                api.dispatch(
-                    CORRECTIVE_WORKFLOW,
-                    ref=ref,
-                    inputs={
-                        "evidence_digest": b2_digest,
-                        "source_sha": retry_source_sha,
-                    },
-                )
-            actions.append(
-                "recover_dispatch_corrective_after_failure:"
-                f"prior_run={corrective.id}:attempt={len(failed_corrective_runs) + 1}:"
-                f"source={retry_source_sha}"
-            )
-            corrective = None
-        else:
-            return {
-                "state": "stopped_corrective_infrastructure_failure_after_retries",
-                "actions": actions,
-                "status": [_status_line("corrective", corrective)],
+            recovery_inputs = {
+                "parent_run_id": str(corrective.id),
+                "evidence_digest": b2_digest,
+                "source_sha": retry_source_sha,
+                "shard_ids": ",".join(missing_shards),
             }
+            recovery_runs = find_marked_runs(
+                api,
+                CORRECTIVE_RECOVERY_WORKFLOW,
+                f"parent={corrective.id} ",
+            )
+            recovery = recovery_runs[0] if recovery_runs else None
+            if recovery is None:
+                if execute:
+                    api.dispatch(
+                        CORRECTIVE_RECOVERY_WORKFLOW,
+                        ref=ref,
+                        inputs=recovery_inputs,
+                    )
+                actions.append(
+                    "dispatch_corrective_shard_recovery:"
+                    f"parent={corrective.id}:missing={len(missing_shards)}:"
+                    f"source={retry_source_sha}"
+                )
+                return {
+                    "state": "corrective_shard_recovery_dispatched",
+                    "actions": actions,
+                    "status": [_status_line("corrective", corrective)],
+                }
+
+            if terminal_failure(recovery):
+                failed_recovery_runs = [
+                    run for run in recovery_runs if terminal_failure(run)
+                ]
+                if len(failed_recovery_runs) < MAX_INFRA_ATTEMPTS:
+                    if execute:
+                        api.dispatch(
+                            CORRECTIVE_RECOVERY_WORKFLOW,
+                            ref=ref,
+                            inputs=recovery_inputs,
+                        )
+                    actions.append(
+                        "recover_dispatch_corrective_shards_after_failure:"
+                        f"prior_run={recovery.id}:"
+                        f"attempt={len(failed_recovery_runs) + 1}:"
+                        f"parent={corrective.id}:missing={len(missing_shards)}"
+                    )
+                    return {
+                        "state": "retrying_corrective_shard_recovery",
+                        "actions": actions,
+                        "status": [
+                            _status_line("corrective", corrective),
+                            _status_line("corrective_recovery", recovery),
+                        ],
+                    }
+                return {
+                    "state": "stopped_corrective_shard_recovery_after_retries",
+                    "actions": actions,
+                    "status": [
+                        _status_line("corrective", corrective),
+                        _status_line("corrective_recovery", recovery),
+                    ],
+                }
+
+            if not terminal_success(recovery):
+                return {
+                    "state": "waiting_corrective_shard_recovery",
+                    "actions": actions,
+                    "status": [
+                        _status_line("corrective", corrective),
+                        _status_line("corrective_recovery", recovery),
+                    ],
+                }
+
+            recovery_artifact = api.artifact(
+                recovery.id,
+                CORRECTIVE_ARTIFACT_PREFIX,
+            )
+            if recovery_artifact is None:
+                return {
+                    "state": "waiting_corrective_recovery_canonical_artifact",
+                    "actions": actions,
+                    "status": [_status_line("corrective_recovery", recovery)],
+                }
+            actions.append(
+                "use_corrective_recovery_canonical:"
+                f"parent={corrective.id}:recovery={recovery.id}:"
+                f"missing={len(missing_shards)}"
+            )
+            corrective = recovery
+        else:
+            # A terminal failure with all 180 shard artifacts is not a shard
+            # incompleteness case. Preserve the existing bounded fresh-wrapper
+            # fallback rather than guessing at the failure semantics.
+            failed_corrective_runs = [
+                run for run in corrective_runs if terminal_failure(run)
+            ]
+            if len(failed_corrective_runs) < MAX_INFRA_ATTEMPTS:
+                retry_source_sha = source_sha_from_run(corrective)
+                if execute:
+                    api.dispatch(
+                        CORRECTIVE_WORKFLOW,
+                        ref=ref,
+                        inputs={
+                            "evidence_digest": b2_digest,
+                            "source_sha": retry_source_sha,
+                        },
+                    )
+                actions.append(
+                    "recover_dispatch_corrective_after_failure:"
+                    f"prior_run={corrective.id}:"
+                    f"attempt={len(failed_corrective_runs) + 1}:"
+                    f"source={retry_source_sha}"
+                )
+                corrective = None
+            else:
+                return {
+                    "state": "stopped_corrective_infrastructure_failure_after_retries",
+                    "actions": actions,
+                    "status": [_status_line("corrective", corrective)],
+                }
 
     if k3 is None or corrective is None or not (
         terminal_success(k3) and terminal_success(corrective)
