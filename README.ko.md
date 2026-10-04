@@ -146,6 +146,7 @@ Credential, connection pool, DB client, transport state는 caller-owned로 유�
 query language를 모델의 실행 권한으로 노출하지 않습니다.
 
 [연결 경로 선택 →](docs_ko/getting-started/ingestion-paths.md) ·
+[전체 ingestion matrix →](docs_ko/guides/universal-ingestion.md) ·
 [Provider-first 등록 →](docs_ko/guides/provider-first-registration.md) ·
 [Enterprise data onboarding →](docs_ko/guides/enterprise-data-onboarding.md)
 
