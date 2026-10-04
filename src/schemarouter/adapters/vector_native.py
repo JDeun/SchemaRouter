@@ -450,6 +450,297 @@ class PineconeVectorBackend:
         return rows
 
 
+class WeaviateVectorBackend:
+    """Thin adapter over a caller-owned Weaviate Python v4 client.
+
+    Weaviate collection configuration is used for property discovery. Query-vector dimensions are
+    explicit because external vector dimensions are not guaranteed to be recoverable from every
+    collection/vectorizer configuration.
+    """
+
+    def __init__(
+        self,
+        client: Any,
+        *,
+        dimension_by_collection: Mapping[str, int],
+        target_vector_by_collection: Mapping[str, str] | None = None,
+        metric_by_collection: Mapping[str, str] | None = None,
+    ) -> None:
+        self._client = client
+        self._dimension_by_collection = {
+            name: int(value)
+            for name, value in dimension_by_collection.items()
+        }
+        self._target_vector_by_collection = dict(target_vector_by_collection or {})
+        self._metric_by_collection = dict(metric_by_collection or {})
+        self._collection_cache: dict[str, Any] = {}
+        self._config_cache: dict[str, Any] = {}
+
+    def _collection_names(self) -> list[str]:
+        collections_api = _read(self._client, "collections")
+        list_all = _read(collections_api, "list_all")
+        if not callable(list_all):
+            raise RegistrationError(
+                "Weaviate client does not expose collections.list_all(...)"
+            )
+        response = list_all(simple=False)
+        if isinstance(response, Mapping):
+            names = [str(name) for name in response]
+        elif isinstance(response, Sequence) and not isinstance(
+            response,
+            (str, bytes),
+        ):
+            names = [str(_read(value, "name", value)) for value in response]
+        else:
+            raise SchemaValidationError(
+                "Weaviate collections.list_all() returned an unexpected response"
+            )
+        return names
+
+    def _collection(self, collection_name: str) -> Any:
+        cached = self._collection_cache.get(collection_name)
+        if cached is not None:
+            return cached
+        collections_api = _read(self._client, "collections")
+        use = _read(collections_api, "use") or _read(collections_api, "get")
+        if not callable(use):
+            raise RegistrationError(
+                "Weaviate client does not expose collections.use/get(...)"
+            )
+        collection = use(collection_name)
+        self._collection_cache[collection_name] = collection
+        return collection
+
+    def _config(self, collection_name: str) -> Any:
+        cached = self._config_cache.get(collection_name)
+        if cached is not None:
+            return cached
+        collection = self._collection(collection_name)
+        config_api = _read(collection, "config")
+        getter = _read(config_api, "get")
+        if not callable(getter):
+            raise RegistrationError(
+                "Weaviate collection does not expose config.get()"
+            )
+        config = getter()
+        self._config_cache[collection_name] = config
+        return config
+
+    def _target_vector(self, collection_name: str, config: Any) -> str | None:
+        configured = self._target_vector_by_collection.get(collection_name)
+        vector_config = _read(config, "vector_config")
+        if not vector_config:
+            return configured
+
+        if isinstance(vector_config, Mapping):
+            names = [str(name) for name in vector_config]
+        else:
+            names = []
+        if configured is not None:
+            if names and configured not in names:
+                raise RegistrationError(
+                    f"Weaviate collection {collection_name!r} has no target vector "
+                    f"{configured!r}"
+                )
+            return configured
+        if len(names) == 1:
+            return names[0]
+        if len(names) > 1:
+            raise RegistrationError(
+                f"Weaviate collection {collection_name!r} has multiple named vectors; "
+                "set target_vector_by_collection"
+            )
+        return None
+
+    def _metadata_fields(
+        self,
+        collection_name: str,
+        config: Any,
+    ) -> tuple[VectorMetadataField, ...]:
+        raw_properties = _read(config, "properties", ()) or ()
+        if not isinstance(raw_properties, Sequence) or isinstance(
+            raw_properties,
+            (str, bytes),
+        ):
+            raise SchemaValidationError(
+                "Weaviate collection properties must be a sequence"
+            )
+        fields: list[VectorMetadataField] = []
+        for raw in raw_properties:
+            name = str(_read(raw, "name", ""))
+            if not name:
+                continue
+            data_type = _read(raw, "data_type")
+            fields.append(
+                VectorMetadataField(
+                    name=name,
+                    description=str(_read(raw, "description", "") or ""),
+                    json_schema=_json_schema_from_vendor_type(data_type),
+                    filterable=bool(_read(raw, "index_filterable", False)),
+                )
+            )
+        return tuple(fields)
+
+    def list_collections(self) -> tuple[VectorCollectionSpec, ...]:
+        results: list[VectorCollectionSpec] = []
+        for collection_name in self._collection_names():
+            dimension = self._dimension_by_collection.get(collection_name)
+            if dimension is None or dimension < 1:
+                raise RegistrationError(
+                    f"Weaviate collection {collection_name!r} requires an explicit "
+                    "dimension_by_collection entry"
+                )
+            config = self._config(collection_name)
+            target_vector = self._target_vector(collection_name, config)
+            results.append(
+                VectorCollectionSpec(
+                    name=collection_name,
+                    dimension=dimension,
+                    metric=self._metric_by_collection.get(
+                        collection_name,
+                        "unknown",
+                    ),
+                    metadata_fields=self._metadata_fields(
+                        collection_name,
+                        config,
+                    ),
+                    public_metadata=(
+                        {}
+                        if target_vector is None
+                        else {"target_vector": target_vector}
+                    ),
+                )
+            )
+        return tuple(results)
+
+    @staticmethod
+    def _weaviate_filter(filters: Mapping[str, Any]) -> Any:
+        try:
+            query_module = importlib.import_module("weaviate.classes.query")
+        except ImportError as exc:
+            raise RegistrationError(
+                "Weaviate trusted filtering requires weaviate-client"
+            ) from exc
+
+        filter_class = _read(query_module, "Filter")
+        if filter_class is None:
+            raise RegistrationError("weaviate.classes.query.Filter is unavailable")
+
+        combined: Any = None
+        for field, value in sorted(filters.items()):
+            by_property = filter_class.by_property(field)
+            if isinstance(value, tuple):
+                if not value:
+                    raise SchemaValidationError(
+                        "Weaviate trusted filter cannot use an empty value set"
+                    )
+                current: Any = None
+                for entry in value:
+                    condition = by_property.equal(entry)
+                    current = condition if current is None else current | condition
+            else:
+                current = by_property.equal(value)
+            combined = current if combined is None else combined & current
+        return combined
+
+    def search(
+        self,
+        *,
+        collection: str,
+        vector: Sequence[float],
+        top_k: int,
+        include_fields: tuple[str, ...],
+        filters: Mapping[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        config = self._config(collection)
+        metadata_fields = {
+            field.name: field
+            for field in self._metadata_fields(collection, config)
+        }
+        unknown_fields = sorted(set(include_fields) - set(metadata_fields))
+        if unknown_fields:
+            raise SchemaValidationError(
+                "Weaviate search requested undeclared properties: "
+                + ", ".join(unknown_fields)
+            )
+        if filters:
+            allowed_filters = {
+                field.name
+                for field in metadata_fields.values()
+                if field.filterable
+            }
+            unknown_filters = sorted(set(filters) - allowed_filters)
+            if unknown_filters:
+                raise SchemaValidationError(
+                    "Weaviate trusted filter requested non-filterable properties: "
+                    + ", ".join(unknown_filters)
+                )
+
+        try:
+            query_module = importlib.import_module("weaviate.classes.query")
+        except ImportError as exc:
+            raise RegistrationError(
+                "Weaviate native search requires weaviate-client"
+            ) from exc
+        metadata_query = _read(query_module, "MetadataQuery")
+        if metadata_query is None:
+            raise RegistrationError(
+                "weaviate.classes.query.MetadataQuery is unavailable"
+            )
+
+        kwargs: dict[str, Any] = {
+            "near_vector": list(vector),
+            "limit": top_k,
+            "return_properties": list(include_fields),
+            "return_metadata": metadata_query(distance=True),
+        }
+        target_vector = self._target_vector(collection, config)
+        if target_vector is not None:
+            kwargs["target_vector"] = target_vector
+        if filters:
+            kwargs["filters"] = self._weaviate_filter(filters)
+
+        query_api = _read(self._collection(collection), "query")
+        near_vector = _read(query_api, "near_vector")
+        if not callable(near_vector):
+            raise RegistrationError(
+                "Weaviate collection does not expose query.near_vector(...)"
+            )
+        response = near_vector(**kwargs)
+        objects = _read(response, "objects", ())
+        if not isinstance(objects, Sequence) or isinstance(objects, (str, bytes)):
+            raise SchemaValidationError(
+                "Weaviate near_vector() returned an unexpected response"
+            )
+
+        rows: list[dict[str, Any]] = []
+        for obj in objects:
+            properties = _read(obj, "properties", {}) or {}
+            if not isinstance(properties, Mapping):
+                raise SchemaValidationError(
+                    "Weaviate object properties must be an object"
+                )
+            metadata = _read(obj, "metadata")
+            distance = _read(metadata, "distance")
+            if distance is None:
+                raise SchemaValidationError(
+                    "Weaviate vector result has no distance metadata"
+                )
+            row: dict[str, Any] = {
+                "id": str(_read(obj, "uuid")),
+                "score": float(distance),
+            }
+            row.update(
+                {
+                    field: properties[field]
+                    for field in include_fields
+                    if field in properties
+                }
+            )
+            rows.append(row)
+        return rows
+
+
 class MilvusVectorBackend:
     """Thin adapter over a caller-owned pymilvus.MilvusClient-compatible client."""
 
