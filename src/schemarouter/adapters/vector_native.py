@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib
 import re
 from array import array
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import Any
 
 from ..errors import RegistrationError, SchemaValidationError
@@ -480,16 +480,13 @@ class PineconeVectorBackend:
         else:
             names = raw
         if isinstance(names, Mapping):
-            values = names.values()
+            values = list(names.values())
+        elif isinstance(names, Iterable) and not isinstance(names, (str, bytes)):
+            values = list(names)
         else:
-            values = names
-        if not isinstance(values, Sequence) or isinstance(values, (str, bytes)):
-            try:
-                values = list(values)
-            except TypeError as exc:
-                raise SchemaValidationError(
-                    "Pinecone list_indexes() returned an unexpected response"
-                ) from exc
+            raise SchemaValidationError(
+                "Pinecone list_indexes() returned an unexpected response"
+            )
         result = [str(_read(value, "name", value)) for value in values]
         if any(not value for value in result):
             raise SchemaValidationError("Pinecone returned an empty index name")
@@ -906,6 +903,10 @@ class RedisVectorBackend:
                     algorithm = data.get("algorithm")
                     algorithm_data = self._pairs(algorithm)
                     dimension = algorithm_data.get("DIM", algorithm_data.get("dim"))
+                if dimension is None:
+                    raise SchemaValidationError(
+                        f"Redis vector field {field_name!r} has no valid DIM"
+                    )
                 try:
                     parsed_dimension = int(dimension)
                 except (TypeError, ValueError) as exc:
