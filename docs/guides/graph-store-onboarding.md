@@ -73,15 +73,32 @@ execution.
 
 Node/property/relationship sub-scopes and trusted traversal predicates are extended in #770.
 
-## Vendor targets
+## Native vendor adapters
 
-The provider-neutral contract is intended to support thin adapters for:
+The provider-neutral contract now has thin caller-owned adapters for:
 
-- Neo4j;
-- Amazon Neptune;
-- ArangoDB;
-- compatible SPARQL 1.1 endpoints such as GraphDB/Stardog-style deployments.
+- **Neo4j** via the Python driver's `execute_query()` surface;
+- **Amazon Neptune Database / Neptune Analytics** via the supported openCypher Data APIs;
+- **ArangoDB** via `python-arango` graph discovery and parameter-bound AQL traversal;
+- **SPARQL 1.1 query endpoints** through a caller-owned HTTP client, suitable for compatible
+  RDF stores such as GraphDB/Stardog deployments.
 
-The common contract is implemented first. Native vendor SDK/live acceptance remains a separate
-vendor-adapter task; the common contract alone is not a claim that every named database is already
-validated end-to-end.
+Typical native registration is still explicit and credential-free from SchemaRouter's point of
+view:
+
+```python
+router.add_neo4j_graph(driver, database="neo4j", graph_name="org")
+router.add_neptune_graph(neptune_client, graph_name="social")
+router.add_arango_graph(arango_database)
+router.add_sparql_graph(
+    http_client,
+    endpoint="https://example.org/sparql",
+    graph_name="rdf",
+)
+```
+
+These adapters translate only SchemaRouter's bounded traversal contract. They do not expose raw
+Cypher, AQL, Gremlin, or SPARQL text to model output.
+
+Deterministic SDK-shape tests are release-gated. A native adapter being present does not imply that
+every vendor/version/deployment has completed live external acceptance.
