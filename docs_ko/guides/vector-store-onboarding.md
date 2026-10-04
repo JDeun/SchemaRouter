@@ -130,6 +130,40 @@ scalar metadata field를 파악합니다. Vector field가 여러 개라면
 Trusted filter는 Milvus filter template과 `filter_params`를 사용하므로 principal-derived
 값을 expression 문자열에 직접 삽입하지 않습니다.
 
+### Pinecone
+
+```python
+from pinecone import Pinecone
+
+client = Pinecone(api_key=PINECONE_API_KEY)
+
+keys = router.add_pinecone_vector_store(
+    client,
+    embed_query,
+    database_name="pinecone",
+    metadata_fields_by_index={
+        "docs": (
+            VectorMetadataField(
+                name="tenant",
+                json_schema={"type": "string"},
+                filterable=True,
+            ),
+        )
+    },
+)
+```
+
+Control-plane client가 index 이름과 dense dimension/metric metadata를 제공하고, adapter는
+caller-owned Pinecone client를 통해 data-plane index client를 만든 뒤 `index.query(...)`
+결과를 공통 vector contract로 정규화합니다.
+
+Pinecone metadata는 유연하며 index description이 모든 record의 모든 metadata key에 대한 완전한
+typed contract를 항상 제공한다고 가정할 수 없습니다. 따라서 SchemaRouter가 field를 추측하지
+않고 `metadata_fields_by_index`로 model-visible/filterable metadata를 명시합니다.
+
+`namespace_by_index`를 사용하면 index별 trusted namespace를 고정할 수 있습니다. Data-scope
+filter는 `filterable=True`로 명시한 metadata에만 전달합니다.
+
 이 adapter들은 caller-owned fake client로 SDK-shape contract를 검증합니다. Vendor credential은
 SchemaRouter state에 들어가지 않으며, 모든 deployment topology의 live acceptance가 끝났다는
 의미는 아닙니다.
