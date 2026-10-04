@@ -197,7 +197,17 @@ class AccessHealthMonitor:
 
             generation = record.generation
             try:
-                outcome = record.probe()
+                async_probe = (
+                    inspect.iscoroutinefunction(record.probe)
+                    or inspect.iscoroutinefunction(record.probe.__call__)
+                )
+                if async_probe:
+                    outcome = record.probe()
+                else:
+                    outcome = await asyncio.wait_for(
+                        asyncio.to_thread(record.probe),
+                        timeout=probe_timeout_seconds,
+                    )
                 if inspect.isawaitable(outcome):
                     outcome = await asyncio.wait_for(
                         outcome,
