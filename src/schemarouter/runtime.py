@@ -1437,6 +1437,7 @@ class SchemaRouter:
         metadata_fields_by_index: Mapping[str, Sequence[Any]] | None = None,
         metric_by_index: Mapping[str, str] | None = None,
         trusted_filter_builder: Callable[[Mapping[str, Any]], str] | None = None,
+        query_factory: Callable[[str], Any] | None = None,
         default_top_k: int = 10,
         remote: bool = True,
     ) -> tuple[str, ...]:
