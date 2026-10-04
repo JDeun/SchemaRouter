@@ -177,11 +177,19 @@ def test_langchain_tool_can_be_imported_back_into_schemarouter() -> None:
 
 def test_langchain_export_requires_principal_when_authorization_is_enabled() -> None:
     router, connection = make_authorized_database_router()
+    events = []
+    router.authorization_audit_hook = events.append
     try:
         with pytest.raises(PolicyViolationError, match="principal context is required"):
             to_langchain_tool(router, "company.employees", "select")
         with pytest.raises(PolicyViolationError, match="principal context is required"):
             to_langchain_tools(router)
+
+        assert len(events) == 2
+        assert all(event.effect == "deny" for event in events)
+        assert all(event.phase == "export" for event in events)
+        assert all(event.decision_source == "missing_principal" for event in events)
+        assert all(event.run_id for event in events)
     finally:
         connection.close()
 
