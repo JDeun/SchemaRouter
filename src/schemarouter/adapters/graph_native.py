@@ -75,8 +75,6 @@ def _json_payload_rows(payload: Any) -> list[dict[str, Any]]:
     return [dict(_as_mapping(row)) for row in payload]
 
 
-
-
 def _falkor_rows(result: Any, columns: tuple[str, ...]) -> list[dict[str, Any]]:
     rows = getattr(result, "result_set", None)
     if not isinstance(rows, Sequence) or isinstance(rows, (str, bytes)):
@@ -502,8 +500,6 @@ class ArangoGraphBackend:
         return rows
 
 
-
-
 class FalkorGraphBackend:
     """Bounded property-graph adapter over a caller-owned FalkorDB client."""
 
@@ -542,14 +538,7 @@ class FalkorGraphBackend:
             raise RegistrationError(
                 "FalkorDB graph must expose ro_query() for read-only execution"
             )
-        try:
-            result = ro_query(query, params=dict(params or {}))
-        except TypeError:
-            result = (
-                ro_query(query, dict(params))
-                if params
-                else ro_query(query)
-            )
+        result = ro_query(query, params=dict(params or {}))
         return _falkor_rows(result, columns)
 
     def _properties(
@@ -702,13 +691,20 @@ class FalkorGraphBackend:
         else:
             raise SchemaValidationError("FalkorDB traversal direction is invalid")
 
+        try:
+            native_start_id = int(start_id)
+        except ValueError as exc:
+            raise SchemaValidationError(
+                "FalkorDB start_id must be a numeric node id"
+            ) from exc
+
         rows = self._read(
             graph,
             (
                 f"MATCH p={pattern} "
-                "WHERE toString(id(start)) = $start_id "
-                "RETURN toString(id(start)) AS source_id, "
-                "toString(id(target)) AS target_id, "
+                "WHERE id(start) = $start_id "
+                "RETURN id(start) AS source_id, "
+                "id(target) AS target_id, "
                 "type(last(rels)) AS relationship, "
                 "size(rels) AS depth, "
                 "coalesce(head(labels(start)), '') AS source_type, "
@@ -723,13 +719,18 @@ class FalkorGraphBackend:
                 "source_type",
                 "target_type",
             ),
-            params={"start_id": start_id, "limit": limit},
+            params={"start_id": native_start_id, "limit": limit},
         )
         selected = set(include_fields)
-        return [
-            {key: value for key, value in row.items() if key in selected}
-            for row in rows
-        ]
+        normalized: list[dict[str, Any]] = []
+        for row in rows:
+            projected = {key: value for key, value in row.items() if key in selected}
+            if "source_id" in projected:
+                projected["source_id"] = str(projected["source_id"])
+            if "target_id" in projected:
+                projected["target_id"] = str(projected["target_id"])
+            normalized.append(projected)
+        return normalized
 
 class SparqlGraphBackend:
     """Generic SPARQL 1.1 query adapter over a caller-owned HTTP client.
