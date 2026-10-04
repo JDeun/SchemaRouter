@@ -14,6 +14,7 @@ import io
 import json
 import os
 import re
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -228,6 +229,31 @@ class GitHubAPI:
         if status not in {200, 201, 202, 204}:
             raise RuntimeError(f"unexpected GitHub rerun status: {status}")
 
+    def workflow_run_job_count(self, run_id: int) -> int:
+        data = self.get(f"/actions/runs/{run_id}/jobs?per_page=1")
+        return int(data.get("total_count") or 0)
+
+    def cancel_run_and_wait(
+        self,
+        run_id: int,
+        *,
+        timeout_seconds: float = 30.0,
+    ) -> None:
+        status, _ = self._request("POST", f"/actions/runs/{run_id}/cancel")
+        if status not in {200, 201, 202, 204}:
+            raise RuntimeError(f"unexpected GitHub cancel status: {status}")
+
+        deadline = time.monotonic() + timeout_seconds
+        while time.monotonic() < deadline:
+            run = self.run(run_id)
+            if run.get("status") == "completed":
+                return
+            time.sleep(1.0)
+        raise RuntimeError(
+            f"workflow run {run_id} did not reach terminal cancellation "
+            f"within {timeout_seconds:g}s"
+        )
+
     def issue_comments(self, issue_number: int) -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
         page = 1
@@ -379,6 +405,23 @@ def _age_seconds(value: str) -> float:
 
 
 STALE_QUEUED_WRAPPER_SECONDS = 1800.0
+CURRENT_WRAPPER_ZERO_JOB_PENDING_SECONDS = 180.0
+
+
+def stale_zero_job_pending(
+    run: StageRun | None,
+    *,
+    job_count: int,
+    min_age_seconds: float = CURRENT_WRAPPER_ZERO_JOB_PENDING_SECONDS,
+) -> bool:
+    """Whether a workflow is stuck before GitHub has created any jobs."""
+
+    return bool(
+        run is not None
+        and run.status == "pending"
+        and job_count == 0
+        and _age_seconds(run.created_at) >= min_age_seconds
+    )
 
 
 def stale_pending_wrapper(
@@ -647,6 +690,50 @@ def run_controller(
             "recover_dispatch_stale_pending_corrective_wrapper:"
             f"prior_run={corrective.id}:source={retry_source_sha}:"
             f"wrapper={_wrapper_sha}"
+        )
+        corrective = None
+    elif (
+        corrective.head_sha == _wrapper_sha
+        and stale_zero_job_pending(
+            corrective,
+            job_count=api.workflow_run_job_count(corrective.id),
+        )
+    ):
+        # A current-wrapper run may itself stall before GitHub creates its first
+        # job. This is distinct from ordinary runner queuing: no scientific job
+        # exists yet. Explicitly cancel it to release the concurrency group
+        # before dispatching the exact same frozen scientific inputs again.
+        prior_zero_job_cancellations = [
+            run
+            for run in corrective_runs[1:]
+            if run.head_sha == _wrapper_sha
+            and run.status == "completed"
+            and run.conclusion == "cancelled"
+            and api.workflow_run_job_count(run.id) == 0
+        ]
+        if len(prior_zero_job_cancellations) >= MAX_INFRA_ATTEMPTS - 1:
+            return {
+                "state": "stopped_corrective_prejob_pending_after_retries",
+                "actions": actions,
+                "status": [_status_line("corrective", corrective)],
+            }
+
+        retry_source_sha = source_sha_from_run(corrective)
+        if execute:
+            api.cancel_run_and_wait(corrective.id)
+            api.dispatch(
+                CORRECTIVE_WORKFLOW,
+                ref=ref,
+                inputs={
+                    "evidence_digest": b2_digest,
+                    "source_sha": retry_source_sha,
+                },
+            )
+        actions.append(
+            "recover_dispatch_zero_job_pending_corrective:"
+            f"prior_run={corrective.id}:"
+            f"attempt={len(prior_zero_job_cancellations) + 2}:"
+            f"source={retry_source_sha}:wrapper={_wrapper_sha}"
         )
         corrective = None
     elif terminal_failure(corrective):

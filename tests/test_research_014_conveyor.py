@@ -20,6 +20,7 @@ from scripts.research_014_conveyor import (
     retry_infrastructure_failure,
     source_sha_from_run,
     stale_pending_wrapper,
+    stale_zero_job_pending,
 )
 from scripts.validate_agent_utility_v3_heldout_corpus import (
     validate_corpus as validate_heldout,
@@ -277,6 +278,41 @@ def test_stale_pending_wrapper_recovery_preserves_scientific_source_contract() -
     )
 
 
+def test_current_wrapper_zero_job_pending_is_recoverable_only_prejob() -> None:
+    pending = StageRun(
+        id=94,
+        status="pending",
+        conclusion=None,
+        display_title=(
+            "Research 0.14 Corrective sha256:fixture "
+            "source=" + "c" * 40
+        ),
+        created_at="2026-09-30T00:00:00Z",
+        html_url="",
+        run_attempt=1,
+        head_sha="e" * 40,
+    )
+    assert stale_zero_job_pending(
+        pending,
+        job_count=0,
+        min_age_seconds=0.0,
+    )
+    assert not stale_zero_job_pending(
+        pending,
+        job_count=1,
+        min_age_seconds=0.0,
+    )
+
+    queued = pending.__class__(
+        **{**pending.__dict__, "status": "queued"}
+    )
+    assert not stale_zero_job_pending(
+        queued,
+        job_count=0,
+        min_age_seconds=0.0,
+    )
+
+
 def test_downstream_workflows_recover_model_cache_eviction() -> None:
     root = Path(__file__).resolve().parents[1]
     workflow_names = (
@@ -305,6 +341,8 @@ def test_conveyor_can_supersede_stale_pending_corrective_wrapper() -> None:
     )
     assert "recover_dispatch_stale_pending_corrective_wrapper" in controller
     assert "stale_pending_wrapper(corrective, wrapper_sha=_wrapper_sha)" in controller
+    assert "recover_dispatch_zero_job_pending_corrective" in controller
+    assert "api.cancel_run_and_wait(corrective.id)" in controller
 
 
 def test_issue_15_is_registered_as_nonblocking_external_dag_node() -> None:
