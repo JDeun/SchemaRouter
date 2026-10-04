@@ -88,7 +88,7 @@ from .sqlite_database import (
     SQLiteTableInvoker,
     introspect_sqlite_database,
 )
-from .vector_native import MilvusVectorBackend, QdrantVectorBackend
+from .vector_native import (\n    ChromaVectorBackend,\n    MilvusVectorBackend,\n    PgVectorBackend,\n    PineconeVectorBackend,\n    QdrantVectorBackend,\n    WeaviateVectorBackend,\n)
 from .vector_store import (
     VectorCollectionBinding,
     VectorCollectionInvoker,
