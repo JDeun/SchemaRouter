@@ -74,9 +74,7 @@ A vendor adapter must not allow model arguments to override those tenant or depa
 
 ## Vendor adapters
 
-The core contract is vendor-neutral so Pinecone, Milvus, Qdrant, Weaviate, Chroma, Redis
-vector/search and pgvector can implement thin adapters without changing SchemaRouter's execution
-authority model.
+The core contract is vendor-neutral so Pinecone, Milvus, Qdrant, Weaviate, Chroma, and pgvector can implement thin adapters without changing SchemaRouter's execution authority model. Redis-specific vector/search support is intentionally left to plugins or adopter-specific adapters rather than the first-class core surface.
 
 The provider-neutral contract does **not** by itself claim that every named vendor SDK has completed
 native/live acceptance. Vendor-specific adapter acceptance is tracked under #767.
@@ -178,19 +176,6 @@ The adapter discovers collections and can infer vector dimension from an existin
 collections require `dimension_by_collection`. Metadata fields can be declared explicitly when the
 collection does not expose a stable schema.
 
-### Redis Vector Search
-
-```python
-keys = router.add_redis_vector_store(
-    redis_client,
-    embed_query,
-)
-```
-
-The adapter reads Redis Search index information, discovers the vector field and dimension, and
-builds a bounded KNN query with a binary vector parameter. Trusted metadata filtering requires a
-trusted filter builder rather than exposing RediSearch query syntax to model output.
-
 ### PostgreSQL / pgvector
 
 ```python
@@ -206,7 +191,6 @@ runtime state, then uses SQLAlchemy expressions for bounded distance ordering an
 filters. If a table has multiple VECTOR columns, select one explicitly with
 `vector_field_by_table`.
 
-The native adapter surface now covers Qdrant, Milvus, Pinecone, Weaviate, Chroma, Redis Vector
-Search, and PostgreSQL/pgvector. These are SDK-shape and contract tests, not a claim that every
+The native adapter surface now covers Qdrant, Milvus, Pinecone, Weaviate, Chroma, and PostgreSQL/pgvector. These are SDK-shape and contract tests, not a claim that every
 deployment topology or hosted account has been live-tested.
 
