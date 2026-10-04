@@ -1200,6 +1200,74 @@ class SchemaRouter:
     ) -> None:
         self._native_schema_refreshers[tool_key] = refresh
 
+    def _apply_native_schema_binding(
+        self,
+        *,
+        current: ToolSpec,
+        candidate_tool: ToolSpec,
+        candidate_invoker: BoundEndpointInvoker,
+        offload_sync: bool,
+        expected_version: int,
+    ) -> None:
+        """Atomically move a native contract and restore the old binding on rebind failure."""
+
+        tool_key = current.key
+        previous_binding = self.executor._bound_binding_for_contract(
+            tool_key,
+            current.fingerprint,
+        )
+        replace_if_current(
+            self.registry,
+            candidate_tool,
+            expected_fingerprint=current.fingerprint,
+            expected_version=expected_version,
+        )
+        try:
+            self.executor.bind(
+                tool_key,
+                candidate_invoker,
+                expected_fingerprint=candidate_tool.fingerprint,
+                offload_sync=offload_sync,
+            )
+        except Exception:
+            self.executor.purge_tool_runtime_state(tool_key)
+            try:
+                replace_if_current(
+                    self.registry,
+                    current,
+                    expected_fingerprint=candidate_tool.fingerprint,
+                    expected_version=self.registry.version,
+                )
+            except Exception as rollback_exc:
+                raise BindingDriftError(
+                    f"native schema refresh for {tool_key!r} failed to bind and the "
+                    "previous registry contract could not be restored safely"
+                ) from rollback_exc
+
+            if previous_binding is not None:
+                previous_invoker, previous_offload_sync = previous_binding
+                try:
+                    self.executor.bind(
+                        tool_key,
+                        previous_invoker,
+                        expected_fingerprint=current.fingerprint,
+                        offload_sync=previous_offload_sync,
+                    )
+                except Exception as restore_exc:
+                    self.executor.purge_tool_runtime_state(tool_key)
+                    raise BindingDriftError(
+                        f"native schema refresh for {tool_key!r} restored the previous "
+                        "registry contract but could not restore its trusted binding"
+                    ) from restore_exc
+            raise
+
+        if candidate_tool.fingerprint != current.fingerprint:
+            self.health_monitor.transition_tool_contract(
+                tool_key,
+                expected_old_fingerprint=current.fingerprint,
+                expected_new_fingerprint=candidate_tool.fingerprint,
+            )
+
     async def arefresh_native_schema(
         self,
         tool_key: str,
@@ -1233,22 +1301,13 @@ class SchemaRouter:
                 report=report,
             )
         if report.compatibility == "compatible" and apply_compatible:
-            replace_if_current(
-                self.registry,
-                candidate_tool,
-                expected_fingerprint=current.fingerprint,
+            self._apply_native_schema_binding(
+                current=current,
+                candidate_tool=candidate_tool,
+                candidate_invoker=candidate_invoker,
+                offload_sync=offload_sync,
                 expected_version=expected_version,
             )
-            try:
-                self.executor.bind(
-                    tool_key,
-                    candidate_invoker,
-                    expected_fingerprint=candidate_tool.fingerprint,
-                    offload_sync=offload_sync,
-                )
-            except Exception:
-                self.executor.purge_tool_runtime_state(tool_key)
-                raise
             self._native_schema_pending.pop(tool_key, None)
             return SchemaRefreshResult(
                 tool_key=tool_key,
@@ -1291,22 +1350,13 @@ class SchemaRouter:
         expected_version = self.registry.version
         current = self.registry.get(tool_key)
         report = compare_tool_specs(current, candidate_tool)
-        replace_if_current(
-            self.registry,
-            candidate_tool,
-            expected_fingerprint=current.fingerprint,
+        self._apply_native_schema_binding(
+            current=current,
+            candidate_tool=candidate_tool,
+            candidate_invoker=candidate_invoker,
+            offload_sync=offload_sync,
             expected_version=expected_version,
         )
-        try:
-            self.executor.bind(
-                tool_key,
-                candidate_invoker,
-                expected_fingerprint=candidate_tool.fingerprint,
-                offload_sync=offload_sync,
-            )
-        except Exception:
-            self.executor.purge_tool_runtime_state(tool_key)
-            raise
         self._native_schema_pending.pop(tool_key, None)
         return SchemaRefreshResult(
             tool_key=tool_key,
@@ -1447,17 +1497,29 @@ class SchemaRouter:
         async def refresh_binding(
             tool_key: str,
         ) -> tuple[ToolSpec, BoundEndpointInvoker, bool]:
-            refreshed = await asyncio.to_thread(
-                introspect_sqlalchemy_engine,
-                engine,
-                database_name=database_name,
-                namespace=namespace,
-                schemas=schemas,
-                tables=tables,
-                include_views=include_views,
-                max_default_rows=max_default_rows,
-                remote=remote,
-            )
+            if remote:
+                refreshed = await asyncio.to_thread(
+                    introspect_sqlalchemy_engine,
+                    engine,
+                    database_name=database_name,
+                    namespace=namespace,
+                    schemas=schemas,
+                    tables=tables,
+                    include_views=include_views,
+                    max_default_rows=max_default_rows,
+                    remote=remote,
+                )
+            else:
+                refreshed = introspect_sqlalchemy_engine(
+                    engine,
+                    database_name=database_name,
+                    namespace=namespace,
+                    schemas=schemas,
+                    tables=tables,
+                    include_views=include_views,
+                    max_default_rows=max_default_rows,
+                    remote=remote,
+                )
             match = next((item for item in refreshed if item.tool.key == tool_key), None)
             if match is None:
                 raise SchemaSourceError(

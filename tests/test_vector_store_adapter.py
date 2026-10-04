@@ -477,3 +477,21 @@ async def test_remote_sync_vector_backend_does_not_block_event_loop() -> None:
         timer.cancel()
 
     assert result[0].data == [{"id": "doc-1", "title": "SchemaRouter"}]
+
+@pytest.mark.asyncio
+async def test_native_vector_schema_refresh_reintrospects_current_contract() -> None:
+    router = SchemaRouter()
+    await router.aadd_vector_store(
+        FakeVectorBackend(),
+        lambda query: [0.1, 0.2, 0.3],
+        database_name="vectors",
+        collections={"public_docs"},
+        remote=False,
+    )
+
+    result = await router.arefresh_native_schema("vectors.public_docs")
+
+    tool = router.registry.get("vectors.public_docs")
+    assert result.action == "unchanged"
+    assert router.executor.is_binding_ready_for_contract(tool.key, tool.fingerprint)
+

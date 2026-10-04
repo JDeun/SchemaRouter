@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import asyncio
+import threading
+import time
 from typing import Any
 
 import pytest
@@ -371,24 +374,15 @@ async def test_native_record_schema_refresh_applies_compatible_drift_and_rebinds
     class MutableBackend(FakeRecordBackend):
         def __init__(self) -> None:
             super().__init__()
-            self.add_summary = False
+            self.updated_description = False
 
         def list_sources(self) -> tuple[RecordSourceSpec, ...]:
             sources = list(super().list_sources())
-            if not self.add_summary:
+            if not self.updated_description:
                 return tuple(sources)
-            current = sources[0]
-            sources[0] = current.model_copy(
+            sources[0] = sources[0].model_copy(
                 deep=True,
-                update={
-                    "fields": (
-                        *current.fields,
-                        RecordFieldSpec(
-                            name="summary",
-                            json_schema={},
-                        ),
-                    )
-                },
+                update={"description": "updated document source"},
             )
             return tuple(sources)
 
@@ -398,20 +392,80 @@ async def test_native_record_schema_refresh_applies_compatible_drift_and_rebinds
         backend,
         database_name="nosql",
         sources={"documents"},
+        remote=False,
     )
     before = router.registry.get("nosql.documents")
-    backend.add_summary = True
+    backend.updated_description = True
 
     result = await router.arefresh_native_schema("nosql.documents")
 
     after = router.registry.get("nosql.documents")
-    assert result.action == "pending_review"
-    assert result.report.compatibility == "breaking"
-    assert after.fingerprint == before.fingerprint
-    assert result.candidate_fingerprint is not None
+    assert result.action == "applied"
+    assert result.report.compatibility == "compatible"
+    assert after.fingerprint != before.fingerprint
+    assert after.description == "updated document source"
     assert router.executor.is_binding_ready_for_contract(
         "nosql.documents",
         after.fingerprint,
+    )
+
+
+@pytest.mark.asyncio
+async def test_native_schema_refresh_rolls_back_registry_and_binding_on_rebind_failure() -> None:
+    class MutableBackend(FakeRecordBackend):
+        def __init__(self) -> None:
+            super().__init__()
+            self.updated_description = False
+
+        def list_sources(self) -> tuple[RecordSourceSpec, ...]:
+            sources = list(super().list_sources())
+            if not self.updated_description:
+                return tuple(sources)
+            sources[0] = sources[0].model_copy(
+                deep=True,
+                update={"description": "updated document source"},
+            )
+            return tuple(sources)
+
+    backend = MutableBackend()
+    router = SchemaRouter()
+    await router.aadd_record_store(
+        backend,
+        database_name="nosql",
+        sources={"documents"},
+        remote=False,
+    )
+    before = router.registry.get("nosql.documents")
+    backend.updated_description = True
+
+    original_bind = router.executor.bind
+
+    def fail_candidate_bind(
+        tool_key: str,
+        invoker: Any,
+        *,
+        expected_fingerprint: str | None = None,
+        offload_sync: bool = False,
+    ) -> None:
+        if expected_fingerprint != before.fingerprint:
+            raise RuntimeError("synthetic bind failure")
+        original_bind(
+            tool_key,
+            invoker,
+            expected_fingerprint=expected_fingerprint,
+            offload_sync=offload_sync,
+        )
+
+    router.executor.bind = fail_candidate_bind  # type: ignore[method-assign]
+
+    with pytest.raises(RuntimeError, match="synthetic bind failure"):
+        await router.arefresh_native_schema("nosql.documents")
+
+    after = router.registry.get("nosql.documents")
+    assert after.fingerprint == before.fingerprint
+    assert router.executor.is_binding_ready_for_contract(
+        "nosql.documents",
+        before.fingerprint,
     )
 
 
@@ -488,3 +542,70 @@ async def test_native_schema_refresh_lifecycle_controls() -> None:
     assert "nosql.documents" not in router._native_schema_refreshers
     with pytest.raises(Exception, match="no process-local native schema refresh binding"):
         await router.arefresh_native_schema("nosql.documents")
+
+@pytest.mark.asyncio
+async def test_remote_sync_record_backend_does_not_block_event_loop() -> None:
+    class BlockingBackend(FakeRecordBackend):
+        def __init__(self) -> None:
+            super().__init__()
+            self.started = threading.Event()
+            self.release = threading.Event()
+
+        def query(
+            self,
+            *,
+            source: str,
+            text_query: str | None,
+            filters: dict[str, Any],
+            start_time: str | None,
+            end_time: str | None,
+            limit: int,
+            include_fields: tuple[str, ...],
+        ) -> list[dict[str, Any]]:
+            self.started.set()
+            self.release.wait(timeout=0.25)
+            return super().query(
+                source=source,
+                text_query=text_query,
+                filters=filters,
+                start_time=start_time,
+                end_time=end_time,
+                limit=limit,
+                include_fields=include_fields,
+            )
+
+    backend = BlockingBackend()
+    router = SchemaRouter()
+    await router.aadd_record_store(
+        backend,
+        database_name="nosql",
+        sources={"documents"},
+        remote=True,
+    )
+
+    timer = threading.Timer(0.2, backend.release.set)
+    timer.start()
+    observed = time.monotonic()
+    task = asyncio.create_task(
+        router.execute(
+            _plan(
+                router,
+                "nosql.documents",
+                fields=["id", "title"],
+                arguments={"query": "routing"},
+            )
+        )
+    )
+    try:
+        while not backend.started.is_set() and time.monotonic() - observed < 0.1:
+            await asyncio.sleep(0.001)
+        assert backend.started.is_set()
+        assert time.monotonic() - observed < 0.1
+        backend.release.set()
+        result = await task
+    finally:
+        backend.release.set()
+        timer.cancel()
+
+    assert result[0].data == [{"id": "doc-1", "title": "Router design"}]
+

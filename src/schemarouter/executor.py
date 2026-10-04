@@ -462,6 +462,21 @@ class RegistryExecutor:
             return None
         return self._invokers.get(tool_key)
 
+    def _bound_binding_for_contract(
+        self,
+        tool_key: str,
+        tool_fingerprint: str,
+    ) -> tuple[BoundEndpointInvoker, bool] | None:
+        """Return one current trusted binding plus its sync-offload mode.
+
+        This package-internal lifecycle hook lets SchemaRouter roll back a failed
+        contract rebind without exposing live invokers through the public API.
+        """
+        invoker = self._bound_invoker_for_contract(tool_key, tool_fingerprint)
+        if invoker is None:
+            return None
+        return invoker, self._binding_offload_sync.get(tool_key, False)
+
     def restamp_binding(self, tool_key: str, expected_fingerprint: str) -> bool:
         """Re-point an existing binding at a fingerprint the caller already validated.
 

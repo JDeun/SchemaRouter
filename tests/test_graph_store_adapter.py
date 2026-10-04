@@ -342,3 +342,20 @@ async def test_remote_sync_graph_backend_does_not_block_event_loop() -> None:
         timer.cancel()
 
     assert result[0].data[0]["relationship"] == "MEMBER_OF"
+
+@pytest.mark.asyncio
+async def test_native_graph_schema_refresh_reintrospects_current_contract() -> None:
+    router = SchemaRouter()
+    await router.aadd_graph_store(
+        FakeGraphBackend(),
+        database_name="knowledge",
+        graphs={"org"},
+        remote=False,
+    )
+
+    result = await router.arefresh_native_schema("knowledge.org")
+
+    tool = router.registry.get("knowledge.org")
+    assert result.action == "unchanged"
+    assert router.executor.is_binding_ready_for_contract(tool.key, tool.fingerprint)
+
