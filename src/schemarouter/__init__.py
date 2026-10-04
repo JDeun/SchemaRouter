@@ -104,6 +104,14 @@ from .authorization import (
     PrincipalContext,
     TrustedFilterBinding,
 )
+from .authorization_config import AuthorizationPolicyConfig as AuthorizationPolicyConfig
+from .authorization_config import AuthorizationRuleConfig as AuthorizationRuleConfig
+from .authorization_config import DataScopeRuleConfig as DataScopeRuleConfig
+from .authorization_config import TrustedFilterConfig as TrustedFilterConfig
+from .authorization_config import lint_authorization_config as lint_authorization_config
+from .authorization_config import load_authorization_policy as load_authorization_policy
+from .authorization_config import normalized_authorization_json as normalized_authorization_json
+from .authorization_config import parse_authorization_policy as parse_authorization_policy
 from .binding_reconciliation import (
     BindingReconciliationError,
     BindingReconciliationItem,
