@@ -5,7 +5,7 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.15.0</span>
+<span class="sr-kicker">SchemaRouter 0.16.0</span>
 
 # 에이전트와 도구 사이에 타입 기반 실행 경계를 두세요
 
@@ -101,16 +101,16 @@ Tavily입니다.
 
 [Provider 중심 등록 →](guides/provider-first-registration.md)
 
-## 현재 안정판과 개발선
+## 현재 안정판
 
-현재 안정판은 **0.15.0 (Beta / pre-1.0)** 입니다. Python 3.10–3.14는 release-blocking
+현재 안정판은 **0.16.0 (Beta / pre-1.0)** 입니다. Python 3.10–3.14는 release-blocking
 대상이고 Python 3.15는 preview 대상입니다.
 
-현재 `main`은 0.16 개발선으로, 기존 실행 경계를 유지하면서 enterprise authorization과
-관계형/vector/graph/RDF/비관계형 데이터 onboarding을 확장하고 있습니다. 연구 실험은 안정
-제품 계약과 분리합니다.
+0.16은 enterprise authorization과 관계형/vector/graph/RDF/비관계형 데이터의 schema
+introspection 기반 onboarding을 추가하되, 인증·credential·DB-native permission·raw query
+authority는 model-visible boundary 밖에 유지합니다.
 
-[0.15.0 릴리스 노트 →](releases/0.15.0.md) ·
+[0.16.0 릴리스 노트 →](releases/0.16.0.md) ·
 [Enterprise data onboarding →](guides/enterprise-data-onboarding.md) ·
 [연구 현황 →](research/routing-status.md)
 
