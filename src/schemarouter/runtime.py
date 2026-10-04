@@ -859,8 +859,19 @@ class SchemaRouter:
     def health_snapshots(self) -> tuple[HealthProbeSnapshot, ...]:
         return self.health_monitor.snapshots()
 
-    async def check_health_once(self) -> tuple[HealthProbeSnapshot, ...]:
-        return await self.health_monitor.run_once()
+    async def check_health_once(
+        self,
+        *,
+        probe_timeout_seconds: float | None = None,
+        unavailable_cooldown_seconds: float | None = None,
+        max_concurrency: int | None = None,
+    ) -> tuple[HealthProbeSnapshot, ...]:
+        return await self.health_monitor.run_once(
+            probe_timeout_seconds=probe_timeout_seconds,
+            unavailable_cooldown_seconds=unavailable_cooldown_seconds,
+            max_concurrency=max_concurrency,
+        )
+
 
     async def start_health_monitor(
         self,

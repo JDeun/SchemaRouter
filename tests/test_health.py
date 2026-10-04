@@ -1,4 +1,6 @@
 import asyncio
+import threading
+import time
 
 import pytest
 
@@ -481,3 +483,29 @@ async def test_probe_restamp_fails_closed_after_concurrent_registry_change() -> 
     snapshots = await router.check_health_once()
     assert snapshots[0].status == "stale"
     assert snapshots[0].last_error_type == "ToolContractChanged"
+
+
+@pytest.mark.asyncio
+async def test_sync_health_probe_timeout_does_not_block_event_loop() -> None:
+    router = _router(cooldown=60)
+    release = threading.Event()
+
+    def probe() -> bool:
+        release.wait(timeout=0.25)
+        return True
+
+    router.register_health_probe("provider_api", "read", probe)
+    started = time.monotonic()
+    try:
+        snapshots = await router.check_health_once(
+            probe_timeout_seconds=0.02,
+            max_concurrency=1,
+        )
+    finally:
+        release.set()
+
+    elapsed = time.monotonic() - started
+    assert elapsed < 0.15
+    assert snapshots[0].status == "unhealthy"
+    assert snapshots[0].last_error_type == "TimeoutError"
+    assert router.unavailable_access_paths() == (("provider_api", "read"),)
