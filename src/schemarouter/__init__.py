@@ -74,7 +74,6 @@ from .adapters.vector_native import (
     PgvectorVectorBackend,
     PineconeVectorBackend,
     QdrantVectorBackend,
-    RedisVectorBackend,
     WeaviateVectorBackend,
 )
 from .adapters.vector_store import (
@@ -616,7 +615,6 @@ __all__ = [
     "PineconeVectorBackend",
     "ODataSourceAdapter",
     "QdrantVectorBackend",
-    "RedisVectorBackend",
     "WeaviateVectorBackend",
     "ObservedStateField",
     "OpenAPICompatibilityIssue",
