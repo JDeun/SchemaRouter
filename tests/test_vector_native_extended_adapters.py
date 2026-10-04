@@ -271,6 +271,9 @@ class _Columns:
     def __getitem__(self, name: str) -> _Column:
         return self._by_name[name]
 
+    def __contains__(self, name: object) -> bool:
+        return isinstance(name, str) and name in self._by_name
+
     def get(self, name: str) -> _Column | None:
         return self._by_name.get(name)
 
