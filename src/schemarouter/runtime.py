@@ -1708,6 +1708,57 @@ class SchemaRouter:
             )
         )
 
+    async def aadd_falkordb_graph(
+        self,
+        client: Any,
+        *,
+        database_name: str = "falkordb",
+        namespace: str | None = None,
+        graphs: set[str] | tuple[str, ...] | list[str] | None = None,
+        default_limit: int = 100,
+        default_max_hops: int = 1,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Register a caller-owned FalkorDB client through the bounded graph contract."""
+
+        from .adapters.graph_native import FalkorGraphBackend
+
+        graph_names = None if graphs is None else tuple(sorted(graphs))
+        return await self.aadd_graph_store(
+            FalkorGraphBackend(client, graphs=graph_names),
+            database_name=database_name,
+            namespace=namespace,
+            graphs=graphs,
+            default_limit=default_limit,
+            default_max_hops=default_max_hops,
+            remote=remote,
+        )
+
+    def add_falkordb_graph(
+        self,
+        client: Any,
+        *,
+        database_name: str = "falkordb",
+        namespace: str | None = None,
+        graphs: set[str] | tuple[str, ...] | list[str] | None = None,
+        default_limit: int = 100,
+        default_max_hops: int = 1,
+        remote: bool = True,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_falkordb_graph`."""
+
+        return _run_sync(
+            lambda: self.aadd_falkordb_graph(
+                client,
+                database_name=database_name,
+                namespace=namespace,
+                graphs=graphs,
+                default_limit=default_limit,
+                default_max_hops=default_max_hops,
+                remote=remote,
+            )
+        )
+
     async def aadd_neptune_graph(
         self,
         client: Any,
