@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import re
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any
@@ -179,7 +180,7 @@ class QdrantVectorBackend:
     @staticmethod
     def _qdrant_filter(filters: Mapping[str, Any]) -> Any:
         try:
-            from qdrant_client import models
+            models = importlib.import_module("qdrant_client.models")
         except ImportError as exc:
             raise RegistrationError(
                 "Qdrant trusted metadata filtering requires qdrant-client"
