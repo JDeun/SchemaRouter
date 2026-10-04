@@ -285,7 +285,7 @@ def test_downstream_workflows_recover_model_cache_eviction() -> None:
         "research-0.14-final-answer.yml",
         "research-0.14-field-projection.yml",
     )
-    cache_sha = "0057852bfaa89a56745cba8c7296529d2fc39830"
+    cache_sha = "55cc8345863c7cc4c66a329aec7e433d2d1c52a9"
 
     for name in workflow_names:
         workflow = (root / ".github" / "workflows" / name).read_text(

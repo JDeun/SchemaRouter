@@ -151,7 +151,7 @@ jobs:
           python-version: "3.12.14"
       - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
       - id: hf-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .hf-cache
           key: "${{ env.QUAL_CACHE_KEY }}"
@@ -168,7 +168,7 @@ jobs:
           PY
       - name: Publish exact candidate cache before fan-out
         if: steps.hf-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .hf-cache
           key: "${{ env.QUAL_CACHE_KEY }}"
@@ -214,7 +214,7 @@ jobs:
       - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0" "jinja2==3.1.6"
       - run: pip install -e .
       - id: evaluator-hf-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .hf-cache
           key: "${{ env.QUAL_CACHE_KEY }}"
@@ -233,7 +233,7 @@ jobs:
               revision=os.environ["QUAL_REV"],
           )
           PY
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
           path: .
@@ -264,11 +264,11 @@ jobs:
         with:
           python-version: "3.12.14"
       - run: pip install -e .
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
           path: .
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
         with:
           pattern: "qualification-smollm3-*-${{ github.run_id }}"
           path: artifacts/smollm3-shards
@@ -310,7 +310,7 @@ jobs:
           python-version: "3.12.14"
       - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
       - id: hf-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .hf-cache
           key: "${{ env.QUAL_CACHE_KEY }}"
@@ -324,7 +324,7 @@ jobs:
           PY
       - name: Publish exact candidate cache before fan-out
         if: steps.hf-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .hf-cache
           key: "${{ env.QUAL_CACHE_KEY }}"
@@ -371,7 +371,7 @@ jobs:
       - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
       - run: pip install -e .
       - id: evaluator-hf-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .hf-cache
           key: "${{ env.QUAL_CACHE_KEY }}"
@@ -390,7 +390,7 @@ jobs:
               revision=os.environ["QUAL_REV"],
           )
           PY
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
           path: .
@@ -420,11 +420,11 @@ jobs:
         with:
           python-version: "3.12.14"
       - run: pip install -e .
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
           path: .
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
         with:
           pattern: "qualification-qwen4-*-${{ github.run_id }}"
           path: artifacts/qwen4-shards
@@ -465,7 +465,7 @@ jobs:
           python-version: "3.12.14"
       - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
       - id: hf-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .hf-cache
           key: "${{ env.QUAL_CACHE_KEY }}"
@@ -479,7 +479,7 @@ jobs:
           PY
       - name: Publish exact candidate cache before fan-out
         if: steps.hf-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .hf-cache
           key: "${{ env.QUAL_CACHE_KEY }}"
@@ -526,7 +526,7 @@ jobs:
       - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
       - run: pip install -e .
       - id: evaluator-hf-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .hf-cache
           key: "${{ env.QUAL_CACHE_KEY }}"
@@ -545,7 +545,7 @@ jobs:
               revision=os.environ["QUAL_REV"],
           )
           PY
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
           path: .
@@ -575,11 +575,11 @@ jobs:
         with:
           python-version: "3.12.14"
       - run: pip install -e .
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
           path: .
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
         with:
           pattern: "qualification-qwen8-*-${{ github.run_id }}"
           path: artifacts/qwen8-shards
@@ -615,11 +615,11 @@ jobs:
         with:
           python-version: "3.12.14"
       - run: pip install -e .
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
           path: .
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
         with:
           pattern: "qualification-evidence-*-${{ github.run_id }}"
           path: artifacts/evidence

@@ -172,13 +172,13 @@ def test_workflow_publishes_model_cache_before_evaluator_fanout():
     # not rely on the generic cache action's post-job save. Downstream matrix
     # jobs otherwise can race cache visibility and fail before inference.
     assert workflow.count(
-        "uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830"
+        "uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9"
     ) == 3
     assert workflow.count(
-        "uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830"
+        "uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9"
     ) == 6
     assert "Publish exact candidate cache before fan-out" in workflow
-    assert "uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830" not in workflow
+    assert "uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9" not in workflow
 
 def test_evaluator_cache_eviction_recovers_only_the_exact_pinned_revision():
     from pathlib import Path
