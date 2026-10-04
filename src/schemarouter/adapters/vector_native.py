@@ -745,7 +745,9 @@ class WeaviateVectorBackend:
             metadata = _read(obj, "metadata", None)
             score = _read(metadata, "score", None)
             if score is None:
-                score = _read(metadata, "certainty", _read(metadata, "distance", 0.0))
+                score = _read(metadata, "certainty", None)
+            if score is None:
+                score = _read(metadata, "distance", 0.0)
             row: dict[str, Any] = {
                 "id": str(_read(obj, "uuid", _read(obj, "id", ""))),
                 "score": float(score),
