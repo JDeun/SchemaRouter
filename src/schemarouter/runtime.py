@@ -283,6 +283,11 @@ class SchemaRouter:
             self.loader.adapters,
         )
         self.provider_profiles = built_in_provider_profile_registry()
+        self._native_schema_refreshers: dict[str, Any] = {}
+        self._native_schema_pending: dict[
+            str, tuple[ToolSpec, BoundEndpointInvoker, bool]
+        ] = {}
+        self._native_schema_watch_task: asyncio.Task[None] | None = None
     def _is_snapshot_access_available(self, tool: ToolSpec, endpoint: Any) -> bool:
         return self.executor.is_access_available_for_contract(
             tool.key,
@@ -1101,6 +1106,8 @@ class SchemaRouter:
                 self.health_monitor.unregister_tool(tool_key)
                 self.executor.purge_tool_runtime_state(tool_key)
                 self.loader.forget_schema_http_validators(tool_key)
+                self._native_schema_refreshers.pop(tool_key, None)
+                self._native_schema_pending.pop(tool_key, None)
                 return current
 
     def remove_tool(self, tool_key: str) -> ToolSpec:
@@ -1186,6 +1193,177 @@ class SchemaRouter:
             raise
         return keys
 
+    def _remember_native_schema_refresh(
+        self,
+        tool_key: str,
+        refresh: Any,
+    ) -> None:
+        self._native_schema_refreshers[tool_key] = refresh
+
+    async def arefresh_native_schema(
+        self,
+        tool_key: str,
+        *,
+        apply_compatible: bool = True,
+    ) -> SchemaRefreshResult:
+        """Re-introspect one caller-owned native data source without persisting its client."""
+
+        refresh = self._native_schema_refreshers.get(tool_key)
+        if refresh is None:
+            raise SchemaSourceError(
+                f"tool {tool_key!r} has no process-local native schema refresh binding"
+            )
+        expected_version = self.registry.version
+        try:
+            current = self.registry.get(tool_key)
+        except KeyError as exc:
+            raise RegistrationError(f"unknown tool: {tool_key}") from exc
+        candidate_tool, candidate_invoker, offload_sync = await refresh()
+        if candidate_tool.key != tool_key:
+            raise SchemaSourceError(
+                "native schema refresh changed the registered tool key unexpectedly"
+            )
+        report = compare_tool_specs(current, candidate_tool)
+        if report.compatibility == "identical":
+            self._native_schema_pending.pop(tool_key, None)
+            return SchemaRefreshResult(
+                tool_key=tool_key,
+                action="unchanged",
+                applied=False,
+                report=report,
+            )
+        if report.compatibility == "compatible" and apply_compatible:
+            replace_if_current(
+                self.registry,
+                candidate_tool,
+                expected_fingerprint=current.fingerprint,
+                expected_version=expected_version,
+            )
+            try:
+                self.executor.bind(
+                    tool_key,
+                    candidate_invoker,
+                    expected_fingerprint=candidate_tool.fingerprint,
+                    offload_sync=offload_sync,
+                )
+            except Exception:
+                self.executor.purge_tool_runtime_state(tool_key)
+                raise
+            self._native_schema_pending.pop(tool_key, None)
+            return SchemaRefreshResult(
+                tool_key=tool_key,
+                action="applied",
+                applied=True,
+                report=report,
+            )
+        action = (
+            "report_only"
+            if report.compatibility == "compatible"
+            else "pending_review"
+        )
+        if action == "pending_review":
+            self._native_schema_pending[tool_key] = (
+                candidate_tool,
+                candidate_invoker,
+                offload_sync,
+            )
+        return SchemaRefreshResult(
+            tool_key=tool_key,
+            action=action,
+            applied=False,
+            report=report,
+            reviewed_current_fingerprint=current.fingerprint,
+            candidate_fingerprint=candidate_tool.fingerprint,
+        )
+
+    async def aaccept_native_schema_pending(
+        self,
+        tool_key: str,
+        *,
+        expected_candidate_fingerprint: str,
+    ) -> SchemaRefreshResult:
+        pending = self._native_schema_pending.get(tool_key)
+        if pending is None:
+            raise SchemaSourceError(f"tool {tool_key!r} has no pending native schema")
+        candidate_tool, candidate_invoker, offload_sync = pending
+        if candidate_tool.fingerprint != expected_candidate_fingerprint:
+            raise SchemaSourceError("pending native schema candidate changed")
+        expected_version = self.registry.version
+        current = self.registry.get(tool_key)
+        report = compare_tool_specs(current, candidate_tool)
+        replace_if_current(
+            self.registry,
+            candidate_tool,
+            expected_fingerprint=current.fingerprint,
+            expected_version=expected_version,
+        )
+        try:
+            self.executor.bind(
+                tool_key,
+                candidate_invoker,
+                expected_fingerprint=candidate_tool.fingerprint,
+                offload_sync=offload_sync,
+            )
+        except Exception:
+            self.executor.purge_tool_runtime_state(tool_key)
+            raise
+        self._native_schema_pending.pop(tool_key, None)
+        return SchemaRefreshResult(
+            tool_key=tool_key,
+            action="applied",
+            applied=True,
+            report=report,
+        )
+
+    async def check_native_schema_watches_once(
+        self,
+        *,
+        apply_compatible: bool = True,
+    ) -> tuple[SchemaRefreshResult, ...]:
+        results: list[SchemaRefreshResult] = []
+        for tool_key in tuple(self._native_schema_refreshers):
+            try:
+                results.append(
+                    await self.arefresh_native_schema(
+                        tool_key,
+                        apply_compatible=apply_compatible,
+                    )
+                )
+            except (KeyError, RegistrationError, SchemaSourceError):
+                continue
+        return tuple(results)
+
+    async def start_native_schema_watcher(
+        self,
+        *,
+        interval_seconds: float = 300.0,
+        apply_compatible: bool = True,
+    ) -> None:
+        if interval_seconds <= 0:
+            raise ValueError("interval_seconds must be > 0")
+        if (
+            self._native_schema_watch_task is not None
+            and not self._native_schema_watch_task.done()
+        ):
+            raise RuntimeError("native schema watcher is already running")
+
+        async def watch_loop() -> None:
+            while True:
+                await self.check_native_schema_watches_once(
+                    apply_compatible=apply_compatible,
+                )
+                await asyncio.sleep(interval_seconds)
+
+        self._native_schema_watch_task = asyncio.create_task(watch_loop())
+
+    async def stop_native_schema_watcher(self) -> None:
+        task = self._native_schema_watch_task
+        self._native_schema_watch_task = None
+        if task is None:
+            return
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
     def add_sqlite_database(
         self,
         connection: Any,
@@ -1266,12 +1444,39 @@ class SchemaRouter:
             max_default_rows=max_default_rows,
             remote=remote,
         )
+        async def refresh_binding(
+            tool_key: str,
+        ) -> tuple[ToolSpec, BoundEndpointInvoker, bool]:
+            refreshed = await asyncio.to_thread(
+                introspect_sqlalchemy_engine,
+                engine,
+                database_name=database_name,
+                namespace=namespace,
+                schemas=schemas,
+                tables=tables,
+                include_views=include_views,
+                max_default_rows=max_default_rows,
+                remote=remote,
+            )
+            match = next((item for item in refreshed if item.tool.key == tool_key), None)
+            if match is None:
+                raise SchemaSourceError(
+                    f"native database capability {tool_key!r} disappeared during refresh"
+                )
+            return match.tool, match.invoker, remote
         expected_version = self.registry.version
-        return self._register_bound_batch(
+        keys = self._register_bound_batch(
             bindings,
             expected_version=expected_version,
             offload_sync=remote,
         )
+        for key in keys:
+            async def refresh_one(
+                tool_key: str = key,
+            ) -> tuple[ToolSpec, BoundEndpointInvoker, bool]:
+                return await refresh_binding(tool_key)
+            self._remember_native_schema_refresh(key, refresh_one)
+        return keys
 
     async def aadd_vector_store(
         self,
@@ -1298,11 +1503,36 @@ class SchemaRouter:
             remote=remote,
             offload_sync_backend=remote,
         )
+        async def refresh_binding(
+            tool_key: str,
+        ) -> tuple[ToolSpec, BoundEndpointInvoker, bool]:
+            refreshed = await introspect_vector_backend(
+                backend,
+                embed_query,
+                database_name=database_name,
+                namespace=namespace,
+                collections=collections,
+                default_top_k=default_top_k,
+                remote=remote,
+            )
+            match = next((item for item in refreshed if item.tool.key == tool_key), None)
+            if match is None:
+                raise SchemaSourceError(
+                    f"native vector capability {tool_key!r} disappeared during refresh"
+                )
+            return match.tool, match.invoker, False
         expected_version = self.registry.version
-        return self._register_bound_batch(
+        keys = self._register_bound_batch(
             bindings,
             expected_version=expected_version,
         )
+        for key in keys:
+            async def refresh_one(
+                tool_key: str = key,
+            ) -> tuple[ToolSpec, BoundEndpointInvoker, bool]:
+                return await refresh_binding(tool_key)
+            self._remember_native_schema_refresh(key, refresh_one)
+        return keys
 
     def add_vector_store(
         self,
@@ -1726,11 +1956,36 @@ class SchemaRouter:
             remote=remote,
             offload_sync_backend=remote,
         )
+        async def refresh_binding(
+            tool_key: str,
+        ) -> tuple[ToolSpec, BoundEndpointInvoker, bool]:
+            refreshed = await introspect_graph_backend(
+                backend,
+                database_name=database_name,
+                namespace=namespace,
+                graphs=graphs,
+                default_limit=default_limit,
+                default_max_hops=default_max_hops,
+                remote=remote,
+            )
+            match = next((item for item in refreshed if item.tool.key == tool_key), None)
+            if match is None:
+                raise SchemaSourceError(
+                    f"native graph capability {tool_key!r} disappeared during refresh"
+                )
+            return match.tool, match.invoker, False
         expected_version = self.registry.version
-        return self._register_bound_batch(
+        keys = self._register_bound_batch(
             bindings,
             expected_version=expected_version,
         )
+        for key in keys:
+            async def refresh_one(
+                tool_key: str = key,
+            ) -> tuple[ToolSpec, BoundEndpointInvoker, bool]:
+                return await refresh_binding(tool_key)
+            self._remember_native_schema_refresh(key, refresh_one)
+        return keys
 
     def add_graph_store(
         self,
@@ -1780,11 +2035,35 @@ class SchemaRouter:
             remote=remote,
             offload_sync_backend=remote,
         )
+        async def refresh_binding(
+            tool_key: str,
+        ) -> tuple[ToolSpec, BoundEndpointInvoker, bool]:
+            refreshed = await introspect_record_backend(
+                backend,
+                database_name=database_name,
+                namespace=namespace,
+                sources=sources,
+                default_limit=default_limit,
+                remote=remote,
+            )
+            match = next((item for item in refreshed if item.tool.key == tool_key), None)
+            if match is None:
+                raise SchemaSourceError(
+                    f"native record capability {tool_key!r} disappeared during refresh"
+                )
+            return match.tool, match.invoker, False
         expected_version = self.registry.version
-        return self._register_bound_batch(
+        keys = self._register_bound_batch(
             bindings,
             expected_version=expected_version,
         )
+        for key in keys:
+            async def refresh_one(
+                tool_key: str = key,
+            ) -> tuple[ToolSpec, BoundEndpointInvoker, bool]:
+                return await refresh_binding(tool_key)
+            self._remember_native_schema_refresh(key, refresh_one)
+        return keys
 
     def add_record_store(
         self,

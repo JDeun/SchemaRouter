@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-import threading
-import time
 from typing import Any
 
 import pytest
@@ -370,67 +367,91 @@ def test_record_store_can_limit_sources_before_registration() -> None:
 
 
 @pytest.mark.asyncio
-async def test_remote_sync_record_backend_does_not_block_event_loop() -> None:
-    class BlockingBackend(FakeRecordBackend):
+async def test_native_record_schema_refresh_applies_compatible_drift_and_rebinds() -> None:
+    class MutableBackend(FakeRecordBackend):
         def __init__(self) -> None:
             super().__init__()
-            self.started = threading.Event()
-            self.release = threading.Event()
+            self.add_summary = False
 
-        def query(
-            self,
-            *,
-            source: str,
-            text_query: str | None,
-            filters: dict[str, Any],
-            start_time: str | None,
-            end_time: str | None,
-            limit: int,
-            include_fields: tuple[str, ...],
-        ) -> list[dict[str, Any]]:
-            self.started.set()
-            self.release.wait(timeout=0.25)
-            return super().query(
-                source=source,
-                text_query=text_query,
-                filters=filters,
-                start_time=start_time,
-                end_time=end_time,
-                limit=limit,
-                include_fields=include_fields,
+        def list_sources(self) -> tuple[RecordSourceSpec, ...]:
+            sources = list(super().list_sources())
+            if not self.add_summary:
+                return tuple(sources)
+            current = sources[0]
+            sources[0] = current.model_copy(
+                deep=True,
+                update={
+                    "fields": (
+                        *current.fields,
+                        RecordFieldSpec(
+                            name="summary",
+                            json_schema={},
+                        ),
+                    )
+                },
             )
+            return tuple(sources)
 
-    backend = BlockingBackend()
+    backend = MutableBackend()
     router = SchemaRouter()
     await router.aadd_record_store(
         backend,
         database_name="nosql",
         sources={"documents"},
-        remote=True,
+    )
+    before = router.registry.get("nosql.documents")
+    backend.add_summary = True
+
+    result = await router.arefresh_native_schema("nosql.documents")
+
+    after = router.registry.get("nosql.documents")
+    assert result.action == "applied"
+    assert result.report.compatibility == "compatible"
+    assert after.fingerprint != before.fingerprint
+    assert "summary" in {
+        field.name for field in after.endpoint("query").output_fields
+    }
+    assert router.executor.is_binding_ready_for_contract(
+        "nosql.documents",
+        after.fingerprint,
     )
 
-    timer = threading.Timer(0.2, backend.release.set)
-    timer.start()
-    observed = time.monotonic()
-    task = asyncio.create_task(
-        router.execute(
-            _plan(
-                router,
-                "nosql.documents",
-                fields=["id", "title"],
-                arguments={"query": "routing"},
+
+@pytest.mark.asyncio
+async def test_native_record_schema_refresh_quarantines_breaking_drift() -> None:
+    class MutableBackend(FakeRecordBackend):
+        def __init__(self) -> None:
+            super().__init__()
+            self.break_schema = False
+
+        def list_sources(self) -> tuple[RecordSourceSpec, ...]:
+            sources = list(super().list_sources())
+            if not self.break_schema:
+                return tuple(sources)
+            current = sources[0]
+            sources[0] = current.model_copy(
+                deep=True,
+                update={
+                    "fields": tuple(
+                        field for field in current.fields if field.name != "title"
+                    )
+                },
             )
-        )
-    )
-    try:
-        while not backend.started.is_set() and time.monotonic() - observed < 0.1:
-            await asyncio.sleep(0.001)
-        assert backend.started.is_set()
-        assert time.monotonic() - observed < 0.1
-        backend.release.set()
-        result = await task
-    finally:
-        backend.release.set()
-        timer.cancel()
+            return tuple(sources)
 
-    assert result[0].data == [{"id": "doc-1", "title": "Router design"}]
+    backend = MutableBackend()
+    router = SchemaRouter()
+    await router.aadd_record_store(
+        backend,
+        database_name="nosql",
+        sources={"documents"},
+    )
+    before = router.registry.get("nosql.documents")
+    backend.break_schema = True
+
+    result = await router.arefresh_native_schema("nosql.documents")
+
+    assert result.action == "pending_review"
+    assert result.report.compatibility == "breaking"
+    assert router.registry.get("nosql.documents").fingerprint == before.fingerprint
+    assert "nosql.documents" in router._native_schema_pending

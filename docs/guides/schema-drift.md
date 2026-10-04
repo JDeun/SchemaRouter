@@ -141,6 +141,33 @@ The apply step uses the exact registry version and tool fingerprint that were co
 writer mutates the registry while remote inspection is in progress, the compare-and-swap fails
 instead of applying a candidate against an unseen newer snapshot.
 
+## Native database schema refresh
+
+Caller-owned relational, vector, graph, and record-store backends registered through the native
+onboarding APIs keep a process-local re-introspection callback. The backend client, credentials,
+connection pool, and other transport state are never persisted in ToolSpec metadata.
+
+```python
+result = await router.arefresh_native_schema("warehouse.orders")
+```
+
+The same conservative policy applies: identical contracts are unchanged, proven-compatible drift
+can be applied and rebound atomically, and breaking drift is quarantined as `pending_review` while
+the current executable contract remains active. Explicit acceptance is available through
+`aaccept_native_schema_pending(...)`.
+
+For long-lived processes, the native watcher can periodically re-introspect all currently bound
+native sources:
+
+```python
+await router.start_native_schema_watcher(interval_seconds=300)
+# ...
+await router.stop_native_schema_watcher()
+```
+
+A one-shot sweep is also available as `check_native_schema_watches_once()`. These watchers are
+process-local by design; restarting the process requires onboarding the caller-owned backend again.
+
 ## Periodic schema watcher
 
 Register a refresh policy per remote tool and start the optional watcher:
