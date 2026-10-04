@@ -383,9 +383,9 @@ async def test_native_record_schema_refresh_applies_compatible_drift_and_rebinds
                 update={
                     "fields": (
                         *current.fields,
-                        RecordFieldSpec(
-                            name="summary",
-                            json_schema={},
+                        current.fields[-1].model_copy(
+                            deep=True,
+                            update={"aliases": ("summary",)},
                         ),
                     )
                 },
