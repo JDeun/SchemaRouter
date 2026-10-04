@@ -118,3 +118,90 @@ Database onboarding builds on this principal boundary. Database adapters should 
 table/column schema permitted for the selected access scope and must enforce row predicates inside
 the trusted database invoker. Model-supplied arguments must never be able to remove or weaken those
 row predicates.
+
+## Field, row, tenant, and traversal scopes
+
+Capability authorization answers **whether a principal may use an endpoint**. Data-scope rules narrow
+what that already-authorized endpoint may expose or execute.
+
+```python
+from schemarouter import DataScopeRule, TrustedFilterBinding
+
+policy = AuthorizationPolicy(
+    rules=(
+        AuthorizationRule(
+            effect="allow",
+            operation="company.employees.select",
+            roles_any=("employee", "manager", "executive"),
+        ),
+    ),
+    data_rules=(
+        DataScopeRule(
+            name="employee-row-scope",
+            operation="company.employees.select",
+            roles_any=("employee",),
+            visible_fields=("id", "name"),
+            trusted_filters=(
+                TrustedFilterBinding(
+                    field="department",
+                    principal_value="attribute:department",
+                ),
+            ),
+        ),
+        DataScopeRule(
+            name="manager-row-scope",
+            operation="company.employees.select",
+            roles_any=("manager",),
+            visible_fields=("id", "name", "department", "salary"),
+            trusted_filters=(
+                TrustedFilterBinding(
+                    field="department",
+                    principal_value="attribute:department",
+                ),
+            ),
+        ),
+        DataScopeRule(
+            name="executive-scope",
+            operation="company.employees.select",
+            roles_any=("executive",),
+            visible_fields=("id", "name", "department", "salary"),
+        ),
+    ),
+)
+```
+
+For the employee rule above:
+
+- `salary` and `department` are removed from the model-visible retrieval schema before scoring;
+- the trusted department predicate is resolved from the verified principal context;
+- the predicate is injected inside the trusted database invoker and cannot be removed by model arguments;
+- a forged/stale plan that explicitly asks for a hidden field fails closed at execution.
+
+`TrustedFilterBinding` can source values from `subject`, `role`, `department`, `team`, or
+`attribute:<name>`. Missing required attributes fail closed.
+
+The same scope contract is reused across database families:
+
+| Data family | Scope enforcement |
+| --- | --- |
+| SQLite / SQLAlchemy RDB | visible columns + trusted equality/IN row predicates |
+| Vector stores | visible result/metadata fields + trusted filterable metadata predicates |
+| Document/search/KV/time-series | visible fields + trusted exact-match predicates |
+| Graph / RDF | visible result fields + allowed relationship/predicate set + maximum hop depth |
+
+For vector stores, a backend must explicitly support a trusted `filters` argument before a
+configured tenant filter can execute. If it cannot enforce the filter, SchemaRouter denies the call
+rather than silently running an unscoped search.
+
+For graph/RDF stores, omitting `relationship_types` does not widen access: the invoker defaults to
+the principal's allowed relationship set. A configured `max_hops` also caps the implicit default.
+
+### Security boundary
+
+Data-scope rules only narrow the application-visible surface. They never grant database privileges.
+Database-native roles, grants, row-level security, ACLs, tenant credentials, and network boundaries
+remain authoritative and should be configured independently.
+
+The first matching data-scope rule applies, mirroring capability-rule ordering. Keep broad rules
+after specific employee/team/department rules.
+
