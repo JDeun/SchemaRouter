@@ -252,6 +252,203 @@ class QdrantVectorBackend:
         return rows
 
 
+class PineconeVectorBackend:
+    """Thin adapter over a caller-owned Pinecone control-plane client.
+
+    Index clients are created through the caller-owned control client. Metadata fields are
+    explicit because Pinecone index configuration does not guarantee a complete typed schema for
+    every stored metadata key.
+    """
+
+    def __init__(
+        self,
+        client: Any,
+        *,
+        metadata_fields_by_index: Mapping[
+            str,
+            Sequence[VectorMetadataField],
+        ]
+        | None = None,
+        namespace_by_index: Mapping[str, str] | None = None,
+    ) -> None:
+        self._client = client
+        self._metadata_fields_by_index = {
+            name: tuple(fields)
+            for name, fields in (metadata_fields_by_index or {}).items()
+        }
+        self._namespace_by_index = dict(namespace_by_index or {})
+        self._index_cache: dict[str, Any] = {}
+        self._index_info: dict[str, Any] = {}
+
+    def _index_names(self) -> list[str]:
+        response = self._client.list_indexes()
+        names_method = getattr(response, "names", None)
+        if callable(names_method):
+            raw_names = names_method()
+        else:
+            raw_entries = _read(response, "indexes", response)
+            if not isinstance(raw_entries, Sequence) or isinstance(
+                raw_entries,
+                (str, bytes),
+            ):
+                raise SchemaValidationError(
+                    "Pinecone list_indexes() returned an unexpected response"
+                )
+            raw_names = [
+                _read(entry, "name", entry)
+                for entry in raw_entries
+            ]
+        names = [str(value) for value in raw_names]
+        if any(not value for value in names):
+            raise SchemaValidationError("Pinecone returned an empty index name")
+        return names
+
+    def _describe_index(self, index_name: str) -> Any:
+        if index_name not in self._index_info:
+            self._index_info[index_name] = self._client.describe_index(
+                name=index_name
+            )
+        return self._index_info[index_name]
+
+    def _index(self, index_name: str) -> Any:
+        cached = self._index_cache.get(index_name)
+        if cached is not None:
+            return cached
+
+        info = self._describe_index(index_name)
+        host = _read(info, "host")
+        index_factory = getattr(self._client, "Index", None)
+        if not callable(index_factory):
+            raise RegistrationError(
+                "Pinecone client does not expose an Index(...) factory"
+            )
+        if isinstance(host, str) and host:
+            try:
+                index = index_factory(host=host)
+            except TypeError:
+                index = index_factory(index_name)
+        else:
+            index = index_factory(index_name)
+        self._index_cache[index_name] = index
+        return index
+
+    def list_collections(self) -> tuple[VectorCollectionSpec, ...]:
+        results: list[VectorCollectionSpec] = []
+        for index_name in self._index_names():
+            info = self._describe_index(index_name)
+            vector_type = _enum_text(_read(info, "vector_type", "dense"))
+            if vector_type not in {"dense", "unknown"}:
+                # The current generic contract represents dense query vectors only.
+                continue
+            dimension = _read(info, "dimension")
+            if not isinstance(dimension, int) or isinstance(dimension, bool) or dimension < 1:
+                raise SchemaValidationError(
+                    f"Pinecone index {index_name!r} did not expose a valid dense dimension"
+                )
+            metric = _enum_text(_read(info, "metric"))
+            results.append(
+                VectorCollectionSpec(
+                    name=index_name,
+                    dimension=dimension,
+                    metric=metric,
+                    metadata_fields=tuple(
+                        field.model_copy(deep=True)
+                        for field in self._metadata_fields_by_index.get(
+                            index_name,
+                            (),
+                        )
+                    ),
+                    public_metadata=(
+                        {}
+                        if index_name not in self._namespace_by_index
+                        else {
+                            "namespace": self._namespace_by_index[index_name]
+                        }
+                    ),
+                )
+            )
+        return tuple(results)
+
+    def search(
+        self,
+        *,
+        collection: str,
+        vector: Sequence[float],
+        top_k: int,
+        include_fields: tuple[str, ...],
+        filters: Mapping[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        declared = {
+            field.name: field
+            for field in self._metadata_fields_by_index.get(collection, ())
+        }
+        unknown_fields = sorted(set(include_fields) - set(declared))
+        if unknown_fields:
+            raise SchemaValidationError(
+                "Pinecone search requested undeclared metadata fields: "
+                + ", ".join(unknown_fields)
+            )
+
+        if filters:
+            allowed_filters = {
+                field.name
+                for field in declared.values()
+                if field.filterable
+            }
+            unknown_filters = sorted(set(filters) - allowed_filters)
+            if unknown_filters:
+                raise SchemaValidationError(
+                    "Pinecone trusted filter requested non-filterable metadata fields: "
+                    + ", ".join(unknown_filters)
+                )
+
+        kwargs: dict[str, Any] = {
+            "vector": list(vector),
+            "top_k": top_k,
+            "include_metadata": bool(include_fields),
+            "include_values": False,
+        }
+        namespace = self._namespace_by_index.get(collection)
+        if namespace is not None:
+            kwargs["namespace"] = namespace
+        if filters:
+            kwargs["filter"] = dict(filters)
+
+        response = self._index(collection).query(**kwargs)
+        matches = _read(response, "matches", response)
+        if not isinstance(matches, Sequence) or isinstance(
+            matches,
+            (str, bytes),
+        ):
+            raise SchemaValidationError(
+                "Pinecone query() returned an unexpected response"
+            )
+
+        rows: list[dict[str, Any]] = []
+        for match in matches:
+            metadata = _read(match, "metadata", {}) or {}
+            if not isinstance(metadata, Mapping):
+                raise SchemaValidationError(
+                    "Pinecone match metadata must be an object"
+                )
+            score = _read(match, "score")
+            if score is None:
+                raise SchemaValidationError("Pinecone match has no score")
+            row: dict[str, Any] = {
+                "id": _read(match, "id"),
+                "score": float(score),
+            }
+            row.update(
+                {
+                    field: metadata[field]
+                    for field in include_fields
+                    if field in metadata
+                }
+            )
+            rows.append(row)
+        return rows
+
+
 class MilvusVectorBackend:
     """Thin adapter over a caller-owned pymilvus.MilvusClient-compatible client."""
 
