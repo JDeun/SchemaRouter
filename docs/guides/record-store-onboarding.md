@@ -81,19 +81,41 @@ AuthorizationRule(
 
 Field/tenant predicates that must never be overridden by model arguments are extended in #770.
 
-## Vendor targets
+## Native vendor adapters
 
-The provider-neutral contract is designed for thin adapters around commonly deployed systems such
-as:
+The bounded record contract now has caller-owned native adapters for:
 
-- MongoDB and Couchbase for document data;
-- Elasticsearch / OpenSearch for search indexes;
-- Redis, DynamoDB, and Cosmos DB for key-value/document access;
-- InfluxDB and compatible time-series sources;
-- vendor-specific sources that can express the same bounded record contract.
+- **MongoDB**: collection discovery, sampled document schema, bounded `find()`, optional configured text/time paths;
+- **Elasticsearch / OpenSearch**: mapping discovery, bounded `multi_match`/term/range queries and field projection;
+- **Redis**: bounded key discovery or exact-key reads for string/hash/list/set/zset values;
+- **Amazon DynamoDB**: table/key discovery, sampled fields, parameterized filter/projection expressions;
+- **Azure Cosmos DB for NoSQL**: container discovery, sampled item schema and parameterized `query_items()`;
+- **Couchbase**: keyspace discovery and bounded named-parameter SQL++ queries;
+- **ClickHouse**: table/column discovery and bound read-only ClickHouse Connect queries;
+- **InfluxDB 2.x / Flux**: measurement, field-key and tag-key discovery with bounded time/tag/field queries.
 
-ClickHouse and other SQL-capable analytical stores may use the SQLAlchemy database path when that
-is the safer and more natural contract.
+Typical registration remains caller-owned:
 
-The common contract does **not** mean every vendor SDK has already completed native/live acceptance.
-Vendor adapters and live acceptance remain explicit follow-up work under #769.
+```python
+router.add_mongodb_record_store(mongo_database)
+router.add_elasticsearch_record_store(elastic_client)
+router.add_opensearch_record_store(opensearch_client)
+router.add_redis_record_store(redis_client)
+router.add_dynamodb_record_store(dynamodb_client)
+router.add_cosmos_record_store(cosmos_database)
+router.add_couchbase_record_store(couchbase_cluster)
+router.add_clickhouse_record_store(clickhouse_client)
+router.add_influxdb_record_store(
+    influx_query_api,
+    bucket="metrics",
+    org="acme",
+)
+```
+
+SchemaRouter stores none of those clients or credentials in model-visible contracts. Native
+adapters translate only the already bounded record-store surface; raw Mongo query documents,
+Elasticsearch/OpenSearch Query DSL, Redis commands, Dynamo expressions, Cosmos SQL, SQL++, raw
+ClickHouse SQL, and arbitrary Flux remain outside model authority.
+
+Deterministic SDK-shape tests are release-gated. Native adapter availability is distinct from
+external live acceptance for every vendor/version/deployment.
