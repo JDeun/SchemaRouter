@@ -9,10 +9,13 @@ from schemarouter import (
     AuthorizationRule,
     DataScopeRule,
     ExecutionPlan,
+    FalkorGraphBackend,
     PolicyViolationError,
     PrincipalContext,
+    RegistrationError,
     RunConfig,
     SchemaRouter,
+    SchemaValidationError,
     ToolCall,
 )
 
@@ -189,3 +192,73 @@ async def test_falkordb_respects_relationship_scope_before_traversal_call() -> N
             config=RunConfig(principal=principal),
         )
     assert len(client.graph.calls) == before
+
+def test_falkordb_discovers_graph_names_and_rejects_duplicates() -> None:
+    class DuplicateGraphsClient:
+        def list_graphs(self) -> list[str]:
+            return ["social", "social"]
+
+    backend = FalkorGraphBackend(DuplicateGraphsClient())
+    with pytest.raises(SchemaValidationError, match="duplicate graph names"):
+        backend.list_graphs()
+
+
+def test_falkordb_requires_read_only_query_surface() -> None:
+    class MissingReadOnlyClient:
+        def select_graph(self, name: str) -> object:
+            assert name == "social"
+            return object()
+
+    backend = FalkorGraphBackend(MissingReadOnlyClient(), graphs=("social",))
+    with pytest.raises(RegistrationError, match="must expose ro_query"):
+        backend.list_graphs()
+
+
+def test_falkordb_rejects_invalid_traversal_inputs() -> None:
+    client = FakeFalkorDB()
+    backend = FalkorGraphBackend(client, graphs=("social",))
+    backend.list_graphs()
+
+    with pytest.raises(SchemaValidationError, match="unknown relationship types"):
+        backend.traverse(
+            graph="social",
+            start_id="1",
+            relationship_types=("UNKNOWN",),
+            direction="out",
+            max_hops=1,
+            limit=5,
+            include_fields=("target_id",),
+        )
+
+    assert backend.traverse(
+        graph="social",
+        start_id="1",
+        relationship_types=(),
+        direction="out",
+        max_hops=1,
+        limit=5,
+        include_fields=("target_id",),
+    ) == []
+
+    with pytest.raises(SchemaValidationError, match="direction is invalid"):
+        backend.traverse(
+            graph="social",
+            start_id="1",
+            relationship_types=("MEMBER_OF",),
+            direction="sideways",
+            max_hops=1,
+            limit=5,
+            include_fields=("target_id",),
+        )
+
+    with pytest.raises(SchemaValidationError, match="numeric node id"):
+        backend.traverse(
+            graph="social",
+            start_id="not-a-node-id",
+            relationship_types=("MEMBER_OF",),
+            direction="out",
+            max_hops=1,
+            limit=5,
+            include_fields=("target_id",),
+        )
+
