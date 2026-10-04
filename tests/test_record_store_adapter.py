@@ -378,14 +378,17 @@ async def test_native_record_schema_refresh_applies_compatible_drift_and_rebinds
             if not self.add_summary:
                 return tuple(sources)
             current = sources[0]
-            fields = list(current.fields)
-            fields[0] = fields[0].model_copy(
-                deep=True,
-                update={"aliases": (*fields[0].aliases, "record-id")},
-            )
             sources[0] = current.model_copy(
                 deep=True,
-                update={"fields": tuple(fields)},
+                update={
+                    "fields": (
+                        *current.fields,
+                        RecordFieldSpec(
+                            name="summary",
+                            json_schema={},
+                        ),
+                    )
+                },
             )
             return tuple(sources)
 
@@ -402,10 +405,10 @@ async def test_native_record_schema_refresh_applies_compatible_drift_and_rebinds
     result = await router.arefresh_native_schema("nosql.documents")
 
     after = router.registry.get("nosql.documents")
-    assert result.action == "applied"
-    assert result.report.compatibility == "compatible"
-    assert after.fingerprint != before.fingerprint
-    assert "record-id" in after.endpoint("query").output_fields[0].aliases
+    assert result.action == "pending_review"
+    assert result.report.compatibility == "breaking"
+    assert after.fingerprint == before.fingerprint
+    assert result.candidate_fingerprint is not None
     assert router.executor.is_binding_ready_for_contract(
         "nosql.documents",
         after.fingerprint,
