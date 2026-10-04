@@ -104,6 +104,8 @@ from .authorization import (
     PrincipalContext,
     TrustedFilterBinding,
 )
+from .authorization_audit import AuthorizationAuditEvent as AuthorizationAuditEvent
+from .authorization_audit import AuthorizationAuditHook as AuthorizationAuditHook
 from .authorization_config import AuthorizationPolicyConfig as AuthorizationPolicyConfig
 from .authorization_config import AuthorizationRuleConfig as AuthorizationRuleConfig
 from .authorization_config import DataScopeRuleConfig as DataScopeRuleConfig

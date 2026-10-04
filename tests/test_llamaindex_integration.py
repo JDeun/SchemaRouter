@@ -261,3 +261,39 @@ def test_llamaindex_collection_filters_denied_endpoints() -> None:
     finally:
         connection.close()
 
+
+
+def test_llamaindex_authorization_audit_correlates_export_and_execution() -> None:
+    router, connection = make_authorized_database_router()
+    events = []
+    router.authorization_audit_hook = events.append
+    principal = PrincipalContext(
+        subject="alice",
+        roles=("employee",),
+        attributes={"department": "sales"},
+    )
+    try:
+        tool = to_llamaindex_tool(
+            router,
+            "company.employees",
+            "select",
+            run_config=RunConfig(
+                principal=principal,
+                principal_audit_id="opaque-llamaindex-principal",
+            ),
+        )
+        assert len(events) == 1
+        assert events[0].phase == "export"
+        export_run_id = events[0].run_id
+        assert export_run_id
+        assert events[0].principal_audit_id == "opaque-llamaindex-principal"
+
+        result = tool(limit=10)
+        assert result.raw_output == [{"id": 1, "name": "Alice"}]
+        assert len(events) == 2
+        assert events[1].phase == "execution"
+        assert events[1].run_id == export_run_id
+        assert events[1].principal_audit_id == "opaque-llamaindex-principal"
+        assert "sales" not in repr(events)
+    finally:
+        connection.close()

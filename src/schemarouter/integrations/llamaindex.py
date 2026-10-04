@@ -7,6 +7,7 @@ import re
 from collections.abc import Sequence
 from copy import deepcopy
 from typing import Any, Literal, cast, get_type_hints
+from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
@@ -430,10 +431,14 @@ def _coerce_export_run_config(
     config: RunConfig | dict[str, Any] | None,
 ) -> RunConfig:
     if config is None:
-        return RunConfig()
-    if isinstance(config, RunConfig):
-        return config
-    return RunConfig.model_validate(config)
+        run_config = RunConfig()
+    elif isinstance(config, RunConfig):
+        run_config = config
+    else:
+        run_config = RunConfig.model_validate(config)
+    if run_config.run_id is not None:
+        return run_config
+    return run_config.model_copy(update={"run_id": uuid4().hex})
 
 
 def _authorized_endpoint_view(
@@ -449,12 +454,16 @@ def _authorized_endpoint_view(
         return tool, endpoint, endpoint
 
     principal = run_config.principal
-    if principal is None:
-        raise PolicyViolationError(
-            "principal context is required when authorization_policy is configured"
-        )
-    if not policy.visible(principal, tool, endpoint):
+    authorized = router._audit_export_authorization(
+        principal,
+        tool,
+        endpoint,
+        run_id=run_config.run_id,
+        principal_audit_id=run_config.principal_audit_id,
+    )
+    if not authorized:
         raise PolicyViolationError("authorization denied for requested capability")
+    assert principal is not None
 
     projected = router._data_scope_endpoint_view(principal, tool, endpoint)
     if projected is None:

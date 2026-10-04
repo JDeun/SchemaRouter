@@ -1,0 +1,173 @@
+import pytest
+
+from schemarouter import (
+    AuthorizationPolicy,
+    AuthorizationRule,
+    ExecutionPlan,
+    PrincipalContext,
+    SchemaRouter,
+    ToolCall,
+    ToolSpec,
+)
+from schemarouter.authorization_audit import AuthorizationAuditEvent
+from schemarouter.models import EndpointSpec, FieldSpec
+
+
+def tool() -> ToolSpec:
+    return ToolSpec(
+        name="company_records",
+        provider="company",
+        access_mode="python",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                description="read records",
+                output_fields=[FieldSpec(name="id", json_schema={"type": "string"})],
+            )
+        ],
+    )
+
+
+def plan(router: SchemaRouter) -> ExecutionPlan:
+    spec = router.registry.get("company_records")
+    endpoint = spec.endpoint("read")
+    return ExecutionPlan(
+        query="records",
+        registry_version=router.registry.version,
+        calls=[
+            ToolCall(
+                tool=spec.key,
+                endpoint=endpoint.name,
+                arguments={},
+                fields=["id"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=spec.fingerprint,
+            )
+        ],
+    )
+
+
+@pytest.mark.asyncio
+async def test_authorization_audit_emits_allow_without_raw_principal_claims() -> None:
+    events: list[AuthorizationAuditEvent] = []
+    router = SchemaRouter(
+        authorization_policy=AuthorizationPolicy(
+            rules=(
+                AuthorizationRule(
+                    name="read-policy",
+                    effect="allow",
+                    operation="company_records.read",
+                    roles_any=("employee",),
+                ),
+            )
+        ),
+        authorization_audit_hook=events.append,
+    )
+    router.add_bound_tool(tool(), lambda endpoint, arguments: {"id": "1"})
+    principal = PrincipalContext(
+        subject="alice@example.test",
+        roles=("employee",),
+        attributes={"tenant_secret": "tenant-a"},
+    )
+
+    await router.execute(
+        plan(router),
+        config={
+            "principal": principal,
+            "run_id": "run-123",
+            "principal_audit_id": "principal-opaque-7",
+        },
+    )
+
+    assert len(events) == 1
+    event = events[0]
+    assert event.effect == "allow"
+    assert event.rule_name == "read-policy"
+    assert event.run_id == "run-123"
+    assert event.phase == "execution"
+    assert event.principal_audit_id == "principal-opaque-7"
+    rendered = repr(event)
+    assert "alice@example.test" not in rendered
+    assert "tenant-a" not in rendered
+    assert "employee" not in rendered
+
+
+@pytest.mark.asyncio
+async def test_authorization_audit_emits_deny_without_persisting_principal() -> None:
+    events: list[AuthorizationAuditEvent] = []
+    router = SchemaRouter(
+        authorization_policy=AuthorizationPolicy(),
+        authorization_audit_hook=events.append,
+    )
+    router.add_bound_tool(tool(), lambda endpoint, arguments: {"id": "1"})
+
+    with pytest.raises(Exception, match="authorization denied"):
+        await router.execute(
+            plan(router),
+            config={"principal": PrincipalContext(subject="blocked-user")},
+        )
+
+    assert len(events) == 1
+    assert events[0].effect == "deny"
+    assert events[0].decision_source == "default"
+    assert events[0].run_id
+    assert events[0].phase == "execution"
+    assert "blocked-user" not in repr(events[0])
+
+
+def test_authorization_audit_default_behavior_does_not_persist_identity() -> None:
+    router = SchemaRouter(
+        authorization_policy=AuthorizationPolicy(
+            rules=(
+                AuthorizationRule(
+                    name="read-policy",
+                    effect="allow",
+                    operation="company_records.read",
+                ),
+            )
+        )
+    )
+    router.add_bound_tool(tool(), lambda endpoint, arguments: {"id": "1"})
+
+    assert router.authorization_audit_hook is None
+
+
+@pytest.mark.asyncio
+async def test_authorization_audit_stream_events_reuses_stream_run_id() -> None:
+    events: list[AuthorizationAuditEvent] = []
+    router = SchemaRouter(
+        authorization_policy=AuthorizationPolicy(
+            rules=(
+                AuthorizationRule(
+                    name="read-policy",
+                    effect="allow",
+                    operation="company_records.read",
+                    roles_any=("employee",),
+                ),
+            )
+        ),
+        authorization_audit_hook=events.append,
+    )
+    router.add_bound_tool(tool(), lambda endpoint, arguments: {"id": "1"})
+    principal = PrincipalContext(subject="stream-user", roles=("employee",))
+
+    run_events = [
+        event
+        async for event in router.astream_events(
+            "read records",
+            config={
+                "principal": principal,
+                "run_id": "stream-run-1",
+                "principal_audit_id": "opaque-stream-principal",
+            },
+        )
+    ]
+
+    assert run_events
+    assert all(event.run_id == "stream-run-1" for event in run_events)
+    assert len(events) == 1
+    assert events[0].effect == "allow"
+    assert events[0].phase == "execution"
+    assert events[0].run_id == "stream-run-1"
+    assert events[0].principal_audit_id == "opaque-stream-principal"
+    assert "stream-user" not in repr(events[0])

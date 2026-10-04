@@ -56,6 +56,8 @@ class RunConfig(StrictModel):
     """Per-run metadata and execution controls."""
 
     principal: PrincipalContext | None = None
+    run_id: str | None = Field(default=None, min_length=1, max_length=256)
+    principal_audit_id: str | None = Field(default=None, min_length=1, max_length=256)
     tags: list[str] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
     max_concurrency: int = Field(default=8, ge=1, le=128)
