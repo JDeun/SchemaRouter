@@ -14,8 +14,8 @@ from schemarouter import (
     RunConfig,
     SchemaRouter,
     SchemaValidationError,
-    schema_tool,
     TrustedFilterBinding,
+    schema_tool,
 )
 from schemarouter.integrations.llamaindex import (
     _llamaindex_schema_model,
@@ -23,8 +23,6 @@ from schemarouter.integrations.llamaindex import (
     to_llamaindex_tools,
     tool_from_llamaindex,
 )
-
-
 
 
 def make_authorized_database_router() -> tuple[SchemaRouter, sqlite3.Connection]:
