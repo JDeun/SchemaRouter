@@ -381,13 +381,13 @@ def _age_seconds(value: str) -> float:
 STALE_QUEUED_WRAPPER_SECONDS = 1800.0
 
 
-def stale_queued_wrapper(
+def stale_pending_wrapper(
     run: StageRun | None,
     *,
     wrapper_sha: str,
     min_age_seconds: float = STALE_QUEUED_WRAPPER_SECONDS,
 ) -> bool:
-    """Whether a queued run is pinned to an obsolete workflow wrapper.
+    """Whether a queued/pending run is pinned to an obsolete workflow wrapper.
 
     Scientific source revisions are carried separately in workflow inputs. A
     fresh dispatch can therefore pick up infrastructure-only wrapper fixes
@@ -395,7 +395,7 @@ def stale_queued_wrapper(
     """
     return bool(
         run is not None
-        and run.status == "queued"
+        and run.status in {"queued", "pending"}
         and run.head_sha != wrapper_sha
         and _age_seconds(run.created_at) >= min_age_seconds
     )
@@ -628,7 +628,7 @@ def run_controller(
                 },
             )
         actions.append("dispatch_corrective")
-    elif stale_queued_wrapper(corrective, wrapper_sha=_wrapper_sha):
+    elif stale_pending_wrapper(corrective, wrapper_sha=_wrapper_sha):
         # A long-queued run keeps the workflow wrapper SHA from dispatch time.
         # If an infrastructure-only wrapper fix has since landed, issue a fresh
         # dispatch while preserving the exact frozen scientific source input.
@@ -644,7 +644,7 @@ def run_controller(
                 },
             )
         actions.append(
-            "recover_dispatch_stale_queued_corrective_wrapper:"
+            "recover_dispatch_stale_pending_corrective_wrapper:"
             f"prior_run={corrective.id}:source={retry_source_sha}:"
             f"wrapper={_wrapper_sha}"
         )

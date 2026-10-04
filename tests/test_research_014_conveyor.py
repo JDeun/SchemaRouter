@@ -19,7 +19,7 @@ from scripts.research_014_conveyor import (
     combine_digests,
     retry_infrastructure_failure,
     source_sha_from_run,
-    stale_queued_wrapper,
+    stale_pending_wrapper,
 )
 from scripts.validate_agent_utility_v3_heldout_corpus import (
     validate_corpus as validate_heldout,
@@ -231,7 +231,7 @@ def test_downstream_failures_use_fresh_wrapper_dispatch_contract() -> None:
     assert "recover_dispatch_final_after_failure" in controller
 
 
-def test_stale_queued_wrapper_recovery_preserves_scientific_source_contract() -> None:
+def test_stale_pending_wrapper_recovery_preserves_scientific_source_contract() -> None:
     queued = StageRun(
         id=92,
         status="queued",
@@ -245,17 +245,36 @@ def test_stale_queued_wrapper_recovery_preserves_scientific_source_contract() ->
         run_attempt=1,
         head_sha="d" * 40,
     )
-    assert stale_queued_wrapper(
+    assert stale_pending_wrapper(
         queued,
         wrapper_sha="e" * 40,
         min_age_seconds=0.0,
     )
-    assert not stale_queued_wrapper(
+    assert not stale_pending_wrapper(
         queued,
         wrapper_sha="d" * 40,
         min_age_seconds=0.0,
     )
     assert source_sha_from_run(queued) == "c" * 40
+
+    pending = StageRun(
+        id=93,
+        status="pending",
+        conclusion=None,
+        display_title=(
+            "Research 0.14 Corrective sha256:fixture "
+            "source=" + "c" * 40
+        ),
+        created_at="2026-09-30T00:00:00Z",
+        html_url="",
+        run_attempt=1,
+        head_sha="d" * 40,
+    )
+    assert stale_pending_wrapper(
+        pending,
+        wrapper_sha="e" * 40,
+        min_age_seconds=0.0,
+    )
 
 
 def test_downstream_workflows_recover_model_cache_eviction() -> None:
@@ -279,13 +298,13 @@ def test_downstream_workflows_recover_model_cache_eviction() -> None:
         assert 'revision=os.environ["B2_REVISION"]' in workflow
 
 
-def test_conveyor_can_supersede_stale_queued_corrective_wrapper() -> None:
+def test_conveyor_can_supersede_stale_pending_corrective_wrapper() -> None:
     root = Path(__file__).resolve().parents[1]
     controller = (root / "scripts" / "research_014_conveyor.py").read_text(
         encoding="utf-8"
     )
-    assert "recover_dispatch_stale_queued_corrective_wrapper" in controller
-    assert "stale_queued_wrapper(corrective, wrapper_sha=_wrapper_sha)" in controller
+    assert "recover_dispatch_stale_pending_corrective_wrapper" in controller
+    assert "stale_pending_wrapper(corrective, wrapper_sha=_wrapper_sha)" in controller
 
 
 def test_issue_15_is_registered_as_nonblocking_external_dag_node() -> None:
