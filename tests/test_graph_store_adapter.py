@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import asyncio
+import threading
+import time
 from typing import Any
 
 import pytest
@@ -271,3 +274,71 @@ def test_graph_registration_can_limit_graphs_before_exposure() -> None:
 
     assert keys == ("knowledge.org",)
     assert router.registry.keys() == ("knowledge.org",)
+
+
+@pytest.mark.asyncio
+async def test_remote_sync_graph_backend_does_not_block_event_loop() -> None:
+    class BlockingBackend(FakeGraphBackend):
+        def __init__(self) -> None:
+            super().__init__()
+            self.started = threading.Event()
+            self.release = threading.Event()
+
+        def traverse(
+            self,
+            *,
+            graph: str,
+            start_id: str,
+            relationship_types: tuple[str, ...],
+            direction: str,
+            max_hops: int,
+            limit: int,
+            include_fields: tuple[str, ...],
+        ) -> list[dict[str, Any]]:
+            self.started.set()
+            self.release.wait(timeout=0.25)
+            return super().traverse(
+                graph=graph,
+                start_id=start_id,
+                relationship_types=relationship_types,
+                direction=direction,
+                max_hops=max_hops,
+                limit=limit,
+                include_fields=include_fields,
+            )
+
+    backend = BlockingBackend()
+    router = SchemaRouter()
+    await router.aadd_graph_store(
+        backend,
+        database_name="knowledge",
+        graphs={"org"},
+        remote=True,
+    )
+
+    timer = threading.Timer(0.2, backend.release.set)
+    timer.start()
+    observed = time.monotonic()
+    task = asyncio.create_task(
+        router.execute(
+            _plan(
+                router,
+                "knowledge.org",
+                start_id="person-1",
+                fields=["source_id", "target_id", "relationship"],
+                relationship_types=["MEMBER_OF"],
+            )
+        )
+    )
+    try:
+        while not backend.started.is_set() and time.monotonic() - observed < 0.1:
+            await asyncio.sleep(0.001)
+        assert backend.started.is_set()
+        assert time.monotonic() - observed < 0.1
+        backend.release.set()
+        result = await task
+    finally:
+        backend.release.set()
+        timer.cancel()
+
+    assert result[0].data[0]["relationship"] == "MEMBER_OF"

@@ -66,6 +66,19 @@ inputs in batch APIs.
 This is flat fan-out, not a DAG/workflow runtime. Dependencies, branching, checkpoints, and
 multi-step orchestration remain the responsibility of LangGraph or another surrounding framework.
 
+### Synchronous I/O inside async execution
+
+Trusted synchronous invokers are inline by default. When a caller knows that a synchronous
+invoker is safe to run in a worker thread, bind it with `offload_sync=True`; SchemaRouter then
+keeps the event loop responsive and applies the remaining elapsed execution budget while awaiting
+that worker.
+
+Provider-neutral vector, graph, and record-store backends follow the same rule automatically from
+their `remote` classification: synchronous methods on `remote=True` backends are offloaded,
+while `remote=False` keeps local/thread-affine backends inline. SQLite remains inline. A timed-out
+worker cannot be forcibly killed by Python, so backend calls should still use vendor-level network
+timeouts.
+
 ## Typed lifecycle events
 
 ```python

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import inspect
 import re
 from collections.abc import Awaitable, Iterable
@@ -93,6 +94,20 @@ async def _await_if_needed(value: Any) -> Any:
     return await value if inspect.isawaitable(value) else value
 
 
+async def _call_backend(
+    function: Any,
+    /,
+    *args: Any,
+    offload_sync: bool,
+    **kwargs: Any,
+) -> Any:
+    if offload_sync and not inspect.iscoroutinefunction(function):
+        value = await asyncio.to_thread(function, *args, **kwargs)
+    else:
+        value = function(*args, **kwargs)
+    return await _await_if_needed(value)
+
+
 @dataclass(frozen=True)
 class RecordSourceBinding:
     tool: ToolSpec
@@ -110,10 +125,12 @@ class RecordSourceInvoker:
         *,
         source: RecordSourceSpec,
         default_limit: int,
+        offload_sync_backend: bool,
     ) -> None:
         self._backend = backend
         self._source = source
         self._default_limit = default_limit
+        self._offload_sync_backend = offload_sync_backend
         self._fields = tuple(field.name for field in source.fields)
         self._filterable = {
             _filter_parameter_name(field.name): field.name
@@ -171,16 +188,16 @@ class RecordSourceInvoker:
                 "record-store query requested unknown fields: " + ", ".join(unknown)
             )
 
-        raw_results = await _await_if_needed(
-            self._backend.query(
-                source=self._source.name,
-                text_query=text_query if isinstance(text_query, str) else None,
-                filters=filters,
-                start_time=start_time if isinstance(start_time, str) else None,
-                end_time=end_time if isinstance(end_time, str) else None,
-                limit=limit,
-                include_fields=selected_fields,
-            )
+        raw_results = await _call_backend(
+            self._backend.query,
+            source=self._source.name,
+            text_query=text_query if isinstance(text_query, str) else None,
+            filters=filters,
+            start_time=start_time if isinstance(start_time, str) else None,
+            end_time=end_time if isinstance(end_time, str) else None,
+            limit=limit,
+            include_fields=selected_fields,
+            offload_sync=self._offload_sync_backend,
         )
         if not isinstance(raw_results, list):
             raise SchemaValidationError("record-store backend query must return a list")
@@ -204,6 +221,7 @@ async def introspect_record_backend(
     sources: set[str] | tuple[str, ...] | list[str] | None = None,
     default_limit: int = 100,
     remote: bool = True,
+    offload_sync_backend: bool | None = None,
 ) -> tuple[RecordSourceBinding, ...]:
     """Compile non-relational source descriptors into typed bounded query capabilities."""
 
@@ -212,7 +230,11 @@ async def introspect_record_backend(
     if default_limit < 1 or default_limit > _MAX_LIMIT:
         raise ValueError(f"default_limit must be between 1 and {_MAX_LIMIT}")
 
-    discovered_raw = await _await_if_needed(backend.list_sources())
+    offload_backend = remote if offload_sync_backend is None else offload_sync_backend
+    discovered_raw = await _call_backend(
+        backend.list_sources,
+        offload_sync=offload_backend,
+    )
     discovered = tuple(
         value if isinstance(value, RecordSourceSpec) else RecordSourceSpec.model_validate(value)
         for value in discovered_raw
@@ -374,6 +396,7 @@ async def introspect_record_backend(
                     backend,
                     source=source,
                     default_limit=default_limit,
+                    offload_sync_backend=offload_backend,
                 ),
             )
         )

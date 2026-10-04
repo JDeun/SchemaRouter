@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import inspect
 import re
 from collections.abc import Awaitable, Iterable
@@ -133,6 +134,20 @@ async def _await_if_needed(value: Any) -> Any:
     return await value if inspect.isawaitable(value) else value
 
 
+async def _call_backend(
+    function: Any,
+    /,
+    *args: Any,
+    offload_sync: bool,
+    **kwargs: Any,
+) -> Any:
+    if offload_sync and not inspect.iscoroutinefunction(function):
+        value = await asyncio.to_thread(function, *args, **kwargs)
+    else:
+        value = function(*args, **kwargs)
+    return await _await_if_needed(value)
+
+
 @dataclass(frozen=True)
 class GraphSourceBinding:
     """One introspected graph plus its trusted bounded traversal invoker."""
@@ -151,11 +166,13 @@ class GraphSourceInvoker:
         graph: GraphSourceSpec,
         default_limit: int,
         default_max_hops: int,
+        offload_sync_backend: bool,
     ) -> None:
         self._backend = backend
         self._graph = graph
         self._default_limit = default_limit
         self._default_max_hops = default_max_hops
+        self._offload_sync_backend = offload_sync_backend
         self._relationship_types = {
             relationship.name for relationship in graph.relationship_types
         }
@@ -217,16 +234,16 @@ class GraphSourceInvoker:
         if limit < 1 or limit > _MAX_LIMIT:
             raise RuntimeError(f"graph limit must be between 1 and {_MAX_LIMIT}")
 
-        raw_results = await _await_if_needed(
-            self._backend.traverse(
-                graph=self._graph.name,
-                start_id=start_id,
-                relationship_types=relationship_types,
-                direction=direction,
-                max_hops=max_hops,
-                limit=limit,
-                include_fields=tuple(call.fields),
-            )
+        raw_results = await _call_backend(
+            self._backend.traverse,
+            graph=self._graph.name,
+            start_id=start_id,
+            relationship_types=relationship_types,
+            direction=direction,
+            max_hops=max_hops,
+            limit=limit,
+            include_fields=tuple(call.fields),
+            offload_sync=self._offload_sync_backend,
         )
         if not isinstance(raw_results, list):
             raise SchemaValidationError("graph backend traversal must return a list")
@@ -251,6 +268,7 @@ async def introspect_graph_backend(
     default_limit: int = 100,
     default_max_hops: int = 1,
     remote: bool = True,
+    offload_sync_backend: bool | None = None,
 ) -> tuple[GraphSourceBinding, ...]:
     """Compile trusted graph/RDF schema descriptors into bounded traversal capabilities."""
 
@@ -261,7 +279,11 @@ async def introspect_graph_backend(
     if default_max_hops < 1 or default_max_hops > _MAX_HOPS:
         raise ValueError(f"default_max_hops must be between 1 and {_MAX_HOPS}")
 
-    discovered_raw = await _await_if_needed(backend.list_graphs())
+    offload_backend = remote if offload_sync_backend is None else offload_sync_backend
+    discovered_raw = await _call_backend(
+        backend.list_graphs,
+        offload_sync=offload_backend,
+    )
     discovered = tuple(
         value if isinstance(value, GraphSourceSpec) else GraphSourceSpec.model_validate(value)
         for value in discovered_raw
@@ -462,6 +484,7 @@ async def introspect_graph_backend(
                     graph=graph,
                     default_limit=default_limit,
                     default_max_hops=default_max_hops,
+                    offload_sync_backend=offload_backend,
                 ),
             )
         )

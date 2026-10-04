@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import asyncio
+import threading
+import time
 from typing import Any
 
 import pytest
@@ -364,3 +367,70 @@ def test_record_store_can_limit_sources_before_registration() -> None:
 
     assert keys == ("nosql.cache",)
     assert router.registry.keys() == ("nosql.cache",)
+
+
+@pytest.mark.asyncio
+async def test_remote_sync_record_backend_does_not_block_event_loop() -> None:
+    class BlockingBackend(FakeRecordBackend):
+        def __init__(self) -> None:
+            super().__init__()
+            self.started = threading.Event()
+            self.release = threading.Event()
+
+        def query(
+            self,
+            *,
+            source: str,
+            text_query: str | None,
+            filters: dict[str, Any],
+            start_time: str | None,
+            end_time: str | None,
+            limit: int,
+            include_fields: tuple[str, ...],
+        ) -> list[dict[str, Any]]:
+            self.started.set()
+            self.release.wait(timeout=0.25)
+            return super().query(
+                source=source,
+                text_query=text_query,
+                filters=filters,
+                start_time=start_time,
+                end_time=end_time,
+                limit=limit,
+                include_fields=include_fields,
+            )
+
+    backend = BlockingBackend()
+    router = SchemaRouter()
+    await router.aadd_record_store(
+        backend,
+        database_name="nosql",
+        sources={"documents"},
+        remote=True,
+    )
+
+    timer = threading.Timer(0.2, backend.release.set)
+    timer.start()
+    observed = time.monotonic()
+    task = asyncio.create_task(
+        router.execute(
+            _plan(
+                router,
+                "nosql.documents",
+                fields=["id", "title"],
+                arguments={"query": "routing"},
+            )
+        )
+    )
+    try:
+        while not backend.started.is_set() and time.monotonic() - observed < 0.1:
+            await asyncio.sleep(0.001)
+        assert backend.started.is_set()
+        assert time.monotonic() - observed < 0.1
+        backend.release.set()
+        result = await task
+    finally:
+        backend.release.set()
+        timer.cancel()
+
+    assert result[0].data == [{"id": "doc-1", "title": "Router design"}]

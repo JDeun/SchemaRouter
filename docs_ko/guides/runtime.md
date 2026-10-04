@@ -33,6 +33,12 @@ parallel task를 시작하기 전에 모든 planned call을 현재 schema, bindi
 
 `ainvoke()`는 plan 순서로 결과를 반환하지만 `astream()`, `astream_events()`는 completion order를 노출할 수 있습니다. 모든 parallel call은 동일한 per-run execution budget을 공유합니다. 이는 flat fan-out이며 DAG/workflow runtime이 아닙니다. dependency, branching, checkpoint, multi-step orchestration은 LangGraph 같은 상위 framework가 담당합니다.
 
+### Async 실행 안의 동기 I/O
+
+trusted sync invoker는 기본적으로 현재 thread에서 실행됩니다. 해당 invoker가 worker thread에서 안전하게 실행될 수 있다는 것을 caller가 알고 있다면 `offload_sync=True`로 bind할 수 있습니다. 이 경우 SchemaRouter는 event loop를 막지 않고, worker를 기다리는 동안 남은 elapsed execution budget도 적용합니다.
+
+provider-neutral vector/graph/record-store backend는 `remote` 분류를 기준으로 같은 정책을 자동 적용합니다. `remote=True` backend의 동기 메서드는 worker thread로 offload하고, `remote=False`인 local/thread-affine backend는 inline으로 유지합니다. SQLite는 inline으로 유지됩니다. Python은 timeout된 worker thread를 강제로 종료할 수 없으므로 vendor SDK의 network timeout도 별도로 설정해야 합니다.
+
 ## Typed lifecycle event
 
 ```text

@@ -1113,6 +1113,7 @@ class SchemaRouter:
         invoker: BoundEndpointInvoker,
         *,
         replace: bool = False,
+        offload_sync: bool = False,
     ) -> str:
         """Register a canonical ToolSpec and bind one trusted invoker.
 
@@ -1142,6 +1143,7 @@ class SchemaRouter:
             key,
             invoker,
             expected_fingerprint=tool.fingerprint,
+            offload_sync=offload_sync,
         )
         return key
 
@@ -1238,7 +1240,11 @@ class SchemaRouter:
             )
 
         return tuple(
-            self.add_bound_tool(binding.tool, binding.invoker)
+            self.add_bound_tool(
+                binding.tool,
+                binding.invoker,
+                offload_sync=remote,
+            )
             for binding in bindings
         )
 
@@ -1265,6 +1271,7 @@ class SchemaRouter:
             collections=collections,
             default_top_k=default_top_k,
             remote=remote,
+            offload_sync_backend=remote,
         )
         existing_keys = set(self.registry.keys())
         duplicate_keys = sorted(
@@ -1702,6 +1709,7 @@ class SchemaRouter:
             default_limit=default_limit,
             default_max_hops=default_max_hops,
             remote=remote,
+            offload_sync_backend=remote,
         )
         existing_keys = set(self.registry.keys())
         duplicate_keys = sorted(
@@ -1765,6 +1773,7 @@ class SchemaRouter:
             sources=sources,
             default_limit=default_limit,
             remote=remote,
+            offload_sync_backend=remote,
         )
         existing_keys = set(self.registry.keys())
         duplicate_keys = sorted(

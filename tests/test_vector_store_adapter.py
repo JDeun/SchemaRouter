@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import asyncio
+import threading
+import time
 from typing import Any
 
 import pytest
@@ -411,3 +414,66 @@ def test_vector_store_can_limit_collections_before_registration() -> None:
 
     assert keys == ("vectors.public_docs",)
     assert router.registry.keys() == ("vectors.public_docs",)
+
+
+@pytest.mark.asyncio
+async def test_remote_sync_vector_backend_does_not_block_event_loop() -> None:
+    class BlockingBackend(FakeVectorBackend):
+        def __init__(self) -> None:
+            super().__init__()
+            self.started = threading.Event()
+            self.release = threading.Event()
+
+        def search(
+            self,
+            *,
+            collection: str,
+            vector: list[float],
+            top_k: int,
+            include_fields: tuple[str, ...],
+        ) -> list[dict[str, Any]]:
+            self.started.set()
+            self.release.wait(timeout=0.25)
+            return super().search(
+                collection=collection,
+                vector=vector,
+                top_k=top_k,
+                include_fields=include_fields,
+            )
+
+    backend = BlockingBackend()
+    router = SchemaRouter()
+    await router.aadd_vector_store(
+        backend,
+        lambda query: [0.1, 0.2, 0.3],
+        database_name="vectors",
+        collections={"public_docs"},
+        remote=True,
+    )
+
+    timer = threading.Timer(0.2, backend.release.set)
+    timer.start()
+    observed = time.monotonic()
+    task = asyncio.create_task(
+        router.execute(
+            _plan(
+                router,
+                "vectors.public_docs",
+                query="routing",
+                fields=["id", "title"],
+                top_k=1,
+            )
+        )
+    )
+    try:
+        while not backend.started.is_set() and time.monotonic() - observed < 0.1:
+            await asyncio.sleep(0.001)
+        assert backend.started.is_set()
+        assert time.monotonic() - observed < 0.1
+        backend.release.set()
+        result = await task
+    finally:
+        backend.release.set()
+        timer.cancel()
+
+    assert result[0].data == [{"id": "doc-1", "title": "SchemaRouter"}]

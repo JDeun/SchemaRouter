@@ -222,6 +222,7 @@ class RegistryExecutor:
         self.unavailable_cooldown_seconds = float(unavailable_cooldown_seconds)
         self._invokers: dict[str, BoundEndpointInvoker] = {}
         self._binding_fingerprints: dict[str, str] = {}
+        self._binding_offload_sync: dict[str, bool] = {}
         self._unavailable_until: dict[tuple[str, str, str], float] = {}
 
     def _current_access_key(
@@ -423,6 +424,7 @@ class RegistryExecutor:
         invoker: BoundEndpointInvoker,
         *,
         expected_fingerprint: str | None = None,
+        offload_sync: bool = False,
     ) -> None:
         """Bind an invoker, optionally pinned to the exact contract it was built for.
 
@@ -430,6 +432,8 @@ class RegistryExecutor:
         spec's fingerprint. If the registry moved before binding, refuse before
         storing the invoker rather than blessing it for an unrelated contract.
         """
+        if not isinstance(offload_sync, bool):
+            raise TypeError("offload_sync must be a bool")
         tool = self.registry.get(tool_key)
         if (
             expected_fingerprint is not None
@@ -442,6 +446,7 @@ class RegistryExecutor:
         fingerprint = expected_fingerprint or tool.fingerprint
         self._invokers[tool_key] = invoker
         self._binding_fingerprints[tool_key] = fingerprint
+        self._binding_offload_sync[tool_key] = offload_sync
 
     def _bound_invoker_for_contract(
         self,
@@ -483,6 +488,7 @@ class RegistryExecutor:
     def unbind(self, tool_key: str) -> None:
         self._invokers.pop(tool_key, None)
         self._binding_fingerprints.pop(tool_key, None)
+        self._binding_offload_sync.pop(tool_key, None)
 
     def purge_tool_runtime_state(self, tool_key: str) -> None:
         """Forget trusted binding and bounded availability state for one tool."""
@@ -850,13 +856,25 @@ class RegistryExecutor:
                 invoke_call = getattr(invoker, "invoke_call", None)
                 call_aware = callable(invoke_call)
                 with _data_scope_execution_context(data_scope):
+                    offload_sync = self._binding_offload_sync.get(call.tool, False)
                     if call_aware:
-                        value = invoke_call(call)
+                        if offload_sync and not inspect.iscoroutinefunction(invoke_call):
+                            value = asyncio.to_thread(invoke_call, call)
+                        else:
+                            value = invoke_call(call)
                     else:
-                        value = cast(EndpointInvoker, invoker)(
-                            call.endpoint,
-                            dict(call.arguments),
-                        )
+                        endpoint_invoker = cast(EndpointInvoker, invoker)
+                        if offload_sync and not inspect.iscoroutinefunction(endpoint_invoker):
+                            value = asyncio.to_thread(
+                                endpoint_invoker,
+                                call.endpoint,
+                                dict(call.arguments),
+                            )
+                        else:
+                            value = endpoint_invoker(
+                                call.endpoint,
+                                dict(call.arguments),
+                            )
                     if inspect.isawaitable(value):
                         value = await tracker.wait_awaitable(
                             value,

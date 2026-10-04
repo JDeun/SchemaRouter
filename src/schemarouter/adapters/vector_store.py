@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import inspect
 import re
 from collections.abc import Awaitable, Callable, Iterable, Sequence
@@ -98,6 +99,20 @@ async def _await_if_needed(value: Any) -> Any:
     return await value if inspect.isawaitable(value) else value
 
 
+async def _call_backend(
+    function: Any,
+    /,
+    *args: Any,
+    offload_sync: bool,
+    **kwargs: Any,
+) -> Any:
+    if offload_sync and not inspect.iscoroutinefunction(function):
+        value = await asyncio.to_thread(function, *args, **kwargs)
+    else:
+        value = function(*args, **kwargs)
+    return await _await_if_needed(value)
+
+
 @dataclass(frozen=True)
 class VectorCollectionBinding:
     """One introspected vector collection plus its trusted search invoker."""
@@ -118,11 +133,13 @@ class VectorCollectionInvoker:
         *,
         collection: VectorCollectionSpec,
         default_top_k: int,
+        offload_sync_backend: bool,
     ) -> None:
         self._backend = backend
         self._embed_query = embed_query
         self._collection = collection
         self._default_top_k = default_top_k
+        self._offload_sync_backend = offload_sync_backend
         self._metadata_fields = {
             field.name for field in collection.metadata_fields
         }
@@ -192,8 +209,10 @@ class VectorCollectionInvoker:
                 )
             search_kwargs["filters"] = trusted_filters
 
-        raw_results = await _await_if_needed(
-            self._backend.search(**search_kwargs)
+        raw_results = await _call_backend(
+            self._backend.search,
+            offload_sync=self._offload_sync_backend,
+            **search_kwargs,
         )
         if not isinstance(raw_results, list):
             raise SchemaValidationError("vector backend search must return a list")
@@ -223,6 +242,7 @@ async def introspect_vector_backend(
     collections: set[str] | tuple[str, ...] | list[str] | None = None,
     default_top_k: int = 10,
     remote: bool = True,
+    offload_sync_backend: bool | None = None,
 ) -> tuple[VectorCollectionBinding, ...]:
     """Compile trusted vector collection descriptors into bounded search capabilities."""
 
@@ -231,7 +251,11 @@ async def introspect_vector_backend(
     if default_top_k < 1 or default_top_k > _MAX_TOP_K:
         raise ValueError(f"default_top_k must be between 1 and {_MAX_TOP_K}")
 
-    discovered_raw = await _await_if_needed(backend.list_collections())
+    offload_backend = remote if offload_sync_backend is None else offload_sync_backend
+    discovered_raw = await _call_backend(
+        backend.list_collections,
+        offload_sync=offload_backend,
+    )
     discovered = tuple(
         item
         if isinstance(item, VectorCollectionSpec)
@@ -376,6 +400,7 @@ async def introspect_vector_backend(
                     embed_query,
                     collection=collection,
                     default_top_k=default_top_k,
+                    offload_sync_backend=offload_backend,
                 ),
             )
         )
