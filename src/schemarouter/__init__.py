@@ -58,7 +58,15 @@ from .adapters.sqlite_database import (
     SQLiteTableInvoker,
     introspect_sqlite_database,
 )
-from .adapters.vector_native import MilvusVectorBackend, QdrantVectorBackend
+from .adapters.vector_native import (
+    ChromaVectorBackend,
+    MilvusVectorBackend,
+    PgvectorVectorBackend,
+    PineconeVectorBackend,
+    QdrantVectorBackend,
+    RedisVectorBackend,
+    WeaviateVectorBackend,
+)
 from .adapters.vector_store import (
     VectorCollectionBinding,
     VectorCollectionInvoker,
@@ -591,9 +599,14 @@ __all__ = [
     "ModelQueryAnalyzer",
     "MutableToolRegistry",
     "NonRetryableInvocationError",
+    "ChromaVectorBackend",
     "MilvusVectorBackend",
+    "PgvectorVectorBackend",
+    "PineconeVectorBackend",
     "ODataSourceAdapter",
     "QdrantVectorBackend",
+    "RedisVectorBackend",
+    "WeaviateVectorBackend",
     "ObservedStateField",
     "OpenAPICompatibilityIssue",
     "OpenAPICompatibilityReport",
