@@ -404,6 +404,7 @@ def _authorized_endpoint_view(
             )
         raise PolicyViolationError("authorization denied for requested capability")
 
+    assert principal is not None
     projected = router._data_scope_endpoint_view(principal, tool, endpoint)
     if projected is None:
         raise PolicyViolationError("authorization denied for requested data scope")
