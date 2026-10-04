@@ -153,13 +153,17 @@ class MongoRecordBackend:
         }
         if text_query is not None:
             if source not in self._text_search:
-                raise SchemaValidationError("MongoDB text search is not enabled for this collection")
+                raise SchemaValidationError(
+                    "MongoDB text search is not enabled for this collection"
+                )
             query["$text"] = {"$search": text_query}
 
         time_field = self._time_fields.get(source)
         if start_time is not None or end_time is not None:
             if time_field is None:
-                raise SchemaValidationError("MongoDB time bounds are not enabled for this collection")
+                raise SchemaValidationError(
+                    "MongoDB time bounds are not enabled for this collection"
+                )
             bounds: dict[str, Any] = {}
             if start_time is not None:
                 bounds["$gte"] = start_time
@@ -234,7 +238,9 @@ class ElasticRecordBackend:
             raw = self._client.indices.get_mapping(index=",".join(self._indices))
         raw = _response_body(raw)
         if not isinstance(raw, Mapping):
-            raise SchemaValidationError("Elasticsearch/OpenSearch get_mapping() must return an object")
+            raise SchemaValidationError(
+                "Elasticsearch/OpenSearch get_mapping() must return an object"
+            )
         return raw
 
     def list_sources(self) -> tuple[RecordSourceSpec, ...]:
@@ -323,11 +329,9 @@ class ElasticRecordBackend:
             if field not in allowed:
                 raise SchemaValidationError(f"index filter field {field!r} is not filterable")
             filter_clauses.append(
-                (
-                    {"terms": {field: list(value)}}
-                    if isinstance(value, tuple)
-                    else {"term": {field: value}}
-                )
+                {"terms": {field: list(value)}}
+                if isinstance(value, tuple)
+                else {"term": {field: value}}
             )
 
         time_field = self._time_fields.get(source)
@@ -501,7 +505,13 @@ class RedisRecordBackend:
                 "type": kind,
                 "value": self._read_value(raw_key, kind),
             }
-            rows.append({field: row[field] for field in include_fields if field in row and field in selected})
+            rows.append(
+                {
+                    field: row[field]
+                    for field in include_fields
+                    if field in row and field in selected
+                }
+            )
         return rows
 
 
@@ -610,7 +620,11 @@ class DynamoDBRecordBackend:
                 value = decoded_sample.get(name)
                 if value is None and name in attribute_types:
                     code = attribute_types[name]
-                    schema = {"S": {"type": "string"}, "N": {"type": "number"}, "B": {"type": "string"}}.get(code, {})
+                    schema = {
+                        "S": {"type": "string"},
+                        "N": {"type": "number"},
+                        "B": {"type": "string"},
+                    }.get(code, {})
                 else:
                     schema = _json_schema_from_value(value)
                 scalar = not isinstance(value, (Mapping, list, tuple, set, frozenset))
@@ -852,7 +866,9 @@ class CosmosRecordBackend:
         time_field = self._time_fields.get(source)
         if start_time is not None or end_time is not None:
             if time_field is None:
-                raise SchemaValidationError("Cosmos DB time bounds are not enabled for this container")
+                raise SchemaValidationError(
+                    "Cosmos DB time bounds are not enabled for this container"
+                )
             prop = _cosmos_property(time_field)
             if start_time is not None:
                 parameters.append({"name": "@start", "value": start_time})
@@ -1002,7 +1018,9 @@ class CouchbaseRecordBackend:
         include_fields: tuple[str, ...],
     ) -> list[dict[str, Any]]:
         if text_query is not None:
-            raise SchemaValidationError("Couchbase native adapter does not expose raw/full-text query text")
+            raise SchemaValidationError(
+                "Couchbase native adapter does not expose raw/full-text query text"
+            )
         if source not in self._paths:
             self.list_sources()
         path = self._paths.get(source)
@@ -1028,7 +1046,9 @@ class CouchbaseRecordBackend:
         time_field = self._time_fields.get(source)
         if start_time is not None or end_time is not None:
             if time_field is None or re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", time_field) is None:
-                raise SchemaValidationError("Couchbase time bounds are not enabled for this keyspace")
+                raise SchemaValidationError(
+                    "Couchbase time bounds are not enabled for this keyspace"
+                )
             identifier = _n1ql_identifier(time_field)
             if start_time is not None:
                 params["start"] = start_time
