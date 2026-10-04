@@ -8,7 +8,8 @@ from typing import Any, Literal, Protocol
 
 from pydantic import Field, model_validator
 
-from ..errors import RegistrationError, SchemaValidationError
+from ..authorization import _current_data_scope
+from ..errors import PolicyViolationError, RegistrationError, SchemaValidationError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, StrictModel, ToolCall, ToolSpec
 
 _QUERY_ENDPOINT = "query"
@@ -119,6 +120,7 @@ class RecordSourceInvoker:
             for field in source.fields
             if field.filterable or field.identifier
         }
+        self._filterable_fields = set(self._filterable.values())
 
     async def invoke_call(self, call: ToolCall) -> list[dict[str, Any]]:
         if call.endpoint != _QUERY_ENDPOINT:
@@ -136,6 +138,17 @@ class RecordSourceInvoker:
             for parameter_name, field_name in self._filterable.items()
             if parameter_name in call.arguments
         }
+        scope = _current_data_scope()
+        if scope is not None and scope.trusted_filters:
+            trusted_filters = scope.filter_dict()
+            unknown_filters = sorted(
+                set(trusted_filters) - self._filterable_fields
+            )
+            if unknown_filters:
+                raise PolicyViolationError(
+                    "authorization denied for requested data scope"
+                )
+            filters.update(trusted_filters)
 
         start_time = call.arguments.get("start_time")
         end_time = call.arguments.get("end_time")
