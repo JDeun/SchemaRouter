@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from array import array
 import importlib
 import re
+from array import array
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
