@@ -213,7 +213,7 @@ jobs:
       max-parallel: 8
       matrix: "${{ fromJSON(needs.prepare.outputs.matrix) }}"
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 240
+    timeout-minutes: 360
     env:
       HF_HUB_OFFLINE: "1"
       TRANSFORMERS_OFFLINE: "1"
