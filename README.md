@@ -264,7 +264,6 @@ SDK or weakly described REST surface.
 | Pinecone | caller-owned Pinecone client | `router.add_pinecone_vector_store(client, embed_query, ...)` |
 | Weaviate | caller-owned Weaviate v4 client | `router.add_weaviate_vector_store(client, embed_query, ...)` |
 | Chroma | caller-owned Chroma client | `router.add_chroma_vector_store(client, embed_query, ...)` |
-| Redis Vector | caller-owned redis-py client | `router.add_redis_vector_store(client, embed_query, ...)` |
 | PostgreSQL/pgvector | caller-owned SQLAlchemy Engine | `router.add_pgvector_store(engine, embed_query, ...)` |
 | Graph/RDF store | graph schema discovery + bounded traversal; native Neo4j/Neptune/ArangoDB/FalkorDB/SPARQL helpers | `router.add_graph_store(...)` / `add_neo4j_graph(...)` / `add_falkordb_graph(...)` |
 | NoSQL record store | document/search/KV/time-series schema discovery + bounded query; native MongoDB/Elastic/OpenSearch/DynamoDB/Cosmos/Couchbase/ClickHouse/InfluxDB helpers | `router.add_record_store(backend, ...)` / `add_mongodb_record_store(...)` |
