@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from array import array
 import importlib
 import re
 from collections.abc import Callable, Mapping, Sequence
@@ -452,3 +453,750 @@ class MilvusVectorBackend:
             )
             rows.append(row)
         return rows
+
+
+class PineconeVectorBackend:
+    """Thin adapter over a caller-owned Pinecone client."""
+
+    def __init__(
+        self,
+        client: Any,
+        *,
+        metadata_fields_by_index: Mapping[str, Sequence[VectorMetadataField]] | None = None,
+    ) -> None:
+        self._client = client
+        self._metadata_fields_by_index = {
+            name: tuple(fields)
+            for name, fields in (metadata_fields_by_index or {}).items()
+        }
+
+    def _index_names(self) -> list[str]:
+        raw = self._client.list_indexes()
+        names_method = getattr(raw, "names", None)
+        if callable(names_method):
+            names = names_method()
+        elif isinstance(raw, Mapping):
+            names = raw.get("indexes", raw)
+        else:
+            names = raw
+        if isinstance(names, Mapping):
+            values = names.values()
+        else:
+            values = names
+        if not isinstance(values, Sequence) or isinstance(values, (str, bytes)):
+            try:
+                values = list(values)
+            except TypeError as exc:
+                raise SchemaValidationError(
+                    "Pinecone list_indexes() returned an unexpected response"
+                ) from exc
+        result = [str(_read(value, "name", value)) for value in values]
+        if any(not value for value in result):
+            raise SchemaValidationError("Pinecone returned an empty index name")
+        return result
+
+    def list_collections(self) -> tuple[VectorCollectionSpec, ...]:
+        results: list[VectorCollectionSpec] = []
+        for index_name in self._index_names():
+            description = self._client.describe_index(index_name)
+            dimension = _read(description, "dimension")
+            if not isinstance(dimension, int) or isinstance(dimension, bool) or dimension < 1:
+                raise SchemaValidationError(
+                    f"Pinecone index {index_name!r} did not expose a valid dimension"
+                )
+            metric = _enum_text(_read(description, "metric"))
+            results.append(
+                VectorCollectionSpec(
+                    name=index_name,
+                    dimension=dimension,
+                    metric=metric,
+                    metadata_fields=self._metadata_fields_by_index.get(index_name, ()),
+                )
+            )
+        return tuple(results)
+
+    def search(
+        self,
+        *,
+        collection: str,
+        vector: Sequence[float],
+        top_k: int,
+        include_fields: tuple[str, ...],
+        filters: Mapping[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        index = self._client.Index(collection)
+        kwargs: dict[str, Any] = {
+            "vector": list(vector),
+            "top_k": top_k,
+            "include_values": False,
+            "include_metadata": bool(include_fields),
+        }
+        if filters:
+            kwargs["filter"] = dict(filters)
+        raw = index.query(**kwargs)
+        matches = _read(raw, "matches", raw)
+        if not isinstance(matches, Sequence) or isinstance(matches, (str, bytes)):
+            raise SchemaValidationError(
+                "Pinecone query() returned an unexpected response"
+            )
+        rows: list[dict[str, Any]] = []
+        for match in matches:
+            metadata = _read(match, "metadata", {}) or {}
+            if not isinstance(metadata, Mapping):
+                raise SchemaValidationError("Pinecone match metadata must be an object")
+            row: dict[str, Any] = {
+                "id": _read(match, "id"),
+                "score": float(_read(match, "score")),
+            }
+            row.update(
+                {
+                    field: metadata[field]
+                    for field in include_fields
+                    if field in metadata
+                }
+            )
+            rows.append(row)
+        return rows
+
+
+class ChromaVectorBackend:
+    """Thin adapter over a caller-owned Chroma client."""
+
+    def __init__(
+        self,
+        client: Any,
+        *,
+        dimension_by_collection: Mapping[str, int] | None = None,
+        metadata_fields_by_collection: Mapping[str, Sequence[VectorMetadataField]] | None = None,
+        metric_by_collection: Mapping[str, str] | None = None,
+    ) -> None:
+        self._client = client
+        self._dimension_by_collection = dict(dimension_by_collection or {})
+        self._metadata_fields_by_collection = {
+            name: tuple(fields)
+            for name, fields in (metadata_fields_by_collection or {}).items()
+        }
+        self._metric_by_collection = dict(metric_by_collection or {})
+
+    def _collection(self, name: str) -> Any:
+        return self._client.get_collection(name=name)
+
+    def _dimension(self, name: str, collection: Any) -> int:
+        configured = self._dimension_by_collection.get(name)
+        if configured is not None:
+            if configured < 1:
+                raise RegistrationError(
+                    f"Chroma collection {name!r} has an invalid configured dimension"
+                )
+            return configured
+        peek = collection.peek(limit=1)
+        embeddings = _read(peek, "embeddings")
+        if isinstance(peek, Mapping):
+            embeddings = peek.get("embeddings")
+        if (
+            isinstance(embeddings, Sequence)
+            and embeddings
+            and isinstance(embeddings[0], Sequence)
+            and not isinstance(embeddings[0], (str, bytes))
+        ):
+            dimension = len(embeddings[0])
+            if dimension > 0:
+                return dimension
+        raise RegistrationError(
+            f"Chroma collection {name!r} is empty or does not expose embeddings; "
+            "set dimension_by_collection"
+        )
+
+    def list_collections(self) -> tuple[VectorCollectionSpec, ...]:
+        raw = self._client.list_collections()
+        if not isinstance(raw, Sequence) or isinstance(raw, (str, bytes)):
+            raise SchemaValidationError(
+                "Chroma list_collections() returned an unexpected response"
+            )
+        results: list[VectorCollectionSpec] = []
+        for entry in raw:
+            name = str(_read(entry, "name", entry))
+            collection = entry if hasattr(entry, "query") else self._collection(name)
+            dimension = self._dimension(name, collection)
+            metadata = _read(collection, "metadata", {}) or {}
+            metric = self._metric_by_collection.get(
+                name,
+                str(metadata.get("hnsw:space", "unknown"))
+                if isinstance(metadata, Mapping)
+                else "unknown",
+            )
+            results.append(
+                VectorCollectionSpec(
+                    name=name,
+                    dimension=dimension,
+                    metric=metric,
+                    metadata_fields=self._metadata_fields_by_collection.get(name, ()),
+                )
+            )
+        return tuple(results)
+
+    def search(
+        self,
+        *,
+        collection: str,
+        vector: Sequence[float],
+        top_k: int,
+        include_fields: tuple[str, ...],
+        filters: Mapping[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        target = self._collection(collection)
+        include: list[str] = ["distances"]
+        metadata_fields = tuple(
+            field for field in include_fields if field != "document"
+        )
+        if metadata_fields:
+            include.append("metadatas")
+        if "document" in include_fields:
+            include.append("documents")
+        kwargs: dict[str, Any] = {
+            "query_embeddings": [list(vector)],
+            "n_results": top_k,
+            "include": include,
+        }
+        if filters:
+            kwargs["where"] = dict(filters)
+        raw = target.query(**kwargs)
+        if not isinstance(raw, Mapping):
+            raise SchemaValidationError("Chroma query() must return an object")
+        ids = (raw.get("ids") or [[]])[0]
+        distances = (raw.get("distances") or [[]])[0]
+        metadatas = (raw.get("metadatas") or [[]])[0] if "metadatas" in include else []
+        documents = (raw.get("documents") or [[]])[0] if "documents" in include else []
+        rows: list[dict[str, Any]] = []
+        for index, item_id in enumerate(ids):
+            row: dict[str, Any] = {"id": item_id}
+            if index < len(distances):
+                row["score"] = float(distances[index])
+            metadata = (
+                metadatas[index]
+                if index < len(metadatas) and isinstance(metadatas[index], Mapping)
+                else {}
+            )
+            for field in metadata_fields:
+                if field in metadata:
+                    row[field] = metadata[field]
+            if "document" in include_fields and index < len(documents):
+                row["document"] = documents[index]
+            rows.append(row)
+        return rows
+
+
+class WeaviateVectorBackend:
+    """Thin adapter over a caller-owned Weaviate v4 client."""
+
+    def __init__(
+        self,
+        client: Any,
+        *,
+        dimension_by_collection: Mapping[str, int],
+        vector_name_by_collection: Mapping[str, str] | None = None,
+        metric_by_collection: Mapping[str, str] | None = None,
+        filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
+    ) -> None:
+        self._client = client
+        self._dimension_by_collection = dict(dimension_by_collection)
+        self._vector_name_by_collection = dict(vector_name_by_collection or {})
+        self._metric_by_collection = dict(metric_by_collection or {})
+        self._filter_builder = filter_builder
+
+    def _names(self) -> list[str]:
+        raw = self._client.collections.list_all(simple=False)
+        if isinstance(raw, Mapping):
+            return [str(name) for name in raw]
+        if isinstance(raw, Sequence) and not isinstance(raw, (str, bytes)):
+            return [str(_read(value, "name", value)) for value in raw]
+        raise SchemaValidationError(
+            "Weaviate collections.list_all() returned an unexpected response"
+        )
+
+    @staticmethod
+    def _property_schema(value: Any) -> dict[str, Any]:
+        raw_type = _read(value, "data_type", _read(value, "dataType"))
+        if isinstance(raw_type, Sequence) and not isinstance(raw_type, (str, bytes)):
+            raw_type = raw_type[0] if raw_type else None
+        return _json_schema_from_vendor_type(raw_type)
+
+    def list_collections(self) -> tuple[VectorCollectionSpec, ...]:
+        results: list[VectorCollectionSpec] = []
+        for name in self._names():
+            dimension = self._dimension_by_collection.get(name)
+            if not isinstance(dimension, int) or isinstance(dimension, bool) or dimension < 1:
+                raise RegistrationError(
+                    f"Weaviate collection {name!r} requires dimension_by_collection"
+                )
+            collection = self._client.collections.get(name)
+            config = collection.config.get()
+            properties = _read(config, "properties", ()) or ()
+            metadata: list[VectorMetadataField] = []
+            for prop in properties:
+                prop_name = str(_read(prop, "name", ""))
+                if not prop_name or prop_name in {"id", "score"}:
+                    continue
+                metadata.append(
+                    VectorMetadataField(
+                        name=prop_name,
+                        json_schema=self._property_schema(prop),
+                        filterable=True,
+                    )
+                )
+            results.append(
+                VectorCollectionSpec(
+                    name=name,
+                    dimension=dimension,
+                    metric=self._metric_by_collection.get(name, "unknown"),
+                    metadata_fields=tuple(metadata),
+                    public_metadata=(
+                        {}
+                        if name not in self._vector_name_by_collection
+                        else {"vector_name": self._vector_name_by_collection[name]}
+                    ),
+                )
+            )
+        return tuple(results)
+
+    def _filter(self, filters: Mapping[str, Any]) -> Any:
+        if self._filter_builder is not None:
+            return self._filter_builder(filters)
+        try:
+            module = importlib.import_module("weaviate.classes.query")
+            filter_cls = module.Filter
+        except (ImportError, AttributeError) as exc:
+            raise RegistrationError(
+                "Weaviate trusted metadata filtering requires weaviate-client "
+                "or a filter_builder"
+            ) from exc
+        combined = None
+        for field, value in sorted(filters.items()):
+            current = (
+                filter_cls.by_property(field).contains_any(list(value))
+                if isinstance(value, tuple)
+                else filter_cls.by_property(field).equal(value)
+            )
+            combined = current if combined is None else combined & current
+        return combined
+
+    def search(
+        self,
+        *,
+        collection: str,
+        vector: Sequence[float],
+        top_k: int,
+        include_fields: tuple[str, ...],
+        filters: Mapping[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        target = self._client.collections.get(collection)
+        kwargs: dict[str, Any] = {
+            "near_vector": list(vector),
+            "limit": top_k,
+            "return_properties": list(include_fields),
+        }
+        vector_name = self._vector_name_by_collection.get(collection)
+        if vector_name is not None:
+            kwargs["target_vector"] = vector_name
+        if filters:
+            kwargs["filters"] = self._filter(filters)
+        response = target.query.near_vector(**kwargs)
+        objects = _read(response, "objects", ())
+        if not isinstance(objects, Sequence) or isinstance(objects, (str, bytes)):
+            raise SchemaValidationError(
+                "Weaviate near_vector() returned an unexpected response"
+            )
+        rows: list[dict[str, Any]] = []
+        for obj in objects:
+            props = _read(obj, "properties", {}) or {}
+            metadata = _read(obj, "metadata")
+            score_raw = _read(metadata, "distance", _read(metadata, "certainty"))
+            row: dict[str, Any] = {"id": str(_read(obj, "uuid", _read(obj, "id")))}
+            if score_raw is not None:
+                row["score"] = float(score_raw)
+            if isinstance(props, Mapping):
+                row.update(
+                    {
+                        field: props[field]
+                        for field in include_fields
+                        if field in props
+                    }
+                )
+            rows.append(row)
+        return rows
+
+
+class RedisVectorBackend:
+    """Thin adapter over a caller-owned redis-py client with Redis Search."""
+
+    def __init__(
+        self,
+        client: Any,
+        *,
+        index_names: Sequence[str] | None = None,
+        vector_field_by_index: Mapping[str, str] | None = None,
+        metadata_fields_by_index: Mapping[str, Sequence[VectorMetadataField]] | None = None,
+        metric_by_index: Mapping[str, str] | None = None,
+        trusted_filter_builder: Callable[[Mapping[str, Any]], str] | None = None,
+    ) -> None:
+        self._client = client
+        self._index_names = None if index_names is None else tuple(index_names)
+        self._vector_field_by_index = dict(vector_field_by_index or {})
+        self._metadata_fields_by_index = {
+            name: tuple(fields)
+            for name, fields in (metadata_fields_by_index or {}).items()
+        }
+        self._metric_by_index = dict(metric_by_index or {})
+        self._trusted_filter_builder = trusted_filter_builder
+        self._dimension_by_index: dict[str, int] = {}
+
+    def _indexes(self) -> tuple[str, ...]:
+        if self._index_names is not None:
+            return self._index_names
+        raw = self._client.execute_command("FT._LIST")
+        if not isinstance(raw, Sequence) or isinstance(raw, (str, bytes)):
+            raise SchemaValidationError("Redis FT._LIST returned an unexpected response")
+        return tuple(
+            value.decode() if isinstance(value, bytes) else str(value)
+            for value in raw
+        )
+
+    @staticmethod
+    def _pairs(value: Any) -> dict[str, Any]:
+        if isinstance(value, Mapping):
+            return {str(key): val for key, val in value.items()}
+        if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
+            return {}
+        result: dict[str, Any] = {}
+        items = list(value)
+        for index in range(0, len(items) - 1, 2):
+            key = items[index]
+            key_text = key.decode() if isinstance(key, bytes) else str(key)
+            result[key_text] = items[index + 1]
+        return result
+
+    def _info(self, index_name: str) -> Mapping[str, Any]:
+        raw = self._client.ft(index_name).info()
+        if isinstance(raw, Mapping):
+            return raw
+        parsed = self._pairs(raw)
+        if not parsed:
+            raise SchemaValidationError("Redis FT.INFO returned an unexpected response")
+        return parsed
+
+    def _vector_contract(self, index_name: str) -> tuple[str, int]:
+        info = self._info(index_name)
+        attributes = info.get("attributes", ())
+        vector_fields: list[tuple[str, int]] = []
+        if isinstance(attributes, Sequence) and not isinstance(attributes, (str, bytes)):
+            for attr in attributes:
+                data = self._pairs(attr)
+                field_name = data.get("attribute", data.get("identifier"))
+                field_type = data.get("type")
+                if isinstance(field_name, bytes):
+                    field_name = field_name.decode()
+                if isinstance(field_type, bytes):
+                    field_type = field_type.decode()
+                if str(field_type).upper() != "VECTOR":
+                    continue
+                dimension = data.get("DIM", data.get("dim"))
+                if dimension is None:
+                    algorithm = data.get("algorithm")
+                    algorithm_data = self._pairs(algorithm)
+                    dimension = algorithm_data.get("DIM", algorithm_data.get("dim"))
+                try:
+                    parsed_dimension = int(dimension)
+                except (TypeError, ValueError) as exc:
+                    raise SchemaValidationError(
+                        f"Redis vector field {field_name!r} has no valid DIM"
+                    ) from exc
+                vector_fields.append((str(field_name), parsed_dimension))
+        configured = self._vector_field_by_index.get(index_name)
+        if configured is not None:
+            for field_name, dimension in vector_fields:
+                if field_name == configured:
+                    return field_name, dimension
+            raise RegistrationError(
+                f"Redis index {index_name!r} has no vector field {configured!r}"
+            )
+        if len(vector_fields) == 1:
+            return vector_fields[0]
+        if not vector_fields:
+            raise RegistrationError(
+                f"Redis index {index_name!r} has no vector field"
+            )
+        raise RegistrationError(
+            f"Redis index {index_name!r} has multiple vector fields; "
+            "set vector_field_by_index"
+        )
+
+    def list_collections(self) -> tuple[VectorCollectionSpec, ...]:
+        results: list[VectorCollectionSpec] = []
+        for index_name in self._indexes():
+            vector_field, dimension = self._vector_contract(index_name)
+            self._dimension_by_index[index_name] = dimension
+            results.append(
+                VectorCollectionSpec(
+                    name=index_name,
+                    dimension=dimension,
+                    metric=self._metric_by_index.get(index_name, "unknown"),
+                    metadata_fields=self._metadata_fields_by_index.get(index_name, ()),
+                    public_metadata={"vector_field": vector_field},
+                )
+            )
+        return tuple(results)
+
+    def search(
+        self,
+        *,
+        collection: str,
+        vector: Sequence[float],
+        top_k: int,
+        include_fields: tuple[str, ...],
+        filters: Mapping[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        vector_field, _dimension = self._vector_contract(collection)
+        prefix = "*"
+        if filters:
+            if self._trusted_filter_builder is None:
+                raise RegistrationError(
+                    "Redis trusted metadata filtering requires trusted_filter_builder"
+                )
+            prefix = self._trusted_filter_builder(filters)
+        query_text = (
+            f"({prefix})=>[KNN {top_k} @{vector_field} $query_vector "
+            "AS __vector_distance]"
+        )
+        try:
+            query_cls = importlib.import_module("redis.commands.search.query").Query
+        except (ImportError, AttributeError) as exc:
+            raise RegistrationError(
+                "Redis vector search requires redis-py search support"
+            ) from exc
+        return_fields = [*include_fields, "__vector_distance"]
+        query = (
+            query_cls(query_text)
+            .sort_by("__vector_distance")
+            .return_fields(*return_fields)
+            .paging(0, top_k)
+            .dialect(2)
+        )
+        response = self._client.ft(collection).search(
+            query,
+            query_params={
+                "query_vector": array("f", (float(value) for value in vector)).tobytes()
+            },
+        )
+        docs = _read(response, "docs", ())
+        if not isinstance(docs, Sequence) or isinstance(docs, (str, bytes)):
+            raise SchemaValidationError(
+                "Redis FT.SEARCH returned an unexpected response"
+            )
+        rows: list[dict[str, Any]] = []
+        for doc in docs:
+            raw_id = _read(doc, "id")
+            score_raw = _read(doc, "__vector_distance")
+            row: dict[str, Any] = {
+                "id": raw_id,
+                "score": float(score_raw),
+            }
+            for field in include_fields:
+                value = _read(doc, field)
+                if value is not None:
+                    row[field] = value
+            rows.append(row)
+        return rows
+
+
+class PgvectorVectorBackend:
+    """SQLAlchemy/pgvector adapter over caller-owned PostgreSQL Engine."""
+
+    def __init__(
+        self,
+        engine: Any,
+        *,
+        tables: Sequence[str] | None = None,
+        vector_field_by_table: Mapping[str, str] | None = None,
+        metric_by_table: Mapping[str, str] | None = None,
+        schema: str | None = None,
+    ) -> None:
+        self._engine = engine
+        self._tables = None if tables is None else tuple(tables)
+        self._vector_field_by_table = dict(vector_field_by_table or {})
+        self._metric_by_table = dict(metric_by_table or {})
+        self._schema = schema
+        self._table_cache: dict[str, Any] = {}
+        self._pk_by_table: dict[str, str] = {}
+
+    def _sqlalchemy(self) -> tuple[Any, Any, Any]:
+        try:
+            from sqlalchemy import MetaData, Table, inspect
+        except ImportError as exc:
+            raise RegistrationError(
+                "pgvector onboarding requires SQLAlchemy"
+            ) from exc
+        return MetaData, Table, inspect
+
+    def _table(self, name: str) -> Any:
+        cached = self._table_cache.get(name)
+        if cached is not None:
+            return cached
+        MetaData, Table, _inspect = self._sqlalchemy()
+        table = Table(
+            name,
+            MetaData(),
+            schema=self._schema,
+            autoload_with=self._engine,
+        )
+        self._table_cache[name] = table
+        return table
+
+    @staticmethod
+    def _dimension(column: Any) -> int | None:
+        dimension = _read(_read(column, "type"), "dim")
+        if dimension is None:
+            text = str(_read(column, "type", ""))
+            match = re.search(r"VECTOR\((\d+)\)", text, flags=re.IGNORECASE)
+            dimension = int(match.group(1)) if match else None
+        return dimension if isinstance(dimension, int) and dimension > 0 else None
+
+    def _contract(self, table_name: str) -> tuple[str, int, tuple[VectorMetadataField, ...]]:
+        table = self._table(table_name)
+        vector_columns = [
+            (column.name, dimension)
+            for column in table.columns
+            if (dimension := self._dimension(column)) is not None
+        ]
+        configured = self._vector_field_by_table.get(table_name)
+        if configured is not None:
+            matches = [
+                (name, dimension)
+                for name, dimension in vector_columns
+                if name == configured
+            ]
+            if not matches:
+                raise RegistrationError(
+                    f"pgvector table {table_name!r} has no vector column {configured!r}"
+                )
+            vector_field, dimension = matches[0]
+        elif len(vector_columns) == 1:
+            vector_field, dimension = vector_columns[0]
+        elif not vector_columns:
+            raise RegistrationError(
+                f"pgvector table {table_name!r} has no VECTOR column"
+            )
+        else:
+            raise RegistrationError(
+                f"pgvector table {table_name!r} has multiple VECTOR columns; "
+                "set vector_field_by_table"
+            )
+
+        pk_columns = [column.name for column in table.primary_key.columns]
+        if not pk_columns:
+            raise RegistrationError(
+                f"pgvector table {table_name!r} requires a primary key"
+            )
+        self._pk_by_table[table_name] = pk_columns[0]
+        metadata = tuple(
+            VectorMetadataField(
+                name=column.name,
+                json_schema=_json_schema_from_vendor_type(_read(column, "type")),
+                filterable=True,
+            )
+            for column in table.columns
+            if column.name not in {vector_field, pk_columns[0]}
+        )
+        return vector_field, dimension, metadata
+
+    def list_collections(self) -> tuple[VectorCollectionSpec, ...]:
+        _metadata, _table, inspect = self._sqlalchemy()
+        inspector = inspect(self._engine)
+        table_names = (
+            list(self._tables)
+            if self._tables is not None
+            else list(inspector.get_table_names(schema=self._schema))
+        )
+        results: list[VectorCollectionSpec] = []
+        for table_name in table_names:
+            vector_field, dimension, metadata = self._contract(table_name)
+            results.append(
+                VectorCollectionSpec(
+                    name=table_name,
+                    dimension=dimension,
+                    metric=self._metric_by_table.get(table_name, "cosine"),
+                    metadata_fields=metadata,
+                    public_metadata={"vector_field": vector_field},
+                )
+            )
+        return tuple(results)
+
+    def search(
+        self,
+        *,
+        collection: str,
+        vector: Sequence[float],
+        top_k: int,
+        include_fields: tuple[str, ...],
+        filters: Mapping[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        try:
+            from sqlalchemy import select
+        except ImportError as exc:
+            raise RegistrationError(
+                "pgvector search requires SQLAlchemy"
+            ) from exc
+        table = self._table(collection)
+        vector_field, _dimension, metadata = self._contract(collection)
+        pk_name = self._pk_by_table[collection]
+        allowed = {field.name for field in metadata if field.filterable}
+        unknown = sorted(set(filters or ()) - allowed)
+        if unknown:
+            raise SchemaValidationError(
+                "pgvector filter requested unknown metadata fields: "
+                + ", ".join(unknown)
+            )
+        vector_column = table.c[vector_field]
+        metric = self._metric_by_table.get(collection, "cosine").lower()
+        method_name = {
+            "cosine": "cosine_distance",
+            "l2": "l2_distance",
+            "euclidean": "l2_distance",
+            "inner_product": "max_inner_product",
+            "ip": "max_inner_product",
+        }.get(metric)
+        if method_name is None or not hasattr(vector_column, method_name):
+            raise RegistrationError(
+                f"pgvector metric {metric!r} is not supported by reflected column"
+            )
+        distance = getattr(vector_column, method_name)(list(vector)).label("__distance")
+        selected_columns = [
+            table.c[field]
+            for field in include_fields
+            if field in table.c and field not in {pk_name, vector_field}
+        ]
+        statement = select(
+            table.c[pk_name].label("__id"),
+            distance,
+            *selected_columns,
+        )
+        for field, value in sorted((filters or {}).items()):
+            column = table.c[field]
+            if isinstance(value, tuple):
+                statement = statement.where(column.in_(list(value)))
+            else:
+                statement = statement.where(column == value)
+        statement = statement.order_by(distance).limit(top_k)
+        with self._engine.connect() as connection:
+            rows = connection.execute(statement).mappings().all()
+        return [
+            {
+                "id": row["__id"],
+                "score": float(row["__distance"]),
+                **{
+                    field: row[field]
+                    for field in include_fields
+                    if field in row
+                },
+            }
+            for row in rows
+        ]
