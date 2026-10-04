@@ -7,6 +7,7 @@ import re
 from collections.abc import Sequence
 from copy import deepcopy
 from typing import Any
+from uuid import uuid4
 
 from ..errors import PolicyViolationError
 from ..models import (
@@ -366,10 +367,14 @@ def _coerce_export_run_config(
     config: RunConfig | dict[str, Any] | None,
 ) -> RunConfig:
     if config is None:
-        return RunConfig()
-    if isinstance(config, RunConfig):
-        return config
-    return RunConfig.model_validate(config)
+        run_config = RunConfig()
+    elif isinstance(config, RunConfig):
+        run_config = config
+    else:
+        run_config = RunConfig.model_validate(config)
+    if run_config.run_id is not None:
+        return run_config
+    return run_config.model_copy(update={"run_id": uuid4().hex})
 
 
 def _authorized_endpoint_view(
@@ -385,13 +390,21 @@ def _authorized_endpoint_view(
         return tool, endpoint, endpoint
 
     principal = run_config.principal
-    if principal is None:
-        raise PolicyViolationError(
-            "principal context is required when authorization_policy is configured"
-        )
-    if not policy.visible(principal, tool, endpoint):
+    authorized = router._audit_export_authorization(
+        principal,
+        tool,
+        endpoint,
+        run_id=run_config.run_id,
+        principal_audit_id=run_config.principal_audit_id,
+    )
+    if not authorized:
+        if principal is None:
+            raise PolicyViolationError(
+                "principal context is required when authorization_policy is configured"
+            )
         raise PolicyViolationError("authorization denied for requested capability")
 
+    assert principal is not None
     projected = router._data_scope_endpoint_view(principal, tool, endpoint)
     if projected is None:
         raise PolicyViolationError("authorization denied for requested data scope")
@@ -466,12 +479,23 @@ def to_langchain_tools(
 ) -> list[Any]:
     """Expose principal-visible endpoints as LangChain StructuredTool objects."""
     resolved_config = _coerce_export_run_config(run_config)
+    selected = set(tool_keys) if tool_keys is not None else None
     if router.authorization_policy is not None and resolved_config.principal is None:
+        for tool in router.registry.tools():
+            if selected is not None and tool.key not in selected:
+                continue
+            for endpoint in tool.endpoints:
+                router._audit_export_authorization(
+                    None,
+                    tool,
+                    endpoint,
+                    run_id=resolved_config.run_id,
+                    principal_audit_id=resolved_config.principal_audit_id,
+                )
         raise PolicyViolationError(
             "principal context is required when authorization_policy is configured"
         )
 
-    selected = set(tool_keys) if tool_keys is not None else None
     tools = []
     for tool in router.registry.tools():
         if selected is not None and tool.key not in selected:

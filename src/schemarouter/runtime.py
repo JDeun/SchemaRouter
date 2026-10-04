@@ -36,6 +36,11 @@ from .authorization import (
     _current_principal_context,
     _principal_execution_context,
 )
+from .authorization_audit import (
+    AuthorizationAuditEvent,
+    AuthorizationAuditHook,
+    AuthorizationAuditPhase,
+)
 from .binding_reconciliation import (
     BindingReconciliationError,
     BindingReconciliationItem,
@@ -175,6 +180,13 @@ def _coerce_config(config: RunConfig | dict[str, Any] | None) -> RunConfig:
     return RunConfig.model_validate(config)
 
 
+def _coerce_run_config(config: RunConfig | dict[str, Any] | None) -> RunConfig:
+    run_config = _coerce_config(config)
+    if run_config.run_id is not None:
+        return run_config
+    return run_config.model_copy(update={"run_id": uuid4().hex})
+
+
 def _run_sync(factory: Callable[[], Awaitable[_T]]) -> _T:
     try:
         asyncio.get_running_loop()
@@ -232,6 +244,7 @@ class SchemaRouter:
         http_client: httpx.AsyncClient | None = None,
         policy: ExecutionPolicy | None = None,
         authorization_policy: AuthorizationPolicy | None = None,
+        authorization_audit_hook: AuthorizationAuditHook | None = None,
         approval_callback: ApprovalCallback | None = None,
         execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
@@ -241,6 +254,7 @@ class SchemaRouter:
     ) -> None:
         self.registry = registry if registry is not None else InMemoryRegistry()
         self.authorization_policy = authorization_policy
+        self.authorization_audit_hook = authorization_audit_hook
         self.executor = RegistryExecutor(
             self.registry,
             policy=policy,
@@ -509,14 +523,131 @@ class SchemaRouter:
             authorization(tool, endpoint) and predicate(tool, endpoint)
         )
 
+    def _emit_authorization_audit(self, event: AuthorizationAuditEvent) -> None:
+        if self.authorization_audit_hook is not None:
+            self.authorization_audit_hook(event)
+
+    def _audit_export_authorization(
+        self,
+        principal: PrincipalContext | None,
+        tool: ToolSpec,
+        endpoint: EndpointSpec,
+        *,
+        run_id: str | None = None,
+        principal_audit_id: str | None = None,
+    ) -> bool:
+        """Emit one privacy-safe authorization decision for a framework export."""
+
+        policy = self.authorization_policy
+        if policy is None:
+            return True
+        audit_run_id = run_id or uuid4().hex
+        operation = f"{tool.key}.{endpoint.name}"
+        if principal is None:
+            self._emit_authorization_audit(
+                AuthorizationAuditEvent(
+                    effect="deny",
+                    operation=operation,
+                    decision_source="missing_principal",
+                    run_id=audit_run_id,
+                    phase="export",
+                    principal_audit_id=principal_audit_id,
+                    tool=tool.key,
+                    endpoint=endpoint.name,
+                )
+            )
+            return False
+
+        decision = policy.evaluate(principal, tool, endpoint)
+        if decision.effect != "allow":
+            self._emit_authorization_audit(
+                AuthorizationAuditEvent(
+                    effect="deny",
+                    operation=decision.operation,
+                    decision_source=decision.source,
+                    run_id=audit_run_id,
+                    phase="export",
+                    principal_audit_id=principal_audit_id,
+                    rule_name=decision.rule_name,
+                    tool=tool.key,
+                    endpoint=endpoint.name,
+                )
+            )
+            return False
+
+        try:
+            scope = policy.data_scope(principal, tool, endpoint)
+        except PolicyViolationError:
+            self._emit_authorization_audit(
+                AuthorizationAuditEvent(
+                    effect="deny",
+                    operation=decision.operation,
+                    decision_source=decision.source,
+                    run_id=audit_run_id,
+                    phase="export",
+                    principal_audit_id=principal_audit_id,
+                    rule_name=decision.rule_name,
+                    tool=tool.key,
+                    endpoint=endpoint.name,
+                )
+            )
+            raise
+
+        self._emit_authorization_audit(
+            AuthorizationAuditEvent(
+                effect="allow",
+                operation=decision.operation,
+                decision_source=decision.source,
+                run_id=audit_run_id,
+                phase="export",
+                principal_audit_id=principal_audit_id,
+                rule_name=decision.rule_name,
+                data_scope_rule_name=scope.rule_name,
+                visible_field_count=(
+                    None if scope.visible_fields is None else len(scope.visible_fields)
+                ),
+                trusted_filter_fields=tuple(
+                    field for field, _value in scope.trusted_filters
+                ),
+                allowed_relationship_count=(
+                    None
+                    if scope.allowed_relationships is None
+                    else len(scope.allowed_relationships)
+                ),
+                max_hops=scope.max_hops,
+                tool=tool.key,
+                endpoint=endpoint.name,
+            )
+        )
+        return True
+
     def _validate_plan_authorization(
         self,
         plan: ExecutionPlan,
         principal: PrincipalContext | None,
+        *,
+        run_id: str | None = None,
+        principal_audit_id: str | None = None,
+        phase: AuthorizationAuditPhase = "execution",
     ) -> None:
-        if self.authorization_policy is None:
+        policy = self.authorization_policy
+        if policy is None:
             return
+        audit_run_id = run_id or uuid4().hex
         if principal is None:
+            for call in plan.calls:
+                self._emit_authorization_audit(
+                    AuthorizationAuditEvent(
+                        effect="deny",
+                        operation=f"{call.tool}.{call.endpoint}",
+                        decision_source="missing_principal",
+                        run_id=audit_run_id,
+                        phase=phase,
+                        principal_audit_id=principal_audit_id,
+                        tool=call.tool,
+                        endpoint=call.endpoint,
+                    )
+                )
             raise PolicyViolationError(
                 "principal context is required when authorization_policy is configured"
             )
@@ -525,14 +656,100 @@ class SchemaRouter:
                 tool = self.registry.get(call.tool)
                 endpoint = tool.endpoint(call.endpoint)
             except KeyError as exc:
+                self._emit_authorization_audit(
+                    AuthorizationAuditEvent(
+                        effect="deny",
+                        operation=f"{call.tool}.{call.endpoint}",
+                        decision_source="missing_capability",
+                        run_id=audit_run_id,
+                        phase=phase,
+                        principal_audit_id=principal_audit_id,
+                        tool=call.tool,
+                        endpoint=call.endpoint,
+                    )
+                )
                 raise PolicyViolationError(
                     "authorization denied for requested capability"
                 ) from exc
-            self.authorization_policy.validate(
-                principal,
-                tool,
-                endpoint,
-                call,
+
+            decision = policy.evaluate(principal, tool, endpoint, call)
+            if decision.effect != "allow":
+                self._emit_authorization_audit(
+                    AuthorizationAuditEvent(
+                        effect="deny",
+                        operation=decision.operation,
+                        decision_source=decision.source,
+                        run_id=audit_run_id,
+                        phase=phase,
+                        principal_audit_id=principal_audit_id,
+                        rule_name=decision.rule_name,
+                        tool=tool.key,
+                        endpoint=endpoint.name,
+                    )
+                )
+                raise PolicyViolationError(
+                    "authorization denied for requested capability"
+                )
+
+            scope = policy.data_scope(principal, tool, endpoint)
+            try:
+                policy.validate_data_scope(principal, tool, endpoint, call)
+            except PolicyViolationError:
+                self._emit_authorization_audit(
+                    AuthorizationAuditEvent(
+                        effect="deny",
+                        operation=decision.operation,
+                        decision_source=decision.source,
+                        run_id=audit_run_id,
+                        phase=phase,
+                        principal_audit_id=principal_audit_id,
+                        rule_name=decision.rule_name,
+                        data_scope_rule_name=scope.rule_name,
+                        visible_field_count=(
+                            None
+                            if scope.visible_fields is None
+                            else len(scope.visible_fields)
+                        ),
+                        trusted_filter_fields=tuple(
+                            field for field, _value in scope.trusted_filters
+                        ),
+                        allowed_relationship_count=(
+                            None
+                            if scope.allowed_relationships is None
+                            else len(scope.allowed_relationships)
+                        ),
+                        max_hops=scope.max_hops,
+                        tool=tool.key,
+                        endpoint=endpoint.name,
+                    )
+                )
+                raise
+
+            self._emit_authorization_audit(
+                AuthorizationAuditEvent(
+                    effect="allow",
+                    operation=decision.operation,
+                    decision_source=decision.source,
+                    run_id=audit_run_id,
+                    phase=phase,
+                    principal_audit_id=principal_audit_id,
+                    rule_name=decision.rule_name,
+                    data_scope_rule_name=scope.rule_name,
+                    visible_field_count=(
+                        None if scope.visible_fields is None else len(scope.visible_fields)
+                    ),
+                    trusted_filter_fields=tuple(
+                        field for field, _value in scope.trusted_filters
+                    ),
+                    allowed_relationship_count=(
+                        None
+                        if scope.allowed_relationships is None
+                        else len(scope.allowed_relationships)
+                    ),
+                    max_hops=scope.max_hops,
+                    tool=tool.key,
+                    endpoint=endpoint.name,
+                )
             )
 
     async def __aenter__(self) -> SchemaRouter:
@@ -4132,7 +4349,7 @@ class SchemaRouter:
             else self.planner.plan_with_additional_availability(request, predicate)
         )
         if self.authorization_policy is not None:
-            self._validate_plan_authorization(plan, principal)
+            self._validate_plan_authorization(plan, principal, phase="plan")
         return plan
 
     async def aplan(self, request: PlanRequest | str) -> ExecutionPlan:
@@ -4149,7 +4366,7 @@ class SchemaRouter:
             )
         )
         if self.authorization_policy is not None:
-            self._validate_plan_authorization(plan, principal)
+            self._validate_plan_authorization(plan, principal, phase="plan")
         return plan
 
     def plan_authorized(
@@ -4539,7 +4756,13 @@ class SchemaRouter:
         plan: ExecutionPlan,
         run_config: RunConfig,
     ) -> list[ToolResult]:
-        self._validate_plan_authorization(plan, run_config.principal)
+        self._validate_plan_authorization(
+            plan,
+            run_config.principal,
+            run_id=run_config.run_id,
+            principal_audit_id=run_config.principal_audit_id,
+            phase="execution",
+        )
         with _principal_execution_context(run_config.principal):
             if run_config.execution_mode == "parallel_read_only":
                 return await self.executor.execute_parallel_read_only(
@@ -4560,7 +4783,7 @@ class SchemaRouter:
         *,
         config: RunConfig | dict[str, Any] | None = None,
     ) -> list[ToolResult]:
-        run_config = _coerce_config(config)
+        run_config = _coerce_run_config(config)
         return await self._execute_plan(plan, run_config)
 
     async def ainvoke(
@@ -4569,7 +4792,7 @@ class SchemaRouter:
         *,
         config: RunConfig | dict[str, Any] | None = None,
     ) -> list[ToolResult]:
-        run_config = _coerce_config(config)
+        run_config = _coerce_run_config(config)
         with _principal_execution_context(run_config.principal):
             plan = await self.aplan_executable(request)
         return await self._execute_plan(plan, run_config)
@@ -4673,9 +4896,17 @@ class SchemaRouter:
         *,
         config: RunConfig | dict[str, Any] | None = None,
     ) -> AsyncIterator[ToolResult]:
-        run_config = _coerce_config(config)
+        run_config = _coerce_run_config(config)
         with _principal_execution_context(run_config.principal):
             plan = await self.aplan_executable(request)
+
+        self._validate_plan_authorization(
+            plan,
+            run_config.principal,
+            run_id=run_config.run_id,
+            principal_audit_id=run_config.principal_audit_id,
+            phase="execution",
+        )
 
         if run_config.execution_mode == "parallel_read_only":
             iterator = self.executor.execute_parallel_read_only_iter(
@@ -4721,13 +4952,13 @@ class SchemaRouter:
         config: RunConfig | dict[str, Any] | None = None,
         trace_store: RunTraceStore | None = None,
     ) -> AsyncIterator[RunEvent]:
-        run_config = _coerce_config(config)
+        run_config = _coerce_run_config(config)
 
         async def emit(event: RunEvent) -> RunEvent:
             if trace_store is not None:
                 trace_store.append(event)
             return event
-        run_id = uuid4().hex
+        run_id = run_config.run_id or uuid4().hex
         sequence = 0
 
         request_payload: dict[str, Any] = {
@@ -4764,6 +4995,14 @@ class SchemaRouter:
                 data=data,
             ))
             raise
+
+        self._validate_plan_authorization(
+            plan,
+            run_config.principal,
+            run_id=run_id,
+            principal_audit_id=run_config.principal_audit_id,
+            phase="execution",
+        )
 
         plan_data: dict[str, Any] = {
             "call_count": len(plan.calls),

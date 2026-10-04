@@ -205,3 +205,42 @@ remain authoritative and should be configured independently.
 The first matching data-scope rule applies, mirroring capability-rule ordering. Keep broad rules
 after specific employee/team/department rules.
 
+
+
+## Authorization audit events
+
+Enterprise hosts can observe authorization decisions through an opt-in trusted callback without
+persisting raw principal claims or trusted-filter values.
+
+```python
+from schemarouter import RunConfig, SchemaRouter
+
+audit_events = []
+
+router = SchemaRouter(
+    authorization_policy=policy,
+    authorization_audit_hook=audit_events.append,
+)
+
+result = await router.execute(
+    plan,
+    config=RunConfig(
+        principal=employee,
+        principal_audit_id="directory-user-7f3a",
+    ),
+)
+```
+
+Each `AuthorizationAuditEvent` contains the decision effect, rule/default source, matched rule name,
+data-scope rule name, visible-field count, trusted-filter **field names**, graph scope summary,
+tool/endpoint identity, phase, and a run ID. When a host supplies `principal_audit_id`, the same
+opaque identifier is carried into the event.
+
+The runtime creates a run ID when the host does not provide one. LangChain and LlamaIndex exports
+reuse the same run ID for the export decision and the later execution decision, so a trusted audit
+sink can correlate the boundary without receiving the raw `PrincipalContext`.
+
+By default the audit hook is disabled. SchemaRouter does not automatically persist subjects, roles,
+departments, teams, principal attributes, or resolved trusted-filter values. If a host chooses to
+copy additional identity data into its own audit sink, that sink becomes part of the host's trusted
+security boundary.

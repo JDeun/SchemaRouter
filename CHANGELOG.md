@@ -7,6 +7,11 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+### Added
+- added opt-in privacy-safe authorization audit events with run correlation, host-supplied opaque
+  principal audit identifiers, redacted DataScope summaries, and consistent native/LangChain/
+  LlamaIndex execution-boundary coverage;
+
 ### Fixed
 - wired PrincipalContext/DataScope through exported LangChain and LlamaIndex tools so principal-visible schemas, trusted filters, and execution-time authorization remain enforced outside the native SchemaRouter invocation path;
 
