@@ -357,6 +357,31 @@ def terminal_failure(run: StageRun | None) -> bool:
     )
 
 
+def select_corrective_run(
+    api: GitHubAPI,
+    runs: list[StageRun],
+) -> StageRun | None:
+    """Prefer scientific evidence over newer concurrency-blocked duplicates."""
+
+    if not runs:
+        return None
+
+    # A successful run is authoritative even if later duplicate dispatches exist.
+    for run in reversed(runs):
+        if terminal_success(run):
+            return run
+
+    # GitHub can report a matrix workflow itself as "queued" while hundreds of
+    # materialized jobs are completed/running/queued. Preserve the oldest such
+    # execution instead of mistaking a newer zero-job pending duplicate for the
+    # canonical run.
+    for run in reversed(runs):
+        if run.status != "completed" and api.workflow_run_job_count(run.id) > 0:
+            return run
+
+    return runs[0]
+
+
 MAX_INFRA_ATTEMPTS = 3
 
 
@@ -659,7 +684,23 @@ def run_controller(
             }
 
     corrective_runs = find_marked_runs(api, CORRECTIVE_WORKFLOW, b2_digest)
-    corrective = corrective_runs[0] if corrective_runs else None
+    corrective = select_corrective_run(api, corrective_runs)
+
+    if corrective is not None:
+        for duplicate in corrective_runs:
+            if duplicate.id == corrective.id:
+                continue
+            if (
+                duplicate.status in {"queued", "pending"}
+                and api.workflow_run_job_count(duplicate.id) == 0
+            ):
+                if execute:
+                    api.cancel_run_and_wait(duplicate.id)
+                actions.append(
+                    "cancel_zero_job_duplicate_corrective:"
+                    f"duplicate={duplicate.id}:selected={corrective.id}"
+                )
+
     if corrective is None:
         if execute:
             api.dispatch(
