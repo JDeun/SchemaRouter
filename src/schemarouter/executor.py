@@ -1118,9 +1118,8 @@ class RegistryExecutor:
             await tracker.before_attempt(call, tool)
 
             # Retry backoff, hooks, and other trusted awaits may outlive the policy snapshot
-            # used for planning or the previous attempt. Re-read the execution contract and
-            # authorize again immediately before each actual invoker boundary.
-            tool, endpoint, invoker = self._execution_state(call)
+            # used for planning or the previous attempt. Re-authorize immediately before each
+            # invoker boundary while preserving the already-validated registry snapshot.
             data_scope = self._authorization_scope_for_attempt(
                 tool,
                 endpoint,
