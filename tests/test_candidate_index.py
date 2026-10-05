@@ -12,6 +12,7 @@ from schemarouter import (
     ToolSpec,
 )
 
+from schemarouter.planner import _CandidateIndex, _normalize, _semantic_substring_match
 
 def make_tool(
     index: int,
@@ -369,3 +370,98 @@ def test_field_evidence_validation_reuses_candidate_index_snapshot() -> None:
     planner.retrieve(updated, k=1)
 
     assert registry.tools_calls == 2
+
+
+def test_candidate_index_trigram_prefilter_matches_legacy_substring_scan() -> None:
+    registry = InMemoryRegistry()
+    field_names = [
+        "thermal_conductivity",
+        "electrical_conductivity",
+        "conductivity",
+        "density",
+        "silicon_density",
+        "Si",
+        "열전도율",
+        "고온열전도율",
+        "전도율",
+        "밀도",
+        "재료열전도율",
+    ]
+    registry.update_many(
+        [
+            ToolSpec(
+                name=f"semantic_{index}",
+                endpoints=[
+                    EndpointSpec(
+                        name="lookup",
+                        output_fields=[FieldSpec(name=field_name)],
+                        read_only=True,
+                    )
+                ],
+            )
+            for index, field_name in enumerate(field_names)
+        ]
+    )
+    index = _CandidateIndex(registry.version, registry.tools())
+    request = PlanRequest(query="__no_catalog_match__")
+
+    for concepts in (
+        ["conductivity"],
+        ["thermalconductivity"],
+        ["density"],
+        ["Si"],
+        ["전도율"],
+        ["열전도율"],
+        ["재료열전도율"],
+        ["conductivity", "열전도율"],
+    ):
+        intent = QueryIntent(concepts=concepts)
+        concept_norms = {
+            _normalize(concept)
+            for concept in concepts
+            if concept and _normalize(concept)
+        }
+
+        legacy_refs: set[tuple[str, str]] = set()
+        for concept in concept_norms:
+            legacy_refs.update(
+                (ref.tool_key, ref.endpoint_name)
+                for ref in index._field_norm_refs.get(concept, ())
+            )
+        for norm, norm_refs in index._field_norm_refs.items():
+            if any(
+                _semantic_substring_match(concept, norm)
+                for concept in concept_norms
+            ):
+                legacy_refs.update(
+                    (ref.tool_key, ref.endpoint_name)
+                    for ref in norm_refs
+                )
+
+        indexed_refs = {
+            (tool.key, endpoint.name)
+            for tool, endpoint in index.endpoint_pairs(request, intent)
+        }
+        assert indexed_refs == legacy_refs
+
+
+def test_candidate_index_trigram_memory_is_bounded_by_indexed_norm_length() -> None:
+    registry = InMemoryRegistry()
+    registry.update_many(
+        [
+            make_tool(index, keyword=f"semantic_property_{index}")
+            for index in range(50)
+        ]
+    )
+    index = _CandidateIndex(registry.version, registry.tools())
+
+    association_count = sum(
+        len(norms)
+        for norms in index._field_trigram_norms.values()
+    )
+    theoretical_bound = sum(
+        max(len(norm) - 2, 0)
+        for norm in index._field_norm_refs
+    )
+
+    assert association_count <= theoretical_bound
