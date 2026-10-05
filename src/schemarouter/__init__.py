@@ -86,11 +86,11 @@ from .adapters.vector_store import (
     introspect_vector_backend,
 )
 from .adaptive_context import (
-    SchemaExposureDecision,
-    SessionSchemaExposure,
-    SuccessfulCapabilityHistory,
-    apply_success_prior,
-    filter_unexposed_schemas,
+    SchemaExposureDecision as SchemaExposureDecision,
+    SessionSchemaExposure as SessionSchemaExposure,
+    SuccessfulCapabilityHistory as SuccessfulCapabilityHistory,
+    apply_success_prior as apply_success_prior,
+    filter_unexposed_schemas as filter_unexposed_schemas,
 )
 from .aggregation import (
     AggregatedField,
