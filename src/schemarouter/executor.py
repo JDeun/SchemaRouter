@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import math
+import threading
 import time
 from collections.abc import AsyncIterator, Awaitable
 from copy import deepcopy
@@ -70,6 +71,14 @@ class CallAwareEndpointInvoker(Protocol):
 
 
 BoundEndpointInvoker = EndpointInvoker | CallAwareEndpointInvoker
+
+
+@dataclass(frozen=True)
+class _BindingSnapshot:
+    invoker: BoundEndpointInvoker | None
+    fingerprint: str | None
+    offload_sync: bool
+    generation: int | None
 
 
 @dataclass
@@ -242,11 +251,77 @@ class RegistryExecutor:
         self.approval_callback = approval_callback
         self.hooks = hooks or ExecutionHooks()
         self.unavailable_cooldown_seconds = float(unavailable_cooldown_seconds)
+        self._runtime_state_lock = threading.RLock()
+        self._binding_generation = 0
         self._invokers: dict[str, BoundEndpointInvoker] = {}
         self._binding_fingerprints: dict[str, str] = {}
         self._binding_offload_sync: dict[str, bool] = {}
+        self._binding_generations: dict[str, int] = {}
         self._inflight_offloaded_sync: set[asyncio.Future[Any]] = set()
         self._unavailable_until: dict[tuple[str, str, str], float] = {}
+
+    def _binding_snapshot(self, tool_key: str) -> _BindingSnapshot:
+        with self._runtime_state_lock:
+            return _BindingSnapshot(
+                invoker=self._invokers.get(tool_key),
+                fingerprint=self._binding_fingerprints.get(tool_key),
+                offload_sync=self._binding_offload_sync.get(tool_key, False),
+                generation=self._binding_generations.get(tool_key),
+            )
+
+    def _store_binding(
+        self,
+        tool_key: str,
+        invoker: BoundEndpointInvoker,
+        fingerprint: str,
+        offload_sync: bool,
+    ) -> int:
+        with self._runtime_state_lock:
+            self._binding_generation += 1
+            generation = self._binding_generation
+            self._invokers[tool_key] = invoker
+            self._binding_fingerprints[tool_key] = fingerprint
+            self._binding_offload_sync[tool_key] = offload_sync
+            self._binding_generations[tool_key] = generation
+            return generation
+
+    def _remove_binding_locked(self, tool_key: str) -> None:
+        self._invokers.pop(tool_key, None)
+        self._binding_fingerprints.pop(tool_key, None)
+        self._binding_offload_sync.pop(tool_key, None)
+        self._binding_generations.pop(tool_key, None)
+
+    def _remove_binding_if_generation(
+        self,
+        tool_key: str,
+        generation: int,
+    ) -> bool:
+        with self._runtime_state_lock:
+            if self._binding_generations.get(tool_key) != generation:
+                return False
+            self._remove_binding_locked(tool_key)
+            return True
+
+    def _restore_binding_if_generation(
+        self,
+        tool_key: str,
+        generation: int,
+        previous: _BindingSnapshot,
+    ) -> bool:
+        with self._runtime_state_lock:
+            if self._binding_generations.get(tool_key) != generation:
+                return False
+            if previous.invoker is None or previous.fingerprint is None:
+                self._remove_binding_locked(tool_key)
+                return True
+
+            self._binding_generation += 1
+            restored_generation = self._binding_generation
+            self._invokers[tool_key] = previous.invoker
+            self._binding_fingerprints[tool_key] = previous.fingerprint
+            self._binding_offload_sync[tool_key] = previous.offload_sync
+            self._binding_generations[tool_key] = restored_generation
+            return True
 
     def _current_access_key(
         self,
