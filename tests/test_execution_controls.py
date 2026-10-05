@@ -166,6 +166,84 @@ async def test_wall_clock_budget_interrupts_async_approval_for_direct_call() -> 
 
 
 @pytest.mark.asyncio
+async def test_parallel_budget_reservations_are_atomic_at_exact_boundaries() -> None:
+    registry, _, call, _ = _setup(remote=True)
+    tool = registry.get("demo")
+    tracker = ExecutionBudgetTracker(
+        ExecutionBudget(
+            max_tool_calls=1,
+            per_tool_calls={"demo": 1},
+            max_attempts=1,
+            max_remote_attempts=1,
+            max_cost_units=1.0,
+            cost_units={"demo.run": 1.0},
+        )
+    )
+
+    await tracker._reservation_lock.acquire()
+    call_reservations = [
+        asyncio.create_task(tracker.before_call(call))
+        for _ in range(2)
+    ]
+    await asyncio.sleep(0)
+    tracker._reservation_lock.release()
+    call_results = await asyncio.gather(
+        *call_reservations,
+        return_exceptions=True,
+    )
+
+    assert sum(result is None for result in call_results) == 1
+    assert sum(
+        isinstance(result, ExecutionBudgetExceededError)
+        for result in call_results
+    ) == 1
+    assert tracker.tool_calls == 1
+    assert tracker.per_tool_calls == {"demo": 1}
+
+    await tracker._reservation_lock.acquire()
+    attempt_reservations = [
+        asyncio.create_task(tracker.before_attempt(call, tool))
+        for _ in range(2)
+    ]
+    await asyncio.sleep(0)
+    tracker._reservation_lock.release()
+    attempt_results = await asyncio.gather(
+        *attempt_reservations,
+        return_exceptions=True,
+    )
+
+    assert sum(result is None for result in attempt_results) == 1
+    assert sum(
+        isinstance(result, ExecutionBudgetExceededError)
+        for result in attempt_results
+    ) == 1
+    assert tracker.attempts == 1
+    assert tracker.remote_attempts == 1
+    assert tracker.cost_units == 1.0
+
+
+@pytest.mark.asyncio
+async def test_failed_attempt_reservation_does_not_partially_consume_budget() -> None:
+    registry, _, call, _ = _setup(remote=True)
+    tool = registry.get("demo")
+    tracker = ExecutionBudgetTracker(
+        ExecutionBudget(
+            max_attempts=2,
+            max_remote_attempts=0,
+            max_cost_units=2.0,
+            cost_units={"demo.run": 1.0},
+        )
+    )
+
+    with pytest.raises(ExecutionBudgetExceededError, match="max_remote_attempts=0"):
+        await tracker.before_attempt(call, tool)
+
+    assert tracker.attempts == 0
+    assert tracker.remote_attempts == 0
+    assert tracker.cost_units == 0.0
+
+
+@pytest.mark.asyncio
 async def test_budget_limits_logical_tool_calls_across_plan() -> None:
     registry = InMemoryRegistry()
     tool = ToolSpec(
