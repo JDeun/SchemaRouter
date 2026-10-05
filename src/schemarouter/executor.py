@@ -11,6 +11,7 @@ from typing import Any, Protocol, cast
 
 from .authorization import (
     AuthorizationPolicy,
+    DataScopeDecision,
     _current_principal_context,
     _data_scope_execution_context,
 )
@@ -1053,6 +1054,36 @@ class RegistryExecutor:
                     result=result.model_copy(deep=True),
                 )
 
+    def _authorization_scope_for_attempt(
+        self,
+        tool: ToolSpec,
+        endpoint: EndpointSpec,
+        call: ToolCall,
+    ) -> DataScopeDecision | None:
+        """Authorize one imminent invocation against one immutable policy snapshot."""
+
+        policy = self.authorization_policy
+        if policy is None:
+            return None
+
+        principal = _current_principal_context()
+        if principal is None:
+            raise PolicyViolationError(
+                "authorization denied for requested capability"
+            )
+
+        decision = policy.evaluate(principal, tool, endpoint, call)
+        if decision.effect != "allow":
+            raise PolicyViolationError(
+                "authorization denied for requested capability"
+            )
+        return policy.validate_data_scope(
+            principal,
+            tool,
+            endpoint,
+            call,
+        )
+
     async def execute_call(
         self,
         call: ToolCall,
@@ -1077,19 +1108,6 @@ class RegistryExecutor:
         if before_hooks_ran:
             tool, endpoint, invoker = self._execution_state(call)
 
-        data_scope = None
-        if self.authorization_policy is not None:
-            principal = _current_principal_context()
-            if principal is None:
-                raise PolicyViolationError(
-                    "authorization denied for requested data scope"
-                )
-            data_scope = self.authorization_policy.data_scope(
-                principal,
-                tool,
-                endpoint,
-            )
-
         retry = retry or RetryPolicy()
         can_retry = endpoint.read_only is True or retry.retry_non_read_only
         max_attempts = retry.max_attempts if can_retry else 1
@@ -1098,6 +1116,17 @@ class RegistryExecutor:
         last_error: Exception | None = None
         for attempt in range(1, max_attempts + 1):
             await tracker.before_attempt(call, tool)
+
+            # Retry backoff, hooks, and other trusted awaits may outlive the policy snapshot
+            # used for planning or the previous attempt. Re-read the execution contract and
+            # authorize again immediately before each actual invoker boundary.
+            tool, endpoint, invoker = self._execution_state(call)
+            data_scope = self._authorization_scope_for_attempt(
+                tool,
+                endpoint,
+                call,
+            )
+
             try:
                 invoke_call = getattr(invoker, "invoke_call", None)
                 call_aware = callable(invoke_call)
