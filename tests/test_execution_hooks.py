@@ -15,6 +15,7 @@ from schemarouter import (
     FieldSpec,
     InMemoryRegistry,
     ParameterSpec,
+    PostInvocationHookError,
     RegistryExecutor,
     RetryPolicy,
     SchemaDriftError,
@@ -236,8 +237,14 @@ async def test_after_hook_return_values_are_rejected() -> None:
         lambda endpoint_name, arguments: {"value": 2},
     )
 
-    with pytest.raises(ExecutionHookError, match="must return None"):
+    with pytest.raises(
+        PostInvocationHookError,
+        match="must return None after successful invocation",
+    ) as exc_info:
         await executor.execute_call(call)
+
+    assert exc_info.value.execution_succeeded is True
+    assert exc_info.value.result.data == {"value": 2}
 
 
 @pytest.mark.asyncio
@@ -321,16 +328,20 @@ async def test_after_hook_time_is_interrupted_by_elapsed_budget() -> None:
 
     started = time.monotonic()
     with pytest.raises(
-        ExecutionBudgetExceededError,
-        match="during after execution hook",
-    ):
+        PostInvocationHookError,
+        match="after execution hook failed after successful invocation",
+    ) as exc_info:
         await executor.execute_call(
             call,
             budget=ExecutionBudget(max_elapsed_seconds=0.1),
         )
     elapsed = time.monotonic() - started
 
+    assert exc_info.value.execution_succeeded is True
+    assert exc_info.value.result.data == {"value": 2}
+    assert isinstance(exc_info.value.__cause__, ExecutionBudgetExceededError)
     assert elapsed < 0.75
+
 
 @pytest.mark.asyncio
 async def test_after_hook_failure_is_never_retried() -> None:
@@ -351,12 +362,67 @@ async def test_after_hook_failure_is_never_retried() -> None:
     )
     executor.bind("demo", invoke)
 
-    with pytest.raises(ExecutionHookError, match="after execution hook failed"):
+    with pytest.raises(
+        PostInvocationHookError,
+        match="after execution hook failed after successful invocation",
+    ) as exc_info:
         await executor.execute_call(
             call,
             retry=RetryPolicy(max_attempts=3),
         )
 
+    assert exc_info.value.execution_succeeded is True
+    assert exc_info.value.result.data == {"value": 2}
+    assert attempts == 1
+
+
+@pytest.mark.asyncio
+async def test_mutating_after_hook_failure_preserves_success_and_never_retries() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="writer",
+        endpoints=[
+            EndpointSpec(
+                name="write",
+                read_only=False,
+                output_fields=[FieldSpec(name="value")],
+            )
+        ],
+    )
+    registry.register(tool)
+    endpoint = registry.endpoint("writer", "write")
+    call = ToolCall(
+        tool="writer",
+        endpoint="write",
+        fields=["value"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+    attempts = 0
+
+    def invoke(endpoint_name, arguments):
+        nonlocal attempts
+        del endpoint_name, arguments
+        attempts += 1
+        return {"value": 7}
+
+    def after(tool, endpoint, hook_call, result):
+        raise RuntimeError("audit sink unavailable")
+
+    executor = RegistryExecutor(
+        registry,
+        hooks=ExecutionHooks(after_call=[after]),
+    )
+    executor.bind("writer", invoke, expected_fingerprint=tool.fingerprint)
+
+    with pytest.raises(PostInvocationHookError) as exc_info:
+        await executor.execute_call(
+            call,
+            retry=RetryPolicy(max_attempts=3, retry_non_read_only=True),
+        )
+
+    assert exc_info.value.execution_succeeded is True
+    assert exc_info.value.result.data == {"value": 7}
     assert attempts == 1
 
 
