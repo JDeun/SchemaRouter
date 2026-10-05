@@ -105,13 +105,13 @@ def evaluate_preconditions(
     """Evaluate only declared typed preconditions; never infer authorization."""
 
     reasons: list[StateEligibilityReason] = []
-    observed = {
-        item.contract.semantic_id: item
-        for item in state.observed_fields
-    }
+    observed: dict[str, list[ObservedStateField]] = {}
+    for item in state.observed_fields:
+        observed.setdefault(item.contract.semantic_id, []).append(item)
+
     for condition in preconditions:
-        item = observed.get(condition.semantic_id)
-        if item is None:
+        items = observed.get(condition.semantic_id, [])
+        if not items:
             reasons.append(StateEligibilityReason(
                 code="missing_required_state",
                 semantic_id=condition.semantic_id,
@@ -120,21 +120,30 @@ def evaluate_preconditions(
             continue
         if condition.operator == "exists":
             continue
-        # TypedExecutionState intentionally carries contract metadata and stable identifiers,
-        # not arbitrary runtime payloads. Value predicates therefore fail closed unless the
-        # host exposes the comparison target as a stable identifier.
-        value = item.stable_identifier
-        if value is None:
+
+        # TypedExecutionState intentionally carries contract metadata and stable
+        # identifiers, not arbitrary runtime payloads. When multiple observations
+        # share a semantic ID, any matching stable identifier satisfies the
+        # precondition; input ordering therefore cannot select a different winner.
+        values = sorted(
+            item.stable_identifier
+            for item in items
+            if item.stable_identifier is not None
+        )
+        if not values:
             reasons.append(StateEligibilityReason(
                 code="precondition_failed",
                 semantic_id=condition.semantic_id,
                 detail="precondition value is not available in typed observable state",
             ))
             continue
-        matches = (
-            value == condition.value
-            if condition.operator == "equals"
-            else condition.value is not None and condition.value in value
+        matches = any(
+            (
+                value == condition.value
+                if condition.operator == "equals"
+                else condition.value is not None and condition.value in value
+            )
+            for value in values
         )
         if not matches:
             reasons.append(StateEligibilityReason(
