@@ -19,6 +19,8 @@ from schemarouter import (
     RunConfig,
     SchemaDriftError,
     SchemaRouter,
+    SessionSchemaExposure,
+    SuccessfulCapabilityHistory,
     ToolCall,
     ToolSpec,
 )
@@ -1028,3 +1030,37 @@ async def test_event_plan_payload_reflects_execution_ready_route() -> None:
     plan_event = next(event for event in events if event.event == "plan.end")
     assert plan_event.data["plan"]["calls"][0]["tool"] == "bound_route"
     assert next(event for event in events if event.event == "tool.end").tool == "bound_route"
+
+
+
+def test_retrieve_adaptive_suppresses_already_exposed_schema() -> None:
+    router = make_router()
+    exposure = SessionSchemaExposure()
+    exposure.mark_exposed("weather", "current")
+
+    result = router.retrieve_adaptive(request(), exposure=exposure, k=5)
+    assert result.candidates == []
+
+    exposure.compacted()
+    restored = router.retrieve_adaptive(request(), exposure=exposure, k=5)
+    assert [candidate.route_id for candidate in restored.candidates] == [
+        "weather.current"
+    ]
+
+
+@pytest.mark.asyncio
+async def test_aretrieve_adaptive_accepts_success_history_without_changing_default() -> None:
+    router = make_router()
+    history = SuccessfulCapabilityHistory()
+    history.record_success("weather", "current")
+
+    baseline = await router.aretrieve(request(), k=5)
+    adaptive = await router.aretrieve_adaptive(
+        request(),
+        history=history,
+        history_weight=1.0,
+        k=5,
+    )
+    assert [candidate.route_id for candidate in adaptive.candidates] == [
+        candidate.route_id for candidate in baseline.candidates
+    ]

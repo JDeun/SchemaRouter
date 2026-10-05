@@ -24,6 +24,12 @@ from .adapters.mcp import (
 from .adapters.openapi import OpenAPIRemoteInvoker
 from .adapters.plugins import load_adapter_plugins as _load_adapter_plugins
 from .adapters.python import PythonCallableInvoker, callable_options, tool_from_callable
+from .adaptive_context import (
+    SessionSchemaExposure,
+    SuccessfulCapabilityHistory,
+    apply_success_prior,
+    filter_unexposed_schemas,
+)
 from .amendment_overlay import (
     amendment_overlay,
     prepare_amended_capability,
@@ -4886,6 +4892,50 @@ class SchemaRouter:
 
         with _principal_execution_context(principal):
             return self.retrieve(request, k=k)
+
+    def retrieve_adaptive(
+        self,
+        request: PlanRequest | str,
+        *,
+        history: SuccessfulCapabilityHistory | None = None,
+        history_weight: float = 0.0,
+        exposure: SessionSchemaExposure | None = None,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        """Retrieve with optional post-authorization history/context transforms."""
+
+        retrieval = self.retrieve(request, k=k)
+        if history is not None:
+            retrieval = apply_success_prior(
+                retrieval,
+                history,
+                weight=history_weight,
+            )
+        if exposure is not None:
+            retrieval = filter_unexposed_schemas(retrieval, exposure)
+        return retrieval
+
+    async def aretrieve_adaptive(
+        self,
+        request: PlanRequest | str,
+        *,
+        history: SuccessfulCapabilityHistory | None = None,
+        history_weight: float = 0.0,
+        exposure: SessionSchemaExposure | None = None,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        """Async counterpart to :meth:`retrieve_adaptive`."""
+
+        retrieval = await self.aretrieve(request, k=k)
+        if history is not None:
+            retrieval = apply_success_prior(
+                retrieval,
+                history,
+                weight=history_weight,
+            )
+        if exposure is not None:
+            retrieval = filter_unexposed_schemas(retrieval, exposure)
+        return retrieval
 
     async def aretrieve_authorized(
         self,
