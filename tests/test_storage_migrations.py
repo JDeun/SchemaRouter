@@ -6,7 +6,6 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 import schemarouter.storage as storage_module
-
 from schemarouter.errors import StorageFormatError
 from schemarouter.models import EndpointSpec, FieldSpec, ToolSpec
 from schemarouter.registry import SQLiteRegistry
