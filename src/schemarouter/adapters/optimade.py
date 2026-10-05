@@ -8,7 +8,6 @@ from urllib.parse import quote, urljoin, urlparse
 import httpx
 
 from ..errors import InvocationUnavailableError, NonRetryableInvocationError, SchemaSourceError
-from ..network_policy import NetworkPolicy, TRUSTED_INTERNAL_NETWORK_POLICY
 from ..models import (
     EndpointSpec,
     FieldSpec,
@@ -17,6 +16,7 @@ from ..models import (
     ToolCall,
     ToolSpec,
 )
+from ..network_policy import NetworkPolicy, TRUSTED_INTERNAL_NETWORK_POLICY
 from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile, RefreshProfile
 
 _MAX_DISCOVERY_BYTES = 2 * 1024 * 1024
