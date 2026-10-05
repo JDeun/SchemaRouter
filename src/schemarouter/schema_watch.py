@@ -364,7 +364,6 @@ class SchemaWatchManager:
                     _expected_fingerprint=record.tool_fingerprint,
                     _expected_source_identity=record.source_identity,
                     _apply_guard=lambda: self._watch_commit_guard(tool_key, record),
-                    _apply_guard=lambda: self._watch_commit_guard(tool_key, record),
                     _accept_candidate_fingerprint=expected_candidate_fingerprint,
                     _accept_candidate_source_identity=(
                         pending.candidate_source_identity
