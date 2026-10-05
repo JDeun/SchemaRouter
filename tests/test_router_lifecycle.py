@@ -21,18 +21,25 @@ async def test_aclose_is_safe_before_start_and_idempotent() -> None:
 
 
 @pytest.mark.asyncio
-async def test_aclose_stops_both_background_managers() -> None:
+async def test_aclose_stops_all_background_managers() -> None:
     router = SchemaRouter()
     await router.start_health_monitor(interval_seconds=60)
     await router.start_schema_watcher()
+    await router.start_native_schema_watcher(interval_seconds=60)
 
     assert router.health_monitor.running is True
     assert router.schema_watcher.running is True
+    assert router._native_schema_watch_task is not None
+    assert router._native_schema_watch_task.done() is False
 
     await router.aclose()
 
     assert router.health_monitor.running is False
     assert router.schema_watcher.running is False
+    assert router._native_schema_watch_task is None
+
+    await router.aclose()
+    assert router._native_schema_watch_task is None
 
 
 @pytest.mark.asyncio
@@ -54,11 +61,14 @@ async def test_async_context_manager_closes_background_tasks() -> None:
         assert entered is router
         await router.start_health_monitor(interval_seconds=60)
         await router.start_schema_watcher()
+        await router.start_native_schema_watcher(interval_seconds=60)
         assert router.health_monitor.running is True
         assert router.schema_watcher.running is True
+        assert router._native_schema_watch_task is not None
 
     assert router.health_monitor.running is False
     assert router.schema_watcher.running is False
+    assert router._native_schema_watch_task is None
 
 
 @pytest.mark.asyncio
