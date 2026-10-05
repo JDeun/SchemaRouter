@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
+import schemarouter.storage as storage_module
 from schemarouter.errors import StorageFormatError
 from schemarouter.models import EndpointSpec, FieldSpec, ToolSpec
 from schemarouter.registry import SQLiteRegistry
@@ -616,6 +617,59 @@ def test_backup_refuses_existing_destination_without_overwrite(tmp_path) -> None
         backup_sqlite_storage(path, backup)
 
     assert backup.read_bytes() == b"do-not-overwrite"
+
+
+
+
+def test_backup_refuses_symlink_destination_without_touching_target(tmp_path) -> None:
+    path = tmp_path / "registry-source.sqlite3"
+    victim = tmp_path / "victim.sqlite3"
+    backup = tmp_path / "backup.sqlite3"
+
+    with SQLiteRegistry(path):
+        pass
+    victim.write_bytes(b"victim-data")
+    try:
+        backup.symlink_to(victim)
+    except OSError:
+        pytest.skip("symlink creation is unavailable on this platform")
+
+    with pytest.raises(StorageFormatError, match="already exists|unsafe"):
+        backup_sqlite_storage(path, backup)
+
+    assert backup.is_symlink()
+    assert victim.read_bytes() == b"victim-data"
+
+
+def test_backup_failure_cleanup_does_not_unlink_replaced_destination(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "registry-source.sqlite3"
+    backup = tmp_path / "reserved-backup.sqlite3"
+
+    with SQLiteRegistry(path):
+        pass
+
+    def replace_reserved_path_then_fail(
+        backup_path,
+        descriptor,
+    ) -> None:
+        del backup_path, descriptor
+        backup.unlink()
+        backup.write_bytes(b"concurrent-owner")
+        raise OSError("synthetic copy failure")
+
+    monkeypatch.setattr(
+        storage_module,
+        "_copy_backup_to_reserved_destination",
+        replace_reserved_path_then_fail,
+    )
+
+    with pytest.raises(StorageFormatError, match="SQLite backup failed"):
+        backup_sqlite_storage(path, backup)
+
+    assert backup.read_bytes() == b"concurrent-owner"
 
 
 def test_current_format_corrupt_document_is_reported_by_storage_inspect(
