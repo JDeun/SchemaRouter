@@ -72,6 +72,11 @@ class ExecutionBudgetTracker:
     remote_attempts: int = 0
     cost_units: float = 0.0
     per_tool_calls: dict[str, int] = field(default_factory=dict)
+    _reservation_lock: asyncio.Lock = field(
+        default_factory=asyncio.Lock,
+        repr=False,
+        compare=False,
+    )
 
     def _check_elapsed(self, *, stage: str | None = None) -> None:
         limit = self.budget.max_elapsed_seconds
@@ -135,63 +140,71 @@ class ExecutionBudgetTracker:
         await asyncio.sleep(delay)
         self._check_elapsed(stage="retry backoff")
 
-    def before_call(self, call: ToolCall) -> None:
-        self._check_elapsed()
-        next_total = self.tool_calls + 1
-        if self.budget.max_tool_calls is not None and next_total > self.budget.max_tool_calls:
-            raise ExecutionBudgetExceededError(
-                f"execution would exceed max_tool_calls={self.budget.max_tool_calls}"
+    async def before_call(self, call: ToolCall) -> None:
+        async with self._reservation_lock:
+            self._check_elapsed()
+            next_total = self.tool_calls + 1
+            if (
+                self.budget.max_tool_calls is not None
+                and next_total > self.budget.max_tool_calls
+            ):
+                raise ExecutionBudgetExceededError(
+                    f"execution would exceed max_tool_calls={self.budget.max_tool_calls}"
+                )
+
+            tool_total = self.per_tool_calls.get(call.tool, 0) + 1
+            tool_limit = self.budget.per_tool_calls.get(call.tool)
+            if tool_limit is not None and tool_total > tool_limit:
+                raise ExecutionBudgetExceededError(
+                    f"execution would exceed per_tool_calls[{call.tool!r}]={tool_limit}"
+                )
+
+            self.tool_calls = next_total
+            self.per_tool_calls[call.tool] = tool_total
+
+    async def before_attempt(self, call: ToolCall, tool: ToolSpec) -> None:
+        async with self._reservation_lock:
+            self._check_elapsed()
+            next_attempts = self.attempts + 1
+            if (
+                self.budget.max_attempts is not None
+                and next_attempts > self.budget.max_attempts
+            ):
+                raise ExecutionBudgetExceededError(
+                    f"execution would exceed max_attempts={self.budget.max_attempts}"
+                )
+
+            remote = is_remote_tool(tool)
+            next_remote = self.remote_attempts + (1 if remote else 0)
+            if (
+                self.budget.max_remote_attempts is not None
+                and next_remote > self.budget.max_remote_attempts
+            ):
+                raise ExecutionBudgetExceededError(
+                    "execution would exceed "
+                    f"max_remote_attempts={self.budget.max_remote_attempts}"
+                )
+
+            operation = f"{call.tool}.{call.endpoint}"
+            cost = self.budget.cost_units.get(
+                operation,
+                self.budget.cost_units.get(
+                    call.tool,
+                    self.budget.cost_units.get("*", 0.0),
+                ),
             )
+            next_cost = self.cost_units + cost
+            if (
+                self.budget.max_cost_units is not None
+                and next_cost > self.budget.max_cost_units
+            ):
+                raise ExecutionBudgetExceededError(
+                    f"execution would exceed max_cost_units={self.budget.max_cost_units}"
+                )
 
-        tool_total = self.per_tool_calls.get(call.tool, 0) + 1
-        tool_limit = self.budget.per_tool_calls.get(call.tool)
-        if tool_limit is not None and tool_total > tool_limit:
-            raise ExecutionBudgetExceededError(
-                f"execution would exceed per_tool_calls[{call.tool!r}]={tool_limit}"
-            )
-
-        self.tool_calls = next_total
-        self.per_tool_calls[call.tool] = tool_total
-
-    def before_attempt(self, call: ToolCall, tool: ToolSpec) -> None:
-        self._check_elapsed()
-        next_attempts = self.attempts + 1
-        if self.budget.max_attempts is not None and next_attempts > self.budget.max_attempts:
-            raise ExecutionBudgetExceededError(
-                f"execution would exceed max_attempts={self.budget.max_attempts}"
-            )
-
-        remote = is_remote_tool(tool)
-        next_remote = self.remote_attempts + (1 if remote else 0)
-        if (
-            self.budget.max_remote_attempts is not None
-            and next_remote > self.budget.max_remote_attempts
-        ):
-            raise ExecutionBudgetExceededError(
-                "execution would exceed "
-                f"max_remote_attempts={self.budget.max_remote_attempts}"
-            )
-
-        operation = f"{call.tool}.{call.endpoint}"
-        cost = self.budget.cost_units.get(
-            operation,
-            self.budget.cost_units.get(
-                call.tool,
-                self.budget.cost_units.get("*", 0.0),
-            ),
-        )
-        next_cost = self.cost_units + cost
-        if (
-            self.budget.max_cost_units is not None
-            and next_cost > self.budget.max_cost_units
-        ):
-            raise ExecutionBudgetExceededError(
-                f"execution would exceed max_cost_units={self.budget.max_cost_units}"
-            )
-
-        self.attempts = next_attempts
-        self.remote_attempts = next_remote
-        self.cost_units = next_cost
+            self.attempts = next_attempts
+            self.remote_attempts = next_remote
+            self.cost_units = next_cost
 
 
 class RegistryExecutor:
@@ -840,7 +853,7 @@ class RegistryExecutor:
         if approval_ran:
             tool, endpoint, invoker = self._execution_state(call)
 
-        tracker.before_call(call)
+        await tracker.before_call(call)
 
         before_hooks_ran = await self._run_before_hooks(tool, endpoint, call, tracker)
         if before_hooks_ran:
@@ -866,7 +879,7 @@ class RegistryExecutor:
 
         last_error: Exception | None = None
         for attempt in range(1, max_attempts + 1):
-            tracker.before_attempt(call, tool)
+            await tracker.before_attempt(call, tool)
             try:
                 invoke_call = getattr(invoker, "invoke_call", None)
                 call_aware = callable(invoke_call)
