@@ -344,7 +344,22 @@ class CapabilitySnapshotStore:
                 ),
                 drift=drift,
             )
-            self._validate(publication)
+            predecessor_revision = current.publication_revision
+            predecessor_snapshot_id = current.snapshot.snapshot_id
+
+        # User validators may call back into the store. Run validation outside the
+        # writer lock, then re-check the predecessor before committing.
+        self._validate(publication)
+
+        with self._lock:
+            active = self._publication
+            if (
+                active.publication_revision != predecessor_revision
+                or active.snapshot.snapshot_id != predecessor_snapshot_id
+            ):
+                raise CapabilityPublicationConflictError(
+                    "capability publication changed during validation"
+                )
 
             # This single reference replacement is the publication boundary.
             self._publication = publication
