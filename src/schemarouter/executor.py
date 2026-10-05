@@ -3,8 +3,9 @@ from __future__ import annotations
 import asyncio
 import inspect
 import math
+import threading
 import time
-from collections.abc import AsyncIterator, Awaitable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Protocol, cast
@@ -20,6 +21,7 @@ from .errors import (
     ExecutionBudgetExceededError,
     ExecutionError,
     ExecutionHookError,
+    IndeterminateInvocationError,
     InvocationUnavailableError,
     NonRetryableInvocationError,
     PlanValidationError,
@@ -237,6 +239,41 @@ class RegistryExecutor:
         self._binding_fingerprints: dict[str, str] = {}
         self._binding_offload_sync: dict[str, bool] = {}
         self._unavailable_until: dict[tuple[str, str, str], float] = {}
+
+    async def _run_offloaded_sync_invocation(
+        self,
+        invocation: Callable[[], Any],
+        *,
+        tracker: ExecutionBudgetTracker,
+        call: ToolCall,
+        endpoint: EndpointSpec,
+    ) -> Any:
+        """Run sync work without misreporting an in-flight mutation as cancelled."""
+        started = threading.Event()
+
+        def invoke_in_worker() -> Any:
+            started.set()
+            return invocation()
+
+        worker = asyncio.create_task(asyncio.to_thread(invoke_in_worker))
+        try:
+            return await tracker.wait_awaitable(worker, stage="invocation")
+        except ExecutionBudgetExceededError as exc:
+            if endpoint.read_only is not True and started.is_set():
+                raise IndeterminateInvocationError(
+                    "offloaded synchronous invocation outcome is indeterminate "
+                    f"for {call.tool}.{call.endpoint}: the execution deadline "
+                    "expired after the worker started"
+                ) from exc
+            raise
+        except asyncio.CancelledError as exc:
+            if endpoint.read_only is not True and started.is_set():
+                raise IndeterminateInvocationError(
+                    "offloaded synchronous invocation outcome is indeterminate "
+                    f"for {call.tool}.{call.endpoint}: cancellation was observed "
+                    "after the worker started"
+                ) from exc
+            raise
 
     def _current_access_key(
         self,
@@ -887,16 +924,25 @@ class RegistryExecutor:
                     offload_sync = self._binding_offload_sync.get(call.tool, False)
                     if call_aware:
                         if offload_sync and not inspect.iscoroutinefunction(invoke_call):
-                            value = asyncio.to_thread(invoke_call, call)
+                            value = await self._run_offloaded_sync_invocation(
+                                lambda: invoke_call(call),
+                                tracker=tracker,
+                                call=call,
+                                endpoint=endpoint,
+                            )
                         else:
                             value = invoke_call(call)
                     else:
                         endpoint_invoker = cast(EndpointInvoker, invoker)
                         if offload_sync and not inspect.iscoroutinefunction(endpoint_invoker):
-                            value = asyncio.to_thread(
-                                endpoint_invoker,
-                                call.endpoint,
-                                dict(call.arguments),
+                            value = await self._run_offloaded_sync_invocation(
+                                lambda: endpoint_invoker(
+                                    call.endpoint,
+                                    dict(call.arguments),
+                                ),
+                                tracker=tracker,
+                                call=call,
+                                endpoint=endpoint,
                             )
                         else:
                             value = endpoint_invoker(
