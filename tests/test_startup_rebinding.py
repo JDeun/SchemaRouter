@@ -593,9 +593,11 @@ def test_openapi_rebinding_reuses_router_injected_http_client(
         timeout=20.0,
         max_response_bytes=10 * 1024 * 1024,
         http_client=None,
+        network_policy=None,
     ):
         del tool, base_url, trusted_headers, timeout, max_response_bytes
         captured["http_client"] = http_client
+        captured["network_policy"] = network_policy
         return lambda endpoint, arguments: arguments
 
     monkeypatch.setattr(runtime_module, "OpenAPIRemoteInvoker", build_invoker)
@@ -612,6 +614,7 @@ def test_openapi_rebinding_reuses_router_injected_http_client(
 
     assert item.status == "ready"
     assert captured["http_client"] is sentinel_client
+    assert captured["network_policy"] is router.loader.network_policy
 
 
 @pytest.mark.parametrize(
