@@ -8,6 +8,7 @@ from typing import Literal
 from .capability_contracts import (
     CapabilityContract,
     CompatibilityContext,
+    _canonical_compatibility_context_payload,
     compare_capability_composition,
 )
 from .capability_drift import CapabilityGraphDrift, compare_capability_graph_snapshot
@@ -78,7 +79,11 @@ def validate_capability_publication(
     snapshot = publication.snapshot
     graph = publication.graph
     snapshot_context = snapshot.compatibility_context
-    if context is not None and context != snapshot_context:
+    if (
+        context is not None
+        and _canonical_compatibility_context_payload(context)
+        != _canonical_compatibility_context_payload(snapshot_context)
+    ):
         raise ValueError(
             "publication compatibility context does not match snapshot semantics"
         )
@@ -140,7 +145,13 @@ class CapabilitySnapshotStore:
         validator: PublicationValidator | None = None,
     ) -> None:
         self._lock = RLock()
-        if context is not None and context != snapshot.compatibility_context:
+        if (
+            context is not None
+            and _canonical_compatibility_context_payload(context)
+            != _canonical_compatibility_context_payload(
+                snapshot.compatibility_context
+            )
+        ):
             raise ValueError(
                 "store compatibility context must be embedded in the supplied snapshot"
             )
