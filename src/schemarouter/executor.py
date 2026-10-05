@@ -238,7 +238,7 @@ class RegistryExecutor:
         self._invokers: dict[str, BoundEndpointInvoker] = {}
         self._binding_fingerprints: dict[str, str] = {}
         self._binding_offload_sync: dict[str, bool] = {}
-        self._inflight_offloaded_sync: set[asyncio.Task[Any]] = set()
+        self._inflight_offloaded_sync: set[asyncio.Future[Any]] = set()
         self._unavailable_until: dict[tuple[str, str, str], float] = {}
 
     def _current_access_key(
@@ -521,12 +521,12 @@ class RegistryExecutor:
         self._binding_fingerprints.pop(tool_key, None)
         self._binding_offload_sync.pop(tool_key, None)
 
-    def _track_offloaded_sync_task(self, task: asyncio.Task[Any]) -> None:
+    def _track_offloaded_sync_task(self, task: asyncio.Future[Any]) -> None:
         """Keep an offloaded worker task alive until its thread-backed call finishes."""
 
         self._inflight_offloaded_sync.add(task)
 
-        def cleanup(done: asyncio.Task[Any]) -> None:
+        def cleanup(done: asyncio.Future[Any]) -> None:
             self._inflight_offloaded_sync.discard(done)
             try:
                 done.result()
@@ -549,7 +549,7 @@ class RegistryExecutor:
         # Check the trusted deadline before scheduling the worker so a budget that is already
         # exhausted remains a normal pre-invocation budget failure.
         remaining = tracker.remaining_seconds(stage="invocation")
-        task = asyncio.create_task(awaitable)
+        task = asyncio.ensure_future(awaitable)
         self._track_offloaded_sync_task(task)
 
         try:
