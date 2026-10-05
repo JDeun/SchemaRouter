@@ -20,6 +20,7 @@ from schemarouter import (
     record_run_events,
     replay_run_events,
 )
+from schemarouter.errors import NonRetryableInvocationError
 
 
 def event(
@@ -89,7 +90,9 @@ def make_secret_router(*, fail: bool = False) -> SchemaRouter:
     def invoke(endpoint: str, arguments: dict) -> dict:
         del endpoint
         if fail:
-            raise RuntimeError(f"authorization={arguments['token']}")
+            raise NonRetryableInvocationError(
+                f"authorization={arguments['token']}"
+            )
         return {"token": arguments["token"]}
 
     router.executor.bind("secret_echo", invoke)
@@ -336,7 +339,7 @@ async def test_payload_trace_redacts_exception_message_before_sqlite_persistence
     router = make_secret_router(fail=True)
 
     with SQLiteRunTraceStore(tmp_path / "redacted-error.sqlite3") as store:
-        with pytest.raises(RuntimeError, match="authorization="):
+        with pytest.raises(NonRetryableInvocationError, match="authorization="):
             async for _ in router.astream_events(
                 PlanRequest(
                     query="echo token",
