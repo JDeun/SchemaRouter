@@ -311,6 +311,7 @@ from .errors import (
     SourceProbeDiagnosticError,
     StorageFormatError,
     TraceError,
+    TracePersistenceError,
     UnsupportedSchemaSourceError,
 )
 from .execution_state import (
