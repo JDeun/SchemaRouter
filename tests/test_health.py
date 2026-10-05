@@ -78,6 +78,38 @@ async def test_health_probe_exception_never_escapes_monitor_cycle() -> None:
 
 
 @pytest.mark.asyncio
+async def test_timed_out_sync_health_probe_can_finish_after_monitor_returns() -> None:
+    router = _router(cooldown=60)
+    started = threading.Event()
+    release = threading.Event()
+    completed = threading.Event()
+
+    def probe() -> bool:
+        started.set()
+        release.wait(timeout=0.5)
+        completed.set()
+        return True
+
+    router.register_health_probe("provider_api", "read", probe)
+    try:
+        snapshots = await router.health_monitor.run_once(
+            probe_timeout_seconds=0.02,
+        )
+        assert started.is_set()
+        assert not completed.is_set()
+        assert snapshots[0].status == "unhealthy"
+        assert snapshots[0].last_error_type == "TimeoutError"
+    finally:
+        release.set()
+
+    for _ in range(100):
+        if completed.is_set():
+            break
+        await asyncio.sleep(0.005)
+    assert completed.is_set()
+
+
+@pytest.mark.asyncio
 async def test_cooldown_expires_without_active_monitor() -> None:
     router = _router(cooldown=0.01)
     router.mark_access_unavailable("provider_api", "read")
