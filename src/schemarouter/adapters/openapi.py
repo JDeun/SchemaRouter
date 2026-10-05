@@ -20,6 +20,7 @@ from ..models import (
     ToolCall,
     ToolSpec,
 )
+from ..network_policy import TRUSTED_INTERNAL_NETWORK_POLICY, NetworkPolicy
 from ..openapi_compatibility import analyze_openapi_compatibility
 
 _HTTP_METHODS = {"get", "post", "put", "patch", "delete", "options", "head", "trace"}
@@ -1595,6 +1596,7 @@ class OpenAPIRemoteInvoker:
         timeout: float = 20.0,
         max_response_bytes: int = _MAX_RUNTIME_RESPONSE_BYTES,
         http_client: httpx.AsyncClient | None = None,
+        network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY,
     ) -> None:
         parsed_base = urlparse(base_url)
         if parsed_base.scheme not in {"http", "https"} or not parsed_base.netloc:
@@ -1627,6 +1629,7 @@ class OpenAPIRemoteInvoker:
         self.timeout = timeout
         self.max_response_bytes = max_response_bytes
         self.http_client = http_client
+        self.network_policy = network_policy
 
     async def __call__(self, endpoint: str, arguments: dict[str, Any]) -> Any:
         return await self._invoke(endpoint, arguments, selected_fields=None)
@@ -1778,6 +1781,7 @@ class OpenAPIRemoteInvoker:
                 "endpoint path escaped the approved API origin"
             )
 
+        await self.network_policy.authorize(url)
         owns_client = self.http_client is None
         client = self.http_client or httpx.AsyncClient(
             timeout=self.timeout,
