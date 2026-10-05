@@ -5163,7 +5163,7 @@ class SchemaRouter:
 
         completed_queue: asyncio.Queue[
             tuple[int, list[ToolResult] | Exception]
-        ] = asyncio.Queue()
+        ] = asyncio.Queue(maxsize=run_config.max_concurrency)
         next_index = 0
 
         async def worker() -> None:
@@ -5392,7 +5392,9 @@ class SchemaRouter:
             semaphore = asyncio.Semaphore(run_config.max_parallel_calls)
             event_queue: asyncio.Queue[
                 tuple[str, int, Any, Any]
-            ] = asyncio.Queue()
+            ] = asyncio.Queue(
+                maxsize=max(1, run_config.max_parallel_calls * 4)
+            )
 
             async def run_parallel_call(
                 index: int,
@@ -5480,16 +5482,29 @@ class SchemaRouter:
                         )
                         return
 
+            next_parallel_index = 0
+
+            async def parallel_worker() -> None:
+                nonlocal next_parallel_index
+                while next_parallel_index < len(plan.calls):
+                    index = next_parallel_index
+                    next_parallel_index += 1
+                    await run_parallel_call(index, plan.calls[index])
+
+            worker_count = min(
+                run_config.max_parallel_calls,
+                len(plan.calls),
+            )
             tasks = [
-                asyncio.create_task(run_parallel_call(index, call))
-                for index, call in enumerate(plan.calls)
+                asyncio.create_task(parallel_worker())
+                for _ in range(worker_count)
             ]
 
             result_count = 0
             fallback_count = 0
             terminal_count = 0
             try:
-                while terminal_count < len(tasks):
+                while terminal_count < len(plan.calls):
                     kind, index, call, payload = await event_queue.get()
 
                     if kind == "preflight_error":
