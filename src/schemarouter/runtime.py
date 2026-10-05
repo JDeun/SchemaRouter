@@ -5837,14 +5837,14 @@ class SchemaRouter:
                         "fallback_candidate_index": candidate_index,
                     }
                     if run_config.include_payloads:
-                        end_data["result"] = post_result.model_dump(mode="json")
+                        end_data["result"] = result.model_dump(mode="json")
                     yield await emit(RunEvent.create(
                         event="tool.end",
                         run_id=run_id,
                         sequence=sequence,
                         config=run_config,
-                        tool=post_result.tool,
-                        endpoint=post_result.endpoint,
+                        tool=result.tool,
+                        endpoint=result.endpoint,
                         data=end_data,
                     ))
                     sequence += 1
@@ -6061,14 +6061,14 @@ class SchemaRouter:
                         "post_invocation_error_type": type(exc).__name__,
                     }
                     if run_config.include_payloads:
-                        end_data["result"] = result.model_dump(mode="json")
+                        end_data["result"] = post_result.model_dump(mode="json")
                     yield await emit(RunEvent.create(
                         event="tool.end",
                         run_id=run_id,
                         sequence=sequence,
                         config=run_config,
-                        tool=result.tool,
-                        endpoint=result.endpoint,
+                        tool=post_result.tool,
+                        endpoint=post_result.endpoint,
                         data=end_data,
                     ))
                     sequence += 1
