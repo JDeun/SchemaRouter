@@ -60,9 +60,12 @@ class SuccessfulCapabilityHistory:
         exact = _capability_key(tool, endpoint, endpoint_fingerprint)
         if exact in self._counts:
             return self._counts[exact]
+        route = _route_id(tool, endpoint)
+        if endpoint_fingerprint is not None and route in self._counts:
+            return self._counts[route]
         if endpoint_fingerprint is not None:
             return 0
-        return self._counts[_route_id(tool, endpoint)]
+        return self._counts[route]
 
     def snapshot(self) -> dict[str, int]:
         return dict(sorted(self._counts.items()))
@@ -119,7 +122,9 @@ class SessionSchemaExposure:
     ) -> SchemaExposureDecision:
         route = _route_id(tool, endpoint)
         key = _capability_key(tool, endpoint, endpoint_fingerprint)
-        if key in self._exposed:
+        if key in self._exposed or (
+            endpoint_fingerprint is not None and route in self._exposed
+        ):
             return SchemaExposureDecision(route, False, "already_exposed")
         return SchemaExposureDecision(route, True, "not_exposed")
 
