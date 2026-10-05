@@ -127,7 +127,7 @@ from .state_retrieval import (
     StateAwareCapabilityRetrieval,
     StateConditionedCapabilityRetrieval,
 )
-from .traces import RunTraceStore
+from .traces import RunTraceStore, append_run_event_async
 from .validation import projected_output_schema
 
 _T = TypeVar("_T")
@@ -5280,7 +5280,7 @@ class SchemaRouter:
         async def emit(event: RunEvent) -> RunEvent:
             if trace_store is not None:
                 try:
-                    trace_store.append(event)
+                    await append_run_event_async(trace_store, event)
                 except Exception as exc:
                     raise TracePersistenceError(
                         (
