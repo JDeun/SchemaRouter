@@ -88,6 +88,43 @@ class CompatibilityContext(StrictModel):
         )
 
 
+def _canonical_compatibility_context_payload(
+    context: CompatibilityContext | None,
+) -> dict[str, object] | None:
+    """Return ordering-independent compatibility semantics for persisted digests."""
+
+    if context is None:
+        return None
+    equivalences = [
+        {
+            "canonical_id": item.canonical_id,
+            "aliases": sorted(item.aliases),
+        }
+        for item in sorted(
+            context.semantic_equivalences,
+            key=lambda item: (
+                item.canonical_id,
+                tuple(sorted(item.aliases)),
+            ),
+        )
+    ]
+    conversions = [
+        item.model_dump(mode="json")
+        for item in sorted(
+            context.unit_conversions,
+            key=lambda item: (
+                item.dimension,
+                item.from_unit,
+                item.to_unit,
+            ),
+        )
+    ]
+    return {
+        "semantic_equivalences": equivalences,
+        "unit_conversions": conversions,
+    }
+
+
 class CompatibilityReason(StrictModel):
     code: Literal[
         "semantic_id_mismatch",
