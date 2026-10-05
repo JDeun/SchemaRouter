@@ -363,6 +363,11 @@ async def test_payload_trace_redacts_exception_message_before_sqlite_persistence
     assert all(secret not in str(event.data) for event in error_events)
 
 
+def test_raw_trace_payloads_require_payload_opt_in() -> None:
+    with pytest.raises(ValueError, match="requires include_payloads"):
+        RunConfig(raw_trace_payloads=True)
+
+
 @pytest.mark.asyncio
 async def test_raw_trace_payloads_require_explicit_escape_hatch(tmp_path) -> None:
     secret = "raw-debug-secret"
