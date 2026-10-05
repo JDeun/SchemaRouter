@@ -9,6 +9,7 @@ from schemarouter import (
     ExecutionBudget,
     ExecutionBudgetExceededError,
     ExecutionHookError,
+    PostInvocationHookError,
     ExecutionHooks,
     ExecutionPlan,
     ExecutionPolicy,
@@ -351,13 +352,65 @@ async def test_after_hook_failure_is_never_retried() -> None:
     )
     executor.bind("demo", invoke)
 
-    with pytest.raises(ExecutionHookError, match="after execution hook failed"):
+    with pytest.raises(PostInvocationHookError, match="after execution hook failed") as raised:
         await executor.execute_call(
             call,
             retry=RetryPolicy(max_attempts=3),
         )
 
     assert attempts == 1
+    assert raised.value.invocation_succeeded is True
+    assert raised.value.result.data == {"value": 2}
+
+
+@pytest.mark.asyncio
+async def test_mutating_after_hook_failure_preserves_committed_result_without_retry() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="writer",
+            endpoints=[
+                EndpointSpec(
+                    name="commit",
+                    output_fields=[FieldSpec(name="value")],
+                    read_only=False,
+                )
+            ],
+        )
+    )
+    endpoint = registry.endpoint("writer", "commit")
+    call = ToolCall(
+        tool="writer",
+        endpoint="commit",
+        fields=["value"],
+        schema_fingerprint=endpoint.fingerprint,
+    )
+    attempts = 0
+
+    def invoke(endpoint_name, arguments):
+        nonlocal attempts
+        del endpoint_name, arguments
+        attempts += 1
+        return {"value": 7}
+
+    def after(tool, endpoint, hook_call, result):
+        raise RuntimeError("audit sink unavailable")
+
+    executor = RegistryExecutor(
+        registry,
+        policy=ExecutionPolicy(allow_mutations=True),
+        hooks=ExecutionHooks(after_call=[after]),
+    )
+    executor.bind("writer", invoke)
+
+    with pytest.raises(PostInvocationHookError) as raised:
+        await executor.execute_call(
+            call,
+            retry=RetryPolicy(max_attempts=3, retry_non_read_only=True),
+        )
+
+    assert attempts == 1
+    assert raised.value.result.data == {"value": 7}
 
 
 @pytest.mark.asyncio
