@@ -10,8 +10,10 @@ from schemarouter import (
     CapabilityContract,
     CapabilityFieldContract,
     CapabilityPublicationConflictError,
+    CompatibilityContext,
     CapabilitySnapshotStore,
     CapabilitySourceRevision,
+    SemanticEquivalence,
     build_capability_dependency_graph,
 )
 
@@ -69,6 +71,53 @@ def test_incremental_publication_matches_clean_full_rebuild() -> None:
     assert published.provenance.successor_snapshot_id == published.snapshot.snapshot_id
     assert published.graph == build_capability_dependency_graph(_contracts(2))
     assert store.read() == published
+
+
+def test_publication_store_embeds_context_in_snapshot_identity_and_successors() -> None:
+    producer = CapabilityContract(
+        capability_id="producer",
+        produces=[_field("material.identifier")],
+    )
+    consumer = CapabilityContract(
+        capability_id="consumer",
+        requires=[_field("resource.material_id")],
+    )
+    context = CompatibilityContext(
+        semantic_equivalences=[
+            SemanticEquivalence(
+                canonical_id="resource.material_id",
+                aliases={"material.identifier"},
+            )
+        ]
+    )
+    store = CapabilitySnapshotStore.from_contracts(
+        [producer, consumer],
+        context=context,
+    )
+
+    before = store.read()
+
+    assert before.snapshot.compatibility_context == context
+    assert before.graph.successors("producer") == ("consumer",)
+
+    published = store.compare_and_publish(
+        [
+            producer.model_copy(
+                update={
+                    "produces": [
+                        _field("material.identifier"),
+                        _field("resource.extra"),
+                    ]
+                }
+            ),
+            consumer,
+        ],
+        expected_revision=1,
+    )
+
+    assert published.snapshot.compatibility_context == context
+    assert published.snapshot.snapshot_id != before.snapshot.snapshot_id
+    assert published.graph.successors("producer") == ("consumer",)
 
 
 def test_source_only_successor_reuses_contract_graph() -> None:
