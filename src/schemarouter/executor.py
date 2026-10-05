@@ -1393,7 +1393,7 @@ class RegistryExecutor:
 
         completed_queue: asyncio.Queue[
             tuple[int, ToolResult | Exception]
-        ] = asyncio.Queue()
+        ] = asyncio.Queue(maxsize=max_concurrency)
         next_index = 0
 
         async def worker() -> None:
