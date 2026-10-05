@@ -591,7 +591,7 @@ class RegistryExecutor:
                 raise BindingDriftError(
                     f"tool {key!r} changed concurrently while publishing its binding"
                 )
-        except Exception as bind_exc:
+        except Exception:
             self.purge_tool_runtime_state(key)
             try:
                 if previous_tool is None:
