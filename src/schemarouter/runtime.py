@@ -67,6 +67,7 @@ from .errors import (
     RegistrationError,
     SchemaNotModifiedError,
     SchemaSourceError,
+    TracePersistenceError,
 )
 from .execution_state import TypedExecutionState
 from .executor import BoundEndpointInvoker, ExecutionBudgetTracker, RegistryExecutor
@@ -5208,7 +5209,17 @@ class SchemaRouter:
 
         async def emit(event: RunEvent) -> RunEvent:
             if trace_store is not None:
-                trace_store.append(event)
+                try:
+                    trace_store.append(event)
+                except Exception as exc:
+                    raise TracePersistenceError(
+                        (
+                            "run event persistence failed after runtime event "
+                            f"{event.event!r} sequence={event.sequence}"
+                        ),
+                        event=event.model_copy(deep=True),
+                        execution_succeeded=event.event in {"tool.end", "run.end"},
+                    ) from exc
             return event
         run_id = run_config.run_id or uuid4().hex
         sequence = 0
