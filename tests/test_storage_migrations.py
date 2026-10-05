@@ -13,6 +13,8 @@ from schemarouter.storage import (
     CURRENT_REGISTRY_DOCUMENT_VERSION,
     CURRENT_STORAGE_FORMAT_VERSION,
     CURRENT_TRACE_DOCUMENT_VERSION,
+    StorageComponentInspection,
+    StorageInspection,
     backup_sqlite_storage,
     inspect_sqlite_storage,
     migrate_sqlite_storage,
@@ -211,6 +213,34 @@ def test_fresh_registry_and_trace_store_current_format_metadata(tmp_path) -> Non
         for component in inspection.components
     } == {("registry", "current"), ("trace", "current")}
 
+
+
+def test_storage_inspection_computed_fields_serialize_once() -> None:
+    component = StorageComponentInspection(
+        component="registry",
+        status="legacy",
+        current_document_format_version=CURRENT_REGISTRY_DOCUMENT_VERSION,
+    )
+    inspection = StorageInspection(
+        path="example.sqlite3",
+        components=[component],
+    )
+
+    component_payload = component.model_dump()
+    inspection_payload = inspection.model_dump()
+    component_schema = StorageComponentInspection.model_json_schema(
+        mode="serialization"
+    )
+    inspection_schema = StorageInspection.model_json_schema(mode="serialization")
+
+    assert component_payload["migration_required"] is True
+    assert inspection_payload["migration_required"] is True
+    assert set(StorageComponentInspection.model_computed_fields) == {
+        "migration_required"
+    }
+    assert set(StorageInspection.model_computed_fields) == {"migration_required"}
+    assert component_schema["properties"]["migration_required"]["type"] == "boolean"
+    assert inspection_schema["properties"]["migration_required"]["type"] == "boolean"
 
 def test_legacy_registry_auto_migration_preserves_logical_state(tmp_path) -> None:
     path = tmp_path / "legacy-registry.sqlite3"
