@@ -783,6 +783,7 @@ class SchemaRouter:
         results = await asyncio.gather(
             self.schema_watcher.stop(),
             self.health_monitor.stop(),
+            self.stop_native_schema_watcher(),
             return_exceptions=True,
         )
         errors = [result for result in results if isinstance(result, BaseException)]
