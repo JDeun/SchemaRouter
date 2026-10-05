@@ -432,26 +432,31 @@ class RegistryExecutor:
     def unavailable_access_paths(self) -> tuple[tuple[str, str], ...]:
         now = time.monotonic()
         active: list[tuple[str, str]] = []
-        stale_keys: list[tuple[str, str, str]] = []
+        stale: list[tuple[tuple[str, str, str], float]] = []
 
-        for key, until in self._unavailable_until.items():
+        with self._runtime_state_lock:
+            cooldowns = tuple(self._unavailable_until.items())
+
+        for key, until in cooldowns:
             tool_key, endpoint, fingerprint = key
             if now >= until:
-                stale_keys.append(key)
+                stale.append((key, until))
                 continue
             try:
                 current = self.registry.get(tool_key)
                 current.endpoint(endpoint)
             except KeyError:
-                stale_keys.append(key)
+                stale.append((key, until))
                 continue
             if current.fingerprint != fingerprint:
-                stale_keys.append(key)
+                stale.append((key, until))
                 continue
             active.append((tool_key, endpoint))
 
-        for key in stale_keys:
-            self._unavailable_until.pop(key, None)
+        with self._runtime_state_lock:
+            for key, observed_until in stale:
+                if self._unavailable_until.get(key) == observed_until:
+                    self._unavailable_until.pop(key, None)
         return tuple(sorted(active))
 
     def binding_status_for_contract(
@@ -459,9 +464,10 @@ class RegistryExecutor:
         tool_key: str,
         tool_fingerprint: str,
     ) -> str:
-        if tool_key not in self._invokers:
+        binding = self._binding_snapshot(tool_key)
+        if binding.invoker is None:
             return "unbound"
-        if self._binding_fingerprints.get(tool_key) != tool_fingerprint:
+        if binding.fingerprint != tool_fingerprint:
             return "stale"
         return "ready"
 
