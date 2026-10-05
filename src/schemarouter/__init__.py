@@ -85,6 +85,11 @@ from .adapters.vector_store import (
     VectorStoreBackend,
     introspect_vector_backend,
 )
+from .adaptive_context import (
+    SchemaExposureDecision,
+    SessionSchemaExposure,
+    SuccessfulCapabilityHistory,
+)
 from .aggregation import (
     AggregatedField,
     CanonicalEntity,
