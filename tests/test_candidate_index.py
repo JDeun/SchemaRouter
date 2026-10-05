@@ -195,6 +195,47 @@ def test_candidate_index_covers_normalized_field_substring_matching() -> None:
     assert [call.tool for call in indexed.calls] == ["materials"]
 
 
+
+def test_candidate_index_semantic_substring_trigrams_preserve_recall() -> None:
+    cases = [
+        ("ascii_concept_in_field", "thermal_conductivity", "conductivity", True),
+        ("ascii_field_in_concept", "elastic", "elasticmodulus", True),
+        ("korean_concept_in_field", "상온열전도도값", "열전도도", True),
+        ("korean_field_in_concept", "열전도도", "상온열전도도값", True),
+        ("short_ascii_collision", "density", "Si", False),
+        ("short_non_ascii_collision", "열값", "열", False),
+    ]
+
+    for index, (name, field_name, concept, expected) in enumerate(cases):
+        registry = InMemoryRegistry()
+        registry.register(
+            ToolSpec(
+                name=name,
+                endpoints=[
+                    EndpointSpec(
+                        name="lookup",
+                        output_fields=[FieldSpec(name=field_name)],
+                        read_only=True,
+                    )
+                ],
+            )
+        )
+        analyzer = StaticAnalyzer(QueryIntent(concepts=[concept]))
+
+        indexed = SchemaPlanner(
+            registry,
+            analyzer=analyzer,
+            candidate_index=True,
+        ).plan("unrelated")
+        exhaustive = SchemaPlanner(
+            registry,
+            analyzer=analyzer,
+            candidate_index=False,
+        ).plan("unrelated")
+
+        assert indexed.model_dump() == exhaustive.model_dump(), index
+        assert bool(indexed.calls) is expected, index
+
 def test_candidate_index_cache_is_reused_until_registry_version_changes() -> None:
     registry = CountingRegistry()
     registry.register(make_tool(0, keyword="first"))
