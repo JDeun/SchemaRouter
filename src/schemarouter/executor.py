@@ -1387,33 +1387,53 @@ class RegistryExecutor:
 
         self.validate_parallel_read_only(plan)
         tracker = ExecutionBudgetTracker(budget or ExecutionBudget())
-        semaphore = asyncio.Semaphore(max_concurrency)
+        call_count = len(plan.calls)
+        if call_count == 0:
+            return
 
-        async def run_one(index: int, call: ToolCall) -> tuple[int, ToolResult]:
-            async with semaphore:
-                route = plan.fallback_route(index)
-                result = await self.execute_call_with_fallback(
-                    call,
-                    route.alternatives if route is not None else [],
-                    retry=retry,
-                    budget=budget,
-                    _tracker=tracker,
-                )
-                return index, result
+        completed_queue: asyncio.Queue[
+            tuple[int, ToolResult | Exception]
+        ] = asyncio.Queue(maxsize=max_concurrency)
+        next_index = 0
 
-        tasks = [
-            asyncio.create_task(run_one(index, call))
-            for index, call in enumerate(plan.calls)
+        async def worker() -> None:
+            nonlocal next_index
+            while next_index < call_count:
+                index = next_index
+                next_index += 1
+                call = plan.calls[index]
+                try:
+                    route = plan.fallback_route(index)
+                    outcome: ToolResult | Exception = (
+                        await self.execute_call_with_fallback(
+                            call,
+                            route.alternatives if route is not None else [],
+                            retry=retry,
+                            budget=budget,
+                            _tracker=tracker,
+                        )
+                    )
+                except Exception as exc:
+                    outcome = exc
+                await completed_queue.put((index, outcome))
+
+        worker_count = min(max_concurrency, call_count)
+        workers = [
+            asyncio.create_task(worker())
+            for _ in range(worker_count)
         ]
         try:
-            for completed in asyncio.as_completed(tasks):
-                yield await completed
+            for _ in range(call_count):
+                index, outcome = await completed_queue.get()
+                if isinstance(outcome, Exception):
+                    raise outcome
+                yield index, outcome
         finally:
-            for task in tasks:
+            for task in workers:
                 if not task.done():
                     task.cancel()
-            if tasks:
-                await asyncio.gather(*tasks, return_exceptions=True)
+            if workers:
+                await asyncio.gather(*workers, return_exceptions=True)
 
     async def execute_iter(
         self,
