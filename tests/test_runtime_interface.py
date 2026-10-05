@@ -7,6 +7,7 @@ from schemarouter import (
     ExecutionBudget,
     ExecutionBudgetExceededError,
     ExecutionError,
+    ExecutionHooks,
     ExecutionPlan,
     ExecutionPolicy,
     FallbackRoute,
@@ -15,6 +16,7 @@ from schemarouter import (
     ParameterSpec,
     PlanRequest,
     PlanValidationError,
+    PostInvocationHookError,
     RetryPolicy,
     RunConfig,
     SchemaDriftError,
@@ -300,6 +302,79 @@ async def test_event_stream_failure_matches_ainvoke_exception_type() -> None:
 
     assert seen[-1].event == "run.error"
     assert seen[-1].data["error_type"] == type(invoke_error.value).__name__
+
+@pytest.mark.asyncio
+async def test_event_stream_records_tool_success_before_post_invocation_hook_error() -> None:
+    def failing_after(tool, endpoint, hook_call, result) -> None:
+        raise RuntimeError("audit sink unavailable")
+
+    router = SchemaRouter(
+        policy=ExecutionPolicy(
+            allow_mutations=True,
+            allow_destructive=True,
+            allow_unclassified_remote=True,
+        ),
+        execution_hooks=ExecutionHooks(after_call=[failing_after]),
+    )
+    router.add_tool(
+        ToolSpec(
+            name="weather",
+            endpoints=[
+                EndpointSpec(
+                    name="current",
+                    parameters=[ParameterSpec(name="city", required=True)],
+                    output_fields=[
+                        FieldSpec(name="city"),
+                        FieldSpec(name="temperature"),
+                    ],
+                    read_only=False,
+                )
+            ],
+        )
+    )
+    router.executor.bind(
+        "weather",
+        lambda endpoint, arguments: {
+            "city": arguments["city"],
+            "temperature": 20,
+        },
+    )
+
+    seen = []
+    with pytest.raises(PostInvocationHookError) as exc_info:
+        async for event in router.astream_events(
+            request(),
+            config=RunConfig(include_payloads=True),
+        ):
+            seen.append(event)
+
+    assert [event.event for event in seen] == [
+        "run.start",
+        "plan.end",
+        "tool.start",
+        "tool.end",
+        "run.error",
+    ]
+    assert all(event.event != "tool.error" for event in seen)
+
+    tool_end = next(event for event in seen if event.event == "tool.end")
+    assert tool_end.data["execution_succeeded"] is True
+    assert tool_end.data["post_invocation_stage"] == "after_hook"
+    assert tool_end.data["post_invocation_error_type"] == "PostInvocationHookError"
+    assert tool_end.data["result"]["data"] == {
+        "city": "Seoul",
+        "temperature": 20,
+    }
+
+    run_error = seen[-1]
+    assert run_error.data["stage"] == "post_invocation_hook"
+    assert run_error.data["execution_succeeded"] is True
+    assert exc_info.value.execution_succeeded is True
+    assert exc_info.value.result.data == {
+        "city": "Seoul",
+        "temperature": 20,
+    }
+
 
 @pytest.mark.asyncio
 async def test_read_only_retry_can_recover() -> None:
