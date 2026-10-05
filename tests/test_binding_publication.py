@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+import schemarouter.runtime as runtime_module
 from schemarouter import (
     EndpointSpec,
     SchemaRouter,
@@ -9,14 +10,23 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.adapters.base import AdapterLoadResult
-import schemarouter.runtime as runtime_module
 
 
 def _tool(name: str = "atomic", *, revision: int = 1) -> ToolSpec:
     return ToolSpec(
         name=name,
         metadata={"revision": revision},
-        endpoints=[EndpointSpec(name="run", read_only=True)],
+        endpoints=[
+            EndpointSpec(
+                name="run",
+                read_only=True,
+                output_schema={
+                    "type": "object",
+                    "properties": {"revision": {"const": revision}},
+                    "required": ["revision"],
+                },
+            )
+        ],
     )
 
 
