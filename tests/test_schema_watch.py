@@ -327,7 +327,14 @@ async def test_unregister_invalidates_inflight_watch_generation_and_reregister_i
         calls += 1
         current = registry.get(tool_key)
         updated_endpoint = current.endpoints[0].model_copy(
-            update={"description": f"generation-{calls}"}
+            update={
+                "output_schema": {
+                    "type": "object",
+                    "properties": {
+                        f"generation_{calls}": {"type": "string"},
+                    },
+                }
+            }
         )
         candidate = current.model_copy(
             deep=True,
