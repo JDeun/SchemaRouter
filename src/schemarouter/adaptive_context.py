@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from collections import Counter
-from dataclasses import dataclass, field
 import json
-from typing import Iterable
+from collections import Counter
+from collections.abc import Iterable
+from dataclasses import dataclass, field
 
 
 def _route_id(tool: str, endpoint: str) -> str:
@@ -41,7 +41,7 @@ class SuccessfulCapabilityHistory:
         return json.dumps(self.snapshot(), sort_keys=True, separators=(",", ":"))
 
     @classmethod
-    def loads(cls, payload: str) -> "SuccessfulCapabilityHistory":
+    def loads(cls, payload: str) -> SuccessfulCapabilityHistory:
         raw = json.loads(payload)
         if not isinstance(raw, dict):
             raise ValueError("successful capability history must be a JSON object")
@@ -105,7 +105,7 @@ class SessionSchemaExposure:
         return json.dumps(self.snapshot(), sort_keys=True, separators=(",", ":"))
 
     @classmethod
-    def loads(cls, payload: str) -> "SessionSchemaExposure":
+    def loads(cls, payload: str) -> SessionSchemaExposure:
         raw = json.loads(payload)
         if not isinstance(raw, dict):
             raise ValueError("session schema exposure must be a JSON object")
