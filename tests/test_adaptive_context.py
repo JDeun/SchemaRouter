@@ -197,9 +197,15 @@ def test_success_prior_is_bounded_for_large_history_counts() -> None:
             "run",
             endpoint_fingerprint="endpoint-tool_b-run",
         )
-    retrieval = _retrieval(
-        _candidate(rank=1, route_id="tool_a.run", score=10.0),
-        _candidate(rank=2, route_id="tool_b.run", score=0.0),
+    retrieval = CapabilityRetrieval(
+        query="bounded prior",
+        registry_version=1,
+        requested_k=2,
+        total_ranked=2,
+        candidates=[
+            _candidate(1, "tool_a.run", 10.0),
+            _candidate(2, "tool_b.run", 0.0),
+        ],
     )
     reranked = apply_success_prior(retrieval, history, weight=1.0)
     assert [candidate.route_id for candidate in reranked.candidates] == [
