@@ -77,6 +77,12 @@ def validate_capability_publication(
 
     snapshot = publication.snapshot
     graph = publication.graph
+    snapshot_context = snapshot.compatibility_context
+    if context is not None and context != snapshot_context:
+        raise ValueError(
+            "publication compatibility context does not match snapshot semantics"
+        )
+    effective_context = snapshot_context
     contract_ids = tuple(item.capability_id for item in snapshot.contracts)
     if len(contract_ids) != len(set(contract_ids)):
         raise ValueError("capability snapshot contains duplicate capability IDs")
@@ -102,7 +108,7 @@ def validate_capability_publication(
         expected = compare_capability_composition(
             by_id[edge.producer_id],
             by_id[edge.consumer_id],
-            context=context,
+            context=effective_context,
         )
         if not expected.satisfies or expected != edge.compatibility:
             raise ValueError(
@@ -134,7 +140,15 @@ class CapabilitySnapshotStore:
         validator: PublicationValidator | None = None,
     ) -> None:
         self._lock = RLock()
-        self._context = context.model_copy(deep=True) if context is not None else None
+        if context is not None and context != snapshot.compatibility_context:
+            raise ValueError(
+                "store compatibility context must be embedded in the supplied snapshot"
+            )
+        self._context = (
+            snapshot.compatibility_context.model_copy(deep=True)
+            if snapshot.compatibility_context is not None
+            else None
+        )
         self._validator = validator
 
         _validate_source_revisions(snapshot.sources)
@@ -180,6 +194,7 @@ class CapabilitySnapshotStore:
             sources=sources,
             builder_version=builder_version,
             built_at=built_at,
+            context=context,
         )
         return cls(
             snapshot,
@@ -260,6 +275,7 @@ class CapabilitySnapshotStore:
                 sources=source_items,
                 builder_version=next_builder_version,
                 built_at=built_at,
+                context=self._context,
             )
 
             if successor.snapshot_id == current.snapshot.snapshot_id:
