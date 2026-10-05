@@ -499,7 +499,10 @@ def test_loader_commit_candidate_failed_rebind_restores_previous_executable_stat
         remote=True,
         endpoints=[EndpointSpec(name="read", path="/v1", read_only=True)],
     )
-    original_invoker = lambda endpoint, arguments: {"version": "v1"}
+    def original_invoker(endpoint, arguments):
+        del endpoint, arguments
+        return {"version": "v1"}
+
     committed = router.loader._commit(
         AdapterLoadResult(tool=original, invoker=original_invoker),
         replace=False,
