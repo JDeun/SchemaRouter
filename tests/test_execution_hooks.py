@@ -411,6 +411,7 @@ async def test_mutating_after_hook_failure_preserves_success_and_never_retries()
 
     executor = RegistryExecutor(
         registry,
+        policy=ExecutionPolicy(allow_mutations=True),
         hooks=ExecutionHooks(after_call=[after]),
     )
     executor.bind("writer", invoke, expected_fingerprint=tool.fingerprint)
