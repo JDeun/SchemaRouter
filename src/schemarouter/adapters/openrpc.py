@@ -17,6 +17,7 @@ from ..errors import (
     SchemaSourceError,
 )
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
+from ..network_policy import NetworkPolicy, TRUSTED_INTERNAL_NETWORK_POLICY
 from ..schema_http import (
     attach_schema_http_validators,
     conditional_schema_headers,
@@ -55,8 +56,10 @@ async def _bounded_get(
     *,
     headers: dict[str, str] | None,
     max_bytes: int = _MAX_DISCOVERY_BYTES,
+    network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY,
 ) -> httpx.Response:
     _validate_http_url(url)
+    await network_policy.authorize(url)
     async with client.stream(
         "GET",
         url,
@@ -464,6 +467,7 @@ class OpenRPCRemoteInvoker:
         timeout: float = 20.0,
         max_response_bytes: int = _MAX_RESPONSE_BYTES,
         http_client: httpx.AsyncClient | None = None,
+        network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY,
     ) -> None:
         self.tool = tool
         self.base_url = _validate_http_url(base_url)
@@ -471,6 +475,7 @@ class OpenRPCRemoteInvoker:
         self.timeout = timeout
         self.max_response_bytes = max_response_bytes
         self.http_client = http_client
+        self.network_policy = network_policy
 
     @staticmethod
     def _params(endpoint: EndpointSpec, arguments: dict[str, Any]) -> Any:
@@ -514,6 +519,7 @@ class OpenRPCRemoteInvoker:
             follow_redirects=False,
         )
         try:
+            await self.network_policy.authorize(self.base_url)
             async with client.stream(
                 "POST",
                 self.base_url,
@@ -608,6 +614,7 @@ class OpenRPCSourceAdapter:
                         context.schema_headers,
                         context.schema_validators,
                     ),
+                    network_policy=context.network_policy,
                 )
                 validators = schema_http_validators_from_headers(
                     response.headers,
@@ -653,12 +660,14 @@ class OpenRPCSourceAdapter:
 
             invoker = None
             if selected_base is not None:
+                await context.network_policy.authorize(selected_base)
                 invoker = OpenRPCRemoteInvoker(
                     tool,
                     selected_base,
                     trusted_headers=context.trusted_headers,
                     timeout=context.timeout,
                     http_client=context.http_client,
+                    network_policy=context.network_policy,
                 )
                 tool.execution_metadata.update(
                     {
