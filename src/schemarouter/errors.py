@@ -83,6 +83,15 @@ class ExecutionHookError(ExecutionError):
     """Raised when a trusted execution hook violates or fails its contract."""
 
 
+class PostInvocationHookError(ExecutionHookError):
+    """Raised when invocation succeeded but post-invocation hook processing failed."""
+
+    def __init__(self, message: str, *, result: object) -> None:
+        super().__init__(message)
+        self.result = result
+        self.invocation_succeeded = True
+
+
 class BindingDriftError(ExecutionError):
     """Raised when an invoker is bound to an older tool schema."""
 
