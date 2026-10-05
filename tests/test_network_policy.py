@@ -125,7 +125,7 @@ async def test_redirect_path_reauthorizes_before_second_request() -> None:
         assert port == 443
         return next(resolver_answers)
 
-    async def handler(request: httpx.Request) -> httpx.Response:
+    def handler(request: httpx.Request) -> httpx.Response:
         nonlocal request_count
         request_count += 1
         return httpx.Response(
