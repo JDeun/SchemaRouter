@@ -7,6 +7,7 @@ import httpx
 
 from ..errors import RegistrationError
 from ..models import EndpointSpec, ToolSpec
+from ..network_policy import NetworkPolicy, TRUSTED_INTERNAL_NETWORK_POLICY
 from .openapi import OpenAPIRemoteInvoker
 
 _SUPPORTED_PARAMETER_LOCATIONS = {
@@ -107,6 +108,7 @@ def build_http_json_invoker(
     timeout: float = 20.0,
     max_response_bytes: int = 10 * 1024 * 1024,
     http_client: httpx.AsyncClient | None = None,
+    network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY,
 ) -> HTTPJSONRemoteInvoker:
     """Build the trusted transport binding for a prepared declarative HTTP tool."""
 
@@ -117,4 +119,5 @@ def build_http_json_invoker(
         timeout=timeout,
         max_response_bytes=max_response_bytes,
         http_client=http_client,
+        network_policy=network_policy,
     )
