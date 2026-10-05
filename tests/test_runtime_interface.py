@@ -529,8 +529,10 @@ async def test_parallel_read_only_fails_before_invocation_for_mutating_call() ->
 @pytest.mark.asyncio
 async def test_parallel_read_only_shares_execution_budget() -> None:
     router, plan = make_parallel_plan_router()
+    invoked: list[str] = []
 
     async def invoker(endpoint: str, arguments: dict) -> dict:
+        invoked.append(endpoint)
         await asyncio.sleep(0)
         return {"value": endpoint}
 
@@ -545,6 +547,47 @@ async def test_parallel_read_only_shares_execution_budget() -> None:
                 budget=ExecutionBudget(max_tool_calls=1),
             ),
         )
+
+    assert len(invoked) == 1
+
+
+@pytest.mark.asyncio
+async def test_parallel_event_stream_cannot_oversubscribe_shared_budget() -> None:
+    router, plan = make_parallel_plan_router()
+    invoked: list[str] = []
+
+    async def invoker(endpoint: str, arguments: dict) -> dict:
+        invoked.append(endpoint)
+        await asyncio.sleep(0)
+        return {"value": endpoint}
+
+    router.executor.bind("fanout", invoker)
+    original_aplan = router.aplan_executable
+
+    async def fixed_plan(request):
+        return plan
+
+    router.aplan_executable = fixed_plan  # type: ignore[method-assign]
+    events = []
+    try:
+        with pytest.raises(
+            ExecutionBudgetExceededError,
+            match="max_tool_calls=1",
+        ):
+            async for event in router.astream_events(
+                "fan out",
+                config=RunConfig(
+                    execution_mode="parallel_read_only",
+                    max_parallel_calls=2,
+                    budget=ExecutionBudget(max_tool_calls=1),
+                ),
+            ):
+                events.append(event)
+    finally:
+        router.aplan_executable = original_aplan  # type: ignore[method-assign]
+
+    assert len(invoked) == 1
+    assert any(event.event == "run.error" for event in events)
 
 
 @pytest.mark.asyncio
