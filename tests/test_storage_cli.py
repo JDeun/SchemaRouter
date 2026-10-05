@@ -50,6 +50,7 @@ def test_storage_inspect_cli_json_reports_legacy_without_mutation(
     assert payload["migration_required"] is True
     assert payload["components"][0]["component"] == "registry"
     assert payload["components"][0]["status"] == "legacy"
+    assert payload["components"][0]["migration_required"] is True
 
     connection = sqlite3.connect(path)
     try:
