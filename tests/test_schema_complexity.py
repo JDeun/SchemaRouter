@@ -76,8 +76,14 @@ def test_schema_complexity_accepts_normal_nested_schema() -> None:
 
 
 def test_openapi_local_ref_chain_has_independent_hop_budget() -> None:
-    document, schema = _ref_chain(130, prefix="components")
-    document["components"] = {"schemas": document.pop("components")}
+    definitions: dict[str, dict] = {}
+    for index in range(130):
+        definitions[f"S{index}"] = (
+            {"type": "object", "properties": {"value": {"type": "string"}}}
+            if index == 129
+            else {"$ref": f"#/components/schemas/S{index + 1}"}
+        )
+    document = {"components": {"schemas": definitions}}
     schema = {"$ref": "#/components/schemas/S0"}
 
     with pytest.raises(SchemaSourceError, match="local reference chain"):
