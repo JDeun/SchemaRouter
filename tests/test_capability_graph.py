@@ -6,6 +6,7 @@ import pytest
 
 import schemarouter.capability_graph as capability_graph_module
 from schemarouter import (
+    CapabilityComposition,
     CapabilityContract,
     CapabilityDependencyEdge,
     CapabilityDependencyGraph,
@@ -340,3 +341,52 @@ def test_scc_cycle_analysis_is_bounded_on_dense_component() -> None:
 def test_cycle_witness_limit_requires_positive_integer(value: object) -> None:
     with pytest.raises(ValueError, match="max_witnesses"):
         dependency_cycles(CapabilityDependencyGraph(), max_witnesses=value)  # type: ignore[arg-type]
+
+
+def _linear_dependency_graph(size: int, *, close_cycle: bool) -> CapabilityDependencyGraph:
+    ids = tuple(f"node-{index:05d}" for index in range(size))
+    compatibility = CapabilityComposition(status="compatible")
+    edges = [
+        CapabilityDependencyEdge(
+            producer_id=ids[index],
+            consumer_id=ids[index + 1],
+            compatibility=compatibility,
+        )
+        for index in range(size - 1)
+    ]
+    if close_cycle:
+        edges.append(
+            CapabilityDependencyEdge(
+                producer_id=ids[-1],
+                consumer_id=ids[0],
+                compatibility=compatibility,
+            )
+        )
+    return CapabilityDependencyGraph(
+        capability_ids=ids,
+        edges=edges,
+    )
+
+
+def test_scc_traversal_is_stack_safe_above_python_recursion_depth() -> None:
+    graph = _linear_dependency_graph(1500, close_cycle=False)
+
+    components = dependency_strongly_connected_components(graph)
+
+    assert len(components) == 1500
+    assert components[0] == ("node-00000",)
+    assert components[-1] == ("node-01499",)
+
+
+def test_cycle_witness_is_stack_safe_for_large_scc() -> None:
+    graph = _linear_dependency_graph(1500, close_cycle=True)
+
+    components = dependency_strongly_connected_components(graph)
+    cycles = dependency_cycles(graph, max_witnesses=1)
+
+    assert len(components) == 1
+    assert len(components[0]) == 1500
+    assert len(cycles) == 1
+    assert len(cycles[0]) == 1500
+    assert cycles[0][0] == "node-00000"
+    assert cycles[0][-1] == "node-01499"
