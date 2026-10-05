@@ -8,6 +8,8 @@ from pydantic import Field
 
 from .capability_contracts import (
     CapabilityContract,
+    CompatibilityContext,
+    _canonical_compatibility_context_payload,
     compare_capability_composition,
 )
 from .capability_graph import (
@@ -17,9 +19,11 @@ from .capability_graph import (
 from .models import StrictModel
 
 LEGACY_CAPABILITY_ARTIFACT_FORMAT_VERSION = "1.0"
-CAPABILITY_ARTIFACT_FORMAT_VERSION = "1.1"
+_PREVIOUS_CAPABILITY_ARTIFACT_FORMAT_VERSION = "1.1"
+CAPABILITY_ARTIFACT_FORMAT_VERSION = "1.2"
 SUPPORTED_CAPABILITY_ARTIFACT_FORMAT_VERSIONS = (
     LEGACY_CAPABILITY_ARTIFACT_FORMAT_VERSION,
+    _PREVIOUS_CAPABILITY_ARTIFACT_FORMAT_VERSION,
     CAPABILITY_ARTIFACT_FORMAT_VERSION,
 )
 
@@ -50,6 +54,7 @@ class CapabilityGraphArtifact(StrictModel):
     sources: tuple[CapabilityArtifactSource, ...] = ()
     edges: tuple[CapabilityArtifactEdge, ...] = ()
     provenance: dict[str, str] = Field(default_factory=dict)
+    compatibility_context: CompatibilityContext | None = None
 
 
 class CapabilityArtifactMigrationRecord(StrictModel):
@@ -84,8 +89,9 @@ def _canonical_payload(
     sources: list[CapabilityArtifactSource],
     edges: list[CapabilityArtifactEdge],
     provenance: dict[str, str],
+    compatibility_context: CompatibilityContext | None,
 ) -> dict[str, object]:
-    return {
+    payload: dict[str, object] = {
         "format_version": format_version,
         "graph_digest": graph_digest,
         "capabilities": [
@@ -113,6 +119,11 @@ def _canonical_payload(
         ],
         "provenance": dict(sorted(provenance.items())),
     }
+    if format_version == CAPABILITY_ARTIFACT_FORMAT_VERSION:
+        payload["compatibility_context"] = _canonical_compatibility_context_payload(
+            compatibility_context
+        )
+    return payload
 
 
 def _payload_digest(payload: dict[str, object]) -> str:
@@ -140,6 +151,7 @@ def _artifact_digest(
             sources=list(artifact.sources),
             edges=list(artifact.edges),
             provenance=artifact.provenance,
+            compatibility_context=artifact.compatibility_context,
         )
     )
 
@@ -193,6 +205,7 @@ def build_capability_artifact(
     sources: list[CapabilityArtifactSource] | None = None,
     edges: list[CapabilityArtifactEdge] | None = None,
     provenance: dict[str, str] | None = None,
+    context: CompatibilityContext | None = None,
 ) -> CapabilityGraphArtifact:
     source_items = list(sources or [])
     edge_items = list(edges or [])
@@ -204,6 +217,7 @@ def build_capability_artifact(
         sources=source_items,
         edges=edge_items,
         provenance=provenance_items,
+        compatibility_context=context,
     )
     return CapabilityGraphArtifact(
         format_version=CAPABILITY_ARTIFACT_FORMAT_VERSION,
@@ -224,6 +238,11 @@ def build_capability_artifact(
             ),
         )),
         provenance=dict(sorted(provenance_items.items())),
+        compatibility_context=(
+            context.model_copy(deep=True)
+            if context is not None
+            else None
+        ),
     )
 
 
@@ -233,8 +252,12 @@ def build_capability_artifact_from_graph(
     capabilities: list[CapabilityContract],
     sources: list[CapabilityArtifactSource] | None = None,
     provenance: dict[str, str] | None = None,
+    context: CompatibilityContext | None = None,
 ) -> CapabilityGraphArtifact:
-    expected = build_capability_dependency_graph(capabilities)
+    expected = build_capability_dependency_graph(
+        capabilities,
+        context=context,
+    )
     if expected != graph:
         raise ValueError(
             "capability graph does not match the supplied capability contracts"
@@ -245,6 +268,7 @@ def build_capability_artifact_from_graph(
         sources=sources,
         edges=artifact_edges_from_graph(graph),
         provenance=provenance,
+        context=context,
     )
 
 
@@ -298,6 +322,7 @@ def validate_capability_artifact(
         compatibility = compare_capability_composition(
             by_id[edge.producer_id],
             by_id[edge.consumer_id],
+            context=artifact.compatibility_context,
         )
         if not compatibility.satisfies:
             raise ValueError(
@@ -310,7 +335,10 @@ def validate_capability_artifact(
         derived_pairs.add((edge.producer_id, edge.consumer_id))
 
     if artifact.edges and all(edge.origin == "derived" for edge in artifact.edges):
-        graph = build_capability_dependency_graph(list(artifact.capabilities))
+        graph = build_capability_dependency_graph(
+            list(artifact.capabilities),
+            context=artifact.compatibility_context,
+        )
         expected_pairs = {
             (edge.producer_id, edge.consumer_id)
             for edge in graph.edges
@@ -366,21 +394,24 @@ def migrate_capability_artifact(
             ),
         )
 
-    # Version 1.0 had no edge-origin field and accepted caller-supplied edge metadata.
-    # Preserve that exact authority boundary by classifying every migrated edge as
-    # external rather than inventing stronger "derived" semantics.
     provenance = dict(artifact.provenance)
     provenance.setdefault("migration.from_format", artifact.format_version)
     provenance.setdefault("migration.source_digest", source_digest)
+    migrated_edges = (
+        [
+            edge.model_copy(update={"origin": "external"})
+            for edge in artifact.edges
+        ]
+        if artifact.format_version == LEGACY_CAPABILITY_ARTIFACT_FORMAT_VERSION
+        else [edge.model_copy(deep=True) for edge in artifact.edges]
+    )
     migrated = build_capability_artifact(
         graph_digest=artifact.graph_digest,
         capabilities=list(artifact.capabilities),
         sources=list(artifact.sources),
-        edges=[
-            edge.model_copy(update={"origin": "external"})
-            for edge in artifact.edges
-        ],
+        edges=migrated_edges,
         provenance=provenance,
+        context=None,
     )
     validate_capability_artifact(migrated)
     return CapabilityArtifactMigrationResult(

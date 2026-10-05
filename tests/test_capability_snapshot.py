@@ -1,9 +1,15 @@
+import hashlib
 import json
 from datetime import datetime, timezone
 
 import pytest
 
-from schemarouter.capability_contracts import CapabilityContract, CapabilityFieldContract
+from schemarouter.capability_contracts import (
+    CapabilityContract,
+    CapabilityFieldContract,
+    CompatibilityContext,
+    SemanticEquivalence,
+)
 from schemarouter.capability_snapshot import (
     CAPABILITY_SNAPSHOT_DOCUMENT_VERSION,
     LEGACY_CAPABILITY_SNAPSHOT_DOCUMENT_VERSION,
@@ -43,6 +49,49 @@ def test_snapshot_digest_is_stable_across_order_and_build_time() -> None:
     )
 
     assert first.snapshot_id == second.snapshot_id
+
+
+def test_snapshot_identity_and_graph_include_compatibility_context() -> None:
+    producer = CapabilityContract(
+        capability_id="producer",
+        produces=[
+            CapabilityFieldContract(
+                semantic_id="material.identifier",
+                json_schema={"type": "string"},
+            )
+        ],
+    )
+    consumer = CapabilityContract(
+        capability_id="consumer",
+        requires=[
+            CapabilityFieldContract(
+                semantic_id="resource.material_id",
+                json_schema={"type": "string"},
+            )
+        ],
+    )
+    context = CompatibilityContext(
+        semantic_equivalences=[
+            SemanticEquivalence(
+                canonical_id="resource.material_id",
+                aliases={"material.identifier"},
+            )
+        ]
+    )
+
+    plain = build_capability_snapshot([producer, consumer])
+    contextual = build_capability_snapshot(
+        [producer, consumer],
+        context=context,
+    )
+
+    assert contextual.snapshot_id != plain.snapshot_id
+    assert plain.build_graph().edges == []
+    assert contextual.build_graph().successors("producer") == ("consumer",)
+
+    loaded = load_capability_snapshot(serialize_capability_snapshot(contextual))
+    assert loaded == contextual
+    assert loaded.build_graph() == contextual.build_graph()
 
 
 def test_contract_drift_creates_successor_snapshot() -> None:
@@ -94,6 +143,42 @@ def test_versioned_snapshot_document_round_trip() -> None:
 
     assert document.format_version == CAPABILITY_SNAPSHOT_DOCUMENT_VERSION
     assert loaded == snapshot
+
+
+def test_version_1_0_snapshot_document_migrates_without_changing_context_free_identity() -> None:
+    snapshot = build_capability_snapshot(
+        [CapabilityContract(capability_id="a")],
+        builder_version="legacy-builder",
+    )
+    snapshot_raw = snapshot.model_dump(mode="json")
+    snapshot_raw.pop("compatibility_context", None)
+    payload = {
+        "format_version": "1.0",
+        "snapshot": snapshot_raw,
+    }
+    digest = hashlib.sha256(
+        json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode("utf-8")
+    ).hexdigest()
+    legacy = json.dumps(
+        {
+            "document_digest": digest,
+            **payload,
+        },
+        sort_keys=True,
+    )
+
+    migrated = migrate_capability_snapshot(legacy)
+
+    assert migrated.migration.from_format == "1.0"
+    assert migrated.migration.to_format == CAPABILITY_SNAPSHOT_DOCUMENT_VERSION
+    assert migrated.migration.migrated is True
+    assert migrated.document.snapshot.snapshot_id == snapshot.snapshot_id
+    assert migrated.document.snapshot.compatibility_context is None
 
 
 def test_raw_legacy_snapshot_migrates_to_versioned_document() -> None:
