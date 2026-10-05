@@ -79,6 +79,15 @@ class NonRetryableInvocationError(ExecutionError, RuntimeError):
     """
 
 
+class IndeterminateInvocationError(NonRetryableInvocationError):
+    """Raised when an offloaded synchronous side effect may still complete.
+
+    The caller-visible deadline or cancellation ended the await, but Python
+    cannot stop an already-running worker thread. Retrying or falling back
+    automatically could therefore duplicate a mutation.
+    """
+
+
 class ExecutionHookError(ExecutionError):
     """Raised when a trusted execution hook violates or fails its contract."""
 
