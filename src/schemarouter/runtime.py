@@ -2731,30 +2731,35 @@ class SchemaRouter:
         SchemaRouter imported on the application's behalf stays executable. The
         invoker is never exposed to the caller.
 
-        If the capability was already bound and re-stamping the binding fails
-        — only possible if another writer replaced the registered spec between
-        validation and this call, e.g. a concurrent thread or another process
-        on a shared registry — this raises `BindingDriftError` immediately
-        instead of returning a key whose binding will only be discovered stale
-        at execution time. The amendment itself is still registered; call
-        `RegistryExecutor.bind()` again to recover.
+        If the capability is already bound, the amended contract and carried
+        binding are published as one failure-atomic transition. A binding failure
+        restores the prior contract/binding when still owned by this operation;
+        concurrent same-key drift fails closed without overwriting the newer writer.
         """
         expected_version = self.registry.version
         current = self.registry.get(tool_key)
         amended = prepare_amended_capability(current, amended)
-        was_bound = tool_key in self.executor.bound_keys()
-        key = replace_if_current(
-            self.registry,
-            amended,
-            expected_fingerprint=current.fingerprint,
-            expected_version=expected_version,
+        previous_binding = self.executor._bound_binding_for_contract(
+            tool_key,
+            current.fingerprint,
         )
-        restamped = self.executor.restamp_binding(key, amended.fingerprint)
-        if was_bound and not restamped:
-            raise BindingDriftError(
-                f"amendment of {key!r} was registered, but its existing binding "
-                "could not be re-stamped because the registered contract changed "
-                "concurrently; the binding is stale until it is bound again"
+        if previous_binding is None:
+            key = replace_if_current(
+                self.registry,
+                amended,
+                expected_fingerprint=current.fingerprint,
+                expected_version=expected_version,
+            )
+        else:
+            invoker, offload_sync = previous_binding
+            key = publish_bound_tool(
+                self.registry,
+                self.executor,
+                amended,
+                invoker,
+                expected_fingerprint=current.fingerprint,
+                expected_version=expected_version,
+                offload_sync=offload_sync,
             )
         self.health_monitor.transition_tool_contract(
             key,
