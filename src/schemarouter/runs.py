@@ -61,6 +61,7 @@ class RunConfig(StrictModel):
     tags: list[str] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
     max_concurrency: int = Field(default=8, ge=1, le=128)
+    max_batch_size: int = Field(default=256, ge=1, le=4096)
     execution_mode: ExecutionMode = "sequential"
     max_parallel_calls: int = Field(default=8, ge=1, le=128)
     include_payloads: bool = False
