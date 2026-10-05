@@ -10,9 +10,9 @@ from schemarouter import (
     CapabilityContract,
     CapabilityFieldContract,
     CapabilityPublicationConflictError,
-    CompatibilityContext,
     CapabilitySnapshotStore,
     CapabilitySourceRevision,
+    CompatibilityContext,
     SemanticEquivalence,
     build_capability_dependency_graph,
 )
