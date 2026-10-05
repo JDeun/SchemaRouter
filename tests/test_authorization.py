@@ -183,6 +183,26 @@ async def test_with_config_applies_principal_to_retrieval_and_invoke() -> None:
 
 
 @pytest.mark.asyncio
+async def test_parallel_event_stream_preflight_preserves_explicit_principal() -> None:
+    router = _router()
+    employee = PrincipalContext(subject="alice", roles=("employee",))
+
+    events = [
+        event
+        async for event in router.astream_events(
+            "employee directory",
+            config=RunConfig(
+                principal=employee,
+                execution_mode="parallel_read_only",
+            ),
+        )
+    ]
+
+    assert any(event.event == "tool.end" for event in events)
+    assert events[-1].event == "run.end"
+
+
+@pytest.mark.asyncio
 async def test_direct_executor_call_cannot_bypass_router_authorization() -> None:
     router = _router()
     executive = PrincipalContext(subject="ceo", roles=("executive",))
