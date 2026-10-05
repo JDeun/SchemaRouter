@@ -5442,7 +5442,8 @@ class SchemaRouter:
 
         if run_config.execution_mode == "parallel_read_only":
             try:
-                self.executor.validate_parallel_read_only(plan)
+                with _principal_execution_context(run_config.principal):
+                    self.executor.validate_parallel_read_only(plan)
             except Exception as exc:
                 error_data: dict[str, Any] = {
                     "error_type": type(exc).__name__,
