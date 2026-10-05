@@ -10,6 +10,25 @@ class TraceError(SchemaRouterError):
     """Raised when persisted run-trace data violates the trace contract."""
 
 
+class TracePersistenceError(TraceError):
+    """Raised when persisting a runtime event fails after that event was reached.
+
+    The failed ``RunEvent`` is retained on ``event`` so callers can distinguish
+    execution outcome from observability persistence failure.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        event: object,
+        execution_succeeded: bool,
+    ) -> None:
+        super().__init__(message)
+        self.event = event
+        self.execution_succeeded = execution_succeeded
+
+
 class StorageFormatError(SchemaRouterError):
     """Raised when persisted SQLite storage cannot be opened or migrated safely."""
 
