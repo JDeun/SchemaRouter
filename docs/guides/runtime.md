@@ -75,9 +75,20 @@ that worker.
 
 Provider-neutral vector, graph, and record-store backends follow the same rule automatically from
 their `remote` classification: synchronous methods on `remote=True` backends are offloaded,
-while `remote=False` keeps local/thread-affine backends inline. SQLite remains inline. A timed-out
-worker cannot be forcibly killed by Python, so backend calls should still use vendor-level network
-timeouts.
+while `remote=False` keeps local/thread-affine backends inline. SQLite remains inline.
+
+Python cannot forcibly stop an already-running worker thread. If an offloaded **mutating**
+synchronous invocation reaches its deadline or receives task cancellation after its worker has
+started, SchemaRouter raises `IndeterminateInvocationError` instead of reporting a normal
+cancellation. This error is non-retryable: automatic retry and fallback must not duplicate a side
+effect whose outcome may still complete in the worker. A deadline that expires before the worker
+starts keeps the normal execution-budget meaning. Explicitly read-only offloaded calls keep their
+existing timeout behavior.
+
+Caller-owned synchronous DB/API clients should configure backend-native network/statement
+timeouts and transactional or idempotency controls. Use a native async invoker when cooperative
+cancellation is required; `offload_sync=True` provides event-loop responsiveness, not thread
+cancellation.
 
 ## Typed lifecycle events
 
