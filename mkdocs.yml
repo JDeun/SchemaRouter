@@ -228,6 +228,7 @@ nav:
           - Paper evidence package: research/paper-evidence-package.md
           - Research governance: research/governance.md
           - External validation freeze: research/external-validation-freeze.md
+          - HYSET external validation retraining protocol: research/hyset-external-validation.md
           - Research freeze protocol: research/operation-routing-freeze-protocol.md
           - Terminal 0.11 report: research/operation-routing-v4-terminal-report.md
       - Prior-art roadmap: research/prior-art-roadmap.md
