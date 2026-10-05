@@ -444,6 +444,11 @@ class RegistryExecutor:
         Callers that construct an invoker from a particular ToolSpec must pass that
         spec's fingerprint. If the registry moved before binding, refuse before
         storing the invoker rather than blessing it for an unrelated contract.
+
+        ``offload_sync=True`` is supported only for endpoints declared ``read_only=True``.
+        Python worker threads cannot be force-cancelled once invocation starts, so mutating
+        or unclassified endpoints fail before dispatch instead of reporting a cancellation
+        while a detached side effect may still complete.
         """
         if not isinstance(offload_sync, bool):
             raise TypeError("offload_sync must be a bool")
@@ -881,10 +886,16 @@ class RegistryExecutor:
         for attempt in range(1, max_attempts + 1):
             await tracker.before_attempt(call, tool)
             try:
+                offload_sync = self._binding_offload_sync.get(call.tool, False)
+                if offload_sync and endpoint.read_only is not True:
+                    raise NonRetryableInvocationError(
+                        "offload_sync requires endpoint.read_only=True because synchronous "
+                        "worker threads cannot be safely cancelled once invocation starts"
+                    )
+
                 invoke_call = getattr(invoker, "invoke_call", None)
                 call_aware = callable(invoke_call)
                 with _data_scope_execution_context(data_scope):
-                    offload_sync = self._binding_offload_sync.get(call.tool, False)
                     if call_aware:
                         if offload_sync and not inspect.iscoroutinefunction(invoke_call):
                             value = asyncio.to_thread(invoke_call, call)
