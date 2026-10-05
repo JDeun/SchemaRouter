@@ -209,7 +209,7 @@ def apply_success_prior(retrieval, history: SuccessfulCapabilityHistory, *, weig
                             endpoint_fingerprint=candidate.endpoint_fingerprint,
                         )
                     )
-                    / math.log(10),
+                    / math.log(2),
                 )
             ),
             candidate.rank,
