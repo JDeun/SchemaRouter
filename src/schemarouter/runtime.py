@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+from contextlib import nullcontext
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Mapping, Sequence
 from typing import Any, TypeVar
 from urllib.parse import urlparse
@@ -4065,6 +4066,7 @@ class SchemaRouter:
         _expected_source_identity: StructuredSourceIdentity | None = None,
         _accept_candidate_fingerprint: str | None = None,
         _accept_candidate_source_identity: str | None = None,
+        _apply_guard: Callable[[], Any] | None = None,
     ) -> SchemaRefreshResult:
         """Reinspect a registered remote schema and apply only proven-compatible drift."""
 
@@ -4398,39 +4400,43 @@ class SchemaRouter:
                     candidate_source_identity=candidate_source_identity,
                 )
 
-            if overlay is None and candidate is not None:
-                self.loader.commit_candidate_if_current(
-                    candidate,
-                    expected_fingerprint=current.fingerprint,
-                    expected_version=expected_version,
-                )
-            else:
-                if candidate_invoker is not None:
-                    self.executor.publish_bound_tool(
-                        effective_candidate,
-                        candidate_invoker,
-                        replace=True,
+            apply_guard = (
+                _apply_guard() if _apply_guard is not None else nullcontext()
+            )
+            with apply_guard:
+                if overlay is None and candidate is not None:
+                    self.loader.commit_candidate_if_current(
+                        candidate,
                         expected_fingerprint=current.fingerprint,
                         expected_version=expected_version,
                     )
                 else:
-                    replace_if_current(
-                        self.registry,
-                        effective_candidate,
-                        expected_fingerprint=current.fingerprint,
-                        expected_version=expected_version,
-                    )
-                if not use_bound_mcp_transport and use_http_validators:
-                    self.loader.remember_tool_schema_http_validators(
-                        effective_candidate
-                    )
+                    if candidate_invoker is not None:
+                        self.executor.publish_bound_tool(
+                            effective_candidate,
+                            candidate_invoker,
+                            replace=True,
+                            expected_fingerprint=current.fingerprint,
+                            expected_version=expected_version,
+                        )
+                    else:
+                        replace_if_current(
+                            self.registry,
+                            effective_candidate,
+                            expected_fingerprint=current.fingerprint,
+                            expected_version=expected_version,
+                        )
+                    if not use_bound_mcp_transport and use_http_validators:
+                        self.loader.remember_tool_schema_http_validators(
+                            effective_candidate
+                        )
 
-            if candidate_fingerprint != current.fingerprint:
-                self.health_monitor.transition_tool_contract(
-                    tool_key,
-                    expected_old_fingerprint=current.fingerprint,
-                    expected_new_fingerprint=candidate_fingerprint,
-                )
+                if candidate_fingerprint != current.fingerprint:
+                    self.health_monitor.transition_tool_contract(
+                        tool_key,
+                        expected_old_fingerprint=current.fingerprint,
+                        expected_new_fingerprint=candidate_fingerprint,
+                    )
             return SchemaRefreshResult(
                 tool_key=tool_key,
                 action="applied",
@@ -4454,39 +4460,43 @@ class SchemaRouter:
         if (
             report.compatibility == "compatible" or raw_changed_under_overlay
         ) and apply_compatible:
-            if overlay is None and candidate is not None:
-                self.loader.commit_candidate_if_current(
-                    candidate,
-                    expected_fingerprint=current.fingerprint,
-                    expected_version=expected_version,
-                )
-            else:
-                if candidate_invoker is not None:
-                    self.executor.publish_bound_tool(
-                        effective_candidate,
-                        candidate_invoker,
-                        replace=True,
+            apply_guard = (
+                _apply_guard() if _apply_guard is not None else nullcontext()
+            )
+            with apply_guard:
+                if overlay is None and candidate is not None:
+                    self.loader.commit_candidate_if_current(
+                        candidate,
                         expected_fingerprint=current.fingerprint,
                         expected_version=expected_version,
                     )
                 else:
-                    replace_if_current(
-                        self.registry,
-                        effective_candidate,
-                        expected_fingerprint=current.fingerprint,
-                        expected_version=expected_version,
-                    )
-                if not use_bound_mcp_transport and use_http_validators:
-                    self.loader.remember_tool_schema_http_validators(
-                        effective_candidate
-                    )
+                    if candidate_invoker is not None:
+                        self.executor.publish_bound_tool(
+                            effective_candidate,
+                            candidate_invoker,
+                            replace=True,
+                            expected_fingerprint=current.fingerprint,
+                            expected_version=expected_version,
+                        )
+                    else:
+                        replace_if_current(
+                            self.registry,
+                            effective_candidate,
+                            expected_fingerprint=current.fingerprint,
+                            expected_version=expected_version,
+                        )
+                    if not use_bound_mcp_transport and use_http_validators:
+                        self.loader.remember_tool_schema_http_validators(
+                            effective_candidate
+                        )
 
-            if effective_candidate.fingerprint != current.fingerprint:
-                self.health_monitor.transition_tool_contract(
-                    tool_key,
-                    expected_old_fingerprint=current.fingerprint,
-                    expected_new_fingerprint=effective_candidate.fingerprint,
-                )
+                if effective_candidate.fingerprint != current.fingerprint:
+                    self.health_monitor.transition_tool_contract(
+                        tool_key,
+                        expected_old_fingerprint=current.fingerprint,
+                        expected_new_fingerprint=effective_candidate.fingerprint,
+                    )
 
             applied_report = report
             if raw_changed_under_overlay:
