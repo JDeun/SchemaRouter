@@ -89,6 +89,8 @@ from .adaptive_context import (
     SchemaExposureDecision,
     SessionSchemaExposure,
     SuccessfulCapabilityHistory,
+    apply_success_prior,
+    filter_unexposed_schemas,
 )
 from .aggregation import (
     AggregatedField,
