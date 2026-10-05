@@ -74,7 +74,6 @@ from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot
 from .hooks import ExecutionHooks
 from .ingestion import SourceKind, SourceProbeResult, URLSchemaLoader
 from .inspection import RouterInspection, inspect_router
-from .network_policy import NetworkPolicy
 from .models import (
     CapabilityRetrieval,
     CapabilityRouteRetrieval,
@@ -85,6 +84,7 @@ from .models import (
     ToolResult,
     ToolSpec,
 )
+from .network_policy import NetworkPolicy
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
