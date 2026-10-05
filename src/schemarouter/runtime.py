@@ -5749,13 +5749,13 @@ class SchemaRouter:
                                 "parallel execution event payload violated the internal contract: "
                                 "'post_invocation_error' expected a non-negative candidate index"
                             )
-                        result = post_error.result
-                        if not isinstance(result, ToolResult):
+                        post_result = post_error.result
+                        if not isinstance(post_result, ToolResult):
                             raise ExecutionInvariantError(
                                 "post-invocation hook error did not preserve a ToolResult"
                             )
                         end_data: dict[str, Any] = {
-                            "projected_fields": list(result.projected_fields),
+                            "projected_fields": list(post_result.projected_fields),
                             "fallback_used": candidate_index > 0,
                             "primary_call_index": index,
                             "fallback_candidate_index": candidate_index,
@@ -5764,14 +5764,14 @@ class SchemaRouter:
                             "post_invocation_error_type": type(post_error).__name__,
                         }
                         if run_config.include_payloads:
-                            end_data["result"] = result.model_dump(mode="json")
+                            end_data["result"] = post_result.model_dump(mode="json")
                         yield await emit(RunEvent.create(
                             event="tool.end",
                             run_id=run_id,
                             sequence=sequence,
                             config=run_config,
-                            tool=result.tool,
-                            endpoint=result.endpoint,
+                            tool=post_result.tool,
+                            endpoint=post_result.endpoint,
                             data=end_data,
                         ))
                         sequence += 1
@@ -5837,14 +5837,14 @@ class SchemaRouter:
                         "fallback_candidate_index": candidate_index,
                     }
                     if run_config.include_payloads:
-                        end_data["result"] = result.model_dump(mode="json")
+                        end_data["result"] = post_result.model_dump(mode="json")
                     yield await emit(RunEvent.create(
                         event="tool.end",
                         run_id=run_id,
                         sequence=sequence,
                         config=run_config,
-                        tool=result.tool,
-                        endpoint=result.endpoint,
+                        tool=post_result.tool,
+                        endpoint=post_result.endpoint,
                         data=end_data,
                     ))
                     sequence += 1
@@ -6046,13 +6046,13 @@ class SchemaRouter:
                     fallback_count += 1
                     continue
                 except PostInvocationHookError as exc:
-                    result = exc.result
-                    if not isinstance(result, ToolResult):
+                    post_result = exc.result
+                    if not isinstance(post_result, ToolResult):
                         raise ExecutionInvariantError(
                             "post-invocation hook error did not preserve a ToolResult"
                         ) from exc
                     end_data: dict[str, Any] = {
-                        "projected_fields": list(result.projected_fields),
+                        "projected_fields": list(post_result.projected_fields),
                         "fallback_used": candidate_index > 0,
                         "primary_call_index": primary_index,
                         "fallback_candidate_index": original_candidate_index,
