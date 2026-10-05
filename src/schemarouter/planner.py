@@ -354,6 +354,7 @@ class _CandidateIndex:
         self._entries: dict[_EndpointRef, tuple[ToolSpec, EndpointSpec]] = {}
         self._token_refs: dict[str, set[_EndpointRef]] = {}
         self._field_norm_refs: dict[str, set[_EndpointRef]] = {}
+        self._field_trigram_norms: dict[str, set[str]] = {}
         self._parameter_refs: dict[str, set[_EndpointRef]] = {}
         self._tool_refs: dict[str, set[_EndpointRef]] = {}
         self._endpoint_refs: dict[str, set[_EndpointRef]] = {}
@@ -405,6 +406,11 @@ class _CandidateIndex:
                         norm = _normalize(name)
                         if norm:
                             self._add(self._field_norm_refs, norm, ref)
+                            for trigram in self._trigrams(norm):
+                                self._field_trigram_norms.setdefault(
+                                    trigram,
+                                    set(),
+                                ).add(norm)
 
                 for parameter in endpoint.parameters:
                     self._add(self._parameter_refs, parameter.name, ref)
@@ -420,6 +426,15 @@ class _CandidateIndex:
         ref: _EndpointRef,
     ) -> None:
         index.setdefault(key, set()).add(ref)
+
+    @staticmethod
+    def _trigrams(value: str) -> tuple[str, ...]:
+        if len(value) < 3:
+            return ()
+        return tuple(
+            value[index : index + 3]
+            for index in range(len(value) - 2)
+        )
 
     def all_endpoint_pairs(self) -> tuple[tuple[ToolSpec, EndpointSpec], ...]:
         """Return the version-frozen endpoint snapshot without copying ToolSpecs again."""
@@ -463,12 +478,18 @@ class _CandidateIndex:
             refs.update(self._field_norm_refs.get(concept, ()))
 
         if concept_norms:
-            for norm, norm_refs in self._field_norm_refs.items():
+            candidate_norms: set[str] = set()
+            for concept in concept_norms:
+                for trigram in self._trigrams(concept):
+                    candidate_norms.update(
+                        self._field_trigram_norms.get(trigram, ())
+                    )
+            for norm in candidate_norms:
                 if any(
                     _semantic_substring_match(concept, norm)
                     for concept in concept_norms
                 ):
-                    refs.update(norm_refs)
+                    refs.update(self._field_norm_refs[norm])
 
         return tuple(self._entries[ref] for ref in sorted(refs))
 
