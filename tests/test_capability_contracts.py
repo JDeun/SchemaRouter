@@ -208,3 +208,83 @@ def test_composition_can_be_convertible_without_executing_conversion() -> None:
     result = compare_capability_composition(producer, consumer, context=context)
     assert result.status == "convertible"
     assert result.satisfies
+
+
+def test_composition_preserves_duplicate_semantic_requirements_deterministically() -> None:
+    producer = CapabilityContract(
+        capability_id="producer",
+        produces=[
+            CapabilityFieldContract(
+                semantic_id="temperature",
+                json_schema={"type": "number"},
+                unit="C",
+                dimension="temperature",
+                qualifiers={"location": "surface"},
+            )
+        ],
+    )
+    requirements = [
+        CapabilityFieldContract(
+            semantic_id="temperature",
+            json_schema={"type": "number"},
+            unit="C",
+            dimension="temperature",
+            qualifiers={"location": "surface"},
+        ),
+        CapabilityFieldContract(
+            semantic_id="temperature",
+            json_schema={"type": "number"},
+            unit="K",
+            dimension="temperature",
+            qualifiers={"location": "core"},
+        ),
+    ]
+
+    forward = compare_capability_composition(
+        producer,
+        CapabilityContract(
+            capability_id="consumer-forward",
+            requires=requirements,
+        ),
+    )
+    reverse = compare_capability_composition(
+        producer,
+        CapabilityContract(
+            capability_id="consumer-reverse",
+            requires=list(reversed(requirements)),
+        ),
+    )
+
+    assert forward.status == "incompatible"
+    assert reverse.status == "incompatible"
+    assert len(forward.requirements) == 2
+    assert list(forward.requirements) == list(reverse.requirements)
+    assert [
+        result.status for result in forward.requirements.values()
+    ] == [
+        result.status for result in reverse.requirements.values()
+    ]
+
+
+def test_composition_preserves_identical_duplicate_requirement_multiplicity() -> None:
+    required = CapabilityFieldContract(
+        semantic_id="temperature",
+        json_schema={"type": "number"},
+    )
+    producer = CapabilityContract(
+        capability_id="producer",
+        produces=[required],
+    )
+    consumer = CapabilityContract(
+        capability_id="consumer",
+        requires=[required, required.model_copy(deep=True)],
+    )
+
+    result = compare_capability_composition(producer, consumer)
+
+    assert result.status == "exact"
+    assert len(result.requirements) == 2
+    assert all(
+        item.status == "exact"
+        for item in result.requirements.values()
+    )
