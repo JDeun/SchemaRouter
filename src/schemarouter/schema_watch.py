@@ -3,9 +3,10 @@ from __future__ import annotations
 import asyncio
 import time
 from collections.abc import Awaitable, Callable, Mapping
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from threading import RLock
 from typing import Any, Literal
 
 from .adapters.base import AdapterRegistry, RefreshProfile
@@ -94,6 +95,7 @@ class SchemaWatchManager:
         self._records: dict[str, _WatchRecord] = {}
         self._task: asyncio.Task[None] | None = None
         self._run_lock = asyncio.Lock()
+        self._membership_lock = RLock()
         self._wake = asyncio.Event()
         self._max_concurrency = 4
 
@@ -206,7 +208,7 @@ class SchemaWatchManager:
         if timeout <= 0:
             raise ValueError("timeout_seconds must be > 0")
 
-        self._records[tool_key] = _WatchRecord(
+        record = _WatchRecord(
             tool_fingerprint=tool.fingerprint,
             source_identity=identity,
             interval_seconds=interval,
@@ -225,10 +227,22 @@ class SchemaWatchManager:
             timeout_seconds=timeout,
             next_due=time.monotonic(),
         )
+        with self._membership_lock:
+            self._records[tool_key] = record
         self._wake.set()
 
+    @contextmanager
+    def _watch_commit_guard(self, tool_key: str, record: _WatchRecord):
+        with self._membership_lock:
+            if self._records.get(tool_key) is not record:
+                raise SchemaSourceError(
+                    f"tool {tool_key!r} schema watch generation is no longer active"
+                )
+            yield
+
     def unregister(self, tool_key: str) -> None:
-        self._records.pop(tool_key, None)
+        with self._membership_lock:
+            self._records.pop(tool_key, None)
         self._wake.set()
 
     def snapshots(self) -> tuple[SchemaWatchSnapshot, ...]:
@@ -316,7 +330,8 @@ class SchemaWatchManager:
         """Refetch and accept only the exact candidate reviewed by trusted local code."""
 
         async with self._run_lock:
-            record = self._records.get(tool_key)
+            with self._membership_lock:
+                record = self._records.get(tool_key)
             if record is None:
                 raise SchemaSourceError(
                     f"tool {tool_key!r} has no registered schema watch"
@@ -348,6 +363,8 @@ class SchemaWatchManager:
                     timeout=record.timeout_seconds,
                     _expected_fingerprint=record.tool_fingerprint,
                     _expected_source_identity=record.source_identity,
+                    _apply_guard=lambda: self._watch_commit_guard(tool_key, record),
+                    _apply_guard=lambda: self._watch_commit_guard(tool_key, record),
                     _accept_candidate_fingerprint=expected_candidate_fingerprint,
                     _accept_candidate_source_identity=(
                         pending.candidate_source_identity
@@ -444,6 +461,9 @@ class SchemaWatchManager:
         semaphore: asyncio.Semaphore,
     ) -> None:
         async with semaphore:
+            with self._membership_lock:
+                if self._records.get(tool_key) is not record:
+                    return
             now = datetime.now(timezone.utc)
             current, stale_status, stale_reason = self._contract_status(
                 tool_key,
@@ -559,9 +579,11 @@ class SchemaWatchManager:
 
         async with self._run_lock:
             now = time.monotonic()
+            with self._membership_lock:
+                records = tuple(self._records.items())
             due = [
                 (tool_key, record)
-                for tool_key, record in tuple(self._records.items())
+                for tool_key, record in records
                 if force or record.next_due <= now
             ]
             if not due:
