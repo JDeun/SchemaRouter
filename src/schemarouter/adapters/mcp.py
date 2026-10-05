@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 
 from ..errors import InvocationUnavailableError, SchemaSourceError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
+from ..schema_complexity import ensure_ref_hop_budget, validate_schema_complexity
 
 _PROTECTED_MCP_HEADERS = {
     "accept",
@@ -289,10 +290,13 @@ def _resolve_output_schema(
 ) -> dict[str, Any]:
     current = schema
     seen: set[str] = set()
+    hops = 0
     while isinstance(current, dict):
         ref = current.get("$ref")
         if not isinstance(ref, str) or not ref.startswith("#/") or ref in seen:
             return current
+        hops += 1
+        ensure_ref_hop_budget(hops, source="MCP schema")
         seen.add(ref)
         target = _local_ref_target(document, ref)
         if target is None:
@@ -473,6 +477,11 @@ def tool_from_mcp(
     for raw_item in raw_tools:
         item = _as_dict(raw_item)
         input_schema = item.get("inputSchema") or item.get("input_schema") or {}
+        if isinstance(input_schema, dict):
+            validate_schema_complexity(
+                input_schema,
+                source=f"MCP tool {item.get('name')!r} input schema",
+            )
         required = (
             set(input_schema.get("required", []))
             if isinstance(input_schema, dict)
@@ -490,6 +499,11 @@ def tool_from_mcp(
         ]
 
         output_schema = item.get("outputSchema") or item.get("output_schema") or {}
+        if isinstance(output_schema, dict):
+            validate_schema_complexity(
+                output_schema,
+                source=f"MCP tool {item.get('name')!r} output schema",
+            )
         output_required = (
             set(output_schema.get("required", []))
             if isinstance(output_schema, dict)
