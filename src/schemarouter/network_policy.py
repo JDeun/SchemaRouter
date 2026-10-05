@@ -44,6 +44,20 @@ def _literal_address(host: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address
         return None
 
 
+def _is_public_address(
+    address: ipaddress.IPv4Address | ipaddress.IPv6Address,
+) -> bool:
+    return (
+        address.is_global
+        and not address.is_multicast
+        and not address.is_reserved
+        and not address.is_unspecified
+        and not address.is_loopback
+        and not address.is_link_local
+        and not address.is_private
+    )
+
+
 async def _system_resolver(host: str, port: int) -> tuple[str, ...]:
     try:
         results = await asyncio.to_thread(
@@ -191,7 +205,7 @@ class NetworkPolicy:
             )
 
         literal = _literal_address(host)
-        if literal is not None and not literal.is_global:
+        if literal is not None and not _is_public_address(literal):
             raise NetworkPolicyError(
                 "network destination is not allowed by the public-network policy"
             )
@@ -222,7 +236,7 @@ class NetworkPolicy:
                 raise NetworkPolicyError(
                     "network resolver returned an invalid address"
                 ) from exc
-            if not address.is_global:
+            if not _is_public_address(address):
                 raise NetworkPolicyError(
                     "network destination is not allowed by the public-network policy"
                 )
