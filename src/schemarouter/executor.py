@@ -20,6 +20,7 @@ from .errors import (
     ExecutionBudgetExceededError,
     ExecutionError,
     ExecutionHookError,
+    IndeterminateInvocationError,
     InvocationUnavailableError,
     NonRetryableInvocationError,
     PlanValidationError,
@@ -236,6 +237,7 @@ class RegistryExecutor:
         self._invokers: dict[str, BoundEndpointInvoker] = {}
         self._binding_fingerprints: dict[str, str] = {}
         self._binding_offload_sync: dict[str, bool] = {}
+        self._inflight_offloaded_sync: set[asyncio.Task[Any]] = set()
         self._unavailable_until: dict[tuple[str, str, str], float] = {}
 
     def _current_access_key(
@@ -517,6 +519,56 @@ class RegistryExecutor:
         self._invokers.pop(tool_key, None)
         self._binding_fingerprints.pop(tool_key, None)
         self._binding_offload_sync.pop(tool_key, None)
+
+    def _track_offloaded_sync_task(self, task: asyncio.Task[Any]) -> None:
+        """Keep an offloaded worker task alive until its thread-backed call finishes."""
+
+        self._inflight_offloaded_sync.add(task)
+
+        def cleanup(done: asyncio.Task[Any]) -> None:
+            self._inflight_offloaded_sync.discard(done)
+            try:
+                done.result()
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                pass
+
+        task.add_done_callback(cleanup)
+
+    async def _await_side_effecting_offloaded_sync(
+        self,
+        awaitable: Awaitable[Any],
+        *,
+        tracker: ExecutionBudgetTracker,
+        call: ToolCall,
+    ) -> Any:
+        """Await a sync mutation without pretending an in-flight worker was cancelled."""
+
+        # Check the trusted deadline before scheduling the worker so a budget that is already
+        # exhausted remains a normal pre-invocation budget failure.
+        remaining = tracker.remaining_seconds(stage="invocation")
+        task = asyncio.create_task(awaitable)
+        self._track_offloaded_sync_task(task)
+
+        try:
+            if remaining is None:
+                value = await asyncio.shield(task)
+            else:
+                value = await asyncio.wait_for(asyncio.shield(task), timeout=remaining)
+        except asyncio.TimeoutError as exc:
+            raise IndeterminateInvocationError(
+                "offloaded synchronous invocation outcome is indeterminate after deadline "
+                f"for {call.tool}.{call.endpoint}; the worker may still complete"
+            ) from exc
+        except asyncio.CancelledError as exc:
+            raise IndeterminateInvocationError(
+                "offloaded synchronous invocation outcome is indeterminate after cancellation "
+                f"for {call.tool}.{call.endpoint}; the worker may still complete"
+            ) from exc
+
+        tracker._check_elapsed(stage="invocation")
+        return value
 
     def purge_tool_runtime_state(self, tool_key: str) -> None:
         """Forget trusted binding and bounded availability state for one tool."""
@@ -885,9 +937,11 @@ class RegistryExecutor:
                 call_aware = callable(invoke_call)
                 with _data_scope_execution_context(data_scope):
                     offload_sync = self._binding_offload_sync.get(call.tool, False)
+                    sync_offloaded = False
                     if call_aware:
                         if offload_sync and not inspect.iscoroutinefunction(invoke_call):
                             value = asyncio.to_thread(invoke_call, call)
+                            sync_offloaded = True
                         else:
                             value = invoke_call(call)
                     else:
@@ -898,16 +952,24 @@ class RegistryExecutor:
                                 call.endpoint,
                                 dict(call.arguments),
                             )
+                            sync_offloaded = True
                         else:
                             value = endpoint_invoker(
                                 call.endpoint,
                                 dict(call.arguments),
                             )
                     if inspect.isawaitable(value):
-                        value = await tracker.wait_awaitable(
-                            value,
-                            stage="invocation",
-                        )
+                        if sync_offloaded and endpoint.read_only is not True:
+                            value = await self._await_side_effecting_offloaded_sync(
+                                value,
+                                tracker=tracker,
+                                call=call,
+                            )
+                        else:
+                            value = await tracker.wait_awaitable(
+                                value,
+                                stage="invocation",
+                            )
                 tracker.after_attempt()
 
                 server_projected = (
