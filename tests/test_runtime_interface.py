@@ -8,6 +8,7 @@ from schemarouter import (
     ExecutionBudgetExceededError,
     ExecutionError,
     ExecutionPlan,
+    ExecutionHooks,
     ExecutionPolicy,
     FallbackRoute,
     FieldSpec,
@@ -15,6 +16,7 @@ from schemarouter import (
     ParameterSpec,
     PlanRequest,
     PlanValidationError,
+    PostInvocationHookError,
     RetryPolicy,
     RunConfig,
     SchemaDriftError,
@@ -278,6 +280,43 @@ async def test_event_stream_success_matches_ainvoke_result_payload() -> None:
     ]
     assert terminal_results == [result.model_dump(mode="json") for result in expected]
     assert events[-1].event == "run.end"
+
+
+@pytest.mark.asyncio
+async def test_event_stream_preserves_success_before_post_invocation_hook_failure() -> None:
+    router = make_router()
+    calls = 0
+
+    def invoke(endpoint: str, arguments: dict) -> dict:
+        nonlocal calls
+        del endpoint
+        calls += 1
+        return {
+            "city": arguments["city"],
+            "temperature": 20,
+        }
+
+    def after(tool, endpoint, hook_call, result) -> None:
+        raise RuntimeError("telemetry unavailable")
+
+    router.executor.bind("weather", invoke)
+    router.executor.hooks = ExecutionHooks(after_call=[after])
+    events = []
+
+    with pytest.raises(PostInvocationHookError):
+        async for event in router.astream_events(
+            request(),
+            config=RunConfig(include_payloads=True),
+        ):
+            events.append(event)
+
+    assert calls == 1
+    tool_end = next(event for event in events if event.event == "tool.end")
+    assert tool_end.data["invocation_succeeded"] is True
+    assert tool_end.data["post_invocation_error_type"] == "PostInvocationHookError"
+    assert tool_end.data["result"]["data"]["temperature"] == 20
+    assert events[-1].event == "run.error"
+    assert events[-1].data["stage"] == "post_invocation_hook"
 
 
 @pytest.mark.asyncio
