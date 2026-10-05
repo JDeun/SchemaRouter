@@ -453,3 +453,91 @@ async def test_schema_refresh_openrpc_preserves_approved_base_url() -> None:
     assert result.action == "unchanged"
     assert result.compatibility == "identical"
     assert seen_gets == 2
+
+def test_loader_commit_rolls_back_new_bound_tool_before_validator_publication(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    router = SchemaRouter()
+    tool = ToolSpec(
+        name="loader_atomic",
+        remote=True,
+        endpoints=[EndpointSpec(name="read", read_only=True)],
+    )
+    remembered: list[str] = []
+
+    def fail_bind(*args, **kwargs) -> None:
+        raise RuntimeError("injected loader bind failure")
+
+    monkeypatch.setattr(router.executor, "bind", fail_bind)
+    monkeypatch.setattr(
+        router.loader,
+        "remember_tool_schema_http_validators",
+        lambda committed: remembered.append(committed.key),
+    )
+
+    with pytest.raises(RuntimeError, match="injected loader bind failure"):
+        router.loader._commit(
+            AdapterLoadResult(
+                tool=tool,
+                invoker=lambda endpoint, arguments: {"ok": True},
+            ),
+            replace=False,
+        )
+
+    assert "loader_atomic" not in router.registry.keys()
+    assert "loader_atomic" not in router.executor.bound_keys()
+    assert remembered == []
+
+
+def test_loader_commit_candidate_failed_rebind_restores_previous_executable_state(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    router = SchemaRouter()
+    original = ToolSpec(
+        name="loader_refresh",
+        description="v1",
+        remote=True,
+        endpoints=[EndpointSpec(name="read", path="/v1", read_only=True)],
+    )
+    original_invoker = lambda endpoint, arguments: {"version": "v1"}
+    committed = router.loader._commit(
+        AdapterLoadResult(tool=original, invoker=original_invoker),
+        replace=False,
+    )
+    expected_version = router.registry.version
+    original_fingerprint = committed.fingerprint
+
+    candidate = original.model_copy(deep=True)
+    candidate.description = "v2"
+    candidate.endpoints[0].path = "/v2"
+
+    def fail_bind(*args, **kwargs) -> None:
+        raise RuntimeError("injected refresh bind failure")
+
+    monkeypatch.setattr(router.executor, "bind", fail_bind)
+
+    with pytest.raises(RuntimeError, match="injected refresh bind failure"):
+        router.loader.commit_candidate_if_current(
+            AdapterLoadResult(
+                tool=candidate,
+                invoker=lambda endpoint, arguments: {"version": "v2"},
+            ),
+            expected_fingerprint=original_fingerprint,
+            expected_version=expected_version,
+        )
+
+    restored = router.registry.get("loader_refresh")
+    assert restored.fingerprint == original_fingerprint
+    assert restored.description == "v1"
+    assert router.executor.is_binding_ready_for_contract(
+        "loader_refresh",
+        original_fingerprint,
+    )
+    assert (
+        router.executor._bound_invoker_for_contract(
+            "loader_refresh",
+            original_fingerprint,
+        )
+        is original_invoker
+    )
+

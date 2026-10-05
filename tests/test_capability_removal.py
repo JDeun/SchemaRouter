@@ -142,7 +142,13 @@ async def test_remove_tool_fails_closed_for_registry_without_atomic_removal() ->
     registry = NonMutableRegistry()
     router = SchemaRouter(registry=registry)
     tool = _local_tool()
-    router.add_bound_tool(tool, _invoker)
+    registry.register(tool)
+    registered = registry.get(tool.key)
+    router.executor.bind(
+        tool.key,
+        _invoker,
+        expected_fingerprint=registered.fingerprint,
+    )
     router.register_health_probe(tool.key, "read", lambda: True)
 
     with pytest.raises(
