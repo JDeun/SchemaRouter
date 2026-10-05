@@ -127,3 +127,88 @@ def test_schema_exposure_filter_does_not_mutate_session_state() -> None:
         "alpha.search",
         "beta.search",
     ]
+
+
+
+def test_history_fingerprint_prevents_schema_drift_prior_reuse() -> None:
+    history = SuccessfulCapabilityHistory()
+    history.record_success(
+        "weather",
+        "current",
+        endpoint_fingerprint="endpoint-v1",
+    )
+    assert (
+        history.count(
+            "weather",
+            "current",
+            endpoint_fingerprint="endpoint-v1",
+        )
+        == 1
+    )
+    assert (
+        history.count(
+            "weather",
+            "current",
+            endpoint_fingerprint="endpoint-v2",
+        )
+        == 0
+    )
+
+
+def test_exposure_fingerprint_reinjects_changed_schema() -> None:
+    exposure = SessionSchemaExposure()
+    exposure.mark_exposed(
+        "weather",
+        "current",
+        endpoint_fingerprint="endpoint-v1",
+    )
+    assert not exposure.decision(
+        "weather",
+        "current",
+        endpoint_fingerprint="endpoint-v1",
+    ).inject
+    assert exposure.decision(
+        "weather",
+        "current",
+        endpoint_fingerprint="endpoint-v2",
+    ).inject
+
+
+def test_state_digests_are_deterministic_and_change_with_state() -> None:
+    history = SuccessfulCapabilityHistory()
+    exposure = SessionSchemaExposure()
+    history_empty = history.digest()
+    exposure_empty = exposure.digest()
+
+    history.record_success("weather", "current")
+    exposure.mark_exposed("weather", "current")
+
+    assert history.digest() != history_empty
+    assert exposure.digest() != exposure_empty
+    assert SuccessfulCapabilityHistory.loads(history.dumps()).digest() == history.digest()
+    assert SessionSchemaExposure.loads(exposure.dumps()).digest() == exposure.digest()
+
+
+def test_success_prior_is_bounded_for_large_history_counts() -> None:
+    history = SuccessfulCapabilityHistory()
+    for _ in range(1000):
+        history.record_success(
+            "tool_b",
+            "run",
+            endpoint_fingerprint="endpoint-tool_b-run",
+        )
+    retrieval = CapabilityRetrieval(
+        query="bounded prior",
+        registry_version=1,
+        requested_k=2,
+        total_ranked=2,
+        candidates=[
+            _candidate(1, "tool_a.run", 10.0),
+            _candidate(2, "tool_b.run", 0.0),
+        ],
+    )
+    reranked = apply_success_prior(retrieval, history, weight=1.0)
+    assert [candidate.route_id for candidate in reranked.candidates] == [
+        "tool_a.run",
+        "tool_b.run",
+    ]

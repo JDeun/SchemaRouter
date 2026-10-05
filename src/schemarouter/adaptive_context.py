@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import math
 from collections import Counter
 from collections.abc import Iterable
 from dataclasses import dataclass, field
@@ -14,6 +16,20 @@ def _route_id(tool: str, endpoint: str) -> str:
     return f"{tool}.{endpoint}"
 
 
+def _capability_key(
+    tool: str,
+    endpoint: str,
+    endpoint_fingerprint: str | None = None,
+) -> str:
+    route = _route_id(tool, endpoint)
+    if endpoint_fingerprint is None:
+        return route
+    fingerprint = endpoint_fingerprint.strip()
+    if not fingerprint:
+        raise ValueError("endpoint_fingerprint must be non-empty when supplied")
+    return f"{route}@{fingerprint}"
+
+
 @dataclass
 class SuccessfulCapabilityHistory:
     """Local successful-execution counts used as an optional routing prior.
@@ -25,11 +41,31 @@ class SuccessfulCapabilityHistory:
 
     _counts: Counter[str] = field(default_factory=Counter)
 
-    def record_success(self, tool: str, endpoint: str) -> None:
-        self._counts[_route_id(tool, endpoint)] += 1
+    def record_success(
+        self,
+        tool: str,
+        endpoint: str,
+        *,
+        endpoint_fingerprint: str | None = None,
+    ) -> None:
+        self._counts[_capability_key(tool, endpoint, endpoint_fingerprint)] += 1
 
-    def count(self, tool: str, endpoint: str) -> int:
-        return self._counts[_route_id(tool, endpoint)]
+    def count(
+        self,
+        tool: str,
+        endpoint: str,
+        *,
+        endpoint_fingerprint: str | None = None,
+    ) -> int:
+        exact = _capability_key(tool, endpoint, endpoint_fingerprint)
+        if exact in self._counts:
+            return self._counts[exact]
+        route = _route_id(tool, endpoint)
+        if endpoint_fingerprint is not None and route in self._counts:
+            return self._counts[route]
+        if endpoint_fingerprint is not None:
+            return 0
+        return self._counts[route]
 
     def snapshot(self) -> dict[str, int]:
         return dict(sorted(self._counts.items()))
@@ -39,6 +75,9 @@ class SuccessfulCapabilityHistory:
 
     def dumps(self) -> str:
         return json.dumps(self.snapshot(), sort_keys=True, separators=(",", ":"))
+
+    def digest(self) -> str:
+        return hashlib.sha256(self.dumps().encode("utf-8")).hexdigest()
 
     @classmethod
     def loads(cls, payload: str) -> SuccessfulCapabilityHistory:
@@ -74,14 +113,29 @@ class SessionSchemaExposure:
     _exposed: set[str] = field(default_factory=set)
     compaction_epoch: int = 0
 
-    def decision(self, tool: str, endpoint: str) -> SchemaExposureDecision:
+    def decision(
+        self,
+        tool: str,
+        endpoint: str,
+        *,
+        endpoint_fingerprint: str | None = None,
+    ) -> SchemaExposureDecision:
         route = _route_id(tool, endpoint)
-        if route in self._exposed:
+        key = _capability_key(tool, endpoint, endpoint_fingerprint)
+        if key in self._exposed or (
+            endpoint_fingerprint is not None and route in self._exposed
+        ):
             return SchemaExposureDecision(route, False, "already_exposed")
         return SchemaExposureDecision(route, True, "not_exposed")
 
-    def mark_exposed(self, tool: str, endpoint: str) -> None:
-        self._exposed.add(_route_id(tool, endpoint))
+    def mark_exposed(
+        self,
+        tool: str,
+        endpoint: str,
+        *,
+        endpoint_fingerprint: str | None = None,
+    ) -> None:
+        self._exposed.add(_capability_key(tool, endpoint, endpoint_fingerprint))
 
     def mark_many_exposed(self, routes: Iterable[tuple[str, str]]) -> None:
         for tool, endpoint in routes:
@@ -103,6 +157,9 @@ class SessionSchemaExposure:
 
     def dumps(self) -> str:
         return json.dumps(self.snapshot(), sort_keys=True, separators=(",", ":"))
+
+    def digest(self) -> str:
+        return hashlib.sha256(self.dumps().encode("utf-8")).hexdigest()
 
     @classmethod
     def loads(cls, payload: str) -> SessionSchemaExposure:
@@ -140,7 +197,21 @@ def apply_success_prior(retrieval, history: SuccessfulCapabilityHistory, *, weig
     ranked = sorted(
         retrieval.candidates,
         key=lambda candidate: (
-            -(candidate.score + weight * history.count(candidate.tool, candidate.endpoint)),
+            -(
+                candidate.score
+                + weight
+                * min(
+                    1.0,
+                    math.log1p(
+                        history.count(
+                            candidate.tool,
+                            candidate.endpoint,
+                            endpoint_fingerprint=candidate.endpoint_fingerprint,
+                        )
+                    )
+                    / math.log(2),
+                )
+            ),
             candidate.rank,
             candidate.route_id,
         ),
@@ -165,7 +236,11 @@ def filter_unexposed_schemas(retrieval, exposure: SessionSchemaExposure):
     candidates = [
         candidate
         for candidate in retrieval.candidates
-        if exposure.decision(candidate.tool, candidate.endpoint).inject
+        if exposure.decision(
+            candidate.tool,
+            candidate.endpoint,
+            endpoint_fingerprint=candidate.endpoint_fingerprint,
+        ).inject
     ]
     return CapabilityRetrieval(
         query=retrieval.query,
