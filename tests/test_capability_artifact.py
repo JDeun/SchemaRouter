@@ -19,6 +19,8 @@ from schemarouter.capability_artifact import (
 from schemarouter.capability_contracts import (
     CapabilityContract,
     CapabilityFieldContract,
+    CompatibilityContext,
+    SemanticEquivalence,
 )
 from schemarouter.capability_graph import build_capability_dependency_graph
 
@@ -152,6 +154,73 @@ def test_legacy_v1_artifact_migrates_deterministically_without_inventing_edge_au
     assert idempotent.migration.migrated is False
 
 
+def test_version_1_1_artifact_migrates_preserving_derived_edge_authority() -> None:
+    producer = CapabilityContract(
+        capability_id="producer",
+        produces=[
+            CapabilityFieldContract(
+                semantic_id="resource.id",
+                json_schema={"type": "string"},
+            )
+        ],
+    )
+    consumer = CapabilityContract(
+        capability_id="consumer",
+        requires=[
+            CapabilityFieldContract(
+                semantic_id="resource.id",
+                json_schema={"type": "string"},
+            )
+        ],
+    )
+    graph = build_capability_dependency_graph([producer, consumer])
+    current = build_capability_artifact_from_graph(
+        graph=graph,
+        capabilities=[producer, consumer],
+    )
+    payload = {
+        "format_version": "1.1",
+        "graph_digest": current.graph_digest,
+        "capabilities": [
+            item.model_dump(mode="json")
+            for item in current.capabilities
+        ],
+        "sources": [
+            item.model_dump(mode="json")
+            for item in current.sources
+        ],
+        "edges": [
+            item.model_dump(mode="json")
+            for item in current.edges
+        ],
+        "provenance": current.provenance,
+    }
+    digest = hashlib.sha256(
+        json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode("utf-8")
+    ).hexdigest()
+    previous = json.dumps(
+        {
+            "artifact_digest": digest,
+            **payload,
+        },
+        sort_keys=True,
+    )
+
+    migrated = migrate_capability_artifact(previous)
+
+    assert migrated.migration.from_format == "1.1"
+    assert migrated.migration.to_format == CAPABILITY_ARTIFACT_FORMAT_VERSION
+    assert migrated.migration.migrated is True
+    assert migrated.artifact.edges[0].origin == "derived"
+    assert migrated.artifact.compatibility_context is None
+    assert validate_capability_artifact(migrated.artifact) is migrated.artifact
+
+
 def test_tampered_legacy_artifact_is_rejected_before_migration() -> None:
     legacy = json.loads(
         _legacy_document(
@@ -222,6 +291,56 @@ def test_duplicate_source_identity_fails_semantic_integrity_validation() -> None
 
     with pytest.raises(ValueError, match="duplicate source"):
         validate_capability_artifact(artifact)
+
+
+def test_derived_artifact_round_trips_compatibility_context() -> None:
+    producer = CapabilityContract(
+        capability_id="producer",
+        produces=[
+            CapabilityFieldContract(
+                semantic_id="material.identifier",
+                json_schema={"type": "string"},
+            )
+        ],
+    )
+    consumer = CapabilityContract(
+        capability_id="consumer",
+        requires=[
+            CapabilityFieldContract(
+                semantic_id="resource.material_id",
+                json_schema={"type": "string"},
+            )
+        ],
+    )
+    context = CompatibilityContext(
+        semantic_equivalences=[
+            SemanticEquivalence(
+                canonical_id="resource.material_id",
+                aliases={"material.identifier"},
+            )
+        ]
+    )
+    graph = build_capability_dependency_graph(
+        [producer, consumer],
+        context=context,
+    )
+
+    artifact = build_capability_artifact_from_graph(
+        graph=graph,
+        capabilities=[producer, consumer],
+        context=context,
+    )
+
+    assert artifact.compatibility_context == context
+    assert validate_capability_artifact(artifact) is artifact
+    loaded = load_capability_artifact(serialize_capability_artifact(artifact))
+    assert loaded == artifact
+
+    with pytest.raises(ValueError, match="does not match"):
+        build_capability_artifact_from_graph(
+            graph=graph,
+            capabilities=[producer, consumer],
+        )
 
 
 def test_derived_artifact_validates_edge_semantics_and_graph_digest() -> None:
