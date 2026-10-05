@@ -5,7 +5,10 @@ import pytest
 from schemarouter.adaptive_context import (
     SessionSchemaExposure,
     SuccessfulCapabilityHistory,
+    apply_success_prior,
+    filter_unexposed_schemas,
 )
+from schemarouter.models import CapabilityCandidate, CapabilityRetrieval
 
 
 def test_success_history_records_only_explicit_successes_and_round_trips() -> None:
@@ -67,3 +70,60 @@ def test_session_exposure_round_trip_preserves_epoch_and_routes() -> None:
 def test_session_exposure_rejects_invalid_serialized_state(payload: str) -> None:
     with pytest.raises(ValueError):
         SessionSchemaExposure.loads(payload)
+
+
+
+def _candidate(rank: int, route: str, score: float) -> CapabilityCandidate:
+    tool, endpoint = route.split(".", 1)
+    return CapabilityCandidate(
+        rank=rank,
+        route_id=route,
+        tool=tool,
+        endpoint=endpoint,
+        score=score,
+        tool_fingerprint=f"{tool}-fp",
+        endpoint_fingerprint=f"{endpoint}-fp",
+    )
+
+
+def _retrieval() -> CapabilityRetrieval:
+    return CapabilityRetrieval(
+        query="find material",
+        registry_version=1,
+        requested_k=2,
+        total_ranked=2,
+        candidates=[
+            _candidate(1, "alpha.search", 10.0),
+            _candidate(2, "beta.search", 9.5),
+        ],
+    )
+
+
+def test_success_prior_is_opt_in_and_can_rerank_visible_candidates() -> None:
+    retrieval = _retrieval()
+    history = SuccessfulCapabilityHistory()
+    history.record_success("beta", "search")
+
+    assert apply_success_prior(retrieval, history).candidates == retrieval.candidates
+    ranked = apply_success_prior(retrieval, history, weight=1.0)
+    assert [candidate.route_id for candidate in ranked.candidates] == [
+        "beta.search",
+        "alpha.search",
+    ]
+
+
+def test_schema_exposure_filter_does_not_mutate_session_state() -> None:
+    retrieval = _retrieval()
+    exposure = SessionSchemaExposure()
+    exposure.mark_exposed("alpha", "search")
+
+    filtered = filter_unexposed_schemas(retrieval, exposure)
+    assert [candidate.route_id for candidate in filtered.candidates] == ["beta.search"]
+    assert exposure.decision("beta", "search").inject is True
+
+    exposure.compacted()
+    restored = filter_unexposed_schemas(retrieval, exposure)
+    assert [candidate.route_id for candidate in restored.candidates] == [
+        "alpha.search",
+        "beta.search",
+    ]
