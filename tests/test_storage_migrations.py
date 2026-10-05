@@ -13,6 +13,8 @@ from schemarouter.storage import (
     CURRENT_REGISTRY_DOCUMENT_VERSION,
     CURRENT_STORAGE_FORMAT_VERSION,
     CURRENT_TRACE_DOCUMENT_VERSION,
+    StorageComponentInspection,
+    StorageInspection,
     backup_sqlite_storage,
     inspect_sqlite_storage,
     migrate_sqlite_storage,
@@ -189,6 +191,31 @@ def _meta_value(path, component: str, key: str) -> str | None:
         return None if row is None else str(row[0])
     finally:
         connection.close()
+
+
+def test_storage_inspection_computed_fields_serialize_and_publish_schema() -> None:
+    component = StorageComponentInspection(
+        component="registry",
+        status="legacy",
+        current_document_format_version=CURRENT_REGISTRY_DOCUMENT_VERSION,
+    )
+    inspection = StorageInspection(
+        path="legacy.sqlite3",
+        components=[component],
+    )
+
+    assert component.model_dump()["migration_required"] is True
+    assert inspection.model_dump()["migration_required"] is True
+
+    component_schema = StorageComponentInspection.model_json_schema(
+        mode="serialization"
+    )
+    inspection_schema = StorageInspection.model_json_schema(
+        mode="serialization"
+    )
+
+    assert component_schema["properties"]["migration_required"]["type"] == "boolean"
+    assert inspection_schema["properties"]["migration_required"]["type"] == "boolean"
 
 
 def test_fresh_registry_and_trace_store_current_format_metadata(tmp_path) -> None:
