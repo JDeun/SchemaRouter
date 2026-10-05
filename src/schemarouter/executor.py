@@ -26,6 +26,7 @@ from .errors import (
     PlanValidationError,
     PolicyViolationError,
     PostInvocationHookError,
+    RegistrationError,
     SchemaDriftError,
     SchemaValidationError,
 )
@@ -40,7 +41,12 @@ from .models import (
     ToolSpec,
 )
 from .policy import ApprovalCallback, ExecutionPolicy, is_remote_tool
-from .registry import ToolRegistry
+from .registry import (
+    ToolRegistry,
+    replace_if_current,
+    unregister_if_current,
+    update_many_if_current,
+)
 from .runs import ExecutionBudget, RetryPolicy
 from .validation import (
     canonical_field_value_schema,
@@ -463,6 +469,156 @@ class RegistryExecutor:
         self._invokers[tool_key] = invoker
         self._binding_fingerprints[tool_key] = fingerprint
         self._binding_offload_sync[tool_key] = offload_sync
+
+    def publish_bound_tool(
+        self,
+        tool: ToolSpec,
+        invoker: BoundEndpointInvoker,
+        *,
+        replace: bool = False,
+        expected_fingerprint: str | None = None,
+        expected_version: int | None = None,
+        offload_sync: bool = False,
+    ) -> str:
+        """Publish one registry contract and trusted binding as one logical transition.
+
+        The registry write remains the concurrency authority. If binding fails, rollback is
+        attempted only while the registry still contains the exact contract/version published by
+        this call. A concurrent writer therefore causes a fail-closed outcome instead of being
+        overwritten by rollback.
+        """
+
+        if not isinstance(offload_sync, bool):
+            raise TypeError("offload_sync must be a bool")
+
+        registry = self.registry
+        base_version = registry.version if expected_version is None else expected_version
+        try:
+            previous_tool = registry.get(tool.key)
+        except KeyError:
+            previous_tool = None
+
+        # A failed bind must always be rollback-capable before mutating the registry. Built-in
+        # registries provide these stronger CAS interfaces; weaker custom registries fail closed.
+        if previous_tool is None:
+            if not callable(getattr(registry, "update_many_if_version", None)):
+                raise RegistrationError(
+                    "atomic bound registration requires version-guarded batch registration"
+                )
+            if not callable(getattr(registry, "unregister_if_fingerprint", None)):
+                raise RegistrationError(
+                    "atomic bound registration requires unregister-if-fingerprint rollback"
+                )
+        elif not callable(getattr(registry, "replace_if_fingerprint", None)):
+            raise RegistrationError(
+                "atomic bound replacement requires replace-if-fingerprint rollback"
+            )
+
+        previous_invoker = self._invokers.get(tool.key, _MISSING)
+        previous_binding_fingerprint = self._binding_fingerprints.get(tool.key, _MISSING)
+        previous_offload_sync = self._binding_offload_sync.get(tool.key, _MISSING)
+
+        if previous_tool is None:
+            keys = update_many_if_current(
+                registry,
+                (tool,),
+                expected_version=base_version,
+                replace=False,
+            )
+            if len(keys) != 1:
+                raise RegistrationError(
+                    "atomic bound registration returned an invalid tool-key count"
+                )
+            key = keys[0]
+        else:
+            if not replace:
+                # Use the version-guarded path even for the expected duplicate failure so no
+                # weaker register-then-rollback path is introduced.
+                update_many_if_current(
+                    registry,
+                    (tool,),
+                    expected_version=base_version,
+                    replace=False,
+                )
+                raise RegistrationError(f"tool {tool.key!r} is already registered")
+            key = replace_if_current(
+                registry,
+                tool,
+                expected_fingerprint=(
+                    expected_fingerprint
+                    if expected_fingerprint is not None
+                    else previous_tool.fingerprint
+                ),
+                expected_version=base_version,
+            )
+
+        published_version = base_version + 1
+
+        def restore_previous_binding() -> None:
+            if previous_invoker is _MISSING:
+                self._invokers.pop(key, None)
+            else:
+                self._invokers[key] = cast(BoundEndpointInvoker, previous_invoker)
+
+            if previous_binding_fingerprint is _MISSING:
+                self._binding_fingerprints.pop(key, None)
+            else:
+                self._binding_fingerprints[key] = cast(
+                    str,
+                    previous_binding_fingerprint,
+                )
+
+            if previous_offload_sync is _MISSING:
+                self._binding_offload_sync.pop(key, None)
+            else:
+                self._binding_offload_sync[key] = cast(bool, previous_offload_sync)
+
+        try:
+            self.bind(
+                key,
+                invoker,
+                expected_fingerprint=tool.fingerprint,
+                offload_sync=offload_sync,
+            )
+            # Detect a registry writer that raced after bind's contract read but before this
+            # logical publication returned. The binding is removed rather than blessed for a
+            # state that this operation no longer owns.
+            if registry.version != published_version:
+                raise BindingDriftError(
+                    f"registry changed concurrently while publishing binding for {key!r}"
+                )
+            if registry.get(key).fingerprint != tool.fingerprint:
+                raise BindingDriftError(
+                    f"tool {key!r} changed concurrently while publishing its binding"
+                )
+        except Exception:
+            self.purge_tool_runtime_state(key)
+            try:
+                if previous_tool is None:
+                    unregister_if_current(
+                        registry,
+                        key,
+                        expected_fingerprint=tool.fingerprint,
+                        expected_version=published_version,
+                    )
+                else:
+                    replace_if_current(
+                        registry,
+                        previous_tool,
+                        expected_fingerprint=tool.fingerprint,
+                        expected_version=published_version,
+                    )
+            except Exception as rollback_exc:
+                self.purge_tool_runtime_state(key)
+                raise BindingDriftError(
+                    f"binding publication for {key!r} failed and registry rollback "
+                    "could not be completed without overwriting concurrent state"
+                ) from rollback_exc
+
+            restore_previous_binding()
+            raise
+
+        return key
 
     def _bound_invoker_for_contract(
         self,

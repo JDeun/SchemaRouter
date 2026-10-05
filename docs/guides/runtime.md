@@ -66,6 +66,21 @@ inputs in batch APIs.
 This is flat fan-out, not a DAG/workflow runtime. Dependencies, branching, checkpoints, and
 multi-step orchestration remain the responsibility of LangGraph or another surrounding framework.
 
+### Atomic bound registration
+
+Public operations that logically register a capability and its trusted invoker together—such as
+`add_bound_tool()`, URL ingestion with an executable adapter, Python/LangChain/LlamaIndex/HTTP
+registration, and MCP registration—publish the registry contract and binding as one failure-atomic
+transition.
+
+If binding fails, SchemaRouter restores the previous contract and binding when it still owns the
+exact post-write registry version. For a new capability it removes the just-published contract.
+Rollback is guarded by registry version and fingerprint checks, so a concurrent writer is never
+overwritten merely to hide a binding failure. When concurrent drift makes rollback unsafe,
+publication fails closed and the affected binding is removed rather than being marked ready for an
+unowned contract. Schema HTTP validators and other post-publication state are updated only after
+the registry + binding transition succeeds.
+
 ### Synchronous I/O inside async execution
 
 Trusted synchronous invokers are inline by default. When a caller knows that a synchronous

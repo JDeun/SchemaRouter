@@ -1141,29 +1141,12 @@ class SchemaRouter:
         state.
         """
 
-        if replace:
-            expected_version = self.registry.version
-            try:
-                current = self.registry.get(tool.key)
-            except KeyError:
-                key = self.registry.register(tool)
-            else:
-                key = replace_if_current(
-                    self.registry,
-                    tool,
-                    expected_fingerprint=current.fingerprint,
-                    expected_version=expected_version,
-                )
-        else:
-            key = self.registry.register(tool)
-
-        self.executor.bind(
-            key,
+        return self.executor.publish_bound_tool(
+            tool,
             invoker,
-            expected_fingerprint=tool.fingerprint,
+            replace=replace,
             offload_sync=offload_sync,
         )
-        return key
 
     def _register_bound_batch(
         self,
@@ -1173,12 +1156,17 @@ class SchemaRouter:
         offload_sync: bool = False,
     ) -> tuple[str, ...]:
         staged = tuple(bindings)
+        rollback = getattr(self.registry, "unregister_many_if_version", None)
+        if not callable(rollback):
+            raise RegistrationError(
+                "atomic bound batch registration requires version-guarded batch rollback"
+            )
         keys = update_many_if_current(
             self.registry,
             (binding.tool for binding in staged),
             expected_version=expected_version,
         )
-        bound: list[str] = []
+        published_version = expected_version + 1
         try:
             for key, binding in zip(keys, staged, strict=True):
                 self.executor.bind(
@@ -1187,19 +1175,26 @@ class SchemaRouter:
                     expected_fingerprint=binding.tool.fingerprint,
                     offload_sync=offload_sync,
                 )
-                bound.append(key)
+            if self.registry.version != published_version:
+                raise BindingDriftError(
+                    "registry changed concurrently while publishing a bound tool batch"
+                )
         except Exception:
-            for key in bound:
+            for key in keys:
                 self.executor.purge_tool_runtime_state(key)
-            rollback = getattr(self.registry, "unregister_many_if_version", None)
-            if callable(rollback):
+            try:
                 rollback(
                     {
                         key: binding.tool.fingerprint
                         for key, binding in zip(keys, staged, strict=True)
                     },
-                    expected_version=self.registry.version,
+                    expected_version=published_version,
                 )
+            except Exception as rollback_exc:
+                raise BindingDriftError(
+                    "bound tool batch failed and rollback could not be completed "
+                    "without overwriting concurrent state"
+                ) from rollback_exc
             raise
         return keys
 
@@ -1219,57 +1214,17 @@ class SchemaRouter:
         offload_sync: bool,
         expected_version: int,
     ) -> None:
-        """Atomically move a native contract and restore the old binding on rebind failure."""
+        """Atomically move a native contract and its trusted binding."""
 
         tool_key = current.key
-        previous_binding = self.executor._bound_binding_for_contract(
-            tool_key,
-            current.fingerprint,
-        )
-        replace_if_current(
-            self.registry,
+        self.executor.publish_bound_tool(
             candidate_tool,
+            candidate_invoker,
+            replace=True,
             expected_fingerprint=current.fingerprint,
             expected_version=expected_version,
+            offload_sync=offload_sync,
         )
-        try:
-            self.executor.bind(
-                tool_key,
-                candidate_invoker,
-                expected_fingerprint=candidate_tool.fingerprint,
-                offload_sync=offload_sync,
-            )
-        except Exception:
-            self.executor.purge_tool_runtime_state(tool_key)
-            try:
-                replace_if_current(
-                    self.registry,
-                    current,
-                    expected_fingerprint=candidate_tool.fingerprint,
-                    expected_version=self.registry.version,
-                )
-            except Exception as rollback_exc:
-                raise BindingDriftError(
-                    f"native schema refresh for {tool_key!r} failed to bind and the "
-                    "previous registry contract could not be restored safely"
-                ) from rollback_exc
-
-            if previous_binding is not None:
-                previous_invoker, previous_offload_sync = previous_binding
-                try:
-                    self.executor.bind(
-                        tool_key,
-                        previous_invoker,
-                        expected_fingerprint=current.fingerprint,
-                        offload_sync=previous_offload_sync,
-                    )
-                except Exception as restore_exc:
-                    self.executor.purge_tool_runtime_state(tool_key)
-                    raise BindingDriftError(
-                        f"native schema refresh for {tool_key!r} restored the previous "
-                        "registry contract but could not restore its trusted binding"
-                    ) from restore_exc
-            raise
 
         if candidate_tool.fingerprint != current.fingerprint:
             self.health_monitor.transition_tool_contract(
@@ -3651,27 +3606,11 @@ class SchemaRouter:
             ),
         )
         invoker = PythonCallableInvoker(function)
-        if replace:
-            expected_version = self.registry.version
-            try:
-                current = self.registry.get(tool.key)
-            except KeyError:
-                key = self.registry.register(tool)
-            else:
-                key = replace_if_current(
-                    self.registry,
-                    tool,
-                    expected_fingerprint=current.fingerprint,
-                    expected_version=expected_version,
-                )
-        else:
-            key = self.registry.register(tool)
-        self.executor.bind(
-            key,
+        return self.executor.publish_bound_tool(
+            tool,
             invoker,
-            expected_fingerprint=tool.fingerprint,
+            replace=replace,
         )
-        return key
 
     def add_langchain_tool(
         self,
@@ -3706,28 +3645,11 @@ class SchemaRouter:
             remote=remote,
         )
         invoker = LangChainToolInvoker(tool)
-        if replace:
-            expected_version = self.registry.version
-            try:
-                current = self.registry.get(spec.key)
-            except KeyError:
-                key = self.registry.register(spec)
-            else:
-                key = replace_if_current(
-                    self.registry,
-                    spec,
-                    expected_fingerprint=current.fingerprint,
-                    expected_version=expected_version,
-                )
-        else:
-            key = self.registry.register(spec)
-
-        self.executor.bind(
-            key,
+        return self.executor.publish_bound_tool(
+            spec,
             invoker,
-            expected_fingerprint=spec.fingerprint,
+            replace=replace,
         )
-        return key
 
     def add_llamaindex_tool(
         self,
@@ -3760,28 +3682,11 @@ class SchemaRouter:
             remote=remote,
         )
         invoker = LlamaIndexToolInvoker(tool)
-        if replace:
-            expected_version = self.registry.version
-            try:
-                current = self.registry.get(spec.key)
-            except KeyError:
-                key = self.registry.register(spec)
-            else:
-                key = replace_if_current(
-                    self.registry,
-                    spec,
-                    expected_fingerprint=current.fingerprint,
-                    expected_version=expected_version,
-                )
-        else:
-            key = self.registry.register(spec)
-
-        self.executor.bind(
-            key,
+        return self.executor.publish_bound_tool(
+            spec,
             invoker,
-            expected_fingerprint=spec.fingerprint,
+            replace=replace,
         )
-        return key
 
     def add_http_tool(
         self,
@@ -3821,28 +3726,11 @@ class SchemaRouter:
             http_client=self.loader.http_client,
         )
 
-        if replace:
-            expected_version = self.registry.version
-            try:
-                current = self.registry.get(prepared.key)
-            except KeyError:
-                key = self.registry.register(prepared)
-            else:
-                key = replace_if_current(
-                    self.registry,
-                    prepared,
-                    expected_fingerprint=current.fingerprint,
-                    expected_version=expected_version,
-                )
-        else:
-            key = self.registry.register(prepared)
-
-        self.executor.bind(
-            key,
+        return self.executor.publish_bound_tool(
+            prepared,
             invoker,
-            expected_fingerprint=prepared.fingerprint,
+            replace=replace,
         )
-        return key
 
     async def inspect_url(
         self,
@@ -3898,16 +3786,12 @@ class SchemaRouter:
                 "requires_explicit_base_url": False,
             }
         )
-        replace_if_current(
-            self.registry,
+        self.executor.publish_bound_tool(
             updated,
+            invoker,
+            replace=True,
             expected_fingerprint=tool.fingerprint,
             expected_version=expected_version,
-        )
-        self.executor.bind(
-            tool_key,
-            invoker,
-            expected_fingerprint=updated.fingerprint,
         )
 
     def approve_proposal(
@@ -3971,27 +3855,11 @@ class SchemaRouter:
             )
         except ValueError as exc:
             raise ProposalApprovalError("invalid proposal execution binding") from exc
-        if replace:
-            expected_version = self.registry.version
-            try:
-                current = self.registry.get(tool.key)
-            except KeyError:
-                key = self.registry.register(tool)
-            else:
-                key = replace_if_current(
-                    self.registry,
-                    tool,
-                    expected_fingerprint=current.fingerprint,
-                    expected_version=expected_version,
-                )
-        else:
-            key = self.registry.register(tool)
-        self.executor.bind(
-            key,
+        return self.executor.publish_bound_tool(
+            tool,
             invoker,
-            expected_fingerprint=tool.fingerprint,
+            replace=replace,
         )
-        return key
 
     async def add_mcp_client_factory(
         self,
@@ -4045,26 +3913,10 @@ class SchemaRouter:
             client_factory,
             timeout=timeout,
         )
-        if replace:
-            expected_version = self.registry.version
-            try:
-                current = self.registry.get(tool.key)
-            except KeyError:
-                key = self.registry.register(tool)
-            else:
-                key = replace_if_current(
-                    self.registry,
-                    tool,
-                    expected_fingerprint=current.fingerprint,
-                    expected_version=expected_version,
-                )
-        else:
-            key = self.registry.register(tool)
-
-        self.executor.bind(
-            key,
+        key = self.executor.publish_bound_tool(
+            tool,
             invoker,
-            expected_fingerprint=tool.fingerprint,
+            replace=replace,
         )
         return self.registry.get(key)
 
@@ -4110,26 +3962,10 @@ class SchemaRouter:
             MCPStdioClientFactory(config),
             timeout=timeout,
         )
-        if replace:
-            expected_version = self.registry.version
-            try:
-                current = self.registry.get(tool.key)
-            except KeyError:
-                key = self.registry.register(tool)
-            else:
-                key = replace_if_current(
-                    self.registry,
-                    tool,
-                    expected_fingerprint=current.fingerprint,
-                    expected_version=expected_version,
-                )
-        else:
-            key = self.registry.register(tool)
-
-        self.executor.bind(
-            key,
+        key = self.executor.publish_bound_tool(
+            tool,
             invoker,
-            expected_fingerprint=tool.fingerprint,
+            replace=replace,
         )
         return self.registry.get(key)
 
@@ -4568,17 +4404,20 @@ class SchemaRouter:
                     expected_version=expected_version,
                 )
             else:
-                key = replace_if_current(
-                    self.registry,
-                    effective_candidate,
-                    expected_fingerprint=current.fingerprint,
-                    expected_version=expected_version,
-                )
                 if candidate_invoker is not None:
-                    self.executor.bind(
-                        key,
+                    self.executor.publish_bound_tool(
+                        effective_candidate,
                         candidate_invoker,
-                        expected_fingerprint=candidate_fingerprint,
+                        replace=True,
+                        expected_fingerprint=current.fingerprint,
+                        expected_version=expected_version,
+                    )
+                else:
+                    replace_if_current(
+                        self.registry,
+                        effective_candidate,
+                        expected_fingerprint=current.fingerprint,
+                        expected_version=expected_version,
                     )
                 if not use_bound_mcp_transport and use_http_validators:
                     self.loader.remember_tool_schema_http_validators(
@@ -4621,17 +4460,20 @@ class SchemaRouter:
                     expected_version=expected_version,
                 )
             else:
-                key = replace_if_current(
-                    self.registry,
-                    effective_candidate,
-                    expected_fingerprint=current.fingerprint,
-                    expected_version=expected_version,
-                )
                 if candidate_invoker is not None:
-                    self.executor.bind(
-                        key,
+                    self.executor.publish_bound_tool(
+                        effective_candidate,
                         candidate_invoker,
-                        expected_fingerprint=effective_candidate.fingerprint,
+                        replace=True,
+                        expected_fingerprint=current.fingerprint,
+                        expected_version=expected_version,
+                    )
+                else:
+                    replace_if_current(
+                        self.registry,
+                        effective_candidate,
+                        expected_fingerprint=current.fingerprint,
+                        expected_version=expected_version,
                     )
                 if not use_bound_mcp_transport and use_http_validators:
                     self.loader.remember_tool_schema_http_validators(

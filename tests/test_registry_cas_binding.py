@@ -144,3 +144,105 @@ def test_amendment_cannot_overwrite_a_writer_that_lands_after_validation() -> No
         router.amend_capability("demo", amended)
 
     assert registry.get("demo").metadata["writer"] == "concurrent"
+
+def test_add_bound_tool_rolls_back_new_registration_when_bind_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    router = SchemaRouter()
+    tool = _tool(description="new")
+
+    def fail_bind(*args, **kwargs) -> None:
+        raise RuntimeError("injected bind failure")
+
+    monkeypatch.setattr(router.executor, "bind", fail_bind)
+
+    with pytest.raises(RuntimeError, match="injected bind failure"):
+        router.add_bound_tool(
+            tool,
+            lambda endpoint, arguments: {"ok": True},
+        )
+
+    assert "demo" not in router.registry.keys()
+    assert "demo" not in router.executor.bound_keys()
+
+
+def test_add_bound_tool_failed_replacement_restores_contract_and_binding(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    router = SchemaRouter()
+    original = _tool(description="original")
+    def original_invoker(endpoint, arguments):
+        del endpoint, arguments
+        return {"version": "original"}
+
+    router.add_bound_tool(original, original_invoker)
+    original_fingerprint = router.registry.get("demo").fingerprint
+
+    replacement = _tool(description="replacement", path="/replacement")
+
+    def fail_bind(*args, **kwargs) -> None:
+        raise RuntimeError("injected replacement bind failure")
+
+    monkeypatch.setattr(router.executor, "bind", fail_bind)
+
+    with pytest.raises(RuntimeError, match="injected replacement bind failure"):
+        router.add_bound_tool(
+            replacement,
+            lambda endpoint, arguments: {"version": "replacement"},
+            replace=True,
+        )
+
+    restored = router.registry.get("demo")
+    assert restored.fingerprint == original_fingerprint
+    assert restored.description == "original"
+    assert router.executor.is_binding_ready_for_contract(
+        "demo",
+        original_fingerprint,
+    )
+    assert (
+        router.executor._bound_invoker_for_contract(
+            "demo",
+            original_fingerprint,
+        )
+        is original_invoker
+    )
+
+
+def test_bound_publication_does_not_rollback_across_concurrent_writer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    router = SchemaRouter()
+    original = _tool(description="original")
+    router.add_bound_tool(
+        original,
+        lambda endpoint, arguments: {"version": "original"},
+    )
+    replacement = _tool(description="replacement", path="/replacement")
+    concurrent = ToolSpec(
+        name="other",
+        endpoints=[EndpointSpec(name="read", read_only=True)],
+    )
+
+    def race_then_fail(*args, **kwargs) -> None:
+        router.registry.register(concurrent)
+        raise RuntimeError("injected bind failure after concurrent write")
+
+    monkeypatch.setattr(router.executor, "bind", race_then_fail)
+
+    with pytest.raises(
+        BindingDriftError,
+        match="rollback could not be completed without overwriting concurrent state",
+    ):
+        router.add_bound_tool(
+            replacement,
+            lambda endpoint, arguments: {"version": "replacement"},
+            replace=True,
+        )
+
+    assert router.registry.get("other").fingerprint == concurrent.fingerprint
+    assert router.registry.get("demo").fingerprint == replacement.fingerprint
+    assert not router.executor.is_binding_ready_for_contract(
+        "demo",
+        replacement.fingerprint,
+    )
+

@@ -33,6 +33,19 @@ parallel task를 시작하기 전에 모든 planned call을 현재 schema, bindi
 
 `ainvoke()`는 plan 순서로 결과를 반환하지만 `astream()`, `astream_events()`는 completion order를 노출할 수 있습니다. 모든 parallel call은 동일한 per-run execution budget을 공유합니다. 이는 flat fan-out이며 DAG/workflow runtime이 아닙니다. dependency, branching, checkpoint, multi-step orchestration은 LangGraph 같은 상위 framework가 담당합니다.
 
+### Bound registration의 원자성
+
+`add_bound_tool()`, 실행 가능한 adapter를 포함한 URL ingestion, Python/LangChain/LlamaIndex/HTTP
+등록, MCP 등록처럼 capability contract와 trusted invoker를 하나의 논리적 작업으로 등록하는
+public API는 registry contract와 binding을 failure-atomic transition으로 publish합니다.
+
+binding이 실패하면 SchemaRouter는 자신이 방금 publish한 정확한 registry version/fingerprint를
+여전히 소유하고 있을 때만 이전 contract와 binding을 복원합니다. 신규 capability라면 방금
+등록한 contract를 제거합니다. 다른 writer가 동시에 registry를 변경해 rollback이 안전하지
+않아진 경우에는 그 변경을 덮어쓰지 않고 fail-closed로 종료하며, 해당 binding은 ready 상태로
+남기지 않습니다. Schema HTTP validator 같은 post-publication 상태도 registry + binding 전환이
+완전히 성공한 뒤에만 갱신됩니다.
+
 ### Async 실행 안의 동기 I/O
 
 trusted sync invoker는 기본적으로 현재 thread에서 실행됩니다. 해당 invoker가 worker thread에서 안전하게 실행될 수 있다는 것을 caller가 알고 있다면 `offload_sync=True`로 bind할 수 있습니다. 이 경우 SchemaRouter는 event loop를 막지 않고, worker를 기다리는 동안 남은 elapsed execution budget도 적용합니다.

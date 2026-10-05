@@ -3,7 +3,14 @@ from types import SimpleNamespace
 
 import pytest
 
-from schemarouter import ExecutionPolicy, PlanRequest, SchemaRouter
+import schemarouter.runtime as runtime_module
+from schemarouter import (
+    EndpointSpec,
+    ExecutionPolicy,
+    PlanRequest,
+    SchemaRouter,
+    ToolSpec,
+)
 from schemarouter.adapters.mcp import (
     MCPRemoteInvoker,
     MCPStdioConfig,
@@ -244,6 +251,66 @@ async def test_transport_neutral_mcp_factory_needs_no_fake_url() -> None:
     )
     assert results[0].data == {"subject": "bound"}
     assert len(factory.calls) == 2
+
+
+@pytest.mark.asyncio
+async def test_mcp_factory_bind_failure_rolls_back_registration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    router = SchemaRouter(
+        policy=ExecutionPolicy(allow_unclassified_remote=True)
+    )
+    factory = BoundRecordingFactory()
+
+    def fail_bind(*args, **kwargs) -> None:
+        raise RuntimeError("injected MCP bind failure")
+
+    monkeypatch.setattr(router.executor, "bind", fail_bind)
+
+    with pytest.raises(RuntimeError, match="injected MCP bind failure"):
+        await router.add_mcp_client_factory(
+            factory,
+            name="bound-mcp",
+            transport="inprocess",
+        )
+
+    assert router.registry.keys() == ()
+    assert router.executor.bound_keys() == ()
+
+
+@pytest.mark.asyncio
+async def test_mcp_stdio_bind_failure_rolls_back_registration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    router = SchemaRouter(
+        policy=ExecutionPolicy(allow_unclassified_remote=True)
+    )
+    tool = ToolSpec(
+        name="stdio_atomic",
+        remote=True,
+        execution_metadata={"adapter": "mcp"},
+        endpoints=[EndpointSpec(name="whoami", read_only=True)],
+    )
+
+    async def fake_inspect(*args, **kwargs) -> ToolSpec:
+        del args, kwargs
+        return tool.model_copy(deep=True)
+
+    def fail_bind(*args, **kwargs) -> None:
+        raise RuntimeError("injected stdio bind failure")
+
+    monkeypatch.setattr(runtime_module, "inspect_mcp_stdio", fake_inspect)
+    monkeypatch.setattr(router.executor, "bind", fail_bind)
+
+    with pytest.raises(RuntimeError, match="injected stdio bind failure"):
+        await router.add_mcp_stdio(
+            "python",
+            allowed_commands=("python",),
+            name="stdio_atomic",
+        )
+
+    assert router.registry.keys() == ()
+    assert router.executor.bound_keys() == ()
 
 
 def test_mcp_stdio_config_enforces_command_allowlist_and_hides_env_values_from_identity() -> None:
