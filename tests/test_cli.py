@@ -1,6 +1,7 @@
 import json
 
 from schemarouter import (
+    CAPABILITY_SNAPSHOT_DOCUMENT_VERSION,
     EndpointSpec,
     SQLiteRegistry,
     ToolSpec,
@@ -133,7 +134,7 @@ def test_cli_snapshot_migrates_raw_public_snapshot_without_overwrite(tmp_path) -
     assert migrated["migration_required"] is True
     assert destination.exists()
     payload = json.loads(destination.read_text(encoding="utf-8"))
-    assert payload["format_version"] == "1.0"
+    assert payload["format_version"] == CAPABILITY_SNAPSHOT_DOCUMENT_VERSION
     assert payload["snapshot"]["snapshot_id"] == snapshot.snapshot_id
 
 
