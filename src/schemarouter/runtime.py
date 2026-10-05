@@ -11,12 +11,6 @@ import httpx
 from pydantic import TypeAdapter
 
 from .adapters.base import AdapterRegistry, SourceAdapter
-from .adaptive_context import (
-    SessionSchemaExposure,
-    SuccessfulCapabilityHistory,
-    apply_success_prior,
-    filter_unexposed_schemas,
-)
 from .adapters.mcp import (
     MCPBoundClientFactory,
     MCPBoundInvoker,
@@ -30,6 +24,12 @@ from .adapters.mcp import (
 from .adapters.openapi import OpenAPIRemoteInvoker
 from .adapters.plugins import load_adapter_plugins as _load_adapter_plugins
 from .adapters.python import PythonCallableInvoker, callable_options, tool_from_callable
+from .adaptive_context import (
+    SessionSchemaExposure,
+    SuccessfulCapabilityHistory,
+    apply_success_prior,
+    filter_unexposed_schemas,
+)
 from .amendment_overlay import (
     amendment_overlay,
     prepare_amended_capability,
