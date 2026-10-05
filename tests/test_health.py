@@ -520,3 +520,77 @@ async def test_sync_health_probe_timeout_does_not_block_event_loop() -> None:
     assert snapshots[0].status == "unhealthy"
     assert snapshots[0].last_error_type == "TimeoutError"
     assert router.unavailable_access_paths() == (("provider_api", "read"),)
+
+
+@pytest.mark.asyncio
+async def test_async_probe_can_reenter_lifecycle_guard_without_self_deadlock() -> None:
+    router = _router(cooldown=60)
+    entered_lifecycle = asyncio.Event()
+
+    async def probe() -> bool:
+        async with router.health_monitor.lifecycle_guard():
+            current = router.registry.get("provider_api")
+            updated = current.model_copy(deep=True)
+            updated.description = "lifecycle transition from probe"
+            router.registry.register(updated, replace=True)
+            router.health_monitor.transition_tool_contract(
+                current.key,
+                expected_old_fingerprint=current.fingerprint,
+                expected_new_fingerprint=updated.fingerprint,
+            )
+            entered_lifecycle.set()
+        return False
+
+    router.register_health_probe("provider_api", "read", probe)
+
+    snapshots = await asyncio.wait_for(
+        router.check_health_once(
+            probe_timeout_seconds=0.2,
+            max_concurrency=1,
+        ),
+        timeout=1,
+    )
+
+    assert entered_lifecycle.is_set()
+    assert snapshots[0].status == "unknown"
+    assert snapshots[0].last_error_type is None
+    assert router.unavailable_access_paths() == ()
+
+
+@pytest.mark.asyncio
+async def test_lifecycle_transition_discards_inflight_probe_result_at_commit_boundary() -> None:
+    router = _router(cooldown=60)
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    async def probe() -> bool:
+        started.set()
+        await release.wait()
+        return False
+
+    router.register_health_probe("provider_api", "read", probe)
+    task = asyncio.create_task(
+        router.check_health_once(
+            probe_timeout_seconds=1,
+            max_concurrency=1,
+        )
+    )
+    await asyncio.wait_for(started.wait(), timeout=1)
+
+    async with router.health_monitor.lifecycle_guard():
+        current = router.registry.get("provider_api")
+        updated = current.model_copy(deep=True)
+        updated.description = "concurrent lifecycle transition"
+        router.registry.register(updated, replace=True)
+        router.health_monitor.transition_tool_contract(
+            current.key,
+            expected_old_fingerprint=current.fingerprint,
+            expected_new_fingerprint=updated.fingerprint,
+        )
+
+    release.set()
+    snapshots = await asyncio.wait_for(task, timeout=1)
+
+    assert snapshots[0].status == "unknown"
+    assert snapshots[0].last_error_type is None
+    assert router.unavailable_access_paths() == ()
