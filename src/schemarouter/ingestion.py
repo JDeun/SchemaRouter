@@ -40,6 +40,7 @@ from .errors import (
     SourceProbeDiagnosticError,
     UnsupportedSchemaSourceError,
 )
+from .binding_publication import publish_bound_tool
 from .executor import RegistryExecutor
 from .models import StrictModel, ToolSpec
 from .registry import ToolRegistry, replace_if_current
@@ -1263,17 +1264,21 @@ class URLSchemaLoader:
     ) -> ToolSpec:
         """Commit only when the compared registry snapshot is still current."""
 
-        key = replace_if_current(
-            self.registry,
-            result.tool,
-            expected_fingerprint=expected_fingerprint,
-            expected_version=expected_version,
-        )
-        if result.invoker is not None:
-            self.executor.bind(
-                key,
+        if result.invoker is None:
+            key = replace_if_current(
+                self.registry,
+                result.tool,
+                expected_fingerprint=expected_fingerprint,
+                expected_version=expected_version,
+            )
+        else:
+            key = publish_bound_tool(
+                self.registry,
+                self.executor,
+                result.tool,
                 result.invoker,
-                expected_fingerprint=result.tool.fingerprint,
+                expected_fingerprint=expected_fingerprint,
+                expected_version=expected_version,
             )
         committed = self.registry.get(key)
         self.remember_tool_schema_http_validators(committed)
@@ -1666,7 +1671,15 @@ class URLSchemaLoader:
         )
 
     def _commit(self, result: AdapterLoadResult, *, replace: bool) -> ToolSpec:
-        if replace:
+        if result.invoker is not None:
+            key = publish_bound_tool(
+                self.registry,
+                self.executor,
+                result.tool,
+                result.invoker,
+                replace=replace,
+            )
+        elif replace:
             expected_version = self.registry.version
             try:
                 current = self.registry.get(result.tool.key)
@@ -1682,12 +1695,6 @@ class URLSchemaLoader:
         else:
             key = self.registry.register(result.tool)
 
-        if result.invoker is not None:
-            self.executor.bind(
-                key,
-                result.invoker,
-                expected_fingerprint=result.tool.fingerprint,
-            )
         committed = self.registry.get(key)
         self.remember_tool_schema_http_validators(committed)
         return committed
