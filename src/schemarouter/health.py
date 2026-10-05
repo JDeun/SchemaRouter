@@ -181,21 +181,24 @@ class AccessHealthMonitor:
         unavailable_cooldown_seconds: float,
     ) -> None:
         async with semaphore:
+            async with self._run_lock:
+                if self._probes.get((tool_key, endpoint)) is not record:
+                    return
+                generation = record.generation
+                current, stale_reason = self._contract_status(
+                    tool_key,
+                    endpoint,
+                    record,
+                )
+                if not current:
+                    record.status = "stale"
+                    record.last_checked_at = datetime.now(timezone.utc)
+                    record.last_error_type = stale_reason
+                    return
+
             status: HealthStatus = "unhealthy"
             error_type: str | None = None
-
-            current, stale_reason = self._contract_status(
-                tool_key,
-                endpoint,
-                record,
-            )
-            if not current:
-                record.status = "stale"
-                record.last_checked_at = datetime.now(timezone.utc)
-                record.last_error_type = stale_reason
-                return
-
-            generation = record.generation
+            healthy = False
             try:
                 async_probe = (
                     inspect.iscoroutinefunction(record.probe)
@@ -213,8 +216,17 @@ class AccessHealthMonitor:
                         outcome,
                         timeout=probe_timeout_seconds,
                     )
+                healthy = outcome is True
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                error_type = type(exc).__name__
 
-                if record.generation != generation:
+            async with self._run_lock:
+                if (
+                    self._probes.get((tool_key, endpoint)) is not record
+                    or record.generation != generation
+                ):
                     return
 
                 current, stale_reason = self._contract_status(
@@ -228,8 +240,7 @@ class AccessHealthMonitor:
                     record.last_error_type = stale_reason
                     return
 
-                healthy = outcome is True
-                if healthy:
+                if healthy and error_type is None:
                     self.executor.mark_access_available(tool_key, endpoint)
                     status = "healthy"
                 else:
@@ -238,31 +249,10 @@ class AccessHealthMonitor:
                         endpoint,
                         cooldown_seconds=unavailable_cooldown_seconds,
                     )
-            except asyncio.CancelledError:
-                raise
-            except Exception as exc:
-                if record.generation != generation:
-                    return
-                error_type = type(exc).__name__
-                current, stale_reason = self._contract_status(
-                    tool_key,
-                    endpoint,
-                    record,
-                )
-                if not current:
-                    record.status = "stale"
-                    record.last_checked_at = datetime.now(timezone.utc)
-                    record.last_error_type = stale_reason
-                    return
-                self.executor.mark_access_unavailable(
-                    tool_key,
-                    endpoint,
-                    cooldown_seconds=unavailable_cooldown_seconds,
-                )
 
-            record.status = status
-            record.last_checked_at = datetime.now(timezone.utc)
-            record.last_error_type = error_type
+                record.status = status
+                record.last_checked_at = datetime.now(timezone.utc)
+                record.last_error_type = error_type
 
     async def run_once(
         self,
@@ -271,12 +261,11 @@ class AccessHealthMonitor:
         unavailable_cooldown_seconds: float | None = None,
         max_concurrency: int | None = None,
     ) -> tuple[HealthProbeSnapshot, ...]:
-        async with self._run_lock:
-            return await self._run_once_unlocked(
-                probe_timeout_seconds=probe_timeout_seconds,
-                unavailable_cooldown_seconds=unavailable_cooldown_seconds,
-                max_concurrency=max_concurrency,
-            )
+        return await self._run_once_unlocked(
+            probe_timeout_seconds=probe_timeout_seconds,
+            unavailable_cooldown_seconds=unavailable_cooldown_seconds,
+            max_concurrency=max_concurrency,
+        )
 
     async def _run_once_unlocked(
         self,
@@ -308,6 +297,9 @@ class AccessHealthMonitor:
             raise ValueError("max_concurrency must be >= 1")
 
         semaphore = asyncio.Semaphore(concurrency)
+        async with self._run_lock:
+            probes = tuple(self._probes.items())
+
         await asyncio.gather(
             *(
                 self._run_probe(
@@ -318,10 +310,11 @@ class AccessHealthMonitor:
                     probe_timeout_seconds=timeout,
                     unavailable_cooldown_seconds=cooldown,
                 )
-                for (tool_key, endpoint), record in tuple(self._probes.items())
+                for (tool_key, endpoint), record in probes
             )
         )
-        return self.snapshots()
+        async with self._run_lock:
+            return self.snapshots()
 
     async def _loop(self) -> None:
         try:
