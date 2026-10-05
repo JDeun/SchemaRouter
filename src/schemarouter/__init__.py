@@ -87,9 +87,17 @@ from .adapters.vector_store import (
 )
 from .adaptive_context import (
     SchemaExposureDecision as SchemaExposureDecision,
+)
+from .adaptive_context import (
     SessionSchemaExposure as SessionSchemaExposure,
+)
+from .adaptive_context import (
     SuccessfulCapabilityHistory as SuccessfulCapabilityHistory,
+)
+from .adaptive_context import (
     apply_success_prior as apply_success_prior,
+)
+from .adaptive_context import (
     filter_unexposed_schemas as filter_unexposed_schemas,
 )
 from .aggregation import (
