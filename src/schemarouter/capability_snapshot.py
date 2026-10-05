@@ -5,12 +5,17 @@ import json
 from datetime import datetime
 from typing import Literal
 
-from .capability_contracts import CapabilityContract
+from .capability_contracts import (
+    CapabilityContract,
+    CompatibilityContext,
+    _canonical_compatibility_context_payload,
+)
 from .capability_graph import CapabilityDependencyGraph, build_capability_dependency_graph
 from .models import StrictModel
 
 SnapshotComparison = Literal["identical", "successor"]
-CAPABILITY_SNAPSHOT_DOCUMENT_VERSION = "1.0"
+CAPABILITY_SNAPSHOT_DOCUMENT_VERSION = "1.1"
+_PREVIOUS_CAPABILITY_SNAPSHOT_DOCUMENT_VERSION = "1.0"
 LEGACY_CAPABILITY_SNAPSHOT_DOCUMENT_VERSION = "legacy-unversioned"
 
 
@@ -27,9 +32,13 @@ class CapabilityGraphSnapshot(StrictModel):
     sources: tuple[CapabilitySourceRevision, ...] = ()
     builder_version: str | None = None
     built_at: datetime | None = None
+    compatibility_context: CompatibilityContext | None = None
 
     def build_graph(self) -> CapabilityDependencyGraph:
-        return build_capability_dependency_graph(list(self.contracts))
+        return build_capability_dependency_graph(
+            list(self.contracts),
+            context=self.compatibility_context,
+        )
 
 
 class CapabilitySnapshotDocument(StrictModel):
@@ -64,8 +73,9 @@ def _snapshot_payload(
     contracts: list[CapabilityContract],
     sources: list[CapabilitySourceRevision],
     builder_version: str | None,
+    compatibility_context: CompatibilityContext | None,
 ) -> dict[str, object]:
-    return {
+    payload: dict[str, object] = {
         "contracts": [
             item.model_dump(mode="json")
             for item in sorted(contracts, key=lambda item: item.capability_id)
@@ -83,6 +93,11 @@ def _snapshot_payload(
         ],
         "builder_version": builder_version,
     }
+    if compatibility_context is not None:
+        payload["compatibility_context"] = _canonical_compatibility_context_payload(
+            compatibility_context
+        )
+    return payload
 
 
 def _digest_payload(payload: object) -> str:
@@ -102,6 +117,7 @@ def build_capability_snapshot(
     sources: list[CapabilitySourceRevision] | None = None,
     builder_version: str | None = None,
     built_at: datetime | None = None,
+    context: CompatibilityContext | None = None,
 ) -> CapabilityGraphSnapshot:
     """Create an immutable, reproducible graph snapshot.
 
@@ -109,7 +125,12 @@ def build_capability_snapshot(
     """
 
     source_items = list(sources or [])
-    payload = _snapshot_payload(contracts, source_items, builder_version)
+    payload = _snapshot_payload(
+        contracts,
+        source_items,
+        builder_version,
+        context,
+    )
     snapshot_id = _digest_payload(payload)
     return CapabilityGraphSnapshot(
         snapshot_id=snapshot_id,
@@ -124,6 +145,11 @@ def build_capability_snapshot(
         )),
         builder_version=builder_version,
         built_at=built_at,
+        compatibility_context=(
+            context.model_copy(deep=True)
+            if context is not None
+            else None
+        ),
     )
 
 
@@ -146,6 +172,7 @@ def validate_capability_snapshot(
         sources=list(snapshot.sources),
         builder_version=snapshot.builder_version,
         built_at=snapshot.built_at,
+        context=snapshot.compatibility_context,
     )
     if rebuilt.snapshot_id != snapshot.snapshot_id:
         raise ValueError("capability snapshot digest mismatch")
@@ -211,20 +238,52 @@ def migrate_capability_snapshot(
 
     if "format_version" in raw:
         version = raw.get("format_version")
-        if version != CAPABILITY_SNAPSHOT_DOCUMENT_VERSION:
-            raise ValueError(f"unsupported capability snapshot format: {version}")
-        current = CapabilitySnapshotDocument.model_validate(raw)
-        _validate_snapshot_document(current)
-        return CapabilitySnapshotMigrationResult(
-            document=current,
-            migration=CapabilitySnapshotMigrationRecord(
-                from_format=current.format_version,
-                to_format=current.format_version,
-                source_digest=current.document_digest,
-                result_digest=current.document_digest,
-                migrated=False,
-            ),
-        )
+        if version == CAPABILITY_SNAPSHOT_DOCUMENT_VERSION:
+            current = CapabilitySnapshotDocument.model_validate(raw)
+            _validate_snapshot_document(current)
+            return CapabilitySnapshotMigrationResult(
+                document=current,
+                migration=CapabilitySnapshotMigrationRecord(
+                    from_format=current.format_version,
+                    to_format=current.format_version,
+                    source_digest=current.document_digest,
+                    result_digest=current.document_digest,
+                    migrated=False,
+                ),
+            )
+
+        if version == _PREVIOUS_CAPABILITY_SNAPSHOT_DOCUMENT_VERSION:
+            snapshot_raw = raw.get("snapshot")
+            source_digest = raw.get("document_digest")
+            if not isinstance(snapshot_raw, dict) or not isinstance(source_digest, str):
+                raise ValueError("invalid legacy capability snapshot document")
+            if "compatibility_context" in snapshot_raw:
+                raise ValueError(
+                    "legacy capability snapshot format cannot declare compatibility context"
+                )
+            legacy = CapabilityGraphSnapshot.model_validate(snapshot_raw)
+            validate_capability_snapshot(legacy)
+            expected = _digest_payload(
+                {
+                    "format_version": version,
+                    "snapshot": snapshot_raw,
+                }
+            )
+            if expected != source_digest:
+                raise ValueError("capability snapshot document digest mismatch")
+            current = build_capability_snapshot_document(legacy)
+            return CapabilitySnapshotMigrationResult(
+                document=current,
+                migration=CapabilitySnapshotMigrationRecord(
+                    from_format=str(version),
+                    to_format=CAPABILITY_SNAPSHOT_DOCUMENT_VERSION,
+                    source_digest=source_digest,
+                    result_digest=current.document_digest,
+                    migrated=True,
+                ),
+            )
+
+        raise ValueError(f"unsupported capability snapshot format: {version}")
 
     # Before the document envelope existed, callers could persist the public
     # CapabilityGraphSnapshot model directly. Treat that exact JSON shape as the
