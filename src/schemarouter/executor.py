@@ -718,9 +718,13 @@ class RegistryExecutor:
         This is an internal lifecycle hook for operations such as transport-native schema
         refresh. It deliberately does not expose invokers through SchemaRouter's public API.
         """
-        if self.binding_status_for_contract(tool_key, tool_fingerprint) != "ready":
+        binding = self._binding_snapshot(tool_key)
+        if (
+            binding.invoker is None
+            or binding.fingerprint != tool_fingerprint
+        ):
             return None
-        return self._invokers.get(tool_key)
+        return binding.invoker
 
     def _bound_binding_for_contract(
         self,
@@ -732,10 +736,13 @@ class RegistryExecutor:
         This package-internal lifecycle hook lets SchemaRouter roll back a failed
         contract rebind without exposing live invokers through the public API.
         """
-        invoker = self._bound_invoker_for_contract(tool_key, tool_fingerprint)
-        if invoker is None:
+        binding = self._binding_snapshot(tool_key)
+        if (
+            binding.invoker is None
+            or binding.fingerprint != tool_fingerprint
+        ):
             return None
-        return invoker, self._binding_offload_sync.get(tool_key, False)
+        return binding.invoker, binding.offload_sync
 
     def restamp_binding(self, tool_key: str, expected_fingerprint: str) -> bool:
         """Re-point an existing binding at a fingerprint the caller already validated.
@@ -753,17 +760,32 @@ class RegistryExecutor:
         registry's fingerprint and stamping it unconditionally would let a
         binding go "ready" for a contract that never passed validation.
         """
-        if tool_key not in self._invokers:
+        previous = self._binding_snapshot(tool_key)
+        if previous.invoker is None or previous.generation is None:
             return False
         if self.registry.get(tool_key).fingerprint != expected_fingerprint:
             return False
-        self._binding_fingerprints[tool_key] = expected_fingerprint
+
+        with self._runtime_state_lock:
+            if self._binding_generations.get(tool_key) != previous.generation:
+                return False
+            self._binding_generation += 1
+            restamped_generation = self._binding_generation
+            self._binding_fingerprints[tool_key] = expected_fingerprint
+            self._binding_generations[tool_key] = restamped_generation
+
+        if self.registry.get(tool_key).fingerprint != expected_fingerprint:
+            self._restore_binding_if_generation(
+                tool_key,
+                restamped_generation,
+                previous,
+            )
+            return False
         return True
 
     def unbind(self, tool_key: str) -> None:
-        self._invokers.pop(tool_key, None)
-        self._binding_fingerprints.pop(tool_key, None)
-        self._binding_offload_sync.pop(tool_key, None)
+        with self._runtime_state_lock:
+            self._remove_binding_locked(tool_key)
 
     def _track_offloaded_sync_task(self, task: asyncio.Future[Any]) -> None:
         """Keep an offloaded worker task alive until its thread-backed call finishes."""
@@ -818,35 +840,46 @@ class RegistryExecutor:
     def purge_tool_runtime_state(self, tool_key: str) -> None:
         """Forget trusted binding and bounded availability state for one tool."""
 
-        self.unbind(tool_key)
-        stale = [
-            key
-            for key in self._unavailable_until
-            if key[0] == tool_key
-        ]
-        for key in stale:
-            self._unavailable_until.pop(key, None)
+        with self._runtime_state_lock:
+            self._remove_binding_locked(tool_key)
+            stale = [
+                key
+                for key in self._unavailable_until
+                if key[0] == tool_key
+            ]
+            for key in stale:
+                self._unavailable_until.pop(key, None)
 
     def bound_keys(self) -> tuple[str, ...]:
         """Return live trusted-invoker keys without exposing invoker objects."""
-        return tuple(sorted(self._invokers))
+        with self._runtime_state_lock:
+            return tuple(sorted(self._invokers))
 
     def binding_states(self) -> dict[str, str]:
         """Return privacy-safe binding readiness for registered and orphaned bindings."""
 
+        with self._runtime_state_lock:
+            bindings = {
+                key: (self._invokers.get(key), self._binding_fingerprints.get(key))
+                for key in set(self._invokers) | set(self._binding_fingerprints)
+            }
+
         states: dict[str, str] = {}
         registry_keys = set(self.registry.keys())
-        binding_keys = set(self._invokers)
+        binding_keys = set(bindings)
 
         for key in sorted(registry_keys | binding_keys):
             if key not in registry_keys:
                 states[key] = "orphaned"
                 continue
             tool = self.registry.get(key)
-            states[key] = self.binding_status_for_contract(
-                key,
-                tool.fingerprint,
-            )
+            invoker, fingerprint = bindings.get(key, (None, None))
+            if invoker is None:
+                states[key] = "unbound"
+            elif fingerprint != tool.fingerprint:
+                states[key] = "stale"
+            else:
+                states[key] = "ready"
         return states
 
     def _validated_call_contract(
@@ -1050,18 +1083,17 @@ class RegistryExecutor:
     def _execution_state(
         self,
         call: ToolCall,
-    ) -> tuple[ToolSpec, EndpointSpec, BoundEndpointInvoker]:
+    ) -> tuple[ToolSpec, EndpointSpec, BoundEndpointInvoker, bool]:
         tool, endpoint = self._validated_call_contract(call)
-        invoker = self._invokers.get(call.tool)
-        if invoker is None:
+        binding = self._binding_snapshot(call.tool)
+        if binding.invoker is None:
             raise ExecutionError(f"no invoker bound for tool {call.tool!r}")
 
-        bound_fingerprint = self._binding_fingerprints.get(call.tool)
-        if bound_fingerprint != tool.fingerprint:
+        if binding.fingerprint != tool.fingerprint:
             raise BindingDriftError(
                 f"invoker binding is stale for tool {call.tool!r}; rebind before execution"
             )
-        return tool, endpoint, invoker
+        return tool, endpoint, binding.invoker, binding.offload_sync
 
     async def _run_before_hooks(
         self,
@@ -1180,20 +1212,20 @@ class RegistryExecutor:
         _tracker: ExecutionBudgetTracker | None = None,
     ) -> ToolResult:
         tracker = _tracker or ExecutionBudgetTracker(budget or ExecutionBudget())
-        tool, endpoint, invoker = self._execution_state(call)
+        tool, endpoint, invoker, offload_sync = self._execution_state(call)
 
         approval_ran = await self._approve(tool, endpoint, call, tracker)
 
         # Trusted callbacks may mutate or await while schema/bindings change. Refresh only when
         # such a callback actually ran; otherwise keep the validated registry snapshot coherent.
         if approval_ran:
-            tool, endpoint, invoker = self._execution_state(call)
+            tool, endpoint, invoker, offload_sync = self._execution_state(call)
 
         await tracker.before_call(call)
 
         before_hooks_ran = await self._run_before_hooks(tool, endpoint, call, tracker)
         if before_hooks_ran:
-            tool, endpoint, invoker = self._execution_state(call)
+            tool, endpoint, invoker, offload_sync = self._execution_state(call)
 
         retry = retry or RetryPolicy()
         can_retry = endpoint.read_only is True or retry.retry_non_read_only
@@ -1207,7 +1239,7 @@ class RegistryExecutor:
             # Retry backoff, hooks, and other trusted awaits may outlive the policy snapshot
             # used for planning or the previous attempt. Re-read the execution contract and
             # authorize again immediately before each actual invoker boundary.
-            tool, endpoint, invoker = self._execution_state(call)
+            tool, endpoint, invoker, offload_sync = self._execution_state(call)
             data_scope = self._authorization_scope_for_attempt(
                 tool,
                 endpoint,
@@ -1218,7 +1250,6 @@ class RegistryExecutor:
                 invoke_call = getattr(invoker, "invoke_call", None)
                 call_aware = callable(invoke_call)
                 with _data_scope_execution_context(data_scope):
-                    offload_sync = self._binding_offload_sync.get(call.tool, False)
                     sync_offloaded = False
                     if call_aware:
                         if offload_sync and not inspect.iscoroutinefunction(invoke_call):
