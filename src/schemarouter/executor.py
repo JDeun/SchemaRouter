@@ -332,7 +332,7 @@ class RegistryExecutor:
         tool.endpoint(endpoint)
         return tool_key, endpoint, tool.fingerprint
 
-    def _purge_access_cooldowns(self, tool_key: str, endpoint: str) -> None:
+    def _purge_access_cooldowns_locked(self, tool_key: str, endpoint: str) -> None:
         stale = [
             key
             for key in self._unavailable_until
@@ -340,6 +340,10 @@ class RegistryExecutor:
         ]
         for key in stale:
             self._unavailable_until.pop(key, None)
+
+    def _purge_access_cooldowns(self, tool_key: str, endpoint: str) -> None:
+        with self._runtime_state_lock:
+            self._purge_access_cooldowns_locked(tool_key, endpoint)
 
     def mark_access_unavailable(
         self,
@@ -356,8 +360,9 @@ class RegistryExecutor:
         if not math.isfinite(cooldown) or cooldown < 0:
             raise ValueError("cooldown_seconds must be a finite non-negative number")
         key = self._current_access_key(tool_key, endpoint)
-        self._purge_access_cooldowns(tool_key, endpoint)
-        self._unavailable_until[key] = time.monotonic() + cooldown
+        with self._runtime_state_lock:
+            self._purge_access_cooldowns_locked(tool_key, endpoint)
+            self._unavailable_until[key] = time.monotonic() + cooldown
 
     def _mark_access_available_for_contract(
         self,
@@ -365,10 +370,11 @@ class RegistryExecutor:
         endpoint: str,
         tool_fingerprint: str,
     ) -> None:
-        self._unavailable_until.pop(
-            (tool_key, endpoint, tool_fingerprint),
-            None,
-        )
+        with self._runtime_state_lock:
+            self._unavailable_until.pop(
+                (tool_key, endpoint, tool_fingerprint),
+                None,
+            )
 
     def _mark_access_unavailable_for_contract(
         self,
@@ -385,14 +391,16 @@ class RegistryExecutor:
         )
         if not math.isfinite(cooldown) or cooldown < 0:
             raise ValueError("cooldown_seconds must be a finite non-negative number")
-        self._purge_access_cooldowns(tool_key, endpoint)
-        self._unavailable_until[
-            (tool_key, endpoint, tool_fingerprint)
-        ] = time.monotonic() + cooldown
+        with self._runtime_state_lock:
+            self._purge_access_cooldowns_locked(tool_key, endpoint)
+            self._unavailable_until[
+                (tool_key, endpoint, tool_fingerprint)
+            ] = time.monotonic() + cooldown
 
     def mark_access_available(self, tool_key: str, endpoint: str) -> None:
         self._current_access_key(tool_key, endpoint)
-        self._purge_access_cooldowns(tool_key, endpoint)
+        with self._runtime_state_lock:
+            self._purge_access_cooldowns_locked(tool_key, endpoint)
 
     def is_access_available_for_contract(
         self,
@@ -401,23 +409,25 @@ class RegistryExecutor:
         tool_fingerprint: str,
     ) -> bool:
         key = (tool_key, endpoint, tool_fingerprint)
-        until = self._unavailable_until.get(key)
-        if until is None:
-            return True
-        if time.monotonic() >= until:
-            self._unavailable_until.pop(key, None)
-            return True
-        return False
+        with self._runtime_state_lock:
+            until = self._unavailable_until.get(key)
+            if until is None:
+                return True
+            if time.monotonic() >= until:
+                self._unavailable_until.pop(key, None)
+                return True
+            return False
 
     def is_access_available(self, tool_key: str, endpoint: str) -> bool:
         key = self._current_access_key(tool_key, endpoint)
-        until = self._unavailable_until.get(key)
-        if until is None:
-            return True
-        if time.monotonic() >= until:
-            self._unavailable_until.pop(key, None)
-            return True
-        return False
+        with self._runtime_state_lock:
+            until = self._unavailable_until.get(key)
+            if until is None:
+                return True
+            if time.monotonic() >= until:
+                self._unavailable_until.pop(key, None)
+                return True
+            return False
 
     def unavailable_access_paths(self) -> tuple[tuple[str, str], ...]:
         now = time.monotonic()
