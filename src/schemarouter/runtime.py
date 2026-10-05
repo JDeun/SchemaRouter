@@ -5076,16 +5076,58 @@ class SchemaRouter:
         return_exceptions: bool = False,
     ) -> list[list[ToolResult] | BaseException]:
         run_config = _coerce_config(config)
-        semaphore = asyncio.Semaphore(run_config.max_concurrency)
+        request_count = len(requests)
+        if request_count > run_config.max_batch_size:
+            raise ValueError(
+                "batch request count exceeds RunConfig.max_batch_size "
+                f"({request_count} > {run_config.max_batch_size})"
+            )
+        if request_count == 0:
+            return []
 
-        async def invoke_one(request: PlanRequest | str) -> list[ToolResult]:
-            async with semaphore:
-                return await self.ainvoke(request, config=run_config)
+        results: list[list[ToolResult] | BaseException | None] = [
+            None
+        ] * request_count
+        next_index = 0
 
-        return await asyncio.gather(
-            *(invoke_one(request) for request in requests),
-            return_exceptions=return_exceptions,
-        )
+        async def worker() -> None:
+            nonlocal next_index
+            while next_index < request_count:
+                index = next_index
+                next_index += 1
+                try:
+                    results[index] = await self.ainvoke(
+                        requests[index],
+                        config=run_config,
+                    )
+                except Exception as exc:
+                    if not return_exceptions:
+                        raise
+                    results[index] = exc
+
+        worker_count = min(run_config.max_concurrency, request_count)
+        workers = [
+            asyncio.create_task(worker())
+            for _ in range(worker_count)
+        ]
+        try:
+            await asyncio.gather(*workers)
+        finally:
+            for task in workers:
+                if not task.done():
+                    task.cancel()
+            if workers:
+                await asyncio.gather(*workers, return_exceptions=True)
+
+        if any(item is None for item in results):
+            raise ExecutionInvariantError(
+                "bounded batch workers completed without producing every result"
+            )
+        return [
+            item
+            for item in results
+            if item is not None
+        ]
 
     def batch(
         self,
@@ -5110,33 +5152,51 @@ class SchemaRouter:
         return_exceptions: bool = False,
     ) -> AsyncIterator[tuple[int, list[ToolResult] | Exception]]:
         run_config = _coerce_config(config)
-        semaphore = asyncio.Semaphore(run_config.max_concurrency)
+        request_count = len(requests)
+        if request_count > run_config.max_batch_size:
+            raise ValueError(
+                "batch request count exceeds RunConfig.max_batch_size "
+                f"({request_count} > {run_config.max_batch_size})"
+            )
+        if request_count == 0:
+            return
 
-        async def invoke_indexed(
-            index: int,
-            request: PlanRequest | str,
-        ) -> tuple[int, list[ToolResult] | Exception]:
-            try:
-                async with semaphore:
-                    result = await self.ainvoke(request, config=run_config)
-                return index, result
-            except Exception as exc:
-                if return_exceptions:
-                    return index, exc
-                raise
+        completed_queue: asyncio.Queue[
+            tuple[int, list[ToolResult] | Exception]
+        ] = asyncio.Queue(maxsize=run_config.max_concurrency)
+        next_index = 0
 
-        tasks = [
-            asyncio.create_task(invoke_indexed(index, request))
-            for index, request in enumerate(requests)
+        async def worker() -> None:
+            nonlocal next_index
+            while next_index < request_count:
+                index = next_index
+                next_index += 1
+                try:
+                    outcome: list[ToolResult] | Exception = await self.ainvoke(
+                        requests[index],
+                        config=run_config,
+                    )
+                except Exception as exc:
+                    outcome = exc
+                await completed_queue.put((index, outcome))
+
+        worker_count = min(run_config.max_concurrency, request_count)
+        workers = [
+            asyncio.create_task(worker())
+            for _ in range(worker_count)
         ]
         try:
-            for completed in asyncio.as_completed(tasks):
-                yield await completed
+            for _ in range(request_count):
+                index, outcome = await completed_queue.get()
+                if isinstance(outcome, Exception) and not return_exceptions:
+                    raise outcome
+                yield index, outcome
         finally:
-            for task in tasks:
+            for task in workers:
                 if not task.done():
                     task.cancel()
-            await asyncio.gather(*tasks, return_exceptions=True)
+            if workers:
+                await asyncio.gather(*workers, return_exceptions=True)
 
     def batch_as_completed(
         self,
@@ -5332,7 +5392,9 @@ class SchemaRouter:
             semaphore = asyncio.Semaphore(run_config.max_parallel_calls)
             event_queue: asyncio.Queue[
                 tuple[str, int, Any, Any]
-            ] = asyncio.Queue()
+            ] = asyncio.Queue(
+                maxsize=max(1, run_config.max_parallel_calls * 4)
+            )
 
             async def run_parallel_call(
                 index: int,
@@ -5420,16 +5482,29 @@ class SchemaRouter:
                         )
                         return
 
+            next_parallel_index = 0
+
+            async def parallel_worker() -> None:
+                nonlocal next_parallel_index
+                while next_parallel_index < len(plan.calls):
+                    index = next_parallel_index
+                    next_parallel_index += 1
+                    await run_parallel_call(index, plan.calls[index])
+
+            worker_count = min(
+                run_config.max_parallel_calls,
+                len(plan.calls),
+            )
             tasks = [
-                asyncio.create_task(run_parallel_call(index, call))
-                for index, call in enumerate(plan.calls)
+                asyncio.create_task(parallel_worker())
+                for _ in range(worker_count)
             ]
 
             result_count = 0
             fallback_count = 0
             terminal_count = 0
             try:
-                while terminal_count < len(tasks):
+                while terminal_count < len(plan.calls):
                     kind, index, call, payload = await event_queue.get()
 
                     if kind == "preflight_error":
