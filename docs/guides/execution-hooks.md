@@ -46,9 +46,9 @@ plan
  -> schema/binding revalidation
  -> invoker attempts / retries
  -> raw output JSON Schema validation
- -> field projection
+ -> field projection + ToolResult construction
  -> after hooks
- -> ToolResult
+ -> return ToolResult
 ```
 
 A before hook cannot bypass schema validation, execution policy, approval, or binding
@@ -70,21 +70,32 @@ An after hook additionally receives the final projected `ToolResult`.
 Mutating those objects does not mutate the executable call, registry schema, or result returned to
 the caller.
 
-Hooks must return `None`. Any other return value raises `ExecutionHookError`. This avoids an
-implicit transformation API that could alter arguments, fields, schemas, or execution authority.
+Hooks must return `None`. A non-`None` return from a before hook raises
+`ExecutionHookError`. A non-`None` return from an after hook raises
+`PostInvocationHookError`, because the external operation and result validation have already
+succeeded. This avoids an implicit transformation API that could alter arguments, fields, schemas,
+or execution authority.
 
 ## Failure behavior
 
-Hook failures are fail-closed.
+Hook failures are fail-closed, but pre- and post-invocation failures have different semantics.
 
-- A failing before hook prevents the invoker from running.
-- A failing after hook withholds the result from the caller.
-- Hook failures are never treated as retryable tool failures.
-- In particular, an after-hook failure does **not** repeat a successful read-only invocation.
+- A failing before hook prevents the invoker from running and is surfaced as
+  `ExecutionHookError`.
+- A failing after hook withholds the normal return path, but the successful projected
+  `ToolResult` is preserved on `PostInvocationHookError.result`.
+- `PostInvocationHookError.execution_succeeded` is always `True`.
+- Post-invocation failures are non-retryable, including when trusted code explicitly enabled
+  retries for non-read-only endpoints. A successful mutation is therefore never repeated because
+  an audit/metrics hook failed.
+- Event streams record the successful operation as `tool.end`, then surface
+  `run.error` with `stage="post_invocation_hook"`; they do not rewrite that operation as
+  `tool.error`.
 
-A hook can veto execution by raising an exception. SchemaRouter wraps ordinary hook
-exceptions in `ExecutionHookError`. Elapsed-budget expiration remains an
-`ExecutionBudgetExceededError` and is not rewritten as a hook failure.
+Before-hook elapsed-budget expiration remains an `ExecutionBudgetExceededError`. Once the tool has
+successfully produced a validated/projected result, an exception, cancellation, invalid return, or
+elapsed-budget failure in an after hook is wrapped as `PostInvocationHookError` so callers can
+distinguish tool success from post-processing failure.
 
 ## Privacy
 
