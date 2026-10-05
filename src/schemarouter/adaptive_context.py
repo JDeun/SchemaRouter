@@ -109,8 +109,12 @@ class SessionSchemaExposure:
         raw = json.loads(payload)
         if not isinstance(raw, dict):
             raise ValueError("session schema exposure must be a JSON object")
-        epoch = raw.get("compaction_epoch", 0)
-        routes = raw.get("exposed_routes", [])
+        if set(raw) != {"compaction_epoch", "exposed_routes"}:
+            raise ValueError(
+                "session schema exposure requires compaction_epoch and exposed_routes"
+            )
+        epoch = raw["compaction_epoch"]
+        routes = raw["exposed_routes"]
         if isinstance(epoch, bool) or not isinstance(epoch, int) or epoch < 0:
             raise ValueError("compaction_epoch must be a non-negative integer")
         if not isinstance(routes, list) or not all(isinstance(x, str) and "." in x for x in routes):
