@@ -25,6 +25,7 @@ from .errors import (
     NonRetryableInvocationError,
     PlanValidationError,
     PolicyViolationError,
+    PostInvocationHookError,
     SchemaDriftError,
     SchemaValidationError,
 )
@@ -876,15 +877,24 @@ class RegistryExecutor:
                     )
                 else:
                     tracker._check_elapsed(stage="after execution hook")
-            except (ExecutionHookError, ExecutionBudgetExceededError):
-                raise
+            except asyncio.CancelledError as exc:
+                raise PostInvocationHookError(
+                    (
+                        "after execution hook was cancelled after successful invocation "
+                        f"for {call.tool}.{call.endpoint}"
+                    ),
+                    result=result.model_copy(deep=True),
+                ) from exc
             except Exception as exc:  # noqa: BLE001
-                raise ExecutionHookError(
-                    f"after execution hook failed for {call.tool}.{call.endpoint}"
+                raise PostInvocationHookError(
+                    f"after execution hook failed after successful invocation "
+                    f"for {call.tool}.{call.endpoint}",
+                    result=result.model_copy(deep=True),
                 ) from exc
             if outcome is not None:
-                raise ExecutionHookError(
-                    "after execution hooks must return None"
+                raise PostInvocationHookError(
+                    "after execution hooks must return None after successful invocation",
+                    result=result.model_copy(deep=True),
                 )
 
     async def execute_call(

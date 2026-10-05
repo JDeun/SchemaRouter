@@ -62,6 +62,7 @@ from .errors import (
     ExecutionInvariantError,
     InvocationUnavailableError,
     PolicyViolationError,
+    PostInvocationHookError,
     ProposalApprovalError,
     RegistrationError,
     SchemaNotModifiedError,
@@ -5538,6 +5539,16 @@ class SchemaRouter:
                             if has_next:
                                 continue
                             return
+                        except PostInvocationHookError as exc:
+                            await event_queue.put(
+                                (
+                                    "post_invocation_error",
+                                    index,
+                                    call,
+                                    (exc, original_candidate_index),
+                                )
+                            )
+                            return
                         except Exception as exc:
                             await event_queue.put(("error", index, call, exc))
                             return
@@ -5715,6 +5726,71 @@ class SchemaRouter:
                         sequence += 1
                         fallback_count += 1
                         continue
+
+                    if kind == "post_invocation_error":
+                        terminal_count += 1
+                        if not isinstance(payload, tuple) or len(payload) != 2:
+                            raise ExecutionInvariantError(
+                                "parallel execution event payload violated the internal contract: "
+                                "'post_invocation_error' expected a 2-item tuple"
+                            )
+                        post_error, candidate_index = payload
+                        if not isinstance(post_error, PostInvocationHookError):
+                            raise ExecutionInvariantError(
+                                "parallel execution event payload violated the internal contract: "
+                                "'post_invocation_error' expected PostInvocationHookError"
+                            )
+                        if (
+                            isinstance(candidate_index, bool)
+                            or not isinstance(candidate_index, int)
+                            or candidate_index < 0
+                        ):
+                            raise ExecutionInvariantError(
+                                "parallel execution event payload violated the internal contract: "
+                                "'post_invocation_error' expected a non-negative candidate index"
+                            )
+                        post_result = post_error.result
+                        if not isinstance(post_result, ToolResult):
+                            raise ExecutionInvariantError(
+                                "post-invocation hook error did not preserve a ToolResult"
+                            )
+                        end_data: dict[str, Any] = {
+                            "projected_fields": list(post_result.projected_fields),
+                            "fallback_used": candidate_index > 0,
+                            "primary_call_index": index,
+                            "fallback_candidate_index": candidate_index,
+                            "execution_succeeded": True,
+                            "post_invocation_stage": "after_hook",
+                            "post_invocation_error_type": type(post_error).__name__,
+                        }
+                        if run_config.include_payloads:
+                            end_data["result"] = post_result.model_dump(mode="json")
+                        yield await emit(RunEvent.create(
+                            event="tool.end",
+                            run_id=run_id,
+                            sequence=sequence,
+                            config=run_config,
+                            tool=post_result.tool,
+                            endpoint=post_result.endpoint,
+                            data=end_data,
+                        ))
+                        sequence += 1
+                        result_count += 1
+                        run_error_data: dict[str, Any] = {
+                            "error_type": type(post_error).__name__,
+                            "stage": "post_invocation_hook",
+                            "execution_succeeded": True,
+                        }
+                        if run_config.include_payloads:
+                            run_error_data["message"] = str(post_error)
+                        yield await emit(RunEvent.create(
+                            event="run.error",
+                            run_id=run_id,
+                            sequence=sequence,
+                            config=run_config,
+                            data=run_error_data,
+                        ))
+                        raise post_error
 
                     if kind == "error":
                         terminal_count += 1
@@ -5969,6 +6045,49 @@ class SchemaRouter:
                     sequence += 1
                     fallback_count += 1
                     continue
+                except PostInvocationHookError as exc:
+                    post_result = exc.result
+                    if not isinstance(post_result, ToolResult):
+                        raise ExecutionInvariantError(
+                            "post-invocation hook error did not preserve a ToolResult"
+                        ) from exc
+                    end_data: dict[str, Any] = {
+                        "projected_fields": list(post_result.projected_fields),
+                        "fallback_used": candidate_index > 0,
+                        "primary_call_index": primary_index,
+                        "fallback_candidate_index": original_candidate_index,
+                        "execution_succeeded": True,
+                        "post_invocation_stage": "after_hook",
+                        "post_invocation_error_type": type(exc).__name__,
+                    }
+                    if run_config.include_payloads:
+                        end_data["result"] = post_result.model_dump(mode="json")
+                    yield await emit(RunEvent.create(
+                        event="tool.end",
+                        run_id=run_id,
+                        sequence=sequence,
+                        config=run_config,
+                        tool=post_result.tool,
+                        endpoint=post_result.endpoint,
+                        data=end_data,
+                    ))
+                    sequence += 1
+                    result_count += 1
+                    run_error_data: dict[str, Any] = {
+                        "error_type": type(exc).__name__,
+                        "stage": "post_invocation_hook",
+                        "execution_succeeded": True,
+                    }
+                    if run_config.include_payloads:
+                        run_error_data["message"] = str(exc)
+                    yield await emit(RunEvent.create(
+                        event="run.error",
+                        run_id=run_id,
+                        sequence=sequence,
+                        config=run_config,
+                        data=run_error_data,
+                    ))
+                    raise
                 except Exception as exc:
                     error_data = {
                         "error_type": type(exc).__name__,
