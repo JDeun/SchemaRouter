@@ -88,6 +88,15 @@ class IndeterminateInvocationError(NonRetryableInvocationError):
     """
 
 
+class PostInvocationHookError(NonRetryableInvocationError):
+    """Raised when post-invocation processing fails after the tool already succeeded."""
+
+    def __init__(self, message: str, *, result: object) -> None:
+        super().__init__(message)
+        self.result = result
+        self.execution_succeeded = True
+
+
 class ExecutionHookError(ExecutionError):
     """Raised when a trusted execution hook violates or fails its contract."""
 
