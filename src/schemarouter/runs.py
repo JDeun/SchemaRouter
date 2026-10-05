@@ -70,6 +70,14 @@ class RunConfig(StrictModel):
     retry: RetryPolicy = Field(default_factory=RetryPolicy)
     budget: ExecutionBudget = Field(default_factory=ExecutionBudget)
 
+    @model_validator(mode="after")
+    def validate_trace_payload_mode(self) -> RunConfig:
+        if self.raw_trace_payloads and not self.include_payloads:
+            raise ValueError(
+                "raw_trace_payloads=True requires include_payloads=True"
+            )
+        return self
+
 
 RunEventName = Literal[
     "run.start",
