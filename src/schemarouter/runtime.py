@@ -61,6 +61,7 @@ from .errors import (
     ContractAmendmentError,
     ExecutionInvariantError,
     InvocationUnavailableError,
+    PostInvocationHookError,
     PolicyViolationError,
     ProposalApprovalError,
     RegistrationError,
@@ -5538,6 +5539,16 @@ class SchemaRouter:
                             if has_next:
                                 continue
                             return
+                        except PostInvocationHookError as exc:
+                            await event_queue.put(
+                                (
+                                    "post_invocation_error",
+                                    index,
+                                    call,
+                                    (exc, original_candidate_index),
+                                )
+                            )
+                            return
                         except Exception as exc:
                             await event_queue.put(("error", index, call, exc))
                             return
@@ -5715,6 +5726,47 @@ class SchemaRouter:
                         sequence += 1
                         fallback_count += 1
                         continue
+
+                    if kind == "post_invocation_error":
+                        terminal_count += 1
+                        exc, candidate_index = payload
+                        if not isinstance(exc, PostInvocationHookError):
+                            raise RuntimeError("invalid post-invocation error payload")
+                        result = exc.result
+                        if not isinstance(result, ToolResult):
+                            raise RuntimeError("invalid post-invocation result payload")
+                        end_data: dict[str, Any] = {
+                            "projected_fields": list(result.projected_fields),
+                            "fallback_used": candidate_index > 0,
+                            "primary_call_index": index,
+                            "fallback_candidate_index": candidate_index,
+                            "invocation_succeeded": True,
+                            "post_invocation_error_type": type(exc).__name__,
+                        }
+                        if run_config.include_payloads:
+                            end_data["result"] = result.model_dump(mode="json")
+                        yield await emit(RunEvent.create(
+                            event="tool.end",
+                            run_id=run_id,
+                            sequence=sequence,
+                            config=run_config,
+                            tool=result.tool,
+                            endpoint=result.endpoint,
+                            data=end_data,
+                        ))
+                        sequence += 1
+                        yield await emit(RunEvent.create(
+                            event="run.error",
+                            run_id=run_id,
+                            sequence=sequence,
+                            config=run_config,
+                            data={
+                                "error_type": type(exc).__name__,
+                                "stage": "post_invocation_hook",
+                                "invocation_succeeded": True,
+                            },
+                        ))
+                        raise exc
 
                     if kind == "error":
                         terminal_count += 1
@@ -5906,6 +5958,42 @@ class SchemaRouter:
                             budget=run_config.budget,
                             _tracker=budget_tracker,
                         )
+                except PostInvocationHookError as exc:
+                    result = exc.result
+                    if not isinstance(result, ToolResult):
+                        raise RuntimeError("invalid post-invocation result payload") from exc
+                    end_data: dict[str, Any] = {
+                        "projected_fields": list(result.projected_fields),
+                        "fallback_used": candidate_index > 0,
+                        "primary_call_index": primary_index,
+                        "fallback_candidate_index": original_candidate_index,
+                        "invocation_succeeded": True,
+                        "post_invocation_error_type": type(exc).__name__,
+                    }
+                    if run_config.include_payloads:
+                        end_data["result"] = result.model_dump(mode="json")
+                    yield await emit(RunEvent.create(
+                        event="tool.end",
+                        run_id=run_id,
+                        sequence=sequence,
+                        config=run_config,
+                        tool=result.tool,
+                        endpoint=result.endpoint,
+                        data=end_data,
+                    ))
+                    sequence += 1
+                    yield await emit(RunEvent.create(
+                        event="run.error",
+                        run_id=run_id,
+                        sequence=sequence,
+                        config=run_config,
+                        data={
+                            "error_type": type(exc).__name__,
+                            "stage": "post_invocation_hook",
+                            "invocation_succeeded": True,
+                        },
+                    ))
+                    raise
                 except InvocationUnavailableError as exc:
                     has_next = candidate_index + 1 < len(chain)
                     error_data: dict[str, Any] = {
