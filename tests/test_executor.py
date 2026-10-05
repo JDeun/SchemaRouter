@@ -16,6 +16,7 @@ from schemarouter import (
     FallbackRoute,
     FieldSpec,
     InMemoryRegistry,
+    IndeterminateInvocationError,
     InvocationUnavailableError,
     NonRetryableInvocationError,
     ParameterSpec,
@@ -1724,3 +1725,152 @@ async def test_offloaded_sync_invoker_respects_elapsed_budget_from_caller() -> N
         timer.cancel()
 
     assert time.monotonic() - started < 0.15
+
+@pytest.mark.asyncio
+async def test_offloaded_sync_mutation_timeout_is_indeterminate_and_not_retried() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="blocking_writer",
+        endpoints=[
+            EndpointSpec(
+                name="write",
+                read_only=False,
+                output_fields=[FieldSpec(name="value")],
+            )
+        ],
+    )
+    registry.register(tool)
+    endpoint = registry.endpoint("blocking_writer", "write")
+    plan = ExecutionPlan(
+        query="blocking write",
+        registry_version=registry.version,
+        calls=[
+            ToolCall(
+                tool="blocking_writer",
+                endpoint="write",
+                fields=["value"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=tool.fingerprint,
+            )
+        ],
+    )
+    started = threading.Event()
+    release = threading.Event()
+    completed = threading.Event()
+    attempts = 0
+
+    def invoker(endpoint_name: str, arguments: dict) -> dict:
+        nonlocal attempts
+        del endpoint_name, arguments
+        attempts += 1
+        started.set()
+        release.wait(timeout=0.5)
+        completed.set()
+        return {"value": "committed"}
+
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        "blocking_writer",
+        invoker,
+        expected_fingerprint=tool.fingerprint,
+        offload_sync=True,
+    )
+
+    try:
+        with pytest.raises(
+            IndeterminateInvocationError,
+            match="indeterminate after deadline",
+        ):
+            await executor.execute(
+                plan,
+                retry=RetryPolicy(max_attempts=3, retry_non_read_only=True),
+                budget=ExecutionBudget(max_elapsed_seconds=0.02),
+            )
+
+        assert started.is_set()
+        assert attempts == 1
+        assert not completed.is_set()
+    finally:
+        release.set()
+
+    assert await asyncio.to_thread(completed.wait, 0.5)
+    assert attempts == 1
+
+
+@pytest.mark.asyncio
+async def test_offloaded_sync_mutation_cancellation_is_indeterminate() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="cancelled_writer",
+        endpoints=[
+            EndpointSpec(
+                name="write",
+                read_only=False,
+                output_fields=[FieldSpec(name="value")],
+            )
+        ],
+    )
+    registry.register(tool)
+    endpoint = registry.endpoint("cancelled_writer", "write")
+    plan = ExecutionPlan(
+        query="cancel blocking write",
+        registry_version=registry.version,
+        calls=[
+            ToolCall(
+                tool="cancelled_writer",
+                endpoint="write",
+                fields=["value"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=tool.fingerprint,
+            )
+        ],
+    )
+    started = threading.Event()
+    release = threading.Event()
+    completed = threading.Event()
+    attempts = 0
+
+    def invoker(endpoint_name: str, arguments: dict) -> dict:
+        nonlocal attempts
+        del endpoint_name, arguments
+        attempts += 1
+        started.set()
+        release.wait(timeout=0.5)
+        completed.set()
+        return {"value": "committed"}
+
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        "cancelled_writer",
+        invoker,
+        expected_fingerprint=tool.fingerprint,
+        offload_sync=True,
+    )
+    task = asyncio.create_task(
+        executor.execute(
+            plan,
+            retry=RetryPolicy(max_attempts=3, retry_non_read_only=True),
+        )
+    )
+
+    try:
+        deadline = time.monotonic() + 0.25
+        while not started.is_set() and time.monotonic() < deadline:
+            await asyncio.sleep(0.001)
+        assert started.is_set()
+
+        task.cancel()
+        with pytest.raises(
+            IndeterminateInvocationError,
+            match="indeterminate after cancellation",
+        ):
+            await task
+
+        assert attempts == 1
+        assert not completed.is_set()
+    finally:
+        release.set()
+
+    assert await asyncio.to_thread(completed.wait, 0.5)
+    assert attempts == 1
+
