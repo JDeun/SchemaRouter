@@ -171,7 +171,10 @@ def test_add_bound_tool_failed_replacement_restores_contract_and_binding(
 ) -> None:
     router = SchemaRouter()
     original = _tool(description="original")
-    original_invoker = lambda endpoint, arguments: {"version": "original"}
+    def original_invoker(endpoint, arguments):
+        del endpoint, arguments
+        return {"version": "original"}
+
     router.add_bound_tool(original, original_invoker)
     original_fingerprint = router.registry.get("demo").fingerprint
 
