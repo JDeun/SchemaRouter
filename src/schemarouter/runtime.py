@@ -1089,6 +1089,8 @@ class SchemaRouter:
             self.health_monitor.unregister_tool(key)
             self.schema_watcher.unregister(key)
             self.loader.forget_schema_http_validators(key)
+            self._native_schema_refreshers.pop(key, None)
+            self._native_schema_pending.pop(key, None)
         return key
 
     async def aremove_tool(self, tool_key: str) -> ToolSpec:
