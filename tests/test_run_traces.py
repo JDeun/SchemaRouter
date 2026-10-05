@@ -15,6 +15,7 @@ from schemarouter import (
     SQLiteRunTraceStore,
     ToolSpec,
     TraceError,
+    TracePersistenceError,
     record_run_events,
     replay_run_events,
 )
@@ -206,6 +207,39 @@ async def test_runtime_can_persist_redacted_trace_directly(tmp_path) -> None:
     assert tool_start.data["argument_names"] == ["city"]
     assert "arguments" not in tool_start.data
     assert "result" not in tool_end.data
+
+
+@pytest.mark.asyncio
+async def test_trace_sink_failure_after_tool_success_is_typed_and_nonretryable() -> None:
+    counter: dict[str, int] = {}
+    router = make_router(counter)
+
+    class FailingStore:
+        def append(self, item: RunEvent) -> None:
+            if item.event == "tool.end":
+                raise OSError("disk full")
+
+    seen: list[RunEvent] = []
+    with pytest.raises(TracePersistenceError) as captured:
+        async for item in router.astream_events(
+            PlanRequest(
+                query="city temperature",
+                arguments={"city": "Seoul"},
+            ),
+            trace_store=FailingStore(),
+        ):
+            seen.append(item)
+
+    assert counter["calls"] == 1
+    assert [item.event for item in seen] == [
+        "run.start",
+        "plan.end",
+        "tool.start",
+    ]
+    assert captured.value.execution_succeeded is True
+    assert isinstance(captured.value.event, RunEvent)
+    assert captured.value.event.event == "tool.end"
+    assert captured.value.event.tool == "weather"
 
 
 @pytest.mark.asyncio

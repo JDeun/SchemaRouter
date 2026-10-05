@@ -311,6 +311,7 @@ from .errors import (
     SourceProbeDiagnosticError,
     StorageFormatError,
     TraceError,
+    TracePersistenceError,
     UnsupportedSchemaSourceError,
 )
 from .execution_state import (
@@ -753,6 +754,7 @@ __all__ = [
     "VectorStoreBackend",
     "UnitNormalizationSpec",
     "TraceError",
+    "TracePersistenceError",
     "UnsupportedSchemaSourceError",
     "schema_tool",
     "tool_from_callable",
