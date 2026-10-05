@@ -10,7 +10,7 @@ from urllib.parse import quote, unquote, urldefrag, urljoin, urlparse
 
 import httpx
 
-from ..errors import InvocationUnavailableError, NonRetryableInvocationError, SchemaSourceError
+from ..errors import InvocationUnavailableError, NonRetryableInvocationError
 from ..models import (
     AuthRequirementSet,
     AuthSchemeRequirement,
