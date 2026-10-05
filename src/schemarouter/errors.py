@@ -79,6 +79,15 @@ class NonRetryableInvocationError(ExecutionError, RuntimeError):
     """
 
 
+class IndeterminateInvocationError(NonRetryableInvocationError):
+    """Raised when an invocation may still complete after timeout or cancellation.
+
+    This is used for side-effecting synchronous work that was offloaded to a worker thread and
+    cannot be forcibly stopped once started. Callers must treat the outcome as unknown and must not
+    automatically retry the same mutation.
+    """
+
+
 class ExecutionHookError(ExecutionError):
     """Raised when a trusted execution hook violates or fails its contract."""
 
