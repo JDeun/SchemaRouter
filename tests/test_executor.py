@@ -15,8 +15,8 @@ from schemarouter import (
     ExecutionPolicy,
     FallbackRoute,
     FieldSpec,
-    InMemoryRegistry,
     IndeterminateInvocationError,
+    InMemoryRegistry,
     InvocationUnavailableError,
     NonRetryableInvocationError,
     ParameterSpec,
@@ -1768,7 +1768,10 @@ async def test_offloaded_sync_mutation_timeout_is_indeterminate_and_not_retried(
         completed.set()
         return {"value": "committed"}
 
-    executor = RegistryExecutor(registry)
+    executor = RegistryExecutor(
+        registry,
+        policy=ExecutionPolicy(allow_mutations=True),
+    )
     executor.bind(
         "blocking_writer",
         invoker,
@@ -1839,7 +1842,10 @@ async def test_offloaded_sync_mutation_cancellation_is_indeterminate() -> None:
         completed.set()
         return {"value": "committed"}
 
-    executor = RegistryExecutor(registry)
+    executor = RegistryExecutor(
+        registry,
+        policy=ExecutionPolicy(allow_mutations=True),
+    )
     executor.bind(
         "cancelled_writer",
         invoker,
