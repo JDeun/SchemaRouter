@@ -1,3 +1,5 @@
+import asyncio
+import time
 import sqlite3
 from datetime import datetime, timedelta, timezone
 
@@ -368,3 +370,72 @@ def test_trace_store_delete_and_closed_state(tmp_path) -> None:
     store.close()
     with pytest.raises(RuntimeError, match="closed"):
         store.run_ids()
+
+
+@pytest.mark.asyncio
+async def test_slow_sync_trace_sink_does_not_block_event_loop() -> None:
+    router = make_router()
+    loop_progressed = asyncio.Event()
+
+    class SlowStore:
+        def append(self, item: RunEvent) -> None:
+            del item
+            time.sleep(0.05)
+
+    async def ticker() -> None:
+        await asyncio.sleep(0.01)
+        loop_progressed.set()
+
+    stream = router.astream_events(
+        PlanRequest(
+            query="city temperature",
+            arguments={"city": "Seoul"},
+        ),
+        trace_store=SlowStore(),
+    )
+    ticker_task = asyncio.create_task(ticker())
+    first_event_task = asyncio.create_task(anext(stream))
+    try:
+        await asyncio.wait_for(loop_progressed.wait(), timeout=0.04)
+        first_event = await asyncio.wait_for(first_event_task, timeout=0.2)
+    finally:
+        await ticker_task
+        if not first_event_task.done():
+            first_event_task.cancel()
+            await asyncio.gather(first_event_task, return_exceptions=True)
+        await stream.aclose()
+
+    assert first_event.event == "run.start"
+
+
+@pytest.mark.asyncio
+async def test_record_run_events_offloads_sync_store_and_preserves_order() -> None:
+    persisted: list[int] = []
+    loop_progressed = asyncio.Event()
+
+    class SlowStore:
+        def append(self, item: RunEvent) -> None:
+            time.sleep(0.03)
+            persisted.append(item.sequence)
+
+    async def source():
+        yield event("run-offload", 0, "run.start")
+        yield event("run-offload", 1, "run.end", seconds=1)
+
+    async def ticker() -> None:
+        await asyncio.sleep(0.005)
+        loop_progressed.set()
+
+    ticker_task = asyncio.create_task(ticker())
+    captured = [
+        item
+        async for item in record_run_events(
+            source(),
+            store=SlowStore(),
+        )
+    ]
+    await ticker_task
+
+    assert loop_progressed.is_set()
+    assert persisted == [0, 1]
+    assert [item.sequence for item in captured] == [0, 1]
