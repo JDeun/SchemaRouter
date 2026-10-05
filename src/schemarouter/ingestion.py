@@ -43,6 +43,7 @@ from .errors import (
 from .executor import RegistryExecutor
 from .models import StrictModel, ToolSpec
 from .registry import ToolRegistry, replace_if_current
+from .schema_complexity import validate_schema_complexity
 from .schema_http import (
     attach_schema_http_validators,
     conditional_schema_headers,
@@ -308,9 +309,18 @@ def _parse_openapi_text(text: str) -> dict[str, Any] | None:
             value = _safe_yaml_load(text)
         except yaml.YAMLError:
             return None
+        except RecursionError as exc:
+            raise SchemaSourceError(
+                "OpenAPI YAML exceeds parser structural complexity limits"
+            ) from exc
+    except RecursionError as exc:
+        raise SchemaSourceError(
+            "OpenAPI JSON exceeds parser structural complexity limits"
+        ) from exc
 
     if not isinstance(value, dict):
         return None
+    validate_schema_complexity(value, source="OpenAPI document")
     version = value.get("openapi")
     if not isinstance(version, str) or not version.startswith("3."):
         return None
@@ -395,7 +405,16 @@ def _parse_reference_text(text: str) -> dict[str, Any] | None:
             value = _safe_yaml_load(text)
         except yaml.YAMLError:
             return None
+        except RecursionError as exc:
+            raise SchemaSourceError(
+                "referenced schema YAML exceeds parser structural complexity limits"
+            ) from exc
+    except RecursionError as exc:
+        raise SchemaSourceError(
+            "referenced schema JSON exceeds parser structural complexity limits"
+        ) from exc
     if isinstance(value, dict):
+        validate_schema_complexity(value, source="referenced schema document")
         return value
     return None
 
