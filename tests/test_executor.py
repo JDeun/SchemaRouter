@@ -1724,3 +1724,53 @@ async def test_offloaded_sync_invoker_respects_elapsed_budget_from_caller() -> N
         timer.cancel()
 
     assert time.monotonic() - started < 0.15
+
+
+@pytest.mark.asyncio
+async def test_offloaded_sync_mutation_fails_before_worker_dispatch() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="blocking_mutation",
+        endpoints=[
+            EndpointSpec(
+                name="write",
+                read_only=False,
+            )
+        ],
+    )
+    registry.register(tool)
+    endpoint = registry.endpoint("blocking_mutation", "write")
+    call = ToolCall(
+        tool="blocking_mutation",
+        endpoint="write",
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+    started = threading.Event()
+
+    def invoker(endpoint_name: str, arguments: dict) -> dict:
+        del endpoint_name, arguments
+        started.set()
+        return {"ok": True}
+
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        "blocking_mutation",
+        invoker,
+        expected_fingerprint=tool.fingerprint,
+        offload_sync=True,
+    )
+
+    with pytest.raises(
+        NonRetryableInvocationError,
+        match=r"offload_sync requires endpoint\.read_only=True",
+    ):
+        await executor.execute_call(
+            call,
+            retry=RetryPolicy(
+                max_attempts=3,
+                retry_non_read_only=True,
+            ),
+        )
+
+    assert started.is_set() is False
