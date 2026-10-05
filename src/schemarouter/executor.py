@@ -558,9 +558,12 @@ class RegistryExecutor:
                 f"{expected_fingerprint!r}, found {tool.fingerprint!r}"
             )
         fingerprint = expected_fingerprint or tool.fingerprint
-        self._invokers[tool_key] = invoker
-        self._binding_fingerprints[tool_key] = fingerprint
-        self._binding_offload_sync[tool_key] = offload_sync
+        self._store_binding(
+            tool_key,
+            invoker,
+            fingerprint,
+            offload_sync,
+        )
 
     def publish_bound_tool(
         self,
@@ -606,9 +609,7 @@ class RegistryExecutor:
                 "atomic bound replacement requires replace-if-fingerprint rollback"
             )
 
-        previous_invoker = self._invokers.get(tool.key, _MISSING)
-        previous_binding_fingerprint = self._binding_fingerprints.get(tool.key, _MISSING)
-        previous_offload_sync = self._binding_offload_sync.get(tool.key, _MISSING)
+        previous_binding = self._binding_snapshot(tool.key)
 
         if previous_tool is None:
             keys = update_many_if_current(
@@ -646,35 +647,22 @@ class RegistryExecutor:
 
         published_version = base_version + 1
 
-        def restore_previous_binding() -> None:
-            if previous_invoker is _MISSING:
-                self._invokers.pop(key, None)
-            else:
-                self._invokers[key] = cast(BoundEndpointInvoker, previous_invoker)
-
-            if previous_binding_fingerprint is _MISSING:
-                self._binding_fingerprints.pop(key, None)
-            else:
-                self._binding_fingerprints[key] = cast(
-                    str,
-                    previous_binding_fingerprint,
-                )
-
-            if previous_offload_sync is _MISSING:
-                self._binding_offload_sync.pop(key, None)
-            else:
-                self._binding_offload_sync[key] = cast(bool, previous_offload_sync)
+        published_generation: int | None = None
 
         try:
-            self.bind(
+            current = registry.get(key)
+            if current.fingerprint != tool.fingerprint:
+                raise BindingDriftError(
+                    f"tool {key!r} changed before its binding could be published"
+                )
+            published_generation = self._store_binding(
                 key,
                 invoker,
-                expected_fingerprint=tool.fingerprint,
-                offload_sync=offload_sync,
+                tool.fingerprint,
+                offload_sync,
             )
-            # Detect a registry writer that raced after bind's contract read but before this
-            # logical publication returned. The binding is removed rather than blessed for a
-            # state that this operation no longer owns.
+
+            # Detect a registry writer that raced after the binding snapshot was published.
             if registry.version != published_version:
                 raise BindingDriftError(
                     f"registry changed concurrently while publishing binding for {key!r}"
@@ -684,7 +672,6 @@ class RegistryExecutor:
                     f"tool {key!r} changed concurrently while publishing its binding"
                 )
         except Exception:
-            self.purge_tool_runtime_state(key)
             try:
                 if previous_tool is None:
                     unregister_if_current(
@@ -701,13 +688,22 @@ class RegistryExecutor:
                         expected_version=published_version,
                     )
             except Exception as rollback_exc:
-                self.purge_tool_runtime_state(key)
+                if published_generation is not None:
+                    self._remove_binding_if_generation(
+                        key,
+                        published_generation,
+                    )
                 raise BindingDriftError(
                     f"binding publication for {key!r} failed and registry rollback "
                     "could not be completed without overwriting concurrent state"
                 ) from rollback_exc
 
-            restore_previous_binding()
+            if published_generation is not None:
+                self._restore_binding_if_generation(
+                    key,
+                    published_generation,
+                    previous_binding,
+                )
             raise
 
         return key
