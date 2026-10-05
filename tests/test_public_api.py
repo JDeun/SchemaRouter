@@ -260,6 +260,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "VectorStoreBackend",
         "UnitNormalizationSpec",
         "TraceError",
+        "TracePersistenceError",
         "UnsupportedSchemaSourceError",
         "schema_tool",
         "serialize_capability_artifact",

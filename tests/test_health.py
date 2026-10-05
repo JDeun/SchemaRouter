@@ -4,6 +4,7 @@ import time
 
 import pytest
 
+import schemarouter.executor as executor_module
 from schemarouter import (
     AccessHealthMonitor,
     EndpointSpec,
@@ -222,7 +223,17 @@ async def test_health_probe_result_is_discarded_if_contract_changes_while_awaiti
 
 
 @pytest.mark.asyncio
-async def test_all_unavailable_paths_reenter_planning_after_cooldown() -> None:
+async def test_all_unavailable_paths_reenter_planning_after_cooldown(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FakeTime:
+        current = 1_000.0
+
+        def monotonic(self) -> float:
+            return self.current
+
+    clock = FakeTime()
+    monkeypatch.setattr(executor_module, "time", clock)
     router = SchemaRouter(unavailable_cooldown_seconds=0.01)
     for name, provider, access_mode in (
         ("provider_a_rest", "provider_a", "openapi"),
@@ -262,7 +273,7 @@ async def test_all_unavailable_paths_reenter_planning_after_cooldown() -> None:
         ("provider_b_optimade", "search"),
     }
 
-    await asyncio.sleep(0.02)
+    clock.current += 0.02
 
     recovered = router.plan(request)
     assert recovered.calls
