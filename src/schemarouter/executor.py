@@ -20,6 +20,7 @@ from .errors import (
     ExecutionBudgetExceededError,
     ExecutionError,
     ExecutionHookError,
+    PostInvocationHookError,
     InvocationUnavailableError,
     NonRetryableInvocationError,
     PlanValidationError,
@@ -829,15 +830,17 @@ class RegistryExecutor:
                     )
                 else:
                     tracker._check_elapsed(stage="after execution hook")
-            except (ExecutionHookError, ExecutionBudgetExceededError):
+            except PostInvocationHookError:
                 raise
             except Exception as exc:  # noqa: BLE001
-                raise ExecutionHookError(
-                    f"after execution hook failed for {call.tool}.{call.endpoint}"
+                raise PostInvocationHookError(
+                    f"after execution hook failed for {call.tool}.{call.endpoint}",
+                    result=result.model_copy(deep=True),
                 ) from exc
             if outcome is not None:
-                raise ExecutionHookError(
-                    "after execution hooks must return None"
+                raise PostInvocationHookError(
+                    "after execution hooks must return None",
+                    result=result.model_copy(deep=True),
                 )
 
     async def execute_call(
@@ -983,13 +986,22 @@ class RegistryExecutor:
                         endpoint,
                     ),
                 )
-                await self._run_after_hooks(tool, endpoint, call, result, tracker)
-                tracker.after_attempt()
                 self._mark_access_available_for_contract(
                     call.tool,
                     call.endpoint,
                     tool.fingerprint,
                 )
+                try:
+                    await self._run_after_hooks(tool, endpoint, call, result, tracker)
+                    tracker.after_attempt()
+                except PostInvocationHookError:
+                    raise
+                except ExecutionBudgetExceededError as exc:
+                    raise PostInvocationHookError(
+                        f"post-invocation processing exceeded budget for "
+                        f"{call.tool}.{call.endpoint}",
+                        result=result.model_copy(deep=True),
+                    ) from exc
                 return result
             except (
                 SchemaValidationError,
