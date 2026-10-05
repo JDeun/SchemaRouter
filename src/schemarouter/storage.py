@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import errno
+import os
 import sqlite3
+import tempfile
 from pathlib import Path
 from typing import Literal
 
@@ -455,6 +458,58 @@ def inspect_sqlite_storage(path: str | Path) -> StorageInspection:
             connection.close()
 
 
+def _reserve_backup_destination(target: Path) -> tuple[int, os.stat_result]:
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    flags |= getattr(os, "O_BINARY", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(target, flags, 0o600)
+    except FileExistsError as exc:
+        raise StorageFormatError(
+            f"backup destination already exists: {target}"
+        ) from exc
+    except OSError as exc:
+        if exc.errno in {errno.EEXIST, errno.ELOOP}:
+            raise StorageFormatError(
+                f"backup destination already exists or is unsafe: {target}"
+            ) from exc
+        raise StorageFormatError(
+            f"backup destination cannot be reserved safely: {target}"
+        ) from exc
+    return descriptor, os.fstat(descriptor)
+
+
+def _path_matches_reserved_destination(
+    target: Path,
+    reserved_stat: os.stat_result,
+) -> bool:
+    try:
+        current = os.stat(target, follow_symlinks=False)
+    except OSError:
+        return False
+    return os.path.samestat(current, reserved_stat)
+
+
+def _copy_backup_to_reserved_destination(
+    backup_path: Path,
+    descriptor: int,
+) -> None:
+    os.lseek(descriptor, 0, os.SEEK_SET)
+    os.ftruncate(descriptor, 0)
+    with backup_path.open("rb") as source_file:
+        while True:
+            chunk = source_file.read(1024 * 1024)
+            if not chunk:
+                break
+            view = memoryview(chunk)
+            while view:
+                written = os.write(descriptor, view)
+                if written <= 0:
+                    raise OSError("failed to write reserved backup destination")
+                view = view[written:]
+    os.fsync(descriptor)
+
+
 def backup_sqlite_storage(
     path: str | Path,
     destination: str | Path | None = None,
@@ -469,38 +524,73 @@ def backup_sqlite_storage(
     )
     if target.resolve() == source.resolve():
         raise StorageFormatError("backup destination must differ from source database")
-    if target.exists():
-        raise StorageFormatError(
-            f"backup destination already exists: {target}"
-        )
     if not target.parent.exists():
         raise StorageFormatError(
             f"backup destination directory does not exist: {target.parent}"
         )
 
+    target_descriptor, reserved_stat = _reserve_backup_destination(target)
     source_connection: sqlite3.Connection | None = None
-    target_connection: sqlite3.Connection | None = None
+    temporary_connection: sqlite3.Connection | None = None
+    temporary_path: Path | None = None
+    completed = False
     try:
+        temporary_descriptor, temporary_name = tempfile.mkstemp(
+            prefix=f".{target.name}.",
+            suffix=".schemarouter-backup.tmp",
+            dir=target.parent,
+        )
+        os.close(temporary_descriptor)
+        temporary_path = Path(temporary_name)
+
         source_connection = sqlite3.connect(
             f"file:{source.resolve().as_posix()}?mode=ro",
             uri=True,
         )
-        target_connection = sqlite3.connect(target)
-        source_connection.backup(target_connection)
-    except sqlite3.DatabaseError as exc:
-        if target.exists():
-            try:
-                target.unlink()
-            except OSError:
-                pass
+        temporary_connection = sqlite3.connect(temporary_path)
+        source_connection.backup(temporary_connection)
+        temporary_connection.close()
+        temporary_connection = None
+
+        _copy_backup_to_reserved_destination(
+            temporary_path,
+            target_descriptor,
+        )
+        if not _path_matches_reserved_destination(target, reserved_stat):
+            raise StorageFormatError(
+                "backup destination changed while the backup was being created"
+            )
+        completed = True
+    except StorageFormatError:
+        raise
+    except (sqlite3.DatabaseError, OSError) as exc:
         raise StorageFormatError(
             f"SQLite backup failed: {source} -> {target}"
         ) from exc
     finally:
-        if target_connection is not None:
-            target_connection.close()
+        if temporary_connection is not None:
+            temporary_connection.close()
         if source_connection is not None:
             source_connection.close()
+        if temporary_path is not None:
+            try:
+                temporary_path.unlink()
+            except FileNotFoundError:
+                pass
+            except OSError:
+                pass
+
+        try:
+            if (
+                not completed
+                and _path_matches_reserved_destination(target, reserved_stat)
+            ):
+                target.unlink()
+        except OSError:
+            pass
+        finally:
+            os.close(target_descriptor)
+
     return target
 
 
