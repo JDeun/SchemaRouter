@@ -754,6 +754,7 @@ __all__ = [
     "VectorStoreBackend",
     "UnitNormalizationSpec",
     "TraceError",
+    "TracePersistenceError",
     "UnsupportedSchemaSourceError",
     "schema_tool",
     "tool_from_callable",
