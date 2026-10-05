@@ -204,6 +204,83 @@ def test_failed_validation_keeps_predecessor_active() -> None:
     assert store.read() == before
 
 
+
+
+def test_reentrant_validator_cannot_overwrite_committed_successor() -> None:
+    holder: dict[str, CapabilitySnapshotStore] = {}
+    nested_publications = []
+    reentered = False
+
+    def validator(publication) -> None:
+        nonlocal reentered
+        store = holder.get("store")
+        if (
+            store is None
+            or publication.publication_revision <= 1
+            or reentered
+        ):
+            return
+
+        reentered = True
+        nested_publications.append(
+            store.compare_and_publish(
+                _contracts(),
+                sources=[_source("nested-source")],
+                expected_revision=1,
+            )
+        )
+
+    store = CapabilitySnapshotStore.from_contracts(
+        _contracts(),
+        validator=validator,
+    )
+    holder["store"] = store
+    before = store.read()
+
+    with pytest.raises(
+        CapabilityPublicationConflictError,
+        match="changed during validation",
+    ):
+        store.compare_and_publish(
+            _contracts(2),
+            expected_revision=before.publication_revision,
+        )
+
+    assert len(nested_publications) == 1
+    committed = nested_publications[0]
+    assert committed.publication_revision == 2
+    assert committed.snapshot.snapshot_id != before.snapshot.snapshot_id
+    assert store.read() == committed
+
+
+def test_validator_can_read_active_predecessor_during_validation() -> None:
+    holder: dict[str, CapabilitySnapshotStore] = {}
+    observed: list[tuple[int, str]] = []
+
+    def validator(publication) -> None:
+        store = holder.get("store")
+        if store is None or publication.publication_revision <= 1:
+            return
+        active = store.read()
+        observed.append(
+            (active.publication_revision, active.snapshot.snapshot_id)
+        )
+
+    store = CapabilitySnapshotStore.from_contracts(
+        _contracts(),
+        validator=validator,
+    )
+    holder["store"] = store
+    before = store.read()
+
+    published = store.compare_and_publish(_contracts(2))
+
+    assert observed == [
+        (before.publication_revision, before.snapshot.snapshot_id)
+    ]
+    assert store.read() == published
+
+
 def test_incremental_failure_falls_back_to_full_rebuild(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
