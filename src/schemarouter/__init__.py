@@ -296,6 +296,7 @@ from .errors import (
     ExecutionError,
     ExecutionHookError,
     ExecutionInvariantError,
+    IndeterminateInvocationError,
     InvocationUnavailableError,
     ModelAnalysisError,
     NonRetryableInvocationError,
