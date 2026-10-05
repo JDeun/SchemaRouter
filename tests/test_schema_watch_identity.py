@@ -342,6 +342,37 @@ async def test_trusted_local_amendment_makes_existing_watch_stale_contract() -> 
 
 
 @pytest.mark.asyncio
+async def test_direct_tool_replacement_clears_native_schema_refresh_state() -> None:
+    router = SchemaRouter()
+    original = _tool(
+        adapter="openapi",
+        source="https://source.example.test/openapi.json",
+    )
+    router.add_tool(original)
+
+    calls = 0
+
+    async def refresh() -> tuple[ToolSpec, Any, bool]:
+        nonlocal calls
+        calls += 1
+        return original, object(), False
+
+    router._remember_native_schema_refresh(original.key, refresh)
+    router._native_schema_pending[original.key] = (original, object(), False)  # type: ignore[arg-type]
+
+    replacement = original.model_copy(deep=True)
+    replacement.endpoints[0].description = "unvalidated replacement contract"
+    assert replacement.fingerprint != original.fingerprint
+
+    router.add_tool(replacement, replace=True)
+
+    assert original.key not in router._native_schema_refreshers
+    assert original.key not in router._native_schema_pending
+    assert await router.check_native_schema_watches_once() == ()
+    assert calls == 0
+
+
+@pytest.mark.asyncio
 async def test_same_source_credential_rotation_requires_watch_reregistration() -> None:
     registry = InMemoryRegistry()
     original = _tool(
