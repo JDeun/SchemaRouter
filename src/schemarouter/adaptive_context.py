@@ -118,3 +118,59 @@ class SessionSchemaExposure:
         state = cls(compaction_epoch=epoch)
         state._exposed.update(routes)
         return state
+
+
+def apply_success_prior(retrieval, history: SuccessfulCapabilityHistory, *, weight: float = 0.0):
+    """Return a re-ranked retrieval using successful-call history as a soft prior.
+
+    The input retrieval is assumed to have already passed normal visibility,
+    authorization and availability filtering. A zero weight is an exact no-op.
+    """
+    from .models import CapabilityRetrieval
+
+    if weight < 0:
+        raise ValueError("weight must be >= 0")
+    if weight == 0 or len(retrieval.candidates) < 2:
+        return retrieval
+
+    ranked = sorted(
+        retrieval.candidates,
+        key=lambda candidate: (
+            -(candidate.score + weight * history.count(candidate.tool, candidate.endpoint)),
+            candidate.rank,
+            candidate.route_id,
+        ),
+    )
+    return CapabilityRetrieval(
+        query=retrieval.query,
+        registry_version=retrieval.registry_version,
+        requested_k=retrieval.requested_k,
+        total_ranked=retrieval.total_ranked,
+        executable_only=retrieval.executable_only,
+        candidates=[
+            candidate.model_copy(update={"rank": rank})
+            for rank, candidate in enumerate(ranked, start=1)
+        ],
+    )
+
+
+def filter_unexposed_schemas(retrieval, exposure: SessionSchemaExposure):
+    """Return only schemas not already exposed in the current context epoch."""
+    from .models import CapabilityRetrieval
+
+    candidates = [
+        candidate
+        for candidate in retrieval.candidates
+        if exposure.decision(candidate.tool, candidate.endpoint).inject
+    ]
+    return CapabilityRetrieval(
+        query=retrieval.query,
+        registry_version=retrieval.registry_version,
+        requested_k=retrieval.requested_k,
+        total_ranked=retrieval.total_ranked,
+        executable_only=retrieval.executable_only,
+        candidates=[
+            candidate.model_copy(update={"rank": rank})
+            for rank, candidate in enumerate(candidates, start=1)
+        ],
+    )
