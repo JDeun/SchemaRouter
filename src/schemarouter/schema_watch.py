@@ -487,6 +487,7 @@ class SchemaWatchManager:
                         timeout=record.timeout_seconds,
                         _expected_fingerprint=record.tool_fingerprint,
                         _expected_source_identity=record.source_identity,
+                        _apply_guard=lambda: self._watch_commit_guard(tool_key, record),
                     ),
                     timeout=record.timeout_seconds,
                 )
