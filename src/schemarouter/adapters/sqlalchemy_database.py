@@ -18,6 +18,11 @@ from ..models import (
     ToolCall,
     ToolSpec,
 )
+from .discovery_limits import (
+    NativeDiscoveryBudget,
+    NativeDiscoveryLimits,
+    require_at_most,
+)
 
 _SELECT_ENDPOINT = "select"
 _MAX_LIMIT = 1000
@@ -172,6 +177,7 @@ def introspect_sqlalchemy_engine(
     include_views: bool = True,
     max_default_rows: int = 100,
     remote: bool = True,
+    discovery_limits: NativeDiscoveryLimits | None = None,
 ) -> tuple[SQLAlchemyTableBinding, ...]:
     """Compile a caller-owned SQLAlchemy Engine into typed read-only capabilities.
 
@@ -184,19 +190,39 @@ def introspect_sqlalchemy_engine(
     if max_default_rows < 1 or max_default_rows > _MAX_LIMIT:
         raise ValueError(f"max_default_rows must be between 1 and {_MAX_LIMIT}")
 
+    budget = NativeDiscoveryBudget(discovery_limits)
+    limits = budget.limits
     MetaData, Table, inspect, _ = _require_sqlalchemy()
     inspector = inspect(engine)
 
     selected_schemas = tuple(schemas) if schemas is not None else (None,)
     requested_tables = None if tables is None else {str(value) for value in tables}
+    if requested_tables is not None:
+        require_at_most(
+            len(requested_tables),
+            limit=limits.max_sources,
+            label="SQLAlchemy selected relation count",
+        )
     discovered_relations: list[tuple[str | None, str, str]] = []
 
     for schema in selected_schemas:
-        for table in inspector.get_table_names(schema=schema):
+        table_names = inspector.get_table_names(schema=schema)
+        for table in table_names:
             discovered_relations.append((schema, str(table), "table"))
+            require_at_most(
+                len(discovered_relations),
+                limit=limits.max_sources,
+                label="SQLAlchemy discovered relation count",
+            )
         if include_views:
-            for view in inspector.get_view_names(schema=schema):
+            view_names = inspector.get_view_names(schema=schema)
+            for view in view_names:
                 discovered_relations.append((schema, str(view), "view"))
+                require_at_most(
+                    len(discovered_relations),
+                    limit=limits.max_sources,
+                    label="SQLAlchemy discovered relation count",
+                )
 
     if requested_tables is not None:
         available = {
@@ -224,6 +250,11 @@ def introspect_sqlalchemy_engine(
             continue
 
         columns = inspector.get_columns(table_name, schema=schema)
+        require_at_most(
+            len(columns),
+            limit=limits.max_fields_per_source,
+            label=f"SQLAlchemy relation {qualified!r} column count",
+        )
         if not columns:
             continue
         primary_key = (
@@ -370,6 +401,7 @@ def introspect_sqlalchemy_engine(
             },
         )
 
+        budget.consume_source(tool, nested_items=len(fields))
         bindings.append(
             SQLAlchemyTableBinding(
                 tool=tool,
