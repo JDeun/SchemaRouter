@@ -12,6 +12,12 @@ from pydantic import Field, model_validator
 from ..authorization import _current_data_scope
 from ..errors import PolicyViolationError, RegistrationError, SchemaValidationError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, StrictModel, ToolCall, ToolSpec
+from .discovery_limits import (
+    NativeDiscoveryBudget,
+    NativeDiscoveryLimits,
+    bounded_collect,
+    require_at_most,
+)
 
 _TRAVERSE_ENDPOINT = "traverse"
 _MAX_HOPS = 5
@@ -302,6 +308,7 @@ async def introspect_graph_backend(
     default_max_hops: int = 1,
     remote: bool = True,
     offload_sync_backend: bool | None = None,
+    discovery_limits: NativeDiscoveryLimits | None = None,
 ) -> tuple[GraphSourceBinding, ...]:
     """Compile trusted graph/RDF schema descriptors into bounded traversal capabilities."""
 
@@ -312,15 +319,60 @@ async def introspect_graph_backend(
     if default_max_hops < 1 or default_max_hops > _MAX_HOPS:
         raise ValueError(f"default_max_hops must be between 1 and {_MAX_HOPS}")
 
+    budget = NativeDiscoveryBudget(discovery_limits)
+    limits = budget.limits
     offload_backend = remote if offload_sync_backend is None else offload_sync_backend
     discovered_raw = await _call_backend(
         backend.list_graphs,
         offload_sync=offload_backend,
     )
-    discovered = tuple(
-        value if isinstance(value, GraphSourceSpec) else GraphSourceSpec.model_validate(value)
-        for value in discovered_raw
+    discovered_items = bounded_collect(
+        discovered_raw,
+        limit=limits.max_sources,
+        label="graph source count",
     )
+    discovered_list: list[GraphSourceSpec] = []
+    for value in discovered_items:
+        graph = (
+            value
+            if isinstance(value, GraphSourceSpec)
+            else GraphSourceSpec.model_validate(value)
+        )
+        require_at_most(
+            len(graph.node_types),
+            limit=limits.max_node_types_per_source,
+            label=f"graph {graph.name!r} node type count",
+        )
+        require_at_most(
+            len(graph.relationship_types),
+            limit=limits.max_relationship_types_per_source,
+            label=f"graph {graph.name!r} relationship type count",
+        )
+        property_count = 0
+        for node in graph.node_types:
+            require_at_most(
+                len(node.properties),
+                limit=limits.max_properties_per_type,
+                label=f"graph node type {node.name!r} property count",
+            )
+            property_count += len(node.properties)
+        for relationship in graph.relationship_types:
+            require_at_most(
+                len(relationship.properties),
+                limit=limits.max_properties_per_type,
+                label=f"graph relationship {relationship.name!r} property count",
+            )
+            property_count += len(relationship.properties)
+        budget.consume_source(
+            graph,
+            nested_items=(
+                len(graph.node_types)
+                + len(graph.relationship_types)
+                + property_count
+            ),
+        )
+        discovered_list.append(graph)
+    discovered = tuple(discovered_list)
     names = [graph.name for graph in discovered]
     if len(names) != len(set(names)):
         raise RegistrationError("graph backend returned duplicate graph names")
