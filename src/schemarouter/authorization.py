@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from contextvars import ContextVar
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from fnmatch import fnmatchcase
 from typing import Any, Literal
 
@@ -314,6 +314,64 @@ class AuthorizationRule:
         )
 
 
+_GLOB_META = frozenset("*?[")
+
+
+def _literal_operation_root(pattern: str) -> str | None:
+    root = pattern.split(".", 1)[0]
+    if any(char in root for char in _GLOB_META):
+        return None
+    return root
+
+
+@dataclass(frozen=True)
+class _CompiledRuleIndex:
+    """Order-preserving partitions for first-match authorization rules."""
+
+    rules: tuple[Any, ...]
+    partitions: dict[
+        tuple[str | None, str | None, str | None],
+        tuple[int, ...],
+    ]
+
+    @classmethod
+    def build(cls, rules: tuple[Any, ...]) -> _CompiledRuleIndex:
+        pending: dict[
+            tuple[str | None, str | None, str | None],
+            list[int],
+        ] = {}
+        for index, rule in enumerate(rules):
+            key = (
+                rule.provider,
+                rule.access_mode,
+                _literal_operation_root(rule.operation),
+            )
+            pending.setdefault(key, []).append(index)
+        return cls(
+            rules=rules,
+            partitions={key: tuple(indexes) for key, indexes in pending.items()},
+        )
+
+    def candidates(
+        self,
+        *,
+        operation: str,
+        provider: str | None,
+        access_mode: str | None,
+    ) -> tuple[Any, ...]:
+        operation_root = operation.split(".", 1)[0]
+        keys = {
+            (provider_key, access_key, root_key)
+            for provider_key in (provider, None)
+            for access_key in (access_mode, None)
+            for root_key in (operation_root, None)
+        }
+        indexes: set[int] = set()
+        for key in keys:
+            indexes.update(self.partitions.get(key, ()))
+        return tuple(self.rules[index] for index in sorted(indexes))
+
+
 @dataclass(frozen=True)
 class AuthorizationDecision:
     effect: AuthorizationEffect
@@ -330,12 +388,30 @@ class AuthorizationPolicy:
     rules: tuple[AuthorizationRule, ...] = ()
     default_effect: AuthorizationEffect = "deny"
     data_rules: tuple[DataScopeRule, ...] = ()
+    _rule_index: _CompiledRuleIndex = field(
+        init=False,
+        repr=False,
+        compare=False,
+        hash=False,
+    )
+    _data_rule_index: _CompiledRuleIndex = field(
+        init=False,
+        repr=False,
+        compare=False,
+        hash=False,
+    )
 
     def __post_init__(self) -> None:
         if self.default_effect not in {"allow", "deny"}:
             raise ValueError("authorization default_effect must be allow or deny")
         object.__setattr__(self, "rules", tuple(self.rules))
         object.__setattr__(self, "data_rules", tuple(self.data_rules))
+        object.__setattr__(self, "_rule_index", _CompiledRuleIndex.build(self.rules))
+        object.__setattr__(
+            self,
+            "_data_rule_index",
+            _CompiledRuleIndex.build(self.data_rules),
+        )
 
     def evaluate(
         self,
@@ -352,7 +428,11 @@ class AuthorizationPolicy:
         rule = next(
             (
                 candidate
-                for candidate in self.rules
+                for candidate in self._rule_index.candidates(
+                    operation=operation,
+                    provider=tool.provider,
+                    access_mode=tool.access_mode,
+                )
                 if candidate.matches(principal, tool, endpoint, call)
             ),
             None,
@@ -407,7 +487,11 @@ class AuthorizationPolicy:
         rule = next(
             (
                 candidate
-                for candidate in self.data_rules
+                for candidate in self._data_rule_index.candidates(
+                    operation=operation,
+                    provider=tool.provider,
+                    access_mode=tool.access_mode,
+                )
                 if candidate.matches(principal, tool, endpoint)
             ),
             None,

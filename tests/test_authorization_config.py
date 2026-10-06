@@ -87,6 +87,57 @@ def test_lint_rejects_duplicate_and_unreachable_rules() -> None:
         parse_authorization_policy(data)
 
 
+def test_lint_reports_named_shadowed_and_duplicate_matchers() -> None:
+    data = example()
+    data["rules"] = [
+        {
+            "name": "company-allow",
+            "effect": "allow",
+            "operation": "company.*",
+        },
+        {
+            "name": "payroll-deny",
+            "effect": "deny",
+            "operation": "company.payroll.*",
+        },
+        {
+            "name": "company-duplicate",
+            "effect": "deny",
+            "operation": "company.*",
+        },
+    ]
+    data["data_rules"] = [
+        {
+            "name": "company-scope",
+            "operation": "company.*",
+            "visible_fields": ["id"],
+        },
+        {
+            "name": "payroll-scope",
+            "operation": "company.payroll.*",
+            "visible_fields": [],
+        },
+    ]
+
+    issues = lint_authorization_config(AuthorizationPolicyConfig.model_validate(data))
+
+    assert any(
+        "rules[1] ('payroll-deny') is shadowed by rules[0] ('company-allow')"
+        in issue
+        for issue in issues
+    )
+    assert any(
+        "rules[2] ('company-duplicate') duplicates match conditions of "
+        "rules[0] ('company-allow')" in issue
+        for issue in issues
+    )
+    assert any(
+        "data_rules[1] ('payroll-scope') is shadowed by "
+        "data_rules[0] ('company-scope')" in issue
+        for issue in issues
+    )
+
+
 def test_normalized_json_is_deterministic() -> None:
     rendered = normalized_authorization_json(example())
     assert rendered == normalized_authorization_json(json.loads(rendered))

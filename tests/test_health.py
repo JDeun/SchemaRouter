@@ -523,6 +523,100 @@ async def test_sync_health_probe_timeout_does_not_block_event_loop() -> None:
 
 
 @pytest.mark.asyncio
+async def test_timed_out_sync_health_probe_is_not_resubmitted_until_worker_exits() -> None:
+    router = _router(cooldown=60)
+    release = threading.Event()
+    started = threading.Event()
+    calls = 0
+
+    def probe() -> bool:
+        nonlocal calls
+        calls += 1
+        started.set()
+        release.wait(timeout=1)
+        return True
+
+    router.register_health_probe("provider_api", "read", probe)
+    try:
+        first = await router.check_health_once(
+            probe_timeout_seconds=0.02,
+            max_concurrency=1,
+        )
+        assert started.wait(timeout=0.2)
+        assert first[0].status == "unhealthy"
+        assert first[0].last_error_type == "TimeoutError"
+
+        for _ in range(5):
+            snapshots = await router.check_health_once(
+                probe_timeout_seconds=0.02,
+                max_concurrency=1,
+            )
+            assert snapshots[0].status == "unhealthy"
+
+        assert calls == 1
+    finally:
+        release.set()
+
+    for _ in range(50):
+        await router.check_health_once(
+            probe_timeout_seconds=0.2,
+            max_concurrency=1,
+        )
+        if calls >= 2:
+            break
+        await asyncio.sleep(0.01)
+
+    assert calls == 2
+    assert router.health_snapshots()[0].status == "healthy"
+
+
+@pytest.mark.asyncio
+async def test_late_sync_probe_completion_cannot_mutate_restamped_contract() -> None:
+    router = _router(cooldown=60)
+    release = threading.Event()
+    started = threading.Event()
+
+    def probe() -> bool:
+        started.set()
+        release.wait(timeout=1)
+        return False
+
+    router.register_health_probe("provider_api", "read", probe)
+    first = await router.check_health_once(
+        probe_timeout_seconds=0.02,
+        max_concurrency=1,
+    )
+    assert started.wait(timeout=0.2)
+    assert first[0].status == "unhealthy"
+
+    current = router.registry.get("provider_api")
+    updated = current.model_copy(deep=True)
+    updated.description = "new contract after timed-out sync probe"
+    router.registry.register(updated, replace=True)
+    router.health_monitor.transition_tool_contract(
+        current.key,
+        expected_old_fingerprint=current.fingerprint,
+        expected_new_fingerprint=updated.fingerprint,
+    )
+    assert router.health_snapshots()[0].status == "unknown"
+
+    during = await router.check_health_once(
+        probe_timeout_seconds=0.02,
+        max_concurrency=1,
+    )
+    assert during[0].status == "unknown"
+    assert during[0].last_error_type is None
+    assert router.unavailable_access_paths() == ()
+
+    release.set()
+    await asyncio.sleep(0.05)
+
+    snapshot = router.health_snapshots()[0]
+    assert snapshot.status == "unknown"
+    assert snapshot.last_error_type is None
+
+
+@pytest.mark.asyncio
 async def test_async_probe_can_reenter_lifecycle_guard_without_self_deadlock() -> None:
     router = _router(cooldown=60)
     entered_lifecycle = asyncio.Event()
