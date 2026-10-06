@@ -5,7 +5,8 @@ from typing import Any
 
 import pytest
 
-from schemarouter import SchemaRouter, VectorMetadataField
+from schemarouter import NativeDiscoveryLimits, SchemaRouter, VectorMetadataField
+from schemarouter.errors import RegistrationError
 from schemarouter.adapters.vector_native import (
     ChromaVectorBackend,
     MilvusVectorBackend,
@@ -96,6 +97,39 @@ class FakeQdrantClient:
                 )
             ]
         )
+
+
+def test_qdrant_selected_collections_skip_catalog_enumeration() -> None:
+    class ScopedClient(FakeQdrantClient):
+        def get_collections(self):
+            raise AssertionError("catalog enumeration should be skipped")
+
+    backend = QdrantVectorBackend(
+        ScopedClient(),
+        collections=("docs",),
+        discovery_limits=NativeDiscoveryLimits(max_sources=1),
+    )
+
+    collections = backend.list_collections()
+    assert [item.name for item in collections] == ["docs"]
+
+
+def test_qdrant_catalog_respects_source_budget_before_describing() -> None:
+    class OversizedClient(FakeQdrantClient):
+        def get_collections(self) -> _QdrantCollections:
+            return _QdrantCollections(
+                [_QdrantCollection("docs"), _QdrantCollection("archive")]
+            )
+
+        def get_collection(self, *, collection_name: str) -> _QdrantInfo:
+            raise AssertionError("oversized catalog must fail before per-source discovery")
+
+    backend = QdrantVectorBackend(
+        OversizedClient(),
+        discovery_limits=NativeDiscoveryLimits(max_sources=1),
+    )
+    with pytest.raises(RegistrationError, match="Qdrant collection count"):
+        backend.list_collections()
 
 
 def test_qdrant_adapter_discovers_schema_and_normalizes_query() -> None:
