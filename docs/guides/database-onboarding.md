@@ -103,6 +103,7 @@ limits = NativeDiscoveryLimits(
     max_properties_per_type=128,
     max_total_items=8_192,
     max_descriptor_bytes=4 * 1024 * 1024,
+    max_generated_bytes=4 * 1024 * 1024,
 )
 
 router = SchemaRouter()
