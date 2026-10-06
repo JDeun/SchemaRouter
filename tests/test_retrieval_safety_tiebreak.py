@@ -136,7 +136,7 @@ def test_safety_outranks_structural_specificity(monkeypatch):
     monkeypatch.setattr(
         router.planner,
         "_structural_specificity_by_route",
-        lambda: destructive_wins,
+        lambda *_args, **_kwargs: destructive_wins,
     )
     ids = _route_ids(router, UNMATCHED)
     assert ids[0] == "zz_reports.read_logs", (
