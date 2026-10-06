@@ -235,7 +235,14 @@ def test_pr_ci_uses_path_aware_tiers_without_renaming_required_gates() -> None:
     assert 'python-version: ["3.10", "3.12", "3.14"]' in workflow
     assert "name: test (3.11)" in workflow
     assert "name: test (3.13)" in workflow
-    assert "if: ${{ false }}" in workflow
+    assert "if: ${{ false }}" not in workflow
+    assert "Python 3.11 full qualification runs in python-compatibility.yml" in workflow
+    assert "Python 3.13 full qualification runs in python-compatibility.yml" in workflow
+    assert "Skip minimum-dependencies qualification when unaffected" in workflow
+    assert "Skip LangChain qualification when unaffected" in workflow
+    assert "Skip LlamaIndex qualification when unaffected" in workflow
+    assert "Skip MCP qualification when unaffected" in workflow
+    assert "Skip docs qualification when unaffected" in workflow
 
 
 def test_scheduled_python_compatibility_covers_all_supported_versions() -> None:
