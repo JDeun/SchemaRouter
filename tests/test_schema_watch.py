@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import threading
 from contextlib import contextmanager
 
 import httpx
@@ -175,6 +176,68 @@ async def test_remote_schema_refresh_rejects_concurrent_writer_before_commit(
         snapshots = await router.check_health_once()
         assert snapshots[0].status == "stale"
         assert snapshots[0].last_error_type == "ToolContractChanged"
+
+
+@pytest.mark.asyncio
+async def test_remote_schema_refresh_serializes_concurrent_probe_registration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    state = {"document": _document()}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=state["document"], request=request)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        tool = await router.add_url(
+            "https://example.test/openapi.json",
+            kind="openapi",
+            name="materials",
+        )
+        router.register_health_probe(tool.key, "materials_search", lambda: True)
+        state["document"] = _document(summary="Search materials")
+
+        prepare_entered = threading.Event()
+        register_started = threading.Event()
+        registration_done = threading.Event()
+        original_prepare = router._prepare_health_contract_transition
+
+        def pause_prepare(current: object, candidate: object) -> object:
+            transition = original_prepare(current, candidate)  # type: ignore[arg-type]
+            prepare_entered.set()
+            assert register_started.wait(timeout=1.0)
+            assert not registration_done.wait(timeout=0.05)
+            return transition
+
+        monkeypatch.setattr(
+            router,
+            "_prepare_health_contract_transition",
+            pause_prepare,
+        )
+
+        def register_during_refresh() -> None:
+            assert prepare_entered.wait(timeout=1.0)
+            register_started.set()
+            router.register_health_probe(
+                tool.key,
+                "materials_search",
+                lambda: True,
+            )
+            registration_done.set()
+
+        registration_thread = threading.Thread(target=register_during_refresh)
+        registration_thread.start()
+        try:
+            result = await router.arefresh_schema(tool.key)
+        finally:
+            registration_thread.join(timeout=1.0)
+
+        assert result.action == "applied"
+        assert registration_done.is_set()
+        assert not registration_thread.is_alive()
+        snapshots = await router.check_health_once()
+        assert len(snapshots) == 1
+        assert snapshots[0].status == "healthy"
 
 
 @pytest.mark.asyncio
