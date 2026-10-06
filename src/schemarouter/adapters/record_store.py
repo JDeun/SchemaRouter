@@ -240,6 +240,8 @@ async def introspect_record_backend(
         raise ValueError("max_fields_per_source must be positive")
 
     selected = None if sources is None else {str(value) for value in sources}
+    if selected == set():
+        return ()
     offload_backend = remote if offload_sync_backend is None else offload_sync_backend
     discovered_raw = await _call_backend(
         backend.list_sources,
@@ -287,6 +289,8 @@ async def introspect_record_backend(
                 f"limit is {max_fields_per_source}"
             )
         discovered.append(source)
+        if selected is not None and selected.issubset(seen_names):
+            break
 
     if selected is not None:
         missing = sorted(selected - seen_names)
