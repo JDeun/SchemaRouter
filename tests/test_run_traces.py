@@ -1,4 +1,5 @@
 import sqlite3
+from contextlib import aclosing
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -368,3 +369,25 @@ def test_trace_store_delete_and_closed_state(tmp_path) -> None:
     store.close()
     with pytest.raises(RuntimeError, match="closed"):
         store.run_ids()
+
+
+@pytest.mark.asyncio
+async def test_record_run_events_closes_upstream_on_early_consumer_exit(tmp_path) -> None:
+    upstream_closed = False
+
+    async def source():
+        nonlocal upstream_closed
+        try:
+            yield event("run-early", 0, "run.start")
+            yield event("run-early", 1, "run.end", seconds=1)
+        finally:
+            upstream_closed = True
+
+    with SQLiteRunTraceStore(tmp_path / "traces.sqlite3") as store:
+        async with aclosing(record_run_events(source(), store=store)) as stream:
+            async for item in stream:
+                assert item.sequence == 0
+                break
+
+        assert upstream_closed is True
+        assert store.trace("run-early").complete is False
