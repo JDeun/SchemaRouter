@@ -13,8 +13,8 @@ from schemarouter import (
     PrincipalContext,
     RunConfig,
     SchemaRouter,
-    StaleExportedToolError,
     SchemaValidationError,
+    StaleExportedToolError,
     TrustedFilterBinding,
     schema_tool,
 )
@@ -270,10 +270,13 @@ def test_langchain_authorization_audit_correlates_export_and_execution() -> None
 
         result = tool.invoke({"limit": 10})
         assert result == [{"id": 1, "name": "Alice"}]
-        assert len(events) == 2
-        assert events[1].phase == "execution"
-        assert events[1].run_id == export_run_id
-        assert events[1].principal_audit_id == "opaque-langchain-principal"
+        assert len(events) == 3
+        assert [event.phase for event in events[1:]] == ["export", "execution"]
+        assert all(event.run_id == export_run_id for event in events[1:])
+        assert all(
+            event.principal_audit_id == "opaque-langchain-principal"
+            for event in events[1:]
+        )
         assert "sales" not in repr(events)
     finally:
         connection.close()
@@ -294,6 +297,9 @@ def test_langchain_export_fails_clearly_after_endpoint_schema_replacement() -> N
 
     with pytest.raises(StaleExportedToolError, match="re-export"):
         exported.invoke({"a": 2, "b": 3})
+
+    refreshed = to_langchain_tool(router, "add", "call")
+    assert refreshed.invoke({"a": 2, "b": 3}) == 5
 
 
 def test_langchain_export_fails_clearly_after_data_scope_narrows() -> None:
@@ -325,6 +331,18 @@ def test_langchain_export_fails_clearly_after_data_scope_narrows() -> None:
 
         with pytest.raises(StaleExportedToolError, match="re-export"):
             exported.invoke({"limit": 10})
+
+        refreshed = to_langchain_tool(
+            router,
+            "company.employees",
+            "select",
+            run_config=RunConfig(principal=principal),
+        )
+        result = refreshed.invoke({"limit": 10})
+        assert result == [
+            {"id": 1, "name": "Alice"},
+            {"id": 2, "name": "Bob"},
+        ]
     finally:
         connection.close()
 
