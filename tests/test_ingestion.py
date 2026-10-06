@@ -567,6 +567,42 @@ async def test_openapi_yaml_rejects_logical_alias_expansion_budget() -> None:
 
 
 @pytest.mark.asyncio
+async def test_openapi_yaml_rejects_excessive_nesting_before_construction() -> None:
+    nested = "leaf: value"
+    for _ in range(70):
+        nested = "child:\n" + "\n".join(
+            f"  {line}" for line in nested.splitlines()
+        )
+    yaml_body = (
+        "openapi: 3.1.0\n"
+        "info:\n"
+        "  title: Deep YAML\n"
+        "paths: {}\n"
+        "x-deep:\n"
+        + "\n".join(f"  {line}" for line in nested.splitlines())
+        + "\n"
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            text=yaml_body,
+            headers={"content-type": "application/yaml"},
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(
+            UnsupportedSchemaSourceError,
+            match="nesting depth exceeds 64",
+        ):
+            await router.add_url(
+                "https://docs.example.com/deep.yaml",
+                kind="openapi",
+            )
+
+
+@pytest.mark.asyncio
 async def test_openapi_yaml_rejects_cyclic_alias_graph_before_construction() -> None:
     yaml_body = """
 openapi: 3.1.0
