@@ -12,11 +12,13 @@ from pydantic import Field, model_validator
 from ..authorization import _current_data_scope
 from ..errors import PolicyViolationError, RegistrationError, SchemaValidationError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, StrictModel, ToolCall, ToolSpec
+from .discovery_limits import NativeDiscoveryBudget, NativeDiscoveryLimits
 
 _QUERY_ENDPOINT = "query"
 _MAX_LIMIT = 1000
 _MAX_DISCOVERY_SOURCES = 128
 _MAX_FIELDS_PER_SOURCE = 256
+_MAX_GENERATED_BYTES = 8 * 1024 * 1024
 _RESERVED_ARGUMENTS = {"query", "limit", "start_time", "end_time"}
 
 RecordModel = Literal["document", "search", "key_value", "time_series"]
@@ -227,6 +229,7 @@ async def introspect_record_backend(
     offload_sync_backend: bool | None = None,
     max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
     max_fields_per_source: int = _MAX_FIELDS_PER_SOURCE,
+    max_generated_bytes: int = _MAX_GENERATED_BYTES,
 ) -> tuple[RecordSourceBinding, ...]:
     """Compile non-relational source descriptors into typed bounded query capabilities."""
 
@@ -238,6 +241,8 @@ async def introspect_record_backend(
         raise ValueError("max_discovery_sources must be positive")
     if max_fields_per_source < 1:
         raise ValueError("max_fields_per_source must be positive")
+    if max_generated_bytes < 1:
+        raise ValueError("max_generated_bytes must be positive")
 
     selected = None if sources is None else {str(value) for value in sources}
     if selected == set():
@@ -297,6 +302,9 @@ async def introspect_record_backend(
         if missing:
             raise RegistrationError("unknown record-store sources: " + ", ".join(missing))
 
+    budget = NativeDiscoveryBudget(
+        NativeDiscoveryLimits(max_generated_bytes=max_generated_bytes)
+    )
     bindings: list[RecordSourceBinding] = []
     used_names: set[str] = set()
 
@@ -437,6 +445,7 @@ async def introspect_record_backend(
                 "source": source.name,
             },
         )
+        budget.consume_generated(tool)
         bindings.append(
             RecordSourceBinding(
                 tool=tool,
