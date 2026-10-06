@@ -7,6 +7,7 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     ParameterSpec,
+    PersistedDocumentLimits,
     PlanRequest,
     RegistrationError,
     SchemaRouter,
@@ -159,6 +160,32 @@ def test_sqlite_registry_corrupt_document_fails_closed(tmp_path) -> None:
     with SQLiteRegistry(path) as reopened:
         with pytest.raises(RegistrationError, match="not a valid ToolSpec"):
             reopened.get("alpha")
+
+
+def test_sqlite_registry_bounds_persisted_document_bytes_on_write_and_read(
+    tmp_path,
+) -> None:
+    write_path = tmp_path / "bounded-write.sqlite3"
+    tiny = PersistedDocumentLimits(
+        max_bytes=64,
+        max_depth=128,
+        max_nodes=100_000,
+    )
+    with SQLiteRegistry(write_path, document_limits=tiny) as registry:
+        with pytest.raises(RegistrationError, match="safety limits"):
+            registry.register(tool("alpha"))
+        assert registry.version == 0
+
+    read_path = tmp_path / "bounded-read.sqlite3"
+    with SQLiteRegistry(read_path) as registry:
+        registry.register(tool("alpha"))
+
+    with SQLiteRegistry(read_path, document_limits=tiny) as reopened:
+        with pytest.raises(RegistrationError, match="persistent document limits"):
+            reopened.get("alpha")
+
+    with SQLiteRegistry(read_path) as reopened:
+        assert reopened.get("alpha").name == "alpha"
 
 
 def test_sqlite_registry_key_mismatch_fails_closed(tmp_path) -> None:
