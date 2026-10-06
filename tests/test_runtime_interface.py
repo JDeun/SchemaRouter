@@ -213,6 +213,66 @@ def test_stream_yields_tool_results_synchronously() -> None:
     assert results[0].endpoint == "current"
 
 
+def test_sync_stream_preserves_iteration_error_when_aclose_also_fails() -> None:
+    class FailingIterator:
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            raise ValueError("primary iteration failure")
+
+        async def aclose(self) -> None:
+            raise RuntimeError("cleanup failure")
+
+    with pytest.raises(ValueError, match="primary iteration failure") as exc_info:
+        list(runtime_module._stream_sync(FailingIterator))
+
+    cleanup_error = getattr(
+        exc_info.value,
+        "_schemarouter_cleanup_error",
+        None,
+    )
+    assert isinstance(cleanup_error, RuntimeError)
+    assert str(cleanup_error) == "cleanup failure"
+
+
+def test_sync_stream_surfaces_aclose_failure_after_normal_completion() -> None:
+    class CleanupFailingIterator:
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            raise StopAsyncIteration
+
+        async def aclose(self) -> None:
+            raise RuntimeError("cleanup failure")
+
+    with pytest.raises(RuntimeError, match="cleanup failure"):
+        list(runtime_module._stream_sync(CleanupFailingIterator))
+
+
+def test_sync_stream_close_does_not_turn_cleanup_failure_into_close_failure() -> None:
+    class YieldThenCleanupFailure:
+        def __init__(self) -> None:
+            self.yielded = False
+
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            if self.yielded:
+                raise StopAsyncIteration
+            self.yielded = True
+            return "value"
+
+        async def aclose(self) -> None:
+            raise RuntimeError("cleanup failure")
+
+    stream = runtime_module._stream_sync(YieldThenCleanupFailure)
+    assert next(stream) == "value"
+    stream.close()
+
+
 @pytest.mark.asyncio
 async def test_astream_events_are_typed_ordered_and_redacted_by_default() -> None:
     router = make_router()
