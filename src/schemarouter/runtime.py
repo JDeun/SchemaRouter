@@ -1245,27 +1245,38 @@ class SchemaRouter:
             raise RegistrationError(
                 "atomic bound batch registration requires version-guarded batch rollback"
             )
+
+        staged_keys = tuple(binding.tool.key for binding in staged)
+        self.executor.ensure_tool_runtime_state_empty(staged_keys)
+
         keys = update_many_if_current(
             self.registry,
             (binding.tool for binding in staged),
             expected_version=expected_version,
         )
         published_version = expected_version + 1
+        published_generations: dict[str, int] = {}
         try:
             for key, binding in zip(keys, staged, strict=True):
-                self.executor.bind(
+                published_generations[key] = self.executor.bind(
                     key,
                     binding.invoker,
                     expected_fingerprint=binding.tool.fingerprint,
                     offload_sync=offload_sync,
+                    require_empty_runtime_state=True,
                 )
             if self.registry.version != published_version:
                 raise BindingDriftError(
                     "registry changed concurrently while publishing a bound tool batch"
                 )
-        except Exception:
-            for key in keys:
-                self.executor.purge_tool_runtime_state(key)
+        except Exception as exc:
+            runtime_rollback_conflict = False
+            for key, generation in published_generations.items():
+                if not self.executor._remove_binding_if_generation(key, generation):
+                    runtime_rollback_conflict = True
+                    continue
+                if self.executor.has_tool_runtime_state(key):
+                    runtime_rollback_conflict = True
             try:
                 rollback(
                     {
@@ -1276,9 +1287,14 @@ class SchemaRouter:
                 )
             except Exception as rollback_exc:
                 raise BindingDriftError(
-                    "bound tool batch failed and rollback could not be completed "
+                    "bound tool batch failed and registry rollback could not be completed "
                     "without overwriting concurrent state"
                 ) from rollback_exc
+            if runtime_rollback_conflict:
+                raise BindingDriftError(
+                    "bound tool batch failed and executor rollback detected newer "
+                    "runtime state; concurrent state was preserved"
+                ) from exc
             raise
         return keys
 

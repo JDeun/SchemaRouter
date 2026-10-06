@@ -5,7 +5,7 @@ import inspect
 import math
 import threading
 import time
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
 from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Protocol, cast
@@ -283,6 +283,40 @@ class RegistryExecutor:
                 generation=self._binding_generations.get(tool_key),
             )
 
+
+    def _has_tool_runtime_state_locked(self, tool_key: str) -> bool:
+        if (
+            tool_key in self._invokers
+            or tool_key in self._binding_fingerprints
+            or tool_key in self._binding_offload_sync
+            or tool_key in self._binding_generations
+        ):
+            return True
+        return any(key[0] == tool_key for key in self._unavailable_until)
+
+    def has_tool_runtime_state(self, tool_key: str) -> bool:
+        """Return whether any binding or availability state exists for one tool key."""
+
+        with self._runtime_state_lock:
+            return self._has_tool_runtime_state_locked(tool_key)
+
+    def ensure_tool_runtime_state_empty(self, tool_keys: Iterable[str]) -> None:
+        """Fail before publication if a staged key already owns executor runtime state."""
+
+        staged = tuple(dict.fromkeys(str(key) for key in tool_keys))
+        with self._runtime_state_lock:
+            conflicts = [
+                key
+                for key in staged
+                if self._has_tool_runtime_state_locked(key)
+            ]
+        if conflicts:
+            joined = ", ".join(repr(key) for key in conflicts)
+            raise RegistrationError(
+                "atomic bound batch registration requires empty pre-existing "
+                f"runtime state for staged keys: {joined}"
+            )
+
     def _store_binding(
         self,
         tool_key: str,
@@ -553,6 +587,7 @@ class RegistryExecutor:
         *,
         expected_fingerprint: str | None = None,
         offload_sync: bool = False,
+        require_empty_runtime_state: bool = False,
     ) -> int:
         """Bind an invoker, optionally pinned to the exact contract it was built for.
 
@@ -562,6 +597,8 @@ class RegistryExecutor:
         """
         if not isinstance(offload_sync, bool):
             raise TypeError("offload_sync must be a bool")
+        if not isinstance(require_empty_runtime_state, bool):
+            raise TypeError("require_empty_runtime_state must be a bool")
         tool = self.registry.get(tool_key)
         if (
             expected_fingerprint is not None
@@ -572,12 +609,27 @@ class RegistryExecutor:
                 f"{expected_fingerprint!r}, found {tool.fingerprint!r}"
             )
         fingerprint = expected_fingerprint or tool.fingerprint
-        return self._store_binding(
-            tool_key,
-            invoker,
-            fingerprint,
-            offload_sync,
-        )
+        if not require_empty_runtime_state:
+            return self._store_binding(
+                tool_key,
+                invoker,
+                fingerprint,
+                offload_sync,
+            )
+
+        with self._runtime_state_lock:
+            if self._has_tool_runtime_state_locked(tool_key):
+                raise RegistrationError(
+                    "atomic bound batch registration encountered concurrent "
+                    f"runtime state for staged key {tool_key!r}"
+                )
+            self._binding_generation += 1
+            generation = self._binding_generation
+            self._invokers[tool_key] = invoker
+            self._binding_fingerprints[tool_key] = fingerprint
+            self._binding_offload_sync[tool_key] = offload_sync
+            self._binding_generations[tool_key] = generation
+            return generation
 
     def publish_bound_tool(
         self,
