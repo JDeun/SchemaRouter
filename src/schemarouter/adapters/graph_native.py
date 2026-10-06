@@ -13,7 +13,24 @@ from .graph_store import (
     GraphSourceSpec,
 )
 
-_MAX_SCHEMA_ITEMS = 1000
+_MAX_SCHEMA_ITEMS = 256
+_MAX_DISCOVERY_SOURCES = 128
+
+
+def _bounded_values(
+    values: Any,
+    *,
+    limit: int,
+    label: str,
+) -> tuple[Any, ...]:
+    if limit < 1:
+        raise ValueError(f"{label} limit must be positive")
+    result: list[Any] = []
+    for index, value in enumerate(values):
+        if index >= limit:
+            raise RegistrationError(f"{label} exceeded limit={limit}")
+        result.append(value)
+    return tuple(result)
 
 
 def _as_mapping(value: Any) -> Mapping[str, Any]:
@@ -106,12 +123,16 @@ class Neo4jGraphBackend:
         *,
         database: str,
         graph_name: str | None = None,
+        max_schema_items: int = _MAX_SCHEMA_ITEMS,
     ) -> None:
         if not database.strip():
             raise ValueError("Neo4j database must be non-empty")
+        if max_schema_items < 1:
+            raise ValueError("Neo4j max_schema_items must be positive")
         self._driver = driver
         self._database = database
         self._graph_name = graph_name or database
+        self._max_schema_items = max_schema_items
         self._relationships: tuple[str, ...] | None = None
 
     def _execute(
@@ -125,21 +146,32 @@ class Neo4jGraphBackend:
         return _normalize_neo4j_result(self._driver.execute_query(query, **kwargs))
 
     def list_graphs(self) -> tuple[GraphSourceSpec, ...]:
+        schema_limit = self._max_schema_items + 1
         label_rows = self._execute(
-            "CALL db.labels() YIELD label RETURN label ORDER BY label"
+            "CALL db.labels() YIELD label RETURN label ORDER BY label "
+            f"LIMIT {schema_limit}"
         )
         relationship_rows = self._execute(
             "CALL db.relationshipTypes() YIELD relationshipType "
-            "RETURN relationshipType ORDER BY relationshipType"
+            "RETURN relationshipType ORDER BY relationshipType "
+            f"LIMIT {schema_limit}"
         )
+        if len(label_rows) > self._max_schema_items:
+            raise RegistrationError(
+                f"Neo4j labels exceeded limit={self._max_schema_items}"
+            )
+        if len(relationship_rows) > self._max_schema_items:
+            raise RegistrationError(
+                f"Neo4j relationship types exceeded limit={self._max_schema_items}"
+            )
         labels = tuple(
             str(row["label"])
-            for row in label_rows[:_MAX_SCHEMA_ITEMS]
+            for row in label_rows
             if row.get("label")
         )
         relationships = tuple(
             str(row["relationshipType"])
-            for row in relationship_rows[:_MAX_SCHEMA_ITEMS]
+            for row in relationship_rows
             if row.get("relationshipType")
         )
         self._relationships = relationships
