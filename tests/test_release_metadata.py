@@ -135,6 +135,30 @@ def test_release_workflow_keeps_trusted_publishing_top_level_and_isolates_build(
 
 
 
+def test_compatibility_prs_block_on_reference_checks_not_public_services() -> None:
+    workflow = (
+        ROOT / ".github" / "workflows" / "compatibility.yml"
+    ).read_text(encoding="utf-8")
+
+    for job in (
+        "public-openapi",
+        "public-optimade",
+        "public-materials-project-provider",
+        "public-crossref-provider",
+        "public-tavily-provider",
+        "published-pypi",
+        "published-pypi-lightweight",
+        "published-pypi-integrations",
+    ):
+        assert f"  {job}:\n    if: github.event_name != 'pull_request'" in workflow
+
+    assert "run_required scripts/live_reference_openrpc_smoke.py" in workflow
+    assert "run_required scripts/live_reference_mcp_smoke.py" in workflow
+    assert "run_required scripts/live_reference_graphql_smoke.py" in workflow
+    assert 'IS_PULL_REQUEST: ${{ github.event_name == \'pull_request\' }}' in workflow
+    assert "external compatibility smoke failed" in workflow
+
+
 def test_external_package_smokes_cover_lightweight_integration_extras() -> None:
     compatibility = (
         ROOT / ".github" / "workflows" / "compatibility.yml"
