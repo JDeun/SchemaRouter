@@ -17,6 +17,7 @@ from ..models import (
     ToolCall,
     ToolSpec,
 )
+from .discovery_limits import NativeDiscoveryBudget, NativeDiscoveryLimits, require_at_most
 
 _SELECT_ENDPOINT = "select"
 _MAX_LIMIT = 1000
