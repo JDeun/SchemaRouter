@@ -101,13 +101,18 @@ def _exposed_contract(tool: dict[str, Any], score: float) -> dict[str, Any]:
 def run(
     *,
     package_dir: Path,
-    repeats: int,
+    repeats: int | None,
     implementation_revision: str | None = None,
 ) -> dict[str, Any]:
+    manifest = _load(package_dir / "manifest.json")
+    repeats = (
+        int(manifest["comparison"]["latency_repeats"])
+        if repeats is None
+        else repeats
+    )
     if repeats < 1:
         raise ValueError("repeats must be positive")
 
-    manifest = _load(package_dir / "manifest.json")
     cases = _load(package_dir / manifest["files"]["cases"])
     snapshot = _load(package_dir / manifest["files"]["smartmcp_snapshot"])
     top_k = int(manifest["comparison"]["max_candidates"])
@@ -177,7 +182,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--package-dir", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--repeats", type=int, default=20)
+    parser.add_argument(
+        "--repeats",
+        type=int,
+        help="Override the shared fixture latency repeat count.",
+    )
     parser.add_argument(
         "--implementation-revision",
         help=(
