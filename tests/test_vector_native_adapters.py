@@ -754,3 +754,33 @@ def test_milvus_field_budget_rejects_wide_descriptor() -> None:
 
     with pytest.raises(RegistrationError, match="Milvus fields"):
         backend.list_collections()
+
+def test_router_qdrant_selection_pushes_down_before_catalog_listing() -> None:
+    class SelectedClient(FakeQdrantClient):
+        def get_collections(self):
+            raise AssertionError("router selection should bypass Qdrant catalog listing")
+
+    router = SchemaRouter()
+    keys = router.add_qdrant_vector_store(
+        SelectedClient(),
+        lambda _query: [0.1, 0.2, 0.3],
+        collections={"docs"},
+        remote=False,
+    )
+
+    assert keys == ("qdrant.docs",)
+
+
+def test_router_milvus_discovery_budget_reaches_native_backend() -> None:
+    router = SchemaRouter()
+
+    with pytest.raises(RegistrationError, match="Milvus fields"):
+        router.add_milvus_vector_store(
+            FakeMilvusClient(),
+            lambda _query: [0.1, 0.2, 0.3],
+            max_fields_per_collection=1,
+            remote=False,
+        )
+
+    assert router.registry.keys() == ()
+
