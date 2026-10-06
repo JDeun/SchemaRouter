@@ -385,7 +385,7 @@ async def test_payload_trace_redacts_credentials_before_sqlite_persistence(tmp_p
                 config=RunConfig(
                     run_id="redacted-success",
                     include_payloads=True,
-                    metadata={"api_key": secret, "safe": "visible"},
+                    trace_metadata={"api_key": secret, "safe": "visible"},
                 ),
                 trace_store=store,
             )
@@ -395,8 +395,11 @@ async def test_payload_trace_redacts_credentials_before_sqlite_persistence(tmp_p
     serialized = "\n".join(event.model_dump_json() for event in trace.events)
     assert secret not in serialized
     assert "[REDACTED]" in serialized
-    assert all(event.metadata["api_key"] == "[REDACTED]" for event in events)
-    assert all(event.metadata["safe"] == "visible" for event in events)
+    assert events[0].metadata == {
+        "api_key": "[REDACTED]",
+        "safe": "visible",
+    }
+    assert all(not event.metadata for event in events[1:])
 
     tool_start = next(event for event in trace.events if event.event == "tool.start")
     tool_end = next(event for event in trace.events if event.event == "tool.end")
@@ -461,7 +464,7 @@ async def test_raw_trace_payloads_require_explicit_escape_hatch(tmp_path) -> Non
                     run_id="raw-debug",
                     include_payloads=True,
                     raw_trace_payloads=True,
-                    metadata={"api_key": secret},
+                    trace_metadata={"api_key": secret},
                 ),
                 trace_store=store,
             )
@@ -471,6 +474,60 @@ async def test_raw_trace_payloads_require_explicit_escape_hatch(tmp_path) -> Non
     serialized = "\n".join(event.model_dump_json() for event in trace.events)
     assert secret in serialized
     assert events[0].metadata["api_key"] == secret
+    assert all(not event.metadata for event in events[1:])
+
+
+@pytest.mark.parametrize("include_payloads", [False, True])
+@pytest.mark.asyncio
+async def test_process_local_metadata_is_never_emitted_or_persisted_by_default(
+    tmp_path,
+    include_payloads: bool,
+) -> None:
+    secret = "process-local-secret"
+    router = make_router()
+
+    with SQLiteRunTraceStore(tmp_path / f"local-{include_payloads}.sqlite3") as store:
+        events = [
+            item
+            async for item in router.astream_events(
+                PlanRequest(
+                    query="city temperature",
+                    arguments={"city": "Seoul"},
+                ),
+                config=RunConfig(
+                    run_id=f"local-{include_payloads}",
+                    include_payloads=include_payloads,
+                    metadata={
+                        "api_key": secret,
+                        "tenant_internal": "tenant-42",
+                    },
+                ),
+                trace_store=store,
+            )
+        ]
+        trace = store.trace(f"local-{include_payloads}")
+
+    assert all(not event.metadata for event in events)
+    serialized = "\n".join(event.model_dump_json() for event in trace.events)
+    assert secret not in serialized
+    assert "tenant-42" not in serialized
+
+
+def test_legacy_run_event_metadata_remains_replayable(tmp_path) -> None:
+    run_id = "legacy-metadata"
+    legacy = RunEvent(
+        event="run.start",
+        run_id=run_id,
+        sequence=0,
+        timestamp=datetime.now(timezone.utc),
+        metadata={"legacy": "preserved"},
+    )
+
+    with SQLiteRunTraceStore(tmp_path / "legacy-metadata.sqlite3") as store:
+        store.append(legacy)
+        replayed = store.trace(run_id)
+
+    assert replayed.events[0].metadata == {"legacy": "preserved"}
 
 
 @pytest.mark.asyncio
