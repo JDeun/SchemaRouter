@@ -133,6 +133,16 @@ data
 Array-of-object도 record alignment를 보존하는 `*` path를 사용합니다. Payload sample을 보고
 임의 wildcard field를 추론하지 않습니다.
 
+## YAML parser 자원 상한
+
+원격 OpenAPI YAML은 객체를 생성하기 전에 보수적인 parser budget을 검사합니다.
+기본 상한은 **alias 64개**, **anchor 64개**, **파싱 노드 50,000개**, **중첩 깊이 64단계**이며,
+기존 **5 MiB** schema document byte 상한과 함께 적용됩니다. 순환 YAML container graph는
+OpenAPI 정규화나 ToolSpec 컴파일에 들어가기 전에 post-parse 구조 복잡도 검사에서
+fail-closed 됩니다.
+
+일반적인 anchor/alias 사용은 이 상한 안에서 계속 지원하며 JSON ingestion 동작은 바뀌지 않습니다.
+
 ## Runtime response bound
 
 OpenAPI runtime response는 기본 **16 MiB** 상한을 적용한 뒤 decode합니다. 서버가
