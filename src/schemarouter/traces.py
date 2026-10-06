@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import sqlite3
 from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
@@ -545,6 +546,31 @@ class SQLiteRunTraceStore:
         self.close()
 
 
+async def append_run_event_async(
+    store: RunTraceStore,
+    event: RunEvent,
+) -> None:
+    """Append one event without running a synchronous trace sink on the event loop.
+
+    The synchronous append is serialized by the store's own contract. The offloaded
+    call is shielded from task cancellation and awaited to completion before
+    cancellation propagates, preventing a detached SQLite write from outliving the
+    async persistence boundary.
+    """
+
+    append_task = asyncio.create_task(
+        asyncio.to_thread(store.append, event)
+    )
+    try:
+        await asyncio.shield(append_task)
+    except asyncio.CancelledError:
+        try:
+            await append_task
+        except Exception:
+            pass
+        raise
+
+
 async def record_run_events(
     events: AsyncIterator[RunEvent],
     *,
@@ -552,7 +578,7 @@ async def record_run_events(
 ) -> AsyncIterator[RunEvent]:
     """Persist an event stream before yielding each event to downstream consumers."""
     async for event in events:
-        store.append(event)
+        await append_run_event_async(store, event)
         yield event
 
 
