@@ -297,7 +297,7 @@ from .decisions import (
 )
 from .errors import (
     ApprovalDeniedError,
-    AuthorizationAuditDeliveryError,
+    AuthorizationAuditDeliveryError as AuthorizationAuditDeliveryError,
     BindingDriftError,
     ContractAmendmentError,
     ExecutionBudgetExceededError,
