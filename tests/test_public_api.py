@@ -231,6 +231,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "StorageMigrationRecord",
         "StorageMigrationResult",
         "StorageStatus",
+        "PersistedDocumentLimits",
         "CURRENT_STORAGE_FORMAT_VERSION",
         "CURRENT_REGISTRY_DOCUMENT_VERSION",
         "CURRENT_TRACE_DOCUMENT_VERSION",
