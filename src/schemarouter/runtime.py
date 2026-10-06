@@ -127,6 +127,8 @@ from .source_identity import (
 from .state_retrieval import (
     StateAwareCapabilityRetrieval,
     StateConditionedCapabilityRetrieval,
+    backfill_ranked_candidates_by_state,
+    filter_retrieval_by_state,
 )
 from .trace_redaction import TraceRedactor
 from .traces import RunTraceStore, append_run_event_async
@@ -4803,6 +4805,12 @@ class SchemaRouter:
         with _principal_execution_context(principal):
             return await self.aretrieve(request, k=k)
 
+    def _state_aware_full_retrieval_k(self, requested_k: int) -> int:
+        """Materialize the complete currently visible ranking for state backfill."""
+
+        route_count = sum(len(tool.endpoints) for tool in self.registry.tools())
+        return max(requested_k, route_count)
+
     def reretrieve_state_aware(
         self,
         request: PlanRequest | str,
@@ -4812,17 +4820,20 @@ class SchemaRouter:
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
     ) -> StateConditionedCapabilityRetrieval:
-        """Backfill to state-eligible capabilities under active authorization."""
+        """Backfill over the same authorization-scoped surface as normal retrieval."""
 
-        return self.planner.reretrieve_state_aware(
+        retrieval = self.retrieve(
             request,
-            execution_state=execution_state,
-            k=k,
-            state_requirements=state_requirements,
-            state_preconditions=state_preconditions,
-            additional_availability_predicate=self._authorization_predicate(
-                _current_principal_context()
-            ),
+            k=self._state_aware_full_retrieval_k(k),
+        )
+        return backfill_ranked_candidates_by_state(
+            query=retrieval.query,
+            registry_version=retrieval.registry_version,
+            requested_k=k,
+            ranked_candidates=retrieval.candidates,
+            state=execution_state,
+            requirements_by_route=state_requirements,
+            preconditions_by_route=state_preconditions,
         )
 
     async def areretrieve_state_aware(
@@ -4836,15 +4847,18 @@ class SchemaRouter:
     ) -> StateConditionedCapabilityRetrieval:
         """Async counterpart to :meth:`reretrieve_state_aware`."""
 
-        return await self.planner.areretrieve_state_aware(
+        retrieval = await self.aretrieve(
             request,
-            execution_state=execution_state,
-            k=k,
-            state_requirements=state_requirements,
-            state_preconditions=state_preconditions,
-            additional_availability_predicate=self._authorization_predicate(
-                _current_principal_context()
-            ),
+            k=self._state_aware_full_retrieval_k(k),
+        )
+        return backfill_ranked_candidates_by_state(
+            query=retrieval.query,
+            registry_version=retrieval.registry_version,
+            requested_k=k,
+            ranked_candidates=retrieval.candidates,
+            state=execution_state,
+            requirements_by_route=state_requirements,
+            preconditions_by_route=state_preconditions,
         )
 
     def retrieve_state_aware(
@@ -4856,17 +4870,14 @@ class SchemaRouter:
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
     ) -> StateAwareCapabilityRetrieval:
-        """Retrieve state-eligible capabilities under active authorization."""
+        """Retrieve from the same authorization-scoped surface as normal retrieval."""
 
-        return self.planner.retrieve_state_aware(
-            request,
-            execution_state=execution_state,
-            k=k,
-            state_requirements=state_requirements,
-            state_preconditions=state_preconditions,
-            additional_availability_predicate=self._authorization_predicate(
-                _current_principal_context()
-            ),
+        retrieval = self.retrieve(request, k=k)
+        return filter_retrieval_by_state(
+            retrieval,
+            execution_state,
+            requirements_by_route=state_requirements,
+            preconditions_by_route=state_preconditions,
         )
 
     async def aretrieve_state_aware(
@@ -4880,15 +4891,12 @@ class SchemaRouter:
     ) -> StateAwareCapabilityRetrieval:
         """Async counterpart to :meth:`retrieve_state_aware`."""
 
-        return await self.planner.aretrieve_state_aware(
-            request,
-            execution_state=execution_state,
-            k=k,
-            state_requirements=state_requirements,
-            state_preconditions=state_preconditions,
-            additional_availability_predicate=self._authorization_predicate(
-                _current_principal_context()
-            ),
+        retrieval = await self.aretrieve(request, k=k)
+        return filter_retrieval_by_state(
+            retrieval,
+            execution_state,
+            requirements_by_route=state_requirements,
+            preconditions_by_route=state_preconditions,
         )
 
     def _binding_ready(self, tool: ToolSpec, endpoint: Any) -> bool:
