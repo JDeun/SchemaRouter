@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import math
 import sqlite3
+import time
 from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 from threading import RLock
@@ -79,6 +81,33 @@ class RunTraceStore(Protocol):
     def trace(self, run_id: str) -> RunTrace: ...
 
     def run_ids(self, *, complete: bool | None = None) -> tuple[str, ...]: ...
+
+
+class TraceRetentionPolicy(StrictModel):
+    """Host-configurable bounds for persistent SQLite run traces."""
+
+    max_age_seconds: float | None = Field(default=None, gt=0)
+    max_complete_runs: int | None = Field(default=None, ge=0)
+    stale_incomplete_age_seconds: float | None = Field(default=None, gt=0)
+    automatic: bool = True
+
+    @model_validator(mode="after")
+    def validate_retention_bounds(self) -> TraceRetentionPolicy:
+        if (
+            self.max_age_seconds is None
+            and self.max_complete_runs is None
+            and self.stale_incomplete_age_seconds is None
+        ):
+            raise ValueError("trace retention policy requires at least one bound")
+        return self
+
+
+class TracePruneResult(StrictModel):
+    """Deterministic summary returned by SQLiteRunTraceStore.prune()."""
+
+    deleted_runs: int
+    deleted_complete_runs: int
+    deleted_stale_incomplete_runs: int
 
 
 def _validate_legacy_trace_storage(
@@ -268,12 +297,18 @@ class SQLiteRunTraceStore:
         *,
         timeout: float = 5.0,
         document_limits: PersistedDocumentLimits | None = None,
+        retention_policy: TraceRetentionPolicy | None = None,
     ) -> None:
         if timeout <= 0:
             raise ValueError("timeout must be > 0")
         self.path = str(path)
         self._document_limits = _resolve_persisted_document_limits(
             document_limits
+        )
+        self._retention_policy = (
+            retention_policy.model_copy(deep=True)
+            if retention_policy is not None
+            else None
         )
         self._lock = RLock()
         self._closed = False
@@ -321,6 +356,19 @@ class SQLiteRunTraceStore:
             """
         )
 
+    def _create_retention_indexes(self) -> None:
+        self._connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS schemarouter_trace_runs_retention_idx
+            ON schemarouter_trace_runs (
+                terminal,
+                last_timestamp DESC,
+                created_at DESC,
+                run_id DESC
+            )
+            """
+        )
+
     def _validate_legacy_storage(self) -> None:
         _validate_legacy_trace_storage(
             self._connection,
@@ -339,6 +387,7 @@ class SQLiteRunTraceStore:
                 self._connection.execute("BEGIN IMMEDIATE")
                 try:
                     self._create_component_tables()
+                    self._create_retention_indexes()
                     stamp_current_component_format(
                         self._connection,
                         "trace",
@@ -355,6 +404,14 @@ class SQLiteRunTraceStore:
                 "trace",
             )
             if status == "current":
+                self._connection.execute("BEGIN IMMEDIATE")
+                try:
+                    self._create_retention_indexes()
+                except Exception:
+                    self._connection.rollback()
+                    raise
+                else:
+                    self._connection.commit()
                 return
 
             self._connection.execute("BEGIN IMMEDIATE")
@@ -365,6 +422,7 @@ class SQLiteRunTraceStore:
                     "trace",
                     from_version=0,
                 )
+                self._create_retention_indexes()
             except Exception:
                 self._connection.rollback()
                 raise
@@ -402,6 +460,12 @@ class SQLiteRunTraceStore:
                     "trace document format metadata is missing"
                 )
             return document_version
+
+    @property
+    def retention_policy(self) -> TraceRetentionPolicy | None:
+        if self._retention_policy is None:
+            return None
+        return self._retention_policy.model_copy(deep=True)
 
     def _begin_write(self) -> None:
         self._ensure_open()
@@ -489,6 +553,11 @@ class SQLiteRunTraceStore:
             raise TraceError("run event requires a non-empty run_id")
         document = self._serialize(event)
         event_timestamp = event.timestamp.timestamp()
+        should_prune = (
+            self._retention_policy is not None
+            and self._retention_policy.automatic
+            and (event.event == "run.start" or event.event in _TERMINAL_EVENTS)
+        )
 
         with self._lock:
             self._begin_write()
@@ -562,6 +631,9 @@ class SQLiteRunTraceStore:
                 raise
             else:
                 self._connection.commit()
+
+        if should_prune:
+            self.prune()
 
     def trace(self, run_id: str) -> RunTrace:
         with self._lock:
@@ -677,6 +749,96 @@ class SQLiteRunTraceStore:
                         ) from exc
                     run_ids.append(str(row["run_id"]))
             return tuple(run_ids)
+
+    def prune(
+        self,
+        *,
+        policy: TraceRetentionPolicy | None = None,
+        now: float | None = None,
+    ) -> TracePruneResult:
+        """Prune trace history under one SQLite write transaction.
+
+        Complete runs may be removed by age and/or retained-run count. Incomplete
+        runs are never removed unless stale_incomplete_age_seconds is explicitly
+        configured. now is injectable for deterministic operator jobs/tests.
+        """
+
+        active_policy = policy or self._retention_policy
+        if active_policy is None:
+            raise ValueError("trace pruning requires a retention policy")
+        active_policy = active_policy.model_copy(deep=True)
+
+        if now is None:
+            now_value = time.time()
+        else:
+            if isinstance(now, bool):
+                raise ValueError("now must be a finite Unix timestamp")
+            try:
+                now_value = float(now)
+            except (TypeError, ValueError) as exc:
+                raise ValueError("now must be a finite Unix timestamp") from exc
+            if not math.isfinite(now_value):
+                raise ValueError("now must be a finite Unix timestamp")
+
+        deleted_complete = 0
+        deleted_stale_incomplete = 0
+        with self._lock:
+            self._begin_write()
+            try:
+                if active_policy.max_age_seconds is not None:
+                    cutoff = now_value - active_policy.max_age_seconds
+                    cursor = self._connection.execute(
+                        """
+                        DELETE FROM schemarouter_trace_runs
+                        WHERE terminal = 1 AND last_timestamp < ?
+                        """,
+                        (cutoff,),
+                    )
+                    deleted_complete += max(cursor.rowcount, 0)
+
+                if active_policy.max_complete_runs is not None:
+                    cursor = self._connection.execute(
+                        """
+                        DELETE FROM schemarouter_trace_runs
+                        WHERE terminal = 1
+                          AND run_id IN (
+                              SELECT run_id
+                              FROM schemarouter_trace_runs
+                              WHERE terminal = 1
+                              ORDER BY
+                                  last_timestamp DESC,
+                                  created_at DESC,
+                                  run_id DESC
+                              LIMIT -1 OFFSET ?
+                          )
+                        """,
+                        (active_policy.max_complete_runs,),
+                    )
+                    deleted_complete += max(cursor.rowcount, 0)
+
+                if active_policy.stale_incomplete_age_seconds is not None:
+                    stale_cutoff = (
+                        now_value - active_policy.stale_incomplete_age_seconds
+                    )
+                    cursor = self._connection.execute(
+                        """
+                        DELETE FROM schemarouter_trace_runs
+                        WHERE terminal = 0 AND last_timestamp < ?
+                        """,
+                        (stale_cutoff,),
+                    )
+                    deleted_stale_incomplete += max(cursor.rowcount, 0)
+            except Exception:
+                self._connection.rollback()
+                raise
+            else:
+                self._connection.commit()
+
+        return TracePruneResult(
+            deleted_runs=deleted_complete + deleted_stale_incomplete,
+            deleted_complete_runs=deleted_complete,
+            deleted_stale_incomplete_runs=deleted_stale_incomplete,
+        )
 
     def delete(self, run_id: str) -> None:
         with self._lock:
