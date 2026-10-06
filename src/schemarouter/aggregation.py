@@ -166,6 +166,11 @@ def _identifier_tokens(record: SourceRecord) -> set[tuple[str, str]]:
     return set(_trusted_identifier_claims(record).items())
 
 
+def _claims_compatible(left: dict[str, str], right: dict[str, str]) -> bool:
+    shared_types = left.keys() & right.keys()
+    return all(left[kind] == right[kind] for kind in shared_types)
+
+
 def aggregate_records(
     records: list[SourceRecord],
     *,
@@ -206,11 +211,7 @@ def aggregate_records(
 
         left_claims = component_claims[left_root]
         right_claims = component_claims[right_root]
-        shared_types = left_claims.keys() & right_claims.keys()
-        if any(
-            left_claims[kind] != right_claims[kind]
-            for kind in shared_types
-        ):
+        if not _claims_compatible(left_claims, right_claims):
             return False
 
         parent[right_root] = left_root
@@ -218,15 +219,39 @@ def aggregate_records(
         component_claims[right_root] = {}
         return True
 
-    token_owner: dict[tuple[str, str, str], int] = {}
+    token_owners: dict[tuple[str, str, str], set[int]] = defaultdict(set)
     for index, record in enumerate(records):
-        for kind, value in _identifier_tokens(record):
-            token = (record.entity_kind, kind, value)
-            previous = token_owner.get(token)
-            if previous is None:
-                token_owner[token] = index
-            else:
-                union(index, previous)
+        tokens = [
+            (record.entity_kind, kind, value)
+            for kind, value in _identifier_tokens(record)
+        ]
+        candidate_roots = {
+            find(owner)
+            for token in tokens
+            for owner in token_owners[token]
+        }
+        compatible_roots = {
+            root
+            for root in candidate_roots
+            if _claims_compatible(component_claims[index], component_claims[root])
+        }
+
+        combined_claims = dict(component_claims[index])
+        ambiguous = False
+        for root in sorted(compatible_roots):
+            root_claims = component_claims[root]
+            if not _claims_compatible(combined_claims, root_claims):
+                ambiguous = True
+                break
+            combined_claims.update(root_claims)
+
+        if not ambiguous:
+            for root in sorted(compatible_roots):
+                union(index, root)
+
+        resolved_root = find(index)
+        for token in tokens:
+            token_owners[token].add(resolved_root)
 
     groups: dict[int, list[SourceRecord]] = defaultdict(list)
     for index, record in enumerate(records):
