@@ -14,6 +14,7 @@ from schemarouter import (
     RetryPolicy,
     RunConfig,
     SchemaRouter,
+    ToolCall,
     ToolSpec,
 )
 
@@ -90,6 +91,24 @@ def test_data_scope_known_hidden_field_is_removed() -> None:
     )
 
     assert scope.visible_fields == frozenset({"value"})
+
+    endpoint = tool.endpoint("read")
+    with pytest.raises(
+        PolicyViolationError,
+        match="authorization denied for requested data scope",
+    ):
+        policy.validate_data_scope(
+            PrincipalContext(subject="alice"),
+            tool,
+            endpoint,
+            ToolCall(
+                tool=tool.key,
+                endpoint=endpoint.name,
+                fields=["secret"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=tool.fingerprint,
+            ),
+        )
 
 
 def test_data_scope_schema_drift_cannot_widen_hidden_field_access() -> None:
