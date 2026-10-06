@@ -16,6 +16,7 @@ from .capability_graph import (
     CapabilityDependencyGraph,
     build_capability_dependency_graph,
 )
+from .document_loading import ConfigurationDocumentLimits, load_bounded_json
 from .models import StrictModel
 
 LEGACY_CAPABILITY_ARTIFACT_FORMAT_VERSION = "1.0"
@@ -357,8 +358,10 @@ def validate_capability_artifact(
 
 def _parse_and_validate_known_artifact(
     document: str,
+    *,
+    document_limits: ConfigurationDocumentLimits | None = None,
 ) -> CapabilityGraphArtifact:
-    raw = json.loads(document)
+    raw = load_bounded_json(document, limits=document_limits)
     if not isinstance(raw, dict):
         raise ValueError("capability artifact document must be a JSON object")
     version = raw.get("format_version")
@@ -377,8 +380,13 @@ def _parse_and_validate_known_artifact(
 
 def migrate_capability_artifact(
     document: str,
+    *,
+    document_limits: ConfigurationDocumentLimits | None = None,
 ) -> CapabilityArtifactMigrationResult:
-    artifact = _parse_and_validate_known_artifact(document)
+    artifact = _parse_and_validate_known_artifact(
+        document,
+        document_limits=document_limits,
+    )
     source_digest = artifact.artifact_digest
 
     if artifact.format_version == CAPABILITY_ARTIFACT_FORMAT_VERSION:
@@ -426,6 +434,13 @@ def migrate_capability_artifact(
     )
 
 
-def load_capability_artifact(document: str) -> CapabilityGraphArtifact:
-    result = migrate_capability_artifact(document)
+def load_capability_artifact(
+    document: str,
+    *,
+    document_limits: ConfigurationDocumentLimits | None = None,
+) -> CapabilityGraphArtifact:
+    result = migrate_capability_artifact(
+        document,
+        document_limits=document_limits,
+    )
     return result.artifact
