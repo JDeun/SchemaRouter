@@ -71,7 +71,10 @@ def validate_package(
     package_id = manifest["package_id"]
     if catalog["catalog_id"] != package_id or cases["case_set_id"] != package_id:
         raise ValueError("package/catalog/case identifiers do not match")
-    if manifest["governance"]["heldout_scoring_allowed"]:
+    if (
+        manifest.get("status") == "development_unfrozen"
+        and manifest["governance"]["heldout_scoring_allowed"]
+    ):
         raise ValueError("development fixture must not enable held-out scoring")
 
     tools = {tool["name"]: tool for tool in catalog["tools"]}
@@ -129,7 +132,14 @@ def build_template(manifest: dict[str, Any], cases: dict[str, Any]) -> dict[str,
     return {
         "schema_version": 1,
         "package_id": manifest["package_id"],
-        "implementation": {"name": "", "commit": "", "configuration": {}},
+        "implementation": {
+            "name": "",
+            "commit": None,
+            "commit_source": "unavailable",
+            "fixture_reference_revision": None,
+            "package_version": None,
+            "configuration": {},
+        },
         "index_build_ms": None,
         "results": [
             {
@@ -151,6 +161,15 @@ def score(
 ) -> dict[str, Any]:
     if submitted.get("package_id") != manifest["package_id"]:
         raise ValueError("result package id mismatch")
+
+    implementation = submitted.get("implementation")
+    if not isinstance(implementation, dict):
+        raise ValueError("implementation must be an object")
+    commit = implementation.get("commit")
+    if commit is not None and (not isinstance(commit, str) or not commit.strip()):
+        raise ValueError("implementation.commit must be a non-empty string or null")
+    if manifest["governance"].get("heldout_scoring_allowed") and not commit:
+        raise ValueError("held-out scoring requires the actual implementation.commit")
 
     tools = {tool["name"]: tool for tool in catalog["tools"]}
     case_map = {case["id"]: case for case in cases["cases"]}
