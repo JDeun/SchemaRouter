@@ -128,6 +128,7 @@ class ModelQueryAnalyzer:
         raise ModelAnalysisError(
             "registry changed repeatedly while capturing the model analyzer catalog"
         )
+
     @staticmethod
     def _catalog(tools: tuple[ToolSpec, ...]) -> list[dict[str, Any]]:
         return [
