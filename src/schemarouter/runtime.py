@@ -242,7 +242,7 @@ class SchemaRouter:
             raise ValueError(
                 "authorization_audit_mode must be 'best_effort' or 'strict'"
             )
-        self.authorization_audit_mode = authorization_audit_mode
+        self.authorization_audit_mode: AuthorizationAuditMode = authorization_audit_mode
         self._authorization_audit_delivery_lock = RLock()
         self._authorization_audit_delivery_failures = 0
         self._authorization_audit_last_error_type: str | None = None
