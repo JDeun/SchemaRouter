@@ -193,6 +193,59 @@ def _router() -> SchemaRouter:
     return router
 
 
+def test_authorization_policy_compiles_safe_rule_partitions_in_order() -> None:
+    policy = AuthorizationPolicy(
+        rules=(
+            AuthorizationRule(name="global", effect="deny", operation="*"),
+            AuthorizationRule(
+                name="other-provider",
+                effect="allow",
+                operation="company.*",
+                provider="other",
+            ),
+            AuthorizationRule(
+                name="target-provider",
+                effect="allow",
+                operation="company.*",
+                provider="target",
+            ),
+            AuthorizationRule(
+                name="other-root",
+                effect="allow",
+                operation="inventory.*",
+                provider="target",
+            ),
+        ),
+        data_rules=(
+            DataScopeRule(name="global-data", operation="*"),
+            DataScopeRule(
+                name="other-data",
+                operation="inventory.*",
+                provider="target",
+            ),
+            DataScopeRule(
+                name="target-data",
+                operation="company.*",
+                provider="target",
+            ),
+        ),
+    )
+
+    rules = policy._rule_index.candidates(
+        operation="company.employees.read",
+        provider="target",
+        access_mode=None,
+    )
+    data_rules = policy._data_rule_index.candidates(
+        operation="company.employees.read",
+        provider="target",
+        access_mode=None,
+    )
+
+    assert [rule.name for rule in rules] == ["global", "target-provider"]
+    assert [rule.name for rule in data_rules] == ["global-data", "target-data"]
+
+
 def test_principal_authorization_hides_ineligible_capabilities_before_retrieval() -> None:
     router = _router()
     employee = PrincipalContext(subject="alice", roles=("employee",))
