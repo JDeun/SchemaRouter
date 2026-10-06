@@ -7,6 +7,7 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     ParameterSpec,
+    PersistedDocumentLimits,
     PlanRequest,
     RunConfig,
     RunEvent,
@@ -149,6 +150,33 @@ def test_sqlite_trace_store_accepts_timestamp_regression_and_replays_by_sequence
         assert [item.sequence for item in trace.events] == [0, 1]
         assert trace.events[1].timestamp < trace.events[0].timestamp
         assert [item.sequence for item in trace.replay()] == [0, 1]
+
+
+def test_sqlite_trace_store_bounds_persisted_document_structure(tmp_path) -> None:
+    path = tmp_path / "bounded-traces.sqlite3"
+    nested = {"a": {"b": {"c": {"d": "value"}}}}
+
+    with SQLiteRunTraceStore(path) as store:
+        store.append(
+            event(
+                "run-1",
+                0,
+                "run.start",
+                data=nested,
+            )
+        )
+
+    shallow = PersistedDocumentLimits(
+        max_bytes=8 * 1024 * 1024,
+        max_depth=4,
+        max_nodes=100_000,
+    )
+    with SQLiteRunTraceStore(path, document_limits=shallow) as reopened:
+        with pytest.raises(TraceError, match="persistent document limits"):
+            reopened.trace("run-1")
+
+    with SQLiteRunTraceStore(path) as reopened:
+        assert reopened.trace("run-1").events[0].data == nested
 
 
 def test_sqlite_trace_store_corruption_fails_closed(tmp_path) -> None:
