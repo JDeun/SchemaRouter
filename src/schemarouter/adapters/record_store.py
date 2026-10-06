@@ -287,6 +287,10 @@ async def introspect_record_backend(
     names = [source.name for source in discovered]
     if len(names) != len(set(names)):
         raise RegistrationError("record-store backend returned duplicate source names")
+    if selected is not None:
+        missing = sorted(selected - set(names))
+        if missing:
+            raise RegistrationError("unknown record-store sources: " + ", ".join(missing))
 
     bindings: list[RecordSourceBinding] = []
     used_names: set[str] = set()
