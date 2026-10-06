@@ -21,6 +21,8 @@ from ..models import (
 
 _SELECT_ENDPOINT = "select"
 _MAX_LIMIT = 1000
+_MAX_DISCOVERY_RELATIONS = 128
+_MAX_COLUMNS_PER_RELATION = 256
 
 
 def _require_sqlalchemy() -> tuple[Any, Any, Any, Any]:
@@ -172,6 +174,8 @@ def introspect_sqlalchemy_engine(
     include_views: bool = True,
     max_default_rows: int = 100,
     remote: bool = True,
+    max_discovery_relations: int = _MAX_DISCOVERY_RELATIONS,
+    max_columns_per_relation: int = _MAX_COLUMNS_PER_RELATION,
 ) -> tuple[SQLAlchemyTableBinding, ...]:
     """Compile a caller-owned SQLAlchemy Engine into typed read-only capabilities.
 
@@ -183,6 +187,10 @@ def introspect_sqlalchemy_engine(
         raise ValueError("database_name must be non-empty")
     if max_default_rows < 1 or max_default_rows > _MAX_LIMIT:
         raise ValueError(f"max_default_rows must be between 1 and {_MAX_LIMIT}")
+    if max_discovery_relations < 1:
+        raise ValueError("max_discovery_relations must be positive")
+    if max_columns_per_relation < 1:
+        raise ValueError("max_columns_per_relation must be positive")
 
     MetaData, Table, inspect, _ = _require_sqlalchemy()
     inspector = inspect(engine)
@@ -193,9 +201,19 @@ def introspect_sqlalchemy_engine(
 
     for schema in selected_schemas:
         for table in inspector.get_table_names(schema=schema):
+            if len(discovered_relations) >= max_discovery_relations:
+                raise RegistrationError(
+                    "SQLAlchemy discovery exceeded max_discovery_relations="
+                    f"{max_discovery_relations}"
+                )
             discovered_relations.append((schema, str(table), "table"))
         if include_views:
             for view in inspector.get_view_names(schema=schema):
+                if len(discovered_relations) >= max_discovery_relations:
+                    raise RegistrationError(
+                        "SQLAlchemy discovery exceeded max_discovery_relations="
+                        f"{max_discovery_relations}"
+                    )
                 discovered_relations.append((schema, str(view), "view"))
 
     if requested_tables is not None:
@@ -224,6 +242,11 @@ def introspect_sqlalchemy_engine(
             continue
 
         columns = inspector.get_columns(table_name, schema=schema)
+        if len(columns) > max_columns_per_relation:
+            raise RegistrationError(
+                f"database relation {qualified!r} exposes {len(columns)} columns; "
+                f"limit is {max_columns_per_relation}"
+            )
         if not columns:
             continue
         primary_key = (
