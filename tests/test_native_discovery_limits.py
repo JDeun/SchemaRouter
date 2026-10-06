@@ -254,6 +254,27 @@ def test_sqlite_allowlist_short_circuits_catalog_budget() -> None:
         connection.close()
 
 
+def test_sqlalchemy_relation_budget_fails_before_publish() -> None:
+    sqlalchemy = pytest.importorskip("sqlalchemy")
+    engine = sqlalchemy.create_engine("sqlite+pysqlite:///:memory:")
+    try:
+        with engine.begin() as connection:
+            connection.exec_driver_sql("CREATE TABLE first_table (id INTEGER)")
+            connection.exec_driver_sql("CREATE TABLE second_table (id INTEGER)")
+
+        router = SchemaRouter()
+        with pytest.raises(RegistrationError, match="relation count"):
+            router.add_sqlalchemy_database(
+                engine,
+                database_name="warehouse",
+                remote=False,
+                discovery_limits=_limits(max_sources=1),
+            )
+        assert router.registry.keys() == ()
+    finally:
+        engine.dispose()
+
+
 def test_sqlite_column_budget_fails_before_publish() -> None:
     connection = sqlite3.connect(":memory:")
     try:
