@@ -18,21 +18,42 @@ def distribution_version(distribution: str | None) -> str | None:
 
 
 def git_revision(source_path: Path | None) -> str | None:
-    """Resolve the git HEAD containing source_path when it is in a checkout."""
+    """Resolve HEAD only when source_path is actually tracked by that checkout."""
     if source_path is None:
         return None
-    directory = source_path if source_path.is_dir() else source_path.parent
+
+    source = source_path.resolve()
+    directory = source if source.is_dir() else source.parent
     try:
-        completed = subprocess.run(
-            ["git", "-C", str(directory), "rev-parse", "HEAD"],
+        root_result = subprocess.run(
+            ["git", "-C", str(directory), "rev-parse", "--show-toplevel"],
             check=True,
             capture_output=True,
             text=True,
             timeout=2,
         )
-    except (OSError, subprocess.SubprocessError):
+        root = Path(root_result.stdout.strip()).resolve()
+        relative = source.relative_to(root)
+        tracked = subprocess.run(
+            ["git", "-C", str(root), "ls-files", "--error-unmatch", "--", str(relative)],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+        if tracked.returncode != 0:
+            return None
+        revision_result = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+    except (OSError, ValueError, subprocess.SubprocessError):
         return None
-    revision = completed.stdout.strip()
+
+    revision = revision_result.stdout.strip()
     return revision or None
 
 
