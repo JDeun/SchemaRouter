@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Mapping, Sequence
-from dataclasses import dataclass
 from contextlib import nullcontext
+from dataclasses import dataclass
 from typing import Any, TypeVar
 from urllib.parse import urlparse
 from uuid import uuid4
