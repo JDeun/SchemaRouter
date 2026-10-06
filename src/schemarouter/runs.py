@@ -54,13 +54,15 @@ ExecutionMode = Literal["sequential", "parallel_read_only"]
 
 
 class RunConfig(StrictModel):
-    """Per-run metadata and execution controls."""
+    """Per-run execution controls with separate trusted and trace-public metadata."""
 
     principal: PrincipalContext | None = None
     run_id: str | None = Field(default=None, min_length=1, max_length=256)
     principal_audit_id: str | None = Field(default=None, min_length=1, max_length=256)
     tags: list[str] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
+    trace_metadata: dict[str, Any] = Field(default_factory=dict)
+    include_metadata_in_traces: bool = False
     max_concurrency: int = Field(default=8, ge=1, le=128)
     max_batch_size: int = Field(default=256, ge=1, le=4096)
     execution_mode: ExecutionMode = "sequential"
@@ -117,13 +119,24 @@ class RunEvent(StrictModel):
         endpoint: str | None = None,
         data: dict[str, Any] | None = None,
     ) -> RunEvent:
+        # RunConfig.metadata is trusted process-local context. It is deliberately
+        # excluded from trace/event surfaces unless the caller explicitly opts in.
+        # Trace metadata is run-scoped and therefore emitted once on run.start rather
+        # than being duplicated into every persisted event.
+        event_metadata: dict[str, Any] = {}
+        if event == "run.start":
+            if config.include_metadata_in_traces:
+                event_metadata.update(config.metadata)
+            # Explicit trace-safe values win on collisions with opted-in local context.
+            event_metadata.update(config.trace_metadata)
+
         return cls(
             event=event,
             run_id=run_id,
             sequence=sequence,
             timestamp=datetime.now(timezone.utc),
             tags=list(config.tags),
-            metadata=dict(config.metadata),
+            metadata=event_metadata,
             tool=tool,
             endpoint=endpoint,
             data=dict(data or {}),
