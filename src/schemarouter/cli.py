@@ -21,6 +21,7 @@ from .capability_snapshot import (
     serialize_capability_snapshot,
 )
 from .dashboard import write_dashboard
+from .document_loading import read_bounded_text_file
 from .errors import (
     SchemaSourceError,
     SourceProbeDiagnosticError,
@@ -749,7 +750,7 @@ def _run(args: argparse.Namespace) -> str:
 
     if args.command == "artifact":
         source = _existing_document(args.document)
-        result = migrate_capability_artifact(source.read_text(encoding="utf-8"))
+        result = migrate_capability_artifact(read_bounded_text_file(source))
         inspection = {
             "kind": "capability_artifact",
             "source": str(source),
@@ -780,7 +781,7 @@ def _run(args: argparse.Namespace) -> str:
 
     if args.command == "snapshot":
         source = _existing_document(args.document)
-        result = migrate_capability_snapshot(source.read_text(encoding="utf-8"))
+        result = migrate_capability_snapshot(read_bounded_text_file(source))
         inspection = {
             "kind": "capability_snapshot",
             "source": str(source),
@@ -838,7 +839,7 @@ def _run(args: argparse.Namespace) -> str:
     if args.surface == "decision-trace":
         source = _existing_document(args.document)
         trace = CapabilityDecisionTrace.model_validate_json(
-            source.read_text(encoding="utf-8")
+            read_bounded_text_file(source)
         )
         document = render_capability_decision_trace(
             trace,
