@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import inspect
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Mapping, Sequence
 from contextlib import nullcontext
 from typing import Any, TypeVar
@@ -11,6 +10,7 @@ from uuid import uuid4
 import httpx
 from pydantic import TypeAdapter
 
+from ._loop_affinity import SyncLoopRunner
 from .adapters.base import AdapterRegistry, SourceAdapter
 from .adapters.mcp import (
     MCPBoundClientFactory,
@@ -133,6 +133,7 @@ from .traces import RunTraceStore, append_run_event_async
 from .validation import projected_output_schema
 
 _T = TypeVar("_T")
+_SYNC_LOOP_RUNNER = SyncLoopRunner()
 
 
 def _require_execution_event_exception(
@@ -200,50 +201,11 @@ def _coerce_run_config(config: RunConfig | dict[str, Any] | None) -> RunConfig:
 
 
 def _run_sync(factory: Callable[[], Awaitable[_T]]) -> _T:
-    try:
-        asyncio.get_running_loop()
-    except RuntimeError:
-        async def await_factory() -> _T:
-            return await factory()
-
-        return asyncio.run(await_factory())
-    raise RuntimeError(
-        "synchronous SchemaRouter API cannot run inside an active event loop; "
-        "use the async API instead"
-    )
+    return _SYNC_LOOP_RUNNER.run(factory)
 
 
 def _stream_sync(factory: Callable[[], AsyncIterator[_T]]) -> Iterator[_T]:
-    try:
-        asyncio.get_running_loop()
-    except RuntimeError:
-        pass
-    else:
-        raise RuntimeError(
-            "synchronous SchemaRouter streaming cannot run inside an active event loop; "
-            "use the async streaming API instead"
-        )
-
-    loop = asyncio.new_event_loop()
-    iterator = factory()
-    try:
-        while True:
-            try:
-                yield loop.run_until_complete(iterator.__anext__())
-            except StopAsyncIteration:
-                break
-    finally:
-        aclose = getattr(iterator, "aclose", None)
-
-        async def close_iterator() -> None:
-            if not callable(aclose):
-                return
-            close_result = aclose()
-            if inspect.isawaitable(close_result):
-                await close_result
-
-        loop.run_until_complete(close_iterator())
-        loop.close()
+    yield from _SYNC_LOOP_RUNNER.stream(factory)
 
 
 class SchemaRouter:

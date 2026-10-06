@@ -1,4 +1,6 @@
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from threading import Lock
 
 import pytest
 
@@ -27,6 +29,7 @@ from schemarouter import (
     ToolCall,
     ToolSpec,
 )
+from schemarouter.runtime import _run_sync
 
 
 def make_router(*, read_only: bool | None = True) -> SchemaRouter:
@@ -1184,6 +1187,86 @@ async def test_aretrieve_adaptive_accepts_success_history_without_changing_defau
     assert [candidate.route_id for candidate in adaptive.candidates] == [
         candidate.route_id for candidate in baseline.candidates
     ]
+
+
+
+def test_sync_bridge_reuses_loop_after_schema_watch_lock_contention() -> None:
+    router = make_router()
+
+    async def contend_for_lifecycle_lock() -> None:
+        entered = asyncio.Event()
+        release = asyncio.Event()
+
+        async def holder() -> None:
+            async with router.schema_watcher.lifecycle_guard():
+                entered.set()
+                await release.wait()
+
+        async def waiter() -> None:
+            await entered.wait()
+            async with router.schema_watcher.lifecycle_guard():
+                return
+
+        holder_task = asyncio.create_task(holder())
+        waiter_task = asyncio.create_task(waiter())
+        await entered.wait()
+        await asyncio.sleep(0)
+        release.set()
+        await asyncio.gather(holder_task, waiter_task)
+
+    _run_sync(contend_for_lifecycle_lock)
+
+    # This public synchronous wrapper also enters the watcher/health lifecycle guards.
+    # Before the stable sync bridge, it could reuse a lock bound to the previous
+    # asyncio.run() loop and fail with a loop-affinity RuntimeError.
+    removed = router.remove_tool("weather")
+    assert removed.name == "weather"
+
+
+def test_sync_invocations_from_multiple_threads_share_bridge_loop() -> None:
+    router = make_router()
+    loop_ids: set[int] = set()
+    loop_ids_lock = Lock()
+
+    async def invoke(endpoint: str, arguments: dict) -> dict:
+        del endpoint
+        with loop_ids_lock:
+            loop_ids.add(id(asyncio.get_running_loop()))
+        await asyncio.sleep(0)
+        return {
+            "city": arguments["city"],
+            "temperature": 20,
+        }
+
+    router.executor.bind("weather", invoke)
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = [
+            pool.submit(router.invoke, request(f"city-{index}"))
+            for index in range(8)
+        ]
+        results = [future.result() for future in futures]
+
+    assert [result[0].data["city"] for result in results] == [
+        f"city-{index}" for index in range(8)
+    ]
+    assert len(loop_ids) == 1
+
+
+@pytest.mark.asyncio
+async def test_mixed_async_then_sync_lifecycle_usage_fails_with_clear_contract() -> None:
+    router = make_router()
+
+    # Bind loop-affine lifecycle state to the caller's async loop.
+    await router.health_monitor.run_once()
+
+    with pytest.raises(
+        RuntimeError,
+        match="do not mix synchronous and asynchronous lifecycle APIs",
+    ):
+        await asyncio.to_thread(
+            lambda: _run_sync(lambda: router.health_monitor.run_once())
+        )
 
 
 def test_execution_plan_rejects_direct_cardinality_bypass() -> None:
