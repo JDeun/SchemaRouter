@@ -11,6 +11,8 @@ from pydantic import ValidationError
 from .errors import RegistrationError, StorageFormatError
 from .models import EndpointSpec, ToolSpec
 from .storage import (
+    PersistedDocumentLimits,
+    _decode_persisted_json,
     component_presence,
     component_versions,
     stamp_current_component_format,
@@ -344,7 +346,14 @@ class InMemoryRegistry:
 
 def _validate_legacy_registry_storage(
     connection: sqlite3.Connection,
+    *,
+    document_limits: PersistedDocumentLimits | None = None,
 ) -> None:
+    limits = (
+        document_limits.model_copy(deep=True)
+        if document_limits is not None
+        else PersistedDocumentLimits()
+    )
     try:
         row = connection.execute(
             "SELECT value FROM schemarouter_registry_meta WHERE key = 'version'"
@@ -395,8 +404,12 @@ def _validate_legacy_registry_storage(
         seen_positions.add(position)
 
         try:
-            tool = ToolSpec.model_validate_json(str(stored["document"]))
-        except (ValidationError, ValueError) as exc:
+            payload = _decode_persisted_json(
+                str(stored["document"]),
+                limits=limits,
+            )
+            tool = ToolSpec.model_validate(payload)
+        except (ValidationError, ValueError, TypeError) as exc:
             raise StorageFormatError(
                 f"legacy stored tool {key!r} cannot be migrated safely"
             ) from exc
@@ -420,10 +433,16 @@ class SQLiteRegistry:
         path: str | Path,
         *,
         timeout: float = 5.0,
+        document_limits: PersistedDocumentLimits | None = None,
     ) -> None:
         if timeout <= 0:
             raise ValueError("timeout must be > 0")
         self.path = str(path)
+        self._document_limits = (
+            document_limits.model_copy(deep=True)
+            if document_limits is not None
+            else PersistedDocumentLimits()
+        )
         self._lock = RLock()
         self._closed = False
         self._connection = sqlite3.connect(
@@ -490,7 +509,10 @@ class SQLiteRegistry:
         return version
 
     def _validate_legacy_storage(self) -> None:
-        _validate_legacy_registry_storage(self._connection)
+        _validate_legacy_registry_storage(
+            self._connection,
+            document_limits=self._document_limits,
+        )
 
     def _initialize(self) -> None:
         with self._lock:
@@ -544,22 +566,33 @@ class SQLiteRegistry:
         if self._closed:
             raise RuntimeError("SQLiteRegistry is closed")
 
-    @staticmethod
-    def _serialize(tool: ToolSpec) -> str:
+    def _serialize(self, tool: ToolSpec) -> str:
         try:
-            return tool.model_dump_json()
+            document = tool.model_dump_json()
+            _decode_persisted_json(
+                document,
+                limits=self._document_limits,
+            )
+            return document
+        except (ValueError, TypeError) as exc:
+            raise RegistrationError(
+                f"tool {tool.key!r} exceeds persistent JSON safety limits"
+            ) from exc
         except Exception as exc:
             raise RegistrationError(
                 f"tool {tool.key!r} cannot be serialized as persistent JSON"
             ) from exc
 
-    @staticmethod
-    def _deserialize(key: str, document: str) -> ToolSpec:
+    def _deserialize(self, key: str, document: str) -> ToolSpec:
         try:
-            tool = ToolSpec.model_validate_json(document)
-        except (ValidationError, ValueError) as exc:
+            payload = _decode_persisted_json(
+                document,
+                limits=self._document_limits,
+            )
+            tool = ToolSpec.model_validate(payload)
+        except (ValidationError, ValueError, TypeError) as exc:
             raise RegistrationError(
-                f"stored tool {key!r} is not a valid ToolSpec"
+                f"stored tool {key!r} is not a valid ToolSpec within persistent document limits"
             ) from exc
         if tool.key != key:
             raise RegistrationError(
