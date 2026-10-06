@@ -4,6 +4,7 @@ import errno
 import os
 import sqlite3
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
@@ -21,6 +22,138 @@ CURRENT_TRACE_DOCUMENT_VERSION = 1
 
 _STORAGE_META_TABLE = "schemarouter_storage_meta"
 _STORAGE_MIGRATIONS_TABLE = "schemarouter_storage_migrations"
+
+DEFAULT_PERSISTED_DOCUMENT_MAX_BYTES = 2 * 1024 * 1024
+DEFAULT_PERSISTED_DOCUMENT_MAX_DEPTH = 64
+DEFAULT_PERSISTED_DOCUMENT_MAX_NODES = 100_000
+
+
+@dataclass(frozen=True)
+class PersistedDocumentLimits:
+    """Resource budgets applied before persisted JSON reaches Pydantic."""
+
+    max_bytes: int = DEFAULT_PERSISTED_DOCUMENT_MAX_BYTES
+    max_depth: int = DEFAULT_PERSISTED_DOCUMENT_MAX_DEPTH
+    max_nodes: int = DEFAULT_PERSISTED_DOCUMENT_MAX_NODES
+
+    def __post_init__(self) -> None:
+        for name, value in (
+            ("max_bytes", self.max_bytes),
+            ("max_depth", self.max_depth),
+            ("max_nodes", self.max_nodes),
+        ):
+            if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                raise ValueError(f"{name} must be a positive integer")
+
+
+class _PersistedDocumentLimitError(ValueError):
+    pass
+
+
+def _resolve_persisted_document_limits(
+    limits: PersistedDocumentLimits | None,
+) -> PersistedDocumentLimits:
+    if limits is None:
+        return PersistedDocumentLimits()
+    if not isinstance(limits, PersistedDocumentLimits):
+        raise TypeError("document_limits must be PersistedDocumentLimits or None")
+    return limits
+
+
+def _validate_persisted_document_size(
+    encoded_bytes: int,
+    *,
+    limits: PersistedDocumentLimits,
+) -> None:
+    if encoded_bytes < 0:
+        raise _PersistedDocumentLimitError(
+            "persisted JSON document has an invalid encoded size"
+        )
+    if encoded_bytes > limits.max_bytes:
+        raise _PersistedDocumentLimitError(
+            "persisted JSON document exceeds the configured byte limit"
+        )
+
+
+def _validate_persisted_json_document(
+    document: str,
+    *,
+    limits: PersistedDocumentLimits,
+    encoded_bytes: int | None = None,
+) -> None:
+    """Bound JSON size/depth/token work before a recursive model decoder runs.
+
+    This intentionally validates only resource complexity. JSON syntax and model
+    semantics remain authoritative in the downstream Pydantic decoder.
+    """
+
+    if not isinstance(document, str):
+        raise _PersistedDocumentLimitError(
+            "persisted JSON document is not text"
+        )
+
+    if encoded_bytes is None:
+        encoded_bytes = len(document.encode("utf-8"))
+    _validate_persisted_document_size(encoded_bytes, limits=limits)
+
+    depth = 0
+    nodes = 0
+    index = 0
+    length = len(document)
+    delimiters = " \t\r\n,]}:"
+
+    while index < length:
+        char = document[index]
+
+        if char in " \t\r\n,:":
+            index += 1
+            continue
+
+        if char == '"':
+            nodes += 1
+            if nodes > limits.max_nodes:
+                raise _PersistedDocumentLimitError(
+                    "persisted JSON document exceeds the configured node limit"
+                )
+            index += 1
+            while index < length:
+                current = document[index]
+                if current == "\\":
+                    index += 2
+                    continue
+                index += 1
+                if current == '"':
+                    break
+            continue
+
+        if char in "[{":
+            nodes += 1
+            if nodes > limits.max_nodes:
+                raise _PersistedDocumentLimitError(
+                    "persisted JSON document exceeds the configured node limit"
+                )
+            depth += 1
+            if depth > limits.max_depth:
+                raise _PersistedDocumentLimitError(
+                    "persisted JSON document exceeds the configured depth limit"
+                )
+            index += 1
+            continue
+
+        if char in "]}":
+            if depth > 0:
+                depth -= 1
+            index += 1
+            continue
+
+        nodes += 1
+        if nodes > limits.max_nodes:
+            raise _PersistedDocumentLimitError(
+                "persisted JSON document exceeds the configured node limit"
+            )
+        index += 1
+        while index < length and document[index] not in delimiters:
+            index += 1
 
 
 class StorageMigrationRecord(StrictModel):
@@ -385,21 +518,34 @@ def _document_count(
 def _validate_component_documents(
     connection: sqlite3.Connection,
     component: StorageComponent,
+    *,
+    document_limits: PersistedDocumentLimits,
 ) -> None:
     # Local imports avoid module cycles. Future formats are never decoded by
     # this helper; callers invoke it only for current/legacy components.
     if component == "registry":
         from .registry import _validate_legacy_registry_storage
 
-        _validate_legacy_registry_storage(connection)
+        _validate_legacy_registry_storage(
+            connection,
+            document_limits=document_limits,
+        )
         return
 
     from .traces import _validate_legacy_trace_storage
 
-    _validate_legacy_trace_storage(connection)
+    _validate_legacy_trace_storage(
+        connection,
+        document_limits=document_limits,
+    )
 
 
-def inspect_sqlite_storage(path: str | Path) -> StorageInspection:
+def inspect_sqlite_storage(
+    path: str | Path,
+    *,
+    document_limits: PersistedDocumentLimits | None = None,
+) -> StorageInspection:
+    limits = _resolve_persisted_document_limits(document_limits)
     source = Path(path)
     if not source.exists():
         raise StorageFormatError(f"SQLite storage does not exist: {source}")
@@ -428,7 +574,11 @@ def inspect_sqlite_storage(path: str | Path) -> StorageInspection:
 
             if status in {"current", "legacy"}:
                 try:
-                    _validate_component_documents(connection, component)
+                    _validate_component_documents(
+                        connection,
+                        component,
+                        document_limits=limits,
+                    )
                 except (StorageFormatError, sqlite3.DatabaseError):
                     status = "corrupt"
 
@@ -560,13 +710,18 @@ def migrate_sqlite_storage(
     *,
     backup: bool = True,
     backup_path: str | Path | None = None,
+    document_limits: PersistedDocumentLimits | None = None,
 ) -> StorageMigrationResult:
     if not backup and backup_path is not None:
         raise StorageFormatError(
             "backup_path cannot be supplied when backup=False"
         )
 
-    before = inspect_sqlite_storage(path)
+    limits = _resolve_persisted_document_limits(document_limits)
+    before = inspect_sqlite_storage(
+        path,
+        document_limits=limits,
+    )
     if not before.components:
         raise StorageFormatError(
             "no SchemaRouter SQLite storage components were found"
@@ -612,11 +767,17 @@ def migrate_sqlite_storage(
         if "registry" in legacy:
             from .registry import _validate_legacy_registry_storage
 
-            _validate_legacy_registry_storage(connection)
+            _validate_legacy_registry_storage(
+                connection,
+                document_limits=limits,
+            )
         if "trace" in legacy:
             from .traces import _validate_legacy_trace_storage
 
-            _validate_legacy_trace_storage(connection)
+            _validate_legacy_trace_storage(
+                connection,
+                document_limits=limits,
+            )
 
         for component in ("registry", "trace"):
             if component in legacy:
@@ -633,7 +794,10 @@ def migrate_sqlite_storage(
     finally:
         connection.close()
 
-    after = inspect_sqlite_storage(path)
+    after = inspect_sqlite_storage(
+        path,
+        document_limits=limits,
+    )
     return StorageMigrationResult(
         path=str(path),
         backup_path=(
