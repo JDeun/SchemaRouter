@@ -165,13 +165,45 @@ running. Static SQLite registry inspection cannot report process-local health st
 
 ## Payload redaction
 
-Arguments and result payloads are not included by default.
+Arguments and result payloads are not included by default. When payload tracing is enabled,
+SchemaRouter now redacts structured trace content **before** events are yielded or persisted:
 
 ```python
-RunConfig(include_payloads=True)
+from schemarouter import RunConfig, TraceRedactionConfig
+
+config = RunConfig(
+    include_payloads=True,
+    trace_redaction=TraceRedactionConfig(
+        sensitive_paths={
+            "data.arguments.customer.email",
+            "data.result.data.customer.email",
+        }
+    ),
+)
 ```
 
-Enable this only for trusted trace sinks with appropriate retention controls.
+The default key matcher covers common credential names such as passwords, API keys, authorization
+values, cookies, tokens, private keys, and several high-risk identity/payment fields. Matching is
+case-insensitive and also catches common prefixed names such as `db_password`. Values discovered
+under sensitive keys/paths are remembered for the current run so the same secret can be removed from
+later exception messages. Bearer tokens and common `key=value` credential forms in strings are
+also scrubbed.
+
+`RunConfig.metadata`, request/plan payloads, tool arguments, results, and exception messages pass
+through the same run-scoped redactor. Principal authorization context and trusted-filter values are
+not added to run events.
+
+Raw payload tracing remains available only as an explicit debugging escape hatch:
+
+```python
+RunConfig(
+    include_payloads=True,
+    raw_trace_payloads=True,
+)
+```
+
+`raw_trace_payloads=True` also disables metadata redaction. Use it only with a trusted sink and
+appropriate retention/access controls; it can persist credentials and personal data verbatim.
 
 ## Bound configuration
 

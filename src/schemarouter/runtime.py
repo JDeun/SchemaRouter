@@ -86,6 +86,7 @@ from .models import (
     ToolResult,
     ToolSpec,
 )
+from .network_policy import NetworkPolicy
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
@@ -127,6 +128,7 @@ from .state_retrieval import (
     StateAwareCapabilityRetrieval,
     StateConditionedCapabilityRetrieval,
 )
+from .trace_redaction import TraceRedactor
 from .traces import RunTraceStore
 from .validation import projected_output_schema
 
@@ -259,6 +261,7 @@ class SchemaRouter:
         execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
         adapter_registry: AdapterRegistry | None = None,
+        network_policy: NetworkPolicy | None = None,
         structural_retrieval: bool = False,
         unavailable_cooldown_seconds: float = 30.0,
     ) -> None:
@@ -285,6 +288,7 @@ class SchemaRouter:
             self.executor,
             http_client=http_client,
             adapters=adapter_registry,
+            network_policy=network_policy,
         )
         self.schema_watcher = SchemaWatchManager(
             self.registry,
@@ -1033,6 +1037,7 @@ class SchemaRouter:
         execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
         adapter_registry: AdapterRegistry | None = None,
+        network_policy: NetworkPolicy | None = None,
         unavailable_cooldown_seconds: float = 30.0,
         base_url: str | None = None,
         schema_headers: dict[str, str] | None = None,
@@ -1053,6 +1058,7 @@ class SchemaRouter:
             execution_hooks=execution_hooks,
             registry=registry,
             adapter_registry=adapter_registry,
+            network_policy=network_policy,
             unavailable_cooldown_seconds=unavailable_cooldown_seconds,
         )
         await router.add_url(
@@ -2838,6 +2844,7 @@ class SchemaRouter:
                 timeout=config.timeout,
                 max_response_bytes=config.max_response_bytes,
                 http_client=self.loader.http_client,
+                network_policy=self.loader.network_policy,
             )
 
         if adapter == "graphql":
@@ -2857,6 +2864,7 @@ class SchemaRouter:
                 timeout=config.timeout,
                 max_response_bytes=config.max_response_bytes,
                 http_client=self.loader.http_client,
+                network_policy=self.loader.network_policy,
             )
 
         if adapter == "odata":
@@ -2876,6 +2884,7 @@ class SchemaRouter:
                 timeout=config.timeout,
                 max_response_bytes=config.max_response_bytes,
                 http_client=self.loader.http_client,
+                network_policy=self.loader.network_policy,
             )
 
         if adapter == "openrpc":
@@ -2894,6 +2903,7 @@ class SchemaRouter:
                 timeout=config.timeout,
                 max_response_bytes=config.max_response_bytes,
                 http_client=self.loader.http_client,
+                network_policy=self.loader.network_policy,
             )
 
         if adapter == "optimade":
@@ -2911,6 +2921,7 @@ class SchemaRouter:
                 trusted_headers=headers,
                 timeout=config.timeout,
                 http_client=self.loader.http_client,
+                network_policy=self.loader.network_policy,
             )
 
         if adapter == "http_json":
@@ -2929,6 +2940,7 @@ class SchemaRouter:
                 timeout=config.timeout,
                 max_response_bytes=config.max_response_bytes,
                 http_client=self.loader.http_client,
+                network_policy=self.loader.network_policy,
             )
 
         if adapter == "mcp":
@@ -2969,6 +2981,7 @@ class SchemaRouter:
                     trusted_headers=headers,
                     timeout=config.timeout,
                     client_factory=config.mcp_http_client_factory,
+                    network_policy=self.loader.network_policy,
                 )
 
             if config.mcp_bound_factory is None:
@@ -3726,6 +3739,7 @@ class SchemaRouter:
             timeout=timeout,
             max_response_bytes=max_response_bytes,
             http_client=self.loader.http_client,
+            network_policy=self.loader.network_policy,
         )
 
         return self.executor.publish_bound_tool(
@@ -3770,6 +3784,7 @@ class SchemaRouter:
                 base_url,
                 trusted_headers=trusted_headers,
                 timeout=timeout,
+                network_policy=self.loader.network_policy,
             )
         except ValueError as exc:
             raise RegistrationError("invalid OpenAPI execution binding") from exc
@@ -3854,6 +3869,7 @@ class SchemaRouter:
                 base_url,
                 trusted_headers=trusted_headers,
                 timeout=timeout,
+                network_policy=self.loader.network_policy,
             )
         except ValueError as exc:
             raise ProposalApprovalError("invalid proposal execution binding") from exc
@@ -5216,21 +5232,27 @@ class SchemaRouter:
         trace_store: RunTraceStore | None = None,
     ) -> AsyncIterator[RunEvent]:
         run_config = _coerce_run_config(config)
+        trace_redactor = TraceRedactor(run_config.trace_redaction)
 
         async def emit(event: RunEvent) -> RunEvent:
+            emitted = (
+                event.model_copy(deep=True)
+                if run_config.raw_trace_payloads
+                else trace_redactor.redact_event(event)
+            )
             if trace_store is not None:
                 try:
-                    trace_store.append(event)
+                    trace_store.append(emitted)
                 except Exception as exc:
                     raise TracePersistenceError(
                         (
                             "run event persistence failed after runtime event "
-                            f"{event.event!r} sequence={event.sequence}"
+                            f"{emitted.event!r} sequence={emitted.sequence}"
                         ),
-                        event=event.model_copy(deep=True),
-                        execution_succeeded=event.event in {"tool.end", "run.end"},
+                        event=emitted.model_copy(deep=True),
+                        execution_succeeded=emitted.event in {"tool.end", "run.end"},
                     ) from exc
-            return event
+            return emitted
         run_id = run_config.run_id or uuid4().hex
         sequence = 0
 

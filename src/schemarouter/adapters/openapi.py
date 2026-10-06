@@ -10,6 +10,7 @@ from urllib.parse import quote, unquote, urldefrag, urljoin, urlparse
 
 import httpx
 
+from .._http_headers import validate_trusted_headers
 from ..errors import InvocationUnavailableError, NonRetryableInvocationError
 from ..models import (
     AuthRequirementSet,
@@ -20,6 +21,7 @@ from ..models import (
     ToolCall,
     ToolSpec,
 )
+from ..network_policy import TRUSTED_INTERNAL_NETWORK_POLICY, NetworkPolicy
 from ..openapi_compatibility import analyze_openapi_compatibility
 
 _HTTP_METHODS = {"get", "post", "put", "patch", "delete", "options", "head", "trace"}
@@ -1595,6 +1597,7 @@ class OpenAPIRemoteInvoker:
         timeout: float = 20.0,
         max_response_bytes: int = _MAX_RUNTIME_RESPONSE_BYTES,
         http_client: httpx.AsyncClient | None = None,
+        network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY,
     ) -> None:
         parsed_base = urlparse(base_url)
         if parsed_base.scheme not in {"http", "https"} or not parsed_base.netloc:
@@ -1604,13 +1607,8 @@ class OpenAPIRemoteInvoker:
         if parsed_base.query or parsed_base.fragment:
             raise ValueError("base_url must not contain query or fragment")
 
-        trusted = dict(trusted_headers or {})
+        trusted = validate_trusted_headers(trusted_headers)
         trusted_names = [name.casefold() for name in trusted]
-        if len(trusted_names) != len(set(trusted_names)):
-            raise ValueError("trusted_headers contains case-insensitive duplicate names")
-        for name in trusted:
-            if not _HEADER_NAME_RE.fullmatch(name):
-                raise ValueError(f"invalid trusted header name: {name!r}")
 
         self.tool = tool
         self.base_url = base_url.rstrip("/")
@@ -1627,6 +1625,7 @@ class OpenAPIRemoteInvoker:
         self.timeout = timeout
         self.max_response_bytes = max_response_bytes
         self.http_client = http_client
+        self.network_policy = network_policy
 
     async def __call__(self, endpoint: str, arguments: dict[str, Any]) -> Any:
         return await self._invoke(endpoint, arguments, selected_fields=None)
@@ -1778,6 +1777,7 @@ class OpenAPIRemoteInvoker:
                 "endpoint path escaped the approved API origin"
             )
 
+        await self.network_policy.authorize(url)
         owns_client = self.http_client is None
         client = self.http_client or httpx.AsyncClient(
             timeout=self.timeout,

@@ -42,6 +42,7 @@ from .errors import (
 )
 from .executor import RegistryExecutor
 from .models import StrictModel, ToolSpec
+from .network_policy import TRUSTED_INTERNAL_NETWORK_POLICY, NetworkPolicy
 from .registry import ToolRegistry, replace_if_current
 from .schema_http import (
     attach_schema_http_validators,
@@ -324,12 +325,14 @@ async def _fetch_with_safe_redirects(
     url: str,
     *,
     headers: dict[str, str] | None,
+    network_policy: NetworkPolicy,
     max_redirects: int = 5,
     max_bytes: int = _MAX_SCHEMA_BYTES,
 ) -> httpx.Response:
     current = url
     initial = url
     for _ in range(max_redirects + 1):
+        await network_policy.authorize(current)
         async with client.stream(
             "GET",
             current,
@@ -463,6 +466,7 @@ class _OpenAPIRefBundler:
         *,
         root_url: str,
         headers: dict[str, str] | None,
+        network_policy: NetworkPolicy,
         max_depth: int,
         max_documents: int,
         max_bytes: int,
@@ -470,6 +474,7 @@ class _OpenAPIRefBundler:
         self.client = client
         self.root_url = urldefrag(root_url)[0]
         self.headers = headers
+        self.network_policy = network_policy
         self.max_depth = max_depth
         self.max_documents = max_documents
         self.max_bytes = max_bytes
@@ -783,6 +788,7 @@ class _OpenAPIRefBundler:
             self.client,
             resource_url,
             headers=self.headers,
+            network_policy=self.network_policy,
             max_bytes=min(_MAX_SCHEMA_BYTES, remaining),
         )
         body = response.content
@@ -896,6 +902,7 @@ class OpenAPISourceAdapter:
                 client,
                 context.url,
                 headers=conditional_headers,
+                network_policy=context.network_policy,
             )
             validators = schema_http_validators_from_headers(
                 response.headers,
@@ -911,6 +918,7 @@ class OpenAPISourceAdapter:
                         client,
                         root_url=resolved_schema_url,
                         headers=context.schema_headers,
+                        network_policy=context.network_policy,
                         max_depth=context.openapi_ref_max_depth,
                         max_documents=context.openapi_ref_max_documents,
                         max_bytes=context.openapi_ref_max_bytes,
@@ -1003,12 +1011,14 @@ class OpenAPISourceAdapter:
             if selected_base_url is None:
                 raise SchemaSourceError("no approved OpenAPI base URL is available")
             try:
+                await context.network_policy.authorize(selected_base_url)
                 invoker = OpenAPIRemoteInvoker(
                     tool,
                     selected_base_url,
                     trusted_headers=context.trusted_headers,
                     timeout=context.timeout,
                     http_client=context.http_client,
+                    network_policy=context.network_policy,
                 )
             except ValueError as exc:
                 raise SchemaSourceError(
@@ -1071,6 +1081,7 @@ class MCPSourceAdapter:
                 trusted_headers=context.trusted_headers,
                 timeout=context.timeout,
                 client_factory=context.mcp_client_factory,
+                network_policy=context.network_policy,
             )
         except (
             httpx.TimeoutException,
@@ -1092,6 +1103,7 @@ class MCPSourceAdapter:
                 trusted_headers=context.trusted_headers,
                 timeout=context.timeout,
                 client_factory=context.mcp_client_factory,
+                network_policy=context.network_policy,
             ),
         )
 
@@ -1125,11 +1137,13 @@ class URLSchemaLoader:
         *,
         http_client: httpx.AsyncClient | None = None,
         adapters: AdapterRegistry | None = None,
+        network_policy: NetworkPolicy | None = None,
     ) -> None:
         self.registry = registry
         self.executor = executor
         self.http_client = http_client
         self.adapters = adapters if adapters is not None else default_adapter_registry()
+        self.network_policy = network_policy or TRUSTED_INTERNAL_NETWORK_POLICY
         self._schema_http_validators: dict[
             str,
             _SchemaHTTPValidatorCacheEntry,
@@ -1305,6 +1319,7 @@ class URLSchemaLoader:
         _diagnose_probe: bool = False,
     ) -> AdapterLoadResult:
         _validate_url(url)
+        await self.network_policy.authorize(url)
         if not isinstance(allow_active_probes, bool):
             raise SchemaSourceError("allow_active_probes must be a boolean")
         if not isinstance(openapi_external_refs, bool):
@@ -1335,6 +1350,7 @@ class URLSchemaLoader:
             openapi_ref_max_bytes=openapi_ref_max_bytes,
             timeout=timeout,
             http_client=self.http_client,
+            network_policy=self.network_policy,
         )
 
         diagnostics: list[AdapterProbeDiagnostic] = []
