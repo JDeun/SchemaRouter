@@ -5021,8 +5021,6 @@ class SchemaRouter:
             )
         else:
             plan = self.planner.plan_with_additional_availability(request, predicate)
-        if self.authorization_policy is not None:
-            self._validate_plan_authorization(plan, principal, phase="plan")
         return plan
 
     async def aplan_executable(self, request: PlanRequest | str) -> ExecutionPlan:
@@ -5058,8 +5056,6 @@ class SchemaRouter:
                 request,
                 predicate,
             )
-        if self.authorization_policy is not None:
-            self._validate_plan_authorization(plan, principal, phase="plan")
         return plan
 
     def plan_executable_authorized(
