@@ -87,7 +87,7 @@ def test_snapshot_identity_and_graph_include_compatibility_context() -> None:
     )
 
     assert contextual.snapshot_id != plain.snapshot_id
-    assert plain.build_graph().edges == []
+    assert plain.build_graph().edges == ()
     assert contextual.build_graph().successors("producer") == ("consumer",)
 
     loaded = load_capability_snapshot(serialize_capability_snapshot(contextual))

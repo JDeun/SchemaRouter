@@ -81,6 +81,101 @@ def test_dependency_graph_links_only_satisfied_contracts() -> None:
     assert graph.predecessors("get_weather") == ()
 
 
+def test_dependency_graph_adjacency_indexes_preserve_edge_order() -> None:
+    compatibility = CapabilityComposition(status="compatible")
+    graph = CapabilityDependencyGraph(
+        capability_ids=("a", "b", "c", "d"),
+        edges=[
+            CapabilityDependencyEdge(
+                producer_id="a",
+                consumer_id="c",
+                compatibility=compatibility,
+            ),
+            CapabilityDependencyEdge(
+                producer_id="a",
+                consumer_id="b",
+                compatibility=compatibility,
+            ),
+            CapabilityDependencyEdge(
+                producer_id="d",
+                consumer_id="b",
+                compatibility=compatibility,
+            ),
+        ],
+    )
+
+    assert graph.successors("a") == ("c", "b")
+    assert graph.predecessors("b") == ("a", "d")
+    assert graph.successors("missing") == ()
+
+
+def test_dependency_graph_assignment_rebuilds_adjacency_indexes() -> None:
+    compatibility = CapabilityComposition(status="compatible")
+    graph = CapabilityDependencyGraph(
+        capability_ids=("a", "b"),
+        edges=[
+            CapabilityDependencyEdge(
+                producer_id="a",
+                consumer_id="b",
+                compatibility=compatibility,
+            )
+        ],
+    )
+    assert graph.successors("a") == ("b",)
+
+    graph.edges = []
+
+    assert isinstance(graph.edges, tuple)
+    assert graph.successors("a") == ()
+    assert graph.predecessors("b") == ()
+
+
+def test_dependency_graph_model_copy_update_rebuilds_adjacency_indexes() -> None:
+    compatibility = CapabilityComposition(status="compatible")
+    graph = CapabilityDependencyGraph(
+        capability_ids=("a", "b", "c"),
+        edges=[
+            CapabilityDependencyEdge(
+                producer_id="a",
+                consumer_id="b",
+                compatibility=compatibility,
+            )
+        ],
+    )
+    replacement = CapabilityDependencyEdge(
+        producer_id="b",
+        consumer_id="c",
+        compatibility=compatibility,
+    )
+
+    copied = graph.model_copy(update={"edges": [replacement]}, deep=True)
+
+    assert copied.successors("a") == ()
+    assert copied.successors("b") == ("c",)
+    assert copied.predecessors("c") == ("b",)
+    assert graph.successors("a") == ("b",)
+
+
+def test_dependency_graph_private_indexes_do_not_change_serialization() -> None:
+    graph = CapabilityDependencyGraph(
+        capability_ids=("a", "b"),
+        edges=[
+            CapabilityDependencyEdge(
+                producer_id="a",
+                consumer_id="b",
+                compatibility=CapabilityComposition(status="compatible"),
+            )
+        ],
+    )
+
+    dumped = graph.model_dump(mode="json")
+
+    assert isinstance(graph.edges, tuple)
+    assert set(dumped) == {"capability_ids", "edges"}
+    assert dumped["capability_ids"] == ["a", "b"]
+    assert len(dumped["edges"]) == 1
+
+
 def test_dependency_graph_does_not_create_edges_for_unknown_contracts() -> None:
     producer = CapabilityContract(
         capability_id="producer",
@@ -91,7 +186,7 @@ def test_dependency_graph_does_not_create_edges_for_unknown_contracts() -> None:
         requires=[field("resource.id")],
     )
     graph = build_capability_dependency_graph([producer, consumer])
-    assert graph.edges == []
+    assert graph.edges == ()
 
 
 def test_index_prunes_full_comparison_calls_on_sparse_registry(

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
+from typing import Any
 
-from pydantic import Field
+from pydantic import PrivateAttr
 
 from .capability_contracts import (
     CapabilityComposition,
@@ -22,21 +23,61 @@ class CapabilityDependencyEdge(StrictModel):
 
 class CapabilityDependencyGraph(StrictModel):
     capability_ids: tuple[str, ...] = ()
-    edges: list[CapabilityDependencyEdge] = Field(default_factory=list)
+    edges: tuple[CapabilityDependencyEdge, ...] = ()
+
+    _successors_by_id: dict[str, tuple[str, ...]] = PrivateAttr(default_factory=dict)
+    _predecessors_by_id: dict[str, tuple[str, ...]] = PrivateAttr(default_factory=dict)
+
+    def model_post_init(self, __context: Any) -> None:
+        del __context
+        self._rebuild_adjacency_indexes()
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        super().__setattr__(name, value)
+        if (
+            name in {"capability_ids", "edges"}
+            and "capability_ids" in self.__dict__
+            and "edges" in self.__dict__
+        ):
+            self._rebuild_adjacency_indexes()
+
+    def model_copy(
+        self,
+        *,
+        update: Mapping[str, Any] | None = None,
+        deep: bool = False,
+    ) -> CapabilityDependencyGraph:
+        copied = super().model_copy(update=update, deep=deep)
+        copied._rebuild_adjacency_indexes()
+        return copied
+
+    def _rebuild_adjacency_indexes(self) -> None:
+        successors: dict[str, list[str]] = {
+            capability_id: []
+            for capability_id in self.capability_ids
+        }
+        predecessors: dict[str, list[str]] = {
+            capability_id: []
+            for capability_id in self.capability_ids
+        }
+        for edge in self.edges:
+            successors.setdefault(edge.producer_id, []).append(edge.consumer_id)
+            predecessors.setdefault(edge.consumer_id, []).append(edge.producer_id)
+
+        self._successors_by_id = {
+            capability_id: tuple(values)
+            for capability_id, values in successors.items()
+        }
+        self._predecessors_by_id = {
+            capability_id: tuple(values)
+            for capability_id, values in predecessors.items()
+        }
 
     def successors(self, capability_id: str) -> tuple[str, ...]:
-        return tuple(
-            edge.consumer_id
-            for edge in self.edges
-            if edge.producer_id == capability_id
-        )
+        return self._successors_by_id.get(capability_id, ())
 
     def predecessors(self, capability_id: str) -> tuple[str, ...]:
-        return tuple(
-            edge.producer_id
-            for edge in self.edges
-            if edge.consumer_id == capability_id
-        )
+        return self._predecessors_by_id.get(capability_id, ())
 
 
 def _capabilities_by_id(
@@ -168,7 +209,7 @@ def build_capability_dependency_graph(
     edges.sort(key=lambda edge: (edge.producer_id, edge.consumer_id))
     return CapabilityDependencyGraph(
         capability_ids=capability_ids,
-        edges=edges,
+        edges=tuple(edges),
     )
 
 
@@ -203,9 +244,11 @@ def update_capability_dependency_graph(
     if not changed:
         return CapabilityDependencyGraph(
             capability_ids=tuple(sorted(current)),
-            edges=sorted(
-                graph.edges,
-                key=lambda edge: (edge.producer_id, edge.consumer_id),
+            edges=tuple(
+                sorted(
+                    graph.edges,
+                    key=lambda edge: (edge.producer_id, edge.consumer_id),
+                )
             ),
         )
 
@@ -229,10 +272,10 @@ def update_capability_dependency_graph(
     }
     return CapabilityDependencyGraph(
         capability_ids=tuple(sorted(current)),
-        edges=[
+        edges=tuple(
             edge_by_pair[pair]
             for pair in sorted(edge_by_pair)
-        ],
+        ),
     )
 
 
