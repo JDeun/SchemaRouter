@@ -20,7 +20,6 @@ from ..models import (
 from ..runs import RunConfig
 from ..runtime import SchemaRouter
 from ..validation import effective_input_schema
-
 from ._export_contract import (
     _authorized_endpoint_view,
     _capture_exported_endpoint_contract,
