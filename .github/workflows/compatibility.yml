@@ -14,6 +14,8 @@ on:
       - "scripts/aggregate_compatibility_matrix.py"
       - "scripts/published_pypi_smoke.py"
       - "scripts/installed_extras_smoke.py"
+      - "scripts/compatibility_scope.py"
+      - "tests/test_compatibility_scope.py"
       - ".github/workflows/compatibility.yml"
 
 permissions:
@@ -24,7 +26,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      openapi: ${{ steps.scope.outputs.openapi }}
+      optimade: ${{ steps.scope.outputs.optimade }}
+      providers: ${{ steps.scope.outputs.providers }}
+      vector: ${{ steps.scope.outputs.vector }}
+      record: ${{ steps.scope.outputs.record }}
+      graph: ${{ steps.scope.outputs.graph }}
+      matrix: ${{ steps.scope.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Classify compatibility surface
+        id: scope
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT_NAME" != "pull_request" ] || [ -z "$BASE_SHA" ] || [ -z "$HEAD_SHA" ]; then
+            python scripts/compatibility_scope.py .github/workflows/compatibility.yml --github-output >> "$GITHUB_OUTPUT"
+          else
+            git diff --name-only --diff-filter=ACMR "$BASE_SHA...$HEAD_SHA" |
+              python scripts/compatibility_scope.py --github-output >> "$GITHUB_OUTPUT"
+          fi
+
   public-openapi:
+    needs: changes
+    if: ${{ needs.changes.outputs.openapi == 'true' }}
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -47,6 +79,8 @@ jobs:
 
 
   public-optimade:
+    needs: changes
+    if: ${{ needs.changes.outputs.optimade == 'true' }}
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -92,6 +126,8 @@ jobs:
 
 
   public-materials-project-provider:
+    needs: changes
+    if: ${{ needs.changes.outputs.providers == 'true' }}
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -117,6 +153,8 @@ jobs:
 
 
   public-crossref-provider:
+    needs: changes
+    if: ${{ needs.changes.outputs.providers == 'true' }}
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -142,6 +180,8 @@ jobs:
 
 
   public-tavily-provider:
+    needs: changes
+    if: ${{ needs.changes.outputs.providers == 'true' }}
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -170,6 +210,8 @@ jobs:
 
 
   qdrant-live:
+    needs: changes
+    if: ${{ needs.changes.outputs.vector == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -205,6 +247,8 @@ jobs:
           retention-days: 30
 
   pgvector-live:
+    needs: changes
+    if: ${{ needs.changes.outputs.vector == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -246,6 +290,8 @@ jobs:
           retention-days: 30
 
   mongodb-live:
+    needs: changes
+    if: ${{ needs.changes.outputs.record == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -289,6 +335,8 @@ jobs:
           retention-days: 30
 
   chroma-live:
+    needs: changes
+    if: ${{ needs.changes.outputs.vector == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -312,6 +360,8 @@ jobs:
           retention-days: 30
 
   clickhouse-live:
+    needs: changes
+    if: ${{ needs.changes.outputs.record == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -364,6 +414,8 @@ jobs:
           retention-days: 30
 
   falkordb-live:
+    needs: changes
+    if: ${{ needs.changes.outputs.graph == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -389,6 +441,8 @@ jobs:
           retention-days: 30
 
   adapter-compatibility-matrix:
+    needs: changes
+    if: ${{ needs.changes.outputs.matrix == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -455,6 +509,7 @@ jobs:
 
 
   published-pypi:
+    if: github.event_name != 'pull_request'
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -492,6 +547,7 @@ jobs:
 
 
   published-pypi-lightweight:
+    if: github.event_name != 'pull_request'
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -522,6 +578,7 @@ jobs:
 
 
   published-pypi-integrations:
+    if: github.event_name != 'pull_request'
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
