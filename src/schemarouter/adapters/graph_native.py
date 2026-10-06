@@ -897,12 +897,16 @@ class SparqlGraphBackend:
         *,
         endpoint: str,
         graph_name: str = "sparql",
+        max_schema_items: int = _MAX_SCHEMA_ITEMS,
     ) -> None:
         if not endpoint.strip():
             raise ValueError("SPARQL endpoint must be non-empty")
+        if max_schema_items < 1:
+            raise ValueError("SPARQL max_schema_items must be positive")
         self._client = client
         self._endpoint = endpoint
         self._graph_name = graph_name
+        self._max_schema_items = max_schema_items
         self._predicates: tuple[str, ...] | None = None
 
     def _select(self, query: str) -> list[dict[str, Any]]:
@@ -936,13 +940,24 @@ class SparqlGraphBackend:
         return rows
 
     def list_graphs(self) -> tuple[GraphSourceSpec, ...]:
+        schema_limit = self._max_schema_items + 1
         class_rows = self._select(
-            "SELECT DISTINCT ?class WHERE { ?s a ?class . } ORDER BY ?class LIMIT 1000"
+            "SELECT DISTINCT ?class WHERE { ?s a ?class . } ORDER BY ?class "
+            f"LIMIT {schema_limit}"
         )
         predicate_rows = self._select(
             "SELECT DISTINCT ?predicate WHERE { ?s ?predicate ?o . } "
-            "ORDER BY ?predicate LIMIT 1000"
+            "ORDER BY ?predicate "
+            f"LIMIT {schema_limit}"
         )
+        if len(class_rows) > self._max_schema_items:
+            raise RegistrationError(
+                f"SPARQL classes exceeded limit={self._max_schema_items}"
+            )
+        if len(predicate_rows) > self._max_schema_items:
+            raise RegistrationError(
+                f"SPARQL predicates exceeded limit={self._max_schema_items}"
+            )
         classes = tuple(
             str(row["class"]) for row in class_rows if row.get("class")
         )
