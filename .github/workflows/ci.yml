@@ -102,14 +102,12 @@ jobs:
 
   test-311-scheduled:
     name: test (3.11)
-    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - run: echo "Python 3.11 full qualification runs in python-compatibility.yml"
 
   test-313-scheduled:
     name: test (3.13)
-    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - run: echo "Python 3.13 full qualification runs in python-compatibility.yml"
@@ -216,21 +214,33 @@ jobs:
           retention-days: 14
   minimum-dependencies:
     needs: changes
-    if: ${{ needs.changes.outputs.deps == 'true' || needs.changes.outputs.runtime == 'true' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Skip minimum-dependencies qualification when unaffected
+        if: ${{ needs.changes.outputs.deps != 'true' && needs.changes.outputs.runtime != 'true' }}
+        run: echo "minimum-dependencies qualification is not required for this change surface"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ needs.changes.outputs.deps == 'true' || needs.changes.outputs.runtime == 'true' }}
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        if: ${{ needs.changes.outputs.deps == 'true' || needs.changes.outputs.runtime == 'true' }}
         with:
           python-version: "3.10"
       - run: python -m pip install --upgrade pip
+        if: ${{ needs.changes.outputs.deps == 'true' || needs.changes.outputs.runtime == 'true' }}
       - run: pip install "pytest>=8.2" "pytest-asyncio>=0.23" "hypothesis>=6.130,<7"
+        if: ${{ needs.changes.outputs.deps == 'true' || needs.changes.outputs.runtime == 'true' }}
       - run: pip install "httpx==0.27.0" "jsonschema==4.23.0" "pydantic==2.8.0" "pyyaml==6.0.0"
+        if: ${{ needs.changes.outputs.deps == 'true' || needs.changes.outputs.runtime == 'true' }}
       - run: pip install -e . --no-deps
+        if: ${{ needs.changes.outputs.deps == 'true' || needs.changes.outputs.runtime == 'true' }}
       - run: pytest -q -m "not mcp_integration"
+        if: ${{ needs.changes.outputs.deps == 'true' || needs.changes.outputs.runtime == 'true' }}
       - run: python examples/quickstart.py
+        if: ${{ needs.changes.outputs.deps == 'true' || needs.changes.outputs.runtime == 'true' }}
       - run: python examples/database_quickstart.py
+        if: ${{ needs.changes.outputs.deps == 'true' || needs.changes.outputs.runtime == 'true' }}
       - run: python scripts/consumer_acceptance.py
+        if: ${{ needs.changes.outputs.deps == 'true' || needs.changes.outputs.runtime == 'true' }}
 
   dependency-audit:
     needs: changes
@@ -597,45 +607,69 @@ jobs:
 
   langchain-integration:
     needs: changes
-    if: ${{ needs.changes.outputs.langchain == 'true' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Skip LangChain qualification when unaffected
+        if: ${{ needs.changes.outputs.langchain != 'true' }}
+        run: echo "LangChain qualification is not required for this change surface"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ needs.changes.outputs.langchain == 'true' }}
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        if: ${{ needs.changes.outputs.langchain == 'true' }}
         with:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
+        if: ${{ needs.changes.outputs.langchain == 'true' }}
       - run: pip install -e ".[dev,langchain,langgraph]"
+        if: ${{ needs.changes.outputs.langchain == 'true' }}
       - run: pytest -q tests/test_langchain_integration.py tests/test_langgraph_integration.py
+        if: ${{ needs.changes.outputs.langchain == 'true' }}
       - run: python examples/langchain_quickstart.py
+        if: ${{ needs.changes.outputs.langchain == 'true' }}
       - run: python examples/langgraph_quickstart.py
+        if: ${{ needs.changes.outputs.langchain == 'true' }}
 
   llamaindex-integration:
     needs: changes
-    if: ${{ needs.changes.outputs.llamaindex == 'true' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Skip LlamaIndex qualification when unaffected
+        if: ${{ needs.changes.outputs.llamaindex != 'true' }}
+        run: echo "LlamaIndex qualification is not required for this change surface"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ needs.changes.outputs.llamaindex == 'true' }}
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        if: ${{ needs.changes.outputs.llamaindex == 'true' }}
         with:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
+        if: ${{ needs.changes.outputs.llamaindex == 'true' }}
       - run: pip install -e ".[dev,llamaindex]"
+        if: ${{ needs.changes.outputs.llamaindex == 'true' }}
       - run: pytest -q tests/test_llamaindex_integration.py
+        if: ${{ needs.changes.outputs.llamaindex == 'true' }}
       - run: python examples/llamaindex_quickstart.py
+        if: ${{ needs.changes.outputs.llamaindex == 'true' }}
 
   jev-integration:
     needs: changes
-    if: ${{ needs.changes.outputs.jev == 'true' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Skip JEV qualification when unaffected
+        if: ${{ needs.changes.outputs.jev != 'true' }}
+        run: echo "JEV qualification is not required for this change surface"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ needs.changes.outputs.jev == 'true' }}
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        if: ${{ needs.changes.outputs.jev == 'true' }}
         with:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
+        if: ${{ needs.changes.outputs.jev == 'true' }}
       - run: pip install -e ".[dev,jev]"
+        if: ${{ needs.changes.outputs.jev == 'true' }}
       - run: pytest -q tests/test_jev_integration.py
+        if: ${{ needs.changes.outputs.jev == 'true' }}
 
   laya-integration:
     needs: changes
@@ -655,30 +689,45 @@ jobs:
 
   otel-integration:
     needs: changes
-    if: ${{ needs.changes.outputs.otel == 'true' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Skip OpenTelemetry qualification when unaffected
+        if: ${{ needs.changes.outputs.otel != 'true' }}
+        run: echo "OpenTelemetry qualification is not required for this change surface"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ needs.changes.outputs.otel == 'true' }}
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        if: ${{ needs.changes.outputs.otel == 'true' }}
         with:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
+        if: ${{ needs.changes.outputs.otel == 'true' }}
       - run: pip install -e ".[dev,otel]"
+        if: ${{ needs.changes.outputs.otel == 'true' }}
       - run: pytest -q tests/test_opentelemetry_integration.py
+        if: ${{ needs.changes.outputs.otel == 'true' }}
 
   mcp-integration:
     needs: changes
-    if: ${{ needs.changes.outputs.mcp == 'true' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Skip MCP qualification when unaffected
+        if: ${{ needs.changes.outputs.mcp != 'true' }}
+        run: echo "MCP qualification is not required for this change surface"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ needs.changes.outputs.mcp == 'true' }}
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        if: ${{ needs.changes.outputs.mcp == 'true' }}
         with:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
+        if: ${{ needs.changes.outputs.mcp == 'true' }}
       - run: pip install -e ".[dev,mcp]"
+        if: ${{ needs.changes.outputs.mcp == 'true' }}
       - run: pytest -q tests/test_mcp_integration.py
+        if: ${{ needs.changes.outputs.mcp == 'true' }}
       - run: python examples/mcp_stdio_quickstart.py
+        if: ${{ needs.changes.outputs.mcp == 'true' }}
 
   database-integration:
     needs: changes
@@ -696,30 +745,42 @@ jobs:
 
   docs:
     needs: changes
-    if: ${{ needs.changes.outputs.docs == 'true' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Skip docs qualification when unaffected
+        if: ${{ needs.changes.outputs.docs != 'true' }}
+        run: echo "docs qualification is not required for this change surface"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ needs.changes.outputs.docs == 'true' }}
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        if: ${{ needs.changes.outputs.docs == 'true' }}
         with:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
+        if: ${{ needs.changes.outputs.docs == 'true' }}
       - run: pip install -e ".[docs]"
+        if: ${{ needs.changes.outputs.docs == 'true' }}
       - name: Check canonical repository facts
+        if: ${{ needs.changes.outputs.docs == 'true' }}
         run: python scripts/sync_repository_facts.py --check
       - name: Prepare Korean documentation tree
+        if: ${{ needs.changes.outputs.docs == 'true' }}
         run: python scripts/prepare_korean_docs.py
       - name: Build English documentation
+        if: ${{ needs.changes.outputs.docs == 'true' }}
         run: mkdocs build --strict -f mkdocs.yml
         env:
           NO_MKDOCS_2_WARNING: "1"
       - name: Build Korean documentation
+        if: ${{ needs.changes.outputs.docs == 'true' }}
         run: mkdocs build --strict -f mkdocs.ko.yml
         env:
           NO_MKDOCS_2_WARNING: "1"
       - name: Verify rendered Markdown/code-block structure
+        if: ${{ needs.changes.outputs.docs == 'true' }}
         run: python scripts/check_rendered_docs.py site
       - name: Verify bilingual Pages layout
+        if: ${{ needs.changes.outputs.docs == 'true' }}
         run: |
           python - <<'PY'
           from pathlib import Path
