@@ -19,7 +19,9 @@ _ADAPTIVE_CHECKPOINT_LIMITS = DocumentLimits(
     max_depth=8,
     max_nodes=30_000,
     max_container_items=_ADAPTIVE_CHECKPOINT_MAX_ROUTES,
-    max_string_chars=_ADAPTIVE_CHECKPOINT_MAX_KEY_CHARS,
+    # Keep the document-wide string ceiling slightly above the route-key ceiling so
+    # route identifiers get the more specific validation/error below.
+    max_string_chars=_ADAPTIVE_CHECKPOINT_MAX_KEY_CHARS * 2,
 )
 
 
