@@ -231,6 +231,7 @@ async def scenario_scoped_policy_rule() -> dict[str, object]:
 
     router = SchemaRouter(
         policy=ExecutionPolicy(
+            allow_mutations=True,
             rules=(
                 PolicyRule(
                     operation="update_profile.call",
