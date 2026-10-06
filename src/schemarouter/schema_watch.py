@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from threading import RLock
 from typing import Any, Literal
 
+from ._loop_affinity import LoopAffinityGuard
 from .adapters.base import AdapterRegistry, RefreshProfile
 from .errors import SchemaSourceError
 from .models import ToolSpec
@@ -97,6 +98,7 @@ class SchemaWatchManager:
         self._run_lock = asyncio.Lock()
         self._membership_lock = RLock()
         self._wake = asyncio.Event()
+        self._loop_affinity = LoopAffinityGuard("schema watcher")
         self._max_concurrency = 4
 
     @property
@@ -107,6 +109,7 @@ class SchemaWatchManager:
     async def lifecycle_guard(self):
         """Quiesce schema refresh while a router lifecycle mutation runs."""
 
+        self._loop_affinity.claim()
         async with self._run_lock:
             yield
 
@@ -229,7 +232,7 @@ class SchemaWatchManager:
         )
         with self._membership_lock:
             self._records[tool_key] = record
-        self._wake.set()
+        self._loop_affinity.notify(self._wake.set)
 
     @contextmanager
     def _watch_commit_guard(self, tool_key: str, record: _WatchRecord):
@@ -243,7 +246,7 @@ class SchemaWatchManager:
     def unregister(self, tool_key: str) -> None:
         with self._membership_lock:
             self._records.pop(tool_key, None)
-        self._wake.set()
+        self._loop_affinity.notify(self._wake.set)
 
     def snapshots(self) -> tuple[SchemaWatchSnapshot, ...]:
         return tuple(
@@ -329,6 +332,7 @@ class SchemaWatchManager:
     ) -> SchemaRefreshResult:
         """Refetch and accept only the exact candidate reviewed by trusted local code."""
 
+        self._loop_affinity.claim()
         async with self._run_lock:
             with self._membership_lock:
                 record = self._records.get(tool_key)
@@ -423,6 +427,7 @@ class SchemaWatchManager:
     ) -> SchemaRefreshResult:
         """Clear only the exact pending candidate reviewed by trusted local code."""
 
+        self._loop_affinity.claim()
         async with self._run_lock:
             record = self._records.get(tool_key)
             if record is None:
@@ -569,6 +574,7 @@ class SchemaWatchManager:
         force: bool = True,
         max_concurrency: int | None = None,
     ) -> tuple[SchemaWatchSnapshot, ...]:
+        self._loop_affinity.claim()
         concurrency = (
             self._max_concurrency
             if max_concurrency is None
@@ -630,6 +636,7 @@ class SchemaWatchManager:
             raise
 
     async def start(self, *, max_concurrency: int = 4) -> None:
+        self._loop_affinity.claim()
         if self.running:
             raise RuntimeError("schema watcher is already running")
         if max_concurrency < 1:
@@ -642,5 +649,6 @@ class SchemaWatchManager:
         self._task = None
         if task is None:
             return
+        self._loop_affinity.claim()
         task.cancel()
         await asyncio.gather(task, return_exceptions=True)

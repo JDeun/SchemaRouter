@@ -9,6 +9,7 @@ from urllib.parse import quote, urlparse
 
 import httpx
 
+from .._http_headers import validate_trusted_headers
 from .._url_safety import safe_provenance_url
 from ..errors import (
     InvocationUnavailableError,
@@ -24,6 +25,7 @@ from ..models import (
     ToolCall,
     ToolSpec,
 )
+from ..network_policy import TRUSTED_INTERNAL_NETWORK_POLICY, NetworkPolicy
 from ..schema_http import (
     attach_schema_http_validators,
     conditional_schema_headers,
@@ -88,7 +90,9 @@ async def _bounded_get(
     headers: dict[str, str] | None,
     max_bytes: int,
     params: dict[str, str] | None = None,
+    network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY,
 ) -> httpx.Response:
+    await network_policy.authorize(url)
     async with client.stream(
         "GET",
         url,
@@ -490,13 +494,15 @@ class ODataRemoteInvoker:
         timeout: float = 20.0,
         max_response_bytes: int = _MAX_RESPONSE_BYTES,
         http_client: httpx.AsyncClient | None = None,
+        network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY,
     ) -> None:
         self.tool = tool
         self.service_url = _validate_base_url(service_url)
-        self.trusted_headers = dict(trusted_headers or {})
+        self.trusted_headers = validate_trusted_headers(trusted_headers)
         self.timeout = timeout
         self.max_response_bytes = max_response_bytes
         self.http_client = http_client
+        self.network_policy = network_policy
 
     async def invoke_call(self, call: ToolCall) -> Any:
         endpoint = self.tool.endpoint(call.endpoint)
@@ -537,6 +543,7 @@ class ODataRemoteInvoker:
                     headers=self.trusted_headers,
                     max_bytes=self.max_response_bytes,
                     params=query,
+                    network_policy=self.network_policy,
                 )
             except httpx.TimeoutException as exc:
                 raise InvocationUnavailableError("OData request timed out") from exc
@@ -608,6 +615,7 @@ class ODataSourceAdapter:
                         context.schema_validators,
                     ),
                     max_bytes=_MAX_METADATA_BYTES,
+                    network_policy=context.network_policy,
                 )
                 validators = schema_http_validators_from_headers(
                     response.headers,
@@ -664,6 +672,7 @@ class ODataSourceAdapter:
                 trusted_headers=context.trusted_headers,
                 timeout=context.timeout,
                 http_client=context.http_client,
+                network_policy=context.network_policy,
             )
             return AdapterLoadResult(tool=tool, invoker=invoker)
         finally:

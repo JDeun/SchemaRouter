@@ -50,3 +50,36 @@ Tavily는 인증 HTTP/JSON + optional Python SDK 경로를 갖습니다.
 
 Core에 protocol-specific adapter를 추가하는 기준은 generic HTTP/Python/plugin 경로로는 보존하기
 어려운 machine-readable schema 의미가 실제로 있는가입니다.
+
+## 네트워크 신뢰 경계
+
+URL 기반 discovery와 execution은 네트워크 신뢰 경계입니다. 기본
+`NetworkPolicy.trusted_internal()`은 기존 local/intranet 배포를 보존하므로, model 또는
+사용자 입력이 결정하는 URL을 기본 설정에 그대로 전달해서는 안 됩니다.
+
+신뢰도가 낮은 입력이 URL에 영향을 줄 수 있다면 public-network 정책을 명시합니다.
+
+```python
+from schemarouter import NetworkPolicy, SchemaRouter
+
+router = SchemaRouter(
+    network_policy=NetworkPolicy.public_only(
+        allowed_ports={80, 443},
+    )
+)
+await router.add_url("https://api.example.com/openapi.json", kind="openapi")
+```
+
+Public profile은 loopback, link-local, private, multicast/reserved 및 일반적인 cloud metadata
+목적지를 거부합니다. Hostname은 IDNA 정규화 후 네트워크 접근 직전에 resolve하며, redirect와
+외부 OpenAPI reference도 매번 다시 검사합니다. 같은 정책이 OpenAPI/HTTP JSON, GraphQL,
+OData, OpenRPC, OPTIMADE, MCP HTTP 실행 binding에도 전달됩니다.
+
+의도적으로 사용하는 내부 서비스는 `allowed_hosts`로 명시적으로 신뢰할 수 있습니다.
+Trusted header는 cross-origin schema redirect로 전달되지 않으며, redirect를 지원하지 않는
+protocol adapter는 기존과 같이 redirect를 거부합니다.
+
+DNS 정책 검사와 HTTP client의 실제 connection lookup은 별도 단계입니다. 따라서 built-in
+public policy는 DNS rebinding 노출을 줄이지만 connection-level DNS pinning까지 보장하지는
+않습니다. 더 강한 보장이 필요하면 검증한 주소를 pin하는 transport/resolver 조합을 사용하거나
+동일한 egress 정책을 네트워크 계층에서도 강제해야 합니다.

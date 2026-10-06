@@ -93,7 +93,7 @@
     },
     {
       "path": "getting-started/runtime-lifecycle.md",
-      "source_blob": "5e1e5e548a438067d4bcf729cc40c8051f7a26e8"
+      "source_blob": "cda61224204bfcc96be326373e1236e48265f984"
     },
     {
       "path": "getting-started/schema-explorer.md",
@@ -269,11 +269,11 @@
     },
     {
       "path": "guides/run-traces.md",
-      "source_blob": "323eb48feded1bb63d9813e772f2f17c95c66861"
+      "source_blob": "39bf7d89bb6b8082c2de17b3b81379651cd39ec4"
     },
     {
       "path": "guides/runtime.md",
-      "source_blob": "1b81d2ee1dde296298d41b5cf1a3a399ecc98850"
+      "source_blob": "1826b1c89c8603cfd17d8b126e943cf6fb6c1cdc"
     },
     {
       "path": "guides/schema-drift.md",
@@ -285,7 +285,7 @@
     },
     {
       "path": "guides/universal-ingestion.md",
-      "source_blob": "b01647e3f39d9a172fd78de119674fca49503e3c"
+      "source_blob": "30f0d2b160bc26ebaa95d5e7434f8eb040070ac6"
     },
     {
       "path": "guides/vector-store-onboarding.md",

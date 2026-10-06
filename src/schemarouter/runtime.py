@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import inspect
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Mapping, Sequence
 from contextlib import nullcontext
 from typing import Any, TypeVar
@@ -11,6 +10,7 @@ from uuid import uuid4
 import httpx
 from pydantic import TypeAdapter
 
+from ._loop_affinity import SyncLoopRunner
 from .adapters.base import AdapterRegistry, SourceAdapter
 from .adapters.mcp import (
     MCPBoundClientFactory,
@@ -86,6 +86,7 @@ from .models import (
     ToolResult,
     ToolSpec,
 )
+from .network_policy import NetworkPolicy
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
@@ -127,10 +128,12 @@ from .state_retrieval import (
     StateAwareCapabilityRetrieval,
     StateConditionedCapabilityRetrieval,
 )
-from .traces import RunTraceStore
+from .trace_redaction import TraceRedactor
+from .traces import RunTraceStore, append_run_event_async
 from .validation import projected_output_schema
 
 _T = TypeVar("_T")
+_SYNC_LOOP_RUNNER = SyncLoopRunner()
 
 
 def _require_execution_event_exception(
@@ -198,50 +201,11 @@ def _coerce_run_config(config: RunConfig | dict[str, Any] | None) -> RunConfig:
 
 
 def _run_sync(factory: Callable[[], Awaitable[_T]]) -> _T:
-    try:
-        asyncio.get_running_loop()
-    except RuntimeError:
-        async def await_factory() -> _T:
-            return await factory()
-
-        return asyncio.run(await_factory())
-    raise RuntimeError(
-        "synchronous SchemaRouter API cannot run inside an active event loop; "
-        "use the async API instead"
-    )
+    return _SYNC_LOOP_RUNNER.run(factory)
 
 
 def _stream_sync(factory: Callable[[], AsyncIterator[_T]]) -> Iterator[_T]:
-    try:
-        asyncio.get_running_loop()
-    except RuntimeError:
-        pass
-    else:
-        raise RuntimeError(
-            "synchronous SchemaRouter streaming cannot run inside an active event loop; "
-            "use the async streaming API instead"
-        )
-
-    loop = asyncio.new_event_loop()
-    iterator = factory()
-    try:
-        while True:
-            try:
-                yield loop.run_until_complete(iterator.__anext__())
-            except StopAsyncIteration:
-                break
-    finally:
-        aclose = getattr(iterator, "aclose", None)
-
-        async def close_iterator() -> None:
-            if not callable(aclose):
-                return
-            close_result = aclose()
-            if inspect.isawaitable(close_result):
-                await close_result
-
-        loop.run_until_complete(close_iterator())
-        loop.close()
+    yield from _SYNC_LOOP_RUNNER.stream(factory)
 
 
 class SchemaRouter:
@@ -259,6 +223,7 @@ class SchemaRouter:
         execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
         adapter_registry: AdapterRegistry | None = None,
+        network_policy: NetworkPolicy | None = None,
         structural_retrieval: bool = False,
         unavailable_cooldown_seconds: float = 30.0,
     ) -> None:
@@ -285,6 +250,7 @@ class SchemaRouter:
             self.executor,
             http_client=http_client,
             adapters=adapter_registry,
+            network_policy=network_policy,
         )
         self.schema_watcher = SchemaWatchManager(
             self.registry,
@@ -1033,6 +999,7 @@ class SchemaRouter:
         execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
         adapter_registry: AdapterRegistry | None = None,
+        network_policy: NetworkPolicy | None = None,
         unavailable_cooldown_seconds: float = 30.0,
         base_url: str | None = None,
         schema_headers: dict[str, str] | None = None,
@@ -1053,6 +1020,7 @@ class SchemaRouter:
             execution_hooks=execution_hooks,
             registry=registry,
             adapter_registry=adapter_registry,
+            network_policy=network_policy,
             unavailable_cooldown_seconds=unavailable_cooldown_seconds,
         )
         await router.add_url(
@@ -2838,6 +2806,7 @@ class SchemaRouter:
                 timeout=config.timeout,
                 max_response_bytes=config.max_response_bytes,
                 http_client=self.loader.http_client,
+                network_policy=self.loader.network_policy,
             )
 
         if adapter == "graphql":
@@ -2857,6 +2826,7 @@ class SchemaRouter:
                 timeout=config.timeout,
                 max_response_bytes=config.max_response_bytes,
                 http_client=self.loader.http_client,
+                network_policy=self.loader.network_policy,
             )
 
         if adapter == "odata":
@@ -2876,6 +2846,7 @@ class SchemaRouter:
                 timeout=config.timeout,
                 max_response_bytes=config.max_response_bytes,
                 http_client=self.loader.http_client,
+                network_policy=self.loader.network_policy,
             )
 
         if adapter == "openrpc":
@@ -2894,6 +2865,7 @@ class SchemaRouter:
                 timeout=config.timeout,
                 max_response_bytes=config.max_response_bytes,
                 http_client=self.loader.http_client,
+                network_policy=self.loader.network_policy,
             )
 
         if adapter == "optimade":
@@ -2911,6 +2883,7 @@ class SchemaRouter:
                 trusted_headers=headers,
                 timeout=config.timeout,
                 http_client=self.loader.http_client,
+                network_policy=self.loader.network_policy,
             )
 
         if adapter == "http_json":
@@ -2929,6 +2902,7 @@ class SchemaRouter:
                 timeout=config.timeout,
                 max_response_bytes=config.max_response_bytes,
                 http_client=self.loader.http_client,
+                network_policy=self.loader.network_policy,
             )
 
         if adapter == "mcp":
@@ -2969,6 +2943,7 @@ class SchemaRouter:
                     trusted_headers=headers,
                     timeout=config.timeout,
                     client_factory=config.mcp_http_client_factory,
+                    network_policy=self.loader.network_policy,
                 )
 
             if config.mcp_bound_factory is None:
@@ -3726,6 +3701,7 @@ class SchemaRouter:
             timeout=timeout,
             max_response_bytes=max_response_bytes,
             http_client=self.loader.http_client,
+            network_policy=self.loader.network_policy,
         )
 
         return self.executor.publish_bound_tool(
@@ -3770,6 +3746,7 @@ class SchemaRouter:
                 base_url,
                 trusted_headers=trusted_headers,
                 timeout=timeout,
+                network_policy=self.loader.network_policy,
             )
         except ValueError as exc:
             raise RegistrationError("invalid OpenAPI execution binding") from exc
@@ -3854,6 +3831,7 @@ class SchemaRouter:
                 base_url,
                 trusted_headers=trusted_headers,
                 timeout=timeout,
+                network_policy=self.loader.network_policy,
             )
         except ValueError as exc:
             raise ProposalApprovalError("invalid proposal execution binding") from exc
@@ -5076,16 +5054,58 @@ class SchemaRouter:
         return_exceptions: bool = False,
     ) -> list[list[ToolResult] | BaseException]:
         run_config = _coerce_config(config)
-        semaphore = asyncio.Semaphore(run_config.max_concurrency)
+        request_count = len(requests)
+        if request_count > run_config.max_batch_size:
+            raise ValueError(
+                "batch request count exceeds RunConfig.max_batch_size "
+                f"({request_count} > {run_config.max_batch_size})"
+            )
+        if request_count == 0:
+            return []
 
-        async def invoke_one(request: PlanRequest | str) -> list[ToolResult]:
-            async with semaphore:
-                return await self.ainvoke(request, config=run_config)
+        results: list[list[ToolResult] | BaseException | None] = [
+            None
+        ] * request_count
+        next_index = 0
 
-        return await asyncio.gather(
-            *(invoke_one(request) for request in requests),
-            return_exceptions=return_exceptions,
-        )
+        async def worker() -> None:
+            nonlocal next_index
+            while next_index < request_count:
+                index = next_index
+                next_index += 1
+                try:
+                    results[index] = await self.ainvoke(
+                        requests[index],
+                        config=run_config,
+                    )
+                except Exception as exc:
+                    if not return_exceptions:
+                        raise
+                    results[index] = exc
+
+        worker_count = min(run_config.max_concurrency, request_count)
+        workers = [
+            asyncio.create_task(worker())
+            for _ in range(worker_count)
+        ]
+        try:
+            await asyncio.gather(*workers)
+        finally:
+            for task in workers:
+                if not task.done():
+                    task.cancel()
+            if workers:
+                await asyncio.gather(*workers, return_exceptions=True)
+
+        if any(item is None for item in results):
+            raise ExecutionInvariantError(
+                "bounded batch workers completed without producing every result"
+            )
+        return [
+            item
+            for item in results
+            if item is not None
+        ]
 
     def batch(
         self,
@@ -5110,33 +5130,51 @@ class SchemaRouter:
         return_exceptions: bool = False,
     ) -> AsyncIterator[tuple[int, list[ToolResult] | Exception]]:
         run_config = _coerce_config(config)
-        semaphore = asyncio.Semaphore(run_config.max_concurrency)
+        request_count = len(requests)
+        if request_count > run_config.max_batch_size:
+            raise ValueError(
+                "batch request count exceeds RunConfig.max_batch_size "
+                f"({request_count} > {run_config.max_batch_size})"
+            )
+        if request_count == 0:
+            return
 
-        async def invoke_indexed(
-            index: int,
-            request: PlanRequest | str,
-        ) -> tuple[int, list[ToolResult] | Exception]:
-            try:
-                async with semaphore:
-                    result = await self.ainvoke(request, config=run_config)
-                return index, result
-            except Exception as exc:
-                if return_exceptions:
-                    return index, exc
-                raise
+        completed_queue: asyncio.Queue[
+            tuple[int, list[ToolResult] | Exception]
+        ] = asyncio.Queue(maxsize=run_config.max_concurrency)
+        next_index = 0
 
-        tasks = [
-            asyncio.create_task(invoke_indexed(index, request))
-            for index, request in enumerate(requests)
+        async def worker() -> None:
+            nonlocal next_index
+            while next_index < request_count:
+                index = next_index
+                next_index += 1
+                try:
+                    outcome: list[ToolResult] | Exception = await self.ainvoke(
+                        requests[index],
+                        config=run_config,
+                    )
+                except Exception as exc:
+                    outcome = exc
+                await completed_queue.put((index, outcome))
+
+        worker_count = min(run_config.max_concurrency, request_count)
+        workers = [
+            asyncio.create_task(worker())
+            for _ in range(worker_count)
         ]
         try:
-            for completed in asyncio.as_completed(tasks):
-                yield await completed
+            for _ in range(request_count):
+                index, outcome = await completed_queue.get()
+                if isinstance(outcome, Exception) and not return_exceptions:
+                    raise outcome
+                yield index, outcome
         finally:
-            for task in tasks:
+            for task in workers:
                 if not task.done():
                     task.cancel()
-            await asyncio.gather(*tasks, return_exceptions=True)
+            if workers:
+                await asyncio.gather(*workers, return_exceptions=True)
 
     def batch_as_completed(
         self,
@@ -5216,21 +5254,27 @@ class SchemaRouter:
         trace_store: RunTraceStore | None = None,
     ) -> AsyncIterator[RunEvent]:
         run_config = _coerce_run_config(config)
+        trace_redactor = TraceRedactor(run_config.trace_redaction)
 
         async def emit(event: RunEvent) -> RunEvent:
+            emitted = (
+                event.model_copy(deep=True)
+                if run_config.raw_trace_payloads
+                else trace_redactor.redact_event(event)
+            )
             if trace_store is not None:
                 try:
-                    trace_store.append(event)
+                    await append_run_event_async(trace_store, emitted)
                 except Exception as exc:
                     raise TracePersistenceError(
                         (
                             "run event persistence failed after runtime event "
-                            f"{event.event!r} sequence={event.sequence}"
+                            f"{emitted.event!r} sequence={emitted.sequence}"
                         ),
-                        event=event.model_copy(deep=True),
-                        execution_succeeded=event.event in {"tool.end", "run.end"},
+                        event=emitted.model_copy(deep=True),
+                        execution_succeeded=emitted.event in {"tool.end", "run.end"},
                     ) from exc
-            return event
+            return emitted
         run_id = run_config.run_id or uuid4().hex
         sequence = 0
 
@@ -5332,7 +5376,9 @@ class SchemaRouter:
             semaphore = asyncio.Semaphore(run_config.max_parallel_calls)
             event_queue: asyncio.Queue[
                 tuple[str, int, Any, Any]
-            ] = asyncio.Queue()
+            ] = asyncio.Queue(
+                maxsize=max(1, run_config.max_parallel_calls * 4)
+            )
 
             async def run_parallel_call(
                 index: int,
@@ -5420,16 +5466,29 @@ class SchemaRouter:
                         )
                         return
 
+            next_parallel_index = 0
+
+            async def parallel_worker() -> None:
+                nonlocal next_parallel_index
+                while next_parallel_index < len(plan.calls):
+                    index = next_parallel_index
+                    next_parallel_index += 1
+                    await run_parallel_call(index, plan.calls[index])
+
+            worker_count = min(
+                run_config.max_parallel_calls,
+                len(plan.calls),
+            )
             tasks = [
-                asyncio.create_task(run_parallel_call(index, call))
-                for index, call in enumerate(plan.calls)
+                asyncio.create_task(parallel_worker())
+                for _ in range(worker_count)
             ]
 
             result_count = 0
             fallback_count = 0
             terminal_count = 0
             try:
-                while terminal_count < len(tasks):
+                while terminal_count < len(plan.calls):
                     kind, index, call, payload = await event_queue.get()
 
                     if kind == "preflight_error":

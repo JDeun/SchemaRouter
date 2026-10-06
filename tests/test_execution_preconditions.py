@@ -24,6 +24,73 @@ def test_exists_precondition_uses_observable_typed_state() -> None:
     assert result.eligible
 
 
+def test_duplicate_observations_make_preconditions_order_independent() -> None:
+    condition = CapabilityPrecondition(
+        semantic_id="sample_id",
+        operator="equals",
+        value="target",
+    )
+    observations = [
+        ObservedStateField(
+            contract=CapabilityFieldContract(semantic_id="sample_id"),
+            stable_identifier="other",
+        ),
+        ObservedStateField(
+            contract=CapabilityFieldContract(
+                semantic_id="sample_id",
+                qualifiers={"source": "preferred"},
+            ),
+            stable_identifier="target",
+        ),
+    ]
+
+    forward = evaluate_preconditions(
+        [condition],
+        TypedExecutionState(observed_fields=observations),
+    )
+    reverse = evaluate_preconditions(
+        [condition],
+        TypedExecutionState(
+            observed_fields=list(reversed(observations)),
+        ),
+    )
+
+    assert forward.status == "eligible"
+    assert reverse.status == "eligible"
+
+
+def test_duplicate_observations_fail_deterministically_when_none_match() -> None:
+    condition = CapabilityPrecondition(
+        semantic_id="sample_id",
+        operator="contains",
+        value="target",
+    )
+    observations = [
+        ObservedStateField(
+            contract=CapabilityFieldContract(semantic_id="sample_id"),
+            stable_identifier=None,
+        ),
+        ObservedStateField(
+            contract=CapabilityFieldContract(semantic_id="sample_id"),
+            stable_identifier="other",
+        ),
+    ]
+
+    forward = evaluate_preconditions(
+        [condition],
+        TypedExecutionState(observed_fields=observations),
+    )
+    reverse = evaluate_preconditions(
+        [condition],
+        TypedExecutionState(
+            observed_fields=list(reversed(observations)),
+        ),
+    )
+
+    assert forward == reverse
+    assert forward.status == "precondition_failed"
+
+
 def test_value_precondition_fails_closed_without_observable_value() -> None:
     state = TypedExecutionState(
         observed_fields=[

@@ -3,7 +3,6 @@ name: Security Audit
 on:
   push:
     branches: [main]
-  pull_request:
   schedule:
     - cron: "41 4 * * 1"
   workflow_dispatch:

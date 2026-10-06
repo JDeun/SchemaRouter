@@ -1,7 +1,10 @@
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from threading import Lock
 
 import pytest
 
+import schemarouter.runtime as runtime_module
 from schemarouter import (
     EndpointSpec,
     ExecutionBudget,
@@ -26,6 +29,7 @@ from schemarouter import (
     ToolCall,
     ToolSpec,
 )
+from schemarouter.runtime import _run_sync
 
 
 def make_router(*, read_only: bool | None = True) -> SchemaRouter:
@@ -133,6 +137,7 @@ def test_input_output_and_config_schemas_are_introspectable() -> None:
     assert router.input_schema["title"] == "PlanRequest"
     assert router.output_schema["type"] == "array"
     assert "max_concurrency" in router.config_schema["properties"]
+    assert "max_batch_size" in router.config_schema["properties"]
     assert "execution_mode" in router.config_schema["properties"]
     assert "max_parallel_calls" in router.config_schema["properties"]
     assert "retry" in router.config_schema["properties"]
@@ -1182,3 +1187,229 @@ async def test_aretrieve_adaptive_accepts_success_history_without_changing_defau
     assert [candidate.route_id for candidate in adaptive.candidates] == [
         candidate.route_id for candidate in baseline.candidates
     ]
+
+
+
+def test_sync_bridge_reuses_loop_after_schema_watch_lock_contention() -> None:
+    router = make_router()
+
+    async def contend_for_lifecycle_lock() -> None:
+        entered = asyncio.Event()
+        release = asyncio.Event()
+
+        async def holder() -> None:
+            async with router.schema_watcher.lifecycle_guard():
+                entered.set()
+                await release.wait()
+
+        async def waiter() -> None:
+            await entered.wait()
+            async with router.schema_watcher.lifecycle_guard():
+                return
+
+        holder_task = asyncio.create_task(holder())
+        waiter_task = asyncio.create_task(waiter())
+        await entered.wait()
+        await asyncio.sleep(0)
+        release.set()
+        await asyncio.gather(holder_task, waiter_task)
+
+    _run_sync(contend_for_lifecycle_lock)
+
+    # This public synchronous wrapper also enters the watcher/health lifecycle guards.
+    # Before the stable sync bridge, it could reuse a lock bound to the previous
+    # asyncio.run() loop and fail with a loop-affinity RuntimeError.
+    removed = router.remove_tool("weather")
+    assert removed.name == "weather"
+
+
+def test_sync_invocations_from_multiple_threads_share_bridge_loop() -> None:
+    router = make_router()
+    loop_ids: set[int] = set()
+    loop_ids_lock = Lock()
+
+    async def invoke(endpoint: str, arguments: dict) -> dict:
+        del endpoint
+        with loop_ids_lock:
+            loop_ids.add(id(asyncio.get_running_loop()))
+        await asyncio.sleep(0)
+        return {
+            "city": arguments["city"],
+            "temperature": 20,
+        }
+
+    router.executor.bind("weather", invoke)
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = [
+            pool.submit(router.invoke, request(f"city-{index}"))
+            for index in range(8)
+        ]
+        results = [future.result() for future in futures]
+
+    assert [result[0].data["city"] for result in results] == [
+        f"city-{index}" for index in range(8)
+    ]
+    assert len(loop_ids) == 1
+
+
+@pytest.mark.asyncio
+async def test_mixed_async_then_sync_lifecycle_usage_fails_with_clear_contract() -> None:
+    router = make_router()
+
+    # Bind loop-affine lifecycle state to the caller's async loop.
+    await router.health_monitor.run_once()
+
+    with pytest.raises(
+        RuntimeError,
+        match="do not mix synchronous and asynchronous lifecycle APIs",
+    ):
+        await asyncio.to_thread(
+            lambda: _run_sync(lambda: router.health_monitor.run_once())
+        )
+
+
+def test_execution_plan_rejects_direct_cardinality_bypass() -> None:
+    router, plan = make_parallel_plan_router()
+    call = plan.calls[0]
+
+    with pytest.raises(ValueError):
+        ExecutionPlan(
+            query="too many calls",
+            registry_version=router.registry.version,
+            calls=[call] * 33,
+        )
+
+    with pytest.raises(ValueError):
+        FallbackRoute(
+            primary_call_index=0,
+            alternatives=[call] * 9,
+        )
+
+
+@pytest.mark.asyncio
+async def test_batch_rejects_request_count_above_configured_limit() -> None:
+    router = make_router()
+
+    with pytest.raises(ValueError, match="max_batch_size"):
+        await router.abatch(
+            [request(str(index)) for index in range(4)],
+            config=RunConfig(max_batch_size=3),
+        )
+
+
+@pytest.mark.asyncio
+async def test_abatch_creates_only_bounded_worker_tasks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    router = make_router()
+    real_create_task = asyncio.create_task
+    created = 0
+
+    def counting_create_task(coro, *args, **kwargs):
+        nonlocal created
+        created += 1
+        return real_create_task(coro, *args, **kwargs)
+
+    monkeypatch.setattr(
+        runtime_module.asyncio,
+        "create_task",
+        counting_create_task,
+    )
+
+    results = await router.abatch(
+        [request(str(index)) for index in range(20)],
+        config=RunConfig(
+            max_concurrency=3,
+            max_batch_size=20,
+        ),
+    )
+
+    assert len(results) == 20
+    assert created == 3
+
+
+@pytest.mark.asyncio
+async def test_abatch_as_completed_creates_only_bounded_worker_tasks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    router = make_router()
+    real_create_task = asyncio.create_task
+    created = 0
+
+    def counting_create_task(coro, *args, **kwargs):
+        nonlocal created
+        created += 1
+        return real_create_task(coro, *args, **kwargs)
+
+    monkeypatch.setattr(
+        runtime_module.asyncio,
+        "create_task",
+        counting_create_task,
+    )
+
+    completed = [
+        item
+        async for item in router.abatch_as_completed(
+            [request(str(index)) for index in range(20)],
+            config=RunConfig(
+                max_concurrency=4,
+                max_batch_size=20,
+            ),
+        )
+    ]
+
+    assert sorted(index for index, _ in completed) == list(range(20))
+    assert created == 4
+
+
+@pytest.mark.asyncio
+async def test_parallel_event_stream_creates_only_bounded_worker_tasks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    router, small_plan = make_parallel_plan_router()
+    call = small_plan.calls[0]
+    plan = ExecutionPlan(
+        query="bounded fanout",
+        registry_version=router.registry.version,
+        calls=[call.model_copy(deep=True) for _ in range(20)],
+    )
+
+    async def fake_plan(request):
+        del request
+        return plan
+
+    async def invoker(endpoint: str, arguments: dict) -> dict:
+        del arguments
+        return {"value": endpoint}
+
+    router.executor.bind("fanout", invoker)
+    monkeypatch.setattr(router, "aplan_executable", fake_plan)
+
+    real_create_task = asyncio.create_task
+    created = 0
+
+    def counting_create_task(coro, *args, **kwargs):
+        nonlocal created
+        created += 1
+        return real_create_task(coro, *args, **kwargs)
+
+    monkeypatch.setattr(
+        runtime_module.asyncio,
+        "create_task",
+        counting_create_task,
+    )
+
+    events = [
+        event
+        async for event in router.astream_events(
+            "bounded",
+            config=RunConfig(
+                execution_mode="parallel_read_only",
+                max_parallel_calls=3,
+            ),
+        )
+    ]
+
+    assert sum(event.event == "tool.end" for event in events) == 20
+    assert created == 3
