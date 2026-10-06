@@ -871,22 +871,50 @@ class WeaviateVectorBackend:
         vector_name_by_collection: Mapping[str, str] | None = None,
         metric_by_collection: Mapping[str, str] | None = None,
         filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
+        collections: Sequence[str] | None = None,
+        max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
+        max_fields_per_collection: int = _MAX_DISCOVERY_FIELDS,
     ) -> None:
+        if max_fields_per_collection < 1:
+            raise ValueError("Weaviate max_fields_per_collection must be positive")
         self._client = client
+        self._collections = (
+            None
+            if collections is None
+            else tuple(
+                str(value)
+                for value in _bounded_values(
+                    collections,
+                    limit=max_discovery_sources,
+                    label="Weaviate configured collections",
+                )
+            )
+        )
+        self._max_discovery_sources = max_discovery_sources
+        self._max_fields_per_collection = max_fields_per_collection
         self._dimension_by_collection = dict(dimension_by_collection)
         self._vector_name_by_collection = dict(vector_name_by_collection or {})
         self._metric_by_collection = dict(metric_by_collection or {})
         self._filter_builder = filter_builder
 
-    def _names(self) -> list[str]:
+    def _names(self) -> tuple[str, ...]:
+        if self._collections is not None:
+            return self._collections
         raw = self._client.collections.list_all(simple=False)
         if isinstance(raw, Mapping):
-            return [str(name) for name in raw]
-        if isinstance(raw, Sequence) and not isinstance(raw, (str, bytes)):
-            return [str(_read(value, "name", value)) for value in raw]
-        raise SchemaValidationError(
-            "Weaviate collections.list_all() returned an unexpected response"
+            values: Iterable[Any] = raw.keys()
+        elif isinstance(raw, Sequence) and not isinstance(raw, (str, bytes)):
+            values = raw
+        else:
+            raise SchemaValidationError(
+                "Weaviate collections.list_all() returned an unexpected response"
+            )
+        bounded = _bounded_values(
+            values,
+            limit=self._max_discovery_sources,
+            label="Weaviate collection discovery",
         )
+        return tuple(str(_read(value, "name", value)) for value in bounded)
 
     @staticmethod
     def _property_schema(value: Any) -> dict[str, Any]:
@@ -906,8 +934,15 @@ class WeaviateVectorBackend:
             collection = self._client.collections.get(name)
             config = collection.config.get()
             properties = _read(config, "properties", ()) or ()
+            if not isinstance(properties, Iterable) or isinstance(properties, (str, bytes)):
+                raise SchemaValidationError("Weaviate collection properties must be iterable")
+            bounded_properties = _bounded_values(
+                properties,
+                limit=self._max_fields_per_collection,
+                label=f"Weaviate properties for {name!r}",
+            )
             metadata: list[VectorMetadataField] = []
-            for prop in properties:
+            for prop in bounded_properties:
                 prop_name = str(_read(prop, "name", ""))
                 if not prop_name or prop_name in {"id", "score"}:
                     continue
