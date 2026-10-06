@@ -184,6 +184,8 @@ async def test_sql_scope_hides_fields_before_retrieval_and_enforces_row_predicat
 
 
 class _VectorBackend:
+    supports_trusted_filters = True
+
     def __init__(self) -> None:
         self.filters: dict[str, Any] | None = None
 
@@ -289,6 +291,84 @@ async def test_vector_scope_hides_tenant_field_and_injects_trusted_filter() -> N
     )
     assert result[0].data == [{"id": "doc-1", "title": "Tenant A"}]
     assert backend.filters == {"tenant": "tenant-a"}
+
+
+class _UndeclaredScopedVectorBackend(_VectorBackend):
+    supports_trusted_filters = False
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.search_called = False
+
+    def search(
+        self,
+        *,
+        collection: str,
+        vector: list[float],
+        top_k: int,
+        include_fields: tuple[str, ...],
+        filters: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        self.search_called = True
+        return super().search(
+            collection=collection,
+            vector=vector,
+            top_k=top_k,
+            include_fields=include_fields,
+            filters=filters,
+        )
+
+
+@pytest.mark.asyncio
+async def test_vector_scope_requires_explicit_filter_capability_before_query() -> None:
+    policy = AuthorizationPolicy(
+        rules=(
+            AuthorizationRule(
+                effect="allow",
+                operation="vectors.docs.search",
+                roles_any=("employee",),
+            ),
+        ),
+        data_rules=(
+            DataScopeRule(
+                operation="vectors.docs.search",
+                roles_any=("employee",),
+                trusted_filters=(
+                    TrustedFilterBinding(
+                        field="tenant",
+                        principal_value="attribute:tenant_id",
+                    ),
+                ),
+            ),
+        ),
+    )
+    backend = _UndeclaredScopedVectorBackend()
+    router = SchemaRouter(authorization_policy=policy)
+    await router.aadd_vector_store(
+        backend,
+        lambda query: [0.1, 0.2],
+        database_name="vectors",
+        remote=False,
+    )
+    principal = PrincipalContext(
+        subject="alice",
+        roles=("employee",),
+        attributes={"tenant_id": "tenant-a"},
+    )
+
+    with pytest.raises(PolicyViolationError, match="authorization denied"):
+        await router.execute(
+            _call(
+                router,
+                "vectors.docs",
+                "search",
+                fields=["id", "title"],
+                arguments={"query": "routing", "top_k": 5},
+            ),
+            config=RunConfig(principal=principal),
+        )
+
+    assert backend.search_called is False
 
 
 class _RecordBackend:
