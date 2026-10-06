@@ -70,16 +70,36 @@ store.run_ids(complete=False)
 The trace store persists the exact event envelope it receives. Runtime-produced events are
 structured-redacted **before** they reach the store unless the caller explicitly selects raw tracing.
 
-By default, payload values are omitted entirely. With:
+`RunConfig.metadata` is trusted process-local context. It is never copied into runtime
+`RunEvent` envelopes, regardless of `include_payloads`. Use it for tenant routing, host-only
+correlation context, credentials required by surrounding application code, or other values that
+must not become trace data.
+
+Trace-visible metadata requires a separate, explicit opt-in:
+
+```python
+RunConfig(
+    tags=["batch-import"],
+    trace_metadata={"request_id": "req-123"},
+)
+```
+
+`tags` are structural labels and remain present on events for filtering. `trace_metadata` is
+written only on the `run.start` event so identical run metadata is not duplicated into every
+stored event. Replayed older traces that contain metadata on later events remain valid.
+
+By default, request/tool payload values are omitted entirely. With:
 
 ```python
 RunConfig(include_payloads=True)
 ```
 
-arguments, plans, results, metadata, and exception messages may be included, but common credential
-keys and configured sensitive paths are replaced with `[REDACTED]` before emission and
-persistence. Secret values discovered under those keys/paths are also removed from later string
-messages in the same run.
+arguments, plans, results, and exception messages may be included. This setting does **not** make
+`RunConfig.metadata` trace-visible. Common credential keys in payloads or `trace_metadata`, plus
+configured sensitive paths, are replaced with `[REDACTED]` before emission and persistence.
+Heuristic key redaction is defense in depth, not a substitute for keeping sensitive values out of
+`trace_metadata`. Secret values discovered under configured keys/paths are also removed from later
+string messages in the same run.
 
 Use `TraceRedactionConfig(sensitive_paths={...})` for application-specific personal or regulated
 fields. Raw persistence requires the additional explicit escape hatch:
@@ -88,12 +108,13 @@ fields. Raw persistence requires the additional explicit escape hatch:
 RunConfig(
     include_payloads=True,
     raw_trace_payloads=True,
+    trace_metadata={"debug_context": "..."},
 )
 ```
 
-Raw tracing can persist credentials and personal data verbatim. Treat such databases as sensitive
-application data and apply appropriate access control, encryption-at-rest, backup, and retention
-policy. SchemaRouter does not encrypt the SQLite file itself.
+Raw tracing can persist payloads and explicitly opted-in trace metadata verbatim. Treat such
+databases as sensitive application data and apply appropriate access control, encryption-at-rest,
+backup, and retention policy. SchemaRouter does not encrypt the SQLite file itself.
 
 External producers that call `SQLiteRunTraceStore.append()` directly are responsible for
 redacting their own `RunEvent` objects; the store deliberately does not mutate envelopes.
