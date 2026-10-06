@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Mapping, Sequence
 from contextlib import nullcontext
+from dataclasses import dataclass
 from typing import Any, TypeVar
 from urllib.parse import urlparse
 from uuid import uuid4
@@ -141,6 +142,15 @@ from .validation import projected_output_schema
 
 _T = TypeVar("_T")
 _SYNC_LOOP_RUNNER = SyncLoopRunner()
+
+
+@dataclass(frozen=True, slots=True)
+class NativeSchemaWatchSnapshot:
+    """Privacy-safe health state for one native schema refresh source."""
+
+    tool_key: str
+    consecutive_failures: int
+    error_kind: str
 
 
 def _require_execution_event_exception(
@@ -284,6 +294,7 @@ class SchemaRouter:
             str, tuple[ToolSpec, BoundEndpointInvoker, bool]
         ] = {}
         self._native_schema_watch_task: asyncio.Task[None] | None = None
+        self._native_schema_watch_failures: dict[str, tuple[int, str]] = {}
     def _is_snapshot_access_available(self, tool: ToolSpec, endpoint: Any) -> bool:
         return self.executor.is_access_available_for_contract(
             tool.key,
@@ -1163,6 +1174,7 @@ class SchemaRouter:
             self.loader.forget_schema_http_validators(key)
             self._native_schema_refreshers.pop(key, None)
             self._native_schema_pending.pop(key, None)
+            self._native_schema_watch_failures.pop(key, None)
         return key
 
     async def aremove_tool(self, tool_key: str) -> ToolSpec:
@@ -1189,6 +1201,7 @@ class SchemaRouter:
                 self.loader.forget_schema_http_validators(tool_key)
                 self._native_schema_refreshers.pop(tool_key, None)
                 self._native_schema_pending.pop(tool_key, None)
+                self._native_schema_watch_failures.pop(tool_key, None)
                 return current
 
     def remove_tool(self, tool_key: str) -> ToolSpec:
@@ -1275,6 +1288,40 @@ class SchemaRouter:
         refresh: Any,
     ) -> None:
         self._native_schema_refreshers[tool_key] = refresh
+        self._native_schema_watch_failures.pop(tool_key, None)
+
+    def _record_native_schema_watch_failure(
+        self,
+        tool_key: str,
+        exc: Exception,
+    ) -> None:
+        previous_count = self._native_schema_watch_failures.get(tool_key, (0, ""))[0]
+        if isinstance(exc, KeyError):
+            error_kind = "missing_tool"
+        elif isinstance(exc, RegistrationError):
+            error_kind = "registration_error"
+        elif isinstance(exc, SchemaSourceError):
+            error_kind = "schema_source_error"
+        else:
+            error_kind = "unexpected_error"
+        self._native_schema_watch_failures[tool_key] = (
+            min(previous_count + 1, 2_147_483_647),
+            error_kind,
+        )
+
+    def native_schema_watch_snapshots(self) -> tuple[NativeSchemaWatchSnapshot, ...]:
+        """Return bounded watcher degradation state without exception messages."""
+
+        return tuple(
+            NativeSchemaWatchSnapshot(
+                tool_key=tool_key,
+                consecutive_failures=count,
+                error_kind=error_kind,
+            )
+            for tool_key, (count, error_kind) in sorted(
+                self._native_schema_watch_failures.items()
+            )
+        )
 
     def _prepare_health_contract_transition(
         self,
@@ -1426,14 +1473,18 @@ class SchemaRouter:
         results: list[SchemaRefreshResult] = []
         for tool_key in tuple(self._native_schema_refreshers):
             try:
-                results.append(
-                    await self.arefresh_native_schema(
-                        tool_key,
-                        apply_compatible=apply_compatible,
-                    )
+                result = await self.arefresh_native_schema(
+                    tool_key,
+                    apply_compatible=apply_compatible,
                 )
-            except (KeyError, RegistrationError, SchemaSourceError):
+            except Exception as exc:
+                # asyncio.CancelledError derives from BaseException, so watcher shutdown
+                # is never swallowed here. Any ordinary source/driver failure is isolated
+                # to this tool and retried on the next scheduled sweep.
+                self._record_native_schema_watch_failure(tool_key, exc)
                 continue
+            self._native_schema_watch_failures.pop(tool_key, None)
+            results.append(result)
         return tuple(results)
 
     async def start_native_schema_watcher(
