@@ -23,6 +23,7 @@ from schemarouter import (
     ToolCall,
     TrustedFilterBinding,
 )
+from schemarouter.errors import RegistrationError
 
 
 class FakeGraphBackend:
@@ -500,3 +501,57 @@ async def test_native_graph_schema_refresh_reintrospects_current_contract() -> N
     assert result.action == "unchanged"
     assert router.executor.is_binding_ready_for_contract(tool.key, tool.fingerprint)
 
+
+
+def test_graph_discovery_catalog_limit_stops_unbounded_iterable() -> None:
+    consumed = 0
+
+    class LargeCatalogBackend(FakeGraphBackend):
+        def list_graphs(self):
+            nonlocal consumed
+
+            def generate():
+                nonlocal consumed
+                for index in range(100):
+                    consumed += 1
+                    yield GraphSourceSpec(name=f"graph_{index}")
+
+            return generate()
+
+    router = SchemaRouter()
+    with pytest.raises(RegistrationError, match="max_discovery_sources=3"):
+        router.add_graph_store(
+            LargeCatalogBackend(),
+            database_name="knowledge",
+            max_discovery_sources=3,
+            remote=False,
+        )
+
+    assert consumed == 4
+    assert router.registry.keys() == ()
+
+
+def test_graph_discovery_rejects_oversized_descriptor_before_registration() -> None:
+    class WideGraphBackend(FakeGraphBackend):
+        def list_graphs(self):
+            return (
+                GraphSourceSpec(
+                    name="wide",
+                    node_types=(
+                        GraphNodeTypeSpec(name="A"),
+                        GraphNodeTypeSpec(name="B"),
+                        GraphNodeTypeSpec(name="C"),
+                    ),
+                ),
+            )
+
+    router = SchemaRouter()
+    with pytest.raises(RegistrationError, match="node types"):
+        router.add_graph_store(
+            WideGraphBackend(),
+            database_name="knowledge",
+            max_schema_items_per_graph=2,
+            remote=False,
+        )
+
+    assert router.registry.keys() == ()

@@ -11,6 +11,7 @@ from schemarouter import (  # noqa: E402
     SchemaRouter,
     ToolCall,
 )
+from schemarouter.errors import RegistrationError  # noqa: E402
 
 
 def _engine():
@@ -178,3 +179,42 @@ async def test_native_sqlalchemy_schema_refresh_reintrospects_current_contract()
     finally:
         engine.dispose()
 
+
+
+def test_sqlalchemy_discovery_rejects_oversized_relation_catalog_atomically() -> None:
+    engine = _engine()
+    try:
+        with engine.begin() as connection:
+            connection.exec_driver_sql(
+                "CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL)"
+            )
+
+        router = SchemaRouter()
+        with pytest.raises(RegistrationError, match="max_discovery_relations=1"):
+            router.add_sqlalchemy_database(
+                engine,
+                database_name="warehouse",
+                max_discovery_relations=1,
+                remote=False,
+            )
+
+        assert router.registry.keys() == ()
+    finally:
+        engine.dispose()
+
+
+def test_sqlalchemy_discovery_rejects_wide_relation_atomically() -> None:
+    engine = _engine()
+    try:
+        router = SchemaRouter()
+        with pytest.raises(RegistrationError, match="exposes 4 columns"):
+            router.add_sqlalchemy_database(
+                engine,
+                database_name="warehouse",
+                max_columns_per_relation=3,
+                remote=False,
+            )
+
+        assert router.registry.keys() == ()
+    finally:
+        engine.dispose()

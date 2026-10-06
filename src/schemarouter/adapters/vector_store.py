@@ -22,6 +22,8 @@ from ..models import (
 
 _SEARCH_ENDPOINT = "search"
 _MAX_TOP_K = 100
+_MAX_DISCOVERY_SOURCES = 128
+_MAX_DISCOVERY_FIELDS = 256
 
 
 class VectorMetadataField(StrictModel):
@@ -267,6 +269,8 @@ async def introspect_vector_backend(
     default_top_k: int = 10,
     remote: bool = True,
     offload_sync_backend: bool | None = None,
+    max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
+    max_fields_per_collection: int = _MAX_DISCOVERY_FIELDS,
 ) -> tuple[VectorCollectionBinding, ...]:
     """Compile trusted vector collection descriptors into bounded search capabilities."""
 
@@ -274,25 +278,63 @@ async def introspect_vector_backend(
         raise ValueError("database_name must be non-empty")
     if default_top_k < 1 or default_top_k > _MAX_TOP_K:
         raise ValueError(f"default_top_k must be between 1 and {_MAX_TOP_K}")
+    if max_discovery_sources < 1:
+        raise ValueError("max_discovery_sources must be positive")
+    if max_fields_per_collection < 1:
+        raise ValueError("max_fields_per_collection must be positive")
 
+    selected = None if collections is None else {str(value) for value in collections}
+    if selected == set():
+        return ()
     offload_backend = remote if offload_sync_backend is None else offload_sync_backend
     discovered_raw = await _call_backend(
         backend.list_collections,
         offload_sync=offload_backend,
     )
-    discovered = tuple(
-        item
-        if isinstance(item, VectorCollectionSpec)
-        else VectorCollectionSpec.model_validate(item)
-        for item in discovered_raw
-    )
-    names = [collection.name for collection in discovered]
-    if len(names) != len(set(names)):
-        raise RegistrationError("vector backend returned duplicate collection names")
 
-    selected = None if collections is None else {str(value) for value in collections}
+    discovered: list[VectorCollectionSpec] = []
+    seen_names: set[str] = set()
+    for index, item in enumerate(discovered_raw):
+        if index >= max_discovery_sources:
+            raise RegistrationError(
+                "vector backend discovery exceeded max_discovery_sources="
+                f"{max_discovery_sources}"
+            )
+
+        raw_name: str | None = None
+        if isinstance(item, VectorCollectionSpec):
+            raw_name = item.name
+        elif isinstance(item, Mapping) and item.get("name") is not None:
+            raw_name = str(item["name"])
+
+        if raw_name is not None:
+            if raw_name in seen_names:
+                raise RegistrationError("vector backend returned duplicate collection names")
+            seen_names.add(raw_name)
+            if selected is not None and raw_name not in selected:
+                continue
+
+        collection = (
+            item
+            if isinstance(item, VectorCollectionSpec)
+            else VectorCollectionSpec.model_validate(item)
+        )
+        if raw_name is None:
+            if collection.name in seen_names:
+                raise RegistrationError("vector backend returned duplicate collection names")
+            seen_names.add(collection.name)
+        if len(collection.metadata_fields) > max_fields_per_collection:
+            raise RegistrationError(
+                f"vector collection {collection.name!r} exposes "
+                f"{len(collection.metadata_fields)} metadata fields; "
+                f"limit is {max_fields_per_collection}"
+            )
+        discovered.append(collection)
+        if selected is not None and selected.issubset(seen_names):
+            break
+
     if selected is not None:
-        missing = sorted(selected - set(names))
+        missing = sorted(selected - seen_names)
         if missing:
             raise RegistrationError(
                 "unknown vector collections/indexes: " + ", ".join(missing)
