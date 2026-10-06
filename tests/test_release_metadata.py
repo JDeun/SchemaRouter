@@ -182,7 +182,12 @@ def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
     assert '"3.14"' in workflow
     assert "windows-smoke:" in workflow
     assert "minimum-dependencies:" in workflow
+    assert "coverage-core:" in workflow
+    assert "shard: [0, 1]" in workflow
+    assert "coverage-native:" in workflow
     assert "coverage:" in workflow
+    assert "needs: [coverage-core, coverage-native]" in workflow
+    assert "coverage combine" in workflow
     assert "--cov-branch" in workflow
     assert "dependency-audit:" in workflow
     assert "pip-audit --strict ." in workflow
