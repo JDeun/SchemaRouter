@@ -132,6 +132,59 @@ async for event in record_run_events(source, store=store):
 
 This keeps storage independent of the high-level runtime facade.
 
+## Retention and pruning
+
+Retention is opt-in so existing deployments keep their current behavior. For a long-running service,
+configure explicit bounds when the store is created:
+
+```python
+from schemarouter import TraceRetentionPolicy
+
+store = SQLiteRunTraceStore(
+    "schemarouter-traces.sqlite3",
+    retention_policy=TraceRetentionPolicy(
+        max_age_seconds=30 * 24 * 60 * 60,
+        max_complete_runs=10_000,
+    ),
+)
+```
+
+With `automatic=True` (the policy default), pruning runs at run boundaries (`run.start` and terminal
+events), not on every event. Complete runs older than `max_age_seconds` are removed, and
+`max_complete_runs` keeps the newest complete runs by terminal timestamp. Incomplete runs are
+never removed by those bounds.
+
+Stale incomplete cleanup requires a separate explicit bound:
+
+```python
+TraceRetentionPolicy(
+    max_complete_runs=10_000,
+    stale_incomplete_age_seconds=24 * 60 * 60,
+)
+```
+
+Enabling that option means an incomplete run with no persisted event newer than the cutoff may be
+deleted. Choose a threshold longer than the maximum expected idle interval for active runs.
+
+Operators can run the same policy deterministically, or supply a one-off policy:
+
+```python
+result = store.prune()
+# or: store.prune(policy=TraceRetentionPolicy(max_complete_runs=5_000))
+print(result.deleted_runs)
+```
+
+Pruning uses one `BEGIN IMMEDIATE` transaction. SQLite therefore serializes it with appenders from
+other `SQLiteRunTraceStore` instances using the same file, and event rows are removed through the
+existing foreign-key cascade. The store also creates a retention index over terminal state and last
+event time so bounded cleanup does not require an unindexed full ordering scan.
+
+Logical deletion does **not** imply immediate file-size reduction. In WAL mode, deleted pages may
+remain reusable inside the database and WAL files until normal checkpoints. `prune()` deliberately
+does not run `VACUUM` or force a truncating checkpoint because those operations can create long
+exclusive maintenance pauses. If physical file reclamation is required, schedule SQLite
+checkpoint/VACUUM maintenance separately while application traffic is quiesced.
+
 ## Deletion and lifecycle
 
 ```python
