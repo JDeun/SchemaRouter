@@ -834,3 +834,84 @@ def test_legacy_trace_aggregate_limits_apply_to_inspection_and_migration(
             backup=False,
             document_limits=limits,
         )
+
+
+def test_migration_holds_writer_lock_while_backup_is_taken(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "locked-migration.sqlite3"
+    backup = tmp_path / "locked-migration.backup.sqlite3"
+    _create_legacy_registry(
+        path,
+        tools=[(0, _tool("alpha"))],
+        logical_version=3,
+    )
+
+    real_backup = storage_module._backup_sqlite_connection
+    observed_writer_exclusion = False
+
+    def assert_writer_is_excluded(
+        source_connection: sqlite3.Connection,
+        source,
+        target,
+    ):
+        nonlocal observed_writer_exclusion
+        contender = sqlite3.connect(path, timeout=0.01)
+        try:
+            with pytest.raises(sqlite3.OperationalError, match="locked"):
+                contender.execute("BEGIN IMMEDIATE")
+            observed_writer_exclusion = True
+        finally:
+            contender.close()
+
+        return real_backup(source_connection, source, target)
+
+    monkeypatch.setattr(
+        storage_module,
+        "_backup_sqlite_connection",
+        assert_writer_is_excluded,
+    )
+
+    migrated = migrate_sqlite_storage(
+        path,
+        backup=True,
+        backup_path=backup,
+    )
+
+    assert observed_writer_exclusion is True
+    assert migrated.backup_path == str(backup)
+    backup_inspection = inspect_sqlite_storage(backup)
+    assert backup_inspection.components[0].status == "legacy"
+    source_inspection = inspect_sqlite_storage(path)
+    assert source_inspection.components[0].status == "current"
+
+
+def test_migration_lock_timeout_is_reported_as_storage_error(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "locked-timeout.sqlite3"
+    _create_legacy_registry(
+        path,
+        tools=[(0, _tool("alpha"))],
+        logical_version=3,
+    )
+
+    lock_owner = sqlite3.connect(path)
+    lock_owner.execute("BEGIN IMMEDIATE")
+    monkeypatch.setattr(
+        storage_module,
+        "_SQLITE_MIGRATION_LOCK_TIMEOUT_SECONDS",
+        0.01,
+    )
+    try:
+        with pytest.raises(
+            StorageFormatError,
+            match="could not acquire the writer lock within 0.01 seconds",
+        ):
+            migrate_sqlite_storage(path, backup=False)
+    finally:
+        lock_owner.rollback()
+        lock_owner.close()
+
