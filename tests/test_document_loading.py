@@ -42,6 +42,12 @@ def test_bounded_json_rejects_size_depth_and_collection_cardinality() -> None:
             limits=_limits(max_list_items=2),
         )
 
+    with pytest.raises(DocumentLimitError, match="map cardinality"):
+        load_bounded_json(
+            json.dumps({"one": 1, "two": 2, "three": 3}),
+            limits=_limits(max_map_items=2),
+        )
+
 
 def test_bounded_json_round_trip_is_unchanged() -> None:
     payload = {"name": "router", "values": [1, 2, 3]}
@@ -61,6 +67,16 @@ two: *base
         load_bounded_yaml(
             alias_heavy,
             limits=_limits(max_aliases=1),
+        )
+
+    anchor_heavy = """
+one: &one 1
+two: &two 2
+"""
+    with pytest.raises(DocumentLimitError, match="anchor limit"):
+        load_bounded_yaml(
+            anchor_heavy,
+            limits=_limits(max_anchors=1),
         )
 
     cyclic = "root: &root [*root]\n"
