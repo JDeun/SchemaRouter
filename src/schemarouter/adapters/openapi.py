@@ -23,6 +23,7 @@ from ..models import (
 )
 from ..network_policy import TRUSTED_INTERNAL_NETWORK_POLICY, NetworkPolicy
 from ..openapi_compatibility import analyze_openapi_compatibility
+from ..schema_complexity import ensure_ref_hop_budget, validate_schema_complexity
 
 _HTTP_METHODS = {"get", "post", "put", "patch", "delete", "options", "head", "trace"}
 _SENSITIVE_RUNTIME_HEADERS = {
@@ -213,10 +214,13 @@ def _resolve_local_ref(document: dict[str, Any], value: Any) -> Any:
 
     current = deepcopy(value)
     seen: set[str] = set()
+    hops = 0
     while isinstance(current, dict):
         ref = current.get("$ref")
         if not isinstance(ref, str) or not ref.startswith("#/") or ref in seen:
             break
+        hops += 1
+        ensure_ref_hop_budget(hops, source="OpenAPI schema")
         target = _local_ref_target(document, ref)
         if target is None:
             break
@@ -244,6 +248,7 @@ def _schema_fragments(
     if isinstance(ref, str) and ref.startswith("#/"):
         if ref in seen_refs:
             return []
+        ensure_ref_hop_budget(len(seen_refs) + 1, source="OpenAPI schema")
         target = _local_ref_target(document, ref)
         fragments: list[dict[str, Any]] = []
         if isinstance(target, dict):
@@ -1311,6 +1316,7 @@ def tool_from_openapi(
     The adapter intentionally supports a stable common subset and preserves unsupported constructs
     in metadata instead of guessing their runtime semantics.
     """
+    validate_schema_complexity(document, source="OpenAPI document")
     nullable_normalized = 0
     version = document.get("openapi")
     if isinstance(version, str) and version.startswith("3.0."):
