@@ -11,6 +11,7 @@ from typing import Literal
 from ._loop_affinity import LoopAffinityGuard
 from .errors import PlanValidationError, RegistrationError
 from .executor import RegistryExecutor
+from .models import ToolSpec
 
 HealthProbe = Callable[[], bool | Awaitable[bool]]
 HealthStatus = Literal["unknown", "healthy", "unhealthy", "stale"]
@@ -34,6 +35,21 @@ class _ProbeRecord:
     status: HealthStatus = "unknown"
     last_checked_at: datetime | None = None
     last_error_type: str | None = None
+
+
+@dataclass(frozen=True)
+class _ProbeContractTransitionEntry:
+    endpoint: str
+    record: _ProbeRecord
+    invalidated_reason: str | None
+
+
+@dataclass(frozen=True)
+class _ToolContractTransition:
+    tool_key: str
+    expected_old_fingerprint: str
+    expected_new_fingerprint: str
+    entries: tuple[_ProbeContractTransitionEntry, ...]
 
 
 class AccessHealthMonitor:
@@ -93,6 +109,84 @@ class AccessHealthMonitor:
         for key in stale:
             self._probes.pop(key, None)
 
+    def _prepare_tool_contract_transition(
+        self,
+        tool_key: str,
+        *,
+        expected_old_fingerprint: str,
+        expected_new_fingerprint: str,
+        new_tool: ToolSpec,
+    ) -> _ToolContractTransition:
+        """Validate and capture a health-probe transition before publishing a contract."""
+
+        if new_tool.key != tool_key:
+            raise RegistrationError(
+                "health probe transition tool key does not match the candidate contract"
+            )
+        if new_tool.fingerprint != expected_new_fingerprint:
+            raise RegistrationError(
+                "health probe transition fingerprint does not match the candidate contract"
+            )
+
+        entries: list[_ProbeContractTransitionEntry] = []
+        for (registered_tool, endpoint), record in self._probes.items():
+            if (
+                registered_tool != tool_key
+                or record.tool_fingerprint != expected_old_fingerprint
+            ):
+                continue
+
+            invalidated_reason: str | None = None
+            try:
+                endpoint_spec = new_tool.endpoint(endpoint)
+            except KeyError:
+                invalidated_reason = "EndpointRemoved"
+            else:
+                if endpoint_spec.read_only is not True:
+                    invalidated_reason = "EndpointNoLongerReadOnly"
+
+            entries.append(
+                _ProbeContractTransitionEntry(
+                    endpoint=endpoint,
+                    record=record,
+                    invalidated_reason=invalidated_reason,
+                )
+            )
+
+        return _ToolContractTransition(
+            tool_key=tool_key,
+            expected_old_fingerprint=expected_old_fingerprint,
+            expected_new_fingerprint=expected_new_fingerprint,
+            entries=tuple(entries),
+        )
+
+    def _apply_tool_contract_transition(
+        self,
+        transition: _ToolContractTransition,
+    ) -> None:
+        """Apply a prevalidated probe transition without rereading mutable registry state."""
+
+        for entry in transition.entries:
+            key = (transition.tool_key, entry.endpoint)
+            record = self._probes.get(key)
+            if (
+                record is not entry.record
+                or record.tool_fingerprint != transition.expected_old_fingerprint
+            ):
+                continue
+
+            record.generation += 1
+            record.tool_fingerprint = transition.expected_new_fingerprint
+            if entry.invalidated_reason is not None:
+                record.invalidated_reason = entry.invalidated_reason
+                record.status = "stale"
+                record.last_error_type = entry.invalidated_reason
+                continue
+
+            record.invalidated_reason = None
+            record.status = "unknown"
+            record.last_error_type = None
+
     def transition_tool_contract(
         self,
         tool_key: str,
@@ -102,13 +196,11 @@ class AccessHealthMonitor:
     ) -> None:
         """Carry trusted probes across one accepted contract transition."""
 
-        candidates = [
-            (endpoint, record)
-            for (registered_tool, endpoint), record in self._probes.items()
-            if registered_tool == tool_key
+        if not any(
+            registered_tool == tool_key
             and record.tool_fingerprint == expected_old_fingerprint
-        ]
-        if not candidates:
+            for (registered_tool, _), record in self._probes.items()
+        ):
             return
 
         current = self.executor.registry.get(tool_key)
@@ -117,27 +209,13 @@ class AccessHealthMonitor:
                 f"tool {tool_key!r} changed before health probes could be restamped"
             )
 
-        for endpoint, record in candidates:
-            record.generation += 1
-            record.tool_fingerprint = expected_new_fingerprint
-
-            try:
-                endpoint_spec = current.endpoint(endpoint)
-            except KeyError:
-                record.invalidated_reason = "EndpointRemoved"
-                record.status = "stale"
-                record.last_error_type = record.invalidated_reason
-                continue
-
-            if endpoint_spec.read_only is not True:
-                record.invalidated_reason = "EndpointNoLongerReadOnly"
-                record.status = "stale"
-                record.last_error_type = record.invalidated_reason
-                continue
-
-            record.invalidated_reason = None
-            record.status = "unknown"
-            record.last_error_type = None
+        transition = self._prepare_tool_contract_transition(
+            tool_key,
+            expected_old_fingerprint=expected_old_fingerprint,
+            expected_new_fingerprint=expected_new_fingerprint,
+            new_tool=current,
+        )
+        self._apply_tool_contract_transition(transition)
 
     @asynccontextmanager
     async def lifecycle_guard(self, *, wait_for_inflight: bool = False):
