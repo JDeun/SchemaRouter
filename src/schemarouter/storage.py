@@ -29,6 +29,7 @@ DEFAULT_PERSISTED_DOCUMENT_MAX_NODES = 100_000
 DEFAULT_PERSISTED_COLLECTION_MAX_DOCUMENTS = 50_000
 DEFAULT_PERSISTED_COLLECTION_MAX_BYTES = 64 * 1024 * 1024
 _PERSISTED_FETCH_BATCH_SIZE = 256
+_SQLITE_MIGRATION_LOCK_TIMEOUT_SECONDS = 30.0
 
 
 @dataclass(frozen=True)
@@ -585,6 +586,58 @@ def _validate_component_documents(
     )
 
 
+def _inspect_sqlite_connection(
+    connection: sqlite3.Connection,
+    source: Path,
+    *,
+    document_limits: PersistedDocumentLimits,
+) -> StorageInspection:
+    names = _table_names(connection)
+    components: list[StorageComponentInspection] = []
+    for component in ("registry", "trace"):
+        expected = set(_component_tables(component))
+        if not (expected & names):
+            continue
+
+        status = component_status(connection, component)
+        try:
+            storage_version, document_version = component_versions(
+                connection,
+                component,
+            )
+        except StorageFormatError:
+            storage_version = None
+            document_version = None
+
+        if status in {"current", "legacy"}:
+            try:
+                _validate_component_documents(
+                    connection,
+                    component,
+                    document_limits=document_limits,
+                )
+            except (StorageFormatError, sqlite3.DatabaseError):
+                status = "corrupt"
+
+        components.append(
+            StorageComponentInspection(
+                component=component,
+                status=status,
+                storage_format_version=storage_version,
+                document_format_version=document_version,
+                current_document_format_version=current_document_version(
+                    component
+                ),
+                document_count=_document_count(connection, component),
+                migrations=migration_history(connection, component),
+            )
+        )
+    return StorageInspection(
+        path=str(source),
+        components=components,
+    )
+
+
 def inspect_sqlite_storage(
     path: str | Path,
     *,
@@ -600,49 +653,10 @@ def inspect_sqlite_storage(
         uri = f"file:{source.resolve().as_posix()}?mode=ro"
         connection = sqlite3.connect(uri, uri=True)
         connection.row_factory = sqlite3.Row
-        names = _table_names(connection)
-        components: list[StorageComponentInspection] = []
-        for component in ("registry", "trace"):
-            expected = set(_component_tables(component))
-            if not (expected & names):
-                continue
-
-            status = component_status(connection, component)
-            try:
-                storage_version, document_version = component_versions(
-                    connection,
-                    component,
-                )
-            except StorageFormatError:
-                storage_version = None
-                document_version = None
-
-            if status in {"current", "legacy"}:
-                try:
-                    _validate_component_documents(
-                        connection,
-                        component,
-                        document_limits=limits,
-                    )
-                except (StorageFormatError, sqlite3.DatabaseError):
-                    status = "corrupt"
-
-            components.append(
-                StorageComponentInspection(
-                    component=component,
-                    status=status,
-                    storage_format_version=storage_version,
-                    document_format_version=document_version,
-                    current_document_format_version=current_document_version(
-                        component
-                    ),
-                    document_count=_document_count(connection, component),
-                    migrations=migration_history(connection, component),
-                )
-            )
-        return StorageInspection(
-            path=str(source),
-            components=components,
+        return _inspect_sqlite_connection(
+            connection,
+            source,
+            document_limits=limits,
         )
     except sqlite3.DatabaseError as exc:
         raise StorageFormatError(
@@ -675,13 +689,10 @@ def _publish_backup_destination(
         ) from exc
 
 
-def backup_sqlite_storage(
-    path: str | Path,
-    destination: str | Path | None = None,
+def _resolve_backup_target(
+    source: Path,
+    destination: str | Path | None,
 ) -> Path:
-    source = Path(path)
-    if not source.exists():
-        raise StorageFormatError(f"SQLite storage does not exist: {source}")
     target = (
         Path(destination)
         if destination is not None
@@ -693,15 +704,21 @@ def backup_sqlite_storage(
         raise StorageFormatError(
             f"backup destination directory does not exist: {target.parent}"
         )
-    # Fast fail for the normal existing-path case. The atomic hard-link publication
-    # below remains the concurrency authority, so a path created after this check is
+    # Fast fail for the normal existing-path case. Atomic hard-link publication
+    # remains the concurrency authority, so a path created after this check is
     # still never overwritten.
     if os.path.lexists(target):
         raise StorageFormatError(
             f"backup destination already exists: {target}"
         )
+    return target
 
-    source_connection: sqlite3.Connection | None = None
+
+def _backup_sqlite_connection(
+    source_connection: sqlite3.Connection,
+    source: Path,
+    target: Path,
+) -> Path:
     temporary_connection: sqlite3.Connection | None = None
     temporary_path: Path | None = None
     try:
@@ -713,10 +730,6 @@ def backup_sqlite_storage(
         os.close(temporary_descriptor)
         temporary_path = Path(temporary_name)
 
-        source_connection = sqlite3.connect(
-            f"file:{source.resolve().as_posix()}?mode=ro",
-            uri=True,
-        )
         temporary_connection = sqlite3.connect(temporary_path)
         source_connection.backup(temporary_connection)
         temporary_connection.close()
@@ -737,8 +750,6 @@ def backup_sqlite_storage(
     finally:
         if temporary_connection is not None:
             temporary_connection.close()
-        if source_connection is not None:
-            source_connection.close()
         if temporary_path is not None:
             try:
                 temporary_path.unlink()
@@ -748,6 +759,37 @@ def backup_sqlite_storage(
                 pass
 
     return target
+
+
+def backup_sqlite_storage(
+    path: str | Path,
+    destination: str | Path | None = None,
+) -> Path:
+    source = Path(path)
+    if not source.exists():
+        raise StorageFormatError(f"SQLite storage does not exist: {source}")
+    target = _resolve_backup_target(source, destination)
+
+    source_connection: sqlite3.Connection | None = None
+    try:
+        source_connection = sqlite3.connect(
+            f"file:{source.resolve().as_posix()}?mode=ro",
+            uri=True,
+        )
+        return _backup_sqlite_connection(
+            source_connection,
+            source,
+            target,
+        )
+    except StorageFormatError:
+        raise
+    except sqlite3.DatabaseError as exc:
+        raise StorageFormatError(
+            f"SQLite backup failed: {source} -> {target}"
+        ) from exc
+    finally:
+        if source_connection is not None:
+            source_connection.close()
 
 
 def migrate_sqlite_storage(
@@ -763,52 +805,75 @@ def migrate_sqlite_storage(
         )
 
     limits = _resolve_persisted_document_limits(document_limits)
-    before = inspect_sqlite_storage(
-        path,
-        document_limits=limits,
-    )
-    if not before.components:
-        raise StorageFormatError(
-            "no SchemaRouter SQLite storage components were found"
-        )
-    if any(component.status in {"future", "corrupt"} for component in before.components):
-        details = ", ".join(
-            f"{component.component}={component.status}"
-            for component in before.components
-            if component.status in {"future", "corrupt"}
-        )
-        raise StorageFormatError(
-            "storage migration refused because component metadata is not safely "
-            f"migratable: {details}"
-        )
-
-    if not before.migration_required:
-        return StorageMigrationResult(
-            path=str(path),
-            before=before,
-            after=before,
-        )
+    source = Path(path)
+    if not source.exists():
+        raise StorageFormatError(f"SQLite storage does not exist: {source}")
 
     created_backup: Path | None = None
-    if backup:
-        created_backup = backup_sqlite_storage(path, backup_path)
-
-    legacy = {
-        component.component
-        for component in before.components
-        if component.migration_required
-    }
-
-    # Explicit migration is database-atomic across all detected components:
-    # first validate every legacy component, then stamp all component metadata
-    # in the same BEGIN IMMEDIATE transaction.
-    source = Path(path)
-    connection = sqlite3.connect(source)
+    before: StorageInspection | None = None
+    connection = sqlite3.connect(
+        source,
+        timeout=_SQLITE_MIGRATION_LOCK_TIMEOUT_SECONDS,
+    )
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
     try:
-        connection.execute("BEGIN IMMEDIATE")
+        # BEGIN IMMEDIATE is the cross-process migration exclusion boundary.
+        # Once it succeeds, no other writer can commit until this transaction
+        # ends. Inspection, validation, backup, and version stamping therefore
+        # all describe one coherent pre-migration database state.
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+        except sqlite3.OperationalError as exc:
+            message = str(exc).casefold()
+            if "locked" in message or "busy" in message:
+                raise StorageFormatError(
+                    "SQLite storage migration could not acquire the writer lock "
+                    f"within {_SQLITE_MIGRATION_LOCK_TIMEOUT_SECONDS:g} seconds: "
+                    f"{source}"
+                ) from exc
+            raise
 
+        before = _inspect_sqlite_connection(
+            connection,
+            source,
+            document_limits=limits,
+        )
+        if not before.components:
+            raise StorageFormatError(
+                "no SchemaRouter SQLite storage components were found"
+            )
+        if any(
+            component.status in {"future", "corrupt"}
+            for component in before.components
+        ):
+            details = ", ".join(
+                f"{component.component}={component.status}"
+                for component in before.components
+                if component.status in {"future", "corrupt"}
+            )
+            raise StorageFormatError(
+                "storage migration refused because component metadata is not safely "
+                f"migratable: {details}"
+            )
+
+        if not before.migration_required:
+            connection.rollback()
+            return StorageMigrationResult(
+                path=str(path),
+                before=before,
+                after=before,
+            )
+
+        legacy = {
+            component.component
+            for component in before.components
+            if component.migration_required
+        }
+
+        # Re-run the authoritative legacy validators while the writer lock is held.
+        # The inspection above is also lock-scoped, but keeping these checks here
+        # makes the validation-before-stamp invariant explicit.
         if "registry" in legacy:
             from .registry import _validate_legacy_registry_storage
 
@@ -824,6 +889,29 @@ def migrate_sqlite_storage(
                 document_limits=limits,
             )
 
+        if backup:
+            target = _resolve_backup_target(source, backup_path)
+            backup_source_connection: sqlite3.Connection | None = None
+            try:
+                # Python's sqlite3 backup API cannot make progress when invoked on
+                # the same connection that owns an active write transaction. A
+                # second read-only source connection is therefore used while the
+                # BEGIN IMMEDIATE writer lock remains held by `connection`.
+                # Because no other writer can commit, this online backup is the
+                # exact committed state validated above.
+                backup_source_connection = sqlite3.connect(
+                    f"file:{source.resolve().as_posix()}?mode=ro",
+                    uri=True,
+                )
+                created_backup = _backup_sqlite_connection(
+                    backup_source_connection,
+                    source,
+                    target,
+                )
+            finally:
+                if backup_source_connection is not None:
+                    backup_source_connection.close()
+
         for component in ("registry", "trace"):
             if component in legacy:
                 stamp_current_component_format(
@@ -832,13 +920,17 @@ def migrate_sqlite_storage(
                     from_version=0,
                 )
     except Exception:
-        connection.rollback()
+        if connection.in_transaction:
+            connection.rollback()
         raise
     else:
         connection.commit()
     finally:
         connection.close()
 
+    # before is guaranteed once BEGIN IMMEDIATE succeeds and migration reaches
+    # this point; the assertion keeps that invariant visible to type checkers.
+    assert before is not None
     after = inspect_sqlite_storage(
         path,
         document_limits=limits,
@@ -853,4 +945,3 @@ def migrate_sqlite_storage(
         before=before,
         after=after,
     )
-
