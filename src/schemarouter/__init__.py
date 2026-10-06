@@ -122,8 +122,12 @@ from .authorization import (
     PrincipalContext,
     TrustedFilterBinding,
 )
+from .authorization_audit import (
+    AuthorizationAuditDeliverySnapshot as AuthorizationAuditDeliverySnapshot,
+)
 from .authorization_audit import AuthorizationAuditEvent as AuthorizationAuditEvent
 from .authorization_audit import AuthorizationAuditHook as AuthorizationAuditHook
+from .authorization_audit import AuthorizationAuditMode as AuthorizationAuditMode
 from .authorization_config import AuthorizationPolicyConfig as AuthorizationPolicyConfig
 from .authorization_config import AuthorizationRuleConfig as AuthorizationRuleConfig
 from .authorization_config import DataScopeRuleConfig as DataScopeRuleConfig
@@ -293,6 +297,7 @@ from .decisions import (
 )
 from .errors import (
     ApprovalDeniedError,
+    AuthorizationAuditDeliveryError,
     BindingDriftError,
     ContractAmendmentError,
     ExecutionBudgetExceededError,
