@@ -222,7 +222,7 @@ async def test_astream_events_are_typed_ordered_and_redacted_by_default() -> Non
             request(),
             config=RunConfig(
                 tags=["prod", "smoke"],
-                metadata={"tenant": "example"},
+                trace_metadata={"tenant": "example"},
             ),
         )
     ]
