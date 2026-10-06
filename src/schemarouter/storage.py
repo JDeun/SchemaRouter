@@ -26,21 +26,33 @@ _STORAGE_MIGRATIONS_TABLE = "schemarouter_storage_migrations"
 DEFAULT_PERSISTED_DOCUMENT_MAX_BYTES = 2 * 1024 * 1024
 DEFAULT_PERSISTED_DOCUMENT_MAX_DEPTH = 64
 DEFAULT_PERSISTED_DOCUMENT_MAX_NODES = 100_000
+DEFAULT_PERSISTED_DOCUMENT_MAX_LIST_ITEMS = 50_000
+DEFAULT_PERSISTED_DOCUMENT_MAX_MAP_ITEMS = 50_000
+DEFAULT_PERSISTED_DOCUMENT_MAX_ALIASES = 128
+DEFAULT_PERSISTED_DOCUMENT_MAX_ANCHORS = 128
 
 
 @dataclass(frozen=True)
 class PersistedDocumentLimits:
-    """Resource budgets applied before persisted JSON reaches Pydantic."""
+    """Resource budgets for persisted and trusted configuration documents."""
 
     max_bytes: int = DEFAULT_PERSISTED_DOCUMENT_MAX_BYTES
     max_depth: int = DEFAULT_PERSISTED_DOCUMENT_MAX_DEPTH
     max_nodes: int = DEFAULT_PERSISTED_DOCUMENT_MAX_NODES
+    max_list_items: int = DEFAULT_PERSISTED_DOCUMENT_MAX_LIST_ITEMS
+    max_map_items: int = DEFAULT_PERSISTED_DOCUMENT_MAX_MAP_ITEMS
+    max_aliases: int = DEFAULT_PERSISTED_DOCUMENT_MAX_ALIASES
+    max_anchors: int = DEFAULT_PERSISTED_DOCUMENT_MAX_ANCHORS
 
     def __post_init__(self) -> None:
         for name, value in (
             ("max_bytes", self.max_bytes),
             ("max_depth", self.max_depth),
             ("max_nodes", self.max_nodes),
+            ("max_list_items", self.max_list_items),
+            ("max_map_items", self.max_map_items),
+            ("max_aliases", self.max_aliases),
+            ("max_anchors", self.max_anchors),
         ):
             if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
                 raise ValueError(f"{name} must be a positive integer")
