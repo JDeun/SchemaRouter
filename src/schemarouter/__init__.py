@@ -434,6 +434,7 @@ from .provider_profiles import (
     discover_provider_profile_plugins,
     load_provider_profile_plugins,
 )
+from .persistence_limits import PersistedDocumentLimits
 from .registry import InMemoryRegistry, MutableToolRegistry, SQLiteRegistry, ToolRegistry
 from .runs import ExecutionBudget, ExecutionMode, RetryPolicy, RunConfig, RunEvent
 from .runtime import ConfiguredSchemaRouter, SchemaRouter
@@ -662,6 +663,7 @@ __all__ = [
     "PlanValidationError",
     "PlanningError",
     "PolicyViolationError",
+    "PersistedDocumentLimits",
     "PolicyDecision",
     "PolicyEffect",
     "PolicyRule",
