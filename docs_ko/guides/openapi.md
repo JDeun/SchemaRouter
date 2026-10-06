@@ -133,6 +133,18 @@ data
 Array-of-object도 record alignment를 보존하는 `*` path를 사용합니다. Payload sample을 보고
 임의 wildcard field를 추론하지 않습니다.
 
+## YAML parser 자원 상한
+
+원격 OpenAPI YAML은 Python 객체를 생성하기 전에 자원 상한을 검사합니다. 기본적으로
+**alias 256개**, **anchor 256개**, **composed node 100,000개**, **논리적으로 확장된 node
+100,000개**, **중첩 깊이 64단계**를 넘으면 거부합니다. Alias를 여러 단계로 재사용하는
+경우에도 논리적 확장량을 계산하므로 작은 원문으로 큰 객체 그래프를 만드는 우회를 막습니다.
+순환 alias graph도 결정적으로 거부합니다.
+
+이 상한은 기존 **5 MiB** schema document byte 제한과 post-parse schema complexity 검사에
+추가로 적용됩니다. 정상적인 anchor/alias 사용은 상한 안에서 계속 지원하며 JSON ingestion
+동작은 변경하지 않습니다.
+
 ## Runtime response bound
 
 OpenAPI runtime response는 기본 **16 MiB** 상한을 적용한 뒤 decode합니다. 서버가

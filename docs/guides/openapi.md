@@ -346,6 +346,18 @@ response variant is simply absent from the projected result. Unsupported constru
 guessed.
 
 
+## YAML parser resource bounds
+
+Remote OpenAPI YAML is bounded before Python object construction. The parser rejects documents
+that exceed **256 aliases**, **256 anchors**, **100,000 composed nodes**, **100,000 logically
+expanded nodes**, or **64 levels of nesting**. Logical expansion is counted across reused aliases,
+so a small raw document cannot bypass the limit through multi-level alias amplification. Cyclic
+alias graphs are rejected deterministically.
+
+These parser limits complement the existing **5 MiB** schema-document byte bound and the normal
+post-parse schema-complexity checks. Ordinary anchors and aliases remain supported within the
+budgets. JSON ingestion is unchanged.
+
 ## Runtime response bound
 
 OpenAPI runtime responses are streamed and capped at **16 MiB by default** before JSON/text decoding.
