@@ -318,6 +318,7 @@ from .errors import (
     StorageFormatError,
     TraceError,
     TracePersistenceError,
+    TransientInvocationError,
     UnsupportedSchemaSourceError,
 )
 from .execution_state import (
