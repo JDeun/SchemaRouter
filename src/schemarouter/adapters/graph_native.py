@@ -6,6 +6,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from ..errors import RegistrationError, SchemaValidationError
+from .discovery_limits import NativeDiscoveryLimits, require_at_most
 from .graph_store import (
     GraphNodeTypeSpec,
     GraphPropertySpec,
@@ -106,12 +107,14 @@ class Neo4jGraphBackend:
         *,
         database: str,
         graph_name: str | None = None,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> None:
         if not database.strip():
             raise ValueError("Neo4j database must be non-empty")
         self._driver = driver
         self._database = database
         self._graph_name = graph_name or database
+        self._discovery_limits = discovery_limits or NativeDiscoveryLimits()
         self._relationships: tuple[str, ...] | None = None
 
     def _execute(
@@ -125,21 +128,33 @@ class Neo4jGraphBackend:
         return _normalize_neo4j_result(self._driver.execute_query(query, **kwargs))
 
     def list_graphs(self) -> tuple[GraphSourceSpec, ...]:
+        label_limit = self._discovery_limits.max_node_types_per_source
+        relationship_limit = self._discovery_limits.max_relationship_types_per_source
         label_rows = self._execute(
-            "CALL db.labels() YIELD label RETURN label ORDER BY label"
+            "CALL db.labels() YIELD label RETURN label ORDER BY label "
+            f"LIMIT {label_limit + 1}"
+        )
+        require_at_most(
+            len(label_rows),
+            limit=label_limit,
+            label="Neo4j label count",
         )
         relationship_rows = self._execute(
             "CALL db.relationshipTypes() YIELD relationshipType "
-            "RETURN relationshipType ORDER BY relationshipType"
+            "RETURN relationshipType ORDER BY relationshipType "
+            f"LIMIT {relationship_limit + 1}"
+        )
+        require_at_most(
+            len(relationship_rows),
+            limit=relationship_limit,
+            label="Neo4j relationship type count",
         )
         labels = tuple(
-            str(row["label"])
-            for row in label_rows[:_MAX_SCHEMA_ITEMS]
-            if row.get("label")
+            str(row["label"]) for row in label_rows if row.get("label")
         )
         relationships = tuple(
             str(row["relationshipType"])
-            for row in relationship_rows[:_MAX_SCHEMA_ITEMS]
+            for row in relationship_rows
             if row.get("relationshipType")
         )
         self._relationships = relationships
@@ -226,12 +241,14 @@ class NeptuneOpenCypherBackend:
         *,
         graph_name: str = "neptune",
         graph_identifier: str | None = None,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> None:
         if not graph_name.strip():
             raise ValueError("Neptune graph_name must be non-empty")
         self._client = client
         self._graph_name = graph_name
         self._graph_identifier = graph_identifier
+        self._discovery_limits = discovery_limits or NativeDiscoveryLimits()
         self._relationships: tuple[str, ...] | None = None
 
     def _execute(
@@ -266,13 +283,23 @@ class NeptuneOpenCypherBackend:
         )
 
     def list_graphs(self) -> tuple[GraphSourceSpec, ...]:
+        label_limit = self._discovery_limits.max_node_types_per_source
+        relationship_limit = self._discovery_limits.max_relationship_types_per_source
         label_rows = self._execute(
             "MATCH (n) UNWIND labels(n) AS label "
-            "RETURN DISTINCT label AS label ORDER BY label LIMIT 1000"
+            "RETURN DISTINCT label AS label ORDER BY label "
+            f"LIMIT {label_limit + 1}"
         )
         relationship_rows = self._execute(
             "MATCH ()-[r]->() RETURN DISTINCT type(r) AS relationshipType "
-            "ORDER BY relationshipType LIMIT 1000"
+            "ORDER BY relationshipType "
+            f"LIMIT {relationship_limit + 1}"
+        )
+        require_at_most(len(label_rows), limit=label_limit, label="Neptune label count")
+        require_at_most(
+            len(relationship_rows),
+            limit=relationship_limit,
+            label="Neptune relationship type count",
         )
         labels = tuple(
             str(row["label"]) for row in label_rows if row.get("label")
@@ -361,14 +388,35 @@ class NeptuneOpenCypherBackend:
 class ArangoGraphBackend:
     """Thin adapter over a caller-owned python-arango Database object."""
 
-    def __init__(self, database: Any) -> None:
+    def __init__(
+        self,
+        database: Any,
+        *,
+        graphs: Sequence[str] | None = None,
+        discovery_limits: NativeDiscoveryLimits | None = None,
+    ) -> None:
         self._database = database
+        self._graphs = None if graphs is None else frozenset(str(value) for value in graphs)
+        self._discovery_limits = discovery_limits or NativeDiscoveryLimits()
         self._definitions: dict[str, tuple[GraphRelationshipTypeSpec, ...]] = {}
 
     def list_graphs(self) -> tuple[GraphSourceSpec, ...]:
         raw_graphs = self._database.graphs()
         if not isinstance(raw_graphs, Sequence) or isinstance(raw_graphs, (str, bytes)):
             raise SchemaValidationError("ArangoDB graphs() must return a list")
+
+        if self._graphs is None:
+            require_at_most(
+                len(raw_graphs),
+                limit=self._discovery_limits.max_sources,
+                label="ArangoDB graph count",
+            )
+        else:
+            require_at_most(
+                len(self._graphs),
+                limit=self._discovery_limits.max_sources,
+                label="ArangoDB selected graph count",
+            )
 
         results: list[GraphSourceSpec] = []
         for raw in raw_graphs:
@@ -377,7 +425,14 @@ class ArangoGraphBackend:
             name = str(raw.get("name") or raw.get("_key") or "")
             if not name:
                 continue
+            if self._graphs is not None and name not in self._graphs:
+                continue
             definitions_raw = raw.get("edge_definitions") or raw.get("edgeDefinitions") or ()
+            require_at_most(
+                len(definitions_raw),
+                limit=self._discovery_limits.max_relationship_types_per_source,
+                label=f"ArangoDB graph {name!r} relationship definition count",
+            )
             relationships: list[GraphRelationshipTypeSpec] = []
             node_names: set[str] = set()
             for definition in definitions_raw:
@@ -417,6 +472,11 @@ class ArangoGraphBackend:
                 )
             orphan = raw.get("orphan_collections") or raw.get("orphanCollections") or ()
             node_names.update(str(value) for value in orphan)
+            require_at_most(
+                len(node_names),
+                limit=self._discovery_limits.max_node_types_per_source,
+                label=f"ArangoDB graph {name!r} node type count",
+            )
             relation_tuple = tuple(relationships)
             self._definitions[name] = relation_tuple
             results.append(
@@ -508,17 +568,29 @@ class FalkorGraphBackend:
         client: Any,
         *,
         graphs: Sequence[str] | None = None,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> None:
         self._client = client
         self._graphs = None if graphs is None else tuple(str(value) for value in graphs)
+        self._discovery_limits = discovery_limits or NativeDiscoveryLimits()
         self._relationships: dict[str, tuple[str, ...]] = {}
 
     def _graph_names(self) -> tuple[str, ...]:
         if self._graphs is not None:
+            require_at_most(
+                len(self._graphs),
+                limit=self._discovery_limits.max_sources,
+                label="FalkorDB selected graph count",
+            )
             return self._graphs
         raw = self._client.list_graphs()
         if not isinstance(raw, Sequence) or isinstance(raw, (str, bytes)):
             raise SchemaValidationError("FalkorDB list_graphs() must return a list")
+        require_at_most(
+            len(raw),
+            limit=self._discovery_limits.max_sources,
+            label="FalkorDB graph count",
+        )
         names = tuple(str(value) for value in raw if str(value))
         if len(names) != len(set(names)):
             raise SchemaValidationError("FalkorDB returned duplicate graph names")
@@ -551,12 +623,18 @@ class FalkorGraphBackend:
         rows = self._read(
             graph_name,
             f"MATCH {pattern} UNWIND keys({variable}) AS property "
-            "RETURN DISTINCT property ORDER BY property LIMIT 1000",
+            "RETURN DISTINCT property ORDER BY property "
+            f"LIMIT {self._discovery_limits.max_properties_per_type + 1}",
             columns=("property",),
+        )
+        require_at_most(
+            len(rows),
+            limit=self._discovery_limits.max_properties_per_type,
+            label="FalkorDB property count",
         )
         return tuple(
             GraphPropertySpec(name=str(row["property"]))
-            for row in rows[:_MAX_SCHEMA_ITEMS]
+            for row in rows
             if row.get("property")
         )
 
@@ -566,23 +644,35 @@ class FalkorGraphBackend:
             label_rows = self._read(
                 graph_name,
                 "MATCH (n) UNWIND labels(n) AS label "
-                "RETURN DISTINCT label ORDER BY label LIMIT 1000",
+                "RETURN DISTINCT label ORDER BY label "
+                f"LIMIT {self._discovery_limits.max_node_types_per_source + 1}",
                 columns=("label",),
             )
             relationship_rows = self._read(
                 graph_name,
                 "MATCH ()-[r]->() RETURN DISTINCT type(r) AS relationshipType "
-                "ORDER BY relationshipType LIMIT 1000",
+                "ORDER BY relationshipType "
+                f"LIMIT {self._discovery_limits.max_relationship_types_per_source + 1}",
                 columns=("relationshipType",),
+            )
+            require_at_most(
+                len(label_rows),
+                limit=self._discovery_limits.max_node_types_per_source,
+                label=f"FalkorDB graph {graph_name!r} label count",
+            )
+            require_at_most(
+                len(relationship_rows),
+                limit=self._discovery_limits.max_relationship_types_per_source,
+                label=f"FalkorDB graph {graph_name!r} relationship type count",
             )
             labels = tuple(
                 str(row["label"])
-                for row in label_rows[:_MAX_SCHEMA_ITEMS]
+                for row in label_rows
                 if row.get("label")
             )
             relationships = tuple(
                 str(row["relationshipType"])
-                for row in relationship_rows[:_MAX_SCHEMA_ITEMS]
+                for row in relationship_rows
                 if row.get("relationshipType")
             )
             self._relationships[graph_name] = relationships
@@ -609,8 +699,14 @@ class FalkorGraphBackend:
                     f"MATCH (source)-[r:{escaped}]->(target) "
                     "UNWIND labels(source) AS sourceType "
                     "UNWIND labels(target) AS targetType "
-                    "RETURN DISTINCT sourceType, targetType LIMIT 1000",
+                    "RETURN DISTINCT sourceType, targetType "
+                    f"LIMIT {self._discovery_limits.max_total_items + 1}",
                     columns=("sourceType", "targetType"),
+                )
+                require_at_most(
+                    len(endpoint_rows),
+                    limit=self._discovery_limits.max_total_items,
+                    label=f"FalkorDB relationship {relationship!r} endpoint pair count",
                 )
                 relationship_types.append(
                     GraphRelationshipTypeSpec(
@@ -745,12 +841,14 @@ class SparqlGraphBackend:
         *,
         endpoint: str,
         graph_name: str = "sparql",
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> None:
         if not endpoint.strip():
             raise ValueError("SPARQL endpoint must be non-empty")
         self._client = client
         self._endpoint = endpoint
         self._graph_name = graph_name
+        self._discovery_limits = discovery_limits or NativeDiscoveryLimits()
         self._predicates: tuple[str, ...] | None = None
 
     def _select(self, query: str) -> list[dict[str, Any]]:
@@ -784,12 +882,22 @@ class SparqlGraphBackend:
         return rows
 
     def list_graphs(self) -> tuple[GraphSourceSpec, ...]:
+        class_limit = self._discovery_limits.max_node_types_per_source
+        predicate_limit = self._discovery_limits.max_relationship_types_per_source
         class_rows = self._select(
-            "SELECT DISTINCT ?class WHERE { ?s a ?class . } ORDER BY ?class LIMIT 1000"
+            "SELECT DISTINCT ?class WHERE { ?s a ?class . } ORDER BY ?class "
+            f"LIMIT {class_limit + 1}"
         )
         predicate_rows = self._select(
             "SELECT DISTINCT ?predicate WHERE { ?s ?predicate ?o . } "
-            "ORDER BY ?predicate LIMIT 1000"
+            "ORDER BY ?predicate "
+            f"LIMIT {predicate_limit + 1}"
+        )
+        require_at_most(len(class_rows), limit=class_limit, label="SPARQL class count")
+        require_at_most(
+            len(predicate_rows),
+            limit=predicate_limit,
+            label="SPARQL predicate count",
         )
         classes = tuple(
             str(row["class"]) for row in class_rows if row.get("class")
