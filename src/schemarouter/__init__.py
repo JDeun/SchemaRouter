@@ -30,6 +30,7 @@ from .adapters.mcp import (
     DefaultMCPClientFactory,
     MCPBoundClientFactory,
     MCPClientFactory,
+    MCPDiscoveryLimits,
     MCPStdioConfig,
 )
 from .adapters.odata import ODataSourceAdapter, tool_from_odata_metadata
@@ -639,6 +640,7 @@ __all__ = [
     "NeptuneOpenCypherBackend",
     "SparqlGraphBackend",
     "MCPClientFactory",
+    "MCPDiscoveryLimits",
     "MCPStdioConfig",
     "ModelAnalysisError",
     "ModelCallable",
