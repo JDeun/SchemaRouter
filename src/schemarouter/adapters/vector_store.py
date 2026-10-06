@@ -19,6 +19,12 @@ from ..models import (
     ToolCall,
     ToolSpec,
 )
+from .discovery_limits import (
+    NativeDiscoveryBudget,
+    NativeDiscoveryLimits,
+    bounded_collect,
+    require_at_most,
+)
 
 _SEARCH_ENDPOINT = "search"
 _MAX_TOP_K = 100
@@ -267,6 +273,7 @@ async def introspect_vector_backend(
     default_top_k: int = 10,
     remote: bool = True,
     offload_sync_backend: bool | None = None,
+    discovery_limits: NativeDiscoveryLimits | None = None,
 ) -> tuple[VectorCollectionBinding, ...]:
     """Compile trusted vector collection descriptors into bounded search capabilities."""
 
@@ -275,17 +282,36 @@ async def introspect_vector_backend(
     if default_top_k < 1 or default_top_k > _MAX_TOP_K:
         raise ValueError(f"default_top_k must be between 1 and {_MAX_TOP_K}")
 
+    budget = NativeDiscoveryBudget(discovery_limits)
+    limits = budget.limits
     offload_backend = remote if offload_sync_backend is None else offload_sync_backend
     discovered_raw = await _call_backend(
         backend.list_collections,
         offload_sync=offload_backend,
     )
-    discovered = tuple(
-        item
-        if isinstance(item, VectorCollectionSpec)
-        else VectorCollectionSpec.model_validate(item)
-        for item in discovered_raw
+    discovered_items = bounded_collect(
+        discovered_raw,
+        limit=limits.max_sources,
+        label="vector collection count",
     )
+    discovered_list: list[VectorCollectionSpec] = []
+    for item in discovered_items:
+        collection = (
+            item
+            if isinstance(item, VectorCollectionSpec)
+            else VectorCollectionSpec.model_validate(item)
+        )
+        require_at_most(
+            len(collection.metadata_fields),
+            limit=limits.max_fields_per_source,
+            label=f"vector collection {collection.name!r} metadata field count",
+        )
+        budget.consume_source(
+            collection,
+            nested_items=len(collection.metadata_fields),
+        )
+        discovered_list.append(collection)
+    discovered = tuple(discovered_list)
     names = [collection.name for collection in discovered]
     if len(names) != len(set(names)):
         raise RegistrationError("vector backend returned duplicate collection names")
