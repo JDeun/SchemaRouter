@@ -347,6 +347,7 @@ async def test_model_analyzer_catalog_budget_is_explicitly_configurable() -> Non
     await router.aplan("read something")
     assert len(captured["schema_catalog"]) == 3
 
+
 @pytest.mark.asyncio
 async def test_model_analyzer_retries_against_fresh_snapshot_on_inflight_registry_change() -> None:
     started = asyncio.Event()
