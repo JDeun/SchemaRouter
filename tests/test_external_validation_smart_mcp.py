@@ -146,3 +146,49 @@ def test_heldout_scoring_requires_actual_execution_revision() -> None:
         match="held-out scoring requires the actual implementation.commit",
     ):
         score(heldout, catalog, cases, submitted)
+
+
+def test_shared_scorer_rejects_duplicate_result_rows() -> None:
+    manifest, catalog, cases = load_package(PACKAGE)
+    submitted = build_template(manifest, cases)
+    submitted["results"].append(deepcopy(submitted["results"][0]))
+
+    with pytest.raises(ValueError, match="result ids must not contain duplicates"):
+        score(manifest, catalog, cases, submitted)
+
+
+def test_shared_scorer_requires_one_exposed_contract_per_ranked_candidate() -> None:
+    manifest, catalog, cases = load_package(PACKAGE)
+    submitted = build_template(manifest, cases)
+    first = cases["cases"][0]
+    target = first["required_tools"][0]
+    submitted["results"][0]["candidate_tools"] = [target]
+    submitted["results"][0]["exposed_contracts"] = []
+
+    with pytest.raises(
+        ValueError,
+        match="exposed_contracts must match candidate_tools in ranked order",
+    ):
+        score(manifest, catalog, cases, submitted)
+
+
+def test_explicit_revision_must_match_detected_git_revision(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import scripts.external_validation_provenance as provenance_module
+
+    monkeypatch.setattr(
+        provenance_module,
+        "git_revision",
+        lambda _source_path: "detected-sha",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="explicit implementation revision does not match",
+    ):
+        implementation_provenance(
+            fixture_reference_revision="fixture-sha",
+            explicit_revision="claimed-sha",
+            source_path=Path(__file__),
+        )
