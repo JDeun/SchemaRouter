@@ -16,6 +16,7 @@ from schemarouter import (
     SchemaRouter,
     ToolCall,
     ToolSpec,
+    TransientInvocationError,
 )
 
 
@@ -355,7 +356,7 @@ async def test_retry_reauthorizes_capability_after_policy_revocation() -> None:
             router.executor.authorization_policy = AuthorizationPolicy(
                 default_effect="deny"
             )
-            raise RuntimeError("transient failure")
+            raise TransientInvocationError("transient failure")
         return {"value": "should-not-run"}
 
     router.add_bound_tool(tool, invoker)
@@ -409,7 +410,7 @@ async def test_retry_recomputes_data_scope_before_second_invocation() -> None:
                     ),
                 ),
             )
-            raise RuntimeError("transient failure")
+            raise TransientInvocationError("transient failure")
         return {"value": "should-not-run"}
 
     router.add_bound_tool(tool, invoker)
