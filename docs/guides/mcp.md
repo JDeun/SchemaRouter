@@ -45,7 +45,7 @@ cursor cycles are rejected.
 Trusted application code can tighten or deliberately raise these limits:
 
 ```python
-from schemarouter import MCPDiscoveryLimits
+from schemarouter import MCPDiscoveryLimits, SchemaRouter
 
 limits = MCPDiscoveryLimits(
     max_pages=16,
@@ -58,7 +58,6 @@ router = await SchemaRouter.from_url(
     "https://mcp.example.com/mcp",
     kind="mcp",
     mcp_discovery_limits=limits,
-    timeout=15.0,
 )
 ```
 
