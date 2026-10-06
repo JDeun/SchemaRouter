@@ -178,3 +178,34 @@ async def test_native_schema_watcher_does_not_hot_loop_persistent_failure() -> N
         assert calls == 1
     finally:
         await router.stop_native_schema_watcher()
+
+
+
+@pytest.mark.asyncio
+async def test_native_schema_watch_late_completion_does_not_recreate_removed_state() -> None:
+    router = SchemaRouter()
+    tool = _tool("removed_while_refreshing")
+    _bind(router, tool)
+
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    async def delayed_refresh():
+        started.set()
+        await release.wait()
+        return tool, (lambda endpoint, arguments: {}), False
+
+    router._remember_native_schema_refresh(tool.key, delayed_refresh)
+
+    checking = asyncio.create_task(router.check_native_schema_watches_once())
+    await asyncio.wait_for(started.wait(), timeout=1)
+
+    await router.aremove_tool(tool.key)
+    assert router.native_schema_watch_snapshots() == ()
+
+    release.set()
+    results = await asyncio.wait_for(checking, timeout=1)
+
+    assert len(results) == 1
+    assert results[0].action == "unchanged"
+    assert router.native_schema_watch_snapshots() == ()
