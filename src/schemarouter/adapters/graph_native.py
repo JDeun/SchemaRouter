@@ -134,15 +134,15 @@ class Neo4jGraphBackend:
             "CALL db.labels() YIELD label RETURN label ORDER BY label "
             f"LIMIT {label_limit + 1}"
         )
-        relationship_rows = self._execute(
-            "CALL db.relationshipTypes() YIELD relationshipType "
-            "RETURN relationshipType ORDER BY relationshipType "
-            f"LIMIT {relationship_limit + 1}"
-        )
         require_at_most(
             len(label_rows),
             limit=label_limit,
             label="Neo4j label count",
+        )
+        relationship_rows = self._execute(
+            "CALL db.relationshipTypes() YIELD relationshipType "
+            "RETURN relationshipType ORDER BY relationshipType "
+            f"LIMIT {relationship_limit + 1}"
         )
         require_at_most(
             len(relationship_rows),
