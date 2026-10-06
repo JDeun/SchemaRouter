@@ -71,20 +71,23 @@ def run(
 
         durations: list[float] = []
         final_results: list[tuple[types.Tool, float]] = []
+        final_contracts: list[dict[str, Any]] = []
         for _ in range(repeats):
             start = time.perf_counter()
             current = index.search(query, top_k=top_k)
+            current_contracts = [
+                _build_search_match(tool, score)
+                for tool, score in current
+            ]
             durations.append((time.perf_counter() - start) * 1000.0)
             final_results = current
+            final_contracts = current_contracts
 
         rows.append(
             {
                 "id": case["id"],
                 "candidate_tools": [tool.name for tool, _ in final_results],
-                "exposed_contracts": [
-                    _build_search_match(tool, score)
-                    for tool, score in final_results
-                ],
+                "exposed_contracts": final_contracts,
                 "latency_ms": median(durations),
             }
         )
@@ -111,8 +114,11 @@ def run(
                 "repeats_per_query": repeats,
                 "top_k": top_k,
                 "adapter_boundary": (
-                    "EmbeddingIndex.search + SmartMCP search-match serialization; "
-                    "no execution"
+                    "EmbeddingIndex.search + SmartMCP search-match materialization; "
+                    "no JSON encoding and no execution"
+                ),
+                "latency_boundary": (
+                    "ranked retrieval + model-visible contract materialization"
                 ),
             },
         },
