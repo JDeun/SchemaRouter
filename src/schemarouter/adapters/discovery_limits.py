@@ -20,6 +20,7 @@ class NativeDiscoveryLimits:
     max_properties_per_type: int = 256
     max_total_items: int = 16_384
     max_descriptor_bytes: int = 8 * 1024 * 1024
+    max_generated_bytes: int = 8 * 1024 * 1024
 
     def __post_init__(self) -> None:
         for name, value in (
@@ -30,6 +31,7 @@ class NativeDiscoveryLimits:
             ("max_properties_per_type", self.max_properties_per_type),
             ("max_total_items", self.max_total_items),
             ("max_descriptor_bytes", self.max_descriptor_bytes),
+            ("max_generated_bytes", self.max_generated_bytes),
         ):
             if isinstance(value, bool) or not isinstance(value, int) or value < 1:
                 raise ValueError(f"{name} must be a positive integer")
@@ -107,6 +109,7 @@ class NativeDiscoveryBudget:
         self._sources = 0
         self._items = 0
         self._descriptor_bytes = 0
+        self._generated_bytes = 0
 
     def consume_source(
         self,
@@ -128,16 +131,27 @@ class NativeDiscoveryBudget:
             label="native discovery descriptor item count",
         )
 
-        dump = getattr(descriptor, "model_dump_json", None)
-        if callable(dump):
-            rendered = dump()
-            serialized = rendered if isinstance(rendered, str) else str(rendered)
-            encoded_size = len(serialized.encode("utf-8"))
-        else:
-            encoded_size = len(repr(descriptor).encode("utf-8"))
-        self._descriptor_bytes += encoded_size
+        self._descriptor_bytes += self._encoded_size(descriptor)
         require_at_most(
             self._descriptor_bytes,
             limit=self.limits.max_descriptor_bytes,
             label="native discovery descriptor bytes",
         )
+
+    def consume_generated(self, value: Any) -> None:
+        self._generated_bytes += self._encoded_size(value)
+        require_at_most(
+            self._generated_bytes,
+            limit=self.limits.max_generated_bytes,
+            label="native discovery generated schema bytes",
+        )
+
+    @staticmethod
+    def _encoded_size(value: Any) -> int:
+        dump = getattr(value, "model_dump_json", None)
+        if callable(dump):
+            rendered = dump()
+            serialized = rendered if isinstance(rendered, str) else str(rendered)
+        else:
+            serialized = repr(value)
+        return len(serialized.encode("utf-8"))
