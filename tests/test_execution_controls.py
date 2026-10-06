@@ -8,7 +8,6 @@ from schemarouter import (
     EndpointSpec,
     ExecutionBudget,
     ExecutionBudgetExceededError,
-    ExecutionError,
     ExecutionHooks,
     ExecutionPlan,
     ExecutionPolicy,
