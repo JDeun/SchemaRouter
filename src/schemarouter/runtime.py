@@ -5971,6 +5971,270 @@ class SchemaRouter:
             result_count = 0
             fallback_count = 0
             terminal_count = 0
+            started_parallel_calls: dict[tuple[int, int], Any] = {}
+            started_parallel_call_keys: dict[
+                tuple[int, int], tuple[int, int]
+            ] = {}
+            terminal_parallel_calls: set[tuple[int, int]] = set()
+            started_primary_indexes: set[int] = set()
+
+            async def abort_parallel_siblings(
+                *,
+                cause_error_type: str,
+            ) -> tuple[list[RunEvent], list[int], int]:
+                nonlocal sequence, result_count
+
+                for task in tasks:
+                    if not task.done():
+                        task.cancel()
+                if tasks:
+                    await asyncio.gather(*tasks, return_exceptions=True)
+
+                pending_events: list[tuple[str, int, Any, Any]] = []
+                while True:
+                    try:
+                        pending_events.append(event_queue.get_nowait())
+                    except asyncio.QueueEmpty:
+                        break
+
+                emitted_events: list[RunEvent] = []
+                for pending_kind, pending_index, pending_call, pending_payload in pending_events:
+                    parallel_key: tuple[int, int] | None = None
+
+                    if pending_kind == "start":
+                        candidate_index = int(pending_payload)
+                        parallel_key = (pending_index, candidate_index)
+                        if parallel_key in started_parallel_calls:
+                            continue
+                        start_data: dict[str, Any] = {
+                            "argument_names": sorted(pending_call.arguments),
+                            "fields": list(pending_call.fields),
+                            "fallback_candidate_index": candidate_index,
+                            "primary_call_index": pending_index,
+                        }
+                        if run_config.include_payloads:
+                            start_data["arguments"] = dict(pending_call.arguments)
+                        emitted_events.append(
+                            await emit(
+                                RunEvent.create(
+                                    event="tool.start",
+                                    run_id=run_id,
+                                    sequence=sequence,
+                                    config=run_config,
+                                    tool=pending_call.tool,
+                                    endpoint=pending_call.endpoint,
+                                    data=start_data,
+                                )
+                            )
+                        )
+                        sequence += 1
+                        started_parallel_calls[parallel_key] = pending_call
+                        started_parallel_call_keys[
+                            (pending_index, id(pending_call))
+                        ] = parallel_key
+                        started_primary_indexes.add(pending_index)
+                        continue
+
+                    if pending_kind == "end":
+                        pending_result, candidate_index = pending_payload
+                        if not isinstance(pending_result, ToolResult):
+                            raise ExecutionInvariantError(
+                                "parallel execution result did not preserve a ToolResult"
+                            )
+                        parallel_key = (pending_index, int(candidate_index))
+                        if (
+                            parallel_key not in started_parallel_calls
+                            or parallel_key in terminal_parallel_calls
+                        ):
+                            continue
+                        end_data: dict[str, Any] = {
+                            "projected_fields": list(pending_result.projected_fields),
+                            "fallback_used": int(candidate_index) > 0,
+                            "primary_call_index": pending_index,
+                            "fallback_candidate_index": int(candidate_index),
+                        }
+                        if run_config.include_payloads:
+                            end_data["result"] = pending_result.model_dump(mode="json")
+                        emitted_events.append(
+                            await emit(
+                                RunEvent.create(
+                                    event="tool.end",
+                                    run_id=run_id,
+                                    sequence=sequence,
+                                    config=run_config,
+                                    tool=pending_result.tool,
+                                    endpoint=pending_result.endpoint,
+                                    data=end_data,
+                                )
+                            )
+                        )
+                        sequence += 1
+                        result_count += 1
+                        terminal_parallel_calls.add(parallel_key)
+                        continue
+
+                    if pending_kind == "post_invocation_error":
+                        if (
+                            not isinstance(pending_payload, tuple)
+                            or len(pending_payload) != 2
+                        ):
+                            raise ExecutionInvariantError(
+                                "parallel execution event payload violated the internal "
+                                "contract: 'post_invocation_error' expected a 2-item tuple"
+                            )
+                        post_error, candidate_index = pending_payload
+                        if not isinstance(post_error, PostInvocationHookError):
+                            raise ExecutionInvariantError(
+                                "parallel execution event payload violated the internal "
+                                "contract: 'post_invocation_error' expected "
+                                "PostInvocationHookError"
+                            )
+                        post_result = post_error.result
+                        if not isinstance(post_result, ToolResult):
+                            raise ExecutionInvariantError(
+                                "post-invocation hook error did not preserve a ToolResult"
+                            )
+                        parallel_key = (pending_index, int(candidate_index))
+                        if (
+                            parallel_key not in started_parallel_calls
+                            or parallel_key in terminal_parallel_calls
+                        ):
+                            continue
+                        end_data = {
+                            "projected_fields": list(post_result.projected_fields),
+                            "fallback_used": int(candidate_index) > 0,
+                            "primary_call_index": pending_index,
+                            "fallback_candidate_index": int(candidate_index),
+                            "execution_succeeded": True,
+                            "post_invocation_stage": "after_hook",
+                            "post_invocation_error_type": type(post_error).__name__,
+                        }
+                        if run_config.include_payloads:
+                            end_data["result"] = post_result.model_dump(mode="json")
+                        emitted_events.append(
+                            await emit(
+                                RunEvent.create(
+                                    event="tool.end",
+                                    run_id=run_id,
+                                    sequence=sequence,
+                                    config=run_config,
+                                    tool=post_result.tool,
+                                    endpoint=post_result.endpoint,
+                                    data=end_data,
+                                )
+                            )
+                        )
+                        sequence += 1
+                        result_count += 1
+                        terminal_parallel_calls.add(parallel_key)
+                        continue
+
+                    if pending_kind == "unavailable":
+                        exc, next_call, candidate_index = (
+                            _require_unavailable_event_payload(pending_payload)
+                        )
+                        parallel_key = (pending_index, candidate_index)
+                        if (
+                            parallel_key not in started_parallel_calls
+                            or parallel_key in terminal_parallel_calls
+                        ):
+                            continue
+                        error_data: dict[str, Any] = {
+                            "error_type": type(exc).__name__,
+                            "fallback_eligible": next_call is not None,
+                            "fallback_aborted_by_sibling": next_call is not None,
+                            "primary_call_index": pending_index,
+                            "fallback_candidate_index": candidate_index,
+                        }
+                        if run_config.include_payloads:
+                            error_data["message"] = str(exc)
+                        emitted_events.append(
+                            await emit(
+                                RunEvent.create(
+                                    event="tool.error",
+                                    run_id=run_id,
+                                    sequence=sequence,
+                                    config=run_config,
+                                    tool=pending_call.tool,
+                                    endpoint=pending_call.endpoint,
+                                    data=error_data,
+                                )
+                            )
+                        )
+                        sequence += 1
+                        terminal_parallel_calls.add(parallel_key)
+                        continue
+
+                    if pending_kind == "error":
+                        pending_error = _require_execution_event_exception(
+                            pending_payload,
+                            event_kind=pending_kind,
+                        )
+                        parallel_key = started_parallel_call_keys.get(
+                            (pending_index, id(pending_call))
+                        )
+                        if (
+                            parallel_key is None
+                            or parallel_key in terminal_parallel_calls
+                        ):
+                            continue
+                        error_data = {
+                            "error_type": type(pending_error).__name__,
+                            "primary_call_index": pending_index,
+                            "fallback_candidate_index": parallel_key[1],
+                        }
+                        if run_config.include_payloads:
+                            error_data["message"] = str(pending_error)
+                        emitted_events.append(
+                            await emit(
+                                RunEvent.create(
+                                    event="tool.error",
+                                    run_id=run_id,
+                                    sequence=sequence,
+                                    config=run_config,
+                                    tool=pending_call.tool,
+                                    endpoint=pending_call.endpoint,
+                                    data=error_data,
+                                )
+                            )
+                        )
+                        sequence += 1
+                        terminal_parallel_calls.add(parallel_key)
+
+                indeterminate_count = 0
+                for parallel_key in sorted(started_parallel_calls):
+                    if parallel_key in terminal_parallel_calls:
+                        continue
+                    pending_call = started_parallel_calls[parallel_key]
+                    emitted_events.append(
+                        await emit(
+                            RunEvent.create(
+                                event="tool.error",
+                                run_id=run_id,
+                                sequence=sequence,
+                                config=run_config,
+                                tool=pending_call.tool,
+                                endpoint=pending_call.endpoint,
+                                data={
+                                    "error_type": "ParallelSiblingFailureAbort",
+                                    "termination_reason": "sibling_failure",
+                                    "execution_state": "indeterminate",
+                                    "sibling_error_type": cause_error_type,
+                                    "primary_call_index": parallel_key[0],
+                                    "fallback_candidate_index": parallel_key[1],
+                                },
+                            )
+                        )
+                    )
+                    sequence += 1
+                    indeterminate_count += 1
+                    terminal_parallel_calls.add(parallel_key)
+
+                cancelled_before_start = sorted(
+                    set(range(len(plan.calls))) - started_primary_indexes
+                )
+                return emitted_events, cancelled_before_start, indeterminate_count
+
             try:
                 while terminal_count < len(plan.calls):
                     kind, index, call, payload = await event_queue.get()
@@ -5988,6 +6252,19 @@ class SchemaRouter:
                         }
                         if run_config.include_payloads:
                             error_data["message"] = str(payload)
+                        (
+                            aborted_events,
+                            cancelled_before_start,
+                            indeterminate_count,
+                        ) = await abort_parallel_siblings(
+                            cause_error_type=type(payload).__name__,
+                        )
+                        for aborted_event in aborted_events:
+                            yield aborted_event
+                        error_data[
+                            "cancelled_before_start_primary_call_indexes"
+                        ] = cancelled_before_start
+                        error_data["indeterminate_in_flight_count"] = indeterminate_count
                         yield await emit(RunEvent.create(
                             event="run.error",
                             run_id=run_id,
@@ -6064,6 +6341,10 @@ class SchemaRouter:
                             data=start_data,
                         ))
                         sequence += 1
+                        parallel_key = (index, candidate_index)
+                        started_parallel_calls[parallel_key] = call
+                        started_parallel_call_keys[(index, id(call))] = parallel_key
+                        started_primary_indexes.add(index)
                         continue
 
                     if kind == "unavailable":
@@ -6088,9 +6369,19 @@ class SchemaRouter:
                             data=error_data,
                         ))
                         sequence += 1
+                        terminal_parallel_calls.add((index, candidate_index))
 
                         if next_call is None:
                             terminal_count += 1
+                            (
+                                aborted_events,
+                                cancelled_before_start,
+                                indeterminate_count,
+                            ) = await abort_parallel_siblings(
+                                cause_error_type=type(exc).__name__,
+                            )
+                            for aborted_event in aborted_events:
+                                yield aborted_event
                             yield await emit(RunEvent.create(
                                 event="run.error",
                                 run_id=run_id,
@@ -6099,6 +6390,10 @@ class SchemaRouter:
                                 data={
                                     "error_type": type(exc).__name__,
                                     "stage": "execution",
+                                    "cancelled_before_start_primary_call_indexes": (
+                                        cancelled_before_start
+                                    ),
+                                    "indeterminate_in_flight_count": indeterminate_count,
                                 },
                             ))
                             raise exc
@@ -6182,10 +6477,24 @@ class SchemaRouter:
                         ))
                         sequence += 1
                         result_count += 1
+                        terminal_parallel_calls.add((index, candidate_index))
+                        (
+                            aborted_events,
+                            cancelled_before_start,
+                            indeterminate_count,
+                        ) = await abort_parallel_siblings(
+                            cause_error_type=type(post_error).__name__,
+                        )
+                        for aborted_event in aborted_events:
+                            yield aborted_event
                         run_error_data: dict[str, Any] = {
                             "error_type": type(post_error).__name__,
                             "stage": "post_invocation_hook",
                             "execution_succeeded": True,
+                            "cancelled_before_start_primary_call_indexes": (
+                                cancelled_before_start
+                            ),
+                            "indeterminate_in_flight_count": indeterminate_count,
                         }
                         if run_config.include_payloads:
                             run_error_data["message"] = str(post_error)
@@ -6204,7 +6513,18 @@ class SchemaRouter:
                             payload,
                             event_kind=kind,
                         )
-                        error_data = {"error_type": type(payload).__name__}
+                        parallel_key = started_parallel_call_keys.get(
+                            (index, id(call))
+                        )
+                        if parallel_key is None:
+                            raise ExecutionInvariantError(
+                                "parallel tool error did not have a matching tool.start"
+                            )
+                        error_data = {
+                            "error_type": type(payload).__name__,
+                            "primary_call_index": index,
+                            "fallback_candidate_index": parallel_key[1],
+                        }
                         if run_config.include_payloads:
                             error_data["message"] = str(payload)
                         yield await emit(RunEvent.create(
@@ -6217,6 +6537,16 @@ class SchemaRouter:
                             data=error_data,
                         ))
                         sequence += 1
+                        terminal_parallel_calls.add(parallel_key)
+                        (
+                            aborted_events,
+                            cancelled_before_start,
+                            indeterminate_count,
+                        ) = await abort_parallel_siblings(
+                            cause_error_type=type(payload).__name__,
+                        )
+                        for aborted_event in aborted_events:
+                            yield aborted_event
                         yield await emit(RunEvent.create(
                             event="run.error",
                             run_id=run_id,
@@ -6225,6 +6555,10 @@ class SchemaRouter:
                             data={
                                 "error_type": type(payload).__name__,
                                 "stage": "execution",
+                                "cancelled_before_start_primary_call_indexes": (
+                                    cancelled_before_start
+                                ),
+                                "indeterminate_in_flight_count": indeterminate_count,
                             },
                         ))
                         raise payload
@@ -6255,6 +6589,7 @@ class SchemaRouter:
                     ))
                     sequence += 1
                     result_count += 1
+                    terminal_parallel_calls.add((index, int(candidate_index)))
             finally:
                 for task in tasks:
                     if not task.done():
