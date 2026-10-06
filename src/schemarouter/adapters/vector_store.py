@@ -284,6 +284,8 @@ async def introspect_vector_backend(
         raise ValueError("max_fields_per_collection must be positive")
 
     selected = None if collections is None else {str(value) for value in collections}
+    if selected == set():
+        return ()
     offload_backend = remote if offload_sync_backend is None else offload_sync_backend
     discovered_raw = await _call_backend(
         backend.list_collections,
@@ -328,6 +330,8 @@ async def introspect_vector_backend(
                 f"limit is {max_fields_per_collection}"
             )
         discovered.append(collection)
+        if selected is not None and selected.issubset(seen_names):
+            break
 
     if selected is not None:
         missing = sorted(selected - seen_names)
