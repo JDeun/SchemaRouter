@@ -66,6 +66,8 @@ class MCPDiscoveryLimits:
     max_tools: int = 1024
     max_tool_schema_bytes: int = 512 * 1024
     max_total_schema_bytes: int = 5 * 1024 * 1024
+    max_tool_payload_bytes: int = 1024 * 1024
+    max_total_payload_bytes: int = 10 * 1024 * 1024
 
     def __post_init__(self) -> None:
         for name in (
@@ -73,6 +75,8 @@ class MCPDiscoveryLimits:
             "max_tools",
             "max_tool_schema_bytes",
             "max_total_schema_bytes",
+            "max_tool_payload_bytes",
+            "max_total_payload_bytes",
         ):
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
@@ -485,21 +489,31 @@ def _as_dict(value: Any) -> dict[str, Any]:
     raise TypeError(f"cannot convert MCP value {type(value)!r} to dict")
 
 
-def _mcp_tool_schema_size(item: dict[str, Any]) -> int:
-    payload = {
-        "inputSchema": item.get("inputSchema") or item.get("input_schema") or {},
-        "outputSchema": item.get("outputSchema") or item.get("output_schema") or {},
-    }
+def _mcp_json_size(value: Any, *, label: str) -> int:
     try:
         encoded = json.dumps(
-            payload,
+            value,
             sort_keys=True,
             separators=(",", ":"),
             ensure_ascii=True,
         ).encode("utf-8")
     except (TypeError, ValueError) as exc:
-        raise SchemaSourceError("MCP tool schema is not JSON serializable") from exc
+        raise SchemaSourceError(f"{label} is not JSON serializable") from exc
     return len(encoded)
+
+
+def _mcp_tool_schema_size(item: dict[str, Any]) -> int:
+    return _mcp_json_size(
+        {
+            "inputSchema": item.get("inputSchema") or item.get("input_schema") or {},
+            "outputSchema": item.get("outputSchema") or item.get("output_schema") or {},
+        },
+        label="MCP tool schema",
+    )
+
+
+def _mcp_tool_payload_size(item: dict[str, Any]) -> int:
+    return _mcp_json_size(item, label="MCP tool payload")
 
 
 def tool_from_mcp(
@@ -611,6 +625,7 @@ async def inspect_mcp_client_factory(
     async def discover() -> tuple[list[dict[str, Any]], str | None, Any]:
         raw_tools: list[dict[str, Any]] = []
         total_schema_bytes = 0
+        total_payload_bytes = 0
         page_count = 0
         seen_cursors: set[str] = set()
 
@@ -642,7 +657,21 @@ async def inspect_mcp_client_factory(
                             "MCP tools/list exceeded configured aggregate schema byte limit "
                             f"({limits.max_total_schema_bytes})"
                         )
+
+                    payload_size = _mcp_tool_payload_size(item)
+                    if payload_size > limits.max_tool_payload_bytes:
+                        raise SchemaSourceError(
+                            "MCP tool payload exceeded configured per-tool byte limit "
+                            f"({limits.max_tool_payload_bytes})"
+                        )
+                    if total_payload_bytes + payload_size > limits.max_total_payload_bytes:
+                        raise SchemaSourceError(
+                            "MCP tools/list exceeded configured aggregate payload byte limit "
+                            f"({limits.max_total_payload_bytes})"
+                        )
+
                     total_schema_bytes += schema_size
+                    total_payload_bytes += payload_size
                     raw_tools.append(item)
 
                 next_cursor = getattr(page, "next_cursor", None)

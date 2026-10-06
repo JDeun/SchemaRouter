@@ -354,13 +354,22 @@ def test_mcp_stdio_config_rejects_control_characters(value: str) -> None:
     with pytest.raises(ValueError):
         MCPStdioConfig(command=value)
 
-def _catalog_tool(name: str, *, description_size: int = 0) -> dict[str, object]:
+def _catalog_tool(
+    name: str,
+    *,
+    description_size: int = 0,
+    tool_description_size: int = 0,
+) -> dict[str, object]:
     property_schema: dict[str, object] = {"type": "string"}
     if description_size:
         property_schema["description"] = "x" * description_size
     return {
         "name": name,
-        "description": "fixture",
+        "description": (
+            "x" * tool_description_size
+            if tool_description_size
+            else "fixture"
+        ),
         "inputSchema": {
             "type": "object",
             "properties": {"value": property_schema},
@@ -531,6 +540,50 @@ async def test_mcp_discovery_rejects_aggregate_schema_budget_overflow() -> None:
             discovery_limits=MCPDiscoveryLimits(
                 max_tool_schema_bytes=1024,
                 max_total_schema_bytes=600,
+            ),
+        )
+
+
+@pytest.mark.asyncio
+async def test_mcp_discovery_rejects_oversized_tool_metadata_payload() -> None:
+    factory = PaginatedBoundFactory(
+        {
+            None: (
+                [_catalog_tool("metadata-heavy", tool_description_size=2048)],
+                None,
+            ),
+        }
+    )
+
+    with pytest.raises(SchemaSourceError, match="tool payload"):
+        await inspect_mcp_client_factory(
+            factory,
+            discovery_limits=MCPDiscoveryLimits(
+                max_tool_payload_bytes=512,
+            ),
+        )
+
+
+@pytest.mark.asyncio
+async def test_mcp_discovery_rejects_aggregate_payload_budget_overflow() -> None:
+    factory = PaginatedBoundFactory(
+        {
+            None: (
+                [
+                    _catalog_tool("first", tool_description_size=300),
+                    _catalog_tool("second", tool_description_size=300),
+                ],
+                None,
+            ),
+        }
+    )
+
+    with pytest.raises(SchemaSourceError, match="aggregate payload byte limit"):
+        await inspect_mcp_client_factory(
+            factory,
+            discovery_limits=MCPDiscoveryLimits(
+                max_tool_payload_bytes=1024,
+                max_total_payload_bytes=900,
             ),
         )
 
