@@ -47,6 +47,8 @@ class QdrantVectorBackend:
     metadata and normalizes query results into the provider-neutral vector-store contract.
     """
 
+    supports_trusted_filters = True
+
     def __init__(
         self,
         client: Any,
@@ -256,6 +258,8 @@ class QdrantVectorBackend:
 class MilvusVectorBackend:
     """Thin adapter over a caller-owned pymilvus.MilvusClient-compatible client."""
 
+    supports_trusted_filters = True
+
     def __init__(
         self,
         client: Any,
@@ -457,6 +461,8 @@ class MilvusVectorBackend:
 class PineconeVectorBackend:
     """Thin adapter over a caller-owned Pinecone client."""
 
+    supports_trusted_filters = True
+
     def __init__(
         self,
         client: Any,
@@ -557,6 +563,8 @@ class PineconeVectorBackend:
 
 class ChromaVectorBackend:
     """Thin adapter over a caller-owned Chroma client."""
+
+    supports_trusted_filters = True
 
     def __init__(
         self,
@@ -684,6 +692,8 @@ class ChromaVectorBackend:
 
 class WeaviateVectorBackend:
     """Thin adapter over a caller-owned Weaviate v4 client."""
+
+    supports_trusted_filters = True
 
     def __init__(
         self,
@@ -824,6 +834,8 @@ class WeaviateVectorBackend:
 
 class PgvectorVectorBackend:
     """SQLAlchemy/pgvector adapter over caller-owned PostgreSQL Engine."""
+
+    supports_trusted_filters = True
 
     def __init__(
         self,
