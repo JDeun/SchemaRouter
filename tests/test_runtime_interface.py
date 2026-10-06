@@ -9,7 +9,6 @@ from schemarouter import (
     EndpointSpec,
     ExecutionBudget,
     ExecutionBudgetExceededError,
-    ExecutionError,
     ExecutionHooks,
     ExecutionPlan,
     ExecutionPolicy,
@@ -28,6 +27,7 @@ from schemarouter import (
     SuccessfulCapabilityHistory,
     ToolCall,
     ToolSpec,
+    TransientInvocationError,
 )
 from schemarouter.runtime import _run_sync
 
@@ -297,7 +297,7 @@ async def test_event_stream_failure_matches_ainvoke_exception_type() -> None:
     invoke_router.executor.bind("weather", failing)
     event_router.executor.bind("weather", failing)
 
-    with pytest.raises(ExecutionError) as invoke_error:
+    with pytest.raises(RuntimeError) as invoke_error:
         await invoke_router.ainvoke(request())
 
     seen = []
@@ -390,7 +390,7 @@ async def test_read_only_retry_can_recover() -> None:
         nonlocal attempts
         attempts += 1
         if attempts < 3:
-            raise RuntimeError("transient")
+            raise TransientInvocationError("transient")
         return {
             "city": arguments["city"],
             "temperature": 20,
@@ -422,7 +422,7 @@ async def test_non_read_only_is_not_retried_by_default() -> None:
         raise RuntimeError("write failed")
 
     router.executor.bind("weather", failing)
-    with pytest.raises(ExecutionError, match="after 1 attempt"):
+    with pytest.raises(RuntimeError, match="write failed"):
         await router.ainvoke(
             request(),
             config=RunConfig(

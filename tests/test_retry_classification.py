@@ -3,7 +3,6 @@ import pytest
 
 from schemarouter import (
     EndpointSpec,
-    ExecutionError,
     FieldSpec,
     InMemoryRegistry,
     NonRetryableInvocationError,
@@ -59,7 +58,7 @@ async def test_explicit_non_retryable_invocation_error_stops_custom_retry_loop()
 
 
 @pytest.mark.asyncio
-async def test_generic_invocation_errors_preserve_existing_retry_behavior() -> None:
+async def test_generic_invocation_errors_are_non_retryable_by_default() -> None:
     tool = ToolSpec(
         name="custom",
         endpoints=[EndpointSpec(name="read", read_only=True)],
@@ -73,10 +72,10 @@ async def test_generic_invocation_errors_preserve_existing_retry_behavior() -> N
 
     executor, call = _executor_for(tool, invoke)
 
-    with pytest.raises(ExecutionError, match="after 3 attempt"):
+    with pytest.raises(RuntimeError, match="possibly transient"):
         await executor.execute_call(call, retry=RetryPolicy(max_attempts=3))
 
-    assert attempts == 3
+    assert attempts == 1
 
 
 @pytest.mark.asyncio

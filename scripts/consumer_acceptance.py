@@ -34,6 +34,7 @@ from schemarouter import (
     SQLiteRunTraceStore,
     ToolCall,
     ToolSpec,
+    TransientInvocationError,
     UnitNormalizationSpec,
     __version__,
     compare_endpoint_specs,
@@ -375,7 +376,7 @@ async def scenario_retry_and_budget() -> dict[str, object]:
         nonlocal attempts
         attempts += 1
         if attempts == 1:
-            raise RuntimeError("transient")
+            raise TransientInvocationError("transient")
         return value
 
     retry_router = SchemaRouter()

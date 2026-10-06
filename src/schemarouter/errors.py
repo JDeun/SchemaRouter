@@ -110,7 +110,16 @@ class ExecutionInvariantError(ExecutionError):
     """Raised when an internal execution event violates a runtime invariant."""
 
 
-class InvocationUnavailableError(ExecutionError, RuntimeError):
+class TransientInvocationError(ExecutionError, RuntimeError):
+    """Raised for an explicitly classified transient invocation failure.
+
+    Executors may retry the same invocation only when an adapter raises this marker
+    (or a subclass). It does not by itself authorize provider/access-path fallback.
+    Unknown exceptions are treated as non-retryable by default.
+    """
+
+
+class InvocationUnavailableError(TransientInvocationError):
     """Raised when an otherwise valid access path is temporarily unavailable.
 
     Executors may retry the same read-only route and a precompiled fallback route may use this

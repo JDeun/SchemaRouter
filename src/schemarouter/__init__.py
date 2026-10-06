@@ -325,6 +325,7 @@ from .errors import (
     StorageFormatError,
     TraceError,
     TracePersistenceError,
+    TransientInvocationError,
     UnsupportedSchemaSourceError,
 )
 from .execution_state import (
@@ -784,6 +785,7 @@ __all__ = [
     "TraceRedactionConfig",
     "TraceError",
     "TracePersistenceError",
+    "TransientInvocationError",
     "UnsupportedSchemaSourceError",
     "schema_tool",
     "tool_from_callable",

@@ -32,6 +32,7 @@ from schemarouter import (
     SchemaValidationError,
     ToolCall,
     ToolSpec,
+    TransientInvocationError,
 )
 
 
@@ -503,6 +504,131 @@ async def test_output_schema_violation_is_never_retried() -> None:
 
     assert attempts == 1
 
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "error",
+    [
+        TypeError("adapter signature bug"),
+        ValueError("invalid SDK configuration"),
+        KeyError("missing adapter mapping"),
+        AssertionError("adapter invariant"),
+    ],
+)
+async def test_unclassified_invocation_failures_are_not_retried(
+    error: Exception,
+) -> None:
+    reg = InMemoryRegistry()
+    tool = ToolSpec(
+        name="classified_retry",
+        endpoints=[EndpointSpec(name="read", read_only=True)],
+    )
+    reg.register(tool)
+    endpoint = tool.endpoint("read")
+    call = ToolCall(
+        tool=tool.key,
+        endpoint=endpoint.name,
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+    executor = RegistryExecutor(reg)
+    attempts = 0
+
+    def invoker(endpoint_name: str, arguments: dict) -> dict:
+        nonlocal attempts
+        del endpoint_name, arguments
+        attempts += 1
+        raise error
+
+    executor.bind(tool.key, invoker)
+
+    with pytest.raises(type(error)):
+        await executor.execute_call(
+            call,
+            retry=RetryPolicy(max_attempts=3),
+        )
+
+    assert attempts == 1
+
+
+@pytest.mark.asyncio
+async def test_explicit_transient_invocation_failure_retries_same_route() -> None:
+    reg = InMemoryRegistry()
+    tool = ToolSpec(
+        name="classified_retry",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_fields=[FieldSpec(name="value")],
+            )
+        ],
+    )
+    reg.register(tool)
+    endpoint = tool.endpoint("read")
+    call = ToolCall(
+        tool=tool.key,
+        endpoint=endpoint.name,
+        fields=["value"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+    executor = RegistryExecutor(reg)
+    attempts = 0
+
+    def invoker(endpoint_name: str, arguments: dict) -> dict:
+        nonlocal attempts
+        del endpoint_name, arguments
+        attempts += 1
+        if attempts < 3:
+            raise TransientInvocationError("temporary transport failure")
+        return {"value": "ok"}
+
+    executor.bind(tool.key, invoker)
+
+    result = await executor.execute_call(
+        call,
+        retry=RetryPolicy(max_attempts=3, initial_backoff_seconds=0),
+    )
+
+    assert result.data == {"value": "ok"}
+    assert attempts == 3
+
+
+@pytest.mark.asyncio
+async def test_exhausted_transient_failure_preserves_typed_error() -> None:
+    reg = InMemoryRegistry()
+    tool = ToolSpec(
+        name="classified_retry",
+        endpoints=[EndpointSpec(name="read", read_only=True)],
+    )
+    reg.register(tool)
+    endpoint = tool.endpoint("read")
+    call = ToolCall(
+        tool=tool.key,
+        endpoint=endpoint.name,
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+    executor = RegistryExecutor(reg)
+    attempts = 0
+
+    def invoker(endpoint_name: str, arguments: dict) -> dict:
+        nonlocal attempts
+        del endpoint_name, arguments
+        attempts += 1
+        raise TransientInvocationError("still temporary")
+
+    executor.bind(tool.key, invoker)
+
+    with pytest.raises(TransientInvocationError, match="still temporary"):
+        await executor.execute_call(
+            call,
+            retry=RetryPolicy(max_attempts=2, initial_backoff_seconds=0),
+        )
+
+    assert attempts == 2
 
 
 @pytest.mark.asyncio
