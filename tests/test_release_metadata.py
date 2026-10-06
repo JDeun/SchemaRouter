@@ -232,8 +232,21 @@ def test_pr_ci_uses_path_aware_tiers_without_renaming_required_gates() -> None:
     assert "needs.changes.outputs.database == 'true'" in workflow
     assert "needs.changes.outputs.docs == 'true'" in workflow
     assert '"success", "skipped"' in workflow
-    assert "test (3.10)" not in workflow  # matrix keeps the historical generated check name
+    assert 'python-version: ["3.10", "3.12", "3.14"]' in workflow
+    assert "name: test (3.11)" in workflow
+    assert "name: test (3.13)" in workflow
+    assert "if: ${{ false }}" in workflow
+
+
+def test_scheduled_python_compatibility_covers_all_supported_versions() -> None:
+    workflow = (
+        ROOT / ".github" / "workflows" / "python-compatibility.yml"
+    ).read_text(encoding="utf-8")
+
     assert 'python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]' in workflow
+    assert "Run full supported-version suite" in workflow
+    assert "schedule:" in workflow
+    assert "workflow_dispatch:" in workflow
 
 
 def test_scheduled_full_qualification_reuses_the_complete_ci() -> None:
