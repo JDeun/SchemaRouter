@@ -36,6 +36,8 @@ class _ProbeRecord:
     status: HealthStatus = "unknown"
     last_checked_at: datetime | None = None
     last_error_type: str | None = None
+    sync_inflight: asyncio.Future[object] | None = None
+    sync_inflight_generation: int | None = None
 
 
 @dataclass(frozen=True)
@@ -335,10 +337,58 @@ class AccessHealthMonitor:
                     if async_probe:
                         outcome = record.probe()
                     else:
-                        outcome = await asyncio.wait_for(
-                            self.executor._submit_offloaded_sync(record.probe),
-                            timeout=probe_timeout_seconds,
-                        )
+                        with self._probe_lock:
+                            inflight = record.sync_inflight
+                            if inflight is not None and inflight.done():
+                                record.sync_inflight = None
+                                record.sync_inflight_generation = None
+                                inflight = None
+
+                            if inflight is None:
+                                inflight = self.executor._submit_offloaded_sync(record.probe)
+                                record.sync_inflight = inflight
+                                record.sync_inflight_generation = generation
+
+                                def consume_late_result(
+                                    completed: asyncio.Future[object],
+                                ) -> None:
+                                    if completed.cancelled():
+                                        return
+                                    try:
+                                        completed.exception()
+                                    except asyncio.CancelledError:
+                                        return
+
+                                inflight.add_done_callback(consume_late_result)
+                                submitted_sync_probe = True
+                            else:
+                                submitted_sync_probe = False
+
+                        if submitted_sync_probe:
+                            try:
+                                outcome = await asyncio.wait_for(
+                                    asyncio.shield(inflight),
+                                    timeout=probe_timeout_seconds,
+                                )
+                            finally:
+                                with self._probe_lock:
+                                    if (
+                                        record.sync_inflight is inflight
+                                        and inflight.done()
+                                    ):
+                                        record.sync_inflight = None
+                                        record.sync_inflight_generation = None
+                        elif record.sync_inflight_generation != generation:
+                            # A worker from an older contract generation is still running.
+                            # Do not let that stale worker make the current contract healthy
+                            # or unhealthy, and do not launch another worker until it exits.
+                            return
+                        else:
+                            # A previous timed-out/cancelled synchronous worker for this
+                            # generation is still executing. Its late result is intentionally
+                            # discarded, and the same probe is not resubmitted until exit.
+                            error_type = record.last_error_type or "TimeoutError"
+                            outcome = False
                     if inspect.isawaitable(outcome):
                         outcome = await asyncio.wait_for(
                             outcome,
