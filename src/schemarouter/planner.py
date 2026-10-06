@@ -1533,7 +1533,10 @@ class SchemaPlanner:
             EndpointSpec | None,
         ]
         | None = None,
+        catalog_snapshot: _RegistrySnapshot | None = None,
     ) -> list[_Candidate]:
+        snapshot = catalog_snapshot or self._catalog_snapshot()
+
         def is_available(tool: ToolSpec, endpoint: EndpointSpec) -> bool:
             if (
                 self.availability_predicate is not None
@@ -1548,13 +1551,13 @@ class SchemaPlanner:
             return True
 
         if self.candidate_index and scoring_endpoint_transform is None:
-            index = self._index()
+            index = self._index(snapshot)
             endpoint_pairs = index.all_endpoint_pairs()
         else:
             index = None
             endpoint_pairs = tuple(
                 (tool, endpoint)
-                for tool in self.registry.tools()
+                for tool in snapshot.tools
                 for endpoint in tool.endpoints
             )
 
@@ -1717,6 +1720,7 @@ class SchemaPlanner:
             EndpointSpec | None,
         ]
         | None = None,
+        catalog_snapshot: _RegistrySnapshot | None = None,
     ) -> tuple[list[_Candidate], list[str]]:
         if self.candidate_recall_backend is None:
             return candidates, []
@@ -1726,6 +1730,7 @@ class SchemaPlanner:
             intent,
             additional_availability_predicate=additional_availability_predicate,
             scoring_endpoint_transform=scoring_endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
         )
         if not catalog:
             return candidates, []
@@ -1773,6 +1778,7 @@ class SchemaPlanner:
             EndpointSpec | None,
         ]
         | None = None,
+        catalog_snapshot: _RegistrySnapshot | None = None,
     ) -> tuple[list[_Candidate], list[str]]:
         if self.candidate_recall_backend is None:
             return candidates, []
@@ -1782,6 +1788,7 @@ class SchemaPlanner:
             intent,
             additional_availability_predicate=additional_availability_predicate,
             scoring_endpoint_transform=scoring_endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
         )
         if not catalog:
             return candidates, []
