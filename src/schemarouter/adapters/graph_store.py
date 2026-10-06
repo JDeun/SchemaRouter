@@ -395,6 +395,10 @@ async def introspect_graph_backend(
     names = [graph.name for graph in discovered]
     if len(names) != len(set(names)):
         raise RegistrationError("graph backend returned duplicate graph names")
+    if selected is not None:
+        missing = sorted(selected - set(names))
+        if missing:
+            raise RegistrationError("unknown graphs: " + ", ".join(missing))
 
     bindings: list[GraphSourceBinding] = []
     used_names: set[str] = set()
