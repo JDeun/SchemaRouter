@@ -8,6 +8,25 @@ from typing import Any
 from ..errors import RegistrationError, SchemaValidationError
 from .vector_store import VectorCollectionSpec, VectorMetadataField
 
+_MAX_DISCOVERY_SOURCES = 128
+_MAX_DISCOVERY_FIELDS = 256
+
+
+def _bounded_values(
+    values: Iterable[Any],
+    *,
+    limit: int,
+    label: str,
+) -> tuple[Any, ...]:
+    if limit < 1:
+        raise ValueError(f"{label} limit must be positive")
+    result: list[Any] = []
+    for index, value in enumerate(values):
+        if index >= limit:
+            raise RegistrationError(f"{label} exceeded limit={limit}")
+        result.append(value)
+    return tuple(result)
+
 
 def _read(value: Any, name: str, default: Any = None) -> Any:
     if isinstance(value, Mapping):
@@ -60,23 +79,53 @@ class QdrantVectorBackend:
         ]
         | None = None,
         filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
+        collections: Sequence[str] | None = None,
+        max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
+        max_fields_per_collection: int = _MAX_DISCOVERY_FIELDS,
     ) -> None:
         self._client = client
+        self._collections = (
+            None
+            if collections is None
+            else tuple(
+                str(value)
+                for value in _bounded_values(
+                    collections,
+                    limit=max_discovery_sources,
+                    label="Qdrant configured collections",
+                )
+            )
+        )
+        self._max_discovery_sources = max_discovery_sources
+        self._max_fields_per_collection = max_fields_per_collection
         self._vector_name_by_collection = dict(vector_name_by_collection or {})
         self._metadata_fields_by_collection = {
-            name: tuple(fields)
+            name: tuple(
+                _bounded_values(
+                    fields,
+                    limit=max_fields_per_collection,
+                    label=f"Qdrant metadata fields for {name!r}",
+                )
+            )
             for name, fields in (metadata_fields_by_collection or {}).items()
         }
         self._filter_builder = filter_builder
 
-    def _collection_names(self) -> list[str]:
+    def _collection_names(self) -> tuple[str, ...]:
+        if self._collections is not None:
+            return self._collections
         response = self._client.get_collections()
         entries = _read(response, "collections", response)
         if not isinstance(entries, Sequence) or isinstance(entries, (str, bytes)):
             raise SchemaValidationError(
                 "Qdrant get_collections() returned an unexpected response"
             )
-        names = [str(_read(entry, "name", entry)) for entry in entries]
+        bounded = _bounded_values(
+            entries,
+            limit=self._max_discovery_sources,
+            label="Qdrant collection discovery",
+        )
+        names = tuple(str(_read(entry, "name", entry)) for entry in bounded)
         if any(not name for name in names):
             raise SchemaValidationError("Qdrant returned an empty collection name")
         return names
@@ -141,7 +190,12 @@ class QdrantVectorBackend:
         }
         payload_schema = _read(info, "payload_schema", {})
         if isinstance(payload_schema, Mapping):
-            for name, schema in payload_schema.items():
+            payload_items = _bounded_values(
+                payload_schema.items(),
+                limit=self._max_fields_per_collection,
+                label=f"Qdrant payload schema for {collection!r}",
+            )
+            for name, schema in payload_items:
                 field_name = str(name)
                 if field_name in declared:
                     existing = declared[field_name]
@@ -157,6 +211,11 @@ class QdrantVectorBackend:
                     ),
                     filterable=True,
                 )
+                if len(declared) > self._max_fields_per_collection:
+                    raise RegistrationError(
+                        f"Qdrant collection {collection!r} exposes more than "
+                        f"{self._max_fields_per_collection} metadata fields"
+                    )
         return tuple(declared[name] for name in sorted(declared))
 
     def list_collections(self) -> tuple[VectorCollectionSpec, ...]:
@@ -266,8 +325,27 @@ class MilvusVectorBackend:
         *,
         vector_field_by_collection: Mapping[str, str] | None = None,
         metric_by_collection: Mapping[str, str] | None = None,
+        collections: Sequence[str] | None = None,
+        max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
+        max_fields_per_collection: int = _MAX_DISCOVERY_FIELDS,
     ) -> None:
+        if max_fields_per_collection < 1:
+            raise ValueError("Milvus max_fields_per_collection must be positive")
         self._client = client
+        self._collections = (
+            None
+            if collections is None
+            else tuple(
+                str(value)
+                for value in _bounded_values(
+                    collections,
+                    limit=max_discovery_sources,
+                    label="Milvus configured collections",
+                )
+            )
+        )
+        self._max_discovery_sources = max_discovery_sources
+        self._max_fields_per_collection = max_fields_per_collection
         self._vector_field_by_collection = dict(vector_field_by_collection or {})
         self._metric_by_collection = dict(metric_by_collection or {})
         self._schema_cache: dict[str, dict[str, Any]] = {}
@@ -293,10 +371,15 @@ class MilvusVectorBackend:
         raw_fields = description.get("fields", ())
         if not isinstance(raw_fields, Sequence):
             raise SchemaValidationError("Milvus collection fields must be a list")
+        bounded_fields = _bounded_values(
+            raw_fields,
+            limit=self._max_fields_per_collection,
+            label=f"Milvus fields for {collection!r}",
+        )
 
         vector_fields: list[tuple[str, int]] = []
         metadata: list[VectorMetadataField] = []
-        for raw in raw_fields:
+        for raw in bounded_fields:
             if not isinstance(raw, Mapping):
                 continue
             name = str(raw.get("name", ""))
@@ -351,10 +434,19 @@ class MilvusVectorBackend:
         return vector_field, dimension, tuple(metadata)
 
     def list_collections(self) -> tuple[VectorCollectionSpec, ...]:
-        names = self._client.list_collections()
-        if not isinstance(names, Sequence) or isinstance(names, (str, bytes)):
-            raise SchemaValidationError(
-                "Milvus list_collections() returned an unexpected response"
+        names: Sequence[Any]
+        if self._collections is not None:
+            names = self._collections
+        else:
+            raw_names = self._client.list_collections()
+            if not isinstance(raw_names, Sequence) or isinstance(raw_names, (str, bytes)):
+                raise SchemaValidationError(
+                    "Milvus list_collections() returned an unexpected response"
+                )
+            names = _bounded_values(
+                raw_names,
+                limit=self._max_discovery_sources,
+                label="Milvus collection discovery",
             )
         results: list[VectorCollectionSpec] = []
         for raw_name in names:
@@ -468,14 +560,38 @@ class PineconeVectorBackend:
         client: Any,
         *,
         metadata_fields_by_index: Mapping[str, Sequence[VectorMetadataField]] | None = None,
+        collections: Sequence[str] | None = None,
+        max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
+        max_fields_per_collection: int = _MAX_DISCOVERY_FIELDS,
     ) -> None:
         self._client = client
+        self._collections = (
+            None
+            if collections is None
+            else tuple(
+                str(value)
+                for value in _bounded_values(
+                    collections,
+                    limit=max_discovery_sources,
+                    label="Pinecone configured indexes",
+                )
+            )
+        )
+        self._max_discovery_sources = max_discovery_sources
         self._metadata_fields_by_index = {
-            name: tuple(fields)
+            name: tuple(
+                _bounded_values(
+                    fields,
+                    limit=max_fields_per_collection,
+                    label=f"Pinecone metadata fields for {name!r}",
+                )
+            )
             for name, fields in (metadata_fields_by_index or {}).items()
         }
 
-    def _index_names(self) -> list[str]:
+    def _index_names(self) -> tuple[str, ...]:
+        if self._collections is not None:
+            return self._collections
         raw = self._client.list_indexes()
         names_method = getattr(raw, "names", None)
         if callable(names_method):
@@ -485,14 +601,19 @@ class PineconeVectorBackend:
         else:
             names = raw
         if isinstance(names, Mapping):
-            values = list(names.values())
+            values: Iterable[Any] = names.values()
         elif isinstance(names, Iterable) and not isinstance(names, (str, bytes)):
-            values = list(names)
+            values = names
         else:
             raise SchemaValidationError(
                 "Pinecone list_indexes() returned an unexpected response"
             )
-        result = [str(_read(value, "name", value)) for value in values]
+        bounded = _bounded_values(
+            values,
+            limit=self._max_discovery_sources,
+            label="Pinecone index discovery",
+        )
+        result = tuple(str(_read(value, "name", value)) for value in bounded)
         if any(not value for value in result):
             raise SchemaValidationError("Pinecone returned an empty index name")
         return result
@@ -580,11 +701,33 @@ class ChromaVectorBackend:
         dimension_by_collection: Mapping[str, int] | None = None,
         metadata_fields_by_collection: Mapping[str, Sequence[VectorMetadataField]] | None = None,
         metric_by_collection: Mapping[str, str] | None = None,
+        collections: Sequence[str] | None = None,
+        max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
+        max_fields_per_collection: int = _MAX_DISCOVERY_FIELDS,
     ) -> None:
         self._client = client
+        self._collections = (
+            None
+            if collections is None
+            else tuple(
+                str(value)
+                for value in _bounded_values(
+                    collections,
+                    limit=max_discovery_sources,
+                    label="Chroma configured collections",
+                )
+            )
+        )
+        self._max_discovery_sources = max_discovery_sources
         self._dimension_by_collection = dict(dimension_by_collection or {})
         self._metadata_fields_by_collection = {
-            name: tuple(fields)
+            name: tuple(
+                _bounded_values(
+                    fields,
+                    limit=max_fields_per_collection,
+                    label=f"Chroma metadata fields for {name!r}",
+                )
+            )
             for name, fields in (metadata_fields_by_collection or {}).items()
         }
         self._metric_by_collection = dict(metric_by_collection or {})
@@ -619,10 +762,18 @@ class ChromaVectorBackend:
         )
 
     def list_collections(self) -> tuple[VectorCollectionSpec, ...]:
-        raw = self._client.list_collections()
-        if not isinstance(raw, Sequence) or isinstance(raw, (str, bytes)):
-            raise SchemaValidationError(
-                "Chroma list_collections() returned an unexpected response"
+        if self._collections is not None:
+            raw: Sequence[Any] = self._collections
+        else:
+            discovered = self._client.list_collections()
+            if not isinstance(discovered, Sequence) or isinstance(discovered, (str, bytes)):
+                raise SchemaValidationError(
+                    "Chroma list_collections() returned an unexpected response"
+                )
+            raw = _bounded_values(
+                discovered,
+                limit=self._max_discovery_sources,
+                label="Chroma collection discovery",
             )
         results: list[VectorCollectionSpec] = []
         for entry in raw:
@@ -720,22 +871,50 @@ class WeaviateVectorBackend:
         vector_name_by_collection: Mapping[str, str] | None = None,
         metric_by_collection: Mapping[str, str] | None = None,
         filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
+        collections: Sequence[str] | None = None,
+        max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
+        max_fields_per_collection: int = _MAX_DISCOVERY_FIELDS,
     ) -> None:
+        if max_fields_per_collection < 1:
+            raise ValueError("Weaviate max_fields_per_collection must be positive")
         self._client = client
+        self._collections = (
+            None
+            if collections is None
+            else tuple(
+                str(value)
+                for value in _bounded_values(
+                    collections,
+                    limit=max_discovery_sources,
+                    label="Weaviate configured collections",
+                )
+            )
+        )
+        self._max_discovery_sources = max_discovery_sources
+        self._max_fields_per_collection = max_fields_per_collection
         self._dimension_by_collection = dict(dimension_by_collection)
         self._vector_name_by_collection = dict(vector_name_by_collection or {})
         self._metric_by_collection = dict(metric_by_collection or {})
         self._filter_builder = filter_builder
 
-    def _names(self) -> list[str]:
+    def _names(self) -> tuple[str, ...]:
+        if self._collections is not None:
+            return self._collections
         raw = self._client.collections.list_all(simple=False)
         if isinstance(raw, Mapping):
-            return [str(name) for name in raw]
-        if isinstance(raw, Sequence) and not isinstance(raw, (str, bytes)):
-            return [str(_read(value, "name", value)) for value in raw]
-        raise SchemaValidationError(
-            "Weaviate collections.list_all() returned an unexpected response"
+            values: Iterable[Any] = raw.keys()
+        elif isinstance(raw, Sequence) and not isinstance(raw, (str, bytes)):
+            values = raw
+        else:
+            raise SchemaValidationError(
+                "Weaviate collections.list_all() returned an unexpected response"
+            )
+        bounded = _bounded_values(
+            values,
+            limit=self._max_discovery_sources,
+            label="Weaviate collection discovery",
         )
+        return tuple(str(_read(value, "name", value)) for value in bounded)
 
     @staticmethod
     def _property_schema(value: Any) -> dict[str, Any]:
@@ -755,8 +934,15 @@ class WeaviateVectorBackend:
             collection = self._client.collections.get(name)
             config = collection.config.get()
             properties = _read(config, "properties", ()) or ()
+            if not isinstance(properties, Iterable) or isinstance(properties, (str, bytes)):
+                raise SchemaValidationError("Weaviate collection properties must be iterable")
+            bounded_properties = _bounded_values(
+                properties,
+                limit=self._max_fields_per_collection,
+                label=f"Weaviate properties for {name!r}",
+            )
             metadata: list[VectorMetadataField] = []
-            for prop in properties:
+            for prop in bounded_properties:
                 prop_name = str(_read(prop, "name", ""))
                 if not prop_name or prop_name in {"id", "score"}:
                     continue
@@ -862,9 +1048,26 @@ class PgvectorVectorBackend:
         vector_field_by_table: Mapping[str, str] | None = None,
         metric_by_table: Mapping[str, str] | None = None,
         schema: str | None = None,
+        max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
+        max_fields_per_collection: int = _MAX_DISCOVERY_FIELDS,
     ) -> None:
+        if max_fields_per_collection < 1:
+            raise ValueError("pgvector max_fields_per_collection must be positive")
         self._engine = engine
-        self._tables = None if tables is None else tuple(tables)
+        self._tables = (
+            None
+            if tables is None
+            else tuple(
+                str(value)
+                for value in _bounded_values(
+                    tables,
+                    limit=max_discovery_sources,
+                    label="pgvector configured tables",
+                )
+            )
+        )
+        self._max_discovery_sources = max_discovery_sources
+        self._max_fields_per_collection = max_fields_per_collection
         self._vector_field_by_table = dict(vector_field_by_table or {})
         self._metric_by_table = dict(metric_by_table or {})
         self._schema = schema
@@ -905,9 +1108,15 @@ class PgvectorVectorBackend:
 
     def _contract(self, table_name: str) -> tuple[str, int, tuple[VectorMetadataField, ...]]:
         table = self._table(table_name)
+        columns = tuple(table.columns)
+        if len(columns) > self._max_fields_per_collection:
+            raise RegistrationError(
+                f"pgvector table {table_name!r} exposes {len(columns)} columns; "
+                f"limit is {self._max_fields_per_collection}"
+            )
         vector_columns = [
             (column.name, dimension)
-            for column in table.columns
+            for column in columns
             if (dimension := self._dimension(column)) is not None
         ]
         configured = self._vector_field_by_table.get(table_name)
@@ -946,7 +1155,7 @@ class PgvectorVectorBackend:
                 json_schema=_json_schema_from_vendor_type(_read(column, "type")),
                 filterable=True,
             )
-            for column in table.columns
+            for column in columns
             if column.name not in {vector_field, pk_columns[0]}
         )
         return vector_field, dimension, metadata
@@ -955,9 +1164,13 @@ class PgvectorVectorBackend:
         _metadata, _table, inspect = self._sqlalchemy()
         inspector = inspect(self._engine)
         table_names = (
-            list(self._tables)
+            self._tables
             if self._tables is not None
-            else list(inspector.get_table_names(schema=self._schema))
+            else _bounded_values(
+                inspector.get_table_names(schema=self._schema),
+                limit=self._max_discovery_sources,
+                label="pgvector table discovery",
+            )
         )
         results: list[VectorCollectionSpec] = []
         for table_name in table_names:
