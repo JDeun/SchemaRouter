@@ -139,6 +139,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "PairwiseDecisionBackend",
         "PairwiseScoreCallable",
         "ParameterSpec",
+        "PersistedDocumentLimits",
         "PlanCoverage",
         "PlanExplanation",
         "PlanRequest",

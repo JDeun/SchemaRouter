@@ -3,8 +3,8 @@ from __future__ import annotations
 import errno
 import os
 import sqlite3
-from dataclasses import dataclass
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
