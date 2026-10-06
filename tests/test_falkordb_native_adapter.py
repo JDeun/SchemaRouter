@@ -262,3 +262,35 @@ def test_falkordb_rejects_invalid_traversal_inputs() -> None:
             include_fields=("target_id",),
         )
 
+def test_falkordb_schema_discovery_pushes_down_limit_and_rejects_overflow() -> None:
+    client = FakeFalkorDB()
+    backend = FalkorGraphBackend(
+        client,
+        graphs=("social",),
+        max_schema_items=1,
+    )
+
+    with pytest.raises(RegistrationError, match="FalkorDB labels exceeded limit=1"):
+        backend.list_graphs()
+
+    label_query = next(
+        query
+        for query, _params in client.graph.calls
+        if "UNWIND labels(n) AS label" in query
+    )
+    assert "LIMIT 2" in label_query
+
+
+def test_falkordb_graph_catalog_budget_rejects_oversized_catalog() -> None:
+    class LargeCatalog:
+        def list_graphs(self) -> list[str]:
+            return ["one", "two"]
+
+    backend = FalkorGraphBackend(
+        LargeCatalog(),
+        max_discovery_sources=1,
+    )
+
+    with pytest.raises(RegistrationError, match="FalkorDB graph discovery exceeded limit=1"):
+        backend.list_graphs()
+
