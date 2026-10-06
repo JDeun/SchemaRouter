@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field, computed_field
 
@@ -18,6 +19,59 @@ CURRENT_TRACE_DOCUMENT_VERSION = 1
 
 _STORAGE_META_TABLE = "schemarouter_storage_meta"
 _STORAGE_MIGRATIONS_TABLE = "schemarouter_storage_migrations"
+
+
+class PersistedDocumentLimits(StrictModel):
+    """Safety envelope for one persisted SQLite JSON document."""
+
+    max_bytes: int = Field(default=8 * 1024 * 1024, ge=1)
+    max_depth: int = Field(default=128, ge=1)
+    max_nodes: int = Field(default=100_000, ge=1)
+
+
+def _decode_persisted_json(
+    document: str,
+    *,
+    limits: PersistedDocumentLimits,
+) -> Any:
+    """Decode one persisted JSON document under explicit byte/structure budgets."""
+
+    try:
+        encoded_size = len(document.encode("utf-8"))
+    except UnicodeError as exc:
+        raise ValueError("persisted JSON document is not valid UTF-8 text") from exc
+    if encoded_size > limits.max_bytes:
+        raise ValueError(
+            "persisted JSON document exceeds "
+            f"max_bytes={limits.max_bytes}"
+        )
+
+    try:
+        payload = json.loads(document)
+    except (json.JSONDecodeError, RecursionError, MemoryError) as exc:
+        raise ValueError("persisted JSON document cannot be decoded safely") from exc
+
+    stack: list[tuple[Any, int]] = [(payload, 1)]
+    nodes = 0
+    while stack:
+        value, depth = stack.pop()
+        nodes += 1
+        if nodes > limits.max_nodes:
+            raise ValueError(
+                "persisted JSON document exceeds "
+                f"max_nodes={limits.max_nodes}"
+            )
+        if depth > limits.max_depth:
+            raise ValueError(
+                "persisted JSON document exceeds "
+                f"max_depth={limits.max_depth}"
+            )
+        if isinstance(value, dict):
+            stack.extend((child, depth + 1) for child in value.values())
+        elif isinstance(value, list):
+            stack.extend((child, depth + 1) for child in value)
+
+    return payload
 
 
 class StorageMigrationRecord(StrictModel):
@@ -382,21 +436,38 @@ def _document_count(
 def _validate_component_documents(
     connection: sqlite3.Connection,
     component: StorageComponent,
+    *,
+    document_limits: PersistedDocumentLimits,
 ) -> None:
     # Local imports avoid module cycles. Future formats are never decoded by
     # this helper; callers invoke it only for current/legacy components.
     if component == "registry":
         from .registry import _validate_legacy_registry_storage
 
-        _validate_legacy_registry_storage(connection)
+        _validate_legacy_registry_storage(
+            connection,
+            document_limits=document_limits,
+        )
         return
 
     from .traces import _validate_legacy_trace_storage
 
-    _validate_legacy_trace_storage(connection)
+    _validate_legacy_trace_storage(
+        connection,
+        document_limits=document_limits,
+    )
 
 
-def inspect_sqlite_storage(path: str | Path) -> StorageInspection:
+def inspect_sqlite_storage(
+    path: str | Path,
+    *,
+    document_limits: PersistedDocumentLimits | None = None,
+) -> StorageInspection:
+    limits = (
+        document_limits.model_copy(deep=True)
+        if document_limits is not None
+        else PersistedDocumentLimits()
+    )
     source = Path(path)
     if not source.exists():
         raise StorageFormatError(f"SQLite storage does not exist: {source}")
@@ -425,7 +496,11 @@ def inspect_sqlite_storage(path: str | Path) -> StorageInspection:
 
             if status in {"current", "legacy"}:
                 try:
-                    _validate_component_documents(connection, component)
+                    _validate_component_documents(
+                        connection,
+                        component,
+                        document_limits=limits,
+                    )
                 except (StorageFormatError, sqlite3.DatabaseError):
                     status = "corrupt"
 
@@ -509,13 +584,22 @@ def migrate_sqlite_storage(
     *,
     backup: bool = True,
     backup_path: str | Path | None = None,
+    document_limits: PersistedDocumentLimits | None = None,
 ) -> StorageMigrationResult:
     if not backup and backup_path is not None:
         raise StorageFormatError(
             "backup_path cannot be supplied when backup=False"
         )
 
-    before = inspect_sqlite_storage(path)
+    limits = (
+        document_limits.model_copy(deep=True)
+        if document_limits is not None
+        else PersistedDocumentLimits()
+    )
+    before = inspect_sqlite_storage(
+        path,
+        document_limits=limits,
+    )
     if not before.components:
         raise StorageFormatError(
             "no SchemaRouter SQLite storage components were found"
@@ -561,11 +645,17 @@ def migrate_sqlite_storage(
         if "registry" in legacy:
             from .registry import _validate_legacy_registry_storage
 
-            _validate_legacy_registry_storage(connection)
+            _validate_legacy_registry_storage(
+                connection,
+                document_limits=limits,
+            )
         if "trace" in legacy:
             from .traces import _validate_legacy_trace_storage
 
-            _validate_legacy_trace_storage(connection)
+            _validate_legacy_trace_storage(
+                connection,
+                document_limits=limits,
+            )
 
         for component in ("registry", "trace"):
             if component in legacy:
@@ -582,7 +672,10 @@ def migrate_sqlite_storage(
     finally:
         connection.close()
 
-    after = inspect_sqlite_storage(path)
+    after = inspect_sqlite_storage(
+        path,
+        document_limits=limits,
+    )
     return StorageMigrationResult(
         path=str(path),
         backup_path=(
