@@ -7,6 +7,7 @@ import re
 from collections.abc import Sequence
 from copy import deepcopy
 from typing import Any
+
 from ..errors import PolicyViolationError
 from ..models import (
     EndpointSpec,
