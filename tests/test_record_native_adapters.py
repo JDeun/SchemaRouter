@@ -56,30 +56,35 @@ class FakeMongoCursor:
 
 class FakeMongoCollection:
     def __init__(self) -> None:
-        self.calls: list[tuple[dict[str, Any], dict[str, int]]] = []
+        self.calls: list[
+            tuple[dict[str, Any], dict[str, int] | None]
+        ] = []
         self.row = {
             "_id": "doc-1",
             "title": "Routing",
             "department": "engineering",
             "body": "typed capability retrieval",
         }
-
-    def find_one(self, query: dict[str, Any]) -> dict[str, Any]:
-        assert query == {}
-        return dict(self.row)
+        self.rows = [self.row]
 
     def find(
         self,
         query: dict[str, Any],
-        projection: dict[str, int],
+        projection: dict[str, int] | None = None,
     ) -> FakeMongoCursor:
-        self.calls.append((dict(query), dict(projection)))
-        row = {
-            key: value
-            for key, value in self.row.items()
-            if projection.get(key) == 1
-        }
-        return FakeMongoCursor([row])
+        copied_projection = None if projection is None else dict(projection)
+        self.calls.append((dict(query), copied_projection))
+        if projection is None:
+            return FakeMongoCursor([dict(row) for row in self.rows])
+        rows = [
+            {
+                key: value
+                for key, value in row.items()
+                if projection.get(key) == 1
+            }
+            for row in self.rows
+        ]
+        return FakeMongoCursor(rows)
 
 
 class FakeMongoDatabase:
@@ -132,6 +137,41 @@ async def test_mongodb_native_adapter_discovers_and_executes_bounded_find() -> N
         "$text": {"$search": "routing"},
     }
     assert projection == {"_id": 1, "title": 1}
+
+
+@pytest.mark.asyncio
+async def test_mongodb_schema_discovery_merges_heterogeneous_bounded_samples() -> None:
+    database = FakeMongoDatabase()
+    database.collections["documents"].rows = [
+        {
+            "_id": "doc-1",
+            "title": "Routing",
+            "score": 1,
+        },
+        {
+            "_id": "doc-2",
+            "title": "Schemas",
+            "department": "research",
+            "score": "high",
+        },
+    ]
+    router = SchemaRouter()
+    await router.aadd_mongodb_record_store(
+        database,
+        database_name="mongo",
+        remote=False,
+    )
+
+    endpoint = router.registry.get("mongo.documents").endpoint("query")
+    fields = {field.name: field for field in endpoint.output_fields}
+    assert set(fields) >= {"_id", "title", "department", "score"}
+    assert fields["title"].json_schema == {"type": "string"}
+    assert fields["department"].json_schema == {}
+    assert fields["score"].json_schema == {}
+    discovery = endpoint.metadata["public_metadata"]["schema_discovery"]
+    assert discovery["complete"] is False
+    assert discovery["sample_count"] == 2
+    assert discovery["sample_limit"] == 16
 
 
 class FakeIndices:
@@ -231,6 +271,13 @@ async def test_elastic_and_opensearch_native_mapping_and_query(
 class FakeDynamoClient:
     def __init__(self) -> None:
         self.scan_calls: list[dict[str, Any]] = []
+        self.discovery_items = [
+            {
+                "id": {"S": "doc-1"},
+                "department": {"S": "engineering"},
+                "title": {"S": "Router design"},
+            }
+        ]
 
     def list_tables(self, **kwargs: Any) -> dict[str, Any]:
         assert kwargs == {}
@@ -249,16 +296,8 @@ class FakeDynamoClient:
 
     def scan(self, **kwargs: Any) -> dict[str, Any]:
         self.scan_calls.append(dict(kwargs))
-        if kwargs == {"TableName": "documents", "Limit": 1}:
-            return {
-                "Items": [
-                    {
-                        "id": {"S": "doc-1"},
-                        "department": {"S": "engineering"},
-                        "title": {"S": "Router design"},
-                    }
-                ]
-            }
+        if kwargs == {"TableName": "documents", "Limit": 16}:
+            return {"Items": list(self.discovery_items)}
         return {
             "Items": [
                 {
@@ -300,6 +339,43 @@ async def test_dynamodb_native_adapter_builds_only_parameterized_scan_expression
     assert "FilterExpression" in call
     assert "ProjectionExpression" in call
     assert call["ExpressionAttributeValues"] == {":v0": {"S": "engineering"}}
+
+
+@pytest.mark.asyncio
+async def test_dynamodb_schema_discovery_merges_heterogeneous_bounded_samples() -> None:
+    client = FakeDynamoClient()
+    client.discovery_items = [
+        {
+            "id": {"S": "doc-1"},
+            "title": {"S": "Router"},
+            "score": {"N": "1"},
+        },
+        {
+            "id": {"S": "doc-2"},
+            "title": {"S": "Schemas"},
+            "department": {"S": "research"},
+            "score": {"S": "high"},
+        },
+    ]
+    router = SchemaRouter()
+    await router.aadd_dynamodb_record_store(
+        client,
+        database_name="ddb",
+        tables=["documents"],
+        remote=False,
+    )
+
+    endpoint = router.registry.get("ddb.documents").endpoint("query")
+    fields = {field.name: field for field in endpoint.output_fields}
+    assert set(fields) >= {"id", "title", "department", "score"}
+    assert fields["id"].json_schema == {"type": "string"}
+    assert fields["title"].json_schema == {"type": "string"}
+    assert fields["department"].json_schema == {}
+    assert fields["score"].json_schema == {}
+    discovery = endpoint.metadata["public_metadata"]["schema_discovery"]
+    assert discovery["complete"] is False
+    assert discovery["sample_count"] == 2
+    assert client.scan_calls[0] == {"TableName": "documents", "Limit": 16}
 
 
 @pytest.mark.asyncio
