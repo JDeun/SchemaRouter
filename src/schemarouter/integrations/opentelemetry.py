@@ -153,21 +153,45 @@ class OpenTelemetryRunExporter:
                 span.end(end_time=timestamp)
             return
 
-    def close(self) -> None:
-        """End unfinished spans as errors without disrupting application cleanup."""
-        if not self._run_spans and not self._tool_spans:
+    def close_runs(self, run_ids: set[str] | tuple[str, ...]) -> None:
+        """End unfinished spans for selected runs without closing unrelated exporter state."""
+        selected = set(run_ids)
+        if not selected:
             return
         from opentelemetry.trace import Status, StatusCode
 
-        for span in self._tool_spans.values():
-            span.set_status(Status(StatusCode.ERROR, "event stream ended before tool completion"))
+        dangling_tool_keys = [
+            key for key in self._tool_spans
+            if key[0] in selected
+        ]
+        for key in dangling_tool_keys:
+            span = self._tool_spans.pop(key)
+            span.set_status(
+                Status(StatusCode.ERROR, "event stream ended before tool completion")
+            )
             span.end()
-        self._tool_spans.clear()
 
-        for span in self._run_spans.values():
-            span.set_status(Status(StatusCode.ERROR, "event stream ended before run completion"))
+        for run_id in tuple(selected):
+            span = self._run_spans.pop(run_id, None)
+            if span is None:
+                continue
+            span.set_status(
+                Status(StatusCode.ERROR, "event stream ended before run completion")
+            )
             span.end()
-        self._run_spans.clear()
+
+    def close(self) -> None:
+        """End all unfinished spans owned by this exporter."""
+        run_ids = set(self._run_spans)
+        run_ids.update(key[0] for key in self._tool_spans)
+        self.close_runs(run_ids)
+
+
+async def _close_upstream_events(events: AsyncIterator[RunEvent]) -> None:
+    close = getattr(events, "aclose", None)
+    if close is None:
+        return
+    await close()
 
 
 async def trace_run_events(
@@ -175,11 +199,34 @@ async def trace_run_events(
     *,
     exporter: OpenTelemetryRunExporter | None = None,
 ) -> AsyncIterator[RunEvent]:
-    """Export an event stream to OpenTelemetry while preserving it for downstream consumers."""
+    """Export an event stream while preserving ownership and upstream cleanup."""
+    owns_exporter = exporter is None
     active = exporter or OpenTelemetryRunExporter()
+    observed_run_ids: set[str] = set()
+    primary_error: BaseException | None = None
     try:
         async for event in events:
+            observed_run_ids.add(event.run_id)
             active.export(event)
             yield event
+    except BaseException as exc:
+        primary_error = exc
+        raise
     finally:
-        active.close()
+        cleanup_error: BaseException | None = None
+        try:
+            await _close_upstream_events(events)
+        except BaseException as exc:
+            cleanup_error = exc
+
+        try:
+            if owns_exporter:
+                active.close()
+            else:
+                active.close_runs(observed_run_ids)
+        except BaseException as exc:
+            if cleanup_error is None:
+                cleanup_error = exc
+
+        if primary_error is None and cleanup_error is not None:
+            raise cleanup_error
