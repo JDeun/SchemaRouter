@@ -3,6 +3,12 @@ name: Security Audit
 on:
   push:
     branches: [main]
+    paths:
+      - "pyproject.toml"
+      - "**/requirements*.txt"
+      - "uv.lock"
+      - "poetry.lock"
+      - "pdm.lock"
   schedule:
     - cron: "41 4 * * 1"
   workflow_dispatch:
