@@ -1512,6 +1512,8 @@ class SchemaRouter:
         include_views: bool = True,
         max_default_rows: int = 100,
         remote: bool = True,
+        max_discovery_relations: int = 128,
+        max_columns_per_relation: int = 256,
     ) -> tuple[str, ...]:
         """Introspect and register a caller-owned SQLAlchemy Engine.
 
@@ -1532,6 +1534,8 @@ class SchemaRouter:
             include_views=include_views,
             max_default_rows=max_default_rows,
             remote=remote,
+            max_discovery_relations=max_discovery_relations,
+            max_columns_per_relation=max_columns_per_relation,
         )
         async def refresh_binding(
             tool_key: str,
@@ -1547,6 +1551,8 @@ class SchemaRouter:
                     include_views=include_views,
                     max_default_rows=max_default_rows,
                     remote=remote,
+                    max_discovery_relations=max_discovery_relations,
+                    max_columns_per_relation=max_columns_per_relation,
                 )
             else:
                 refreshed = introspect_sqlalchemy_engine(
@@ -1558,6 +1564,8 @@ class SchemaRouter:
                     include_views=include_views,
                     max_default_rows=max_default_rows,
                     remote=remote,
+                    max_discovery_relations=max_discovery_relations,
+                    max_columns_per_relation=max_columns_per_relation,
                 )
             match = next((item for item in refreshed if item.tool.key == tool_key), None)
             if match is None:
@@ -1589,6 +1597,8 @@ class SchemaRouter:
         collections: set[str] | tuple[str, ...] | list[str] | None = None,
         default_top_k: int = 10,
         remote: bool = True,
+        max_discovery_sources: int = 128,
+        max_fields_per_collection: int = 256,
     ) -> tuple[str, ...]:
         """Discover and register a caller-owned vector store as bounded search capabilities."""
 
@@ -1603,6 +1613,8 @@ class SchemaRouter:
             default_top_k=default_top_k,
             remote=remote,
             offload_sync_backend=remote,
+            max_discovery_sources=max_discovery_sources,
+            max_fields_per_collection=max_fields_per_collection,
         )
         async def refresh_binding(
             tool_key: str,
@@ -1615,6 +1627,8 @@ class SchemaRouter:
                 collections=collections,
                 default_top_k=default_top_k,
                 remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
             )
             match = next((item for item in refreshed if item.tool.key == tool_key), None)
             if match is None:
@@ -1657,6 +1671,8 @@ class SchemaRouter:
                 collections=collections,
                 default_top_k=default_top_k,
                 remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
             )
         )
 
@@ -1721,6 +1737,8 @@ class SchemaRouter:
                 filter_builder=filter_builder,
                 default_top_k=default_top_k,
                 remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
             )
         )
 
@@ -1781,6 +1799,8 @@ class SchemaRouter:
                 metric_by_collection=metric_by_collection,
                 default_top_k=default_top_k,
                 remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
             )
         )
 
@@ -1835,6 +1855,8 @@ class SchemaRouter:
                 metadata_fields_by_index=metadata_fields_by_index,
                 default_top_k=default_top_k,
                 remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
             )
         )
 
@@ -1897,6 +1919,8 @@ class SchemaRouter:
                 metric_by_collection=metric_by_collection,
                 default_top_k=default_top_k,
                 remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
             )
         )
 
@@ -1963,6 +1987,8 @@ class SchemaRouter:
                 filter_builder=filter_builder,
                 default_top_k=default_top_k,
                 remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
             )
         )
 
@@ -2029,6 +2055,8 @@ class SchemaRouter:
                 schema=schema,
                 default_top_k=default_top_k,
                 remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
             )
         )
 
@@ -2042,6 +2070,8 @@ class SchemaRouter:
         default_limit: int = 100,
         default_max_hops: int = 1,
         remote: bool = True,
+        max_discovery_sources: int = 128,
+        max_schema_items_per_graph: int = 256,
     ) -> tuple[str, ...]:
         """Discover and register a caller-owned property-graph or RDF backend."""
 
@@ -2056,6 +2086,8 @@ class SchemaRouter:
             default_max_hops=default_max_hops,
             remote=remote,
             offload_sync_backend=remote,
+            max_discovery_sources=max_discovery_sources,
+            max_schema_items_per_graph=max_schema_items_per_graph,
         )
         async def refresh_binding(
             tool_key: str,
@@ -2068,6 +2100,8 @@ class SchemaRouter:
                 default_limit=default_limit,
                 default_max_hops=default_max_hops,
                 remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_schema_items_per_graph=max_schema_items_per_graph,
             )
             match = next((item for item in refreshed if item.tool.key == tool_key), None)
             if match is None:
@@ -2110,6 +2144,8 @@ class SchemaRouter:
                 default_limit=default_limit,
                 default_max_hops=default_max_hops,
                 remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_schema_items_per_graph=max_schema_items_per_graph,
             )
         )
 
@@ -2122,6 +2158,8 @@ class SchemaRouter:
         sources: set[str] | tuple[str, ...] | list[str] | None = None,
         default_limit: int = 100,
         remote: bool = True,
+        max_discovery_sources: int = 128,
+        max_fields_per_source: int = 256,
     ) -> tuple[str, ...]:
         """Discover and register document/search/key-value/time-series sources."""
 
@@ -2135,6 +2173,8 @@ class SchemaRouter:
             default_limit=default_limit,
             remote=remote,
             offload_sync_backend=remote,
+            max_discovery_sources=max_discovery_sources,
+            max_fields_per_source=max_fields_per_source,
         )
         async def refresh_binding(
             tool_key: str,
@@ -2146,6 +2186,8 @@ class SchemaRouter:
                 sources=sources,
                 default_limit=default_limit,
                 remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_source=max_fields_per_source,
             )
             match = next((item for item in refreshed if item.tool.key == tool_key), None)
             if match is None:
@@ -2186,6 +2228,8 @@ class SchemaRouter:
                 sources=sources,
                 default_limit=default_limit,
                 remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_source=max_fields_per_source,
             )
         )
 
@@ -2243,6 +2287,8 @@ class SchemaRouter:
                 default_limit=default_limit,
                 default_max_hops=default_max_hops,
                 remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_schema_items_per_graph=max_schema_items_per_graph,
             )
         )
 
@@ -2294,6 +2340,8 @@ class SchemaRouter:
                 default_limit=default_limit,
                 default_max_hops=default_max_hops,
                 remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_schema_items_per_graph=max_schema_items_per_graph,
             )
         )
 
@@ -2351,6 +2399,8 @@ class SchemaRouter:
                 default_limit=default_limit,
                 default_max_hops=default_max_hops,
                 remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_schema_items_per_graph=max_schema_items_per_graph,
             )
         )
 
@@ -2401,6 +2451,8 @@ class SchemaRouter:
                 default_limit=default_limit,
                 default_max_hops=default_max_hops,
                 remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_schema_items_per_graph=max_schema_items_per_graph,
             )
         )
 
