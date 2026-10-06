@@ -82,12 +82,16 @@ def test_digest_surfaces_share_the_canonical_encoder_contract() -> None:
 
     history = SuccessfulCapabilityHistory()
     history.record_success("materials", "search")
-    assert history.dumps() == canonical_json_text(history.snapshot())
+    assert history.dumps() == canonical_json_text(
+        {"schema_version": 1, "counts": history.snapshot()}
+    )
     assert history.digest() == canonical_json_sha256(history.snapshot())
 
     exposure = SessionSchemaExposure()
     exposure.mark_exposed("materials", "search")
-    assert exposure.dumps() == canonical_json_text(exposure.snapshot())
+    assert exposure.dumps() == canonical_json_text(
+        {"schema_version": 1, **exposure.snapshot()}
+    )
     assert exposure.digest() == canonical_json_sha256(exposure.snapshot())
 
 
