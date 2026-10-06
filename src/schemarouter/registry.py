@@ -13,6 +13,7 @@ from .models import EndpointSpec, ToolSpec
 from .storage import (
     _PERSISTED_FETCH_BATCH_SIZE,
     PersistedDocumentLimits,
+    _PersistedCollectionLimitError,
     _PersistedDocumentLimitError,
     _PersistedReadBudget,
     _resolve_persisted_document_limits,
@@ -436,6 +437,10 @@ def _validate_legacy_registry_storage(
                     limits=limits,
                     encoded_bytes=encoded_bytes,
                 )
+            except _PersistedCollectionLimitError as exc:
+                raise StorageFormatError(
+                    "legacy registry exceeds persisted JSON collection limits"
+                ) from exc
             except (TypeError, ValueError, _PersistedDocumentLimitError) as exc:
                 raise StorageFormatError(
                     f"legacy stored tool {key!r} exceeds persisted JSON document limits"
@@ -929,7 +934,7 @@ class SQLiteRegistry:
                         ) from exc
                     try:
                         budget.consume(encoded_bytes)
-                    except _PersistedDocumentLimitError as exc:
+                    except _PersistedCollectionLimitError as exc:
                         raise RegistrationError(
                             "stored registry exceeds configured persisted JSON collection limits"
                         ) from exc
@@ -951,7 +956,7 @@ class SQLiteRegistry:
                 for row in rows:
                     try:
                         budget.consume(0)
-                    except _PersistedDocumentLimitError as exc:
+                    except _PersistedCollectionLimitError as exc:
                         raise RegistrationError(
                             "stored registry exceeds configured persisted collection limits"
                         ) from exc
