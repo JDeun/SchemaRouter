@@ -1048,9 +1048,26 @@ class PgvectorVectorBackend:
         vector_field_by_table: Mapping[str, str] | None = None,
         metric_by_table: Mapping[str, str] | None = None,
         schema: str | None = None,
+        max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
+        max_fields_per_collection: int = _MAX_DISCOVERY_FIELDS,
     ) -> None:
+        if max_fields_per_collection < 1:
+            raise ValueError("pgvector max_fields_per_collection must be positive")
         self._engine = engine
-        self._tables = None if tables is None else tuple(tables)
+        self._tables = (
+            None
+            if tables is None
+            else tuple(
+                str(value)
+                for value in _bounded_values(
+                    tables,
+                    limit=max_discovery_sources,
+                    label="pgvector configured tables",
+                )
+            )
+        )
+        self._max_discovery_sources = max_discovery_sources
+        self._max_fields_per_collection = max_fields_per_collection
         self._vector_field_by_table = dict(vector_field_by_table or {})
         self._metric_by_table = dict(metric_by_table or {})
         self._schema = schema
@@ -1091,9 +1108,15 @@ class PgvectorVectorBackend:
 
     def _contract(self, table_name: str) -> tuple[str, int, tuple[VectorMetadataField, ...]]:
         table = self._table(table_name)
+        columns = tuple(table.columns)
+        if len(columns) > self._max_fields_per_collection:
+            raise RegistrationError(
+                f"pgvector table {table_name!r} exposes {len(columns)} columns; "
+                f"limit is {self._max_fields_per_collection}"
+            )
         vector_columns = [
             (column.name, dimension)
-            for column in table.columns
+            for column in columns
             if (dimension := self._dimension(column)) is not None
         ]
         configured = self._vector_field_by_table.get(table_name)
@@ -1132,7 +1155,7 @@ class PgvectorVectorBackend:
                 json_schema=_json_schema_from_vendor_type(_read(column, "type")),
                 filterable=True,
             )
-            for column in table.columns
+            for column in columns
             if column.name not in {vector_field, pk_columns[0]}
         )
         return vector_field, dimension, metadata
@@ -1141,9 +1164,13 @@ class PgvectorVectorBackend:
         _metadata, _table, inspect = self._sqlalchemy()
         inspector = inspect(self._engine)
         table_names = (
-            list(self._tables)
+            self._tables
             if self._tables is not None
-            else list(inspector.get_table_names(schema=self._schema))
+            else _bounded_values(
+                inspector.get_table_names(schema=self._schema),
+                limit=self._max_discovery_sources,
+                label="pgvector table discovery",
+            )
         )
         results: list[VectorCollectionSpec] = []
         for table_name in table_names:
