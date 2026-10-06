@@ -1499,7 +1499,11 @@ class SchemaPlanner:
                     replace(
                         scored,
                         endpoint=endpoint,
-                        visible_endpoint=visible_endpoint,
+                        visible_endpoint=(
+                            visible_endpoint
+                            if scoring_endpoint_transform is not None
+                            else None
+                        ),
                     )
                 )
             return result
@@ -1522,7 +1526,11 @@ class SchemaPlanner:
                     replace(
                         scored,
                         endpoint=endpoint,
-                        visible_endpoint=visible_endpoint,
+                        visible_endpoint=(
+                            visible_endpoint
+                            if scoring_endpoint_transform is not None
+                            else None
+                        ),
                     )
                 )
             else:
@@ -1532,7 +1540,11 @@ class SchemaPlanner:
                         endpoint,
                         0.0,
                         (),
-                        visible_endpoint=visible_endpoint,
+                        visible_endpoint=(
+                            visible_endpoint
+                            if scoring_endpoint_transform is not None
+                            else None
+                        ),
                     )
                 )
         return result
