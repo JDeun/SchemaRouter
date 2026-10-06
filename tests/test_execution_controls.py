@@ -604,6 +604,33 @@ async def test_before_hook_cannot_add_approval_requirement_after_no_approval_dec
 
 
 @pytest.mark.asyncio
+async def test_offloaded_sync_invocation_rechecks_policy_at_worker_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, executor, _, plan = _setup(
+        read_only=True,
+        policy=ExecutionPolicy(),
+    )
+    invoked: list[str] = []
+    executor.bind(
+        "demo",
+        lambda endpoint, arguments: invoked.append(endpoint) or {"ok": True},
+        offload_sync=True,
+    )
+
+    async def delayed_to_thread(function, /, *args, **kwargs):
+        executor.policy = ExecutionPolicy(approval_mode="all")
+        return function(*args, **kwargs)
+
+    monkeypatch.setattr(asyncio, "to_thread", delayed_to_thread)
+
+    with pytest.raises(ApprovalDeniedError, match="execution policy changed"):
+        await executor.execute(plan)
+
+    assert invoked == []
+
+
+@pytest.mark.asyncio
 async def test_scoped_rule_can_require_approval_without_global_approval_mode() -> None:
     seen = []
 
