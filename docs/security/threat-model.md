@@ -34,6 +34,23 @@ SchemaRouter:
 - rejects stale schema fingerprints and stale invoker bindings;
 - requires trusted local policy for mutation, destructive, or unclassified remote operations.
 
+### Authorization audit delivery
+
+Authorization decisions and audit delivery are separate security planes. A host-provided
+`authorization_audit_hook` receives privacy-safe decision metadata only; principal claims and
+trusted-filter values are not included.
+
+Audit delivery defaults to `best_effort`. Sink failures are isolated from the authorization
+decision, recorded in `router.authorization_audit_delivery_status()`, and do not turn an allow
+into an execution failure or mask a deny with the sink exception.
+
+Deployments that require mandatory audit persistence can opt into
+`authorization_audit_delivery_mode="strict"`. Strict mode requires a configured sink and fails
+closed with `AuthorizationAuditDeliveryError` before an allowed invocation proceeds. If the
+underlying authorization decision was deny, the error retains that decision and the original
+`PolicyViolationError` separately. Run traces record only privacy-safe delivery-failure flags and
+the allow/deny effect, not sink exception text or principal data.
+
 ### Credentials
 
 Runtime credentials must remain outside model-visible tool arguments.

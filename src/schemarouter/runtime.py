@@ -45,6 +45,9 @@ from .authorization import (
     _principal_execution_context,
 )
 from .authorization_audit import (
+    AuthorizationAuditDeliveryMode,
+    AuthorizationAuditDeliveryMonitor,
+    AuthorizationAuditDeliveryStatus,
     AuthorizationAuditEvent,
     AuthorizationAuditHook,
     AuthorizationAuditPhase,
@@ -59,6 +62,7 @@ from .binding_reconciliation import (
 from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
 from .capability_decision_trace import CapabilityDecisionTrace
 from .errors import (
+    AuthorizationAuditDeliveryError,
     BindingDriftError,
     ContractAmendmentError,
     ExecutionInvariantError,
@@ -222,6 +226,7 @@ class SchemaRouter:
         policy: ExecutionPolicy | None = None,
         authorization_policy: AuthorizationPolicy | None = None,
         authorization_audit_hook: AuthorizationAuditHook | None = None,
+        authorization_audit_delivery_mode: AuthorizationAuditDeliveryMode = "best_effort",
         approval_callback: ApprovalCallback | None = None,
         execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
@@ -233,6 +238,19 @@ class SchemaRouter:
         self.registry = registry if registry is not None else InMemoryRegistry()
         self.authorization_policy = authorization_policy
         self.authorization_audit_hook = authorization_audit_hook
+        self._authorization_audit_delivery = AuthorizationAuditDeliveryMonitor(
+            mode=authorization_audit_delivery_mode,
+            sink_configured=authorization_audit_hook is not None,
+        )
+        self.authorization_audit_delivery_mode = authorization_audit_delivery_mode
+        if (
+            authorization_audit_delivery_mode == "strict"
+            and authorization_audit_hook is None
+        ):
+            raise ValueError(
+                "strict authorization audit delivery requires "
+                "authorization_audit_hook"
+            )
         self.executor = RegistryExecutor(
             self.registry,
             policy=policy,
@@ -550,9 +568,34 @@ class SchemaRouter:
             authorization(tool, endpoint) and predicate(tool, endpoint)
         )
 
-    def _emit_authorization_audit(self, event: AuthorizationAuditEvent) -> None:
-        if self.authorization_audit_hook is not None:
-            self.authorization_audit_hook(event)
+    def authorization_audit_delivery_status(
+        self,
+    ) -> AuthorizationAuditDeliveryStatus:
+        """Return privacy-safe health counters for the configured audit sink."""
+
+        return self._authorization_audit_delivery.snapshot()
+
+    def _emit_authorization_audit(
+        self,
+        event: AuthorizationAuditEvent,
+        *,
+        authorization_error: PolicyViolationError | None = None,
+    ) -> None:
+        hook = self.authorization_audit_hook
+        if hook is None:
+            return
+        try:
+            hook(event)
+        except Exception as exc:  # noqa: BLE001
+            self._authorization_audit_delivery.record_failure(event, exc)
+            if self.authorization_audit_delivery_mode == "strict":
+                raise AuthorizationAuditDeliveryError(
+                    "mandatory authorization audit delivery failed",
+                    event=event,
+                    authorization_error=authorization_error,
+                ) from exc
+            return
+        self._authorization_audit_delivery.record_success()
 
     def _audit_export_authorization(
         self,
@@ -604,7 +647,7 @@ class SchemaRouter:
 
         try:
             scope = policy.data_scope(principal, tool, endpoint)
-        except PolicyViolationError:
+        except PolicyViolationError as authorization_error:
             self._emit_authorization_audit(
                 AuthorizationAuditEvent(
                     effect="deny",
@@ -616,7 +659,8 @@ class SchemaRouter:
                     rule_name=decision.rule_name,
                     tool=tool.key,
                     endpoint=endpoint.name,
-                )
+                ),
+                authorization_error=authorization_error,
             )
             raise
 
@@ -662,6 +706,9 @@ class SchemaRouter:
             return
         audit_run_id = run_id or uuid4().hex
         if principal is None:
+            authorization_error = PolicyViolationError(
+                "principal context is required when authorization_policy is configured"
+            )
             for call in plan.calls:
                 self._emit_authorization_audit(
                     AuthorizationAuditEvent(
@@ -673,16 +720,19 @@ class SchemaRouter:
                         principal_audit_id=principal_audit_id,
                         tool=call.tool,
                         endpoint=call.endpoint,
-                    )
+                    ),
+                    authorization_error=authorization_error,
                 )
-            raise PolicyViolationError(
-                "principal context is required when authorization_policy is configured"
-            )
+            raise authorization_error
+
         for call in plan.calls:
             try:
                 tool = self.registry.get(call.tool)
                 endpoint = tool.endpoint(call.endpoint)
             except KeyError as exc:
+                authorization_error = PolicyViolationError(
+                    "authorization denied for requested capability"
+                )
                 self._emit_authorization_audit(
                     AuthorizationAuditEvent(
                         effect="deny",
@@ -693,14 +743,16 @@ class SchemaRouter:
                         principal_audit_id=principal_audit_id,
                         tool=call.tool,
                         endpoint=call.endpoint,
-                    )
+                    ),
+                    authorization_error=authorization_error,
                 )
-                raise PolicyViolationError(
-                    "authorization denied for requested capability"
-                ) from exc
+                raise authorization_error from exc
 
             decision = policy.evaluate(principal, tool, endpoint, call)
             if decision.effect != "allow":
+                authorization_error = PolicyViolationError(
+                    "authorization denied for requested capability"
+                )
                 self._emit_authorization_audit(
                     AuthorizationAuditEvent(
                         effect="deny",
@@ -712,16 +764,15 @@ class SchemaRouter:
                         rule_name=decision.rule_name,
                         tool=tool.key,
                         endpoint=endpoint.name,
-                    )
+                    ),
+                    authorization_error=authorization_error,
                 )
-                raise PolicyViolationError(
-                    "authorization denied for requested capability"
-                )
+                raise authorization_error
 
             scope = policy.data_scope(principal, tool, endpoint)
             try:
                 policy.validate_data_scope(principal, tool, endpoint, call)
-            except PolicyViolationError:
+            except PolicyViolationError as authorization_error:
                 self._emit_authorization_audit(
                     AuthorizationAuditEvent(
                         effect="deny",
@@ -748,7 +799,8 @@ class SchemaRouter:
                         max_hops=scope.max_hops,
                         tool=tool.key,
                         endpoint=endpoint.name,
-                    )
+                    ),
+                    authorization_error=authorization_error,
                 )
                 raise
 
@@ -5513,6 +5565,10 @@ class SchemaRouter:
                 plan = await self.aplan_executable(request)
         except Exception as exc:
             data = {"error_type": type(exc).__name__, "stage": "planning"}
+            if isinstance(exc, AuthorizationAuditDeliveryError):
+                data["audit_delivery_failed"] = True
+                data["authorization_effect"] = exc.decision_effect
+                data["authorization_denied"] = exc.authorization_denied
             if run_config.include_payloads:
                 data["message"] = str(exc)
             yield await emit(RunEvent.create(
@@ -5534,6 +5590,10 @@ class SchemaRouter:
             )
         except Exception as exc:
             data = {"error_type": type(exc).__name__, "stage": "authorization"}
+            if isinstance(exc, AuthorizationAuditDeliveryError):
+                data["audit_delivery_failed"] = True
+                data["authorization_effect"] = exc.decision_effect
+                data["authorization_denied"] = exc.authorization_denied
             if run_config.include_payloads:
                 data["message"] = str(exc)
             yield await emit(RunEvent.create(
