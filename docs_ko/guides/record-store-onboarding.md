@@ -116,3 +116,21 @@ ClickHouse SQL, arbitrary Flux를 모델 권한으로 노출하지 않습니다.
 
 Deterministic SDK-shape test는 release gate에 포함합니다. Native adapter가 있다는 사실과 모든
 vendor/version/deployment의 외부 live acceptance가 끝났다는 주장은 구분합니다.
+## Schemaless discovery는 의도적으로 partial입니다
+
+MongoDB, DynamoDB, Cosmos DB, Couchbase는 완전한 authoritative field schema 없이 서로 다른
+형태의 record를 저장할 수 있습니다. 따라서 native adapter는 최대 16개 record만 확인하고,
+sample materialization이 256 KiB 또는 로컬 iteration 5초에 도달하면 중단합니다. SDK가 허용하는
+경우에는 stable order 또는 provider-side execution bound도 함께 사용합니다.
+
+발견되는 field set은 이 bounded sample들의 결정적인 합집합입니다. Record 값에서만 추론한 type은
+관찰된 한 runtime type을 authoritative contract로 승격하지 않고 `{}`로 유지합니다. DynamoDB key
+attribute type과 Cosmos DB의 `id`처럼 provider metadata가 제공하는 정보만 authoritative type으로
+사용합니다. Endpoint의 `public_metadata.schema_discovery`에는 `partial` 상태와 고정 discovery
+bound가 명시됩니다.
+
+이후 refresh에서 새 field가 bounded sample에 들어오면 field set이 확장될 수 있습니다. Sample 값의
+type을 좁히지 않으므로 heterogeneous value 때문에 type만 바뀌는 fingerprint oscillation은 막습니다.
+Authorization에서는 계속 선언된 field만 addressable한 것으로 취급해야 하며, 완전한 field contract가
+필요한 호스트는 sample discovery 대신 authoritative backend/schema를 제공해야 합니다.
+
