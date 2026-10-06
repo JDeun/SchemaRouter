@@ -11,7 +11,7 @@ async with SchemaRouter() as router:
     # router 사용
 ```
 
-context를 벗어나면 `await router.aclose()`가 호출됩니다. 종료 처리는 idempotent하며, 한쪽 종료 경로에서 오류가 발생하더라도 두 background manager를 모두 중지하려고 시도합니다.
+context를 벗어나면 `await router.aclose()`가 호출됩니다. 종료 처리는 idempotent하며, 한쪽 종료 경로에서 오류가 발생하더라도 router가 소유한 모든 background task를 중지하려고 시도합니다.
 
 ## 리소스 소유권
 
@@ -19,6 +19,7 @@ context를 벗어나면 `await router.aclose()`가 호출됩니다. 종료 처�
 
 - `AccessHealthMonitor` background task
 - `SchemaWatchManager` background task
+- `start_native_schema_watcher()`로 시작한 process-local native schema watcher
 - 명시적으로 offload된 invoker와 sync health probe가 사용하는 bounded synchronous worker pool
 
 반대로 호출자가 소유한 다음 리소스는 **종료하지 않습니다**.
@@ -38,3 +39,23 @@ loop-affine lifecycle state의 소유자는 하나뿐입니다. health monitor �
 
 schema watcher가 실행 중일 때도 동기식 schema-watch 등록과 제거는 안전합니다. wake-up은 다른 thread에서 `asyncio.Event`를 직접 변경하지 않고, 해당 event loop로 전달되어 처리됩니다.
 
+
+
+## Native schema watcher 장애 격리
+
+Native database/vector/document/graph refresher는 trusted client나 connection 상태를
+process-local로 유지합니다. `start_native_schema_watcher()`가 실행 중일 때 각 native source는
+서로 독립적으로 refresh됩니다. 한 source에서 예상하지 못한 예외가 발생해도 해당 source의
+상태만 오류로 기록되고 watcher 전체가 종료되거나 다른 source의 검사가 중단되지 않습니다.
+Cancellation은 source failure로 변환하지 않으므로 `stop_native_schema_watcher()`와
+`aclose()`도 즉시 종료 의미론을 유지합니다.
+
+실패한 source는 다음 watcher interval에서 다시 시도합니다. 각 cycle 사이에는 항상 sleep이
+있으므로 지속적으로 실패하는 source가 tight retry loop를 만들지 않습니다.
+
+`native_schema_watch_snapshots()` 또는
+`router.inspect().execution.native_schema_watches`에서 privacy-safe 상태를 확인할 수
+있습니다. Snapshot에는 tool key, status, timestamp, 마지막 action, 예외 **타입**, bounded
+counter만 포함됩니다. 예외 메시지, credential, client object, connection state는 보존하지
+않습니다. 결정적인 `pending_review` 결과는 refresh 장애가 아니라 정상 watch 결과로
+표시됩니다.
