@@ -50,6 +50,11 @@ construction of the model-visible per-candidate contract. JSON encoding and tool
 execution are excluded. This keeps SmartMCP, SchemaRouter, and the lexical
 baseline on the same observable boundary.
 
+The shared repeat count is frozen in `manifest.json` as
+`comparison.latency_repeats` and is used by every runner unless an explicit
+development override is supplied. Publishable comparisons must use the same
+repeat count for all conditions.
+
 `index_build_ms` measures condition-specific catalog/index construction after
 runtime imports. For SmartMCP, embedding-model object initialization is outside
 that timer; only embedding/index construction over the shared catalog is timed.
