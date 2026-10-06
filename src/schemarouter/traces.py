@@ -11,6 +11,11 @@ from pydantic import Field, ValidationError, model_validator
 
 from .errors import StorageFormatError, TraceError
 from .models import StrictModel
+from .persistence_limits import (
+    PersistedDocumentLimitError,
+    PersistedDocumentLimits,
+    validate_persisted_json_document,
+)
 from .runs import RunEvent
 from .storage import (
     component_presence,
@@ -79,7 +84,10 @@ class RunTraceStore(Protocol):
 
 def _validate_legacy_trace_storage(
     connection: sqlite3.Connection,
+    *,
+    document_limits: PersistedDocumentLimits | None = None,
 ) -> None:
+    limits = document_limits or PersistedDocumentLimits()
     try:
         summaries = connection.execute(
             """
@@ -122,8 +130,16 @@ def _validate_legacy_trace_storage(
                 raise StorageFormatError(
                     f"legacy run trace {run_id!r} contains an invalid sequence"
                 ) from exc
+            document = str(row["document"])
             try:
-                event = RunEvent.model_validate_json(str(row["document"]))
+                validate_persisted_json_document(document, limits)
+            except PersistedDocumentLimitError as exc:
+                raise StorageFormatError(
+                    f"legacy run event {run_id}:{sequence} "
+                    "exceeds persisted document safety limits"
+                ) from exc
+            try:
+                event = RunEvent.model_validate_json(document)
             except (ValidationError, ValueError) as exc:
                 raise StorageFormatError(
                     f"legacy run event {run_id}:{sequence} "
@@ -210,10 +226,12 @@ class SQLiteRunTraceStore:
         path: str | Path,
         *,
         timeout: float = 5.0,
+        document_limits: PersistedDocumentLimits | None = None,
     ) -> None:
         if timeout <= 0:
             raise ValueError("timeout must be > 0")
         self.path = str(path)
+        self._document_limits = document_limits or PersistedDocumentLimits()
         self._lock = RLock()
         self._closed = False
         self._connection = sqlite3.connect(
@@ -261,7 +279,10 @@ class SQLiteRunTraceStore:
         )
 
     def _validate_legacy_storage(self) -> None:
-        _validate_legacy_trace_storage(self._connection)
+        _validate_legacy_trace_storage(
+            self._connection,
+            document_limits=self._document_limits,
+        )
 
     def _initialize(self) -> None:
         with self._lock:
@@ -343,19 +364,31 @@ class SQLiteRunTraceStore:
         self._ensure_open()
         self._connection.execute("BEGIN IMMEDIATE")
 
-    @staticmethod
-    def _serialize(event: RunEvent) -> str:
+    def _serialize(self, event: RunEvent) -> str:
         try:
-            return event.model_dump_json()
+            document = event.model_dump_json()
         except Exception as exc:
             raise TraceError("run event cannot be serialized as persistent JSON") from exc
+        try:
+            validate_persisted_json_document(document, self._document_limits)
+        except PersistedDocumentLimitError as exc:
+            raise TraceError(
+                f"run event {event.run_id}:{event.sequence} exceeds persisted document safety limits"
+            ) from exc
+        return document
 
-    @staticmethod
     def _deserialize(
+        self,
         run_id: str,
         sequence: int,
         document: str,
     ) -> RunEvent:
+        try:
+            validate_persisted_json_document(document, self._document_limits)
+        except PersistedDocumentLimitError as exc:
+            raise TraceError(
+                f"stored run event {run_id}:{sequence} exceeds persisted document safety limits"
+            ) from exc
         try:
             event = RunEvent.model_validate_json(document)
         except (ValidationError, ValueError) as exc:
