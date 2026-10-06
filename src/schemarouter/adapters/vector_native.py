@@ -8,6 +8,25 @@ from typing import Any
 from ..errors import RegistrationError, SchemaValidationError
 from .vector_store import VectorCollectionSpec, VectorMetadataField
 
+_MAX_DISCOVERY_SOURCES = 128
+_MAX_DISCOVERY_FIELDS = 256
+
+
+def _bounded_values(
+    values: Iterable[Any],
+    *,
+    limit: int,
+    label: str,
+) -> tuple[Any, ...]:
+    if limit < 1:
+        raise ValueError(f"{label} limit must be positive")
+    result: list[Any] = []
+    for index, value in enumerate(values):
+        if index >= limit:
+            raise RegistrationError(f"{label} exceeded limit={limit}")
+        result.append(value)
+    return tuple(result)
+
 
 def _read(value: Any, name: str, default: Any = None) -> Any:
     if isinstance(value, Mapping):
@@ -60,23 +79,53 @@ class QdrantVectorBackend:
         ]
         | None = None,
         filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
+        collections: Sequence[str] | None = None,
+        max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
+        max_fields_per_collection: int = _MAX_DISCOVERY_FIELDS,
     ) -> None:
         self._client = client
+        self._collections = (
+            None
+            if collections is None
+            else tuple(
+                str(value)
+                for value in _bounded_values(
+                    collections,
+                    limit=max_discovery_sources,
+                    label="Qdrant configured collections",
+                )
+            )
+        )
+        self._max_discovery_sources = max_discovery_sources
+        self._max_fields_per_collection = max_fields_per_collection
         self._vector_name_by_collection = dict(vector_name_by_collection or {})
         self._metadata_fields_by_collection = {
-            name: tuple(fields)
+            name: tuple(
+                _bounded_values(
+                    fields,
+                    limit=max_fields_per_collection,
+                    label=f"Qdrant metadata fields for {name!r}",
+                )
+            )
             for name, fields in (metadata_fields_by_collection or {}).items()
         }
         self._filter_builder = filter_builder
 
-    def _collection_names(self) -> list[str]:
+    def _collection_names(self) -> tuple[str, ...]:
+        if self._collections is not None:
+            return self._collections
         response = self._client.get_collections()
         entries = _read(response, "collections", response)
         if not isinstance(entries, Sequence) or isinstance(entries, (str, bytes)):
             raise SchemaValidationError(
                 "Qdrant get_collections() returned an unexpected response"
             )
-        names = [str(_read(entry, "name", entry)) for entry in entries]
+        bounded = _bounded_values(
+            entries,
+            limit=self._max_discovery_sources,
+            label="Qdrant collection discovery",
+        )
+        names = tuple(str(_read(entry, "name", entry)) for entry in bounded)
         if any(not name for name in names):
             raise SchemaValidationError("Qdrant returned an empty collection name")
         return names
@@ -141,7 +190,12 @@ class QdrantVectorBackend:
         }
         payload_schema = _read(info, "payload_schema", {})
         if isinstance(payload_schema, Mapping):
-            for name, schema in payload_schema.items():
+            payload_items = _bounded_values(
+                payload_schema.items(),
+                limit=self._max_fields_per_collection,
+                label=f"Qdrant payload schema for {collection!r}",
+            )
+            for name, schema in payload_items:
                 field_name = str(name)
                 if field_name in declared:
                     existing = declared[field_name]
@@ -157,6 +211,11 @@ class QdrantVectorBackend:
                     ),
                     filterable=True,
                 )
+                if len(declared) > self._max_fields_per_collection:
+                    raise RegistrationError(
+                        f"Qdrant collection {collection!r} exposes more than "
+                        f"{self._max_fields_per_collection} metadata fields"
+                    )
         return tuple(declared[name] for name in sorted(declared))
 
     def list_collections(self) -> tuple[VectorCollectionSpec, ...]:
