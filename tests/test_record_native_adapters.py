@@ -16,7 +16,10 @@ from schemarouter import (
     TrustedFilterBinding,
 )
 from schemarouter.adapters.discovery_limits import NativeDiscoveryLimits
-from schemarouter.adapters.record_native import DynamoDBRecordBackend, MongoRecordBackend
+from schemarouter.adapters.record_native import (
+    DynamoDBRecordBackend,
+    MongoRecordBackend,
+)
 from schemarouter.errors import RegistrationError
 
 
