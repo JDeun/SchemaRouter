@@ -126,6 +126,13 @@ def validate_package(
         raise ValueError("top_k_values must be a sorted unique positive list")
     if manifest["comparison"]["max_candidates"] != max(top_k_values):
         raise ValueError("max_candidates must equal the largest Top-K")
+    latency_repeats = manifest["comparison"].get("latency_repeats")
+    if (
+        isinstance(latency_repeats, bool)
+        or not isinstance(latency_repeats, int)
+        or latency_repeats < 1
+    ):
+        raise ValueError("latency_repeats must be a positive integer")
 
 
 def build_template(manifest: dict[str, Any], cases: dict[str, Any]) -> dict[str, Any]:
