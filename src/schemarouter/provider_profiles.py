@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 from collections.abc import Callable, Collection, Iterable
 from importlib import metadata
+from threading import RLock
 from typing import Any, Literal
 
 from pydantic import model_validator
@@ -189,8 +190,16 @@ class ProviderProfileRegistry:
     def __init__(self) -> None:
         self._profiles: dict[str, ProviderProfile] = {}
         self._aliases: dict[str, str] = {}
+        self._lock = RLock()
 
-    def register(self, profile: ProviderProfile, *, replace: bool = False) -> str:
+    @staticmethod
+    def _register_into(
+        profiles: dict[str, ProviderProfile],
+        aliases_by_name: dict[str, str],
+        profile: ProviderProfile,
+        *,
+        replace: bool,
+    ) -> str:
         canonical = _normalize_provider_name(profile.provider_id)
         aliases = {
             _normalize_provider_name(alias)
@@ -199,9 +208,9 @@ class ProviderProfileRegistry:
         aliases.add(canonical)
 
         collision_ids = {
-            self._aliases[name]
+            aliases_by_name[name]
             for name in aliases
-            if name in self._aliases and self._aliases[name] != canonical
+            if name in aliases_by_name and aliases_by_name[name] != canonical
         }
         if collision_ids:
             raise ValueError(
@@ -209,38 +218,73 @@ class ProviderProfileRegistry:
                 + ", ".join(sorted(collision_ids))
             )
 
-        if canonical in self._profiles and not replace:
+        if canonical in profiles and not replace:
             raise ValueError(f"provider profile {canonical!r} is already registered")
 
-        if replace and canonical in self._profiles:
-            previous = self._profiles[canonical]
+        if replace and canonical in profiles:
+            previous = profiles[canonical]
             for name in {
                 _normalize_provider_name(previous.provider_id),
                 *(_normalize_provider_name(alias) for alias in previous.aliases),
             }:
-                if self._aliases.get(name) == canonical:
-                    self._aliases.pop(name, None)
+                if aliases_by_name.get(name) == canonical:
+                    aliases_by_name.pop(name, None)
 
-        self._profiles[canonical] = profile.model_copy(deep=True)
+        profiles[canonical] = profile.model_copy(deep=True)
         for name in aliases:
-            self._aliases[name] = canonical
+            aliases_by_name[name] = canonical
         return canonical
+
+    def register_many(
+        self,
+        profiles: Iterable[ProviderProfile],
+        *,
+        replace: bool = False,
+    ) -> tuple[str, ...]:
+        """Register a profile batch atomically against one coherent registry snapshot."""
+
+        incoming = tuple(profiles)
+        if any(not isinstance(profile, ProviderProfile) for profile in incoming):
+            raise TypeError("provider profile batch must contain only ProviderProfile values")
+
+        with self._lock:
+            staged_profiles = dict(self._profiles)
+            staged_aliases = dict(self._aliases)
+            registered: list[str] = []
+            for profile in incoming:
+                registered.append(
+                    self._register_into(
+                        staged_profiles,
+                        staged_aliases,
+                        profile,
+                        replace=replace,
+                    )
+                )
+            self._profiles = staged_profiles
+            self._aliases = staged_aliases
+        return tuple(registered)
+
+    def register(self, profile: ProviderProfile, *, replace: bool = False) -> str:
+        return self.register_many((profile,), replace=replace)[0]
 
     def get(self, identifier: str) -> ProviderProfile:
         normalized = _normalize_provider_name(identifier)
-        canonical = self._aliases.get(normalized)
-        if canonical is None:
-            raise KeyError(f"unknown provider profile: {identifier}")
-        return self._profiles[canonical].model_copy(deep=True)
+        with self._lock:
+            canonical = self._aliases.get(normalized)
+            if canonical is None:
+                raise KeyError(f"unknown provider profile: {identifier}")
+            return self._profiles[canonical].model_copy(deep=True)
 
     def profiles(self) -> tuple[ProviderProfile, ...]:
-        return tuple(
-            self._profiles[key].model_copy(deep=True)
-            for key in sorted(self._profiles)
-        )
+        with self._lock:
+            return tuple(
+                self._profiles[key].model_copy(deep=True)
+                for key in sorted(self._profiles)
+            )
 
     def provider_ids(self) -> tuple[str, ...]:
-        return tuple(sorted(self._profiles))
+        with self._lock:
+            return tuple(sorted(self._profiles))
 
     def discover(
         self,
@@ -255,9 +299,14 @@ class ProviderProfileRegistry:
             raise ValueError("provider discovery limit must be positive")
         normalized = _normalize_provider_name(identifier)
 
-        canonical = self._aliases.get(normalized)
-        if canonical is not None:
-            profile = self._profiles[canonical].model_copy(deep=True)
+        with self._lock:
+            canonical = self._aliases.get(normalized)
+            profile = (
+                self._profiles[canonical].model_copy(deep=True)
+                if canonical is not None
+                else None
+            )
+        if profile is not None:
             return ProviderDiscoveryProposal(
                 query=identifier,
                 status="resolved",
@@ -510,12 +559,14 @@ def load_provider_profile_plugins(
             "ambiguous provider profile plugin name(s): " + ", ".join(ambiguous)
         )
 
-    registered: list[str] = []
+    staged_profiles: list[ProviderProfile] = []
     for name in sorted(requested):
-        profiles = _coerce_profiles(available[name][0].load())
-        for profile in profiles:
-            registered.append(registry.register(profile, replace=replace))
-    return tuple(registered)
+        staged_profiles.extend(_coerce_profiles(available[name][0].load()))
+
+    # Import/coerce every allowlisted plugin before taking the registry write lock.
+    # register_many() then validates the complete batch against one coherent
+    # snapshot and publishes it only after every profile succeeds.
+    return registry.register_many(staged_profiles, replace=replace)
 
 
 def _crossref_tool() -> ToolSpec:

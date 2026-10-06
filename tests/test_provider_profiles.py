@@ -435,6 +435,24 @@ class _FakeProviderEntryPoints(tuple[object, ...]):
         return ()
 
 
+class _StaticProviderEntryPoint:
+    def __init__(self, name: str, loaded: list[str], value: object) -> None:
+        self.name = name
+        self.value = f"package_{name}:profiles"
+        self.dist = SimpleNamespace(
+            metadata={"Name": f"dist-{name}"},
+            version="1.0",
+        )
+        self._loaded = loaded
+        self._value = value
+
+    def load(self) -> object:
+        self._loaded.append(self.name)
+        if isinstance(self._value, BaseException):
+            raise self._value
+        return self._value
+
+
 def test_provider_plugin_discovery_does_not_import_code(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -471,3 +489,181 @@ def test_provider_plugin_loading_requires_explicit_allowlist(
     )
     assert router.resolve_provider("plugin-demo").provider_id == "plugin-demo"
     assert loaded == ["demo"]
+
+
+def test_provider_plugin_batch_is_atomic_when_later_plugin_load_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    loaded: list[str] = []
+    registry = ProviderProfileRegistry()
+    baseline = ProviderProfile(
+        provider_id="baseline",
+        display_name="Baseline",
+        aliases=("baseline-alias",),
+    )
+    registry.register(baseline)
+    before = registry.profiles()
+
+    entries = _FakeProviderEntryPoints(
+        [
+            _StaticProviderEntryPoint(
+                "alpha",
+                loaded,
+                ProviderProfile(
+                    provider_id="plugin-alpha",
+                    display_name="Plugin Alpha",
+                ),
+            ),
+            _StaticProviderEntryPoint(
+                "beta",
+                loaded,
+                RuntimeError("plugin import failed"),
+            ),
+        ]
+    )
+    monkeypatch.setattr(provider_profiles.metadata, "entry_points", lambda: entries)
+
+    with pytest.raises(RuntimeError, match="plugin import failed"):
+        provider_profiles.load_provider_profile_plugins(
+            registry,
+            allowlist={"alpha", "beta"},
+        )
+
+    assert loaded == ["alpha", "beta"]
+    assert registry.profiles() == before
+    assert registry.provider_ids() == ("baseline",)
+
+
+def test_provider_plugin_batch_is_atomic_when_second_profile_is_invalid(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    loaded: list[str] = []
+    registry = ProviderProfileRegistry()
+    entries = _FakeProviderEntryPoints(
+        [
+            _StaticProviderEntryPoint(
+                "batch",
+                loaded,
+                (
+                    ProviderProfile(
+                        provider_id="first",
+                        display_name="First",
+                        aliases=("shared",),
+                    ),
+                    ProviderProfile(
+                        provider_id="second",
+                        display_name="Second",
+                        aliases=("shared",),
+                    ),
+                ),
+            )
+        ]
+    )
+    monkeypatch.setattr(provider_profiles.metadata, "entry_points", lambda: entries)
+
+    with pytest.raises(ValueError, match="aliases collide"):
+        provider_profiles.load_provider_profile_plugins(
+            registry,
+            allowlist={"batch"},
+        )
+
+    assert loaded == ["batch"]
+    assert registry.provider_ids() == ()
+
+
+def test_provider_plugin_batch_rejects_cross_plugin_alias_collision_atomically(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    loaded: list[str] = []
+    registry = ProviderProfileRegistry()
+    entries = _FakeProviderEntryPoints(
+        [
+            _StaticProviderEntryPoint(
+                "alpha",
+                loaded,
+                ProviderProfile(
+                    provider_id="plugin-alpha",
+                    display_name="Plugin Alpha",
+                    aliases=("shared",),
+                ),
+            ),
+            _StaticProviderEntryPoint(
+                "beta",
+                loaded,
+                ProviderProfile(
+                    provider_id="plugin-beta",
+                    display_name="Plugin Beta",
+                    aliases=("shared",),
+                ),
+            ),
+        ]
+    )
+    monkeypatch.setattr(provider_profiles.metadata, "entry_points", lambda: entries)
+
+    with pytest.raises(ValueError, match="aliases collide"):
+        provider_profiles.load_provider_profile_plugins(
+            registry,
+            allowlist={"alpha", "beta"},
+        )
+
+    assert loaded == ["alpha", "beta"]
+    assert registry.provider_ids() == ()
+
+
+def test_provider_plugin_replace_batch_rolls_back_on_late_collision(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    loaded: list[str] = []
+    registry = ProviderProfileRegistry()
+    registry.register(
+        ProviderProfile(
+            provider_id="alpha",
+            display_name="Original Alpha",
+            aliases=("old-alpha",),
+        )
+    )
+    registry.register(
+        ProviderProfile(
+            provider_id="owner",
+            display_name="Alias Owner",
+            aliases=("shared",),
+        )
+    )
+    before = registry.profiles()
+
+    entries = _FakeProviderEntryPoints(
+        [
+            _StaticProviderEntryPoint(
+                "alpha-replacement",
+                loaded,
+                ProviderProfile(
+                    provider_id="alpha",
+                    display_name="Replacement Alpha",
+                    aliases=("new-alpha",),
+                ),
+            ),
+            _StaticProviderEntryPoint(
+                "beta",
+                loaded,
+                ProviderProfile(
+                    provider_id="beta",
+                    display_name="Beta",
+                    aliases=("shared",),
+                ),
+            ),
+        ]
+    )
+    monkeypatch.setattr(provider_profiles.metadata, "entry_points", lambda: entries)
+
+    with pytest.raises(ValueError, match="aliases collide"):
+        provider_profiles.load_provider_profile_plugins(
+            registry,
+            allowlist={"alpha-replacement", "beta"},
+            replace=True,
+        )
+
+    assert loaded == ["alpha-replacement", "beta"]
+    assert registry.profiles() == before
+    assert registry.get("old-alpha").display_name == "Original Alpha"
+    with pytest.raises(KeyError, match="unknown provider profile"):
+        registry.get("new-alpha")
