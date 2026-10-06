@@ -163,6 +163,38 @@ async def test_mcp_discovery_rejects_oversized_tool_descriptor() -> None:
 
 
 @pytest.mark.asyncio
+async def test_mcp_discovery_stops_materializing_after_oversized_tool() -> None:
+    client = SimpleNamespace(
+        server_info=SimpleNamespace(name="streamed-catalog"),
+        protocol_version="2026-06-18",
+    )
+
+    def tools():
+        yield _tool("large", description="x" * 1024)
+        raise AssertionError("discovery consumed past the rejected descriptor")
+
+    async def list_tools(*, cursor=None):
+        del cursor
+        return SimpleNamespace(tools=tools(), next_cursor=None)
+
+    client.list_tools = list_tools
+
+    @asynccontextmanager
+    async def factory(*, timeout=20.0):
+        del timeout
+        yield client
+
+    with pytest.raises(SchemaSourceError, match="per-tool byte limit"):
+        await inspect_mcp_client_factory(
+            factory,
+            discovery_limits=MCPDiscoveryLimits(
+                max_tool_bytes=256,
+                max_total_bytes=4096,
+            ),
+        )
+
+
+@pytest.mark.asyncio
 async def test_mcp_discovery_rejects_oversized_aggregate_catalog() -> None:
     factory = _PagedFactory(
         {
