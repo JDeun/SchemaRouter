@@ -833,3 +833,67 @@ async def test_remote_sync_record_backend_does_not_block_event_loop() -> None:
 
     assert result[0].data == [{"id": "doc-1", "title": "Router design"}]
 
+def test_record_discovery_catalog_limit_stops_unbounded_iterable() -> None:
+    consumed = 0
+
+    class LargeCatalogBackend(FakeRecordBackend):
+        def list_sources(self):
+            nonlocal consumed
+
+            def generate():
+                nonlocal consumed
+                for index in range(100):
+                    consumed += 1
+                    yield RecordSourceSpec(
+                        name=f"source_{index}",
+                        model="document",
+                        fields=(
+                            RecordFieldSpec(
+                                name="id",
+                                json_schema={"type": "string"},
+                                identifier=True,
+                            ),
+                        ),
+                    )
+
+            return generate()
+
+    router = SchemaRouter()
+    with pytest.raises(RegistrationError, match="max_discovery_sources=3"):
+        router.add_record_store(
+            LargeCatalogBackend(),
+            database_name="nosql",
+            max_discovery_sources=3,
+            remote=False,
+        )
+
+    assert consumed == 4
+    assert router.registry.keys() == ()
+
+def test_record_discovery_rejects_oversized_fields_before_registration() -> None:
+    class WideSourceBackend(FakeRecordBackend):
+        def list_sources(self):
+            return (
+                RecordSourceSpec(
+                    name="wide",
+                    model="document",
+                    fields=tuple(
+                        RecordFieldSpec(
+                            name=f"field_{index}",
+                            json_schema={"type": "string"},
+                        )
+                        for index in range(3)
+                    ),
+                ),
+            )
+
+    router = SchemaRouter()
+    with pytest.raises(RegistrationError, match="exposes 3 fields"):
+        router.add_record_store(
+            WideSourceBackend(),
+            database_name="nosql",
+            max_fields_per_source=2,
+            remote=False,
+        )
+
+    assert router.registry.keys() == ()
