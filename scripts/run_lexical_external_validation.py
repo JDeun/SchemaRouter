@@ -11,7 +11,10 @@ from pathlib import Path
 from statistics import median
 from typing import Any
 
-from scripts.external_validation_provenance import implementation_provenance
+try:
+    from scripts.external_validation_provenance import implementation_provenance
+except ModuleNotFoundError:  # direct `python scripts/...` execution
+    from external_validation_provenance import implementation_provenance
 
 _TOKEN_RE = re.compile(r"[\w.-]+", flags=re.UNICODE)
 
