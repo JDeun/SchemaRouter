@@ -82,6 +82,44 @@ def test_adaptive_checkpoint_restore_rejects_oversized_payload_before_decode() -
         SessionSchemaExposure.loads(payload)
 
 
+def test_adaptive_checkpoint_restore_rejects_invalid_shapes_and_values() -> None:
+    with pytest.raises(TypeError, match="payload must be a string"):
+        SuccessfulCapabilityHistory.loads(None)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="must be a JSON object"):
+        SuccessfulCapabilityHistory.loads("[]")
+    with pytest.raises(ValueError, match="counts must be a JSON object"):
+        SuccessfulCapabilityHistory.loads(
+            '{"schema_version":1,"counts":[]}'
+        )
+    with pytest.raises(ValueError, match="non-negative integers"):
+        SuccessfulCapabilityHistory.loads(
+            '{"schema_version":1,"counts":{"tool.run":true}}'
+        )
+    with pytest.raises(ValueError, match="<tool>\\.<endpoint>"):
+        SuccessfulCapabilityHistory.loads(
+            '{"schema_version":1,"counts":{".run":1}}'
+        )
+    with pytest.raises(ValueError, match="fingerprint suffix"):
+        SuccessfulCapabilityHistory.loads(
+            '{"schema_version":1,"counts":{"tool.run@":1}}'
+        )
+
+    with pytest.raises(TypeError, match="payload must be a string"):
+        SessionSchemaExposure.loads(None)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="route-id strings"):
+        SessionSchemaExposure.loads(
+            '{"schema_version":1,"compaction_epoch":0,"exposed_routes":{}}'
+        )
+    with pytest.raises(ValueError, match="<tool>\\.<endpoint>"):
+        SessionSchemaExposure.loads(
+            '{"schema_version":1,"compaction_epoch":0,"exposed_routes":["tool."]}'
+        )
+    with pytest.raises(ValueError, match="fingerprint suffix"):
+        SessionSchemaExposure.loads(
+            '{"schema_version":1,"compaction_epoch":0,"exposed_routes":["tool.run@"]}'
+        )
+
+
 def test_success_history_restore_rejects_oversized_route_key_and_count() -> None:
     long_route = "tool." + ("x" * 508)
     with pytest.raises(ValueError, match="route id exceeds"):
