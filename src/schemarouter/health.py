@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Literal
 
+from ._loop_affinity import LoopAffinityGuard
 from .errors import PlanValidationError, RegistrationError
 from .executor import RegistryExecutor
 
@@ -52,6 +53,7 @@ class AccessHealthMonitor:
         self._max_concurrency = 4
         self._run_lock = asyncio.Lock()
         self._lifecycle_condition = asyncio.Condition(self._run_lock)
+        self._loop_affinity = LoopAffinityGuard("health monitor")
         self._active_probe_tasks: set[asyncio.Task] = set()
         self._quiesce_requests = 0
 
@@ -148,6 +150,7 @@ class AccessHealthMonitor:
         for itself.
         """
 
+        self._loop_affinity.claim()
         current_task = asyncio.current_task()
         async with self._lifecycle_condition:
             if wait_for_inflight:
@@ -296,6 +299,7 @@ class AccessHealthMonitor:
         unavailable_cooldown_seconds: float | None = None,
         max_concurrency: int | None = None,
     ) -> tuple[HealthProbeSnapshot, ...]:
+        self._loop_affinity.claim()
         return await self._run_once_unlocked(
             probe_timeout_seconds=probe_timeout_seconds,
             unavailable_cooldown_seconds=unavailable_cooldown_seconds,
@@ -366,6 +370,7 @@ class AccessHealthMonitor:
         probe_timeout_seconds: float = 5.0,
         max_concurrency: int = 4,
     ) -> None:
+        self._loop_affinity.claim()
         if self.running:
             raise RuntimeError("health monitor is already running")
         if interval_seconds <= 0:
@@ -385,5 +390,6 @@ class AccessHealthMonitor:
         self._task = None
         if task is None:
             return
+        self._loop_affinity.claim()
         task.cancel()
         await asyncio.gather(task, return_exceptions=True)
