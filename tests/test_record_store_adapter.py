@@ -20,6 +20,7 @@ from schemarouter import (
     SchemaRouter,
     ToolCall,
 )
+from schemarouter.errors import RegistrationError
 
 
 class FakeRecordBackend:
@@ -408,6 +409,114 @@ async def test_native_record_schema_refresh_applies_compatible_drift_and_rebinds
         "nosql.documents",
         after.fingerprint,
     )
+
+
+@pytest.mark.asyncio
+async def test_native_schema_refresh_does_not_commit_when_health_transition_prepare_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class MutableBackend(FakeRecordBackend):
+        def __init__(self) -> None:
+            super().__init__()
+            self.updated_description = False
+
+        def list_sources(self) -> tuple[RecordSourceSpec, ...]:
+            sources = list(super().list_sources())
+            if self.updated_description:
+                sources[0] = sources[0].model_copy(
+                    deep=True,
+                    update={"description": "updated document source"},
+                )
+            return tuple(sources)
+
+    backend = MutableBackend()
+    router = SchemaRouter()
+    await router.aadd_record_store(
+        backend,
+        database_name="nosql",
+        sources={"documents"},
+        remote=False,
+    )
+    router.register_health_probe("nosql.documents", "query", lambda: True)
+    before = router.registry.get("nosql.documents")
+    backend.updated_description = True
+
+    def fail_prepare(*args: Any, **kwargs: Any) -> Any:
+        del args, kwargs
+        raise RuntimeError("synthetic health transition failure")
+
+    monkeypatch.setattr(
+        router.health_monitor,
+        "_prepare_tool_contract_transition",
+        fail_prepare,
+    )
+
+    with pytest.raises(RuntimeError, match="synthetic health transition failure"):
+        await router.arefresh_native_schema("nosql.documents")
+
+    after = router.registry.get("nosql.documents")
+    assert after.fingerprint == before.fingerprint
+    assert router.executor.is_binding_ready_for_contract(
+        "nosql.documents",
+        before.fingerprint,
+    )
+    assert router.health_snapshots()[0].status == "unknown"
+
+
+@pytest.mark.asyncio
+async def test_native_schema_refresh_rejects_concurrent_writer_before_commit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class MutableBackend(FakeRecordBackend):
+        def __init__(self) -> None:
+            super().__init__()
+            self.updated_description = False
+
+        def list_sources(self) -> tuple[RecordSourceSpec, ...]:
+            sources = list(super().list_sources())
+            if self.updated_description:
+                sources[0] = sources[0].model_copy(
+                    deep=True,
+                    update={"description": "updated document source"},
+                )
+            return tuple(sources)
+
+    backend = MutableBackend()
+    router = SchemaRouter()
+    await router.aadd_record_store(
+        backend,
+        database_name="nosql",
+        sources={"documents"},
+        remote=False,
+    )
+    router.register_health_probe("nosql.documents", "query", lambda: True)
+    before = router.registry.get("nosql.documents")
+    backend.updated_description = True
+    original_prepare = router._prepare_health_contract_transition
+    concurrent = before.model_copy(
+        deep=True,
+        update={"description": "concurrent writer"},
+    )
+
+    def mutate_then_prepare(current: Any, candidate: Any) -> Any:
+        transition = original_prepare(current, candidate)
+        router.registry.register(concurrent, replace=True)
+        return transition
+
+    monkeypatch.setattr(
+        router,
+        "_prepare_health_contract_transition",
+        mutate_then_prepare,
+    )
+
+    with pytest.raises(RegistrationError, match="registry changed concurrently"):
+        await router.arefresh_native_schema("nosql.documents")
+
+    after = router.registry.get("nosql.documents")
+    assert after.fingerprint == concurrent.fingerprint
+    snapshots = await router.check_health_once()
+    assert snapshots[0].status == "stale"
+    assert snapshots[0].last_error_type == "ToolContractChanged"
 
 
 @pytest.mark.asyncio
