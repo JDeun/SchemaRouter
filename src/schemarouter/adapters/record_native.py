@@ -168,10 +168,10 @@ class MongoRecordBackend:
         cursor = collection.find({})
         sort = getattr(cursor, "sort", None)
         if callable(sort):
-            cursor = sort("_id", 1)
+            sort("_id", 1)
         max_time_ms = getattr(cursor, "max_time_ms", None)
         if callable(max_time_ms):
-            cursor = max_time_ms(int(_SCHEMA_SAMPLE_TIME_LIMIT_SECONDS * 1000))
+            max_time_ms(int(_SCHEMA_SAMPLE_TIME_LIMIT_SECONDS * 1000))
         cursor = cursor.limit(_SCHEMA_SAMPLE_ROW_LIMIT)
         return _bounded_sample_documents(cursor)
 
@@ -599,11 +599,14 @@ class DynamoDBRecordBackend:
             fields = []
             for name in names:
                 code = attribute_types.get(name)
-                schema = {
-                    "S": {"type": "string"},
-                    "N": {"type": "number"},
-                    "B": {"type": "string"},
-                }.get(code, {})
+                if code == "S":
+                    schema = {"type": "string"}
+                elif code == "N":
+                    schema = {"type": "number"}
+                elif code == "B":
+                    schema = {"type": "string"}
+                else:
+                    schema = {}
                 fields.append(
                     RecordFieldSpec(
                         name=name,
