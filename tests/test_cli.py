@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from schemarouter import (
     CAPABILITY_SNAPSHOT_DOCUMENT_VERSION,
     EndpointSpec,
@@ -160,9 +162,18 @@ def test_cli_format_migration_refuses_existing_destination_without_overwrite(
         ]
     )
 
-    import pytest
-
     with pytest.raises(FileExistsError, match="already exists"):
         _run(args)
 
     assert output.read_text(encoding="utf-8") == "keep"
+
+
+def test_cli_artifact_read_rejects_oversized_file_before_json_parse(tmp_path) -> None:
+    source = tmp_path / "oversized.json"
+    source.write_bytes(b"x" * (2 * 1024 * 1024 + 1))
+    args = build_parser().parse_args(
+        ["artifact", "inspect", str(source), "--json"]
+    )
+
+    with pytest.raises(ValueError, match="byte limit"):
+        _run(args)
