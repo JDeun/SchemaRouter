@@ -11,6 +11,7 @@ from schemarouter import (
     compare_capability_composition,
     compare_capability_fields,
 )
+from schemarouter.capability_contracts import _canonical_compatibility_context_payload
 
 
 def contract(semantic_id: str, **kwargs) -> CapabilityFieldContract:
@@ -130,6 +131,39 @@ def test_semantic_alias_requires_explicit_equivalence() -> None:
     result = compare_capability_fields(required, produced, context=context)
     assert result.status == "compatible"
     assert result.reasons[0].code == "semantic_equivalence_declared"
+
+
+def test_overlapping_semantic_equivalences_are_transitive() -> None:
+    context = CompatibilityContext(
+        semantic_equivalences=[
+            SemanticEquivalence(canonical_id="A", aliases={"B"}),
+            SemanticEquivalence(canonical_id="B", aliases={"C"}),
+        ]
+    )
+
+    assert context.semantics_equivalent("A", "C")
+    assert context.semantic_equivalences == [
+        SemanticEquivalence(canonical_id="A", aliases={"B", "C"})
+    ]
+
+
+def test_semantic_equivalence_grouping_and_order_are_canonical() -> None:
+    overlapping = CompatibilityContext(
+        semantic_equivalences=[
+            SemanticEquivalence(canonical_id="B", aliases={"C"}),
+            SemanticEquivalence(canonical_id="A", aliases={"B"}),
+        ]
+    )
+    single_group = CompatibilityContext(
+        semantic_equivalences=[
+            SemanticEquivalence(canonical_id="C", aliases={"B", "A"}),
+        ]
+    )
+
+    assert overlapping.semantic_equivalences == single_group.semantic_equivalences
+    assert _canonical_compatibility_context_payload(
+        overlapping
+    ) == _canonical_compatibility_context_payload(single_group)
 
 
 def test_unit_conversion_requires_explicit_directed_relation() -> None:

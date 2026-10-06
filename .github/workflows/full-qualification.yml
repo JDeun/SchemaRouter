@@ -1,0 +1,17 @@
+name: Full Qualification
+
+on:
+  schedule:
+    - cron: "29 2 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: full-qualification
+  cancel-in-progress: true
+
+jobs:
+  full-ci:
+    uses: ./.github/workflows/ci.yml
