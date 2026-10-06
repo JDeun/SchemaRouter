@@ -86,8 +86,9 @@ class PolicyDecision:
 class ExecutionPolicy:
     """Local execution authority for side effects and optional per-call approval.
 
-    Fine-grained rules are trusted local configuration and are evaluated before the legacy category
-    switches. Existing allow_* flags remain the default behavior when no rule matches.
+    Fine-grained rules are trusted local configuration. Explicit allow/deny rules are authoritative;
+    require_approval is an additional gate and does not grant mutation/destructive/unclassified
+    authority by itself. Existing allow_* flags remain the default category authority.
     """
 
     allow_mutations: bool = False
@@ -130,7 +131,7 @@ class ExecutionPolicy:
 
         operation = f"{call.tool}.{call.endpoint}"
         rule = self._matching_rule(tool, endpoint, call)
-        if rule is not None:
+        if rule is not None and rule.effect in {"allow", "deny"}:
             return PolicyDecision(
                 effect=rule.effect,
                 source="rule",
@@ -173,6 +174,19 @@ class ExecutionPolicy:
                 reason=(
                     f"remote operation {operation} has unclassified side effects; "
                     "set allow_unclassified_remote=True or provide a trusted local contract"
+                ),
+            )
+
+        if rule is not None:
+            return PolicyDecision(
+                effect="require_approval",
+                source="rule",
+                operation=operation,
+                rule_name=rule.name,
+                reason=(
+                    f"matched local policy rule {rule.name!r}"
+                    if rule.name
+                    else f"matched local policy rule {rule.operation!r}"
                 ),
             )
 

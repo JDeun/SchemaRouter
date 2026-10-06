@@ -65,8 +65,10 @@ The operation string is matched against `tool.endpoint` with shell-style wildcar
 `remote`, `read_only`, `destructive`, and `unclassified` predicates can narrow a rule further. `unclassified=True` explicitly matches endpoints whose side-effect classification is unknown; `read_only=None` remains the default wildcard rather than overloading that meaning.
 
 A scoped `allow` rule is trusted local authority for that operation only. A scoped `deny` rule can
-narrow a globally enabled category. `require_approval` grants no model authority: the call still
-passes schema, binding, and policy validation and then requires the trusted approval callback.
+narrow a globally enabled category. `require_approval` is an additional gate, not an authority
+grant: the call must first satisfy the applicable `allow_mutations`, `allow_destructive`, or
+`allow_unclassified_remote` category guard (or an explicit scoped `allow` rule). Only then does
+the trusted approval callback decide whether that already-authorized call may proceed.
 
 If no rule matches, the existing `allow_mutations`, `allow_destructive`, and
 `allow_unclassified_remote` behavior is unchanged.
