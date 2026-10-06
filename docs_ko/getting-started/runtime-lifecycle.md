@@ -19,6 +19,7 @@ context를 벗어나면 `await router.aclose()`가 호출됩니다. 종료 처�
 
 - `AccessHealthMonitor` background task
 - `SchemaWatchManager` background task
+- 명시적으로 offload된 invoker와 sync health probe가 사용하는 bounded synchronous worker pool
 
 반대로 호출자가 소유한 다음 리소스는 **종료하지 않습니다**.
 
@@ -27,7 +28,7 @@ context를 벗어나면 `await router.aclose()`가 호출됩니다. 종료 처�
 - SDK client, MCP factory/transport, subprocess handle 또는 기타 trusted invoker
 - 호출자 소유 trace store
 
-이러한 리소스는 애플리케이션이 자체 ownership model에 따라 종료해야 합니다. SchemaRouter adapter가 내부에서 만드는 단기 HTTP client는 해당 client를 만든 개별 operation 안에서 이미 종료됩니다.
+이러한 리소스는 애플리케이션이 자체 ownership model에 따라 종료해야 합니다. SchemaRouter adapter가 내부에서 만드는 단기 HTTP client는 해당 client를 만든 개별 operation 안에서 이미 종료됩니다. router를 닫으면 새로운 sync offload는 더 이상 받지 않지만, 이미 실행을 시작한 Python thread는 강제로 중단할 수 없으므로 `aclose()`가 반환된 뒤에도 자연스럽게 완료될 수 있습니다.
 
 ## 동기 및 비동기 루프 소유권
 

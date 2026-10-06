@@ -93,7 +93,7 @@
     },
     {
       "path": "getting-started/runtime-lifecycle.md",
-      "source_blob": "cda61224204bfcc96be326373e1236e48265f984"
+      "source_blob": "8a8372dbebecff4c1fcb98881e5d67c50b0cdf4a"
     },
     {
       "path": "getting-started/schema-explorer.md",
@@ -273,7 +273,7 @@
     },
     {
       "path": "guides/runtime.md",
-      "source_blob": "1826b1c89c8603cfd17d8b126e943cf6fb6c1cdc"
+      "source_blob": "e9cae58a4efb0d47971e7134e9dbaa77075899cd"
     },
     {
       "path": "guides/schema-drift.md",

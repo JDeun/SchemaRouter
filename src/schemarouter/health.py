@@ -336,7 +336,7 @@ class AccessHealthMonitor:
                         outcome = record.probe()
                     else:
                         outcome = await asyncio.wait_for(
-                            asyncio.to_thread(record.probe),
+                            self.executor._submit_offloaded_sync(record.probe),
                             timeout=probe_timeout_seconds,
                         )
                     if inspect.isawaitable(outcome):
