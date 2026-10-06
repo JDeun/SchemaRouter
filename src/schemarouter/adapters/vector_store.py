@@ -265,6 +265,26 @@ class VectorCollectionInvoker:
         return rows
 
 
+def _bounded_vector_descriptor(
+    value: Any,
+    limits: NativeDiscoveryLimits,
+) -> Any:
+    if not isinstance(value, Mapping):
+        return value
+    raw = dict(value)
+    metadata_fields = raw.get("metadata_fields")
+    if (
+        isinstance(metadata_fields, Iterable)
+        and not isinstance(metadata_fields, (str, bytes, Mapping))
+    ):
+        raw["metadata_fields"] = bounded_collect(
+            metadata_fields,
+            limit=limits.max_fields_per_source,
+            label=f"vector collection {descriptor_name(raw)!r} metadata field count",
+        )
+    return raw
+
+
 async def introspect_vector_backend(
     backend: VectorStoreBackend,
     embed_query: VectorQueryEmbedder,
@@ -315,10 +335,11 @@ async def introspect_vector_backend(
     )
     discovered_list: list[VectorCollectionSpec] = []
     for item in discovered_items:
+        bounded_item = _bounded_vector_descriptor(item, limits)
         collection = (
-            item
-            if isinstance(item, VectorCollectionSpec)
-            else VectorCollectionSpec.model_validate(item)
+            bounded_item
+            if isinstance(bounded_item, VectorCollectionSpec)
+            else VectorCollectionSpec.model_validate(bounded_item)
         )
         require_at_most(
             len(collection.metadata_fields),
