@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+import json
+from collections import Counter
 from collections.abc import Iterable
 from typing import Literal
 
@@ -300,15 +303,35 @@ def compare_capability_fields(
     return CapabilityCompatibility(status="compatible", reasons=reasons)
 
 
+
+def _capability_requirement_identity(
+    required: CapabilityFieldContract,
+) -> str:
+    payload = required.model_dump(mode="json")
+    return json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+
 def compare_capability_composition(
     producer: CapabilityContract,
     consumer: CapabilityContract,
     *,
     context: CompatibilityContext | None = None,
 ) -> CapabilityComposition:
-    """Check whether producer outputs can satisfy every consumer requirement."""
+    """Check whether producer outputs can satisfy every consumer requirement.
 
-    results: dict[str, CapabilityCompatibility] = {}
+    A semantic ID may legitimately appear more than once when unit, qualifier, or
+    schema requirements differ. Single-occurrence keys retain the legacy semantic-ID
+    shape; duplicate semantic IDs receive stable contract-derived keys so no declared
+    requirement is overwritten.
+    """
+
+    evaluations: list[
+        tuple[CapabilityFieldContract, str, CapabilityCompatibility]
+    ] = []
     statuses: list[CompatibilityStatus] = []
     for required in consumer.requires:
         candidates = [
@@ -332,8 +355,31 @@ def compare_capability_composition(
                     ),
                 )],
             )
-        results[required.semantic_id] = result
+        identity = _capability_requirement_identity(required)
+        evaluations.append((required, identity, result))
         statuses.append(result.status)
+
+    semantic_counts = Counter(
+        required.semantic_id
+        for required, _, _ in evaluations
+    )
+    duplicate_occurrences: Counter[tuple[str, str]] = Counter()
+    results: dict[str, CapabilityCompatibility] = {}
+    for required, identity, result in sorted(
+        evaluations,
+        key=lambda item: (item[0].semantic_id, item[1]),
+    ):
+        if semantic_counts[required.semantic_id] == 1:
+            key = required.semantic_id
+        else:
+            duplicate_key = (required.semantic_id, identity)
+            duplicate_occurrences[duplicate_key] += 1
+            digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:12]
+            key = (
+                f"{required.semantic_id}#{duplicate_occurrences[duplicate_key]}"
+                f":{digest}"
+            )
+        results[key] = result
 
     return CapabilityComposition(
         status=_composition_status(statuses),
