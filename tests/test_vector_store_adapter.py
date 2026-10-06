@@ -21,6 +21,7 @@ from schemarouter import (
     VectorCollectionSpec,
     VectorMetadataField,
 )
+from schemarouter.errors import RegistrationError
 
 
 class FakeVectorBackend:
@@ -495,3 +496,85 @@ async def test_native_vector_schema_refresh_reintrospects_current_contract() -> 
     assert result.action == "unchanged"
     assert router.executor.is_binding_ready_for_contract(tool.key, tool.fingerprint)
 
+
+
+def test_vector_discovery_catalog_limit_stops_unbounded_iterable() -> None:
+    consumed = 0
+
+    class LargeCatalogBackend(FakeVectorBackend):
+        def list_collections(self):
+            nonlocal consumed
+
+            def generate():
+                nonlocal consumed
+                for index in range(100):
+                    consumed += 1
+                    yield VectorCollectionSpec(
+                        name=f"collection_{index}",
+                        dimension=3,
+                    )
+
+            return generate()
+
+    router = SchemaRouter()
+    with pytest.raises(RegistrationError, match="max_discovery_sources=3"):
+        router.add_vector_store(
+            LargeCatalogBackend(),
+            lambda query: [0.1, 0.2, 0.3],
+            database_name="vectors",
+            max_discovery_sources=3,
+            remote=False,
+        )
+
+    assert consumed == 4
+    assert router.registry.keys() == ()
+
+
+def test_vector_discovery_rejects_oversized_metadata_before_registration() -> None:
+    class WideCollectionBackend(FakeVectorBackend):
+        def list_collections(self):
+            return (
+                VectorCollectionSpec(
+                    name="wide",
+                    dimension=3,
+                    metadata_fields=tuple(
+                        VectorMetadataField(
+                            name=f"field_{index}",
+                            json_schema={"type": "string"},
+                        )
+                        for index in range(3)
+                    ),
+                ),
+            )
+
+    router = SchemaRouter()
+    with pytest.raises(RegistrationError, match="metadata fields"):
+        router.add_vector_store(
+            WideCollectionBackend(),
+            lambda query: [0.1, 0.2, 0.3],
+            database_name="vectors",
+            max_fields_per_collection=2,
+            remote=False,
+        )
+
+    assert router.registry.keys() == ()
+
+
+def test_vector_explicit_selection_skips_unrelated_malformed_descriptor() -> None:
+    class MixedCatalogBackend(FakeVectorBackend):
+        def list_collections(self):
+            return (
+                {"name": "broken", "dimension": "not-an-integer"},
+                VectorCollectionSpec(name="selected", dimension=3),
+            )
+
+    router = SchemaRouter()
+    keys = router.add_vector_store(
+        MixedCatalogBackend(),
+        lambda query: [0.1, 0.2, 0.3],
+        database_name="vectors",
+        collections={"selected"},
+        remote=False,
+    )
+
+    assert keys == ("vectors.selected",)
