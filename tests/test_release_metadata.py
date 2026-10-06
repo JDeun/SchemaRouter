@@ -236,6 +236,17 @@ def test_pr_ci_uses_path_aware_tiers_without_renaming_required_gates() -> None:
     assert 'python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]' in workflow
 
 
+def test_scheduled_full_qualification_reuses_the_complete_ci() -> None:
+    workflow = (
+        ROOT / ".github" / "workflows" / "full-qualification.yml"
+    ).read_text(encoding="utf-8")
+
+    assert "schedule:" in workflow
+    assert "workflow_dispatch:" in workflow
+    assert "uses: ./.github/workflows/ci.yml" in workflow
+    assert "cancel-in-progress: true" in workflow
+
+
 def test_pr_ci_and_post_merge_qualification_are_separated() -> None:
     ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
     post_merge = (
