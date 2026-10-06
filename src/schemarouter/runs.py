@@ -61,6 +61,7 @@ class RunConfig(StrictModel):
     principal_audit_id: str | None = Field(default=None, min_length=1, max_length=256)
     tags: list[str] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
+    trace_metadata: dict[str, Any] = Field(default_factory=dict)
     max_concurrency: int = Field(default=8, ge=1, le=128)
     max_batch_size: int = Field(default=256, ge=1, le=4096)
     execution_mode: ExecutionMode = "sequential"
@@ -123,7 +124,11 @@ class RunEvent(StrictModel):
             sequence=sequence,
             timestamp=datetime.now(timezone.utc),
             tags=list(config.tags),
-            metadata=dict(config.metadata),
+            metadata=(
+                dict(config.trace_metadata)
+                if event == "run.start"
+                else {}
+            ),
             tool=tool,
             endpoint=endpoint,
             data=dict(data or {}),
