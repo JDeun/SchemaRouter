@@ -570,15 +570,37 @@ async def append_run_event_async(
         raise
 
 
+async def _close_upstream_events(
+    events: AsyncIterator[RunEvent],
+) -> None:
+    close = getattr(events, "aclose", None)
+    if close is None:
+        return
+    await close()
+
+
 async def record_run_events(
     events: AsyncIterator[RunEvent],
     *,
     store: RunTraceStore,
 ) -> AsyncIterator[RunEvent]:
-    """Persist an event stream before yielding each event to downstream consumers."""
-    async for event in events:
-        await append_run_event_async(store, event)
-        yield event
+    """Persist an event stream and promptly propagate downstream closure upstream."""
+    primary_error: BaseException | None = None
+    try:
+        async for event in events:
+            await append_run_event_async(store, event)
+            yield event
+    except BaseException as exc:
+        primary_error = exc
+        raise
+    finally:
+        cleanup_error: BaseException | None = None
+        try:
+            await _close_upstream_events(events)
+        except BaseException as exc:
+            cleanup_error = exc
+        if primary_error is None and cleanup_error is not None:
+            raise cleanup_error
 
 
 def replay_run_events(
