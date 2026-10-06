@@ -146,6 +146,10 @@ class DataScopeRule:
             raise ValueError("visible_fields must contain non-empty names")
         if any(not value.strip() for value in self.hidden_fields):
             raise ValueError("hidden_fields must contain non-empty names")
+        if self.visible_fields is not None and set(self.visible_fields).intersection(
+            self.hidden_fields
+        ):
+            raise ValueError("visible_fields and hidden_fields must not overlap")
         if self.allowed_relationships is not None and any(
             not value.strip() for value in self.allowed_relationships
         ):
@@ -412,6 +416,11 @@ class AuthorizationPolicy:
             return DataScopeDecision(operation=operation)
 
         declared_fields = {field.name for field in endpoint.output_fields}
+        hidden_fields = set(rule.hidden_fields)
+        unknown_hidden = sorted(hidden_fields - declared_fields)
+        if unknown_hidden:
+            raise PolicyViolationError("authorization denied for requested data scope")
+
         if rule.visible_fields is None:
             visible_set = set(declared_fields)
         else:
@@ -419,7 +428,7 @@ class AuthorizationPolicy:
             if unknown:
                 raise PolicyViolationError("authorization denied for requested data scope")
             visible_set = set(rule.visible_fields)
-        visible_set.difference_update(rule.hidden_fields)
+        visible_set.difference_update(hidden_fields)
 
         filters = tuple(
             (binding.field, binding.resolve(principal))
