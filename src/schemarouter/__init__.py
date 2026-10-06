@@ -297,7 +297,6 @@ from .decisions import (
 )
 from .errors import (
     ApprovalDeniedError,
-    AuthorizationAuditDeliveryError as AuthorizationAuditDeliveryError,
     BindingDriftError,
     ContractAmendmentError,
     ExecutionBudgetExceededError,
@@ -324,6 +323,9 @@ from .errors import (
     TraceError,
     TracePersistenceError,
     UnsupportedSchemaSourceError,
+)
+from .errors import (
+    AuthorizationAuditDeliveryError as AuthorizationAuditDeliveryError,
 )
 from .execution_state import (
     EligibilityStatus,
