@@ -13,6 +13,7 @@ from pydantic import TypeAdapter
 
 from ._loop_affinity import SyncLoopRunner
 from .adapters.base import AdapterRegistry, SourceAdapter
+from .adapters.discovery_limits import NativeDiscoveryLimits
 from .adapters.mcp import (
     MCPBoundClientFactory,
     MCPBoundInvoker,
@@ -1526,6 +1527,7 @@ class SchemaRouter:
         namespace: str | None = None,
         tables: set[str] | tuple[str, ...] | list[str] | None = None,
         max_default_rows: int = 100,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Introspect and register a caller-owned SQLite database as read-only capabilities.
 
@@ -1546,6 +1548,7 @@ class SchemaRouter:
             namespace=namespace,
             tables=tables,
             max_default_rows=max_default_rows,
+            discovery_limits=discovery_limits,
         )
         return self._register_bound_batch(
             bindings,
@@ -1563,6 +1566,7 @@ class SchemaRouter:
         include_views: bool = True,
         max_default_rows: int = 100,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Introspect and register a caller-owned SQLAlchemy Engine.
 
@@ -1583,6 +1587,7 @@ class SchemaRouter:
             include_views=include_views,
             max_default_rows=max_default_rows,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
         async def refresh_binding(
             tool_key: str,
@@ -1598,6 +1603,7 @@ class SchemaRouter:
                     include_views=include_views,
                     max_default_rows=max_default_rows,
                     remote=remote,
+                    discovery_limits=discovery_limits,
                 )
             else:
                 refreshed = introspect_sqlalchemy_engine(
@@ -1609,6 +1615,7 @@ class SchemaRouter:
                     include_views=include_views,
                     max_default_rows=max_default_rows,
                     remote=remote,
+                    discovery_limits=discovery_limits,
                 )
             match = next((item for item in refreshed if item.tool.key == tool_key), None)
             if match is None:
@@ -1640,6 +1647,7 @@ class SchemaRouter:
         collections: set[str] | tuple[str, ...] | list[str] | None = None,
         default_top_k: int = 10,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Discover and register a caller-owned vector store as bounded search capabilities."""
 
@@ -1654,6 +1662,7 @@ class SchemaRouter:
             default_top_k=default_top_k,
             remote=remote,
             offload_sync_backend=remote,
+            discovery_limits=discovery_limits,
         )
         async def refresh_binding(
             tool_key: str,
@@ -1666,6 +1675,7 @@ class SchemaRouter:
                 collections=collections,
                 default_top_k=default_top_k,
                 remote=remote,
+                discovery_limits=discovery_limits,
             )
             match = next((item for item in refreshed if item.tool.key == tool_key), None)
             if match is None:
@@ -1708,6 +1718,7 @@ class SchemaRouter:
                 collections=collections,
                 default_top_k=default_top_k,
                 remote=remote,
+                discovery_limits=discovery_limits,
             )
         )
 
@@ -1772,6 +1783,7 @@ class SchemaRouter:
                 filter_builder=filter_builder,
                 default_top_k=default_top_k,
                 remote=remote,
+                discovery_limits=discovery_limits,
             )
         )
 
@@ -1832,6 +1844,7 @@ class SchemaRouter:
                 metric_by_collection=metric_by_collection,
                 default_top_k=default_top_k,
                 remote=remote,
+                discovery_limits=discovery_limits,
             )
         )
 
@@ -1886,6 +1899,7 @@ class SchemaRouter:
                 metadata_fields_by_index=metadata_fields_by_index,
                 default_top_k=default_top_k,
                 remote=remote,
+                discovery_limits=discovery_limits,
             )
         )
 
@@ -1948,6 +1962,7 @@ class SchemaRouter:
                 metric_by_collection=metric_by_collection,
                 default_top_k=default_top_k,
                 remote=remote,
+                discovery_limits=discovery_limits,
             )
         )
 
@@ -2014,6 +2029,7 @@ class SchemaRouter:
                 filter_builder=filter_builder,
                 default_top_k=default_top_k,
                 remote=remote,
+                discovery_limits=discovery_limits,
             )
         )
 
@@ -2080,6 +2096,7 @@ class SchemaRouter:
                 schema=schema,
                 default_top_k=default_top_k,
                 remote=remote,
+                discovery_limits=discovery_limits,
             )
         )
 
@@ -2093,6 +2110,7 @@ class SchemaRouter:
         default_limit: int = 100,
         default_max_hops: int = 1,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Discover and register a caller-owned property-graph or RDF backend."""
 
@@ -2107,6 +2125,7 @@ class SchemaRouter:
             default_max_hops=default_max_hops,
             remote=remote,
             offload_sync_backend=remote,
+            discovery_limits=discovery_limits,
         )
         async def refresh_binding(
             tool_key: str,
@@ -2119,6 +2138,7 @@ class SchemaRouter:
                 default_limit=default_limit,
                 default_max_hops=default_max_hops,
                 remote=remote,
+                discovery_limits=discovery_limits,
             )
             match = next((item for item in refreshed if item.tool.key == tool_key), None)
             if match is None:
@@ -2161,6 +2181,7 @@ class SchemaRouter:
                 default_limit=default_limit,
                 default_max_hops=default_max_hops,
                 remote=remote,
+                discovery_limits=discovery_limits,
             )
         )
 
@@ -2173,6 +2194,7 @@ class SchemaRouter:
         sources: set[str] | tuple[str, ...] | list[str] | None = None,
         default_limit: int = 100,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Discover and register document/search/key-value/time-series sources."""
 
@@ -2186,6 +2208,7 @@ class SchemaRouter:
             default_limit=default_limit,
             remote=remote,
             offload_sync_backend=remote,
+            discovery_limits=discovery_limits,
         )
         async def refresh_binding(
             tool_key: str,
@@ -2237,6 +2260,7 @@ class SchemaRouter:
                 sources=sources,
                 default_limit=default_limit,
                 remote=remote,
+                discovery_limits=discovery_limits,
             )
         )
 
@@ -2294,6 +2318,7 @@ class SchemaRouter:
                 default_limit=default_limit,
                 default_max_hops=default_max_hops,
                 remote=remote,
+                discovery_limits=discovery_limits,
             )
         )
 
@@ -2345,6 +2370,7 @@ class SchemaRouter:
                 default_limit=default_limit,
                 default_max_hops=default_max_hops,
                 remote=remote,
+                discovery_limits=discovery_limits,
             )
         )
 
@@ -2402,6 +2428,7 @@ class SchemaRouter:
                 default_limit=default_limit,
                 default_max_hops=default_max_hops,
                 remote=remote,
+                discovery_limits=discovery_limits,
             )
         )
 
@@ -2452,6 +2479,7 @@ class SchemaRouter:
                 default_limit=default_limit,
                 default_max_hops=default_max_hops,
                 remote=remote,
+                discovery_limits=discovery_limits,
             )
         )
 
