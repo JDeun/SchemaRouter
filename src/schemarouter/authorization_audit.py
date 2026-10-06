@@ -68,7 +68,7 @@ class AuthorizationAuditDeliveryMonitor:
             raise ValueError(
                 "authorization_audit_delivery_mode must be 'best_effort' or 'strict'"
             )
-        self.mode = mode
+        self.mode: AuthorizationAuditDeliveryMode = mode
         self.sink_configured = sink_configured
         self._lock = Lock()
         self._delivered_events = 0
