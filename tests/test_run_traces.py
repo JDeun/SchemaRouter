@@ -370,7 +370,48 @@ async def test_runtime_trace_can_explicitly_include_payloads(tmp_path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_payload_trace_redacts_credentials_before_sqlite_persistence(tmp_path) -> None:
+async def test_default_trace_excludes_trusted_metadata_and_keeps_trace_metadata_run_scoped(
+    tmp_path,
+) -> None:
+    secret = "process-local-secret"
+    router = make_router()
+
+    with SQLiteRunTraceStore(tmp_path / "metadata-boundary.sqlite3") as store:
+        events = [
+            item
+            async for item in router.astream_events(
+                PlanRequest(
+                    query="city temperature",
+                    arguments={"city": "Seoul"},
+                ),
+                config=RunConfig(
+                    run_id="metadata-boundary",
+                    metadata={
+                        "api_key": secret,
+                        "internal_tenant": "tenant-private",
+                    },
+                    trace_metadata={
+                        "correlation_id": "req-public-42",
+                    },
+                ),
+                trace_store=store,
+            )
+        ]
+        trace = store.trace("metadata-boundary")
+
+    serialized = "\n".join(event.model_dump_json() for event in trace.events)
+    assert secret not in serialized
+    assert "tenant-private" not in serialized
+    assert trace.events[0].metadata == {"correlation_id": "req-public-42"}
+    assert all(event.metadata == {} for event in trace.events[1:])
+    assert events[0].metadata == {"correlation_id": "req-public-42"}
+    assert all(event.metadata == {} for event in events[1:])
+
+
+@pytest.mark.asyncio
+async def test_opted_in_trusted_metadata_is_redacted_before_sqlite_persistence(
+    tmp_path,
+) -> None:
     secret = "sk-super-secret-value"
     router = make_secret_router()
 
@@ -385,6 +426,7 @@ async def test_payload_trace_redacts_credentials_before_sqlite_persistence(tmp_p
                 config=RunConfig(
                     run_id="redacted-success",
                     include_payloads=True,
+                    include_metadata_in_traces=True,
                     metadata={"api_key": secret, "safe": "visible"},
                 ),
                 trace_store=store,
@@ -395,8 +437,9 @@ async def test_payload_trace_redacts_credentials_before_sqlite_persistence(tmp_p
     serialized = "\n".join(event.model_dump_json() for event in trace.events)
     assert secret not in serialized
     assert "[REDACTED]" in serialized
-    assert all(event.metadata["api_key"] == "[REDACTED]" for event in events)
-    assert all(event.metadata["safe"] == "visible" for event in events)
+    assert events[0].metadata["api_key"] == "[REDACTED]"
+    assert events[0].metadata["safe"] == "visible"
+    assert all(event.metadata == {} for event in events[1:])
 
     tool_start = next(event for event in trace.events if event.event == "tool.start")
     tool_end = next(event for event in trace.events if event.event == "tool.end")
@@ -461,6 +504,7 @@ async def test_raw_trace_payloads_require_explicit_escape_hatch(tmp_path) -> Non
                     run_id="raw-debug",
                     include_payloads=True,
                     raw_trace_payloads=True,
+                    include_metadata_in_traces=True,
                     metadata={"api_key": secret},
                 ),
                 trace_store=store,
