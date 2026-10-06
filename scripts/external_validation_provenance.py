@@ -65,11 +65,20 @@ def implementation_provenance(
     distribution: str | None = None,
 ) -> dict[str, Any]:
     """Build provenance without pretending the fixture revision is the executed revision."""
-    detected = explicit_revision or git_revision(source_path)
+    detected_git = git_revision(source_path)
+    if (
+        explicit_revision is not None
+        and detected_git is not None
+        and explicit_revision != detected_git
+    ):
+        raise ValueError(
+            "explicit implementation revision does not match the executed git checkout"
+        )
+    detected = explicit_revision or detected_git
     revision_source = (
         "explicit"
         if explicit_revision
-        else ("git" if detected else "unavailable")
+        else ("git" if detected_git else "unavailable")
     )
     return {
         "commit": detected,
