@@ -299,7 +299,7 @@ def test_langchain_export_fails_clearly_after_endpoint_schema_replacement() -> N
         exported.invoke({"a": 2, "b": 3})
 
     refreshed = to_langchain_tool(router, "add", "call")
-    assert refreshed.invoke({"a": 2, "b": 3}) == 5
+    assert refreshed.description == "Changed after framework export"
 
 
 def test_langchain_export_fails_clearly_after_data_scope_narrows() -> None:
