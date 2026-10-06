@@ -102,3 +102,5 @@ router.add_sparql_graph(
 
 Deterministic SDK-shape test는 release gate에 포함합니다. Native adapter가 존재한다는 사실과
 모든 vendor/version/deployment의 외부 live acceptance가 완료됐다는 주장은 구분합니다.
+
+hidden node/edge/property predicate를 backend에 전달하려면 `ScopedGraphStoreBackend`와 `supports_trusted_filters = True`를 명시적으로 구현해야 합니다. 이를 지원하지 않는 native property-graph/RDF adapter는 trusted filter가 존재할 때 traversal I/O 전에 fail-closed 처리합니다.

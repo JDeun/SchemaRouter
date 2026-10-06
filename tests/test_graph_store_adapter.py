@@ -10,6 +10,7 @@ import pytest
 from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
+    DataScopeRule,
     ExecutionPlan,
     GraphNodeTypeSpec,
     GraphRelationshipTypeSpec,
@@ -20,6 +21,7 @@ from schemarouter import (
     SchemaRouter,
     SchemaValidationError,
     ToolCall,
+    TrustedFilterBinding,
 )
 
 
@@ -261,6 +263,145 @@ async def test_graphs_compose_with_principal_authorization() -> None:
         config=RunConfig(principal=executive),
     )
     assert result[0].data[0]["relationship"] == "reportsTo"
+
+
+@pytest.mark.asyncio
+async def test_graph_trusted_filters_fail_closed_before_unscoped_backend_io() -> None:
+    policy = AuthorizationPolicy(
+        rules=(
+            AuthorizationRule(
+                effect="allow",
+                operation="knowledge.org.*",
+                roles_any=("employee",),
+            ),
+        ),
+        data_rules=(
+            DataScopeRule(
+                operation="knowledge.org.*",
+                roles_any=("employee",),
+                trusted_filters=(
+                    TrustedFilterBinding(
+                        field="tenant",
+                        principal_value="attribute:tenant_id",
+                    ),
+                ),
+            ),
+        ),
+    )
+    backend = FakeGraphBackend()
+    router = SchemaRouter(authorization_policy=policy)
+    await router.aadd_graph_store(
+        backend,
+        database_name="knowledge",
+        graphs={"org"},
+        remote=False,
+    )
+    principal = PrincipalContext(
+        subject="alice",
+        roles=("employee",),
+        attributes={"tenant_id": "tenant-a"},
+    )
+
+    with pytest.raises(PolicyViolationError, match="authorization denied"):
+        await router.execute(
+            _plan(
+                router,
+                "knowledge.org",
+                start_id="person-1",
+                fields=["source_id", "target_id", "relationship"],
+                relationship_types=["MEMBER_OF"],
+            ),
+            config=RunConfig(principal=principal),
+        )
+
+    assert backend.calls == []
+
+
+class ScopedFakeGraphBackend(FakeGraphBackend):
+    supports_trusted_filters = True
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.trusted_filters: dict[str, Any] | None = None
+
+    def traverse(
+        self,
+        *,
+        graph: str,
+        start_id: str,
+        relationship_types: tuple[str, ...],
+        direction: str,
+        max_hops: int,
+        limit: int,
+        include_fields: tuple[str, ...],
+        trusted_filters: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        self.trusted_filters = trusted_filters
+        return super().traverse(
+            graph=graph,
+            start_id=start_id,
+            relationship_types=relationship_types,
+            direction=direction,
+            max_hops=max_hops,
+            limit=limit,
+            include_fields=include_fields,
+        )
+
+
+@pytest.mark.asyncio
+async def test_graph_scoped_backend_composes_filters_relationships_and_hops() -> None:
+    policy = AuthorizationPolicy(
+        rules=(
+            AuthorizationRule(
+                effect="allow",
+                operation="knowledge.org.*",
+                roles_any=("employee",),
+            ),
+        ),
+        data_rules=(
+            DataScopeRule(
+                operation="knowledge.org.*",
+                roles_any=("employee",),
+                trusted_filters=(
+                    TrustedFilterBinding(
+                        field="tenant",
+                        principal_value="attribute:tenant_id",
+                    ),
+                ),
+                allowed_relationships=("MEMBER_OF",),
+                max_hops=1,
+            ),
+        ),
+    )
+    backend = ScopedFakeGraphBackend()
+    router = SchemaRouter(authorization_policy=policy)
+    await router.aadd_graph_store(
+        backend,
+        database_name="knowledge",
+        graphs={"org"},
+        default_max_hops=3,
+        remote=False,
+    )
+    principal = PrincipalContext(
+        subject="alice",
+        roles=("employee",),
+        attributes={"tenant_id": "tenant-a"},
+    )
+
+    result = await router.execute(
+        _plan(
+            router,
+            "knowledge.org",
+            start_id="person-1",
+            fields=["source_id", "target_id", "relationship"],
+            relationship_types=["MEMBER_OF"],
+        ),
+        config=RunConfig(principal=principal),
+    )
+
+    assert result[0].data[0]["relationship"] == "MEMBER_OF"
+    assert backend.trusted_filters == {"tenant": "tenant-a"}
+    assert backend.calls[0]["max_hops"] == 1
 
 
 def test_graph_registration_can_limit_graphs_before_exposure() -> None:
