@@ -12,12 +12,14 @@ from pydantic import Field, model_validator
 from ..authorization import _current_data_scope
 from ..errors import PolicyViolationError, RegistrationError, SchemaValidationError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, StrictModel, ToolCall, ToolSpec
+from .discovery_limits import NativeDiscoveryBudget, NativeDiscoveryLimits
 
 _TRAVERSE_ENDPOINT = "traverse"
 _MAX_HOPS = 5
 _MAX_LIMIT = 500
 _MAX_DISCOVERY_SOURCES = 128
 _MAX_SCHEMA_ITEMS_PER_GRAPH = 256
+_MAX_GENERATED_BYTES = 8 * 1024 * 1024
 
 GraphModel = Literal["property_graph", "rdf"]
 GraphDirection = Literal["out", "in", "both"]
@@ -306,6 +308,7 @@ async def introspect_graph_backend(
     offload_sync_backend: bool | None = None,
     max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
     max_schema_items_per_graph: int = _MAX_SCHEMA_ITEMS_PER_GRAPH,
+    max_generated_bytes: int = _MAX_GENERATED_BYTES,
 ) -> tuple[GraphSourceBinding, ...]:
     """Compile trusted graph/RDF schema descriptors into bounded traversal capabilities."""
 
@@ -319,6 +322,8 @@ async def introspect_graph_backend(
         raise ValueError("max_discovery_sources must be positive")
     if max_schema_items_per_graph < 1:
         raise ValueError("max_schema_items_per_graph must be positive")
+    if max_generated_bytes < 1:
+        raise ValueError("max_generated_bytes must be positive")
 
     selected = None if graphs is None else {str(value) for value in graphs}
     if selected == set():
@@ -403,6 +408,9 @@ async def introspect_graph_backend(
         if missing:
             raise RegistrationError("unknown graphs: " + ", ".join(missing))
 
+    budget = NativeDiscoveryBudget(
+        NativeDiscoveryLimits(max_generated_bytes=max_generated_bytes)
+    )
     bindings: list[GraphSourceBinding] = []
     used_names: set[str] = set()
     for graph in discovered:
@@ -581,6 +589,7 @@ async def introspect_graph_backend(
                 "graph": graph.name,
             },
         )
+        budget.consume_generated(tool)
         bindings.append(
             GraphSourceBinding(
                 tool=tool,

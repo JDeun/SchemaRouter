@@ -19,11 +19,13 @@ from ..models import (
     ToolCall,
     ToolSpec,
 )
+from .discovery_limits import NativeDiscoveryBudget, NativeDiscoveryLimits
 
 _SEARCH_ENDPOINT = "search"
 _MAX_TOP_K = 100
 _MAX_DISCOVERY_SOURCES = 128
 _MAX_DISCOVERY_FIELDS = 256
+_MAX_GENERATED_BYTES = 8 * 1024 * 1024
 
 
 class VectorMetadataField(StrictModel):
@@ -271,6 +273,7 @@ async def introspect_vector_backend(
     offload_sync_backend: bool | None = None,
     max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
     max_fields_per_collection: int = _MAX_DISCOVERY_FIELDS,
+    max_generated_bytes: int = _MAX_GENERATED_BYTES,
 ) -> tuple[VectorCollectionBinding, ...]:
     """Compile trusted vector collection descriptors into bounded search capabilities."""
 
@@ -282,6 +285,8 @@ async def introspect_vector_backend(
         raise ValueError("max_discovery_sources must be positive")
     if max_fields_per_collection < 1:
         raise ValueError("max_fields_per_collection must be positive")
+    if max_generated_bytes < 1:
+        raise ValueError("max_generated_bytes must be positive")
 
     selected = None if collections is None else {str(value) for value in collections}
     if selected == set():
@@ -340,6 +345,9 @@ async def introspect_vector_backend(
                 "unknown vector collections/indexes: " + ", ".join(missing)
             )
 
+    budget = NativeDiscoveryBudget(
+        NativeDiscoveryLimits(max_generated_bytes=max_generated_bytes)
+    )
     bindings: list[VectorCollectionBinding] = []
     used_names: set[str] = set()
     for collection in discovered:
@@ -458,6 +466,7 @@ async def introspect_vector_backend(
                 "collection": collection.name,
             },
         )
+        budget.consume_generated(tool)
         bindings.append(
             VectorCollectionBinding(
                 tool=tool,

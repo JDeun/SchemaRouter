@@ -580,3 +580,18 @@ def test_vector_explicit_selection_skips_unrelated_malformed_descriptor() -> Non
     )
 
     assert keys == ("vectors.selected",)
+
+
+def test_vector_generated_contract_budget_is_failure_atomic() -> None:
+    router = SchemaRouter()
+
+    with pytest.raises(RegistrationError, match="generated schema bytes"):
+        router.add_vector_store(
+            FakeVectorBackend(),
+            lambda query: [0.1, 0.2, 0.3],
+            database_name="vectors",
+            max_generated_bytes=1,
+            remote=False,
+        )
+
+    assert router.registry.keys() == ()
