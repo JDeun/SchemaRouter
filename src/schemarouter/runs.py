@@ -8,6 +8,7 @@ from pydantic import Field, model_validator
 
 from .authorization import PrincipalContext
 from .models import StrictModel
+from .trace_redaction import TraceRedactionConfig
 
 
 class RetryPolicy(StrictModel):
@@ -64,8 +65,18 @@ class RunConfig(StrictModel):
     execution_mode: ExecutionMode = "sequential"
     max_parallel_calls: int = Field(default=8, ge=1, le=128)
     include_payloads: bool = False
+    trace_redaction: TraceRedactionConfig = Field(default_factory=TraceRedactionConfig)
+    raw_trace_payloads: bool = False
     retry: RetryPolicy = Field(default_factory=RetryPolicy)
     budget: ExecutionBudget = Field(default_factory=ExecutionBudget)
+
+    @model_validator(mode="after")
+    def validate_trace_payload_mode(self) -> RunConfig:
+        if self.raw_trace_payloads and not self.include_payloads:
+            raise ValueError(
+                "raw_trace_payloads=True requires include_payloads=True"
+            )
+        return self
 
 
 RunEventName = Literal[

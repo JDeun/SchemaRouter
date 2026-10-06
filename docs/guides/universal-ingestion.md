@@ -54,6 +54,39 @@ The built-in acceptance profiles are Materials Project, Crossref, and Tavily.
 Protocol-specific code is added to core only when it preserves useful machine-readable semantics
 that generic HTTP, Python, or plugin paths would lose.
 
+## Network trust boundary
+
+URL-backed discovery and execution are network trust boundaries. The default
+`NetworkPolicy.trusted_internal()` preserves existing local/intranet deployments, so applications
+must not pass model- or user-controlled URLs to that default configuration.
+
+When a URL can be influenced by less-trusted input, configure a public-network policy:
+
+```python
+from schemarouter import NetworkPolicy, SchemaRouter
+
+router = SchemaRouter(
+    network_policy=NetworkPolicy.public_only(
+        allowed_ports={80, 443},
+    )
+)
+await router.add_url("https://api.example.com/openapi.json", kind="openapi")
+```
+
+The public profile rejects loopback, link-local, private, multicast/reserved, and common cloud
+metadata destinations. Hostnames are IDNA-normalized and resolved immediately before network
+access; every redirect and external OpenAPI reference is checked again. The same policy is carried
+into OpenAPI/HTTP JSON, GraphQL, OData, OpenRPC, OPTIMADE, and MCP HTTP execution bindings.
+
+Explicit internal services can be trusted deliberately with `allowed_hosts`. Trusted headers are
+not forwarded through cross-origin schema redirects, and protocol adapters that do not support
+redirects continue to reject them.
+
+DNS validation and the HTTP client's connection lookup are separate operations. The built-in
+public policy therefore narrows DNS-rebinding exposure but does not claim connection-level DNS
+pinning. Deployments that require that stronger property should use a transport/resolver pair that
+pins the validated address or enforce the same egress policy at the network layer.
+
 ## Broad-domain conformance matrix
 
 The machine-readable regression fixture is

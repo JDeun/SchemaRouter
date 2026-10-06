@@ -10,8 +10,10 @@ from pathlib import Path
 from typing import Any, Protocol
 from urllib.parse import urlparse
 
+from .._http_headers import validate_trusted_headers
 from ..errors import InvocationUnavailableError, SchemaSourceError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
+from ..network_policy import TRUSTED_INTERNAL_NETWORK_POLICY, NetworkPolicy
 
 _PROTECTED_MCP_HEADERS = {
     "accept",
@@ -173,21 +175,29 @@ class _BoundHTTPMCPClientFactory:
         *,
         headers: Mapping[str, str] | None,
         client_factory: MCPClientFactory,
+        network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY,
     ) -> None:
         self.url = url
         self.headers = headers
         self.client_factory = client_factory
+        self.network_policy = network_policy
 
     def __call__(
         self,
         *,
         timeout: float = 20.0,
     ) -> AbstractAsyncContextManager[Any]:
-        return self.client_factory(
+        return self._open(timeout=timeout)
+
+    @asynccontextmanager
+    async def _open(self, *, timeout: float):
+        await self.network_policy.authorize(self.url)
+        async with self.client_factory(
             self.url,
             headers=self.headers,
             timeout=timeout,
-        )
+        ) as client:
+            yield client
 
 
 def _validated_trusted_headers(
@@ -195,20 +205,16 @@ def _validated_trusted_headers(
 ) -> dict[str, str] | None:
     if headers is None:
         return None
-    result: dict[str, str] = {}
-    for name, value in headers.items():
-        if not isinstance(name, str) or not name.strip():
-            raise ValueError("MCP trusted header names must be non-empty strings")
-        if not isinstance(value, str):
-            raise ValueError("MCP trusted header values must be strings")
-        if "\r" in name or "\n" in name or "\r" in value or "\n" in value:
-            raise ValueError("MCP trusted headers must not contain newlines")
-        normalized = name.strip().casefold()
+    result = validate_trusted_headers(
+        headers,
+        label="MCP trusted_headers",
+    )
+    for name in result:
+        normalized = name.casefold()
         if normalized in _PROTECTED_MCP_HEADERS or normalized.startswith("mcp-"):
             raise ValueError(
                 f"MCP protocol header {name!r} is controlled by the SDK and cannot be overridden"
             )
-        result[name.strip()] = value
     return result
 
 
@@ -661,6 +667,7 @@ async def inspect_mcp_url(
     trusted_headers: Mapping[str, str] | None = None,
     timeout: float = 20.0,
     client_factory: MCPClientFactory | None = None,
+    network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY,
 ) -> ToolSpec:
     """Connect to a Streamable HTTP MCP URL and import all advertised tools."""
     _validate_mcp_url(url)
@@ -670,6 +677,7 @@ async def inspect_mcp_url(
         url,
         headers=headers,
         client_factory=factory,
+        network_policy=network_policy,
     )
     transport_fingerprint = hashlib.sha256(
         json.dumps(
@@ -717,6 +725,7 @@ class MCPRemoteInvoker(MCPBoundInvoker):
         trusted_headers: Mapping[str, str] | None = None,
         timeout: float = 20.0,
         client_factory: MCPClientFactory | None = None,
+        network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY,
     ) -> None:
         _validate_mcp_url(url)
         headers = _validated_trusted_headers(trusted_headers)
@@ -726,6 +735,7 @@ class MCPRemoteInvoker(MCPBoundInvoker):
                 url,
                 headers=headers,
                 client_factory=factory,
+                network_policy=network_policy,
             ),
             timeout=timeout,
         )
