@@ -36,6 +36,7 @@ from .errors import (
     RegistrationError,
     SchemaDriftError,
     SchemaValidationError,
+    TransientInvocationError,
 )
 from .evidence import available_evidence, field_evidence_status, global_evidence_status
 from .hooks import ExecutionHooks
@@ -1447,7 +1448,7 @@ class RegistryExecutor:
                 PolicyViolationError,
             ):
                 raise
-            except Exception as exc:  # noqa: BLE001
+            except TransientInvocationError as exc:
                 last_error = exc
                 if attempt >= max_attempts:
                     break
@@ -1457,6 +1458,10 @@ class RegistryExecutor:
                         retry.max_backoff_seconds,
                         delay * retry.backoff_multiplier,
                     )
+            except Exception:
+                # Adapter/programming/configuration failures are deterministic unless the
+                # trusted invoker explicitly classifies them as transient above.
+                raise
 
         if isinstance(last_error, InvocationUnavailableError):
             if not isinstance(last_error, _OffloadedSyncCapacityUnavailable):
@@ -1465,6 +1470,8 @@ class RegistryExecutor:
                     call.endpoint,
                     tool.fingerprint,
                 )
+            raise last_error
+        if isinstance(last_error, TransientInvocationError):
             raise last_error
         raise ExecutionError(
             f"invocation failed for {call.tool}.{call.endpoint} after {max_attempts} attempt(s)"
