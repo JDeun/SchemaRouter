@@ -71,8 +71,12 @@ AuthorizationRule(
 Unauthorized graph capabilities are non-disclosed before model selection and are revalidated before
 execution.
 
-Node/property/relationship visibility, allowed relationship sets, and maximum traversal depth are
-applied through principal DataScope rules and revalidated at execution.
+Allowed relationship sets and maximum traversal depth are applied through principal DataScope
+rules and revalidated at execution. Hidden node/edge/property predicates require an explicit
+`ScopedGraphStoreBackend` implementation with `supports_trusted_filters = True`. If a DataScope
+rule supplies trusted filters to a backend that has not declared and implemented that contract,
+SchemaRouter fails closed before traversal I/O. The built-in native graph/RDF adapters do not yet
+claim this predicate capability.
 
 ## Native vendor adapters
 
