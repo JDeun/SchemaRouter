@@ -58,6 +58,27 @@ class MCPBoundClientFactory(Protocol):
     ) -> AbstractAsyncContextManager[Any]: ...
 
 
+@dataclass(frozen=True)
+class MCPDiscoveryLimits:
+    """Resource limits for untrusted MCP tools/list discovery."""
+
+    max_pages: int = 64
+    max_tools: int = 1024
+    max_tool_schema_bytes: int = 512 * 1024
+    max_total_schema_bytes: int = 5 * 1024 * 1024
+
+    def __post_init__(self) -> None:
+        for name in (
+            "max_pages",
+            "max_tools",
+            "max_tool_schema_bytes",
+            "max_total_schema_bytes",
+        ):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                raise ValueError(f"{name} must be a positive integer")
+
+
 def _validate_stdio_text(value: str, *, label: str) -> str:
     if not isinstance(value, str) or not value:
         raise ValueError(f"{label} must be a non-empty string")
@@ -464,6 +485,23 @@ def _as_dict(value: Any) -> dict[str, Any]:
     raise TypeError(f"cannot convert MCP value {type(value)!r} to dict")
 
 
+def _mcp_tool_schema_size(item: dict[str, Any]) -> int:
+    payload = {
+        "inputSchema": item.get("inputSchema") or item.get("input_schema") or {},
+        "outputSchema": item.get("outputSchema") or item.get("output_schema") or {},
+    }
+    try:
+        encoded = json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise SchemaSourceError("MCP tool schema is not JSON serializable") from exc
+    return len(encoded)
+
+
 def tool_from_mcp(
     server_name: str,
     tools_list_result: dict[str, Any] | list[dict[str, Any]],
@@ -564,25 +602,84 @@ async def inspect_mcp_client_factory(
     timeout: float = 20.0,
     transport: str = "custom",
     transport_fingerprint: str | None = None,
+    discovery_limits: MCPDiscoveryLimits | None = None,
 ) -> ToolSpec:
     """Inspect an MCP server through an already-bound trusted transport factory."""
 
-    raw_tools: list[dict[str, Any]] = []
-    try:
+    limits = discovery_limits or MCPDiscoveryLimits()
+
+    async def discover() -> tuple[list[dict[str, Any]], str | None, Any]:
+        raw_tools: list[dict[str, Any]] = []
+        total_schema_bytes = 0
+        page_count = 0
+        seen_cursors: set[str] = set()
+
         async with factory(timeout=timeout) as client:
             cursor: str | None = None
             while True:
                 page = await client.list_tools(cursor=cursor)
-                raw_tools.extend(_as_dict(tool) for tool in page.tools)
-                cursor = page.next_cursor
-                if cursor is None:
+                page_count += 1
+
+                page_tools = getattr(page, "tools", None)
+                if page_tools is None:
+                    raise SchemaSourceError("MCP tools/list response is missing tools")
+
+                for raw_tool in page_tools:
+                    if len(raw_tools) >= limits.max_tools:
+                        raise SchemaSourceError(
+                            "MCP tools/list exceeded configured tool-count limit "
+                            f"({limits.max_tools})"
+                        )
+                    item = _as_dict(raw_tool)
+                    schema_size = _mcp_tool_schema_size(item)
+                    if schema_size > limits.max_tool_schema_bytes:
+                        raise SchemaSourceError(
+                            "MCP tool schema exceeded configured per-tool byte limit "
+                            f"({limits.max_tool_schema_bytes})"
+                        )
+                    if total_schema_bytes + schema_size > limits.max_total_schema_bytes:
+                        raise SchemaSourceError(
+                            "MCP tools/list exceeded configured aggregate schema byte limit "
+                            f"({limits.max_total_schema_bytes})"
+                        )
+                    total_schema_bytes += schema_size
+                    raw_tools.append(item)
+
+                next_cursor = getattr(page, "next_cursor", None)
+                if next_cursor is None:
                     break
+                if not isinstance(next_cursor, str):
+                    raise SchemaSourceError(
+                        "MCP tools/list returned a non-string pagination cursor"
+                    )
+                if next_cursor in seen_cursors:
+                    raise SchemaSourceError(
+                        "MCP tools/list returned a repeated pagination cursor"
+                    )
+                seen_cursors.add(next_cursor)
+                if page_count >= limits.max_pages:
+                    raise SchemaSourceError(
+                        "MCP tools/list exceeded configured page limit "
+                        f"({limits.max_pages})"
+                    )
+                cursor = next_cursor
 
             info = getattr(client, "server_info", None)
             discovered_name = getattr(info, "name", None)
             protocol_version = getattr(client, "protocol_version", None)
+            return raw_tools, discovered_name, protocol_version
+
+    try:
+        raw_tools, discovered_name, protocol_version = await asyncio.wait_for(
+            discover(),
+            timeout=timeout,
+        )
     except SchemaSourceError:
         raise
+    except asyncio.TimeoutError as exc:
+        raise SchemaSourceError(
+            "MCP tools/list discovery exceeded the configured total timeout"
+        ) from exc
     except Exception as exc:  # noqa: BLE001
         raise SchemaSourceError(
             f"failed to inspect MCP server over {transport!r} transport"
@@ -615,6 +712,7 @@ async def inspect_mcp_stdio(
     server_name: str | None = None,
     namespace: str | None = None,
     timeout: float = 20.0,
+    discovery_limits: MCPDiscoveryLimits | None = None,
 ) -> ToolSpec:
     """Spawn a trusted local MCP stdio server and import all advertised tools."""
 
@@ -625,6 +723,7 @@ async def inspect_mcp_stdio(
         timeout=timeout,
         transport="stdio",
         transport_fingerprint=config.transport_fingerprint,
+        discovery_limits=discovery_limits,
     )
 
 
@@ -682,6 +781,7 @@ async def inspect_mcp_url(
     timeout: float = 20.0,
     client_factory: MCPClientFactory | None = None,
     network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY,
+    discovery_limits: MCPDiscoveryLimits | None = None,
 ) -> ToolSpec:
     """Connect to a Streamable HTTP MCP URL and import all advertised tools."""
     _validate_mcp_url(url)
@@ -710,6 +810,7 @@ async def inspect_mcp_url(
         timeout=timeout,
         transport="streamable_http",
         transport_fingerprint=transport_fingerprint,
+        discovery_limits=discovery_limits,
     )
     custom_client_factory_required = client_factory is not None
     tool.execution_metadata.update(
