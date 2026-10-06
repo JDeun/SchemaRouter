@@ -183,7 +183,10 @@ def main() -> None:
     parser.add_argument("--repeats", type=int, default=20)
     parser.add_argument(
         "--implementation-revision",
-        help="Exact SchemaRouter commit/revision used when it cannot be detected from a git checkout.",
+        help=(
+            "Exact SchemaRouter commit/revision used when it cannot be detected "
+            "from a git checkout."
+        ),
     )
     args = parser.parse_args()
 
