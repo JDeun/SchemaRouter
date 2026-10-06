@@ -3960,6 +3960,7 @@ class SchemaRouter:
         invoker = MCPBoundInvoker(
             client_factory,
             timeout=timeout,
+            discovery_limits=discovery_limits,
         )
         key = self.executor.publish_bound_tool(
             tool,
@@ -4011,6 +4012,7 @@ class SchemaRouter:
         invoker = MCPBoundInvoker(
             MCPStdioClientFactory(config),
             timeout=timeout,
+            discovery_limits=discovery_limits,
         )
         key = self.executor.publish_bound_tool(
             tool,
@@ -4252,6 +4254,11 @@ class SchemaRouter:
                 else None
             )
 
+            effective_mcp_discovery_limits = (
+                mcp_discovery_limits
+                if mcp_discovery_limits is not None
+                else bound.discovery_limits
+            )
             candidate_tool = await inspect_mcp_client_factory(
                 bound.factory,
                 server_name=current.name,
@@ -4259,13 +4266,14 @@ class SchemaRouter:
                 timeout=timeout,
                 transport=transport,
                 transport_fingerprint=transport_fingerprint,
-                discovery_limits=mcp_discovery_limits,
+                discovery_limits=effective_mcp_discovery_limits,
             )
             candidate_tool.provider = current.provider
             candidate_tool.access_mode = current.access_mode
             candidate_invoker = MCPBoundInvoker(
                 bound.factory,
                 timeout=timeout,
+                discovery_limits=effective_mcp_discovery_limits,
             )
         else:
             if source_url is None:
