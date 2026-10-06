@@ -184,7 +184,8 @@ class AccessHealthMonitor:
                 key = (transition.tool_key, entry.endpoint)
                 record = self._probes.get(key)
                 if (
-                    record is not entry.record
+                    record is None
+                    or record is not entry.record
                     or record.tool_fingerprint != transition.expected_old_fingerprint
                 ):
                     continue
