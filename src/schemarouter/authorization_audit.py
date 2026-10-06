@@ -8,6 +8,7 @@ from typing import Literal
 
 AuthorizationAuditEffect = Literal["allow", "deny"]
 AuthorizationAuditPhase = Literal["plan", "execution", "export"]
+AuthorizationAuditMode = Literal["best_effort", "strict"]
 
 
 @dataclass(frozen=True)
@@ -32,6 +33,17 @@ class AuthorizationAuditEvent:
     max_hops: int | None = None
     tool: str | None = None
     endpoint: str | None = None
+
+
+@dataclass(frozen=True)
+class AuthorizationAuditDeliverySnapshot:
+    """Process-local health for the trusted authorization audit delivery boundary."""
+
+    mode: AuthorizationAuditMode
+    configured: bool
+    failure_count: int = 0
+    last_error_type: str | None = None
+    last_delivery_succeeded: bool | None = None
 
 
 AuthorizationAuditHook = Callable[[AuthorizationAuditEvent], None]
