@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sqlite3
 from collections.abc import AsyncIterator, Iterator
+from inspect import isawaitable
 from pathlib import Path
 from threading import RLock
 from typing import Protocol
@@ -544,15 +545,38 @@ class SQLiteRunTraceStore:
         self.close()
 
 
+async def _close_upstream_events(events: AsyncIterator[RunEvent]) -> None:
+    close = getattr(events, "aclose", None)
+    if not callable(close):
+        return
+    result = close()
+    if isawaitable(result):
+        await result
+
+
 async def record_run_events(
     events: AsyncIterator[RunEvent],
     *,
     store: RunTraceStore,
 ) -> AsyncIterator[RunEvent]:
     """Persist an event stream before yielding each event to downstream consumers."""
-    async for event in events:
-        store.append(event)
-        yield event
+    exhausted = False
+    primary_error: BaseException | None = None
+    try:
+        async for event in events:
+            store.append(event)
+            yield event
+        exhausted = True
+    except BaseException as exc:
+        primary_error = exc
+        raise
+    finally:
+        if not exhausted:
+            try:
+                await _close_upstream_events(events)
+            except BaseException:
+                if primary_error is None:
+                    raise
 
 
 def replay_run_events(
