@@ -23,6 +23,7 @@ from schemarouter.capability_snapshot import (
     serialize_capability_snapshot,
     validate_capability_snapshot,
 )
+from schemarouter.document_loading import DocumentLimitError, DocumentLimits
 
 
 def test_snapshot_digest_is_stable_across_order_and_build_time() -> None:
@@ -256,3 +257,20 @@ def test_duplicate_snapshot_sources_fail_semantic_validation() -> None:
 
     with pytest.raises(ValueError, match="duplicate source"):
         validate_capability_snapshot(snapshot)
+
+
+def test_capability_snapshot_loading_enforces_document_limits() -> None:
+    snapshot = build_capability_snapshot([])
+    document = json.dumps(snapshot.model_dump(mode="json"))
+
+    with pytest.raises(DocumentLimitError, match="encoded-size"):
+        load_capability_snapshot(
+            document,
+            document_limits=DocumentLimits(max_bytes=len(document.encode("utf-8")) - 1),
+        )
+
+    with pytest.raises(DocumentLimitError, match="node"):
+        load_capability_snapshot(
+            '{"a":[1,2,3]}',
+            document_limits=DocumentLimits(max_nodes=4),
+        )
