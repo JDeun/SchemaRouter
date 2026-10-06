@@ -555,3 +555,17 @@ def test_graph_discovery_rejects_oversized_descriptor_before_registration() -> N
         )
 
     assert router.registry.keys() == ()
+
+
+def test_graph_generated_contract_budget_is_failure_atomic() -> None:
+    router = SchemaRouter()
+
+    with pytest.raises(RegistrationError, match="generated schema bytes"):
+        router.add_graph_store(
+            FakeGraphBackend(),
+            database_name="knowledge",
+            max_generated_bytes=1,
+            remote=False,
+        )
+
+    assert router.registry.keys() == ()

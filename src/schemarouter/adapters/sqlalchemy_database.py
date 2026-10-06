@@ -18,11 +18,13 @@ from ..models import (
     ToolCall,
     ToolSpec,
 )
+from .discovery_limits import NativeDiscoveryBudget, NativeDiscoveryLimits
 
 _SELECT_ENDPOINT = "select"
 _MAX_LIMIT = 1000
 _MAX_DISCOVERY_RELATIONS = 128
 _MAX_COLUMNS_PER_RELATION = 256
+_MAX_GENERATED_BYTES = 8 * 1024 * 1024
 
 
 def _require_sqlalchemy() -> tuple[Any, Any, Any, Any]:
@@ -176,6 +178,7 @@ def introspect_sqlalchemy_engine(
     remote: bool = True,
     max_discovery_relations: int = _MAX_DISCOVERY_RELATIONS,
     max_columns_per_relation: int = _MAX_COLUMNS_PER_RELATION,
+    max_generated_bytes: int = _MAX_GENERATED_BYTES,
 ) -> tuple[SQLAlchemyTableBinding, ...]:
     """Compile a caller-owned SQLAlchemy Engine into typed read-only capabilities.
 
@@ -191,6 +194,8 @@ def introspect_sqlalchemy_engine(
         raise ValueError("max_discovery_relations must be positive")
     if max_columns_per_relation < 1:
         raise ValueError("max_columns_per_relation must be positive")
+    if max_generated_bytes < 1:
+        raise ValueError("max_generated_bytes must be positive")
 
     MetaData, Table, inspect, _ = _require_sqlalchemy()
     inspector = inspect(engine)
@@ -228,6 +233,9 @@ def introspect_sqlalchemy_engine(
             )
 
     multi_schema = len({schema for schema, _, _ in discovered_relations}) > 1
+    budget = NativeDiscoveryBudget(
+        NativeDiscoveryLimits(max_generated_bytes=max_generated_bytes)
+    )
     bindings: list[SQLAlchemyTableBinding] = []
     used_names: set[str] = set()
 
@@ -393,6 +401,7 @@ def introspect_sqlalchemy_engine(
             },
         )
 
+        budget.consume_generated(tool)
         bindings.append(
             SQLAlchemyTableBinding(
                 tool=tool,
