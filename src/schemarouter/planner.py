@@ -354,6 +354,14 @@ def _visible_endpoint(candidate: _Candidate) -> EndpointSpec:
     return candidate.visible_endpoint or candidate.endpoint
 
 
+@dataclass(frozen=True)
+class _RegistrySnapshot:
+    """Coherent versioned tool catalog used by one planning/retrieval operation."""
+
+    version: int
+    tools: tuple[ToolSpec, ...]
+
+
 @dataclass(frozen=True, order=True)
 class _EndpointRef:
     tool_key: str
@@ -1194,25 +1202,33 @@ class SchemaPlanner:
                 )
         return request
 
-    def _index(self) -> _CandidateIndex:
-        current_version = self.registry.version
-        if (
-            self._candidate_index is not None
-            and self._candidate_index.version == current_version
-        ):
-            return self._candidate_index
+    def _catalog_snapshot(self) -> _RegistrySnapshot:
+        """Capture detached tools and the exact registry version that owns them."""
 
         for _ in range(4):
             before = self.registry.version
             tools = self.registry.tools()
             after = self.registry.version
             if before == after:
-                self._candidate_index = _CandidateIndex(after, tools)
-                return self._candidate_index
+                return _RegistrySnapshot(version=after, tools=tools)
 
         raise PlanningError(
-            "registry changed repeatedly while building the candidate index"
+            "registry changed repeatedly while capturing the planning catalog"
         )
+
+    def _index(
+        self,
+        catalog_snapshot: _RegistrySnapshot | None = None,
+    ) -> _CandidateIndex:
+        snapshot = catalog_snapshot or self._catalog_snapshot()
+        if (
+            self._candidate_index is not None
+            and self._candidate_index.version == snapshot.version
+        ):
+            return self._candidate_index
+
+        self._candidate_index = _CandidateIndex(snapshot.version, snapshot.tools)
+        return self._candidate_index
 
     def _snapshot_tool_fingerprint(self, tool: ToolSpec) -> str:
         """Reuse the fingerprint for an immutable index snapshot when available."""
@@ -1238,7 +1254,10 @@ class SchemaPlanner:
             EndpointSpec | None,
         ]
         | None = None,
+        catalog_snapshot: _RegistrySnapshot | None = None,
     ) -> list[_Candidate]:
+        snapshot = catalog_snapshot or self._catalog_snapshot()
+
         def is_available(tool: ToolSpec, endpoint: EndpointSpec) -> bool:
             if (
                 self.availability_predicate is not None
@@ -1257,11 +1276,11 @@ class SchemaPlanner:
             and not self.structural_retrieval
             and scoring_endpoint_transform is None
         ):
-            endpoint_pairs = self._index().endpoint_pairs(request, intent)
+            endpoint_pairs = self._index(snapshot).endpoint_pairs(request, intent)
         else:
             endpoint_pairs = tuple(
                 (tool, endpoint)
-                for tool in self.registry.tools()
+                for tool in snapshot.tools
                 for endpoint in tool.endpoints
             )
 
@@ -1310,7 +1329,7 @@ class SchemaPlanner:
             and self.candidate_recall_backend is None
         ):
             candidates = []
-            for tool in self.registry.tools():
+            for tool in snapshot.tools:
                 for endpoint in tool.endpoints:
                     if not is_available(tool, endpoint):
                         continue
@@ -1334,7 +1353,7 @@ class SchemaPlanner:
                             ),
                         )
                     )
-        self._sort_candidates(candidates)
+        self._sort_candidates(candidates, catalog_snapshot=snapshot)
         return candidates
 
     @staticmethod
@@ -1378,37 +1397,49 @@ class SchemaPlanner:
             for route_id, terms in entries
         }
 
-    def _sort_candidates(self, candidates: list[_Candidate]) -> None:
-        """Sort candidates without consulting authorization-hidden schema metadata."""
+    def _sort_candidates(
+        self,
+        candidates: list[_Candidate],
+        *,
+        catalog_snapshot: _RegistrySnapshot | None = None,
+    ) -> None:
+        """Sort candidates against one coherent catalog/schema visibility snapshot."""
 
-        scoped_specificity: dict[str, float] | None = None
-        if self.structural_retrieval and any(
-            candidate.visible_endpoint is not None
-            for candidate in candidates
-        ):
-            scoped_specificity = self._structural_specificity_from_candidates(candidates)
+        structural_specificity: dict[str, float] | None = None
+        if self.structural_retrieval:
+            if any(candidate.visible_endpoint is not None for candidate in candidates):
+                structural_specificity = self._structural_specificity_from_candidates(
+                    candidates
+                )
+            else:
+                structural_specificity = self._structural_specificity_by_route(
+                    catalog_snapshot
+                )
 
         candidates.sort(
             key=lambda candidate: self._candidate_sort_key(
                 candidate,
-                structural_specificity=scoped_specificity,
+                structural_specificity=structural_specificity,
             )
         )
 
-    def _structural_specificity_by_route(self) -> dict[str, float]:
+    def _structural_specificity_by_route(
+        self,
+        catalog_snapshot: _RegistrySnapshot | None = None,
+    ) -> dict[str, float]:
         if not self.structural_retrieval:
             return {}
 
-        current_version = self.registry.version
+        snapshot = catalog_snapshot or self._catalog_snapshot()
         if (
             self._structural_specificity_cache is not None
-            and self._structural_specificity_cache[0] == current_version
+            and self._structural_specificity_cache[0] == snapshot.version
         ):
             return self._structural_specificity_cache[1]
 
         entries: list[tuple[str, set[str]]] = []
         frequencies: dict[str, int] = {}
-        for tool in self.registry.tools():
+        for tool in snapshot.tools:
             for endpoint in tool.endpoints:
                 route_id = f"{tool.key}.{endpoint.name}"
                 terms = _schema_specificity_terms(tool, endpoint)
@@ -1445,7 +1476,7 @@ class SchemaPlanner:
                 )
 
         self._structural_specificity_cache = (
-            current_version,
+            snapshot.version,
             result,
         )
         return result
