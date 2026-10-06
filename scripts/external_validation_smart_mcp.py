@@ -176,7 +176,12 @@ def score(
     rows = submitted.get("results")
     if not isinstance(rows, list):
         raise ValueError("results must be a list")
-    result_map = {row.get("id"): row for row in rows if isinstance(row, dict)}
+    if not all(isinstance(row, dict) for row in rows):
+        raise ValueError("every result row must be an object")
+    result_ids = [row.get("id") for row in rows]
+    if len(result_ids) != len(set(result_ids)):
+        raise ValueError("result ids must not contain duplicates")
+    result_map = {row["id"]: row for row in rows}
     if set(result_map) != set(case_map):
         raise ValueError("result ids must match case ids exactly")
 
@@ -221,6 +226,10 @@ def score(
             exposed_names.append(name)
         if len(exposed_names) != len(set(exposed_names)):
             raise ValueError(f"{case_id} exposes duplicate contracts")
+        if exposed_names != candidates:
+            raise ValueError(
+                f"{case_id} exposed_contracts must match candidate_tools in ranked order"
+            )
 
         latency = _finite_nonnegative(row.get("latency_ms"), field=f"{case_id}.latency_ms")
         if latency is not None:
