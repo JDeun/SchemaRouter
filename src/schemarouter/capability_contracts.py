@@ -60,6 +60,59 @@ class SemanticEquivalence(StrictModel):
         return semantic_id == self.canonical_id or semantic_id in self.aliases
 
 
+def _normalize_semantic_equivalences(
+    items: list[SemanticEquivalence],
+) -> list[SemanticEquivalence]:
+    """Collapse overlapping declarations into deterministic equivalence classes."""
+
+    parent: dict[str, str] = {}
+
+    def find(value: str) -> str:
+        parent.setdefault(value, value)
+        root = value
+        while parent[root] != root:
+            root = parent[root]
+        while parent[value] != value:
+            next_value = parent[value]
+            parent[value] = root
+            value = next_value
+        return root
+
+    def union(left: str, right: str) -> None:
+        left_root = find(left)
+        right_root = find(right)
+        if left_root == right_root:
+            return
+        if left_root < right_root:
+            parent[right_root] = left_root
+        else:
+            parent[left_root] = right_root
+
+    for item in items:
+        members = sorted({item.canonical_id, *item.aliases})
+        if not members:
+            continue
+        anchor = members[0]
+        find(anchor)
+        for member in members[1:]:
+            union(anchor, member)
+
+    groups: dict[str, set[str]] = {}
+    for member in sorted(parent):
+        groups.setdefault(find(member), set()).add(member)
+
+    normalized: list[SemanticEquivalence] = []
+    for members in sorted(groups.values(), key=lambda value: tuple(sorted(value))):
+        ordered = sorted(members)
+        normalized.append(
+            SemanticEquivalence(
+                canonical_id=ordered[0],
+                aliases=set(ordered[1:]),
+            )
+        )
+    return normalized
+
+
 class UnitConversion(StrictModel):
     """Declared safe unit conversion relation for one dimension."""
 
@@ -71,6 +124,15 @@ class UnitConversion(StrictModel):
 class CompatibilityContext(StrictModel):
     semantic_equivalences: list[SemanticEquivalence] = Field(default_factory=list)
     unit_conversions: list[UnitConversion] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def normalize_semantic_equivalences(self) -> CompatibilityContext:
+        object.__setattr__(
+            self,
+            "semantic_equivalences",
+            _normalize_semantic_equivalences(self.semantic_equivalences),
+        )
+        return self
 
     def semantics_equivalent(self, left: str, right: str) -> bool:
         if left == right:

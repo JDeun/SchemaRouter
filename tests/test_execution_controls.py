@@ -9,6 +9,7 @@ from schemarouter import (
     ExecutionBudget,
     ExecutionBudgetExceededError,
     ExecutionError,
+    ExecutionHooks,
     ExecutionPlan,
     ExecutionPolicy,
     InMemoryRegistry,
@@ -538,6 +539,95 @@ async def test_registry_drift_during_async_approval_fails_closed() -> None:
 
     with pytest.raises(SchemaDriftError, match="tool contract changed"):
         await executor.execute(plan)
+
+
+@pytest.mark.asyncio
+async def test_policy_change_during_async_approval_fails_closed_before_invocation() -> None:
+    holder: dict[str, RegistryExecutor] = {}
+
+    async def approve(tool, endpoint, call):
+        del tool, endpoint, call
+        await asyncio.sleep(0)
+        holder["executor"].policy = ExecutionPolicy(approval_mode="never")
+        return True
+
+    _, executor, _, plan = _setup(
+        read_only=True,
+        policy=ExecutionPolicy(approval_mode="all"),
+        approval_callback=approve,
+    )
+    holder["executor"] = executor
+    invoked: list[str] = []
+    executor.bind(
+        "demo",
+        lambda endpoint, arguments: invoked.append(endpoint) or {"ok": True},
+    )
+
+    with pytest.raises(ApprovalDeniedError, match="execution policy changed"):
+        await executor.execute(plan)
+
+    assert invoked == []
+
+
+@pytest.mark.asyncio
+async def test_before_hook_cannot_add_approval_requirement_after_no_approval_decision() -> None:
+    holder: dict[str, RegistryExecutor] = {}
+
+    def strengthen_policy(tool, endpoint, call) -> None:
+        del tool, endpoint, call
+        holder["executor"].policy = ExecutionPolicy(
+            rules=(
+                PolicyRule(
+                    operation="demo.run",
+                    effect="require_approval",
+                    name="late-review",
+                ),
+            ),
+        )
+
+    _, executor, _, plan = _setup(
+        read_only=True,
+        policy=ExecutionPolicy(),
+    )
+    holder["executor"] = executor
+    executor.hooks = ExecutionHooks(before_call=(strengthen_policy,))
+    invoked: list[str] = []
+    executor.bind(
+        "demo",
+        lambda endpoint, arguments: invoked.append(endpoint) or {"ok": True},
+    )
+
+    with pytest.raises(ApprovalDeniedError, match="execution policy changed"):
+        await executor.execute(plan)
+
+    assert invoked == []
+
+
+@pytest.mark.asyncio
+async def test_offloaded_sync_invocation_rechecks_policy_at_worker_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, executor, _, plan = _setup(
+        read_only=True,
+        policy=ExecutionPolicy(),
+    )
+    invoked: list[str] = []
+    executor.bind(
+        "demo",
+        lambda endpoint, arguments: invoked.append(endpoint) or {"ok": True},
+        offload_sync=True,
+    )
+
+    async def delayed_to_thread(function, /, *args, **kwargs):
+        executor.policy = ExecutionPolicy(approval_mode="all")
+        return function(*args, **kwargs)
+
+    monkeypatch.setattr(asyncio, "to_thread", delayed_to_thread)
+
+    with pytest.raises(ApprovalDeniedError, match="execution policy changed"):
+        await executor.execute(plan)
+
+    assert invoked == []
 
 
 @pytest.mark.asyncio
