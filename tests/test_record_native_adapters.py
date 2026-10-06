@@ -15,6 +15,7 @@ from schemarouter import (
     ToolCall,
     TrustedFilterBinding,
 )
+from schemarouter.adapters.record_native import ElasticRecordBackend
 
 
 def _plan(
@@ -238,6 +239,103 @@ async def test_elastic_and_opensearch_native_mapping_and_query(
     assert query["bool"]["must"][0]["multi_match"]["query"] == "healthy"
     assert {"term": {"service": "router"}} in query["bool"]["filter"]
     assert any("range" in item for item in query["bool"]["filter"])
+
+
+class FakeLegacyElasticClient:
+    def __init__(self) -> None:
+        self.indices = FakeIndices()
+        self.calls: list[dict[str, Any]] = []
+
+    def search(
+        self,
+        *,
+        index: str,
+        body: dict[str, Any],
+    ) -> dict[str, Any]:
+        self.calls.append({"index": index, "body": dict(body)})
+        return {
+            "hits": {
+                "hits": [
+                    {
+                        "_id": "legacy-1",
+                        "_source": {
+                            "message": "legacy healthy",
+                            "status": 200,
+                        },
+                    }
+                ]
+            }
+        }
+
+
+def test_elastic_legacy_body_signature_is_dispatched_without_probe_retry() -> None:
+    client = FakeLegacyElasticClient()
+    backend = ElasticRecordBackend(client, indices=["logs"])
+    backend.list_sources()
+
+    rows = backend.query(
+        source="logs",
+        text_query="healthy",
+        filters={},
+        start_time=None,
+        end_time=None,
+        limit=2,
+        include_fields=("_id", "message", "status"),
+    )
+
+    assert rows == [
+        {"_id": "legacy-1", "message": "legacy healthy", "status": 200}
+    ]
+    assert len(client.calls) == 1
+    assert client.calls[0]["index"] == "logs"
+    assert client.calls[0]["body"]["size"] == 2
+    assert client.calls[0]["body"]["_source"] == ["message", "status"]
+
+
+class FailingModernElasticClient:
+    def __init__(self) -> None:
+        self.indices = FakeIndices()
+        self.calls: list[dict[str, Any]] = []
+
+    def search(
+        self,
+        *,
+        index: str,
+        size: int,
+        query: dict[str, Any],
+        source: list[str],
+    ) -> dict[str, Any]:
+        self.calls.append(
+            {
+                "index": index,
+                "size": size,
+                "query": query,
+                "source": list(source),
+            }
+        )
+        raise TypeError("vendor-internal type error")
+
+
+def test_elastic_internal_type_error_does_not_trigger_second_request() -> None:
+    client = FailingModernElasticClient()
+    backend = ElasticRecordBackend(client, indices=["logs"])
+    backend.list_sources()
+
+    with pytest.raises(TypeError, match="vendor-internal type error"):
+        backend.query(
+            source="logs",
+            text_query="healthy",
+            filters={},
+            start_time=None,
+            end_time=None,
+            limit=2,
+            include_fields=("_id", "message"),
+        )
+
+    assert len(client.calls) == 1
+    assert client.calls[0]["index"] == "logs"
+    assert "query" in client.calls[0]
+    assert "source" in client.calls[0]
 
 
 class FakeDynamoClient:
