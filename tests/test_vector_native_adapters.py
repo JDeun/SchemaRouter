@@ -14,6 +14,7 @@ from schemarouter.adapters.vector_native import (
     QdrantVectorBackend,
     WeaviateVectorBackend,
 )
+from schemarouter.errors import RegistrationError
 
 
 @dataclass
@@ -700,3 +701,56 @@ def test_router_remaining_native_vector_registration_helpers() -> None:
     )
     assert weaviate_keys == ("weaviate.docs",)
 
+
+
+def test_qdrant_explicit_collection_skips_catalog_listing() -> None:
+    class SelectedClient(FakeQdrantClient):
+        def get_collections(self):
+            raise AssertionError("configured collection should bypass catalog listing")
+
+    backend = QdrantVectorBackend(
+        SelectedClient(),
+        collections=("docs",),
+    )
+
+    collections = backend.list_collections()
+    assert [collection.name for collection in collections] == ["docs"]
+
+
+def test_pinecone_catalog_budget_stops_large_iterable() -> None:
+    consumed = 0
+
+    class LargePineconeClient:
+        def list_indexes(self):
+            nonlocal consumed
+
+            def generate():
+                nonlocal consumed
+                for index in range(100):
+                    consumed += 1
+                    yield f"index-{index}"
+
+            return generate()
+
+        def describe_index(self, name):
+            raise AssertionError(f"should fail before describing {name}")
+
+    backend = PineconeVectorBackend(
+        LargePineconeClient(),
+        max_discovery_sources=3,
+    )
+
+    with pytest.raises(RegistrationError, match="Pinecone index discovery exceeded limit=3"):
+        backend.list_collections()
+
+    assert consumed == 4
+
+
+def test_milvus_field_budget_rejects_wide_descriptor() -> None:
+    backend = MilvusVectorBackend(
+        FakeMilvusClient(),
+        max_fields_per_collection=1,
+    )
+
+    with pytest.raises(RegistrationError, match="Milvus fields"):
+        backend.list_collections()
