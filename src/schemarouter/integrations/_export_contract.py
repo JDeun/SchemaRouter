@@ -38,6 +38,8 @@ def _authorized_endpoint_view(
     tool_key: str,
     endpoint_name: str,
     run_config: RunConfig,
+    *,
+    audit_export: bool = True,
 ) -> tuple[ToolSpec, EndpointSpec, EndpointSpec]:
     tool = router.registry.get(tool_key)
     endpoint = tool.endpoint(endpoint_name)
@@ -46,21 +48,32 @@ def _authorized_endpoint_view(
         return tool, endpoint, endpoint
 
     principal = run_config.principal
-    authorized = router._audit_export_authorization(
-        principal,
-        tool,
-        endpoint,
-        run_id=run_config.run_id,
-        principal_audit_id=run_config.principal_audit_id,
+    if principal is None:
+        if audit_export:
+            router._audit_export_authorization(
+                None,
+                tool,
+                endpoint,
+                run_id=run_config.run_id,
+                principal_audit_id=run_config.principal_audit_id,
+            )
+        raise PolicyViolationError(
+            "principal context is required when authorization_policy is configured"
+        )
+
+    authorized = (
+        router._audit_export_authorization(
+            principal,
+            tool,
+            endpoint,
+            run_id=run_config.run_id,
+            principal_audit_id=run_config.principal_audit_id,
+        )
+        if audit_export
+        else policy.visible(principal, tool, endpoint)
     )
     if not authorized:
-        if principal is None:
-            raise PolicyViolationError(
-                "principal context is required when authorization_policy is configured"
-            )
         raise PolicyViolationError("authorization denied for requested capability")
-
-    assert principal is not None
     projected = router._data_scope_endpoint_view(principal, tool, endpoint)
     if projected is None:
         raise PolicyViolationError("authorization denied for requested data scope")
@@ -92,6 +105,7 @@ def _resolve_live_exported_endpoint(
             tool_key,
             endpoint_name,
             run_config,
+            audit_export=False,
         )
     except KeyError as exc:
         raise StaleExportedToolError(
