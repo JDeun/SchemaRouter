@@ -701,11 +701,33 @@ class ChromaVectorBackend:
         dimension_by_collection: Mapping[str, int] | None = None,
         metadata_fields_by_collection: Mapping[str, Sequence[VectorMetadataField]] | None = None,
         metric_by_collection: Mapping[str, str] | None = None,
+        collections: Sequence[str] | None = None,
+        max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
+        max_fields_per_collection: int = _MAX_DISCOVERY_FIELDS,
     ) -> None:
         self._client = client
+        self._collections = (
+            None
+            if collections is None
+            else tuple(
+                str(value)
+                for value in _bounded_values(
+                    collections,
+                    limit=max_discovery_sources,
+                    label="Chroma configured collections",
+                )
+            )
+        )
+        self._max_discovery_sources = max_discovery_sources
         self._dimension_by_collection = dict(dimension_by_collection or {})
         self._metadata_fields_by_collection = {
-            name: tuple(fields)
+            name: tuple(
+                _bounded_values(
+                    fields,
+                    limit=max_fields_per_collection,
+                    label=f"Chroma metadata fields for {name!r}",
+                )
+            )
             for name, fields in (metadata_fields_by_collection or {}).items()
         }
         self._metric_by_collection = dict(metric_by_collection or {})
@@ -740,10 +762,18 @@ class ChromaVectorBackend:
         )
 
     def list_collections(self) -> tuple[VectorCollectionSpec, ...]:
-        raw = self._client.list_collections()
-        if not isinstance(raw, Sequence) or isinstance(raw, (str, bytes)):
-            raise SchemaValidationError(
-                "Chroma list_collections() returned an unexpected response"
+        if self._collections is not None:
+            raw: Sequence[Any] = self._collections
+        else:
+            discovered = self._client.list_collections()
+            if not isinstance(discovered, Sequence) or isinstance(discovered, (str, bytes)):
+                raise SchemaValidationError(
+                    "Chroma list_collections() returned an unexpected response"
+                )
+            raw = _bounded_values(
+                discovered,
+                limit=self._max_discovery_sources,
+                label="Chroma collection discovery",
             )
         results: list[VectorCollectionSpec] = []
         for entry in raw:
