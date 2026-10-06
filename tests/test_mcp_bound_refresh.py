@@ -13,6 +13,7 @@ class RefreshableBoundFactory:
     def __init__(self) -> None:
         self.description = "Return identity"
         self.required_query = False
+        self.extra_tool = False
         self.calls = 0
         self.client = SimpleNamespace(
             server_info=SimpleNamespace(name="bound-refresh"),
@@ -25,24 +26,37 @@ class RefreshableBoundFactory:
             if self.required_query:
                 properties["query"] = {"type": "string"}
                 required.append("query")
-            return SimpleNamespace(
-                tools=[
-                    {
-                        "name": "whoami",
-                        "description": self.description,
-                        "inputSchema": {
-                            "type": "object",
-                            "properties": properties,
-                            "required": required,
+            tools = [
+                {
+                    "name": "whoami",
+                    "description": self.description,
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": properties,
+                        "required": required,
+                    },
+                    "outputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "subject": {"type": "string"},
                         },
+                    },
+                }
+            ]
+            if self.extra_tool:
+                tools.append(
+                    {
+                        "name": "health",
+                        "description": "Return health",
+                        "inputSchema": {"type": "object", "properties": {}},
                         "outputSchema": {
                             "type": "object",
-                            "properties": {
-                                "subject": {"type": "string"},
-                            },
+                            "properties": {"ok": {"type": "boolean"}},
                         },
                     }
-                ],
+                )
+            return SimpleNamespace(
+                tools=tools,
                 next_cursor=None,
             )
 
@@ -178,3 +192,25 @@ async def test_bound_mcp_refresh_fails_closed_without_current_transport_binding(
         match="no current trusted MCP transport binding",
     ):
         await router.arefresh_schema(tool.key)
+
+
+@pytest.mark.asyncio
+async def test_bound_mcp_refresh_preserves_discovery_tool_budget() -> None:
+    factory = RefreshableBoundFactory()
+    router = SchemaRouter()
+    tool = await router.add_mcp_client_factory(
+        factory,
+        name="bounded-refresh",
+        transport="inprocess",
+        transport_fingerprint="fixture-inprocess-v1",
+        max_tools=1,
+    )
+    accepted_fingerprint = tool.fingerprint
+    factory.extra_tool = True
+
+    with pytest.raises(SchemaSourceError, match="max_tools=1"):
+        await router.arefresh_schema(tool.key)
+
+    current = router.registry.get(tool.key)
+    assert current.fingerprint == accepted_fingerprint
+    assert [endpoint.name for endpoint in current.endpoints] == ["whoami"]

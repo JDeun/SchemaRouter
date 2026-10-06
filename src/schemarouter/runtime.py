@@ -13,6 +13,10 @@ from pydantic import TypeAdapter
 from ._loop_affinity import SyncLoopRunner
 from .adapters.base import AdapterRegistry, SourceAdapter
 from .adapters.mcp import (
+    MCP_DISCOVERY_DEFAULT_MAX_PAGES,
+    MCP_DISCOVERY_DEFAULT_MAX_TOOL_BYTES,
+    MCP_DISCOVERY_DEFAULT_MAX_TOOLS,
+    MCP_DISCOVERY_DEFAULT_MAX_TOTAL_BYTES,
     MCPBoundClientFactory,
     MCPBoundInvoker,
     MCPClientFactory,
@@ -3916,6 +3920,10 @@ class SchemaRouter:
         transport_fingerprint: str | None = None,
         replace: bool = False,
         timeout: float = 20.0,
+        max_pages: int = MCP_DISCOVERY_DEFAULT_MAX_PAGES,
+        max_tools: int = MCP_DISCOVERY_DEFAULT_MAX_TOOLS,
+        max_tool_bytes: int = MCP_DISCOVERY_DEFAULT_MAX_TOOL_BYTES,
+        max_total_bytes: int = MCP_DISCOVERY_DEFAULT_MAX_TOTAL_BYTES,
     ) -> ToolSpec:
         """Import MCP tools through a trusted transport-neutral client factory.
 
@@ -3944,6 +3952,10 @@ class SchemaRouter:
                 if transport_fingerprint is not None
                 else None
             ),
+            max_pages=max_pages,
+            max_tools=max_tools,
+            max_tool_bytes=max_tool_bytes,
+            max_total_bytes=max_total_bytes,
         )
         if provider is not None:
             tool.provider = provider
@@ -3955,6 +3967,10 @@ class SchemaRouter:
         invoker = MCPBoundInvoker(
             client_factory,
             timeout=timeout,
+            max_pages=max_pages,
+            max_tools=max_tools,
+            max_tool_bytes=max_tool_bytes,
+            max_total_bytes=max_total_bytes,
         )
         key = self.executor.publish_bound_tool(
             tool,
@@ -3978,6 +3994,10 @@ class SchemaRouter:
         access_mode: str | None = None,
         replace: bool = False,
         timeout: float = 20.0,
+        max_pages: int = MCP_DISCOVERY_DEFAULT_MAX_PAGES,
+        max_tools: int = MCP_DISCOVERY_DEFAULT_MAX_TOOLS,
+        max_tool_bytes: int = MCP_DISCOVERY_DEFAULT_MAX_TOOL_BYTES,
+        max_total_bytes: int = MCP_DISCOVERY_DEFAULT_MAX_TOTAL_BYTES,
     ) -> ToolSpec:
         """Spawn a trusted local MCP stdio server and register its advertised tools."""
 
@@ -3993,6 +4013,10 @@ class SchemaRouter:
             server_name=name,
             namespace=namespace,
             timeout=timeout,
+            max_pages=max_pages,
+            max_tools=max_tools,
+            max_tool_bytes=max_tool_bytes,
+            max_total_bytes=max_total_bytes,
         )
         if provider is not None:
             tool.provider = provider
@@ -4004,6 +4028,10 @@ class SchemaRouter:
         invoker = MCPBoundInvoker(
             MCPStdioClientFactory(config),
             timeout=timeout,
+            max_pages=max_pages,
+            max_tools=max_tools,
+            max_tool_bytes=max_tool_bytes,
+            max_total_bytes=max_total_bytes,
         )
         key = self.executor.publish_bound_tool(
             tool,
@@ -4247,12 +4275,20 @@ class SchemaRouter:
                 timeout=timeout,
                 transport=transport,
                 transport_fingerprint=transport_fingerprint,
+                max_pages=bound.max_pages,
+                max_tools=bound.max_tools,
+                max_tool_bytes=bound.max_tool_bytes,
+                max_total_bytes=bound.max_total_bytes,
             )
             candidate_tool.provider = current.provider
             candidate_tool.access_mode = current.access_mode
             candidate_invoker = MCPBoundInvoker(
                 bound.factory,
                 timeout=timeout,
+                max_pages=bound.max_pages,
+                max_tools=bound.max_tools,
+                max_tool_bytes=bound.max_tool_bytes,
+                max_total_bytes=bound.max_total_bytes,
             )
         else:
             if source_url is None:

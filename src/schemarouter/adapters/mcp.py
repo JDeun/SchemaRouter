@@ -25,6 +25,32 @@ _PROTECTED_MCP_HEADERS = {
     "transfer-encoding",
 }
 
+MCP_DISCOVERY_DEFAULT_MAX_PAGES = 64
+MCP_DISCOVERY_DEFAULT_MAX_TOOLS = 4096
+MCP_DISCOVERY_DEFAULT_MAX_TOOL_BYTES = 1024 * 1024
+MCP_DISCOVERY_DEFAULT_MAX_TOTAL_BYTES = 16 * 1024 * 1024
+
+
+def _validate_mcp_discovery_limit(value: int, *, label: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+        raise ValueError(f"{label} must be a positive integer")
+    return value
+
+
+def _mcp_tool_document_size(tool: dict[str, Any]) -> int:
+    try:
+        encoded = json.dumps(
+            tool,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise SchemaSourceError(
+            "MCP tool discovery returned a non-JSON-serializable tool document"
+        ) from exc
+    return len(encoded)
+
 
 def _schema_unit(schema: Any) -> str | None:
     if not isinstance(schema, dict):
@@ -163,7 +189,7 @@ class MCPStdioClientFactory:
                     read_timeout_seconds=timeout,
                 ) as client:
                     yield client
-        except TimeoutError as exc:
+        except asyncio.TimeoutError as exc:
             raise InvocationUnavailableError(
                 "MCP stdio lifecycle exceeded the configured timeout"
             ) from exc
@@ -564,23 +590,93 @@ async def inspect_mcp_client_factory(
     timeout: float = 20.0,
     transport: str = "custom",
     transport_fingerprint: str | None = None,
+    max_pages: int = MCP_DISCOVERY_DEFAULT_MAX_PAGES,
+    max_tools: int = MCP_DISCOVERY_DEFAULT_MAX_TOOLS,
+    max_tool_bytes: int = MCP_DISCOVERY_DEFAULT_MAX_TOOL_BYTES,
+    max_total_bytes: int = MCP_DISCOVERY_DEFAULT_MAX_TOTAL_BYTES,
 ) -> ToolSpec:
     """Inspect an MCP server through an already-bound trusted transport factory."""
 
+    max_pages = _validate_mcp_discovery_limit(max_pages, label="max_pages")
+    max_tools = _validate_mcp_discovery_limit(max_tools, label="max_tools")
+    max_tool_bytes = _validate_mcp_discovery_limit(
+        max_tool_bytes,
+        label="max_tool_bytes",
+    )
+    max_total_bytes = _validate_mcp_discovery_limit(
+        max_total_bytes,
+        label="max_total_bytes",
+    )
+
     raw_tools: list[dict[str, Any]] = []
-    try:
+
+    async def discover() -> tuple[str | None, Any]:
         async with factory(timeout=timeout) as client:
             cursor: str | None = None
+            seen_cursors: set[str] = set()
+            page_count = 0
+            total_bytes = 0
+
             while True:
+                if page_count >= max_pages:
+                    raise SchemaSourceError(
+                        f"MCP tool discovery exceeded max_pages={max_pages}"
+                    )
+
                 page = await client.list_tools(cursor=cursor)
-                raw_tools.extend(_as_dict(tool) for tool in page.tools)
-                cursor = page.next_cursor
-                if cursor is None:
+                page_count += 1
+
+                for raw_tool in page.tools:
+                    if len(raw_tools) >= max_tools:
+                        raise SchemaSourceError(
+                            f"MCP tool discovery exceeded max_tools={max_tools}"
+                        )
+
+                    item = _as_dict(raw_tool)
+                    item_bytes = _mcp_tool_document_size(item)
+                    if item_bytes > max_tool_bytes:
+                        raise SchemaSourceError(
+                            "MCP tool discovery returned an oversized tool document "
+                            f"({item_bytes} bytes > max_tool_bytes={max_tool_bytes})"
+                        )
+                    if total_bytes + item_bytes > max_total_bytes:
+                        raise SchemaSourceError(
+                            "MCP tool discovery exceeded the aggregate tool-document budget "
+                            f"max_total_bytes={max_total_bytes}"
+                        )
+
+                    raw_tools.append(item)
+                    total_bytes += item_bytes
+
+                next_cursor = page.next_cursor
+                if next_cursor is None:
                     break
+                if not isinstance(next_cursor, str) or not next_cursor:
+                    raise SchemaSourceError(
+                        "MCP tool discovery returned an invalid pagination cursor"
+                    )
+                if next_cursor in seen_cursors:
+                    raise SchemaSourceError(
+                        "MCP tool discovery returned a repeated pagination cursor"
+                    )
+                seen_cursors.add(next_cursor)
+                cursor = next_cursor
 
             info = getattr(client, "server_info", None)
-            discovered_name = getattr(info, "name", None)
-            protocol_version = getattr(client, "protocol_version", None)
+            return (
+                getattr(info, "name", None),
+                getattr(client, "protocol_version", None),
+            )
+
+    try:
+        discovered_name, protocol_version = await asyncio.wait_for(
+            discover(),
+            timeout=timeout,
+        )
+    except asyncio.TimeoutError as exc:
+        raise SchemaSourceError(
+            "MCP tool discovery exceeded the configured total timeout"
+        ) from exc
     except SchemaSourceError:
         raise
     except Exception as exc:  # noqa: BLE001
@@ -615,6 +711,10 @@ async def inspect_mcp_stdio(
     server_name: str | None = None,
     namespace: str | None = None,
     timeout: float = 20.0,
+    max_pages: int = MCP_DISCOVERY_DEFAULT_MAX_PAGES,
+    max_tools: int = MCP_DISCOVERY_DEFAULT_MAX_TOOLS,
+    max_tool_bytes: int = MCP_DISCOVERY_DEFAULT_MAX_TOOL_BYTES,
+    max_total_bytes: int = MCP_DISCOVERY_DEFAULT_MAX_TOTAL_BYTES,
 ) -> ToolSpec:
     """Spawn a trusted local MCP stdio server and import all advertised tools."""
 
@@ -625,6 +725,10 @@ async def inspect_mcp_stdio(
         timeout=timeout,
         transport="stdio",
         transport_fingerprint=config.transport_fingerprint,
+        max_pages=max_pages,
+        max_tools=max_tools,
+        max_tool_bytes=max_tool_bytes,
+        max_total_bytes=max_total_bytes,
     )
 
 
@@ -636,9 +740,29 @@ class MCPBoundInvoker:
         factory: MCPBoundClientFactory,
         *,
         timeout: float = 20.0,
+        max_pages: int = MCP_DISCOVERY_DEFAULT_MAX_PAGES,
+        max_tools: int = MCP_DISCOVERY_DEFAULT_MAX_TOOLS,
+        max_tool_bytes: int = MCP_DISCOVERY_DEFAULT_MAX_TOOL_BYTES,
+        max_total_bytes: int = MCP_DISCOVERY_DEFAULT_MAX_TOTAL_BYTES,
     ) -> None:
         self.factory = factory
         self.timeout = timeout
+        self.max_pages = _validate_mcp_discovery_limit(
+            max_pages,
+            label="max_pages",
+        )
+        self.max_tools = _validate_mcp_discovery_limit(
+            max_tools,
+            label="max_tools",
+        )
+        self.max_tool_bytes = _validate_mcp_discovery_limit(
+            max_tool_bytes,
+            label="max_tool_bytes",
+        )
+        self.max_total_bytes = _validate_mcp_discovery_limit(
+            max_total_bytes,
+            label="max_total_bytes",
+        )
 
     async def __call__(self, endpoint: str, arguments: dict[str, Any]) -> Any:
         async def invoke_bound() -> Any:
@@ -682,6 +806,10 @@ async def inspect_mcp_url(
     timeout: float = 20.0,
     client_factory: MCPClientFactory | None = None,
     network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY,
+    max_pages: int = MCP_DISCOVERY_DEFAULT_MAX_PAGES,
+    max_tools: int = MCP_DISCOVERY_DEFAULT_MAX_TOOLS,
+    max_tool_bytes: int = MCP_DISCOVERY_DEFAULT_MAX_TOOL_BYTES,
+    max_total_bytes: int = MCP_DISCOVERY_DEFAULT_MAX_TOTAL_BYTES,
 ) -> ToolSpec:
     """Connect to a Streamable HTTP MCP URL and import all advertised tools."""
     _validate_mcp_url(url)
@@ -710,6 +838,10 @@ async def inspect_mcp_url(
         timeout=timeout,
         transport="streamable_http",
         transport_fingerprint=transport_fingerprint,
+        max_pages=max_pages,
+        max_tools=max_tools,
+        max_tool_bytes=max_tool_bytes,
+        max_total_bytes=max_total_bytes,
     )
     custom_client_factory_required = client_factory is not None
     tool.execution_metadata.update(

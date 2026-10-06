@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 from types import SimpleNamespace
 
@@ -14,8 +15,10 @@ from schemarouter import (
 from schemarouter.adapters.mcp import (
     MCPRemoteInvoker,
     MCPStdioConfig,
+    inspect_mcp_client_factory,
     inspect_mcp_url,
 )
+from schemarouter.errors import SchemaSourceError
 
 
 class RecordingFactory:
@@ -179,6 +182,237 @@ def test_mcp_invoker_rejects_query_or_fragment_runtime_urls(url: str) -> None:
         MCPRemoteInvoker(
             url,
             client_factory=RecordingFactory(),
+        )
+
+
+def _mcp_tool(name: str, *, description: str = "") -> dict[str, object]:
+    return {
+        "name": name,
+        "description": description,
+        "inputSchema": {"type": "object", "properties": {}},
+        "outputSchema": {
+            "type": "object",
+            "properties": {"value": {"type": "string"}},
+        },
+    }
+
+
+class PaginatedBoundFactory:
+    def __init__(
+        self,
+        pages: dict[
+            str | None,
+            tuple[list[dict[str, object]], str | None],
+        ],
+        *,
+        delay_seconds: float = 0.0,
+    ) -> None:
+        self.pages = pages
+        self.delay_seconds = delay_seconds
+        self.calls: list[str | None] = []
+        self.client = SimpleNamespace(
+            server_info=SimpleNamespace(name="paginated-server"),
+            protocol_version="2026-07-28",
+        )
+
+        async def list_tools(*, cursor=None):
+            self.calls.append(cursor)
+            if self.delay_seconds:
+                await asyncio.sleep(self.delay_seconds)
+            tools, next_cursor = self.pages[cursor]
+            return SimpleNamespace(
+                tools=tools,
+                next_cursor=next_cursor,
+            )
+
+        self.client.list_tools = list_tools
+
+    @asynccontextmanager
+    async def __call__(self, *, timeout=20.0):
+        del timeout
+        yield self.client
+
+
+@pytest.mark.asyncio
+async def test_mcp_discovery_accepts_finite_pagination_within_budgets() -> None:
+    factory = PaginatedBoundFactory(
+        {
+            None: ([_mcp_tool("first")], "page-2"),
+            "page-2": ([_mcp_tool("second")], None),
+        }
+    )
+
+    tool = await inspect_mcp_client_factory(
+        factory,
+        max_pages=2,
+        max_tools=2,
+        max_tool_bytes=2048,
+        max_total_bytes=4096,
+    )
+
+    assert factory.calls == [None, "page-2"]
+    assert [endpoint.name for endpoint in tool.endpoints] == ["first", "second"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("pages", "expected_calls"),
+    [
+        (
+            {
+                None: ([], "same"),
+                "same": ([], "same"),
+            },
+            [None, "same"],
+        ),
+        (
+            {
+                None: ([], "a"),
+                "a": ([], "b"),
+                "b": ([], "a"),
+            },
+            [None, "a", "b"],
+        ),
+    ],
+)
+async def test_mcp_discovery_rejects_repeated_or_cyclic_cursors(
+    pages: dict[
+        str | None,
+        tuple[list[dict[str, object]], str | None],
+    ],
+    expected_calls: list[str | None],
+) -> None:
+    factory = PaginatedBoundFactory(pages)
+
+    with pytest.raises(SchemaSourceError, match="repeated pagination cursor"):
+        await inspect_mcp_client_factory(factory)
+
+    assert factory.calls == expected_calls
+
+
+@pytest.mark.asyncio
+async def test_mcp_discovery_stops_before_requesting_past_page_budget() -> None:
+    factory = PaginatedBoundFactory(
+        {
+            None: ([], "a"),
+            "a": ([], "b"),
+            "b": ([], None),
+        }
+    )
+
+    with pytest.raises(SchemaSourceError, match="max_pages=2"):
+        await inspect_mcp_client_factory(factory, max_pages=2)
+
+    assert factory.calls == [None, "a"]
+
+
+@pytest.mark.asyncio
+async def test_mcp_discovery_tool_budget_fails_before_router_registration() -> None:
+    factory = PaginatedBoundFactory(
+        {
+            None: (
+                [
+                    _mcp_tool("first"),
+                    _mcp_tool("second"),
+                    _mcp_tool("third"),
+                ],
+                None,
+            )
+        }
+    )
+    router = SchemaRouter()
+
+    with pytest.raises(SchemaSourceError, match="max_tools=2"):
+        await router.add_mcp_client_factory(
+            factory,
+            name="bounded-mcp",
+            max_tools=2,
+        )
+
+    assert router.registry.keys() == ()
+    assert router.executor.bound_keys() == ()
+
+
+@pytest.mark.asyncio
+async def test_mcp_discovery_rejects_oversized_individual_tool_document() -> None:
+    factory = PaginatedBoundFactory(
+        {
+            None: (
+                [_mcp_tool("large", description="x" * 2048)],
+                None,
+            )
+        }
+    )
+
+    with pytest.raises(SchemaSourceError, match="oversized tool document"):
+        await inspect_mcp_client_factory(
+            factory,
+            max_tool_bytes=512,
+        )
+
+
+@pytest.mark.asyncio
+async def test_mcp_discovery_rejects_aggregate_tool_document_budget() -> None:
+    factory = PaginatedBoundFactory(
+        {
+            None: (
+                [
+                    _mcp_tool("first", description="x" * 256),
+                    _mcp_tool("second", description="y" * 256),
+                ],
+                None,
+            )
+        }
+    )
+
+    with pytest.raises(SchemaSourceError, match="aggregate tool-document budget"):
+        await inspect_mcp_client_factory(
+            factory,
+            max_tool_bytes=2048,
+            max_total_bytes=600,
+        )
+
+
+@pytest.mark.asyncio
+async def test_mcp_discovery_enforces_total_wall_clock_timeout() -> None:
+    factory = PaginatedBoundFactory(
+        {
+            None: ([_mcp_tool("slow")], None),
+        },
+        delay_seconds=0.1,
+    )
+
+    with pytest.raises(SchemaSourceError, match="configured total timeout"):
+        await inspect_mcp_client_factory(
+            factory,
+            timeout=0.01,
+        )
+
+
+@pytest.mark.parametrize(
+    ("keyword", "value"),
+    [
+        ("max_pages", 0),
+        ("max_tools", -1),
+        ("max_tool_bytes", True),
+        ("max_total_bytes", 0),
+    ],
+)
+@pytest.mark.asyncio
+async def test_mcp_discovery_rejects_invalid_budget_configuration(
+    keyword: str,
+    value: object,
+) -> None:
+    factory = PaginatedBoundFactory(
+        {
+            None: ([_mcp_tool("unused")], None),
+        }
+    )
+
+    with pytest.raises(ValueError, match="positive integer"):
+        await inspect_mcp_client_factory(
+            factory,
+            **{keyword: value},
         )
 
 
