@@ -335,34 +335,26 @@ def compare_capability_composition(
     statuses: list[CompatibilityStatus] = []
     for required in consumer.requires:
         candidates = [
-            produced
+            compare_capability_fields(required, produced, context=context)
             for produced in producer.produces
-            if produced.semantic_id == required.semantic_id
         ]
-        result = (
-            max(
-                (
-                    compare_capability_fields(
-                        produced,
-                        required,
-                        context=context,
-                    )
-                    for produced in candidates
-                ),
-                key=lambda item: _compatibility_rank(item.status),
-            )
-            if candidates
-            else CapabilityCompatibility(
+        satisfiable = [candidate for candidate in candidates if candidate.satisfies]
+        unknown = [candidate for candidate in candidates if candidate.status == "unknown"]
+        if satisfiable:
+            result = min(satisfiable, key=lambda item: _status_rank(item.status))
+        elif unknown:
+            result = unknown[0]
+        else:
+            result = CapabilityCompatibility(
                 status="incompatible",
-                reasons=[CapabilityCompatibilityReason(
-                    code="missing_semantic_field",
+                reasons=[CompatibilityReason(
+                    code="missing_requirement",
                     detail=(
-                        f"producer does not declare semantic field "
+                        "producer does not satisfy required semantic field "
                         f"{required.semantic_id!r}"
                     ),
                 )],
             )
-        )
         identity = _capability_requirement_identity(required)
         evaluations.append((required, identity, result))
         statuses.append(result.status)
