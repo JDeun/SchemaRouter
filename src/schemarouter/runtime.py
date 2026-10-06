@@ -5985,6 +5985,40 @@ class SchemaRouter:
                 for pending_kind, pending_index, pending_call, pending_payload in pending_events:
                     parallel_key: tuple[int, int] | None = None
 
+                    if pending_kind == "start":
+                        candidate_index = int(pending_payload)
+                        parallel_key = (pending_index, candidate_index)
+                        if parallel_key in started_parallel_calls:
+                            continue
+                        start_data: dict[str, Any] = {
+                            "argument_names": sorted(pending_call.arguments),
+                            "fields": list(pending_call.fields),
+                            "fallback_candidate_index": candidate_index,
+                            "primary_call_index": pending_index,
+                        }
+                        if run_config.include_payloads:
+                            start_data["arguments"] = dict(pending_call.arguments)
+                        emitted_events.append(
+                            await emit(
+                                RunEvent.create(
+                                    event="tool.start",
+                                    run_id=run_id,
+                                    sequence=sequence,
+                                    config=run_config,
+                                    tool=pending_call.tool,
+                                    endpoint=pending_call.endpoint,
+                                    data=start_data,
+                                )
+                            )
+                        )
+                        sequence += 1
+                        started_parallel_calls[parallel_key] = pending_call
+                        started_parallel_call_keys[
+                            (pending_index, id(pending_call))
+                        ] = parallel_key
+                        started_primary_indexes.add(pending_index)
+                        continue
+
                     if pending_kind == "end":
                         pending_result, candidate_index = pending_payload
                         if not isinstance(pending_result, ToolResult):
