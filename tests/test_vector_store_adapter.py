@@ -563,10 +563,12 @@ def test_vector_discovery_rejects_oversized_metadata_before_registration() -> No
 def test_vector_explicit_selection_skips_unrelated_malformed_descriptor() -> None:
     class MixedCatalogBackend(FakeVectorBackend):
         def list_collections(self):
-            return (
-                {"name": "broken", "dimension": "not-an-integer"},
-                VectorCollectionSpec(name="selected", dimension=3),
-            )
+            def generate():
+                yield {"name": "broken", "dimension": "not-an-integer"}
+                yield VectorCollectionSpec(name="selected", dimension=3)
+                raise AssertionError("explicit selection should stop catalog iteration")
+
+            return generate()
 
     router = SchemaRouter()
     keys = router.add_vector_store(
