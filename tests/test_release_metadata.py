@@ -214,6 +214,28 @@ def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
     assert "schemarouter[mcp,jev,otel] @ file://" in workflow
 
 
+def test_pr_ci_and_post_merge_qualification_are_separated() -> None:
+    ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    post_merge = (
+        ROOT / ".github" / "workflows" / "post-merge-qualification.yml"
+    ).read_text(encoding="utf-8")
+
+    assert "workflow_call:" in ci
+    assert "pull_request:" in ci
+    assert "  push:\n    branches: [main]" not in ci
+
+    assert "push:\n    branches: [main]" in post_merge
+    assert 'python-version: "3.12"' in post_merge
+    assert "pytest -q" in post_merge
+    assert "--cov-fail-under=83.5" in post_merge
+    assert "pyright" in post_merge
+    assert "python -m build" in post_merge
+    assert "twine check dist/*" in post_merge
+    assert "QUALIFIED_SHA" in post_merge
+    assert "post-merge-qualification-${{ github.sha }}" in post_merge
+    assert "cancel-in-progress: true" not in post_merge
+
+
 def test_python_preview_is_separate_from_release_blocking_ci() -> None:
     ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
     preview = (
