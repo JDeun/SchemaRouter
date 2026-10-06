@@ -204,6 +204,19 @@ class SchemaWatchInspection(StrictModel):
     last_error_type: str | None = None
 
 
+class NativeSchemaWatchInspection(StrictModel):
+    """Privacy-safe view of one process-local native schema watch."""
+
+    tool: str
+    status: str
+    last_checked_at: datetime.datetime | None = None
+    last_success_at: datetime.datetime | None = None
+    last_action: str | None = None
+    last_error_type: str | None = None
+    failure_count: int = Field(default=0, ge=0)
+    consecutive_failures: int = Field(default=0, ge=0)
+
+
 class ExecutionInspection(StrictModel):
     """Privacy-safe view of live execution authority, bindings, and access health."""
 
@@ -215,6 +228,10 @@ class ExecutionInspection(StrictModel):
     health_probes: list[HealthProbeInspection] = Field(default_factory=list)
     schema_watcher_running: bool = False
     schema_watches: list[SchemaWatchInspection] = Field(default_factory=list)
+    native_schema_watcher_running: bool = False
+    native_schema_watches: list[NativeSchemaWatchInspection] = Field(
+        default_factory=list
+    )
 
 
 class CapabilityDecisionCandidateInspection(StrictModel):
@@ -475,6 +492,20 @@ def inspect_router(
                     last_error_type=snapshot.last_error_type,
                 )
                 for snapshot in router.schema_watcher.snapshots()
+            ],
+            native_schema_watcher_running=router.native_schema_watcher_running,
+            native_schema_watches=[
+                NativeSchemaWatchInspection(
+                    tool=snapshot.tool,
+                    status=snapshot.status,
+                    last_checked_at=snapshot.last_checked_at,
+                    last_success_at=snapshot.last_success_at,
+                    last_action=snapshot.last_action,
+                    last_error_type=snapshot.last_error_type,
+                    failure_count=snapshot.failure_count,
+                    consecutive_failures=snapshot.consecutive_failures,
+                )
+                for snapshot in router.native_schema_watch_snapshots()
             ],
         ),
     )
