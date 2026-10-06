@@ -57,6 +57,31 @@ class PolicyViolationError(PlanValidationError):
     """Raised when local execution policy denies a tool call."""
 
 
+class AuthorizationAuditDeliveryError(SchemaRouterError):
+    """Raised when mandatory authorization-audit delivery fails.
+
+    The privacy-safe authorization event is retained so callers can distinguish
+    an allow decision from a deny decision without exposing principal claims.
+    When the underlying decision already produced an authorization error, that
+    error is retained separately instead of being converted into a generic
+    invocation failure.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        event: object,
+        authorization_error: PolicyViolationError | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.event = event
+        self.authorization_error = authorization_error
+        self.decision_effect = getattr(event, "effect", None)
+        self.decision_phase = getattr(event, "phase", None)
+        self.authorization_denied = self.decision_effect == "deny"
+
+
 class ApprovalDeniedError(PolicyViolationError):
     """Raised when a call requiring trusted local approval is not approved."""
 

@@ -122,6 +122,12 @@ from .authorization import (
     PrincipalContext,
     TrustedFilterBinding,
 )
+from .authorization_audit import (
+    AuthorizationAuditDeliveryMode as AuthorizationAuditDeliveryMode,
+)
+from .authorization_audit import (
+    AuthorizationAuditDeliveryStatus as AuthorizationAuditDeliveryStatus,
+)
 from .authorization_audit import AuthorizationAuditEvent as AuthorizationAuditEvent
 from .authorization_audit import AuthorizationAuditHook as AuthorizationAuditHook
 from .authorization_config import AuthorizationPolicyConfig as AuthorizationPolicyConfig
@@ -293,6 +299,7 @@ from .decisions import (
 )
 from .errors import (
     ApprovalDeniedError,
+    AuthorizationAuditDeliveryError,
     BindingDriftError,
     ContractAmendmentError,
     ExecutionBudgetExceededError,
@@ -524,6 +531,9 @@ __all__ = [
     "AuthSchemeRequirement",
     "BeforeExecutionHook",
     "BindingDriftError",
+    "AuthorizationAuditDeliveryError",
+    "AuthorizationAuditDeliveryMode",
+    "AuthorizationAuditDeliveryStatus",
     "AuthorizationDecision",
     "AuthorizationEffect",
     "AuthorizationPolicy",
