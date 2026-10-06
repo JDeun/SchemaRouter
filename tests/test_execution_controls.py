@@ -618,11 +618,16 @@ async def test_offloaded_sync_invocation_rechecks_policy_at_worker_boundary(
         offload_sync=True,
     )
 
-    async def delayed_to_thread(function, /, *args, **kwargs):
-        executor.policy = ExecutionPolicy(approval_mode="all")
-        return function(*args, **kwargs)
+    original_submit = executor._sync_offload_pool.submit
 
-    monkeypatch.setattr(asyncio, "to_thread", delayed_to_thread)
+    def delayed_submit(function, /, *args, **kwargs):
+        def cross_worker_boundary():
+            executor.policy = ExecutionPolicy(approval_mode="all")
+            return function(*args, **kwargs)
+
+        return original_submit(cross_worker_boundary)
+
+    monkeypatch.setattr(executor._sync_offload_pool, "submit", delayed_submit)
 
     with pytest.raises(ApprovalDeniedError, match="execution policy changed"):
         await executor.execute(plan)

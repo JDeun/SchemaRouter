@@ -800,6 +800,7 @@ class SchemaRouter:
             self.stop_native_schema_watcher(),
             return_exceptions=True,
         )
+        self.executor.shutdown_offloaded_sync()
         errors = [result for result in results if isinstance(result, BaseException)]
         if not errors:
             return
