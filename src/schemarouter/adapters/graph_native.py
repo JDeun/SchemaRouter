@@ -393,8 +393,33 @@ class NeptuneOpenCypherBackend:
 class ArangoGraphBackend:
     """Thin adapter over a caller-owned python-arango Database object."""
 
-    def __init__(self, database: Any) -> None:
+    def __init__(
+        self,
+        database: Any,
+        *,
+        graphs: Sequence[str] | None = None,
+        max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
+        max_schema_items: int = _MAX_SCHEMA_ITEMS,
+    ) -> None:
+        if max_discovery_sources < 1:
+            raise ValueError("ArangoDB max_discovery_sources must be positive")
+        if max_schema_items < 1:
+            raise ValueError("ArangoDB max_schema_items must be positive")
         self._database = database
+        self._graphs = (
+            None
+            if graphs is None
+            else frozenset(
+                str(value)
+                for value in _bounded_values(
+                    graphs,
+                    limit=max_discovery_sources,
+                    label="ArangoDB configured graphs",
+                )
+            )
+        )
+        self._max_discovery_sources = max_discovery_sources
+        self._max_schema_items = max_schema_items
         self._definitions: dict[str, tuple[GraphRelationshipTypeSpec, ...]] = {}
 
     def list_graphs(self) -> tuple[GraphSourceSpec, ...]:
