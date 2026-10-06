@@ -70,7 +70,10 @@ class _PersistedReadBudget:
     total_bytes: int = 0
 
     def consume(self, encoded_bytes: int) -> None:
-        _validate_persisted_document_size(encoded_bytes, limits=self.limits)
+        if encoded_bytes < 0:
+            raise _PersistedDocumentLimitError(
+                "persisted JSON collection has an invalid encoded size"
+            )
 
         next_documents = self.documents + 1
         if next_documents > self.limits.max_documents:
