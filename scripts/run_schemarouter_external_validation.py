@@ -12,7 +12,10 @@ import schemarouter as schemarouter_package
 from schemarouter import SchemaRouter
 from schemarouter.models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
 
-from scripts.external_validation_provenance import implementation_provenance
+try:
+    from scripts.external_validation_provenance import implementation_provenance
+except ModuleNotFoundError:  # direct `python scripts/...` execution
+    from external_validation_provenance import implementation_provenance
 
 
 def _load(path: Path) -> Any:
