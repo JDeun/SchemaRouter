@@ -12,6 +12,8 @@ from .errors import StorageFormatError, TraceError
 from .models import StrictModel
 from .runs import RunEvent
 from .storage import (
+    PersistedDocumentLimits,
+    _decode_persisted_json,
     component_presence,
     component_versions,
     stamp_current_component_format,
@@ -74,7 +76,14 @@ class RunTraceStore(Protocol):
 
 def _validate_legacy_trace_storage(
     connection: sqlite3.Connection,
+    *,
+    document_limits: PersistedDocumentLimits | None = None,
 ) -> None:
+    limits = (
+        document_limits.model_copy(deep=True)
+        if document_limits is not None
+        else PersistedDocumentLimits()
+    )
     try:
         summaries = connection.execute(
             """
@@ -118,8 +127,12 @@ def _validate_legacy_trace_storage(
                     f"legacy run trace {run_id!r} contains an invalid sequence"
                 ) from exc
             try:
-                event = RunEvent.model_validate_json(str(row["document"]))
-            except (ValidationError, ValueError) as exc:
+                payload = _decode_persisted_json(
+                    str(row["document"]),
+                    limits=limits,
+                )
+                event = RunEvent.model_validate(payload)
+            except (ValidationError, ValueError, TypeError) as exc:
                 raise StorageFormatError(
                     f"legacy run event {run_id}:{sequence} "
                     "cannot be migrated safely"
@@ -204,10 +217,16 @@ class SQLiteRunTraceStore:
         path: str | Path,
         *,
         timeout: float = 5.0,
+        document_limits: PersistedDocumentLimits | None = None,
     ) -> None:
         if timeout <= 0:
             raise ValueError("timeout must be > 0")
         self.path = str(path)
+        self._document_limits = (
+            document_limits.model_copy(deep=True)
+            if document_limits is not None
+            else PersistedDocumentLimits()
+        )
         self._lock = RLock()
         self._closed = False
         self._connection = sqlite3.connect(
@@ -255,7 +274,10 @@ class SQLiteRunTraceStore:
         )
 
     def _validate_legacy_storage(self) -> None:
-        _validate_legacy_trace_storage(self._connection)
+        _validate_legacy_trace_storage(
+            self._connection,
+            document_limits=self._document_limits,
+        )
 
     def _initialize(self) -> None:
         with self._lock:
@@ -337,24 +359,36 @@ class SQLiteRunTraceStore:
         self._ensure_open()
         self._connection.execute("BEGIN IMMEDIATE")
 
-    @staticmethod
-    def _serialize(event: RunEvent) -> str:
+    def _serialize(self, event: RunEvent) -> str:
         try:
-            return event.model_dump_json()
+            document = event.model_dump_json()
+            _decode_persisted_json(
+                document,
+                limits=self._document_limits,
+            )
+            return document
+        except (ValueError, TypeError) as exc:
+            raise TraceError(
+                "run event exceeds persistent JSON safety limits"
+            ) from exc
         except Exception as exc:
             raise TraceError("run event cannot be serialized as persistent JSON") from exc
 
-    @staticmethod
     def _deserialize(
+        self,
         run_id: str,
         sequence: int,
         document: str,
     ) -> RunEvent:
         try:
-            event = RunEvent.model_validate_json(document)
-        except (ValidationError, ValueError) as exc:
+            payload = _decode_persisted_json(
+                document,
+                limits=self._document_limits,
+            )
+            event = RunEvent.model_validate(payload)
+        except (ValidationError, ValueError, TypeError) as exc:
             raise TraceError(
-                f"stored run event {run_id}:{sequence} is invalid"
+                f"stored run event {run_id}:{sequence} is invalid within persistent document limits"
             ) from exc
         if event.run_id != run_id or event.sequence != sequence:
             raise TraceError(
