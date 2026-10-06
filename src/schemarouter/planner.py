@@ -3541,11 +3541,13 @@ class SchemaPlanner:
         | None = None,
     ) -> ExecutionPlan:
         del async_decision
+        catalog_snapshot = self._catalog_snapshot()
         lexical_candidates = self._candidates(
             request,
             intent,
             additional_availability_predicate=additional_availability_predicate,
             scoring_endpoint_transform=scoring_endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
         )
         all_candidates, recall_warnings = (
             self._augment_candidates_with_semantic_recall_sync(
@@ -3554,6 +3556,7 @@ class SchemaPlanner:
                 lexical_candidates,
                 additional_availability_predicate=additional_availability_predicate,
                 scoring_endpoint_transform=scoring_endpoint_transform,
+                catalog_snapshot=catalog_snapshot,
             )
         )
         _, required_coverage = self._field_coverage_matrix(request, all_candidates)
@@ -3593,7 +3596,7 @@ class SchemaPlanner:
             coverage_warning = self._coverage_warning(coverage)
             return ExecutionPlan(
                 query=request.query,
-                registry_version=self.registry.version,
+                registry_version=catalog_snapshot.version,
                 calls=[],
                 warnings=[
                     *warnings,
@@ -3740,7 +3743,7 @@ class SchemaPlanner:
 
         return ExecutionPlan(
             query=request.query,
-            registry_version=self.registry.version,
+            registry_version=catalog_snapshot.version,
             calls=calls,
             fallback_routes=fallback_routes,
             warnings=warnings,
@@ -3763,11 +3766,13 @@ class SchemaPlanner:
         ]
         | None = None,
     ) -> ExecutionPlan:
+        catalog_snapshot = self._catalog_snapshot()
         lexical_candidates = self._candidates(
             request,
             intent,
             additional_availability_predicate=additional_availability_predicate,
             scoring_endpoint_transform=scoring_endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
         )
         all_candidates, recall_warnings = (
             await self._augment_candidates_with_semantic_recall_async(
@@ -3776,6 +3781,7 @@ class SchemaPlanner:
                 lexical_candidates,
                 additional_availability_predicate=additional_availability_predicate,
                 scoring_endpoint_transform=scoring_endpoint_transform,
+                catalog_snapshot=catalog_snapshot,
             )
         )
         _, required_coverage = self._field_coverage_matrix(request, all_candidates)
@@ -3816,7 +3822,7 @@ class SchemaPlanner:
             coverage_warning = self._coverage_warning(coverage)
             return ExecutionPlan(
                 query=request.query,
-                registry_version=self.registry.version,
+                registry_version=catalog_snapshot.version,
                 calls=[],
                 warnings=[
                     *warnings,
@@ -3963,7 +3969,7 @@ class SchemaPlanner:
 
         return ExecutionPlan(
             query=request.query,
-            registry_version=self.registry.version,
+            registry_version=catalog_snapshot.version,
             calls=calls,
             fallback_routes=fallback_routes,
             warnings=warnings,
