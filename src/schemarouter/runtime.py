@@ -1755,7 +1755,9 @@ class SchemaRouter:
                 vector_name_by_collection=vector_name_by_collection,
                 metadata_fields_by_collection=metadata_fields_by_collection,
                 filter_builder=filter_builder,
-                collections=collections,
+                collections=(
+                    None if collections is None else tuple(sorted(collections))
+                ),
                 max_discovery_sources=max_discovery_sources,
                 max_fields_per_collection=max_fields_per_collection,
             ),
@@ -1828,7 +1830,9 @@ class SchemaRouter:
                 client,
                 vector_field_by_collection=vector_field_by_collection,
                 metric_by_collection=metric_by_collection,
-                collections=collections,
+                collections=(
+                    None if collections is None else tuple(sorted(collections))
+                ),
                 max_discovery_sources=max_discovery_sources,
                 max_fields_per_collection=max_fields_per_collection,
             ),
@@ -1897,7 +1901,9 @@ class SchemaRouter:
             PineconeVectorBackend(
                 client,
                 metadata_fields_by_index=metadata_fields_by_index,
-                collections=collections,
+                collections=(
+                    None if collections is None else tuple(sorted(collections))
+                ),
                 max_discovery_sources=max_discovery_sources,
                 max_fields_per_collection=max_fields_per_collection,
             ),
@@ -1966,7 +1972,9 @@ class SchemaRouter:
                 dimension_by_collection=dimension_by_collection,
                 metadata_fields_by_collection=metadata_fields_by_collection,
                 metric_by_collection=metric_by_collection,
-                collections=collections,
+                collections=(
+                    None if collections is None else tuple(sorted(collections))
+                ),
                 max_discovery_sources=max_discovery_sources,
                 max_fields_per_collection=max_fields_per_collection,
             ),
@@ -2041,7 +2049,9 @@ class SchemaRouter:
                 vector_name_by_collection=vector_name_by_collection,
                 metric_by_collection=metric_by_collection,
                 filter_builder=filter_builder,
-                collections=collections,
+                collections=(
+                    None if collections is None else tuple(sorted(collections))
+                ),
                 max_discovery_sources=max_discovery_sources,
                 max_fields_per_collection=max_fields_per_collection,
             ),
@@ -2114,7 +2124,15 @@ class SchemaRouter:
         return await self.aadd_vector_store(
             PgvectorVectorBackend(
                 engine,
-                tables=(tables if tables is not None else collections),
+                tables=(
+                    tables
+                    if tables is not None
+                    else (
+                        None
+                        if collections is None
+                        else tuple(sorted(collections))
+                    )
+                ),
                 vector_field_by_table=vector_field_by_table,
                 metric_by_table=metric_by_table,
                 schema=schema,
