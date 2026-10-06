@@ -382,6 +382,7 @@ from .inspection import (
     inspect_tool_spec,
     inspect_trace,
     inspect_traces,
+    raw_tool_spec_document,
     tool_spec_document,
 )
 from .models import (
@@ -828,6 +829,7 @@ __all__ = [
     "inspect_trace",
     "inspect_traces",
     "load_adapter_plugins",
+    "raw_tool_spec_document",
     "tool_spec_document",
     "record_run_events",
     "render_dashboard",
