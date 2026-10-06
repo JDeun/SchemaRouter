@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from concurrent.futures import Future
 from threading import Event, Lock, Thread
@@ -81,15 +82,19 @@ class SyncLoopRunner:
         try:
             loop.run_forever()
         finally:
-            pending = asyncio.all_tasks(loop)
-            for task in pending:
-                task.cancel()
-            if pending:
-                loop.run_until_complete(
-                    asyncio.gather(*pending, return_exceptions=True)
-                )
-            loop.run_until_complete(loop.shutdown_asyncgens())
-            loop.close()
+            try:
+                pending = asyncio.all_tasks(loop)
+                for task in pending:
+                    task.cancel()
+                if pending:
+                    loop.run_until_complete(
+                        asyncio.gather(*pending, return_exceptions=True)
+                    )
+                loop.run_until_complete(loop.shutdown_asyncgens())
+            finally:
+                # This runner owns the loop. Even if async-generator cleanup
+                # itself fails, never leave the owned loop unclosed.
+                loop.close()
 
     def _ensure_loop(self) -> asyncio.AbstractEventLoop:
         with self._state_lock:
@@ -127,6 +132,7 @@ class SyncLoopRunner:
         self._reject_active_caller_loop("streaming")
         loop = self._ensure_loop()
         iterator = factory()
+        primary_error: BaseException | None = None
         try:
             while True:
                 future = asyncio.run_coroutine_threadsafe(
@@ -137,12 +143,31 @@ class SyncLoopRunner:
                     yield future.result()
                 except StopAsyncIteration:
                     break
+        except BaseException as exc:
+            primary_error = exc
+            raise
         finally:
             aclose = getattr(iterator, "aclose", None)
             if callable(aclose):
                 close_iterator = cast(Callable[[], Awaitable[None]], aclose)
-                close_future = asyncio.run_coroutine_threadsafe(
-                    self._await_factory(close_iterator),
-                    loop,
-                )
-                close_future.result()
+                try:
+                    close_future = asyncio.run_coroutine_threadsafe(
+                        self._await_factory(close_iterator),
+                        loop,
+                    )
+                    close_future.result()
+                except BaseException as cleanup_error:
+                    # An iterator failure is the primary execution signal. Do
+                    # not replace it with a secondary aclose() failure. Explicit
+                    # generator close (GeneratorExit) has no execution failure
+                    # to preserve, so callers still receive the cleanup error.
+                    if primary_error is None or isinstance(primary_error, GeneratorExit):
+                        raise
+                    warnings.warn(
+                        "synchronous stream cleanup failed after a primary stream "
+                        "error; preserving "
+                        f"{type(primary_error).__name__} over "
+                        f"{type(cleanup_error).__name__}",
+                        RuntimeWarning,
+                        stacklevel=2,
+                    )

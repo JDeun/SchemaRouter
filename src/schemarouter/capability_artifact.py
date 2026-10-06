@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import hashlib
 import json
 from typing import Literal
 
 from pydantic import Field
 
+from .canonical_json import canonical_json_sha256
 from .capability_contracts import (
     CapabilityContract,
     CompatibilityContext,
@@ -128,14 +128,7 @@ def _canonical_payload(
 
 
 def _payload_digest(payload: dict[str, object]) -> str:
-    return hashlib.sha256(
-        json.dumps(
-            payload,
-            sort_keys=True,
-            separators=(",", ":"),
-            ensure_ascii=True,
-        ).encode("utf-8")
-    ).hexdigest()
+    return canonical_json_sha256(payload)
 
 
 def _artifact_digest(

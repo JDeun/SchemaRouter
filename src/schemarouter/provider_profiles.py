@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-import hashlib
 import importlib.util
-import json
 from collections.abc import Callable, Collection, Iterable
 from importlib import metadata
 from typing import Any, Literal
 
 from pydantic import model_validator
 
+from .canonical_json import canonical_json_sha256
 from .models import EndpointSpec, FieldSpec, ParameterSpec, StrictModel, ToolSpec
 
 PROVIDER_PROFILE_ENTRY_POINT_GROUP = "schemarouter.providers"
@@ -155,14 +154,7 @@ class ProviderDiscoveryCandidate(StrictModel):
     def approval_digest(self) -> str | None:
         if self.profile is None:
             return None
-        payload = self.profile.model_dump(mode="json")
-        canonical = json.dumps(
-            payload,
-            sort_keys=True,
-            separators=(",", ":"),
-            ensure_ascii=True,
-        )
-        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        return canonical_json_sha256(self.profile.model_dump(mode="json"))
 
 
 class ProviderDiscoveryProposal(StrictModel):

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import hashlib
-import json
 from typing import Literal
 
 from pydantic import Field, model_validator
 
+from .canonical_json import canonical_json_sha256
 from .capability_constraints import OperationalConstraintResult
 from .capability_eligibility import (
     CapabilityEligibilityExplanation,
@@ -243,14 +242,7 @@ def _trace_digest(
             else None
         ),
     }
-    return hashlib.sha256(
-        json.dumps(
-            payload,
-            sort_keys=True,
-            separators=(",", ":"),
-            ensure_ascii=True,
-        ).encode("utf-8")
-    ).hexdigest()
+    return canonical_json_sha256(payload)
 
 
 def build_capability_decision_trace(
