@@ -1880,3 +1880,135 @@ async def test_offloaded_sync_mutation_cancellation_is_indeterminate() -> None:
     assert await asyncio.to_thread(completed.wait, 0.5)
     assert attempts == 1
 
+@pytest.mark.asyncio
+async def test_execution_uses_one_coherent_binding_generation_during_rebind() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="binding_snapshot",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_fields=[FieldSpec(name="value")],
+            )
+        ],
+    )
+    registry.register(tool)
+    endpoint = registry.endpoint("binding_snapshot", "read")
+    call = ToolCall(
+        tool="binding_snapshot",
+        endpoint="read",
+        fields=["value"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+
+    snapshot_taken = threading.Event()
+    rebound = threading.Event()
+    main_thread = threading.get_ident()
+    invocations: list[tuple[str, int]] = []
+
+    def invoker_a(endpoint_name: str, arguments: dict) -> dict:
+        del endpoint_name, arguments
+        invocations.append(("a", threading.get_ident()))
+        return {"value": "a"}
+
+    def invoker_b(endpoint_name: str, arguments: dict) -> dict:
+        del endpoint_name, arguments
+        invocations.append(("b", threading.get_ident()))
+        return {"value": "b"}
+
+    class InterleavingExecutor(RegistryExecutor):
+        def __init__(self) -> None:
+            super().__init__(registry)
+            self.binding_snapshot_reads = 0
+
+        def _binding_for_validated_contract(
+            self,
+            tool_key: str,
+            tool_fingerprint: str,
+        ):
+            state = super()._binding_for_validated_contract(
+                tool_key,
+                tool_fingerprint,
+            )
+            self.binding_snapshot_reads += 1
+            if self.binding_snapshot_reads == 2:
+                snapshot_taken.set()
+                assert rebound.wait(timeout=1.0)
+            return state
+
+    executor = InterleavingExecutor()
+    executor.bind(
+        tool.key,
+        invoker_a,
+        expected_fingerprint=tool.fingerprint,
+        offload_sync=False,
+    )
+
+    def replace_binding() -> None:
+        assert snapshot_taken.wait(timeout=1.0)
+        executor.bind(
+            tool.key,
+            invoker_b,
+            expected_fingerprint=tool.fingerprint,
+            offload_sync=True,
+        )
+        rebound.set()
+
+    worker = threading.Thread(target=replace_binding)
+    worker.start()
+    try:
+        result = await executor.execute_call(call)
+    finally:
+        worker.join(timeout=1.0)
+
+    assert not worker.is_alive()
+    assert result.data == {"value": "a"}
+    assert invocations == [("a", main_thread)]
+
+
+def test_restamp_does_not_resurrect_binding_removed_concurrently() -> None:
+    entered_get = threading.Event()
+    release_get = threading.Event()
+
+    class BlockingRegistry(InMemoryRegistry):
+        block_reads = False
+
+        def get(self, key: str) -> ToolSpec:
+            if self.block_reads:
+                entered_get.set()
+                assert release_get.wait(timeout=1.0)
+            return super().get(key)
+
+    registry = BlockingRegistry()
+    tool = ToolSpec(
+        name="restamp_race",
+        endpoints=[EndpointSpec(name="read", read_only=True)],
+    )
+    registry.register(tool)
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        tool.key,
+        lambda endpoint_name, arguments: None,
+        expected_fingerprint=tool.fingerprint,
+    )
+    registry.block_reads = True
+
+    result: list[bool] = []
+
+    def restamp() -> None:
+        result.append(executor.restamp_binding(tool.key, tool.fingerprint))
+
+    worker = threading.Thread(target=restamp)
+    worker.start()
+    assert entered_get.wait(timeout=1.0)
+
+    executor.unbind(tool.key)
+    release_get.set()
+    worker.join(timeout=1.0)
+
+    assert not worker.is_alive()
+    assert result == [False]
+    assert executor.binding_status_for_contract(tool.key, tool.fingerprint) == "unbound"
+
