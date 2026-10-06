@@ -764,9 +764,11 @@ class MCPBoundInvoker:
         factory: MCPBoundClientFactory,
         *,
         timeout: float = 20.0,
+        discovery_limits: MCPDiscoveryLimits | None = None,
     ) -> None:
         self.factory = factory
         self.timeout = timeout
+        self.discovery_limits = discovery_limits or MCPDiscoveryLimits()
 
     async def __call__(self, endpoint: str, arguments: dict[str, Any]) -> Any:
         async def invoke_bound() -> Any:
