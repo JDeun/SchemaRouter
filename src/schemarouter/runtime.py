@@ -1434,6 +1434,9 @@ class SchemaRouter:
 
         from .adapters.sqlite_database import introspect_sqlite_database
 
+        # Capture the catalog generation before introspection so a concurrent
+        # writer cannot land between discovery and publication unnoticed.
+        expected_version = self.registry.version
         bindings = introspect_sqlite_database(
             connection,
             database_name=database_name,
@@ -1441,27 +1444,10 @@ class SchemaRouter:
             tables=tables,
             max_default_rows=max_default_rows,
         )
-        existing_keys = set(self.registry.keys())
-        duplicate_keys = sorted(
-            binding.tool.key
-            for binding in bindings
-            if binding.tool.key in existing_keys
+        return self._register_bound_batch(
+            bindings,
+            expected_version=expected_version,
         )
-        if duplicate_keys:
-            raise RegistrationError(
-                "database introspection would replace existing tools: "
-                + ", ".join(duplicate_keys)
-            )
-
-        registered: list[str] = []
-        for binding in bindings:
-            registered.append(
-                self.add_bound_tool(
-                    binding.tool,
-                    binding.invoker,
-                )
-            )
-        return tuple(registered)
 
     def add_sqlalchemy_database(
         self,
