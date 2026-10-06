@@ -721,6 +721,53 @@ async def test_native_schema_refresh_lifecycle_controls() -> None:
         await router.arefresh_native_schema("nosql.documents")
 
 @pytest.mark.asyncio
+async def test_native_schema_watcher_isolates_unexpected_source_failure() -> None:
+    router = SchemaRouter()
+    await router.aadd_record_store(
+        FakeRecordBackend(),
+        database_name="nosql",
+        sources={"documents", "cache"},
+        remote=False,
+    )
+
+    healthy_key = "nosql.cache"
+    failing_key = "nosql.documents"
+    healthy_refresh = router._native_schema_refreshers[healthy_key]
+    healthy_calls = 0
+    healthy_reached_second_cycle = asyncio.Event()
+
+    async def fail_refresh():
+        raise RuntimeError("credential-like-detail-that-must-not-be-recorded")
+
+    async def count_healthy_refresh():
+        nonlocal healthy_calls
+        healthy_calls += 1
+        if healthy_calls >= 2:
+            healthy_reached_second_cycle.set()
+        return await healthy_refresh()
+
+    router._native_schema_refreshers[failing_key] = fail_refresh
+    router._native_schema_refreshers[healthy_key] = count_healthy_refresh
+
+    await router.start_native_schema_watcher(interval_seconds=0.01)
+    try:
+        await asyncio.wait_for(healthy_reached_second_cycle.wait(), timeout=1.0)
+        task = router._native_schema_watch_task
+        assert task is not None
+        assert task.done() is False
+    finally:
+        await router.stop_native_schema_watcher()
+
+    snapshots = router.native_schema_watch_snapshots()
+    assert len(snapshots) == 1
+    assert snapshots[0].tool_key == failing_key
+    assert snapshots[0].consecutive_failures >= 2
+    assert snapshots[0].error_kind == "unexpected_error"
+    assert "credential-like-detail" not in repr(snapshots[0])
+    assert healthy_calls >= 2
+
+
+@pytest.mark.asyncio
 async def test_remote_sync_record_backend_does_not_block_event_loop() -> None:
     class BlockingBackend(FakeRecordBackend):
         def __init__(self) -> None:
