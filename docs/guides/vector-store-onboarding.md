@@ -70,7 +70,10 @@ Unauthorized collections are non-disclosed before model selection and revalidate
 execution.
 
 Metadata/tenant filters from principal DataScope rules are applied as trusted filters at execution.
-A vendor adapter must not allow model arguments to override those tenant or department filters.
+A backend that can enforce them implements the exported `ScopedVectorStoreBackend` contract and
+sets `supports_trusted_filters = True`; SchemaRouter fails closed before backend I/O otherwise.
+Scalar filter values mean exact match, while tuple values mean any-of for that field. These filters
+come only from trusted principal state and are never exposed as model-controlled search arguments.
 
 ## Vendor adapters
 

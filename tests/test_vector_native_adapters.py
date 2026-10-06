@@ -454,10 +454,12 @@ def test_pinecone_adapter_discovers_index_and_normalizes_query() -> None:
         vector=[0.1, 0.2, 0.3],
         top_k=4,
         include_fields=("title",),
-        filters={"tenant": "tenant-a"},
+        filters={"tenant": ("tenant-a", "tenant-b")},
     )
     assert rows == [{"id": "p1", "score": 0.97, "title": "Router"}]
-    assert client.index.query_kwargs["filter"] == {"tenant": "tenant-a"}
+    assert client.index.query_kwargs["filter"] == {
+        "tenant": {"$in": ["tenant-a", "tenant-b"]}
+    }
 
 
 @dataclass
@@ -471,6 +473,7 @@ class _ChromaCollection:
 
     def query(self, **kwargs: Any) -> dict[str, Any]:
         assert kwargs["n_results"] == 2
+        self.query_kwargs = dict(kwargs)
         return {
             "ids": [["c1"]],
             "distances": [[0.11]],
@@ -494,8 +497,9 @@ class FakeChromaClient:
 
 
 def test_chroma_adapter_infers_dimension_and_normalizes_query() -> None:
+    client = FakeChromaClient()
     backend = ChromaVectorBackend(
-        FakeChromaClient(),
+        client,
         metadata_fields_by_collection={
             "docs": (
                 VectorMetadataField(
@@ -523,7 +527,10 @@ def test_chroma_adapter_infers_dimension_and_normalizes_query() -> None:
         vector=[0.1, 0.2, 0.3],
         top_k=2,
         include_fields=("title", "document"),
-        filters={"tenant": "tenant-a"},
+        filters={
+            "tenant": ("tenant-a", "tenant-b"),
+            "year": 2026,
+        },
     )
     assert rows == [
         {
@@ -533,6 +540,12 @@ def test_chroma_adapter_infers_dimension_and_normalizes_query() -> None:
             "document": "typed routing",
         }
     ]
+    assert client.collection.query_kwargs["where"] == {
+        "$and": [
+            {"tenant": {"$in": ["tenant-a", "tenant-b"]}},
+            {"year": 2026},
+        ]
+    }
 
 
 @dataclass

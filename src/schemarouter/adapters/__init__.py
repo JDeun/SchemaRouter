@@ -99,6 +99,7 @@ from .vector_native import (
     WeaviateVectorBackend,
 )
 from .vector_store import (
+    ScopedVectorStoreBackend,
     VectorCollectionBinding,
     VectorCollectionInvoker,
     VectorCollectionSpec,
@@ -172,6 +173,7 @@ __all__ = [
     "VectorCollectionInvoker",
     "VectorCollectionSpec",
     "VectorMetadataField",
+    "ScopedVectorStoreBackend",
     "VectorQueryEmbedder",
     "VectorStoreBackend",
     "SQLiteTableBinding",

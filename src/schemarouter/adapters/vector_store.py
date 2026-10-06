@@ -3,9 +3,9 @@ from __future__ import annotations
 import asyncio
 import inspect
 import re
-from collections.abc import Awaitable, Callable, Iterable, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 from pydantic import Field, model_validator
 
@@ -68,7 +68,11 @@ class VectorCollectionSpec(StrictModel):
 
 
 class VectorStoreBackend(Protocol):
-    """Trusted backend contract implemented by vendor adapters or host applications."""
+    """Base vector backend contract.
+
+    Backends that do not enforce trusted authorization predicates implement only
+    this interface and remain usable when no trusted data-scope filters apply.
+    """
 
     def list_collections(
         self,
@@ -81,6 +85,27 @@ class VectorStoreBackend(Protocol):
         vector: Sequence[float],
         top_k: int,
         include_fields: tuple[str, ...],
+    ) -> list[dict[str, Any]] | Awaitable[list[dict[str, Any]]]: ...
+
+
+class ScopedVectorStoreBackend(VectorStoreBackend, Protocol):
+    """Vector backend that explicitly supports trusted data-scope predicates.
+
+    Filter values use exact-match semantics for scalars. Tuple values represent
+    an any-of match for the same field. The filters are trusted host data and
+    must never be exposed as model-controlled search arguments.
+    """
+
+    supports_trusted_filters: bool
+
+    def search(
+        self,
+        *,
+        collection: str,
+        vector: Sequence[float],
+        top_k: int,
+        include_fields: tuple[str, ...],
+        filters: Mapping[str, Any] | None = None,
     ) -> list[dict[str, Any]] | Awaitable[list[dict[str, Any]]]: ...
 
 
@@ -188,6 +213,7 @@ class VectorCollectionInvoker:
             "top_k": top_k,
             "include_fields": selected_metadata,
         }
+        search = self._backend.search
         scope = _current_data_scope()
         if scope is not None and scope.trusted_filters:
             trusted_filters = scope.filter_dict()
@@ -198,19 +224,16 @@ class VectorCollectionInvoker:
                 raise PolicyViolationError(
                     "authorization denied for requested data scope"
                 )
-            search: Any = self._backend.search
-            try:
-                parameters = inspect.signature(search).parameters
-            except (TypeError, ValueError):
-                parameters = {}
-            if "filters" not in parameters:
+            if getattr(self._backend, "supports_trusted_filters", False) is not True:
                 raise PolicyViolationError(
                     "authorization denied for requested data scope"
                 )
+            scoped_backend = cast(ScopedVectorStoreBackend, self._backend)
+            search = scoped_backend.search
             search_kwargs["filters"] = trusted_filters
 
         raw_results = await _call_backend(
-            self._backend.search,
+            search,
             offload_sync=self._offload_sync_backend,
             **search_kwargs,
         )
