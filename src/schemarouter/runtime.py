@@ -1659,6 +1659,8 @@ class SchemaRouter:
         collections: set[str] | tuple[str, ...] | list[str] | None = None,
         default_top_k: int = 10,
         remote: bool = True,
+        max_discovery_sources: int = 128,
+        max_fields_per_collection: int = 256,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_vector_store`."""
 
@@ -1737,8 +1739,6 @@ class SchemaRouter:
                 filter_builder=filter_builder,
                 default_top_k=default_top_k,
                 remote=remote,
-                max_discovery_sources=max_discovery_sources,
-                max_fields_per_collection=max_fields_per_collection,
             )
         )
 
@@ -1799,8 +1799,6 @@ class SchemaRouter:
                 metric_by_collection=metric_by_collection,
                 default_top_k=default_top_k,
                 remote=remote,
-                max_discovery_sources=max_discovery_sources,
-                max_fields_per_collection=max_fields_per_collection,
             )
         )
 
@@ -1855,8 +1853,6 @@ class SchemaRouter:
                 metadata_fields_by_index=metadata_fields_by_index,
                 default_top_k=default_top_k,
                 remote=remote,
-                max_discovery_sources=max_discovery_sources,
-                max_fields_per_collection=max_fields_per_collection,
             )
         )
 
@@ -1919,8 +1915,6 @@ class SchemaRouter:
                 metric_by_collection=metric_by_collection,
                 default_top_k=default_top_k,
                 remote=remote,
-                max_discovery_sources=max_discovery_sources,
-                max_fields_per_collection=max_fields_per_collection,
             )
         )
 
@@ -1987,8 +1981,6 @@ class SchemaRouter:
                 filter_builder=filter_builder,
                 default_top_k=default_top_k,
                 remote=remote,
-                max_discovery_sources=max_discovery_sources,
-                max_fields_per_collection=max_fields_per_collection,
             )
         )
 
@@ -2055,8 +2047,6 @@ class SchemaRouter:
                 schema=schema,
                 default_top_k=default_top_k,
                 remote=remote,
-                max_discovery_sources=max_discovery_sources,
-                max_fields_per_collection=max_fields_per_collection,
             )
         )
 
@@ -2132,6 +2122,8 @@ class SchemaRouter:
         default_limit: int = 100,
         default_max_hops: int = 1,
         remote: bool = True,
+        max_discovery_sources: int = 128,
+        max_schema_items_per_graph: int = 256,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_graph_store`."""
 
@@ -2217,6 +2209,8 @@ class SchemaRouter:
         sources: set[str] | tuple[str, ...] | list[str] | None = None,
         default_limit: int = 100,
         remote: bool = True,
+        max_discovery_sources: int = 128,
+        max_fields_per_source: int = 256,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_record_store`."""
 
@@ -2287,8 +2281,6 @@ class SchemaRouter:
                 default_limit=default_limit,
                 default_max_hops=default_max_hops,
                 remote=remote,
-                max_discovery_sources=max_discovery_sources,
-                max_schema_items_per_graph=max_schema_items_per_graph,
             )
         )
 
@@ -2340,8 +2332,6 @@ class SchemaRouter:
                 default_limit=default_limit,
                 default_max_hops=default_max_hops,
                 remote=remote,
-                max_discovery_sources=max_discovery_sources,
-                max_schema_items_per_graph=max_schema_items_per_graph,
             )
         )
 
@@ -2399,8 +2389,6 @@ class SchemaRouter:
                 default_limit=default_limit,
                 default_max_hops=default_max_hops,
                 remote=remote,
-                max_discovery_sources=max_discovery_sources,
-                max_schema_items_per_graph=max_schema_items_per_graph,
             )
         )
 
@@ -2451,8 +2439,6 @@ class SchemaRouter:
                 default_limit=default_limit,
                 default_max_hops=default_max_hops,
                 remote=remote,
-                max_discovery_sources=max_discovery_sources,
-                max_schema_items_per_graph=max_schema_items_per_graph,
             )
         )
 
