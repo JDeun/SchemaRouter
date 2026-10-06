@@ -334,3 +334,33 @@ def test_ambiguous_shared_identifier_bridge_remains_unmerged() -> None:
         ("provider_b",),
         ("provider_unknown",),
     }
+
+
+def test_document_transitive_bridge_does_not_merge_conflicting_arxiv_ids() -> None:
+    records = [
+        SourceRecord(
+            provider="provider_a",
+            entity_kind="document",
+            identifiers={"doi": "10.1000/arxiv-conflict", "arxiv": "2609.00001"},
+        ),
+        SourceRecord(
+            provider="provider_b",
+            entity_kind="document",
+            identifiers={"doi": "10.1000/arxiv-conflict", "arxiv": "2609.00002"},
+        ),
+        SourceRecord(
+            provider="provider_c",
+            entity_kind="document",
+            identifiers={"arxiv": "arXiv:2609.00002"},
+        ),
+    ]
+
+    entities = aggregate_records(records)
+
+    assert len(entities) == 2
+    by_providers = {tuple(entity.providers): entity for entity in entities}
+    assert by_providers[("provider_a",)].identifiers["arxiv"] == "2609.00001"
+    assert (
+        by_providers[("provider_b", "provider_c")].identifiers["arxiv"]
+        == "2609.00002"
+    )
