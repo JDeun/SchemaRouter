@@ -35,6 +35,38 @@ router = await SchemaRouter.from_url(
 Discovery performs protocol negotiation, paginates `list_tools()`, and imports each advertised
 `inputSchema` and `outputSchema`.
 
+### Discovery resource limits
+
+MCP catalogs are untrusted input. Discovery is fail-closed on repeated/cyclic cursors and applies
+a total wall-clock timeout plus configurable limits for page count, tool count, schema bytes, and
+the complete serialized tool payload (including descriptions and annotations). The payload budget
+prevents a server from bypassing schema limits with oversized metadata.
+
+```python
+from schemarouter import MCPDiscoveryLimits
+
+limits = MCPDiscoveryLimits(
+    max_pages=32,
+    max_tools=512,
+    max_tool_schema_bytes=256 * 1024,
+    max_total_schema_bytes=4 * 1024 * 1024,
+    max_tool_payload_bytes=512 * 1024,
+    max_total_payload_bytes=8 * 1024 * 1024,
+)
+
+tool = await router.add_url(
+    "https://mcp.example.com/mcp",
+    kind="mcp",
+    mcp_discovery_limits=limits,
+)
+```
+
+The defaults are 64 pages, 1,024 tools, 512 KiB per tool schema, 5 MiB aggregate schema,
+1 MiB per complete tool payload, and 10 MiB aggregate payload. A failed discovery publishes
+neither a partial catalog nor a runtime binding. The same limits can be supplied to
+`SchemaRouter.from_url()`, `probe_url()`, `add_mcp_client_factory()`, `add_mcp_stdio()`,
+and schema refresh calls.
+
 ## Local stdio servers
 
 CLI-distributed MCP servers can be registered without inventing an HTTP URL:

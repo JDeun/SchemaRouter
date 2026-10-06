@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 from types import SimpleNamespace
 
@@ -12,10 +13,13 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.adapters.mcp import (
+    MCPDiscoveryLimits,
     MCPRemoteInvoker,
     MCPStdioConfig,
+    inspect_mcp_client_factory,
     inspect_mcp_url,
 )
+from schemarouter.errors import SchemaSourceError
 
 
 class RecordingFactory:
@@ -349,3 +353,251 @@ def test_mcp_stdio_config_enforces_command_allowlist_and_hides_env_values_from_i
 def test_mcp_stdio_config_rejects_control_characters(value: str) -> None:
     with pytest.raises(ValueError):
         MCPStdioConfig(command=value)
+
+def _catalog_tool(
+    name: str,
+    *,
+    description_size: int = 0,
+    tool_description_size: int = 0,
+) -> dict[str, object]:
+    property_schema: dict[str, object] = {"type": "string"}
+    if description_size:
+        property_schema["description"] = "x" * description_size
+    return {
+        "name": name,
+        "description": (
+            "x" * tool_description_size
+            if tool_description_size
+            else "fixture"
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {"value": property_schema},
+        },
+        "outputSchema": {
+            "type": "object",
+            "properties": {"value": {"type": "string"}},
+        },
+    }
+
+
+class PaginatedBoundFactory:
+    def __init__(
+        self,
+        pages: dict[str | None, tuple[list[dict[str, object]], str | None]],
+        *,
+        block: bool = False,
+    ) -> None:
+        self.pages = pages
+        self.block = block
+        self.cursors: list[str | None] = []
+        self.client = SimpleNamespace(
+            server_info=SimpleNamespace(name="paginated-server"),
+            protocol_version="2026-07-28",
+        )
+
+        async def list_tools(*, cursor=None):
+            self.cursors.append(cursor)
+            if self.block:
+                await asyncio.Event().wait()
+            tools, next_cursor = self.pages[cursor]
+            return SimpleNamespace(tools=tools, next_cursor=next_cursor)
+
+        self.client.list_tools = list_tools
+
+    @asynccontextmanager
+    async def __call__(self, *, timeout=20.0):
+        yield self.client
+
+
+@pytest.mark.asyncio
+async def test_mcp_discovery_accepts_finite_pagination_within_limits() -> None:
+    factory = PaginatedBoundFactory(
+        {
+            None: ([_catalog_tool("first")], "next"),
+            "next": ([_catalog_tool("second")], None),
+        }
+    )
+
+    tool = await inspect_mcp_client_factory(
+        factory,
+        discovery_limits=MCPDiscoveryLimits(max_pages=2, max_tools=2),
+    )
+
+    assert [endpoint.name for endpoint in tool.endpoints] == ["first", "second"]
+    assert factory.cursors == [None, "next"]
+
+
+@pytest.mark.asyncio
+async def test_mcp_discovery_rejects_repeated_cursor_without_registration() -> None:
+    factory = PaginatedBoundFactory(
+        {
+            None: ([_catalog_tool("first")], "same"),
+            "same": ([_catalog_tool("second")], "same"),
+        }
+    )
+    router = SchemaRouter(
+        policy=ExecutionPolicy(allow_unclassified_remote=True)
+    )
+
+    with pytest.raises(SchemaSourceError, match="repeated pagination cursor"):
+        await router.add_mcp_client_factory(factory, name="unsafe")
+
+    assert factory.cursors == [None, "same"]
+    assert router.registry.keys() == ()
+    assert router.executor.bound_keys() == ()
+
+
+@pytest.mark.asyncio
+async def test_mcp_discovery_rejects_cursor_cycle() -> None:
+    factory = PaginatedBoundFactory(
+        {
+            None: ([_catalog_tool("first")], "a"),
+            "a": ([_catalog_tool("second")], "b"),
+            "b": ([_catalog_tool("third")], "a"),
+        }
+    )
+
+    with pytest.raises(SchemaSourceError, match="repeated pagination cursor"):
+        await inspect_mcp_client_factory(factory)
+
+    assert factory.cursors == [None, "a", "b"]
+
+
+@pytest.mark.asyncio
+async def test_mcp_discovery_rejects_endless_unique_pagination_at_page_limit() -> None:
+    factory = PaginatedBoundFactory(
+        {
+            None: ([_catalog_tool("first")], "a"),
+            "a": ([_catalog_tool("second")], "b"),
+            "b": ([_catalog_tool("third")], "c"),
+        }
+    )
+
+    with pytest.raises(SchemaSourceError, match="page limit"):
+        await inspect_mcp_client_factory(
+            factory,
+            discovery_limits=MCPDiscoveryLimits(max_pages=3),
+        )
+
+    assert factory.cursors == [None, "a", "b"]
+
+
+@pytest.mark.asyncio
+async def test_mcp_discovery_rejects_oversized_tool_catalog() -> None:
+    factory = PaginatedBoundFactory(
+        {
+            None: (
+                [
+                    _catalog_tool("first"),
+                    _catalog_tool("second"),
+                    _catalog_tool("third"),
+                ],
+                None,
+            ),
+        }
+    )
+
+    with pytest.raises(SchemaSourceError, match="tool-count limit"):
+        await inspect_mcp_client_factory(
+            factory,
+            discovery_limits=MCPDiscoveryLimits(max_tools=2),
+        )
+
+
+@pytest.mark.asyncio
+async def test_mcp_discovery_rejects_oversized_individual_tool_schema() -> None:
+    factory = PaginatedBoundFactory(
+        {
+            None: ([_catalog_tool("oversized", description_size=2048)], None),
+        }
+    )
+
+    with pytest.raises(SchemaSourceError, match="per-tool byte limit"):
+        await inspect_mcp_client_factory(
+            factory,
+            discovery_limits=MCPDiscoveryLimits(max_tool_schema_bytes=256),
+        )
+
+
+@pytest.mark.asyncio
+async def test_mcp_discovery_rejects_aggregate_schema_budget_overflow() -> None:
+    factory = PaginatedBoundFactory(
+        {
+            None: (
+                [
+                    _catalog_tool("first", description_size=256),
+                    _catalog_tool("second", description_size=256),
+                ],
+                None,
+            ),
+        }
+    )
+
+    with pytest.raises(SchemaSourceError, match="aggregate schema byte limit"):
+        await inspect_mcp_client_factory(
+            factory,
+            discovery_limits=MCPDiscoveryLimits(
+                max_tool_schema_bytes=1024,
+                max_total_schema_bytes=600,
+            ),
+        )
+
+
+@pytest.mark.asyncio
+async def test_mcp_discovery_rejects_oversized_tool_metadata_payload() -> None:
+    factory = PaginatedBoundFactory(
+        {
+            None: (
+                [_catalog_tool("metadata-heavy", tool_description_size=2048)],
+                None,
+            ),
+        }
+    )
+
+    with pytest.raises(SchemaSourceError, match="tool payload"):
+        await inspect_mcp_client_factory(
+            factory,
+            discovery_limits=MCPDiscoveryLimits(
+                max_tool_payload_bytes=512,
+            ),
+        )
+
+
+@pytest.mark.asyncio
+async def test_mcp_discovery_rejects_aggregate_payload_budget_overflow() -> None:
+    factory = PaginatedBoundFactory(
+        {
+            None: (
+                [
+                    _catalog_tool("first", tool_description_size=300),
+                    _catalog_tool("second", tool_description_size=300),
+                ],
+                None,
+            ),
+        }
+    )
+
+    with pytest.raises(SchemaSourceError, match="aggregate payload byte limit"):
+        await inspect_mcp_client_factory(
+            factory,
+            discovery_limits=MCPDiscoveryLimits(
+                max_tool_payload_bytes=1024,
+                max_total_payload_bytes=900,
+            ),
+        )
+
+
+@pytest.mark.asyncio
+async def test_mcp_discovery_applies_timeout_to_entire_catalog_walk() -> None:
+    factory = PaginatedBoundFactory(
+        {None: ([_catalog_tool("never")], None)},
+        block=True,
+    )
+
+    with pytest.raises(SchemaSourceError, match="total timeout"):
+        await inspect_mcp_client_factory(
+            factory,
+            timeout=0.01,
+        )
+

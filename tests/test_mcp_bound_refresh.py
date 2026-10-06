@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from schemarouter import SchemaRouter
+from schemarouter import MCPDiscoveryLimits, SchemaRouter
 from schemarouter.errors import SchemaSourceError
 
 
@@ -178,3 +178,39 @@ async def test_bound_mcp_refresh_fails_closed_without_current_transport_binding(
         match="no current trusted MCP transport binding",
     ):
         await router.arefresh_schema(tool.key)
+
+@pytest.mark.asyncio
+async def test_bound_mcp_refresh_preserves_registered_discovery_limits() -> None:
+    factory = RefreshableBoundFactory()
+    router = SchemaRouter()
+    tool = await router.add_mcp_client_factory(
+        factory,
+        name="bounded-refresh",
+        transport="inprocess",
+        transport_fingerprint="fixture-inprocess-v1",
+        discovery_limits=MCPDiscoveryLimits(max_tools=1),
+    )
+
+    async def expanded_list_tools(*, cursor=None):
+        assert cursor is None
+        return SimpleNamespace(
+            tools=[
+                {
+                    "name": "whoami",
+                    "inputSchema": {"type": "object"},
+                    "outputSchema": {"type": "object"},
+                },
+                {
+                    "name": "extra",
+                    "inputSchema": {"type": "object"},
+                    "outputSchema": {"type": "object"},
+                },
+            ],
+            next_cursor=None,
+        )
+
+    factory.client.list_tools = expanded_list_tools
+
+    with pytest.raises(SchemaSourceError, match="tool-count limit"):
+        await router.arefresh_schema(tool.key)
+

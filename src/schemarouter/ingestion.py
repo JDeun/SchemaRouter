@@ -23,7 +23,7 @@ from .adapters.base import (
     SourceAdapter,
 )
 from .adapters.graphql import GraphQLSourceAdapter
-from .adapters.mcp import MCPRemoteInvoker, inspect_mcp_url
+from .adapters.mcp import MCPDiscoveryLimits, MCPRemoteInvoker, inspect_mcp_url
 from .adapters.odata import ODataSourceAdapter
 from .adapters.openapi import (
     OpenAPIRemoteInvoker,
@@ -1099,6 +1099,7 @@ class MCPSourceAdapter:
                 timeout=context.timeout,
                 client_factory=context.mcp_client_factory,
                 network_policy=context.network_policy,
+                discovery_limits=context.mcp_discovery_limits,
             )
         except (
             httpx.TimeoutException,
@@ -1257,6 +1258,7 @@ class URLSchemaLoader:
         schema_validators: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: Any | None = None,
+        mcp_discovery_limits: MCPDiscoveryLimits | None = None,
         allow_active_probes: bool = False,
         openapi_external_refs: bool = False,
         openapi_ref_max_depth: int = _DEFAULT_OPENAPI_REF_MAX_DEPTH,
@@ -1276,6 +1278,7 @@ class URLSchemaLoader:
             schema_validators=schema_validators,
             trusted_headers=trusted_headers,
             mcp_client_factory=mcp_client_factory,
+            mcp_discovery_limits=mcp_discovery_limits,
             allow_active_probes=allow_active_probes,
             openapi_external_refs=openapi_external_refs,
             openapi_ref_max_depth=openapi_ref_max_depth,
@@ -1327,6 +1330,7 @@ class URLSchemaLoader:
         schema_validators: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: Any | None = None,
+        mcp_discovery_limits: MCPDiscoveryLimits | None = None,
         allow_active_probes: bool = False,
         openapi_external_refs: bool = False,
         openapi_ref_max_depth: int = _DEFAULT_OPENAPI_REF_MAX_DEPTH,
@@ -1361,6 +1365,7 @@ class URLSchemaLoader:
             schema_validators=schema_validators,
             trusted_headers=trusted_headers,
             mcp_client_factory=mcp_client_factory,
+            mcp_discovery_limits=mcp_discovery_limits,
             openapi_external_refs=openapi_external_refs,
             openapi_ref_max_depth=openapi_ref_max_depth,
             openapi_ref_max_documents=openapi_ref_max_documents,
@@ -1589,6 +1594,7 @@ class URLSchemaLoader:
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: Any | None = None,
+        mcp_discovery_limits: MCPDiscoveryLimits | None = None,
         allow_active_probes: bool = False,
         openapi_external_refs: bool = False,
         openapi_ref_max_depth: int = _DEFAULT_OPENAPI_REF_MAX_DEPTH,
@@ -1608,6 +1614,7 @@ class URLSchemaLoader:
             schema_headers=schema_headers,
             trusted_headers=trusted_headers,
             mcp_client_factory=mcp_client_factory,
+            mcp_discovery_limits=mcp_discovery_limits,
             allow_active_probes=allow_active_probes,
             openapi_external_refs=openapi_external_refs,
             openapi_ref_max_depth=openapi_ref_max_depth,
