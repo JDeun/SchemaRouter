@@ -775,6 +775,7 @@ __all__ = [
     "TraceRedactionConfig",
     "TraceError",
     "TracePersistenceError",
+    "TransientInvocationError",
     "UnsupportedSchemaSourceError",
     "schema_tool",
     "tool_from_callable",
