@@ -13,8 +13,11 @@ from .errors import StorageFormatError, TraceError
 from .models import StrictModel
 from .runs import RunEvent
 from .storage import (
+    _PERSISTED_FETCH_BATCH_SIZE,
     PersistedDocumentLimits,
+    _PersistedCollectionLimitError,
     _PersistedDocumentLimitError,
+    _PersistedReadBudget,
     _resolve_persisted_document_limits,
     _validate_persisted_document_size,
     _validate_persisted_json_document,
@@ -85,123 +88,149 @@ def _validate_legacy_trace_storage(
 ) -> None:
     limits = _resolve_persisted_document_limits(document_limits)
     try:
-        summaries = connection.execute(
+        summaries_cursor = connection.execute(
             """
             SELECT run_id, created_at, last_sequence, last_timestamp, terminal
             FROM schemarouter_trace_runs
             ORDER BY created_at, run_id
             """
-        ).fetchall()
+        )
     except sqlite3.DatabaseError as exc:
         raise StorageFormatError(
             "legacy trace table shape is not compatible with migration"
         ) from exc
 
-    for summary in summaries:
-        run_id = str(summary["run_id"])
+    budget = _PersistedReadBudget(limits)
+    while True:
         try:
-            rows = connection.execute(
-                """
-                SELECT
-                    sequence,
-                    length(CAST(document AS BLOB)) AS document_bytes,
-                    CASE
-                        WHEN length(CAST(document AS BLOB)) <= ?
-                        THEN document
-                        ELSE NULL
-                    END AS document
-                FROM schemarouter_trace_events
-                WHERE run_id = ?
-                ORDER BY sequence
-                """,
-                (limits.max_bytes, run_id),
-            ).fetchall()
+            summaries = summaries_cursor.fetchmany(_PERSISTED_FETCH_BATCH_SIZE)
         except sqlite3.DatabaseError as exc:
             raise StorageFormatError(
-                "legacy trace event table shape is not compatible with migration"
+                "legacy trace table shape is not compatible with migration"
             ) from exc
-        if not rows:
-            raise StorageFormatError(
-                f"legacy run trace {run_id!r} has no persisted events"
-            )
+        if not summaries:
+            break
 
-        events: list[RunEvent] = []
-        for row in rows:
+        for summary in summaries:
+            run_id = str(summary["run_id"])
             try:
-                sequence = int(row["sequence"])
+                rows_cursor = connection.execute(
+                    """
+                    SELECT
+                        sequence,
+                        length(CAST(document AS BLOB)) AS document_bytes,
+                        CASE
+                            WHEN length(CAST(document AS BLOB)) <= ?
+                            THEN document
+                            ELSE NULL
+                        END AS document
+                    FROM schemarouter_trace_events
+                    WHERE run_id = ?
+                    ORDER BY sequence
+                    """,
+                    (limits.max_bytes, run_id),
+                )
+            except sqlite3.DatabaseError as exc:
+                raise StorageFormatError(
+                    "legacy trace event table shape is not compatible with migration"
+                ) from exc
+
+            events: list[RunEvent] = []
+            while True:
+                try:
+                    rows = rows_cursor.fetchmany(_PERSISTED_FETCH_BATCH_SIZE)
+                except sqlite3.DatabaseError as exc:
+                    raise StorageFormatError(
+                        "legacy trace event table shape is not compatible with migration"
+                    ) from exc
+                if not rows:
+                    break
+                for row in rows:
+                    try:
+                        sequence = int(row["sequence"])
+                    except (TypeError, ValueError) as exc:
+                        raise StorageFormatError(
+                            f"legacy run trace {run_id!r} contains an invalid sequence"
+                        ) from exc
+                    try:
+                        encoded_bytes = int(row["document_bytes"])
+                        _validate_persisted_document_size(
+                            encoded_bytes,
+                            limits=limits,
+                        )
+                        budget.consume(encoded_bytes)
+                        document = row["document"]
+                        _validate_persisted_json_document(
+                            document,
+                            limits=limits,
+                            encoded_bytes=encoded_bytes,
+                        )
+                    except _PersistedCollectionLimitError as exc:
+                        raise StorageFormatError(
+                            "legacy trace exceeds persisted JSON collection limits"
+                        ) from exc
+                    except (TypeError, ValueError, _PersistedDocumentLimitError) as exc:
+                        raise StorageFormatError(
+                            f"legacy run event {run_id}:{sequence} "
+                            "exceeds persisted JSON document limits"
+                        ) from exc
+                    try:
+                        event = RunEvent.model_validate_json(document)
+                    except (ValidationError, ValueError, RecursionError) as exc:
+                        raise StorageFormatError(
+                            f"legacy run event {run_id}:{sequence} "
+                            "cannot be migrated safely"
+                        ) from exc
+                    if event.run_id != run_id or event.sequence != sequence:
+                        raise StorageFormatError(
+                            f"legacy run event identity mismatch at "
+                            f"{run_id}:{sequence}"
+                        )
+                    events.append(event)
+
+            if not events:
+                raise StorageFormatError(
+                    f"legacy run trace {run_id!r} has no persisted events"
+                )
+
+            try:
+                trace = RunTrace(run_id=run_id, events=events)
+            except ValidationError as exc:
+                raise StorageFormatError(
+                    f"legacy run trace {run_id!r} violates replay invariants"
+                ) from exc
+
+            first_timestamp = trace.events[0].timestamp.timestamp()
+            last_timestamp = trace.events[-1].timestamp.timestamp()
+            try:
+                created_at = float(summary["created_at"])
+                last_sequence = int(summary["last_sequence"])
+                stored_last_timestamp = float(summary["last_timestamp"])
+                terminal_raw = int(summary["terminal"])
             except (TypeError, ValueError) as exc:
                 raise StorageFormatError(
-                    f"legacy run trace {run_id!r} contains an invalid sequence"
+                    f"legacy run trace {run_id!r} summary contains invalid values"
                 ) from exc
-            try:
-                encoded_bytes = int(row["document_bytes"])
-                _validate_persisted_document_size(
-                    encoded_bytes,
-                    limits=limits,
-                )
-                document = row["document"]
-                _validate_persisted_json_document(
-                    document,
-                    limits=limits,
-                    encoded_bytes=encoded_bytes,
-                )
-            except (TypeError, ValueError, _PersistedDocumentLimitError) as exc:
+            if terminal_raw not in {0, 1}:
                 raise StorageFormatError(
-                    f"legacy run event {run_id}:{sequence} "
-                    "exceeds persisted JSON document limits"
-                ) from exc
-            try:
-                event = RunEvent.model_validate_json(document)
-            except (ValidationError, ValueError, RecursionError) as exc:
-                raise StorageFormatError(
-                    f"legacy run event {run_id}:{sequence} "
-                    "cannot be migrated safely"
-                ) from exc
-            if event.run_id != run_id or event.sequence != sequence:
-                raise StorageFormatError(
-                    f"legacy run event identity mismatch at "
-                    f"{run_id}:{sequence}"
+                    f"legacy run trace {run_id!r} terminal summary is invalid"
                 )
-            events.append(event)
-
-        try:
-            trace = RunTrace(run_id=run_id, events=events)
-        except ValidationError as exc:
-            raise StorageFormatError(
-                f"legacy run trace {run_id!r} violates replay invariants"
-            ) from exc
-
-        first_timestamp = trace.events[0].timestamp.timestamp()
-        last_timestamp = trace.events[-1].timestamp.timestamp()
-        try:
-            created_at = float(summary["created_at"])
-            last_sequence = int(summary["last_sequence"])
-            stored_last_timestamp = float(summary["last_timestamp"])
-            terminal_raw = int(summary["terminal"])
-        except (TypeError, ValueError) as exc:
-            raise StorageFormatError(
-                f"legacy run trace {run_id!r} summary contains invalid values"
-            ) from exc
-        if terminal_raw not in {0, 1}:
-            raise StorageFormatError(
-                f"legacy run trace {run_id!r} terminal summary is invalid"
-            )
-        if abs(created_at - first_timestamp) > 1e-6:
-            raise StorageFormatError(
-                f"legacy run trace {run_id!r} created_at summary is invalid"
-            )
-        if last_sequence != trace.events[-1].sequence:
-            raise StorageFormatError(
-                f"legacy run trace {run_id!r} sequence summary is invalid"
-            )
-        if abs(stored_last_timestamp - last_timestamp) > 1e-6:
-            raise StorageFormatError(
-                f"legacy run trace {run_id!r} timestamp summary is invalid"
-            )
-        if bool(terminal_raw) != trace.complete:
-            raise StorageFormatError(
-                f"legacy run trace {run_id!r} terminal summary is invalid"
-            )
+            if abs(created_at - first_timestamp) > 1e-6:
+                raise StorageFormatError(
+                    f"legacy run trace {run_id!r} created_at summary is invalid"
+                )
+            if last_sequence != trace.events[-1].sequence:
+                raise StorageFormatError(
+                    f"legacy run trace {run_id!r} sequence summary is invalid"
+                )
+            if abs(stored_last_timestamp - last_timestamp) > 1e-6:
+                raise StorageFormatError(
+                    f"legacy run trace {run_id!r} timestamp summary is invalid"
+                )
+            if bool(terminal_raw) != trace.complete:
+                raise StorageFormatError(
+                    f"legacy run trace {run_id!r} terminal summary is invalid"
+                )
 
     try:
         orphan = connection.execute(
@@ -545,7 +574,7 @@ class SQLiteRunTraceStore:
                 """,
                 (run_id,),
             ).fetchone()
-            rows = self._connection.execute(
+            cursor = self._connection.execute(
                 """
                 SELECT
                     sequence,
@@ -560,17 +589,46 @@ class SQLiteRunTraceStore:
                 ORDER BY sequence
                 """,
                 (self._document_limits.max_bytes, run_id),
-            ).fetchall()
-            if summary is None or not rows:
+            )
+            if summary is None:
                 raise KeyError(run_id)
-            events = [
-                self._deserialize_row(
-                    run_id,
-                    int(row["sequence"]),
-                    row,
-                )
-                for row in rows
-            ]
+
+            budget = _PersistedReadBudget(self._document_limits)
+            events: list[RunEvent] = []
+            while True:
+                rows = cursor.fetchmany(_PERSISTED_FETCH_BATCH_SIZE)
+                if not rows:
+                    break
+                for row in rows:
+                    sequence = int(row["sequence"])
+                    try:
+                        encoded_bytes = int(row["document_bytes"])
+                        _validate_persisted_document_size(
+                            encoded_bytes,
+                            limits=self._document_limits,
+                        )
+                    except (TypeError, ValueError, _PersistedDocumentLimitError) as exc:
+                        raise TraceError(
+                            f"stored run event {run_id}:{sequence} exceeds configured "
+                            "persisted JSON document limits"
+                        ) from exc
+                    try:
+                        budget.consume(encoded_bytes)
+                    except _PersistedCollectionLimitError as exc:
+                        raise TraceError(
+                            f"stored run trace {run_id!r} exceeds configured "
+                            "persisted JSON collection limits"
+                        ) from exc
+                    events.append(
+                        self._deserialize_row(
+                            run_id,
+                            sequence,
+                            row,
+                        )
+                    )
+            if not events:
+                raise KeyError(run_id)
+
         try:
             trace = RunTrace(run_id=run_id, events=events)
         except ValidationError as exc:
@@ -586,15 +644,15 @@ class SQLiteRunTraceStore:
         with self._lock:
             self._ensure_open()
             if complete is None:
-                rows = self._connection.execute(
+                cursor = self._connection.execute(
                     """
                     SELECT run_id
                     FROM schemarouter_trace_runs
                     ORDER BY created_at, run_id
                     """
-                ).fetchall()
+                )
             else:
-                rows = self._connection.execute(
+                cursor = self._connection.execute(
                     """
                     SELECT run_id
                     FROM schemarouter_trace_runs
@@ -602,8 +660,23 @@ class SQLiteRunTraceStore:
                     ORDER BY created_at, run_id
                     """,
                     (1 if complete else 0,),
-                ).fetchall()
-            return tuple(str(row["run_id"]) for row in rows)
+                )
+
+            budget = _PersistedReadBudget(self._document_limits)
+            run_ids: list[str] = []
+            while True:
+                rows = cursor.fetchmany(_PERSISTED_FETCH_BATCH_SIZE)
+                if not rows:
+                    break
+                for row in rows:
+                    try:
+                        budget.consume(0)
+                    except _PersistedCollectionLimitError as exc:
+                        raise TraceError(
+                            "stored trace index exceeds configured persisted collection limits"
+                        ) from exc
+                    run_ids.append(str(row["run_id"]))
+            return tuple(run_ids)
 
     def delete(self, run_id: str) -> None:
         with self._lock:

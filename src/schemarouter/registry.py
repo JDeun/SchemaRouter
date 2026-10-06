@@ -11,8 +11,11 @@ from pydantic import ValidationError
 from .errors import RegistrationError, StorageFormatError
 from .models import EndpointSpec, ToolSpec
 from .storage import (
+    _PERSISTED_FETCH_BATCH_SIZE,
     PersistedDocumentLimits,
+    _PersistedCollectionLimitError,
     _PersistedDocumentLimitError,
+    _PersistedReadBudget,
     _resolve_persisted_document_limits,
     _validate_persisted_document_size,
     _validate_persisted_json_document,
@@ -375,7 +378,7 @@ def _validate_legacy_registry_storage(
         )
 
     try:
-        rows = connection.execute(
+        cursor = connection.execute(
             """
             SELECT
                 key,
@@ -390,55 +393,70 @@ def _validate_legacy_registry_storage(
             ORDER BY position
             """,
             (limits.max_bytes,),
-        ).fetchall()
+        )
     except sqlite3.DatabaseError as exc:
         raise StorageFormatError(
             "legacy registry table shape is not compatible with migration"
         ) from exc
 
     seen_positions: set[int] = set()
-    for stored in rows:
-        key = str(stored["key"])
+    budget = _PersistedReadBudget(limits)
+    while True:
         try:
-            position = int(stored["position"])
-        except (TypeError, ValueError) as exc:
+            rows = cursor.fetchmany(_PERSISTED_FETCH_BATCH_SIZE)
+        except sqlite3.DatabaseError as exc:
             raise StorageFormatError(
-                f"stored tool {key!r} has an invalid registry position"
+                "legacy registry table shape is not compatible with migration"
             ) from exc
-        if position < 0 or position in seen_positions:
-            raise StorageFormatError(
-                f"stored tool {key!r} has an invalid registry position"
-            )
-        seen_positions.add(position)
+        if not rows:
+            break
+        for stored in rows:
+            key = str(stored["key"])
+            try:
+                position = int(stored["position"])
+            except (TypeError, ValueError) as exc:
+                raise StorageFormatError(
+                    f"stored tool {key!r} has an invalid registry position"
+                ) from exc
+            if position < 0 or position in seen_positions:
+                raise StorageFormatError(
+                    f"stored tool {key!r} has an invalid registry position"
+                )
+            seen_positions.add(position)
 
-        try:
-            encoded_bytes = int(stored["document_bytes"])
-            _validate_persisted_document_size(
-                encoded_bytes,
-                limits=limits,
-            )
-            document = stored["document"]
-            _validate_persisted_json_document(
-                document,
-                limits=limits,
-                encoded_bytes=encoded_bytes,
-            )
-        except (TypeError, ValueError, _PersistedDocumentLimitError) as exc:
-            raise StorageFormatError(
-                f"legacy stored tool {key!r} exceeds persisted JSON document limits"
-            ) from exc
+            try:
+                encoded_bytes = int(stored["document_bytes"])
+                _validate_persisted_document_size(
+                    encoded_bytes,
+                    limits=limits,
+                )
+                budget.consume(encoded_bytes)
+                document = stored["document"]
+                _validate_persisted_json_document(
+                    document,
+                    limits=limits,
+                    encoded_bytes=encoded_bytes,
+                )
+            except _PersistedCollectionLimitError as exc:
+                raise StorageFormatError(
+                    "legacy registry exceeds persisted JSON collection limits"
+                ) from exc
+            except (TypeError, ValueError, _PersistedDocumentLimitError) as exc:
+                raise StorageFormatError(
+                    f"legacy stored tool {key!r} exceeds persisted JSON document limits"
+                ) from exc
 
-        try:
-            tool = ToolSpec.model_validate_json(document)
-        except (ValidationError, ValueError, RecursionError) as exc:
-            raise StorageFormatError(
-                f"legacy stored tool {key!r} cannot be migrated safely"
-            ) from exc
-        if tool.key != key:
-            raise StorageFormatError(
-                f"legacy stored tool key mismatch: row={key!r}, "
-                f"document={tool.key!r}"
-            )
+            try:
+                tool = ToolSpec.model_validate_json(document)
+            except (ValidationError, ValueError, RecursionError) as exc:
+                raise StorageFormatError(
+                    f"legacy stored tool {key!r} cannot be migrated safely"
+                ) from exc
+            if tool.key != key:
+                raise StorageFormatError(
+                    f"legacy stored tool key mismatch: row={key!r}, "
+                    f"document={tool.key!r}"
+                )
 
 
 class SQLiteRegistry:
@@ -881,7 +899,7 @@ class SQLiteRegistry:
     def tools(self) -> tuple[ToolSpec, ...]:
         with self._lock:
             self._ensure_open()
-            rows = self._connection.execute(
+            cursor = self._connection.execute(
                 """
                 SELECT
                     key,
@@ -895,19 +913,55 @@ class SQLiteRegistry:
                 ORDER BY position
                 """,
                 (self._document_limits.max_bytes,),
-            ).fetchall()
-            return tuple(
-                self._deserialize_row(str(row["key"]), row)
-                for row in rows
             )
+            budget = _PersistedReadBudget(self._document_limits)
+            tools: list[ToolSpec] = []
+            while True:
+                rows = cursor.fetchmany(_PERSISTED_FETCH_BATCH_SIZE)
+                if not rows:
+                    break
+                for row in rows:
+                    key = str(row["key"])
+                    try:
+                        encoded_bytes = int(row["document_bytes"])
+                        _validate_persisted_document_size(
+                            encoded_bytes,
+                            limits=self._document_limits,
+                        )
+                    except (TypeError, ValueError, _PersistedDocumentLimitError) as exc:
+                        raise RegistrationError(
+                            f"stored tool {key!r} exceeds configured persisted JSON document limits"
+                        ) from exc
+                    try:
+                        budget.consume(encoded_bytes)
+                    except _PersistedCollectionLimitError as exc:
+                        raise RegistrationError(
+                            "stored registry exceeds configured persisted JSON collection limits"
+                        ) from exc
+                    tools.append(self._deserialize_row(key, row))
+            return tuple(tools)
 
     def keys(self) -> tuple[str, ...]:
         with self._lock:
             self._ensure_open()
-            rows = self._connection.execute(
+            cursor = self._connection.execute(
                 "SELECT key FROM schemarouter_registry_tools ORDER BY position"
-            ).fetchall()
-            return tuple(str(row["key"]) for row in rows)
+            )
+            budget = _PersistedReadBudget(self._document_limits)
+            keys: list[str] = []
+            while True:
+                rows = cursor.fetchmany(_PERSISTED_FETCH_BATCH_SIZE)
+                if not rows:
+                    break
+                for row in rows:
+                    try:
+                        budget.consume(0)
+                    except _PersistedCollectionLimitError as exc:
+                        raise RegistrationError(
+                            "stored registry exceeds configured persisted collection limits"
+                        ) from exc
+                    keys.append(str(row["key"]))
+            return tuple(keys)
 
     def endpoint(self, tool_key: str, endpoint_name: str) -> EndpointSpec:
         return self.get(tool_key).endpoint(endpoint_name)

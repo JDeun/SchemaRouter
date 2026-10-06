@@ -450,3 +450,45 @@ def test_sqlite_cas_detects_metadata_only_cross_connection_write(tmp_path) -> No
             )
 
         assert first.get("alpha").metadata["owner"] == "concurrent writer"
+
+def test_sqlite_registry_bounds_collection_cardinality(tmp_path) -> None:
+    path = tmp_path / "registry-cardinality.sqlite3"
+
+    with SQLiteRegistry(path) as registry:
+        registry.update_many([tool("alpha"), tool("beta"), tool("gamma")])
+
+    limits = PersistedDocumentLimits(
+        max_bytes=64 * 1024,
+        max_depth=32,
+        max_nodes=10_000,
+        max_documents=2,
+        max_total_bytes=256 * 1024,
+    )
+    with SQLiteRegistry(path, document_limits=limits) as reopened:
+        with pytest.raises(RegistrationError, match="collection limits"):
+            reopened.tools()
+        with pytest.raises(RegistrationError, match="collection limits"):
+            reopened.keys()
+
+
+def test_sqlite_registry_bounds_cumulative_persisted_bytes(tmp_path) -> None:
+    path = tmp_path / "registry-cumulative-bytes.sqlite3"
+    tools = [tool("alpha"), tool("beta")]
+
+    with SQLiteRegistry(path) as registry:
+        registry.update_many(tools)
+
+    encoded_sizes = [
+        len(item.model_dump_json().encode("utf-8"))
+        for item in tools
+    ]
+    limits = PersistedDocumentLimits(
+        max_bytes=max(encoded_sizes) + 1,
+        max_depth=32,
+        max_nodes=10_000,
+        max_documents=10,
+        max_total_bytes=sum(encoded_sizes) - 1,
+    )
+    with SQLiteRegistry(path, document_limits=limits) as reopened:
+        with pytest.raises(RegistrationError, match="collection limits"):
+            reopened.tools()

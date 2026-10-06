@@ -767,3 +767,70 @@ def test_current_format_corrupt_document_is_reported_by_storage_inspect(
         match="registry=corrupt",
     ):
         migrate_sqlite_storage(path, backup=False)
+
+def test_legacy_registry_aggregate_limits_apply_to_inspection_and_migration(
+    tmp_path,
+) -> None:
+    path = tmp_path / "legacy-registry-cardinality.sqlite3"
+    _create_legacy_registry(
+        path,
+        tools=[
+            (0, _tool("alpha")),
+            (1, _tool("beta")),
+            (2, _tool("gamma")),
+        ],
+        logical_version=3,
+    )
+    limits = PersistedDocumentLimits(
+        max_bytes=64 * 1024,
+        max_depth=32,
+        max_nodes=10_000,
+        max_documents=2,
+        max_total_bytes=256 * 1024,
+    )
+
+    inspection = inspect_sqlite_storage(path, document_limits=limits)
+    component = next(
+        item for item in inspection.components if item.component == "registry"
+    )
+    assert component.status == "corrupt"
+
+    with pytest.raises(StorageFormatError, match="persisted JSON collection limits"):
+        SQLiteRegistry(path, document_limits=limits)
+
+    with pytest.raises(StorageFormatError, match="registry=corrupt"):
+        migrate_sqlite_storage(
+            path,
+            backup=False,
+            document_limits=limits,
+        )
+
+
+def test_legacy_trace_aggregate_limits_apply_to_inspection_and_migration(
+    tmp_path,
+) -> None:
+    path = tmp_path / "legacy-trace-cardinality.sqlite3"
+    _create_legacy_trace(path)
+    limits = PersistedDocumentLimits(
+        max_bytes=64 * 1024,
+        max_depth=32,
+        max_nodes=10_000,
+        max_documents=2,
+        max_total_bytes=256 * 1024,
+    )
+
+    inspection = inspect_sqlite_storage(path, document_limits=limits)
+    component = next(
+        item for item in inspection.components if item.component == "trace"
+    )
+    assert component.status == "corrupt"
+
+    with pytest.raises(StorageFormatError, match="persisted JSON collection limits"):
+        SQLiteRunTraceStore(path, document_limits=limits)
+
+    with pytest.raises(StorageFormatError, match="trace=corrupt"):
+        migrate_sqlite_storage(
+            path,
+            backup=False,
+            document_limits=limits,
+        )
