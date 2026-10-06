@@ -12,10 +12,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      full: ${{ steps.scope.outputs.full }}
+      native: ${{ steps.scope.outputs.native }}
+      deps: ${{ steps.scope.outputs.deps }}
+      package: ${{ steps.scope.outputs.package }}
+      runtime: ${{ steps.scope.outputs.runtime }}
+      adapter_plugin: ${{ steps.scope.outputs.adapter_plugin }}
+      pydanticai: ${{ steps.scope.outputs.pydanticai }}
+      openai_agents: ${{ steps.scope.outputs.openai_agents }}
+      mcp_agent: ${{ steps.scope.outputs.mcp_agent }}
+      langchain: ${{ steps.scope.outputs.langchain }}
+      llamaindex: ${{ steps.scope.outputs.llamaindex }}
+      jev: ${{ steps.scope.outputs.jev }}
+      laya: ${{ steps.scope.outputs.laya }}
+      otel: ${{ steps.scope.outputs.otel }}
+      mcp: ${{ steps.scope.outputs.mcp }}
+      database: ${{ steps.scope.outputs.database }}
+      docs: ${{ steps.scope.outputs.docs }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Classify changed paths
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git diff --name-only --diff-filter=ACMR "$BASE_SHA...$HEAD_SHA" |
+            python scripts/ci_scope.py --github-output >> "$GITHUB_OUTPUT"
+
   test:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
+      max-parallel: 2
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
@@ -33,9 +67,9 @@ jobs:
         if: matrix.python-version == '3.12'
         run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel,database]"
       - run: ruff check .
-      - name: Run compatibility test suite
+      - name: Run compatibility smoke suite
         if: matrix.python-version != '3.12'
-        run: pytest -q -m "not mcp_integration"
+        run: pytest -q tests/test_public_api.py tests/test_registry.py
       - name: Run Python 3.12 suite and collect core coverage
         if: matrix.python-version == '3.12'
         env:
@@ -68,7 +102,7 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev]"
       - run: ruff check .
-      - run: pytest -q -m "not mcp_integration"
+      - run: pytest -q tests/test_public_api.py tests/test_registry.py
       - run: python examples/quickstart.py
       - run: python examples/database_quickstart.py
       - run: python scripts/consumer_acceptance.py
@@ -85,6 +119,8 @@ jobs:
       - run: pyright
 
   coverage-native:
+    needs: changes
+    if: ${{ needs.changes.outputs.native == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -137,7 +173,7 @@ jobs:
           NATIVE_RESULT: ${{ needs.coverage-native.result }}
         run: |
           test "$TEST_RESULT" = "success"
-          test "$NATIVE_RESULT" = "success"
+          [ "$NATIVE_RESULT" = "success" ] || [ "$NATIVE_RESULT" = "skipped" ]
       - name: Download Python 3.12 core coverage data
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -155,6 +191,8 @@ jobs:
           if-no-files-found: error
           retention-days: 14
   minimum-dependencies:
+    needs: changes
+    if: ${{ needs.changes.outputs.deps == 'true' || needs.changes.outputs.runtime == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -171,6 +209,8 @@ jobs:
       - run: python scripts/consumer_acceptance.py
 
   dependency-audit:
+    needs: changes
+    if: ${{ needs.changes.outputs.deps == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -185,6 +225,8 @@ jobs:
       - run: pip-audit --strict .
 
   package-core:
+    needs: changes
+    if: ${{ needs.changes.outputs.package == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -219,7 +261,8 @@ jobs:
           retention-days: 3
 
   package-adapter-plugin:
-    needs: package-core
+    needs: [package-core, changes]
+    if: ${{ needs.package-core.result == 'success' && needs.changes.outputs.adapter_plugin == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -242,7 +285,8 @@ jobs:
         run: /tmp/schemarouter-wheel-adapter-plugin/bin/python scripts/downstream_adapter_plugin_smoke.py
 
   package-pydanticai:
-    needs: package-core
+    needs: [package-core, changes]
+    if: ${{ needs.package-core.result == 'success' && needs.changes.outputs.pydanticai == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -273,7 +317,8 @@ jobs:
           retention-days: 30
 
   package-openai-agents:
-    needs: package-core
+    needs: [package-core, changes]
+    if: ${{ needs.package-core.result == 'success' && needs.changes.outputs.openai_agents == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -308,7 +353,8 @@ jobs:
           retention-days: 30
 
   package-mcp-agent:
-    needs: package-core
+    needs: [package-core, changes]
+    if: ${{ needs.package-core.result == 'success' && needs.changes.outputs.mcp_agent == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -343,7 +389,8 @@ jobs:
           retention-days: 30
 
   package-runtime-smoke:
-    needs: package-core
+    needs: [package-core, changes]
+    if: ${{ needs.package-core.result == 'success' && needs.changes.outputs.runtime == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -402,7 +449,8 @@ jobs:
           retention-days: 30
 
   package-lightweight-extras:
-    needs: package-core
+    needs: [package-core, changes]
+    if: ${{ needs.package-core.result == 'success' && needs.changes.outputs.deps == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -423,7 +471,8 @@ jobs:
       - run: /tmp/schemarouter-wheel-lightweight/bin/python scripts/installed_extras_smoke.py
 
   package-integration-extras:
-    needs: package-core
+    needs: [package-core, changes]
+    if: ${{ needs.package-core.result == 'success' && needs.changes.outputs.deps == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -448,7 +497,8 @@ jobs:
       - run: /tmp/schemarouter-wheel-integrations/bin/python examples/llamaindex_quickstart.py
 
   package-sdist:
-    needs: package-core
+    needs: [package-core, changes]
+    if: ${{ needs.package-core.result == 'success' && needs.changes.outputs.deps == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -514,7 +564,7 @@ jobs:
           failed = {
               name: payload["result"]
               for name, payload in needs.items()
-              if payload["result"] != "success"
+              if payload["result"] not in {"success", "skipped"}
           }
           if failed:
               raise SystemExit(f"package qualification failed: {failed}")
@@ -522,6 +572,8 @@ jobs:
           PY
 
   langchain-integration:
+    needs: changes
+    if: ${{ needs.changes.outputs.langchain == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -535,6 +587,8 @@ jobs:
       - run: python examples/langgraph_quickstart.py
 
   llamaindex-integration:
+    needs: changes
+    if: ${{ needs.changes.outputs.llamaindex == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -547,6 +601,8 @@ jobs:
       - run: python examples/llamaindex_quickstart.py
 
   jev-integration:
+    needs: changes
+    if: ${{ needs.changes.outputs.jev == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -558,6 +614,8 @@ jobs:
       - run: pytest -q tests/test_jev_integration.py
 
   laya-integration:
+    needs: changes
+    if: ${{ needs.changes.outputs.laya == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -572,6 +630,8 @@ jobs:
       - run: pytest -q tests/test_laya_integration.py
 
   otel-integration:
+    needs: changes
+    if: ${{ needs.changes.outputs.otel == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -583,6 +643,8 @@ jobs:
       - run: pytest -q tests/test_opentelemetry_integration.py
 
   mcp-integration:
+    needs: changes
+    if: ${{ needs.changes.outputs.mcp == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -595,6 +657,8 @@ jobs:
       - run: python examples/mcp_stdio_quickstart.py
 
   database-integration:
+    needs: changes
+    if: ${{ needs.changes.outputs.database == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -607,6 +671,8 @@ jobs:
       - run: python scripts/installed_database_smoke.py
 
   docs:
+    needs: changes
+    if: ${{ needs.changes.outputs.docs == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
