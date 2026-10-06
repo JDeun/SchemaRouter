@@ -59,7 +59,57 @@ jobs:
       - run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel,database]"
       - run: pyright
 
-  coverage:
+  coverage-core:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel,database]"
+      - name: Select deterministic coverage shard
+        env:
+          COVERAGE_SHARD: ${{ matrix.shard }}
+          COVERAGE_SHARDS: "2"
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          shard = int(os.environ["COVERAGE_SHARD"])
+          total = int(os.environ["COVERAGE_SHARDS"])
+          files = sorted(str(path) for path in Path("tests").rglob("test_*.py"))
+          selected = files[shard::total]
+          if not selected:
+              raise SystemExit(f"coverage shard {shard} selected no tests")
+          Path("/tmp/coverage-tests.txt").write_text(
+              "\n".join(selected) + "\n",
+              encoding="utf-8",
+          )
+          print(f"coverage shard {shard}/{total}: {len(selected)} files")
+          PY
+      - name: Run core coverage shard
+        run: |
+          mapfile -t TEST_FILES < /tmp/coverage-tests.txt
+          pytest -q "${TEST_FILES[@]}" \
+            --cov=schemarouter \
+            --cov-branch \
+            --cov-report=
+          mv .coverage ".coverage.${{ matrix.shard }}"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-core-${{ matrix.shard }}-${{ github.run_id }}
+          path: .coverage.${{ matrix.shard }}
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 3
+
+  coverage-native:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -68,7 +118,6 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel,database]"
-      - run: pytest -q --cov=schemarouter --cov-branch --cov-report=term-missing --cov-report=xml:coverage.xml
       - run: >-
           pytest -q
           tests/test_graph_native_adapters.py
@@ -83,6 +132,45 @@ jobs:
           --cov-branch
           --cov-report=term-missing
           --cov-fail-under=60
+
+  coverage:
+    if: ${{ always() }}
+    needs: [coverage-core, coverage-native]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify coverage producers
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+
+          needs = json.loads(os.environ["NEEDS_JSON"])
+          failed = {
+              name: payload["result"]
+              for name, payload in needs.items()
+              if payload["result"] != "success"
+          }
+          if failed:
+              raise SystemExit(f"coverage producers failed: {failed}")
+          PY
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install "coverage>=7,<8"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: coverage-core-*-${{ github.run_id }}
+          path: coverage-parts
+          merge-multiple: true
+      - name: Combine core coverage shards
+        run: |
+          cp coverage-parts/.coverage.* .
+          coverage combine
+          coverage report --show-missing
+          coverage xml -o coverage.xml
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage-report
