@@ -1748,6 +1748,8 @@ class SchemaRouter:
                 vector_name_by_collection=vector_name_by_collection,
                 metadata_fields_by_collection=metadata_fields_by_collection,
                 filter_builder=filter_builder,
+                collections=None if collections is None else tuple(sorted(collections)),
+                discovery_limits=discovery_limits,
             ),
             embed_query,
             database_name=database_name,
@@ -1814,6 +1816,8 @@ class SchemaRouter:
                 client,
                 vector_field_by_collection=vector_field_by_collection,
                 metric_by_collection=metric_by_collection,
+                collections=None if collections is None else tuple(sorted(collections)),
+                discovery_limits=discovery_limits,
             ),
             embed_query,
             database_name=database_name,
@@ -1876,6 +1880,8 @@ class SchemaRouter:
             PineconeVectorBackend(
                 client,
                 metadata_fields_by_index=metadata_fields_by_index,
+                indexes=None if collections is None else tuple(sorted(collections)),
+                discovery_limits=discovery_limits,
             ),
             embed_query,
             database_name=database_name,
@@ -1938,6 +1944,8 @@ class SchemaRouter:
                 dimension_by_collection=dimension_by_collection,
                 metadata_fields_by_collection=metadata_fields_by_collection,
                 metric_by_collection=metric_by_collection,
+                collections=None if collections is None else tuple(sorted(collections)),
+                discovery_limits=discovery_limits,
             ),
             embed_query,
             database_name=database_name,
@@ -2006,6 +2014,8 @@ class SchemaRouter:
                 vector_name_by_collection=vector_name_by_collection,
                 metric_by_collection=metric_by_collection,
                 filter_builder=filter_builder,
+                collections=None if collections is None else tuple(sorted(collections)),
+                discovery_limits=discovery_limits,
             ),
             embed_query,
             database_name=database_name,
@@ -2072,10 +2082,15 @@ class SchemaRouter:
         return await self.aadd_vector_store(
             PgvectorVectorBackend(
                 engine,
-                tables=tables,
+                tables=(
+                    tables
+                    if tables is not None
+                    else None if collections is None else tuple(sorted(collections))
+                ),
                 vector_field_by_table=vector_field_by_table,
                 metric_by_table=metric_by_table,
                 schema=schema,
+                discovery_limits=discovery_limits,
             ),
             embed_query,
             database_name=database_name,
