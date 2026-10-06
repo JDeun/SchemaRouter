@@ -77,11 +77,11 @@ from .adapters.vector_native import (
     WeaviateVectorBackend,
 )
 from .adapters.vector_store import (
+    ScopedVectorStoreBackend,
     VectorCollectionBinding,
     VectorCollectionInvoker,
     VectorCollectionSpec,
     VectorMetadataField,
-    ScopedVectorStoreBackend,
     VectorQueryEmbedder,
     VectorStoreBackend,
     introspect_vector_backend,

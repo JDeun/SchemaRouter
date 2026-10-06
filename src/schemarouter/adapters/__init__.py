@@ -98,11 +98,11 @@ from .vector_native import (
     WeaviateVectorBackend,
 )
 from .vector_store import (
+    ScopedVectorStoreBackend,
     VectorCollectionBinding,
     VectorCollectionInvoker,
     VectorCollectionSpec,
     VectorMetadataField,
-    ScopedVectorStoreBackend,
     VectorQueryEmbedder,
     VectorStoreBackend,
     introspect_vector_backend,

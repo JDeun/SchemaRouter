@@ -1371,6 +1371,7 @@ class RegistryExecutor:
                 ExecutionBudgetExceededError,
                 ExecutionHookError,
                 NonRetryableInvocationError,
+                PolicyViolationError,
             ):
                 raise
             except Exception as exc:  # noqa: BLE001
