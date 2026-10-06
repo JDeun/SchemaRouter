@@ -300,6 +300,88 @@ class GraphSourceInvoker:
         return rows
 
 
+def _bounded_graph_type_descriptor(
+    value: Any,
+    *,
+    limits: NativeDiscoveryLimits,
+    label: str,
+) -> Any:
+    if not isinstance(value, Mapping):
+        return value
+    raw = dict(value)
+    properties = raw.get("properties")
+    if (
+        isinstance(properties, Iterable)
+        and not isinstance(properties, (str, bytes, Mapping))
+    ):
+        raw["properties"] = bounded_collect(
+            properties,
+            limit=limits.max_properties_per_type,
+            label=f"{label} property count",
+        )
+    for endpoint_key in ("source_types", "target_types"):
+        endpoint_values = raw.get(endpoint_key)
+        if (
+            isinstance(endpoint_values, Iterable)
+            and not isinstance(endpoint_values, (str, bytes, Mapping))
+        ):
+            raw[endpoint_key] = bounded_collect(
+                endpoint_values,
+                limit=limits.max_node_types_per_source,
+                label=f"{label} {endpoint_key} count",
+            )
+    return raw
+
+
+def _bounded_graph_descriptor(
+    value: Any,
+    limits: NativeDiscoveryLimits,
+) -> Any:
+    if not isinstance(value, Mapping):
+        return value
+    raw = dict(value)
+    name = descriptor_name(raw)
+
+    node_types = raw.get("node_types")
+    if (
+        isinstance(node_types, Iterable)
+        and not isinstance(node_types, (str, bytes, Mapping))
+    ):
+        bounded_nodes = bounded_collect(
+            node_types,
+            limit=limits.max_node_types_per_source,
+            label=f"graph {name!r} node type count",
+        )
+        raw["node_types"] = tuple(
+            _bounded_graph_type_descriptor(
+                item,
+                limits=limits,
+                label=f"graph {name!r} node type",
+            )
+            for item in bounded_nodes
+        )
+
+    relationship_types = raw.get("relationship_types")
+    if (
+        isinstance(relationship_types, Iterable)
+        and not isinstance(relationship_types, (str, bytes, Mapping))
+    ):
+        bounded_relationships = bounded_collect(
+            relationship_types,
+            limit=limits.max_relationship_types_per_source,
+            label=f"graph {name!r} relationship type count",
+        )
+        raw["relationship_types"] = tuple(
+            _bounded_graph_type_descriptor(
+                item,
+                limits=limits,
+                label=f"graph {name!r} relationship type",
+            )
+            for item in bounded_relationships
+        )
+    return raw
+
+
 async def introspect_graph_backend(
     backend: GraphStoreBackend,
     *,
@@ -352,10 +434,11 @@ async def introspect_graph_backend(
     )
     discovered_list: list[GraphSourceSpec] = []
     for value in discovered_items:
+        bounded_value = _bounded_graph_descriptor(value, limits)
         graph = (
-            value
-            if isinstance(value, GraphSourceSpec)
-            else GraphSourceSpec.model_validate(value)
+            bounded_value
+            if isinstance(bounded_value, GraphSourceSpec)
+            else GraphSourceSpec.model_validate(bounded_value)
         )
         require_at_most(
             len(graph.node_types),
