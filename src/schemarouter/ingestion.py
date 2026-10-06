@@ -10,6 +10,7 @@ from urllib.parse import unquote, urldefrag, urljoin, urlparse
 import httpx
 import yaml
 from pydantic import Field
+from yaml.events import AliasEvent
 
 from ._url_safety import safe_provenance_url
 from .adapters.base import (
@@ -286,7 +287,7 @@ class _OpenAPIYAMLLoader(yaml.SafeLoader):
         )
 
     def compose_node(self, parent: Any, index: Any) -> Any:
-        if self.check_event(yaml.events.AliasEvent):
+        if self.check_event(AliasEvent):
             self._alias_count += 1
             if self._alias_count > _MAX_YAML_ALIASES:
                 raise self._budget_error(
