@@ -309,7 +309,7 @@
     },
     {
       "path": "integrations/langchain.md",
-      "source_blob": "0cad3851e030d9b4f84e2409e2f93e5512ad2d8c"
+      "source_blob": "9c1dcb68be40af3c4779e7cd78a6ec02379dfc9e"
     },
     {
       "path": "integrations/langgraph.md",
@@ -321,7 +321,7 @@
     },
     {
       "path": "integrations/llamaindex.md",
-      "source_blob": "9e7c687a39bcaa0dd2cf0e76aa8e6d4eefe4e21d"
+      "source_blob": "df85cf760bcdecedf91e692bc8e3bc267c4ed98f"
     },
     {
       "path": "integrations/ollama.md",

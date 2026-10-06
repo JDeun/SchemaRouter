@@ -14,6 +14,7 @@ from schemarouter import (
     RunConfig,
     SchemaRouter,
     SchemaValidationError,
+    StaleExportedToolError,
     TrustedFilterBinding,
     schema_tool,
 )
@@ -269,10 +270,79 @@ def test_langchain_authorization_audit_correlates_export_and_execution() -> None
 
         result = tool.invoke({"limit": 10})
         assert result == [{"id": 1, "name": "Alice"}]
-        assert len(events) == 2
-        assert events[1].phase == "execution"
-        assert events[1].run_id == export_run_id
-        assert events[1].principal_audit_id == "opaque-langchain-principal"
+        assert len(events) == 3
+        assert [event.phase for event in events[1:]] == ["export", "execution"]
+        assert all(event.run_id == export_run_id for event in events[1:])
+        assert all(
+            event.principal_audit_id == "opaque-langchain-principal"
+            for event in events[1:]
+        )
         assert "sales" not in repr(events)
     finally:
         connection.close()
+
+def test_langchain_export_fails_clearly_after_endpoint_schema_replacement() -> None:
+    router = make_router()
+    exported = to_langchain_tool(router, "add", "call")
+    original = router.registry.get("add")
+    replacement_endpoint = original.endpoint("call").model_copy(
+        deep=True,
+        update={"description": "Changed after framework export"},
+    )
+    replacement = original.model_copy(
+        deep=True,
+        update={"endpoints": [replacement_endpoint]},
+    )
+    router.add_tool(replacement, replace=True)
+
+    with pytest.raises(StaleExportedToolError, match="re-export"):
+        exported.invoke({"a": 2, "b": 3})
+
+    refreshed = to_langchain_tool(router, "add", "call")
+    assert refreshed.invoke({"a": 2, "b": 3}) == 5
+
+
+def test_langchain_export_fails_clearly_after_data_scope_narrows() -> None:
+    router, connection = make_authorized_database_router()
+    principal = PrincipalContext(subject="boss", roles=("executive",))
+    try:
+        exported = to_langchain_tool(
+            router,
+            "company.employees",
+            "select",
+            run_config=RunConfig(principal=principal),
+        )
+        router.authorization_policy = AuthorizationPolicy(
+            rules=(
+                AuthorizationRule(
+                    effect="allow",
+                    operation="company.employees.select",
+                    roles_any=("executive",),
+                ),
+            ),
+            data_rules=(
+                DataScopeRule(
+                    operation="company.employees.select",
+                    roles_any=("executive",),
+                    visible_fields=("id", "name"),
+                ),
+            ),
+        )
+
+        with pytest.raises(StaleExportedToolError, match="re-export"):
+            exported.invoke({"limit": 10})
+
+        refreshed = to_langchain_tool(
+            router,
+            "company.employees",
+            "select",
+            run_config=RunConfig(principal=principal),
+        )
+        result = refreshed.invoke({"limit": 10})
+        assert result == [
+            {"id": 1, "name": "Alice"},
+            {"id": 2, "name": "Bob"},
+        ]
+    finally:
+        connection.close()
+

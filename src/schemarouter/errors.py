@@ -69,6 +69,10 @@ class SchemaDriftError(PlanValidationError):
     """Raised when a plan was compiled against an older endpoint schema."""
 
 
+class StaleExportedToolError(SchemaDriftError):
+    """Raised when a framework-exported tool no longer matches its live authorized contract."""
+
+
 class SchemaValidationError(PlanValidationError):
     """Raised when arguments or tool output violate a declared JSON Schema."""
 

@@ -23,4 +23,15 @@ Principal에게 허용된 endpoint만 export하며 DataScope가 숨긴 field/par
 schema에서도 제거합니다. 실행은 다시 `SchemaRouter.execute(...)`를 거치므로 trusted
 row/tenant filter와 execution-time authorization이 유지됩니다.
 
+## Live export contract
+
+`FunctionTool`은 export 시점의 authorized endpoint contract를 고정합니다. 호출 직전에 현재
+endpoint를 다시 조회하고 AuthorizationPolicy/DataScope를 재적용하며, schema나 tool
+fingerprint 또는 허용된 projection이 바뀌었다면 실행 전에
+`StaleExportedToolError`로 종료합니다.
+
+schema refresh나 authorization policy 변경 뒤에는 `to_llamaindex_tool(...)` 또는
+`to_llamaindex_tools(...)`로 다시 export합니다. 기존 tool object가 다른 live contract로
+조용히 재바인딩되는 동작은 허용하지 않습니다.
+
 LlamaIndex는 agent/workflow orchestration을, SchemaRouter는 registered schema identity/policy/validation/binding/execution을 담당합니다. bridge는 현재 main distribution의 optional `llamaindex` extra로 유지합니다.
