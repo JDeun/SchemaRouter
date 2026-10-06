@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
+from json import JSONDecodeError, loads
 from pathlib import Path
 from typing import Any
 
@@ -225,8 +225,8 @@ def load_bounded_json(
 
     _validate_json_text_budget(document, limits=effective_limits)
     try:
-        loaded = json.loads(document)
-    except (json.JSONDecodeError, ValueError, RecursionError) as exc:
+        loaded = loads(document)
+    except (JSONDecodeError, ValueError, RecursionError) as exc:
         raise ConfigurationDocumentError(
             "configuration document is not valid JSON"
         ) from exc
