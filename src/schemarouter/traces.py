@@ -101,7 +101,12 @@ def _validate_legacy_trace_storage(
 
     budget = _PersistedReadBudget(limits)
     while True:
-        summaries = summaries_cursor.fetchmany(_PERSISTED_FETCH_BATCH_SIZE)
+        try:
+            summaries = summaries_cursor.fetchmany(_PERSISTED_FETCH_BATCH_SIZE)
+        except sqlite3.DatabaseError as exc:
+            raise StorageFormatError(
+                "legacy trace table shape is not compatible with migration"
+            ) from exc
         if not summaries:
             break
 
@@ -131,7 +136,12 @@ def _validate_legacy_trace_storage(
 
             events: list[RunEvent] = []
             while True:
-                rows = rows_cursor.fetchmany(_PERSISTED_FETCH_BATCH_SIZE)
+                try:
+                    rows = rows_cursor.fetchmany(_PERSISTED_FETCH_BATCH_SIZE)
+                except sqlite3.DatabaseError as exc:
+                    raise StorageFormatError(
+                        "legacy trace event table shape is not compatible with migration"
+                    ) from exc
                 if not rows:
                     break
                 for row in rows:
