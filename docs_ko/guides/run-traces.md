@@ -77,6 +77,43 @@ backup, retention policy를 적용해야 합니다. SchemaRouter 자체는 SQLit
 외부 producer가 `SQLiteRunTraceStore.append()`를 직접 호출하는 경우에는 자신의
 `RunEvent`를 직접 redact해야 합니다. Store는 event envelope를 의도적으로 수정하지 않습니다.
 
+## 보존 정책과 pruning
+
+기존 배포와의 호환성을 위해 retention은 opt-in입니다. 장기 실행 서비스에서는 명시적인
+상한을 권장합니다.
+
+```python
+from schemarouter import TraceRetentionPolicy
+
+store = SQLiteRunTraceStore(
+    "schemarouter-traces.sqlite3",
+    retention_policy=TraceRetentionPolicy(
+        max_age_seconds=30 * 24 * 60 * 60,
+        max_complete_runs=10_000,
+    ),
+)
+```
+
+기본 `automatic=True`에서는 모든 event마다가 아니라 `run.start`와 terminal event 같은 run
+경계에서 pruning합니다. `max_age_seconds`는 완료 run의 마지막 event timestamp를 기준으로
+TTL을 적용하고, `max_complete_runs`는 가장 최근에 완료된 run만 지정 개수만큼 유지합니다.
+이 두 설정은 incomplete run을 삭제하지 않습니다.
+
+Incomplete run을 정리하려면 `stale_incomplete_age_seconds`를 별도로 명시해야 합니다. 이 옵션을
+켜면 cutoff보다 최근 event가 없는 incomplete run은 삭제 대상이 되므로 실제 active run의 최대
+idle 시간보다 충분히 큰 값을 사용해야 합니다.
+
+`store.prune()`으로 설정된 정책을 수동 실행할 수 있고, `policy=`로 일회성 정책을 전달할 수도
+있습니다. Pruning은 하나의 `BEGIN IMMEDIATE` transaction에서 수행되므로 같은 SQLite file을
+사용하는 여러 store instance의 append와 직렬화되며, event row는 foreign-key cascade로 함께
+삭제됩니다.
+
+삭제 후 SQLite file 크기가 즉시 줄어드는 것은 아닙니다. WAL mode에서는 삭제된 page가 DB/WAL
+내에서 재사용될 수 있으며 checkpoint 전까지 파일이 남을 수 있습니다. `prune()`은 장시간
+exclusive lock을 유발할 수 있는 `VACUUM`이나 truncating checkpoint를 자동 수행하지 않습니다.
+실제 파일 축소가 필요하면 application traffic을 멈춘 maintenance window에서 checkpoint/VACUUM을
+별도로 실행해야 합니다.
+
 ## 범위
 
 run trace는 observability/audit 기능이며 agent control flow 재개를 위한 checkpoint system이 아닙니다. workflow checkpoint와 memory는 LangGraph 같은 orchestration layer가 담당합니다.
