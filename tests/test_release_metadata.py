@@ -189,6 +189,10 @@ def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
     assert "Verify coverage fan-out" in workflow
     assert "coverage combine coverage-data" in workflow
     assert "coverage report --fail-under=83.5" in workflow
+    assert workflow.count("actions/setup-python@") == workflow.count("cache: pip")
+    assert "examples/external_validation/pydanticai-tool-search/requirements.txt" in workflow
+    assert "examples/external_validation/openai_agents_mcp_filter/requirements.txt" in workflow
+    assert "examples/external_validation/mcp_agent_catalog/requirements.txt" in workflow
     assert "--cov-branch" in workflow
     assert "dependency-audit:" in workflow
     assert "pip-audit --strict ." in workflow
