@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any, TypeVar
 
@@ -51,6 +51,40 @@ def bounded_collect(
             )
         collected.append(value)
     return tuple(collected)
+
+
+def bounded_select(
+    values: Iterable[_T],
+    requested: set[str],
+    *,
+    limit: int,
+    label: str,
+    name_of: Callable[[_T], str],
+) -> tuple[_T, ...]:
+    """Select requested descriptors without consuming unrelated tail entries."""
+
+    if not requested:
+        return ()
+    selected: list[_T] = []
+    found: set[str] = set()
+    for index, value in enumerate(values):
+        if index >= limit:
+            raise RegistrationError(
+                f"{label} exceeds native discovery limit of {limit}"
+            )
+        name = name_of(value)
+        if name in requested:
+            selected.append(value)
+            found.add(name)
+            if found == requested:
+                break
+    return tuple(selected)
+
+
+def descriptor_name(value: Any) -> str:
+    if isinstance(value, Mapping):
+        return str(value.get("name") or "")
+    return str(getattr(value, "name", "") or "")
 
 
 def require_at_most(
