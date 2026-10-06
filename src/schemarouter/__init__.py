@@ -131,12 +131,6 @@ from .authorization_config import lint_authorization_config as lint_authorizatio
 from .authorization_config import load_authorization_policy as load_authorization_policy
 from .authorization_config import normalized_authorization_json as normalized_authorization_json
 from .authorization_config import parse_authorization_policy as parse_authorization_policy
-from .document_loading import (
-    ConfigurationDocumentError as ConfigurationDocumentError,
-)
-from .document_loading import (
-    ConfigurationDocumentLimits as ConfigurationDocumentLimits,
-)
 from .binding_reconciliation import (
     BindingReconciliationError,
     BindingReconciliationItem,
@@ -295,6 +289,12 @@ from .decisions import (
     FirstOptionDecisionBackend,
     choose_async,
     choose_sync,
+)
+from .document_loading import (
+    ConfigurationDocumentError as ConfigurationDocumentError,
+)
+from .document_loading import (
+    ConfigurationDocumentLimits as ConfigurationDocumentLimits,
 )
 from .errors import (
     ApprovalDeniedError,
