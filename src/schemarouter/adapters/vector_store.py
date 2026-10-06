@@ -459,6 +459,7 @@ async def introspect_vector_backend(
                 "collection": collection.name,
             },
         )
+        budget.consume_generated(tool)
         bindings.append(
             VectorCollectionBinding(
                 tool=tool,
