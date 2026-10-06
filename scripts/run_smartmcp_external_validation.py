@@ -13,9 +13,15 @@ from pathlib import Path
 from statistics import median
 from typing import Any
 
+import smartmcp.embedding as smartmcp_embedding
 from mcp import types
 from smartmcp.embedding import EmbeddingIndex
 from smartmcp.server import _build_search_match
+
+try:
+    from scripts.external_validation_provenance import implementation_provenance
+except ModuleNotFoundError:  # direct `python scripts/...` execution
+    from external_validation_provenance import implementation_provenance
 
 
 def _load(path: Path) -> Any:
@@ -38,12 +44,18 @@ def run(
     *,
     package_dir: Path,
     model: str,
-    repeats: int,
+    repeats: int | None,
+    implementation_revision: str | None = None,
 ) -> dict[str, Any]:
+    manifest = _load(package_dir / "manifest.json")
+    repeats = (
+        int(manifest["comparison"]["latency_repeats"])
+        if repeats is None
+        else repeats
+    )
     if repeats < 1:
         raise ValueError("repeats must be positive")
 
-    manifest = _load(package_dir / "manifest.json")
     cases = _load(package_dir / manifest["files"]["cases"])
     snapshot_path = package_dir / manifest["files"]["smartmcp_snapshot"]
     tools = _load_tools(snapshot_path)
@@ -64,37 +76,54 @@ def run(
 
         durations: list[float] = []
         final_results: list[tuple[types.Tool, float]] = []
+        final_contracts: list[dict[str, Any]] = []
         for _ in range(repeats):
             start = time.perf_counter()
             current = index.search(query, top_k=top_k)
+            current_contracts = [
+                _build_search_match(tool, score)
+                for tool, score in current
+            ]
             durations.append((time.perf_counter() - start) * 1000.0)
             final_results = current
+            final_contracts = current_contracts
 
         rows.append(
             {
                 "id": case["id"],
                 "candidate_tools": [tool.name for tool, _ in final_results],
-                "exposed_contracts": [
-                    _build_search_match(tool, score)
-                    for tool, score in final_results
-                ],
+                "exposed_contracts": final_contracts,
                 "latency_ms": median(durations),
             }
         )
+
+    provenance = implementation_provenance(
+        fixture_reference_revision=manifest["source_revisions"].get("smartmcp"),
+        explicit_revision=implementation_revision,
+        source_path=(
+            Path(smartmcp_embedding.__file__)
+            if smartmcp_embedding.__file__
+            else None
+        ),
+        distribution="smartmcp-router",
+    )
 
     return {
         "schema_version": 1,
         "package_id": manifest["package_id"],
         "implementation": {
             "name": "SmartMCP semantic discovery",
-            "commit": manifest["source_revisions"]["smartmcp"],
+            **provenance,
             "configuration": {
                 "embedding_model": model,
                 "repeats_per_query": repeats,
                 "top_k": top_k,
                 "adapter_boundary": (
-                    "EmbeddingIndex.search + SmartMCP search-match serialization; "
-                    "no execution"
+                    "EmbeddingIndex.search + SmartMCP search-match materialization; "
+                    "no JSON encoding and no execution"
+                ),
+                "latency_boundary": (
+                    "ranked retrieval + model-visible contract materialization"
                 ),
             },
         },
@@ -108,13 +137,22 @@ def main() -> None:
     parser.add_argument("--package-dir", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--model", default="all-MiniLM-L6-v2")
-    parser.add_argument("--repeats", type=int, default=5)
+    parser.add_argument(
+        "--repeats",
+        type=int,
+        help="Override the shared fixture latency repeat count.",
+    )
+    parser.add_argument(
+        "--implementation-revision",
+        help="Exact SmartMCP commit/revision used when it cannot be detected from a git checkout.",
+    )
     args = parser.parse_args()
 
     payload = run(
         package_dir=args.package_dir,
         model=args.model,
         repeats=args.repeats,
+        implementation_revision=args.implementation_revision,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")

@@ -71,7 +71,10 @@ def validate_package(
     package_id = manifest["package_id"]
     if catalog["catalog_id"] != package_id or cases["case_set_id"] != package_id:
         raise ValueError("package/catalog/case identifiers do not match")
-    if manifest["governance"]["heldout_scoring_allowed"]:
+    if (
+        manifest.get("status") == "development_unfrozen"
+        and manifest["governance"]["heldout_scoring_allowed"]
+    ):
         raise ValueError("development fixture must not enable held-out scoring")
 
     tools = {tool["name"]: tool for tool in catalog["tools"]}
@@ -123,13 +126,27 @@ def validate_package(
         raise ValueError("top_k_values must be a sorted unique positive list")
     if manifest["comparison"]["max_candidates"] != max(top_k_values):
         raise ValueError("max_candidates must equal the largest Top-K")
+    latency_repeats = manifest["comparison"].get("latency_repeats")
+    if (
+        isinstance(latency_repeats, bool)
+        or not isinstance(latency_repeats, int)
+        or latency_repeats < 1
+    ):
+        raise ValueError("latency_repeats must be a positive integer")
 
 
 def build_template(manifest: dict[str, Any], cases: dict[str, Any]) -> dict[str, Any]:
     return {
         "schema_version": 1,
         "package_id": manifest["package_id"],
-        "implementation": {"name": "", "commit": "", "configuration": {}},
+        "implementation": {
+            "name": "",
+            "commit": None,
+            "commit_source": "unavailable",
+            "fixture_reference_revision": None,
+            "package_version": None,
+            "configuration": {},
+        },
         "index_build_ms": None,
         "results": [
             {
@@ -152,12 +169,26 @@ def score(
     if submitted.get("package_id") != manifest["package_id"]:
         raise ValueError("result package id mismatch")
 
+    implementation = submitted.get("implementation")
+    if not isinstance(implementation, dict):
+        raise ValueError("implementation must be an object")
+    commit = implementation.get("commit")
+    if commit is not None and (not isinstance(commit, str) or not commit.strip()):
+        raise ValueError("implementation.commit must be a non-empty string or null")
+    if manifest["governance"].get("heldout_scoring_allowed") and not commit:
+        raise ValueError("held-out scoring requires the actual implementation.commit")
+
     tools = {tool["name"]: tool for tool in catalog["tools"]}
     case_map = {case["id"]: case for case in cases["cases"]}
     rows = submitted.get("results")
     if not isinstance(rows, list):
         raise ValueError("results must be a list")
-    result_map = {row.get("id"): row for row in rows if isinstance(row, dict)}
+    if not all(isinstance(row, dict) for row in rows):
+        raise ValueError("every result row must be an object")
+    result_ids = [row.get("id") for row in rows]
+    if len(result_ids) != len(set(result_ids)):
+        raise ValueError("result ids must not contain duplicates")
+    result_map = {row["id"]: row for row in rows}
     if set(result_map) != set(case_map):
         raise ValueError("result ids must match case ids exactly")
 
@@ -202,6 +233,10 @@ def score(
             exposed_names.append(name)
         if len(exposed_names) != len(set(exposed_names)):
             raise ValueError(f"{case_id} exposes duplicate contracts")
+        if exposed_names != candidates:
+            raise ValueError(
+                f"{case_id} exposed_contracts must match candidate_tools in ranked order"
+            )
 
         latency = _finite_nonnegative(row.get("latency_ms"), field=f"{case_id}.latency_ms")
         if latency is not None:

@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from pathlib import Path
 
+import pytest
+
+from scripts.external_validation_provenance import implementation_provenance
 from scripts.external_validation_smart_mcp import (
     build_template,
     load_package,
@@ -31,6 +35,7 @@ def test_smartmcp_cross_project_dev_fixture_is_consistent() -> None:
         "multi_tool": 3,
     }
     assert manifest["comparison"]["top_k_values"] == [1, 3, 5]
+    assert manifest["comparison"]["latency_repeats"] == 20
 
 
 def test_smartmcp_snapshot_is_exact_projection_of_shared_catalog() -> None:
@@ -109,7 +114,82 @@ def test_shared_scorer_rejects_candidate_duplicates() -> None:
     target = first["required_tools"][0]
     submitted["results"][0]["candidate_tools"] = [target, target]
 
-    import pytest
-
     with pytest.raises(ValueError, match="must not contain duplicates"):
         score(manifest, catalog, cases, submitted)
+
+
+def test_explicit_execution_revision_is_not_replaced_by_fixture_revision() -> None:
+    provenance = implementation_provenance(
+        fixture_reference_revision="fixture-old-sha",
+        explicit_revision="executed-new-sha",
+    )
+
+    assert provenance == {
+        "commit": "executed-new-sha",
+        "commit_source": "explicit",
+        "fixture_reference_revision": "fixture-old-sha",
+        "package_version": None,
+    }
+
+
+def test_heldout_scoring_requires_actual_execution_revision() -> None:
+    manifest, catalog, cases = load_package(PACKAGE)
+    heldout = deepcopy(manifest)
+    heldout["status"] = "heldout_frozen"
+    heldout["governance"] = {
+        **heldout["governance"],
+        "heldout_scoring_allowed": True,
+    }
+    submitted = build_template(heldout, cases)
+
+    with pytest.raises(
+        ValueError,
+        match="held-out scoring requires the actual implementation.commit",
+    ):
+        score(heldout, catalog, cases, submitted)
+
+
+def test_shared_scorer_rejects_duplicate_result_rows() -> None:
+    manifest, catalog, cases = load_package(PACKAGE)
+    submitted = build_template(manifest, cases)
+    submitted["results"].append(deepcopy(submitted["results"][0]))
+
+    with pytest.raises(ValueError, match="result ids must not contain duplicates"):
+        score(manifest, catalog, cases, submitted)
+
+
+def test_shared_scorer_requires_one_exposed_contract_per_ranked_candidate() -> None:
+    manifest, catalog, cases = load_package(PACKAGE)
+    submitted = build_template(manifest, cases)
+    first = cases["cases"][0]
+    target = first["required_tools"][0]
+    submitted["results"][0]["candidate_tools"] = [target]
+    submitted["results"][0]["exposed_contracts"] = []
+
+    with pytest.raises(
+        ValueError,
+        match="exposed_contracts must match candidate_tools in ranked order",
+    ):
+        score(manifest, catalog, cases, submitted)
+
+
+def test_explicit_revision_must_match_detected_git_revision(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import scripts.external_validation_provenance as provenance_module
+
+    monkeypatch.setattr(
+        provenance_module,
+        "git_revision",
+        lambda _source_path: "detected-sha",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="explicit implementation revision does not match",
+    ):
+        implementation_provenance(
+            fixture_reference_revision="fixture-sha",
+            explicit_revision="claimed-sha",
+            source_path=Path(__file__),
+        )

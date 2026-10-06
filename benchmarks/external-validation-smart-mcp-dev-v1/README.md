@@ -42,6 +42,41 @@ python scripts/external_validation_smart_mcp.py score \
 
 The scorer uses only the Python standard library.
 
+### Latency measurement boundary
+
+Hot-path latency is measured after one unmeasured per-query warmup. For every
+condition, the timed region includes both ranked candidate retrieval and
+construction of the model-visible per-candidate contract. JSON encoding and tool
+execution are excluded. This keeps SmartMCP, SchemaRouter, and the lexical
+baseline on the same observable boundary.
+
+The shared repeat count is frozen in `manifest.json` as
+`comparison.latency_repeats` and is used by every runner unless an explicit
+development override is supplied. Publishable comparisons must use the same
+repeat count for all conditions.
+
+`index_build_ms` measures condition-specific catalog/index construction after
+runtime imports. For SmartMCP, embedding-model object initialization is outside
+that timer; only embedding/index construction over the shared catalog is timed.
+
+## Execution provenance
+
+Fixture authorship and execution provenance are intentionally separate. The
+`source_revisions` values in `manifest.json` describe the revisions used when
+the visible development fixture was authored; runners do **not** reuse those
+values as if they were the code that actually executed a later run.
+
+Each runner records:
+- the actual git revision when it can be detected from the executed source;
+- `commit_source` (`git`, `explicit`, or `unavailable`);
+- the fixture reference revision for comparison;
+- the installed package version when applicable.
+
+When a runner executes from an installed wheel rather than a git checkout, pass
+`--implementation-revision <exact-sha-or-release-revision>`. A future held-out
+package must provide an actual implementation revision; the shared scorer rejects
+publishable held-out results that omit it.
+
 ## Run SmartMCP without modifying SmartMCP core
 
 Install the pinned-compatible SmartMCP package/environment, then run:
@@ -49,6 +84,7 @@ Install the pinned-compatible SmartMCP package/environment, then run:
 ```bash
 python scripts/run_smartmcp_external_validation.py \
   --package-dir benchmarks/external-validation-smart-mcp-dev-v1 \
+  --implementation-revision c4d6602cfabb6f514bf06a1d1ae10b610ff7d573 \
   --out /tmp/smartmcp-dev-result.json
 
 python scripts/external_validation_smart_mcp.py score \

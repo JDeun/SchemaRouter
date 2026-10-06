@@ -11,6 +11,11 @@ from pathlib import Path
 from statistics import median
 from typing import Any
 
+try:
+    from scripts.external_validation_provenance import implementation_provenance
+except ModuleNotFoundError:  # direct `python scripts/...` execution
+    from external_validation_provenance import implementation_provenance
+
 _TOKEN_RE = re.compile(r"[\w.-]+", flags=re.UNICODE)
 
 
@@ -93,11 +98,21 @@ def _exposed_contract(tool: dict[str, Any], score: float) -> dict[str, Any]:
     }
 
 
-def run(*, package_dir: Path, repeats: int) -> dict[str, Any]:
+def run(
+    *,
+    package_dir: Path,
+    repeats: int | None,
+    implementation_revision: str | None = None,
+) -> dict[str, Any]:
+    manifest = _load(package_dir / "manifest.json")
+    repeats = (
+        int(manifest["comparison"]["latency_repeats"])
+        if repeats is None
+        else repeats
+    )
     if repeats < 1:
         raise ValueError("repeats must be positive")
 
-    manifest = _load(package_dir / "manifest.json")
     cases = _load(package_dir / manifest["files"]["cases"])
     snapshot = _load(package_dir / manifest["files"]["smartmcp_snapshot"])
     top_k = int(manifest["comparison"]["max_candidates"])
@@ -113,30 +128,39 @@ def run(*, package_dir: Path, repeats: int) -> dict[str, Any]:
 
         durations: list[float] = []
         final_results: list[tuple[dict[str, Any], float]] = []
+        final_contracts: list[dict[str, Any]] = []
         for _ in range(repeats):
             start = time.perf_counter()
             current = index.search(query, top_k=top_k)
+            current_contracts = [
+                _exposed_contract(tool, score)
+                for tool, score in current
+            ]
             durations.append((time.perf_counter() - start) * 1000.0)
             final_results = current
+            final_contracts = current_contracts
 
         rows.append(
             {
                 "id": case["id"],
                 "candidate_tools": [tool["name"] for tool, _ in final_results],
-                "exposed_contracts": [
-                    _exposed_contract(tool, score)
-                    for tool, score in final_results
-                ],
+                "exposed_contracts": final_contracts,
                 "latency_ms": median(durations),
             }
         )
+
+    provenance = implementation_provenance(
+        fixture_reference_revision=manifest["source_revisions"].get("schemarouter"),
+        explicit_revision=implementation_revision,
+        source_path=Path(__file__),
+    )
 
     return {
         "schema_version": 1,
         "package_id": manifest["package_id"],
         "implementation": {
             "name": "raw-spec lexical TF-IDF cosine baseline",
-            "commit": manifest["source_revisions"]["schemarouter"],
+            **provenance,
             "configuration": {
                 "repeats_per_query": repeats,
                 "top_k": top_k,
@@ -144,6 +168,9 @@ def run(*, package_dir: Path, repeats: int) -> dict[str, Any]:
                     "tool name + description + top-level input parameter names/descriptions"
                 ),
                 "abstention": "none; deterministic ranked Top-K",
+                "latency_boundary": (
+                    "ranked retrieval + model-visible contract materialization"
+                ),
             },
         },
         "index_build_ms": index_build_ms,
@@ -155,10 +182,25 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--package-dir", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--repeats", type=int, default=20)
+    parser.add_argument(
+        "--repeats",
+        type=int,
+        help="Override the shared fixture latency repeat count.",
+    )
+    parser.add_argument(
+        "--implementation-revision",
+        help=(
+            "Exact benchmark-code commit/revision used when it cannot be detected "
+            "from a git checkout."
+        ),
+    )
     args = parser.parse_args()
 
-    payload = run(package_dir=args.package_dir, repeats=args.repeats)
+    payload = run(
+        package_dir=args.package_dir,
+        repeats=args.repeats,
+        implementation_revision=args.implementation_revision,
+    )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
