@@ -298,6 +298,12 @@ class TraceRedactor:
             budget=collection_budget,
         )
         self._collect_sensitive_values(
+            event.tags,
+            path=("tags",),
+            depth=0,
+            budget=collection_budget,
+        )
+        self._collect_sensitive_values(
             event.data,
             path=("data",),
             depth=0,
@@ -305,8 +311,22 @@ class TraceRedactor:
         )
 
         redaction_budget = [_MAX_REDACTION_NODES]
+        redacted_tags = (
+            [self.config.replacement for _ in event.tags]
+            if self._matches_path(("tags",))
+            else [
+                self._redact(
+                    tag,
+                    path=("tags", "[]"),
+                    depth=1,
+                    budget=redaction_budget,
+                )
+                for tag in event.tags
+            ]
+        )
         return event.model_copy(
             update={
+                "tags": redacted_tags,
                 "metadata": self._redact(
                     event.metadata,
                     path=("metadata",),
