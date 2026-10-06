@@ -24,6 +24,7 @@ env:
   TOKENIZERS_PARALLELISM: "false"
   FIXTURE_DIR: benchmarks/external-validation-smart-mcp-dev-v1
   SMARTMCP_REVISION: c4d6602cfabb6f514bf06a1d1ae10b610ff7d573
+  MCP_PYTHON_VERSION: "1.30.0"
 
 jobs:
   pinned-development-smoke:
@@ -40,12 +41,48 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Install SchemaRouter and pinned SmartMCP
+      - name: Install SchemaRouter and pinned SmartMCP runtime
         shell: bash
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e .
-          python -m pip install "git+https://github.com/spak2005/smart-mcp.git@${SMARTMCP_REVISION}"
+          printf 'mcp==%s\n' "${MCP_PYTHON_VERSION}" > /tmp/smartmcp-constraints.txt
+          python -m pip install \
+            -c /tmp/smartmcp-constraints.txt \
+            "git+https://github.com/spak2005/smart-mcp.git@${SMARTMCP_REVISION}"
+          python -m pip check
+
+      - name: Verify SmartMCP MCP-SDK compatibility boundary
+        shell: bash
+        run: |
+          python - <<'PY'
+          from importlib.metadata import version
+
+          from mcp import types
+
+          tool = types.Tool(
+              name="compatibility_probe",
+              description="compatibility probe",
+              inputSchema={"type": "object", "properties": {}},
+          )
+          assert tool.inputSchema["type"] == "object"
+          assert version("mcp") == "1.30.0"
+          print("mcp", version("mcp"))
+          print("smartmcp-router", version("smartmcp-router"))
+          PY
+
+      - name: Record runtime environment
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          python - <<'PY' > artifacts/runtime.txt
+          import platform
+          import sys
+
+          print(sys.version)
+          print(platform.platform())
+          PY
+          python -m pip freeze > artifacts/pip-freeze.txt
 
       - name: Validate development fixture
         run: |
