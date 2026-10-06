@@ -123,20 +123,23 @@ def run(
 
         durations: list[float] = []
         final_results: list[tuple[dict[str, Any], float]] = []
+        final_contracts: list[dict[str, Any]] = []
         for _ in range(repeats):
             start = time.perf_counter()
             current = index.search(query, top_k=top_k)
+            current_contracts = [
+                _exposed_contract(tool, score)
+                for tool, score in current
+            ]
             durations.append((time.perf_counter() - start) * 1000.0)
             final_results = current
+            final_contracts = current_contracts
 
         rows.append(
             {
                 "id": case["id"],
                 "candidate_tools": [tool["name"] for tool, _ in final_results],
-                "exposed_contracts": [
-                    _exposed_contract(tool, score)
-                    for tool, score in final_results
-                ],
+                "exposed_contracts": final_contracts,
                 "latency_ms": median(durations),
             }
         )
@@ -160,6 +163,9 @@ def run(
                     "tool name + description + top-level input parameter names/descriptions"
                 ),
                 "abstention": "none; deterministic ranked Top-K",
+                "latency_boundary": (
+                    "ranked retrieval + model-visible contract materialization"
+                ),
             },
         },
         "index_build_ms": index_build_ms,
