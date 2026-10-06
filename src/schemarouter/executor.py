@@ -539,7 +539,7 @@ class RegistryExecutor:
         *,
         expected_fingerprint: str | None = None,
         offload_sync: bool = False,
-    ) -> None:
+    ) -> int:
         """Bind an invoker, optionally pinned to the exact contract it was built for.
 
         Callers that construct an invoker from a particular ToolSpec must pass that
@@ -558,7 +558,7 @@ class RegistryExecutor:
                 f"{expected_fingerprint!r}, found {tool.fingerprint!r}"
             )
         fingerprint = expected_fingerprint or tool.fingerprint
-        self._store_binding(
+        return self._store_binding(
             tool_key,
             invoker,
             fingerprint,
@@ -650,16 +650,11 @@ class RegistryExecutor:
         published_generation: int | None = None
 
         try:
-            current = registry.get(key)
-            if current.fingerprint != tool.fingerprint:
-                raise BindingDriftError(
-                    f"tool {key!r} changed before its binding could be published"
-                )
-            published_generation = self._store_binding(
+            published_generation = self.bind(
                 key,
                 invoker,
-                tool.fingerprint,
-                offload_sync,
+                expected_fingerprint=tool.fingerprint,
+                offload_sync=offload_sync,
             )
 
             # Detect a registry writer that raced after the binding snapshot was published.
@@ -1080,20 +1075,32 @@ class RegistryExecutor:
             )
         return True
 
+    def _binding_for_validated_contract(
+        self,
+        tool_key: str,
+        tool_fingerprint: str,
+    ) -> tuple[BoundEndpointInvoker, bool]:
+        """Return one coherent binding snapshot for an already-validated contract."""
+
+        binding = self._binding_snapshot(tool_key)
+        if binding.invoker is None:
+            raise ExecutionError(f"no invoker bound for tool {tool_key!r}")
+        if binding.fingerprint != tool_fingerprint:
+            raise BindingDriftError(
+                f"invoker binding is stale for tool {tool_key!r}; rebind before execution"
+            )
+        return binding.invoker, binding.offload_sync
+
     def _execution_state(
         self,
         call: ToolCall,
     ) -> tuple[ToolSpec, EndpointSpec, BoundEndpointInvoker, bool]:
         tool, endpoint = self._validated_call_contract(call)
-        binding = self._binding_snapshot(call.tool)
-        if binding.invoker is None:
-            raise ExecutionError(f"no invoker bound for tool {call.tool!r}")
-
-        if binding.fingerprint != tool.fingerprint:
-            raise BindingDriftError(
-                f"invoker binding is stale for tool {call.tool!r}; rebind before execution"
-            )
-        return tool, endpoint, binding.invoker, binding.offload_sync
+        invoker, offload_sync = self._binding_for_validated_contract(
+            call.tool,
+            tool.fingerprint,
+        )
+        return tool, endpoint, invoker, offload_sync
 
     async def _run_before_hooks(
         self,
@@ -1237,9 +1244,13 @@ class RegistryExecutor:
             await tracker.before_attempt(call, tool)
 
             # Retry backoff, hooks, and other trusted awaits may outlive the policy snapshot
-            # used for planning or the previous attempt. Re-read the execution contract and
-            # authorize again immediately before each actual invoker boundary.
-            tool, endpoint, invoker, offload_sync = self._execution_state(call)
+            # used for planning or the previous attempt. Preserve the already-validated
+            # registry contract, but refresh the process-local binding as one coherent snapshot
+            # and re-authorize immediately before each actual invoker boundary.
+            invoker, offload_sync = self._binding_for_validated_contract(
+                call.tool,
+                tool.fingerprint,
+            )
             data_scope = self._authorization_scope_for_attempt(
                 tool,
                 endpoint,
