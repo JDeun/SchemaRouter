@@ -20,6 +20,7 @@ from schemarouter.capability_snapshot import (
     load_capability_snapshot,
     serialize_capability_snapshot,
 )
+from schemarouter.cli import _run, build_parser
 from schemarouter.document_loading import (
     load_bounded_json,
     load_bounded_yaml,
@@ -177,3 +178,17 @@ def test_normalized_authorization_json_uses_document_budget() -> None:
                 max_bytes=max(1, len(document.encode("utf-8")) - 1)
             ),
         )
+
+
+def test_cli_artifact_inspection_uses_bounded_reader(tmp_path, monkeypatch) -> None:
+    source = tmp_path / "artifact.json"
+    source.write_text("{}", encoding="utf-8")
+    args = build_parser().parse_args(["artifact", "inspect", str(source), "--json"])
+
+    def reject_read(path):
+        assert path == source
+        raise ConfigurationDocumentError("configuration document exceeds the configured byte limit")
+
+    monkeypatch.setattr("schemarouter.cli.read_bounded_text_file", reject_read)
+    with pytest.raises(ConfigurationDocumentError, match="byte limit"):
+        _run(args)
