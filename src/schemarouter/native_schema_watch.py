@@ -73,7 +73,9 @@ class NativeSchemaWatchHealth:
             status = "unchanged"
 
         with self._lock:
-            record = self._records.setdefault(tool_key, _NativeSchemaWatchRecord())
+            record = self._records.get(tool_key)
+            if record is None:
+                return
             record.status = status
             record.last_checked_at = checked_at
             record.last_success_at = checked_at
@@ -83,7 +85,9 @@ class NativeSchemaWatchHealth:
 
     def record_error(self, tool_key: str, exc: BaseException) -> None:
         with self._lock:
-            record = self._records.setdefault(tool_key, _NativeSchemaWatchRecord())
+            record = self._records.get(tool_key)
+            if record is None:
+                return
             record.status = "error"
             record.last_checked_at = datetime.now(timezone.utc)
             record.last_error_type = type(exc).__name__
