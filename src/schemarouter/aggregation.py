@@ -145,13 +145,25 @@ def _default_merge_mode(entity_kind: EntityKind, field: str) -> MergeMode:
     return "deduplicate"
 
 
-def _identifier_tokens(record: SourceRecord) -> set[tuple[str, str]]:
+def _trusted_identifier_claims(record: SourceRecord) -> dict[str, str]:
     trusted = _trusted_identity_types(record.entity_kind)
-    return {
-        (kind.casefold(), _normalise_identifier(kind, value))
-        for kind, value in record.identifiers.items()
-        if value.strip() and (trusted is None or kind.casefold() in trusted)
-    }
+    claims: dict[str, str] = {}
+    for kind, value in record.identifiers.items():
+        normalized_kind = kind.casefold()
+        if trusted is not None and normalized_kind not in trusted:
+            continue
+        normalized_value = _normalise_identifier(kind, value)
+        previous = claims.get(normalized_kind)
+        if previous is not None and previous != normalized_value:
+            raise ValueError(
+                "record contains conflicting values for one trusted identifier type"
+            )
+        claims[normalized_kind] = normalized_value
+    return claims
+
+
+def _identifier_tokens(record: SourceRecord) -> set[tuple[str, str]]:
+    return set(_trusted_identifier_claims(record).items())
 
 
 def aggregate_records(
@@ -161,9 +173,10 @@ def aggregate_records(
 ) -> list[CanonicalEntity]:
     """Resolve duplicate entities while preserving independent scientific observations.
 
-    Identity resolution is transitive across trusted identifiers: if record A shares a DOI
-    with B and B shares an arXiv ID with C, all three belong to one entity. Records without
-    identifiers are never fuzzy-merged.
+    Identity resolution is transitive across trusted identifiers only while the proposed
+    component remains internally consistent. If two components assert different values for
+    the same trusted identifier type, that union is refused instead of silently discarding
+    one identity claim. Records without identifiers are never fuzzy-merged.
 
     Documents default to metadata deduplication. Material/chemical records default to
     observation preservation so equal semantic fields from independent providers remain
@@ -175,6 +188,10 @@ def aggregate_records(
         return []
 
     parent = list(range(len(records)))
+    component_claims = [
+        _trusted_identifier_claims(record)
+        for record in records
+    ]
 
     def find(index: int) -> int:
         while parent[index] != index:
@@ -182,10 +199,24 @@ def aggregate_records(
             index = parent[index]
         return index
 
-    def union(left: int, right: int) -> None:
+    def union(left: int, right: int) -> bool:
         left_root, right_root = find(left), find(right)
-        if left_root != right_root:
-            parent[right_root] = left_root
+        if left_root == right_root:
+            return True
+
+        left_claims = component_claims[left_root]
+        right_claims = component_claims[right_root]
+        shared_types = left_claims.keys() & right_claims.keys()
+        if any(
+            left_claims[kind] != right_claims[kind]
+            for kind in shared_types
+        ):
+            return False
+
+        parent[right_root] = left_root
+        left_claims.update(right_claims)
+        component_claims[right_root] = {}
+        return True
 
     token_owner: dict[tuple[str, str, str], int] = {}
     for index, record in enumerate(records):
