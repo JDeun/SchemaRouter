@@ -1416,6 +1416,7 @@ class RegistryExecutor:
                 )
                 return result
             except (
+                ApprovalDeniedError,
                 SchemaValidationError,
                 ExecutionBudgetExceededError,
                 ExecutionHookError,
