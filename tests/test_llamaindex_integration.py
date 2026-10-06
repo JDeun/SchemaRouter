@@ -328,7 +328,7 @@ def test_llamaindex_export_fails_clearly_after_endpoint_schema_replacement() -> 
         exported(a=2, b=3)
 
     refreshed = to_llamaindex_tool(router, "add", "call")
-    assert refreshed(a=2, b=3).raw_output == 5
+    assert refreshed.metadata.description == "Changed after framework export"
 
 
 def test_llamaindex_export_fails_clearly_after_data_scope_narrows() -> None:
