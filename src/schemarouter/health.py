@@ -51,6 +51,9 @@ class AccessHealthMonitor:
         self._probe_timeout_seconds = 5.0
         self._max_concurrency = 4
         self._run_lock = asyncio.Lock()
+        self._lifecycle_condition = asyncio.Condition(self._run_lock)
+        self._active_probe_tasks: set[asyncio.Task] = set()
+        self._quiesce_requests = 0
 
     @property
     def running(self) -> bool:
@@ -135,11 +138,29 @@ class AccessHealthMonitor:
             record.last_error_type = None
 
     @asynccontextmanager
-    async def lifecycle_guard(self):
-        """Quiesce probe execution while a router lifecycle mutation runs."""
+    async def lifecycle_guard(self, *, wait_for_inflight: bool = False):
+        """Serialize lifecycle commits without running probe callbacks under the lock.
 
-        async with self._run_lock:
-            yield
+        Normal lifecycle transitions may invalidate an in-flight probe generation and let
+        its result be discarded at commit time. Destructive operations can request
+        wait_for_inflight to drain already-started probes while preventing new ones from
+        starting. A probe that re-enters a destructive lifecycle operation never waits
+        for itself.
+        """
+
+        current_task = asyncio.current_task()
+        async with self._lifecycle_condition:
+            if wait_for_inflight:
+                self._quiesce_requests += 1
+                if current_task not in self._active_probe_tasks:
+                    while self._active_probe_tasks:
+                        await self._lifecycle_condition.wait()
+            try:
+                yield
+            finally:
+                if wait_for_inflight:
+                    self._quiesce_requests -= 1
+                    self._lifecycle_condition.notify_all()
 
     def _contract_status(
         self,
@@ -181,42 +202,15 @@ class AccessHealthMonitor:
         unavailable_cooldown_seconds: float,
     ) -> None:
         async with semaphore:
-            status: HealthStatus = "unhealthy"
-            error_type: str | None = None
+            current_task = asyncio.current_task()
+            registered_active = False
 
-            current, stale_reason = self._contract_status(
-                tool_key,
-                endpoint,
-                record,
-            )
-            if not current:
-                record.status = "stale"
-                record.last_checked_at = datetime.now(timezone.utc)
-                record.last_error_type = stale_reason
-                return
-
-            generation = record.generation
-            try:
-                async_probe = (
-                    inspect.iscoroutinefunction(record.probe)
-                    or inspect.iscoroutinefunction(record.probe.__call__)
-                )
-                if async_probe:
-                    outcome = record.probe()
-                else:
-                    outcome = await asyncio.wait_for(
-                        asyncio.to_thread(record.probe),
-                        timeout=probe_timeout_seconds,
-                    )
-                if inspect.isawaitable(outcome):
-                    outcome = await asyncio.wait_for(
-                        outcome,
-                        timeout=probe_timeout_seconds,
-                    )
-
-                if record.generation != generation:
+            async with self._lifecycle_condition:
+                while self._quiesce_requests:
+                    await self._lifecycle_condition.wait()
+                if self._probes.get((tool_key, endpoint)) is not record:
                     return
-
+                generation = record.generation
                 current, stale_reason = self._contract_status(
                     tool_key,
                     endpoint,
@@ -227,42 +221,73 @@ class AccessHealthMonitor:
                     record.last_checked_at = datetime.now(timezone.utc)
                     record.last_error_type = stale_reason
                     return
+                if current_task is not None:
+                    self._active_probe_tasks.add(current_task)
+                    registered_active = True
 
-                healthy = outcome is True
-                if healthy:
-                    self.executor.mark_access_available(tool_key, endpoint)
-                    status = "healthy"
-                else:
-                    self.executor.mark_access_unavailable(
+            try:
+                status: HealthStatus = "unhealthy"
+                error_type: str | None = None
+                healthy = False
+                try:
+                    async_probe = (
+                        inspect.iscoroutinefunction(record.probe)
+                        or inspect.iscoroutinefunction(record.probe.__call__)
+                    )
+                    if async_probe:
+                        outcome = record.probe()
+                    else:
+                        outcome = await asyncio.wait_for(
+                            asyncio.to_thread(record.probe),
+                            timeout=probe_timeout_seconds,
+                        )
+                    if inspect.isawaitable(outcome):
+                        outcome = await asyncio.wait_for(
+                            outcome,
+                            timeout=probe_timeout_seconds,
+                        )
+                    healthy = outcome is True
+                except asyncio.CancelledError:
+                    raise
+                except Exception as exc:
+                    error_type = type(exc).__name__
+
+                async with self._lifecycle_condition:
+                    if (
+                        self._probes.get((tool_key, endpoint)) is not record
+                        or record.generation != generation
+                    ):
+                        return
+
+                    current, stale_reason = self._contract_status(
                         tool_key,
                         endpoint,
-                        cooldown_seconds=unavailable_cooldown_seconds,
+                        record,
                     )
-            except asyncio.CancelledError:
-                raise
-            except Exception as exc:
-                if record.generation != generation:
-                    return
-                error_type = type(exc).__name__
-                current, stale_reason = self._contract_status(
-                    tool_key,
-                    endpoint,
-                    record,
-                )
-                if not current:
-                    record.status = "stale"
-                    record.last_checked_at = datetime.now(timezone.utc)
-                    record.last_error_type = stale_reason
-                    return
-                self.executor.mark_access_unavailable(
-                    tool_key,
-                    endpoint,
-                    cooldown_seconds=unavailable_cooldown_seconds,
-                )
+                    if not current:
+                        record.status = "stale"
+                        record.last_checked_at = datetime.now(timezone.utc)
+                        record.last_error_type = stale_reason
+                        return
 
-            record.status = status
-            record.last_checked_at = datetime.now(timezone.utc)
-            record.last_error_type = error_type
+                    if healthy and error_type is None:
+                        self.executor.mark_access_available(tool_key, endpoint)
+                        status = "healthy"
+                    else:
+                        self.executor.mark_access_unavailable(
+                            tool_key,
+                            endpoint,
+                            cooldown_seconds=unavailable_cooldown_seconds,
+                        )
+
+                    record.status = status
+                    record.last_checked_at = datetime.now(timezone.utc)
+                    record.last_error_type = error_type
+            finally:
+                if registered_active and current_task is not None:
+                    async with self._lifecycle_condition:
+                        self._active_probe_tasks.discard(current_task)
+                        self._lifecycle_condition.notify_all()
 
     async def run_once(
         self,
@@ -271,12 +296,11 @@ class AccessHealthMonitor:
         unavailable_cooldown_seconds: float | None = None,
         max_concurrency: int | None = None,
     ) -> tuple[HealthProbeSnapshot, ...]:
-        async with self._run_lock:
-            return await self._run_once_unlocked(
-                probe_timeout_seconds=probe_timeout_seconds,
-                unavailable_cooldown_seconds=unavailable_cooldown_seconds,
-                max_concurrency=max_concurrency,
-            )
+        return await self._run_once_unlocked(
+            probe_timeout_seconds=probe_timeout_seconds,
+            unavailable_cooldown_seconds=unavailable_cooldown_seconds,
+            max_concurrency=max_concurrency,
+        )
 
     async def _run_once_unlocked(
         self,
@@ -308,6 +332,9 @@ class AccessHealthMonitor:
             raise ValueError("max_concurrency must be >= 1")
 
         semaphore = asyncio.Semaphore(concurrency)
+        async with self._lifecycle_condition:
+            probes = tuple(self._probes.items())
+
         await asyncio.gather(
             *(
                 self._run_probe(
@@ -318,10 +345,11 @@ class AccessHealthMonitor:
                     probe_timeout_seconds=timeout,
                     unavailable_cooldown_seconds=cooldown,
                 )
-                for (tool_key, endpoint), record in tuple(self._probes.items())
+                for (tool_key, endpoint), record in probes
             )
         )
-        return self.snapshots()
+        async with self._lifecycle_condition:
+            return self.snapshots()
 
     async def _loop(self) -> None:
         try:

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import contextmanager
 
 import httpx
 import pytest
 
 from schemarouter import EndpointSpec, SchemaRouter, ToolSpec
+from schemarouter.errors import SchemaSourceError
 from schemarouter.ingestion import default_adapter_registry
 from schemarouter.registry import InMemoryRegistry
 from schemarouter.schema_diff import SchemaDiffReport, SchemaRefreshResult
@@ -293,3 +295,116 @@ async def test_schema_watcher_snapshots_never_expose_secret_headers() -> None:
 
     assert "schema-secret" not in snapshot_text
     assert "runtime-secret" not in snapshot_text
+
+
+@pytest.mark.asyncio
+async def test_unregister_invalidates_inflight_watch_generation_and_reregister_isolated() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="remote",
+        remote=True,
+        metadata={
+            "adapter": "openapi",
+            "source_url": "https://example.test/openapi.json",
+        },
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_schema={"type": "object"},
+            )
+        ],
+    )
+    registry.register(tool)
+    original_fingerprint = tool.fingerprint
+
+    first_started = asyncio.Event()
+    release_first = asyncio.Event()
+    calls = 0
+
+    async def refresh(tool_key: str, **kwargs) -> SchemaRefreshResult:
+        nonlocal calls
+        calls += 1
+        current = registry.get(tool_key)
+        updated_endpoint = current.endpoints[0].model_copy(
+            update={"description": f"generation-{calls}"}
+        )
+        candidate = current.model_copy(
+            deep=True,
+            update={"endpoints": [updated_endpoint]},
+        )
+        report = SchemaDiffReport(
+            compatibility="compatible",
+            old_fingerprint=current.fingerprint,
+            new_fingerprint=candidate.fingerprint,
+            changes=[],
+        )
+
+        if calls == 1:
+            first_started.set()
+            await release_first.wait()
+
+        apply_guard = kwargs["_apply_guard"]
+        with apply_guard():
+            registry.register(candidate, replace=True)
+
+        return SchemaRefreshResult(
+            tool_key=tool_key,
+            action="applied",
+            applied=True,
+            report=report,
+        )
+
+    watcher = SchemaWatchManager(registry, refresh, default_adapter_registry())
+    watcher.register(tool.key, interval_seconds=60)
+
+    old_run = asyncio.create_task(watcher.run_once())
+    await first_started.wait()
+
+    watcher.unregister(tool.key)
+    watcher.register(tool.key, interval_seconds=60)
+    release_first.set()
+    await old_run
+
+    assert calls == 1
+    assert registry.get(tool.key).fingerprint == original_fingerprint
+    snapshots = watcher.snapshots()
+    assert len(snapshots) == 1
+    assert snapshots[0].status == "idle"
+
+    await watcher.run_once()
+
+    assert calls == 2
+    assert registry.get(tool.key).fingerprint != original_fingerprint
+    assert watcher.snapshots()[0].status == "applied"
+
+
+@pytest.mark.asyncio
+async def test_runtime_apply_guard_prevents_schema_commit() -> None:
+    state = {"document": _document()}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=state["document"], request=request)
+
+    @contextmanager
+    def reject_apply():
+        raise SchemaSourceError("watch generation is no longer active")
+        yield
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        tool = await router.add_url(
+            "https://example.test/openapi.json",
+            kind="openapi",
+            name="materials",
+        )
+        original_fingerprint = tool.fingerprint
+        state["document"] = _document(summary="updated")
+
+        with pytest.raises(SchemaSourceError, match="no longer active"):
+            await router.arefresh_schema(
+                tool.key,
+                _apply_guard=reject_apply,
+            )
+
+        assert router.registry.get(tool.key).fingerprint == original_fingerprint
