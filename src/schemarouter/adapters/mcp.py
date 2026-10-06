@@ -603,30 +603,32 @@ async def inspect_mcp_client_factory(
             cursor: str | None = None
             for _page_number in range(1, limits.max_pages + 1):
                 page = await client.list_tools(cursor=cursor)
-                page_tools = list(page.tools)
-                if len(raw_tools) + len(page_tools) > limits.max_tools:
-                    raise SchemaSourceError(
-                        "MCP tool discovery exceeded the configured tool limit"
-                    )
 
-                for raw_tool in page_tools:
+                for raw_tool in page.tools:
+                    if len(raw_tools) >= limits.max_tools:
+                        raise SchemaSourceError(
+                            "MCP tool discovery exceeded the configured tool limit"
+                        )
                     item = _as_dict(raw_tool)
-                    encoded = json.dumps(
-                        item,
+                    item_bytes = 0
+                    encoder = json.JSONEncoder(
                         sort_keys=True,
                         separators=(",", ":"),
                         ensure_ascii=False,
-                    ).encode("utf-8")
-                    item_bytes = len(encoded)
-                    if item_bytes > limits.max_tool_bytes:
-                        raise SchemaSourceError(
-                            "MCP tool descriptor exceeded the configured per-tool byte limit"
-                        )
+                    )
+                    for chunk in encoder.iterencode(item):
+                        item_bytes += len(chunk.encode("utf-8"))
+                        if item_bytes > limits.max_tool_bytes:
+                            raise SchemaSourceError(
+                                "MCP tool descriptor exceeded the configured "
+                                "per-tool byte limit"
+                            )
+                        if total_bytes + item_bytes > limits.max_total_bytes:
+                            raise SchemaSourceError(
+                                "MCP tool discovery exceeded the configured "
+                                "aggregate byte limit"
+                            )
                     total_bytes += item_bytes
-                    if total_bytes > limits.max_total_bytes:
-                        raise SchemaSourceError(
-                            "MCP tool discovery exceeded the configured aggregate byte limit"
-                        )
                     raw_tools.append(item)
 
                 next_cursor = page.next_cursor
