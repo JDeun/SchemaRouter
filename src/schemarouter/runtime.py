@@ -16,6 +16,7 @@ from .adapters.mcp import (
     MCPBoundClientFactory,
     MCPBoundInvoker,
     MCPClientFactory,
+    MCPDiscoveryLimits,
     MCPRemoteInvoker,
     MCPStdioClientFactory,
     MCPStdioConfig,
@@ -1051,6 +1052,7 @@ class SchemaRouter:
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: MCPClientFactory | None = None,
+        mcp_discovery_limits: MCPDiscoveryLimits | None = None,
         allow_active_probes: bool = False,
         openapi_external_refs: bool = False,
         openapi_ref_max_depth: int = 3,
@@ -1080,6 +1082,7 @@ class SchemaRouter:
             schema_headers=schema_headers,
             trusted_headers=trusted_headers,
             mcp_client_factory=mcp_client_factory,
+            mcp_discovery_limits=mcp_discovery_limits,
             allow_active_probes=allow_active_probes,
             openapi_external_refs=openapi_external_refs,
             openapi_ref_max_depth=openapi_ref_max_depth,
@@ -3916,6 +3919,7 @@ class SchemaRouter:
         transport_fingerprint: str | None = None,
         replace: bool = False,
         timeout: float = 20.0,
+        discovery_limits: MCPDiscoveryLimits | None = None,
     ) -> ToolSpec:
         """Import MCP tools through a trusted transport-neutral client factory.
 
@@ -3944,6 +3948,7 @@ class SchemaRouter:
                 if transport_fingerprint is not None
                 else None
             ),
+            discovery_limits=discovery_limits,
         )
         if provider is not None:
             tool.provider = provider
@@ -3978,6 +3983,7 @@ class SchemaRouter:
         access_mode: str | None = None,
         replace: bool = False,
         timeout: float = 20.0,
+        discovery_limits: MCPDiscoveryLimits | None = None,
     ) -> ToolSpec:
         """Spawn a trusted local MCP stdio server and register its advertised tools."""
 
@@ -3993,6 +3999,7 @@ class SchemaRouter:
             server_name=name,
             namespace=namespace,
             timeout=timeout,
+            discovery_limits=discovery_limits,
         )
         if provider is not None:
             tool.provider = provider
@@ -4025,6 +4032,7 @@ class SchemaRouter:
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: MCPClientFactory | None = None,
+        mcp_discovery_limits: MCPDiscoveryLimits | None = None,
         allow_active_probes: bool = False,
         openapi_external_refs: bool = False,
         openapi_ref_max_depth: int = 3,
@@ -4044,6 +4052,7 @@ class SchemaRouter:
             schema_headers=schema_headers,
             trusted_headers=trusted_headers,
             mcp_client_factory=mcp_client_factory,
+            mcp_discovery_limits=mcp_discovery_limits,
             allow_active_probes=allow_active_probes,
             openapi_external_refs=openapi_external_refs,
             openapi_ref_max_depth=openapi_ref_max_depth,
@@ -4067,6 +4076,7 @@ class SchemaRouter:
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: MCPClientFactory | None = None,
+        mcp_discovery_limits: MCPDiscoveryLimits | None = None,
         allow_active_probes: bool = False,
         openapi_external_refs: bool = False,
         openapi_ref_max_depth: int = 3,
@@ -4086,6 +4096,7 @@ class SchemaRouter:
             schema_headers=schema_headers,
             trusted_headers=trusted_headers,
             mcp_client_factory=mcp_client_factory,
+            mcp_discovery_limits=mcp_discovery_limits,
             allow_active_probes=allow_active_probes,
             openapi_external_refs=openapi_external_refs,
             openapi_ref_max_depth=openapi_ref_max_depth,
@@ -4102,6 +4113,7 @@ class SchemaRouter:
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: MCPClientFactory | None = None,
+        mcp_discovery_limits: MCPDiscoveryLimits | None = None,
         timeout: float = 20.0,
         _expected_fingerprint: str | None = None,
         _expected_source_identity: StructuredSourceIdentity | None = None,
@@ -4247,6 +4259,7 @@ class SchemaRouter:
                 timeout=timeout,
                 transport=transport,
                 transport_fingerprint=transport_fingerprint,
+                discovery_limits=mcp_discovery_limits,
             )
             candidate_tool.provider = current.provider
             candidate_tool.access_mode = current.access_mode
@@ -4281,6 +4294,7 @@ class SchemaRouter:
                     schema_validators=schema_validators,
                     trusted_headers=trusted_headers,
                     mcp_client_factory=mcp_client_factory,
+                    mcp_discovery_limits=mcp_discovery_limits,
                     openapi_external_refs=openapi_external_refs,
                     openapi_ref_max_depth=openapi_ref_max_depth,
                     openapi_ref_max_documents=openapi_ref_max_documents,
@@ -4585,6 +4599,7 @@ class SchemaRouter:
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: MCPClientFactory | None = None,
+        mcp_discovery_limits: MCPDiscoveryLimits | None = None,
         timeout: float = 20.0,
     ) -> SchemaRefreshResult:
         """Synchronous wrapper for :meth:`arefresh_schema`."""
@@ -4596,6 +4611,7 @@ class SchemaRouter:
                 schema_headers=schema_headers,
                 trusted_headers=trusted_headers,
                 mcp_client_factory=mcp_client_factory,
+                mcp_discovery_limits=mcp_discovery_limits,
                 timeout=timeout,
             )
         )
