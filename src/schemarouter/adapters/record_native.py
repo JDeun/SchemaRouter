@@ -9,6 +9,7 @@ from decimal import Decimal
 from typing import Any
 
 from ..errors import RegistrationError, SchemaValidationError
+from .discovery_limits import NativeDiscoveryLimits, require_at_most
 from .record_store import RecordFieldSpec, RecordSourceSpec
 
 
@@ -150,18 +151,30 @@ class MongoRecordBackend:
         collections: Sequence[str] | None = None,
         text_search_collections: Sequence[str] = (),
         time_field_by_collection: Mapping[str, str] | None = None,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> None:
         self._database = database
+        self._discovery_limits = discovery_limits or NativeDiscoveryLimits()
         self._collections = None if collections is None else tuple(collections)
         self._text_search = set(text_search_collections)
         self._time_fields = dict(time_field_by_collection or {})
 
     def _names(self) -> tuple[str, ...]:
         if self._collections is not None:
+            require_at_most(
+                len(self._collections),
+                limit=self._discovery_limits.max_sources,
+                label="MongoDB selected collection count",
+            )
             return self._collections
         names = self._database.list_collection_names()
         if not isinstance(names, Sequence) or isinstance(names, (str, bytes)):
             raise SchemaValidationError("MongoDB list_collection_names() must return a list")
+        require_at_most(
+            len(names),
+            limit=self._discovery_limits.max_sources,
+            label="MongoDB collection count",
+        )
         return tuple(str(name) for name in names if str(name))
 
     def _sample_documents(self, collection: Any) -> tuple[dict[str, Any], ...]:
@@ -184,6 +197,12 @@ class MongoRecordBackend:
             time_field = self._time_fields.get(name)
             if time_field is not None:
                 required.append(time_field)
+            field_names = _sample_field_names(samples, required=required)
+            require_at_most(
+                len(field_names),
+                limit=self._discovery_limits.max_fields_per_source,
+                label=f"MongoDB collection {name!r} field count",
+            )
             fields = [
                 RecordFieldSpec(
                     name=field_name,
@@ -196,7 +215,7 @@ class MongoRecordBackend:
                         or _sample_field_is_scalar(samples, field_name)
                     ),
                 )
-                for field_name in _sample_field_names(samples, required=required)
+                for field_name in field_names
             ]
             results.append(
                 RecordSourceSpec(
@@ -303,8 +322,10 @@ class ElasticRecordBackend:
         indices: Sequence[str] | None = None,
         time_field_by_index: Mapping[str, str] | None = None,
         vendor: str = "elasticsearch",
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> None:
         self._client = client
+        self._discovery_limits = discovery_limits or NativeDiscoveryLimits()
         self._indices = None if indices is None else tuple(indices)
         self._time_fields = dict(time_field_by_index or {})
         self._vendor = vendor
@@ -321,6 +342,11 @@ class ElasticRecordBackend:
             raise SchemaValidationError(
                 "Elasticsearch/OpenSearch get_mapping() must return an object"
             )
+        require_at_most(
+            len(raw),
+            limit=self._discovery_limits.max_sources,
+            label=f"{self._vendor} index count",
+        )
         return raw
 
     def list_sources(self) -> tuple[RecordSourceSpec, ...]:
@@ -335,6 +361,11 @@ class ElasticRecordBackend:
             properties = mapping.get("properties") or {} if isinstance(mapping, Mapping) else {}
             if not isinstance(properties, Mapping):
                 properties = {}
+            require_at_most(
+                len(properties) + 1,
+                limit=self._discovery_limits.max_fields_per_source,
+                label=f"{self._vendor} index {index_name!r} field count",
+            )
 
             fields = [
                 RecordFieldSpec(
@@ -538,8 +569,10 @@ class DynamoDBRecordBackend:
         *,
         tables: Sequence[str] | None = None,
         time_field_by_table: Mapping[str, str] | None = None,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> None:
         self._client = client
+        self._discovery_limits = discovery_limits or NativeDiscoveryLimits()
         self._tables = None if tables is None else tuple(tables)
         self._time_fields = dict(time_field_by_table or {})
         self._key_fields: dict[str, tuple[str, ...]] = {}
@@ -547,6 +580,11 @@ class DynamoDBRecordBackend:
 
     def _table_names(self) -> tuple[str, ...]:
         if self._tables is not None:
+            require_at_most(
+                len(self._tables),
+                limit=self._discovery_limits.max_sources,
+                label="DynamoDB selected table count",
+            )
             return self._tables
         names: list[str] = []
         start: str | None = None
@@ -554,6 +592,11 @@ class DynamoDBRecordBackend:
             kwargs = {} if start is None else {"ExclusiveStartTableName": start}
             response = self._client.list_tables(**kwargs)
             names.extend(str(value) for value in response.get("TableNames", ()))
+            require_at_most(
+                len(names),
+                limit=self._discovery_limits.max_sources,
+                label="DynamoDB table count",
+            )
             start = response.get("LastEvaluatedTableName")
             if not start:
                 break
@@ -595,6 +638,11 @@ class DynamoDBRecordBackend:
             if time_field is not None:
                 required.append(time_field)
             names = _sample_field_names(samples, required=required)
+            require_at_most(
+                len(names),
+                limit=self._discovery_limits.max_fields_per_source,
+                label=f"DynamoDB table {table_name!r} field count",
+            )
 
             fields = []
             for name in names:
@@ -748,19 +796,31 @@ class CosmosRecordBackend:
         *,
         containers: Sequence[str] | None = None,
         time_field_by_container: Mapping[str, str] | None = None,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> None:
         self._database = database
+        self._discovery_limits = discovery_limits or NativeDiscoveryLimits()
         self._containers = None if containers is None else tuple(containers)
         self._time_fields = dict(time_field_by_container or {})
         self._field_names: dict[str, frozenset[str]] = {}
 
     def _container_names(self) -> tuple[str, ...]:
         if self._containers is not None:
+            require_at_most(
+                len(self._containers),
+                limit=self._discovery_limits.max_sources,
+                label="Cosmos DB selected container count",
+            )
             return self._containers
         names: list[str] = []
         for raw in self._database.list_containers():
             if isinstance(raw, Mapping) and raw.get("id"):
                 names.append(str(raw["id"]))
+                require_at_most(
+                    len(names),
+                    limit=self._discovery_limits.max_sources,
+                    label="Cosmos DB container count",
+                )
         return tuple(names)
 
     def _samples(self, container_name: str) -> tuple[dict[str, Any], ...]:
@@ -783,6 +843,11 @@ class CosmosRecordBackend:
             if time_field is not None:
                 required.append(time_field)
             names = _sample_field_names(samples, required=required)
+            require_at_most(
+                len(names),
+                limit=self._discovery_limits.max_fields_per_source,
+                label=f"Cosmos DB container {container_name!r} field count",
+            )
             fields: list[RecordFieldSpec] = []
             for name in names:
                 fields.append(
@@ -911,8 +976,10 @@ class CouchbaseRecordBackend:
         *,
         keyspaces: Sequence[str] | None = None,
         time_field_by_source: Mapping[str, str] | None = None,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> None:
         self._cluster = cluster
+        self._discovery_limits = discovery_limits or NativeDiscoveryLimits()
         self._configured = None if keyspaces is None else tuple(keyspaces)
         self._time_fields = dict(time_field_by_source or {})
         self._paths: dict[str, tuple[str, str, str]] = {}
@@ -920,6 +987,11 @@ class CouchbaseRecordBackend:
 
     def _discover_paths(self) -> dict[str, tuple[str, str, str]]:
         if self._configured is not None:
+            require_at_most(
+                len(self._configured),
+                limit=self._discovery_limits.max_sources,
+                label="Couchbase selected keyspace count",
+            )
             paths: dict[str, tuple[str, str, str]] = {}
             for value in self._configured:
                 parts = value.split(".")
@@ -944,6 +1016,11 @@ class CouchbaseRecordBackend:
                 continue
             source = f"{bucket}.{scope}.{name}"
             paths[source] = (bucket, scope, name)
+            require_at_most(
+                len(paths),
+                limit=self._discovery_limits.max_sources,
+                label="Couchbase keyspace count",
+            )
         return paths
 
     @staticmethod
@@ -962,6 +1039,11 @@ class CouchbaseRecordBackend:
                 _query_rows(self._cluster.query(statement))
             )
             names = _sample_field_names(samples)
+            require_at_most(
+                len(names),
+                limit=self._discovery_limits.max_fields_per_source,
+                label=f"Couchbase keyspace {source!r} field count",
+            )
             fields = []
             for name in names:
                 safe_filter = re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name) is not None
@@ -1109,8 +1191,10 @@ class ClickHouseRecordBackend:
         *,
         tables: Sequence[str] | None = None,
         time_field_by_table: Mapping[str, str] | None = None,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> None:
         self._client = client
+        self._discovery_limits = discovery_limits or NativeDiscoveryLimits()
         self._configured = None if tables is None else tuple(tables)
         self._time_fields = dict(time_field_by_table or {})
         self._fields: dict[str, dict[str, str]] = {}
@@ -1124,6 +1208,11 @@ class ClickHouseRecordBackend:
 
     def _table_names(self) -> tuple[str, ...]:
         if self._configured is not None:
+            require_at_most(
+                len(self._configured),
+                limit=self._discovery_limits.max_sources,
+                label="ClickHouse selected table count",
+            )
             return self._configured
         result = self._client.query(
             "SELECT database, name FROM system.tables "
@@ -1131,9 +1220,15 @@ class ClickHouseRecordBackend:
             "('system', 'INFORMATION_SCHEMA', 'information_schema') "
             "ORDER BY database, name"
         )
+        rows = self._rows(result)
+        require_at_most(
+            len(rows),
+            limit=self._discovery_limits.max_sources,
+            label="ClickHouse table count",
+        )
         return tuple(
             f"{str(database)}.{str(name)}"
-            for database, name in self._rows(result)
+            for database, name in rows
         )
 
     @staticmethod
@@ -1151,9 +1246,15 @@ class ClickHouseRecordBackend:
                 f"DESCRIBE TABLE {_clickhouse_identifier(database)}."
                 f"{_clickhouse_identifier(table)}"
             )
+            describe_rows = self._rows(describe)
+            require_at_most(
+                len(describe_rows),
+                limit=self._discovery_limits.max_fields_per_source,
+                label=f"ClickHouse table {source!r} field count",
+            )
             fields: list[RecordFieldSpec] = []
             types: dict[str, str] = {}
-            for row in self._rows(describe):
+            for row in describe_rows:
                 if len(row) < 2:
                     continue
                 name = str(row[0])
@@ -1285,12 +1386,14 @@ class InfluxRecordBackend:
         org: str,
         measurements: Sequence[str] | None = None,
         default_start: str = "-30d",
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> None:
         if not bucket.strip() or not org.strip():
             raise ValueError("InfluxDB bucket and org must be non-empty")
         if re.fullmatch(r"-[1-9][0-9]*[smhdw]", default_start) is None:
             raise ValueError("InfluxDB default_start must be a negative Flux duration")
         self._query_api = query_api
+        self._discovery_limits = discovery_limits or NativeDiscoveryLimits()
         self._bucket = bucket
         self._org = org
         self._configured = None if measurements is None else tuple(measurements)
@@ -1321,11 +1424,22 @@ class InfluxRecordBackend:
 
     def _measurement_names(self) -> tuple[str, ...]:
         if self._configured is not None:
+            require_at_most(
+                len(self._configured),
+                limit=self._discovery_limits.max_sources,
+                label="InfluxDB selected measurement count",
+            )
             return self._configured
-        return self._schema_values(
+        values = self._schema_values(
             'import "influxdata/influxdb/schema"\n'
             f"schema.measurements(bucket: {_flux_string(self._bucket)})"
         )
+        require_at_most(
+            len(values),
+            limit=self._discovery_limits.max_sources,
+            label="InfluxDB measurement count",
+        )
+        return values
 
     def list_sources(self) -> tuple[RecordSourceSpec, ...]:
         results: list[RecordSourceSpec] = []
@@ -1342,6 +1456,11 @@ class InfluxRecordBackend:
                 f"bucket: {_flux_string(self._bucket)}, predicate: {predicate})"
             )
             tag_set = frozenset(value for value in tags if not value.startswith("_"))
+            require_at_most(
+                len(fields) + len(tag_set) + 3,
+                limit=self._discovery_limits.max_fields_per_source,
+                label=f"InfluxDB measurement {measurement!r} field count",
+            )
             self._tag_fields[measurement] = tag_set
             self._field_keys[measurement] = frozenset(fields)
             output_fields = [
