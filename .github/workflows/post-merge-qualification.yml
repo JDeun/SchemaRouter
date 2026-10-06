@@ -1,0 +1,81 @@
+name: Post-merge Qualification
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - name: Install exact-main qualification dependencies
+        run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel,database]" build twine
+      - name: Lint exact merged tree
+        run: ruff check .
+      - name: Type-check exact merged tree
+        run: pyright
+      - name: Run exact-main core suite with coverage floor
+        run: >-
+          pytest -q
+          --cov=schemarouter
+          --cov-branch
+          --cov-report=term-missing
+          --cov-fail-under=83.5
+      - name: Run consumer smoke checks
+        run: |
+          python examples/quickstart.py
+          python examples/database_quickstart.py
+          python scripts/consumer_acceptance.py
+      - name: Verify exact-main package build
+        run: |
+          python -m build
+          twine check dist/*
+      - name: Record exact-main qualification evidence
+        env:
+          QUALIFIED_SHA: ${{ github.sha }}
+          QUALIFIED_REF: ${{ github.ref }}
+          QUALIFICATION_RUN_ID: ${{ github.run_id }}
+          QUALIFICATION_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path("artifacts/post-merge-qualification.json")
+          path.parent.mkdir(parents=True, exist_ok=True)
+          path.write_text(
+              json.dumps(
+                  {
+                      "repository": os.environ["GITHUB_REPOSITORY"],
+                      "sha": os.environ["QUALIFIED_SHA"],
+                      "ref": os.environ["QUALIFIED_REF"],
+                      "run_id": os.environ["QUALIFICATION_RUN_ID"],
+                      "run_attempt": os.environ["QUALIFICATION_RUN_ATTEMPT"],
+                  },
+                  indent=2,
+                  sort_keys=True,
+              )
+              + "\n",
+              encoding="utf-8",
+          )
+          PY
+      - name: Publish exact-main qualification evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: post-merge-qualification-${{ github.sha }}
+          path: artifacts/post-merge-qualification.json
+          if-no-files-found: error
+          retention-days: 30
