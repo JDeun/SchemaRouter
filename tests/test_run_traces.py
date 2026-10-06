@@ -439,3 +439,28 @@ async def test_record_run_events_offloads_sync_store_and_preserves_order() -> No
     assert loop_progressed.is_set()
     assert persisted == [0, 1]
     assert [item.sequence for item in captured] == [0, 1]
+
+
+@pytest.mark.asyncio
+async def test_record_run_events_closes_upstream_generator_promptly() -> None:
+    closed = asyncio.Event()
+    persisted: list[int] = []
+
+    class Store:
+        def append(self, item: RunEvent) -> None:
+            persisted.append(item.sequence)
+
+    async def source():
+        try:
+            yield event("upstream-close", 0, "run.start")
+            await asyncio.Event().wait()
+        finally:
+            closed.set()
+
+    wrapped = record_run_events(source(), store=Store())
+    first = await anext(wrapped)
+    await wrapped.aclose()
+
+    assert first.sequence == 0
+    assert persisted == [0]
+    assert closed.is_set()
