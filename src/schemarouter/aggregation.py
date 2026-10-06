@@ -199,6 +199,12 @@ def aggregate_records(
             index = parent[index]
         return index
 
+    def claims_compatible(left: dict[str, str], right: dict[str, str]) -> bool:
+        return all(
+            left[kind] == right[kind]
+            for kind in left.keys() & right.keys()
+        )
+
     def union(left: int, right: int) -> bool:
         left_root, right_root = find(left), find(right)
         if left_root == right_root:
@@ -206,11 +212,7 @@ def aggregate_records(
 
         left_claims = component_claims[left_root]
         right_claims = component_claims[right_root]
-        shared_types = left_claims.keys() & right_claims.keys()
-        if any(
-            left_claims[kind] != right_claims[kind]
-            for kind in shared_types
-        ):
+        if not claims_compatible(left_claims, right_claims):
             return False
 
         parent[right_root] = left_root
@@ -218,15 +220,52 @@ def aggregate_records(
         component_claims[right_root] = {}
         return True
 
-    token_owner: dict[tuple[str, str, str], int] = {}
+    token_owners: dict[tuple[str, str, str], list[int]] = {}
     for index, record in enumerate(records):
-        for kind, value in _identifier_tokens(record):
+        for kind, value in sorted(_identifier_tokens(record)):
             token = (record.entity_kind, kind, value)
-            previous = token_owner.get(token)
-            if previous is None:
-                token_owner[token] = index
-            else:
-                union(index, previous)
+            owners = token_owners.setdefault(token, [])
+
+            roots: list[int] = []
+            for owner in owners:
+                root = find(owner)
+                if root not in roots:
+                    roots.append(root)
+
+            current_root = find(index)
+            compatible_roots = [
+                root
+                for root in roots
+                if claims_compatible(
+                    component_claims[current_root],
+                    component_claims[root],
+                )
+            ]
+
+            candidates_are_mutually_compatible = all(
+                claims_compatible(
+                    component_claims[left_root],
+                    component_claims[right_root],
+                )
+                for position, left_root in enumerate(compatible_roots)
+                for right_root in compatible_roots[position + 1 :]
+            )
+            if (
+                len(compatible_roots) == 1
+                or (
+                    compatible_roots
+                    and candidates_are_mutually_compatible
+                )
+            ):
+                for root in compatible_roots:
+                    union(index, root)
+
+            refreshed_roots: list[int] = []
+            for owner in [*roots, index]:
+                root = find(owner)
+                if root not in refreshed_roots:
+                    refreshed_roots.append(root)
+            token_owners[token] = refreshed_roots
 
     groups: dict[int, list[SourceRecord]] = defaultdict(list)
     for index, record in enumerate(records):
@@ -243,7 +282,19 @@ def aggregate_records(
             if record.provider not in providers:
                 providers.append(record.provider)
             for identifier_type, value in record.identifiers.items():
-                identifiers.setdefault(identifier_type.casefold(), value)
+                normalized_type = identifier_type.casefold()
+                previous = identifiers.get(normalized_type)
+                trusted = _trusted_identity_types(entity_kind)
+                if (
+                    previous is not None
+                    and (trusted is None or normalized_type in trusted)
+                    and _normalise_identifier(identifier_type, previous)
+                    != _normalise_identifier(identifier_type, value)
+                ):
+                    raise ValueError(
+                        "conflicting trusted identifier escaped identity resolution"
+                    )
+                identifiers.setdefault(normalized_type, value)
             for field, value in record.fields.items():
                 field_observations[field].append(
                     FieldObservation(
