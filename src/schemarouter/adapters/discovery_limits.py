@@ -130,7 +130,9 @@ class NativeDiscoveryBudget:
 
         dump = getattr(descriptor, "model_dump_json", None)
         if callable(dump):
-            encoded_size = len(dump().encode("utf-8"))
+            rendered = dump()
+            serialized = rendered if isinstance(rendered, str) else str(rendered)
+            encoded_size = len(serialized.encode("utf-8"))
         else:
             encoded_size = len(repr(descriptor).encode("utf-8"))
         self._descriptor_bytes += encoded_size
