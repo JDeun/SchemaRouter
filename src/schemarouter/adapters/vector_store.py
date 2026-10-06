@@ -334,6 +334,12 @@ async def introspect_vector_backend(
     names = [collection.name for collection in discovered]
     if len(names) != len(set(names)):
         raise RegistrationError("vector backend returned duplicate collection names")
+    if selected is not None:
+        missing = sorted(selected - set(names))
+        if missing:
+            raise RegistrationError(
+                "unknown vector collections/indexes: " + ", ".join(missing)
+            )
 
     bindings: list[VectorCollectionBinding] = []
     used_names: set[str] = set()
