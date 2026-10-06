@@ -98,6 +98,12 @@ def _resolve_live_exported_endpoint(
             f"exported framework tool {tool_key}.{endpoint_name} is stale because "
             "the live endpoint no longer exists; re-export the framework tool"
         ) from exc
+    except PolicyViolationError as exc:
+        raise StaleExportedToolError(
+            f"exported framework tool {tool_key}.{endpoint_name} is stale because "
+            "the live authorization view no longer permits the exported contract; "
+            "re-export the framework tool"
+        ) from exc
 
     current = _capture_exported_endpoint_contract(
         tool,
