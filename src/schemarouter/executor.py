@@ -1037,14 +1037,27 @@ class RegistryExecutor:
     def validate_call(self, call: ToolCall) -> None:
         self._validated_call_contract(call)
 
+    def _execution_policy_snapshot(self) -> ExecutionPolicy:
+        """Capture the immutable execution policy governing one call."""
+        return self.policy
+
+    def _assert_execution_policy_snapshot(self, policy: ExecutionPolicy) -> None:
+        if self.policy is not policy:
+            raise ApprovalDeniedError(
+                "execution policy changed before final invocation; retry under current policy"
+            )
+
     async def _approve(
         self,
         tool: ToolSpec,
         endpoint: EndpointSpec,
         call: ToolCall,
         tracker: ExecutionBudgetTracker,
+        *,
+        policy: ExecutionPolicy | None = None,
     ) -> bool:
-        if not self.policy.requires_approval(endpoint, tool=tool, call=call):
+        effective_policy = self.policy if policy is None else policy
+        if not effective_policy.requires_approval(endpoint, tool=tool, call=call):
             return False
         if self.approval_callback is None:
             raise ApprovalDeniedError(
@@ -1219,20 +1232,33 @@ class RegistryExecutor:
         _tracker: ExecutionBudgetTracker | None = None,
     ) -> ToolResult:
         tracker = _tracker or ExecutionBudgetTracker(budget or ExecutionBudget())
+        execution_policy = self._execution_policy_snapshot()
         tool, endpoint, invoker, offload_sync = self._execution_state(call)
+        self._assert_execution_policy_snapshot(execution_policy)
 
-        approval_ran = await self._approve(tool, endpoint, call, tracker)
+        approval_ran = await self._approve(
+            tool,
+            endpoint,
+            call,
+            tracker,
+            policy=execution_policy,
+        )
+        self._assert_execution_policy_snapshot(execution_policy)
 
         # Trusted callbacks may mutate or await while schema/bindings change. Refresh only when
         # such a callback actually ran; otherwise keep the validated registry snapshot coherent.
         if approval_ran:
             tool, endpoint, invoker, offload_sync = self._execution_state(call)
+            self._assert_execution_policy_snapshot(execution_policy)
 
         await tracker.before_call(call)
+        self._assert_execution_policy_snapshot(execution_policy)
 
         before_hooks_ran = await self._run_before_hooks(tool, endpoint, call, tracker)
+        self._assert_execution_policy_snapshot(execution_policy)
         if before_hooks_ran:
             tool, endpoint, invoker, offload_sync = self._execution_state(call)
+            self._assert_execution_policy_snapshot(execution_policy)
 
         retry = retry or RetryPolicy()
         can_retry = endpoint.read_only is True or retry.retry_non_read_only
@@ -1242,6 +1268,7 @@ class RegistryExecutor:
         last_error: Exception | None = None
         for attempt in range(1, max_attempts + 1):
             await tracker.before_attempt(call, tool)
+            self._assert_execution_policy_snapshot(execution_policy)
 
             # Retry backoff, hooks, and other trusted awaits may outlive the policy snapshot
             # used for planning or the previous attempt. Preserve the already-validated
@@ -1256,6 +1283,9 @@ class RegistryExecutor:
                 endpoint,
                 call,
             )
+            # Authorization is intentionally re-evaluated for every imminent invocation;
+            # approval authority, by contrast, must remain the immutable call snapshot.
+            self._assert_execution_policy_snapshot(execution_policy)
 
             try:
                 invoke_call = getattr(invoker, "invoke_call", None)
