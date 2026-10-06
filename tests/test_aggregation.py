@@ -214,3 +214,196 @@ def test_chemical_formula_alone_does_not_merge_isomers() -> None:
     ]
 
     assert len(aggregate_records(records)) == 2
+
+def test_document_transitive_bridge_does_not_merge_conflicting_pmids() -> None:
+    records = [
+        SourceRecord(
+            provider="crossref",
+            entity_kind="document",
+            identifiers={"doi": "10.1000/conflict", "pmid": "1"},
+            fields={"title": "Crossref"},
+        ),
+        SourceRecord(
+            provider="openalex",
+            entity_kind="document",
+            identifiers={
+                "doi": "10.1000/conflict",
+                "pmid": "2",
+                "arxiv": "2609.12345",
+            },
+            fields={"title": "OpenAlex"},
+        ),
+        SourceRecord(
+            provider="arxiv",
+            entity_kind="document",
+            identifiers={"pmid": "2", "arxiv": "arXiv:2609.12345"},
+            fields={"abstract": "Abstract"},
+        ),
+    ]
+
+    entities = aggregate_records(records)
+
+    assert len(entities) == 2
+    by_providers = {tuple(entity.providers): entity for entity in entities}
+    assert by_providers[("crossref",)].identifiers["pmid"] == "1"
+    assert by_providers[("openalex", "arxiv")].identifiers["pmid"] == "2"
+
+
+def test_material_transitive_bridge_does_not_merge_conflicting_material_ids() -> None:
+    records = [
+        SourceRecord(
+            provider="provider_a",
+            entity_kind="material",
+            identifiers={"structure_id": "shared", "material_id": "mp-1"},
+        ),
+        SourceRecord(
+            provider="provider_b",
+            entity_kind="material",
+            identifiers={"structure_id": "shared", "material_id": "mp-2"},
+        ),
+        SourceRecord(
+            provider="provider_c",
+            entity_kind="material",
+            identifiers={"material_id": "mp-2"},
+        ),
+    ]
+
+    entities = aggregate_records(records)
+
+    assert len(entities) == 2
+    by_providers = {tuple(entity.providers): entity for entity in entities}
+    assert by_providers[("provider_a",)].identifiers["material_id"] == "mp-1"
+    assert (
+        by_providers[("provider_b", "provider_c")].identifiers["material_id"]
+        == "mp-2"
+    )
+
+
+def test_chemical_transitive_bridge_does_not_merge_conflicting_cids() -> None:
+    records = [
+        SourceRecord(
+            provider="provider_a",
+            entity_kind="chemical",
+            identifiers={"inchikey": "SAMEKEY", "cid": "1"},
+        ),
+        SourceRecord(
+            provider="provider_b",
+            entity_kind="chemical",
+            identifiers={"inchikey": "SAMEKEY", "cid": "2"},
+        ),
+        SourceRecord(
+            provider="provider_c",
+            entity_kind="chemical",
+            identifiers={"cid": "2"},
+        ),
+    ]
+
+    entities = aggregate_records(records)
+
+    assert len(entities) == 2
+    by_providers = {tuple(entity.providers): entity for entity in entities}
+    assert by_providers[("provider_a",)].identifiers["cid"] == "1"
+    assert by_providers[("provider_b", "provider_c")].identifiers["cid"] == "2"
+
+
+
+def test_document_bridge_does_not_merge_conflicting_dois() -> None:
+    records = [
+        SourceRecord(
+            provider="provider_a",
+            entity_kind="document",
+            identifiers={"doi": "10.1000/left", "pmid": "42"},
+        ),
+        SourceRecord(
+            provider="provider_b",
+            entity_kind="document",
+            identifiers={
+                "doi": "10.1000/right",
+                "pmid": "42",
+                "arxiv": "2609.54321",
+            },
+        ),
+        SourceRecord(
+            provider="provider_c",
+            entity_kind="document",
+            identifiers={"doi": "https://doi.org/10.1000/right", "arxiv": "2609.54321"},
+        ),
+    ]
+
+    entities = aggregate_records(records)
+
+    assert len(entities) == 2
+    by_providers = {tuple(entity.providers): entity for entity in entities}
+    assert by_providers[("provider_a",)].identifiers["doi"] == "10.1000/left"
+    assert (
+        by_providers[("provider_b", "provider_c")].identifiers["doi"]
+        == "10.1000/right"
+    )
+
+
+def test_document_bridge_does_not_merge_conflicting_arxiv_ids() -> None:
+    records = [
+        SourceRecord(
+            provider="provider_a",
+            entity_kind="document",
+            identifiers={"doi": "10.2000/shared", "arxiv": "2609.11111"},
+        ),
+        SourceRecord(
+            provider="provider_b",
+            entity_kind="document",
+            identifiers={
+                "doi": "10.2000/shared",
+                "arxiv": "2609.22222",
+                "pmid": "7",
+            },
+        ),
+        SourceRecord(
+            provider="provider_c",
+            entity_kind="document",
+            identifiers={"arxiv": "arXiv:2609.22222", "pmid": "7"},
+        ),
+    ]
+
+    entities = aggregate_records(records)
+
+    assert len(entities) == 2
+    by_providers = {tuple(entity.providers): entity for entity in entities}
+    assert by_providers[("provider_a",)].identifiers["arxiv"] == "2609.11111"
+    assert (
+        by_providers[("provider_b", "provider_c")].identifiers["arxiv"]
+        == "2609.22222"
+    )
+
+def test_ambiguous_shared_identifier_does_not_attach_to_first_conflicting_owner() -> None:
+    left = SourceRecord(
+        provider="provider_a",
+        entity_kind="document",
+        identifiers={"doi": "10.3000/shared", "pmid": "1"},
+    )
+    right = SourceRecord(
+        provider="provider_b",
+        entity_kind="document",
+        identifiers={"doi": "10.3000/shared", "pmid": "2"},
+    )
+    ambiguous = SourceRecord(
+        provider="provider_c",
+        entity_kind="document",
+        identifiers={"doi": "10.3000/shared"},
+    )
+
+    forward = aggregate_records([left, right, ambiguous])
+    reverse = aggregate_records([right, left, ambiguous])
+
+    assert len(forward) == 3
+    assert len(reverse) == 3
+    assert {tuple(entity.providers) for entity in forward} == {
+        ("provider_a",),
+        ("provider_b",),
+        ("provider_c",),
+    }
+    assert {tuple(entity.providers) for entity in reverse} == {
+        ("provider_a",),
+        ("provider_b",),
+        ("provider_c",),
+    }
+
