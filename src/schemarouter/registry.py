@@ -25,6 +25,140 @@ from .storage import (
     validate_component_openable,
 )
 
+_PERSISTENCE_SENSITIVE_KEY_NAMES = frozenset(
+    {
+        "accesstoken",
+        "apikey",
+        "authorization",
+        "authtoken",
+        "bearertoken",
+        "clientsecret",
+        "cookie",
+        "password",
+        "passwd",
+        "privatekey",
+        "refreshtoken",
+        "secret",
+        "setcookie",
+        "token",
+    }
+)
+_PERSISTENCE_SENSITIVE_KEY_SUFFIXES = (
+    "accesstoken",
+    "apikey",
+    "authorization",
+    "clientsecret",
+    "cookie",
+    "password",
+    "passwd",
+    "privatekey",
+    "refreshtoken",
+    "setcookie",
+)
+_CREDENTIAL_ASSIGNMENT_NAMES = (
+    "access_token",
+    "accesstoken",
+    "api_key",
+    "apikey",
+    "authorization",
+    "client_secret",
+    "clientsecret",
+    "cookie",
+    "password",
+    "passwd",
+    "private_key",
+    "privatekey",
+    "refresh_token",
+    "refreshtoken",
+    "secret",
+    "token",
+)
+
+
+def _normalize_persistence_metadata_key(value: object) -> str:
+    return "".join(character for character in str(value).casefold() if character.isalnum())
+
+
+def _looks_like_persistent_credential_key(value: object) -> bool:
+    normalized = _normalize_persistence_metadata_key(value)
+    if normalized in _PERSISTENCE_SENSITIVE_KEY_NAMES:
+        return True
+    return any(
+        normalized.endswith(suffix) and len(normalized) > len(suffix)
+        for suffix in _PERSISTENCE_SENSITIVE_KEY_SUFFIXES
+    )
+
+
+def _string_contains_persistent_credential(value: str) -> bool:
+    candidate = value.strip()
+    if not candidate:
+        return False
+
+    folded = candidate.casefold()
+    if folded.startswith(("bearer ", "basic ")):
+        return True
+
+    compact = "".join(
+        character
+        for character in folded.replace("-", "_")
+        if not character.isspace()
+    )
+    if any(
+        f"{name}=" in compact or f"{name}:" in compact
+        for name in _CREDENTIAL_ASSIGNMENT_NAMES
+    ):
+        return True
+
+    scheme_separator = compact.find("://")
+    if scheme_separator < 0:
+        return False
+    authority = compact[scheme_separator + 3 :]
+    authority = authority.split("/", 1)[0].split("?", 1)[0].split("#", 1)[0]
+    return "@" in authority
+
+
+def _metadata_contains_persistent_credential(
+    value: object,
+    *,
+    max_depth: int,
+    max_nodes: int,
+) -> bool:
+    stack: list[tuple[object, int]] = [(value, 0)]
+    seen_containers: set[int] = set()
+    visited_nodes = 0
+
+    while stack:
+        current, depth = stack.pop()
+        visited_nodes += 1
+        if visited_nodes > max_nodes or depth > max_depth:
+            # Persisted-document validation will reject over-limit structures.
+            continue
+
+        if isinstance(current, str):
+            if _string_contains_persistent_credential(current):
+                return True
+            continue
+
+        if isinstance(current, dict):
+            marker = id(current)
+            if marker in seen_containers:
+                continue
+            seen_containers.add(marker)
+            for key, child in current.items():
+                if _looks_like_persistent_credential_key(key):
+                    return True
+                stack.append((child, depth + 1))
+            continue
+
+        if isinstance(current, (list, tuple)):
+            marker = id(current)
+            if marker in seen_containers:
+                continue
+            seen_containers.add(marker)
+            stack.extend((child, depth + 1) for child in current)
+
+    return False
+
 
 def _validated_tool_snapshot(tool: ToolSpec) -> ToolSpec:
     """Revalidate mutable nested model state at the registry write boundary."""
@@ -604,6 +738,33 @@ class SQLiteRegistry:
             raise RuntimeError("SQLiteRegistry is closed")
 
     def _serialize(self, tool: ToolSpec) -> str:
+        metadata_roots: list[tuple[str, object]] = [
+            ("tool metadata", tool.metadata),
+            ("tool execution metadata", tool.execution_metadata),
+        ]
+        for endpoint in tool.endpoints:
+            metadata_roots.extend(
+                (
+                    (f"endpoint {endpoint.name!r} metadata", endpoint.metadata),
+                    (
+                        f"endpoint {endpoint.name!r} execution metadata",
+                        endpoint.execution_metadata,
+                    ),
+                )
+            )
+
+        for location, metadata in metadata_roots:
+            if _metadata_contains_persistent_credential(
+                metadata,
+                max_depth=self._document_limits.max_depth,
+                max_nodes=self._document_limits.max_nodes,
+            ):
+                raise RegistrationError(
+                    f"tool {tool.key!r} cannot be persisted because {location} contains "
+                    "credential-bearing metadata; credentials, client objects, and transport "
+                    "secrets must remain in process-local bindings/configuration"
+                )
+
         try:
             document = tool.model_dump_json()
         except Exception as exc:

@@ -354,8 +354,13 @@ def test_embedded_explorer_document_is_valid_json_and_script_safe() -> None:
 def test_schema_explorer_cli_exports_static_html(tmp_path, capsys) -> None:
     registry_path = tmp_path / "registry.sqlite3"
     output = tmp_path / "explorer.html"
+    persistent_tool = _tool("openapi_tool", "openapi").model_copy(deep=True)
+    persistent_tool.metadata = {
+        "source_url": "https://example.test/openapi.json",
+    }
+    persistent_tool.endpoints[0].metadata = {}
     with SQLiteRegistry(registry_path) as registry:
-        registry.register(_tool("openapi_tool", "openapi"))
+        registry.register(persistent_tool)
 
     assert (
         main(

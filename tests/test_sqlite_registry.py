@@ -54,6 +54,124 @@ def test_sqlite_registry_persists_tools_version_and_order(tmp_path) -> None:
         assert reopened.endpoint("alpha", "get").name == "get"
 
 
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"transport": {"Authorization": "Bearer top-secret"}},
+        {"transport": {"COOKIE": "session=top-secret"}},
+        {"credentials": {"api_key": "top-secret"}},
+        {"credentials": {"token": "top-secret"}},
+        {"credentials": {"password": "top-secret"}},
+        {"header_value": "Basic dXNlcjpwYXNz"},
+        {"connection_string": "Server=db.example;Password=top-secret;Database=app"},
+    ],
+)
+def test_sqlite_registry_rejects_nested_credential_bearing_metadata(
+    tmp_path,
+    payload,
+) -> None:
+    path = tmp_path / "registry.sqlite3"
+    spec = tool("secret")
+    spec.metadata = payload
+
+    with SQLiteRegistry(path) as registry:
+        with pytest.raises(
+            RegistrationError,
+            match="process-local bindings/configuration",
+        ):
+            registry.register(spec)
+
+        assert registry.version == 0
+        assert registry.keys() == ()
+
+
+@pytest.mark.parametrize(
+    "location",
+    [
+        "tool_metadata",
+        "tool_execution_metadata",
+        "endpoint_metadata",
+        "endpoint_execution_metadata",
+    ],
+)
+def test_sqlite_registry_rejects_credentials_from_each_metadata_surface(
+    tmp_path,
+    location,
+) -> None:
+    path = tmp_path / "registry.sqlite3"
+    spec = tool("secret")
+    payload = {"nested": {"Client_Secret": "top-secret"}}
+
+    if location == "tool_metadata":
+        spec.metadata = payload
+    elif location == "tool_execution_metadata":
+        spec.execution_metadata = payload
+    elif location == "endpoint_metadata":
+        spec.endpoints[0].metadata = payload
+    else:
+        spec.endpoints[0].execution_metadata = payload
+
+    with SQLiteRegistry(path) as registry:
+        with pytest.raises(RegistrationError, match="credential-bearing metadata"):
+            registry.register(spec)
+
+        assert registry.version == 0
+        assert registry.keys() == ()
+
+
+def test_sqlite_registry_rejects_dsn_userinfo_in_benignly_named_metadata(
+    tmp_path,
+) -> None:
+    path = tmp_path / "registry.sqlite3"
+    spec = tool("secret")
+    spec.endpoints[0].execution_metadata = {
+        "connection": "postgresql://app_user:top-secret@db.example/app"
+    }
+
+    with SQLiteRegistry(path) as registry:
+        with pytest.raises(RegistrationError, match="credential-bearing metadata"):
+            registry.register(spec)
+
+        assert registry.version == 0
+        assert registry.keys() == ()
+
+
+def test_sqlite_registry_round_trips_benign_auth_and_token_descriptors(tmp_path) -> None:
+    path = tmp_path / "registry.sqlite3"
+    spec = tool("benign")
+    spec.metadata = {
+        "owner": "tests",
+        "token_count": 2048,
+        "auth_scheme": "oauth2",
+        "source_url": "https://docs.example.test/api?mode=read",
+    }
+    spec.execution_metadata = {
+        "approved_base_url": "https://api.example.test/v1",
+        "mode": "search",
+    }
+    spec.endpoints[0].metadata = {
+        "cookie_name": "session_id",
+        "token_parameter_name": "page_token",
+    }
+    spec.endpoints[0].execution_metadata = {
+        "pagination_token_field": "next_page",
+        "mode": "get",
+    }
+
+    with SQLiteRegistry(path) as registry:
+        registry.register(spec)
+
+    with SQLiteRegistry(path) as reopened:
+        persisted = reopened.get("benign")
+        assert persisted.metadata == spec.metadata
+        assert persisted.execution_metadata == spec.execution_metadata
+        assert persisted.endpoints[0].metadata == spec.endpoints[0].metadata
+        assert (
+            persisted.endpoints[0].execution_metadata
+            == spec.endpoints[0].execution_metadata
+        )
+
+
 def test_sqlite_registry_returns_detached_models(tmp_path) -> None:
     path = tmp_path / "registry.sqlite3"
 
