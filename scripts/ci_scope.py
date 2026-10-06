@@ -10,6 +10,7 @@ from collections.abc import Iterable
 _SCOPE_PATTERNS: dict[str, tuple[str, ...]] = {
     "full": (
         ".github/workflows/ci.yml",
+        ".github/workflows/python-compatibility.yml",
         "scripts/ci_scope.py",
         "tests/test_ci_scope.py",
     ),
