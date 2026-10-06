@@ -34,6 +34,11 @@ from .adapters.openapi import (
 )
 from .adapters.openrpc import OpenRPCSourceAdapter
 from .adapters.optimade import OPTIMADESourceAdapter
+from .document_loading import (
+    DocumentLimitError,
+    DocumentLimits,
+    validate_yaml_event_budget,
+)
 from .errors import (
     SchemaNotModifiedError,
     SchemaSourceError,
@@ -44,7 +49,10 @@ from .executor import RegistryExecutor
 from .models import StrictModel, ToolSpec
 from .network_policy import TRUSTED_INTERNAL_NETWORK_POLICY, NetworkPolicy
 from .registry import ToolRegistry, replace_if_current
-from .schema_complexity import validate_schema_complexity
+from .schema_complexity import (
+    DEFAULT_SCHEMA_COMPLEXITY_LIMITS,
+    validate_schema_complexity,
+)
 from .schema_http import (
     attach_schema_http_validators,
     conditional_schema_headers,
@@ -67,6 +75,14 @@ _DEFAULT_OPENAPI_REF_MAX_DEPTH = 3
 _DEFAULT_OPENAPI_REF_MAX_DOCUMENTS = 8
 _DEFAULT_OPENAPI_REF_MAX_BYTES = 10 * 1024 * 1024
 _OPENAPI_EXTERNAL_REFS_KEY = "x-schemarouter-external-refs"
+
+_OPENAPI_YAML_LIMITS = DocumentLimits(
+    max_bytes=_MAX_SCHEMA_BYTES,
+    max_depth=DEFAULT_SCHEMA_COMPLEXITY_LIMITS.max_depth,
+    max_nodes=DEFAULT_SCHEMA_COMPLEXITY_LIMITS.max_nodes,
+    max_container_items=DEFAULT_SCHEMA_COMPLEXITY_LIMITS.max_nodes,
+    max_string_chars=_MAX_SCHEMA_BYTES,
+)
 
 
 SourceProbeFailureCategory = Literal[
@@ -277,6 +293,10 @@ _OpenAPIYAMLLoader.yaml_implicit_resolvers = {
 
 
 def _safe_yaml_load(text: str) -> Any:
+    try:
+        validate_yaml_event_budget(text, _OPENAPI_YAML_LIMITS)
+    except (DocumentLimitError, ValueError) as exc:
+        raise SchemaSourceError(f"OpenAPI YAML invalid schema: {exc}") from exc
     return yaml.load(text, Loader=_OpenAPIYAMLLoader)
 
 
