@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 from schemarouter import (
@@ -344,3 +346,150 @@ async def test_model_analyzer_catalog_budget_is_explicitly_configurable() -> Non
 
     await router.aplan("read something")
     assert len(captured["schema_catalog"]) == 3
+
+@pytest.mark.asyncio
+async def test_model_analyzer_retries_against_fresh_snapshot_on_inflight_registry_change() -> None:
+    started = asyncio.Event()
+    resume = asyncio.Event()
+    payloads: list[dict] = []
+
+    async def model(payload: dict) -> dict:
+        payloads.append(payload)
+        catalog = payload["schema_catalog"]
+        users = next(tool for tool in catalog if tool["tool_key"] == "prod.users")
+        endpoint = next(
+            item for item in users["endpoints"] if item["endpoint_key"] == "prod.users.get_user"
+        )
+        field_names = {field["name"] for field in endpoint["fields"]}
+        if len(payloads) == 1:
+            started.set()
+            await resume.wait()
+        selected_field = "replacement_name" if "replacement_name" in field_names else "name"
+        return {
+            "preferred_tools": ["prod.users"],
+            "preferred_endpoints": ["prod.users.get_user"],
+            "arguments": {"user_id": "42"},
+            "fields": [selected_field],
+            "concepts": [selected_field],
+            "evidence": {},
+        }
+
+    router = make_router(model)
+    plan_task = asyncio.create_task(router.aplan("42번 사용자의 이름을 알려줘"))
+
+    await started.wait()
+    router.registry.register(
+        ToolSpec(
+            name="users",
+            namespace="prod",
+            description="Replacement user directory",
+            endpoints=[
+                EndpointSpec(
+                    name="get_user",
+                    description="Get one user from the replacement schema",
+                    read_only=True,
+                    parameters=[ParameterSpec(name="user_id", required=True)],
+                    output_fields=[
+                        FieldSpec(name="user_id", identifier=True),
+                        FieldSpec(name="replacement_name"),
+                    ],
+                )
+            ],
+        ),
+        replace=True,
+    )
+    resume.set()
+
+    plan = await plan_task
+
+    assert len(payloads) == 2
+    first_endpoint = next(
+        item
+        for item in payloads[0]["schema_catalog"][0]["endpoints"]
+        if item["endpoint_key"] == "prod.users.get_user"
+    )
+    second_endpoint = next(
+        item
+        for item in payloads[1]["schema_catalog"][0]["endpoints"]
+        if item["endpoint_key"] == "prod.users.get_user"
+    )
+    assert {field["name"] for field in first_endpoint["fields"]} >= {"user_id", "name"}
+    assert {field["name"] for field in second_endpoint["fields"]} == {
+        "user_id",
+        "replacement_name",
+    }
+    assert plan.calls[0].tool == "prod.users"
+    assert plan.calls[0].endpoint == "get_user"
+    assert plan.calls[0].fields == ["user_id", "replacement_name"]
+
+
+@pytest.mark.asyncio
+async def test_model_analyzer_fails_closed_when_registry_never_stabilizes() -> None:
+    calls = 0
+    holder: dict[str, SchemaRouter] = {}
+
+    async def model(payload: dict) -> dict:
+        nonlocal calls
+        calls += 1
+        holder["router"].registry.register(
+            ToolSpec(
+                name="users",
+                namespace="prod",
+                description=f"replacement version {calls}",
+                endpoints=[
+                    EndpointSpec(
+                        name="get_user",
+                        read_only=True,
+                        parameters=[ParameterSpec(name="user_id", required=True)],
+                        output_fields=[
+                            FieldSpec(name="user_id", identifier=True),
+                            FieldSpec(name="name"),
+                        ],
+                    )
+                ],
+            ),
+            replace=True,
+        )
+        return {
+            "preferred_tools": ["prod.users"],
+            "preferred_endpoints": ["prod.users.get_user"],
+            "arguments": {"user_id": "42"},
+            "fields": ["name"],
+            "concepts": ["name"],
+            "evidence": {},
+        }
+
+    router = SchemaRouter(
+        analyzer=ModelQueryAnalyzer(model, max_registry_retries=1)
+    )
+    holder["router"] = router
+    router.add_tool(
+        ToolSpec(
+            name="users",
+            namespace="prod",
+            endpoints=[
+                EndpointSpec(
+                    name="get_user",
+                    read_only=True,
+                    parameters=[ParameterSpec(name="user_id", required=True)],
+                    output_fields=[
+                        FieldSpec(name="user_id", identifier=True),
+                        FieldSpec(name="name"),
+                    ],
+                )
+            ],
+        )
+    )
+
+    with pytest.raises(ModelAnalysisError, match="did not stabilize"):
+        await router.aplan("42번 사용자의 이름을 알려줘")
+
+    assert calls == 2
+
+
+def test_model_analyzer_rejects_invalid_registry_retry_budget() -> None:
+    with pytest.raises(ValueError, match="max_registry_retries"):
+        ModelQueryAnalyzer(lambda payload: {}, max_registry_retries=-1)
+    with pytest.raises(ValueError, match="max_registry_retries"):
+        ModelQueryAnalyzer(lambda payload: {}, max_registry_retries=True)
+
