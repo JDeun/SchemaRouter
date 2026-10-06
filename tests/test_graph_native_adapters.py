@@ -18,6 +18,12 @@ from schemarouter import (
     ToolCall,
     TrustedFilterBinding,
 )
+from schemarouter.adapters.graph_native import (
+    ArangoGraphBackend,
+    Neo4jGraphBackend,
+    SparqlGraphBackend,
+)
+from schemarouter.errors import RegistrationError
 
 
 def _plan(
@@ -503,3 +509,60 @@ async def test_native_graph_respects_relationship_data_scope_before_vendor_call(
         )
 
     assert len(driver.calls) == initial_calls
+
+def test_neo4j_schema_discovery_pushes_down_limit_and_rejects_overflow() -> None:
+    driver = FakeNeo4jDriver()
+    backend = Neo4jGraphBackend(
+        driver,
+        database="neo4j",
+        graph_name="org",
+        max_schema_items=1,
+    )
+
+    with pytest.raises(RegistrationError, match="Neo4j labels exceeded limit=1"):
+        backend.list_graphs()
+
+    assert "LIMIT 2" in driver.calls[0][0]
+
+
+def test_arangodb_explicit_graph_selection_stops_before_unrelated_descriptor() -> None:
+    class SelectedDatabase(FakeArangoDatabase):
+        def graphs(self):
+            return [
+                {
+                    "name": "org",
+                    "edge_definitions": [
+                        {
+                            "edge_collection": "member_of",
+                            "from_vertex_collections": ["people"],
+                            "to_vertex_collections": ["teams"],
+                        }
+                    ],
+                },
+                "malformed-unrelated-descriptor",
+            ]
+
+    backend = ArangoGraphBackend(
+        SelectedDatabase(),
+        graphs=("org",),
+        max_discovery_sources=2,
+    )
+
+    graphs = backend.list_graphs()
+    assert [graph.name for graph in graphs] == ["org"]
+
+
+def test_sparql_schema_discovery_pushes_down_limit() -> None:
+    client = FakeSparqlClient()
+    backend = SparqlGraphBackend(
+        client,
+        endpoint="https://example.test/sparql",
+        graph_name="rdf",
+        max_schema_items=1,
+    )
+
+    graph = backend.list_graphs()[0]
+    assert graph.name == "rdf"
+    assert "LIMIT 2" in client.queries[0]
+    assert "LIMIT 2" in client.queries[1]
+
