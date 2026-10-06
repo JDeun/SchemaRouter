@@ -25,6 +25,7 @@ concurrency:
 
 jobs:
   public-openapi:
+    if: github.event_name != 'pull_request'
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -47,6 +48,7 @@ jobs:
 
 
   public-optimade:
+    if: github.event_name != 'pull_request'
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -92,6 +94,7 @@ jobs:
 
 
   public-materials-project-provider:
+    if: github.event_name != 'pull_request'
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -117,6 +120,7 @@ jobs:
 
 
   public-crossref-provider:
+    if: github.event_name != 'pull_request'
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -142,6 +146,7 @@ jobs:
 
 
   public-tavily-provider:
+    if: github.event_name != 'pull_request'
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -403,37 +408,53 @@ jobs:
           python -m pip check
       - name: Run protocol compatibility matrix
         shell: bash
+        env:
+          IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
         run: |
           mkdir -p artifacts
 
-          run_smoke() {
+          run_optional() {
             set +e
             python "$@"
             code=$?
             set -e
             if [ "$code" -ne 0 ]; then
-              echo "::warning::compatibility smoke failed: $* (exit $code)"
+              echo "::warning::external compatibility smoke failed: $* (exit $code)"
             fi
           }
 
-          run_smoke scripts/live_openapi_smoke.py \
-            --json-out artifacts/openapi-compatibility.json
-          run_smoke scripts/live_optimade_smoke.py \
-            --json-out artifacts/optimade-compatibility.json
-          run_smoke scripts/live_odata_smoke.py \
-            --json-out artifacts/odata-compatibility.json
-          run_smoke scripts/live_reference_openrpc_smoke.py \
+          run_required() {
+            python "$@"
+          }
+
+          # External/public services are evidence, not PR correctness gates.
+          if [ "$IS_PULL_REQUEST" != "true" ]; then
+            run_optional scripts/live_openapi_smoke.py \
+              --json-out artifacts/openapi-compatibility.json
+            run_optional scripts/live_optimade_smoke.py \
+              --json-out artifacts/optimade-compatibility.json
+            run_optional scripts/live_odata_smoke.py \
+              --json-out artifacts/odata-compatibility.json
+            run_optional scripts/live_provider_first_protocol_smoke.py \
+              --provider apis-guru \
+              --json-out artifacts/provider-apis-guru-compatibility.json
+          fi
+
+          # Pinned/local reference implementations are deterministic and must fail PR CI.
+          run_required scripts/live_reference_openrpc_smoke.py \
             --json-out artifacts/openrpc-compatibility.json
-          run_smoke scripts/live_reference_mcp_smoke.py \
+          run_required scripts/live_reference_mcp_smoke.py \
             --json-out artifacts/mcp-compatibility.json
-          run_smoke scripts/live_reference_graphql_smoke.py \
+          run_required scripts/live_reference_graphql_smoke.py \
             --json-out artifacts/graphql-reference-compatibility.json
-          run_smoke scripts/live_provider_first_protocol_smoke.py \
-            --provider apis-guru \
-            --json-out artifacts/provider-apis-guru-compatibility.json
-          run_smoke scripts/live_provider_first_protocol_smoke.py \
-            --provider odata-v4-reference \
-            --json-out artifacts/provider-odata-v4-reference-compatibility.json
+
+          # The OData provider profile currently targets a public reference endpoint.
+          # Keep it as non-blocking evidence until a pinned local OData fixture exists.
+          if [ "$IS_PULL_REQUEST" != "true" ]; then
+            run_optional scripts/live_provider_first_protocol_smoke.py \
+              --provider odata-v4-reference \
+              --json-out artifacts/provider-odata-v4-reference-compatibility.json
+          fi
 
           python scripts/aggregate_compatibility_matrix.py \
             --reports-dir artifacts \
@@ -455,6 +476,7 @@ jobs:
 
 
   published-pypi:
+    if: github.event_name != 'pull_request'
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -492,6 +514,7 @@ jobs:
 
 
   published-pypi-lightweight:
+    if: github.event_name != 'pull_request'
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -522,6 +545,7 @@ jobs:
 
 
   published-pypi-integrations:
+    if: github.event_name != 'pull_request'
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
