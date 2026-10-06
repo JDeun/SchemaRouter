@@ -189,15 +189,34 @@ def test_state_digests_are_deterministic_and_change_with_state() -> None:
     assert SessionSchemaExposure.loads(exposure.dumps()).digest() == exposure.digest()
 
 
-def test_success_prior_is_bounded_for_large_history_counts() -> None:
-    history = SuccessfulCapabilityHistory()
-    for _ in range(1000):
-        history.record_success(
-            "tool_b",
-            "run",
-            endpoint_fingerprint="endpoint-tool_b-run",
-        )
-    retrieval = CapabilityRetrieval(
+@pytest.mark.parametrize("legacy_count", [1, 10, 1000, 10**9])
+def test_success_prior_is_bounded_for_large_history_counts(legacy_count: int) -> None:
+    history = SuccessfulCapabilityHistory.loads(
+        f'{{"tool_b.run@run-fp":{legacy_count}}}'
+    )
+    assert history.count(
+        "tool_b",
+        "run",
+        endpoint_fingerprint="run-fp",
+    ) == 1
+
+    close_retrieval = CapabilityRetrieval(
+        query="matching prior is applied",
+        registry_version=1,
+        requested_k=2,
+        total_ranked=2,
+        candidates=[
+            _candidate(1, "tool_a.run", 1.0),
+            _candidate(2, "tool_b.run", 0.5),
+        ],
+    )
+    close_reranked = apply_success_prior(close_retrieval, history, weight=1.0)
+    assert [candidate.route_id for candidate in close_reranked.candidates] == [
+        "tool_b.run",
+        "tool_a.run",
+    ]
+
+    wide_retrieval = CapabilityRetrieval(
         query="bounded prior",
         registry_version=1,
         requested_k=2,
@@ -207,13 +226,8 @@ def test_success_prior_is_bounded_for_large_history_counts() -> None:
             _candidate(2, "tool_b.run", 0.0),
         ],
     )
-    assert history.count(
-        "tool_b",
-        "run",
-        endpoint_fingerprint="endpoint-tool_b-run",
-    ) == 1
-    reranked = apply_success_prior(retrieval, history, weight=1.0)
-    assert [candidate.route_id for candidate in reranked.candidates] == [
+    wide_reranked = apply_success_prior(wide_retrieval, history, weight=1.0)
+    assert [candidate.route_id for candidate in wide_reranked.candidates] == [
         "tool_a.run",
         "tool_b.run",
     ]
