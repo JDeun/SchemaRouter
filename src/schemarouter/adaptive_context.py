@@ -30,6 +30,41 @@ def _capability_key(
     return f"{route}@{fingerprint}"
 
 
+_SUCCESS_COUNT_CAP = 1
+
+
+def _drop_superseded_fingerprint_keys(
+    keys: set[str] | Counter[str],
+    route: str,
+    *,
+    keep: str | None = None,
+) -> None:
+    prefix = f"{route}@"
+    stale = [key for key in keys if key.startswith(prefix) and key != keep]
+    for key in stale:
+        if isinstance(keys, Counter):
+            del keys[key]
+        else:
+            keys.discard(key)
+
+
+def _legacy_compacted_fingerprint_keys(keys: Iterable[str]) -> set[str]:
+    """Deterministically compact old checkpoints that retained many fingerprints per route."""
+
+    retained: set[str] = set()
+    fingerprinted: dict[str, str] = {}
+    for key in sorted(keys):
+        if "@" not in key:
+            retained.add(key)
+            continue
+        route, _fingerprint = key.split("@", 1)
+        # Legacy payloads did not persist generation order. Keep one deterministic fingerprint.
+        # If it is not the current fingerprint, callers conservatively get a miss/re-injection.
+        fingerprinted[route] = key
+    retained.update(fingerprinted.values())
+    return retained
+
+
 @dataclass
 class SuccessfulCapabilityHistory:
     """Local successful-execution counts used as an optional routing prior.
@@ -48,7 +83,18 @@ class SuccessfulCapabilityHistory:
         *,
         endpoint_fingerprint: str | None = None,
     ) -> None:
-        self._counts[_capability_key(tool, endpoint, endpoint_fingerprint)] += 1
+        route = _route_id(tool, endpoint)
+        key = _capability_key(tool, endpoint, endpoint_fingerprint)
+        if endpoint_fingerprint is not None:
+            _drop_superseded_fingerprint_keys(self._counts, route, keep=key)
+        self._counts[key] = min(_SUCCESS_COUNT_CAP, self._counts[key] + 1)
+
+    def forget(self, tool: str, endpoint: str) -> None:
+        """Drop legacy and fingerprinted adaptive state for one removed route."""
+
+        route = _route_id(tool, endpoint)
+        self._counts.pop(route, None)
+        _drop_superseded_fingerprint_keys(self._counts, route)
 
     def count(
         self,
@@ -84,14 +130,19 @@ class SuccessfulCapabilityHistory:
         raw = json.loads(payload)
         if not isinstance(raw, dict):
             raise ValueError("successful capability history must be a JSON object")
-        history = cls()
+        validated: dict[str, int] = {}
         for route, value in raw.items():
             if not isinstance(route, str) or "." not in route:
                 raise ValueError("history route ids must be '<tool>.<endpoint>' strings")
             if isinstance(value, bool) or not isinstance(value, int) or value < 0:
                 raise ValueError("history counts must be non-negative integers")
             if value:
-                history._counts[route] = value
+                validated[route] = min(_SUCCESS_COUNT_CAP, value)
+
+        history = cls()
+        retained = _legacy_compacted_fingerprint_keys(validated)
+        for route in sorted(retained):
+            history._counts[route] = validated[route]
         return history
 
 
@@ -135,7 +186,18 @@ class SessionSchemaExposure:
         *,
         endpoint_fingerprint: str | None = None,
     ) -> None:
-        self._exposed.add(_capability_key(tool, endpoint, endpoint_fingerprint))
+        route = _route_id(tool, endpoint)
+        key = _capability_key(tool, endpoint, endpoint_fingerprint)
+        if endpoint_fingerprint is not None:
+            _drop_superseded_fingerprint_keys(self._exposed, route, keep=key)
+        self._exposed.add(key)
+
+    def forget(self, tool: str, endpoint: str) -> None:
+        """Drop legacy and fingerprinted exposure state for one removed route."""
+
+        route = _route_id(tool, endpoint)
+        self._exposed.discard(route)
+        _drop_superseded_fingerprint_keys(self._exposed, route)
 
     def mark_many_exposed(self, routes: Iterable[tuple[str, str]]) -> None:
         for tool, endpoint in routes:
@@ -177,7 +239,7 @@ class SessionSchemaExposure:
         if not isinstance(routes, list) or not all(isinstance(x, str) and "." in x for x in routes):
             raise ValueError("exposed_routes must be route-id strings")
         state = cls(compaction_epoch=epoch)
-        state._exposed.update(routes)
+        state._exposed.update(_legacy_compacted_fingerprint_keys(routes))
         return state
 
 

@@ -17,7 +17,7 @@ def test_success_history_records_only_explicit_successes_and_round_trips() -> No
     history.record_success("materials", "search")
     history.record_success("papers", "lookup")
 
-    assert history.count("materials", "search") == 2
+    assert history.count("materials", "search") == 1
     assert history.count("papers", "lookup") == 1
     assert SuccessfulCapabilityHistory.loads(history.dumps()).snapshot() == history.snapshot()
 
@@ -207,8 +207,86 @@ def test_success_prior_is_bounded_for_large_history_counts() -> None:
             _candidate(2, "tool_b.run", 0.0),
         ],
     )
+    assert history.count(
+        "tool_b",
+        "run",
+        endpoint_fingerprint="endpoint-tool_b-run",
+    ) == 1
     reranked = apply_success_prior(retrieval, history, weight=1.0)
     assert [candidate.route_id for candidate in reranked.candidates] == [
         "tool_a.run",
         "tool_b.run",
     ]
+
+
+
+def test_success_history_retains_only_latest_fingerprint_per_route() -> None:
+    history = SuccessfulCapabilityHistory()
+    for generation in range(100):
+        history.record_success(
+            "weather",
+            "current",
+            endpoint_fingerprint=f"fp-{generation:03d}",
+        )
+
+    snapshot = history.snapshot()
+    assert snapshot == {"weather.current@fp-099": 1}
+    assert history.count("weather", "current", endpoint_fingerprint="fp-099") == 1
+    assert history.count("weather", "current", endpoint_fingerprint="fp-098") == 0
+
+
+def test_schema_exposure_retains_only_latest_fingerprint_per_route() -> None:
+    exposure = SessionSchemaExposure()
+    for generation in range(100):
+        exposure.mark_exposed(
+            "weather",
+            "current",
+            endpoint_fingerprint=f"fp-{generation:03d}",
+        )
+
+    assert exposure.snapshot()["exposed_routes"] == ["weather.current@fp-099"]
+    assert not exposure.decision(
+        "weather", "current", endpoint_fingerprint="fp-099"
+    ).inject
+    assert exposure.decision(
+        "weather", "current", endpoint_fingerprint="fp-098"
+    ).inject
+
+
+def test_legacy_multi_fingerprint_checkpoints_compact_deterministically() -> None:
+    history_payload = (
+        '{"weather.current@fp-003":7,"weather.current@fp-001":3,'
+        '"weather.current@fp-002":5,"legacy.route":4}'
+    )
+    history = SuccessfulCapabilityHistory.loads(history_payload)
+    assert history.snapshot() == {
+        "legacy.route": 1,
+        "weather.current@fp-003": 1,
+    }
+    assert SuccessfulCapabilityHistory.loads(history.dumps()).digest() == history.digest()
+
+    exposure = SessionSchemaExposure.loads(
+        '{"compaction_epoch":2,"exposed_routes":['
+        '"weather.current@fp-002","weather.current@fp-001","weather.current@fp-003",'
+        '"legacy.route"]}'
+    )
+    assert exposure.snapshot() == {
+        "compaction_epoch": 2,
+        "exposed_routes": ["legacy.route", "weather.current@fp-003"],
+    }
+    assert SessionSchemaExposure.loads(exposure.dumps()).digest() == exposure.digest()
+
+
+def test_adaptive_route_forget_removes_legacy_and_fingerprinted_state() -> None:
+    history = SuccessfulCapabilityHistory()
+    exposure = SessionSchemaExposure()
+    history.record_success("weather", "current")
+    history.record_success("weather", "current", endpoint_fingerprint="fp-current")
+    exposure.mark_exposed("weather", "current")
+    exposure.mark_exposed("weather", "current", endpoint_fingerprint="fp-current")
+
+    history.forget("weather", "current")
+    exposure.forget("weather", "current")
+
+    assert history.snapshot() == {}
+    assert exposure.snapshot()["exposed_routes"] == []
