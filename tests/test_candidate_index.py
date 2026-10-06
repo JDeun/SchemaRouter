@@ -69,6 +69,21 @@ class CountingPlanner(SchemaPlanner):
         return super()._score_endpoint(*args, **kwargs)
 
 
+class MutatingAfterSortPlanner(SchemaPlanner):
+    """Inject an unrelated registry write after ranking but before result construction."""
+
+    def __init__(self, registry: InMemoryRegistry, *args, **kwargs) -> None:
+        self._mutable_registry = registry
+        self._mutated_after_sort = False
+        super().__init__(registry, *args, **kwargs)
+
+    def _sort_candidates(self, candidates, **kwargs) -> None:
+        super()._sort_candidates(candidates, **kwargs)
+        if not self._mutated_after_sort:
+            self._mutated_after_sort = True
+            self._mutable_registry.register(make_tool(999, keyword="late"))
+
+
 class CountingRegistry(InMemoryRegistry):
     def __init__(self) -> None:
         super().__init__()
@@ -85,6 +100,38 @@ class StaticAnalyzer:
 
     def analyze(self, request: PlanRequest, registry: InMemoryRegistry) -> QueryIntent:
         return self.intent
+
+
+def test_retrieval_registry_version_stays_bound_to_ranked_snapshot() -> None:
+    for candidate_index in (False, True):
+        registry = make_registry(size=2)
+        ranked_version = registry.version
+        planner = MutatingAfterSortPlanner(
+            registry,
+            candidate_index=candidate_index,
+        )
+
+        retrieval = planner.retrieve("needle", k=5)
+
+        assert registry.version == ranked_version + 1
+        assert retrieval.registry_version == ranked_version
+        assert all(candidate.tool != "tool_999" for candidate in retrieval.candidates)
+
+
+def test_plan_registry_version_stays_bound_to_ranked_snapshot() -> None:
+    for candidate_index in (False, True):
+        registry = make_registry(size=2)
+        ranked_version = registry.version
+        planner = MutatingAfterSortPlanner(
+            registry,
+            candidate_index=candidate_index,
+        )
+
+        plan = planner.plan("needle")
+
+        assert registry.version == ranked_version + 1
+        assert plan.registry_version == ranked_version
+        assert all(call.tool != "tool_999" for call in plan.calls)
 
 
 def test_candidate_index_preserves_exhaustive_plan_semantics() -> None:
