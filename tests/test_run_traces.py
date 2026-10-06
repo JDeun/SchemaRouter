@@ -9,6 +9,7 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     ParameterSpec,
+    PersistedDocumentLimits,
     PlanRequest,
     RunConfig,
     RunEvent,
@@ -205,6 +206,76 @@ def test_sqlite_trace_store_corruption_fails_closed(tmp_path) -> None:
 
     with SQLiteRunTraceStore(path) as reopened:
         with pytest.raises(TraceError, match="invalid|identity mismatch"):
+            reopened.trace("run-1")
+
+
+def test_sqlite_trace_store_rejects_oversized_persisted_event_before_decode(
+    tmp_path,
+) -> None:
+    path = tmp_path / "traces.sqlite3"
+
+    with SQLiteRunTraceStore(path) as store:
+        store.append(event("run-1", 0, "run.start"))
+
+    connection = sqlite3.connect(path)
+    try:
+        connection.execute(
+            """
+            UPDATE schemarouter_trace_events
+            SET document = ?
+            WHERE run_id = ? AND sequence = 0
+            """,
+            ('"' + ("x" * 4096) + '"', "run-1"),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    limits = PersistedDocumentLimits(
+        max_bytes=512,
+        max_depth=32,
+        max_nodes=1_000,
+    )
+    with SQLiteRunTraceStore(path, document_limits=limits) as reopened:
+        with pytest.raises(
+            TraceError,
+            match="persisted JSON document limits",
+        ):
+            reopened.trace("run-1")
+
+
+def test_sqlite_trace_store_rejects_deep_persisted_event_before_decode(
+    tmp_path,
+) -> None:
+    path = tmp_path / "traces.sqlite3"
+
+    with SQLiteRunTraceStore(path) as store:
+        store.append(event("run-1", 0, "run.start"))
+
+    connection = sqlite3.connect(path)
+    try:
+        connection.execute(
+            """
+            UPDATE schemarouter_trace_events
+            SET document = ?
+            WHERE run_id = ? AND sequence = 0
+            """,
+            ("[" * 40 + "0" + "]" * 40, "run-1"),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    limits = PersistedDocumentLimits(
+        max_bytes=4096,
+        max_depth=8,
+        max_nodes=1_000,
+    )
+    with SQLiteRunTraceStore(path, document_limits=limits) as reopened:
+        with pytest.raises(
+            TraceError,
+            match="persisted JSON document limits",
+        ):
             reopened.trace("run-1")
 
 
