@@ -5,7 +5,7 @@ import inspect
 import math
 import threading
 import time
-from collections.abc import AsyncIterator, Awaitable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Protocol, cast
@@ -1047,6 +1047,18 @@ class RegistryExecutor:
                 "execution policy changed before final invocation; retry under current policy"
             )
 
+    def _invoke_sync_with_policy_snapshot(
+        self,
+        policy: ExecutionPolicy,
+        invoker: Callable[..., Any],
+        /,
+        *args: Any,
+    ) -> Any:
+        """Recheck approval authority in the worker immediately before sync invocation."""
+
+        self._assert_execution_policy_snapshot(policy)
+        return invoker(*args)
+
     async def _approve(
         self,
         tool: ToolSpec,
@@ -1294,7 +1306,12 @@ class RegistryExecutor:
                     sync_offloaded = False
                     if call_aware:
                         if offload_sync and not inspect.iscoroutinefunction(invoke_call):
-                            value = asyncio.to_thread(invoke_call, call)
+                            value = asyncio.to_thread(
+                                self._invoke_sync_with_policy_snapshot,
+                                execution_policy,
+                                invoke_call,
+                                call,
+                            )
                             sync_offloaded = True
                         else:
                             value = invoke_call(call)
@@ -1302,6 +1319,8 @@ class RegistryExecutor:
                         endpoint_invoker = cast(EndpointInvoker, invoker)
                         if offload_sync and not inspect.iscoroutinefunction(endpoint_invoker):
                             value = asyncio.to_thread(
+                                self._invoke_sync_with_policy_snapshot,
+                                execution_policy,
                                 endpoint_invoker,
                                 call.endpoint,
                                 dict(call.arguments),
