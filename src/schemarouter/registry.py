@@ -11,6 +11,11 @@ from pydantic import ValidationError
 from .errors import RegistrationError, StorageFormatError
 from .models import EndpointSpec, ToolSpec
 from .storage import (
+    PersistedDocumentLimits,
+    _PersistedDocumentLimitError,
+    _resolve_persisted_document_limits,
+    _validate_persisted_document_size,
+    _validate_persisted_json_document,
     component_presence,
     component_versions,
     stamp_current_component_format,
@@ -344,7 +349,10 @@ class InMemoryRegistry:
 
 def _validate_legacy_registry_storage(
     connection: sqlite3.Connection,
+    *,
+    document_limits: PersistedDocumentLimits | None = None,
 ) -> None:
+    limits = _resolve_persisted_document_limits(document_limits)
     try:
         row = connection.execute(
             "SELECT value FROM schemarouter_registry_meta WHERE key = 'version'"
@@ -369,10 +377,19 @@ def _validate_legacy_registry_storage(
     try:
         rows = connection.execute(
             """
-            SELECT key, position, document
+            SELECT
+                key,
+                position,
+                length(CAST(document AS BLOB)) AS document_bytes,
+                CASE
+                    WHEN length(CAST(document AS BLOB)) <= ?
+                    THEN document
+                    ELSE NULL
+                END AS document
             FROM schemarouter_registry_tools
             ORDER BY position
-            """
+            """,
+            (limits.max_bytes,),
         ).fetchall()
     except sqlite3.DatabaseError as exc:
         raise StorageFormatError(
@@ -395,8 +412,25 @@ def _validate_legacy_registry_storage(
         seen_positions.add(position)
 
         try:
-            tool = ToolSpec.model_validate_json(str(stored["document"]))
-        except (ValidationError, ValueError) as exc:
+            encoded_bytes = int(stored["document_bytes"])
+            _validate_persisted_document_size(
+                encoded_bytes,
+                limits=limits,
+            )
+            document = stored["document"]
+            _validate_persisted_json_document(
+                document,
+                limits=limits,
+                encoded_bytes=encoded_bytes,
+            )
+        except (TypeError, ValueError, _PersistedDocumentLimitError) as exc:
+            raise StorageFormatError(
+                f"legacy stored tool {key!r} exceeds persisted JSON document limits"
+            ) from exc
+
+        try:
+            tool = ToolSpec.model_validate_json(document)
+        except (ValidationError, ValueError, RecursionError) as exc:
             raise StorageFormatError(
                 f"legacy stored tool {key!r} cannot be migrated safely"
             ) from exc
@@ -420,10 +454,14 @@ class SQLiteRegistry:
         path: str | Path,
         *,
         timeout: float = 5.0,
+        document_limits: PersistedDocumentLimits | None = None,
     ) -> None:
         if timeout <= 0:
             raise ValueError("timeout must be > 0")
         self.path = str(path)
+        self._document_limits = _resolve_persisted_document_limits(
+            document_limits
+        )
         self._lock = RLock()
         self._closed = False
         self._connection = sqlite3.connect(
@@ -490,7 +528,10 @@ class SQLiteRegistry:
         return version
 
     def _validate_legacy_storage(self) -> None:
-        _validate_legacy_registry_storage(self._connection)
+        _validate_legacy_registry_storage(
+            self._connection,
+            document_limits=self._document_limits,
+        )
 
     def _initialize(self) -> None:
         with self._lock:
@@ -544,20 +585,44 @@ class SQLiteRegistry:
         if self._closed:
             raise RuntimeError("SQLiteRegistry is closed")
 
-    @staticmethod
-    def _serialize(tool: ToolSpec) -> str:
+    def _serialize(self, tool: ToolSpec) -> str:
         try:
-            return tool.model_dump_json()
+            document = tool.model_dump_json()
         except Exception as exc:
             raise RegistrationError(
                 f"tool {tool.key!r} cannot be serialized as persistent JSON"
             ) from exc
+        try:
+            _validate_persisted_json_document(
+                document,
+                limits=self._document_limits,
+            )
+        except _PersistedDocumentLimitError as exc:
+            raise RegistrationError(
+                f"tool {tool.key!r} exceeds configured persisted JSON document limits"
+            ) from exc
+        return document
 
-    @staticmethod
-    def _deserialize(key: str, document: str) -> ToolSpec:
+    def _deserialize(
+        self,
+        key: str,
+        document: str,
+        *,
+        encoded_bytes: int | None = None,
+    ) -> ToolSpec:
+        try:
+            _validate_persisted_json_document(
+                document,
+                limits=self._document_limits,
+                encoded_bytes=encoded_bytes,
+            )
+        except _PersistedDocumentLimitError as exc:
+            raise RegistrationError(
+                f"stored tool {key!r} exceeds configured persisted JSON document limits"
+            ) from exc
         try:
             tool = ToolSpec.model_validate_json(document)
-        except (ValidationError, ValueError) as exc:
+        except (ValidationError, ValueError, RecursionError) as exc:
             raise RegistrationError(
                 f"stored tool {key!r} is not a valid ToolSpec"
             ) from exc
@@ -566,6 +631,45 @@ class SQLiteRegistry:
                 f"stored tool key mismatch: row={key!r}, document={tool.key!r}"
             )
         return tool
+
+    def _stored_document_row(self, key: str) -> sqlite3.Row | None:
+        return self._connection.execute(
+            """
+            SELECT
+                length(CAST(document AS BLOB)) AS document_bytes,
+                CASE
+                    WHEN length(CAST(document AS BLOB)) <= ?
+                    THEN document
+                    ELSE NULL
+                END AS document
+            FROM schemarouter_registry_tools
+            WHERE key = ?
+            """,
+            (self._document_limits.max_bytes, key),
+        ).fetchone()
+
+    def _deserialize_row(self, key: str, row: sqlite3.Row) -> ToolSpec:
+        try:
+            encoded_bytes = int(row["document_bytes"])
+            _validate_persisted_document_size(
+                encoded_bytes,
+                limits=self._document_limits,
+            )
+            document = row["document"]
+            _validate_persisted_json_document(
+                document,
+                limits=self._document_limits,
+                encoded_bytes=encoded_bytes,
+            )
+        except (TypeError, ValueError, _PersistedDocumentLimitError) as exc:
+            raise RegistrationError(
+                f"stored tool {key!r} exceeds configured persisted JSON document limits"
+            ) from exc
+        return self._deserialize(
+            key,
+            document,
+            encoded_bytes=encoded_bytes,
+        )
 
     def _begin_write(self) -> None:
         self._ensure_open()
@@ -682,13 +786,10 @@ class SQLiteRegistry:
                         f"registry changed concurrently; expected version "
                         f"{expected_version}, found {current_version}"
                     )
-                row = self._connection.execute(
-                    "SELECT document FROM schemarouter_registry_tools WHERE key = ?",
-                    (validated.key,),
-                ).fetchone()
+                row = self._stored_document_row(validated.key)
                 if row is None:
                     raise KeyError(validated.key)
-                current = self._deserialize(validated.key, str(row["document"]))
+                current = self._deserialize_row(validated.key, row)
                 if current.fingerprint != expected_fingerprint:
                     raise RegistrationError(
                         f"tool {validated.key!r} changed concurrently; expected "
@@ -732,13 +833,10 @@ class SQLiteRegistry:
                         f"registry changed concurrently; expected version "
                         f"{expected_version}, found {current_version}"
                     )
-                row = self._connection.execute(
-                    "SELECT document FROM schemarouter_registry_tools WHERE key = ?",
-                    (key,),
-                ).fetchone()
+                row = self._stored_document_row(key)
                 if row is None:
                     raise KeyError(key)
-                current = self._deserialize(key, str(row["document"]))
+                current = self._deserialize_row(key, row)
                 if current.fingerprint != expected_fingerprint:
                     raise RegistrationError(
                         f"tool {key!r} changed concurrently; expected fingerprint "
@@ -775,26 +873,31 @@ class SQLiteRegistry:
     def get(self, key: str) -> ToolSpec:
         with self._lock:
             self._ensure_open()
-            row = self._connection.execute(
-                "SELECT document FROM schemarouter_registry_tools WHERE key = ?",
-                (key,),
-            ).fetchone()
+            row = self._stored_document_row(key)
             if row is None:
                 raise KeyError(key)
-            return self._deserialize(key, str(row["document"]))
+            return self._deserialize_row(key, row)
 
     def tools(self) -> tuple[ToolSpec, ...]:
         with self._lock:
             self._ensure_open()
             rows = self._connection.execute(
                 """
-                SELECT key, document
+                SELECT
+                    key,
+                    length(CAST(document AS BLOB)) AS document_bytes,
+                    CASE
+                        WHEN length(CAST(document AS BLOB)) <= ?
+                        THEN document
+                        ELSE NULL
+                    END AS document
                 FROM schemarouter_registry_tools
                 ORDER BY position
-                """
+                """,
+                (self._document_limits.max_bytes,),
             ).fetchall()
             return tuple(
-                self._deserialize(str(row["key"]), str(row["document"]))
+                self._deserialize_row(str(row["key"]), row)
                 for row in rows
             )
 
@@ -827,15 +930,12 @@ class SQLiteRegistry:
                         f"{expected_version}, found {current_version}"
                     )
                 for key, fingerprint in expected.items():
-                    row = self._connection.execute(
-                        "SELECT document FROM schemarouter_registry_tools WHERE key = ?",
-                        (key,),
-                    ).fetchone()
+                    row = self._stored_document_row(key)
                     if row is None:
                         raise RegistrationError(
                             f"tool {key!r} disappeared before atomic batch rollback"
                         )
-                    current = self._deserialize(key, str(row["document"]))
+                    current = self._deserialize_row(key, row)
                     if current.fingerprint != fingerprint:
                         raise RegistrationError(
                             f"tool {key!r} changed before atomic batch rollback"
