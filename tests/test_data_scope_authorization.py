@@ -9,7 +9,9 @@ from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
     DataScopeRule,
+    EndpointSpec,
     ExecutionPlan,
+    FieldSpec,
     GraphRelationshipTypeSpec,
     GraphSourceSpec,
     PolicyViolationError,
@@ -19,10 +21,25 @@ from schemarouter import (
     RunConfig,
     SchemaRouter,
     ToolCall,
+    ToolSpec,
     TrustedFilterBinding,
     VectorCollectionSpec,
     VectorMetadataField,
 )
+
+from schemarouter.adapters.graph_store import GraphSourceInvoker
+from schemarouter.adapters.graphql import GraphQLRemoteInvoker
+from schemarouter.adapters.http_json import HTTPJSONRemoteInvoker
+from schemarouter.adapters.mcp import MCPBoundInvoker, MCPRemoteInvoker
+from schemarouter.adapters.odata import ODataRemoteInvoker
+from schemarouter.adapters.openapi import OpenAPIRemoteInvoker
+from schemarouter.adapters.openrpc import OpenRPCRemoteInvoker
+from schemarouter.adapters.optimade import OPTIMADERemoteInvoker
+from schemarouter.adapters.record_store import RecordSourceInvoker
+from schemarouter.adapters.sqlalchemy_database import SQLAlchemyTableInvoker
+from schemarouter.adapters.sqlite_database import SQLiteTableInvoker
+from schemarouter.adapters.vector_store import VectorCollectionInvoker
+from schemarouter.authorization import _current_data_scope
 
 
 def _call(
@@ -593,3 +610,150 @@ async def test_graph_scope_restricts_relationship_schema_and_default_traversal()
             forbidden,
             config=RunConfig(principal=principal),
         )
+
+
+@pytest.mark.parametrize(
+    "invoker_type",
+    [
+        OpenAPIRemoteInvoker,
+        HTTPJSONRemoteInvoker,
+        GraphQLRemoteInvoker,
+        OpenRPCRemoteInvoker,
+        ODataRemoteInvoker,
+        OPTIMADERemoteInvoker,
+        MCPBoundInvoker,
+        MCPRemoteInvoker,
+    ],
+)
+def test_non_database_transports_do_not_claim_trusted_filter_enforcement(
+    invoker_type: type,
+) -> None:
+    assert getattr(invoker_type, "supports_trusted_filters", False) is False
+
+
+@pytest.mark.parametrize(
+    "invoker_type",
+    [
+        SQLiteTableInvoker,
+        SQLAlchemyTableInvoker,
+        VectorCollectionInvoker,
+        GraphSourceInvoker,
+        RecordSourceInvoker,
+    ],
+)
+def test_scoped_storage_invokers_declare_trusted_filter_enforcement(
+    invoker_type: type,
+) -> None:
+    assert getattr(invoker_type, "supports_trusted_filters", False) is True
+
+
+class _UnscopedCustomInvoker:
+    def __init__(self) -> None:
+        self.called = False
+
+    async def __call__(
+        self,
+        endpoint: str,
+        arguments: dict[str, Any],
+    ) -> dict[str, Any]:
+        del endpoint, arguments
+        self.called = True
+        return {"id": "row-1"}
+
+
+class _ScopedCustomInvoker:
+    supports_trusted_filters = True
+
+    def __init__(self) -> None:
+        self.called = False
+        self.filters: dict[str, Any] | None = None
+
+    async def __call__(
+        self,
+        endpoint: str,
+        arguments: dict[str, Any],
+    ) -> dict[str, Any]:
+        del endpoint
+        self.called = True
+        scope = _current_data_scope()
+        assert scope is not None
+        self.filters = scope.filter_dict()
+        assert "tenant" not in arguments
+        return {"id": "row-1"}
+
+
+def _custom_scoped_router(invoker: Any) -> tuple[SchemaRouter, ExecutionPlan, PrincipalContext]:
+    policy = AuthorizationPolicy(
+        rules=(
+            AuthorizationRule(
+                effect="allow",
+                operation="custom.read.get",
+                roles_any=("employee",),
+            ),
+        ),
+        data_rules=(
+            DataScopeRule(
+                operation="custom.read.get",
+                roles_any=("employee",),
+                trusted_filters=(
+                    TrustedFilterBinding(
+                        field="tenant",
+                        principal_value="attribute:tenant_id",
+                    ),
+                ),
+            ),
+        ),
+    )
+    router = SchemaRouter(authorization_policy=policy)
+    tool = ToolSpec(
+        name="custom.read",
+        endpoints=[
+            EndpointSpec(
+                name="get",
+                read_only=True,
+                output_fields=[FieldSpec(name="id", identifier=True)],
+            )
+        ],
+    )
+    router.registry.register(tool)
+    router.executor.bind(
+        tool.key,
+        invoker,
+        expected_fingerprint=tool.fingerprint,
+    )
+    plan = _call(
+        router,
+        tool.key,
+        "get",
+        fields=["id"],
+        arguments={},
+    )
+    principal = PrincipalContext(
+        subject="alice",
+        roles=("employee",),
+        attributes={"tenant_id": "tenant-a"},
+    )
+    return router, plan, principal
+
+
+@pytest.mark.asyncio
+async def test_trusted_filter_scope_rejects_unscoped_custom_invoker_before_io() -> None:
+    invoker = _UnscopedCustomInvoker()
+    router, plan, principal = _custom_scoped_router(invoker)
+
+    with pytest.raises(PolicyViolationError, match="authorization denied"):
+        await router.execute(plan, config=RunConfig(principal=principal))
+
+    assert invoker.called is False
+
+
+@pytest.mark.asyncio
+async def test_scoped_custom_invoker_receives_hidden_principal_filter() -> None:
+    invoker = _ScopedCustomInvoker()
+    router, plan, principal = _custom_scoped_router(invoker)
+
+    result = await router.execute(plan, config=RunConfig(principal=principal))
+
+    assert result[0].data == {"id": "row-1"}
+    assert invoker.called is True
+    assert invoker.filters == {"tenant": "tenant-a"}
