@@ -128,6 +128,7 @@ from .state_retrieval import (
     StateAwareCapabilityRetrieval,
     StateConditionedCapabilityRetrieval,
 )
+from .trace_redaction import TraceRedactor
 from .traces import RunTraceStore
 from .validation import projected_output_schema
 
@@ -5231,21 +5232,27 @@ class SchemaRouter:
         trace_store: RunTraceStore | None = None,
     ) -> AsyncIterator[RunEvent]:
         run_config = _coerce_run_config(config)
+        trace_redactor = TraceRedactor(run_config.trace_redaction)
 
         async def emit(event: RunEvent) -> RunEvent:
+            emitted = (
+                event.model_copy(deep=True)
+                if run_config.raw_trace_payloads
+                else trace_redactor.redact_event(event)
+            )
             if trace_store is not None:
                 try:
-                    trace_store.append(event)
+                    trace_store.append(emitted)
                 except Exception as exc:
                     raise TracePersistenceError(
                         (
                             "run event persistence failed after runtime event "
-                            f"{event.event!r} sequence={event.sequence}"
+                            f"{emitted.event!r} sequence={emitted.sequence}"
                         ),
-                        event=event.model_copy(deep=True),
-                        execution_succeeded=event.event in {"tool.end", "run.end"},
+                        event=emitted.model_copy(deep=True),
+                        execution_succeeded=emitted.event in {"tool.end", "run.end"},
                     ) from exc
-            return event
+            return emitted
         run_id = run_config.run_id or uuid4().hex
         sequence = 0
 
