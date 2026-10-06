@@ -87,6 +87,7 @@ from .models import (
     ToolResult,
     ToolSpec,
 )
+from .native_schema_watch import NativeSchemaWatchHealth, NativeSchemaWatchSnapshot
 from .network_policy import NetworkPolicy
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
@@ -265,6 +266,7 @@ class SchemaRouter:
         self._native_schema_pending: dict[
             str, tuple[ToolSpec, BoundEndpointInvoker, bool]
         ] = {}
+        self._native_schema_watch_health = NativeSchemaWatchHealth()
         self._native_schema_watch_task: asyncio.Task[None] | None = None
     def _is_snapshot_access_available(self, tool: ToolSpec, endpoint: Any) -> bool:
         return self.executor.is_access_available_for_contract(
@@ -1111,6 +1113,7 @@ class SchemaRouter:
             self.loader.forget_schema_http_validators(key)
             self._native_schema_refreshers.pop(key, None)
             self._native_schema_pending.pop(key, None)
+            self._native_schema_watch_health.forget(key)
         return key
 
     async def aremove_tool(self, tool_key: str) -> ToolSpec:
@@ -1137,6 +1140,7 @@ class SchemaRouter:
                 self.loader.forget_schema_http_validators(tool_key)
                 self._native_schema_refreshers.pop(tool_key, None)
                 self._native_schema_pending.pop(tool_key, None)
+                self._native_schema_watch_health.forget(tool_key)
                 return current
 
     def remove_tool(self, tool_key: str) -> ToolSpec:
@@ -1223,6 +1227,7 @@ class SchemaRouter:
         refresh: Any,
     ) -> None:
         self._native_schema_refreshers[tool_key] = refresh
+        self._native_schema_watch_health.remember(tool_key)
 
     def _prepare_health_contract_transition(
         self,
@@ -1366,6 +1371,18 @@ class SchemaRouter:
             report=report,
         )
 
+    @property
+    def native_schema_watcher_running(self) -> bool:
+        task = self._native_schema_watch_task
+        return task is not None and not task.done()
+
+    def native_schema_watch_snapshots(
+        self,
+    ) -> tuple[NativeSchemaWatchSnapshot, ...]:
+        """Return bounded privacy-safe health for process-local schema refreshers."""
+
+        return self._native_schema_watch_health.snapshots()
+
     async def check_native_schema_watches_once(
         self,
         *,
@@ -1374,14 +1391,21 @@ class SchemaRouter:
         results: list[SchemaRefreshResult] = []
         for tool_key in tuple(self._native_schema_refreshers):
             try:
-                results.append(
-                    await self.arefresh_native_schema(
-                        tool_key,
-                        apply_compatible=apply_compatible,
-                    )
+                result = await self.arefresh_native_schema(
+                    tool_key,
+                    apply_compatible=apply_compatible,
                 )
-            except (KeyError, RegistrationError, SchemaSourceError):
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                # A single driver/client/adapter failure must not terminate the
+                # router-owned watcher or prevent other sources from refreshing.
+                # Retain only the exception type; messages may contain credentials.
+                self._native_schema_watch_health.record_error(tool_key, exc)
                 continue
+
+            self._native_schema_watch_health.record_result(tool_key, result)
+            results.append(result)
         return tuple(results)
 
     async def start_native_schema_watcher(
@@ -1392,10 +1416,7 @@ class SchemaRouter:
     ) -> None:
         if interval_seconds <= 0:
             raise ValueError("interval_seconds must be > 0")
-        if (
-            self._native_schema_watch_task is not None
-            and not self._native_schema_watch_task.done()
-        ):
+        if self.native_schema_watcher_running:
             raise RuntimeError("native schema watcher is already running")
 
         async def watch_loop() -> None:
