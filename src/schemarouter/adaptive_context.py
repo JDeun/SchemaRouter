@@ -8,8 +8,6 @@ from dataclasses import dataclass, field
 from .canonical_json import canonical_json_sha256, canonical_json_text
 from .document_loading import DocumentLimits, load_bounded_json
 
-
-
 _ADAPTIVE_CHECKPOINT_VERSION = 1
 _ADAPTIVE_CHECKPOINT_MAX_BYTES = 1024 * 1024
 _ADAPTIVE_CHECKPOINT_MAX_ROUTES = 10_000
