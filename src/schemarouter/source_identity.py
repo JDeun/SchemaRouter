@@ -7,6 +7,7 @@ from typing import Any
 
 from ._url_safety import safe_provenance_url
 from .adapters.base import RefreshProfile
+from .canonical_json import canonical_json_sha256
 from .models import ToolSpec
 
 
@@ -52,6 +53,9 @@ def _safe_url(value: str | None) -> str | None:
 
 
 def _canonical_identity_value(value: Any) -> str:
+    # This qualifier preserves the historical default=str coercion because
+    # refresh identity metadata may contain host objects. Persisted source
+    # identity digests below use the strict canonical JSON contract.
     serialized = json.dumps(
         value,
         sort_keys=True,
@@ -97,13 +101,7 @@ def structured_source_identity_digest(
 ) -> str:
     """Return an opaque stable digest suitable for persisted validator ownership."""
 
-    payload = json.dumps(
-        asdict(identity),
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=True,
-    )
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    return canonical_json_sha256(asdict(identity))
 
 
 def structured_source_identity(

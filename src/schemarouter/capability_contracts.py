@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import hashlib
-import json
 from collections import Counter
 from collections.abc import Iterable
 from typing import Literal
 
 from pydantic import Field, model_validator
 
+from .canonical_json import canonical_json_text
 from .models import FieldSpec, StrictModel
 
 CompatibilityStatus = Literal["exact", "compatible", "convertible", "incompatible", "unknown"]
@@ -370,12 +370,10 @@ def _capability_requirement_identity(
     required: CapabilityFieldContract,
 ) -> str:
     payload = required.model_dump(mode="json")
-    return json.dumps(
-        payload,
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False,
-    )
+    # This historical identity hashes UTF-8 characters directly rather than
+    # JSON ASCII escapes. Keep that compatibility boundary explicit while
+    # sharing the canonical ordering and compact-separator contract.
+    return canonical_json_text(payload, ensure_ascii=False)
 
 def compare_capability_composition(
     producer: CapabilityContract,
