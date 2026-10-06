@@ -43,6 +43,97 @@ def _tool(name: str, description: str) -> ToolSpec:
     )
 
 
+def test_data_scope_rule_rejects_overlapping_visible_and_hidden_fields() -> None:
+    with pytest.raises(ValueError, match="must not overlap"):
+        DataScopeRule(
+            visible_fields=("value",),
+            hidden_fields=("value",),
+        )
+
+
+def test_data_scope_unknown_hidden_field_fails_closed() -> None:
+    policy = AuthorizationPolicy(
+        data_rules=(DataScopeRule(hidden_fields=("secret",)),)
+    )
+    tool = _tool("records", "records")
+    endpoint = tool.endpoint("read")
+
+    with pytest.raises(
+        PolicyViolationError,
+        match="authorization denied for requested data scope",
+    ):
+        policy.data_scope(PrincipalContext(subject="alice"), tool, endpoint)
+
+
+def test_data_scope_known_hidden_field_is_removed() -> None:
+    policy = AuthorizationPolicy(
+        data_rules=(DataScopeRule(hidden_fields=("secret",)),)
+    )
+    tool = ToolSpec(
+        name="records",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                output_fields=[
+                    FieldSpec(name="value"),
+                    FieldSpec(name="secret"),
+                ],
+                read_only=True,
+            )
+        ],
+    )
+
+    scope = policy.data_scope(
+        PrincipalContext(subject="alice"),
+        tool,
+        tool.endpoint("read"),
+    )
+
+    assert scope.visible_fields == frozenset({"value"})
+
+
+def test_data_scope_schema_drift_cannot_widen_hidden_field_access() -> None:
+    policy = AuthorizationPolicy(
+        data_rules=(DataScopeRule(hidden_fields=("salary",)),)
+    )
+    principal = PrincipalContext(subject="alice")
+    old_tool = ToolSpec(
+        name="employees",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                output_fields=[
+                    FieldSpec(name="name"),
+                    FieldSpec(name="salary"),
+                ],
+                read_only=True,
+            )
+        ],
+    )
+    new_tool = ToolSpec(
+        name="employees",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                output_fields=[
+                    FieldSpec(name="name"),
+                    FieldSpec(name="compensation"),
+                ],
+                read_only=True,
+            )
+        ],
+    )
+
+    old_scope = policy.data_scope(principal, old_tool, old_tool.endpoint("read"))
+    assert old_scope.visible_fields == frozenset({"name"})
+
+    with pytest.raises(
+        PolicyViolationError,
+        match="authorization denied for requested data scope",
+    ):
+        policy.data_scope(principal, new_tool, new_tool.endpoint("read"))
+
+
 def _policy() -> AuthorizationPolicy:
     return AuthorizationPolicy(
         rules=(
