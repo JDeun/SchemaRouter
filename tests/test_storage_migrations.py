@@ -13,6 +13,7 @@ from schemarouter.storage import (
     CURRENT_REGISTRY_DOCUMENT_VERSION,
     CURRENT_STORAGE_FORMAT_VERSION,
     CURRENT_TRACE_DOCUMENT_VERSION,
+    PersistedDocumentLimits,
     StorageComponentInspection,
     StorageInspection,
     backup_sqlite_storage,
@@ -616,6 +617,33 @@ def test_backup_refuses_existing_destination_without_overwrite(tmp_path) -> None
         backup_sqlite_storage(path, backup)
 
     assert backup.read_bytes() == b"do-not-overwrite"
+
+
+def test_storage_inspection_applies_persisted_document_limits(tmp_path) -> None:
+    path = tmp_path / "bounded-inspection.sqlite3"
+    with SQLiteRegistry(path) as registry:
+        registry.register(_tool("alpha"))
+
+    limits = PersistedDocumentLimits(
+        max_bytes=64,
+        max_depth=128,
+        max_nodes=100_000,
+    )
+    inspection = inspect_sqlite_storage(
+        path,
+        document_limits=limits,
+    )
+    component = next(
+        item for item in inspection.components if item.component == "registry"
+    )
+    assert component.status == "corrupt"
+
+    with pytest.raises(StorageFormatError, match="registry=corrupt"):
+        migrate_sqlite_storage(
+            path,
+            backup=False,
+            document_limits=limits,
+        )
 
 
 def test_current_format_corrupt_document_is_reported_by_storage_inspect(
