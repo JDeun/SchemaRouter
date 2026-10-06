@@ -534,7 +534,14 @@ class PineconeVectorBackend:
             "include_metadata": bool(include_fields),
         }
         if filters:
-            kwargs["filter"] = dict(filters)
+            kwargs["filter"] = {
+                field: (
+                    {"$in": list(value)}
+                    if isinstance(value, tuple)
+                    else {"$eq": value}
+                )
+                for field, value in sorted(filters.items())
+            }
         raw = index.query(**kwargs)
         matches = _read(raw, "matches", raw)
         if not isinstance(matches, Sequence) or isinstance(matches, (str, bytes)):
@@ -663,7 +670,17 @@ class ChromaVectorBackend:
             "include": include,
         }
         if filters:
-            kwargs["where"] = dict(filters)
+            clauses = [
+                {
+                    field: (
+                        {"$in": list(value)}
+                        if isinstance(value, tuple)
+                        else value
+                    )
+                }
+                for field, value in sorted(filters.items())
+            ]
+            kwargs["where"] = clauses[0] if len(clauses) == 1 else {"$and": clauses}
         raw = target.query(**kwargs)
         if not isinstance(raw, Mapping):
             raise SchemaValidationError("Chroma query() must return an object")
