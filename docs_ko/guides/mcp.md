@@ -33,6 +33,37 @@ router = await SchemaRouter.from_url(
 연결되면 protocol negotiation을 수행하고 `list_tools()`를 끝까지 조회한 뒤,
 각 tool의 `inputSchema`와 `outputSchema`를 등록합니다.
 
+### Discovery 리소스 제한
+
+MCP의 원격 tool catalog는 신뢰하지 않는 입력으로 취급합니다. 기본 한도는 한 번의 inspection
+기준 64 pages, 512 tools, tool descriptor 하나당 512 KiB, 전체 catalog 4 MiB입니다. 기존
+`timeout`은 page마다 새로 적용되는 시간이 아니라 전체 discovery walk의 상한입니다.
+같은 cursor의 반복이나 cursor cycle도 거부합니다.
+
+애플리케이션이 필요에 따라 한도를 더 낮추거나 명시적으로 높일 수 있습니다.
+
+```python
+from schemarouter import MCPDiscoveryLimits
+
+limits = MCPDiscoveryLimits(
+    max_pages=16,
+    max_tools=200,
+    max_tool_bytes=256 * 1024,
+    max_total_bytes=2 * 1024 * 1024,
+)
+
+router = await SchemaRouter.from_url(
+    "https://mcp.example.com/mcp",
+    kind="mcp",
+    mcp_discovery_limits=limits,
+    timeout=15.0,
+)
+```
+
+같은 `MCPDiscoveryLimits`를 `add_url()`, `probe_url()`, `add_mcp_stdio()`,
+`add_mcp_client_factory()`, `arefresh_schema()`에도 사용할 수 있습니다. 한도를 넘기면
+부분 catalog를 등록하지 않고 `SchemaSourceError`로 실패합니다.
+
 ## Local stdio server
 
 ```python
