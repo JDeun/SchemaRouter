@@ -150,6 +150,7 @@ class VectorCollectionInvoker:
     """Call-aware bounded vector search invoker with a caller-owned embedder/backend."""
 
     projects_fields = True
+    supports_trusted_filters = True
 
     def __init__(
         self,
