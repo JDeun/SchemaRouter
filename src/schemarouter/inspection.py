@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 from collections.abc import Sequence
+from copy import deepcopy
 from dataclasses import asdict
 from typing import Any
 
@@ -9,6 +10,7 @@ from pydantic import Field
 
 from ._url_safety import safe_provenance_url
 from .capability_decision_trace import CapabilityDecisionTrace
+from .inspection_safety import safe_schema_document
 from .models import StrictModel, ToolSpec
 from .registry import ToolRegistry
 from .traces import RunTrace, RunTraceStore
@@ -528,18 +530,20 @@ def inspect_traces(
     )
 
 
-def tool_spec_document(tool: ToolSpec) -> dict[str, object]:
-    """Return a safe detached inspection document plus derived fingerprints.
+def _inspection_document_value(value: Any, *, safe: bool) -> Any:
+    return safe_schema_document(value) if safe else deepcopy(value)
 
-    Arbitrary ToolSpec/EndpointSpec metadata is intentionally omitted. Only the allowlisted
-    ingestion provenance above is surfaced at tool level.
-    """
 
+def _tool_spec_document(
+    tool: ToolSpec,
+    *,
+    safe: bool,
+) -> dict[str, object]:
     return {
         "key": tool.key,
         "name": tool.name,
         "namespace": tool.namespace,
-        "description": tool.description,
+        "description": _inspection_document_value(tool.description, safe=safe),
         "source_type": tool.source_type,
         "license": tool.license,
         "provider": tool.provider,
@@ -549,23 +553,60 @@ def tool_spec_document(tool: ToolSpec) -> dict[str, object]:
         "endpoints": [
             {
                 "name": endpoint.name,
-                "description": endpoint.description,
+                "description": _inspection_document_value(
+                    endpoint.description,
+                    safe=safe,
+                ),
                 "method": endpoint.method,
                 "path": endpoint.path,
                 "read_only": endpoint.read_only,
                 "destructive": endpoint.destructive,
                 "parameters": [
-                    parameter.model_dump(mode="json")
+                    _inspection_document_value(
+                        parameter.model_dump(mode="json"),
+                        safe=safe,
+                    )
                     for parameter in endpoint.parameters
                 ],
                 "output_fields": [
-                    field.model_dump(mode="json")
+                    _inspection_document_value(
+                        field.model_dump(mode="json"),
+                        safe=safe,
+                    )
                     for field in endpoint.output_fields
                 ],
-                "input_schema": endpoint.input_schema,
-                "output_schema": endpoint.output_schema,
+                "input_schema": _inspection_document_value(
+                    endpoint.input_schema,
+                    safe=safe,
+                ),
+                "output_schema": _inspection_document_value(
+                    endpoint.output_schema,
+                    safe=safe,
+                ),
                 "fingerprint": endpoint.fingerprint,
             }
             for endpoint in tool.endpoints
         ],
     }
+
+
+def tool_spec_document(tool: ToolSpec) -> dict[str, object]:
+    """Return a privacy-safe detached inspection document plus derived fingerprints.
+
+    Arbitrary ToolSpec/EndpointSpec metadata is intentionally omitted. Schema-like payloads are
+    sanitized so embedded defaults/examples and obvious credential-bearing annotations do not
+    escape through the safe inspection API.
+    """
+
+    return _tool_spec_document(tool, safe=True)
+
+
+def raw_tool_spec_document(tool: ToolSpec) -> dict[str, object]:
+    """Return a detached trusted-debugging document with raw schema annotation values.
+
+    This API is intentionally not privacy-safe and may expose credentials embedded in schema
+    defaults, examples, descriptions, or vendor extensions. Arbitrary ToolSpec/EndpointSpec
+    metadata remains omitted; use only when the caller is authorized to inspect raw contracts.
+    """
+
+    return _tool_spec_document(tool, safe=False)

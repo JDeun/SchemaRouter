@@ -353,6 +353,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "load_adapter_plugins",
         "load_capability_artifact",
         "load_decision_backend_plugin",
+        "raw_tool_spec_document",
         "tool_spec_document",
         "record_run_events",
         "render_dashboard",

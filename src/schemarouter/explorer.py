@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from copy import deepcopy
 from html import escape
 from pathlib import Path
 from typing import Any, Literal
@@ -10,6 +9,7 @@ from pydantic import Field
 
 from .errors import RegistrationError
 from .inspection import RouterInspection, inspect_tool_spec
+from .inspection_safety import safe_schema_document
 from .models import StrictModel, ToolSpec
 from .registry import ToolRegistry
 
@@ -131,28 +131,6 @@ class CapabilityExplorerDocument(StrictModel):
     endpoint_count: int
     live: bool = False
     tools: list[ExplorerTool] = Field(default_factory=list)
-
-
-_SCHEMA_EXCLUDED_KEYS = {
-    "const",
-    "default",
-    "example",
-    "examples",
-}
-
-
-def _safe_schema(value: Any) -> Any:
-    """Return a JSON-safe schema view without embedded example/default values."""
-
-    if isinstance(value, dict):
-        return {
-            str(key): _safe_schema(item)
-            for key, item in value.items()
-            if str(key).casefold() not in _SCHEMA_EXCLUDED_KEYS
-        }
-    if isinstance(value, list):
-        return [_safe_schema(item) for item in value]
-    return deepcopy(value)
 
 
 def _mode(read_only: bool | None, destructive: bool | None) -> SideEffectMode:
@@ -336,18 +314,18 @@ def build_capability_explorer_document(
                             style=parameter.style,
                             explode=parameter.explode,
                             allow_reserved=parameter.allow_reserved,
-                            json_schema=_safe_schema(parameter.json_schema),
+                            json_schema=safe_schema_document(parameter.json_schema),
                             aliases=list(parameter.aliases),
                         )
                         for parameter in endpoint.parameters
                     ],
-                    input_schema=_safe_schema(endpoint.input_schema),
+                    input_schema=safe_schema_document(endpoint.input_schema),
                     output_fields=[
                         ExplorerField(
                             name=field.name,
                             semantic_id=field.semantic_id,
                             description=field.description,
-                            json_schema=_safe_schema(field.json_schema),
+                            json_schema=safe_schema_document(field.json_schema),
                             aliases=list(field.aliases),
                             path=list(field.path),
                             result_path=list(field.result_path),
@@ -371,7 +349,7 @@ def build_capability_explorer_document(
                         )
                         for field in endpoint.output_fields
                     ],
-                    output_schema=_safe_schema(endpoint.output_schema),
+                    output_schema=safe_schema_document(endpoint.output_schema),
                     server_projection=projection,
                     fingerprint=endpoint.fingerprint,
                     status=status,

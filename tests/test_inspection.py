@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 
 from schemarouter import (
@@ -18,7 +19,9 @@ from schemarouter import (
     inspect_router,
     inspect_trace,
     inspect_traces,
+    raw_tool_spec_document,
     schema_tool,
+    tool_spec_document,
 )
 from schemarouter.cli import main
 from schemarouter.dashboard import render_dashboard
@@ -691,3 +694,133 @@ def test_live_inspection_reports_schema_watch_without_credentials() -> None:
     serialized = snapshot.model_dump_json()
     assert "schema-secret" not in serialized
     assert "runtime-secret" not in serialized
+
+def test_tool_spec_document_sanitizes_secret_bearing_schema_annotations() -> None:
+    tool = ToolSpec(
+        name="secret_schema",
+        description="Safe catalog description",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                description="Authorization: Bearer endpoint-secret",
+                read_only=True,
+                parameters=[
+                    ParameterSpec(
+                        name="Authorization",
+                        location="header",
+                        json_schema={
+                            "type": "object",
+                            "description": "password=description-secret",
+                            "default": {"api_key": "default-secret"},
+                            "examples": [{"token": "example-secret"}],
+                            "x-api-key": "vendor-secret",
+                            "properties": {
+                                "password": {
+                                    "type": "string",
+                                    "default": "nested-secret",
+                                },
+                                "normal": {"type": "string"},
+                            },
+                            "required": ["password"],
+                        },
+                    )
+                ],
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "api_key": {
+                            "type": "string",
+                            "example": "input-secret",
+                        }
+                    },
+                    "required": ["api_key"],
+                },
+                output_fields=[
+                    FieldSpec(
+                        name="token",
+                        json_schema={
+                            "type": "string",
+                            "const": "field-secret",
+                        },
+                    )
+                ],
+                output_schema={
+                    "type": "object",
+                    "description": "Cookie: session=output-secret",
+                    "x-client-secret": "vendor-output-secret",
+                    "properties": {
+                        "token": {
+                            "type": "string",
+                            "examples": ["output-example-secret"],
+                        }
+                    },
+                },
+            )
+        ],
+    )
+
+    document = tool_spec_document(tool)
+    endpoint = document["endpoints"][0]
+    parameter = endpoint["parameters"][0]
+    parameter_schema = parameter["json_schema"]
+
+    assert endpoint["description"] == "<redacted>"
+    assert parameter["name"] == "Authorization"
+    assert parameter_schema["type"] == "object"
+    assert parameter_schema["description"] == "<redacted>"
+    assert parameter_schema["x-api-key"] == "<redacted>"
+    assert "default" not in parameter_schema
+    assert "examples" not in parameter_schema
+    assert parameter_schema["properties"]["password"] == {"type": "string"}
+    assert parameter_schema["properties"]["normal"] == {"type": "string"}
+    assert parameter_schema["required"] == ["password"]
+
+    assert endpoint["input_schema"]["properties"]["api_key"] == {"type": "string"}
+    assert endpoint["input_schema"]["required"] == ["api_key"]
+    assert endpoint["output_fields"][0]["name"] == "token"
+    assert endpoint["output_fields"][0]["json_schema"] == {"type": "string"}
+    assert endpoint["output_schema"]["description"] == "<redacted>"
+    assert endpoint["output_schema"]["x-client-secret"] == "<redacted>"
+    assert endpoint["output_schema"]["properties"]["token"] == {"type": "string"}
+
+    serialized = json.dumps(document, sort_keys=True)
+    for secret in (
+        "endpoint-secret",
+        "description-secret",
+        "default-secret",
+        "example-secret",
+        "vendor-secret",
+        "nested-secret",
+        "input-secret",
+        "field-secret",
+        "output-secret",
+        "vendor-output-secret",
+        "output-example-secret",
+    ):
+        assert secret not in serialized
+
+
+def test_raw_tool_spec_document_preserves_schema_values_for_trusted_debugging() -> None:
+    tool = ToolSpec(
+        name="raw_schema",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                input_schema={
+                    "type": "string",
+                    "default": "trusted-debug-secret",
+                },
+            )
+        ],
+    )
+
+    safe = tool_spec_document(tool)
+    raw = raw_tool_spec_document(tool)
+
+    assert "default" not in safe["endpoints"][0]["input_schema"]
+    assert (
+        raw["endpoints"][0]["input_schema"]["default"]
+        == "trusted-debug-secret"
+    )
+
