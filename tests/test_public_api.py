@@ -269,6 +269,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "UnitNormalizationSpec",
         "TraceError",
         "TracePersistenceError",
+        "TransientInvocationError",
         "UnsupportedSchemaSourceError",
         "schema_tool",
         "serialize_capability_artifact",
