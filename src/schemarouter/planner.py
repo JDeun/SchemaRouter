@@ -656,7 +656,7 @@ class SchemaPlanner:
             additional_availability_predicate=additional_availability_predicate,
             scoring_endpoint_transform=scoring_endpoint_transform,
         )
-        candidates.sort(key=self._candidate_sort_key)
+        self._sort_candidates(candidates)
         return CapabilityRetrieval(
             query=request.query,
             registry_version=self.registry.version,
@@ -682,7 +682,7 @@ class SchemaPlanner:
             intent,
             additional_availability_predicate=additional_availability_predicate,
         )
-        candidates.sort(key=self._candidate_sort_key)
+        self._sort_candidates(candidates)
         return CapabilityRouteRetrieval(
             query=request.query,
             registry_version=self.registry.version,
@@ -780,7 +780,7 @@ class SchemaPlanner:
             intent,
             additional_availability_predicate=additional_availability_predicate,
         )
-        ranked.sort(key=self._candidate_sort_key)
+        self._sort_candidates(ranked)
         visible = [
             self._retrieval_candidate(candidate, rank=index)
             for index, candidate in enumerate(ranked, start=1)
@@ -1334,8 +1334,66 @@ class SchemaPlanner:
                             ),
                         )
                     )
-        candidates.sort(key=self._candidate_sort_key)
+        self._sort_candidates(candidates)
         return candidates
+
+    @staticmethod
+    def _structural_specificity_from_candidates(
+        candidates: list[_Candidate],
+    ) -> dict[str, float]:
+        """Compute structural specificity from only the schema views visible to this ranking."""
+
+        entries: list[tuple[str, set[str]]] = []
+        frequencies: dict[str, int] = {}
+        for candidate in candidates:
+            route_id = f"{candidate.tool.key}.{candidate.endpoint.name}"
+            terms = _schema_specificity_terms(
+                candidate.tool,
+                _visible_endpoint(candidate),
+            )
+            entries.append((route_id, terms))
+            for term in terms:
+                frequencies[term] = frequencies.get(term, 0) + 1
+
+        endpoint_count = len(entries)
+        if endpoint_count <= 1:
+            return {route_id: 0.0 for route_id, _terms in entries}
+
+        denominator = math.log(endpoint_count + 1)
+        discrimination = {
+            term: math.log((endpoint_count + 1) / (frequency + 1)) / denominator
+            for term, frequency in frequencies.items()
+        }
+        return {
+            route_id: (
+                sum(
+                    discrimination[term]
+                    for term in terms
+                    if term in discrimination
+                )
+                / len([term for term in terms if term in discrimination])
+                if any(term in discrimination for term in terms)
+                else 0.0
+            )
+            for route_id, terms in entries
+        }
+
+    def _sort_candidates(self, candidates: list[_Candidate]) -> None:
+        """Sort candidates without consulting authorization-hidden schema metadata."""
+
+        scoped_specificity: dict[str, float] | None = None
+        if self.structural_retrieval and any(
+            candidate.visible_endpoint is not None
+            for candidate in candidates
+        ):
+            scoped_specificity = self._structural_specificity_from_candidates(candidates)
+
+        candidates.sort(
+            key=lambda candidate: self._candidate_sort_key(
+                candidate,
+                structural_specificity=scoped_specificity,
+            )
+        )
 
     def _structural_specificity_by_route(self) -> dict[str, float]:
         if not self.structural_retrieval:
@@ -1395,16 +1453,17 @@ class SchemaPlanner:
     def _candidate_sort_key(
         self,
         candidate: _Candidate,
+        *,
+        structural_specificity: dict[str, float] | None = None,
     ) -> tuple[float, bool, bool, float, bool, str, str]:
         specificity = 0.0
-        if self.structural_retrieval and candidate.visible_endpoint is None:
-            route_id = (
-                f"{candidate.tool.key}.{candidate.endpoint.name}"
-            )
-            specificity = self._structural_specificity_by_route().get(
-                route_id,
-                0.0,
-            )
+        if self.structural_retrieval:
+            route_id = f"{candidate.tool.key}.{candidate.endpoint.name}"
+            specificity = (
+                self._structural_specificity_by_route()
+                if structural_specificity is None
+                else structural_specificity
+            ).get(route_id, 0.0)
         # Safety outranks every tie-break except relevance. Without these two terms an
         # unmatched query falls through to `tool.key`, so a destructive endpoint whose
         # tool sorts early becomes rank 1 of the discovery surface an agent reads.
