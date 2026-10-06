@@ -72,6 +72,7 @@ _MAX_YAML_ALIASES = 256
 _MAX_YAML_ANCHORS = 256
 _MAX_YAML_COMPOSED_NODES = 100_000
 _MAX_YAML_EXPANDED_NODES = 100_000
+_MAX_YAML_DEPTH = 64
 
 
 SourceProbeFailureCategory = Literal[
@@ -279,6 +280,7 @@ class _OpenAPIYAMLLoader(yaml.SafeLoader):
         self._alias_count = 0
         self._anchor_count = 0
         self._composed_node_count = 0
+        self._compose_depth = 0
 
     @staticmethod
     def _budget_error(detail: str) -> _YAMLResourceLimitError:
@@ -287,27 +289,36 @@ class _OpenAPIYAMLLoader(yaml.SafeLoader):
         )
 
     def compose_node(self, parent: Any, index: Any) -> Any:
-        if self.check_event(AliasEvent):
-            self._alias_count += 1
-            if self._alias_count > _MAX_YAML_ALIASES:
+        self._compose_depth += 1
+        try:
+            if self._compose_depth > _MAX_YAML_DEPTH:
                 raise self._budget_error(
-                    f"alias count exceeds {_MAX_YAML_ALIASES}"
+                    f"nesting depth exceeds {_MAX_YAML_DEPTH}"
                 )
-            return super().compose_node(parent, index)
 
-        event = self.peek_event()
-        self._composed_node_count += 1
-        if self._composed_node_count > _MAX_YAML_COMPOSED_NODES:
-            raise self._budget_error(
-                f"composed node count exceeds {_MAX_YAML_COMPOSED_NODES}"
-            )
-        if getattr(event, "anchor", None) is not None:
-            self._anchor_count += 1
-            if self._anchor_count > _MAX_YAML_ANCHORS:
+            if self.check_event(AliasEvent):
+                self._alias_count += 1
+                if self._alias_count > _MAX_YAML_ALIASES:
+                    raise self._budget_error(
+                        f"alias count exceeds {_MAX_YAML_ALIASES}"
+                    )
+                return super().compose_node(parent, index)
+
+            event = self.peek_event()
+            self._composed_node_count += 1
+            if self._composed_node_count > _MAX_YAML_COMPOSED_NODES:
                 raise self._budget_error(
-                    f"anchor count exceeds {_MAX_YAML_ANCHORS}"
+                    f"composed node count exceeds {_MAX_YAML_COMPOSED_NODES}"
                 )
-        return super().compose_node(parent, index)
+            if getattr(event, "anchor", None) is not None:
+                self._anchor_count += 1
+                if self._anchor_count > _MAX_YAML_ANCHORS:
+                    raise self._budget_error(
+                        f"anchor count exceeds {_MAX_YAML_ANCHORS}"
+                    )
+            return super().compose_node(parent, index)
+        finally:
+            self._compose_depth -= 1
 
     @staticmethod
     def _children(node: Any) -> tuple[Any, ...]:
