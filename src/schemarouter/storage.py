@@ -61,6 +61,10 @@ class _PersistedDocumentLimitError(ValueError):
     pass
 
 
+class _PersistedCollectionLimitError(_PersistedDocumentLimitError):
+    pass
+
+
 @dataclass
 class _PersistedReadBudget:
     """Mutable aggregate budget for one persisted collection read."""
@@ -77,13 +81,13 @@ class _PersistedReadBudget:
 
         next_documents = self.documents + 1
         if next_documents > self.limits.max_documents:
-            raise _PersistedDocumentLimitError(
+            raise _PersistedCollectionLimitError(
                 "persisted JSON collection exceeds the configured document limit"
             )
 
         next_total_bytes = self.total_bytes + encoded_bytes
         if next_total_bytes > self.limits.max_total_bytes:
-            raise _PersistedDocumentLimitError(
+            raise _PersistedCollectionLimitError(
                 "persisted JSON collection exceeds the configured cumulative byte limit"
             )
 
