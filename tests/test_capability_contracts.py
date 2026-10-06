@@ -322,3 +322,5 @@ def test_composition_preserves_identical_duplicate_requirement_multiplicity() ->
         item.status == "exact"
         for item in result.requirements.values()
     )
+
+# transient-ci-sync-marker
