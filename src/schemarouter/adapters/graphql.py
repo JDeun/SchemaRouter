@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 
 import httpx
 
+from .._http_headers import validate_trusted_headers
 from .._url_safety import safe_provenance_url
 from ..errors import (
     InvocationUnavailableError,
@@ -14,6 +15,7 @@ from ..errors import (
     SchemaSourceError,
 )
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
+from ..network_policy import TRUSTED_INTERNAL_NETWORK_POLICY, NetworkPolicy
 from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile, RefreshProfile
 
 _TRANSIENT_HTTP_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
@@ -128,8 +130,10 @@ async def _bounded_post(
     headers: dict[str, str] | None,
     payload: dict[str, Any],
     max_bytes: int,
+    network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY,
 ) -> dict[str, Any]:
     _validate_graphql_url(url)
+    await network_policy.authorize(url)
     async with client.stream(
         "POST",
         url,
@@ -702,13 +706,15 @@ class GraphQLRemoteInvoker:
         timeout: float = 20.0,
         max_response_bytes: int = _MAX_RESPONSE_BYTES,
         http_client: httpx.AsyncClient | None = None,
+        network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY,
     ) -> None:
         self.tool = tool
         self.endpoint_url = _validate_graphql_url(endpoint_url)
-        self.trusted_headers = dict(trusted_headers or {})
+        self.trusted_headers = validate_trusted_headers(trusted_headers)
         self.timeout = timeout
         self.max_response_bytes = max_response_bytes
         self.http_client = http_client
+        self.network_policy = network_policy
 
     async def invoke_call(self, call: ToolCall) -> Any:
         endpoint = self.tool.endpoint(call.endpoint)
@@ -731,6 +737,7 @@ class GraphQLRemoteInvoker:
                     headers=self.trusted_headers,
                     payload=payload,
                     max_bytes=self.max_response_bytes,
+                    network_policy=self.network_policy,
                 )
             except httpx.TimeoutException as exc:
                 raise InvocationUnavailableError("GraphQL request timed out") from exc
@@ -799,6 +806,7 @@ class GraphQLSourceAdapter:
                     headers=context.schema_headers,
                     payload={"query": _INTROSPECTION_QUERY},
                     max_bytes=_MAX_INTROSPECTION_BYTES,
+                    network_policy=context.network_policy,
                 )
             except httpx.HTTPStatusError as exc:
                 if exc.response.status_code != 413:
@@ -809,6 +817,7 @@ class GraphQLSourceAdapter:
                     headers=context.schema_headers,
                     payload={"query": _COMPACT_INTROSPECTION_QUERY},
                     max_bytes=_MAX_INTROSPECTION_BYTES,
+                    network_policy=context.network_policy,
                 )
             except SchemaSourceError:
                 raise
@@ -854,6 +863,7 @@ class GraphQLSourceAdapter:
                 trusted_headers=context.trusted_headers,
                 timeout=context.timeout,
                 http_client=context.http_client,
+                network_policy=context.network_policy,
             )
             return AdapterLoadResult(tool=tool, invoker=invoker)
         finally:

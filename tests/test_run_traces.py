@@ -1,4 +1,6 @@
+import asyncio
 import sqlite3
+import time
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -16,9 +18,11 @@ from schemarouter import (
     ToolSpec,
     TraceError,
     TracePersistenceError,
+    TraceRedactionConfig,
     record_run_events,
     replay_run_events,
 )
+from schemarouter.errors import NonRetryableInvocationError
 
 
 def event(
@@ -69,6 +73,34 @@ def make_router(counter: dict[str, int] | None = None) -> SchemaRouter:
     return router
 
 
+def make_secret_router(*, fail: bool = False) -> SchemaRouter:
+    router = SchemaRouter()
+    router.add_tool(
+        ToolSpec(
+            name="secret_echo",
+            endpoints=[
+                EndpointSpec(
+                    name="echo",
+                    parameters=[ParameterSpec(name="token", required=True)],
+                    output_fields=[FieldSpec(name="token")],
+                    read_only=True,
+                )
+            ],
+        )
+    )
+
+    def invoke(endpoint: str, arguments: dict) -> dict:
+        del endpoint
+        if fail:
+            raise NonRetryableInvocationError(
+                f"authorization={arguments['token']}"
+            )
+        return {"token": arguments["token"]}
+
+    router.executor.bind("secret_echo", invoke)
+    return router
+
+
 def test_run_trace_validates_order_identity_and_terminal_boundary() -> None:
     trace = RunTrace(
         run_id="run-1",
@@ -91,10 +123,6 @@ def test_run_trace_validates_order_identity_and_terminal_boundary() -> None:
         [event("run-1", 0, "plan.end")],
         [event("run-1", 0, "run.start"), event("run-1", 2, "run.end")],
         [event("run-1", 0, "run.start"), event("run-2", 1, "run.end")],
-        [
-            event("run-1", 0, "run.start", seconds=2),
-            event("run-1", 1, "run.end", seconds=1),
-        ],
         [
             event("run-1", 0, "run.start"),
             event("run-1", 1, "run.end", seconds=1),
@@ -142,13 +170,17 @@ def test_sqlite_trace_store_rejects_gaps_duplicates_and_post_terminal_events(tmp
             store.append(event("run-1", 2, "plan.end", seconds=2))
 
 
-def test_sqlite_trace_store_rejects_timestamp_regression(tmp_path) -> None:
+def test_sqlite_trace_store_accepts_timestamp_regression_and_replays_by_sequence(tmp_path) -> None:
     path = tmp_path / "traces.sqlite3"
 
     with SQLiteRunTraceStore(path) as store:
         store.append(event("run-1", 0, "run.start", seconds=2))
-        with pytest.raises(TraceError, match="timestamps"):
-            store.append(event("run-1", 1, "run.end", seconds=1))
+        store.append(event("run-1", 1, "run.end", seconds=1))
+
+        trace = store.trace("run-1")
+        assert [item.sequence for item in trace.events] == [0, 1]
+        assert trace.events[1].timestamp < trace.events[0].timestamp
+        assert [item.sequence for item in trace.replay()] == [0, 1]
 
 
 def test_sqlite_trace_store_corruption_fails_closed(tmp_path) -> None:
@@ -267,6 +299,143 @@ async def test_runtime_trace_can_explicitly_include_payloads(tmp_path) -> None:
 
 
 @pytest.mark.asyncio
+async def test_payload_trace_redacts_credentials_before_sqlite_persistence(tmp_path) -> None:
+    secret = "sk-super-secret-value"
+    router = make_secret_router()
+
+    with SQLiteRunTraceStore(tmp_path / "redacted.sqlite3") as store:
+        events = [
+            item
+            async for item in router.astream_events(
+                PlanRequest(
+                    query="echo token",
+                    arguments={"token": secret},
+                ),
+                config=RunConfig(
+                    run_id="redacted-success",
+                    include_payloads=True,
+                    metadata={"api_key": secret, "safe": "visible"},
+                ),
+                trace_store=store,
+            )
+        ]
+        trace = store.trace("redacted-success")
+
+    serialized = "\n".join(event.model_dump_json() for event in trace.events)
+    assert secret not in serialized
+    assert "[REDACTED]" in serialized
+    assert all(event.metadata["api_key"] == "[REDACTED]" for event in events)
+    assert all(event.metadata["safe"] == "visible" for event in events)
+
+    tool_start = next(event for event in trace.events if event.event == "tool.start")
+    tool_end = next(event for event in trace.events if event.event == "tool.end")
+    assert tool_start.data["arguments"]["token"] == "[REDACTED]"
+    assert tool_end.data["result"]["data"]["token"] == "[REDACTED]"
+
+
+@pytest.mark.asyncio
+async def test_payload_trace_redacts_exception_message_before_sqlite_persistence(
+    tmp_path,
+) -> None:
+    secret = "runtime-secret-token"
+    router = make_secret_router(fail=True)
+
+    with SQLiteRunTraceStore(tmp_path / "redacted-error.sqlite3") as store:
+        with pytest.raises(NonRetryableInvocationError, match="authorization="):
+            async for _ in router.astream_events(
+                PlanRequest(
+                    query="echo token",
+                    arguments={"token": secret},
+                ),
+                config=RunConfig(
+                    run_id="redacted-error",
+                    include_payloads=True,
+                ),
+                trace_store=store,
+            ):
+                pass
+
+        trace = store.trace("redacted-error")
+
+    serialized = "\n".join(event.model_dump_json() for event in trace.events)
+    assert secret not in serialized
+    error_events = [
+        event
+        for event in trace.events
+        if event.event in {"tool.error", "run.error"}
+    ]
+    assert error_events
+    assert all(secret not in str(event.data) for event in error_events)
+
+
+def test_raw_trace_payloads_require_payload_opt_in() -> None:
+    with pytest.raises(ValueError, match="requires include_payloads"):
+        RunConfig(raw_trace_payloads=True)
+
+
+@pytest.mark.asyncio
+async def test_raw_trace_payloads_require_explicit_escape_hatch(tmp_path) -> None:
+    secret = "raw-debug-secret"
+    router = make_secret_router()
+
+    with SQLiteRunTraceStore(tmp_path / "raw.sqlite3") as store:
+        events = [
+            item
+            async for item in router.astream_events(
+                PlanRequest(
+                    query="echo token",
+                    arguments={"token": secret},
+                ),
+                config=RunConfig(
+                    run_id="raw-debug",
+                    include_payloads=True,
+                    raw_trace_payloads=True,
+                    metadata={"api_key": secret},
+                ),
+                trace_store=store,
+            )
+        ]
+        trace = store.trace("raw-debug")
+
+    serialized = "\n".join(event.model_dump_json() for event in trace.events)
+    assert secret in serialized
+    assert events[0].metadata["api_key"] == secret
+
+
+@pytest.mark.asyncio
+async def test_trace_redaction_supports_explicit_event_paths(tmp_path) -> None:
+    router = make_router()
+    policy = TraceRedactionConfig(
+        sensitive_paths={
+            "data.arguments.city",
+            "data.result.data.city",
+        }
+    )
+
+    with SQLiteRunTraceStore(tmp_path / "path-redacted.sqlite3") as store:
+        events = [
+            item
+            async for item in router.astream_events(
+                PlanRequest(
+                    query="city temperature",
+                    arguments={"city": "Seoul"},
+                ),
+                config=RunConfig(
+                    run_id="path-redacted",
+                    include_payloads=True,
+                    trace_redaction=policy,
+                ),
+                trace_store=store,
+            )
+        ]
+
+    tool_start = next(event for event in events if event.event == "tool.start")
+    tool_end = next(event for event in events if event.event == "tool.end")
+    assert tool_start.data["arguments"]["city"] == "[REDACTED]"
+    assert tool_end.data["result"]["data"]["city"] == "[REDACTED]"
+
+
+@pytest.mark.asyncio
 async def test_replay_never_reexecutes_tools(tmp_path) -> None:
     counter: dict[str, int] = {}
     router = make_router(counter)
@@ -368,3 +537,98 @@ def test_trace_store_delete_and_closed_state(tmp_path) -> None:
     store.close()
     with pytest.raises(RuntimeError, match="closed"):
         store.run_ids()
+
+
+@pytest.mark.asyncio
+async def test_slow_sync_trace_sink_does_not_block_event_loop() -> None:
+    router = make_router()
+    loop_progressed = asyncio.Event()
+
+    class SlowStore:
+        def append(self, item: RunEvent) -> None:
+            del item
+            time.sleep(0.05)
+
+    async def ticker() -> None:
+        await asyncio.sleep(0.01)
+        loop_progressed.set()
+
+    stream = router.astream_events(
+        PlanRequest(
+            query="city temperature",
+            arguments={"city": "Seoul"},
+        ),
+        trace_store=SlowStore(),
+    )
+    ticker_task = asyncio.create_task(ticker())
+    first_event_task = asyncio.create_task(anext(stream))
+    try:
+        await asyncio.wait_for(loop_progressed.wait(), timeout=0.04)
+        first_event = await asyncio.wait_for(first_event_task, timeout=0.2)
+    finally:
+        await ticker_task
+        if not first_event_task.done():
+            first_event_task.cancel()
+            await asyncio.gather(first_event_task, return_exceptions=True)
+        await stream.aclose()
+
+    assert first_event.event == "run.start"
+
+
+@pytest.mark.asyncio
+async def test_record_run_events_offloads_sync_store_and_preserves_order() -> None:
+    persisted: list[int] = []
+    loop_progressed = asyncio.Event()
+
+    class SlowStore:
+        def append(self, item: RunEvent) -> None:
+            time.sleep(0.03)
+            persisted.append(item.sequence)
+
+    async def source():
+        yield event("run-offload", 0, "run.start")
+        yield event("run-offload", 1, "run.end", seconds=1)
+
+    async def ticker() -> None:
+        await asyncio.sleep(0.005)
+        loop_progressed.set()
+
+    ticker_task = asyncio.create_task(ticker())
+    captured = [
+        item
+        async for item in record_run_events(
+            source(),
+            store=SlowStore(),
+        )
+    ]
+    await ticker_task
+
+    assert loop_progressed.is_set()
+    assert persisted == [0, 1]
+    assert [item.sequence for item in captured] == [0, 1]
+
+
+
+@pytest.mark.asyncio
+async def test_record_run_events_closes_upstream_generator_promptly() -> None:
+    closed = asyncio.Event()
+    persisted: list[int] = []
+
+    class Store:
+        def append(self, item: RunEvent) -> None:
+            persisted.append(item.sequence)
+
+    async def source():
+        try:
+            yield event("upstream-close", 0, "run.start")
+            await asyncio.Event().wait()
+        finally:
+            closed.set()
+
+    wrapped = record_run_events(source(), store=Store())
+    first = await anext(wrapped)
+    await wrapped.aclose()
+
+    assert first.sequence == 0
+    assert persisted == [0]
+    assert closed.is_set()

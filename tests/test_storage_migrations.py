@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
+import schemarouter.storage as storage_module
 from schemarouter.errors import StorageFormatError
 from schemarouter.models import EndpointSpec, FieldSpec, ToolSpec
 from schemarouter.registry import SQLiteRegistry
@@ -616,6 +617,57 @@ def test_backup_refuses_existing_destination_without_overwrite(tmp_path) -> None
         backup_sqlite_storage(path, backup)
 
     assert backup.read_bytes() == b"do-not-overwrite"
+
+
+def test_backup_refuses_symlink_destination_without_touching_target(tmp_path) -> None:
+    path = tmp_path / "registry-source.sqlite3"
+    victim = tmp_path / "victim.sqlite3"
+    backup = tmp_path / "backup.sqlite3"
+
+    with SQLiteRegistry(path):
+        pass
+    victim.write_bytes(b"victim-data")
+    try:
+        backup.symlink_to(victim)
+    except OSError:
+        pytest.skip("symlink creation is unavailable on this platform")
+
+    with pytest.raises(StorageFormatError, match="already exists|unsafe"):
+        backup_sqlite_storage(path, backup)
+
+    assert backup.is_symlink()
+    assert victim.read_bytes() == b"victim-data"
+
+
+def test_backup_concurrent_destination_is_not_overwritten(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "registry-source.sqlite3"
+    backup = tmp_path / "reserved-backup.sqlite3"
+
+    with SQLiteRegistry(path):
+        pass
+
+    real_link = storage_module.os.link
+
+    def create_competing_path_then_publish(
+        source,
+        destination,
+    ) -> None:
+        backup.write_bytes(b"concurrent-owner")
+        real_link(source, destination)
+
+    monkeypatch.setattr(
+        storage_module.os,
+        "link",
+        create_competing_path_then_publish,
+    )
+
+    with pytest.raises(StorageFormatError, match="already exists"):
+        backup_sqlite_storage(path, backup)
+
+    assert backup.read_bytes() == b"concurrent-owner"
 
 
 def test_current_format_corrupt_document_is_reported_by_storage_inspect(

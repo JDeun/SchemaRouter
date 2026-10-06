@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 pytest.importorskip("opentelemetry.sdk")
@@ -219,3 +221,80 @@ def test_otel_exporter_disambiguates_parallel_calls_to_same_endpoint() -> None:
         span.attributes["schemarouter.primary_call_index"]
         for span in tool_spans
     } == {0, 1}
+
+
+
+@pytest.mark.asyncio
+async def test_shared_exporter_closes_only_runs_owned_by_finished_wrapper() -> None:
+    tracer, memory = _tracer()
+    exporter = OpenTelemetryRunExporter(tracer)
+    config = RunConfig()
+    closed_a = asyncio.Event()
+    closed_b = asyncio.Event()
+
+    async def source(run_id: str, closed: asyncio.Event):
+        try:
+            yield RunEvent.create(
+                event="run.start",
+                run_id=run_id,
+                sequence=0,
+                config=config,
+            )
+            await asyncio.Event().wait()
+        finally:
+            closed.set()
+
+    stream_a = trace_run_events(
+        source("run-a", closed_a),
+        exporter=exporter,
+    )
+    stream_b = trace_run_events(
+        source("run-b", closed_b),
+        exporter=exporter,
+    )
+
+    await anext(stream_a)
+    await anext(stream_b)
+    await stream_a.aclose()
+
+    assert closed_a.is_set()
+    assert not closed_b.is_set()
+    finished = memory.get_finished_spans()
+    assert [
+        span.attributes["schemarouter.run_id"]
+        for span in finished
+    ] == ["run-a"]
+
+    await stream_b.aclose()
+
+    assert closed_b.is_set()
+    assert {
+        span.attributes["schemarouter.run_id"]
+        for span in memory.get_finished_spans()
+    } == {"run-a", "run-b"}
+
+
+@pytest.mark.asyncio
+async def test_trace_wrapper_closes_upstream_generator_promptly() -> None:
+    tracer, _ = _tracer()
+    exporter = OpenTelemetryRunExporter(tracer)
+    config = RunConfig()
+    closed = asyncio.Event()
+
+    async def source():
+        try:
+            yield RunEvent.create(
+                event="run.start",
+                run_id="upstream-close",
+                sequence=0,
+                config=config,
+            )
+            await asyncio.Event().wait()
+        finally:
+            closed.set()
+
+    wrapped = trace_run_events(source(), exporter=exporter)
+    await anext(wrapped)
+    await wrapped.aclose()
+
+    assert closed.is_set()
