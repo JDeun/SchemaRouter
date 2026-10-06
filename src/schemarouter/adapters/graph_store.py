@@ -16,6 +16,8 @@ from ..models import EndpointSpec, FieldSpec, ParameterSpec, StrictModel, ToolCa
 _TRAVERSE_ENDPOINT = "traverse"
 _MAX_HOPS = 5
 _MAX_LIMIT = 500
+_MAX_DISCOVERY_SOURCES = 128
+_MAX_SCHEMA_ITEMS_PER_GRAPH = 256
 
 GraphModel = Literal["property_graph", "rdf"]
 GraphDirection = Literal["out", "in", "both"]
@@ -302,6 +304,8 @@ async def introspect_graph_backend(
     default_max_hops: int = 1,
     remote: bool = True,
     offload_sync_backend: bool | None = None,
+    max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
+    max_schema_items_per_graph: int = _MAX_SCHEMA_ITEMS_PER_GRAPH,
 ) -> tuple[GraphSourceBinding, ...]:
     """Compile trusted graph/RDF schema descriptors into bounded traversal capabilities."""
 
@@ -311,23 +315,87 @@ async def introspect_graph_backend(
         raise ValueError(f"default_limit must be between 1 and {_MAX_LIMIT}")
     if default_max_hops < 1 or default_max_hops > _MAX_HOPS:
         raise ValueError(f"default_max_hops must be between 1 and {_MAX_HOPS}")
+    if max_discovery_sources < 1:
+        raise ValueError("max_discovery_sources must be positive")
+    if max_schema_items_per_graph < 1:
+        raise ValueError("max_schema_items_per_graph must be positive")
 
+    selected = None if graphs is None else {str(value) for value in graphs}
     offload_backend = remote if offload_sync_backend is None else offload_sync_backend
     discovered_raw = await _call_backend(
         backend.list_graphs,
         offload_sync=offload_backend,
     )
-    discovered = tuple(
-        value if isinstance(value, GraphSourceSpec) else GraphSourceSpec.model_validate(value)
-        for value in discovered_raw
-    )
-    names = [graph.name for graph in discovered]
-    if len(names) != len(set(names)):
-        raise RegistrationError("graph backend returned duplicate graph names")
 
-    selected = None if graphs is None else {str(value) for value in graphs}
+    discovered: list[GraphSourceSpec] = []
+    seen_names: set[str] = set()
+    for index, value in enumerate(discovered_raw):
+        if index >= max_discovery_sources:
+            raise RegistrationError(
+                "graph backend discovery exceeded max_discovery_sources="
+                f"{max_discovery_sources}"
+            )
+
+        raw_name: str | None = None
+        if isinstance(value, GraphSourceSpec):
+            raw_name = value.name
+        elif isinstance(value, Mapping) and value.get("name") is not None:
+            raw_name = str(value["name"])
+
+        if raw_name is not None:
+            if raw_name in seen_names:
+                raise RegistrationError("graph backend returned duplicate graph names")
+            seen_names.add(raw_name)
+            if selected is not None and raw_name not in selected:
+                continue
+
+        graph = (
+            value
+            if isinstance(value, GraphSourceSpec)
+            else GraphSourceSpec.model_validate(value)
+        )
+        if raw_name is None:
+            if graph.name in seen_names:
+                raise RegistrationError("graph backend returned duplicate graph names")
+            seen_names.add(graph.name)
+
+        node_count = len(graph.node_types)
+        relationship_count = len(graph.relationship_types)
+        if node_count > max_schema_items_per_graph:
+            raise RegistrationError(
+                f"graph {graph.name!r} exposes {node_count} node types; "
+                f"limit is {max_schema_items_per_graph}"
+            )
+        if relationship_count > max_schema_items_per_graph:
+            raise RegistrationError(
+                f"graph {graph.name!r} exposes {relationship_count} relationship types; "
+                f"limit is {max_schema_items_per_graph}"
+            )
+        for node in graph.node_types:
+            if len(node.properties) > max_schema_items_per_graph:
+                raise RegistrationError(
+                    f"graph node type {node.name!r} exposes {len(node.properties)} properties; "
+                    f"limit is {max_schema_items_per_graph}"
+                )
+        for relationship in graph.relationship_types:
+            if len(relationship.properties) > max_schema_items_per_graph:
+                raise RegistrationError(
+                    f"graph relationship {relationship.name!r} exposes "
+                    f"{len(relationship.properties)} properties; "
+                    f"limit is {max_schema_items_per_graph}"
+                )
+            if (
+                len(relationship.source_types) > max_schema_items_per_graph
+                or len(relationship.target_types) > max_schema_items_per_graph
+            ):
+                raise RegistrationError(
+                    f"graph relationship {relationship.name!r} exposes too many endpoint types; "
+                    f"limit is {max_schema_items_per_graph}"
+                )
+        discovered.append(graph)
+
     if selected is not None:
-        missing = sorted(selected - set(names))
+        missing = sorted(selected - seen_names)
         if missing:
             raise RegistrationError("unknown graphs: " + ", ".join(missing))
 
