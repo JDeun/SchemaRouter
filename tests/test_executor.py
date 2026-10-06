@@ -1638,11 +1638,12 @@ async def test_sync_invoker_offload_keeps_event_loop_responsive() -> None:
     )
     started = threading.Event()
     release = threading.Event()
+    fallback_release_used = threading.Event()
 
     def invoker(endpoint_name: str, arguments: dict) -> dict:
         del endpoint_name, arguments
         started.set()
-        release.wait(timeout=0.25)
+        release.wait()
         return {"value": "ok"}
 
     executor = RegistryExecutor(registry)
@@ -1652,15 +1653,30 @@ async def test_sync_invoker_offload_keeps_event_loop_responsive() -> None:
         expected_fingerprint=tool.fingerprint,
         offload_sync=True,
     )
-    timer = threading.Timer(0.2, release.set)
+
+    # A real regression that invokes the blocking function on the event-loop thread
+    # would deadlock this coroutine. Use a generous external failsafe to release the
+    # worker, then assert that normal execution regained event-loop control before
+    # the failsafe was needed. This tests scheduling semantics without treating a
+    # 100 ms worker-start deadline as a correctness invariant.
+    def fallback_release() -> None:
+        fallback_release_used.set()
+        release.set()
+
+    timer = threading.Timer(5.0, fallback_release)
     timer.start()
-    observed = time.monotonic()
     task = asyncio.create_task(executor.execute(plan))
     try:
-        while not started.is_set() and time.monotonic() - observed < 0.1:
-            await asyncio.sleep(0.001)
+        while not started.is_set() and not fallback_release_used.is_set():
+            await asyncio.sleep(0)
         assert started.is_set()
-        assert time.monotonic() - observed < 0.1
+        assert not fallback_release_used.is_set()
+
+        # The invoker has started and is blocked on release. If it was offloaded,
+        # the event loop can still schedule this heartbeat immediately.
+        await asyncio.sleep(0)
+        assert not fallback_release_used.is_set()
+
         release.set()
         result = await task
     finally:
