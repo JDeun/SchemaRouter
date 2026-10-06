@@ -12,6 +12,12 @@ from pydantic import Field, model_validator
 from ..authorization import _current_data_scope
 from ..errors import PolicyViolationError, RegistrationError, SchemaValidationError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, StrictModel, ToolCall, ToolSpec
+from .discovery_limits import (
+    NativeDiscoveryBudget,
+    NativeDiscoveryLimits,
+    bounded_collect,
+    require_at_most,
+)
 
 _QUERY_ENDPOINT = "query"
 _MAX_LIMIT = 1000
@@ -223,6 +229,7 @@ async def introspect_record_backend(
     default_limit: int = 100,
     remote: bool = True,
     offload_sync_backend: bool | None = None,
+    discovery_limits: NativeDiscoveryLimits | None = None,
 ) -> tuple[RecordSourceBinding, ...]:
     """Compile non-relational source descriptors into typed bounded query capabilities."""
 
@@ -231,15 +238,33 @@ async def introspect_record_backend(
     if default_limit < 1 or default_limit > _MAX_LIMIT:
         raise ValueError(f"default_limit must be between 1 and {_MAX_LIMIT}")
 
+    budget = NativeDiscoveryBudget(discovery_limits)
+    limits = budget.limits
     offload_backend = remote if offload_sync_backend is None else offload_sync_backend
     discovered_raw = await _call_backend(
         backend.list_sources,
         offload_sync=offload_backend,
     )
-    discovered = tuple(
-        value if isinstance(value, RecordSourceSpec) else RecordSourceSpec.model_validate(value)
-        for value in discovered_raw
+    discovered_items = bounded_collect(
+        discovered_raw,
+        limit=limits.max_sources,
+        label="record-store source count",
     )
+    discovered_list: list[RecordSourceSpec] = []
+    for value in discovered_items:
+        source = (
+            value
+            if isinstance(value, RecordSourceSpec)
+            else RecordSourceSpec.model_validate(value)
+        )
+        require_at_most(
+            len(source.fields),
+            limit=limits.max_fields_per_source,
+            label=f"record-store source {source.name!r} field count",
+        )
+        budget.consume_source(source, nested_items=len(source.fields))
+        discovered_list.append(source)
+    discovered = tuple(discovered_list)
     names = [source.name for source in discovered]
     if len(names) != len(set(names)):
         raise RegistrationError("record-store backend returned duplicate source names")
