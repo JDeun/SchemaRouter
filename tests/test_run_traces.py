@@ -703,3 +703,41 @@ async def test_record_run_events_closes_upstream_generator_promptly() -> None:
     assert first.sequence == 0
     assert persisted == [0]
     assert closed.is_set()
+
+def test_sqlite_trace_store_bounds_event_cardinality(tmp_path) -> None:
+    path = tmp_path / "trace-cardinality.sqlite3"
+
+    with SQLiteRunTraceStore(path) as store:
+        store.append(event("run-1", 0, "run.start"))
+        store.append(event("run-1", 1, "plan.end", seconds=1))
+        store.append(event("run-1", 2, "run.end", seconds=2))
+
+    limits = PersistedDocumentLimits(
+        max_bytes=64 * 1024,
+        max_depth=32,
+        max_nodes=10_000,
+        max_documents=2,
+        max_total_bytes=256 * 1024,
+    )
+    with SQLiteRunTraceStore(path, document_limits=limits) as reopened:
+        with pytest.raises(TraceError, match="collection limits"):
+            reopened.trace("run-1")
+
+
+def test_sqlite_trace_store_bounds_run_id_listing_cardinality(tmp_path) -> None:
+    path = tmp_path / "trace-run-ids-cardinality.sqlite3"
+
+    with SQLiteRunTraceStore(path) as store:
+        for index in range(3):
+            store.append(event(f"run-{index}", 0, "run.start", seconds=index))
+
+    limits = PersistedDocumentLimits(
+        max_bytes=64 * 1024,
+        max_depth=32,
+        max_nodes=10_000,
+        max_documents=2,
+        max_total_bytes=256 * 1024,
+    )
+    with SQLiteRunTraceStore(path, document_limits=limits) as reopened:
+        with pytest.raises(TraceError, match="collection limits"):
+            reopened.run_ids()
