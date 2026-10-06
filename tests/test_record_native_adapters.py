@@ -15,6 +15,12 @@ from schemarouter import (
     ToolCall,
     TrustedFilterBinding,
 )
+from schemarouter.adapters.discovery_limits import NativeDiscoveryLimits
+from schemarouter.adapters.record_native import (
+    DynamoDBRecordBackend,
+    MongoRecordBackend,
+)
+from schemarouter.errors import RegistrationError
 
 
 def _plan(
@@ -454,3 +460,47 @@ async def test_dynamodb_schema_discovery_merges_samples_and_only_trusts_metadata
     assert discovery["partial"] is True
     assert client.scan_calls[0] == {"TableName": "documents", "Limit": 16}
 
+
+
+class _CatalogForbiddenMongoDatabase(FakeMongoDatabase):
+    def list_collection_names(self) -> list[str]:
+        raise AssertionError("explicit collection selection must bypass full catalog discovery")
+
+
+def test_mongodb_explicit_selection_bypasses_catalog_enumeration() -> None:
+    database = _CatalogForbiddenMongoDatabase()
+    backend = MongoRecordBackend(
+        database,
+        collections=["documents"],
+        discovery_limits=NativeDiscoveryLimits(max_sources=1),
+    )
+
+    sources = backend.list_sources()
+
+    assert [source.name for source in sources] == ["documents"]
+
+
+class _PagedDynamoDiscoveryClient:
+    def __init__(self) -> None:
+        self.calls: list[dict[str, Any]] = []
+
+    def list_tables(self, **kwargs: Any) -> dict[str, Any]:
+        self.calls.append(dict(kwargs))
+        assert kwargs["Limit"] == 2
+        return {
+            "TableNames": ["one", "two"],
+            "LastEvaluatedTableName": "two",
+        }
+
+
+def test_dynamodb_catalog_budget_requests_only_limit_plus_one() -> None:
+    client = _PagedDynamoDiscoveryClient()
+    backend = DynamoDBRecordBackend(
+        client,
+        discovery_limits=NativeDiscoveryLimits(max_sources=1),
+    )
+
+    with pytest.raises(RegistrationError, match="DynamoDB table count"):
+        backend.list_sources()
+
+    assert client.calls == [{"Limit": 2}]
