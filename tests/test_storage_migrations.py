@@ -835,6 +835,7 @@ def test_legacy_trace_aggregate_limits_apply_to_inspection_and_migration(
             document_limits=limits,
         )
 
+
 def test_migration_holds_writer_lock_while_backup_is_taken(
     tmp_path,
     monkeypatch: pytest.MonkeyPatch,
