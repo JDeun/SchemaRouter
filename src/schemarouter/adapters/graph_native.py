@@ -291,18 +291,24 @@ class NeptuneOpenCypherBackend:
         *,
         graph_name: str = "neptune",
         graph_identifier: str | None = None,
+        max_schema_items: int = _MAX_SCHEMA_ITEMS,
     ) -> None:
         if not graph_name.strip():
             raise ValueError("Neptune graph_name must be non-empty")
+        if max_schema_items < 1:
+            raise ValueError("Neptune max_schema_items must be positive")
         self._client = client
         self._graph_name = graph_name
         self._graph_identifier = graph_identifier
+        self._max_schema_items = max_schema_items
         self._relationships: tuple[str, ...] | None = None
 
     def _execute(
         self,
         query: str,
         parameters: Mapping[str, Any] | None = None,
+        *,
+        max_rows: int | None = None,
     ) -> list[dict[str, Any]]:
         params = dict(parameters or {})
         if self._graph_identifier is not None and hasattr(self._client, "execute_query"):
@@ -312,7 +318,10 @@ class NeptuneOpenCypherBackend:
                 language="OPEN_CYPHER",
                 parameters=params,
             )
-            return _json_payload_rows(response.get("payload"))
+            return _json_payload_rows(
+                response.get("payload"),
+                max_rows=max_rows,
+            )
 
         if hasattr(self._client, "execute_open_cypher_query"):
             kwargs: dict[str, Any] = {"openCypherQuery": query}
@@ -323,7 +332,10 @@ class NeptuneOpenCypherBackend:
                     sort_keys=True,
                 )
             response = self._client.execute_open_cypher_query(**kwargs)
-            return _json_payload_rows(response.get("results"))
+            return _json_payload_rows(
+                response.get("results"),
+                max_rows=max_rows,
+            )
 
         raise RegistrationError(
             "Neptune client must expose execute_open_cypher_query() or "
@@ -331,14 +343,27 @@ class NeptuneOpenCypherBackend:
         )
 
     def list_graphs(self) -> tuple[GraphSourceSpec, ...]:
+        schema_limit = self._max_schema_items + 1
         label_rows = self._execute(
             "MATCH (n) UNWIND labels(n) AS label "
-            "RETURN DISTINCT label AS label ORDER BY label LIMIT 1000"
+            "RETURN DISTINCT label AS label ORDER BY label "
+            f"LIMIT {schema_limit}",
+            max_rows=schema_limit,
         )
         relationship_rows = self._execute(
             "MATCH ()-[r]->() RETURN DISTINCT type(r) AS relationshipType "
-            "ORDER BY relationshipType LIMIT 1000"
+            "ORDER BY relationshipType "
+            f"LIMIT {schema_limit}",
+            max_rows=schema_limit,
         )
+        if len(label_rows) > self._max_schema_items:
+            raise RegistrationError(
+                f"Neptune labels exceeded limit={self._max_schema_items}"
+            )
+        if len(relationship_rows) > self._max_schema_items:
+            raise RegistrationError(
+                f"Neptune relationship types exceeded limit={self._max_schema_items}"
+            )
         labels = tuple(
             str(row["label"]) for row in label_rows if row.get("label")
         )
