@@ -32,7 +32,6 @@ class RunTrace(StrictModel):
         if self.events[0].event != "run.start":
             raise ValueError("run trace must start with run.start")
 
-        previous_timestamp = None
         terminal_seen = False
         for expected_sequence, event in enumerate(self.events):
             if event.run_id != self.run_id:
@@ -42,13 +41,10 @@ class RunTrace(StrictModel):
                     "run trace sequence must be contiguous from zero: "
                     f"expected {expected_sequence}, got {event.sequence}"
                 )
-            if previous_timestamp is not None and event.timestamp < previous_timestamp:
-                raise ValueError("run trace timestamps must be monotonic")
             if terminal_seen:
                 raise ValueError("run trace cannot contain events after a terminal event")
             if event.event in _TERMINAL_EVENTS:
                 terminal_seen = True
-            previous_timestamp = event.timestamp
         return self
 
     @property
@@ -377,7 +373,7 @@ class SQLiteRunTraceStore:
             try:
                 row = self._connection.execute(
                     """
-                    SELECT last_sequence, last_timestamp, terminal
+                    SELECT last_sequence, terminal
                     FROM schemarouter_trace_runs
                     WHERE run_id = ?
                     """,
@@ -403,11 +399,9 @@ class SQLiteRunTraceStore:
                         (event.run_id, event_timestamp, -1, event_timestamp),
                     )
                     last_sequence = -1
-                    last_timestamp = event_timestamp
                     terminal = False
                 else:
                     last_sequence = int(row["last_sequence"])
-                    last_timestamp = float(row["last_timestamp"])
                     terminal = bool(row["terminal"])
 
                 if terminal:
@@ -420,9 +414,6 @@ class SQLiteRunTraceStore:
                     )
                 if event.sequence > 0 and event.event == "run.start":
                     raise TraceError("run.start can only appear at sequence 0")
-                if event_timestamp < last_timestamp:
-                    raise TraceError("run event timestamps must be monotonic")
-
                 self._connection.execute(
                     """
                     INSERT INTO schemarouter_trace_events (run_id, sequence, document)
