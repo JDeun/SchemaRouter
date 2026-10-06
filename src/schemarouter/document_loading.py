@@ -194,6 +194,18 @@ def _validate_loaded_structure(
                 stack.append((False, child, depth + 1))
 
 
+def validate_bounded_structure(
+    value: Any,
+    *,
+    limits: ConfigurationDocumentLimits | None = None,
+) -> Any:
+    """Validate an already-decoded configuration value against structural budgets."""
+
+    effective_limits = _resolve_limits(limits)
+    _validate_loaded_structure(value, limits=effective_limits)
+    return value
+
+
 def load_bounded_json(
     value: str | bytes,
     *,
