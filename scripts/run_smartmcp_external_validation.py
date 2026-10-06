@@ -18,7 +18,10 @@ from mcp import types
 from smartmcp.embedding import EmbeddingIndex
 from smartmcp.server import _build_search_match
 
-from scripts.external_validation_provenance import implementation_provenance
+try:
+    from scripts.external_validation_provenance import implementation_provenance
+except ModuleNotFoundError:  # direct `python scripts/...` execution
+    from external_validation_provenance import implementation_provenance
 
 
 def _load(path: Path) -> Any:
