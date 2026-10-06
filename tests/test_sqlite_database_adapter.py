@@ -16,6 +16,9 @@ from schemarouter import (
     ToolCall,
 )
 
+from schemarouter.errors import RegistrationError
+from schemarouter.registry import InMemoryRegistry
+
 
 def _connection() -> sqlite3.Connection:
     connection = sqlite3.connect(":memory:")
@@ -288,4 +291,75 @@ def test_sqlite_database_connection_never_enters_model_visible_metadata() -> Non
     assert "connection" not in serialized["metadata"]
     assert "connection" not in serialized["execution_metadata"]
 
+    connection.close()
+
+
+def test_sqlite_registration_rolls_back_all_contracts_on_middle_bind_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    connection = _connection()
+    router = SchemaRouter()
+    real_bind = router.executor.bind
+    bind_calls = 0
+
+    def fail_middle_bind(*args, **kwargs):
+        nonlocal bind_calls
+        bind_calls += 1
+        if bind_calls == 2:
+            raise RuntimeError("injected middle SQLite bind failure")
+        return real_bind(*args, **kwargs)
+
+    monkeypatch.setattr(router.executor, "bind", fail_middle_bind)
+
+    with pytest.raises(RuntimeError, match="middle SQLite bind failure"):
+        router.add_sqlite_database(
+            connection,
+            database_name="company",
+        )
+
+    assert bind_calls == 2
+    assert router.registry.keys() == ()
+    assert router.executor.bound_keys() == ()
+    assert connection.execute("SELECT 1").fetchone() == (1,)
+    connection.close()
+
+
+def test_sqlite_registration_rejects_concurrent_key_insertion_atomically() -> None:
+    class RacingRegistry(InMemoryRegistry):
+        raced = False
+
+        def update_many_if_version(
+            self,
+            tools,
+            *,
+            expected_version: int,
+            replace: bool = False,
+        ) -> tuple[str, ...]:
+            staged = tuple(tools)
+            if not self.raced:
+                self.raced = True
+                # Simulate another writer publishing a colliding key after
+                # SQLite introspection but before this batch can commit.
+                super().register(staged[0])
+            return super().update_many_if_version(
+                staged,
+                expected_version=expected_version,
+                replace=replace,
+            )
+
+    connection = _connection()
+    registry = RacingRegistry()
+    router = SchemaRouter(registry=registry)
+
+    with pytest.raises(RegistrationError, match="registry changed concurrently"):
+        router.add_sqlite_database(
+            connection,
+            database_name="company",
+        )
+
+    assert len(registry.keys()) == 1
+    concurrent_key = registry.keys()[0]
+    assert concurrent_key.startswith("company.")
+    assert router.executor.bound_keys() == ()
+    assert connection.execute("SELECT 1").fetchone() == (1,)
     connection.close()
