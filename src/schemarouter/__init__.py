@@ -376,6 +376,10 @@ from .inspection import (
     inspect_traces,
     tool_spec_document,
 )
+from .native_schema_watch import (
+    NativeSchemaWatchSnapshot as NativeSchemaWatchSnapshot,
+)
+from .native_schema_watch import NativeSchemaWatchStatus as NativeSchemaWatchStatus
 from .models import (
     AuthRequirementSet,
     AuthSchemeRequirement,
