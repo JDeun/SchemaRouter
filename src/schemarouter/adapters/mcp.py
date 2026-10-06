@@ -58,6 +58,30 @@ class MCPBoundClientFactory(Protocol):
     ) -> AbstractAsyncContextManager[Any]: ...
 
 
+@dataclass(frozen=True)
+class MCPDiscoveryLimits:
+    """Resource bounds for untrusted MCP tool discovery."""
+
+    max_pages: int = 64
+    max_tools: int = 512
+    max_tool_bytes: int = 512 * 1024
+    max_total_bytes: int = 4 * 1024 * 1024
+
+    def __post_init__(self) -> None:
+        for value, label in (
+            (self.max_pages, "max_pages"),
+            (self.max_tools, "max_tools"),
+            (self.max_tool_bytes, "max_tool_bytes"),
+            (self.max_total_bytes, "max_total_bytes"),
+        ):
+            if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                raise ValueError(f"MCP discovery {label} must be a positive integer")
+        if self.max_tool_bytes > self.max_total_bytes:
+            raise ValueError(
+                "MCP discovery max_tool_bytes must not exceed max_total_bytes"
+            )
+
+
 def _validate_stdio_text(value: str, *, label: str) -> str:
     if not isinstance(value, str) or not value:
         raise ValueError(f"{label} must be a non-empty string")
@@ -564,25 +588,81 @@ async def inspect_mcp_client_factory(
     timeout: float = 20.0,
     transport: str = "custom",
     transport_fingerprint: str | None = None,
+    discovery_limits: MCPDiscoveryLimits | None = None,
 ) -> ToolSpec:
     """Inspect an MCP server through an already-bound trusted transport factory."""
 
-    raw_tools: list[dict[str, Any]] = []
-    try:
+    limits = discovery_limits or MCPDiscoveryLimits()
+
+    async def discover() -> tuple[list[dict[str, Any]], str | None, Any]:
+        raw_tools: list[dict[str, Any]] = []
+        total_bytes = 0
+        seen_cursors: set[str] = set()
+
         async with factory(timeout=timeout) as client:
             cursor: str | None = None
-            while True:
+            for _page_number in range(1, limits.max_pages + 1):
                 page = await client.list_tools(cursor=cursor)
-                raw_tools.extend(_as_dict(tool) for tool in page.tools)
-                cursor = page.next_cursor
-                if cursor is None:
-                    break
+                page_tools = list(page.tools)
+                if len(raw_tools) + len(page_tools) > limits.max_tools:
+                    raise SchemaSourceError(
+                        "MCP tool discovery exceeded the configured tool limit"
+                    )
 
-            info = getattr(client, "server_info", None)
-            discovered_name = getattr(info, "name", None)
-            protocol_version = getattr(client, "protocol_version", None)
+                for raw_tool in page_tools:
+                    item = _as_dict(raw_tool)
+                    encoded = json.dumps(
+                        item,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                        ensure_ascii=False,
+                    ).encode("utf-8")
+                    item_bytes = len(encoded)
+                    if item_bytes > limits.max_tool_bytes:
+                        raise SchemaSourceError(
+                            "MCP tool descriptor exceeded the configured per-tool byte limit"
+                        )
+                    total_bytes += item_bytes
+                    if total_bytes > limits.max_total_bytes:
+                        raise SchemaSourceError(
+                            "MCP tool discovery exceeded the configured aggregate byte limit"
+                        )
+                    raw_tools.append(item)
+
+                next_cursor = page.next_cursor
+                if next_cursor is None:
+                    info = getattr(client, "server_info", None)
+                    return (
+                        raw_tools,
+                        getattr(info, "name", None),
+                        getattr(client, "protocol_version", None),
+                    )
+                if not isinstance(next_cursor, str) or not next_cursor:
+                    raise SchemaSourceError(
+                        "MCP tool discovery returned an invalid pagination cursor"
+                    )
+                if next_cursor in seen_cursors:
+                    raise SchemaSourceError(
+                        "MCP tool discovery returned a repeated pagination cursor"
+                    )
+                seen_cursors.add(next_cursor)
+                cursor = next_cursor
+
+            raise SchemaSourceError(
+                "MCP tool discovery exceeded the configured page limit"
+            )
+
+    try:
+        raw_tools, discovered_name, protocol_version = await asyncio.wait_for(
+            discover(),
+            timeout=timeout,
+        )
     except SchemaSourceError:
         raise
+    except TimeoutError as exc:
+        raise SchemaSourceError(
+            "MCP tool discovery exceeded the configured total timeout"
+        ) from exc
     except Exception as exc:  # noqa: BLE001
         raise SchemaSourceError(
             f"failed to inspect MCP server over {transport!r} transport"
@@ -615,6 +695,7 @@ async def inspect_mcp_stdio(
     server_name: str | None = None,
     namespace: str | None = None,
     timeout: float = 20.0,
+    discovery_limits: MCPDiscoveryLimits | None = None,
 ) -> ToolSpec:
     """Spawn a trusted local MCP stdio server and import all advertised tools."""
 
@@ -625,6 +706,7 @@ async def inspect_mcp_stdio(
         timeout=timeout,
         transport="stdio",
         transport_fingerprint=config.transport_fingerprint,
+        discovery_limits=discovery_limits,
     )
 
 
@@ -682,6 +764,7 @@ async def inspect_mcp_url(
     timeout: float = 20.0,
     client_factory: MCPClientFactory | None = None,
     network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY,
+    discovery_limits: MCPDiscoveryLimits | None = None,
 ) -> ToolSpec:
     """Connect to a Streamable HTTP MCP URL and import all advertised tools."""
     _validate_mcp_url(url)
@@ -710,6 +793,7 @@ async def inspect_mcp_url(
         timeout=timeout,
         transport="streamable_http",
         transport_fingerprint=transport_fingerprint,
+        discovery_limits=discovery_limits,
     )
     custom_client_factory_required = client_factory is not None
     tool.execution_metadata.update(
