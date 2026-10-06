@@ -14,6 +14,7 @@ from schemarouter.storage import (
     CURRENT_REGISTRY_DOCUMENT_VERSION,
     CURRENT_STORAGE_FORMAT_VERSION,
     CURRENT_TRACE_DOCUMENT_VERSION,
+    PersistedDocumentLimits,
     StorageComponentInspection,
     StorageInspection,
     backup_sqlite_storage,
@@ -354,6 +355,65 @@ def test_registry_migration_rolls_back_if_legacy_document_is_invalid(tmp_path) -
         assert row is not None and int(row[0]) == 4
     finally:
         connection.close()
+
+
+def test_legacy_registry_document_limits_apply_to_inspection_and_migration(
+    tmp_path,
+) -> None:
+    path = tmp_path / "oversized-legacy.sqlite3"
+    _create_legacy_registry(
+        path,
+        tools=[(0, _tool("alpha"))],
+        logical_version=3,
+    )
+
+    connection = sqlite3.connect(path)
+    try:
+        connection.execute(
+            """
+            UPDATE schemarouter_registry_tools
+            SET document = ?
+            WHERE key = 'alpha'
+            """,
+            ('"' + ("x" * 4096) + '"',),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    limits = PersistedDocumentLimits(
+        max_bytes=512,
+        max_depth=32,
+        max_nodes=1_000,
+    )
+
+    inspection = inspect_sqlite_storage(
+        path,
+        document_limits=limits,
+    )
+    component = next(
+        item for item in inspection.components if item.component == "registry"
+    )
+    assert component.status == "corrupt"
+
+    with pytest.raises(
+        StorageFormatError,
+        match="persisted JSON document limits",
+    ):
+        SQLiteRegistry(
+            path,
+            document_limits=limits,
+        )
+
+    with pytest.raises(
+        StorageFormatError,
+        match="registry=corrupt",
+    ):
+        migrate_sqlite_storage(
+            path,
+            backup=False,
+            document_limits=limits,
+        )
 
 
 def test_trace_migration_rolls_back_on_summary_corruption(tmp_path) -> None:
