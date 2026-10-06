@@ -153,6 +153,10 @@ def _validate_legacy_trace_storage(
                         ) from exc
                     try:
                         encoded_bytes = int(row["document_bytes"])
+                        _validate_persisted_document_size(
+                            encoded_bytes,
+                            limits=limits,
+                        )
                         budget.consume(encoded_bytes)
                         document = row["document"]
                         _validate_persisted_json_document(
@@ -591,9 +595,21 @@ class SQLiteRunTraceStore:
                 if not rows:
                     break
                 for row in rows:
+                    sequence = int(row["sequence"])
                     try:
-                        budget.consume(int(row["document_bytes"]))
+                        encoded_bytes = int(row["document_bytes"])
+                        _validate_persisted_document_size(
+                            encoded_bytes,
+                            limits=self._document_limits,
+                        )
                     except (TypeError, ValueError, _PersistedDocumentLimitError) as exc:
+                        raise TraceError(
+                            f"stored run event {run_id}:{sequence} exceeds configured "
+                            "persisted JSON document limits"
+                        ) from exc
+                    try:
+                        budget.consume(encoded_bytes)
+                    except _PersistedDocumentLimitError as exc:
                         raise TraceError(
                             f"stored run trace {run_id!r} exceeds configured "
                             "persisted JSON collection limits"
@@ -601,7 +617,7 @@ class SQLiteRunTraceStore:
                     events.append(
                         self._deserialize_row(
                             run_id,
-                            int(row["sequence"]),
+                            sequence,
                             row,
                         )
                     )
