@@ -77,6 +77,109 @@ async def test_executor_projects_result() -> None:
 
 
 @pytest.mark.asyncio
+async def test_executor_rechecks_elapsed_budget_after_input_schema_validation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    reg = make_registry()
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(query="temperature", arguments={"city": "Seoul"})
+    )
+    executor = RegistryExecutor(reg)
+    invoked = False
+
+    def invoker(endpoint: str, arguments: dict[str, object]) -> dict[str, object]:
+        nonlocal invoked
+        invoked = True
+        return {"city": arguments["city"], "temperature": 20}
+
+    executor.bind("weather", invoker)
+    checks = 0
+
+    def expire_after_validation(
+        tracker: executor_module.ExecutionBudgetTracker,
+        *,
+        stage: str | None = None,
+    ) -> None:
+        del tracker
+        nonlocal checks
+        if stage == "input schema validation":
+            checks += 1
+            if checks == 2:
+                raise ExecutionBudgetExceededError(
+                    "execution exceeded max_elapsed_seconds during input schema validation"
+                )
+
+    monkeypatch.setattr(
+        executor_module.ExecutionBudgetTracker,
+        "_check_elapsed",
+        expire_after_validation,
+    )
+
+    with pytest.raises(
+        ExecutionBudgetExceededError,
+        match="during input schema validation",
+    ):
+        await executor.execute_call(
+            plan.calls[0],
+            budget=ExecutionBudget(max_elapsed_seconds=1),
+        )
+
+    assert invoked is False
+
+
+@pytest.mark.asyncio
+async def test_executor_rechecks_elapsed_budget_after_output_schema_validation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    reg = make_registry()
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(query="temperature", arguments={"city": "Seoul"})
+    )
+    executor = RegistryExecutor(reg)
+    invocations = 0
+
+    def invoker(endpoint: str, arguments: dict[str, object]) -> dict[str, object]:
+        del endpoint
+        nonlocal invocations
+        invocations += 1
+        return {"city": arguments["city"], "temperature": 20}
+
+    executor.bind("weather", invoker)
+    checks = 0
+
+    def expire_after_validation(
+        tracker: executor_module.ExecutionBudgetTracker,
+        *,
+        stage: str | None = None,
+    ) -> None:
+        del tracker
+        nonlocal checks
+        if stage == "output schema validation":
+            checks += 1
+            if checks == 2:
+                raise ExecutionBudgetExceededError(
+                    "execution exceeded max_elapsed_seconds during output schema validation"
+                )
+
+    monkeypatch.setattr(
+        executor_module.ExecutionBudgetTracker,
+        "_check_elapsed",
+        expire_after_validation,
+    )
+
+    with pytest.raises(
+        ExecutionBudgetExceededError,
+        match="during output schema validation",
+    ):
+        await executor.execute_call(
+            plan.calls[0],
+            budget=ExecutionBudget(max_elapsed_seconds=1),
+        )
+
+    assert invocations == 1
+
+
+@pytest.mark.asyncio
 async def test_executor_rejects_schema_drift() -> None:
     reg = make_registry()
     plan = SchemaPlanner(reg).plan(
@@ -218,7 +321,7 @@ def test_executor_rejects_argument_enum_violation() -> None:
         schema_fingerprint=endpoint.fingerprint,
     )
 
-    with pytest.raises(SchemaValidationError, match="metric"):
+    with pytest.raises(SchemaValidationError, match="keyword 'enum'"):
         RegistryExecutor(reg).validate_call(call)
 
 

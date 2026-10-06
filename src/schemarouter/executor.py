@@ -1245,7 +1245,9 @@ class RegistryExecutor:
     ) -> ToolResult:
         tracker = _tracker or ExecutionBudgetTracker(budget or ExecutionBudget())
         execution_policy = self._execution_policy_snapshot()
+        tracker._check_elapsed(stage="input schema validation")
         tool, endpoint, invoker, offload_sync = self._execution_state(call)
+        tracker._check_elapsed(stage="input schema validation")
         self._assert_execution_policy_snapshot(execution_policy)
 
         approval_ran = await self._approve(
@@ -1260,7 +1262,9 @@ class RegistryExecutor:
         # Trusted callbacks may mutate or await while schema/bindings change. Refresh only when
         # such a callback actually ran; otherwise keep the validated registry snapshot coherent.
         if approval_ran:
+            tracker._check_elapsed(stage="input schema validation")
             tool, endpoint, invoker, offload_sync = self._execution_state(call)
+            tracker._check_elapsed(stage="input schema validation")
             self._assert_execution_policy_snapshot(execution_policy)
 
         await tracker.before_call(call)
@@ -1269,7 +1273,9 @@ class RegistryExecutor:
         before_hooks_ran = await self._run_before_hooks(tool, endpoint, call, tracker)
         self._assert_execution_policy_snapshot(execution_policy)
         if before_hooks_ran:
+            tracker._check_elapsed(stage="input schema validation")
             tool, endpoint, invoker, offload_sync = self._execution_state(call)
+            tracker._check_elapsed(stage="input schema validation")
             self._assert_execution_policy_snapshot(execution_policy)
 
         retry = retry or RetryPolicy()
@@ -1350,6 +1356,7 @@ class RegistryExecutor:
                     and endpoint.server_projection is not None
                     and bool(call.fields)
                 )
+                tracker._check_elapsed(stage="output schema validation")
                 validate_json_schema_value(
                     value,
                     (
@@ -1359,6 +1366,7 @@ class RegistryExecutor:
                     ),
                     context=f"output from {call.tool}.{call.endpoint}",
                 )
+                tracker._check_elapsed(stage="output schema validation")
                 if server_projected:
                     self._validate_selected_fields_present(
                         value,
@@ -1372,6 +1380,7 @@ class RegistryExecutor:
                     endpoint,
                     context=f"output from {call.tool}.{call.endpoint}",
                 )
+                tracker._check_elapsed(stage="projected field schema validation")
                 selected_field_specs = {
                     field.name: field
                     for field in endpoint.output_fields
