@@ -578,6 +578,7 @@ async def introspect_graph_backend(
                 "graph": graph.name,
             },
         )
+        budget.consume_generated(tool)
         bindings.append(
             GraphSourceBinding(
                 tool=tool,
