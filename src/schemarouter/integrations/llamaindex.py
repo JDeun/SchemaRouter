@@ -7,6 +7,7 @@ import re
 from collections.abc import Sequence
 from copy import deepcopy
 from typing import Any, Literal, cast, get_type_hints
+
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from ..errors import PolicyViolationError
