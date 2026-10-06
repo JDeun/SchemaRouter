@@ -37,6 +37,18 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
         run: |
+          emit_value() {
+            echo "$1=$2" >> "$GITHUB_OUTPUT"
+          }
+
+          # Reusable non-PR callers intentionally exercise every tier.
+          if [ -z "${BASE_REF}" ]; then
+            for key in native dependencies package langchain llamaindex jev laya otel mcp database docs; do
+              emit_value "$key" true
+            done
+            exit 0
+          fi
+
           git fetch --no-tags origin "${BASE_REF}"
           git diff --name-only "origin/${BASE_REF}...HEAD" > changed-files.txt
           cat changed-files.txt
@@ -45,14 +57,28 @@ jobs:
             key="$1"
             regex="$2"
             if grep -Eq "$regex" changed-files.txt; then
-              echo "$key=true" >> "$GITHUB_OUTPUT"
+              emit_value "$key" true
             else
-              echo "$key=false" >> "$GITHUB_OUTPUT"
+              emit_value "$key" false
             fi
           }
 
-          # A ci.yml change intentionally exercises every tier once.
-          CI='^\.github/workflows/ci\.yml    runs-on: ubuntu-latest
+          # A ci.yml change intentionally exercises every path-aware tier once.
+          CI='^\.github/workflows/ci\.yml$'
+          emit native "(${CI}|^src/schemarouter/adapters/(graph_native|vector_native|record_native)|^tests/test_(graph|vector|record)_native|^tests/test_falkordb_native_adapter\.py$|^\.coveragerc-native$)"
+          emit dependencies "(${CI}|^pyproject\.toml$|(^|/)(requirements[^/]*\.txt|uv\.lock|poetry\.lock|pdm\.lock)$)"
+          emit package "(${CI}|^pyproject\.toml$|^LICENSE$|^src/schemarouter/(__init__|cli|plugins|provider_profiles)\.py$|^examples/(adapter_plugin_demo|external_validation)/|^scripts/(consumer_acceptance|downstream_adapter_plugin_smoke|installed_extras_smoke|installed_database_smoke|external_validation_.*|quickstart_provider_contract_smoke)\.py$)"
+          emit langchain "(${CI}|^src/schemarouter/integrations/(langchain|langgraph)|^tests/test_(langchain|langgraph)_integration\.py$|^examples/(langchain|langgraph)_quickstart\.py$|^pyproject\.toml$)"
+          emit llamaindex "(${CI}|^src/schemarouter/integrations/llamaindex|^tests/test_llamaindex_integration\.py$|^examples/llamaindex_quickstart\.py$|^pyproject\.toml$)"
+          emit jev "(${CI}|^src/schemarouter/integrations/jev|^tests/test_jev_integration\.py$|^pyproject\.toml$)"
+          emit laya "(${CI}|^src/schemarouter/integrations/laya|^tests/test_laya_integration\.py$|^pyproject\.toml$)"
+          emit otel "(${CI}|^src/schemarouter/integrations/opentelemetry|^tests/test_opentelemetry_integration\.py$|^pyproject\.toml$)"
+          emit mcp "(${CI}|^src/schemarouter/adapters/mcp\.py$|^tests/test_mcp_integration\.py$|^examples/mcp_|^pyproject\.toml$)"
+          emit database "(${CI}|^src/schemarouter/(runtime\.py|adapters/.*(sqlite|sqlalchemy|database))|^tests/test_(sqlite|sqlalchemy)_database_adapter\.py$|^scripts/installed_database_smoke\.py$|^examples/database_quickstart\.py$|^pyproject\.toml$)"
+          emit docs "(${CI}|^(docs|docs_ko)/|^README(\.ko)?\.md$|^mkdocs(\.ko)?\.yml$|^scripts/(prepare_korean_docs|check_rendered_docs|sync_repository_facts)\.py$)"
+
+  test:
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       max-parallel: 3
@@ -295,7 +321,7 @@ jobs:
 
   package-pydanticai:
     needs: [changes, package-core]
-    if: ${{ needs.changes.outputs.package == 'true' && needs.package-core.result == 'success' }}
+    if: ${{ github.event_name != 'pull_request' && needs.changes.outputs.package == 'true' && needs.package-core.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -327,7 +353,7 @@ jobs:
 
   package-openai-agents:
     needs: [changes, package-core]
-    if: ${{ needs.changes.outputs.package == 'true' && needs.package-core.result == 'success' }}
+    if: ${{ github.event_name != 'pull_request' && needs.changes.outputs.package == 'true' && needs.package-core.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -363,7 +389,7 @@ jobs:
 
   package-mcp-agent:
     needs: [changes, package-core]
-    if: ${{ needs.changes.outputs.package == 'true' && needs.package-core.result == 'success' }}
+    if: ${{ github.event_name != 'pull_request' && needs.changes.outputs.package == 'true' && needs.package-core.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
