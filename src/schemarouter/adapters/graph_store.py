@@ -3,9 +3,9 @@ from __future__ import annotations
 import asyncio
 import inspect
 import re
-from collections.abc import Awaitable, Iterable
+from collections.abc import Awaitable, Iterable, Mapping
 from dataclasses import dataclass
-from typing import Any, Literal, Protocol
+from typing import Any, Literal, Protocol, cast
 
 from pydantic import Field, model_validator
 
@@ -106,7 +106,7 @@ class GraphSourceSpec(StrictModel):
 
 
 class GraphStoreBackend(Protocol):
-    """Trusted backend contract for Neo4j/Neptune/ArangoDB/FalkorDB/SPARQL adapters."""
+    """Base graph traversal backend contract."""
 
     def list_graphs(
         self,
@@ -122,6 +122,25 @@ class GraphStoreBackend(Protocol):
         max_hops: int,
         limit: int,
         include_fields: tuple[str, ...],
+    ) -> list[dict[str, Any]] | Awaitable[list[dict[str, Any]]]: ...
+
+
+class ScopedGraphStoreBackend(GraphStoreBackend, Protocol):
+    """Graph backend that explicitly enforces trusted hidden predicates."""
+
+    supports_trusted_filters: bool
+
+    def traverse(
+        self,
+        *,
+        graph: str,
+        start_id: str,
+        relationship_types: tuple[str, ...],
+        direction: GraphDirection,
+        max_hops: int,
+        limit: int,
+        include_fields: tuple[str, ...],
+        trusted_filters: Mapping[str, Any] | None = None,
     ) -> list[dict[str, Any]] | Awaitable[list[dict[str, Any]]]: ...
 
 
@@ -234,16 +253,29 @@ class GraphSourceInvoker:
         if limit < 1 or limit > _MAX_LIMIT:
             raise RuntimeError(f"graph limit must be between 1 and {_MAX_LIMIT}")
 
+        traverse = self._backend.traverse
+        traverse_kwargs: dict[str, Any] = {
+            "graph": self._graph.name,
+            "start_id": start_id,
+            "relationship_types": relationship_types,
+            "direction": direction,
+            "max_hops": max_hops,
+            "limit": limit,
+            "include_fields": tuple(call.fields),
+        }
+        if scope is not None and scope.trusted_filters:
+            if getattr(self._backend, "supports_trusted_filters", False) is not True:
+                raise PolicyViolationError(
+                    "authorization denied for requested data scope"
+                )
+            scoped_backend = cast(ScopedGraphStoreBackend, self._backend)
+            traverse = scoped_backend.traverse
+            traverse_kwargs["trusted_filters"] = scope.filter_dict()
+
         raw_results = await _call_backend(
-            self._backend.traverse,
-            graph=self._graph.name,
-            start_id=start_id,
-            relationship_types=relationship_types,
-            direction=direction,
-            max_hops=max_hops,
-            limit=limit,
-            include_fields=tuple(call.fields),
+            traverse,
             offload_sync=self._offload_sync_backend,
+            **traverse_kwargs,
         )
         if not isinstance(raw_results, list):
             raise SchemaValidationError("graph backend traversal must return a list")

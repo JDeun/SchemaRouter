@@ -20,6 +20,7 @@ from .graph_store import (
     GraphSourceInvoker,
     GraphSourceSpec,
     GraphStoreBackend,
+    ScopedGraphStoreBackend,
     introspect_graph_backend,
 )
 from .graphql import (
@@ -126,6 +127,7 @@ __all__ = [
     "GraphSourceInvoker",
     "GraphSourceSpec",
     "GraphStoreBackend",
+    "ScopedGraphStoreBackend",
     "Neo4jGraphBackend",
     "NeptuneOpenCypherBackend",
     "SparqlGraphBackend",

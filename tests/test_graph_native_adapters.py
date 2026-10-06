@@ -16,6 +16,7 @@ from schemarouter import (
     RunConfig,
     SchemaRouter,
     ToolCall,
+    TrustedFilterBinding,
 )
 
 
@@ -353,6 +354,111 @@ async def test_sparql_native_adapter_is_read_only_and_iri_bounded() -> None:
     assert "SELECT" in traversal
     assert "UPDATE" not in traversal
     assert "<https://example.test/alice>" in traversal
+
+
+@pytest.mark.asyncio
+async def test_neo4j_trusted_filter_scope_fails_before_vendor_traversal() -> None:
+    driver = FakeNeo4jDriver()
+    policy = AuthorizationPolicy(
+        rules=(
+            AuthorizationRule(
+                effect="allow",
+                operation="neo4j.org.*",
+                roles_any=("employee",),
+            ),
+        ),
+        data_rules=(
+            DataScopeRule(
+                operation="neo4j.org.*",
+                roles_any=("employee",),
+                trusted_filters=(
+                    TrustedFilterBinding(
+                        field="tenant",
+                        principal_value="attribute:tenant_id",
+                    ),
+                ),
+            ),
+        ),
+    )
+    router = SchemaRouter(authorization_policy=policy)
+    await router.aadd_neo4j_graph(
+        driver,
+        database="neo4j",
+        graph_name="org",
+        remote=False,
+    )
+    principal = PrincipalContext(
+        subject="alice",
+        roles=("employee",),
+        attributes={"tenant_id": "tenant-a"},
+    )
+    discovery_calls = len(driver.calls)
+
+    with pytest.raises(PolicyViolationError, match="authorization denied"):
+        await router.execute(
+            _plan(
+                router,
+                "neo4j.org",
+                start_id="person-1",
+                relationship_types=["MEMBER_OF"],
+            ),
+            config=RunConfig(principal=principal),
+        )
+
+    assert len(driver.calls) == discovery_calls
+
+
+@pytest.mark.asyncio
+async def test_sparql_trusted_filter_scope_fails_before_vendor_traversal() -> None:
+    client = FakeSparqlClient()
+    policy = AuthorizationPolicy(
+        rules=(
+            AuthorizationRule(
+                effect="allow",
+                operation="rdf.rdf.*",
+                roles_any=("employee",),
+            ),
+        ),
+        data_rules=(
+            DataScopeRule(
+                operation="rdf.rdf.*",
+                roles_any=("employee",),
+                trusted_filters=(
+                    TrustedFilterBinding(
+                        field="tenant",
+                        principal_value="attribute:tenant_id",
+                    ),
+                ),
+            ),
+        ),
+    )
+    router = SchemaRouter(authorization_policy=policy)
+    await router.aadd_sparql_graph(
+        client,
+        endpoint="https://example.test/sparql",
+        graph_name="rdf",
+        database_name="rdf",
+        remote=False,
+    )
+    principal = PrincipalContext(
+        subject="alice",
+        roles=("employee",),
+        attributes={"tenant_id": "tenant-a"},
+    )
+    discovery_queries = len(client.queries)
+
+    with pytest.raises(PolicyViolationError, match="authorization denied"):
+        await router.execute(
+            _plan(
+                router,
+                "rdf.rdf",
+                start_id="https://example.test/alice",
+                relationship_types=["https://example.test/knows"],
+            ),
+            config=RunConfig(principal=principal),
+        )
+
+    assert len(client.queries) == discovery_queries
 
 
 @pytest.mark.asyncio
