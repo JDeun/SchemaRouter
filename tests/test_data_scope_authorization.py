@@ -112,6 +112,58 @@ def _employee_policy(operation: str) -> AuthorizationPolicy:
     )
 
 
+def test_data_scope_rule_rejects_overlapping_visible_and_hidden_fields() -> None:
+    with pytest.raises(ValueError, match="visible_fields and hidden_fields must not overlap"):
+        DataScopeRule(
+            operation="company.employees.select",
+            visible_fields=("id", "name"),
+            hidden_fields=("name",),
+        )
+
+
+def test_data_scope_rejects_unknown_hidden_field_after_schema_drift() -> None:
+    connection = sqlite3.connect(":memory:")
+    connection.execute(
+        """
+        CREATE TABLE employees (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL
+        )
+        """
+    )
+    connection.commit()
+
+    policy = AuthorizationPolicy(
+        rules=(
+            AuthorizationRule(
+                effect="allow",
+                operation="company.employees.select",
+                roles_any=("employee",),
+            ),
+        ),
+        data_rules=(
+            DataScopeRule(
+                operation="company.employees.select",
+                roles_any=("employee",),
+                hidden_fields=("legacy_salary",),
+            ),
+        ),
+    )
+    router = SchemaRouter(authorization_policy=policy)
+    router.add_sqlite_database(connection, database_name="company")
+    principal = PrincipalContext(subject="alice", roles=("employee",))
+
+    try:
+        with pytest.raises(PolicyViolationError, match="authorization denied"):
+            router.retrieve_authorized(
+                "employees",
+                principal=principal,
+                k=5,
+            )
+    finally:
+        connection.close()
+
+
 @pytest.mark.asyncio
 async def test_sql_scope_hides_fields_before_retrieval_and_enforces_row_predicate() -> None:
     connection = sqlite3.connect(":memory:")
