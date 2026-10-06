@@ -6,19 +6,19 @@ from typing import Literal
 
 from pydantic import Field
 
+from ._document_loading import load_bounded_json
 from .capability_contracts import (
     CapabilityContract,
     CompatibilityContext,
     _canonical_compatibility_context_payload,
     compare_capability_composition,
 )
-from ._document_loading import load_bounded_json
-from .storage import PersistedDocumentLimits
 from .capability_graph import (
     CapabilityDependencyGraph,
     build_capability_dependency_graph,
 )
 from .models import StrictModel
+from .storage import PersistedDocumentLimits
 
 LEGACY_CAPABILITY_ARTIFACT_FORMAT_VERSION = "1.0"
 _PREVIOUS_CAPABILITY_ARTIFACT_FORMAT_VERSION = "1.1"
