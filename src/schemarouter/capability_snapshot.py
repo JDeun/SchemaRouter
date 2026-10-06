@@ -5,6 +5,7 @@ import json
 from datetime import datetime
 from typing import Literal
 
+from ._document_loading import load_bounded_json
 from .capability_contracts import (
     CapabilityContract,
     CompatibilityContext,
@@ -12,6 +13,7 @@ from .capability_contracts import (
 )
 from .capability_graph import CapabilityDependencyGraph, build_capability_dependency_graph
 from .models import StrictModel
+from .storage import PersistedDocumentLimits
 
 SnapshotComparison = Literal["identical", "successor"]
 CAPABILITY_SNAPSHOT_DOCUMENT_VERSION = "1.1"
@@ -231,8 +233,14 @@ def _validate_snapshot_document(
 
 def migrate_capability_snapshot(
     document: str,
+    *,
+    document_limits: PersistedDocumentLimits | None = None,
 ) -> CapabilitySnapshotMigrationResult:
-    raw = json.loads(document)
+    raw = load_bounded_json(
+        document,
+        limits=document_limits,
+        label="capability snapshot document",
+    )
     if not isinstance(raw, dict):
         raise ValueError("capability snapshot document must be a JSON object")
 
@@ -304,8 +312,15 @@ def migrate_capability_snapshot(
     )
 
 
-def load_capability_snapshot(document: str) -> CapabilityGraphSnapshot:
-    return migrate_capability_snapshot(document).document.snapshot
+def load_capability_snapshot(
+    document: str,
+    *,
+    document_limits: PersistedDocumentLimits | None = None,
+) -> CapabilityGraphSnapshot:
+    return migrate_capability_snapshot(
+        document,
+        document_limits=document_limits,
+    ).document.snapshot
 
 
 def compare_capability_snapshots(
