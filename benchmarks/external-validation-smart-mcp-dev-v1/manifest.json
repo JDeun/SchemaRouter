@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "package_id": "smartmcp-cross-project-dev-v1",
+  "status": "development_unfrozen",
+  "purpose": "Development-only shared fixture for SchemaRouter × SmartMCP protocol review. Not held-out evidence.",
+  "source_revisions": {
+    "schemarouter": "d3f9b7087f15ee3abc0cec1dc18f65bb50218498",
+    "smartmcp": "c4d6602cfabb6f514bf06a1d1ae10b610ff7d573"
+  },
+  "files": {
+    "catalog": "catalog.json",
+    "cases": "cases.json",
+    "result_template": "result-template.json",
+    "smartmcp_snapshot": "smartmcp-snapshot.json"
+  },
+  "counts": {
+    "tools": 21,
+    "cases": 33,
+    "supported": 27,
+    "ambiguous": 3,
+    "unsupported": 3,
+    "multi_tool": 3
+  },
+  "comparison": {
+    "top_k_values": [
+      1,
+      3,
+      5
+    ],
+    "max_candidates": 5,
+    "execution": "disabled",
+    "paid_models": "disabled",
+    "catalog_eligibility": "The complete catalog is eligible for every query.",
+    "primary_metrics": [
+      "Recall@K",
+      "FullCoverage@K",
+      "MRR",
+      "nDCG@K",
+      "retrieval latency p50/p95",
+      "index build time",
+      "exposed contract bytes"
+    ],
+    "diagnostics": [
+      "stratum",
+      "unsupported nonempty-candidate rate",
+      "ambiguous acceptable-candidate hit rate"
+    ]
+  },
+  "exposure_definition": {
+    "unit": "UTF-8 bytes",
+    "serialization": "canonical JSON with sort_keys=true and separators=(',', ':')",
+    "value": "The exact per-candidate capability/search contract made model-visible by that implementation. Do not substitute source catalog size."
+  },
+  "governance": {
+    "heldout_scoring_allowed": false,
+    "dev_tuning_allowed": true,
+    "protocol_freeze_required_before_heldout": true,
+    "negative_results_publishable_unchanged": true,
+    "preserve_native_retrieval_behavior": true
+  }
+}
