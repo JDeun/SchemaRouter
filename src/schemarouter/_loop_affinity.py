@@ -123,10 +123,30 @@ class SyncLoopRunner:
         )
         return future.result()
 
+    @staticmethod
+    def _record_stream_cleanup_error(
+        primary_error: BaseException,
+        cleanup_error: BaseException,
+    ) -> None:
+        """Attach iterator-cleanup failure details without masking the primary failure."""
+
+        try:
+            setattr(primary_error, "_schemarouter_cleanup_error", cleanup_error)
+        except Exception:
+            pass
+
+        add_note = getattr(primary_error, "add_note", None)
+        if callable(add_note):
+            add_note(
+                "SchemaRouter async iterator cleanup also failed: "
+                f"{type(cleanup_error).__name__}: {cleanup_error}"
+            )
+
     def stream(self, factory: Callable[[], AsyncIterator[_T]]) -> Iterator[_T]:
         self._reject_active_caller_loop("streaming")
         loop = self._ensure_loop()
         iterator = factory()
+        primary_error: BaseException | None = None
         try:
             while True:
                 future = asyncio.run_coroutine_threadsafe(
@@ -137,12 +157,20 @@ class SyncLoopRunner:
                     yield future.result()
                 except StopAsyncIteration:
                     break
+        except BaseException as exc:
+            primary_error = exc
+            raise
         finally:
             aclose = getattr(iterator, "aclose", None)
             if callable(aclose):
                 close_iterator = cast(Callable[[], Awaitable[None]], aclose)
-                close_future = asyncio.run_coroutine_threadsafe(
-                    self._await_factory(close_iterator),
-                    loop,
-                )
-                close_future.result()
+                try:
+                    close_future = asyncio.run_coroutine_threadsafe(
+                        self._await_factory(close_iterator),
+                        loop,
+                    )
+                    close_future.result()
+                except BaseException as cleanup_error:
+                    if primary_error is None:
+                        raise
+                    self._record_stream_cleanup_error(primary_error, cleanup_error)
