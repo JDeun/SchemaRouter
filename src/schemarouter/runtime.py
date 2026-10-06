@@ -1175,7 +1175,25 @@ class SchemaRouter:
     ) -> None:
         self._native_schema_refreshers[tool_key] = refresh
 
-    def _apply_native_schema_binding(
+    def _prepare_health_contract_transition(
+        self,
+        current: ToolSpec,
+        candidate: ToolSpec,
+    ) -> Any | None:
+        if current.fingerprint == candidate.fingerprint:
+            return None
+        return self.health_monitor._prepare_tool_contract_transition(
+            current.key,
+            expected_old_fingerprint=current.fingerprint,
+            expected_new_fingerprint=candidate.fingerprint,
+            new_tool=candidate,
+        )
+
+    def _apply_health_contract_transition(self, transition: Any | None) -> None:
+        if transition is not None:
+            self.health_monitor._apply_tool_contract_transition(transition)
+
+    async def _apply_native_schema_binding(
         self,
         *,
         current: ToolSpec,
@@ -1184,24 +1202,23 @@ class SchemaRouter:
         offload_sync: bool,
         expected_version: int,
     ) -> None:
-        """Atomically move a native contract and its trusted binding."""
+        """Atomically move a native contract, trusted binding, and probe generation."""
 
-        tool_key = current.key
-        self.executor.publish_bound_tool(
-            candidate_tool,
-            candidate_invoker,
-            replace=True,
-            expected_fingerprint=current.fingerprint,
-            expected_version=expected_version,
-            offload_sync=offload_sync,
-        )
-
-        if candidate_tool.fingerprint != current.fingerprint:
-            self.health_monitor.transition_tool_contract(
-                tool_key,
-                expected_old_fingerprint=current.fingerprint,
-                expected_new_fingerprint=candidate_tool.fingerprint,
-            )
+        async with self.health_monitor.lifecycle_guard():
+            with self.health_monitor.contract_transition_guard():
+                health_transition = self._prepare_health_contract_transition(
+                    current,
+                    candidate_tool,
+                )
+                self.executor.publish_bound_tool(
+                    candidate_tool,
+                    candidate_invoker,
+                    replace=True,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                    offload_sync=offload_sync,
+                )
+                self._apply_health_contract_transition(health_transition)
 
     async def arefresh_native_schema(
         self,
@@ -1236,7 +1253,7 @@ class SchemaRouter:
                 report=report,
             )
         if report.compatibility == "compatible" and apply_compatible:
-            self._apply_native_schema_binding(
+            await self._apply_native_schema_binding(
                 current=current,
                 candidate_tool=candidate_tool,
                 candidate_invoker=candidate_invoker,
@@ -1285,7 +1302,7 @@ class SchemaRouter:
         expected_version = self.registry.version
         current = self.registry.get(tool_key)
         report = compare_tool_specs(current, candidate_tool)
-        self._apply_native_schema_binding(
+        await self._apply_native_schema_binding(
             current=current,
             candidate_tool=candidate_tool,
             candidate_invoker=candidate_invoker,
@@ -4381,40 +4398,41 @@ class SchemaRouter:
             apply_guard = (
                 _apply_guard() if _apply_guard is not None else nullcontext()
             )
-            with apply_guard:
-                if overlay is None and candidate is not None:
-                    self.loader.commit_candidate_if_current(
-                        candidate,
-                        expected_fingerprint=current.fingerprint,
-                        expected_version=expected_version,
+            async with self.health_monitor.lifecycle_guard():
+                with self.health_monitor.contract_transition_guard():
+                    health_transition = self._prepare_health_contract_transition(
+                        current,
+                        effective_candidate,
                     )
-                else:
-                    if candidate_invoker is not None:
-                        self.executor.publish_bound_tool(
-                            effective_candidate,
-                            candidate_invoker,
-                            replace=True,
-                            expected_fingerprint=current.fingerprint,
-                            expected_version=expected_version,
-                        )
-                    else:
-                        replace_if_current(
-                            self.registry,
-                            effective_candidate,
-                            expected_fingerprint=current.fingerprint,
-                            expected_version=expected_version,
-                        )
-                    if not use_bound_mcp_transport and use_http_validators:
-                        self.loader.remember_tool_schema_http_validators(
-                            effective_candidate
-                        )
+                    with apply_guard:
+                        if overlay is None and candidate is not None:
+                            self.loader.commit_candidate_if_current(
+                                candidate,
+                                expected_fingerprint=current.fingerprint,
+                                expected_version=expected_version,
+                            )
+                        else:
+                            if candidate_invoker is not None:
+                                self.executor.publish_bound_tool(
+                                    effective_candidate,
+                                    candidate_invoker,
+                                    replace=True,
+                                    expected_fingerprint=current.fingerprint,
+                                    expected_version=expected_version,
+                                )
+                            else:
+                                replace_if_current(
+                                    self.registry,
+                                    effective_candidate,
+                                    expected_fingerprint=current.fingerprint,
+                                    expected_version=expected_version,
+                                )
+                            if not use_bound_mcp_transport and use_http_validators:
+                                self.loader.remember_tool_schema_http_validators(
+                                    effective_candidate
+                                )
 
-                if candidate_fingerprint != current.fingerprint:
-                    self.health_monitor.transition_tool_contract(
-                        tool_key,
-                        expected_old_fingerprint=current.fingerprint,
-                        expected_new_fingerprint=candidate_fingerprint,
-                    )
+                        self._apply_health_contract_transition(health_transition)
             return SchemaRefreshResult(
                 tool_key=tool_key,
                 action="applied",
@@ -4441,40 +4459,41 @@ class SchemaRouter:
             apply_guard = (
                 _apply_guard() if _apply_guard is not None else nullcontext()
             )
-            with apply_guard:
-                if overlay is None and candidate is not None:
-                    self.loader.commit_candidate_if_current(
-                        candidate,
-                        expected_fingerprint=current.fingerprint,
-                        expected_version=expected_version,
+            async with self.health_monitor.lifecycle_guard():
+                with self.health_monitor.contract_transition_guard():
+                    health_transition = self._prepare_health_contract_transition(
+                        current,
+                        effective_candidate,
                     )
-                else:
-                    if candidate_invoker is not None:
-                        self.executor.publish_bound_tool(
-                            effective_candidate,
-                            candidate_invoker,
-                            replace=True,
-                            expected_fingerprint=current.fingerprint,
-                            expected_version=expected_version,
-                        )
-                    else:
-                        replace_if_current(
-                            self.registry,
-                            effective_candidate,
-                            expected_fingerprint=current.fingerprint,
-                            expected_version=expected_version,
-                        )
-                    if not use_bound_mcp_transport and use_http_validators:
-                        self.loader.remember_tool_schema_http_validators(
-                            effective_candidate
-                        )
+                    with apply_guard:
+                        if overlay is None and candidate is not None:
+                            self.loader.commit_candidate_if_current(
+                                candidate,
+                                expected_fingerprint=current.fingerprint,
+                                expected_version=expected_version,
+                            )
+                        else:
+                            if candidate_invoker is not None:
+                                self.executor.publish_bound_tool(
+                                    effective_candidate,
+                                    candidate_invoker,
+                                    replace=True,
+                                    expected_fingerprint=current.fingerprint,
+                                    expected_version=expected_version,
+                                )
+                            else:
+                                replace_if_current(
+                                    self.registry,
+                                    effective_candidate,
+                                    expected_fingerprint=current.fingerprint,
+                                    expected_version=expected_version,
+                                )
+                            if not use_bound_mcp_transport and use_http_validators:
+                                self.loader.remember_tool_schema_http_validators(
+                                    effective_candidate
+                                )
 
-                if effective_candidate.fingerprint != current.fingerprint:
-                    self.health_monitor.transition_tool_contract(
-                        tool_key,
-                        expected_old_fingerprint=current.fingerprint,
-                        expected_new_fingerprint=effective_candidate.fingerprint,
-                    )
+                        self._apply_health_contract_transition(health_transition)
 
             applied_report = report
             if raw_changed_under_overlay:
