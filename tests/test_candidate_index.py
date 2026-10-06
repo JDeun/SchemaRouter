@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import threading
+
 from schemarouter import (
     EndpointSpec,
     EvidenceRequirements,
     FieldSpec,
     InMemoryRegistry,
     ParameterSpec,
+    PlanningError,
     PlanRequest,
     QueryIntent,
     SchemaPlanner,
@@ -410,3 +413,105 @@ def test_field_evidence_validation_reuses_candidate_index_snapshot() -> None:
     planner.retrieve(updated, k=1)
 
     assert registry.tools_calls == 2
+
+
+class BlockingAfterRankPlanner(SchemaPlanner):
+    def __init__(self, *args, **kwargs) -> None:
+        self.ranked = threading.Event()
+        self.resume = threading.Event()
+        self._blocked_once = False
+        super().__init__(*args, **kwargs)
+
+    def _sort_candidates(self, candidates, *, catalog_snapshot) -> None:
+        super()._sort_candidates(
+            candidates,
+            catalog_snapshot=catalog_snapshot,
+        )
+        if not self._blocked_once:
+            self._blocked_once = True
+            self.ranked.set()
+            if not self.resume.wait(timeout=2.0):
+                raise AssertionError("test did not resume planner after ranking")
+
+
+def _run_with_registry_mutation_after_ranking(planner, registry, operation):
+    outcome = {}
+
+    def run() -> None:
+        try:
+            outcome["result"] = operation()
+        except BaseException as exc:  # noqa: BLE001
+            outcome["error"] = exc
+
+    worker = threading.Thread(target=run)
+    worker.start()
+    assert planner.ranked.wait(timeout=2.0)
+    ranked_version = registry.version
+    registry.register(make_tool(1, keyword="later"))
+    planner.resume.set()
+    worker.join(timeout=2.0)
+    assert not worker.is_alive()
+    if "error" in outcome:
+        raise outcome["error"]
+    return ranked_version, outcome["result"]
+
+
+def test_retrieval_registry_version_is_the_catalog_snapshot_ranked_under_concurrency() -> None:
+    for candidate_index in (False, True):
+        registry = InMemoryRegistry()
+        registry.register(make_tool(0, keyword="first"))
+        planner = BlockingAfterRankPlanner(
+            registry,
+            candidate_index=candidate_index,
+        )
+
+        ranked_version, retrieval = _run_with_registry_mutation_after_ranking(
+            planner,
+            registry,
+            lambda planner=planner: planner.retrieve("first", k=1),
+        )
+
+        assert retrieval.registry_version == ranked_version
+        assert registry.version == ranked_version + 1
+        assert [item.route_id for item in retrieval.candidates] == ["tool_0.search"]
+
+
+def test_plan_registry_version_is_the_catalog_snapshot_ranked_under_concurrency() -> None:
+    registry = InMemoryRegistry()
+    registry.register(make_tool(0, keyword="first"))
+    planner = BlockingAfterRankPlanner(registry, candidate_index=True)
+
+    ranked_version, plan = _run_with_registry_mutation_after_ranking(
+        planner,
+        registry,
+        lambda: planner.plan("first"),
+    )
+
+    assert plan.registry_version == ranked_version
+    assert registry.version == ranked_version + 1
+    assert [call.tool for call in plan.calls] == ["tool_0"]
+
+
+class AlwaysChurningRegistry(InMemoryRegistry):
+    def __init__(self) -> None:
+        super().__init__()
+        self._churn_index = 0
+
+    def tools(self) -> tuple[ToolSpec, ...]:
+        snapshot = super().tools()
+        self._churn_index += 1
+        self.register(make_tool(1000 + self._churn_index))
+        return snapshot
+
+
+def test_non_index_catalog_capture_fails_closed_under_repeated_churn() -> None:
+    registry = AlwaysChurningRegistry()
+    registry.register(make_tool(0, keyword="first"))
+    planner = SchemaPlanner(registry, candidate_index=False)
+
+    try:
+        planner.retrieve("first", k=1)
+    except PlanningError as exc:
+        assert "changed repeatedly while capturing the planning catalog" in str(exc)
+    else:
+        raise AssertionError("expected unstable non-index catalog capture to fail closed")
