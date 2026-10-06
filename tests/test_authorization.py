@@ -5,11 +5,13 @@ import pytest
 from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
+    DataScopeRule,
     EndpointSpec,
     FieldSpec,
     PlanRequest,
     PolicyViolationError,
     PrincipalContext,
+    RetryPolicy,
     RunConfig,
     SchemaRouter,
     ToolSpec,
@@ -221,3 +223,97 @@ def test_no_authorization_policy_preserves_existing_no_principal_behavior() -> N
     retrieval = router.retrieve("public information")
     assert retrieval.candidates
     assert retrieval.candidates[0].tool == "public"
+
+@pytest.mark.asyncio
+async def test_retry_reauthorizes_capability_after_policy_revocation() -> None:
+    allow_rule = AuthorizationRule(
+        name="retry-allow",
+        effect="allow",
+        operation="retry_records.*",
+    )
+    router = SchemaRouter(
+        authorization_policy=AuthorizationPolicy(rules=(allow_rule,))
+    )
+    tool = _tool("retry_records", "retry records")
+    attempts = 0
+
+    async def invoker(endpoint: str, arguments: dict) -> dict:
+        nonlocal attempts
+        del endpoint, arguments
+        attempts += 1
+        if attempts == 1:
+            router.executor.authorization_policy = AuthorizationPolicy(
+                default_effect="deny"
+            )
+            raise RuntimeError("transient failure")
+        return {"value": "should-not-run"}
+
+    router.add_bound_tool(tool, invoker)
+    principal = PrincipalContext(subject="alice")
+    plan = router.plan_authorized("retry records", principal=principal)
+
+    with pytest.raises(PolicyViolationError, match="authorization denied"):
+        await router.execute(
+            plan,
+            config=RunConfig(
+                principal=principal,
+                retry=RetryPolicy(max_attempts=2),
+            ),
+        )
+
+    assert attempts == 1
+
+
+@pytest.mark.asyncio
+async def test_retry_recomputes_data_scope_before_second_invocation() -> None:
+    allow_rule = AuthorizationRule(
+        name="retry-allow",
+        effect="allow",
+        operation="retry_records.*",
+    )
+    router = SchemaRouter(
+        authorization_policy=AuthorizationPolicy(
+            rules=(allow_rule,),
+            data_rules=(
+                DataScopeRule(
+                    operation="retry_records.*",
+                    visible_fields=("value",),
+                ),
+            ),
+        )
+    )
+    tool = _tool("retry_records", "retry records")
+    attempts = 0
+
+    async def invoker(endpoint: str, arguments: dict) -> dict:
+        nonlocal attempts
+        del endpoint, arguments
+        attempts += 1
+        if attempts == 1:
+            router.executor.authorization_policy = AuthorizationPolicy(
+                rules=(allow_rule,),
+                data_rules=(
+                    DataScopeRule(
+                        operation="retry_records.*",
+                        visible_fields=(),
+                    ),
+                ),
+            )
+            raise RuntimeError("transient failure")
+        return {"value": "should-not-run"}
+
+    router.add_bound_tool(tool, invoker)
+    principal = PrincipalContext(subject="alice")
+    plan = router.plan_authorized("retry records", principal=principal)
+
+    with pytest.raises(PolicyViolationError, match="data scope"):
+        await router.execute(
+            plan,
+            config=RunConfig(
+                principal=principal,
+                retry=RetryPolicy(max_attempts=2),
+            ),
+        )
+
+    assert attempts == 1
+
