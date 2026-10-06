@@ -11,6 +11,8 @@ from pathlib import Path
 from statistics import median
 from typing import Any
 
+from scripts.external_validation_provenance import implementation_provenance
+
 _TOKEN_RE = re.compile(r"[\w.-]+", flags=re.UNICODE)
 
 
@@ -93,7 +95,12 @@ def _exposed_contract(tool: dict[str, Any], score: float) -> dict[str, Any]:
     }
 
 
-def run(*, package_dir: Path, repeats: int) -> dict[str, Any]:
+def run(
+    *,
+    package_dir: Path,
+    repeats: int,
+    implementation_revision: str | None = None,
+) -> dict[str, Any]:
     if repeats < 1:
         raise ValueError("repeats must be positive")
 
@@ -131,12 +138,18 @@ def run(*, package_dir: Path, repeats: int) -> dict[str, Any]:
             }
         )
 
+    provenance = implementation_provenance(
+        fixture_reference_revision=manifest["source_revisions"].get("schemarouter"),
+        explicit_revision=implementation_revision,
+        source_path=Path(__file__),
+    )
+
     return {
         "schema_version": 1,
         "package_id": manifest["package_id"],
         "implementation": {
             "name": "raw-spec lexical TF-IDF cosine baseline",
-            "commit": manifest["source_revisions"]["schemarouter"],
+            **provenance,
             "configuration": {
                 "repeats_per_query": repeats,
                 "top_k": top_k,
@@ -156,9 +169,17 @@ def main() -> None:
     parser.add_argument("--package-dir", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--repeats", type=int, default=20)
+    parser.add_argument(
+        "--implementation-revision",
+        help="Exact benchmark-code commit/revision used when it cannot be detected from a git checkout.",
+    )
     args = parser.parse_args()
 
-    payload = run(package_dir=args.package_dir, repeats=args.repeats)
+    payload = run(
+        package_dir=args.package_dir,
+        repeats=args.repeats,
+        implementation_revision=args.implementation_revision,
+    )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
