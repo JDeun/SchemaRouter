@@ -12,6 +12,732 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    outputs:
+      native: ${{ steps.classify.outputs.native }}
+      dependencies: ${{ steps.classify.outputs.dependencies }}
+      package: ${{ steps.classify.outputs.package }}
+      langchain: ${{ steps.classify.outputs.langchain }}
+      llamaindex: ${{ steps.classify.outputs.llamaindex }}
+      jev: ${{ steps.classify.outputs.jev }}
+      laya: ${{ steps.classify.outputs.laya }}
+      otel: ${{ steps.classify.outputs.otel }}
+      mcp: ${{ steps.classify.outputs.mcp }}
+      database: ${{ steps.classify.outputs.database }}
+      docs: ${{ steps.classify.outputs.docs }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - id: classify
+        name: Classify changed surfaces
+        shell: bash
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --no-tags origin "${BASE_REF}"
+          git diff --name-only "origin/${BASE_REF}...HEAD" > changed-files.txt
+          cat changed-files.txt
+
+          emit() {
+            key="$1"
+            regex="$2"
+            if grep -Eq "$regex" changed-files.txt; then
+              echo "$key=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "$key=false" >> "$GITHUB_OUTPUT"
+            fi
+          }
+
+          # A ci.yml change intentionally exercises every tier once.
+          CI='^\.github/workflows/ci\.yml    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      max-parallel: 3
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - name: Install compatibility test dependencies
+        if: matrix.python-version != '3.12'
+        run: pip install -e ".[dev]"
+      - name: Install Python 3.12 coverage test dependencies
+        if: matrix.python-version == '3.12'
+        run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel,database]"
+      - name: Run compatibility test suite
+        if: matrix.python-version != '3.12'
+        run: pytest -q -m "not mcp_integration"
+      - name: Run Python 3.12 suite and collect core coverage
+        if: matrix.python-version == '3.12'
+        env:
+          COVERAGE_FILE: .coverage.core
+        run: >-
+          pytest -q
+          --cov=schemarouter
+          --cov-branch
+          --cov-report=
+      - name: Upload Python 3.12 core coverage data
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-core-${{ github.run_id }}
+          path: .coverage.core
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 3
+      - name: Run Python 3.12 consumer smokes
+        if: matrix.python-version == '3.12'
+        run: |
+          python examples/quickstart.py
+          python examples/database_quickstart.py
+          python scripts/consumer_acceptance.py
+
+  windows-smoke:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.14"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+      - run: pytest -q -m "not mcp_integration"
+      - run: python examples/quickstart.py
+      - run: python examples/database_quickstart.py
+      - run: python scripts/consumer_acceptance.py
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel,database]"
+      - run: ruff check .
+      - run: pyright
+
+  coverage-native:
+    needs: changes
+    if: ${{ needs.changes.outputs.native == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel,database]"
+      - run: >-
+          pytest -q
+          tests/test_graph_native_adapters.py
+          tests/test_falkordb_native_adapter.py
+          tests/test_vector_native_adapters.py
+          tests/test_record_native_adapters.py
+          tests/test_record_native_extended_adapters.py
+          --cov=schemarouter.adapters.graph_native
+          --cov=schemarouter.adapters.vector_native
+          --cov=schemarouter.adapters.record_native
+          --cov-config=.coveragerc-native
+          --cov-branch
+          --cov-report=term-missing
+          --cov-report=xml:coverage-native.xml
+          --cov-fail-under=60
+      - name: Upload native coverage report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-native-${{ github.run_id }}
+          path: coverage-native.xml
+          if-no-files-found: error
+          retention-days: 14
+
+  coverage:
+    needs: [test, coverage-native]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - run: pip install "coverage[toml]>=7.10.6,<8"
+      - name: Verify coverage fan-out
+        env:
+          TEST_RESULT: ${{ needs.test.result }}
+          NATIVE_RESULT: ${{ needs.coverage-native.result }}
+        run: |
+          test "$TEST_RESULT" = "success"
+          test "$NATIVE_RESULT" = "success" -o "$NATIVE_RESULT" = "skipped"
+      - name: Download Python 3.12 core coverage data
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: coverage-core-${{ github.run_id }}
+          path: coverage-data
+      - name: Combine core coverage and enforce measured baseline
+        run: |
+          coverage combine coverage-data
+          coverage report --fail-under=83.5
+          coverage xml -o coverage.xml
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-report
+          path: coverage.xml
+          if-no-files-found: error
+          retention-days: 14
+  minimum-dependencies:
+    needs: changes
+    if: ${{ needs.changes.outputs.dependencies == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.10"
+      - run: python -m pip install --upgrade pip
+      - run: pip install "pytest>=8.2" "pytest-asyncio>=0.23" "hypothesis>=6.130,<7"
+      - run: pip install "httpx==0.27.0" "jsonschema==4.23.0" "pydantic==2.8.0" "pyyaml==6.0.0"
+      - run: pip install -e . --no-deps
+      - run: pytest -q -m "not mcp_integration"
+      - run: python examples/quickstart.py
+      - run: python examples/database_quickstart.py
+      - run: python scripts/consumer_acceptance.py
+
+  dependency-audit:
+    needs: changes
+    if: ${{ needs.changes.outputs.dependencies == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install .
+      - run: pip install "pip-audit>=2.9,<4"
+      - run: python -m pip check
+      - run: pip-audit --strict .
+
+  package-core:
+    needs: changes
+    if: ${{ needs.changes.outputs.package == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install build twine
+      - run: python -m build
+      - run: twine check dist/*
+      - name: Verify license is packaged
+        run: |
+          python - <<'PY'
+          import glob
+          import zipfile
+
+          wheel = glob.glob("dist/*.whl")[0]
+          names = zipfile.ZipFile(wheel).namelist()
+          assert any(name.endswith("/licenses/LICENSE") for name in names), names
+          PY
+      - run: python -m venv /tmp/schemarouter-wheel
+      - run: /tmp/schemarouter-wheel/bin/python -m pip install --upgrade pip
+      - run: /tmp/schemarouter-wheel/bin/pip install dist/*.whl
+      - run: /tmp/schemarouter-wheel/bin/python -c "from importlib.metadata import version; import schemarouter; assert schemarouter.__version__ == version('schemarouter')"
+      - run: /tmp/schemarouter-wheel/bin/schemarouter --help
+      - name: Publish immutable package artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: package-dist-${{ github.run_id }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 3
+
+  package-adapter-plugin:
+    needs: [changes, package-core]
+    if: ${{ needs.changes.outputs.package == 'true' && needs.package-core.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: package-dist-${{ github.run_id }}
+          path: dist
+      - run: python -m venv /tmp/schemarouter-wheel-adapter-plugin
+      - run: /tmp/schemarouter-wheel-adapter-plugin/bin/python -m pip install --upgrade pip
+      - name: Install built wheel and downstream adapter distribution
+        run: |
+          WHEEL="$(pwd)/$(ls dist/*.whl)"
+          /tmp/schemarouter-wheel-adapter-plugin/bin/pip install "$WHEEL"
+          /tmp/schemarouter-wheel-adapter-plugin/bin/pip install --no-deps examples/adapter_plugin_demo
+          /tmp/schemarouter-wheel-adapter-plugin/bin/pip check
+      - name: Exercise downstream adapter plugin against built wheel
+        run: /tmp/schemarouter-wheel-adapter-plugin/bin/python scripts/downstream_adapter_plugin_smoke.py
+
+  package-pydanticai:
+    needs: [changes, package-core]
+    if: ${{ needs.changes.outputs.package == 'true' && needs.package-core.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: package-dist-${{ github.run_id }}
+          path: dist
+      - run: python -m venv /tmp/schemarouter-wheel-pydanticai
+      - run: /tmp/schemarouter-wheel-pydanticai/bin/python -m pip install --upgrade pip
+      - name: Install built wheel and pinned PydanticAI validation dependency
+        run: |
+          WHEEL="$(pwd)/$(ls dist/*.whl)"
+          /tmp/schemarouter-wheel-pydanticai/bin/pip install "$WHEEL"
+          /tmp/schemarouter-wheel-pydanticai/bin/pip install -r examples/external_validation/pydanticai-tool-search/requirements.txt
+          /tmp/schemarouter-wheel-pydanticai/bin/pip check
+      - name: Run PydanticAI ToolSearch external validation
+        run: |
+          /tmp/schemarouter-wheel-pydanticai/bin/python scripts/external_validation_pydanticai.py \
+            --json-out artifacts/external-validation-pydanticai.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: external-validation-pydanticai-${{ github.run_id }}
+          path: artifacts/external-validation-pydanticai.json
+          if-no-files-found: error
+          retention-days: 30
+
+  package-openai-agents:
+    needs: [changes, package-core]
+    if: ${{ needs.changes.outputs.package == 'true' && needs.package-core.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: package-dist-${{ github.run_id }}
+          path: dist
+      - run: python -m venv /tmp/schemarouter-wheel-openai-agents
+      - run: /tmp/schemarouter-wheel-openai-agents/bin/python -m pip install --upgrade pip
+      - name: Install built wheel and pinned OpenAI Agents SDK validation dependency
+        run: |
+          WHEEL="$(pwd)/$(ls dist/*.whl)"
+          /tmp/schemarouter-wheel-openai-agents/bin/pip install "$WHEEL"
+          /tmp/schemarouter-wheel-openai-agents/bin/pip install -r examples/external_validation/openai_agents_mcp_filter/requirements.txt
+          /tmp/schemarouter-wheel-openai-agents/bin/pip check
+      - name: Run focused OpenAI Agents SDK MCP filter contract
+        run: |
+          /tmp/schemarouter-wheel-openai-agents/bin/python -m unittest \
+            examples.external_validation.openai_agents_mcp_filter.contract_smoke -v
+      - name: Run OpenAI Agents SDK dynamic MCP filter external validation
+        run: |
+          /tmp/schemarouter-wheel-openai-agents/bin/python scripts/external_validation_openai_agents.py \
+            --json-out artifacts/external-validation-openai-agents.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: external-validation-openai-agents-${{ github.run_id }}
+          path: artifacts/external-validation-openai-agents.json
+          if-no-files-found: error
+          retention-days: 30
+
+  package-mcp-agent:
+    needs: [changes, package-core]
+    if: ${{ needs.changes.outputs.package == 'true' && needs.package-core.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: package-dist-${{ github.run_id }}
+          path: dist
+      - run: python -m venv /tmp/schemarouter-wheel-mcp-agent
+      - run: /tmp/schemarouter-wheel-mcp-agent/bin/python -m pip install --upgrade pip
+      - name: Install built wheel and pinned mcp-agent validation dependencies
+        run: |
+          WHEEL="$(pwd)/$(ls dist/*.whl)"
+          /tmp/schemarouter-wheel-mcp-agent/bin/pip install "$WHEEL"
+          /tmp/schemarouter-wheel-mcp-agent/bin/pip install -r examples/external_validation/mcp_agent_catalog/requirements.txt
+          /tmp/schemarouter-wheel-mcp-agent/bin/pip check
+      - name: Run focused mcp-agent catalog contract
+        run: |
+          /tmp/schemarouter-wheel-mcp-agent/bin/python -m unittest \
+            examples.external_validation.mcp_agent_catalog.contract_smoke -v
+      - name: Run mcp-agent large-tool-catalog external validation
+        run: |
+          /tmp/schemarouter-wheel-mcp-agent/bin/python scripts/external_validation_mcp_agent.py \
+            --json-out artifacts/external-validation-mcp-agent.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: external-validation-mcp-agent-${{ github.run_id }}
+          path: artifacts/external-validation-mcp-agent.json
+          if-no-files-found: error
+          retention-days: 30
+
+  package-runtime-smoke:
+    needs: [changes, package-core]
+    if: ${{ needs.changes.outputs.package == 'true' && needs.package-core.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: package-dist-${{ github.run_id }}
+          path: dist
+      - run: python -m venv /tmp/schemarouter-wheel
+      - run: /tmp/schemarouter-wheel/bin/python -m pip install --upgrade pip
+      - run: /tmp/schemarouter-wheel/bin/pip install dist/*.whl
+      - run: /tmp/schemarouter-wheel/bin/python examples/quickstart.py
+      - run: /tmp/schemarouter-wheel/bin/python examples/database_quickstart.py
+      - run: /tmp/schemarouter-wheel/bin/python examples/sdk_bound_demo.py
+      - run: /tmp/schemarouter-wheel/bin/python examples/mixed_provider_demo.py
+      - run: /tmp/schemarouter-wheel/bin/python examples/schema_drift_demo.py
+      - run: /tmp/schemarouter-wheel/bin/python examples/context_reduction_demo.py
+      - name: Install external-style decision backend demo against built wheel
+        run: /tmp/schemarouter-wheel/bin/pip install --no-deps -e examples/decision_backend_plugin_demo
+      - run: /tmp/schemarouter-wheel/bin/python examples/decision_backend_plugin_quickstart.py
+      - run: /tmp/schemarouter-wheel/bin/python scripts/quickstart_provider_contract_smoke.py
+      - run: /tmp/schemarouter-wheel/bin/python scripts/consumer_acceptance.py --json-out artifacts/consumer-acceptance-wheel.json
+      - run: /tmp/schemarouter-wheel/bin/schemarouter --help
+      - run: /tmp/schemarouter-wheel/bin/python scripts/benchmark_decision_routing.py --json-out /tmp/decision-benchmark.json --html-out /tmp/decision-benchmark.html
+      - run: test -s /tmp/decision-benchmark.json
+      - run: test -s /tmp/decision-benchmark.html
+      - run: /tmp/schemarouter-wheel/bin/python scripts/render_benchmark_history.py /tmp/decision-benchmark.json --output /tmp/decision-benchmark-history.html
+      - run: test -s /tmp/decision-benchmark-history.html
+      - run: /tmp/schemarouter-wheel/bin/python examples/inspection_dashboard.py --registry /tmp/inspection-registry.sqlite3 --traces /tmp/inspection-traces.sqlite3 --output /tmp/inspection-dashboard.html
+      - run: test -s /tmp/inspection-dashboard.html
+      - name: Exercise installed inspection CLI
+        run: |
+          /tmp/schemarouter-wheel/bin/schemarouter inspect registry --db /tmp/inspection-registry.sqlite3 --json > /tmp/inspection-registry.json
+          /tmp/schemarouter-wheel/bin/schemarouter inspect traces --db /tmp/inspection-traces.sqlite3 --complete --json > /tmp/inspection-traces.json
+          /tmp/schemarouter-wheel/bin/python - <<'PY'
+          import json
+          from pathlib import Path
+
+          registry = json.loads(Path("/tmp/inspection-registry.json").read_text())
+          traces = json.loads(Path("/tmp/inspection-traces.json").read_text())
+          assert registry["tool_count"] == 1, registry
+          assert registry["endpoint_count"] == 1, registry
+          assert len(traces) == 1, traces
+          assert traces[0]["complete"] is True, traces
+          assert traces[0]["terminal_event"] == "run.end", traces
+          PY
+          /tmp/schemarouter-wheel/bin/schemarouter dashboard --registry /tmp/inspection-registry.sqlite3 --traces /tmp/inspection-traces.sqlite3 --output /tmp/inspection-cli-dashboard.html
+          test -s /tmp/inspection-cli-dashboard.html
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: consumer-acceptance-wheel-${{ github.run_id }}
+          path: artifacts/consumer-acceptance-wheel.json
+          if-no-files-found: error
+          retention-days: 30
+
+  package-lightweight-extras:
+    needs: [changes, package-core]
+    if: ${{ needs.changes.outputs.package == 'true' && needs.package-core.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: package-dist-${{ github.run_id }}
+          path: dist
+      - run: python -m venv /tmp/schemarouter-wheel-lightweight
+      - run: /tmp/schemarouter-wheel-lightweight/bin/python -m pip install --upgrade pip
+      - name: Install wheel with isolated lightweight extras
+        run: |
+          WHEEL="$(pwd)/$(ls dist/*.whl)"
+          /tmp/schemarouter-wheel-lightweight/bin/pip install "schemarouter[mcp,jev,otel] @ file://${WHEEL}"
+          /tmp/schemarouter-wheel-lightweight/bin/pip check
+      - run: /tmp/schemarouter-wheel-lightweight/bin/python scripts/installed_extras_smoke.py
+
+  package-integration-extras:
+    needs: [changes, package-core]
+    if: ${{ needs.changes.outputs.package == 'true' && needs.package-core.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: package-dist-${{ github.run_id }}
+          path: dist
+      - run: python -m venv /tmp/schemarouter-wheel-integrations
+      - run: /tmp/schemarouter-wheel-integrations/bin/python -m pip install --upgrade pip
+      - name: Install wheel with combined integration extras
+        run: |
+          WHEEL="$(pwd)/$(ls dist/*.whl)"
+          /tmp/schemarouter-wheel-integrations/bin/pip install "schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel,database] @ file://${WHEEL}"
+          /tmp/schemarouter-wheel-integrations/bin/pip check
+      - run: /tmp/schemarouter-wheel-integrations/bin/python scripts/installed_extras_smoke.py
+      - run: /tmp/schemarouter-wheel-integrations/bin/python scripts/installed_database_smoke.py
+      - run: /tmp/schemarouter-wheel-integrations/bin/python examples/langchain_quickstart.py
+      - run: /tmp/schemarouter-wheel-integrations/bin/python examples/langgraph_quickstart.py
+      - run: /tmp/schemarouter-wheel-integrations/bin/python examples/llamaindex_quickstart.py
+
+  package-sdist:
+    needs: [changes, package-core]
+    if: ${{ needs.changes.outputs.package == 'true' && needs.package-core.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: package-dist-${{ github.run_id }}
+          path: dist
+      - run: python -m venv /tmp/schemarouter-sdist
+      - run: /tmp/schemarouter-sdist/bin/python -m pip install --upgrade pip
+      - run: /tmp/schemarouter-sdist/bin/pip install dist/*.tar.gz
+      - run: /tmp/schemarouter-sdist/bin/python -c "from importlib.metadata import version; import schemarouter; assert schemarouter.__version__ == version('schemarouter')"
+      - run: /tmp/schemarouter-sdist/bin/python examples/quickstart.py
+      - run: /tmp/schemarouter-sdist/bin/python examples/database_quickstart.py
+      - run: /tmp/schemarouter-sdist/bin/python scripts/quickstart_provider_contract_smoke.py
+      - run: /tmp/schemarouter-sdist/bin/python scripts/consumer_acceptance.py --json-out artifacts/consumer-acceptance-sdist.json
+      - run: /tmp/schemarouter-sdist/bin/schemarouter --help
+      - name: Prepare isolated inspection fixtures for the sdist
+        run: |
+          /tmp/schemarouter-sdist/bin/python examples/inspection_dashboard.py \
+            --registry /tmp/inspection-registry.sqlite3 \
+            --traces /tmp/inspection-traces.sqlite3 \
+            --output /tmp/inspection-dashboard-sdist.html
+      - run: /tmp/schemarouter-sdist/bin/schemarouter inspect registry --db /tmp/inspection-registry.sqlite3 --json > /tmp/inspection-registry-sdist.json
+      - run: /tmp/schemarouter-sdist/bin/python -c "import json; data=json.load(open('/tmp/inspection-registry-sdist.json')); assert data['tool_count'] == 1"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: consumer-acceptance-sdist-${{ github.run_id }}
+          path: artifacts/consumer-acceptance-sdist.json
+          if-no-files-found: error
+          retention-days: 30
+
+  package:
+    # Keep the protected-main required check name stable while making package
+    # construction and qualification independently attributable and parallel.
+    if: ${{ always() && needs.changes.outputs.package == 'true' }}
+    needs:
+      - changes
+      - laya-integration
+      - dependency-audit
+      - database-integration
+      - package-core
+      - package-adapter-plugin
+      - package-pydanticai
+      - package-openai-agents
+      - package-mcp-agent
+      - package-runtime-smoke
+      - package-lightweight-extras
+      - package-integration-extras
+      - package-sdist
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify package qualification fan-out
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+
+          needs = json.loads(os.environ["NEEDS_JSON"])
+          failed = {
+              name: payload["result"]
+              for name, payload in needs.items()
+              if payload["result"] not in {"success", "skipped"}
+          }
+          if failed:
+              raise SystemExit(f"package qualification failed: {failed}")
+          print("all package qualification jobs succeeded")
+          PY
+
+  langchain-integration:
+    needs: changes
+    if: ${{ needs.changes.outputs.langchain == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev,langchain,langgraph]"
+      - run: pytest -q tests/test_langchain_integration.py tests/test_langgraph_integration.py
+      - run: python examples/langchain_quickstart.py
+      - run: python examples/langgraph_quickstart.py
+
+  llamaindex-integration:
+    needs: changes
+    if: ${{ needs.changes.outputs.llamaindex == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev,llamaindex]"
+      - run: pytest -q tests/test_llamaindex_integration.py
+      - run: python examples/llamaindex_quickstart.py
+
+  jev-integration:
+    needs: changes
+    if: ${{ needs.changes.outputs.jev == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev,jev]"
+      - run: pytest -q tests/test_jev_integration.py
+
+  laya-integration:
+    needs: changes
+    if: ${{ needs.changes.outputs.laya == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      # Contract tests do not need CUDA. Satisfy Laya's torch dependency from the
+      # official CPU wheel index so CI does not download multi-gigabyte CUDA wheels.
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install -e ".[dev,laya]"
+      - run: pytest -q tests/test_laya_integration.py
+
+  otel-integration:
+    needs: changes
+    if: ${{ needs.changes.outputs.otel == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev,otel]"
+      - run: pytest -q tests/test_opentelemetry_integration.py
+
+  mcp-integration:
+    needs: changes
+    if: ${{ needs.changes.outputs.mcp == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev,mcp]"
+      - run: pytest -q tests/test_mcp_integration.py
+      - run: python examples/mcp_stdio_quickstart.py
+
+  database-integration:
+    needs: changes
+    if: ${{ needs.changes.outputs.database == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev,database]"
+      - run: pytest -q tests/test_sqlite_database_adapter.py tests/test_sqlalchemy_database_adapter.py
+      - run: python scripts/installed_database_smoke.py
+
+  docs:
+    needs: changes
+    if: ${{ needs.changes.outputs.docs == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[docs]"
+      - name: Check canonical repository facts
+        run: python scripts/sync_repository_facts.py --check
+      - name: Prepare Korean documentation tree
+        run: python scripts/prepare_korean_docs.py
+      - name: Build English documentation
+        run: mkdocs build --strict -f mkdocs.yml
+        env:
+          NO_MKDOCS_2_WARNING: "1"
+      - name: Build Korean documentation
+        run: mkdocs build --strict -f mkdocs.ko.yml
+        env:
+          NO_MKDOCS_2_WARNING: "1"
+      - name: Verify rendered Markdown/code-block structure
+        run: python scripts/check_rendered_docs.py site
+      - name: Verify bilingual Pages layout
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          english = Path("site/index.html")
+          korean = Path("site/ko/index.html")
+          translated = Path("site/ko/getting-started/quickstart/index.html")
+          fallback = Path("site/ko/guides/graphql/index.html")
+
+          for path in (english, korean, translated, fallback):
+              assert path.is_file(), f"missing bilingual docs output: {path}"
+
+          english_html = english.read_text(encoding="utf-8")
+          korean_html = korean.read_text(encoding="utf-8")
+          assert 'hreflang="ko"' in english_html, "English site is missing Korean alternate"
+          assert 'hreflang="en"' in korean_html, "Korean site is missing English alternate"
+          assert "/SchemaRouter/ko/" in english_html, "English selector is missing Korean site link"
+          assert "/SchemaRouter/" in korean_html, "Korean selector is missing English site link"
+          PY
+
+          emit native "(${CI}|^src/schemarouter/adapters/(graph_native|vector_native|record_native)|^tests/test_(graph|vector|record)_native|^tests/test_falkordb_native_adapter\.py$|^\.coveragerc-native$)"
+          emit dependencies "(${CI}|^pyproject\.toml$|(^|/)(requirements[^/]*\.txt|uv\.lock|poetry\.lock|pdm\.lock)$)"
+          emit package "(${CI}|^pyproject\.toml$|^LICENSE$|^src/schemarouter/(__init__|cli|plugins|provider_profiles)\.py$|^examples/(adapter_plugin_demo|external_validation)/|^scripts/(consumer_acceptance|downstream_adapter_plugin_smoke|installed_extras_smoke|installed_database_smoke|external_validation_.*|quickstart_provider_contract_smoke)\.py$)"
+          emit langchain "(${CI}|^src/schemarouter/integrations/(langchain|langgraph)|^tests/test_(langchain|langgraph)_integration\.py$|^examples/(langchain|langgraph)_quickstart\.py$|^pyproject\.toml$)"
+          emit llamaindex "(${CI}|^src/schemarouter/integrations/llamaindex|^tests/test_llamaindex_integration\.py$|^examples/llamaindex_quickstart\.py$|^pyproject\.toml$)"
+          emit jev "(${CI}|^src/schemarouter/integrations/jev|^tests/test_jev_integration\.py$|^pyproject\.toml$)"
+          emit laya "(${CI}|^src/schemarouter/integrations/laya|^tests/test_laya_integration\.py$|^pyproject\.toml$)"
+          emit otel "(${CI}|^src/schemarouter/integrations/opentelemetry|^tests/test_opentelemetry_integration\.py$|^pyproject\.toml$)"
+          emit mcp "(${CI}|^src/schemarouter/adapters/mcp\.py$|^tests/test_mcp_integration\.py$|^examples/mcp_|^pyproject\.toml$)"
+          emit database "(${CI}|^src/schemarouter/(runtime\.py|adapters/.*(sqlite|sqlalchemy|database))|^tests/test_(sqlite|sqlalchemy)_database_adapter\.py$|^scripts/installed_database_smoke\.py$|^examples/database_quickstart\.py$|^pyproject\.toml$)"
+          emit docs "(${CI}|^(docs|docs_ko)/|^README(\.ko)?\.md$|^mkdocs(\.ko)?\.yml$|^scripts/(prepare_korean_docs|check_rendered_docs|sync_repository_facts)\.py$)"
+
   test:
     runs-on: ubuntu-latest
     strategy:
