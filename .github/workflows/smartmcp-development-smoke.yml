@@ -18,6 +18,7 @@ permissions:
 env:
   SMARTMCP_REVISION: c4d6602cfabb6f514bf06a1d1ae10b610ff7d573
   MCP_VERSION: "1.29.0"
+  TORCH_VERSION: "2.14.1"
   PACKAGE_DIR: benchmarks/external-validation-smart-mcp-dev-v1
   TOKENIZERS_PARALLELISM: "false"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
@@ -37,6 +38,9 @@ jobs:
       - name: Install SchemaRouter and pinned SmartMCP
         run: |
           python -m pip install .
+          # This benchmark is CPU-only. Preinstall the CPU wheel so SmartMCP's
+          # sentence-transformers dependency does not pull CUDA runtime packages.
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu "torch==${TORCH_VERSION}"
           # SmartMCP's pinned revision predates the MCP Python SDK v2 API rename
           # (Tool.inputSchema -> Tool.input_schema). Its pyproject currently says
           # mcp>=1.0 without a <2 upper bound, so reproduce the compatible v1 line.
@@ -48,6 +52,7 @@ jobs:
           mkdir -p artifacts/smartmcp-dev-smoke
           python --version > artifacts/smartmcp-dev-smoke/python-version.txt
           python -m pip freeze > artifacts/smartmcp-dev-smoke/pip-freeze.txt
+          python -c 'import torch; print(torch.__version__)' > artifacts/smartmcp-dev-smoke/torch-version.txt
           uname -a > artifacts/smartmcp-dev-smoke/uname.txt
           lscpu > artifacts/smartmcp-dev-smoke/lscpu.txt
           git rev-parse HEAD > artifacts/smartmcp-dev-smoke/schemarouter-revision.txt
@@ -70,6 +75,7 @@ jobs:
         run: |
           python scripts/run_schemarouter_external_validation.py \
             --package-dir "${PACKAGE_DIR}" \
+            --implementation-revision "$(git rev-parse HEAD)" \
             --out artifacts/smartmcp-dev-smoke/schemarouter-result.json
 
       - name: Run lexical baseline
