@@ -15,7 +15,8 @@ from schemarouter import (
     SchemaRouter,
     ToolCall,
 )
-from schemarouter.errors import RegistrationError
+from schemarouter.adapters.sqlite_database import introspect_sqlite_database
+from schemarouter.errors import BindingDriftError, RegistrationError
 from schemarouter.registry import InMemoryRegistry
 
 
@@ -423,4 +424,89 @@ def test_sqlite_generated_contract_budget_is_failure_atomic() -> None:
         )
 
     assert router.registry.keys() == ()
+    connection.close()
+
+
+def test_sqlite_registration_rejects_preexisting_orphan_runtime_state_without_mutation() -> None:
+    connection = _connection()
+    router = SchemaRouter()
+    binding = next(
+        item
+        for item in introspect_sqlite_database(
+            connection,
+            database_name="company",
+            tables={"employees"},
+        )
+        if item.tool.key == "company.employees"
+    )
+
+    router.registry.register(binding.tool)
+    router.executor.bind(
+        binding.tool.key,
+        binding.invoker,
+        expected_fingerprint=binding.tool.fingerprint,
+    )
+    router.registry.unregister(binding.tool.key)
+    version_before = router.registry.version
+
+    assert router.executor.binding_states()[binding.tool.key] == "orphaned"
+
+    with pytest.raises(
+        RegistrationError,
+        match="empty pre-existing runtime state",
+    ):
+        router.add_sqlite_database(
+            connection,
+            database_name="company",
+        )
+
+    assert router.registry.version == version_before
+    assert router.registry.keys() == ()
+    assert router.executor.bound_keys() == (binding.tool.key,)
+    assert router.executor.binding_states()[binding.tool.key] == "orphaned"
+    connection.close()
+
+
+def test_sqlite_registration_preserves_newer_runtime_writer_during_failed_rollback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    connection = _connection()
+    router = SchemaRouter()
+    real_bind = router.executor.bind
+    bind_calls = 0
+    concurrently_rebound_key: str | None = None
+
+    def fail_after_concurrent_rebind(tool_key, invoker, **kwargs):
+        nonlocal bind_calls, concurrently_rebound_key
+        bind_calls += 1
+        if bind_calls == 2:
+            raise RuntimeError("injected later batch bind failure")
+
+        generation = real_bind(tool_key, invoker, **kwargs)
+        if bind_calls == 1:
+            concurrently_rebound_key = tool_key
+            real_bind(
+                tool_key,
+                invoker,
+                expected_fingerprint=kwargs["expected_fingerprint"],
+                offload_sync=kwargs.get("offload_sync", False),
+            )
+        return generation
+
+    monkeypatch.setattr(router.executor, "bind", fail_after_concurrent_rebind)
+
+    with pytest.raises(
+        BindingDriftError,
+        match="concurrent state was preserved",
+    ):
+        router.add_sqlite_database(
+            connection,
+            database_name="company",
+        )
+
+    assert bind_calls == 2
+    assert router.registry.keys() == ()
+    assert concurrently_rebound_key is not None
+    assert router.executor.bound_keys() == (concurrently_rebound_key,)
+    assert router.executor.binding_states()[concurrently_rebound_key] == "orphaned"
     connection.close()
