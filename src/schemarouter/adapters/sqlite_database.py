@@ -79,6 +79,7 @@ class SQLiteTableInvoker:
     """Read-only call-aware invoker for one introspected SQLite table or view."""
 
     projects_fields = True
+    supports_trusted_filters = True
 
     def __init__(
         self,

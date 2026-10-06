@@ -1301,6 +1301,14 @@ class RegistryExecutor:
                 endpoint,
                 call,
             )
+            if (
+                data_scope is not None
+                and data_scope.trusted_filters
+                and getattr(invoker, "supports_trusted_filters", False) is not True
+            ):
+                raise PolicyViolationError(
+                    "authorization denied for requested data scope"
+                )
             # Authorization is intentionally re-evaluated for every imminent invocation;
             # approval authority, by contrast, must remain the immutable call snapshot.
             self._assert_execution_policy_snapshot(execution_policy)
