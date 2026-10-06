@@ -26,7 +26,6 @@ from schemarouter import (
     VectorCollectionSpec,
     VectorMetadataField,
 )
-
 from schemarouter.adapters.graph_store import GraphSourceInvoker
 from schemarouter.adapters.graphql import GraphQLRemoteInvoker
 from schemarouter.adapters.http_json import HTTPJSONRemoteInvoker
