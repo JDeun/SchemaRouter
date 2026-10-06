@@ -39,11 +39,16 @@ jobs:
       - name: Classify changed paths
         id: scope
         env:
+          EVENT_NAME: ${{ github.event_name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          git diff --name-only --diff-filter=ACMR "$BASE_SHA...$HEAD_SHA" |
-            python scripts/ci_scope.py --github-output >> "$GITHUB_OUTPUT"
+          if [ "$EVENT_NAME" != "pull_request" ] || [ -z "$BASE_SHA" ] || [ -z "$HEAD_SHA" ]; then
+            python scripts/ci_scope.py .github/workflows/ci.yml --github-output >> "$GITHUB_OUTPUT"
+          else
+            git diff --name-only --diff-filter=ACMR "$BASE_SHA...$HEAD_SHA" |
+              python scripts/ci_scope.py --github-output >> "$GITHUB_OUTPUT"
+          fi
 
   test:
     runs-on: ubuntu-latest
