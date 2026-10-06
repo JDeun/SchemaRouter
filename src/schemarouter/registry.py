@@ -401,7 +401,12 @@ def _validate_legacy_registry_storage(
     seen_positions: set[int] = set()
     budget = _PersistedReadBudget(limits)
     while True:
-        rows = cursor.fetchmany(_PERSISTED_FETCH_BATCH_SIZE)
+        try:
+            rows = cursor.fetchmany(_PERSISTED_FETCH_BATCH_SIZE)
+        except sqlite3.DatabaseError as exc:
+            raise StorageFormatError(
+                "legacy registry table shape is not compatible with migration"
+            ) from exc
         if not rows:
             break
         for stored in rows:
