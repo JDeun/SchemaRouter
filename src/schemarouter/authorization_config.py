@@ -19,6 +19,7 @@ from .document_loading import (
     load_bounded_json,
     load_bounded_yaml,
     read_bounded_text_file,
+    validate_bounded_structure,
 )
 from .models import StrictModel
 
@@ -188,7 +189,7 @@ def parse_authorization_policy(
     document_limits: ConfigurationDocumentLimits | None = None,
 ) -> AuthorizationPolicy:
     if isinstance(value, dict):
-        raw = value
+        raw = validate_bounded_structure(value, limits=document_limits)
     elif format == "json":
         raw = load_bounded_json(value, limits=document_limits)
     else:
@@ -234,7 +235,7 @@ def normalized_authorization_json(
         else AuthorizationPolicyConfig.model_validate(
             load_bounded_json(value, limits=document_limits)
             if isinstance(value, (str, bytes))
-            else value
+            else validate_bounded_structure(value, limits=document_limits)
         )
     )
     return json.dumps(
