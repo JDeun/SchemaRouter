@@ -425,6 +425,10 @@ def _validate_legacy_registry_storage(
 
             try:
                 encoded_bytes = int(stored["document_bytes"])
+                _validate_persisted_document_size(
+                    encoded_bytes,
+                    limits=limits,
+                )
                 budget.consume(encoded_bytes)
                 document = stored["document"]
                 _validate_persisted_json_document(
@@ -912,13 +916,24 @@ class SQLiteRegistry:
                 if not rows:
                     break
                 for row in rows:
+                    key = str(row["key"])
                     try:
-                        budget.consume(int(row["document_bytes"]))
+                        encoded_bytes = int(row["document_bytes"])
+                        _validate_persisted_document_size(
+                            encoded_bytes,
+                            limits=self._document_limits,
+                        )
                     except (TypeError, ValueError, _PersistedDocumentLimitError) as exc:
+                        raise RegistrationError(
+                            f"stored tool {key!r} exceeds configured persisted JSON document limits"
+                        ) from exc
+                    try:
+                        budget.consume(encoded_bytes)
+                    except _PersistedDocumentLimitError as exc:
                         raise RegistrationError(
                             "stored registry exceeds configured persisted JSON collection limits"
                         ) from exc
-                    tools.append(self._deserialize_row(str(row["key"]), row))
+                    tools.append(self._deserialize_row(key, row))
             return tuple(tools)
 
     def keys(self) -> tuple[str, ...]:
