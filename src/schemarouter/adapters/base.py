@@ -6,6 +6,7 @@ from typing import Any, Literal, Protocol
 import httpx
 
 from ..models import ToolSpec
+from ..network_policy import TRUSTED_INTERNAL_NETWORK_POLICY, NetworkPolicy
 
 
 @dataclass(frozen=True)
@@ -26,6 +27,7 @@ class AdapterContext:
     openapi_ref_max_bytes: int = 10 * 1024 * 1024
     timeout: float = 20.0
     http_client: httpx.AsyncClient | None = None
+    network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY
 
 
 ProbeOutcome = Literal[

@@ -16,6 +16,7 @@ from ..models import (
     ToolCall,
     ToolSpec,
 )
+from ..network_policy import TRUSTED_INTERNAL_NETWORK_POLICY, NetworkPolicy
 from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile, RefreshProfile
 
 _MAX_DISCOVERY_BYTES = 2 * 1024 * 1024
@@ -81,12 +82,14 @@ async def _bounded_get(
     params: dict[str, Any] | None = None,
     max_bytes: int,
     max_redirects: int = 5,
+    network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY,
 ) -> httpx.Response:
     current = _safe_base_url(url)
     initial = urlparse(current)
     query_params = params
 
     for _ in range(max_redirects + 1):
+        await network_policy.authorize(current)
         async with client.stream(
             "GET",
             current,
@@ -673,6 +676,7 @@ class OPTIMADESourceAdapter:
                         f"{candidate}/info",
                         headers=context.schema_headers,
                         max_bytes=_MAX_DISCOVERY_BYTES,
+                        network_policy=context.network_policy,
                     )
                     document = response.json()
                 except SchemaSourceError:
@@ -759,6 +763,7 @@ class OPTIMADESourceAdapter:
                         f"{versioned_base_url}/info/{safe_entry_type}",
                         headers=context.schema_headers,
                         max_bytes=_MAX_DISCOVERY_BYTES,
+                        network_policy=context.network_policy,
                     )
                     payload = _entry_info_payload(response.json(), entry_type)
                 except SchemaSourceError:
@@ -787,6 +792,7 @@ class OPTIMADESourceAdapter:
                 trusted_headers=context.trusted_headers,
                 timeout=context.timeout,
                 http_client=context.http_client,
+                network_policy=context.network_policy,
             )
             return AdapterLoadResult(tool=tool, invoker=invoker)
         finally:
@@ -807,12 +813,14 @@ class OPTIMADERemoteInvoker:
         trusted_headers: dict[str, str] | None = None,
         timeout: float = 20.0,
         http_client: httpx.AsyncClient | None = None,
+        network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY,
     ) -> None:
         self.tool = tool
         self.base_url = _safe_base_url(versioned_base_url)
         self.trusted_headers = dict(trusted_headers or {})
         self.timeout = timeout
         self.http_client = http_client
+        self.network_policy = network_policy
 
     async def invoke_call(self, call: ToolCall) -> Any:
         endpoint = self.tool.endpoint(call.endpoint)
@@ -868,6 +876,7 @@ class OPTIMADERemoteInvoker:
                     headers=self.trusted_headers,
                     params=query or None,
                     max_bytes=_MAX_RESPONSE_BYTES,
+                    network_policy=self.network_policy,
                 )
             except httpx.HTTPStatusError as exc:
                 if exc.response.status_code not in _TRANSIENT_HTTP_STATUS_CODES:

@@ -401,6 +401,7 @@ from .models import (
     ToolSpec,
     UnitNormalizationSpec,
 )
+from .network_policy import NetworkPolicy, NetworkPolicyError
 from .openapi_compatibility import (
     OpenAPICompatibilityIssue,
     OpenAPICompatibilityReport,
@@ -635,6 +636,8 @@ __all__ = [
     "MCPStdioConfig",
     "ModelAnalysisError",
     "ModelCallable",
+    "NetworkPolicy",
+    "NetworkPolicyError",
     "ModelQueryAnalyzer",
     "MutableToolRegistry",
     "NonRetryableInvocationError",
