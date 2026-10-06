@@ -19,6 +19,7 @@ from schemarouter import (
     SchemaDriftError,
     ToolCall,
     ToolSpec,
+    TransientInvocationError,
 )
 from schemarouter.executor import ExecutionBudgetTracker
 
@@ -279,7 +280,7 @@ async def test_retry_attempts_consume_attempt_budget() -> None:
     async def flaky(endpoint, arguments):
         nonlocal attempts
         attempts += 1
-        raise RuntimeError("transient")
+        raise TransientInvocationError("transient")
 
     executor.bind("demo", flaky)
 
@@ -305,7 +306,7 @@ async def test_remote_retry_attempts_consume_remote_budget() -> None:
     async def flaky(endpoint, arguments):
         nonlocal attempts
         attempts += 1
-        raise RuntimeError("transient")
+        raise TransientInvocationError("transient")
 
     executor.bind("demo", flaky)
 
@@ -339,7 +340,7 @@ async def test_cost_units_are_charged_per_attempt() -> None:
     async def flaky(endpoint, arguments):
         nonlocal attempts
         attempts += 1
-        raise RuntimeError("transient")
+        raise TransientInvocationError("transient")
 
     executor.bind("demo", flaky)
 
@@ -365,7 +366,7 @@ async def test_max_backoff_caps_the_first_retry_delay(monkeypatch) -> None:
     async def flaky(endpoint, arguments):
         nonlocal attempts
         attempts += 1
-        raise RuntimeError("transient")
+        raise TransientInvocationError("transient")
 
     async def capture_backoff(self, delay: float) -> None:
         delays.append(delay)
@@ -373,7 +374,7 @@ async def test_max_backoff_caps_the_first_retry_delay(monkeypatch) -> None:
     monkeypatch.setattr(ExecutionBudgetTracker, "wait_backoff", capture_backoff)
     executor.bind("demo", flaky)
 
-    with pytest.raises(ExecutionError, match="after 3 attempt"):
+    with pytest.raises(TransientInvocationError, match="transient"):
         await executor.execute_call(
             call,
             retry=RetryPolicy(
@@ -417,7 +418,7 @@ async def test_wall_clock_budget_interrupts_retry_backoff() -> None:
     async def flaky(endpoint, arguments):
         nonlocal attempts
         attempts += 1
-        raise RuntimeError("transient")
+        raise TransientInvocationError("transient")
 
     executor.bind("demo", flaky)
 
