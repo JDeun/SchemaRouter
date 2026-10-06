@@ -654,15 +654,9 @@ def test_backup_concurrent_destination_is_not_overwritten(
     def create_competing_path_then_publish(
         source,
         destination,
-        *,
-        follow_symlinks=True,
     ) -> None:
         backup.write_bytes(b"concurrent-owner")
-        real_link(
-            source,
-            destination,
-            follow_symlinks=follow_symlinks,
-        )
+        real_link(source, destination)
 
     monkeypatch.setattr(
         storage_module.os,

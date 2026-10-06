@@ -465,7 +465,7 @@ def _publish_backup_destination(
     """Publish a completed backup atomically without clobbering an existing path."""
 
     try:
-        os.link(backup_path, target, follow_symlinks=False)
+        os.link(backup_path, target)
     except FileExistsError as exc:
         raise StorageFormatError(
             f"backup destination already exists: {target}"
@@ -529,7 +529,7 @@ def backup_sqlite_storage(
 
         # Ensure the completed temporary database reaches the filesystem before it
         # becomes visible at the caller-selected destination.
-        with temporary_path.open("rb") as backup_file:
+        with temporary_path.open("rb+") as backup_file:
             os.fsync(backup_file.fileno())
 
         _publish_backup_destination(temporary_path, target)
