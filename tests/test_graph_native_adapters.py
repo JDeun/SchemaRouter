@@ -5,6 +5,10 @@ from typing import Any
 
 import pytest
 
+from schemarouter.adapters.discovery_limits import NativeDiscoveryLimits
+from schemarouter.adapters.graph_native import Neo4jGraphBackend
+from schemarouter.errors import RegistrationError
+
 from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
@@ -503,3 +507,21 @@ async def test_native_graph_respects_relationship_data_scope_before_vendor_call(
         )
 
     assert len(driver.calls) == initial_calls
+
+
+def test_neo4j_schema_discovery_stops_at_configured_budget() -> None:
+    driver = FakeNeo4jDriver()
+    backend = Neo4jGraphBackend(
+        driver,
+        database="neo4j",
+        graph_name="org",
+        discovery_limits=NativeDiscoveryLimits(max_node_types_per_source=1),
+    )
+
+    with pytest.raises(RegistrationError, match="Neo4j label count"):
+        backend.list_graphs()
+
+    assert len(driver.calls) == 1
+    query, _ = driver.calls[0]
+    assert "CALL db.labels()" in query
+    assert "LIMIT 2" in query
