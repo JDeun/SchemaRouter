@@ -54,6 +54,17 @@ tools = to_langchain_tools(
 LangChain tool schema에도 노출하지 않습니다. 실제 호출도 `SchemaRouter.execute(...)` 경로로
 돌아가므로 trusted row/tenant filter와 execution-time authorization이 유지됩니다.
 
+## Live export contract
+
+`StructuredTool`은 export 시점에 principal에게 허용된 endpoint contract를 고정합니다.
+호출 직전에는 현재 registry의 endpoint를 다시 조회하고 AuthorizationPolicy와 DataScope를
+다시 적용합니다. schema, tool fingerprint, 또는 허용된 projection이 export 시점과 달라졌다면
+실행 전에 `StaleExportedToolError`로 종료합니다.
+
+schema refresh나 authorization policy 변경 뒤에는 `to_langchain_tool(...)` 또는
+`to_langchain_tools(...)`로 다시 export해야 합니다. 따라서 오래된 framework tool이 현재보다
+넓거나 다른 contract로 조용히 재바인딩되지 않습니다.
+
 ## 실행 경계
 
 LangChain tool 호출도 SchemaRouter `ToolCall` → current schema validation → `ExecutionPolicy` → binding-drift check → trusted invoker → output validation을 거칩니다. 따라서 direct 사용과 같은 fail-closed contract가 적용됩니다.

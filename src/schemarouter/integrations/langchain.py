@@ -7,7 +7,6 @@ import re
 from collections.abc import Sequence
 from copy import deepcopy
 from typing import Any
-from uuid import uuid4
 
 from ..errors import PolicyViolationError
 from ..models import (
@@ -21,6 +20,12 @@ from ..models import (
 from ..runs import RunConfig
 from ..runtime import SchemaRouter
 from ..validation import effective_input_schema
+from ._export_contract import (
+    _authorized_endpoint_view,
+    _capture_exported_endpoint_contract,
+    _coerce_export_run_config,
+    _resolve_live_exported_endpoint,
+)
 
 
 def _langchain_name(tool_key: str, endpoint_name: str) -> str:
@@ -363,54 +368,6 @@ class LangChainToolInvoker:
 
 
 
-def _coerce_export_run_config(
-    config: RunConfig | dict[str, Any] | None,
-) -> RunConfig:
-    if config is None:
-        run_config = RunConfig()
-    elif isinstance(config, RunConfig):
-        run_config = config
-    else:
-        run_config = RunConfig.model_validate(config)
-    if run_config.run_id is not None:
-        return run_config
-    return run_config.model_copy(update={"run_id": uuid4().hex})
-
-
-def _authorized_endpoint_view(
-    router: SchemaRouter,
-    tool_key: str,
-    endpoint_name: str,
-    run_config: RunConfig,
-) -> tuple[ToolSpec, EndpointSpec, EndpointSpec]:
-    tool = router.registry.get(tool_key)
-    endpoint = tool.endpoint(endpoint_name)
-    policy = router.authorization_policy
-    if policy is None:
-        return tool, endpoint, endpoint
-
-    principal = run_config.principal
-    authorized = router._audit_export_authorization(
-        principal,
-        tool,
-        endpoint,
-        run_id=run_config.run_id,
-        principal_audit_id=run_config.principal_audit_id,
-    )
-    if not authorized:
-        if principal is None:
-            raise PolicyViolationError(
-                "principal context is required when authorization_policy is configured"
-            )
-        raise PolicyViolationError("authorization denied for requested capability")
-
-    assert principal is not None
-    projected = router._data_scope_endpoint_view(principal, tool, endpoint)
-    if projected is None:
-        raise PolicyViolationError("authorization denied for requested data scope")
-    return tool, endpoint, projected
-
-
 def to_langchain_tool(
     router: SchemaRouter,
     tool_key: str,
@@ -435,16 +392,29 @@ def to_langchain_tool(
         endpoint_name,
         resolved_config,
     )
-    fields = [field.name for field in visible_endpoint.output_fields]
+    export_contract = _capture_exported_endpoint_contract(
+        tool,
+        endpoint,
+        visible_endpoint,
+    )
 
     async def ainvoke_endpoint(**arguments: Any) -> Any:
+        live_tool, live_endpoint, live_visible_endpoint = (
+            _resolve_live_exported_endpoint(
+                router,
+                tool_key,
+                endpoint_name,
+                resolved_config,
+                export_contract,
+            )
+        )
         call = ToolCall(
             tool=tool_key,
             endpoint=endpoint_name,
             arguments=arguments,
-            fields=fields,
-            schema_fingerprint=endpoint.fingerprint,
-            tool_fingerprint=tool.fingerprint,
+            fields=[field.name for field in live_visible_endpoint.output_fields],
+            schema_fingerprint=live_endpoint.fingerprint,
+            tool_fingerprint=live_tool.fingerprint,
         )
         plan = ExecutionPlan(
             query=f"LangChain invocation of {tool_key}.{endpoint_name}",

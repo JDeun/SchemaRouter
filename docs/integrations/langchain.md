@@ -92,6 +92,17 @@ before LangChain receives the tool schema, and invocation returns through
 `SchemaRouter.execute(..., config=...)` so trusted row/tenant filters and execution-time
 authorization remain active.
 
+## Live export contract
+
+A `StructuredTool` captures the authorized endpoint schema visible at export time. Before every
+invocation, SchemaRouter resolves the endpoint again and reapplies the current authorization and
+DataScope view. If the endpoint schema, tool fingerprint, or authorized projected contract changed,
+the call fails with `StaleExportedToolError` before execution.
+
+Re-export the tool with `to_langchain_tool(...)` or rebuild the catalog with
+`to_langchain_tools(...)` after schema refreshes or authorization-policy changes. This keeps a
+framework agent from silently invoking a contract broader or different from the current live view.
+
 ## Runnable example
 
 The repository includes a minimal executable integration example:

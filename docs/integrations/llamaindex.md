@@ -77,6 +77,17 @@ fields/parameters from the LlamaIndex-visible schema, and calls re-enter
 `SchemaRouter.execute(..., config=...)` so authorization and trusted data filters are enforced
 again at execution.
 
+## Live export contract
+
+A `FunctionTool` captures the authorized endpoint schema visible at export time. Immediately
+before each call, SchemaRouter resolves and authorizes the endpoint again. If the endpoint schema,
+tool fingerprint, or authorized DataScope projection changed, invocation fails with
+`StaleExportedToolError` before execution.
+
+Re-export with `to_llamaindex_tool(...)` or rebuild the catalog with
+`to_llamaindex_tools(...)` after schema refreshes or authorization-policy changes. The exported
+LlamaIndex schema is therefore never silently rebound to a different live capability.
+
 ## Runnable example
 
 The repository includes a minimal executable integration example:
