@@ -207,7 +207,8 @@ def _lint_shadowing(items: tuple[Any, ...], label: str) -> list[str]:
             if _matcher_covers(earlier, rule):
                 issues.append(
                     f"{_rule_ref(label, index, rule)} is shadowed by "
-                    f"{_rule_ref(label, earlier_index, earlier)} under first-match semantics"
+                    f"{_rule_ref(label, earlier_index, earlier)} under first-match semantics; "
+                    "the later rule is unreachable"
                 )
                 break
     return issues
