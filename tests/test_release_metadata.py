@@ -214,6 +214,52 @@ def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
     assert "schemarouter[mcp,jev,otel] @ file://" in workflow
 
 
+def test_pr_ci_uses_path_aware_tiers_without_renaming_required_gates() -> None:
+    workflow = (
+        ROOT / ".github" / "workflows" / "ci.yml"
+    ).read_text(encoding="utf-8")
+
+    assert "changes:" in workflow
+    assert "Classify changed paths" in workflow
+    assert "max-parallel: 2" in workflow
+    assert "fail-fast: true" in workflow
+    assert "needs.changes.outputs.native == 'true'" in workflow
+    assert "needs.changes.outputs.deps == 'true'" in workflow
+    assert "needs.changes.outputs.package == 'true'" in workflow
+    assert "needs.changes.outputs.langchain == 'true'" in workflow
+    assert "needs.changes.outputs.llamaindex == 'true'" in workflow
+    assert "needs.changes.outputs.mcp == 'true'" in workflow
+    assert "needs.changes.outputs.database == 'true'" in workflow
+    assert "needs.changes.outputs.docs == 'true'" in workflow
+    assert '"success", "skipped"' in workflow
+    assert 'python-version: ["3.10", "3.12", "3.14"]' in workflow
+    assert "name: test (3.11)" in workflow
+    assert "name: test (3.13)" in workflow
+    assert "if: ${{ false }}" in workflow
+
+
+def test_scheduled_python_compatibility_covers_all_supported_versions() -> None:
+    workflow = (
+        ROOT / ".github" / "workflows" / "python-compatibility.yml"
+    ).read_text(encoding="utf-8")
+
+    assert 'python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]' in workflow
+    assert "Run full supported-version suite" in workflow
+    assert "schedule:" in workflow
+    assert "workflow_dispatch:" in workflow
+
+
+def test_scheduled_full_qualification_reuses_the_complete_ci() -> None:
+    workflow = (
+        ROOT / ".github" / "workflows" / "full-qualification.yml"
+    ).read_text(encoding="utf-8")
+
+    assert "schedule:" in workflow
+    assert "workflow_dispatch:" in workflow
+    assert "uses: ./.github/workflows/ci.yml" in workflow
+    assert "cancel-in-progress: true" in workflow
+
+
 def test_pr_ci_and_post_merge_qualification_are_separated() -> None:
     ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
     post_merge = (
@@ -248,7 +294,8 @@ def test_python_preview_is_separate_from_release_blocking_ci() -> None:
     assert "timeout-minutes: 20" in preview
     assert "pull_request:" not in preview
     assert "schedule:" in preview
-    assert "branches: [main]" in preview
+    assert "  push:" not in preview
+    assert "workflow_dispatch:" in preview
     assert "workflow_call:" not in preview
 
     release = (
@@ -269,7 +316,9 @@ def test_security_workflows_cover_dependency_and_code_scanning() -> None:
 
     assert "pull_request:" not in security
     assert "schedule:" in security
+    assert '"pyproject.toml"' in security
     assert "pull_request:" in codeql
+    assert "  push:" not in codeql
     assert "pip-audit --strict" in security
     assert "python -m pip check" in security
 
@@ -334,6 +383,8 @@ def test_docs_workflow_uses_read_only_default_permissions() -> None:
     ).read_text(encoding="utf-8")
 
     assert "permissions:\n  contents: read" in workflow
+    assert '"docs/**"' in workflow
+    assert '"docs_ko/**"' in workflow
     build_section = workflow.split("  deploy:", 1)[0]
     assert "pages: write" not in build_section
     deploy_section = workflow.split("  deploy:", 1)[1]

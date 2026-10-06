@@ -3,6 +3,16 @@ name: Docs
 on:
   push:
     branches: [main]
+    paths:
+      - "docs/**"
+      - "docs_ko/**"
+      - "README.md"
+      - "README.ko.md"
+      - "mkdocs.yml"
+      - "mkdocs.ko.yml"
+      - "scripts/prepare_korean_docs.py"
+      - "scripts/check_rendered_docs.py"
+      - ".github/workflows/docs.yml"
   workflow_dispatch:
 
 permissions:
