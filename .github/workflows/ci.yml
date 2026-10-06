@@ -120,11 +120,7 @@ jobs:
       - run: python -m pip check
       - run: pip-audit --strict .
 
-  package:
-    # "package" is a protected-main required check. Transitive dependencies make
-    # Laya contract tests and dependency vulnerability auditing release-blocking
-    # even when the repository ruleset has not caught up with newer job names.
-    needs: [laya-integration, dependency-audit, database-integration]
+  package-core:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -149,6 +145,27 @@ jobs:
       - run: /tmp/schemarouter-wheel/bin/python -m pip install --upgrade pip
       - run: /tmp/schemarouter-wheel/bin/pip install dist/*.whl
       - run: /tmp/schemarouter-wheel/bin/python -c "from importlib.metadata import version; import schemarouter; assert schemarouter.__version__ == version('schemarouter')"
+      - run: /tmp/schemarouter-wheel/bin/schemarouter --help
+      - name: Publish immutable package artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: package-dist-${{ github.run_id }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 3
+
+  package-adapter-plugin:
+    needs: package-core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: package-dist-${{ github.run_id }}
+          path: dist
       - run: python -m venv /tmp/schemarouter-wheel-adapter-plugin
       - run: /tmp/schemarouter-wheel-adapter-plugin/bin/python -m pip install --upgrade pip
       - name: Install built wheel and downstream adapter distribution
@@ -159,6 +176,19 @@ jobs:
           /tmp/schemarouter-wheel-adapter-plugin/bin/pip check
       - name: Exercise downstream adapter plugin against built wheel
         run: /tmp/schemarouter-wheel-adapter-plugin/bin/python scripts/downstream_adapter_plugin_smoke.py
+
+  package-pydanticai:
+    needs: package-core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: package-dist-${{ github.run_id }}
+          path: dist
       - run: python -m venv /tmp/schemarouter-wheel-pydanticai
       - run: /tmp/schemarouter-wheel-pydanticai/bin/python -m pip install --upgrade pip
       - name: Install built wheel and pinned PydanticAI validation dependency
@@ -177,6 +207,19 @@ jobs:
           path: artifacts/external-validation-pydanticai.json
           if-no-files-found: error
           retention-days: 30
+
+  package-openai-agents:
+    needs: package-core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: package-dist-${{ github.run_id }}
+          path: dist
       - run: python -m venv /tmp/schemarouter-wheel-openai-agents
       - run: /tmp/schemarouter-wheel-openai-agents/bin/python -m pip install --upgrade pip
       - name: Install built wheel and pinned OpenAI Agents SDK validation dependency
@@ -199,6 +242,19 @@ jobs:
           path: artifacts/external-validation-openai-agents.json
           if-no-files-found: error
           retention-days: 30
+
+  package-mcp-agent:
+    needs: package-core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: package-dist-${{ github.run_id }}
+          path: dist
       - run: python -m venv /tmp/schemarouter-wheel-mcp-agent
       - run: /tmp/schemarouter-wheel-mcp-agent/bin/python -m pip install --upgrade pip
       - name: Install built wheel and pinned mcp-agent validation dependencies
@@ -221,6 +277,22 @@ jobs:
           path: artifacts/external-validation-mcp-agent.json
           if-no-files-found: error
           retention-days: 30
+
+  package-runtime-smoke:
+    needs: package-core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: package-dist-${{ github.run_id }}
+          path: dist
+      - run: python -m venv /tmp/schemarouter-wheel
+      - run: /tmp/schemarouter-wheel/bin/python -m pip install --upgrade pip
+      - run: /tmp/schemarouter-wheel/bin/pip install dist/*.whl
       - run: /tmp/schemarouter-wheel/bin/python examples/quickstart.py
       - run: /tmp/schemarouter-wheel/bin/python examples/database_quickstart.py
       - run: /tmp/schemarouter-wheel/bin/python examples/sdk_bound_demo.py
@@ -258,6 +330,25 @@ jobs:
           PY
           /tmp/schemarouter-wheel/bin/schemarouter dashboard --registry /tmp/inspection-registry.sqlite3 --traces /tmp/inspection-traces.sqlite3 --output /tmp/inspection-cli-dashboard.html
           test -s /tmp/inspection-cli-dashboard.html
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: consumer-acceptance-wheel-${{ github.run_id }}
+          path: artifacts/consumer-acceptance-wheel.json
+          if-no-files-found: error
+          retention-days: 30
+
+  package-lightweight-extras:
+    needs: package-core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: package-dist-${{ github.run_id }}
+          path: dist
       - run: python -m venv /tmp/schemarouter-wheel-lightweight
       - run: /tmp/schemarouter-wheel-lightweight/bin/python -m pip install --upgrade pip
       - name: Install wheel with isolated lightweight extras
@@ -266,6 +357,19 @@ jobs:
           /tmp/schemarouter-wheel-lightweight/bin/pip install "schemarouter[mcp,jev,otel] @ file://${WHEEL}"
           /tmp/schemarouter-wheel-lightweight/bin/pip check
       - run: /tmp/schemarouter-wheel-lightweight/bin/python scripts/installed_extras_smoke.py
+
+  package-integration-extras:
+    needs: package-core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: package-dist-${{ github.run_id }}
+          path: dist
       - run: python -m venv /tmp/schemarouter-wheel-integrations
       - run: /tmp/schemarouter-wheel-integrations/bin/python -m pip install --upgrade pip
       - name: Install wheel with combined integration extras
@@ -278,6 +382,19 @@ jobs:
       - run: /tmp/schemarouter-wheel-integrations/bin/python examples/langchain_quickstart.py
       - run: /tmp/schemarouter-wheel-integrations/bin/python examples/langgraph_quickstart.py
       - run: /tmp/schemarouter-wheel-integrations/bin/python examples/llamaindex_quickstart.py
+
+  package-sdist:
+    needs: package-core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: package-dist-${{ github.run_id }}
+          path: dist
       - run: python -m venv /tmp/schemarouter-sdist
       - run: /tmp/schemarouter-sdist/bin/python -m pip install --upgrade pip
       - run: /tmp/schemarouter-sdist/bin/pip install dist/*.tar.gz
@@ -291,10 +408,48 @@ jobs:
       - run: /tmp/schemarouter-sdist/bin/python -c "import json; data=json.load(open('/tmp/inspection-registry-sdist.json')); assert data['tool_count'] == 1"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: consumer-acceptance-${{ github.run_id }}
-          path: artifacts/consumer-acceptance-*.json
+          name: consumer-acceptance-sdist-${{ github.run_id }}
+          path: artifacts/consumer-acceptance-sdist.json
           if-no-files-found: error
           retention-days: 30
+
+  package:
+    # Keep the protected-main required check name stable while making package
+    # construction and qualification independently attributable and parallel.
+    if: ${{ always() }}
+    needs:
+      - laya-integration
+      - dependency-audit
+      - database-integration
+      - package-core
+      - package-adapter-plugin
+      - package-pydanticai
+      - package-openai-agents
+      - package-mcp-agent
+      - package-runtime-smoke
+      - package-lightweight-extras
+      - package-integration-extras
+      - package-sdist
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify package qualification fan-out
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+
+          needs = json.loads(os.environ["NEEDS_JSON"])
+          failed = {
+              name: payload["result"]
+              for name, payload in needs.items()
+              if payload["result"] != "success"
+          }
+          if failed:
+              raise SystemExit(f"package qualification failed: {failed}")
+          print("all package qualification jobs succeeded")
+          PY
 
   langchain-integration:
     runs-on: ubuntu-latest
