@@ -458,12 +458,14 @@ def inspect_sqlite_storage(path: str | Path) -> StorageInspection:
             connection.close()
 
 
-def _reserve_backup_destination(target: Path) -> tuple[int, os.stat_result]:
-    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
-    flags |= getattr(os, "O_BINARY", 0)
-    flags |= getattr(os, "O_NOFOLLOW", 0)
+def _publish_backup_destination(
+    backup_path: Path,
+    target: Path,
+) -> None:
+    """Publish a completed backup atomically without clobbering an existing path."""
+
     try:
-        descriptor = os.open(target, flags, 0o600)
+        os.link(backup_path, target, follow_symlinks=False)
     except FileExistsError as exc:
         raise StorageFormatError(
             f"backup destination already exists: {target}"
@@ -474,40 +476,8 @@ def _reserve_backup_destination(target: Path) -> tuple[int, os.stat_result]:
                 f"backup destination already exists or is unsafe: {target}"
             ) from exc
         raise StorageFormatError(
-            f"backup destination cannot be reserved safely: {target}"
+            f"backup destination cannot be published atomically: {target}"
         ) from exc
-    return descriptor, os.fstat(descriptor)
-
-
-def _path_matches_reserved_destination(
-    target: Path,
-    reserved_stat: os.stat_result,
-) -> bool:
-    try:
-        current = os.stat(target, follow_symlinks=False)
-    except OSError:
-        return False
-    return os.path.samestat(current, reserved_stat)
-
-
-def _copy_backup_to_reserved_destination(
-    backup_path: Path,
-    descriptor: int,
-) -> None:
-    os.lseek(descriptor, 0, os.SEEK_SET)
-    os.ftruncate(descriptor, 0)
-    with backup_path.open("rb") as source_file:
-        while True:
-            chunk = source_file.read(1024 * 1024)
-            if not chunk:
-                break
-            view = memoryview(chunk)
-            while view:
-                written = os.write(descriptor, view)
-                if written <= 0:
-                    raise OSError("failed to write reserved backup destination")
-                view = view[written:]
-    os.fsync(descriptor)
 
 
 def backup_sqlite_storage(
@@ -528,12 +498,17 @@ def backup_sqlite_storage(
         raise StorageFormatError(
             f"backup destination directory does not exist: {target.parent}"
         )
+    # Fast fail for the normal existing-path case. The atomic hard-link publication
+    # below remains the concurrency authority, so a path created after this check is
+    # still never overwritten.
+    if os.path.lexists(target):
+        raise StorageFormatError(
+            f"backup destination already exists: {target}"
+        )
 
-    target_descriptor, reserved_stat = _reserve_backup_destination(target)
     source_connection: sqlite3.Connection | None = None
     temporary_connection: sqlite3.Connection | None = None
     temporary_path: Path | None = None
-    completed = False
     try:
         temporary_descriptor, temporary_name = tempfile.mkstemp(
             prefix=f".{target.name}.",
@@ -552,15 +527,12 @@ def backup_sqlite_storage(
         temporary_connection.close()
         temporary_connection = None
 
-        _copy_backup_to_reserved_destination(
-            temporary_path,
-            target_descriptor,
-        )
-        if not _path_matches_reserved_destination(target, reserved_stat):
-            raise StorageFormatError(
-                "backup destination changed while the backup was being created"
-            )
-        completed = True
+        # Ensure the completed temporary database reaches the filesystem before it
+        # becomes visible at the caller-selected destination.
+        with temporary_path.open("rb") as backup_file:
+            os.fsync(backup_file.fileno())
+
+        _publish_backup_destination(temporary_path, target)
     except StorageFormatError:
         raise
     except (sqlite3.DatabaseError, OSError) as exc:
@@ -579,20 +551,6 @@ def backup_sqlite_storage(
                 pass
             except OSError:
                 pass
-
-        # Close the reservation handle before path-identity cleanup. On Windows,
-        # unlinking/replacing an open file can remain pending until the last handle
-        # closes; checking the pathname while our reservation handle is still open
-        # can therefore misidentify a concurrently-created replacement as ours.
-        os.close(target_descriptor)
-        try:
-            if (
-                not completed
-                and _path_matches_reserved_destination(target, reserved_stat)
-            ):
-                target.unlink()
-        except OSError:
-            pass
 
     return target
 
