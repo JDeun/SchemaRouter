@@ -1100,7 +1100,7 @@ class SchemaRouter:
         """Atomically remove one capability and all router-owned runtime state."""
 
         async with self.schema_watcher.lifecycle_guard():
-            async with self.health_monitor.lifecycle_guard():
+            async with self.health_monitor.lifecycle_guard(wait_for_inflight=True):
                 expected_version = self.registry.version
                 try:
                     current = self.registry.get(tool_key)
