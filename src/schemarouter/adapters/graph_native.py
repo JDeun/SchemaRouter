@@ -63,7 +63,11 @@ def _absolute_iri(value: str) -> str:
     return f"<{value}>"
 
 
-def _normalize_neo4j_result(result: Any) -> list[dict[str, Any]]:
+def _normalize_neo4j_result(
+    result: Any,
+    *,
+    max_rows: int | None = None,
+) -> list[dict[str, Any]]:
     records = getattr(result, "records", None)
     if records is None and isinstance(result, Sequence) and not isinstance(result, (str, bytes)):
         if len(result) >= 1 and isinstance(result[0], Sequence):
@@ -72,10 +76,19 @@ def _normalize_neo4j_result(result: Any) -> list[dict[str, Any]]:
             records = result
     if records is None:
         raise SchemaValidationError("Neo4j execute_query() returned an unexpected result")
-    return [dict(_as_mapping(record)) for record in records]
+    normalized: list[dict[str, Any]] = []
+    for index, record in enumerate(records):
+        if max_rows is not None and index >= max_rows:
+            raise RegistrationError(f"Neo4j result rows exceeded limit={max_rows}")
+        normalized.append(dict(_as_mapping(record)))
+    return normalized
 
 
-def _json_payload_rows(payload: Any) -> list[dict[str, Any]]:
+def _json_payload_rows(
+    payload: Any,
+    *,
+    max_rows: int | None = None,
+) -> list[dict[str, Any]]:
     if hasattr(payload, "read"):
         payload = payload.read()
     if isinstance(payload, bytes):
@@ -89,15 +102,27 @@ def _json_payload_rows(payload: Any) -> list[dict[str, Any]]:
             payload = [payload]
     if not isinstance(payload, Sequence) or isinstance(payload, (str, bytes)):
         raise SchemaValidationError("graph query response must contain a list of rows")
-    return [dict(_as_mapping(row)) for row in payload]
+    normalized: list[dict[str, Any]] = []
+    for index, row in enumerate(payload):
+        if max_rows is not None and index >= max_rows:
+            raise RegistrationError(f"graph query rows exceeded limit={max_rows}")
+        normalized.append(dict(_as_mapping(row)))
+    return normalized
 
 
-def _falkor_rows(result: Any, columns: tuple[str, ...]) -> list[dict[str, Any]]:
+def _falkor_rows(
+    result: Any,
+    columns: tuple[str, ...],
+    *,
+    max_rows: int | None = None,
+) -> list[dict[str, Any]]:
     rows = getattr(result, "result_set", None)
     if not isinstance(rows, Sequence) or isinstance(rows, (str, bytes)):
         raise SchemaValidationError("FalkorDB query returned an unexpected result")
     normalized: list[dict[str, Any]] = []
-    for raw in rows:
+    for index, raw in enumerate(rows):
+        if max_rows is not None and index >= max_rows:
+            raise RegistrationError(f"FalkorDB query rows exceeded limit={max_rows}")
         if isinstance(raw, Mapping):
             normalized.append(
                 {column: raw.get(column) for column in columns}
@@ -113,6 +138,7 @@ def _falkor_rows(result: Any, columns: tuple[str, ...]) -> list[dict[str, Any]]:
             continue
         raise SchemaValidationError("FalkorDB query row has an unexpected shape")
     return normalized
+
 
 class Neo4jGraphBackend:
     """Thin adapter over a caller-owned Neo4j Python driver."""
@@ -139,22 +165,29 @@ class Neo4jGraphBackend:
         self,
         query: str,
         parameters: Mapping[str, Any] | None = None,
+        *,
+        max_rows: int | None = None,
     ) -> list[dict[str, Any]]:
         kwargs: dict[str, Any] = {"database_": self._database}
         if parameters:
             kwargs["parameters_"] = dict(parameters)
-        return _normalize_neo4j_result(self._driver.execute_query(query, **kwargs))
+        return _normalize_neo4j_result(
+            self._driver.execute_query(query, **kwargs),
+            max_rows=max_rows,
+        )
 
     def list_graphs(self) -> tuple[GraphSourceSpec, ...]:
         schema_limit = self._max_schema_items + 1
         label_rows = self._execute(
             "CALL db.labels() YIELD label RETURN label ORDER BY label "
-            f"LIMIT {schema_limit}"
+            f"LIMIT {schema_limit}",
+            max_rows=schema_limit,
         )
         relationship_rows = self._execute(
             "CALL db.relationshipTypes() YIELD relationshipType "
             "RETURN relationshipType ORDER BY relationshipType "
-            f"LIMIT {schema_limit}"
+            f"LIMIT {schema_limit}",
+            max_rows=schema_limit,
         )
         if len(label_rows) > self._max_schema_items:
             raise RegistrationError(
@@ -661,6 +694,7 @@ class FalkorGraphBackend:
         *,
         columns: tuple[str, ...],
         params: Mapping[str, Any] | None = None,
+        max_rows: int | None = None,
     ) -> list[dict[str, Any]]:
         graph = self._client.select_graph(graph_name)
         ro_query = getattr(graph, "ro_query", None)
@@ -669,7 +703,7 @@ class FalkorGraphBackend:
                 "FalkorDB graph must expose ro_query() for read-only execution"
             )
         result = ro_query(query, params=dict(params or {}))
-        return _falkor_rows(result, columns)
+        return _falkor_rows(result, columns, max_rows=max_rows)
 
     def _properties(
         self,
@@ -684,6 +718,7 @@ class FalkorGraphBackend:
             "RETURN DISTINCT property ORDER BY property "
             f"LIMIT {self._max_schema_items + 1}",
             columns=("property",),
+            max_rows=self._max_schema_items + 1,
         )
         if len(rows) > self._max_schema_items:
             raise RegistrationError(
@@ -704,6 +739,7 @@ class FalkorGraphBackend:
                 "RETURN DISTINCT label ORDER BY label "
                 f"LIMIT {self._max_schema_items + 1}",
                 columns=("label",),
+                max_rows=self._max_schema_items + 1,
             )
             relationship_rows = self._read(
                 graph_name,
@@ -711,6 +747,7 @@ class FalkorGraphBackend:
                 "ORDER BY relationshipType "
                 f"LIMIT {self._max_schema_items + 1}",
                 columns=("relationshipType",),
+                max_rows=self._max_schema_items + 1,
             )
             if len(label_rows) > self._max_schema_items:
                 raise RegistrationError(
@@ -758,6 +795,7 @@ class FalkorGraphBackend:
                     "RETURN DISTINCT sourceType, targetType "
                     f"LIMIT {self._max_schema_items + 1}",
                     columns=("sourceType", "targetType"),
+                    max_rows=self._max_schema_items + 1,
                 )
                 if len(endpoint_rows) > self._max_schema_items:
                     raise RegistrationError(
