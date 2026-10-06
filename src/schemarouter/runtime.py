@@ -1692,7 +1692,7 @@ class SchemaRouter:
                 remote=remote,
                 max_discovery_sources=max_discovery_sources,
                 max_fields_per_collection=max_fields_per_collection,
-            max_generated_bytes=max_generated_bytes,
+                max_generated_bytes=max_generated_bytes,
             )
             match = next((item for item in refreshed if item.tool.key == tool_key), None)
             if match is None:
@@ -2243,7 +2243,7 @@ class SchemaRouter:
                 remote=remote,
                 max_discovery_sources=max_discovery_sources,
                 max_schema_items_per_graph=max_schema_items_per_graph,
-            max_generated_bytes=max_generated_bytes,
+                max_generated_bytes=max_generated_bytes,
             )
             match = next((item for item in refreshed if item.tool.key == tool_key), None)
             if match is None:
@@ -2336,7 +2336,7 @@ class SchemaRouter:
                 remote=remote,
                 max_discovery_sources=max_discovery_sources,
                 max_fields_per_source=max_fields_per_source,
-            max_generated_bytes=max_generated_bytes,
+                max_generated_bytes=max_generated_bytes,
             )
             match = next((item for item in refreshed if item.tool.key == tool_key), None)
             if match is None:
