@@ -23,6 +23,8 @@ from .discovery_limits import (
     NativeDiscoveryBudget,
     NativeDiscoveryLimits,
     bounded_collect,
+    bounded_select,
+    descriptor_name,
     require_at_most,
 )
 
@@ -284,15 +286,32 @@ async def introspect_vector_backend(
 
     budget = NativeDiscoveryBudget(discovery_limits)
     limits = budget.limits
+    selected = None if collections is None else {str(value) for value in collections}
+    if selected is not None:
+        require_at_most(
+            len(selected),
+            limit=limits.max_sources,
+            label="vector collection selected count",
+        )
     offload_backend = remote if offload_sync_backend is None else offload_sync_backend
     discovered_raw = await _call_backend(
         backend.list_collections,
         offload_sync=offload_backend,
     )
-    discovered_items = bounded_collect(
-        discovered_raw,
-        limit=limits.max_sources,
-        label="vector collection count",
+    discovered_items = (
+        bounded_collect(
+            discovered_raw,
+            limit=limits.max_sources,
+            label="vector collection count",
+        )
+        if selected is None
+        else bounded_select(
+            discovered_raw,
+            selected,
+            limit=limits.max_sources,
+            label="vector collection count",
+            name_of=descriptor_name,
+        )
     )
     discovered_list: list[VectorCollectionSpec] = []
     for item in discovered_items:
@@ -315,14 +334,6 @@ async def introspect_vector_backend(
     names = [collection.name for collection in discovered]
     if len(names) != len(set(names)):
         raise RegistrationError("vector backend returned duplicate collection names")
-
-    selected = None if collections is None else {str(value) for value in collections}
-    if selected is not None:
-        missing = sorted(selected - set(names))
-        if missing:
-            raise RegistrationError(
-                "unknown vector collections/indexes: " + ", ".join(missing)
-            )
 
     bindings: list[VectorCollectionBinding] = []
     used_names: set[str] = set()
