@@ -71,6 +71,53 @@ def test_vector_discovery_stops_after_one_item_past_source_budget() -> None:
     assert router.registry.keys() == ()
 
 
+def test_vector_allowlist_stops_after_requested_descriptor() -> None:
+    class Backend:
+        def __init__(self) -> None:
+            self.consumed = 0
+
+        def list_collections(self):
+            for name in ("wanted", "unrelated_a", "unrelated_b"):
+                self.consumed += 1
+                yield VectorCollectionSpec(name=name, dimension=3)
+
+        def search(self, **_kwargs):
+            return []
+
+    backend = Backend()
+    router = SchemaRouter()
+    keys = router.add_vector_store(
+        backend,
+        lambda _query: [0.0, 0.0, 0.0],
+        database_name="vectors",
+        collections={"wanted"},
+        remote=False,
+        discovery_limits=_limits(max_sources=1),
+    )
+
+    assert keys == ("vectors.wanted",)
+    assert backend.consumed == 1
+
+
+def test_vector_allowlist_still_reports_missing_requested_source() -> None:
+    class Backend:
+        def list_collections(self):
+            yield VectorCollectionSpec(name="available", dimension=3)
+
+        def search(self, **_kwargs):
+            return []
+
+    with pytest.raises(RegistrationError, match="unknown vector collections"):
+        SchemaRouter().add_vector_store(
+            Backend(),
+            lambda _query: [0.0, 0.0, 0.0],
+            database_name="vectors",
+            collections={"missing"},
+            remote=False,
+            discovery_limits=_limits(max_sources=2),
+        )
+
+
 def test_vector_discovery_rejects_oversized_descriptor_before_publish() -> None:
     class Backend:
         def list_collections(self):
