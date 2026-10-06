@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import errno
+import os
 import sqlite3
+import tempfile
 from pathlib import Path
 from typing import Literal
 
@@ -455,6 +458,28 @@ def inspect_sqlite_storage(path: str | Path) -> StorageInspection:
             connection.close()
 
 
+def _publish_backup_destination(
+    backup_path: Path,
+    target: Path,
+) -> None:
+    """Publish a completed backup atomically without clobbering an existing path."""
+
+    try:
+        os.link(backup_path, target)
+    except FileExistsError as exc:
+        raise StorageFormatError(
+            f"backup destination already exists: {target}"
+        ) from exc
+    except OSError as exc:
+        if exc.errno in {errno.EEXIST, errno.ELOOP}:
+            raise StorageFormatError(
+                f"backup destination already exists or is unsafe: {target}"
+            ) from exc
+        raise StorageFormatError(
+            f"backup destination cannot be published atomically: {target}"
+        ) from exc
+
+
 def backup_sqlite_storage(
     path: str | Path,
     destination: str | Path | None = None,
@@ -469,38 +494,64 @@ def backup_sqlite_storage(
     )
     if target.resolve() == source.resolve():
         raise StorageFormatError("backup destination must differ from source database")
-    if target.exists():
-        raise StorageFormatError(
-            f"backup destination already exists: {target}"
-        )
     if not target.parent.exists():
         raise StorageFormatError(
             f"backup destination directory does not exist: {target.parent}"
         )
+    # Fast fail for the normal existing-path case. The atomic hard-link publication
+    # below remains the concurrency authority, so a path created after this check is
+    # still never overwritten.
+    if os.path.lexists(target):
+        raise StorageFormatError(
+            f"backup destination already exists: {target}"
+        )
 
     source_connection: sqlite3.Connection | None = None
-    target_connection: sqlite3.Connection | None = None
+    temporary_connection: sqlite3.Connection | None = None
+    temporary_path: Path | None = None
     try:
+        temporary_descriptor, temporary_name = tempfile.mkstemp(
+            prefix=f".{target.name}.",
+            suffix=".schemarouter-backup.tmp",
+            dir=target.parent,
+        )
+        os.close(temporary_descriptor)
+        temporary_path = Path(temporary_name)
+
         source_connection = sqlite3.connect(
             f"file:{source.resolve().as_posix()}?mode=ro",
             uri=True,
         )
-        target_connection = sqlite3.connect(target)
-        source_connection.backup(target_connection)
-    except sqlite3.DatabaseError as exc:
-        if target.exists():
-            try:
-                target.unlink()
-            except OSError:
-                pass
+        temporary_connection = sqlite3.connect(temporary_path)
+        source_connection.backup(temporary_connection)
+        temporary_connection.close()
+        temporary_connection = None
+
+        # Ensure the completed temporary database reaches the filesystem before it
+        # becomes visible at the caller-selected destination.
+        with temporary_path.open("rb+") as backup_file:
+            os.fsync(backup_file.fileno())
+
+        _publish_backup_destination(temporary_path, target)
+    except StorageFormatError:
+        raise
+    except (sqlite3.DatabaseError, OSError) as exc:
         raise StorageFormatError(
             f"SQLite backup failed: {source} -> {target}"
         ) from exc
     finally:
-        if target_connection is not None:
-            target_connection.close()
+        if temporary_connection is not None:
+            temporary_connection.close()
         if source_connection is not None:
             source_connection.close()
+        if temporary_path is not None:
+            try:
+                temporary_path.unlink()
+            except FileNotFoundError:
+                pass
+            except OSError:
+                pass
+
     return target
 
 

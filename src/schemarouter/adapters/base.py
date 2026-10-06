@@ -5,7 +5,9 @@ from typing import Any, Literal, Protocol
 
 import httpx
 
+from .._http_headers import validate_trusted_headers
 from ..models import ToolSpec
+from ..network_policy import TRUSTED_INTERNAL_NETWORK_POLICY, NetworkPolicy
 
 
 @dataclass(frozen=True)
@@ -26,6 +28,27 @@ class AdapterContext:
     openapi_ref_max_bytes: int = 10 * 1024 * 1024
     timeout: float = 20.0
     http_client: httpx.AsyncClient | None = None
+    network_policy: NetworkPolicy = TRUSTED_INTERNAL_NETWORK_POLICY
+
+    def __post_init__(self) -> None:
+        if self.schema_headers is not None:
+            object.__setattr__(
+                self,
+                "schema_headers",
+                validate_trusted_headers(
+                    self.schema_headers,
+                    label="schema_headers",
+                ),
+            )
+        if self.trusted_headers is not None:
+            object.__setattr__(
+                self,
+                "trusted_headers",
+                validate_trusted_headers(
+                    self.trusted_headers,
+                    label="trusted_headers",
+                ),
+            )
 
 
 ProbeOutcome = Literal[

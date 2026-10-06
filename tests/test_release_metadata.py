@@ -183,10 +183,24 @@ def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
     assert "windows-smoke:" in workflow
     assert "minimum-dependencies:" in workflow
     assert "coverage:" in workflow
+    assert "coverage-native:" in workflow
+    assert "Upload Python 3.12 core coverage data" in workflow
+    assert "needs: [test, coverage-native]" in workflow
+    assert "Verify coverage fan-out" in workflow
+    assert "coverage combine coverage-data" in workflow
+    assert "coverage report --fail-under=83.5" in workflow
     assert "--cov-branch" in workflow
     assert "dependency-audit:" in workflow
     assert "pip-audit --strict ." in workflow
-    assert "needs: [laya-integration, dependency-audit, database-integration]" in workflow
+    assert "package-core:" in workflow
+    assert "Publish immutable package artifacts" in workflow
+    assert "package-dist-${{ github.run_id }}" in workflow
+    assert "package-runtime-smoke:" in workflow
+    assert "package-sdist:" in workflow
+    assert "Verify package qualification fan-out" in workflow
+    assert "- laya-integration" in workflow
+    assert "- dependency-audit" in workflow
+    assert "- database-integration" in workflow
     assert "database-integration:" in workflow
     assert 'pip install -e ".[dev,database]"' in workflow
     assert "--html-out /tmp/decision-benchmark.html" in workflow
@@ -210,7 +224,8 @@ def test_python_preview_is_separate_from_release_blocking_ci() -> None:
     assert '"3.15.0-rc.2"' in preview
     assert "allow-prereleases: true" in preview
     assert "timeout-minutes: 20" in preview
-    assert "pull_request:" in preview
+    assert "pull_request:" not in preview
+    assert "schedule:" in preview
     assert "branches: [main]" in preview
     assert "workflow_call:" not in preview
 
@@ -230,8 +245,9 @@ def test_security_workflows_cover_dependency_and_code_scanning() -> None:
         ROOT / ".github" / "workflows" / "codeql.yml"
     ).read_text(encoding="utf-8")
 
-    assert "pull_request:" in security
+    assert "pull_request:" not in security
     assert "schedule:" in security
+    assert "pull_request:" in codeql
     assert "pip-audit --strict" in security
     assert "python -m pip check" in security
 

@@ -255,46 +255,67 @@ def _adjacency(
 def dependency_strongly_connected_components(
     graph: CapabilityDependencyGraph,
 ) -> tuple[tuple[str, ...], ...]:
-    """Return deterministic strongly connected components using Tarjan's algorithm."""
+    """Return deterministic SCCs using an iterative Tarjan traversal."""
 
     adjacency = _adjacency(graph)
     index = 0
-    stack: list[str] = []
+    tarjan_stack: list[str] = []
     on_stack: set[str] = set()
     indices: dict[str, int] = {}
     lowlinks: dict[str, int] = {}
     components: list[tuple[str, ...]] = []
 
-    def strongconnect(node: str) -> None:
+    def discover(node: str) -> None:
         nonlocal index
         indices[node] = index
         lowlinks[node] = index
         index += 1
-        stack.append(node)
+        tarjan_stack.append(node)
         on_stack.add(node)
 
-        for successor in adjacency.get(node, ()):
-            if successor not in indices:
-                strongconnect(successor)
-                lowlinks[node] = min(lowlinks[node], lowlinks[successor])
-            elif successor in on_stack:
-                lowlinks[node] = min(lowlinks[node], indices[successor])
+    for root in sorted(graph.capability_ids):
+        if root in indices:
+            continue
 
-        if lowlinks[node] != indices[node]:
-            return
+        discover(root)
+        frames: list[tuple[str, int]] = [(root, 0)]
+        while frames:
+            node, successor_index = frames[-1]
+            successors = adjacency.get(node, ())
 
-        component: list[str] = []
-        while stack:
-            member = stack.pop()
-            on_stack.remove(member)
-            component.append(member)
-            if member == node:
-                break
-        components.append(tuple(sorted(component)))
+            if successor_index < len(successors):
+                successor = successors[successor_index]
+                frames[-1] = (node, successor_index + 1)
+                if successor not in indices:
+                    discover(successor)
+                    frames.append((successor, 0))
+                    continue
+                if successor in on_stack:
+                    lowlinks[node] = min(
+                        lowlinks[node],
+                        indices[successor],
+                    )
+                continue
 
-    for capability_id in sorted(graph.capability_ids):
-        if capability_id not in indices:
-            strongconnect(capability_id)
+            frames.pop()
+            if frames:
+                parent = frames[-1][0]
+                lowlinks[parent] = min(
+                    lowlinks[parent],
+                    lowlinks[node],
+                )
+
+            if lowlinks[node] != indices[node]:
+                continue
+
+            component: list[str] = []
+            while tarjan_stack:
+                member = tarjan_stack.pop()
+                on_stack.remove(member)
+                component.append(member)
+                if member == node:
+                    break
+            components.append(tuple(sorted(component)))
 
     return tuple(sorted(components))
 
@@ -308,31 +329,43 @@ def _cycle_witness(
         node = component[0]
         return (node,) if node in adjacency.get(node, ()) else None
 
-    def visit(
-        start: str,
-        current: str,
-        path: tuple[str, ...],
-    ) -> tuple[str, ...] | None:
-        for successor in adjacency.get(current, ()):
+    for start in component:
+        path = [start]
+        path_set = {start}
+        frames: list[tuple[str, int]] = [(start, 0)]
+        found: tuple[str, ...] | None = None
+
+        while frames:
+            current, successor_index = frames[-1]
+            successors = adjacency.get(current, ())
+
+            if successor_index >= len(successors):
+                frames.pop()
+                removed = path.pop()
+                path_set.remove(removed)
+                continue
+
+            successor = successors[successor_index]
+            frames[-1] = (current, successor_index + 1)
             if successor not in allowed:
                 continue
             if successor == start:
-                return path
-            if successor in path:
+                found = tuple(path)
+                break
+            if successor in path_set:
                 continue
-            found = visit(start, successor, (*path, successor))
-            if found is not None:
-                return found
-        return None
 
-    for start in component:
-        found = visit(start, start, (start,))
+            path.append(successor)
+            path_set.add(successor)
+            frames.append((successor, 0))
+
         if found is not None:
-            rotations = [
-                found[index:] + found[:index]
-                for index in range(len(found))
-            ]
-            return min(rotations)
+            minimum_index = min(
+                range(len(found)),
+                key=found.__getitem__,
+            )
+            return found[minimum_index:] + found[:minimum_index]
+
     return None
 
 

@@ -1009,7 +1009,7 @@ class FallbackRoute(StrictModel):
     """Precompiled alternatives for one primary call in an ExecutionPlan."""
 
     primary_call_index: int = Field(ge=0)
-    alternatives: list[ToolCall] = Field(default_factory=list)
+    alternatives: list[ToolCall] = Field(default_factory=list, max_length=8)
 
 
 class SemanticFieldRequirement(StrictModel):
@@ -1031,8 +1031,8 @@ class PlanCoverage(StrictModel):
 class ExecutionPlan(StrictModel):
     query: str
     registry_version: int
-    calls: list[ToolCall] = Field(default_factory=list)
-    fallback_routes: list[FallbackRoute] = Field(default_factory=list)
+    calls: list[ToolCall] = Field(default_factory=list, max_length=32)
+    fallback_routes: list[FallbackRoute] = Field(default_factory=list, max_length=32)
     warnings: list[str] = Field(default_factory=list)
     coverage: PlanCoverage | None = None
 

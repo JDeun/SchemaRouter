@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import sqlite3
 from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
@@ -32,7 +33,6 @@ class RunTrace(StrictModel):
         if self.events[0].event != "run.start":
             raise ValueError("run trace must start with run.start")
 
-        previous_timestamp = None
         terminal_seen = False
         for expected_sequence, event in enumerate(self.events):
             if event.run_id != self.run_id:
@@ -42,13 +42,10 @@ class RunTrace(StrictModel):
                     "run trace sequence must be contiguous from zero: "
                     f"expected {expected_sequence}, got {event.sequence}"
                 )
-            if previous_timestamp is not None and event.timestamp < previous_timestamp:
-                raise ValueError("run trace timestamps must be monotonic")
             if terminal_seen:
                 raise ValueError("run trace cannot contain events after a terminal event")
             if event.event in _TERMINAL_EVENTS:
                 terminal_seen = True
-            previous_timestamp = event.timestamp
         return self
 
     @property
@@ -198,9 +195,10 @@ def _validate_legacy_trace_storage(
 class SQLiteRunTraceStore:
     """Append-only SQLite store for replayable RunEvent streams.
 
-    The store persists the exact RunEvent envelope it receives. Payloads are therefore redacted
-    when the source stream uses the default RunConfig, but explicit include_payloads=True data will
-    also be persisted and must be protected by the application.
+    The store persists the exact RunEvent envelope it receives. SchemaRouter's runtime stream
+    applies structured redaction before persistence by default, including when payload tracing is
+    enabled. Only the explicit raw_trace_payloads escape hatch emits unredacted runtime events.
+    External event producers remain responsible for their own redaction.
     """
 
     def __init__(
@@ -377,7 +375,7 @@ class SQLiteRunTraceStore:
             try:
                 row = self._connection.execute(
                     """
-                    SELECT last_sequence, last_timestamp, terminal
+                    SELECT last_sequence, terminal
                     FROM schemarouter_trace_runs
                     WHERE run_id = ?
                     """,
@@ -403,11 +401,9 @@ class SQLiteRunTraceStore:
                         (event.run_id, event_timestamp, -1, event_timestamp),
                     )
                     last_sequence = -1
-                    last_timestamp = event_timestamp
                     terminal = False
                 else:
                     last_sequence = int(row["last_sequence"])
-                    last_timestamp = float(row["last_timestamp"])
                     terminal = bool(row["terminal"])
 
                 if terminal:
@@ -420,8 +416,6 @@ class SQLiteRunTraceStore:
                     )
                 if event.sequence > 0 and event.event == "run.start":
                     raise TraceError("run.start can only appear at sequence 0")
-                if event_timestamp < last_timestamp:
-                    raise TraceError("run event timestamps must be monotonic")
 
                 self._connection.execute(
                     """
@@ -544,15 +538,62 @@ class SQLiteRunTraceStore:
         self.close()
 
 
+async def append_run_event_async(
+    store: RunTraceStore,
+    event: RunEvent,
+) -> None:
+    """Append one event without running a synchronous trace sink on the event loop.
+
+    The synchronous append is serialized by the store's own contract. The offloaded
+    call is shielded from task cancellation and awaited to completion before
+    cancellation propagates, preventing a detached SQLite write from outliving the
+    async persistence boundary.
+    """
+
+    append_task = asyncio.create_task(
+        asyncio.to_thread(store.append, event)
+    )
+    try:
+        await asyncio.shield(append_task)
+    except asyncio.CancelledError:
+        try:
+            await append_task
+        except Exception:
+            pass
+        raise
+
+
+async def _close_upstream_events(
+    events: AsyncIterator[RunEvent],
+) -> None:
+    close = getattr(events, "aclose", None)
+    if close is None:
+        return
+    await close()
+
+
 async def record_run_events(
     events: AsyncIterator[RunEvent],
     *,
     store: RunTraceStore,
 ) -> AsyncIterator[RunEvent]:
-    """Persist an event stream before yielding each event to downstream consumers."""
-    async for event in events:
-        store.append(event)
-        yield event
+    """Persist an event stream and promptly propagate downstream closure upstream."""
+    primary_error: BaseException | None = None
+    try:
+        async for event in events:
+            await append_run_event_async(store, event)
+            yield event
+    except BaseException as exc:
+        primary_error = exc
+        raise
+    finally:
+        cleanup_error: BaseException | None = None
+        try:
+            await _close_upstream_events(events)
+        except BaseException as exc:
+            cleanup_error = exc
+        if primary_error is None and cleanup_error is not None:
+            raise cleanup_error
 
 
 def replay_run_events(

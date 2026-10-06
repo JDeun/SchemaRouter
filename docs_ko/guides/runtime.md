@@ -75,7 +75,45 @@ SchemaRouter는 remote metadata에서 probe를 만들어내거나 model output�
 
 ## Payload redaction
 
-argument와 result payload는 기본 event에 포함하지 않습니다. `RunConfig(include_payloads=True)`는 적절한 retention control을 가진 trusted trace sink에서만 사용하세요.
+argument와 result payload는 기본 event에 포함하지 않습니다. Payload tracing을 활성화해도
+SchemaRouter는 event를 yield하거나 저장하기 **전에** structured trace content를 redact합니다.
+
+```python
+from schemarouter import RunConfig, TraceRedactionConfig
+
+config = RunConfig(
+    include_payloads=True,
+    trace_redaction=TraceRedactionConfig(
+        sensitive_paths={
+            "data.arguments.customer.email",
+            "data.result.data.customer.email",
+        }
+    ),
+)
+```
+
+기본 key matcher는 password, API key, authorization, cookie, token, private key와 일부 고위험
+identity/payment field를 포함합니다. Key matching은 대소문자를 구분하지 않으며
+`db_password` 같은 일반적인 prefix가 붙은 이름도 감지합니다. 민감 key/path 아래에서 찾은
+값은 현재 run 동안 기억하여 이후 exception message에 같은 값이 나타나도 제거합니다. 문자열
+안의 Bearer token과 일반적인 `key=value` credential 형식도 scrub합니다.
+
+`RunConfig.metadata`, request/plan payload, tool argument, result, exception message는 동일한
+run-scoped redactor를 통과합니다. Principal authorization context와 trusted-filter 값은 run
+event에 추가하지 않습니다.
+
+원문 payload가 반드시 필요한 디버깅에서는 별도의 escape hatch를 명시해야 합니다.
+
+```python
+RunConfig(
+    include_payloads=True,
+    raw_trace_payloads=True,
+)
+```
+
+`raw_trace_payloads=True`는 metadata redaction도 비활성화합니다. credential과 개인정보가
+그대로 저장될 수 있으므로 trusted sink와 적절한 retention/access control이 있는 경우에만
+사용해야 합니다.
 
 ## Bound configuration
 

@@ -402,6 +402,7 @@ from .models import (
     ToolSpec,
     UnitNormalizationSpec,
 )
+from .network_policy import NetworkPolicy, NetworkPolicyError
 from .openapi_compatibility import (
     OpenAPICompatibilityIssue,
     OpenAPICompatibilityReport,
@@ -467,6 +468,7 @@ from .storage import (
     inspect_sqlite_storage,
     migrate_sqlite_storage,
 )
+from .trace_redaction import TraceRedactionConfig
 from .traces import (
     RunTrace,
     RunTraceStore,
@@ -637,6 +639,8 @@ __all__ = [
     "MCPStdioConfig",
     "ModelAnalysisError",
     "ModelCallable",
+    "NetworkPolicy",
+    "NetworkPolicyError",
     "ModelQueryAnalyzer",
     "MutableToolRegistry",
     "NonRetryableInvocationError",
@@ -759,6 +763,7 @@ __all__ = [
     "VectorQueryEmbedder",
     "VectorStoreBackend",
     "UnitNormalizationSpec",
+    "TraceRedactionConfig",
     "TraceError",
     "TracePersistenceError",
     "UnsupportedSchemaSourceError",
