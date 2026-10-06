@@ -9,14 +9,12 @@ from schemarouter import (
     EndpointSpec,
     ExecutionBudget,
     ExecutionBudgetExceededError,
-    ExecutionError,
     ExecutionHooks,
     ExecutionPlan,
     ExecutionPolicy,
     FallbackRoute,
     FieldSpec,
     InvocationUnavailableError,
-    TransientInvocationError,
     ParameterSpec,
     PlanRequest,
     PlanValidationError,
@@ -29,6 +27,7 @@ from schemarouter import (
     SuccessfulCapabilityHistory,
     ToolCall,
     ToolSpec,
+    TransientInvocationError,
 )
 from schemarouter.runtime import _run_sync
 
