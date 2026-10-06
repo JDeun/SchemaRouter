@@ -8,6 +8,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+from ._document_loading import read_bounded_text
 from .capability_artifact import (
     migrate_capability_artifact,
     serialize_capability_artifact,
@@ -749,7 +750,9 @@ def _run(args: argparse.Namespace) -> str:
 
     if args.command == "artifact":
         source = _existing_document(args.document)
-        result = migrate_capability_artifact(source.read_text(encoding="utf-8"))
+        result = migrate_capability_artifact(
+            read_bounded_text(source, label="capability artifact document")
+        )
         inspection = {
             "kind": "capability_artifact",
             "source": str(source),
@@ -780,7 +783,9 @@ def _run(args: argparse.Namespace) -> str:
 
     if args.command == "snapshot":
         source = _existing_document(args.document)
-        result = migrate_capability_snapshot(source.read_text(encoding="utf-8"))
+        result = migrate_capability_snapshot(
+            read_bounded_text(source, label="capability snapshot document")
+        )
         inspection = {
             "kind": "capability_snapshot",
             "source": str(source),
