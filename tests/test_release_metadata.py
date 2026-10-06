@@ -214,6 +214,29 @@ def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
     assert "schemarouter[mcp,jev,otel] @ file://" in workflow
 
 
+def test_python_workflows_cache_dependency_downloads_without_sharing_envs() -> None:
+    ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    preview = (
+        ROOT / ".github" / "workflows" / "python-preview.yml"
+    ).read_text(encoding="utf-8")
+    security = (
+        ROOT / ".github" / "workflows" / "security.yml"
+    ).read_text(encoding="utf-8")
+    docs = (ROOT / ".github" / "workflows" / "docs.yml").read_text(encoding="utf-8")
+
+    assert ci.count("cache: pip") == ci.count("actions/setup-python@")
+    assert "examples/external_validation/pydanticai-tool-search/requirements.txt" in ci
+    assert "examples/external_validation/openai_agents_mcp_filter/requirements.txt" in ci
+    assert "examples/external_validation/mcp_agent_catalog/requirements.txt" in ci
+
+    for workflow in (preview, security, docs):
+        assert "cache: pip" in workflow
+        assert "cache-dependency-path: pyproject.toml" in workflow
+
+    assert ".venv" not in ci
+    assert "site-packages" not in ci
+
+
 def test_python_preview_is_separate_from_release_blocking_ci() -> None:
     ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
     preview = (
