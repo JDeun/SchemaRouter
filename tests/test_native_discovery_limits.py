@@ -118,6 +118,65 @@ def test_vector_allowlist_still_reports_missing_requested_source() -> None:
         )
 
 
+def test_vector_raw_field_iterable_is_bounded_before_validation() -> None:
+    consumed = 0
+
+    def metadata_fields():
+        nonlocal consumed
+        for index in range(100):
+            consumed += 1
+            yield {"name": f"field_{index}"}
+
+    class Backend:
+        def list_collections(self):
+            return (
+                {
+                    "name": "docs",
+                    "dimension": 3,
+                    "metadata_fields": metadata_fields(),
+                },
+            )
+
+        def search(self, **_kwargs):
+            return []
+
+    router = SchemaRouter()
+    with pytest.raises(RegistrationError, match="metadata field count"):
+        router.add_vector_store(
+            Backend(),
+            lambda _query: [0.0, 0.0, 0.0],
+            database_name="vectors",
+            remote=False,
+            discovery_limits=_limits(max_fields_per_source=2),
+        )
+
+    assert consumed == 3
+    assert router.registry.keys() == ()
+
+
+def test_generated_tool_schema_bytes_are_bounded_before_publish() -> None:
+    class Backend:
+        def list_collections(self):
+            return (VectorCollectionSpec(name="docs", dimension=3),)
+
+        def search(self, **_kwargs):
+            return []
+
+    router = SchemaRouter()
+    with pytest.raises(RegistrationError, match="generated schema bytes"):
+        router.add_vector_store(
+            Backend(),
+            lambda _query: [0.0, 0.0, 0.0],
+            database_name="vectors",
+            remote=False,
+            discovery_limits=_limits(
+                max_descriptor_bytes=64 * 1024,
+                max_generated_bytes=128,
+            ),
+        )
+    assert router.registry.keys() == ()
+
+
 def test_vector_discovery_rejects_oversized_descriptor_before_publish() -> None:
     class Backend:
         def list_collections(self):
