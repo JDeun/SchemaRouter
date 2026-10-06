@@ -13,6 +13,11 @@ from .errors import StorageFormatError, TraceError
 from .models import StrictModel
 from .runs import RunEvent
 from .storage import (
+    PersistedDocumentLimits,
+    _PersistedDocumentLimitError,
+    _resolve_persisted_document_limits,
+    _validate_persisted_document_size,
+    _validate_persisted_json_document,
     component_presence,
     component_versions,
     stamp_current_component_format,
@@ -75,7 +80,10 @@ class RunTraceStore(Protocol):
 
 def _validate_legacy_trace_storage(
     connection: sqlite3.Connection,
+    *,
+    document_limits: PersistedDocumentLimits | None = None,
 ) -> None:
+    limits = _resolve_persisted_document_limits(document_limits)
     try:
         summaries = connection.execute(
             """
@@ -94,12 +102,19 @@ def _validate_legacy_trace_storage(
         try:
             rows = connection.execute(
                 """
-                SELECT sequence, document
+                SELECT
+                    sequence,
+                    length(CAST(document AS BLOB)) AS document_bytes,
+                    CASE
+                        WHEN length(CAST(document AS BLOB)) <= ?
+                        THEN document
+                        ELSE NULL
+                    END AS document
                 FROM schemarouter_trace_events
                 WHERE run_id = ?
                 ORDER BY sequence
                 """,
-                (run_id,),
+                (limits.max_bytes, run_id),
             ).fetchall()
         except sqlite3.DatabaseError as exc:
             raise StorageFormatError(
@@ -119,8 +134,25 @@ def _validate_legacy_trace_storage(
                     f"legacy run trace {run_id!r} contains an invalid sequence"
                 ) from exc
             try:
-                event = RunEvent.model_validate_json(str(row["document"]))
-            except (ValidationError, ValueError) as exc:
+                encoded_bytes = int(row["document_bytes"])
+                _validate_persisted_document_size(
+                    encoded_bytes,
+                    limits=limits,
+                )
+                document = row["document"]
+                _validate_persisted_json_document(
+                    document,
+                    limits=limits,
+                    encoded_bytes=encoded_bytes,
+                )
+            except (TypeError, ValueError, _PersistedDocumentLimitError) as exc:
+                raise StorageFormatError(
+                    f"legacy run event {run_id}:{sequence} "
+                    "exceeds persisted JSON document limits"
+                ) from exc
+            try:
+                event = RunEvent.model_validate_json(document)
+            except (ValidationError, ValueError, RecursionError) as exc:
                 raise StorageFormatError(
                     f"legacy run event {run_id}:{sequence} "
                     "cannot be migrated safely"
@@ -206,10 +238,14 @@ class SQLiteRunTraceStore:
         path: str | Path,
         *,
         timeout: float = 5.0,
+        document_limits: PersistedDocumentLimits | None = None,
     ) -> None:
         if timeout <= 0:
             raise ValueError("timeout must be > 0")
         self.path = str(path)
+        self._document_limits = _resolve_persisted_document_limits(
+            document_limits
+        )
         self._lock = RLock()
         self._closed = False
         self._connection = sqlite3.connect(
@@ -257,7 +293,10 @@ class SQLiteRunTraceStore:
         )
 
     def _validate_legacy_storage(self) -> None:
-        _validate_legacy_trace_storage(self._connection)
+        _validate_legacy_trace_storage(
+            self._connection,
+            document_limits=self._document_limits,
+        )
 
     def _initialize(self) -> None:
         with self._lock:
@@ -339,22 +378,44 @@ class SQLiteRunTraceStore:
         self._ensure_open()
         self._connection.execute("BEGIN IMMEDIATE")
 
-    @staticmethod
-    def _serialize(event: RunEvent) -> str:
+    def _serialize(self, event: RunEvent) -> str:
         try:
-            return event.model_dump_json()
+            document = event.model_dump_json()
         except Exception as exc:
             raise TraceError("run event cannot be serialized as persistent JSON") from exc
+        try:
+            _validate_persisted_json_document(
+                document,
+                limits=self._document_limits,
+            )
+        except _PersistedDocumentLimitError as exc:
+            raise TraceError(
+                "run event exceeds configured persisted JSON document limits"
+            ) from exc
+        return document
 
-    @staticmethod
     def _deserialize(
+        self,
         run_id: str,
         sequence: int,
         document: str,
+        *,
+        encoded_bytes: int | None = None,
     ) -> RunEvent:
         try:
+            _validate_persisted_json_document(
+                document,
+                limits=self._document_limits,
+                encoded_bytes=encoded_bytes,
+            )
+        except _PersistedDocumentLimitError as exc:
+            raise TraceError(
+                f"stored run event {run_id}:{sequence} exceeds configured "
+                "persisted JSON document limits"
+            ) from exc
+        try:
             event = RunEvent.model_validate_json(document)
-        except (ValidationError, ValueError) as exc:
+        except (ValidationError, ValueError, RecursionError) as exc:
             raise TraceError(
                 f"stored run event {run_id}:{sequence} is invalid"
             ) from exc
@@ -363,6 +424,36 @@ class SQLiteRunTraceStore:
                 f"stored run event identity mismatch at {run_id}:{sequence}"
             )
         return event
+
+    def _deserialize_row(
+        self,
+        run_id: str,
+        sequence: int,
+        row: sqlite3.Row,
+    ) -> RunEvent:
+        try:
+            encoded_bytes = int(row["document_bytes"])
+            _validate_persisted_document_size(
+                encoded_bytes,
+                limits=self._document_limits,
+            )
+            document = row["document"]
+            _validate_persisted_json_document(
+                document,
+                limits=self._document_limits,
+                encoded_bytes=encoded_bytes,
+            )
+        except (TypeError, ValueError, _PersistedDocumentLimitError) as exc:
+            raise TraceError(
+                f"stored run event {run_id}:{sequence} exceeds configured "
+                "persisted JSON document limits"
+            ) from exc
+        return self._deserialize(
+            run_id,
+            sequence,
+            document,
+            encoded_bytes=encoded_bytes,
+        )
 
     def append(self, event: RunEvent) -> None:
         if not event.run_id.strip():
@@ -456,20 +547,27 @@ class SQLiteRunTraceStore:
             ).fetchone()
             rows = self._connection.execute(
                 """
-                SELECT sequence, document
+                SELECT
+                    sequence,
+                    length(CAST(document AS BLOB)) AS document_bytes,
+                    CASE
+                        WHEN length(CAST(document AS BLOB)) <= ?
+                        THEN document
+                        ELSE NULL
+                    END AS document
                 FROM schemarouter_trace_events
                 WHERE run_id = ?
                 ORDER BY sequence
                 """,
-                (run_id,),
+                (self._document_limits.max_bytes, run_id),
             ).fetchall()
             if summary is None or not rows:
                 raise KeyError(run_id)
             events = [
-                self._deserialize(
+                self._deserialize_row(
                     run_id,
                     int(row["sequence"]),
-                    str(row["document"]),
+                    row,
                 )
                 for row in rows
             ]
