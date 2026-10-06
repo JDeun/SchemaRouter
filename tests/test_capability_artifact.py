@@ -3,6 +3,7 @@ import json
 
 import pytest
 
+from schemarouter._document_loading import DocumentLimitError
 from schemarouter.capability_artifact import (
     CAPABILITY_ARTIFACT_FORMAT_VERSION,
     LEGACY_CAPABILITY_ARTIFACT_FORMAT_VERSION,
@@ -23,6 +24,7 @@ from schemarouter.capability_contracts import (
     SemanticEquivalence,
 )
 from schemarouter.capability_graph import build_capability_dependency_graph
+from schemarouter.storage import PersistedDocumentLimits
 
 
 def _legacy_document(
@@ -396,3 +398,29 @@ def test_artifact_model_has_no_runtime_or_secret_transport_fields() -> None:
     assert "health" not in fields
     assert "credentials" not in fields
     assert "headers" not in fields
+
+
+def test_artifact_loader_rejects_oversized_and_deep_documents_before_model_validation() -> None:
+    limits = PersistedDocumentLimits(
+        max_bytes=64,
+        max_depth=4,
+        max_nodes=100,
+        max_list_items=100,
+        max_map_items=100,
+        max_aliases=8,
+        max_anchors=8,
+    )
+    with pytest.raises(DocumentLimitError):
+        load_capability_artifact(json.dumps({"payload": "x" * 256}), document_limits=limits)
+
+    deep_limits = PersistedDocumentLimits(
+        max_bytes=4096,
+        max_depth=4,
+        max_nodes=100,
+        max_list_items=100,
+        max_map_items=100,
+        max_aliases=8,
+        max_anchors=8,
+    )
+    with pytest.raises(DocumentLimitError, match="structural limits"):
+        load_capability_artifact("[" * 10 + "0" + "]" * 10, document_limits=deep_limits)
