@@ -1,0 +1,389 @@
+[
+  {
+    "name": "literature__search",
+    "description": "Search scientific literature by topic or keywords.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Scientific topic or keyword query."
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "literature__retrieve",
+    "description": "Retrieve the full text of one scientific literature document by identifier.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "document_id": {
+          "type": "string",
+          "description": "Literature document identifier."
+        }
+      },
+      "required": [
+        "document_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "literature__summarize",
+    "description": "Return a summary for one scientific literature document by identifier.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "document_id": {
+          "type": "string",
+          "description": "Literature document identifier."
+        }
+      },
+      "required": [
+        "document_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "datasets__search",
+    "description": "Search registered datasets by topic, keyword, or measurement type.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Dataset search query."
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "datasets__retrieve",
+    "description": "Retrieve metadata for one registered dataset by identifier.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "dataset_id": {
+          "type": "string",
+          "description": "Dataset identifier."
+        }
+      },
+      "required": [
+        "dataset_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "samples__get",
+    "description": "Read one laboratory sample record without modifying it.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sample_id": {
+          "type": "string",
+          "description": "Laboratory sample identifier."
+        }
+      },
+      "required": [
+        "sample_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "samples__update",
+    "description": "Update fields on one laboratory sample record.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sample_id": {
+          "type": "string",
+          "description": "Laboratory sample identifier."
+        },
+        "patch": {
+          "type": "object",
+          "description": "Fields to update."
+        }
+      },
+      "required": [
+        "sample_id",
+        "patch"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "samples__delete",
+    "description": "Permanently delete one laboratory sample record.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sample_id": {
+          "type": "string",
+          "description": "Laboratory sample identifier."
+        },
+        "confirm": {
+          "type": "boolean",
+          "description": "Explicit destructive-operation confirmation."
+        }
+      },
+      "required": [
+        "sample_id",
+        "confirm"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "jobs__status",
+    "description": "Read the current status of a computation job.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "job_id": {
+          "type": "string",
+          "description": "Computation job identifier."
+        }
+      },
+      "required": [
+        "job_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "jobs__cancel",
+    "description": "Cancel a running computation job.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "job_id": {
+          "type": "string",
+          "description": "Computation job identifier."
+        }
+      },
+      "required": [
+        "job_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "materials__elastic_modulus",
+    "description": "Read Young elastic modulus for a material sample.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sample_id": {
+          "type": "string",
+          "description": "Material sample identifier."
+        }
+      },
+      "required": [
+        "sample_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "materials__poisson_ratio",
+    "description": "Read Poisson ratio for a material sample.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sample_id": {
+          "type": "string",
+          "description": "Material sample identifier."
+        }
+      },
+      "required": [
+        "sample_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "thermal__conductivity",
+    "description": "Read thermal conductivity for a material sample.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sample_id": {
+          "type": "string",
+          "description": "Material sample identifier."
+        }
+      },
+      "required": [
+        "sample_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "spectroscopy__raman_peak",
+    "description": "Read Raman peak position for a material sample.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sample_id": {
+          "type": "string",
+          "description": "Material sample identifier."
+        }
+      },
+      "required": [
+        "sample_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "optics__refractive_index",
+    "description": "Read refractive index for a material sample.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sample_id": {
+          "type": "string",
+          "description": "Material sample identifier."
+        }
+      },
+      "required": [
+        "sample_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "weather__forecast",
+    "description": "Get a weather forecast for a location and future date.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "location": {
+          "type": "string",
+          "description": "City or location."
+        },
+        "date": {
+          "type": "string",
+          "description": "Future local date in YYYY-MM-DD format."
+        }
+      },
+      "required": [
+        "location",
+        "date"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "weather__historical",
+    "description": "Get historical observed weather for a location and past date.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "location": {
+          "type": "string",
+          "description": "City or location."
+        },
+        "date": {
+          "type": "string",
+          "description": "Past local date in YYYY-MM-DD format."
+        }
+      },
+      "required": [
+        "location",
+        "date"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "finance__quote",
+    "description": "Read the latest market quote for one ticker symbol.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "symbol": {
+          "type": "string",
+          "description": "Market ticker symbol."
+        }
+      },
+      "required": [
+        "symbol"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "finance__history",
+    "description": "Read historical daily prices for one ticker over a date range.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "symbol": {
+          "type": "string",
+          "description": "Market ticker symbol."
+        },
+        "start_date": {
+          "type": "string",
+          "description": "Inclusive start date in YYYY-MM-DD format."
+        },
+        "end_date": {
+          "type": "string",
+          "description": "Inclusive end date in YYYY-MM-DD format."
+        }
+      },
+      "required": [
+        "symbol",
+        "start_date",
+        "end_date"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "documents__metadata",
+    "description": "Read metadata for one stored document without retrieving its body.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "document_id": {
+          "type": "string",
+          "description": "Stored document identifier."
+        }
+      },
+      "required": [
+        "document_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "documents__full_text",
+    "description": "Retrieve the full text body of one stored document.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "document_id": {
+          "type": "string",
+          "description": "Stored document identifier."
+        }
+      },
+      "required": [
+        "document_id"
+      ],
+      "additionalProperties": false
+    }
+  }
+]

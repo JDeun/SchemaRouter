@@ -1,0 +1,308 @@
+{
+  "schema_version": 1,
+  "case_set_id": "smartmcp-cross-project-dev-v1",
+  "status": "development_unfrozen",
+  "cases": [
+    {
+      "id": "sm-dev-001",
+      "label": "supported",
+      "stratum": "exact_single",
+      "query": "Read the Young elastic modulus for sample S-201 in GPa.",
+      "required_tools": [
+        "materials__elastic_modulus"
+      ]
+    },
+    {
+      "id": "sm-dev-002",
+      "label": "supported",
+      "stratum": "exact_single",
+      "query": "Get the Poisson ratio for sample S-202.",
+      "required_tools": [
+        "materials__poisson_ratio"
+      ]
+    },
+    {
+      "id": "sm-dev-003",
+      "label": "supported",
+      "stratum": "output_semantics",
+      "query": "Get the thermal conductivity for sample S-203.",
+      "required_tools": [
+        "thermal__conductivity"
+      ]
+    },
+    {
+      "id": "sm-dev-004",
+      "label": "supported",
+      "stratum": "output_semantics",
+      "query": "Find the Raman peak position for sample S-204.",
+      "required_tools": [
+        "spectroscopy__raman_peak"
+      ]
+    },
+    {
+      "id": "sm-dev-005",
+      "label": "supported",
+      "stratum": "output_semantics",
+      "query": "Read the refractive index for sample S-205.",
+      "required_tools": [
+        "optics__refractive_index"
+      ]
+    },
+    {
+      "id": "sm-dev-006",
+      "label": "supported",
+      "stratum": "sibling_operation",
+      "query": "Search scientific literature for typed capability routing.",
+      "required_tools": [
+        "literature__search"
+      ]
+    },
+    {
+      "id": "sm-dev-007",
+      "label": "supported",
+      "stratum": "sibling_operation",
+      "query": "Retrieve the full text of literature document DOC-42.",
+      "required_tools": [
+        "literature__retrieve"
+      ]
+    },
+    {
+      "id": "sm-dev-008",
+      "label": "supported",
+      "stratum": "sibling_operation",
+      "query": "Summarize literature document DOC-42.",
+      "required_tools": [
+        "literature__summarize"
+      ]
+    },
+    {
+      "id": "sm-dev-009",
+      "label": "supported",
+      "stratum": "sibling_operation",
+      "query": "Search registered datasets for thermal transport measurements.",
+      "required_tools": [
+        "datasets__search"
+      ]
+    },
+    {
+      "id": "sm-dev-010",
+      "label": "supported",
+      "stratum": "sibling_operation",
+      "query": "Retrieve metadata for dataset DS-7.",
+      "required_tools": [
+        "datasets__retrieve"
+      ]
+    },
+    {
+      "id": "sm-dev-011",
+      "label": "supported",
+      "stratum": "read_write_destructive",
+      "query": "Read sample S-301 without changing it.",
+      "required_tools": [
+        "samples__get"
+      ]
+    },
+    {
+      "id": "sm-dev-012",
+      "label": "supported",
+      "stratum": "read_write_destructive",
+      "query": "Update sample S-301 with the supplied patch.",
+      "required_tools": [
+        "samples__update"
+      ]
+    },
+    {
+      "id": "sm-dev-013",
+      "label": "supported",
+      "stratum": "read_write_destructive",
+      "query": "Permanently delete sample S-301 after explicit confirmation.",
+      "required_tools": [
+        "samples__delete"
+      ]
+    },
+    {
+      "id": "sm-dev-014",
+      "label": "supported",
+      "stratum": "read_write_destructive",
+      "query": "Check the current status of job JOB-5.",
+      "required_tools": [
+        "jobs__status"
+      ]
+    },
+    {
+      "id": "sm-dev-015",
+      "label": "supported",
+      "stratum": "read_write_destructive",
+      "query": "Cancel running job JOB-5.",
+      "required_tools": [
+        "jobs__cancel"
+      ]
+    },
+    {
+      "id": "sm-dev-016",
+      "label": "supported",
+      "stratum": "input_constraint",
+      "query": "Get the forecast for Seoul on 2026-10-10.",
+      "required_tools": [
+        "weather__forecast"
+      ]
+    },
+    {
+      "id": "sm-dev-017",
+      "label": "supported",
+      "stratum": "input_constraint",
+      "query": "What was the observed weather in Seoul on 2026-09-10?",
+      "required_tools": [
+        "weather__historical"
+      ]
+    },
+    {
+      "id": "sm-dev-018",
+      "label": "supported",
+      "stratum": "sibling_operation",
+      "query": "Get the latest market quote for AAPL.",
+      "required_tools": [
+        "finance__quote"
+      ]
+    },
+    {
+      "id": "sm-dev-019",
+      "label": "supported",
+      "stratum": "sibling_operation",
+      "query": "Get AAPL daily prices from 2026-09-01 through 2026-09-30.",
+      "required_tools": [
+        "finance__history"
+      ]
+    },
+    {
+      "id": "sm-dev-020",
+      "label": "supported",
+      "stratum": "output_semantics",
+      "query": "Read only the metadata for stored document FILE-17.",
+      "required_tools": [
+        "documents__metadata"
+      ]
+    },
+    {
+      "id": "sm-dev-021",
+      "label": "supported",
+      "stratum": "output_semantics",
+      "query": "Retrieve the full text body of stored document FILE-17.",
+      "required_tools": [
+        "documents__full_text"
+      ]
+    },
+    {
+      "id": "sm-dev-022",
+      "label": "supported",
+      "stratum": "multi_tool",
+      "query": "Search for papers about schema routing, then retrieve the full text of the selected paper.",
+      "required_tools": [
+        "literature__search",
+        "literature__retrieve"
+      ]
+    },
+    {
+      "id": "sm-dev-023",
+      "label": "supported",
+      "stratum": "multi_tool",
+      "query": "Check job JOB-9 and cancel it if it is still running.",
+      "required_tools": [
+        "jobs__status",
+        "jobs__cancel"
+      ]
+    },
+    {
+      "id": "sm-dev-024",
+      "label": "supported",
+      "stratum": "multi_tool",
+      "query": "Get the metadata and the full text for stored document FILE-21.",
+      "required_tools": [
+        "documents__metadata",
+        "documents__full_text"
+      ]
+    },
+    {
+      "id": "sm-dev-025",
+      "label": "supported",
+      "stratum": "multilingual",
+      "query": "샘플 S-401의 영률(Young's modulus)을 GPa 단위로 조회해줘.",
+      "required_tools": [
+        "materials__elastic_modulus"
+      ]
+    },
+    {
+      "id": "sm-dev-026",
+      "label": "supported",
+      "stratum": "multilingual",
+      "query": "JOB-12의 현재 상태를 확인해줘.",
+      "required_tools": [
+        "jobs__status"
+      ]
+    },
+    {
+      "id": "sm-dev-027",
+      "label": "supported",
+      "stratum": "mixed_identifier",
+      "query": "문서 FILE-42의 full text content를 가져와줘.",
+      "required_tools": [
+        "documents__full_text"
+      ]
+    },
+    {
+      "id": "sm-dev-028",
+      "label": "ambiguous",
+      "stratum": "ambiguous",
+      "query": "Handle sample S-9 without specifying whether it should be read, changed, or deleted.",
+      "required_tools": [],
+      "acceptable_candidate_tools": [
+        "samples__get",
+        "samples__update",
+        "samples__delete"
+      ]
+    },
+    {
+      "id": "sm-dev-029",
+      "label": "ambiguous",
+      "stratum": "ambiguous",
+      "query": "Get information from literature document DOC-42 without saying whether I want the source or a summary.",
+      "required_tools": [],
+      "acceptable_candidate_tools": [
+        "literature__retrieve",
+        "literature__summarize"
+      ]
+    },
+    {
+      "id": "sm-dev-030",
+      "label": "ambiguous",
+      "stratum": "ambiguous",
+      "query": "Tell me the weather in Seoul without specifying a date or whether I mean forecast or history.",
+      "required_tools": [],
+      "acceptable_candidate_tools": [
+        "weather__forecast",
+        "weather__historical"
+      ]
+    },
+    {
+      "id": "sm-dev-031",
+      "label": "unsupported",
+      "stratum": "near_ood",
+      "query": "Give the electrochemical impedance spectrum for cell CELL-9.",
+      "required_tools": []
+    },
+    {
+      "id": "sm-dev-032",
+      "label": "unsupported",
+      "stratum": "ood",
+      "query": "Send an email to the project maintainer.",
+      "required_tools": []
+    },
+    {
+      "id": "sm-dev-033",
+      "label": "unsupported",
+      "stratum": "ood",
+      "query": "Compose a jazz chord progression in D minor.",
+      "required_tools": []
+    }
+  ]
+}

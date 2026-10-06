@@ -1,0 +1,696 @@
+{
+  "schema_version": 1,
+  "catalog_id": "smartmcp-cross-project-dev-v1",
+  "status": "development_unfrozen",
+  "provenance": {
+    "repository": "https://github.com/JDeun/SchemaRouter",
+    "issue": "https://github.com/JDeun/SchemaRouter/issues/1114",
+    "upstream_issue": "https://github.com/spak2005/smart-mcp/issues/4",
+    "note": "Development-only synthetic catalog for protocol review. It must not be treated as held-out evidence."
+  },
+  "tools": [
+    {
+      "name": "literature__search",
+      "description": "Search scientific literature by topic or keywords.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Scientific topic or keyword query."
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "id",
+          "semantic_id": "resource.identifier",
+          "json_schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "title",
+          "semantic_id": "literature.title",
+          "json_schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "literature__retrieve",
+      "description": "Retrieve the full text of one scientific literature document by identifier.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "description": "Literature document identifier."
+          }
+        },
+        "required": [
+          "document_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "text",
+          "semantic_id": "literature.full_text",
+          "json_schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "literature__summarize",
+      "description": "Return a summary for one scientific literature document by identifier.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "description": "Literature document identifier."
+          }
+        },
+        "required": [
+          "document_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "summary",
+          "semantic_id": "literature.summary",
+          "json_schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "datasets__search",
+      "description": "Search registered datasets by topic, keyword, or measurement type.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Dataset search query."
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "id",
+          "semantic_id": "resource.identifier",
+          "json_schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "title",
+          "semantic_id": "dataset.title",
+          "json_schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "datasets__retrieve",
+      "description": "Retrieve metadata for one registered dataset by identifier.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "dataset_id": {
+            "type": "string",
+            "description": "Dataset identifier."
+          }
+        },
+        "required": [
+          "dataset_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "metadata",
+          "semantic_id": "dataset.metadata",
+          "json_schema": {
+            "type": "object"
+          }
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "samples__get",
+      "description": "Read one laboratory sample record without modifying it.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "sample_id": {
+            "type": "string",
+            "description": "Laboratory sample identifier."
+          }
+        },
+        "required": [
+          "sample_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "id",
+          "semantic_id": "resource.identifier",
+          "json_schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "properties",
+          "semantic_id": "sample.properties",
+          "json_schema": {
+            "type": "object"
+          }
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "samples__update",
+      "description": "Update fields on one laboratory sample record.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "sample_id": {
+            "type": "string",
+            "description": "Laboratory sample identifier."
+          },
+          "patch": {
+            "type": "object",
+            "description": "Fields to update."
+          }
+        },
+        "required": [
+          "sample_id",
+          "patch"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "id",
+          "semantic_id": "resource.identifier",
+          "json_schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "updated",
+          "semantic_id": "operation.updated",
+          "json_schema": {
+            "type": "boolean"
+          }
+        }
+      ],
+      "read_only": false,
+      "destructive": false
+    },
+    {
+      "name": "samples__delete",
+      "description": "Permanently delete one laboratory sample record.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "sample_id": {
+            "type": "string",
+            "description": "Laboratory sample identifier."
+          },
+          "confirm": {
+            "type": "boolean",
+            "description": "Explicit destructive-operation confirmation."
+          }
+        },
+        "required": [
+          "sample_id",
+          "confirm"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "deleted",
+          "semantic_id": "operation.deleted",
+          "json_schema": {
+            "type": "boolean"
+          }
+        }
+      ],
+      "read_only": false,
+      "destructive": true
+    },
+    {
+      "name": "jobs__status",
+      "description": "Read the current status of a computation job.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "description": "Computation job identifier."
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "status",
+          "semantic_id": "job.status",
+          "json_schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "jobs__cancel",
+      "description": "Cancel a running computation job.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "description": "Computation job identifier."
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "cancelled",
+          "semantic_id": "job.cancelled",
+          "json_schema": {
+            "type": "boolean"
+          }
+        }
+      ],
+      "read_only": false,
+      "destructive": true
+    },
+    {
+      "name": "materials__elastic_modulus",
+      "description": "Read Young elastic modulus for a material sample.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "sample_id": {
+            "type": "string",
+            "description": "Material sample identifier."
+          }
+        },
+        "required": [
+          "sample_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "value",
+          "semantic_id": "mechanics.elastic_modulus",
+          "json_schema": {
+            "type": "number"
+          },
+          "unit": "GPa"
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "materials__poisson_ratio",
+      "description": "Read Poisson ratio for a material sample.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "sample_id": {
+            "type": "string",
+            "description": "Material sample identifier."
+          }
+        },
+        "required": [
+          "sample_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "value",
+          "semantic_id": "mechanics.poisson_ratio",
+          "json_schema": {
+            "type": "number"
+          },
+          "unit": "1"
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "thermal__conductivity",
+      "description": "Read thermal conductivity for a material sample.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "sample_id": {
+            "type": "string",
+            "description": "Material sample identifier."
+          }
+        },
+        "required": [
+          "sample_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "value",
+          "semantic_id": "thermal.conductivity",
+          "json_schema": {
+            "type": "number"
+          },
+          "unit": "W/(m*K)"
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "spectroscopy__raman_peak",
+      "description": "Read Raman peak position for a material sample.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "sample_id": {
+            "type": "string",
+            "description": "Material sample identifier."
+          }
+        },
+        "required": [
+          "sample_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "value",
+          "semantic_id": "spectroscopy.raman_peak",
+          "json_schema": {
+            "type": "number"
+          },
+          "unit": "cm^-1"
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "optics__refractive_index",
+      "description": "Read refractive index for a material sample.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "sample_id": {
+            "type": "string",
+            "description": "Material sample identifier."
+          }
+        },
+        "required": [
+          "sample_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "value",
+          "semantic_id": "optics.refractive_index",
+          "json_schema": {
+            "type": "number"
+          },
+          "unit": "1"
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "weather__forecast",
+      "description": "Get a weather forecast for a location and future date.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string",
+            "description": "City or location."
+          },
+          "date": {
+            "type": "string",
+            "description": "Future local date in YYYY-MM-DD format."
+          }
+        },
+        "required": [
+          "location",
+          "date"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "temperature_c",
+          "semantic_id": "weather.temperature",
+          "json_schema": {
+            "type": "number"
+          },
+          "unit": "degC"
+        },
+        {
+          "name": "precipitation_probability",
+          "semantic_id": "weather.precipitation_probability",
+          "json_schema": {
+            "type": "number"
+          },
+          "unit": "1"
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "weather__historical",
+      "description": "Get historical observed weather for a location and past date.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string",
+            "description": "City or location."
+          },
+          "date": {
+            "type": "string",
+            "description": "Past local date in YYYY-MM-DD format."
+          }
+        },
+        "required": [
+          "location",
+          "date"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "temperature_c",
+          "semantic_id": "weather.temperature",
+          "json_schema": {
+            "type": "number"
+          },
+          "unit": "degC"
+        },
+        {
+          "name": "precipitation_mm",
+          "semantic_id": "weather.precipitation",
+          "json_schema": {
+            "type": "number"
+          },
+          "unit": "mm"
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "finance__quote",
+      "description": "Read the latest market quote for one ticker symbol.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "description": "Market ticker symbol."
+          }
+        },
+        "required": [
+          "symbol"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "price",
+          "semantic_id": "finance.last_price",
+          "json_schema": {
+            "type": "number"
+          }
+        },
+        {
+          "name": "currency",
+          "semantic_id": "finance.currency",
+          "json_schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "finance__history",
+      "description": "Read historical daily prices for one ticker over a date range.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "description": "Market ticker symbol."
+          },
+          "start_date": {
+            "type": "string",
+            "description": "Inclusive start date in YYYY-MM-DD format."
+          },
+          "end_date": {
+            "type": "string",
+            "description": "Inclusive end date in YYYY-MM-DD format."
+          }
+        },
+        "required": [
+          "symbol",
+          "start_date",
+          "end_date"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "rows",
+          "semantic_id": "finance.price_history",
+          "json_schema": {
+            "type": "array"
+          }
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "documents__metadata",
+      "description": "Read metadata for one stored document without retrieving its body.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "description": "Stored document identifier."
+          }
+        },
+        "required": [
+          "document_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "title",
+          "semantic_id": "document.title",
+          "json_schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "mime_type",
+          "semantic_id": "document.mime_type",
+          "json_schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    },
+    {
+      "name": "documents__full_text",
+      "description": "Retrieve the full text body of one stored document.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "description": "Stored document identifier."
+          }
+        },
+        "required": [
+          "document_id"
+        ],
+        "additionalProperties": false
+      },
+      "output_fields": [
+        {
+          "name": "text",
+          "semantic_id": "document.full_text",
+          "json_schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "read_only": true,
+      "destructive": false
+    }
+  ]
+}

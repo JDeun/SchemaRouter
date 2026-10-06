@@ -1,0 +1,210 @@
+{
+  "schema_version": 1,
+  "package_id": "smartmcp-cross-project-dev-v1",
+  "implementation": {
+    "name": "",
+    "commit": "",
+    "configuration": {}
+  },
+  "index_build_ms": null,
+  "results": [
+    {
+      "id": "sm-dev-001",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-002",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-003",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-004",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-005",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-006",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-007",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-008",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-009",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-010",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-011",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-012",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-013",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-014",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-015",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-016",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-017",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-018",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-019",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-020",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-021",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-022",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-023",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-024",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-025",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-026",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-027",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-028",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-029",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-030",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-031",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-032",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sm-dev-033",
+      "candidate_tools": [],
+      "exposed_contracts": [],
+      "latency_ms": null
+    }
+  ]
+}
