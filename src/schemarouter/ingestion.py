@@ -67,6 +67,10 @@ _DEFAULT_OPENAPI_REF_MAX_DEPTH = 3
 _DEFAULT_OPENAPI_REF_MAX_DOCUMENTS = 8
 _DEFAULT_OPENAPI_REF_MAX_BYTES = 10 * 1024 * 1024
 _OPENAPI_EXTERNAL_REFS_KEY = "x-schemarouter-external-refs"
+_MAX_YAML_ALIASES = 256
+_MAX_YAML_ANCHORS = 256
+_MAX_YAML_COMPOSED_NODES = 100_000
+_MAX_YAML_EXPANDED_NODES = 100_000
 
 
 SourceProbeFailureCategory = Literal[
@@ -262,8 +266,98 @@ def _public_probe_diagnostic(
     )
 
 
+class _YAMLResourceLimitError(yaml.YAMLError):
+    """Raised before YAML construction exceeds the schema parser resource budget."""
+
+
 class _OpenAPIYAMLLoader(yaml.SafeLoader):
-    """Safe YAML loader that keeps timestamp-looking scalars JSON-compatible strings."""
+    """Safe YAML loader with bounded aliases, anchors, nodes, and logical expansion."""
+
+    def __init__(self, stream: Any) -> None:
+        super().__init__(stream)
+        self._alias_count = 0
+        self._anchor_count = 0
+        self._composed_node_count = 0
+
+    @staticmethod
+    def _budget_error(detail: str) -> _YAMLResourceLimitError:
+        return _YAMLResourceLimitError(
+            f"YAML schema parser resource budget exceeded: {detail}"
+        )
+
+    def compose_node(self, parent: Any, index: Any) -> Any:
+        if self.check_event(yaml.events.AliasEvent):
+            self._alias_count += 1
+            if self._alias_count > _MAX_YAML_ALIASES:
+                raise self._budget_error(
+                    f"alias count exceeds {_MAX_YAML_ALIASES}"
+                )
+            return super().compose_node(parent, index)
+
+        event = self.peek_event()
+        self._composed_node_count += 1
+        if self._composed_node_count > _MAX_YAML_COMPOSED_NODES:
+            raise self._budget_error(
+                f"composed node count exceeds {_MAX_YAML_COMPOSED_NODES}"
+            )
+        if getattr(event, "anchor", None) is not None:
+            self._anchor_count += 1
+            if self._anchor_count > _MAX_YAML_ANCHORS:
+                raise self._budget_error(
+                    f"anchor count exceeds {_MAX_YAML_ANCHORS}"
+                )
+        return super().compose_node(parent, index)
+
+    @staticmethod
+    def _children(node: Any) -> tuple[Any, ...]:
+        node_id = getattr(node, "id", None)
+        value = getattr(node, "value", None)
+        if node_id == "sequence" and isinstance(value, list):
+            return tuple(value)
+        if node_id == "mapping" and isinstance(value, list):
+            children: list[Any] = []
+            for pair in value:
+                if isinstance(pair, tuple) and len(pair) == 2:
+                    children.extend(pair)
+            return tuple(children)
+        return ()
+
+    def _validate_composed_graph(self, root: Any) -> None:
+        memo: dict[int, int] = {}
+        visiting: set[int] = set()
+        stack: list[tuple[Any, bool]] = [(root, False)]
+
+        while stack:
+            node, leaving = stack.pop()
+            node_key = id(node)
+            if leaving:
+                total = 1
+                for child in self._children(node):
+                    total += memo[id(child)]
+                    if total > _MAX_YAML_EXPANDED_NODES:
+                        raise self._budget_error(
+                            "logical alias expansion exceeds "
+                            f"{_MAX_YAML_EXPANDED_NODES} nodes"
+                        )
+                visiting.discard(node_key)
+                memo[node_key] = total
+                continue
+
+            if node_key in memo:
+                continue
+            if node_key in visiting:
+                raise self._budget_error("cyclic alias graph")
+            visiting.add(node_key)
+            stack.append((node, True))
+            for child in reversed(self._children(node)):
+                stack.append((child, False))
+
+    def get_single_data(self) -> Any:
+        node = self.get_single_node()
+        if node is None:
+            return None
+        self._validate_composed_graph(node)
+        return self.construct_document(node)
 
 
 _OpenAPIYAMLLoader.yaml_implicit_resolvers = {
@@ -277,7 +371,10 @@ _OpenAPIYAMLLoader.yaml_implicit_resolvers = {
 
 
 def _safe_yaml_load(text: str) -> Any:
-    return yaml.load(text, Loader=_OpenAPIYAMLLoader)
+    try:
+        return yaml.load(text, Loader=_OpenAPIYAMLLoader)
+    except _YAMLResourceLimitError as exc:
+        raise SchemaSourceError(str(exc)) from exc
 
 
 def _slug(value: str) -> str:
