@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import asyncio
 import inspect
-from collections.abc import Awaitable, Callable
-from contextlib import asynccontextmanager
+from collections.abc import Awaitable, Callable, Iterator
+from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from threading import RLock
 from typing import Literal
 
 from ._loop_affinity import LoopAffinityGuard
 from .errors import PlanValidationError, RegistrationError
 from .executor import RegistryExecutor
+from .models import ToolSpec
 
 HealthProbe = Callable[[], bool | Awaitable[bool]]
 HealthStatus = Literal["unknown", "healthy", "unhealthy", "stale"]
@@ -36,6 +38,21 @@ class _ProbeRecord:
     last_error_type: str | None = None
 
 
+@dataclass(frozen=True)
+class _ProbeContractTransitionEntry:
+    endpoint: str
+    record: _ProbeRecord
+    invalidated_reason: str | None
+
+
+@dataclass(frozen=True)
+class _ToolContractTransition:
+    tool_key: str
+    expected_old_fingerprint: str
+    expected_new_fingerprint: str
+    entries: tuple[_ProbeContractTransitionEntry, ...]
+
+
 class AccessHealthMonitor:
     """Explicit background health checks for registered read-only access paths.
 
@@ -47,6 +64,7 @@ class AccessHealthMonitor:
     def __init__(self, executor: RegistryExecutor) -> None:
         self.executor = executor
         self._probes: dict[tuple[str, str], _ProbeRecord] = {}
+        self._probe_lock = RLock()
         self._task: asyncio.Task[None] | None = None
         self._interval_seconds = 30.0
         self._probe_timeout_seconds = 5.0
@@ -67,31 +85,122 @@ class AccessHealthMonitor:
         endpoint: str,
         probe: HealthProbe,
     ) -> None:
-        tool = self.executor.registry.get(tool_key)
-        endpoint_spec = tool.endpoint(endpoint)
-        if endpoint_spec.read_only is not True:
-            raise PlanValidationError(
-                "background health probes may be attached only to explicitly read-only "
-                f"access paths; got {tool_key}.{endpoint}"
+        with self._probe_lock:
+            tool = self.executor.registry.get(tool_key)
+            endpoint_spec = tool.endpoint(endpoint)
+            if endpoint_spec.read_only is not True:
+                raise PlanValidationError(
+                    "background health probes may be attached only to explicitly read-only "
+                    f"access paths; got {tool_key}.{endpoint}"
+                )
+            if not callable(probe):
+                raise TypeError("health probe must be callable")
+            self._probes[(tool_key, endpoint)] = _ProbeRecord(
+                probe=probe,
+                tool_fingerprint=tool.fingerprint,
             )
-        if not callable(probe):
-            raise TypeError("health probe must be callable")
-        self._probes[(tool_key, endpoint)] = _ProbeRecord(
-            probe=probe,
-            tool_fingerprint=tool.fingerprint,
-        )
 
     def unregister(self, tool_key: str, endpoint: str) -> None:
-        self._probes.pop((tool_key, endpoint), None)
+        with self._probe_lock:
+            self._probes.pop((tool_key, endpoint), None)
 
     def unregister_tool(self, tool_key: str) -> None:
-        stale = [
-            key
-            for key in self._probes
-            if key[0] == tool_key
-        ]
-        for key in stale:
-            self._probes.pop(key, None)
+        with self._probe_lock:
+            stale = [
+                key
+                for key in self._probes
+                if key[0] == tool_key
+            ]
+            for key in stale:
+                self._probes.pop(key, None)
+
+    @contextmanager
+    def contract_transition_guard(self) -> Iterator[None]:
+        """Serialize probe registration with contract snapshot/publication/restamping."""
+
+        with self._probe_lock:
+            yield
+
+    def _prepare_tool_contract_transition(
+        self,
+        tool_key: str,
+        *,
+        expected_old_fingerprint: str,
+        expected_new_fingerprint: str,
+        new_tool: ToolSpec,
+    ) -> _ToolContractTransition:
+        """Validate and capture a health-probe transition before publishing a contract."""
+
+        if new_tool.key != tool_key:
+            raise RegistrationError(
+                "health probe transition tool key does not match the candidate contract"
+            )
+        if new_tool.fingerprint != expected_new_fingerprint:
+            raise RegistrationError(
+                "health probe transition fingerprint does not match the candidate contract"
+            )
+
+        entries: list[_ProbeContractTransitionEntry] = []
+        with self._probe_lock:
+            for (registered_tool, endpoint), record in self._probes.items():
+                if (
+                    registered_tool != tool_key
+                    or record.tool_fingerprint != expected_old_fingerprint
+                ):
+                    continue
+
+                invalidated_reason: str | None = None
+                try:
+                    endpoint_spec = new_tool.endpoint(endpoint)
+                except KeyError:
+                    invalidated_reason = "EndpointRemoved"
+                else:
+                    if endpoint_spec.read_only is not True:
+                        invalidated_reason = "EndpointNoLongerReadOnly"
+
+                entries.append(
+                    _ProbeContractTransitionEntry(
+                        endpoint=endpoint,
+                        record=record,
+                        invalidated_reason=invalidated_reason,
+                    )
+                )
+
+        return _ToolContractTransition(
+            tool_key=tool_key,
+            expected_old_fingerprint=expected_old_fingerprint,
+            expected_new_fingerprint=expected_new_fingerprint,
+            entries=tuple(entries),
+        )
+
+    def _apply_tool_contract_transition(
+        self,
+        transition: _ToolContractTransition,
+    ) -> None:
+        """Apply a prevalidated probe transition without rereading mutable registry state."""
+
+        with self._probe_lock:
+            for entry in transition.entries:
+                key = (transition.tool_key, entry.endpoint)
+                record = self._probes.get(key)
+                if (
+                    record is None
+                    or record is not entry.record
+                    or record.tool_fingerprint != transition.expected_old_fingerprint
+                ):
+                    continue
+
+                record.generation += 1
+                record.tool_fingerprint = transition.expected_new_fingerprint
+                if entry.invalidated_reason is not None:
+                    record.invalidated_reason = entry.invalidated_reason
+                    record.status = "stale"
+                    record.last_error_type = entry.invalidated_reason
+                    continue
+
+                record.invalidated_reason = None
+                record.status = "unknown"
+                record.last_error_type = None
 
     def transition_tool_contract(
         self,
@@ -102,42 +211,27 @@ class AccessHealthMonitor:
     ) -> None:
         """Carry trusted probes across one accepted contract transition."""
 
-        candidates = [
-            (endpoint, record)
-            for (registered_tool, endpoint), record in self._probes.items()
-            if registered_tool == tool_key
-            and record.tool_fingerprint == expected_old_fingerprint
-        ]
-        if not candidates:
-            return
+        with self.contract_transition_guard():
+            if not any(
+                registered_tool == tool_key
+                and record.tool_fingerprint == expected_old_fingerprint
+                for (registered_tool, _), record in self._probes.items()
+            ):
+                return
 
-        current = self.executor.registry.get(tool_key)
-        if current.fingerprint != expected_new_fingerprint:
-            raise RegistrationError(
-                f"tool {tool_key!r} changed before health probes could be restamped"
+            current = self.executor.registry.get(tool_key)
+            if current.fingerprint != expected_new_fingerprint:
+                raise RegistrationError(
+                    f"tool {tool_key!r} changed before health probes could be restamped"
+                )
+
+            transition = self._prepare_tool_contract_transition(
+                tool_key,
+                expected_old_fingerprint=expected_old_fingerprint,
+                expected_new_fingerprint=expected_new_fingerprint,
+                new_tool=current,
             )
-
-        for endpoint, record in candidates:
-            record.generation += 1
-            record.tool_fingerprint = expected_new_fingerprint
-
-            try:
-                endpoint_spec = current.endpoint(endpoint)
-            except KeyError:
-                record.invalidated_reason = "EndpointRemoved"
-                record.status = "stale"
-                record.last_error_type = record.invalidated_reason
-                continue
-
-            if endpoint_spec.read_only is not True:
-                record.invalidated_reason = "EndpointNoLongerReadOnly"
-                record.status = "stale"
-                record.last_error_type = record.invalidated_reason
-                continue
-
-            record.invalidated_reason = None
-            record.status = "unknown"
-            record.last_error_type = None
+            self._apply_tool_contract_transition(transition)
 
     @asynccontextmanager
     async def lifecycle_guard(self, *, wait_for_inflight: bool = False):
@@ -183,16 +277,17 @@ class AccessHealthMonitor:
         return True, None
 
     def snapshots(self) -> tuple[HealthProbeSnapshot, ...]:
-        return tuple(
-            HealthProbeSnapshot(
-                tool=tool,
-                endpoint=endpoint,
-                status=record.status,
-                last_checked_at=record.last_checked_at,
-                last_error_type=record.last_error_type,
+        with self._probe_lock:
+            return tuple(
+                HealthProbeSnapshot(
+                    tool=tool,
+                    endpoint=endpoint,
+                    status=record.status,
+                    last_checked_at=record.last_checked_at,
+                    last_error_type=record.last_error_type,
+                )
+                for (tool, endpoint), record in sorted(self._probes.items())
             )
-            for (tool, endpoint), record in sorted(self._probes.items())
-        )
 
     async def _run_probe(
         self,
@@ -337,7 +432,8 @@ class AccessHealthMonitor:
 
         semaphore = asyncio.Semaphore(concurrency)
         async with self._lifecycle_condition:
-            probes = tuple(self._probes.items())
+            with self._probe_lock:
+                probes = tuple(self._probes.items())
 
         await asyncio.gather(
             *(
