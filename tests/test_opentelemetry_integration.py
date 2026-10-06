@@ -1,3 +1,5 @@
+from contextlib import aclosing
+
 import pytest
 
 pytest.importorskip("opentelemetry.sdk")
@@ -219,3 +221,69 @@ def test_otel_exporter_disambiguates_parallel_calls_to_same_endpoint() -> None:
         span.attributes["schemarouter.primary_call_index"]
         for span in tool_spans
     } == {0, 1}
+
+
+@pytest.mark.asyncio
+async def test_trace_wrapper_closes_only_its_run_on_shared_exporter() -> None:
+    tracer, memory = _tracer()
+    exporter = OpenTelemetryRunExporter(tracer)
+    config = RunConfig()
+
+    exporter.export(
+        RunEvent.create(
+            event="run.start",
+            run_id="shared-run",
+            sequence=0,
+            config=config,
+        )
+    )
+
+    upstream_closed = False
+
+    async def source():
+        nonlocal upstream_closed
+        try:
+            yield RunEvent.create(
+                event="run.start",
+                run_id="wrapped-run",
+                sequence=0,
+                config=config,
+            )
+            yield RunEvent.create(
+                event="run.end",
+                run_id="wrapped-run",
+                sequence=1,
+                config=config,
+            )
+        finally:
+            upstream_closed = True
+
+    async with aclosing(trace_run_events(source(), exporter=exporter)) as stream:
+        async for item in stream:
+            assert item.run_id == "wrapped-run"
+            break
+
+    assert upstream_closed is True
+    finished = memory.get_finished_spans()
+    wrapped_span = next(
+        span
+        for span in finished
+        if span.attributes["schemarouter.run_id"] == "wrapped-run"
+    )
+    assert wrapped_span.status.status_code is StatusCode.ERROR
+
+    exporter.export(
+        RunEvent.create(
+            event="run.end",
+            run_id="shared-run",
+            sequence=1,
+            config=config,
+        )
+    )
+    finished = memory.get_finished_spans()
+    shared_span = next(
+        span
+        for span in finished
+        if span.attributes["schemarouter.run_id"] == "shared-run"
+    )
+    assert shared_span.status.status_code is StatusCode.UNSET
