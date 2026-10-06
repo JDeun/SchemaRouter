@@ -376,10 +376,6 @@ from .inspection import (
     inspect_traces,
     tool_spec_document,
 )
-from .native_schema_watch import (
-    NativeSchemaWatchSnapshot as NativeSchemaWatchSnapshot,
-)
-from .native_schema_watch import NativeSchemaWatchStatus as NativeSchemaWatchStatus
 from .models import (
     AuthRequirementSet,
     AuthSchemeRequirement,
@@ -408,6 +404,10 @@ from .models import (
     ToolResult,
     ToolSpec,
     UnitNormalizationSpec,
+)
+from .native_schema_watch import (
+    NativeSchemaWatchSnapshot as NativeSchemaWatchSnapshot,
+    NativeSchemaWatchStatus as NativeSchemaWatchStatus,
 )
 from .network_policy import NetworkPolicy, NetworkPolicyError
 from .openapi_compatibility import (
