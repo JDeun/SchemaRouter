@@ -17,6 +17,11 @@ from ..models import (
     ToolCall,
     ToolSpec,
 )
+from .discovery_limits import (
+    NativeDiscoveryBudget,
+    NativeDiscoveryLimits,
+    require_at_most,
+)
 
 _SELECT_ENDPOINT = "select"
 _MAX_LIMIT = 1000
@@ -162,27 +167,51 @@ class SQLiteTableInvoker:
 
 def _sqlite_table_rows(
     connection: sqlite3.Connection,
+    *,
+    selected_tables: set[str] | None,
+    max_sources: int,
 ) -> list[tuple[str, str]]:
-    rows = connection.execute(
-        """
+    if selected_tables is not None and not selected_tables:
+        return []
+
+    query = """
         SELECT name, type
         FROM sqlite_master
         WHERE type IN ('table', 'view')
           AND name NOT LIKE 'sqlite_%'
-        ORDER BY name
-        """
-    ).fetchall()
+    """
+    parameters: list[Any] = []
+    if selected_tables is not None:
+        placeholders = ", ".join("?" for _ in selected_tables)
+        query += f" AND name IN ({placeholders})"
+        parameters.extend(sorted(selected_tables))
+    query += " ORDER BY name LIMIT ?"
+    parameters.append(max_sources + 1)
+
+    rows = connection.execute(query, parameters).fetchall()
+    require_at_most(
+        len(rows),
+        limit=max_sources,
+        label="SQLite discovered relation count",
+    )
     return [(str(name), str(kind)) for name, kind in rows]
 
 
 def _table_info(
     connection: sqlite3.Connection,
     table: str,
+    *,
+    max_fields: int,
 ) -> list[tuple[int, str, str, int, Any, int]]:
     cursor = connection.execute(
         f"PRAGMA table_info({_quote_identifier(table)})"
     )
-    rows = cursor.fetchall()
+    rows = cursor.fetchmany(max_fields + 1)
+    require_at_most(
+        len(rows),
+        limit=max_fields,
+        label=f"SQLite relation {table!r} column count",
+    )
     return [
         (
             int(cid),
@@ -203,6 +232,7 @@ def introspect_sqlite_database(
     namespace: str | None = None,
     tables: set[str] | tuple[str, ...] | list[str] | None = None,
     max_default_rows: int = 100,
+    discovery_limits: NativeDiscoveryLimits | None = None,
 ) -> tuple[SQLiteTableBinding, ...]:
     """Compile a caller-owned SQLite database into typed read-only capabilities.
 
@@ -218,9 +248,21 @@ def introspect_sqlite_database(
     if max_default_rows < 1 or max_default_rows > _MAX_LIMIT:
         raise ValueError(f"max_default_rows must be between 1 and {_MAX_LIMIT}")
 
-    discovered = _sqlite_table_rows(connection)
-    available = {name for name, _ in discovered}
+    budget = NativeDiscoveryBudget(discovery_limits)
+    limits = budget.limits
     selected_tables = None if tables is None else {str(value) for value in tables}
+    if selected_tables is not None:
+        require_at_most(
+            len(selected_tables),
+            limit=limits.max_sources,
+            label="SQLite selected relation count",
+        )
+    discovered = _sqlite_table_rows(
+        connection,
+        selected_tables=selected_tables,
+        max_sources=limits.max_sources,
+    )
+    available = {name for name, _ in discovered}
     if selected_tables is not None:
         missing = sorted(selected_tables - available)
         if missing:
@@ -234,7 +276,11 @@ def introspect_sqlite_database(
         if selected_tables is not None and table not in selected_tables:
             continue
 
-        info = _table_info(connection, table)
+        info = _table_info(
+            connection,
+            table,
+            max_fields=limits.max_fields_per_source,
+        )
         if not info:
             continue
 
@@ -362,6 +408,7 @@ def introspect_sqlite_database(
                 "table": table,
             },
         )
+        budget.consume_source(tool, nested_items=len(fields))
         bindings.append(
             SQLiteTableBinding(
                 tool=tool,
