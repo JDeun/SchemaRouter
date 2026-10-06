@@ -346,6 +346,16 @@ response variant is simply absent from the projected result. Unsupported constru
 guessed.
 
 
+## YAML parser resource bounds
+
+Remote OpenAPI YAML is checked before object construction with conservative parser budgets.
+The default limits are **64 aliases**, **64 anchors**, **50,000 parsed nodes**, and **64 levels of
+nesting**, in addition to the existing **5 MiB** schema-document byte limit. Cyclic YAML container
+graphs are rejected by the post-parse structural validator before OpenAPI normalization or
+ToolSpec compilation.
+
+Ordinary anchors and aliases remain supported within these limits. JSON ingestion is unchanged.
+
 ## Runtime response bound
 
 OpenAPI runtime responses are streamed and capped at **16 MiB by default** before JSON/text decoding.
