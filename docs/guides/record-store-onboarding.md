@@ -94,6 +94,20 @@ The bounded record contract now has caller-owned native adapters for:
 - **ClickHouse**: table/column discovery and bound read-only ClickHouse Connect queries;
 - **InfluxDB 2.x / Flux**: measurement, field-key and tag-key discovery with bounded time/tag/field queries.
 
+For schemaless MongoDB collections, non-key DynamoDB attributes, Cosmos DB containers, and
+Couchbase keyspaces, discovery is explicitly **partial** rather than authoritative. SchemaRouter
+processes at most 16 sampled records and at most 256 KiB of sample payload per source, unions fields
+observed across those records, and only declares a sampled field type when repeated non-null
+observations agree. DynamoDB key attribute types still use authoritative `DescribeTable` metadata.
+A field seen once, an unknown value type, or heterogeneous observed types therefore remain
+unconstrained instead of being narrowed from one arbitrary document.
+
+The generated source metadata exposes `public_metadata.schema_discovery` with
+`complete=false`, the observed sample count, and the configured row/byte bounds. Callers and
+authorization layers can therefore distinguish sampled catalogs from provider-authoritative
+schemas. A later refresh may safely expand the discovered field set as new records become visible;
+earlier samples are never presented as proof that the source schema was complete.
+
 Typical registration remains caller-owned:
 
 ```python
