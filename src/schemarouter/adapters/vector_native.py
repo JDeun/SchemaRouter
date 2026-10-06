@@ -325,8 +325,27 @@ class MilvusVectorBackend:
         *,
         vector_field_by_collection: Mapping[str, str] | None = None,
         metric_by_collection: Mapping[str, str] | None = None,
+        collections: Sequence[str] | None = None,
+        max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
+        max_fields_per_collection: int = _MAX_DISCOVERY_FIELDS,
     ) -> None:
+        if max_fields_per_collection < 1:
+            raise ValueError("Milvus max_fields_per_collection must be positive")
         self._client = client
+        self._collections = (
+            None
+            if collections is None
+            else tuple(
+                str(value)
+                for value in _bounded_values(
+                    collections,
+                    limit=max_discovery_sources,
+                    label="Milvus configured collections",
+                )
+            )
+        )
+        self._max_discovery_sources = max_discovery_sources
+        self._max_fields_per_collection = max_fields_per_collection
         self._vector_field_by_collection = dict(vector_field_by_collection or {})
         self._metric_by_collection = dict(metric_by_collection or {})
         self._schema_cache: dict[str, dict[str, Any]] = {}
@@ -352,10 +371,15 @@ class MilvusVectorBackend:
         raw_fields = description.get("fields", ())
         if not isinstance(raw_fields, Sequence):
             raise SchemaValidationError("Milvus collection fields must be a list")
+        bounded_fields = _bounded_values(
+            raw_fields,
+            limit=self._max_fields_per_collection,
+            label=f"Milvus fields for {collection!r}",
+        )
 
         vector_fields: list[tuple[str, int]] = []
         metadata: list[VectorMetadataField] = []
-        for raw in raw_fields:
+        for raw in bounded_fields:
             if not isinstance(raw, Mapping):
                 continue
             name = str(raw.get("name", ""))
@@ -410,10 +434,19 @@ class MilvusVectorBackend:
         return vector_field, dimension, tuple(metadata)
 
     def list_collections(self) -> tuple[VectorCollectionSpec, ...]:
-        names = self._client.list_collections()
-        if not isinstance(names, Sequence) or isinstance(names, (str, bytes)):
-            raise SchemaValidationError(
-                "Milvus list_collections() returned an unexpected response"
+        names: Sequence[Any]
+        if self._collections is not None:
+            names = self._collections
+        else:
+            raw_names = self._client.list_collections()
+            if not isinstance(raw_names, Sequence) or isinstance(raw_names, (str, bytes)):
+                raise SchemaValidationError(
+                    "Milvus list_collections() returned an unexpected response"
+                )
+            names = _bounded_values(
+                raw_names,
+                limit=self._max_discovery_sources,
+                label="Milvus collection discovery",
             )
         results: list[VectorCollectionSpec] = []
         for raw_name in names:
