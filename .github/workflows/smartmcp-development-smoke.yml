@@ -17,6 +17,7 @@ permissions:
 
 env:
   SMARTMCP_REVISION: c4d6602cfabb6f514bf06a1d1ae10b610ff7d573
+  MCP_VERSION: "1.29.0"
   PACKAGE_DIR: benchmarks/external-validation-smart-mcp-dev-v1
   TOKENIZERS_PARALLELISM: "false"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
@@ -36,6 +37,10 @@ jobs:
       - name: Install SchemaRouter and pinned SmartMCP
         run: |
           python -m pip install .
+          # SmartMCP's pinned revision predates the MCP Python SDK v2 API rename
+          # (Tool.inputSchema -> Tool.input_schema). Its pyproject currently says
+          # mcp>=1.0 without a <2 upper bound, so reproduce the compatible v1 line.
+          python -m pip install "mcp==${MCP_VERSION}"
           python -m pip install "git+https://github.com/spak2005/smart-mcp.git@${SMARTMCP_REVISION}"
 
       - name: Record environment
@@ -47,6 +52,7 @@ jobs:
           lscpu > artifacts/smartmcp-dev-smoke/lscpu.txt
           git rev-parse HEAD > artifacts/smartmcp-dev-smoke/schemarouter-revision.txt
           printf '%s\n' "${SMARTMCP_REVISION}" > artifacts/smartmcp-dev-smoke/smartmcp-revision.txt
+          printf '%s\n' "${MCP_VERSION}" > artifacts/smartmcp-dev-smoke/mcp-version.txt
 
       - name: Validate development fixture
         run: |
