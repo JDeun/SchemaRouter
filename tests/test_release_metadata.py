@@ -186,7 +186,15 @@ def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
     assert "--cov-branch" in workflow
     assert "dependency-audit:" in workflow
     assert "pip-audit --strict ." in workflow
-    assert "needs: [laya-integration, dependency-audit, database-integration]" in workflow
+    assert "package-core:" in workflow
+    assert "Publish immutable package artifacts" in workflow
+    assert "package-dist-${{ github.run_id }}" in workflow
+    assert "package-runtime-smoke:" in workflow
+    assert "package-sdist:" in workflow
+    assert "Verify package qualification fan-out" in workflow
+    assert "- laya-integration" in workflow
+    assert "- dependency-audit" in workflow
+    assert "- database-integration" in workflow
     assert "database-integration:" in workflow
     assert 'pip install -e ".[dev,database]"' in workflow
     assert "--html-out /tmp/decision-benchmark.html" in workflow
