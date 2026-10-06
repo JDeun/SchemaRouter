@@ -580,6 +580,11 @@ def backup_sqlite_storage(
             except OSError:
                 pass
 
+        # Close the reservation handle before path-identity cleanup. On Windows,
+        # unlinking/replacing an open file can remain pending until the last handle
+        # closes; checking the pathname while our reservation handle is still open
+        # can therefore misidentify a concurrently-created replacement as ours.
+        os.close(target_descriptor)
         try:
             if (
                 not completed
@@ -588,8 +593,6 @@ def backup_sqlite_storage(
                 target.unlink()
         except OSError:
             pass
-        finally:
-            os.close(target_descriptor)
 
     return target
 
