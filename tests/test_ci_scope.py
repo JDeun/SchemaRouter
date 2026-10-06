@@ -1,3 +1,6 @@
+import re
+from pathlib import Path
+
 from scripts.ci_scope import classify_paths
 
 
@@ -42,3 +45,30 @@ def test_ci_scope_ci_definition_change_requests_full_qualification() -> None:
     scopes = classify_paths([".github/workflows/ci.yml"])
 
     assert all(scopes.values())
+
+
+def test_protected_required_contexts_never_use_job_level_path_skips() -> None:
+    workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+    protected_scoped_jobs = (
+        "test-311-scheduled",
+        "test-313-scheduled",
+        "minimum-dependencies",
+        "langchain-integration",
+        "llamaindex-integration",
+        "jev-integration",
+        "otel-integration",
+        "mcp-integration",
+        "docs",
+    )
+
+    for job_id in protected_scoped_jobs:
+        marker = f"\n  {job_id}:\n"
+        start = workflow.index(marker) + len(marker)
+        remainder = workflow[start:]
+        next_job = re.search(r"\n  [A-Za-z0-9_-]+:\n", remainder)
+        block = remainder if next_job is None else remainder[: next_job.start()]
+
+        # Protected rulesets do not accept these contexts when the whole job is
+        # skipped. Path qualification therefore belongs on expensive steps, while
+        # the required job itself must always reach a successful conclusion.
+        assert "\n    if:" not in block, job_id
