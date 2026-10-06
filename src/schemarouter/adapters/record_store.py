@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import re
-from collections.abc import Awaitable, Iterable
+from collections.abc import Awaitable, Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any, Literal, Protocol
 
@@ -222,6 +222,26 @@ class RecordSourceInvoker:
         return rows
 
 
+def _bounded_record_descriptor(
+    value: Any,
+    limits: NativeDiscoveryLimits,
+) -> Any:
+    if not isinstance(value, Mapping):
+        return value
+    raw = dict(value)
+    fields = raw.get("fields")
+    if (
+        isinstance(fields, Iterable)
+        and not isinstance(fields, (str, bytes, Mapping))
+    ):
+        raw["fields"] = bounded_collect(
+            fields,
+            limit=limits.max_fields_per_source,
+            label=f"record-store source {descriptor_name(raw)!r} field count",
+        )
+    return raw
+
+
 async def introspect_record_backend(
     backend: RecordStoreBackend,
     *,
@@ -271,10 +291,11 @@ async def introspect_record_backend(
     )
     discovered_list: list[RecordSourceSpec] = []
     for value in discovered_items:
+        bounded_value = _bounded_record_descriptor(value, limits)
         source = (
-            value
-            if isinstance(value, RecordSourceSpec)
-            else RecordSourceSpec.model_validate(value)
+            bounded_value
+            if isinstance(bounded_value, RecordSourceSpec)
+            else RecordSourceSpec.model_validate(bounded_value)
         )
         require_at_most(
             len(source.fields),
