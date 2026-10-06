@@ -220,11 +220,11 @@ def test_pr_ci_uses_path_aware_tiers_without_renaming_required_gates() -> None:
     ).read_text(encoding="utf-8")
 
     assert "changes:" in workflow
-    assert "Classify changed surfaces" in workflow
-    assert "max-parallel: 3" in workflow
+    assert "Classify changed paths" in workflow
+    assert "max-parallel: 2" in workflow
     assert "fail-fast: true" in workflow
     assert "needs.changes.outputs.native == 'true'" in workflow
-    assert "needs.changes.outputs.dependencies == 'true'" in workflow
+    assert "needs.changes.outputs.deps == 'true'" in workflow
     assert "needs.changes.outputs.package == 'true'" in workflow
     assert "needs.changes.outputs.langchain == 'true'" in workflow
     assert "needs.changes.outputs.llamaindex == 'true'" in workflow
