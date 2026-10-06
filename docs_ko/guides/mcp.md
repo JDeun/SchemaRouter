@@ -43,7 +43,7 @@ MCP의 원격 tool catalog는 신뢰하지 않는 입력으로 취급합니다. 
 애플리케이션이 필요에 따라 한도를 더 낮추거나 명시적으로 높일 수 있습니다.
 
 ```python
-from schemarouter import MCPDiscoveryLimits
+from schemarouter import MCPDiscoveryLimits, SchemaRouter
 
 limits = MCPDiscoveryLimits(
     max_pages=16,
@@ -56,7 +56,6 @@ router = await SchemaRouter.from_url(
     "https://mcp.example.com/mcp",
     kind="mcp",
     mcp_discovery_limits=limits,
-    timeout=15.0,
 )
 ```
 
