@@ -7,6 +7,7 @@ from .adapters.base import (
     RefreshProfile,
     SourceAdapter,
 )
+from .adapters.discovery_limits import NativeDiscoveryLimits
 from .adapters.graph_native import (
     ArangoGraphBackend,
     FalkorGraphBackend,
@@ -653,6 +654,7 @@ __all__ = [
     "SparqlGraphBackend",
     "MCPClientFactory",
     "MCPDiscoveryLimits",
+    "NativeDiscoveryLimits",
     "MCPStdioConfig",
     "ModelAnalysisError",
     "ModelCallable",
