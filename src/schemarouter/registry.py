@@ -10,6 +10,11 @@ from pydantic import ValidationError
 
 from .errors import RegistrationError, StorageFormatError
 from .models import EndpointSpec, ToolSpec
+from .persistence_limits import (
+    PersistedDocumentLimitError,
+    PersistedDocumentLimits,
+    validate_persisted_json_document,
+)
 from .storage import (
     component_presence,
     component_versions,
@@ -344,7 +349,10 @@ class InMemoryRegistry:
 
 def _validate_legacy_registry_storage(
     connection: sqlite3.Connection,
+    *,
+    document_limits: PersistedDocumentLimits | None = None,
 ) -> None:
+    limits = document_limits or PersistedDocumentLimits()
     try:
         row = connection.execute(
             "SELECT value FROM schemarouter_registry_meta WHERE key = 'version'"
@@ -394,8 +402,15 @@ def _validate_legacy_registry_storage(
             )
         seen_positions.add(position)
 
+        document = str(stored["document"])
         try:
-            tool = ToolSpec.model_validate_json(str(stored["document"]))
+            validate_persisted_json_document(document, limits)
+        except PersistedDocumentLimitError as exc:
+            raise StorageFormatError(
+                f"legacy stored tool {key!r} exceeds persisted document safety limits"
+            ) from exc
+        try:
+            tool = ToolSpec.model_validate_json(document)
         except (ValidationError, ValueError) as exc:
             raise StorageFormatError(
                 f"legacy stored tool {key!r} cannot be migrated safely"
@@ -420,10 +435,12 @@ class SQLiteRegistry:
         path: str | Path,
         *,
         timeout: float = 5.0,
+        document_limits: PersistedDocumentLimits | None = None,
     ) -> None:
         if timeout <= 0:
             raise ValueError("timeout must be > 0")
         self.path = str(path)
+        self._document_limits = document_limits or PersistedDocumentLimits()
         self._lock = RLock()
         self._closed = False
         self._connection = sqlite3.connect(
@@ -490,7 +507,10 @@ class SQLiteRegistry:
         return version
 
     def _validate_legacy_storage(self) -> None:
-        _validate_legacy_registry_storage(self._connection)
+        _validate_legacy_registry_storage(
+            self._connection,
+            document_limits=self._document_limits,
+        )
 
     def _initialize(self) -> None:
         with self._lock:
@@ -544,17 +564,28 @@ class SQLiteRegistry:
         if self._closed:
             raise RuntimeError("SQLiteRegistry is closed")
 
-    @staticmethod
-    def _serialize(tool: ToolSpec) -> str:
+    def _serialize(self, tool: ToolSpec) -> str:
         try:
-            return tool.model_dump_json()
+            document = tool.model_dump_json()
         except Exception as exc:
             raise RegistrationError(
                 f"tool {tool.key!r} cannot be serialized as persistent JSON"
             ) from exc
+        try:
+            validate_persisted_json_document(document, self._document_limits)
+        except PersistedDocumentLimitError as exc:
+            raise RegistrationError(
+                f"tool {tool.key!r} exceeds persisted document safety limits"
+            ) from exc
+        return document
 
-    @staticmethod
-    def _deserialize(key: str, document: str) -> ToolSpec:
+    def _deserialize(self, key: str, document: str) -> ToolSpec:
+        try:
+            validate_persisted_json_document(document, self._document_limits)
+        except PersistedDocumentLimitError as exc:
+            raise RegistrationError(
+                f"stored tool {key!r} exceeds persisted document safety limits"
+            ) from exc
         try:
             tool = ToolSpec.model_validate_json(document)
         except (ValidationError, ValueError) as exc:
