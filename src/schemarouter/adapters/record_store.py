@@ -16,6 +16,8 @@ from .discovery_limits import (
     NativeDiscoveryBudget,
     NativeDiscoveryLimits,
     bounded_collect,
+    bounded_select,
+    descriptor_name,
     require_at_most,
 )
 
@@ -240,15 +242,32 @@ async def introspect_record_backend(
 
     budget = NativeDiscoveryBudget(discovery_limits)
     limits = budget.limits
+    selected = None if sources is None else {str(value) for value in sources}
+    if selected is not None:
+        require_at_most(
+            len(selected),
+            limit=limits.max_sources,
+            label="record-store source selected count",
+        )
     offload_backend = remote if offload_sync_backend is None else offload_sync_backend
     discovered_raw = await _call_backend(
         backend.list_sources,
         offload_sync=offload_backend,
     )
-    discovered_items = bounded_collect(
-        discovered_raw,
-        limit=limits.max_sources,
-        label="record-store source count",
+    discovered_items = (
+        bounded_collect(
+            discovered_raw,
+            limit=limits.max_sources,
+            label="record-store source count",
+        )
+        if selected is None
+        else bounded_select(
+            discovered_raw,
+            selected,
+            limit=limits.max_sources,
+            label="record-store source count",
+            name_of=descriptor_name,
+        )
     )
     discovered_list: list[RecordSourceSpec] = []
     for value in discovered_items:
@@ -268,12 +287,6 @@ async def introspect_record_backend(
     names = [source.name for source in discovered]
     if len(names) != len(set(names)):
         raise RegistrationError("record-store backend returned duplicate source names")
-
-    selected = None if sources is None else {str(value) for value in sources}
-    if selected is not None:
-        missing = sorted(selected - set(names))
-        if missing:
-            raise RegistrationError("unknown record-store sources: " + ", ".join(missing))
 
     bindings: list[RecordSourceBinding] = []
     used_names: set[str] = set()
