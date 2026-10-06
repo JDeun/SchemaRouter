@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import re
+import time
 from collections.abc import Mapping, Sequence
 from decimal import Decimal
 from typing import Any
@@ -70,6 +71,75 @@ def _json_safe(value: Any) -> Any:
     return str(value)
 
 
+_SCHEMA_SAMPLE_ROW_LIMIT = 16
+_SCHEMA_SAMPLE_BYTE_LIMIT = 256 * 1024
+_SCHEMA_SAMPLE_TIME_LIMIT_SECONDS = 5.0
+_COMPLEX_SAMPLE_TYPES = (Mapping, list, tuple, set, frozenset)
+
+
+def _bounded_sample_documents(rows: Any) -> tuple[dict[str, Any], ...]:
+    """Materialize a small, byte/time-bounded set of mapping-like sample documents."""
+
+    started = time.monotonic()
+    total_bytes = 0
+    samples: list[dict[str, Any]] = []
+    for raw in rows:
+        if len(samples) >= _SCHEMA_SAMPLE_ROW_LIMIT:
+            break
+        if time.monotonic() - started >= _SCHEMA_SAMPLE_TIME_LIMIT_SECONDS:
+            break
+        if not isinstance(raw, Mapping):
+            raise SchemaValidationError("sample document must be an object")
+        sample = {str(name): value for name, value in raw.items()}
+        encoded = json.dumps(
+            _json_safe(sample),
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        if len(encoded) > _SCHEMA_SAMPLE_BYTE_LIMIT - total_bytes:
+            break
+        total_bytes += len(encoded)
+        samples.append(sample)
+    return tuple(samples)
+
+
+def _sample_field_names(
+    samples: Sequence[Mapping[str, Any]],
+    *,
+    required: Sequence[str] = (),
+) -> tuple[str, ...]:
+    observed = {
+        str(name)
+        for sample in samples
+        for name in sample
+        if str(name)
+    }
+    ordered_required = tuple(dict.fromkeys(str(name) for name in required if str(name)))
+    return ordered_required + tuple(sorted(observed - set(ordered_required)))
+
+
+def _sample_field_is_scalar(
+    samples: Sequence[Mapping[str, Any]],
+    name: str,
+) -> bool:
+    values = [sample[name] for sample in samples if name in sample and sample[name] is not None]
+    return bool(values) and all(not isinstance(value, _COMPLEX_SAMPLE_TYPES) for value in values)
+
+
+def _sample_discovery_metadata(vendor: str) -> dict[str, Any]:
+    return {
+        "vendor": vendor,
+        "schema_discovery": {
+            "mode": "bounded_sample",
+            "partial": True,
+            "row_limit": _SCHEMA_SAMPLE_ROW_LIMIT,
+            "byte_limit": _SCHEMA_SAMPLE_BYTE_LIMIT,
+            "time_limit_seconds": _SCHEMA_SAMPLE_TIME_LIMIT_SECONDS,
+            "sampled_field_types": "unconstrained",
+        },
+    }
+
+
 class MongoRecordBackend:
     """Thin adapter over a caller-owned PyMongo Database-like object."""
 
@@ -94,38 +164,48 @@ class MongoRecordBackend:
             raise SchemaValidationError("MongoDB list_collection_names() must return a list")
         return tuple(str(name) for name in names if str(name))
 
+    def _sample_documents(self, collection: Any) -> tuple[dict[str, Any], ...]:
+        cursor = collection.find({})
+        sort = getattr(cursor, "sort", None)
+        if callable(sort):
+            cursor = sort("_id", 1)
+        max_time_ms = getattr(cursor, "max_time_ms", None)
+        if callable(max_time_ms):
+            cursor = max_time_ms(int(_SCHEMA_SAMPLE_TIME_LIMIT_SECONDS * 1000))
+        cursor = cursor.limit(_SCHEMA_SAMPLE_ROW_LIMIT)
+        return _bounded_sample_documents(cursor)
+
     def list_sources(self) -> tuple[RecordSourceSpec, ...]:
         results: list[RecordSourceSpec] = []
         for name in self._names():
             collection = self._database[name]
-            sample = collection.find_one({}) or {}
-            if not isinstance(sample, Mapping):
-                raise SchemaValidationError(
-                    f"MongoDB collection {name!r} sample document must be an object"
+            samples = self._sample_documents(collection)
+            required = ["_id"]
+            time_field = self._time_fields.get(name)
+            if time_field is not None:
+                required.append(time_field)
+            fields = [
+                RecordFieldSpec(
+                    name=field_name,
+                    # MongoDB collections are schemaless unless an external validator is
+                    # supplied. Sampled values prove presence, not a complete type contract.
+                    json_schema={},
+                    identifier=field_name == "_id",
+                    filterable=(
+                        field_name == "_id"
+                        or _sample_field_is_scalar(samples, field_name)
+                    ),
                 )
-            keys = list(sample)
-            if "_id" not in keys:
-                keys.insert(0, "_id")
-            fields = []
-            for field_name in keys:
-                value = sample.get(field_name)
-                scalar = not isinstance(value, (Mapping, list, tuple, set, frozenset))
-                fields.append(
-                    RecordFieldSpec(
-                        name=str(field_name),
-                        json_schema=_json_schema_from_value(value),
-                        identifier=field_name == "_id",
-                        filterable=field_name == "_id" or scalar,
-                    )
-                )
+                for field_name in _sample_field_names(samples, required=required)
+            ]
             results.append(
                 RecordSourceSpec(
                     name=name,
                     model="document",
                     fields=tuple(fields),
                     supports_text_search=name in self._text_search,
-                    time_field=self._time_fields.get(name),
-                    public_metadata={"vendor": "mongodb"},
+                    time_field=time_field,
+                    public_metadata=_sample_discovery_metadata("mongodb"),
                 )
             )
         return tuple(results)
@@ -488,43 +568,53 @@ class DynamoDBRecordBackend:
                 for item in description.get("KeySchema", ())
                 if isinstance(item, Mapping) and item.get("AttributeName")
             )
-            sample_response = self._client.scan(TableName=table_name, Limit=1)
+            sample_response = self._client.scan(
+                TableName=table_name,
+                Limit=_SCHEMA_SAMPLE_ROW_LIMIT,
+            )
             sample_items = sample_response.get("Items", ())
-            sample = sample_items[0] if sample_items else {}
-            decoded_sample = {
-                str(name): _ddb_decode(value)
-                for name, value in sample.items()
-            } if isinstance(sample, Mapping) else {}
+            decoded_samples: list[dict[str, Any]] = []
+            for sample in sample_items:
+                if not isinstance(sample, Mapping):
+                    raise SchemaValidationError("DynamoDB sample item must be an object")
+                decoded_samples.append(
+                    {
+                        str(name): _ddb_decode(value)
+                        for name, value in sample.items()
+                    }
+                )
+            samples = _bounded_sample_documents(decoded_samples)
 
             attribute_types = {
                 str(item.get("AttributeName")): str(item.get("AttributeType"))
                 for item in description.get("AttributeDefinitions", ())
                 if isinstance(item, Mapping) and item.get("AttributeName")
             }
-            names = list(decoded_sample)
-            for key in key_fields:
-                if key not in names:
-                    names.insert(0, key)
+            required = list(key_fields)
+            time_field = self._time_fields.get(table_name)
+            if time_field is not None:
+                required.append(time_field)
+            names = _sample_field_names(samples, required=required)
 
             fields = []
             for name in names:
-                value = decoded_sample.get(name)
-                if value is None and name in attribute_types:
-                    code = attribute_types[name]
-                    schema = {
-                        "S": {"type": "string"},
-                        "N": {"type": "number"},
-                        "B": {"type": "string"},
-                    }.get(code, {})
-                else:
-                    schema = _json_schema_from_value(value)
-                scalar = not isinstance(value, (Mapping, list, tuple, set, frozenset))
+                code = attribute_types.get(name)
+                schema = {
+                    "S": {"type": "string"},
+                    "N": {"type": "number"},
+                    "B": {"type": "string"},
+                }.get(code, {})
                 fields.append(
                     RecordFieldSpec(
                         name=name,
+                        # AttributeDefinitions are authoritative for key/index attributes;
+                        # all other sampled values remain intentionally unconstrained.
                         json_schema=dict(schema),
                         identifier=name in key_fields,
-                        filterable=name in key_fields or scalar,
+                        filterable=(
+                            name in key_fields
+                            or _sample_field_is_scalar(samples, name)
+                        ),
                     )
                 )
             self._key_fields[table_name] = key_fields
@@ -534,8 +624,8 @@ class DynamoDBRecordBackend:
                     name=table_name,
                     model="document",
                     fields=tuple(fields),
-                    time_field=self._time_fields.get(table_name),
-                    public_metadata={"vendor": "dynamodb"},
+                    time_field=time_field,
+                    public_metadata=_sample_discovery_metadata("dynamodb"),
                 )
             )
         return tuple(results)
@@ -670,35 +760,37 @@ class CosmosRecordBackend:
                 names.append(str(raw["id"]))
         return tuple(names)
 
-    def _sample(self, container_name: str) -> dict[str, Any]:
+    def _samples(self, container_name: str) -> tuple[dict[str, Any], ...]:
         container = self._database.get_container_client(container_name)
         rows = container.query_items(
-            query="SELECT TOP 1 * FROM c",
+            query=(
+                f"SELECT TOP {_SCHEMA_SAMPLE_ROW_LIMIT} * FROM c "
+                "ORDER BY c.id"
+            ),
             enable_cross_partition_query=True,
         )
-        for row in rows:
-            if not isinstance(row, Mapping):
-                raise SchemaValidationError("Cosmos DB sample item must be an object")
-            return dict(row)
-        return {}
+        return _bounded_sample_documents(rows)
 
     def list_sources(self) -> tuple[RecordSourceSpec, ...]:
         results: list[RecordSourceSpec] = []
         for container_name in self._container_names():
-            sample = self._sample(container_name)
-            names = list(sample)
-            if "id" not in names:
-                names.insert(0, "id")
+            samples = self._samples(container_name)
+            required = ["id"]
+            time_field = self._time_fields.get(container_name)
+            if time_field is not None:
+                required.append(time_field)
+            names = _sample_field_names(samples, required=required)
             fields: list[RecordFieldSpec] = []
             for name in names:
-                value = sample.get(name)
-                scalar = not isinstance(value, (Mapping, list, tuple, set, frozenset))
                 fields.append(
                     RecordFieldSpec(
                         name=name,
-                        json_schema=_json_schema_from_value(value),
+                        json_schema={"type": "string"} if name == "id" else {},
                         identifier=name == "id",
-                        filterable=name == "id" or scalar,
+                        filterable=(
+                            name == "id"
+                            or _sample_field_is_scalar(samples, name)
+                        ),
                     )
                 )
             self._field_names[container_name] = frozenset(names)
@@ -707,8 +799,8 @@ class CosmosRecordBackend:
                     name=container_name,
                     model="document",
                     fields=tuple(fields),
-                    time_field=self._time_fields.get(container_name),
-                    public_metadata={"vendor": "azure-cosmos-db"},
+                    time_field=time_field,
+                    public_metadata=_sample_discovery_metadata("azure-cosmos-db"),
                 )
             )
         return tuple(results)
@@ -859,21 +951,29 @@ class CouchbaseRecordBackend:
         self._paths = self._discover_paths()
         results: list[RecordSourceSpec] = []
         for source, path in sorted(self._paths.items()):
-            statement = f"SELECT RAW c FROM {self._keyspace(path)} AS c LIMIT 1"
-            rows = _query_rows(self._cluster.query(statement))
-            sample = rows[0] if rows else {}
-            names = list(sample)
+            statement = (
+                f"SELECT RAW c FROM {self._keyspace(path)} AS c "
+                f"ORDER BY META(c).id LIMIT {_SCHEMA_SAMPLE_ROW_LIMIT}"
+            )
+            samples = _bounded_sample_documents(
+                _query_rows(self._cluster.query(statement))
+            )
+            names = _sample_field_names(samples)
             fields = []
             for name in names:
-                value = sample.get(name)
-                scalar = not isinstance(value, (Mapping, list, tuple, set, frozenset))
                 safe_filter = re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name) is not None
                 fields.append(
                     RecordFieldSpec(
                         name=name,
-                        json_schema=_json_schema_from_value(value),
+                        json_schema={},
                         identifier=name == "id",
-                        filterable=safe_filter and (name == "id" or scalar),
+                        filterable=(
+                            safe_filter
+                            and (
+                                name == "id"
+                                or _sample_field_is_scalar(samples, name)
+                            )
+                        ),
                     )
                 )
             if not fields:
@@ -892,7 +992,7 @@ class CouchbaseRecordBackend:
                     model="document",
                     fields=tuple(fields),
                     time_field=self._time_fields.get(source),
-                    public_metadata={"vendor": "couchbase"},
+                    public_metadata=_sample_discovery_metadata("couchbase"),
                 )
             )
         return tuple(results)
