@@ -658,16 +658,18 @@ class SchemaPlanner:
         ]
         | None = None,
     ) -> CapabilityRetrieval:
+        catalog_snapshot = self._catalog_snapshot()
         candidates = self._semantic_recall_catalog(
             request,
             intent,
             additional_availability_predicate=additional_availability_predicate,
             scoring_endpoint_transform=scoring_endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
         )
-        self._sort_candidates(candidates)
+        self._sort_candidates(candidates, catalog_snapshot=catalog_snapshot)
         return CapabilityRetrieval(
             query=request.query,
-            registry_version=self.registry.version,
+            registry_version=catalog_snapshot.version,
             requested_k=k,
             total_ranked=len(candidates),
             executable_only=executable_only,
@@ -685,15 +687,17 @@ class SchemaPlanner:
         k: int,
         additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> CapabilityRouteRetrieval:
+        catalog_snapshot = self._catalog_snapshot()
         candidates = self._semantic_recall_catalog(
             request,
             intent,
             additional_availability_predicate=additional_availability_predicate,
+            catalog_snapshot=catalog_snapshot,
         )
-        self._sort_candidates(candidates)
+        self._sort_candidates(candidates, catalog_snapshot=catalog_snapshot)
         return CapabilityRouteRetrieval(
             query=request.query,
-            registry_version=self.registry.version,
+            registry_version=catalog_snapshot.version,
             requested_k=k,
             total_ranked=len(candidates),
             candidates=[
@@ -783,19 +787,21 @@ class SchemaPlanner:
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
         additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> StateConditionedCapabilityRetrieval:
+        catalog_snapshot = self._catalog_snapshot()
         ranked = self._semantic_recall_catalog(
             request,
             intent,
             additional_availability_predicate=additional_availability_predicate,
+            catalog_snapshot=catalog_snapshot,
         )
-        self._sort_candidates(ranked)
+        self._sort_candidates(ranked, catalog_snapshot=catalog_snapshot)
         visible = [
             self._retrieval_candidate(candidate, rank=index)
             for index, candidate in enumerate(ranked, start=1)
         ]
         return backfill_ranked_candidates_by_state(
             query=request.query,
-            registry_version=self.registry.version,
+            registry_version=catalog_snapshot.version,
             requested_k=k,
             ranked_candidates=visible,
             state=execution_state,
