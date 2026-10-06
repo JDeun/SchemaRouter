@@ -169,6 +169,9 @@ def run(
                 "api": "SchemaRouter.retrieve",
                 "structural_retrieval": False,
                 "execution": "disabled",
+                "latency_boundary": (
+                    "ranked retrieval + model-visible contract materialization"
+                ),
             },
         },
         "index_build_ms": index_build_ms,
