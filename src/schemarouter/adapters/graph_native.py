@@ -613,9 +613,26 @@ class FalkorGraphBackend:
         client: Any,
         *,
         graphs: Sequence[str] | None = None,
+        max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
+        max_schema_items: int = _MAX_SCHEMA_ITEMS,
     ) -> None:
+        if max_schema_items < 1:
+            raise ValueError("FalkorDB max_schema_items must be positive")
         self._client = client
-        self._graphs = None if graphs is None else tuple(str(value) for value in graphs)
+        self._graphs = (
+            None
+            if graphs is None
+            else tuple(
+                str(value)
+                for value in _bounded_values(
+                    graphs,
+                    limit=max_discovery_sources,
+                    label="FalkorDB configured graphs",
+                )
+            )
+        )
+        self._max_discovery_sources = max_discovery_sources
+        self._max_schema_items = max_schema_items
         self._relationships: dict[str, tuple[str, ...]] = {}
 
     def _graph_names(self) -> tuple[str, ...]:
@@ -624,7 +641,15 @@ class FalkorGraphBackend:
         raw = self._client.list_graphs()
         if not isinstance(raw, Sequence) or isinstance(raw, (str, bytes)):
             raise SchemaValidationError("FalkorDB list_graphs() must return a list")
-        names = tuple(str(value) for value in raw if str(value))
+        names = tuple(
+            str(value)
+            for value in _bounded_values(
+                raw,
+                limit=self._max_discovery_sources,
+                label="FalkorDB graph discovery",
+            )
+            if str(value)
+        )
         if len(names) != len(set(names)):
             raise SchemaValidationError("FalkorDB returned duplicate graph names")
         return names
@@ -656,12 +681,17 @@ class FalkorGraphBackend:
         rows = self._read(
             graph_name,
             f"MATCH {pattern} UNWIND keys({variable}) AS property "
-            "RETURN DISTINCT property ORDER BY property LIMIT 1000",
+            "RETURN DISTINCT property ORDER BY property "
+            f"LIMIT {self._max_schema_items + 1}",
             columns=("property",),
         )
+        if len(rows) > self._max_schema_items:
+            raise RegistrationError(
+                f"FalkorDB properties exceeded limit={self._max_schema_items}"
+            )
         return tuple(
             GraphPropertySpec(name=str(row["property"]))
-            for row in rows[:_MAX_SCHEMA_ITEMS]
+            for row in rows
             if row.get("property")
         )
 
@@ -671,23 +701,34 @@ class FalkorGraphBackend:
             label_rows = self._read(
                 graph_name,
                 "MATCH (n) UNWIND labels(n) AS label "
-                "RETURN DISTINCT label ORDER BY label LIMIT 1000",
+                "RETURN DISTINCT label ORDER BY label "
+                f"LIMIT {self._max_schema_items + 1}",
                 columns=("label",),
             )
             relationship_rows = self._read(
                 graph_name,
                 "MATCH ()-[r]->() RETURN DISTINCT type(r) AS relationshipType "
-                "ORDER BY relationshipType LIMIT 1000",
+                "ORDER BY relationshipType "
+                f"LIMIT {self._max_schema_items + 1}",
                 columns=("relationshipType",),
             )
+            if len(label_rows) > self._max_schema_items:
+                raise RegistrationError(
+                    f"FalkorDB labels exceeded limit={self._max_schema_items}"
+                )
+            if len(relationship_rows) > self._max_schema_items:
+                raise RegistrationError(
+                    "FalkorDB relationship types exceeded "
+                    f"limit={self._max_schema_items}"
+                )
             labels = tuple(
                 str(row["label"])
-                for row in label_rows[:_MAX_SCHEMA_ITEMS]
+                for row in label_rows
                 if row.get("label")
             )
             relationships = tuple(
                 str(row["relationshipType"])
-                for row in relationship_rows[:_MAX_SCHEMA_ITEMS]
+                for row in relationship_rows
                 if row.get("relationshipType")
             )
             self._relationships[graph_name] = relationships
@@ -714,9 +755,15 @@ class FalkorGraphBackend:
                     f"MATCH (source)-[r:{escaped}]->(target) "
                     "UNWIND labels(source) AS sourceType "
                     "UNWIND labels(target) AS targetType "
-                    "RETURN DISTINCT sourceType, targetType LIMIT 1000",
+                    "RETURN DISTINCT sourceType, targetType "
+                    f"LIMIT {self._max_schema_items + 1}",
                     columns=("sourceType", "targetType"),
                 )
+                if len(endpoint_rows) > self._max_schema_items:
+                    raise RegistrationError(
+                        "FalkorDB relationship endpoints exceeded "
+                        f"limit={self._max_schema_items}"
+                    )
                 relationship_types.append(
                     GraphRelationshipTypeSpec(
                         name=relationship,
