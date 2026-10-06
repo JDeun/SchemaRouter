@@ -346,6 +346,18 @@ class SchemaRouter:
             parameters.append(clone)
 
         selected_names = [field.name for field in visible_fields]
+        server_projection = endpoint.server_projection
+        if server_projection is not None:
+            server_projection = server_projection.model_copy(
+                deep=True,
+                update={
+                    "field_map": {
+                        name: selector
+                        for name, selector in server_projection.field_map.items()
+                        if name in selected_names
+                    }
+                },
+            )
         return endpoint.model_copy(
             deep=True,
             update={
@@ -355,8 +367,39 @@ class SchemaRouter:
                     endpoint,
                     selected_names,
                 ),
+                "server_projection": server_projection,
             },
         )
+
+    def _scoped_analysis_registry(
+        self,
+        principal: PrincipalContext,
+        predicate: Callable[[ToolSpec, Any], bool],
+    ) -> ToolRegistry:
+        """Build the authorization-bounded schema catalog supplied to analyzers."""
+
+        scoped = InMemoryRegistry()
+        for tool in self.registry.tools():
+            endpoints: list[EndpointSpec] = []
+            for endpoint in tool.endpoints:
+                if not predicate(tool, endpoint):
+                    continue
+                visible_endpoint = self._data_scope_endpoint_view(
+                    principal,
+                    tool,
+                    endpoint,
+                )
+                if visible_endpoint is not None:
+                    endpoints.append(visible_endpoint)
+            if not endpoints:
+                continue
+            scoped.register(
+                tool.model_copy(
+                    deep=True,
+                    update={"endpoints": endpoints},
+                )
+            )
+        return scoped
 
     def _project_retrieval_data_scope(
         self,
@@ -4561,11 +4604,28 @@ class SchemaRouter:
 
         principal = _current_principal_context()
         predicate = self._authorization_predicate(principal)
-        plan = (
-            self.planner.plan(request)
-            if predicate is None
-            else self.planner.plan_with_additional_availability(request, predicate)
-        )
+        if predicate is None:
+            plan = self.planner.plan(request)
+        elif (
+            self.authorization_policy is not None
+            and self.authorization_policy.data_rules
+            and principal is not None
+        ):
+            plan = self.planner.plan_with_scoped_schema(
+                request,
+                predicate,
+                lambda tool, endpoint: self._data_scope_endpoint_view(
+                    principal,
+                    tool,
+                    endpoint,
+                ),
+                analysis_registry=self._scoped_analysis_registry(
+                    principal,
+                    predicate,
+                ),
+            )
+        else:
+            plan = self.planner.plan_with_additional_availability(request, predicate)
         if self.authorization_policy is not None:
             self._validate_plan_authorization(plan, principal, phase="plan")
         return plan
@@ -4575,14 +4635,31 @@ class SchemaRouter:
 
         principal = _current_principal_context()
         predicate = self._authorization_predicate(principal)
-        plan = (
-            await self.planner.aplan(request)
-            if predicate is None
-            else await self.planner.aplan_with_additional_availability(
+        if predicate is None:
+            plan = await self.planner.aplan(request)
+        elif (
+            self.authorization_policy is not None
+            and self.authorization_policy.data_rules
+            and principal is not None
+        ):
+            plan = await self.planner.aplan_with_scoped_schema(
+                request,
+                predicate,
+                lambda tool, endpoint: self._data_scope_endpoint_view(
+                    principal,
+                    tool,
+                    endpoint,
+                ),
+                analysis_registry=self._scoped_analysis_registry(
+                    principal,
+                    predicate,
+                ),
+            )
+        else:
+            plan = await self.planner.aplan_with_additional_availability(
                 request,
                 predicate,
             )
-        )
         if self.authorization_policy is not None:
             self._validate_plan_authorization(plan, principal, phase="plan")
         return plan
@@ -4693,6 +4770,10 @@ class SchemaRouter:
                     endpoint,
                 ),
                 k=k,
+                analysis_registry=self._scoped_analysis_registry(
+                    principal,
+                    predicate,
+                ),
             )
         else:
             retrieval = self.planner.retrieve_with_additional_availability(
@@ -4728,6 +4809,10 @@ class SchemaRouter:
                     endpoint,
                 ),
                 k=k,
+                analysis_registry=self._scoped_analysis_registry(
+                    principal,
+                    predicate,
+                ),
             )
         else:
             retrieval = await self.planner.aretrieve_with_additional_availability(
@@ -4909,27 +4994,69 @@ class SchemaRouter:
     def plan_executable(self, request: PlanRequest | str) -> ExecutionPlan:
         """Plan only across authorized routes with a ready local binding."""
 
+        principal = _current_principal_context()
         predicate = self._combined_availability_predicate(
-            _current_principal_context(),
+            principal,
             self._binding_ready,
         )
         if predicate is None:
             raise RuntimeError("executable planning requires an availability predicate")
-        return self.planner.plan_with_additional_availability(request, predicate)
+        if (
+            self.authorization_policy is not None
+            and self.authorization_policy.data_rules
+            and principal is not None
+        ):
+            plan = self.planner.plan_with_scoped_schema(
+                request,
+                predicate,
+                lambda tool, endpoint: self._data_scope_endpoint_view(
+                    principal,
+                    tool,
+                    endpoint,
+                ),
+                analysis_registry=self._scoped_analysis_registry(
+                    principal,
+                    predicate,
+                ),
+            )
+        else:
+            plan = self.planner.plan_with_additional_availability(request, predicate)
+        return plan
 
     async def aplan_executable(self, request: PlanRequest | str) -> ExecutionPlan:
         """Async counterpart to :meth:`plan_executable`."""
 
+        principal = _current_principal_context()
         predicate = self._combined_availability_predicate(
-            _current_principal_context(),
+            principal,
             self._binding_ready,
         )
         if predicate is None:
             raise RuntimeError("executable planning requires an availability predicate")
-        return await self.planner.aplan_with_additional_availability(
-            request,
-            predicate,
-        )
+        if (
+            self.authorization_policy is not None
+            and self.authorization_policy.data_rules
+            and principal is not None
+        ):
+            plan = await self.planner.aplan_with_scoped_schema(
+                request,
+                predicate,
+                lambda tool, endpoint: self._data_scope_endpoint_view(
+                    principal,
+                    tool,
+                    endpoint,
+                ),
+                analysis_registry=self._scoped_analysis_registry(
+                    principal,
+                    predicate,
+                ),
+            )
+        else:
+            plan = await self.planner.aplan_with_additional_availability(
+                request,
+                predicate,
+            )
+        return plan
 
     def plan_executable_authorized(
         self,
@@ -4961,18 +5088,41 @@ class SchemaRouter:
     ) -> CapabilityRetrieval:
         """Return Top-K authorized capabilities with a ready local binding."""
 
+        principal = _current_principal_context()
         predicate = self._combined_availability_predicate(
-            _current_principal_context(),
+            principal,
             self._binding_ready,
         )
         if predicate is None:
             raise RuntimeError("executable retrieval requires an availability predicate")
-        return self.planner.retrieve_with_additional_availability(
-            request,
-            predicate,
-            k=k,
-            executable_only=True,
-        )
+        if (
+            self.authorization_policy is not None
+            and self.authorization_policy.data_rules
+            and principal is not None
+        ):
+            retrieval = self.planner.retrieve_with_scoped_schema(
+                request,
+                predicate,
+                lambda tool, endpoint: self._data_scope_endpoint_view(
+                    principal,
+                    tool,
+                    endpoint,
+                ),
+                k=k,
+                executable_only=True,
+                analysis_registry=self._scoped_analysis_registry(
+                    principal,
+                    predicate,
+                ),
+            )
+        else:
+            retrieval = self.planner.retrieve_with_additional_availability(
+                request,
+                predicate,
+                k=k,
+                executable_only=True,
+            )
+        return self._project_retrieval_data_scope(retrieval, principal)
 
     async def aretrieve_executable(
         self,
@@ -4982,18 +5132,41 @@ class SchemaRouter:
     ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve_executable`."""
 
+        principal = _current_principal_context()
         predicate = self._combined_availability_predicate(
-            _current_principal_context(),
+            principal,
             self._binding_ready,
         )
         if predicate is None:
             raise RuntimeError("executable retrieval requires an availability predicate")
-        return await self.planner.aretrieve_with_additional_availability(
-            request,
-            predicate,
-            k=k,
-            executable_only=True,
-        )
+        if (
+            self.authorization_policy is not None
+            and self.authorization_policy.data_rules
+            and principal is not None
+        ):
+            retrieval = await self.planner.aretrieve_with_scoped_schema(
+                request,
+                predicate,
+                lambda tool, endpoint: self._data_scope_endpoint_view(
+                    principal,
+                    tool,
+                    endpoint,
+                ),
+                k=k,
+                executable_only=True,
+                analysis_registry=self._scoped_analysis_registry(
+                    principal,
+                    predicate,
+                ),
+            )
+        else:
+            retrieval = await self.planner.aretrieve_with_additional_availability(
+                request,
+                predicate,
+                k=k,
+                executable_only=True,
+            )
+        return self._project_retrieval_data_scope(retrieval, principal)
 
     def retrieve_executable_authorized(
         self,
