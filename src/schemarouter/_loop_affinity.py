@@ -150,11 +150,11 @@ class SyncLoopRunner:
             aclose = getattr(iterator, "aclose", None)
             if callable(aclose):
                 close_iterator = cast(Callable[[], Awaitable[None]], aclose)
-                close_future = asyncio.run_coroutine_threadsafe(
-                    self._await_factory(close_iterator),
-                    loop,
-                )
                 try:
+                    close_future = asyncio.run_coroutine_threadsafe(
+                        self._await_factory(close_iterator),
+                        loop,
+                    )
                     close_future.result()
                 except BaseException as cleanup_error:
                     # An iterator failure is the primary execution signal. Do
