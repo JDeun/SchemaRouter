@@ -70,6 +70,112 @@ def _json_safe(value: Any) -> Any:
     return str(value)
 
 
+_RECORD_SCHEMA_SAMPLE_LIMIT = 16
+_RECORD_SCHEMA_SAMPLE_MAX_BYTES = 256 * 1024
+
+
+def _bounded_sample_records(rows: Any) -> list[dict[str, Any]]:
+    """Materialize a bounded sample without treating any one row as authoritative."""
+
+    samples: list[dict[str, Any]] = []
+    sampled_bytes = 0
+    for raw in rows:
+        if len(samples) >= _RECORD_SCHEMA_SAMPLE_LIMIT:
+            break
+        if not isinstance(raw, Mapping):
+            raise SchemaValidationError("record schema sample row must be an object")
+        row = {str(name): value for name, value in raw.items()}
+        encoded_size = len(
+            json.dumps(
+                _json_safe(row),
+                ensure_ascii=True,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        )
+        if sampled_bytes + encoded_size > _RECORD_SCHEMA_SAMPLE_MAX_BYTES:
+            break
+        samples.append(row)
+        sampled_bytes += encoded_size
+    return samples
+
+
+def _sampled_record_fields(
+    samples: Sequence[Mapping[str, Any]],
+    *,
+    identifiers: Sequence[str] = (),
+    authoritative_schemas: Mapping[str, Mapping[str, Any]] | None = None,
+) -> tuple[RecordFieldSpec, ...]:
+    """Merge sampled document fields conservatively and deterministically."""
+
+    identifier_set = {str(name) for name in identifiers}
+    authoritative = {
+        str(name): dict(schema)
+        for name, schema in (authoritative_schemas or {}).items()
+    }
+    observed: dict[str, list[Any]] = {}
+    for sample in samples:
+        for name, value in sample.items():
+            observed.setdefault(str(name), []).append(value)
+    for name in identifier_set:
+        observed.setdefault(name, [])
+
+    ordered_names = sorted(observed, key=lambda name: (name not in identifier_set, name))
+    fields: list[RecordFieldSpec] = []
+    for name in ordered_names:
+        values = [value for value in observed[name] if value is not None]
+        schema = authoritative.get(name)
+        if schema is None:
+            inferred = [
+                _json_schema_from_value(value)
+                for value in values
+            ]
+            known = [item for item in inferred if item]
+            distinct = {
+                json.dumps(item, sort_keys=True, separators=(",", ":")): item
+                for item in known
+            }
+            # One observed runtime value is not enough to claim a stable type for a
+            # schemaless field. Repeated homogeneous observations may be surfaced;
+            # heterogeneous or unknown observations remain unconstrained.
+            schema = (
+                dict(next(iter(distinct.values())))
+                if len(values) >= 2
+                and len(known) == len(values)
+                and len(distinct) == 1
+                else {}
+            )
+
+        scalar = bool(values) and all(
+            not isinstance(value, (Mapping, list, tuple, set, frozenset))
+            for value in values
+        )
+        fields.append(
+            RecordFieldSpec(
+                name=name,
+                description="Discovered from a bounded, partial schema sample.",
+                json_schema=dict(schema),
+                identifier=name in identifier_set,
+                filterable=name in identifier_set or scalar,
+            )
+        )
+    return tuple(fields)
+
+
+def _sampled_schema_metadata(vendor: str, sample_count: int) -> dict[str, Any]:
+    return {
+        "vendor": vendor,
+        "schema_discovery": {
+            "mode": "bounded_sample",
+            "complete": False,
+            "sample_count": sample_count,
+            "sample_limit": _RECORD_SCHEMA_SAMPLE_LIMIT,
+            "sample_max_bytes": _RECORD_SCHEMA_SAMPLE_MAX_BYTES,
+            "sample_order": "provider",
+        },
+    }
+
+
 class MongoRecordBackend:
     """Thin adapter over a caller-owned PyMongo Database-like object."""
 
@@ -98,34 +204,17 @@ class MongoRecordBackend:
         results: list[RecordSourceSpec] = []
         for name in self._names():
             collection = self._database[name]
-            sample = collection.find_one({}) or {}
-            if not isinstance(sample, Mapping):
-                raise SchemaValidationError(
-                    f"MongoDB collection {name!r} sample document must be an object"
-                )
-            keys = list(sample)
-            if "_id" not in keys:
-                keys.insert(0, "_id")
-            fields = []
-            for field_name in keys:
-                value = sample.get(field_name)
-                scalar = not isinstance(value, (Mapping, list, tuple, set, frozenset))
-                fields.append(
-                    RecordFieldSpec(
-                        name=str(field_name),
-                        json_schema=_json_schema_from_value(value),
-                        identifier=field_name == "_id",
-                        filterable=field_name == "_id" or scalar,
-                    )
-                )
+            cursor = collection.find({}).limit(_RECORD_SCHEMA_SAMPLE_LIMIT)
+            samples = _bounded_sample_records(cursor)
+            fields = _sampled_record_fields(samples, identifiers=("_id",))
             results.append(
                 RecordSourceSpec(
                     name=name,
                     model="document",
-                    fields=tuple(fields),
+                    fields=fields,
                     supports_text_search=name in self._text_search,
                     time_field=self._time_fields.get(name),
-                    public_metadata={"vendor": "mongodb"},
+                    public_metadata=_sampled_schema_metadata("mongodb", len(samples)),
                 )
             )
         return tuple(results)
@@ -488,54 +577,52 @@ class DynamoDBRecordBackend:
                 for item in description.get("KeySchema", ())
                 if isinstance(item, Mapping) and item.get("AttributeName")
             )
-            sample_response = self._client.scan(TableName=table_name, Limit=1)
+            sample_response = self._client.scan(
+                TableName=table_name,
+                Limit=_RECORD_SCHEMA_SAMPLE_LIMIT,
+            )
             sample_items = sample_response.get("Items", ())
-            sample = sample_items[0] if sample_items else {}
-            decoded_sample = {
-                str(name): _ddb_decode(value)
-                for name, value in sample.items()
-            } if isinstance(sample, Mapping) else {}
+            decoded_samples = _bounded_sample_records(
+                {
+                    str(name): _ddb_decode(value)
+                    for name, value in item.items()
+                }
+                for item in sample_items
+                if isinstance(item, Mapping)
+            )
 
             attribute_types = {
                 str(item.get("AttributeName")): str(item.get("AttributeType"))
                 for item in description.get("AttributeDefinitions", ())
                 if isinstance(item, Mapping) and item.get("AttributeName")
             }
-            names = list(decoded_sample)
-            for key in key_fields:
-                if key not in names:
-                    names.insert(0, key)
-
-            fields = []
-            for name in names:
-                value = decoded_sample.get(name)
-                if value is None and name in attribute_types:
-                    code = attribute_types[name]
-                    schema = {
-                        "S": {"type": "string"},
-                        "N": {"type": "number"},
-                        "B": {"type": "string"},
-                    }.get(code, {})
-                else:
-                    schema = _json_schema_from_value(value)
-                scalar = not isinstance(value, (Mapping, list, tuple, set, frozenset))
-                fields.append(
-                    RecordFieldSpec(
-                        name=name,
-                        json_schema=dict(schema),
-                        identifier=name in key_fields,
-                        filterable=name in key_fields or scalar,
-                    )
-                )
+            authoritative_schemas = {
+                name: {
+                    "S": {"type": "string"},
+                    "N": {"type": "number"},
+                    "B": {"type": "string"},
+                }.get(code, {})
+                for name, code in attribute_types.items()
+                if name in key_fields
+            }
+            fields = _sampled_record_fields(
+                decoded_samples,
+                identifiers=key_fields,
+                authoritative_schemas=authoritative_schemas,
+            )
+            names = [field.name for field in fields]
             self._key_fields[table_name] = key_fields
             self._field_names[table_name] = frozenset(names)
             results.append(
                 RecordSourceSpec(
                     name=table_name,
                     model="document",
-                    fields=tuple(fields),
+                    fields=fields,
                     time_field=self._time_fields.get(table_name),
-                    public_metadata={"vendor": "dynamodb"},
+                    public_metadata=_sampled_schema_metadata(
+                        "dynamodb",
+                        len(decoded_samples),
+                    ),
                 )
             )
         return tuple(results)
@@ -670,45 +757,31 @@ class CosmosRecordBackend:
                 names.append(str(raw["id"]))
         return tuple(names)
 
-    def _sample(self, container_name: str) -> dict[str, Any]:
+    def _samples(self, container_name: str) -> list[dict[str, Any]]:
         container = self._database.get_container_client(container_name)
         rows = container.query_items(
-            query="SELECT TOP 1 * FROM c",
+            query=f"SELECT TOP {_RECORD_SCHEMA_SAMPLE_LIMIT} * FROM c",
             enable_cross_partition_query=True,
         )
-        for row in rows:
-            if not isinstance(row, Mapping):
-                raise SchemaValidationError("Cosmos DB sample item must be an object")
-            return dict(row)
-        return {}
+        return _bounded_sample_records(rows)
 
     def list_sources(self) -> tuple[RecordSourceSpec, ...]:
         results: list[RecordSourceSpec] = []
         for container_name in self._container_names():
-            sample = self._sample(container_name)
-            names = list(sample)
-            if "id" not in names:
-                names.insert(0, "id")
-            fields: list[RecordFieldSpec] = []
-            for name in names:
-                value = sample.get(name)
-                scalar = not isinstance(value, (Mapping, list, tuple, set, frozenset))
-                fields.append(
-                    RecordFieldSpec(
-                        name=name,
-                        json_schema=_json_schema_from_value(value),
-                        identifier=name == "id",
-                        filterable=name == "id" or scalar,
-                    )
-                )
+            samples = self._samples(container_name)
+            fields = _sampled_record_fields(samples, identifiers=("id",))
+            names = [field.name for field in fields]
             self._field_names[container_name] = frozenset(names)
             results.append(
                 RecordSourceSpec(
                     name=container_name,
                     model="document",
-                    fields=tuple(fields),
+                    fields=fields,
                     time_field=self._time_fields.get(container_name),
-                    public_metadata={"vendor": "azure-cosmos-db"},
+                    public_metadata=_sampled_schema_metadata(
+                        "azure-cosmos-db",
+                        len(samples),
+                    ),
                 )
             )
         return tuple(results)
@@ -859,32 +932,27 @@ class CouchbaseRecordBackend:
         self._paths = self._discover_paths()
         results: list[RecordSourceSpec] = []
         for source, path in sorted(self._paths.items()):
-            statement = f"SELECT RAW c FROM {self._keyspace(path)} AS c LIMIT 1"
-            rows = _query_rows(self._cluster.query(statement))
-            sample = rows[0] if rows else {}
-            names = list(sample)
-            fields = []
-            for name in names:
-                value = sample.get(name)
-                scalar = not isinstance(value, (Mapping, list, tuple, set, frozenset))
-                safe_filter = re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name) is not None
-                fields.append(
-                    RecordFieldSpec(
-                        name=name,
-                        json_schema=_json_schema_from_value(value),
-                        identifier=name == "id",
-                        filterable=safe_filter and (name == "id" or scalar),
-                    )
+            statement = (
+                f"SELECT RAW c FROM {self._keyspace(path)} AS c "
+                f"LIMIT {_RECORD_SCHEMA_SAMPLE_LIMIT}"
+            )
+            samples = _bounded_sample_records(
+                _query_rows(self._cluster.query(statement))
+            )
+            sampled_fields = _sampled_record_fields(samples, identifiers=("id",))
+            fields = [
+                field.model_copy(
+                    update={
+                        "filterable": field.filterable
+                        and re.fullmatch(
+                            r"[A-Za-z_][A-Za-z0-9_]*",
+                            field.name,
+                        )
+                        is not None
+                    }
                 )
-            if not fields:
-                fields.append(
-                    RecordFieldSpec(
-                        name="id",
-                        json_schema={"type": "string"},
-                        identifier=True,
-                        filterable=True,
-                    )
-                )
+                for field in sampled_fields
+            ]
             self._field_names[source] = frozenset(field.name for field in fields)
             results.append(
                 RecordSourceSpec(
@@ -892,7 +960,10 @@ class CouchbaseRecordBackend:
                     model="document",
                     fields=tuple(fields),
                     time_field=self._time_fields.get(source),
-                    public_metadata={"vendor": "couchbase"},
+                    public_metadata=_sampled_schema_metadata(
+                        "couchbase",
+                        len(samples),
+                    ),
                 )
             )
         return tuple(results)
