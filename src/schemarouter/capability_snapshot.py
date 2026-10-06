@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import hashlib
 import json
 from datetime import datetime
 from typing import Literal
 
+from .canonical_json import canonical_json_sha256
 from .capability_contracts import (
     CapabilityContract,
     CompatibilityContext,
@@ -102,14 +102,7 @@ def _snapshot_payload(
 
 
 def _digest_payload(payload: object) -> str:
-    return hashlib.sha256(
-        json.dumps(
-            payload,
-            sort_keys=True,
-            separators=(",", ":"),
-            ensure_ascii=True,
-        ).encode("utf-8")
-    ).hexdigest()
+    return canonical_json_sha256(payload)
 
 
 def build_capability_snapshot(

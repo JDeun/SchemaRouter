@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import math
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
+
+from .canonical_json import canonical_json_sha256
 
 _REMOTE_ADAPTERS = {"mcp", "openapi", "optimade", "html_proposal"}
 _OPENAPI_ENDPOINT_RUNTIME_KEYS = {
@@ -712,8 +713,7 @@ class EndpointSpec(StrictModel):
         if not self.auth_requirements:
             # Preserve pre-auth-contract fingerprints for public endpoints.
             payload.pop("auth_requirements", None)
-        canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
-        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        return canonical_json_sha256(payload)
 
 
 class ToolSpec(StrictModel):
@@ -791,8 +791,7 @@ class ToolSpec(StrictModel):
                 endpoint_payload.pop("auth_requirements", None)
             endpoint_payloads.append(endpoint_payload)
         payload["endpoints"] = endpoint_payloads
-        canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
-        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        return canonical_json_sha256(payload)
 
     def endpoint(self, name: str) -> EndpointSpec:
         for endpoint in self.endpoints:

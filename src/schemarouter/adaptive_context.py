@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import math
 from collections import Counter
 from collections.abc import Iterable
 from dataclasses import dataclass, field
+
+from .canonical_json import canonical_json_sha256, canonical_json_text
 
 
 def _route_id(tool: str, endpoint: str) -> str:
@@ -120,10 +121,10 @@ class SuccessfulCapabilityHistory:
         self._counts.clear()
 
     def dumps(self) -> str:
-        return json.dumps(self.snapshot(), sort_keys=True, separators=(",", ":"))
+        return canonical_json_text(self.snapshot())
 
     def digest(self) -> str:
-        return hashlib.sha256(self.dumps().encode("utf-8")).hexdigest()
+        return canonical_json_sha256(self.snapshot())
 
     @classmethod
     def loads(cls, payload: str) -> SuccessfulCapabilityHistory:
@@ -218,10 +219,10 @@ class SessionSchemaExposure:
         }
 
     def dumps(self) -> str:
-        return json.dumps(self.snapshot(), sort_keys=True, separators=(",", ":"))
+        return canonical_json_text(self.snapshot())
 
     def digest(self) -> str:
-        return hashlib.sha256(self.dumps().encode("utf-8")).hexdigest()
+        return canonical_json_sha256(self.snapshot())
 
     @classmethod
     def loads(cls, payload: str) -> SessionSchemaExposure:
