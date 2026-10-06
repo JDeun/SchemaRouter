@@ -404,6 +404,12 @@ jobs:
       - run: /tmp/schemarouter-sdist/bin/python scripts/quickstart_provider_contract_smoke.py
       - run: /tmp/schemarouter-sdist/bin/python scripts/consumer_acceptance.py --json-out artifacts/consumer-acceptance-sdist.json
       - run: /tmp/schemarouter-sdist/bin/schemarouter --help
+      - name: Prepare isolated inspection fixtures for the sdist
+        run: |
+          /tmp/schemarouter-sdist/bin/python examples/inspection_dashboard.py \
+            --registry /tmp/inspection-registry.sqlite3 \
+            --traces /tmp/inspection-traces.sqlite3 \
+            --output /tmp/inspection-dashboard-sdist.html
       - run: /tmp/schemarouter-sdist/bin/schemarouter inspect registry --db /tmp/inspection-registry.sqlite3 --json > /tmp/inspection-registry-sdist.json
       - run: /tmp/schemarouter-sdist/bin/python -c "import json; data=json.load(open('/tmp/inspection-registry-sdist.json')); assert data['tool_count'] == 1"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
