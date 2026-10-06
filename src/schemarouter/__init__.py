@@ -467,6 +467,7 @@ from .storage import (
     inspect_sqlite_storage,
     migrate_sqlite_storage,
 )
+from .trace_redaction import TraceRedactionConfig
 from .traces import (
     RunTrace,
     RunTraceStore,
@@ -760,6 +761,7 @@ __all__ = [
     "VectorQueryEmbedder",
     "VectorStoreBackend",
     "UnitNormalizationSpec",
+    "TraceRedactionConfig",
     "TraceError",
     "TracePersistenceError",
     "UnsupportedSchemaSourceError",

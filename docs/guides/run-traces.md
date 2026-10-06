@@ -67,23 +67,36 @@ store.run_ids(complete=False)
 
 ## Privacy
 
-The trace store persists the exact event envelope it receives.
+The trace store persists the exact event envelope it receives. Runtime-produced events are
+structured-redacted **before** they reach the store unless the caller explicitly selects raw tracing.
 
-By default, `SchemaRouter.astream_events()` redacts argument values and result payloads, so the
-SQLite trace contains structural data such as argument names, selected fields, tool/endpoint names,
-error types, and result counts.
-
-If the caller explicitly sets:
+By default, payload values are omitted entirely. With:
 
 ```python
 RunConfig(include_payloads=True)
 ```
 
-then arguments, plans, results, and exception messages may be present in the trace and remain on
-disk until deleted by the application. Treat that database as sensitive application data and apply
-appropriate access control, encryption-at-rest, backup, and retention policy.
+arguments, plans, results, metadata, and exception messages may be included, but common credential
+keys and configured sensitive paths are replaced with `[REDACTED]` before emission and
+persistence. Secret values discovered under those keys/paths are also removed from later string
+messages in the same run.
 
-SchemaRouter does not encrypt the SQLite file itself.
+Use `TraceRedactionConfig(sensitive_paths={...})` for application-specific personal or regulated
+fields. Raw persistence requires the additional explicit escape hatch:
+
+```python
+RunConfig(
+    include_payloads=True,
+    raw_trace_payloads=True,
+)
+```
+
+Raw tracing can persist credentials and personal data verbatim. Treat such databases as sensitive
+application data and apply appropriate access control, encryption-at-rest, backup, and retention
+policy. SchemaRouter does not encrypt the SQLite file itself.
+
+External producers that call `SQLiteRunTraceStore.append()` directly are responsible for
+redacting their own `RunEvent` objects; the store deliberately does not mutate envelopes.
 
 ## External event streams
 
