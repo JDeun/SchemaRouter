@@ -305,3 +305,32 @@ def test_chemical_transitive_bridge_does_not_merge_conflicting_cids() -> None:
     assert by_providers[("provider_a",)].identifiers["cid"] == "1"
     assert by_providers[("provider_b", "provider_c")].identifiers["cid"] == "2"
 
+
+
+def test_ambiguous_shared_identifier_bridge_remains_unmerged() -> None:
+    records = [
+        SourceRecord(
+            provider="provider_a",
+            entity_kind="document",
+            identifiers={"doi": "10.1000/ambiguous", "pmid": "1"},
+        ),
+        SourceRecord(
+            provider="provider_b",
+            entity_kind="document",
+            identifiers={"doi": "10.1000/ambiguous", "pmid": "2"},
+        ),
+        SourceRecord(
+            provider="provider_unknown",
+            entity_kind="document",
+            identifiers={"doi": "10.1000/ambiguous"},
+        ),
+    ]
+
+    entities = aggregate_records(records)
+
+    assert len(entities) == 3
+    assert {tuple(entity.providers) for entity in entities} == {
+        ("provider_a",),
+        ("provider_b",),
+        ("provider_unknown",),
+    }
