@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 
 import httpx
 
+from .._http_headers import validate_trusted_headers
 from .._url_safety import safe_provenance_url
 from ..errors import (
     InvocationUnavailableError,
@@ -709,7 +710,7 @@ class GraphQLRemoteInvoker:
     ) -> None:
         self.tool = tool
         self.endpoint_url = _validate_graphql_url(endpoint_url)
-        self.trusted_headers = dict(trusted_headers or {})
+        self.trusted_headers = validate_trusted_headers(trusted_headers)
         self.timeout = timeout
         self.max_response_bytes = max_response_bytes
         self.http_client = http_client
