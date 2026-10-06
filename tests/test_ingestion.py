@@ -445,3 +445,187 @@ async def test_openapi_injected_http_client_is_reused_for_execution() -> None:
 
     assert seen_paths == ["/openapi.json", "/metrics"]
     assert result.data == {"numAPIs": 42}
+
+
+@pytest.mark.asyncio
+async def test_openapi_yaml_allows_bounded_anchors_and_aliases() -> None:
+    yaml_body = """
+openapi: 3.1.0
+info:
+  title: Anchored API
+paths:
+  /first:
+    get:
+      operationId: first
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: &shared_response
+                type: object
+                properties:
+                  status:
+                    type: string
+  /second:
+    get:
+      operationId: second
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: *shared_response
+"""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            text=yaml_body,
+            headers={"content-type": "application/yaml"},
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        tool = await router.add_url(
+            "https://docs.example.com/anchored.yaml",
+            kind="openapi",
+        )
+
+    assert {endpoint.name for endpoint in tool.endpoints} == {"first", "second"}
+
+
+@pytest.mark.asyncio
+async def test_openapi_yaml_rejects_excessive_alias_count_before_normalization() -> None:
+    aliases = "\n".join("  - *shared" for _ in range(257))
+    yaml_body = f"""
+openapi: 3.1.0
+info:
+  title: Alias Bomb
+paths: {{}}
+x-shared: &shared
+  type: string
+x-aliases:
+{aliases}
+"""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            text=yaml_body,
+            headers={"content-type": "application/yaml"},
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(
+            UnsupportedSchemaSourceError,
+            match="YAML schema parser resource budget exceeded: alias count",
+        ):
+            await router.add_url(
+                "https://docs.example.com/alias-bomb.yaml",
+                kind="openapi",
+            )
+
+
+@pytest.mark.asyncio
+async def test_openapi_yaml_rejects_logical_alias_expansion_budget() -> None:
+    repeated = ", ".join(["*{anchor}"] * 8)
+    levels = ["a", "b", "c", "d", "e", "f"]
+    lines = ["x-a: &a [leaf]"]
+    for previous, current in zip(levels, levels[1:], strict=False):
+        lines.append(
+            f"x-{current}: &{current} ["
+            + repeated.format(anchor=previous)
+            + "]"
+        )
+    lines.append("x-expanded: *f")
+    yaml_body = (
+        "openapi: 3.1.0\n"
+        "info:\n"
+        "  title: Expansion Bomb\n"
+        "paths: {}\n"
+        + "\n".join(lines)
+        + "\n"
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            text=yaml_body,
+            headers={"content-type": "application/yaml"},
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(
+            UnsupportedSchemaSourceError,
+            match="logical alias expansion exceeds",
+        ):
+            await router.add_url(
+                "https://docs.example.com/expansion-bomb.yaml",
+                kind="openapi",
+            )
+
+
+@pytest.mark.asyncio
+async def test_openapi_yaml_rejects_excessive_nesting_before_construction() -> None:
+    nested = "leaf: value"
+    for _ in range(70):
+        nested = "child:\n" + "\n".join(
+            f"  {line}" for line in nested.splitlines()
+        )
+    yaml_body = (
+        "openapi: 3.1.0\n"
+        "info:\n"
+        "  title: Deep YAML\n"
+        "paths: {}\n"
+        "x-deep:\n"
+        + "\n".join(f"  {line}" for line in nested.splitlines())
+        + "\n"
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            text=yaml_body,
+            headers={"content-type": "application/yaml"},
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(
+            UnsupportedSchemaSourceError,
+            match="nesting depth exceeds 64",
+        ):
+            await router.add_url(
+                "https://docs.example.com/deep.yaml",
+                kind="openapi",
+            )
+
+
+@pytest.mark.asyncio
+async def test_openapi_yaml_rejects_cyclic_alias_graph_before_construction() -> None:
+    yaml_body = """
+openapi: 3.1.0
+info:
+  title: Cyclic Alias
+paths: {}
+x-cycle: &loop [*loop]
+"""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            text=yaml_body,
+            headers={"content-type": "application/yaml"},
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(
+            UnsupportedSchemaSourceError,
+            match="cyclic alias graph",
+        ):
+            await router.add_url(
+                "https://docs.example.com/cyclic-alias.yaml",
+                kind="openapi",
+            )
