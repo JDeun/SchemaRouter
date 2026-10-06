@@ -57,6 +57,17 @@ class PolicyViolationError(PlanValidationError):
     """Raised when local execution policy denies a tool call."""
 
 
+class AuthorizationAuditDeliveryError(PolicyViolationError):
+    """Raised when mandatory authorization audit delivery cannot be completed."""
+
+    def __init__(self, message: str, *, event: object) -> None:
+        super().__init__(message)
+        self.event = event
+        self.decision_effect = getattr(event, "effect", None)
+        self.phase = getattr(event, "phase", None)
+        self.operation = getattr(event, "operation", None)
+
+
 class ApprovalDeniedError(PolicyViolationError):
     """Raised when a call requiring trusted local approval is not approved."""
 
