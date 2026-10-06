@@ -1,0 +1,108 @@
+name: SmartMCP External Validation Smoke
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/smartmcp-external-validation.yml"
+      - "benchmarks/external-validation-smart-mcp-dev-v1/**"
+      - "scripts/run_smartmcp_external_validation.py"
+      - "scripts/run_schemarouter_external_validation.py"
+      - "scripts/run_lexical_external_validation.py"
+      - "scripts/external_validation_smart_mcp.py"
+      - "scripts/external_validation_provenance.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smartmcp-external-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  TOKENIZERS_PARALLELISM: "false"
+  FIXTURE_DIR: benchmarks/external-validation-smart-mcp-dev-v1
+  SMARTMCP_REVISION: c4d6602cfabb6f514bf06a1d1ae10b610ff7d573
+
+jobs:
+  pinned-development-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out SchemaRouter
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install SchemaRouter and pinned SmartMCP
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install "git+https://github.com/spak2005/smart-mcp.git@${SMARTMCP_REVISION}"
+
+      - name: Validate development fixture
+        run: |
+          python scripts/external_validation_smart_mcp.py validate \
+            --package-dir "${FIXTURE_DIR}"
+
+      - name: Run pinned SmartMCP retrieval
+        run: |
+          mkdir -p artifacts
+          python scripts/run_smartmcp_external_validation.py \
+            --package-dir "${FIXTURE_DIR}" \
+            --implementation-revision "${SMARTMCP_REVISION}" \
+            --out artifacts/smartmcp-dev-result.json
+          python scripts/external_validation_smart_mcp.py score \
+            --package-dir "${FIXTURE_DIR}" \
+            --results artifacts/smartmcp-dev-result.json \
+            --out artifacts/smartmcp-dev-score.json
+
+      - name: Run SchemaRouter development condition
+        run: |
+          python scripts/run_schemarouter_external_validation.py \
+            --package-dir "${FIXTURE_DIR}" \
+            --out artifacts/schemarouter-dev-result.json
+          python scripts/external_validation_smart_mcp.py score \
+            --package-dir "${FIXTURE_DIR}" \
+            --results artifacts/schemarouter-dev-result.json \
+            --out artifacts/schemarouter-dev-score.json
+
+      - name: Run lexical development baseline
+        run: |
+          python scripts/run_lexical_external_validation.py \
+            --package-dir "${FIXTURE_DIR}" \
+            --out artifacts/lexical-dev-result.json
+          python scripts/external_validation_smart_mcp.py score \
+            --package-dir "${FIXTURE_DIR}" \
+            --results artifacts/lexical-dev-result.json \
+            --out artifacts/lexical-dev-score.json
+
+      - name: Print development summaries
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          for name in ("smartmcp", "schemarouter", "lexical"):
+              path = Path("artifacts") / f"{name}-dev-score.json"
+              payload = json.loads(path.read_text(encoding="utf-8"))
+              print(f"\n== {name} ==")
+              print(json.dumps(payload["summary"], indent=2, sort_keys=True))
+          PY
+
+      - name: Upload development smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: smartmcp-external-validation-dev
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 14
