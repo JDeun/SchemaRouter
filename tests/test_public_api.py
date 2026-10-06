@@ -125,6 +125,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "KeywordAnalyzer",
         "MCPBoundClientFactory",
         "MCPClientFactory",
+        "MCPDiscoveryLimits",
         "MCPStdioConfig",
         "ModelAnalysisError",
         "ModelCallable",
