@@ -50,3 +50,20 @@ It never searches outside the host-visible registry surface and never uses hidde
 A declared requirement with missing or incompatible typed state is excluded fail-closed; routes with no declared state requirement retain stateless behavior. Existing `router.retrieve(query, k=...)` and `router.aretrieve(...)` callers therefore keep the original `CapabilityRetrieval` contract and signature.
 
 This surface returns capability information only. It does not select a workflow, execute a capability, commit or roll back a transaction, mutate host state, schedule retries, compensate an operation, or widen authorization. Host runtimes remain responsible for policy, availability, execution, retry, and compensation.
+## Bounded adaptive session state
+
+The optional `SuccessfulCapabilityHistory` and `SessionSchemaExposure` helpers keep adaptive
+session state bounded under schema churn. Fingerprinted state retains only the most recently
+observed fingerprint for each route; recording a new fingerprint drops older generations for that
+same route. Legacy route-only checkpoint entries remain supported.
+
+Successful history counts saturate at one because the routing prior reaches its configured maximum
+bonus after the first recorded success. This preserves ranking semantics without allowing counters
+to grow with call volume. `forget(tool, endpoint)` removes both legacy and fingerprinted state when
+a host removes a route.
+
+Legacy checkpoints that contain several historical fingerprints for one route still load. Because
+those payloads did not record generation order, loading compacts them deterministically to one
+fingerprint. If that retained fingerprint is not the current contract, fingerprint isolation makes
+the result a conservative prior miss or schema re-injection rather than reusing stale state.
+
