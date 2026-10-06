@@ -1735,6 +1735,7 @@ class SchemaRouter:
         filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
         default_top_k: int = 10,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register a caller-owned Qdrant client through the vector capability contract."""
 
@@ -1753,6 +1754,7 @@ class SchemaRouter:
             collections=collections,
             default_top_k=default_top_k,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_qdrant_vector_store(
@@ -1768,6 +1770,7 @@ class SchemaRouter:
         filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
         default_top_k: int = 10,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_qdrant_vector_store`."""
 
@@ -1799,6 +1802,7 @@ class SchemaRouter:
         metric_by_collection: Mapping[str, str] | None = None,
         default_top_k: int = 10,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register a caller-owned MilvusClient through the vector capability contract."""
 
@@ -1816,6 +1820,7 @@ class SchemaRouter:
             collections=collections,
             default_top_k=default_top_k,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_milvus_vector_store(
@@ -1830,6 +1835,7 @@ class SchemaRouter:
         metric_by_collection: Mapping[str, str] | None = None,
         default_top_k: int = 10,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_milvus_vector_store`."""
 
@@ -1859,6 +1865,7 @@ class SchemaRouter:
         metadata_fields_by_index: Mapping[str, Sequence[Any]] | None = None,
         default_top_k: int = 10,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register a caller-owned Pinecone client."""
 
@@ -1875,6 +1882,7 @@ class SchemaRouter:
             collections=collections,
             default_top_k=default_top_k,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_pinecone_vector_store(
@@ -1888,6 +1896,7 @@ class SchemaRouter:
         metadata_fields_by_index: Mapping[str, Sequence[Any]] | None = None,
         default_top_k: int = 10,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         return _run_sync(
             lambda: self.aadd_pinecone_vector_store(
@@ -1916,6 +1925,7 @@ class SchemaRouter:
         metric_by_collection: Mapping[str, str] | None = None,
         default_top_k: int = 10,
         remote: bool = False,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register a caller-owned Chroma client."""
 
@@ -1934,6 +1944,7 @@ class SchemaRouter:
             collections=collections,
             default_top_k=default_top_k,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_chroma_vector_store(
@@ -1949,6 +1960,7 @@ class SchemaRouter:
         metric_by_collection: Mapping[str, str] | None = None,
         default_top_k: int = 10,
         remote: bool = False,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         return _run_sync(
             lambda: self.aadd_chroma_vector_store(
@@ -1980,6 +1992,7 @@ class SchemaRouter:
         filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
         default_top_k: int = 10,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register a caller-owned Weaviate v4 client."""
 
@@ -1999,6 +2012,7 @@ class SchemaRouter:
             collections=collections,
             default_top_k=default_top_k,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_weaviate_vector_store(
@@ -2015,6 +2029,7 @@ class SchemaRouter:
         filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
         default_top_k: int = 10,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         return _run_sync(
             lambda: self.aadd_weaviate_vector_store(
@@ -2047,6 +2062,7 @@ class SchemaRouter:
         schema: str | None = None,
         default_top_k: int = 10,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register caller-owned PostgreSQL/pgvector Engine."""
 
@@ -2066,6 +2082,7 @@ class SchemaRouter:
             collections=collections,
             default_top_k=default_top_k,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_pgvector_store(
@@ -2082,6 +2099,7 @@ class SchemaRouter:
         schema: str | None = None,
         default_top_k: int = 10,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         return _run_sync(
             lambda: self.aadd_pgvector_store(
@@ -2275,6 +2293,7 @@ class SchemaRouter:
         default_limit: int = 100,
         default_max_hops: int = 1,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register a caller-owned Neo4j driver through the bounded graph contract."""
 
@@ -2292,6 +2311,7 @@ class SchemaRouter:
             default_limit=default_limit,
             default_max_hops=default_max_hops,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_neo4j_graph(
@@ -2305,6 +2325,7 @@ class SchemaRouter:
         default_limit: int = 100,
         default_max_hops: int = 1,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_neo4j_graph`."""
 
@@ -2332,6 +2353,7 @@ class SchemaRouter:
         default_limit: int = 100,
         default_max_hops: int = 1,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register a caller-owned FalkorDB client through the bounded graph contract."""
 
@@ -2346,6 +2368,7 @@ class SchemaRouter:
             default_limit=default_limit,
             default_max_hops=default_max_hops,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_falkordb_graph(
@@ -2358,6 +2381,7 @@ class SchemaRouter:
         default_limit: int = 100,
         default_max_hops: int = 1,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_falkordb_graph`."""
 
@@ -2385,6 +2409,7 @@ class SchemaRouter:
         default_limit: int = 100,
         default_max_hops: int = 1,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register a caller-owned Neptune Database/Analytics client."""
 
@@ -2402,6 +2427,7 @@ class SchemaRouter:
             default_limit=default_limit,
             default_max_hops=default_max_hops,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_neptune_graph(
@@ -2415,6 +2441,7 @@ class SchemaRouter:
         default_limit: int = 100,
         default_max_hops: int = 1,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_neptune_graph`."""
 
@@ -2442,6 +2469,7 @@ class SchemaRouter:
         default_limit: int = 100,
         default_max_hops: int = 1,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register a caller-owned python-arango Database wrapper."""
 
@@ -2455,6 +2483,7 @@ class SchemaRouter:
             default_limit=default_limit,
             default_max_hops=default_max_hops,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_arango_graph(
@@ -2467,6 +2496,7 @@ class SchemaRouter:
         default_limit: int = 100,
         default_max_hops: int = 1,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_arango_graph`."""
 
@@ -2493,6 +2523,7 @@ class SchemaRouter:
         namespace: str | None = None,
         default_limit: int = 100,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register a caller-owned HTTP client for a SPARQL 1.1 query endpoint."""
 
@@ -2510,6 +2541,7 @@ class SchemaRouter:
             default_limit=default_limit,
             default_max_hops=1,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_sparql_graph(
@@ -2522,6 +2554,7 @@ class SchemaRouter:
         namespace: str | None = None,
         default_limit: int = 100,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_sparql_graph`."""
 
@@ -2534,6 +2567,7 @@ class SchemaRouter:
                 namespace=namespace,
                 default_limit=default_limit,
                 remote=remote,
+                discovery_limits=discovery_limits,
             )
         )
 
@@ -2548,6 +2582,7 @@ class SchemaRouter:
         time_field_by_collection: Mapping[str, str] | None = None,
         default_limit: int = 100,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register a caller-owned PyMongo Database through the bounded record contract."""
 
@@ -2565,6 +2600,7 @@ class SchemaRouter:
             sources=None if collections is None else set(collections),
             default_limit=default_limit,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_mongodb_record_store(
@@ -2578,6 +2614,7 @@ class SchemaRouter:
         time_field_by_collection: Mapping[str, str] | None = None,
         default_limit: int = 100,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_mongodb_record_store`."""
 
@@ -2591,6 +2628,7 @@ class SchemaRouter:
                 time_field_by_collection=time_field_by_collection,
                 default_limit=default_limit,
                 remote=remote,
+                discovery_limits=discovery_limits,
             )
         )
 
@@ -2604,6 +2642,7 @@ class SchemaRouter:
         time_field_by_index: Mapping[str, str] | None = None,
         default_limit: int = 100,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register a caller-owned Elasticsearch client."""
 
@@ -2621,6 +2660,7 @@ class SchemaRouter:
             sources=None if indices is None else set(indices),
             default_limit=default_limit,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_elasticsearch_record_store(
@@ -2642,6 +2682,7 @@ class SchemaRouter:
         time_field_by_index: Mapping[str, str] | None = None,
         default_limit: int = 100,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register a caller-owned OpenSearch client."""
 
@@ -2659,6 +2700,7 @@ class SchemaRouter:
             sources=None if indices is None else set(indices),
             default_limit=default_limit,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_opensearch_record_store(
@@ -2680,6 +2722,7 @@ class SchemaRouter:
         time_field_by_table: Mapping[str, str] | None = None,
         default_limit: int = 100,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register a caller-owned low-level boto3 DynamoDB client."""
 
@@ -2696,6 +2739,7 @@ class SchemaRouter:
             sources=None if tables is None else set(tables),
             default_limit=default_limit,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_dynamodb_record_store(
@@ -2717,6 +2761,7 @@ class SchemaRouter:
         time_field_by_container: Mapping[str, str] | None = None,
         default_limit: int = 100,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register a caller-owned Azure Cosmos DB DatabaseProxy."""
 
@@ -2733,6 +2778,7 @@ class SchemaRouter:
             sources=None if containers is None else set(containers),
             default_limit=default_limit,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_cosmos_record_store(
@@ -2754,6 +2800,7 @@ class SchemaRouter:
         time_field_by_source: Mapping[str, str] | None = None,
         default_limit: int = 100,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register a caller-owned Couchbase Cluster."""
 
@@ -2770,6 +2817,7 @@ class SchemaRouter:
             sources=None if keyspaces is None else set(keyspaces),
             default_limit=default_limit,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_couchbase_record_store(
@@ -2791,6 +2839,7 @@ class SchemaRouter:
         time_field_by_table: Mapping[str, str] | None = None,
         default_limit: int = 100,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register a caller-owned clickhouse-connect client."""
 
@@ -2807,6 +2856,7 @@ class SchemaRouter:
             sources=None if tables is None else set(tables),
             default_limit=default_limit,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_clickhouse_record_store(
@@ -2830,6 +2880,7 @@ class SchemaRouter:
         default_start: str = "-30d",
         default_limit: int = 100,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Register a caller-owned InfluxDB QueryApi."""
 
@@ -2848,6 +2899,7 @@ class SchemaRouter:
             sources=None if measurements is None else set(measurements),
             default_limit=default_limit,
             remote=remote,
+            discovery_limits=discovery_limits,
         )
 
     def add_influxdb_record_store(
