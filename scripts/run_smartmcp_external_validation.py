@@ -13,9 +13,12 @@ from pathlib import Path
 from statistics import median
 from typing import Any
 
+import smartmcp.embedding as smartmcp_embedding
 from mcp import types
 from smartmcp.embedding import EmbeddingIndex
 from smartmcp.server import _build_search_match
+
+from scripts.external_validation_provenance import implementation_provenance
 
 
 def _load(path: Path) -> Any:
@@ -39,6 +42,7 @@ def run(
     package_dir: Path,
     model: str,
     repeats: int,
+    implementation_revision: str | None = None,
 ) -> dict[str, Any]:
     if repeats < 1:
         raise ValueError("repeats must be positive")
@@ -82,12 +86,23 @@ def run(
             }
         )
 
+    provenance = implementation_provenance(
+        fixture_reference_revision=manifest["source_revisions"].get("smartmcp"),
+        explicit_revision=implementation_revision,
+        source_path=(
+            Path(smartmcp_embedding.__file__)
+            if smartmcp_embedding.__file__
+            else None
+        ),
+        distribution="smartmcp-router",
+    )
+
     return {
         "schema_version": 1,
         "package_id": manifest["package_id"],
         "implementation": {
             "name": "SmartMCP semantic discovery",
-            "commit": manifest["source_revisions"]["smartmcp"],
+            **provenance,
             "configuration": {
                 "embedding_model": model,
                 "repeats_per_query": repeats,
@@ -109,12 +124,17 @@ def main() -> None:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--model", default="all-MiniLM-L6-v2")
     parser.add_argument("--repeats", type=int, default=5)
+    parser.add_argument(
+        "--implementation-revision",
+        help="Exact SmartMCP commit/revision used when it cannot be detected from a git checkout.",
+    )
     args = parser.parse_args()
 
     payload = run(
         package_dir=args.package_dir,
         model=args.model,
         repeats=args.repeats,
+        implementation_revision=args.implementation_revision,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
