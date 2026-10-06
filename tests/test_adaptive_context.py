@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from schemarouter.adaptive_context import (
@@ -20,6 +22,173 @@ def test_success_history_records_only_explicit_successes_and_round_trips() -> No
     assert history.count("materials", "search") == 1
     assert history.count("papers", "lookup") == 1
     assert SuccessfulCapabilityHistory.loads(history.dumps()).snapshot() == history.snapshot()
+
+
+def test_adaptive_checkpoints_emit_v1_envelopes_and_read_legacy_state() -> None:
+    history = SuccessfulCapabilityHistory()
+    history.record_success("materials", "search")
+    history_payload = json.loads(history.dumps())
+    assert history_payload == {
+        "schema_version": 1,
+        "counts": {"materials.search": 1},
+    }
+    assert SuccessfulCapabilityHistory.loads(
+        '{"materials.search":7}'
+    ).snapshot() == {"materials.search": 1}
+
+    exposure = SessionSchemaExposure()
+    exposure.mark_exposed("materials", "search")
+    exposure_payload = json.loads(exposure.dumps())
+    assert exposure_payload == {
+        "schema_version": 1,
+        "compaction_epoch": 0,
+        "exposed_routes": ["materials.search"],
+    }
+    assert SessionSchemaExposure.loads(
+        '{"compaction_epoch":0,"exposed_routes":["materials.search"]}'
+    ).snapshot() == exposure.snapshot()
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        '{"schema_version":2,"counts":{}}',
+        '{"schema_version":1,"counts":{},"extra":true}',
+    ],
+)
+def test_success_history_rejects_malformed_checkpoint_versions(payload: str) -> None:
+    with pytest.raises(ValueError):
+        SuccessfulCapabilityHistory.loads(payload)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        '{"schema_version":2,"compaction_epoch":0,"exposed_routes":[]}',
+        '{"schema_version":1,"compaction_epoch":0,"exposed_routes":[],"extra":true}',
+    ],
+)
+def test_session_exposure_rejects_malformed_checkpoint_versions(payload: str) -> None:
+    with pytest.raises(ValueError):
+        SessionSchemaExposure.loads(payload)
+
+
+def test_adaptive_checkpoint_restore_rejects_oversized_payload_before_decode() -> None:
+    payload = " " * (1024 * 1024 + 1)
+
+    with pytest.raises(ValueError, match="restore limits"):
+        SuccessfulCapabilityHistory.loads(payload)
+    with pytest.raises(ValueError, match="restore limits"):
+        SessionSchemaExposure.loads(payload)
+
+
+def test_adaptive_checkpoint_restore_rejects_invalid_shapes_and_values() -> None:
+    with pytest.raises(TypeError, match="payload must be a string"):
+        SuccessfulCapabilityHistory.loads(None)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="must be a JSON object"):
+        SuccessfulCapabilityHistory.loads("[]")
+    with pytest.raises(ValueError, match="counts must be a JSON object"):
+        SuccessfulCapabilityHistory.loads(
+            '{"schema_version":1,"counts":[]}'
+        )
+    with pytest.raises(ValueError, match="non-negative integers"):
+        SuccessfulCapabilityHistory.loads(
+            '{"schema_version":1,"counts":{"tool.run":true}}'
+        )
+    with pytest.raises(ValueError, match="<tool>\\.<endpoint>"):
+        SuccessfulCapabilityHistory.loads(
+            '{"schema_version":1,"counts":{".run":1}}'
+        )
+    with pytest.raises(ValueError, match="fingerprint suffix"):
+        SuccessfulCapabilityHistory.loads(
+            '{"schema_version":1,"counts":{"tool.run@":1}}'
+        )
+
+    with pytest.raises(TypeError, match="payload must be a string"):
+        SessionSchemaExposure.loads(None)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="route-id strings"):
+        SessionSchemaExposure.loads(
+            '{"schema_version":1,"compaction_epoch":0,"exposed_routes":{}}'
+        )
+    with pytest.raises(ValueError, match="<tool>\\.<endpoint>"):
+        SessionSchemaExposure.loads(
+            '{"schema_version":1,"compaction_epoch":0,"exposed_routes":["tool."]}'
+        )
+    with pytest.raises(ValueError, match="fingerprint suffix"):
+        SessionSchemaExposure.loads(
+            '{"schema_version":1,"compaction_epoch":0,"exposed_routes":["tool.run@"]}'
+        )
+
+
+def test_success_history_restore_rejects_oversized_route_key_and_count() -> None:
+    long_route = "tool." + ("x" * 508)
+    with pytest.raises(ValueError, match="route id exceeds"):
+        SuccessfulCapabilityHistory.loads(
+            json.dumps({"schema_version": 1, "counts": {long_route: 1}})
+        )
+
+    with pytest.raises(ValueError, match="history count exceeds"):
+        SuccessfulCapabilityHistory.loads(
+            '{"schema_version":1,"counts":{"tool.run":2147483648}}'
+        )
+
+
+def test_session_exposure_restore_rejects_oversized_route_key_and_epoch() -> None:
+    long_route = "tool." + ("x" * 508)
+    with pytest.raises(ValueError, match="route id exceeds"):
+        SessionSchemaExposure.loads(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "compaction_epoch": 0,
+                    "exposed_routes": [long_route],
+                }
+            )
+        )
+
+    with pytest.raises(ValueError, match="compaction_epoch exceeds"):
+        SessionSchemaExposure.loads(
+            '{"schema_version":1,"compaction_epoch":2147483648,"exposed_routes":[]}'
+        )
+
+
+def test_adaptive_checkpoint_restore_rejects_route_cardinality_over_budget() -> None:
+    history_routes = {
+        f"tool.route_{index}": 1
+        for index in range(10_001)
+    }
+    with pytest.raises(ValueError, match="restore limits"):
+        SuccessfulCapabilityHistory.loads(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "counts": history_routes,
+                },
+                separators=(",", ":"),
+            )
+        )
+
+    exposure_routes = [
+        f"tool.route_{index}"
+        for index in range(10_001)
+    ]
+    with pytest.raises(ValueError, match="restore limits"):
+        SessionSchemaExposure.loads(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "compaction_epoch": 0,
+                    "exposed_routes": exposure_routes,
+                },
+                separators=(",", ":"),
+            )
+        )
+
+
+def test_session_exposure_runtime_compaction_respects_checkpoint_epoch_range() -> None:
+    state = SessionSchemaExposure(compaction_epoch=2_147_483_647)
+    with pytest.raises(ValueError, match="compaction_epoch exceeds"):
+        state.compacted()
 
 
 def test_success_history_reset_is_deterministic() -> None:
