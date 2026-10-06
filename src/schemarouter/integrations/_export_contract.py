@@ -105,7 +105,6 @@ def _resolve_live_exported_endpoint(
             tool_key,
             endpoint_name,
             run_config,
-            audit_export=False,
         )
     except KeyError as exc:
         raise StaleExportedToolError(
