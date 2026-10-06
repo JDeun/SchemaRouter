@@ -708,6 +708,104 @@ async def test_parallel_read_only_event_stream_reports_completion_order() -> Non
 
 
 @pytest.mark.asyncio
+async def test_parallel_failure_closes_every_started_tool_before_run_error() -> None:
+    router, plan = make_parallel_plan_router()
+    slow_started = asyncio.Event()
+    release_slow = asyncio.Event()
+
+    async def invoker(endpoint: str, arguments: dict) -> dict:
+        del arguments
+        if endpoint == "slow":
+            slow_started.set()
+            await release_slow.wait()
+            return {"value": endpoint}
+        await slow_started.wait()
+        raise RuntimeError("fast sibling failed")
+
+    router.executor.bind("fanout", invoker)
+    original_aplan = router.aplan_executable
+
+    async def fixed_plan(request):
+        del request
+        return plan
+
+    router.aplan_executable = fixed_plan  # type: ignore[method-assign]
+    events = []
+    try:
+        with pytest.raises(RuntimeError, match="fast sibling failed"):
+            async for event in router.astream_events(
+                "fan out",
+                config=RunConfig(
+                    execution_mode="parallel_read_only",
+                    max_parallel_calls=2,
+                ),
+            ):
+                events.append(event)
+    finally:
+        release_slow.set()
+        router.aplan_executable = original_aplan  # type: ignore[method-assign]
+
+    assert events[-1].event == "run.error"
+    assert [event.sequence for event in events] == list(range(len(events)))
+
+    starts = {
+        (
+            int(event.data["primary_call_index"]),
+            int(event.data["fallback_candidate_index"]),
+        ): event
+        for event in events
+        if event.event == "tool.start"
+    }
+    terminals = {
+        (
+            int(event.data["primary_call_index"]),
+            int(event.data["fallback_candidate_index"]),
+        ): event
+        for event in events
+        if event.event in {"tool.end", "tool.error"}
+    }
+
+    assert len(starts) == 2
+    assert set(terminals) == set(starts)
+    assert all(event.sequence < events[-1].sequence for event in terminals.values())
+
+    slow_start = next(
+        event
+        for event in starts.values()
+        if event.endpoint == "slow"
+    )
+    slow_terminal = terminals[
+        (
+            int(slow_start.data["primary_call_index"]),
+            int(slow_start.data["fallback_candidate_index"]),
+        )
+    ]
+    assert slow_terminal.event == "tool.error"
+    assert slow_terminal.data["error_type"] == "ParallelSiblingFailureAbort"
+    assert slow_terminal.data["termination_reason"] == "sibling_failure"
+    assert slow_terminal.data["execution_state"] == "indeterminate"
+    assert slow_terminal.data["sibling_error_type"] == "RuntimeError"
+
+    fast_start = next(
+        event
+        for event in starts.values()
+        if event.endpoint == "fast"
+    )
+    fast_terminal = terminals[
+        (
+            int(fast_start.data["primary_call_index"]),
+            int(fast_start.data["fallback_candidate_index"]),
+        )
+    ]
+    assert fast_terminal.event == "tool.error"
+    assert fast_terminal.data["error_type"] == "RuntimeError"
+
+    run_error = events[-1]
+    assert run_error.data["indeterminate_in_flight_count"] == 1
+    assert run_error.data["cancelled_before_start_primary_call_indexes"] == []
+
+
+@pytest.mark.asyncio
 async def test_max_parallel_calls_is_independent_from_batch_concurrency() -> None:
     router, plan = make_parallel_plan_router()
     active = 0
