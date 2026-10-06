@@ -137,49 +137,91 @@ def _duplicate_names(items: tuple[Any, ...]) -> list[str]:
     return sorted({name for name in names if names.count(name) > 1})
 
 
+def _principal_signature(rule: Any) -> tuple[Any, ...]:
+    return (
+        tuple(sorted(rule.roles_any)),
+        tuple(sorted(rule.roles_all)),
+        tuple(sorted(rule.departments_any)),
+        tuple(sorted(rule.teams_any)),
+        tuple(sorted(rule.attributes.items())),
+    )
+
+
+def _principal_unconstrained(rule: Any) -> bool:
+    return not any(_principal_signature(rule))
+
+
+def _matcher_signature(rule: Any) -> tuple[Any, ...]:
+    return (
+        rule.operation,
+        rule.provider,
+        rule.access_mode,
+        *_principal_signature(rule),
+    )
+
+
+def _operation_pattern_covers(earlier: str, later: str) -> bool:
+    if earlier == "*" or earlier == later:
+        return True
+    if not earlier.endswith("*"):
+        return False
+    prefix = earlier[:-1]
+    if any(char in prefix for char in "*?["):
+        return False
+    return later.startswith(prefix)
+
+
+def _matcher_covers(earlier: Any, later: Any) -> bool:
+    if not _operation_pattern_covers(earlier.operation, later.operation):
+        return False
+    if earlier.provider is not None and earlier.provider != later.provider:
+        return False
+    if earlier.access_mode is not None and earlier.access_mode != later.access_mode:
+        return False
+    return _principal_unconstrained(earlier) or (
+        _principal_signature(earlier) == _principal_signature(later)
+    )
+
+
+def _rule_ref(label: str, index: int, rule: Any) -> str:
+    suffix = f" ({rule.name!r})" if rule.name is not None else ""
+    return f"{label}[{index}]{suffix}"
+
+
+def _lint_shadowing(items: tuple[Any, ...], label: str) -> list[str]:
+    issues: list[str] = []
+    seen: dict[tuple[Any, ...], int] = {}
+    for index, rule in enumerate(items):
+        signature = _matcher_signature(rule)
+        duplicate_index = seen.get(signature)
+        if duplicate_index is not None:
+            issues.append(
+                f"{_rule_ref(label, index, rule)} duplicates match conditions of "
+                f"{_rule_ref(label, duplicate_index, items[duplicate_index])}; "
+                "the later rule is unreachable under first-match semantics"
+            )
+            continue
+        seen[signature] = index
+
+        for earlier_index, earlier in enumerate(items[:index]):
+            if _matcher_covers(earlier, rule):
+                issues.append(
+                    f"{_rule_ref(label, index, rule)} is shadowed by "
+                    f"{_rule_ref(label, earlier_index, earlier)} under first-match semantics; "
+                    "the later rule is unreachable"
+                )
+                break
+    return issues
+
+
 def lint_authorization_config(config: AuthorizationPolicyConfig) -> tuple[str, ...]:
     issues: list[str] = []
     for label, items in (("rules", config.rules), ("data_rules", config.data_rules)):
         duplicates = _duplicate_names(items)
         if duplicates:
             issues.append(f"{label} contain duplicate names: {', '.join(duplicates)}")
-
-    for index, rule in enumerate(config.rules):
-        if rule.operation == "*" and not any(
-            (
-                rule.provider,
-                rule.access_mode,
-                rule.roles_any,
-                rule.roles_all,
-                rule.departments_any,
-                rule.teams_any,
-                rule.attributes,
-            )
-        ):
-            if index < len(config.rules) - 1:
-                issues.append(
-                    f"rules[{index}] is an unconditional catch-all; later rules are unreachable"
-                )
-
-    for index, rule in enumerate(config.data_rules):
-        if rule.operation == "*" and not any(
-            (
-                rule.provider,
-                rule.access_mode,
-                rule.roles_any,
-                rule.roles_all,
-                rule.departments_any,
-                rule.teams_any,
-                rule.attributes,
-            )
-        ):
-            if index < len(config.data_rules) - 1:
-                issues.append(
-                    f"data_rules[{index}] is an unconditional catch-all; "
-                    "later rules are unreachable"
-                )
+        issues.extend(_lint_shadowing(items, label))
     return tuple(issues)
-
 
 def parse_authorization_policy(
     value: str | bytes | dict[str, Any],
