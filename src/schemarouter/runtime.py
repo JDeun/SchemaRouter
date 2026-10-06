@@ -5564,7 +5564,7 @@ class SchemaRouter:
             with _principal_execution_context(run_config.principal):
                 plan = await self.aplan_executable(request)
         except Exception as exc:
-            data = {"error_type": type(exc).__name__, "stage": "planning"}
+            data: dict[str, Any] = {"error_type": type(exc).__name__, "stage": "planning"}
             if isinstance(exc, AuthorizationAuditDeliveryError):
                 data["audit_delivery_failed"] = True
                 data["authorization_effect"] = exc.decision_effect
@@ -5589,7 +5589,7 @@ class SchemaRouter:
                 phase="execution",
             )
         except Exception as exc:
-            data = {"error_type": type(exc).__name__, "stage": "authorization"}
+            data: dict[str, Any] = {"error_type": type(exc).__name__, "stage": "authorization"}
             if isinstance(exc, AuthorizationAuditDeliveryError):
                 data["audit_delivery_failed"] = True
                 data["authorization_effect"] = exc.decision_effect
