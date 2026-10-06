@@ -46,6 +46,15 @@ class FakeMongoCursor:
     def __init__(self, rows: list[dict[str, Any]]) -> None:
         self._rows = rows
 
+    def sort(self, field: str, direction: int) -> FakeMongoCursor:
+        assert direction == 1
+        self._rows = sorted(self._rows, key=lambda row: str(row.get(field, "")))
+        return self
+
+    def max_time_ms(self, value: int) -> FakeMongoCursor:
+        assert value > 0
+        return self
+
     def limit(self, value: int) -> FakeMongoCursor:
         self._rows = self._rows[:value]
         return self
@@ -71,8 +80,11 @@ class FakeMongoCollection:
     def find(
         self,
         query: dict[str, Any],
-        projection: dict[str, int],
+        projection: dict[str, int] | None = None,
     ) -> FakeMongoCursor:
+        if projection is None:
+            assert query == {}
+            return FakeMongoCursor([dict(self.row)])
         self.calls.append((dict(query), dict(projection)))
         row = {
             key: value
@@ -349,3 +361,96 @@ async def test_native_record_backend_receives_hidden_principal_filter() -> None:
     assert result[0].data == [{"_id": "doc-1", "title": "Routing"}]
     query, _projection = database.collections["documents"].calls[-1]
     assert query["department"] == {"$in": ["engineering"]}
+
+class FakeHeterogeneousMongoCollection(FakeMongoCollection):
+    def __init__(self) -> None:
+        super().__init__()
+        self.rows = [
+            {"_id": "doc-1", "kind": "primary", "value": 1},
+            {"_id": "doc-2", "kind": "secondary", "value": "mixed", "extra": True},
+        ]
+
+    def find(
+        self,
+        query: dict[str, Any],
+        projection: dict[str, int] | None = None,
+    ) -> FakeMongoCursor:
+        if projection is not None:
+            return super().find(query, projection)
+        assert query == {}
+        return FakeMongoCursor([dict(row) for row in self.rows])
+
+
+@pytest.mark.asyncio
+async def test_mongodb_schema_discovery_merges_bounded_heterogeneous_samples() -> None:
+    database = FakeMongoDatabase()
+    collection = FakeHeterogeneousMongoCollection()
+    database.collections["documents"] = collection
+    router = SchemaRouter()
+
+    await router.aadd_mongodb_record_store(
+        database,
+        database_name="mongo_heterogeneous",
+        remote=False,
+    )
+
+    endpoint = router.registry.get("mongo_heterogeneous.documents").endpoint("query")
+    fields = {field.name: field for field in endpoint.output_fields}
+    assert set(fields) >= {"_id", "kind", "value", "extra"}
+    assert fields["value"].json_schema == {}
+    assert fields["extra"].json_schema == {}
+    discovery = endpoint.metadata["public_metadata"]["schema_discovery"]
+    assert discovery["mode"] == "bounded_sample"
+    assert discovery["partial"] is True
+    assert discovery["row_limit"] == 16
+
+
+class FakeHeterogeneousDynamoClient(FakeDynamoClient):
+    def scan(self, **kwargs: Any) -> dict[str, Any]:
+        self.scan_calls.append(dict(kwargs))
+        if kwargs == {"TableName": "documents", "Limit": 16}:
+            return {
+                "Items": [
+                    {
+                        "id": {"S": "doc-1"},
+                        "value": {"N": "1"},
+                    },
+                    {
+                        "id": {"S": "doc-2"},
+                        "value": {"S": "mixed"},
+                        "extra": {"BOOL": True},
+                    },
+                ]
+            }
+        return {
+            "Items": [
+                {
+                    "id": {"S": "doc-1"},
+                    "value": {"N": "1"},
+                }
+            ]
+        }
+
+
+@pytest.mark.asyncio
+async def test_dynamodb_schema_discovery_merges_samples_and_only_trusts_metadata_types() -> None:
+    client = FakeHeterogeneousDynamoClient()
+    router = SchemaRouter()
+
+    await router.aadd_dynamodb_record_store(
+        client,
+        database_name="ddb_heterogeneous",
+        tables=["documents"],
+        remote=False,
+    )
+
+    endpoint = router.registry.get("ddb_heterogeneous.documents").endpoint("query")
+    fields = {field.name: field for field in endpoint.output_fields}
+    assert set(fields) >= {"id", "value", "extra"}
+    assert fields["id"].json_schema == {"type": "string"}
+    assert fields["value"].json_schema == {}
+    assert fields["extra"].json_schema == {}
+    discovery = endpoint.metadata["public_metadata"]["schema_discovery"]
+    assert discovery["partial"] is True
+    assert client.scan_calls[0] == {"TableName": "documents", "Limit": 16}
+
