@@ -428,16 +428,32 @@ class ArangoGraphBackend:
             raise SchemaValidationError("ArangoDB graphs() must return a list")
 
         results: list[GraphSourceSpec] = []
-        for raw in raw_graphs:
+        seen_names: set[str] = set()
+        for index, raw in enumerate(raw_graphs):
+            if index >= self._max_discovery_sources:
+                raise RegistrationError(
+                    "ArangoDB graph discovery exceeded "
+                    f"limit={self._max_discovery_sources}"
+                )
             if not isinstance(raw, Mapping):
                 raise SchemaValidationError("ArangoDB graph descriptor must be an object")
             name = str(raw.get("name") or raw.get("_key") or "")
             if not name:
                 continue
+            if name in seen_names:
+                raise SchemaValidationError("ArangoDB returned duplicate graph names")
+            seen_names.add(name)
+            if self._graphs is not None and name not in self._graphs:
+                continue
+
             definitions_raw = raw.get("edge_definitions") or raw.get("edgeDefinitions") or ()
             relationships: list[GraphRelationshipTypeSpec] = []
             node_names: set[str] = set()
-            for definition in definitions_raw:
+            for definition in _bounded_values(
+                definitions_raw,
+                limit=self._max_schema_items,
+                label=f"ArangoDB edge definitions for {name!r}",
+            ):
                 if not isinstance(definition, Mapping):
                     continue
                 edge = str(
@@ -449,22 +465,31 @@ class ArangoGraphBackend:
                     continue
                 sources = tuple(
                     str(value)
-                    for value in (
+                    for value in _bounded_values(
                         definition.get("from_vertex_collections")
                         or definition.get("from")
-                        or ()
+                        or (),
+                        limit=self._max_schema_items,
+                        label=f"ArangoDB source types for {edge!r}",
                     )
                 )
                 targets = tuple(
                     str(value)
-                    for value in (
+                    for value in _bounded_values(
                         definition.get("to_vertex_collections")
                         or definition.get("to")
-                        or ()
+                        or (),
+                        limit=self._max_schema_items,
+                        label=f"ArangoDB target types for {edge!r}",
                     )
                 )
                 node_names.update(sources)
                 node_names.update(targets)
+                if len(node_names) > self._max_schema_items:
+                    raise RegistrationError(
+                        f"ArangoDB graph {name!r} exposes more than "
+                        f"{self._max_schema_items} node types"
+                    )
                 relationships.append(
                     GraphRelationshipTypeSpec(
                         name=edge,
@@ -472,8 +497,22 @@ class ArangoGraphBackend:
                         target_types=targets,
                     )
                 )
+
             orphan = raw.get("orphan_collections") or raw.get("orphanCollections") or ()
-            node_names.update(str(value) for value in orphan)
+            node_names.update(
+                str(value)
+                for value in _bounded_values(
+                    orphan,
+                    limit=self._max_schema_items,
+                    label=f"ArangoDB orphan collections for {name!r}",
+                )
+            )
+            if len(node_names) > self._max_schema_items:
+                raise RegistrationError(
+                    f"ArangoDB graph {name!r} exposes more than "
+                    f"{self._max_schema_items} node types"
+                )
+
             relation_tuple = tuple(relationships)
             self._definitions[name] = relation_tuple
             results.append(
@@ -488,6 +527,15 @@ class ArangoGraphBackend:
                     public_metadata={"vendor": "arangodb"},
                 )
             )
+            if self._graphs is not None and self._graphs.issubset(seen_names):
+                break
+
+        if self._graphs is not None:
+            missing = sorted(self._graphs - seen_names)
+            if missing:
+                raise RegistrationError(
+                    "unknown ArangoDB graphs: " + ", ".join(missing)
+                )
         return tuple(results)
 
     def traverse(
