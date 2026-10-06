@@ -531,7 +531,7 @@ async def test_openapi_yaml_rejects_logical_alias_expansion_budget() -> None:
     repeated = ", ".join(["*{anchor}"] * 8)
     levels = ["a", "b", "c", "d", "e", "f"]
     lines = ["x-a: &a [leaf]"]
-    for previous, current in zip(levels, levels[1:], strict=True):
+    for previous, current in zip(levels, levels[1:]):
         lines.append(
             f"x-{current}: &{current} ["
             + repeated.format(anchor=previous)
