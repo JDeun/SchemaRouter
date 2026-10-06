@@ -897,3 +897,17 @@ def test_record_discovery_rejects_oversized_fields_before_registration() -> None
         )
 
     assert router.registry.keys() == ()
+
+
+def test_record_generated_contract_budget_is_failure_atomic() -> None:
+    router = SchemaRouter()
+
+    with pytest.raises(RegistrationError, match="generated schema bytes"):
+        router.add_record_store(
+            FakeRecordBackend(),
+            database_name="nosql",
+            max_generated_bytes=1,
+            remote=False,
+        )
+
+    assert router.registry.keys() == ()

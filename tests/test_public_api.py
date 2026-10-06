@@ -129,6 +129,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "MCPBoundClientFactory",
         "MCPClientFactory",
         "MCPDiscoveryLimits",
+        "NativeDiscoveryLimits",
         "MCPStdioConfig",
         "ModelAnalysisError",
         "ModelCallable",

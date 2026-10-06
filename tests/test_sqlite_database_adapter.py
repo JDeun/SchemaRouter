@@ -362,3 +362,65 @@ def test_sqlite_registration_rejects_concurrent_key_insertion_atomically() -> No
     assert router.executor.bound_keys() == ()
     assert connection.execute("SELECT 1").fetchone() == (1,)
     connection.close()
+
+
+def test_sqlite_discovery_relation_budget_is_failure_atomic() -> None:
+    connection = _connection()
+    router = SchemaRouter()
+
+    with pytest.raises(RegistrationError, match="discovered relation count"):
+        router.add_sqlite_database(
+            connection,
+            database_name="company",
+            max_discovery_relations=2,
+        )
+
+    assert router.registry.keys() == ()
+    connection.close()
+
+
+def test_sqlite_explicit_selection_is_pushed_down_before_catalog_limit() -> None:
+    connection = _connection()
+    router = SchemaRouter()
+
+    keys = router.add_sqlite_database(
+        connection,
+        database_name="company",
+        tables={"employees"},
+        max_discovery_relations=1,
+    )
+
+    assert keys == ("company.employees",)
+    connection.close()
+
+
+def test_sqlite_column_budget_is_failure_atomic() -> None:
+    connection = _connection()
+    router = SchemaRouter()
+
+    with pytest.raises(RegistrationError, match="column count"):
+        router.add_sqlite_database(
+            connection,
+            database_name="company",
+            tables={"employees"},
+            max_columns_per_relation=3,
+        )
+
+    assert router.registry.keys() == ()
+    connection.close()
+
+
+def test_sqlite_generated_contract_budget_is_failure_atomic() -> None:
+    connection = _connection()
+    router = SchemaRouter()
+
+    with pytest.raises(RegistrationError, match="generated schema bytes"):
+        router.add_sqlite_database(
+            connection,
+            database_name="company",
+            tables={"employees"},
+            max_generated_bytes=1,
+        )
+
+    assert router.registry.keys() == ()
+    connection.close()

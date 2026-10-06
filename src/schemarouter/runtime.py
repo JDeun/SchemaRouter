@@ -1526,6 +1526,9 @@ class SchemaRouter:
         namespace: str | None = None,
         tables: set[str] | tuple[str, ...] | list[str] | None = None,
         max_default_rows: int = 100,
+        max_discovery_relations: int = 128,
+        max_columns_per_relation: int = 256,
+        max_generated_bytes: int = 8 * 1024 * 1024,
     ) -> tuple[str, ...]:
         """Introspect and register a caller-owned SQLite database as read-only capabilities.
 
@@ -1546,6 +1549,9 @@ class SchemaRouter:
             namespace=namespace,
             tables=tables,
             max_default_rows=max_default_rows,
+            max_discovery_relations=max_discovery_relations,
+            max_columns_per_relation=max_columns_per_relation,
+            max_generated_bytes=max_generated_bytes,
         )
         return self._register_bound_batch(
             bindings,
@@ -1565,6 +1571,7 @@ class SchemaRouter:
         remote: bool = True,
         max_discovery_relations: int = 128,
         max_columns_per_relation: int = 256,
+        max_generated_bytes: int = 8 * 1024 * 1024,
     ) -> tuple[str, ...]:
         """Introspect and register a caller-owned SQLAlchemy Engine.
 
@@ -1587,6 +1594,7 @@ class SchemaRouter:
             remote=remote,
             max_discovery_relations=max_discovery_relations,
             max_columns_per_relation=max_columns_per_relation,
+            max_generated_bytes=max_generated_bytes,
         )
         async def refresh_binding(
             tool_key: str,
@@ -1604,6 +1612,7 @@ class SchemaRouter:
                     remote=remote,
                     max_discovery_relations=max_discovery_relations,
                     max_columns_per_relation=max_columns_per_relation,
+                    max_generated_bytes=max_generated_bytes,
                 )
             else:
                 refreshed = introspect_sqlalchemy_engine(
@@ -1617,6 +1626,7 @@ class SchemaRouter:
                     remote=remote,
                     max_discovery_relations=max_discovery_relations,
                     max_columns_per_relation=max_columns_per_relation,
+                    max_generated_bytes=max_generated_bytes,
                 )
             match = next((item for item in refreshed if item.tool.key == tool_key), None)
             if match is None:
@@ -1650,6 +1660,7 @@ class SchemaRouter:
         remote: bool = True,
         max_discovery_sources: int = 128,
         max_fields_per_collection: int = 256,
+        max_generated_bytes: int = 8 * 1024 * 1024,
     ) -> tuple[str, ...]:
         """Discover and register a caller-owned vector store as bounded search capabilities."""
 
@@ -1666,6 +1677,7 @@ class SchemaRouter:
             offload_sync_backend=remote,
             max_discovery_sources=max_discovery_sources,
             max_fields_per_collection=max_fields_per_collection,
+            max_generated_bytes=max_generated_bytes,
         )
         async def refresh_binding(
             tool_key: str,
@@ -1680,6 +1692,7 @@ class SchemaRouter:
                 remote=remote,
                 max_discovery_sources=max_discovery_sources,
                 max_fields_per_collection=max_fields_per_collection,
+                max_generated_bytes=max_generated_bytes,
             )
             match = next((item for item in refreshed if item.tool.key == tool_key), None)
             if match is None:
@@ -1712,6 +1725,7 @@ class SchemaRouter:
         remote: bool = True,
         max_discovery_sources: int = 128,
         max_fields_per_collection: int = 256,
+        max_generated_bytes: int = 8 * 1024 * 1024,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_vector_store`."""
 
@@ -1726,6 +1740,7 @@ class SchemaRouter:
                 remote=remote,
                 max_discovery_sources=max_discovery_sources,
                 max_fields_per_collection=max_fields_per_collection,
+                max_generated_bytes=max_generated_bytes,
             )
         )
 
@@ -2196,6 +2211,7 @@ class SchemaRouter:
         remote: bool = True,
         max_discovery_sources: int = 128,
         max_schema_items_per_graph: int = 256,
+        max_generated_bytes: int = 8 * 1024 * 1024,
     ) -> tuple[str, ...]:
         """Discover and register a caller-owned property-graph or RDF backend."""
 
@@ -2212,6 +2228,7 @@ class SchemaRouter:
             offload_sync_backend=remote,
             max_discovery_sources=max_discovery_sources,
             max_schema_items_per_graph=max_schema_items_per_graph,
+            max_generated_bytes=max_generated_bytes,
         )
         async def refresh_binding(
             tool_key: str,
@@ -2226,6 +2243,7 @@ class SchemaRouter:
                 remote=remote,
                 max_discovery_sources=max_discovery_sources,
                 max_schema_items_per_graph=max_schema_items_per_graph,
+                max_generated_bytes=max_generated_bytes,
             )
             match = next((item for item in refreshed if item.tool.key == tool_key), None)
             if match is None:
@@ -2258,6 +2276,7 @@ class SchemaRouter:
         remote: bool = True,
         max_discovery_sources: int = 128,
         max_schema_items_per_graph: int = 256,
+        max_generated_bytes: int = 8 * 1024 * 1024,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_graph_store`."""
 
@@ -2272,6 +2291,7 @@ class SchemaRouter:
                 remote=remote,
                 max_discovery_sources=max_discovery_sources,
                 max_schema_items_per_graph=max_schema_items_per_graph,
+                max_generated_bytes=max_generated_bytes,
             )
         )
 
@@ -2286,6 +2306,7 @@ class SchemaRouter:
         remote: bool = True,
         max_discovery_sources: int = 128,
         max_fields_per_source: int = 256,
+        max_generated_bytes: int = 8 * 1024 * 1024,
     ) -> tuple[str, ...]:
         """Discover and register document/search/key-value/time-series sources."""
 
@@ -2301,6 +2322,7 @@ class SchemaRouter:
             offload_sync_backend=remote,
             max_discovery_sources=max_discovery_sources,
             max_fields_per_source=max_fields_per_source,
+            max_generated_bytes=max_generated_bytes,
         )
         async def refresh_binding(
             tool_key: str,
@@ -2314,6 +2336,7 @@ class SchemaRouter:
                 remote=remote,
                 max_discovery_sources=max_discovery_sources,
                 max_fields_per_source=max_fields_per_source,
+                max_generated_bytes=max_generated_bytes,
             )
             match = next((item for item in refreshed if item.tool.key == tool_key), None)
             if match is None:
@@ -2345,6 +2368,7 @@ class SchemaRouter:
         remote: bool = True,
         max_discovery_sources: int = 128,
         max_fields_per_source: int = 256,
+        max_generated_bytes: int = 8 * 1024 * 1024,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_record_store`."""
 
@@ -2358,6 +2382,7 @@ class SchemaRouter:
                 remote=remote,
                 max_discovery_sources=max_discovery_sources,
                 max_fields_per_source=max_fields_per_source,
+                max_generated_bytes=max_generated_bytes,
             )
         )
 
