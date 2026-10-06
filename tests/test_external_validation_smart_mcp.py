@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from pathlib import Path
 
+import pytest
+
+from scripts.external_validation_provenance import implementation_provenance
 from scripts.external_validation_smart_mcp import (
     build_template,
     load_package,
@@ -109,7 +113,36 @@ def test_shared_scorer_rejects_candidate_duplicates() -> None:
     target = first["required_tools"][0]
     submitted["results"][0]["candidate_tools"] = [target, target]
 
-    import pytest
-
     with pytest.raises(ValueError, match="must not contain duplicates"):
         score(manifest, catalog, cases, submitted)
+
+
+def test_explicit_execution_revision_is_not_replaced_by_fixture_revision() -> None:
+    provenance = implementation_provenance(
+        fixture_reference_revision="fixture-old-sha",
+        explicit_revision="executed-new-sha",
+    )
+
+    assert provenance == {
+        "commit": "executed-new-sha",
+        "commit_source": "explicit",
+        "fixture_reference_revision": "fixture-old-sha",
+        "package_version": None,
+    }
+
+
+def test_heldout_scoring_requires_actual_execution_revision() -> None:
+    manifest, catalog, cases = load_package(PACKAGE)
+    heldout = deepcopy(manifest)
+    heldout["status"] = "heldout_frozen"
+    heldout["governance"] = {
+        **heldout["governance"],
+        "heldout_scoring_allowed": True,
+    }
+    submitted = build_template(heldout, cases)
+
+    with pytest.raises(
+        ValueError,
+        match="held-out scoring requires the actual implementation.commit",
+    ):
+        score(heldout, catalog, cases, submitted)
