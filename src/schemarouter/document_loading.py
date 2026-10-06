@@ -199,7 +199,7 @@ def load_bounded_json(
     return value
 
 
-def _validate_yaml_event_budget(
+def validate_yaml_event_budget(
     document: str | bytes,
     limits: DocumentLimits,
 ) -> None:
@@ -264,7 +264,7 @@ def load_bounded_yaml(
 ) -> typing.Any:
     effective = _resolve_limits(limits)
     _validate_encoded_size(document, effective)
-    _validate_yaml_event_budget(document, effective)
+    validate_yaml_event_budget(document, effective)
 
     try:
         from yaml import YAMLError, safe_load
