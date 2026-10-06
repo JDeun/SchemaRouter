@@ -2322,6 +2322,7 @@ class SchemaRouter:
                 driver,
                 database=database,
                 graph_name=graph_name,
+                discovery_limits=discovery_limits,
             ),
             database_name=database,
             namespace=namespace,
@@ -2379,7 +2380,11 @@ class SchemaRouter:
 
         graph_names = None if graphs is None else tuple(sorted(graphs))
         return await self.aadd_graph_store(
-            FalkorGraphBackend(client, graphs=graph_names),
+            FalkorGraphBackend(
+                client,
+                graphs=graph_names,
+                discovery_limits=discovery_limits,
+            ),
             database_name=database_name,
             namespace=namespace,
             graphs=graphs,
@@ -2438,6 +2443,7 @@ class SchemaRouter:
                 client,
                 graph_name=graph_name,
                 graph_identifier=graph_identifier,
+                discovery_limits=discovery_limits,
             ),
             database_name=database_name,
             namespace=namespace,
@@ -2494,7 +2500,11 @@ class SchemaRouter:
         from .adapters.graph_native import ArangoGraphBackend
 
         return await self.aadd_graph_store(
-            ArangoGraphBackend(database),
+            ArangoGraphBackend(
+                database,
+                graphs=None if graphs is None else tuple(sorted(graphs)),
+                discovery_limits=discovery_limits,
+            ),
             database_name=database_name,
             namespace=namespace,
             graphs=graphs,
@@ -2552,6 +2562,7 @@ class SchemaRouter:
                 client,
                 endpoint=endpoint,
                 graph_name=graph_name,
+                discovery_limits=discovery_limits,
             ),
             database_name=database_name,
             namespace=namespace,
