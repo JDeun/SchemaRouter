@@ -26,21 +26,32 @@ _STORAGE_MIGRATIONS_TABLE = "schemarouter_storage_migrations"
 DEFAULT_PERSISTED_DOCUMENT_MAX_BYTES = 2 * 1024 * 1024
 DEFAULT_PERSISTED_DOCUMENT_MAX_DEPTH = 64
 DEFAULT_PERSISTED_DOCUMENT_MAX_NODES = 100_000
+DEFAULT_PERSISTED_COLLECTION_MAX_DOCUMENTS = 50_000
+DEFAULT_PERSISTED_COLLECTION_MAX_BYTES = 64 * 1024 * 1024
+_PERSISTED_FETCH_BATCH_SIZE = 256
 
 
 @dataclass(frozen=True)
 class PersistedDocumentLimits:
-    """Resource budgets applied before persisted JSON reaches Pydantic."""
+    """Resource budgets applied before persisted JSON reaches Pydantic.
+
+    max_documents and max_total_bytes bound a single collection-style read
+    such as a registry listing, trace replay, inspection, or migration.
+    """
 
     max_bytes: int = DEFAULT_PERSISTED_DOCUMENT_MAX_BYTES
     max_depth: int = DEFAULT_PERSISTED_DOCUMENT_MAX_DEPTH
     max_nodes: int = DEFAULT_PERSISTED_DOCUMENT_MAX_NODES
+    max_documents: int = DEFAULT_PERSISTED_COLLECTION_MAX_DOCUMENTS
+    max_total_bytes: int = DEFAULT_PERSISTED_COLLECTION_MAX_BYTES
 
     def __post_init__(self) -> None:
         for name, value in (
             ("max_bytes", self.max_bytes),
             ("max_depth", self.max_depth),
             ("max_nodes", self.max_nodes),
+            ("max_documents", self.max_documents),
+            ("max_total_bytes", self.max_total_bytes),
         ):
             if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
                 raise ValueError(f"{name} must be a positive integer")
@@ -48,6 +59,33 @@ class PersistedDocumentLimits:
 
 class _PersistedDocumentLimitError(ValueError):
     pass
+
+
+@dataclass
+class _PersistedReadBudget:
+    """Mutable aggregate budget for one persisted collection read."""
+
+    limits: PersistedDocumentLimits
+    documents: int = 0
+    total_bytes: int = 0
+
+    def consume(self, encoded_bytes: int) -> None:
+        _validate_persisted_document_size(encoded_bytes, limits=self.limits)
+
+        next_documents = self.documents + 1
+        if next_documents > self.limits.max_documents:
+            raise _PersistedDocumentLimitError(
+                "persisted JSON collection exceeds the configured document limit"
+            )
+
+        next_total_bytes = self.total_bytes + encoded_bytes
+        if next_total_bytes > self.limits.max_total_bytes:
+            raise _PersistedDocumentLimitError(
+                "persisted JSON collection exceeds the configured cumulative byte limit"
+            )
+
+        self.documents = next_documents
+        self.total_bytes = next_total_bytes
 
 
 def _resolve_persisted_document_limits(
