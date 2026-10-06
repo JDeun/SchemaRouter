@@ -43,7 +43,7 @@ jobs:
         env:
           COVERAGE_FILE: .coverage.core
         run: >-
-          pytest -q -m "not mcp_integration"
+          pytest -q
           --cov=schemarouter
           --cov-branch
           --cov-report=
