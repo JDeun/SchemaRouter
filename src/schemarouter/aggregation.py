@@ -178,10 +178,11 @@ def aggregate_records(
 ) -> list[CanonicalEntity]:
     """Resolve duplicate entities while preserving independent scientific observations.
 
-    Identity resolution is transitive across trusted identifiers only while the proposed
-    component remains internally consistent. If two components assert different values for
-    the same trusted identifier type, that union is refused instead of silently discarding
-    one identity claim. Records without identifiers are never fuzzy-merged.
+    Identity resolution is transitive across trusted identifiers only while the evidence
+    remains internally consistent. A shared identifier is treated as ambiguous when its
+    owners disagree on another trusted identifier, and any residual transitive component
+    containing contradictory trusted claims is conservatively left unresolved. Records
+    without identifiers are never fuzzy-merged.
 
     Documents default to metadata deduplication. Material/chemical records default to
     observation preservation so equal semantic fields from independent providers remain
@@ -193,10 +194,7 @@ def aggregate_records(
         return []
 
     parent = list(range(len(records)))
-    component_claims = [
-        _trusted_identifier_claims(record)
-        for record in records
-    ]
+    record_claims = [_trusted_identifier_claims(record) for record in records]
 
     def find(index: int) -> int:
         while parent[index] != index:
@@ -204,61 +202,54 @@ def aggregate_records(
             index = parent[index]
         return index
 
-    def union(left: int, right: int) -> bool:
+    def union(left: int, right: int) -> None:
         left_root, right_root = find(left), find(right)
-        if left_root == right_root:
-            return True
+        if left_root != right_root:
+            parent[right_root] = left_root
 
-        left_claims = component_claims[left_root]
-        right_claims = component_claims[right_root]
-        if not _claims_compatible(left_claims, right_claims):
-            return False
+    def combined_claims(indices: list[int]) -> dict[str, str] | None:
+        combined: dict[str, str] = {}
+        for index in indices:
+            claims = record_claims[index]
+            if not _claims_compatible(combined, claims):
+                return None
+            combined.update(claims)
+        return combined
 
-        parent[right_root] = left_root
-        left_claims.update(right_claims)
-        component_claims[right_root] = {}
-        return True
+    token_members: dict[tuple[str, str, str], list[int]] = defaultdict(list)
+    for index, (record, claims) in enumerate(
+        zip(records, record_claims, strict=True)
+    ):
+        for kind, value in claims.items():
+            token_members[(record.entity_kind, kind, value)].append(index)
 
-    token_owners: dict[tuple[str, str, str], set[int]] = defaultdict(set)
-    for index, record in enumerate(records):
-        tokens = [
-            (record.entity_kind, kind, value)
-            for kind, value in _identifier_tokens(record)
-        ]
-        candidate_roots = {
-            find(owner)
-            for token in tokens
-            for owner in token_owners[token]
-        }
-        compatible_roots = {
-            root
-            for root in candidate_roots
-            if _claims_compatible(component_claims[index], component_claims[root])
-        }
+    # A shared token is safe merge evidence only when all of its owners agree on
+    # every other trusted identifier they actually assert. This prevents a sparse
+    # bridge record from attaching to whichever conflicting owner happens to be
+    # processed first.
+    for members in token_members.values():
+        if len(members) < 2 or combined_claims(members) is None:
+            continue
+        anchor = members[0]
+        for index in members[1:]:
+            union(anchor, index)
 
-        combined_claims = dict(component_claims[index])
-        ambiguous = False
-        for root in sorted(compatible_roots):
-            root_claims = component_claims[root]
-            if not _claims_compatible(combined_claims, root_claims):
-                ambiguous = True
-                break
-            combined_claims.update(root_claims)
+    candidate_groups: dict[int, list[int]] = defaultdict(list)
+    for index in range(len(records)):
+        candidate_groups[find(index)].append(index)
 
-        if not ambiguous:
-            for root in sorted(compatible_roots):
-                union(index, root)
-
-        resolved_root = find(index)
-        for token in tokens:
-            token_owners[token].add(resolved_root)
-
-    groups: dict[int, list[SourceRecord]] = defaultdict(list)
-    for index, record in enumerate(records):
-        groups[find(index)].append(record)
+    resolved_groups: list[list[SourceRecord]] = []
+    for indices in candidate_groups.values():
+        if combined_claims(indices) is None:
+            # Individually safe token edges can still form a contradictory
+            # transitive component through records with missing claims. Prefer
+            # duplicates over a false merge and keep provenance units separate.
+            resolved_groups.extend([[records[index]] for index in indices])
+            continue
+        resolved_groups.append([records[index] for index in indices])
 
     entities: list[CanonicalEntity] = []
-    for group in groups.values():
+    for group in resolved_groups:
         entity_kind = group[0].entity_kind
         identifiers: dict[str, str] = {}
         providers: list[str] = []

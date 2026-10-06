@@ -1,3 +1,5 @@
+from itertools import permutations
+
 from schemarouter.aggregation import SourceRecord, aggregate_records, canonical_identity
 
 
@@ -374,36 +376,62 @@ def test_document_bridge_does_not_merge_conflicting_arxiv_ids() -> None:
         == "2609.22222"
     )
 
-def test_ambiguous_shared_identifier_does_not_attach_to_first_conflicting_owner() -> None:
-    left = SourceRecord(
-        provider="provider_a",
-        entity_kind="document",
-        identifiers={"doi": "10.3000/shared", "pmid": "1"},
-    )
-    right = SourceRecord(
-        provider="provider_b",
-        entity_kind="document",
-        identifiers={"doi": "10.3000/shared", "pmid": "2"},
-    )
-    ambiguous = SourceRecord(
-        provider="provider_c",
-        entity_kind="document",
-        identifiers={"doi": "10.3000/shared"},
+def test_ambiguous_shared_identifier_is_order_independent() -> None:
+    records = (
+        SourceRecord(
+            provider="provider_a",
+            entity_kind="document",
+            identifiers={"doi": "10.3000/shared", "pmid": "1"},
+        ),
+        SourceRecord(
+            provider="provider_b",
+            entity_kind="document",
+            identifiers={"doi": "10.3000/shared", "pmid": "2"},
+        ),
+        SourceRecord(
+            provider="provider_c",
+            entity_kind="document",
+            identifiers={"doi": "10.3000/shared"},
+        ),
     )
 
-    forward = aggregate_records([left, right, ambiguous])
-    reverse = aggregate_records([right, left, ambiguous])
-
-    assert len(forward) == 3
-    assert len(reverse) == 3
-    assert {tuple(entity.providers) for entity in forward} == {
+    expected = {
         ("provider_a",),
         ("provider_b",),
         ("provider_c",),
     }
-    assert {tuple(entity.providers) for entity in reverse} == {
+    for ordering in permutations(records):
+        entities = aggregate_records(list(ordering))
+        assert len(entities) == 3
+        assert {tuple(entity.providers) for entity in entities} == expected
+
+
+def test_missing_claim_bridge_cannot_hide_transitive_conflict() -> None:
+    records = (
+        SourceRecord(
+            provider="provider_a",
+            entity_kind="document",
+            identifiers={"doi": "10.4000/shared", "pmid": "1"},
+        ),
+        SourceRecord(
+            provider="provider_b",
+            entity_kind="document",
+            identifiers={"doi": "10.4000/shared", "arxiv": "2610.00001"},
+        ),
+        SourceRecord(
+            provider="provider_c",
+            entity_kind="document",
+            identifiers={"arxiv": "2610.00001", "pmid": "2"},
+        ),
+    )
+
+    expected = {
         ("provider_a",),
         ("provider_b",),
         ("provider_c",),
     }
+    for ordering in permutations(records):
+        entities = aggregate_records(list(ordering))
+        assert len(entities) == 3
+        assert {tuple(entity.providers) for entity in entities} == expected
 
