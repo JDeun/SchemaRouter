@@ -373,3 +373,37 @@ def test_document_bridge_does_not_merge_conflicting_arxiv_ids() -> None:
         by_providers[("provider_b", "provider_c")].identifiers["arxiv"]
         == "2609.22222"
     )
+
+def test_ambiguous_shared_identifier_does_not_attach_to_first_conflicting_owner() -> None:
+    left = SourceRecord(
+        provider="provider_a",
+        entity_kind="document",
+        identifiers={"doi": "10.3000/shared", "pmid": "1"},
+    )
+    right = SourceRecord(
+        provider="provider_b",
+        entity_kind="document",
+        identifiers={"doi": "10.3000/shared", "pmid": "2"},
+    )
+    ambiguous = SourceRecord(
+        provider="provider_c",
+        entity_kind="document",
+        identifiers={"doi": "10.3000/shared"},
+    )
+
+    forward = aggregate_records([left, right, ambiguous])
+    reverse = aggregate_records([right, left, ambiguous])
+
+    assert len(forward) == 3
+    assert len(reverse) == 3
+    assert {tuple(entity.providers) for entity in forward} == {
+        ("provider_a",),
+        ("provider_b",),
+        ("provider_c",),
+    }
+    assert {tuple(entity.providers) for entity in reverse} == {
+        ("provider_a",),
+        ("provider_b",),
+        ("provider_c",),
+    }
+
