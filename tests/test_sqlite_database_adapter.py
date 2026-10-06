@@ -15,7 +15,6 @@ from schemarouter import (
     SchemaRouter,
     ToolCall,
 )
-
 from schemarouter.errors import RegistrationError
 from schemarouter.registry import InMemoryRegistry
 
