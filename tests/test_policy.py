@@ -198,6 +198,94 @@ async def test_scoped_allow_rule_grants_one_mutation_without_global_mutation_acc
         await executor.execute(plan_for(registry, "jobs", "update"))
 
 
+def test_require_approval_rule_does_not_grant_mutation_authority() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="jobs",
+        endpoints=[EndpointSpec(name="create", read_only=False, destructive=False)],
+        metadata={"adapter": "openapi"},
+    )
+    registry.register(tool)
+    endpoint = registry.endpoint("jobs", "create")
+    call = plan_for(registry, "jobs", "create").calls[0]
+    policy = ExecutionPolicy(
+        rules=(PolicyRule(operation="jobs.create", effect="require_approval"),)
+    )
+
+    decision = policy.evaluate(tool, endpoint, call)
+
+    assert decision.effect == "deny"
+    assert "allow_mutations" in decision.reason
+
+
+def test_require_approval_rule_does_not_grant_destructive_authority() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="jobs",
+        endpoints=[EndpointSpec(name="delete", read_only=False, destructive=True)],
+        metadata={"adapter": "openapi"},
+    )
+    registry.register(tool)
+    endpoint = registry.endpoint("jobs", "delete")
+    call = plan_for(registry, "jobs", "delete").calls[0]
+    policy = ExecutionPolicy(
+        allow_mutations=True,
+        rules=(PolicyRule(operation="jobs.delete", effect="require_approval"),),
+    )
+
+    decision = policy.evaluate(tool, endpoint, call)
+
+    assert decision.effect == "deny"
+    assert "allow_destructive" in decision.reason
+
+
+def test_require_approval_rule_does_not_grant_unclassified_remote_authority() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="remote",
+        endpoints=[EndpointSpec(name="mystery")],
+        metadata={"adapter": "mcp"},
+    )
+    registry.register(tool)
+    endpoint = registry.endpoint("remote", "mystery")
+    call = plan_for(registry, "remote", "mystery").calls[0]
+    policy = ExecutionPolicy(
+        rules=(PolicyRule(operation="remote.mystery", effect="require_approval"),)
+    )
+
+    decision = policy.evaluate(tool, endpoint, call)
+
+    assert decision.effect == "deny"
+    assert "unclassified" in decision.reason
+
+
+def test_require_approval_rule_applies_after_underlying_authority_is_granted() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="jobs",
+        endpoints=[EndpointSpec(name="create", read_only=False, destructive=False)],
+        metadata={"adapter": "openapi"},
+    )
+    registry.register(tool)
+    endpoint = registry.endpoint("jobs", "create")
+    call = plan_for(registry, "jobs", "create").calls[0]
+    policy = ExecutionPolicy(
+        allow_mutations=True,
+        rules=(
+            PolicyRule(
+                operation="jobs.create",
+                effect="require_approval",
+                name="review-create",
+            ),
+        ),
+    )
+
+    decision = policy.evaluate(tool, endpoint, call)
+
+    assert decision.effect == "require_approval"
+    assert decision.rule_name == "review-create"
+
+
 @pytest.mark.asyncio
 async def test_explicit_deny_rule_can_narrow_globally_allowed_mutations() -> None:
     registry = InMemoryRegistry()
