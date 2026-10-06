@@ -321,6 +321,8 @@ async def introspect_graph_backend(
         raise ValueError("max_schema_items_per_graph must be positive")
 
     selected = None if graphs is None else {str(value) for value in graphs}
+    if selected == set():
+        return ()
     offload_backend = remote if offload_sync_backend is None else offload_sync_backend
     discovered_raw = await _call_backend(
         backend.list_graphs,
@@ -393,6 +395,8 @@ async def introspect_graph_backend(
                     f"limit is {max_schema_items_per_graph}"
                 )
         discovered.append(graph)
+        if selected is not None and selected.issubset(seen_names):
+            break
 
     if selected is not None:
         missing = sorted(selected - seen_names)
