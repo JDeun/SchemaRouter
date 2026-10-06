@@ -51,12 +51,13 @@ jobs:
           fi
 
   test:
+    name: test (${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       max-parallel: 2
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.10", "3.12", "3.14"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
@@ -98,6 +99,20 @@ jobs:
           python examples/quickstart.py
           python examples/database_quickstart.py
           python scripts/consumer_acceptance.py
+
+  test-311-scheduled:
+    name: test (3.11)
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Python 3.11 full qualification runs in python-compatibility.yml"
+
+  test-313-scheduled:
+    name: test (3.13)
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Python 3.13 full qualification runs in python-compatibility.yml"
 
   windows-smoke:
     runs-on: windows-latest
