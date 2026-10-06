@@ -1921,12 +1921,19 @@ async def test_execution_uses_one_coherent_binding_generation_during_rebind() ->
     class InterleavingExecutor(RegistryExecutor):
         def __init__(self) -> None:
             super().__init__(registry)
-            self.execution_state_reads = 0
+            self.binding_snapshot_reads = 0
 
-        def _execution_state(self, requested_call: ToolCall):
-            state = super()._execution_state(requested_call)
-            self.execution_state_reads += 1
-            if self.execution_state_reads == 2:
+        def _binding_for_validated_contract(
+            self,
+            tool_key: str,
+            tool_fingerprint: str,
+        ):
+            state = super()._binding_for_validated_contract(
+                tool_key,
+                tool_fingerprint,
+            )
+            self.binding_snapshot_reads += 1
+            if self.binding_snapshot_reads == 2:
                 snapshot_taken.set()
                 assert rebound.wait(timeout=1.0)
             return state
