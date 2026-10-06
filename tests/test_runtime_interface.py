@@ -2,6 +2,7 @@ import asyncio
 
 import pytest
 
+import schemarouter.runtime as runtime_module
 from schemarouter import (
     EndpointSpec,
     ExecutionBudget,
@@ -133,6 +134,7 @@ def test_input_output_and_config_schemas_are_introspectable() -> None:
     assert router.input_schema["title"] == "PlanRequest"
     assert router.output_schema["type"] == "array"
     assert "max_concurrency" in router.config_schema["properties"]
+    assert "max_batch_size" in router.config_schema["properties"]
     assert "execution_mode" in router.config_schema["properties"]
     assert "max_parallel_calls" in router.config_schema["properties"]
     assert "retry" in router.config_schema["properties"]
@@ -1182,3 +1184,149 @@ async def test_aretrieve_adaptive_accepts_success_history_without_changing_defau
     assert [candidate.route_id for candidate in adaptive.candidates] == [
         candidate.route_id for candidate in baseline.candidates
     ]
+
+
+def test_execution_plan_rejects_direct_cardinality_bypass() -> None:
+    router, plan = make_parallel_plan_router()
+    call = plan.calls[0]
+
+    with pytest.raises(ValueError):
+        ExecutionPlan(
+            query="too many calls",
+            registry_version=router.registry.version,
+            calls=[call] * 33,
+        )
+
+    with pytest.raises(ValueError):
+        FallbackRoute(
+            primary_call_index=0,
+            alternatives=[call] * 9,
+        )
+
+
+@pytest.mark.asyncio
+async def test_batch_rejects_request_count_above_configured_limit() -> None:
+    router = make_router()
+
+    with pytest.raises(ValueError, match="max_batch_size"):
+        await router.abatch(
+            [request(str(index)) for index in range(4)],
+            config=RunConfig(max_batch_size=3),
+        )
+
+
+@pytest.mark.asyncio
+async def test_abatch_creates_only_bounded_worker_tasks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    router = make_router()
+    real_create_task = asyncio.create_task
+    created = 0
+
+    def counting_create_task(coro, *args, **kwargs):
+        nonlocal created
+        created += 1
+        return real_create_task(coro, *args, **kwargs)
+
+    monkeypatch.setattr(
+        runtime_module.asyncio,
+        "create_task",
+        counting_create_task,
+    )
+
+    results = await router.abatch(
+        [request(str(index)) for index in range(20)],
+        config=RunConfig(
+            max_concurrency=3,
+            max_batch_size=20,
+        ),
+    )
+
+    assert len(results) == 20
+    assert created == 3
+
+
+@pytest.mark.asyncio
+async def test_abatch_as_completed_creates_only_bounded_worker_tasks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    router = make_router()
+    real_create_task = asyncio.create_task
+    created = 0
+
+    def counting_create_task(coro, *args, **kwargs):
+        nonlocal created
+        created += 1
+        return real_create_task(coro, *args, **kwargs)
+
+    monkeypatch.setattr(
+        runtime_module.asyncio,
+        "create_task",
+        counting_create_task,
+    )
+
+    completed = [
+        item
+        async for item in router.abatch_as_completed(
+            [request(str(index)) for index in range(20)],
+            config=RunConfig(
+                max_concurrency=4,
+                max_batch_size=20,
+            ),
+        )
+    ]
+
+    assert sorted(index for index, _ in completed) == list(range(20))
+    assert created == 4
+
+
+@pytest.mark.asyncio
+async def test_parallel_event_stream_creates_only_bounded_worker_tasks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    router, small_plan = make_parallel_plan_router()
+    call = small_plan.calls[0]
+    plan = ExecutionPlan(
+        query="bounded fanout",
+        registry_version=router.registry.version,
+        calls=[call.model_copy(deep=True) for _ in range(20)],
+    )
+
+    async def fake_plan(request):
+        del request
+        return plan
+
+    async def invoker(endpoint: str, arguments: dict) -> dict:
+        del arguments
+        return {"value": endpoint}
+
+    router.executor.bind("fanout", invoker)
+    monkeypatch.setattr(router, "aplan_executable", fake_plan)
+
+    real_create_task = asyncio.create_task
+    created = 0
+
+    def counting_create_task(coro, *args, **kwargs):
+        nonlocal created
+        created += 1
+        return real_create_task(coro, *args, **kwargs)
+
+    monkeypatch.setattr(
+        runtime_module.asyncio,
+        "create_task",
+        counting_create_task,
+    )
+
+    events = [
+        event
+        async for event in router.astream_events(
+            "bounded",
+            config=RunConfig(
+                execution_mode="parallel_read_only",
+                max_parallel_calls=3,
+            ),
+        )
+    ]
+
+    assert sum(event.event == "tool.end" for event in events) == 20
+    assert created == 3

@@ -4,6 +4,7 @@ import time
 
 import pytest
 
+import schemarouter.executor as executor_module
 from schemarouter import (
     BindingDriftError,
     EndpointSpec,
@@ -1880,3 +1881,67 @@ async def test_offloaded_sync_mutation_cancellation_is_indeterminate() -> None:
     assert await asyncio.to_thread(completed.wait, 0.5)
     assert attempts == 1
 
+
+
+@pytest.mark.asyncio
+async def test_parallel_executor_creates_only_bounded_worker_tasks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="fanout",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_fields=[FieldSpec(name="value")],
+            )
+        ],
+    )
+    registry.register(tool)
+    endpoint = registry.endpoint("fanout", "read")
+    call = ToolCall(
+        tool="fanout",
+        endpoint="read",
+        fields=["value"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+    plan = ExecutionPlan(
+        query="bounded parallel execution",
+        registry_version=registry.version,
+        calls=[call.model_copy(deep=True) for _ in range(20)],
+    )
+    executor = RegistryExecutor(registry)
+
+    async def invoker(endpoint_name: str, arguments: dict) -> dict:
+        del endpoint_name, arguments
+        await asyncio.sleep(0)
+        return {"value": "ok"}
+
+    executor.bind("fanout", invoker)
+
+    real_create_task = asyncio.create_task
+    created = 0
+
+    def counting_create_task(coro, *args, **kwargs):
+        nonlocal created
+        created += 1
+        return real_create_task(coro, *args, **kwargs)
+
+    monkeypatch.setattr(
+        executor_module.asyncio,
+        "create_task",
+        counting_create_task,
+    )
+
+    results = [
+        item
+        async for item in executor.execute_parallel_read_only_iter(
+            plan,
+            max_concurrency=3,
+        )
+    ]
+
+    assert len(results) == 20
+    assert created == 3
