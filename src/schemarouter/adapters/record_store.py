@@ -118,6 +118,7 @@ class RecordSourceInvoker:
     """Bounded record-query invoker with trusted backend-owned execution."""
 
     projects_fields = True
+    supports_trusted_filters = True
 
     def __init__(
         self,
