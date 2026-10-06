@@ -432,6 +432,7 @@ async def introspect_record_backend(
                 "source": source.name,
             },
         )
+        budget.consume_generated(tool)
         bindings.append(
             RecordSourceBinding(
                 tool=tool,
