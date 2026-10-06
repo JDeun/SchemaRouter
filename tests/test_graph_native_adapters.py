@@ -566,3 +566,16 @@ def test_sparql_schema_discovery_pushes_down_limit() -> None:
     assert "LIMIT 2" in client.queries[0]
     assert "LIMIT 2" in client.queries[1]
 
+def test_neptune_schema_discovery_pushes_down_limit() -> None:
+    client = FakeNeptuneDataClient()
+    backend = NeptuneOpenCypherBackend(
+        client,
+        graph_name="social",
+        max_schema_items=1,
+    )
+
+    graph = backend.list_graphs()[0]
+    assert graph.name == "social"
+    assert "LIMIT 2" in client.calls[0]["openCypherQuery"]
+    assert "LIMIT 2" in client.calls[1]["openCypherQuery"]
+
