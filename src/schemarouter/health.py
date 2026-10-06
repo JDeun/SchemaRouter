@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from threading import RLock
-from typing import Literal
+from typing import Any, Literal
 
 from ._loop_affinity import LoopAffinityGuard
 from .errors import PlanValidationError, RegistrationError
@@ -73,6 +73,7 @@ class AccessHealthMonitor:
         self._lifecycle_condition = asyncio.Condition(self._run_lock)
         self._loop_affinity = LoopAffinityGuard("health monitor")
         self._active_probe_tasks: set[asyncio.Task] = set()
+        self._sync_probe_inflight: dict[tuple[str, str], asyncio.Future[Any]] = {}
         self._quiesce_requests = 0
 
     @property
@@ -289,6 +290,24 @@ class AccessHealthMonitor:
                 for (tool, endpoint), record in sorted(self._probes.items())
             )
 
+    def _forget_sync_probe(
+        self,
+        key: tuple[str, str],
+        future: asyncio.Future[Any],
+    ) -> None:
+        """Release per-probe quarantine only after the worker future really finishes."""
+
+        if not future.cancelled():
+            try:
+                future.exception()
+            except BaseException:
+                # The probe result/error is consumed only to avoid an un-retrieved
+                # future warning. Health state is committed by the probe generation
+                # that awaited it, never by this detached completion callback.
+                pass
+        if self._sync_probe_inflight.get(key) is future:
+            self._sync_probe_inflight.pop(key, None)
+
     async def _run_probe(
         self,
         tool_key: str,
@@ -302,11 +321,15 @@ class AccessHealthMonitor:
         async with semaphore:
             current_task = asyncio.current_task()
             registered_active = False
+            key = (tool_key, endpoint)
+            sync_future: asyncio.Future[Any] | None = None
+            sync_submission_error: Exception | None = None
+            async_probe = False
 
             async with self._lifecycle_condition:
                 while self._quiesce_requests:
                     await self._lifecycle_condition.wait()
-                if self._probes.get((tool_key, endpoint)) is not record:
+                if self._probes.get(key) is not record:
                     return
                 generation = record.generation
                 current, stale_reason = self._contract_status(
@@ -319,6 +342,42 @@ class AccessHealthMonitor:
                     record.last_checked_at = datetime.now(timezone.utc)
                     record.last_error_type = stale_reason
                     return
+
+                async_probe = (
+                    inspect.iscoroutinefunction(record.probe)
+                    or inspect.iscoroutinefunction(record.probe.__call__)
+                )
+                if not async_probe:
+                    existing = self._sync_probe_inflight.get(key)
+                    if existing is not None and not existing.done():
+                        # A timed-out/cancelled sync callback is still executing in
+                        # Python's non-cancellable worker thread. Keep the path
+                        # quarantined and, critically, do not submit another copy.
+                        self.executor.mark_access_unavailable(
+                            tool_key,
+                            endpoint,
+                            cooldown_seconds=unavailable_cooldown_seconds,
+                        )
+                        record.status = "unhealthy"
+                        if record.last_error_type is None:
+                            record.last_error_type = "ProbeStillRunning"
+                        return
+                    if existing is not None:
+                        self._sync_probe_inflight.pop(key, None)
+
+                    try:
+                        sync_future = self.executor._submit_offloaded_sync(record.probe)
+                    except Exception as exc:
+                        sync_submission_error = exc
+                    else:
+                        self._sync_probe_inflight[key] = sync_future
+                        sync_future.add_done_callback(
+                            lambda done, probe_key=key: self._forget_sync_probe(
+                                probe_key,
+                                done,
+                            )
+                        )
+
                 if current_task is not None:
                     self._active_probe_tasks.add(current_task)
                     registered_active = True
@@ -328,15 +387,18 @@ class AccessHealthMonitor:
                 error_type: str | None = None
                 healthy = False
                 try:
-                    async_probe = (
-                        inspect.iscoroutinefunction(record.probe)
-                        or inspect.iscoroutinefunction(record.probe.__call__)
-                    )
+                    if sync_submission_error is not None:
+                        raise sync_submission_error
                     if async_probe:
                         outcome = record.probe()
                     else:
+                        assert sync_future is not None
+                        # wait_for normally cancels its awaitable on timeout. Shield
+                        # preserves the original wrapper so it remains tied to the
+                        # actual worker lifetime and keeps this probe quarantined
+                        # until the non-cancellable thread exits.
                         outcome = await asyncio.wait_for(
-                            self.executor._submit_offloaded_sync(record.probe),
+                            asyncio.shield(sync_future),
                             timeout=probe_timeout_seconds,
                         )
                     if inspect.isawaitable(outcome):
@@ -352,7 +414,7 @@ class AccessHealthMonitor:
 
                 async with self._lifecycle_condition:
                     if (
-                        self._probes.get((tool_key, endpoint)) is not record
+                        self._probes.get(key) is not record
                         or record.generation != generation
                     ):
                         return
