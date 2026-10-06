@@ -92,10 +92,6 @@ def test_run_trace_validates_order_identity_and_terminal_boundary() -> None:
         [event("run-1", 0, "run.start"), event("run-1", 2, "run.end")],
         [event("run-1", 0, "run.start"), event("run-2", 1, "run.end")],
         [
-            event("run-1", 0, "run.start", seconds=2),
-            event("run-1", 1, "run.end", seconds=1),
-        ],
-        [
             event("run-1", 0, "run.start"),
             event("run-1", 1, "run.end", seconds=1),
             event("run-1", 2, "plan.end", seconds=2),
@@ -142,13 +138,17 @@ def test_sqlite_trace_store_rejects_gaps_duplicates_and_post_terminal_events(tmp
             store.append(event("run-1", 2, "plan.end", seconds=2))
 
 
-def test_sqlite_trace_store_rejects_timestamp_regression(tmp_path) -> None:
+def test_sqlite_trace_store_accepts_timestamp_regression_and_replays_by_sequence(tmp_path) -> None:
     path = tmp_path / "traces.sqlite3"
 
     with SQLiteRunTraceStore(path) as store:
         store.append(event("run-1", 0, "run.start", seconds=2))
-        with pytest.raises(TraceError, match="timestamps"):
-            store.append(event("run-1", 1, "run.end", seconds=1))
+        store.append(event("run-1", 1, "run.end", seconds=1))
+
+        trace = store.trace("run-1")
+        assert [item.sequence for item in trace.events] == [0, 1]
+        assert trace.events[1].timestamp < trace.events[0].timestamp
+        assert [item.sequence for item in trace.replay()] == [0, 1]
 
 
 def test_sqlite_trace_store_corruption_fails_closed(tmp_path) -> None:
