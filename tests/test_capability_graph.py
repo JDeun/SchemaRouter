@@ -224,6 +224,35 @@ def test_index_expands_declared_semantic_equivalence_without_false_negative() ->
     assert indexed.successors("producer") == ("consumer",)
 
 
+def test_index_and_reference_graph_share_transitive_equivalence_semantics() -> None:
+    producer = CapabilityContract(
+        capability_id="producer",
+        produces=[field("semantic.C")],
+    )
+    consumer = CapabilityContract(
+        capability_id="consumer",
+        requires=[field("semantic.A")],
+    )
+    context = CompatibilityContext(
+        semantic_equivalences=[
+            SemanticEquivalence(canonical_id="semantic.A", aliases={"semantic.B"}),
+            SemanticEquivalence(canonical_id="semantic.B", aliases={"semantic.C"}),
+        ]
+    )
+
+    indexed = build_capability_dependency_graph(
+        [producer, consumer],
+        context=context,
+    )
+    reference = _reference_graph(
+        [producer, consumer],
+        context=context,
+    )
+
+    assert indexed == reference
+    assert indexed.successors("producer") == ("consumer",)
+
+
 def test_incremental_update_matches_full_rebuild_for_add_remove_and_change() -> None:
     old = [
         CapabilityContract(
