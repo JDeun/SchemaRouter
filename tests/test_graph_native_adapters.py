@@ -5,10 +5,6 @@ from typing import Any
 
 import pytest
 
-from schemarouter.adapters.discovery_limits import NativeDiscoveryLimits
-from schemarouter.adapters.graph_native import Neo4jGraphBackend
-from schemarouter.errors import RegistrationError
-
 from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
@@ -22,6 +18,9 @@ from schemarouter import (
     ToolCall,
     TrustedFilterBinding,
 )
+from schemarouter.adapters.discovery_limits import NativeDiscoveryLimits
+from schemarouter.adapters.graph_native import Neo4jGraphBackend
+from schemarouter.errors import RegistrationError
 
 
 def _plan(
