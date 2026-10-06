@@ -1,13 +1,55 @@
 from __future__ import annotations
 
-import json
 import math
 from collections import Counter
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 from .canonical_json import canonical_json_sha256, canonical_json_text
+from .document_loading import DocumentLimits, load_bounded_json
 
+
+
+_ADAPTIVE_CHECKPOINT_VERSION = 1
+_ADAPTIVE_CHECKPOINT_MAX_BYTES = 1024 * 1024
+_ADAPTIVE_CHECKPOINT_MAX_ROUTES = 10_000
+_ADAPTIVE_CHECKPOINT_MAX_KEY_CHARS = 512
+_ADAPTIVE_CHECKPOINT_MAX_EPOCH = 2_147_483_647
+_ADAPTIVE_CHECKPOINT_MAX_HISTORY_COUNT = 2_147_483_647
+_ADAPTIVE_CHECKPOINT_LIMITS = DocumentLimits(
+    max_bytes=_ADAPTIVE_CHECKPOINT_MAX_BYTES,
+    max_depth=8,
+    max_nodes=30_000,
+    max_container_items=_ADAPTIVE_CHECKPOINT_MAX_ROUTES,
+    max_string_chars=_ADAPTIVE_CHECKPOINT_MAX_KEY_CHARS,
+)
+
+
+def _load_checkpoint_json(payload: str, *, label: str) -> object:
+    if not isinstance(payload, str):
+        raise TypeError(f"{label} checkpoint payload must be a string")
+    try:
+        return load_bounded_json(payload, limits=_ADAPTIVE_CHECKPOINT_LIMITS)
+    except ValueError as exc:
+        raise ValueError(f"{label} checkpoint is invalid or exceeds restore limits: {exc}") from exc
+
+
+def _validate_checkpoint_key(value: object, *, label: str) -> str:
+    if not isinstance(value, str):
+        raise ValueError(f"{label} route ids must be strings")
+    if len(value) > _ADAPTIVE_CHECKPOINT_MAX_KEY_CHARS:
+        raise ValueError(
+            f"{label} route id exceeds {_ADAPTIVE_CHECKPOINT_MAX_KEY_CHARS} characters"
+        )
+    route, separator, fingerprint = value.partition("@")
+    if "." not in route:
+        raise ValueError(f"{label} route ids must be '<tool>.<endpoint>' strings")
+    tool, endpoint = route.split(".", 1)
+    if not tool or not endpoint:
+        raise ValueError(f"{label} route ids must be '<tool>.<endpoint>' strings")
+    if separator and not fingerprint:
+        raise ValueError(f"{label} fingerprint suffix must be non-empty")
+    return value
 
 def _route_id(tool: str, endpoint: str) -> str:
     tool = tool.strip()
@@ -121,22 +163,56 @@ class SuccessfulCapabilityHistory:
         self._counts.clear()
 
     def dumps(self) -> str:
-        return canonical_json_text(self.snapshot())
+        return canonical_json_text(
+            {
+                "schema_version": _ADAPTIVE_CHECKPOINT_VERSION,
+                "counts": self.snapshot(),
+            }
+        )
 
     def digest(self) -> str:
         return canonical_json_sha256(self.snapshot())
 
     @classmethod
     def loads(cls, payload: str) -> SuccessfulCapabilityHistory:
-        raw = json.loads(payload)
-        if not isinstance(raw, dict):
+        decoded = _load_checkpoint_json(
+            payload,
+            label="successful capability history",
+        )
+        if not isinstance(decoded, dict):
             raise ValueError("successful capability history must be a JSON object")
+
+        raw: object
+        if "schema_version" in decoded:
+            if set(decoded) != {"schema_version", "counts"}:
+                raise ValueError(
+                    "successful capability history checkpoint requires "
+                    "schema_version and counts"
+                )
+            version = decoded["schema_version"]
+            if version != _ADAPTIVE_CHECKPOINT_VERSION:
+                raise ValueError(
+                    "unsupported successful capability history checkpoint version"
+                )
+            raw = decoded["counts"]
+        else:
+            # Backward-compatible reader for the pre-envelope checkpoint format.
+            raw = decoded
+
+        if not isinstance(raw, dict):
+            raise ValueError("successful capability history counts must be a JSON object")
+        if len(raw) > _ADAPTIVE_CHECKPOINT_MAX_ROUTES:
+            raise ValueError(
+                "successful capability history route count exceeds restore limit"
+            )
+
         validated: dict[str, int] = {}
-        for route, value in raw.items():
-            if not isinstance(route, str) or "." not in route:
-                raise ValueError("history route ids must be '<tool>.<endpoint>' strings")
+        for raw_route, value in raw.items():
+            route = _validate_checkpoint_key(raw_route, label="history")
             if isinstance(value, bool) or not isinstance(value, int) or value < 0:
                 raise ValueError("history counts must be non-negative integers")
+            if value > _ADAPTIVE_CHECKPOINT_MAX_HISTORY_COUNT:
+                raise ValueError("history count exceeds restore limit")
             if value:
                 validated[route] = min(_SUCCESS_COUNT_CAP, value)
 
@@ -205,6 +281,8 @@ class SessionSchemaExposure:
             self.mark_exposed(tool, endpoint)
 
     def compacted(self) -> None:
+        if self.compaction_epoch >= _ADAPTIVE_CHECKPOINT_MAX_EPOCH:
+            raise ValueError("compaction_epoch exceeds checkpoint range")
         self._exposed.clear()
         self.compaction_epoch += 1
 
@@ -219,28 +297,64 @@ class SessionSchemaExposure:
         }
 
     def dumps(self) -> str:
-        return canonical_json_text(self.snapshot())
+        return canonical_json_text(
+            {
+                "schema_version": _ADAPTIVE_CHECKPOINT_VERSION,
+                **self.snapshot(),
+            }
+        )
 
     def digest(self) -> str:
         return canonical_json_sha256(self.snapshot())
 
     @classmethod
     def loads(cls, payload: str) -> SessionSchemaExposure:
-        raw = json.loads(payload)
-        if not isinstance(raw, dict):
+        decoded = _load_checkpoint_json(
+            payload,
+            label="session schema exposure",
+        )
+        if not isinstance(decoded, dict):
             raise ValueError("session schema exposure must be a JSON object")
-        if set(raw) != {"compaction_epoch", "exposed_routes"}:
+
+        if "schema_version" in decoded:
+            if set(decoded) != {
+                "schema_version",
+                "compaction_epoch",
+                "exposed_routes",
+            }:
+                raise ValueError(
+                    "session schema exposure checkpoint requires schema_version, "
+                    "compaction_epoch and exposed_routes"
+                )
+            version = decoded["schema_version"]
+            if version != _ADAPTIVE_CHECKPOINT_VERSION:
+                raise ValueError(
+                    "unsupported session schema exposure checkpoint version"
+                )
+        elif set(decoded) != {"compaction_epoch", "exposed_routes"}:
             raise ValueError(
                 "session schema exposure requires compaction_epoch and exposed_routes"
             )
-        epoch = raw["compaction_epoch"]
-        routes = raw["exposed_routes"]
+
+        epoch = decoded["compaction_epoch"]
+        routes = decoded["exposed_routes"]
         if isinstance(epoch, bool) or not isinstance(epoch, int) or epoch < 0:
             raise ValueError("compaction_epoch must be a non-negative integer")
-        if not isinstance(routes, list) or not all(isinstance(x, str) and "." in x for x in routes):
+        if epoch > _ADAPTIVE_CHECKPOINT_MAX_EPOCH:
+            raise ValueError("compaction_epoch exceeds restore limit")
+        if not isinstance(routes, list):
             raise ValueError("exposed_routes must be route-id strings")
+        if len(routes) > _ADAPTIVE_CHECKPOINT_MAX_ROUTES:
+            raise ValueError("exposed_routes count exceeds restore limit")
+
+        validated_routes = [
+            _validate_checkpoint_key(route, label="exposure")
+            for route in routes
+        ]
         state = cls(compaction_epoch=epoch)
-        state._exposed.update(_legacy_compacted_fingerprint_keys(routes))
+        state._exposed.update(
+            _legacy_compacted_fingerprint_keys(validated_routes)
+        )
         return state
 
 
