@@ -218,7 +218,8 @@ def test_python_preview_is_separate_from_release_blocking_ci() -> None:
     assert '"3.15.0-rc.2"' in preview
     assert "allow-prereleases: true" in preview
     assert "timeout-minutes: 20" in preview
-    assert "pull_request:" in preview
+    assert "pull_request:" not in preview
+    assert "schedule:" in preview
     assert "branches: [main]" in preview
     assert "workflow_call:" not in preview
 
@@ -238,8 +239,9 @@ def test_security_workflows_cover_dependency_and_code_scanning() -> None:
         ROOT / ".github" / "workflows" / "codeql.yml"
     ).read_text(encoding="utf-8")
 
-    assert "pull_request:" in security
+    assert "pull_request:" not in security
     assert "schedule:" in security
+    assert "pull_request:" in codeql
     assert "pip-audit --strict" in security
     assert "python -m pip check" in security
 
