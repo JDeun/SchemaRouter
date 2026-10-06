@@ -19,7 +19,9 @@ from schemarouter import (
     ToolSpec,
     TraceError,
     TracePersistenceError,
+    TracePruneResult,
     TraceRedactionConfig,
+    TraceRetentionPolicy,
     record_run_events,
     replay_run_events,
 )
@@ -798,3 +800,114 @@ def test_sqlite_trace_store_bounds_run_id_listing_cardinality(tmp_path) -> None:
     with SQLiteRunTraceStore(path, document_limits=limits) as reopened:
         with pytest.raises(TraceError, match="collection limits"):
             reopened.run_ids()
+
+
+
+def _append_complete_trace(
+    store: SQLiteRunTraceStore,
+    run_id: str,
+    *,
+    seconds: int,
+) -> None:
+    store.append(event(run_id, 0, "run.start", seconds=seconds))
+    store.append(event(run_id, 1, "run.end", seconds=seconds + 1))
+
+
+def test_trace_retention_policy_requires_a_bound() -> None:
+    with pytest.raises(ValueError, match="at least one bound"):
+        TraceRetentionPolicy()
+
+
+def test_sqlite_trace_store_prunes_complete_runs_by_age_and_count(tmp_path) -> None:
+    path = tmp_path / "trace-retention.sqlite3"
+    policy = TraceRetentionPolicy(
+        max_age_seconds=70,
+        max_complete_runs=1,
+        automatic=False,
+    )
+    base = event("base", 0, "run.start").timestamp.timestamp()
+
+    with SQLiteRunTraceStore(path, retention_policy=policy) as store:
+        _append_complete_trace(store, "old", seconds=0)
+        _append_complete_trace(store, "middle", seconds=60)
+        _append_complete_trace(store, "new", seconds=90)
+
+        result = store.prune(now=base + 100)
+        assert result == TracePruneResult(
+            deleted_runs=2,
+            deleted_complete_runs=2,
+            deleted_stale_incomplete_runs=0,
+        )
+        assert store.run_ids(complete=True) == ("new",)
+
+
+def test_sqlite_trace_store_prunes_stale_incomplete_only_when_explicit(tmp_path) -> None:
+    path = tmp_path / "trace-stale.sqlite3"
+    base = event("base", 0, "run.start").timestamp.timestamp()
+
+    first = SQLiteRunTraceStore(path)
+    second = SQLiteRunTraceStore(path)
+    try:
+        _append_complete_trace(first, "complete-old", seconds=0)
+        _append_complete_trace(second, "complete-new", seconds=80)
+        first.append(event("incomplete-old", 0, "run.start", seconds=10))
+        second.append(event("incomplete-fresh", 0, "run.start", seconds=90))
+
+        result = first.prune(
+            policy=TraceRetentionPolicy(
+                max_complete_runs=1,
+                stale_incomplete_age_seconds=30,
+                automatic=False,
+            ),
+            now=base + 100,
+        )
+
+        assert result.deleted_complete_runs == 1
+        assert result.deleted_stale_incomplete_runs == 1
+        assert second.run_ids(complete=True) == ("complete-new",)
+        assert second.run_ids(complete=False) == ("incomplete-fresh",)
+    finally:
+        second.close()
+        first.close()
+
+
+def test_sqlite_trace_store_automatic_retention_runs_at_run_boundaries(tmp_path) -> None:
+    path = tmp_path / "trace-auto-retention.sqlite3"
+    policy = TraceRetentionPolicy(max_complete_runs=1)
+
+    with SQLiteRunTraceStore(path, retention_policy=policy) as store:
+        assert store.retention_policy == policy
+        _append_complete_trace(store, "run-1", seconds=0)
+        _append_complete_trace(store, "run-2", seconds=10)
+        assert store.run_ids(complete=True) == ("run-2",)
+
+
+def test_sqlite_trace_store_manual_prune_requires_policy_and_valid_now(tmp_path) -> None:
+    with SQLiteRunTraceStore(tmp_path / "trace-prune-validation.sqlite3") as store:
+        with pytest.raises(ValueError, match="requires a retention policy"):
+            store.prune()
+        with pytest.raises(ValueError, match="finite Unix timestamp"):
+            store.prune(
+                policy=TraceRetentionPolicy(max_complete_runs=1),
+                now=float("inf"),
+            )
+
+
+def test_sqlite_trace_store_creates_retention_index(tmp_path) -> None:
+    path = tmp_path / "trace-retention-index.sqlite3"
+    with SQLiteRunTraceStore(path):
+        pass
+
+    connection = sqlite3.connect(path)
+    try:
+        row = connection.execute(
+            """
+            SELECT name
+            FROM sqlite_master
+            WHERE type = 'index'
+              AND name = 'schemarouter_trace_runs_retention_idx'
+            """
+        ).fetchone()
+    finally:
+        connection.close()
+    assert row is not None
