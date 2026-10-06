@@ -42,6 +42,18 @@ python scripts/external_validation_smart_mcp.py score \
 
 The scorer uses only the Python standard library.
 
+### Latency measurement boundary
+
+Hot-path latency is measured after one unmeasured per-query warmup. For every
+condition, the timed region includes both ranked candidate retrieval and
+construction of the model-visible per-candidate contract. JSON encoding and tool
+execution are excluded. This keeps SmartMCP, SchemaRouter, and the lexical
+baseline on the same observable boundary.
+
+`index_build_ms` measures condition-specific catalog/index construction after
+runtime imports. For SmartMCP, embedding-model object initialization is outside
+that timer; only embedding/index construction over the shared catalog is timed.
+
 ## Execution provenance
 
 Fixture authorship and execution provenance are intentionally separate. The
