@@ -87,6 +87,38 @@ working SQLAlchemy dialect/driver exists, including PostgreSQL, MySQL/MariaDB, M
 Server, Oracle, SQLite, and common warehouse dialects. This is a **dialect capability statement**,
 not a claim that every vendor has completed live acceptance testing.
 
+## Native discovery budgets
+
+Native database/vector/graph/record onboarding is bounded separately from query execution. Hosts can
+tighten catalog and descriptor budgets with `NativeDiscoveryLimits`:
+
+```python
+from schemarouter import NativeDiscoveryLimits, SchemaRouter
+
+limits = NativeDiscoveryLimits(
+    max_sources=64,
+    max_fields_per_source=256,
+    max_node_types_per_source=256,
+    max_relationship_types_per_source=256,
+    max_properties_per_type=128,
+    max_total_items=8_192,
+    max_descriptor_bytes=4 * 1024 * 1024,
+)
+
+router = SchemaRouter()
+router.add_sqlite_database(
+    connection,
+    database_name="company",
+    tables={"employee_directory", "orders"},
+    discovery_limits=limits,
+)
+```
+
+The same limits are retained by native schema refresh callbacks. Discovery fails before publication
+when a source count, descriptor complexity, cumulative item count, or descriptor-byte budget is
+exceeded, so partial registrations are not left behind. Explicit source/table/collection allowlists
+are used to avoid unrelated discovery work where the underlying adapter can do so.
+
 ## Authorization
 
 Database tools compose with `PrincipalContext` and `AuthorizationPolicy`.
