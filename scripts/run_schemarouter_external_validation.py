@@ -1,4 +1,4 @@
-"""Run SchemaRouter's native typed retrieval on the shared SmartMCP fixture."""
+"""Run SchemaRouter retrieval on the shared SmartMCP validation fixture."""
 from __future__ import annotations
 
 import argparse
@@ -6,7 +6,7 @@ import json
 import time
 from pathlib import Path
 from statistics import median
-from typing import Any
+from typing import Any, Literal
 
 import schemarouter as schemarouter_package
 from schemarouter import SchemaRouter
@@ -16,6 +16,9 @@ try:
     from scripts.external_validation_provenance import implementation_provenance
 except ModuleNotFoundError:  # direct `python scripts/...` execution
     from external_validation_provenance import implementation_provenance
+
+
+Surface = Literal["typed", "smartmcp-text-equivalent"]
 
 
 def _load(path: Path) -> Any:
@@ -69,6 +72,8 @@ def _output_schema(fields: list[FieldSpec]) -> dict[str, Any]:
 
 
 def build_router(catalog: dict[str, Any]) -> SchemaRouter:
+    """Build the native typed SchemaRouter benchmark surface."""
+
     router = SchemaRouter()
     for raw_tool in catalog["tools"]:
         input_schema = raw_tool["input_schema"]
@@ -97,11 +102,73 @@ def build_router(catalog: dict[str, Any]) -> SchemaRouter:
     return router
 
 
+def build_router_from_smartmcp_snapshot(
+    snapshot: list[dict[str, Any]],
+) -> SchemaRouter:
+    """Build a SchemaRouter surface from only information SmartMCP receives.
+
+    The secondary matched-information control intentionally removes output-field
+    semantics and policy metadata. SchemaRouter receives only the SmartMCP
+    snapshot's tool name, description, and input schema. SchemaRouter's own
+    registry/candidate object shape remains unchanged; this ablation controls
+    retrieval-side source information, not downstream interface serialization.
+    """
+
+    router = SchemaRouter()
+    for raw_tool in snapshot:
+        name = raw_tool["name"]
+        input_schema_raw = raw_tool.get("inputSchema", {})
+        input_schema = (
+            input_schema_raw
+            if isinstance(input_schema_raw, dict)
+            else {}
+        )
+        description = str(raw_tool.get("description", ""))
+        operation = name.split("__", 1)[-1]
+        endpoint = EndpointSpec(
+            name=operation,
+            description=description,
+            parameters=_parameter_specs(input_schema),
+            input_schema=input_schema,
+        )
+        router.add_tool(
+            ToolSpec(
+                name=name,
+                description=description,
+                endpoints=[endpoint],
+                source_type="benchmark_fixture",
+                provider="smartmcp-cross-project-dev",
+                access_mode="offline-fixture-text-equivalent",
+            )
+        )
+    return router
+
+
+def _build_surface_router(
+    *,
+    package_dir: Path,
+    manifest: dict[str, Any],
+    surface: Surface,
+) -> SchemaRouter:
+    if surface == "typed":
+        catalog = _load(package_dir / manifest["files"]["catalog"])
+        return build_router(catalog)
+
+    snapshot = _load(package_dir / manifest["files"]["smartmcp_snapshot"])
+    if not isinstance(snapshot, list) or not all(
+        isinstance(item, dict)
+        for item in snapshot
+    ):
+        raise ValueError("SmartMCP snapshot must be a list of objects")
+    return build_router_from_smartmcp_snapshot(snapshot)
+
+
 def run(
     *,
     package_dir: Path,
     repeats: int | None,
     implementation_revision: str | None = None,
+    surface: Surface = "typed",
 ) -> dict[str, Any]:
     manifest = _load(package_dir / "manifest.json")
     repeats = (
@@ -112,12 +179,15 @@ def run(
     if repeats < 1:
         raise ValueError("repeats must be positive")
 
-    catalog = _load(package_dir / manifest["files"]["catalog"])
     cases = _load(package_dir / manifest["files"]["cases"])
     top_k = int(manifest["comparison"]["max_candidates"])
 
     build_start = time.perf_counter()
-    router = build_router(catalog)
+    router = _build_surface_router(
+        package_dir=package_dir,
+        manifest=manifest,
+        surface=surface,
+    )
     # Force lazy retrieval indexes to materialize before hot-path measurements.
     router.retrieve("__benchmark_index_build__", k=1)
     index_build_ms = (time.perf_counter() - build_start) * 1000.0
@@ -161,17 +231,25 @@ def run(
         ),
         distribution="schemarouter",
     )
+    implementation_name = (
+        "SchemaRouter typed capability retrieval"
+        if surface == "typed"
+        else "SchemaRouter SmartMCP-text-equivalent retrieval"
+    )
 
     return {
         "schema_version": 1,
         "package_id": manifest["package_id"],
         "implementation": {
-            "name": "SchemaRouter typed capability retrieval",
+            "name": implementation_name,
             **provenance,
             "configuration": {
                 "repeats_per_query": repeats,
                 "top_k": top_k,
                 "api": "SchemaRouter.retrieve",
+                "surface": surface,
+                "typed_output_metadata": surface == "typed",
+                "policy_metadata": surface == "typed",
                 "structural_retrieval": False,
                 "execution": "disabled",
                 "latency_boundary": (
@@ -194,6 +272,15 @@ def main() -> None:
         help="Override the shared fixture latency repeat count.",
     )
     parser.add_argument(
+        "--surface",
+        choices=("typed", "smartmcp-text-equivalent"),
+        default="typed",
+        help=(
+            "Use SchemaRouter's native typed fixture surface or a secondary "
+            "control built only from SmartMCP-visible name/description/inputSchema."
+        ),
+    )
+    parser.add_argument(
         "--implementation-revision",
         help=(
             "Exact SchemaRouter commit/revision used when it cannot be detected "
@@ -206,6 +293,7 @@ def main() -> None:
         package_dir=args.package_dir,
         repeats=args.repeats,
         implementation_revision=args.implementation_revision,
+        surface=args.surface,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(
