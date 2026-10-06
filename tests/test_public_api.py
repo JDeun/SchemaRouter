@@ -208,6 +208,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "GraphSourceInvoker",
         "GraphSourceSpec",
         "GraphStoreBackend",
+        "ScopedGraphStoreBackend",
         "Neo4jGraphBackend",
         "NeptuneOpenCypherBackend",
         "SparqlGraphBackend",
