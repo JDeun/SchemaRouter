@@ -22,6 +22,7 @@ class AdapterContext:
     schema_validators: dict[str, str] | None = None
     trusted_headers: dict[str, str] | None = None
     mcp_client_factory: Any | None = None
+    mcp_discovery_limits: Any | None = None
     openapi_external_refs: bool = False
     openapi_ref_max_depth: int = 3
     openapi_ref_max_documents: int = 8
