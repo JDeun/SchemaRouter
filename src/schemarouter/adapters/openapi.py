@@ -10,6 +10,7 @@ from urllib.parse import quote, unquote, urldefrag, urljoin, urlparse
 
 import httpx
 
+from .._http_headers import validate_trusted_headers
 from ..errors import InvocationUnavailableError, NonRetryableInvocationError
 from ..models import (
     AuthRequirementSet,
@@ -1606,13 +1607,8 @@ class OpenAPIRemoteInvoker:
         if parsed_base.query or parsed_base.fragment:
             raise ValueError("base_url must not contain query or fragment")
 
-        trusted = dict(trusted_headers or {})
+        trusted = validate_trusted_headers(trusted_headers)
         trusted_names = [name.casefold() for name in trusted]
-        if len(trusted_names) != len(set(trusted_names)):
-            raise ValueError("trusted_headers contains case-insensitive duplicate names")
-        for name in trusted:
-            if not _HEADER_NAME_RE.fullmatch(name):
-                raise ValueError(f"invalid trusted header name: {name!r}")
 
         self.tool = tool
         self.base_url = base_url.rstrip("/")

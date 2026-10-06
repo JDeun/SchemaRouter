@@ -7,6 +7,7 @@ from urllib.parse import quote, urljoin, urlparse
 
 import httpx
 
+from .._http_headers import validate_trusted_headers
 from ..errors import InvocationUnavailableError, NonRetryableInvocationError, SchemaSourceError
 from ..models import (
     EndpointSpec,
@@ -817,7 +818,7 @@ class OPTIMADERemoteInvoker:
     ) -> None:
         self.tool = tool
         self.base_url = _safe_base_url(versioned_base_url)
-        self.trusted_headers = dict(trusted_headers or {})
+        self.trusted_headers = validate_trusted_headers(trusted_headers)
         self.timeout = timeout
         self.http_client = http_client
         self.network_policy = network_policy

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Protocol
 from urllib.parse import urlparse
 
+from .._http_headers import validate_trusted_headers
 from ..errors import InvocationUnavailableError, SchemaSourceError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
 from ..network_policy import TRUSTED_INTERNAL_NETWORK_POLICY, NetworkPolicy
@@ -204,20 +205,16 @@ def _validated_trusted_headers(
 ) -> dict[str, str] | None:
     if headers is None:
         return None
-    result: dict[str, str] = {}
-    for name, value in headers.items():
-        if not isinstance(name, str) or not name.strip():
-            raise ValueError("MCP trusted header names must be non-empty strings")
-        if not isinstance(value, str):
-            raise ValueError("MCP trusted header values must be strings")
-        if "\r" in name or "\n" in name or "\r" in value or "\n" in value:
-            raise ValueError("MCP trusted headers must not contain newlines")
-        normalized = name.strip().casefold()
+    result = validate_trusted_headers(
+        headers,
+        label="MCP trusted_headers",
+    )
+    for name in result:
+        normalized = name.casefold()
         if normalized in _PROTECTED_MCP_HEADERS or normalized.startswith("mcp-"):
             raise ValueError(
                 f"MCP protocol header {name!r} is controlled by the SDK and cannot be overridden"
             )
-        result[name.strip()] = value
     return result
 
 
