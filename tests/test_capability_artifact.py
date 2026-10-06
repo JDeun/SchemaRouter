@@ -23,6 +23,7 @@ from schemarouter.capability_contracts import (
     SemanticEquivalence,
 )
 from schemarouter.capability_graph import build_capability_dependency_graph
+from schemarouter.document_loading import DocumentLimitError, DocumentLimits
 
 
 def _legacy_document(
@@ -396,3 +397,20 @@ def test_artifact_model_has_no_runtime_or_secret_transport_fields() -> None:
     assert "health" not in fields
     assert "credentials" not in fields
     assert "headers" not in fields
+
+
+def test_capability_artifact_loading_enforces_document_limits() -> None:
+    artifact = build_capability_artifact(graph_digest="g", capabilities=[])
+    document = serialize_capability_artifact(artifact)
+
+    with pytest.raises(DocumentLimitError, match="encoded-size"):
+        load_capability_artifact(
+            document,
+            document_limits=DocumentLimits(max_bytes=len(document.encode("utf-8")) - 1),
+        )
+
+    with pytest.raises(DocumentLimitError, match="depth"):
+        load_capability_artifact(
+            '{"a":{"b":{"c":1}}}',
+            document_limits=DocumentLimits(max_depth=2),
+        )

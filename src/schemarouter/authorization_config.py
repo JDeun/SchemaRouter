@@ -14,6 +14,13 @@ from .authorization import (
     DataScopeRule,
     TrustedFilterBinding,
 )
+from .document_loading import (
+    DocumentLimits,
+    load_bounded_json,
+    load_bounded_yaml,
+    read_bounded_text,
+    validate_bounded_structure,
+)
 from .models import StrictModel
 
 
@@ -179,19 +186,20 @@ def parse_authorization_policy(
     *,
     format: Literal["json", "yaml"] = "json",
     lint: bool = True,
+    document_limits: DocumentLimits | None = None,
 ) -> AuthorizationPolicy:
     if isinstance(value, dict):
+        validate_bounded_structure(value, limits=document_limits)
         raw = value
     elif format == "json":
-        raw = json.loads(value)
+        raw = load_bounded_json(value, limits=document_limits)
     else:
         try:
-            import yaml
-        except ImportError as exc:
+            raw = load_bounded_yaml(value, limits=document_limits)
+        except RuntimeError as exc:
             raise RuntimeError(
                 "YAML policy loading requires the optional PyYAML package"
             ) from exc
-        raw = yaml.safe_load(value)
 
     config = AuthorizationPolicyConfig.model_validate(raw)
     issues = lint_authorization_config(config)
@@ -204,6 +212,7 @@ def load_authorization_policy(
     path: str | Path,
     *,
     lint: bool = True,
+    document_limits: DocumentLimits | None = None,
 ) -> AuthorizationPolicy:
     policy_path = Path(path)
     suffix = policy_path.suffix.lower()
@@ -214,22 +223,27 @@ def load_authorization_policy(
     else:
         raise ValueError("authorization policy path must end in .json, .yaml, or .yml")
     return parse_authorization_policy(
-        policy_path.read_text(encoding="utf-8"),
+        read_bounded_text(policy_path, limits=document_limits),
         format=format,
         lint=lint,
+        document_limits=document_limits,
     )
 
 
 def normalized_authorization_json(
     value: AuthorizationPolicyConfig | str | bytes | dict[str, Any],
+    *,
+    document_limits: DocumentLimits | None = None,
 ) -> str:
-    config = (
-        value
-        if isinstance(value, AuthorizationPolicyConfig)
-        else AuthorizationPolicyConfig.model_validate(
-            json.loads(value) if isinstance(value, (str, bytes)) else value
-        )
-    )
+    if isinstance(value, AuthorizationPolicyConfig):
+        config = value
+    else:
+        if isinstance(value, (str, bytes)):
+            raw = load_bounded_json(value, limits=document_limits)
+        else:
+            validate_bounded_structure(value, limits=document_limits)
+            raw = value
+        config = AuthorizationPolicyConfig.model_validate(raw)
     return json.dumps(
         config.model_dump(mode="json", exclude_none=True),
         ensure_ascii=False,

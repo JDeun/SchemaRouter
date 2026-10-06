@@ -6,9 +6,11 @@ from pydantic import ValidationError
 from schemarouter.authorization_config import (
     AuthorizationPolicyConfig,
     lint_authorization_config,
+    load_authorization_policy,
     normalized_authorization_json,
     parse_authorization_policy,
 )
+from schemarouter.document_loading import DocumentLimitError, DocumentLimits
 
 
 def example() -> dict:
@@ -89,3 +91,41 @@ def test_normalized_json_is_deterministic() -> None:
     rendered = normalized_authorization_json(example())
     assert rendered == normalized_authorization_json(json.loads(rendered))
     assert '"version": 1' in rendered
+
+
+def test_authorization_policy_parsing_enforces_json_document_limits() -> None:
+    document = json.dumps(example())
+    with pytest.raises(DocumentLimitError, match="encoded-size"):
+        parse_authorization_policy(
+            document,
+            document_limits=DocumentLimits(max_bytes=len(document.encode("utf-8")) - 1),
+        )
+
+
+def test_authorization_policy_yaml_alias_budget_fails_closed() -> None:
+    pytest.importorskip("yaml")
+    document = """
+version: 1
+default_effect: deny
+base: &base {effect: allow, operation: public.read}
+rules:
+  - *base
+  - *base
+"""
+    with pytest.raises(DocumentLimitError, match="alias"):
+        parse_authorization_policy(
+            document,
+            format="yaml",
+            document_limits=DocumentLimits(max_yaml_aliases=1),
+        )
+
+
+def test_authorization_policy_file_read_is_bounded(tmp_path) -> None:
+    source = tmp_path / "policy.json"
+    source.write_text(json.dumps(example()), encoding="utf-8")
+
+    with pytest.raises(DocumentLimitError, match="encoded-size"):
+        load_authorization_policy(
+            source,
+            document_limits=DocumentLimits(max_bytes=16),
+        )

@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from schemarouter import (
     CAPABILITY_SNAPSHOT_DOCUMENT_VERSION,
     EndpointSpec,
@@ -10,6 +12,7 @@ from schemarouter import (
     serialize_capability_artifact,
 )
 from schemarouter.cli import _run, build_parser
+from schemarouter.document_loading import DocumentLimitError
 
 
 def _write_registry(path, *, read_only: bool) -> None:
@@ -166,3 +169,17 @@ def test_cli_format_migration_refuses_existing_destination_without_overwrite(
         _run(args)
 
     assert output.read_text(encoding="utf-8") == "keep"
+
+
+def test_cli_artifact_inspection_uses_bounded_file_read(tmp_path, monkeypatch) -> None:
+    source = tmp_path / "graph.json"
+    source.write_text("{}", encoding="utf-8")
+    args = build_parser().parse_args(["artifact", "inspect", str(source), "--json"])
+
+    def reject_unbounded_read(path):
+        assert path == source
+        raise DocumentLimitError("document exceeds configured encoded-size limit")
+
+    monkeypatch.setattr("schemarouter.cli.read_bounded_text", reject_unbounded_read)
+    with pytest.raises(DocumentLimitError, match="encoded-size"):
+        _run(args)
