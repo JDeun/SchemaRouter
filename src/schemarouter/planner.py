@@ -666,16 +666,18 @@ class SchemaPlanner:
         ]
         | None = None,
     ) -> CapabilityRetrieval:
+        snapshot = self._catalog_snapshot()
         candidates = self._semantic_recall_catalog(
             request,
             intent,
             additional_availability_predicate=additional_availability_predicate,
             scoring_endpoint_transform=scoring_endpoint_transform,
+            catalog_snapshot=snapshot,
         )
-        self._sort_candidates(candidates)
+        self._sort_candidates(candidates, catalog_snapshot=snapshot)
         return CapabilityRetrieval(
             query=request.query,
-            registry_version=self.registry.version,
+            registry_version=snapshot.version,
             requested_k=k,
             total_ranked=len(candidates),
             executable_only=executable_only,
@@ -693,15 +695,17 @@ class SchemaPlanner:
         k: int,
         additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> CapabilityRouteRetrieval:
+        snapshot = self._catalog_snapshot()
         candidates = self._semantic_recall_catalog(
             request,
             intent,
             additional_availability_predicate=additional_availability_predicate,
+            catalog_snapshot=snapshot,
         )
-        self._sort_candidates(candidates)
+        self._sort_candidates(candidates, catalog_snapshot=snapshot)
         return CapabilityRouteRetrieval(
             query=request.query,
-            registry_version=self.registry.version,
+            registry_version=snapshot.version,
             requested_k=k,
             total_ranked=len(candidates),
             candidates=[
@@ -791,19 +795,21 @@ class SchemaPlanner:
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
         additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> StateConditionedCapabilityRetrieval:
+        snapshot = self._catalog_snapshot()
         ranked = self._semantic_recall_catalog(
             request,
             intent,
             additional_availability_predicate=additional_availability_predicate,
+            catalog_snapshot=snapshot,
         )
-        self._sort_candidates(ranked)
+        self._sort_candidates(ranked, catalog_snapshot=snapshot)
         visible = [
             self._retrieval_candidate(candidate, rank=index)
             for index, candidate in enumerate(ranked, start=1)
         ]
         return backfill_ranked_candidates_by_state(
             query=request.query,
-            registry_version=self.registry.version,
+            registry_version=snapshot.version,
             requested_k=k,
             ranked_candidates=visible,
             state=execution_state,
@@ -1752,6 +1758,7 @@ class SchemaPlanner:
             EndpointSpec | None,
         ]
         | None = None,
+        catalog_snapshot: _CatalogSnapshot | None = None,
     ) -> tuple[list[_Candidate], list[str]]:
         if self.candidate_recall_backend is None:
             return candidates, []
@@ -1761,6 +1768,7 @@ class SchemaPlanner:
             intent,
             additional_availability_predicate=additional_availability_predicate,
             scoring_endpoint_transform=scoring_endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
         )
         if not catalog:
             return candidates, []
@@ -1808,6 +1816,7 @@ class SchemaPlanner:
             EndpointSpec | None,
         ]
         | None = None,
+        catalog_snapshot: _CatalogSnapshot | None = None,
     ) -> tuple[list[_Candidate], list[str]]:
         if self.candidate_recall_backend is None:
             return candidates, []
@@ -1817,6 +1826,7 @@ class SchemaPlanner:
             intent,
             additional_availability_predicate=additional_availability_predicate,
             scoring_endpoint_transform=scoring_endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
         )
         if not catalog:
             return candidates, []
@@ -3563,11 +3573,13 @@ class SchemaPlanner:
         | None = None,
     ) -> ExecutionPlan:
         del async_decision
+        snapshot = self._catalog_snapshot()
         lexical_candidates = self._candidates(
             request,
             intent,
             additional_availability_predicate=additional_availability_predicate,
             scoring_endpoint_transform=scoring_endpoint_transform,
+            catalog_snapshot=snapshot,
         )
         all_candidates, recall_warnings = (
             self._augment_candidates_with_semantic_recall_sync(
@@ -3576,6 +3588,7 @@ class SchemaPlanner:
                 lexical_candidates,
                 additional_availability_predicate=additional_availability_predicate,
                 scoring_endpoint_transform=scoring_endpoint_transform,
+                catalog_snapshot=snapshot,
             )
         )
         _, required_coverage = self._field_coverage_matrix(request, all_candidates)
@@ -3615,7 +3628,7 @@ class SchemaPlanner:
             coverage_warning = self._coverage_warning(coverage)
             return ExecutionPlan(
                 query=request.query,
-                registry_version=self.registry.version,
+                registry_version=snapshot.version,
                 calls=[],
                 warnings=[
                     *warnings,
@@ -3762,7 +3775,7 @@ class SchemaPlanner:
 
         return ExecutionPlan(
             query=request.query,
-            registry_version=self.registry.version,
+            registry_version=snapshot.version,
             calls=calls,
             fallback_routes=fallback_routes,
             warnings=warnings,
@@ -3785,11 +3798,13 @@ class SchemaPlanner:
         ]
         | None = None,
     ) -> ExecutionPlan:
+        snapshot = self._catalog_snapshot()
         lexical_candidates = self._candidates(
             request,
             intent,
             additional_availability_predicate=additional_availability_predicate,
             scoring_endpoint_transform=scoring_endpoint_transform,
+            catalog_snapshot=snapshot,
         )
         all_candidates, recall_warnings = (
             await self._augment_candidates_with_semantic_recall_async(
@@ -3798,6 +3813,7 @@ class SchemaPlanner:
                 lexical_candidates,
                 additional_availability_predicate=additional_availability_predicate,
                 scoring_endpoint_transform=scoring_endpoint_transform,
+                catalog_snapshot=snapshot,
             )
         )
         _, required_coverage = self._field_coverage_matrix(request, all_candidates)
@@ -3838,7 +3854,7 @@ class SchemaPlanner:
             coverage_warning = self._coverage_warning(coverage)
             return ExecutionPlan(
                 query=request.query,
-                registry_version=self.registry.version,
+                registry_version=snapshot.version,
                 calls=[],
                 warnings=[
                     *warnings,
@@ -3985,7 +4001,7 @@ class SchemaPlanner:
 
         return ExecutionPlan(
             query=request.query,
-            registry_version=self.registry.version,
+            registry_version=snapshot.version,
             calls=calls,
             fallback_routes=fallback_routes,
             warnings=warnings,
