@@ -35,6 +35,7 @@ def test_smartmcp_cross_project_dev_fixture_is_consistent() -> None:
         "multi_tool": 3,
     }
     assert manifest["comparison"]["top_k_values"] == [1, 3, 5]
+    assert manifest["comparison"]["latency_repeats"] == 20
 
 
 def test_smartmcp_snapshot_is_exact_projection_of_shared_catalog() -> None:
