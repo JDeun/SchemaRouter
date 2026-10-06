@@ -218,3 +218,20 @@ def test_sqlalchemy_discovery_rejects_wide_relation_atomically() -> None:
         assert router.registry.keys() == ()
     finally:
         engine.dispose()
+
+
+def test_sqlalchemy_generated_contract_budget_is_failure_atomic() -> None:
+    engine = _engine()
+    try:
+        router = SchemaRouter()
+        with pytest.raises(RegistrationError, match="generated schema bytes"):
+            router.add_sqlalchemy_database(
+                engine,
+                database_name="warehouse",
+                max_generated_bytes=1,
+                remote=False,
+            )
+
+        assert router.registry.keys() == ()
+    finally:
+        engine.dispose()
