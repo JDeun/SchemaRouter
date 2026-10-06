@@ -118,3 +118,22 @@ ClickHouse SQL, and arbitrary Flux remain outside model authority.
 
 Deterministic SDK-shape tests are release-gated. Native adapter availability is distinct from
 external live acceptance for every vendor/version/deployment.
+## Schemaless discovery is partial by design
+
+MongoDB, DynamoDB, Cosmos DB, and Couchbase can contain heterogeneous records without a complete
+authoritative field schema. Their native adapters therefore inspect at most 16 records and stop
+materializing samples after 256 KiB or 5 seconds of local iteration. Where the SDK permits it,
+discovery also requests a stable order or provider-side execution bound.
+
+The discovered field set is the deterministic union of those bounded samples. Types inferred only
+from record values remain unconstrained (`{}`) rather than turning one observed runtime type into an
+authoritative contract. Provider metadata remains authoritative where it exists, such as DynamoDB
+key attribute types and Cosmos DB's `id`. Endpoint `public_metadata.schema_discovery` marks the
+result as `partial` and records the fixed discovery bounds.
+
+A later refresh may expand the field set when new fields enter the bounded sample. Because sampled
+value types are not narrowed, heterogeneous values do not cause type-only fingerprint oscillation.
+Authorization should continue to treat only declared fields as addressable; hosts that require a
+complete field contract should supply an authoritative backend/schema instead of relying on sample
+discovery.
+
