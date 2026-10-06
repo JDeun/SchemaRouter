@@ -15,6 +15,8 @@ from ..models import EndpointSpec, FieldSpec, ParameterSpec, StrictModel, ToolCa
 
 _QUERY_ENDPOINT = "query"
 _MAX_LIMIT = 1000
+_MAX_DISCOVERY_SOURCES = 128
+_MAX_FIELDS_PER_SOURCE = 256
 _RESERVED_ARGUMENTS = {"query", "limit", "start_time", "end_time"}
 
 RecordModel = Literal["document", "search", "key_value", "time_series"]
@@ -223,6 +225,8 @@ async def introspect_record_backend(
     default_limit: int = 100,
     remote: bool = True,
     offload_sync_backend: bool | None = None,
+    max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
+    max_fields_per_source: int = _MAX_FIELDS_PER_SOURCE,
 ) -> tuple[RecordSourceBinding, ...]:
     """Compile non-relational source descriptors into typed bounded query capabilities."""
 
@@ -230,23 +234,62 @@ async def introspect_record_backend(
         raise ValueError("database_name must be non-empty")
     if default_limit < 1 or default_limit > _MAX_LIMIT:
         raise ValueError(f"default_limit must be between 1 and {_MAX_LIMIT}")
+    if max_discovery_sources < 1:
+        raise ValueError("max_discovery_sources must be positive")
+    if max_fields_per_source < 1:
+        raise ValueError("max_fields_per_source must be positive")
 
+    selected = None if sources is None else {str(value) for value in sources}
     offload_backend = remote if offload_sync_backend is None else offload_sync_backend
     discovered_raw = await _call_backend(
         backend.list_sources,
         offload_sync=offload_backend,
     )
-    discovered = tuple(
-        value if isinstance(value, RecordSourceSpec) else RecordSourceSpec.model_validate(value)
-        for value in discovered_raw
-    )
-    names = [source.name for source in discovered]
-    if len(names) != len(set(names)):
-        raise RegistrationError("record-store backend returned duplicate source names")
 
-    selected = None if sources is None else {str(value) for value in sources}
+    discovered: list[RecordSourceSpec] = []
+    seen_names: set[str] = set()
+    for index, value in enumerate(discovered_raw):
+        if index >= max_discovery_sources:
+            raise RegistrationError(
+                "record-store discovery exceeded max_discovery_sources="
+                f"{max_discovery_sources}"
+            )
+
+        raw_name: str | None = None
+        if isinstance(value, RecordSourceSpec):
+            raw_name = value.name
+        elif isinstance(value, dict) and value.get("name") is not None:
+            raw_name = str(value["name"])
+
+        if raw_name is not None:
+            if raw_name in seen_names:
+                raise RegistrationError(
+                    "record-store backend returned duplicate source names"
+                )
+            seen_names.add(raw_name)
+            if selected is not None and raw_name not in selected:
+                continue
+
+        source = (
+            value
+            if isinstance(value, RecordSourceSpec)
+            else RecordSourceSpec.model_validate(value)
+        )
+        if raw_name is None:
+            if source.name in seen_names:
+                raise RegistrationError(
+                    "record-store backend returned duplicate source names"
+                )
+            seen_names.add(source.name)
+        if len(source.fields) > max_fields_per_source:
+            raise RegistrationError(
+                f"record-store source {source.name!r} exposes {len(source.fields)} fields; "
+                f"limit is {max_fields_per_source}"
+            )
+        discovered.append(source)
+
     if selected is not None:
-        missing = sorted(selected - set(names))
+        missing = sorted(selected - seen_names)
         if missing:
             raise RegistrationError("unknown record-store sources: " + ", ".join(missing))
 
