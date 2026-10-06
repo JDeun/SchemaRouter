@@ -560,14 +560,38 @@ class PineconeVectorBackend:
         client: Any,
         *,
         metadata_fields_by_index: Mapping[str, Sequence[VectorMetadataField]] | None = None,
+        collections: Sequence[str] | None = None,
+        max_discovery_sources: int = _MAX_DISCOVERY_SOURCES,
+        max_fields_per_collection: int = _MAX_DISCOVERY_FIELDS,
     ) -> None:
         self._client = client
+        self._collections = (
+            None
+            if collections is None
+            else tuple(
+                str(value)
+                for value in _bounded_values(
+                    collections,
+                    limit=max_discovery_sources,
+                    label="Pinecone configured indexes",
+                )
+            )
+        )
+        self._max_discovery_sources = max_discovery_sources
         self._metadata_fields_by_index = {
-            name: tuple(fields)
+            name: tuple(
+                _bounded_values(
+                    fields,
+                    limit=max_fields_per_collection,
+                    label=f"Pinecone metadata fields for {name!r}",
+                )
+            )
             for name, fields in (metadata_fields_by_index or {}).items()
         }
 
-    def _index_names(self) -> list[str]:
+    def _index_names(self) -> tuple[str, ...]:
+        if self._collections is not None:
+            return self._collections
         raw = self._client.list_indexes()
         names_method = getattr(raw, "names", None)
         if callable(names_method):
@@ -577,14 +601,19 @@ class PineconeVectorBackend:
         else:
             names = raw
         if isinstance(names, Mapping):
-            values = list(names.values())
+            values: Iterable[Any] = names.values()
         elif isinstance(names, Iterable) and not isinstance(names, (str, bytes)):
-            values = list(names)
+            values = names
         else:
             raise SchemaValidationError(
                 "Pinecone list_indexes() returned an unexpected response"
             )
-        result = [str(_read(value, "name", value)) for value in values]
+        bounded = _bounded_values(
+            values,
+            limit=self._max_discovery_sources,
+            label="Pinecone index discovery",
+        )
+        result = tuple(str(_read(value, "name", value)) for value in bounded)
         if any(not value for value in result):
             raise SchemaValidationError("Pinecone returned an empty index name")
         return result
