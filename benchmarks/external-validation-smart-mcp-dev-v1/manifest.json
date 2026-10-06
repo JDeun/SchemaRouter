@@ -44,7 +44,8 @@
       "stratum",
       "unsupported nonempty-candidate rate",
       "ambiguous acceptable-candidate hit rate"
-    ]
+    ],
+    "latency_repeats": 20
   },
   "exposure_definition": {
     "unit": "UTF-8 bytes",
