@@ -6,6 +6,10 @@ source =
     schemarouter.adapters.record_native
 
 [report]
-fail_under = 60
+fail_under = 0
 show_missing = True
 skip_covered = False
+
+# Enforcement lives in .github/workflows/ci.yml so each security-sensitive
+# native adapter family has an independent ratchet and cannot hide behind
+# aggregate coverage from the other vendor families.
