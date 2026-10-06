@@ -198,9 +198,10 @@ def _validate_legacy_trace_storage(
 class SQLiteRunTraceStore:
     """Append-only SQLite store for replayable RunEvent streams.
 
-    The store persists the exact RunEvent envelope it receives. Payloads are therefore redacted
-    when the source stream uses the default RunConfig, but explicit include_payloads=True data will
-    also be persisted and must be protected by the application.
+    The store persists the exact RunEvent envelope it receives. SchemaRouter's runtime stream
+    applies structured redaction before persistence by default, including when payload tracing is
+    enabled. Only the explicit raw_trace_payloads escape hatch emits unredacted runtime events.
+    External event producers remain responsible for their own redaction.
     """
 
     def __init__(

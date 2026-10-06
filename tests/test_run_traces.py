@@ -16,9 +16,11 @@ from schemarouter import (
     ToolSpec,
     TraceError,
     TracePersistenceError,
+    TraceRedactionConfig,
     record_run_events,
     replay_run_events,
 )
+from schemarouter.errors import NonRetryableInvocationError
 
 
 def event(
@@ -66,6 +68,34 @@ def make_router(counter: dict[str, int] | None = None) -> SchemaRouter:
         }
 
     router.executor.bind("weather", invoke)
+    return router
+
+
+def make_secret_router(*, fail: bool = False) -> SchemaRouter:
+    router = SchemaRouter()
+    router.add_tool(
+        ToolSpec(
+            name="secret_echo",
+            endpoints=[
+                EndpointSpec(
+                    name="echo",
+                    parameters=[ParameterSpec(name="token", required=True)],
+                    output_fields=[FieldSpec(name="token")],
+                    read_only=True,
+                )
+            ],
+        )
+    )
+
+    def invoke(endpoint: str, arguments: dict) -> dict:
+        del endpoint
+        if fail:
+            raise NonRetryableInvocationError(
+                f"authorization={arguments['token']}"
+            )
+        return {"token": arguments["token"]}
+
+    router.executor.bind("secret_echo", invoke)
     return router
 
 
@@ -264,6 +294,143 @@ async def test_runtime_trace_can_explicitly_include_payloads(tmp_path) -> None:
     tool_end = next(item for item in trace.events if item.event == "tool.end")
     assert tool_start.data["arguments"] == {"city": "Busan"}
     assert tool_end.data["result"]["data"]["temperature"] == 20
+
+
+@pytest.mark.asyncio
+async def test_payload_trace_redacts_credentials_before_sqlite_persistence(tmp_path) -> None:
+    secret = "sk-super-secret-value"
+    router = make_secret_router()
+
+    with SQLiteRunTraceStore(tmp_path / "redacted.sqlite3") as store:
+        events = [
+            item
+            async for item in router.astream_events(
+                PlanRequest(
+                    query="echo token",
+                    arguments={"token": secret},
+                ),
+                config=RunConfig(
+                    run_id="redacted-success",
+                    include_payloads=True,
+                    metadata={"api_key": secret, "safe": "visible"},
+                ),
+                trace_store=store,
+            )
+        ]
+        trace = store.trace("redacted-success")
+
+    serialized = "\n".join(event.model_dump_json() for event in trace.events)
+    assert secret not in serialized
+    assert "[REDACTED]" in serialized
+    assert all(event.metadata["api_key"] == "[REDACTED]" for event in events)
+    assert all(event.metadata["safe"] == "visible" for event in events)
+
+    tool_start = next(event for event in trace.events if event.event == "tool.start")
+    tool_end = next(event for event in trace.events if event.event == "tool.end")
+    assert tool_start.data["arguments"]["token"] == "[REDACTED]"
+    assert tool_end.data["result"]["data"]["token"] == "[REDACTED]"
+
+
+@pytest.mark.asyncio
+async def test_payload_trace_redacts_exception_message_before_sqlite_persistence(
+    tmp_path,
+) -> None:
+    secret = "runtime-secret-token"
+    router = make_secret_router(fail=True)
+
+    with SQLiteRunTraceStore(tmp_path / "redacted-error.sqlite3") as store:
+        with pytest.raises(NonRetryableInvocationError, match="authorization="):
+            async for _ in router.astream_events(
+                PlanRequest(
+                    query="echo token",
+                    arguments={"token": secret},
+                ),
+                config=RunConfig(
+                    run_id="redacted-error",
+                    include_payloads=True,
+                ),
+                trace_store=store,
+            ):
+                pass
+
+        trace = store.trace("redacted-error")
+
+    serialized = "\n".join(event.model_dump_json() for event in trace.events)
+    assert secret not in serialized
+    error_events = [
+        event
+        for event in trace.events
+        if event.event in {"tool.error", "run.error"}
+    ]
+    assert error_events
+    assert all(secret not in str(event.data) for event in error_events)
+
+
+def test_raw_trace_payloads_require_payload_opt_in() -> None:
+    with pytest.raises(ValueError, match="requires include_payloads"):
+        RunConfig(raw_trace_payloads=True)
+
+
+@pytest.mark.asyncio
+async def test_raw_trace_payloads_require_explicit_escape_hatch(tmp_path) -> None:
+    secret = "raw-debug-secret"
+    router = make_secret_router()
+
+    with SQLiteRunTraceStore(tmp_path / "raw.sqlite3") as store:
+        events = [
+            item
+            async for item in router.astream_events(
+                PlanRequest(
+                    query="echo token",
+                    arguments={"token": secret},
+                ),
+                config=RunConfig(
+                    run_id="raw-debug",
+                    include_payloads=True,
+                    raw_trace_payloads=True,
+                    metadata={"api_key": secret},
+                ),
+                trace_store=store,
+            )
+        ]
+        trace = store.trace("raw-debug")
+
+    serialized = "\n".join(event.model_dump_json() for event in trace.events)
+    assert secret in serialized
+    assert events[0].metadata["api_key"] == secret
+
+
+@pytest.mark.asyncio
+async def test_trace_redaction_supports_explicit_event_paths(tmp_path) -> None:
+    router = make_router()
+    policy = TraceRedactionConfig(
+        sensitive_paths={
+            "data.arguments.city",
+            "data.result.data.city",
+        }
+    )
+
+    with SQLiteRunTraceStore(tmp_path / "path-redacted.sqlite3") as store:
+        events = [
+            item
+            async for item in router.astream_events(
+                PlanRequest(
+                    query="city temperature",
+                    arguments={"city": "Seoul"},
+                ),
+                config=RunConfig(
+                    run_id="path-redacted",
+                    include_payloads=True,
+                    trace_redaction=policy,
+                ),
+                trace_store=store,
+            )
+        ]
+
+    tool_start = next(event for event in events if event.event == "tool.start")
+    tool_end = next(event for event in events if event.event == "tool.end")
+    assert tool_start.data["arguments"]["city"] == "[REDACTED]"
+    assert tool_end.data["result"]["data"]["city"] == "[REDACTED]"
 
 
 @pytest.mark.asyncio
