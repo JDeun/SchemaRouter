@@ -247,3 +247,35 @@ Host가 run ID를 지정하지 않으면 runtime이 생성합니다. LangChain/L
 principal attribute, resolved trusted-filter 값을 자동 저장하지 않습니다. Host가 별도 audit
 sink에 추가 identity 정보를 기록한다면 그 sink 자체가 host의 trusted security boundary가
 됩니다.
+
+
+### Audit 전달 정책
+
+`authorization_audit_mode`은 trusted audit sink 장애가 authorization 경계를 차단할지
+명시적으로 결정합니다.
+
+- `"best_effort"`(기본값)는 sink 예외를 authorization 결과와 분리합니다. 따라서 허용된
+  호출은 계속 실행할 수 있고, 거부된 호출은 audit sink의 임의 예외가 아니라 원래 policy
+  denial을 유지합니다.
+- `"strict"`는 audit 전달을 필수로 만듭니다. Sink가 없거나 전달이 실패하면 허용된 실제
+  호출이 실행되기 전에 `AuthorizationAuditDeliveryError`로 fail-closed합니다.
+
+`AuthorizationAuditDeliveryError`는 `PolicyViolationError`의 하위 타입이며 privacy-safe한
+결정 `effect`, `phase`, `operation`만 보존합니다. 따라서 retry/fallback 로직이 mandatory
+audit 장애를 일반 tool invocation 실패로 잘못 분류하지 않습니다.
+
+Authorization 결과와 별도로 audit 전달 상태를 확인할 수 있습니다.
+
+```python
+snapshot = router.authorization_audit_delivery_snapshot()
+
+print(snapshot.mode)
+print(snapshot.configured)
+print(snapshot.failure_count)
+print(snapshot.last_error_type)
+print(snapshot.last_delivery_succeeded)
+```
+
+이 snapshot은 process-local observability 상태이며 principal claim이나 resolved trusted-filter
+값을 저장하지 않습니다. Strict mode에서는 authorization event를 기록해야 하는 시점에 audit
+hook이 설정되어 있지 않은 것 자체가 delivery failure입니다.
