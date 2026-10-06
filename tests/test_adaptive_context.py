@@ -189,31 +189,47 @@ def test_state_digests_are_deterministic_and_change_with_state() -> None:
     assert SessionSchemaExposure.loads(exposure.dumps()).digest() == exposure.digest()
 
 
-def test_success_prior_is_bounded_for_large_history_counts() -> None:
-    history = SuccessfulCapabilityHistory()
-    for _ in range(1000):
-        history.record_success(
-            "tool_b",
-            "run",
-            endpoint_fingerprint="endpoint-tool_b-run",
-        )
+@pytest.mark.parametrize("persisted_count", [1, 10, 1_000, 1_000_000_000])
+def test_success_prior_is_bounded_for_large_history_counts(
+    persisted_count: int,
+) -> None:
+    # _candidate("tool_b.run") uses endpoint_fingerprint="run-fp". Load a
+    # matching legacy/checkpoint count so this test exercises the prior rather
+    # than silently missing because of fingerprint drift.
+    history = SuccessfulCapabilityHistory.loads(
+        f'{{"tool_b.run@run-fp":{persisted_count}}}'
+    )
     retrieval = CapabilityRetrieval(
         query="bounded prior",
         registry_version=1,
         requested_k=2,
         total_ranked=2,
         candidates=[
-            _candidate(1, "tool_a.run", 10.0),
+            _candidate(1, "tool_a.run", 0.75),
             _candidate(2, "tool_b.run", 0.0),
         ],
     )
+
+    # Persisted counts are normalized to the bounded success signal.
     assert history.count(
         "tool_b",
         "run",
-        endpoint_fingerprint="endpoint-tool_b-run",
+        endpoint_fingerprint="run-fp",
     ) == 1
+
+    # With weight=1 the bounded +1 prior must be present; if matching history
+    # were ignored, tool_b would remain second.
     reranked = apply_success_prior(retrieval, history, weight=1.0)
     assert [candidate.route_id for candidate in reranked.candidates] == [
+        "tool_b.run",
+        "tool_a.run",
+    ]
+
+    # At weight=0.5 the maximum allowed bonus is +0.5, which is insufficient
+    # to pass tool_a's 0.75 base score. Any count-amplified/unbounded prior
+    # would eventually violate this assertion for the larger cases above.
+    bounded = apply_success_prior(retrieval, history, weight=0.5)
+    assert [candidate.route_id for candidate in bounded.candidates] == [
         "tool_a.run",
         "tool_b.run",
     ]
