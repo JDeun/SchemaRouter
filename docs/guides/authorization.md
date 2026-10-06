@@ -244,3 +244,34 @@ By default the audit hook is disabled. SchemaRouter does not automatically persi
 departments, teams, principal attributes, or resolved trusted-filter values. If a host chooses to
 copy additional identity data into its own audit sink, that sink becomes part of the host's trusted
 security boundary.
+
+
+### Audit delivery policy
+
+`authorization_audit_mode` defines whether an audit-sink outage may block an authorization
+boundary:
+
+- `"best_effort"` (default) isolates sink exceptions. The original allow/deny decision is preserved,
+  so an allowed call may continue and a denied call still raises the original policy error.
+- `"strict"` makes audit delivery mandatory. A missing or failing sink raises
+  `AuthorizationAuditDeliveryError` before an allowed invocation can run.
+
+`AuthorizationAuditDeliveryError` is a `PolicyViolationError` subtype. It carries only the
+privacy-safe decision `effect`, `phase`, and `operation`, so retry/fallback code does not
+misclassify mandatory audit failure as an ordinary tool invocation error.
+
+Hosts can inspect delivery state separately from authorization results:
+
+```python
+snapshot = router.authorization_audit_delivery_snapshot()
+
+print(snapshot.mode)
+print(snapshot.configured)
+print(snapshot.failure_count)
+print(snapshot.last_error_type)
+print(snapshot.last_delivery_succeeded)
+```
+
+The snapshot is process-local observability state. It does not retain principal claims or resolved
+trusted-filter values. In strict mode, configuring no audit hook is itself a delivery failure when an
+authorization event must be emitted.
