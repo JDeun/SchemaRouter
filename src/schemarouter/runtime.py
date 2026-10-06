@@ -1741,6 +1741,8 @@ class SchemaRouter:
         metadata_fields_by_collection: Mapping[str, Sequence[Any]] | None = None,
         filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
         default_top_k: int = 10,
+        max_discovery_sources: int = 128,
+        max_fields_per_collection: int = 256,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned Qdrant client through the vector capability contract."""
@@ -1753,6 +1755,9 @@ class SchemaRouter:
                 vector_name_by_collection=vector_name_by_collection,
                 metadata_fields_by_collection=metadata_fields_by_collection,
                 filter_builder=filter_builder,
+                collections=collections,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
             ),
             embed_query,
             database_name=database_name,
@@ -1760,6 +1765,8 @@ class SchemaRouter:
             collections=collections,
             default_top_k=default_top_k,
             remote=remote,
+            max_discovery_sources=max_discovery_sources,
+            max_fields_per_collection=max_fields_per_collection,
         )
 
     def add_qdrant_vector_store(
@@ -1774,6 +1781,8 @@ class SchemaRouter:
         metadata_fields_by_collection: Mapping[str, Sequence[Any]] | None = None,
         filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
         default_top_k: int = 10,
+        max_discovery_sources: int = 128,
+        max_fields_per_collection: int = 256,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_qdrant_vector_store`."""
@@ -1789,6 +1798,8 @@ class SchemaRouter:
                 metadata_fields_by_collection=metadata_fields_by_collection,
                 filter_builder=filter_builder,
                 default_top_k=default_top_k,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
                 remote=remote,
             )
         )
@@ -1804,6 +1815,8 @@ class SchemaRouter:
         vector_field_by_collection: Mapping[str, str] | None = None,
         metric_by_collection: Mapping[str, str] | None = None,
         default_top_k: int = 10,
+        max_discovery_sources: int = 128,
+        max_fields_per_collection: int = 256,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned MilvusClient through the vector capability contract."""
@@ -1815,6 +1828,9 @@ class SchemaRouter:
                 client,
                 vector_field_by_collection=vector_field_by_collection,
                 metric_by_collection=metric_by_collection,
+                collections=collections,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
             ),
             embed_query,
             database_name=database_name,
@@ -1822,6 +1838,8 @@ class SchemaRouter:
             collections=collections,
             default_top_k=default_top_k,
             remote=remote,
+            max_discovery_sources=max_discovery_sources,
+            max_fields_per_collection=max_fields_per_collection,
         )
 
     def add_milvus_vector_store(
@@ -1835,6 +1853,8 @@ class SchemaRouter:
         vector_field_by_collection: Mapping[str, str] | None = None,
         metric_by_collection: Mapping[str, str] | None = None,
         default_top_k: int = 10,
+        max_discovery_sources: int = 128,
+        max_fields_per_collection: int = 256,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_milvus_vector_store`."""
@@ -1849,6 +1869,8 @@ class SchemaRouter:
                 vector_field_by_collection=vector_field_by_collection,
                 metric_by_collection=metric_by_collection,
                 default_top_k=default_top_k,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
                 remote=remote,
             )
         )
@@ -1863,6 +1885,8 @@ class SchemaRouter:
         collections: set[str] | tuple[str, ...] | list[str] | None = None,
         metadata_fields_by_index: Mapping[str, Sequence[Any]] | None = None,
         default_top_k: int = 10,
+        max_discovery_sources: int = 128,
+        max_fields_per_collection: int = 256,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned Pinecone client."""
@@ -1873,6 +1897,9 @@ class SchemaRouter:
             PineconeVectorBackend(
                 client,
                 metadata_fields_by_index=metadata_fields_by_index,
+                collections=collections,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
             ),
             embed_query,
             database_name=database_name,
@@ -1880,6 +1907,8 @@ class SchemaRouter:
             collections=collections,
             default_top_k=default_top_k,
             remote=remote,
+            max_discovery_sources=max_discovery_sources,
+            max_fields_per_collection=max_fields_per_collection,
         )
 
     def add_pinecone_vector_store(
@@ -1892,6 +1921,8 @@ class SchemaRouter:
         collections: set[str] | tuple[str, ...] | list[str] | None = None,
         metadata_fields_by_index: Mapping[str, Sequence[Any]] | None = None,
         default_top_k: int = 10,
+        max_discovery_sources: int = 128,
+        max_fields_per_collection: int = 256,
         remote: bool = True,
     ) -> tuple[str, ...]:
         return _run_sync(
@@ -1903,6 +1934,8 @@ class SchemaRouter:
                 collections=collections,
                 metadata_fields_by_index=metadata_fields_by_index,
                 default_top_k=default_top_k,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
                 remote=remote,
             )
         )
@@ -1919,6 +1952,8 @@ class SchemaRouter:
         metadata_fields_by_collection: Mapping[str, Sequence[Any]] | None = None,
         metric_by_collection: Mapping[str, str] | None = None,
         default_top_k: int = 10,
+        max_discovery_sources: int = 128,
+        max_fields_per_collection: int = 256,
         remote: bool = False,
     ) -> tuple[str, ...]:
         """Register a caller-owned Chroma client."""
@@ -1931,6 +1966,9 @@ class SchemaRouter:
                 dimension_by_collection=dimension_by_collection,
                 metadata_fields_by_collection=metadata_fields_by_collection,
                 metric_by_collection=metric_by_collection,
+                collections=collections,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
             ),
             embed_query,
             database_name=database_name,
@@ -1938,6 +1976,8 @@ class SchemaRouter:
             collections=collections,
             default_top_k=default_top_k,
             remote=remote,
+            max_discovery_sources=max_discovery_sources,
+            max_fields_per_collection=max_fields_per_collection,
         )
 
     def add_chroma_vector_store(
@@ -1952,6 +1992,8 @@ class SchemaRouter:
         metadata_fields_by_collection: Mapping[str, Sequence[Any]] | None = None,
         metric_by_collection: Mapping[str, str] | None = None,
         default_top_k: int = 10,
+        max_discovery_sources: int = 128,
+        max_fields_per_collection: int = 256,
         remote: bool = False,
     ) -> tuple[str, ...]:
         return _run_sync(
@@ -1965,6 +2007,8 @@ class SchemaRouter:
                 metadata_fields_by_collection=metadata_fields_by_collection,
                 metric_by_collection=metric_by_collection,
                 default_top_k=default_top_k,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
                 remote=remote,
             )
         )
@@ -1982,6 +2026,8 @@ class SchemaRouter:
         metric_by_collection: Mapping[str, str] | None = None,
         filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
         default_top_k: int = 10,
+        max_discovery_sources: int = 128,
+        max_fields_per_collection: int = 256,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned Weaviate v4 client."""
@@ -1995,6 +2041,9 @@ class SchemaRouter:
                 vector_name_by_collection=vector_name_by_collection,
                 metric_by_collection=metric_by_collection,
                 filter_builder=filter_builder,
+                collections=collections,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
             ),
             embed_query,
             database_name=database_name,
@@ -2002,6 +2051,8 @@ class SchemaRouter:
             collections=collections,
             default_top_k=default_top_k,
             remote=remote,
+            max_discovery_sources=max_discovery_sources,
+            max_fields_per_collection=max_fields_per_collection,
         )
 
     def add_weaviate_vector_store(
@@ -2017,6 +2068,8 @@ class SchemaRouter:
         metric_by_collection: Mapping[str, str] | None = None,
         filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
         default_top_k: int = 10,
+        max_discovery_sources: int = 128,
+        max_fields_per_collection: int = 256,
         remote: bool = True,
     ) -> tuple[str, ...]:
         return _run_sync(
@@ -2031,6 +2084,8 @@ class SchemaRouter:
                 metric_by_collection=metric_by_collection,
                 filter_builder=filter_builder,
                 default_top_k=default_top_k,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
                 remote=remote,
             )
         )
@@ -2048,6 +2103,8 @@ class SchemaRouter:
         metric_by_table: Mapping[str, str] | None = None,
         schema: str | None = None,
         default_top_k: int = 10,
+        max_discovery_sources: int = 128,
+        max_fields_per_collection: int = 256,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register caller-owned PostgreSQL/pgvector Engine."""
@@ -2057,10 +2114,12 @@ class SchemaRouter:
         return await self.aadd_vector_store(
             PgvectorVectorBackend(
                 engine,
-                tables=tables,
+                tables=(tables if tables is not None else collections),
                 vector_field_by_table=vector_field_by_table,
                 metric_by_table=metric_by_table,
                 schema=schema,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
             ),
             embed_query,
             database_name=database_name,
@@ -2068,6 +2127,8 @@ class SchemaRouter:
             collections=collections,
             default_top_k=default_top_k,
             remote=remote,
+            max_discovery_sources=max_discovery_sources,
+            max_fields_per_collection=max_fields_per_collection,
         )
 
     def add_pgvector_store(
@@ -2083,6 +2144,8 @@ class SchemaRouter:
         metric_by_table: Mapping[str, str] | None = None,
         schema: str | None = None,
         default_top_k: int = 10,
+        max_discovery_sources: int = 128,
+        max_fields_per_collection: int = 256,
         remote: bool = True,
     ) -> tuple[str, ...]:
         return _run_sync(
@@ -2097,6 +2160,8 @@ class SchemaRouter:
                 metric_by_table=metric_by_table,
                 schema=schema,
                 default_top_k=default_top_k,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
                 remote=remote,
             )
         )
