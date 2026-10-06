@@ -523,6 +523,143 @@ async def test_sync_health_probe_timeout_does_not_block_event_loop() -> None:
 
 
 @pytest.mark.asyncio
+async def test_timed_out_sync_probe_is_not_resubmitted_until_worker_exits() -> None:
+    router = _router(cooldown=0.01)
+    release = threading.Event()
+    calls = 0
+
+    def probe() -> bool:
+        nonlocal calls
+        calls += 1
+        release.wait(timeout=1)
+        return True
+
+    router.register_health_probe("provider_api", "read", probe)
+    try:
+        first = await router.check_health_once(
+            probe_timeout_seconds=0.01,
+            unavailable_cooldown_seconds=0.01,
+            max_concurrency=1,
+        )
+        assert first[0].status == "unhealthy"
+        assert first[0].last_error_type == "TimeoutError"
+        assert calls == 1
+
+        # Let the first availability cooldown expire. Repeated health cycles must
+        # extend quarantine without submitting another copy of the blocked callback.
+        for _ in range(3):
+            await asyncio.sleep(0.02)
+            snapshots = await router.check_health_once(
+                probe_timeout_seconds=0.01,
+                unavailable_cooldown_seconds=0.01,
+                max_concurrency=1,
+            )
+            assert calls == 1
+            assert snapshots[0].status == "unhealthy"
+            assert snapshots[0].last_error_type == "TimeoutError"
+            assert router.unavailable_access_paths() == (("provider_api", "read"),)
+
+        release.set()
+        for _ in range(50):
+            if not router.health_monitor._sync_probe_inflight:
+                break
+            await asyncio.sleep(0.01)
+
+        recovered = await router.check_health_once(
+            probe_timeout_seconds=0.1,
+            unavailable_cooldown_seconds=0.01,
+            max_concurrency=1,
+        )
+        assert calls == 2
+        assert recovered[0].status == "healthy"
+        assert router.unavailable_access_paths() == ()
+    finally:
+        release.set()
+
+
+@pytest.mark.asyncio
+async def test_background_monitor_stop_is_prompt_with_stuck_sync_probe() -> None:
+    router = _router(cooldown=0.01)
+    release = threading.Event()
+    calls = 0
+
+    def probe() -> bool:
+        nonlocal calls
+        calls += 1
+        release.wait(timeout=1)
+        return True
+
+    router.register_health_probe("provider_api", "read", probe)
+    await router.start_health_monitor(
+        interval_seconds=0.01,
+        probe_timeout_seconds=0.01,
+        max_concurrency=1,
+    )
+    try:
+        for _ in range(50):
+            if calls:
+                break
+            await asyncio.sleep(0.005)
+        assert calls == 1
+
+        # Several monitor intervals pass after the timeout, but the same worker
+        # remains the only execution for this probe.
+        await asyncio.sleep(0.08)
+        assert calls == 1
+
+        await asyncio.wait_for(router.stop_health_monitor(), timeout=0.2)
+        assert router.health_monitor.running is False
+        assert calls == 1
+    finally:
+        release.set()
+        if router.health_monitor.running:
+            await router.stop_health_monitor()
+
+
+@pytest.mark.asyncio
+async def test_timed_out_sync_probe_completion_cannot_mutate_new_contract() -> None:
+    router = _router(cooldown=60)
+    release = threading.Event()
+
+    def probe() -> bool:
+        release.wait(timeout=1)
+        return False
+
+    router.register_health_probe("provider_api", "read", probe)
+    snapshots = await router.check_health_once(
+        probe_timeout_seconds=0.01,
+        max_concurrency=1,
+    )
+    assert snapshots[0].last_error_type == "TimeoutError"
+
+    current = router.registry.get("provider_api")
+    updated = current.model_copy(deep=True)
+    updated.description = "accepted transition while old sync probe is detached"
+    router.registry.register(updated, replace=True)
+    router.health_monitor.transition_tool_contract(
+        current.key,
+        expected_old_fingerprint=current.fingerprint,
+        expected_new_fingerprint=updated.fingerprint,
+    )
+
+    assert router.health_snapshots()[0].status == "unknown"
+    assert router.health_snapshots()[0].last_error_type is None
+    assert router.unavailable_access_paths() == ()
+
+    release.set()
+    for _ in range(50):
+        if not router.health_monitor._sync_probe_inflight:
+            break
+        await asyncio.sleep(0.01)
+
+    # Completion of the old worker only clears quarantine. It must not commit
+    # its false result into the restamped generation.
+    assert router.health_snapshots()[0].status == "unknown"
+    assert router.health_snapshots()[0].last_error_type is None
+    assert router.unavailable_access_paths() == ()
+
+
+@pytest.mark.asyncio
 async def test_async_probe_can_reenter_lifecycle_guard_without_self_deadlock() -> None:
     router = _router(cooldown=60)
     entered_lifecycle = asyncio.Event()
