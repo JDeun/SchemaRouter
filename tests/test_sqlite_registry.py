@@ -7,6 +7,7 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     ParameterSpec,
+    PersistedDocumentLimits,
     PlanRequest,
     RegistrationError,
     SchemaRouter,
@@ -158,6 +159,86 @@ def test_sqlite_registry_corrupt_document_fails_closed(tmp_path) -> None:
 
     with SQLiteRegistry(path) as reopened:
         with pytest.raises(RegistrationError, match="not a valid ToolSpec"):
+            reopened.get("alpha")
+
+
+def test_sqlite_registry_rejects_oversized_persisted_document_before_decode(
+    tmp_path,
+) -> None:
+    path = tmp_path / "registry.sqlite3"
+
+    with SQLiteRegistry(path) as registry:
+        registry.register(tool("alpha"))
+
+    connection = sqlite3.connect(path)
+    try:
+        connection.execute(
+            "UPDATE schemarouter_registry_tools SET document = ? WHERE key = ?",
+            (json.dumps("x" * 4096), "alpha"),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    limits = PersistedDocumentLimits(
+        max_bytes=512,
+        max_depth=32,
+        max_nodes=1_000,
+    )
+    with SQLiteRegistry(path, document_limits=limits) as reopened:
+        with pytest.raises(
+            RegistrationError,
+            match="persisted JSON document limits",
+        ):
+            reopened.get("alpha")
+
+
+@pytest.mark.parametrize(
+    ("document", "limits"),
+    [
+        (
+            "[" * 40 + "0" + "]" * 40,
+            PersistedDocumentLimits(
+                max_bytes=4096,
+                max_depth=8,
+                max_nodes=1_000,
+            ),
+        ),
+        (
+            json.dumps([0] * 64),
+            PersistedDocumentLimits(
+                max_bytes=4096,
+                max_depth=32,
+                max_nodes=16,
+            ),
+        ),
+    ],
+)
+def test_sqlite_registry_rejects_structurally_expensive_persisted_documents(
+    tmp_path,
+    document: str,
+    limits: PersistedDocumentLimits,
+) -> None:
+    path = tmp_path / "registry.sqlite3"
+
+    with SQLiteRegistry(path) as registry:
+        registry.register(tool("alpha"))
+
+    connection = sqlite3.connect(path)
+    try:
+        connection.execute(
+            "UPDATE schemarouter_registry_tools SET document = ? WHERE key = ?",
+            (document, "alpha"),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    with SQLiteRegistry(path, document_limits=limits) as reopened:
+        with pytest.raises(
+            RegistrationError,
+            match="persisted JSON document limits",
+        ):
             reopened.get("alpha")
 
 
