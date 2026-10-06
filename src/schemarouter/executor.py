@@ -1389,26 +1389,11 @@ class RegistryExecutor:
                     context=f"output from {call.tool}.{call.endpoint}",
                 )
                 tracker._check_elapsed(stage="projected field schema validation")
-                selected_field_specs = {
-                    field.name: field
-                    for field in endpoint.output_fields
-                    if field.name in call.fields
-                }
-                has_explicit_paths = any(
-                    field.path
-                    or field.result_projection_path != field.projection_path
-                    for field in selected_field_specs.values()
-                )
-                adapter_projected = (
-                    call_aware
-                    and bool(getattr(invoker, "projects_fields", False))
-                    and not has_explicit_paths
-                )
-                projected = (
-                    value
-                    if adapter_projected
-                    else self._project(value, call.fields, endpoint)
-                )
+                # Adapter-side projection is only an upstream optimization. It is
+                # never proof that the returned payload contains no unrequested or
+                # authorization-hidden fields. Enforce the local allowlist as the final
+                # least-privilege boundary for every declared field selection.
+                projected = self._project(value, call.fields, endpoint)
                 projected = self._normalize_projected_units(
                     projected,
                     call.fields,
