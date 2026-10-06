@@ -174,7 +174,7 @@ jobs:
           coverage report --include="*/adapters/graph_native.py" --fail-under=72
           coverage report --include="*/adapters/record_native.py" --fail-under=66
           coverage report --include="*/adapters/vector_native.py" --fail-under=64
-          coverage --rcfile=.coveragerc-native xml -o coverage-native.xml
+          coverage xml --rcfile=.coveragerc-native -o coverage-native.xml
       - name: Upload native coverage report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
