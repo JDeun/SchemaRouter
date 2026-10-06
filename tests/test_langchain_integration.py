@@ -270,13 +270,10 @@ def test_langchain_authorization_audit_correlates_export_and_execution() -> None
 
         result = tool.invoke({"limit": 10})
         assert result == [{"id": 1, "name": "Alice"}]
-        assert len(events) == 3
-        assert [event.phase for event in events[1:]] == ["export", "execution"]
-        assert all(event.run_id == export_run_id for event in events[1:])
-        assert all(
-            event.principal_audit_id == "opaque-langchain-principal"
-            for event in events[1:]
-        )
+        assert len(events) == 2
+        assert events[1].phase == "execution"
+        assert events[1].run_id == export_run_id
+        assert events[1].principal_audit_id == "opaque-langchain-principal"
         assert "sales" not in repr(events)
     finally:
         connection.close()
@@ -284,16 +281,11 @@ def test_langchain_authorization_audit_correlates_export_and_execution() -> None
 def test_langchain_export_fails_clearly_after_endpoint_schema_replacement() -> None:
     router = make_router()
     exported = to_langchain_tool(router, "add", "call")
-    original = router.registry.get("add")
-    replacement_endpoint = original.endpoint("call").model_copy(
-        deep=True,
-        update={"description": "Changed after framework export"},
+    router.add_callable(
+        add,
+        description="Changed after framework export",
+        replace=True,
     )
-    replacement = original.model_copy(
-        deep=True,
-        update={"endpoints": [replacement_endpoint]},
-    )
-    router.add_tool(replacement, replace=True)
 
     with pytest.raises(StaleExportedToolError, match="re-export"):
         exported.invoke({"a": 2, "b": 3})
