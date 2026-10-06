@@ -551,6 +551,7 @@ async def test_scoped_rule_can_require_approval_without_global_approval_mode() -
     _, executor, _, plan = _setup(
         read_only=False,
         policy=ExecutionPolicy(
+            allow_mutations=True,
             rules=(
                 PolicyRule(
                     operation="demo.run",
@@ -574,6 +575,7 @@ async def test_scoped_approval_rule_fails_closed_without_callback() -> None:
     _, executor, _, plan = _setup(
         read_only=False,
         policy=ExecutionPolicy(
+            allow_mutations=True,
             rules=(PolicyRule(operation="demo.run", effect="require_approval"),),
         ),
     )
