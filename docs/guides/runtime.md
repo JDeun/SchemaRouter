@@ -92,14 +92,20 @@ Provider-neutral vector, graph, and record-store backends follow the same rule a
 their `remote` classification: synchronous methods on `remote=True` backends are offloaded,
 while `remote=False` keeps local/thread-affine backends inline. SQLite remains inline.
 
-Python cannot forcibly stop a worker thread after it has started. For explicitly read-only endpoints,
-an elapsed-budget timeout still raises `ExecutionBudgetExceededError`; the caller must therefore
-treat the worker as potentially still consuming resources until its backend call returns. For
-non-read-only or unknown-effect endpoints, timeout or task cancellation after the worker starts
-raises `IndeterminateInvocationError` instead. That error is non-retryable: the mutation may still
-complete, so SchemaRouter will not automatically repeat it. Use vendor-level timeouts,
-transactions, idempotency keys, or a cancellation-safe async client when a stronger completion
-contract is required.
+Python cannot forcibly stop a worker thread after it has started. SchemaRouter therefore runs
+explicit sync offloads in a bounded router-owned worker pool rather than submitting an unbounded
+sequence of `to_thread` work. A timed-out read-only call may still consume one worker slot until the
+backend returns, but repeated timeout/retry cycles cannot grow router-induced worker pressure without
+bound. If all slots remain occupied, a new offload fails as locally unavailable instead of queueing
+another blocking call.
+
+For explicitly read-only endpoints, an elapsed-budget timeout still raises
+`ExecutionBudgetExceededError`; the caller must therefore treat the worker as potentially still
+consuming resources until its backend call returns. For non-read-only or unknown-effect endpoints,
+timeout or task cancellation after the worker starts raises `IndeterminateInvocationError` instead.
+That error is non-retryable: the mutation may still complete, so SchemaRouter will not automatically
+repeat it. Use vendor-level timeouts, transactions, idempotency keys, or a cancellation-safe async
+client when a stronger completion contract is required.
 
 ## Typed lifecycle events
 

@@ -20,7 +20,8 @@ background managers even if one shutdown path reports an error.
 `aclose()` stops only resources owned by the router lifecycle:
 
 - the `AccessHealthMonitor` background task;
-- the `SchemaWatchManager` background task.
+- the `SchemaWatchManager` background task;
+- the bounded synchronous offload worker pool used by explicitly offloaded invokers and sync health probes.
 
 It deliberately does **not** close caller-owned resources, including:
 
@@ -31,7 +32,8 @@ It deliberately does **not** close caller-owned resources, including:
 
 Applications remain responsible for closing those resources according to their own ownership model.
 SchemaRouter adapters that create short-lived HTTP clients internally already close them within the
-individual operation that created them.
+individual operation that created them. Closing the router prevents new sync offloads; a Python
+thread that was already executing cannot be forcibly stopped and may finish after `aclose()` returns.
 
 
 ## Synchronous and asynchronous loop ownership

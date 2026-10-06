@@ -175,7 +175,9 @@ async def test_authorization_audit_stream_events_reuses_stream_run_id() -> None:
 
 
 @pytest.mark.asyncio
-async def test_authorization_audit_stream_events_emits_terminal_error_on_denial() -> None:
+async def test_authorization_audit_stream_events_emits_terminal_error_on_denial(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     audit_events: list[AuthorizationAuditEvent] = []
     scoped_tool = ToolSpec(
         name="company_records",
@@ -224,6 +226,30 @@ async def test_authorization_audit_stream_events_emits_terminal_error_on_denial(
         scoped_tool,
         lambda endpoint, arguments: {"id": "1", "secret_note": "private"},
     )
+
+    # Scoped planning now removes hidden fields before candidate compilation. Exercise the
+    # final authorization boundary directly with a deliberately unsafe planner result so this
+    # audit test continues to prove defense-in-depth instead of depending on metadata leakage.
+    registered = router.registry.get("company_records")
+    registered_endpoint = registered.endpoint("read")
+
+    async def unsafe_plan(_request: object) -> ExecutionPlan:
+        return ExecutionPlan(
+            query="secret",
+            registry_version=router.registry.version,
+            calls=[
+                ToolCall(
+                    tool=registered.key,
+                    endpoint=registered_endpoint.name,
+                    arguments={},
+                    fields=["secret_note"],
+                    schema_fingerprint=registered_endpoint.fingerprint,
+                    tool_fingerprint=registered.fingerprint,
+                )
+            ],
+        )
+
+    monkeypatch.setattr(router, "aplan_executable", unsafe_plan)
     principal = PrincipalContext(
         subject="blocked-stream-user",
         roles=("employee",),

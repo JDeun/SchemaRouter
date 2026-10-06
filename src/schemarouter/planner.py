@@ -348,6 +348,12 @@ class _Candidate:
     visible_endpoint: EndpointSpec | None = None
 
 
+def _visible_endpoint(candidate: _Candidate) -> EndpointSpec:
+    """Return the non-authoritative schema view exposed to planning surfaces."""
+
+    return candidate.visible_endpoint or candidate.endpoint
+
+
 @dataclass(frozen=True, order=True)
 class _EndpointRef:
     tool_key: str
@@ -650,7 +656,7 @@ class SchemaPlanner:
             additional_availability_predicate=additional_availability_predicate,
             scoring_endpoint_transform=scoring_endpoint_transform,
         )
-        candidates.sort(key=self._candidate_sort_key)
+        self._sort_candidates(candidates)
         return CapabilityRetrieval(
             query=request.query,
             registry_version=self.registry.version,
@@ -676,7 +682,7 @@ class SchemaPlanner:
             intent,
             additional_availability_predicate=additional_availability_predicate,
         )
-        candidates.sort(key=self._candidate_sort_key)
+        self._sort_candidates(candidates)
         return CapabilityRouteRetrieval(
             query=request.query,
             registry_version=self.registry.version,
@@ -774,7 +780,7 @@ class SchemaPlanner:
             intent,
             additional_availability_predicate=additional_availability_predicate,
         )
-        ranked.sort(key=self._candidate_sort_key)
+        self._sort_candidates(ranked)
         visible = [
             self._retrieval_candidate(candidate, rank=index)
             for index, candidate in enumerate(ranked, start=1)
@@ -1013,12 +1019,13 @@ class SchemaPlanner:
         *,
         k: int = 5,
         executable_only: bool = False,
+        analysis_registry: ToolRegistry | None = None,
     ) -> CapabilityRetrieval:
         """Retrieve under local availability and a non-authoritative visible schema view."""
 
         k = self._validate_retrieval_k(k)
         request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, self.registry)
+        intent = self.analyzer.analyze(request, analysis_registry or self.registry)
         if inspect.isawaitable(intent):
             if inspect.iscoroutine(intent):
                 intent.close()
@@ -1043,12 +1050,13 @@ class SchemaPlanner:
         *,
         k: int = 5,
         executable_only: bool = False,
+        analysis_registry: ToolRegistry | None = None,
     ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve_with_scoped_schema`."""
 
         k = self._validate_retrieval_k(k)
         request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, self.registry)
+        intent = self.analyzer.analyze(request, analysis_registry or self.registry)
         if inspect.isawaitable(intent):
             intent = await intent
         return self._retrieve_from_intent(
@@ -1056,6 +1064,54 @@ class SchemaPlanner:
             intent,
             k=k,
             executable_only=executable_only,
+            additional_availability_predicate=predicate,
+            scoring_endpoint_transform=endpoint_transform,
+        )
+
+    def plan_with_scoped_schema(
+        self,
+        request: PlanRequest | str,
+        predicate: Callable[[ToolSpec, EndpointSpec], bool],
+        endpoint_transform: Callable[[ToolSpec, EndpointSpec], EndpointSpec | None],
+        *,
+        analysis_registry: ToolRegistry | None = None,
+    ) -> ExecutionPlan:
+        """Plan using a bounded visible schema while preserving authoritative identities."""
+
+        request = self._prepare_request(request)
+        intent = self.analyzer.analyze(request, analysis_registry or self.registry)
+        if inspect.isawaitable(intent):
+            if inspect.iscoroutine(intent):
+                intent.close()
+            raise PlanningError(
+                "the configured analyzer is asynchronous; use "
+                "await planner.aplan_with_scoped_schema(...)"
+            )
+        return self._build_plan(
+            request,
+            intent,
+            async_decision=False,
+            additional_availability_predicate=predicate,
+            scoring_endpoint_transform=endpoint_transform,
+        )
+
+    async def aplan_with_scoped_schema(
+        self,
+        request: PlanRequest | str,
+        predicate: Callable[[ToolSpec, EndpointSpec], bool],
+        endpoint_transform: Callable[[ToolSpec, EndpointSpec], EndpointSpec | None],
+        *,
+        analysis_registry: ToolRegistry | None = None,
+    ) -> ExecutionPlan:
+        """Async counterpart to :meth:`plan_with_scoped_schema`."""
+
+        request = self._prepare_request(request)
+        intent = self.analyzer.analyze(request, analysis_registry or self.registry)
+        if inspect.isawaitable(intent):
+            intent = await intent
+        return await self._abuild_plan(
+            request,
+            intent,
             additional_availability_predicate=predicate,
             scoring_endpoint_transform=endpoint_transform,
         )
@@ -1177,6 +1233,11 @@ class SchemaPlanner:
             bool,
         ]
         | None = None,
+        scoring_endpoint_transform: Callable[
+            [ToolSpec, EndpointSpec],
+            EndpointSpec | None,
+        ]
+        | None = None,
     ) -> list[_Candidate]:
         def is_available(tool: ToolSpec, endpoint: EndpointSpec) -> bool:
             if (
@@ -1191,7 +1252,11 @@ class SchemaPlanner:
                 return False
             return True
 
-        if self.candidate_index and not self.structural_retrieval:
+        if (
+            self.candidate_index
+            and not self.structural_retrieval
+            and scoring_endpoint_transform is None
+        ):
             endpoint_pairs = self._index().endpoint_pairs(request, intent)
         else:
             endpoint_pairs = tuple(
@@ -1211,30 +1276,124 @@ class SchemaPlanner:
             )
 
         scoring_context = self._scoring_context(request.query, intent)
-        candidates = [
-            self._score_endpoint(
+        candidates: list[_Candidate] = []
+        for tool, endpoint in endpoint_pairs:
+            visible_endpoint = (
+                endpoint
+                if scoring_endpoint_transform is None
+                else scoring_endpoint_transform(tool, endpoint)
+            )
+            if visible_endpoint is None:
+                continue
+            scored = self._score_endpoint(
                 tool,
-                endpoint,
+                visible_endpoint,
                 request.query,
                 intent,
                 _context=scoring_context,
             )
-            for tool, endpoint in endpoint_pairs
-        ]
-        candidates = [candidate for candidate in candidates if candidate.score > 0]
+            if scored.score > 0:
+                candidates.append(
+                    replace(
+                        scored,
+                        endpoint=endpoint,
+                        visible_endpoint=(
+                            visible_endpoint
+                            if scoring_endpoint_transform is not None
+                            else None
+                        ),
+                    )
+                )
         if (
             not candidates
             and self.decision_policy.candidate_recall_on_empty_enabled
             and self.candidate_recall_backend is None
         ):
-            candidates = [
-                _Candidate(tool, endpoint, 0.0, ())
-                for tool in self.registry.tools()
-                for endpoint in tool.endpoints
-                if is_available(tool, endpoint)
-            ]
-        candidates.sort(key=self._candidate_sort_key)
+            candidates = []
+            for tool in self.registry.tools():
+                for endpoint in tool.endpoints:
+                    if not is_available(tool, endpoint):
+                        continue
+                    visible_endpoint = (
+                        endpoint
+                        if scoring_endpoint_transform is None
+                        else scoring_endpoint_transform(tool, endpoint)
+                    )
+                    if visible_endpoint is None:
+                        continue
+                    candidates.append(
+                        _Candidate(
+                            tool,
+                            endpoint,
+                            0.0,
+                            (),
+                            visible_endpoint=(
+                                visible_endpoint
+                                if scoring_endpoint_transform is not None
+                                else None
+                            ),
+                        )
+                    )
+        self._sort_candidates(candidates)
         return candidates
+
+    @staticmethod
+    def _structural_specificity_from_candidates(
+        candidates: list[_Candidate],
+    ) -> dict[str, float]:
+        """Compute structural specificity from only the schema views visible to this ranking."""
+
+        entries: list[tuple[str, set[str]]] = []
+        frequencies: dict[str, int] = {}
+        for candidate in candidates:
+            route_id = f"{candidate.tool.key}.{candidate.endpoint.name}"
+            terms = _schema_specificity_terms(
+                candidate.tool,
+                _visible_endpoint(candidate),
+            )
+            entries.append((route_id, terms))
+            for term in terms:
+                frequencies[term] = frequencies.get(term, 0) + 1
+
+        endpoint_count = len(entries)
+        if endpoint_count <= 1:
+            return {route_id: 0.0 for route_id, _terms in entries}
+
+        denominator = math.log(endpoint_count + 1)
+        discrimination = {
+            term: math.log((endpoint_count + 1) / (frequency + 1)) / denominator
+            for term, frequency in frequencies.items()
+        }
+        return {
+            route_id: (
+                sum(
+                    discrimination[term]
+                    for term in terms
+                    if term in discrimination
+                )
+                / len([term for term in terms if term in discrimination])
+                if any(term in discrimination for term in terms)
+                else 0.0
+            )
+            for route_id, terms in entries
+        }
+
+    def _sort_candidates(self, candidates: list[_Candidate]) -> None:
+        """Sort candidates without consulting authorization-hidden schema metadata."""
+
+        scoped_specificity: dict[str, float] | None = None
+        if self.structural_retrieval and any(
+            candidate.visible_endpoint is not None
+            for candidate in candidates
+        ):
+            scoped_specificity = self._structural_specificity_from_candidates(candidates)
+
+        candidates.sort(
+            key=lambda candidate: self._candidate_sort_key(
+                candidate,
+                structural_specificity=scoped_specificity,
+            )
+        )
 
     def _structural_specificity_by_route(self) -> dict[str, float]:
         if not self.structural_retrieval:
@@ -1294,16 +1453,17 @@ class SchemaPlanner:
     def _candidate_sort_key(
         self,
         candidate: _Candidate,
+        *,
+        structural_specificity: dict[str, float] | None = None,
     ) -> tuple[float, bool, bool, float, bool, str, str]:
         specificity = 0.0
         if self.structural_retrieval:
-            route_id = (
-                f"{candidate.tool.key}.{candidate.endpoint.name}"
-            )
-            specificity = self._structural_specificity_by_route().get(
-                route_id,
-                0.0,
-            )
+            route_id = f"{candidate.tool.key}.{candidate.endpoint.name}"
+            specificity = (
+                self._structural_specificity_by_route()
+                if structural_specificity is None
+                else structural_specificity
+            ).get(route_id, 0.0)
         # Safety outranks every tie-break except relevance. Without these two terms an
         # unmatched query falls through to `tool.key`, so a destructive endpoint whose
         # tool sorts early becomes rank 1 of the discovery surface an agent reads.
@@ -1356,7 +1516,7 @@ class SchemaPlanner:
                 return False
             return True
 
-        if self.candidate_index:
+        if self.candidate_index and scoring_endpoint_transform is None:
             index = self._index()
             endpoint_pairs = index.all_endpoint_pairs()
         else:
@@ -1398,7 +1558,11 @@ class SchemaPlanner:
                     replace(
                         scored,
                         endpoint=endpoint,
-                        visible_endpoint=visible_endpoint,
+                        visible_endpoint=(
+                            visible_endpoint
+                            if scoring_endpoint_transform is not None
+                            else None
+                        ),
                     )
                 )
             return result
@@ -1421,7 +1585,11 @@ class SchemaPlanner:
                     replace(
                         scored,
                         endpoint=endpoint,
-                        visible_endpoint=visible_endpoint,
+                        visible_endpoint=(
+                            visible_endpoint
+                            if scoring_endpoint_transform is not None
+                            else None
+                        ),
                     )
                 )
             else:
@@ -1431,7 +1599,11 @@ class SchemaPlanner:
                         endpoint,
                         0.0,
                         (),
-                        visible_endpoint=visible_endpoint,
+                        visible_endpoint=(
+                            visible_endpoint
+                            if scoring_endpoint_transform is not None
+                            else None
+                        ),
                     )
                 )
         return result
@@ -1509,6 +1681,11 @@ class SchemaPlanner:
             bool,
         ]
         | None = None,
+        scoring_endpoint_transform: Callable[
+            [ToolSpec, EndpointSpec],
+            EndpointSpec | None,
+        ]
+        | None = None,
     ) -> tuple[list[_Candidate], list[str]]:
         if self.candidate_recall_backend is None:
             return candidates, []
@@ -1517,6 +1694,7 @@ class SchemaPlanner:
             request,
             intent,
             additional_availability_predicate=additional_availability_predicate,
+            scoring_endpoint_transform=scoring_endpoint_transform,
         )
         if not catalog:
             return candidates, []
@@ -1559,6 +1737,11 @@ class SchemaPlanner:
             bool,
         ]
         | None = None,
+        scoring_endpoint_transform: Callable[
+            [ToolSpec, EndpointSpec],
+            EndpointSpec | None,
+        ]
+        | None = None,
     ) -> tuple[list[_Candidate], list[str]]:
         if self.candidate_recall_backend is None:
             return candidates, []
@@ -1567,6 +1750,7 @@ class SchemaPlanner:
             request,
             intent,
             additional_availability_predicate=additional_availability_predicate,
+            scoring_endpoint_transform=scoring_endpoint_transform,
         )
         if not catalog:
             return candidates, []
@@ -1605,14 +1789,15 @@ class SchemaPlanner:
     ) -> DecisionRequest:
         options: list[DecisionOption] = []
         for index, candidate in enumerate(candidates):
+            endpoint = _visible_endpoint(candidate)
             field_labels = [
                 field.semantic_id or field.name
-                for field in candidate.endpoint.output_fields
+                for field in endpoint.output_fields
                 if not field.identifier
             ]
             parts = [
                 candidate.tool.description.strip(),
-                candidate.endpoint.description.strip(),
+                endpoint.description.strip(),
             ]
             if field_labels:
                 parts.append("Fields: " + ", ".join(field_labels))
@@ -1702,7 +1887,7 @@ class SchemaPlanner:
 
         options: list[DecisionOption] = []
         for index, candidate in enumerate(sibling_candidates):
-            endpoint = candidate.endpoint
+            endpoint = _visible_endpoint(candidate)
             operation_name = endpoint.name.replace("_", " ").replace("-", " ")
             parts = [operation_name]
             if endpoint.operation_aliases:
@@ -1816,20 +2001,21 @@ class SchemaPlanner:
         options: list[DecisionOption] = []
         for local_index, candidate_index in enumerate(sibling_indexes):
             candidate = candidates[candidate_index]
+            endpoint = _visible_endpoint(candidate)
             field_labels = [
                 field.semantic_id or field.name
-                for field in candidate.endpoint.output_fields
+                for field in endpoint.output_fields
                 if not field.identifier
             ]
             operation = (
                 "read-only retrieval"
-                if candidate.endpoint.read_only is True
+                if endpoint.read_only is True
                 else "mutating write"
-                if candidate.endpoint.read_only is False
+                if endpoint.read_only is False
                 else "unclassified operation"
             )
             parts = [
-                candidate.endpoint.description.strip(),
+                endpoint.description.strip(),
                 f"Operation class: {operation}",
             ]
             if field_labels:
@@ -1972,7 +2158,7 @@ class SchemaPlanner:
                 DecisionOption(
                     id=f"candidate:{index}",
                     label=f"{candidate.tool.key}.{candidate.endpoint.name}",
-                    description=candidate.endpoint.description,
+                    description=_visible_endpoint(candidate).description,
                     metadata={"schema_score": candidate.score},
                 )
                 for index, candidate in enumerate(candidates)
@@ -2146,7 +2332,7 @@ class SchemaPlanner:
     ) -> frozenset[tuple[str, tuple[str, ...]]]:
         """Return query-matched semantic field requirements for one candidate."""
 
-        field_map = {field.name: field for field in candidate.endpoint.output_fields}
+        field_map = {field.name: field for field in _visible_endpoint(candidate).output_fields}
         requirements: set[tuple[str, tuple[str, ...]]] = set()
         for field_name in candidate.matched_fields:
             if field_names is not None and field_name not in field_names:
@@ -2213,7 +2399,7 @@ class SchemaPlanner:
 
         semantic_labels: dict[str, str] = {}
         for candidate in candidates:
-            for field in candidate.endpoint.output_fields:
+            for field in _visible_endpoint(candidate).output_fields:
                 if field.identifier:
                     continue
                 semantic_key = _normalize(field.semantic_id or field.name)
@@ -2311,7 +2497,7 @@ class SchemaPlanner:
         candidate: _Candidate,
         deterministic_fields: list[str],
     ) -> DecisionRequest | None:
-        endpoint = candidate.endpoint
+        endpoint = _visible_endpoint(candidate)
         selectable = [field for field in endpoint.output_fields if not field.identifier]
         if not selectable:
             return None
@@ -2368,7 +2554,7 @@ class SchemaPlanner:
         candidate: _Candidate,
         result_ids: list[str],
     ) -> list[str]:
-        endpoint = candidate.endpoint
+        endpoint = _visible_endpoint(candidate)
         identifiers = [field.name for field in endpoint.output_fields if field.identifier]
         selectable = [field for field in endpoint.output_fields if not field.identifier]
         selected = [
@@ -2498,7 +2684,7 @@ class SchemaPlanner:
         }
         field_map = {
             field.name: field
-            for field in candidate.endpoint.output_fields
+            for field in _visible_endpoint(candidate).output_fields
         }
         matched: dict[str, tuple[str, EvidenceRequirements]] = {}
         for field_name in selected_fields:
@@ -2519,7 +2705,7 @@ class SchemaPlanner:
     ) -> tuple[bool, dict[str, object], list[str]]:
         locally_sufficient, available, missing = global_evidence_status(
             candidate.tool,
-            candidate.endpoint,
+            _visible_endpoint(candidate),
             selected_fields,
             requested,
         )
@@ -2571,7 +2757,7 @@ class SchemaPlanner:
         }
         locally_sufficient, local_available, local_missing = field_evidence_status(
             candidate.tool,
-            candidate.endpoint,
+            _visible_endpoint(candidate),
             selected_fields,
             local_required,
         )
@@ -3114,7 +3300,8 @@ class SchemaPlanner:
         *,
         warn_ignored_arguments: bool = True,
     ) -> ToolCall | None:
-        endpoint = candidate.endpoint
+        authoritative_endpoint = candidate.endpoint
+        endpoint = _visible_endpoint(candidate)
         arguments, _, dropped, ambiguous_aliases = self._bind_arguments(
             endpoint,
             intent.arguments,
@@ -3183,7 +3370,7 @@ class SchemaPlanner:
             evidence=evidence,
             required_evidence=intent.evidence,
             field_evidence=call_field_evidence,
-            schema_fingerprint=endpoint.fingerprint,
+            schema_fingerprint=authoritative_endpoint.fingerprint,
             tool_fingerprint=candidate.tool.fingerprint,
             missing_required_arguments=missing,
             score=candidate.score,
@@ -3207,7 +3394,8 @@ class SchemaPlanner:
         *,
         warn_ignored_arguments: bool = True,
     ) -> ToolCall | None:
-        endpoint = candidate.endpoint
+        authoritative_endpoint = candidate.endpoint
+        endpoint = _visible_endpoint(candidate)
         arguments, _, dropped, ambiguous_aliases = self._bind_arguments(
             endpoint,
             intent.arguments,
@@ -3276,7 +3464,7 @@ class SchemaPlanner:
             evidence=evidence,
             required_evidence=intent.evidence,
             field_evidence=call_field_evidence,
-            schema_fingerprint=endpoint.fingerprint,
+            schema_fingerprint=authoritative_endpoint.fingerprint,
             tool_fingerprint=candidate.tool.fingerprint,
             missing_required_arguments=missing,
             score=candidate.score,
@@ -3302,12 +3490,18 @@ class SchemaPlanner:
             bool,
         ]
         | None = None,
+        scoring_endpoint_transform: Callable[
+            [ToolSpec, EndpointSpec],
+            EndpointSpec | None,
+        ]
+        | None = None,
     ) -> ExecutionPlan:
         del async_decision
         lexical_candidates = self._candidates(
             request,
             intent,
             additional_availability_predicate=additional_availability_predicate,
+            scoring_endpoint_transform=scoring_endpoint_transform,
         )
         all_candidates, recall_warnings = (
             self._augment_candidates_with_semantic_recall_sync(
@@ -3315,6 +3509,7 @@ class SchemaPlanner:
                 intent,
                 lexical_candidates,
                 additional_availability_predicate=additional_availability_predicate,
+                scoring_endpoint_transform=scoring_endpoint_transform,
             )
         )
         _, required_coverage = self._field_coverage_matrix(request, all_candidates)
@@ -3518,11 +3713,17 @@ class SchemaPlanner:
             bool,
         ]
         | None = None,
+        scoring_endpoint_transform: Callable[
+            [ToolSpec, EndpointSpec],
+            EndpointSpec | None,
+        ]
+        | None = None,
     ) -> ExecutionPlan:
         lexical_candidates = self._candidates(
             request,
             intent,
             additional_availability_predicate=additional_availability_predicate,
+            scoring_endpoint_transform=scoring_endpoint_transform,
         )
         all_candidates, recall_warnings = (
             await self._augment_candidates_with_semantic_recall_async(
@@ -3530,6 +3731,7 @@ class SchemaPlanner:
                 intent,
                 lexical_candidates,
                 additional_availability_predicate=additional_availability_predicate,
+                scoring_endpoint_transform=scoring_endpoint_transform,
             )
         )
         _, required_coverage = self._field_coverage_matrix(request, all_candidates)
@@ -3733,7 +3935,7 @@ class SchemaPlanner:
         field_decision_used: bool,
     ) -> PlanExplanation:
         reasons = dict(candidate.field_reasons)
-        field_map = {field.name: field for field in candidate.endpoint.output_fields}
+        field_map = {field.name: field for field in _visible_endpoint(candidate).output_fields}
         selections: list[FieldSelectionExplanation] = []
         for name in fields:
             field = field_map.get(name)

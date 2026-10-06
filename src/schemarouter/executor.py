@@ -10,6 +10,11 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Protocol, cast
 
+from ._sync_offload import (
+    BoundedSyncOffloadPool,
+    SyncOffloadCapacityError,
+    SyncOffloadClosedError,
+)
 from .authorization import (
     AuthorizationPolicy,
     DataScopeDecision,
@@ -60,6 +65,10 @@ from .validation import (
 )
 
 _MISSING = object()
+
+
+class _OffloadedSyncCapacityUnavailable(InvocationUnavailableError):
+    """Local worker saturation; safe for fallback but not endpoint cooldown."""
 
 
 class EndpointInvoker(Protocol):
@@ -237,6 +246,7 @@ class RegistryExecutor:
         approval_callback: ApprovalCallback | None = None,
         hooks: ExecutionHooks | None = None,
         unavailable_cooldown_seconds: float = 30.0,
+        max_offloaded_sync_workers: int = 8,
     ) -> None:
         if (
             not isinstance(unavailable_cooldown_seconds, (int, float))
@@ -257,7 +267,10 @@ class RegistryExecutor:
         self._binding_fingerprints: dict[str, str] = {}
         self._binding_offload_sync: dict[str, bool] = {}
         self._binding_generations: dict[str, int] = {}
-        self._inflight_offloaded_sync: set[asyncio.Future[Any]] = set()
+        self._sync_offload_pool = BoundedSyncOffloadPool(
+            max_workers=max_offloaded_sync_workers,
+            thread_name_prefix="schemarouter-sync",
+        )
         self._unavailable_until: dict[tuple[str, str, str], float] = {}
 
     def _binding_snapshot(self, tool_key: str) -> _BindingSnapshot:
@@ -782,21 +795,30 @@ class RegistryExecutor:
         with self._runtime_state_lock:
             self._remove_binding_locked(tool_key)
 
-    def _track_offloaded_sync_task(self, task: asyncio.Future[Any]) -> None:
-        """Keep an offloaded worker task alive until its thread-backed call finishes."""
+    def _submit_offloaded_sync(
+        self,
+        callback: Callable[..., Any],
+        /,
+        *args: Any,
+    ) -> asyncio.Future[Any]:
+        """Submit sync work without allowing timeout churn to grow workers unbounded."""
 
-        self._inflight_offloaded_sync.add(task)
+        try:
+            return self._sync_offload_pool.submit(callback, *args)
+        except SyncOffloadCapacityError as exc:
+            raise _OffloadedSyncCapacityUnavailable(
+                "offloaded synchronous worker capacity is exhausted; "
+                "an earlier call may still be running"
+            ) from exc
+        except SyncOffloadClosedError as exc:
+            raise NonRetryableInvocationError(
+                "offloaded synchronous worker pool is closed"
+            ) from exc
 
-        def cleanup(done: asyncio.Future[Any]) -> None:
-            self._inflight_offloaded_sync.discard(done)
-            try:
-                done.result()
-            except asyncio.CancelledError:
-                pass
-            except Exception:
-                pass
+    def shutdown_offloaded_sync(self) -> None:
+        """Stop accepting router-owned sync offloads without claiming running threads stopped."""
 
-        task.add_done_callback(cleanup)
+        self._sync_offload_pool.shutdown()
 
     async def _await_side_effecting_offloaded_sync(
         self,
@@ -811,7 +833,6 @@ class RegistryExecutor:
         # exhausted remains a normal pre-invocation budget failure.
         remaining = tracker.remaining_seconds(stage="invocation")
         task = asyncio.ensure_future(awaitable)
-        self._track_offloaded_sync_task(task)
 
         try:
             if remaining is None:
@@ -1320,7 +1341,7 @@ class RegistryExecutor:
                     sync_offloaded = False
                     if call_aware:
                         if offload_sync and not inspect.iscoroutinefunction(invoke_call):
-                            value = asyncio.to_thread(
+                            value = self._submit_offloaded_sync(
                                 self._invoke_sync_with_policy_snapshot,
                                 execution_policy,
                                 invoke_call,
@@ -1332,7 +1353,7 @@ class RegistryExecutor:
                     else:
                         endpoint_invoker = cast(EndpointInvoker, invoker)
                         if offload_sync and not inspect.iscoroutinefunction(endpoint_invoker):
-                            value = asyncio.to_thread(
+                            value = self._submit_offloaded_sync(
                                 self._invoke_sync_with_policy_snapshot,
                                 execution_policy,
                                 endpoint_invoker,
@@ -1438,11 +1459,12 @@ class RegistryExecutor:
                     )
 
         if isinstance(last_error, InvocationUnavailableError):
-            self._mark_access_unavailable_for_contract(
-                call.tool,
-                call.endpoint,
-                tool.fingerprint,
-            )
+            if not isinstance(last_error, _OffloadedSyncCapacityUnavailable):
+                self._mark_access_unavailable_for_contract(
+                    call.tool,
+                    call.endpoint,
+                    tool.fingerprint,
+                )
             raise last_error
         raise ExecutionError(
             f"invocation failed for {call.tool}.{call.endpoint} after {max_attempts} attempt(s)"

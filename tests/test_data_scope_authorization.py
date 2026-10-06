@@ -14,6 +14,8 @@ from schemarouter import (
     FieldSpec,
     GraphRelationshipTypeSpec,
     GraphSourceSpec,
+    ModelQueryAnalyzer,
+    PlanRequest,
     PolicyViolationError,
     PrincipalContext,
     RecordFieldSpec,
@@ -756,3 +758,97 @@ async def test_scoped_custom_invoker_receives_hidden_principal_filter() -> None:
     assert result[0].data == {"id": "row-1"}
     assert invoker.called is True
     assert invoker.filters == {"tenant": "tenant-a"}
+
+
+@pytest.mark.asyncio
+async def test_authorized_planning_and_executable_surfaces_hide_scoped_schema_from_model() -> None:
+    connection = sqlite3.connect(":memory:")
+    connection.execute(
+        """
+        CREATE TABLE employees (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            department TEXT NOT NULL,
+            salary REAL NOT NULL
+        )
+        """
+    )
+    connection.commit()
+
+    captured_catalogs: list[list[dict[str, Any]]] = []
+
+    async def model(payload: dict[str, Any]) -> dict[str, Any]:
+        captured_catalogs.append(payload["schema_catalog"])
+        return {
+            "preferred_tools": ["company.employees"],
+            "preferred_endpoints": ["company.employees.select"],
+            "arguments": {"filter__salary": 100.0, "limit": 5},
+            "fields": ["name", "salary"],
+            "concepts": ["employee", "salary"],
+            "evidence": {},
+        }
+
+    policy = _employee_policy("company.employees.select")
+    router = SchemaRouter(
+        analyzer=ModelQueryAnalyzer(model),
+        authorization_policy=policy,
+    )
+    router.add_sqlite_database(connection, database_name="company")
+    employee = PrincipalContext(
+        subject="alice",
+        roles=("employee",),
+        attributes={"department": "sales"},
+    )
+
+    request = PlanRequest(
+        query="employee name",
+        arguments={"limit": 3, "filter__salary": 200.0},
+    )
+    plan = await router.aplan_authorized(request, principal=employee)
+    executable_plan = await router.aplan_executable_authorized(
+        request,
+        principal=employee,
+    )
+    normal_retrieval = await router.aretrieve_authorized(
+        "employee name",
+        principal=employee,
+        k=5,
+    )
+    executable_retrieval = await router.aretrieve_executable_authorized(
+        "employee name",
+        principal=employee,
+        k=5,
+    )
+
+    assert captured_catalogs
+    for catalog in captured_catalogs:
+        serialized = repr(catalog)
+        assert "salary" not in serialized
+        assert "department" not in serialized
+        assert "filter__salary" not in serialized
+        assert "filter__department" not in serialized
+        endpoint = catalog[0]["endpoints"][0]
+        assert [field["name"] for field in endpoint["fields"]] == ["id", "name"]
+
+    for current_plan in (plan, executable_plan):
+        assert current_plan.calls
+        call = current_plan.calls[0]
+        assert set(call.fields).issubset({"id", "name"})
+        assert "salary" not in call.fields
+        assert "filter__salary" not in call.arguments
+        assert "filter__department" not in call.arguments
+
+    assert normal_retrieval.candidates
+    assert executable_retrieval.candidates
+    normal = normal_retrieval.candidates[0]
+    executable = executable_retrieval.candidates[0]
+    assert [field.name for field in executable.output_fields] == [
+        field.name for field in normal.output_fields
+    ]
+    assert [parameter.name for parameter in executable.parameters] == [
+        parameter.name for parameter in normal.parameters
+    ]
+    assert executable.output_schema == normal.output_schema
+    assert executable_retrieval.executable_only is True
+
+    connection.close()

@@ -52,7 +52,9 @@ trusted sync invoker는 기본적으로 현재 thread에서 실행됩니다. 해
 
 provider-neutral vector/graph/record-store backend는 `remote` 분류를 기준으로 같은 정책을 자동 적용합니다. `remote=True` backend의 동기 메서드는 worker thread로 offload하고, `remote=False`인 local/thread-affine backend는 inline으로 유지합니다. SQLite는 inline으로 유지됩니다.
 
-Python은 이미 시작된 worker thread를 강제로 중단할 수 없습니다. 명시적으로 read-only인 endpoint는 elapsed budget을 넘으면 기존처럼 `ExecutionBudgetExceededError`를 발생시키지만, backend 호출이 반환될 때까지 worker가 리소스를 계속 사용할 수 있음을 caller가 고려해야 합니다. 반대로 non-read-only 또는 effect가 불명확한 endpoint는 worker가 시작된 뒤 timeout이나 task cancellation이 발생하면 `IndeterminateInvocationError`를 발생시킵니다. 이 오류는 non-retryable이며 mutation이 뒤늦게 완료될 수 있으므로 SchemaRouter가 같은 호출을 자동 재시도하지 않습니다. 더 강한 완료 보장이 필요하면 vendor-level timeout, transaction, idempotency key, 또는 cancellation-safe async client를 사용해야 합니다.
+Python은 이미 시작된 worker thread를 강제로 중단할 수 없습니다. 따라서 SchemaRouter는 명시적 sync offload를 무제한 `to_thread` 제출이 아니라 router 소유의 bounded worker pool에서 실행합니다. read-only 호출이 timeout된 뒤에도 backend가 반환할 때까지 worker slot 하나를 계속 점유할 수 있지만, 반복 timeout/retry가 router가 만든 worker 압력을 무한히 늘리지는 못합니다. 모든 slot이 점유된 경우 새 blocking 호출을 queue에 계속 쌓는 대신 local unavailable로 실패합니다.
+
+명시적으로 read-only인 endpoint는 elapsed budget을 넘으면 기존처럼 `ExecutionBudgetExceededError`를 발생시키지만, backend 호출이 반환될 때까지 worker가 리소스를 계속 사용할 수 있음을 caller가 고려해야 합니다. 반대로 non-read-only 또는 effect가 불명확한 endpoint는 worker가 시작된 뒤 timeout이나 task cancellation이 발생하면 `IndeterminateInvocationError`를 발생시킵니다. 이 오류는 non-retryable이며 mutation이 뒤늦게 완료될 수 있으므로 SchemaRouter가 같은 호출을 자동 재시도하지 않습니다. 더 강한 완료 보장이 필요하면 vendor-level timeout, transaction, idempotency key, 또는 cancellation-safe async client를 사용해야 합니다.
 
 ## Typed lifecycle event
 
