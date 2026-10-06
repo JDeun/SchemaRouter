@@ -16,6 +16,8 @@ from .discovery_limits import (
     NativeDiscoveryBudget,
     NativeDiscoveryLimits,
     bounded_collect,
+    bounded_select,
+    descriptor_name,
     require_at_most,
 )
 
@@ -321,15 +323,32 @@ async def introspect_graph_backend(
 
     budget = NativeDiscoveryBudget(discovery_limits)
     limits = budget.limits
+    selected = None if graphs is None else {str(value) for value in graphs}
+    if selected is not None:
+        require_at_most(
+            len(selected),
+            limit=limits.max_sources,
+            label="graph source selected count",
+        )
     offload_backend = remote if offload_sync_backend is None else offload_sync_backend
     discovered_raw = await _call_backend(
         backend.list_graphs,
         offload_sync=offload_backend,
     )
-    discovered_items = bounded_collect(
-        discovered_raw,
-        limit=limits.max_sources,
-        label="graph source count",
+    discovered_items = (
+        bounded_collect(
+            discovered_raw,
+            limit=limits.max_sources,
+            label="graph source count",
+        )
+        if selected is None
+        else bounded_select(
+            discovered_raw,
+            selected,
+            limit=limits.max_sources,
+            label="graph source count",
+            name_of=descriptor_name,
+        )
     )
     discovered_list: list[GraphSourceSpec] = []
     for value in discovered_items:
@@ -376,12 +395,6 @@ async def introspect_graph_backend(
     names = [graph.name for graph in discovered]
     if len(names) != len(set(names)):
         raise RegistrationError("graph backend returned duplicate graph names")
-
-    selected = None if graphs is None else {str(value) for value in graphs}
-    if selected is not None:
-        missing = sorted(selected - set(names))
-        if missing:
-            raise RegistrationError("unknown graphs: " + ", ".join(missing))
 
     bindings: list[GraphSourceBinding] = []
     used_names: set[str] = set()
