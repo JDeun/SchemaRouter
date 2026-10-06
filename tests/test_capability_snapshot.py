@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 import pytest
 
+from schemarouter._document_loading import DocumentLimitError
 from schemarouter.capability_contracts import (
     CapabilityContract,
     CapabilityFieldContract,
@@ -23,6 +24,7 @@ from schemarouter.capability_snapshot import (
     serialize_capability_snapshot,
     validate_capability_snapshot,
 )
+from schemarouter.storage import PersistedDocumentLimits
 
 
 def test_snapshot_digest_is_stable_across_order_and_build_time() -> None:
@@ -256,3 +258,29 @@ def test_duplicate_snapshot_sources_fail_semantic_validation() -> None:
 
     with pytest.raises(ValueError, match="duplicate source"):
         validate_capability_snapshot(snapshot)
+
+
+def test_snapshot_loader_rejects_oversized_and_deep_documents_before_model_validation() -> None:
+    limits = PersistedDocumentLimits(
+        max_bytes=64,
+        max_depth=4,
+        max_nodes=100,
+        max_list_items=100,
+        max_map_items=100,
+        max_aliases=8,
+        max_anchors=8,
+    )
+    with pytest.raises(DocumentLimitError):
+        load_capability_snapshot(json.dumps({"payload": "x" * 256}), document_limits=limits)
+
+    deep_limits = PersistedDocumentLimits(
+        max_bytes=4096,
+        max_depth=4,
+        max_nodes=100,
+        max_list_items=100,
+        max_map_items=100,
+        max_aliases=8,
+        max_anchors=8,
+    )
+    with pytest.raises(DocumentLimitError, match="structural limits"):
+        load_capability_snapshot("[" * 10 + "0" + "]" * 10, document_limits=deep_limits)
