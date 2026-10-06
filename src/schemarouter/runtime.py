@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Mapping, Sequence
 from contextlib import nullcontext
+from threading import RLock
 from typing import Any, TypeVar
 from urllib.parse import urlparse
 from uuid import uuid4
@@ -45,8 +46,10 @@ from .authorization import (
     _principal_execution_context,
 )
 from .authorization_audit import (
+    AuthorizationAuditDeliverySnapshot,
     AuthorizationAuditEvent,
     AuthorizationAuditHook,
+    AuthorizationAuditMode,
     AuthorizationAuditPhase,
 )
 from .binding_reconciliation import (
@@ -59,6 +62,7 @@ from .binding_reconciliation import (
 from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
 from .capability_decision_trace import CapabilityDecisionTrace
 from .errors import (
+    AuthorizationAuditDeliveryError,
     BindingDriftError,
     ContractAmendmentError,
     ExecutionInvariantError,
@@ -222,6 +226,7 @@ class SchemaRouter:
         policy: ExecutionPolicy | None = None,
         authorization_policy: AuthorizationPolicy | None = None,
         authorization_audit_hook: AuthorizationAuditHook | None = None,
+        authorization_audit_mode: AuthorizationAuditMode = "best_effort",
         approval_callback: ApprovalCallback | None = None,
         execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
@@ -233,6 +238,15 @@ class SchemaRouter:
         self.registry = registry if registry is not None else InMemoryRegistry()
         self.authorization_policy = authorization_policy
         self.authorization_audit_hook = authorization_audit_hook
+        if authorization_audit_mode not in ("best_effort", "strict"):
+            raise ValueError(
+                "authorization_audit_mode must be 'best_effort' or 'strict'"
+            )
+        self.authorization_audit_mode = authorization_audit_mode
+        self._authorization_audit_delivery_lock = RLock()
+        self._authorization_audit_delivery_failures = 0
+        self._authorization_audit_last_error_type: str | None = None
+        self._authorization_audit_last_delivery_succeeded: bool | None = None
         self.executor = RegistryExecutor(
             self.registry,
             policy=policy,
@@ -550,9 +564,63 @@ class SchemaRouter:
             authorization(tool, endpoint) and predicate(tool, endpoint)
         )
 
+    def authorization_audit_delivery_snapshot(
+        self,
+    ) -> AuthorizationAuditDeliverySnapshot:
+        """Return process-local health for authorization audit delivery."""
+
+        with self._authorization_audit_delivery_lock:
+            return AuthorizationAuditDeliverySnapshot(
+                mode=self.authorization_audit_mode,
+                configured=self.authorization_audit_hook is not None,
+                failure_count=self._authorization_audit_delivery_failures,
+                last_error_type=self._authorization_audit_last_error_type,
+                last_delivery_succeeded=(
+                    self._authorization_audit_last_delivery_succeeded
+                ),
+            )
+
+    def _record_authorization_audit_delivery(
+        self,
+        *,
+        succeeded: bool,
+        error_type: str | None = None,
+    ) -> None:
+        with self._authorization_audit_delivery_lock:
+            self._authorization_audit_last_delivery_succeeded = succeeded
+            self._authorization_audit_last_error_type = error_type
+            if not succeeded:
+                self._authorization_audit_delivery_failures += 1
+
     def _emit_authorization_audit(self, event: AuthorizationAuditEvent) -> None:
-        if self.authorization_audit_hook is not None:
-            self.authorization_audit_hook(event)
+        hook = self.authorization_audit_hook
+        if hook is None:
+            if self.authorization_audit_mode == "strict":
+                self._record_authorization_audit_delivery(
+                    succeeded=False,
+                    error_type="MissingAuditHook",
+                )
+                raise AuthorizationAuditDeliveryError(
+                    "mandatory authorization audit delivery has no configured sink",
+                    event=event,
+                )
+            return
+
+        try:
+            hook(event)
+        except Exception as exc:
+            self._record_authorization_audit_delivery(
+                succeeded=False,
+                error_type=type(exc).__name__,
+            )
+            if self.authorization_audit_mode == "strict":
+                raise AuthorizationAuditDeliveryError(
+                    "mandatory authorization audit delivery failed",
+                    event=event,
+                ) from exc
+            return
+
+        self._record_authorization_audit_delivery(succeeded=True)
 
     def _audit_export_authorization(
         self,
