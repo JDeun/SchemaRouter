@@ -94,6 +94,21 @@ Bounded record contract 위에 caller-owned native adapter를 추가합니다.
 - **ClickHouse**: table/column discovery와 bound read-only ClickHouse Connect query
 - **InfluxDB 2.x / Flux**: measurement/field-key/tag-key discovery와 bounded time/tag/field query
 
+Schema가 고정되지 않은 MongoDB collection, DynamoDB의 non-key attribute, Cosmos DB container,
+Couchbase keyspace는 discovery 결과를 authoritative schema가 아닌 명시적인 **partial schema**로
+취급합니다. SchemaRouter는 source마다 최대 16개 record, 최대 256 KiB의 sample payload만
+처리하고, 여러 record에서 관찰한 field를 union합니다. Sample에서 추론한 field type은 두 번
+이상의 non-null 관찰이 모두 같은 type일 때만 선언합니다. DynamoDB key attribute type은
+계속 authoritative한 `DescribeTable` metadata를 사용합니다. 따라서 한 record에서만 보인
+field, 알 수 없는 value type, 서로 다른 type으로 관찰된 field는 임의의 단일 document에
+맞춰 좁히지 않고 unconstrained schema로 유지합니다.
+
+생성된 source metadata의 `public_metadata.schema_discovery`에는 `complete=false`, 실제
+sample count, row/byte bound가 기록됩니다. 따라서 caller와 authorization layer는 sampled
+catalog와 provider-authoritative schema를 구분할 수 있습니다. 이후 refresh에서 새로운
+record가 관찰되면 field set이 안전하게 확장될 수 있으며, 이전 sample을 전체 source schema가
+완전했다는 근거로 취급하지 않습니다.
+
 ```python
 router.add_mongodb_record_store(mongo_database)
 router.add_elasticsearch_record_store(elastic_client)
