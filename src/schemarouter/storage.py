@@ -11,6 +11,7 @@ from pydantic import Field, computed_field
 
 from .errors import StorageFormatError
 from .models import StrictModel
+from .persistence_limits import PersistedDocumentLimits
 
 StorageComponent = Literal["registry", "trace"]
 StorageStatus = Literal["current", "legacy", "future", "corrupt"]
@@ -385,22 +386,35 @@ def _document_count(
 def _validate_component_documents(
     connection: sqlite3.Connection,
     component: StorageComponent,
+    *,
+    document_limits: PersistedDocumentLimits | None = None,
 ) -> None:
     # Local imports avoid module cycles. Future formats are never decoded by
     # this helper; callers invoke it only for current/legacy components.
     if component == "registry":
         from .registry import _validate_legacy_registry_storage
 
-        _validate_legacy_registry_storage(connection)
+        _validate_legacy_registry_storage(
+            connection,
+            document_limits=document_limits,
+        )
         return
 
     from .traces import _validate_legacy_trace_storage
 
-    _validate_legacy_trace_storage(connection)
+    _validate_legacy_trace_storage(
+        connection,
+        document_limits=document_limits,
+    )
 
 
-def inspect_sqlite_storage(path: str | Path) -> StorageInspection:
+def inspect_sqlite_storage(
+    path: str | Path,
+    *,
+    document_limits: PersistedDocumentLimits | None = None,
+) -> StorageInspection:
     source = Path(path)
+    limits = document_limits or PersistedDocumentLimits()
     if not source.exists():
         raise StorageFormatError(f"SQLite storage does not exist: {source}")
 
@@ -428,7 +442,11 @@ def inspect_sqlite_storage(path: str | Path) -> StorageInspection:
 
             if status in {"current", "legacy"}:
                 try:
-                    _validate_component_documents(connection, component)
+                    _validate_component_documents(
+                        connection,
+                        component,
+                        document_limits=limits,
+                    )
                 except (StorageFormatError, sqlite3.DatabaseError):
                     status = "corrupt"
 
@@ -560,13 +578,17 @@ def migrate_sqlite_storage(
     *,
     backup: bool = True,
     backup_path: str | Path | None = None,
+    document_limits: PersistedDocumentLimits | None = None,
 ) -> StorageMigrationResult:
     if not backup and backup_path is not None:
         raise StorageFormatError(
             "backup_path cannot be supplied when backup=False"
         )
 
-    before = inspect_sqlite_storage(path)
+    before = inspect_sqlite_storage(
+        path,
+        document_limits=document_limits,
+    )
     if not before.components:
         raise StorageFormatError(
             "no SchemaRouter SQLite storage components were found"
@@ -612,11 +634,17 @@ def migrate_sqlite_storage(
         if "registry" in legacy:
             from .registry import _validate_legacy_registry_storage
 
-            _validate_legacy_registry_storage(connection)
+            _validate_legacy_registry_storage(
+                connection,
+                document_limits=document_limits,
+            )
         if "trace" in legacy:
             from .traces import _validate_legacy_trace_storage
 
-            _validate_legacy_trace_storage(connection)
+            _validate_legacy_trace_storage(
+                connection,
+                document_limits=document_limits,
+            )
 
         for component in ("registry", "trace"):
             if component in legacy:
@@ -633,7 +661,10 @@ def migrate_sqlite_storage(
     finally:
         connection.close()
 
-    after = inspect_sqlite_storage(path)
+    after = inspect_sqlite_storage(
+        path,
+        document_limits=document_limits,
+    )
     return StorageMigrationResult(
         path=str(path),
         backup_path=(
