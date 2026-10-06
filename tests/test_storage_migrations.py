@@ -795,7 +795,7 @@ def test_legacy_registry_aggregate_limits_apply_to_inspection_and_migration(
     )
     assert component.status == "corrupt"
 
-    with pytest.raises(StorageFormatError, match="persisted JSON document limits"):
+    with pytest.raises(StorageFormatError, match="persisted JSON collection limits"):
         SQLiteRegistry(path, document_limits=limits)
 
     with pytest.raises(StorageFormatError, match="registry=corrupt"):
@@ -825,7 +825,7 @@ def test_legacy_trace_aggregate_limits_apply_to_inspection_and_migration(
     )
     assert component.status == "corrupt"
 
-    with pytest.raises(StorageFormatError, match="persisted JSON document limits"):
+    with pytest.raises(StorageFormatError, match="persisted JSON collection limits"):
         SQLiteRunTraceStore(path, document_limits=limits)
 
     with pytest.raises(StorageFormatError, match="trace=corrupt"):
