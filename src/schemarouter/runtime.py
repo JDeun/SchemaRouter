@@ -1706,6 +1706,7 @@ class SchemaRouter:
         collections: set[str] | tuple[str, ...] | list[str] | None = None,
         default_top_k: int = 10,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_vector_store`."""
 
@@ -2187,6 +2188,7 @@ class SchemaRouter:
         default_limit: int = 100,
         default_max_hops: int = 1,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_graph_store`."""
 
@@ -2267,6 +2269,7 @@ class SchemaRouter:
         sources: set[str] | tuple[str, ...] | list[str] | None = None,
         default_limit: int = 100,
         remote: bool = True,
+        discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_record_store`."""
 
