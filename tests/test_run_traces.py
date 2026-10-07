@@ -16,11 +16,11 @@ from schemarouter import (
     RunTrace,
     SchemaRouter,
     SQLiteRunTraceStore,
-    TraceRetentionPolicy,
     ToolSpec,
     TraceError,
     TracePersistenceError,
     TraceRedactionConfig,
+    TraceRetentionPolicy,
     record_run_events,
     replay_run_events,
 )
