@@ -11,7 +11,7 @@ from typing import Any, Protocol
 from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
 from .decision_policy import DecisionPolicy
 from .decisions import DecisionBackend, DecisionOption, DecisionRequest, choose_async, choose_sync
-from .errors import PlanningError
+from .errors import ModelAnalysisError, PlanningError
 from .evidence import available_evidence, field_evidence_status, global_evidence_status
 from .execution_state import TypedExecutionState
 from .models import (
@@ -36,7 +36,7 @@ from .models import (
     ToolCall,
     ToolSpec,
 )
-from .planning_context import PlanningContext, RegistrySnapshot
+from .planning_context import PlanningContext, RegistrySnapshot, SnapshotToolRegistry
 from .planning_stages import (
     assemble_execution_plan,
     run_candidate_pipeline_async,
@@ -554,24 +554,158 @@ class SchemaPlanner:
         if self.decision_policy.enabled and self.decision_backend is None:
             raise PlanningError("decision policy is enabled but no decision backend is configured")
 
-    def plan(self, request: PlanRequest | str) -> ExecutionPlan:
-        request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, self.registry)
-        if inspect.isawaitable(intent):
-            if inspect.iscoroutine(intent):
-                intent.close()
-            raise PlanningError(
-                "the configured analyzer is asynchronous; use await planner.aplan(...)"
+
+    def _analysis_retry_budget(self) -> int:
+        configured = getattr(self.analyzer, "max_registry_retries", 2)
+        if (
+            isinstance(configured, int)
+            and not isinstance(configured, bool)
+            and configured >= 0
+        ):
+            return configured
+        return 2
+
+    @staticmethod
+    def _snapshot_registry_view(registry: ToolRegistry) -> RegistrySnapshot:
+        for _ in range(4):
+            before = registry.version
+            tools = registry.tools()
+            after = registry.version
+            if before == after:
+                return RegistrySnapshot(version=after, tools=tools)
+        raise PlanningError(
+            "registry changed repeatedly while capturing the analyzer catalog"
+        )
+
+    def _raise_analysis_churn(self, attempts: int) -> None:
+        message = (
+            "registry changed during query analysis and did not stabilize "
+            f"after {attempts} attempts"
+        )
+        if hasattr(self.analyzer, "max_registry_retries"):
+            raise ModelAnalysisError(message)
+        raise PlanningError(message)
+
+    def _analysis_is_current(
+        self,
+        catalog_snapshot: RegistrySnapshot,
+        analysis_registry: ToolRegistry | None,
+        analysis_snapshot: RegistrySnapshot,
+    ) -> bool:
+        if self.registry.version != catalog_snapshot.version:
+            return False
+        if analysis_registry is None or analysis_registry is self.registry:
+            return True
+        return analysis_registry.version == analysis_snapshot.version
+
+    def _analyze_sync(
+        self,
+        request: PlanRequest | str,
+        *,
+        async_method: str,
+        analysis_registry: ToolRegistry | None = None,
+        scoring_endpoint_transform: Callable[
+            [ToolSpec, EndpointSpec],
+            EndpointSpec | None,
+        ]
+        | None = None,
+    ) -> tuple[PlanRequest, QueryIntent, RegistrySnapshot]:
+        attempts = self._analysis_retry_budget() + 1
+        for attempt in range(attempts):
+            catalog_snapshot = self._catalog_snapshot(
+                scoring_endpoint_transform=scoring_endpoint_transform,
             )
-        return self._build_plan(request, intent, async_decision=False)
+            prepared = self._prepare_request(
+                request,
+                catalog_snapshot=catalog_snapshot,
+            )
+            analysis_snapshot = (
+                catalog_snapshot
+                if analysis_registry is None or analysis_registry is self.registry
+                else self._snapshot_registry_view(analysis_registry)
+            )
+            intent = self.analyzer.analyze(
+                prepared,
+                SnapshotToolRegistry(analysis_snapshot),
+            )
+            if inspect.isawaitable(intent):
+                if inspect.iscoroutine(intent):
+                    intent.close()
+                raise PlanningError(
+                    "the configured analyzer is asynchronous; use "
+                    f"await {async_method}"
+                )
+            if self._analysis_is_current(
+                catalog_snapshot,
+                analysis_registry,
+                analysis_snapshot,
+            ):
+                return prepared, intent, catalog_snapshot
+            if attempt + 1 >= attempts:
+                self._raise_analysis_churn(attempts)
+        raise PlanningError("query analysis exhausted registry retry budget")
+
+    async def _analyze_async(
+        self,
+        request: PlanRequest | str,
+        *,
+        analysis_registry: ToolRegistry | None = None,
+        scoring_endpoint_transform: Callable[
+            [ToolSpec, EndpointSpec],
+            EndpointSpec | None,
+        ]
+        | None = None,
+    ) -> tuple[PlanRequest, QueryIntent, RegistrySnapshot]:
+        attempts = self._analysis_retry_budget() + 1
+        for attempt in range(attempts):
+            catalog_snapshot = self._catalog_snapshot(
+                scoring_endpoint_transform=scoring_endpoint_transform,
+            )
+            prepared = self._prepare_request(
+                request,
+                catalog_snapshot=catalog_snapshot,
+            )
+            analysis_snapshot = (
+                catalog_snapshot
+                if analysis_registry is None or analysis_registry is self.registry
+                else self._snapshot_registry_view(analysis_registry)
+            )
+            intent = self.analyzer.analyze(
+                prepared,
+                SnapshotToolRegistry(analysis_snapshot),
+            )
+            if inspect.isawaitable(intent):
+                intent = await intent
+            if self._analysis_is_current(
+                catalog_snapshot,
+                analysis_registry,
+                analysis_snapshot,
+            ):
+                return prepared, intent, catalog_snapshot
+            if attempt + 1 >= attempts:
+                self._raise_analysis_churn(attempts)
+        raise PlanningError("query analysis exhausted registry retry budget")
+
+
+    def plan(self, request: PlanRequest | str) -> ExecutionPlan:
+        request, intent, catalog_snapshot = self._analyze_sync(
+            request,
+            async_method="planner.aplan(...)",
+        )
+        return self._build_plan(
+            request,
+            intent,
+            async_decision=False,
+            catalog_snapshot=catalog_snapshot,
+        )
 
     async def aplan(self, request: PlanRequest | str) -> ExecutionPlan:
-        request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, self.registry)
-        if inspect.isawaitable(intent):
-            intent = await intent
-        return await self._abuild_plan(request, intent)
-
+        request, intent, catalog_snapshot = await self._analyze_async(request)
+        return await self._abuild_plan(
+            request,
+            intent,
+            catalog_snapshot=catalog_snapshot,
+        )
     @staticmethod
     def _validate_retrieval_k(k: int) -> int:
         if not isinstance(k, int) or isinstance(k, bool) or k < 1:
@@ -660,11 +794,13 @@ class SchemaPlanner:
             EndpointSpec | None,
         ]
         | None = None,
+        catalog_snapshot: RegistrySnapshot | None = None,
     ) -> CapabilityRetrieval:
         context = self._planning_context(
             request,
             intent,
             scoring_endpoint_transform=scoring_endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
         )
         catalog_snapshot = context.registry
         candidates = self._semantic_recall_catalog(
@@ -694,8 +830,13 @@ class SchemaPlanner:
         *,
         k: int,
         additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
+        catalog_snapshot: RegistrySnapshot | None = None,
     ) -> CapabilityRouteRetrieval:
-        context = self._planning_context(request, intent)
+        context = self._planning_context(
+            request,
+            intent,
+            catalog_snapshot=catalog_snapshot,
+        )
         catalog_snapshot = context.registry
         candidates = self._semantic_recall_catalog(
             context.request,
@@ -715,6 +856,7 @@ class SchemaPlanner:
             ],
         )
 
+
     def retrieve_routes(
         self,
         request: PlanRequest | str,
@@ -724,16 +866,16 @@ class SchemaPlanner:
         """Return lightweight Top-K route references without materializing schemas."""
 
         k = self._validate_retrieval_k(k)
-        request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, self.registry)
-        if inspect.isawaitable(intent):
-            if inspect.iscoroutine(intent):
-                intent.close()
-            raise PlanningError(
-                "the configured analyzer is asynchronous; use "
-                "await planner.aretrieve_routes(...)"
-            )
-        return self._retrieve_routes_from_intent(request, intent, k=k)
+        request, intent, catalog_snapshot = self._analyze_sync(
+            request,
+            async_method="planner.aretrieve_routes(...)",
+        )
+        return self._retrieve_routes_from_intent(
+            request,
+            intent,
+            k=k,
+            catalog_snapshot=catalog_snapshot,
+        )
 
     async def aretrieve_routes(
         self,
@@ -744,11 +886,13 @@ class SchemaPlanner:
         """Async counterpart to :meth:`retrieve_routes`."""
 
         k = self._validate_retrieval_k(k)
-        request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, self.registry)
-        if inspect.isawaitable(intent):
-            intent = await intent
-        return self._retrieve_routes_from_intent(request, intent, k=k)
+        request, intent, catalog_snapshot = await self._analyze_async(request)
+        return self._retrieve_routes_from_intent(
+            request,
+            intent,
+            k=k,
+            catalog_snapshot=catalog_snapshot,
+        )
 
     def retrieve(
         self,
@@ -759,16 +903,16 @@ class SchemaPlanner:
         """Return Top-K registered capabilities without planning or execution."""
 
         k = self._validate_retrieval_k(k)
-        request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, self.registry)
-        if inspect.isawaitable(intent):
-            if inspect.iscoroutine(intent):
-                intent.close()
-            raise PlanningError(
-                "the configured analyzer is asynchronous; use "
-                "await planner.aretrieve(...)"
-            )
-        return self._retrieve_from_intent(request, intent, k=k)
+        request, intent, catalog_snapshot = self._analyze_sync(
+            request,
+            async_method="planner.aretrieve(...)",
+        )
+        return self._retrieve_from_intent(
+            request,
+            intent,
+            k=k,
+            catalog_snapshot=catalog_snapshot,
+        )
 
     async def aretrieve(
         self,
@@ -779,12 +923,13 @@ class SchemaPlanner:
         """Async counterpart to :meth:`retrieve`."""
 
         k = self._validate_retrieval_k(k)
-        request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, self.registry)
-        if inspect.isawaitable(intent):
-            intent = await intent
-        return self._retrieve_from_intent(request, intent, k=k)
-
+        request, intent, catalog_snapshot = await self._analyze_async(request)
+        return self._retrieve_from_intent(
+            request,
+            intent,
+            k=k,
+            catalog_snapshot=catalog_snapshot,
+        )
     def _reretrieve_state_aware_from_intent(
         self,
         request: PlanRequest,
@@ -795,8 +940,9 @@ class SchemaPlanner:
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
         additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
+        catalog_snapshot: RegistrySnapshot | None = None,
     ) -> StateConditionedCapabilityRetrieval:
-        catalog_snapshot = self._catalog_snapshot()
+        catalog_snapshot = catalog_snapshot or self._catalog_snapshot()
         ranked = self._semantic_recall_catalog(
             request,
             intent,
@@ -818,6 +964,7 @@ class SchemaPlanner:
             preconditions_by_route=state_preconditions,
         )
 
+
     def reretrieve_state_aware(
         self,
         request: PlanRequest | str,
@@ -831,15 +978,10 @@ class SchemaPlanner:
         """Return the best K state-eligible capabilities from the visible ranked surface."""
 
         k = self._validate_retrieval_k(k)
-        request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, self.registry)
-        if inspect.isawaitable(intent):
-            if inspect.iscoroutine(intent):
-                intent.close()
-            raise PlanningError(
-                "the configured analyzer is asynchronous; use "
-                "await planner.areretrieve_state_aware(...)"
-            )
+        request, intent, catalog_snapshot = self._analyze_sync(
+            request,
+            async_method="planner.areretrieve_state_aware(...)",
+        )
         return self._reretrieve_state_aware_from_intent(
             request,
             intent,
@@ -848,6 +990,7 @@ class SchemaPlanner:
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
             additional_availability_predicate=additional_availability_predicate,
+            catalog_snapshot=catalog_snapshot,
         )
 
     async def areretrieve_state_aware(
@@ -863,10 +1006,7 @@ class SchemaPlanner:
         """Async counterpart to :meth:`reretrieve_state_aware`."""
 
         k = self._validate_retrieval_k(k)
-        request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, self.registry)
-        if inspect.isawaitable(intent):
-            intent = await intent
+        request, intent, catalog_snapshot = await self._analyze_async(request)
         return self._reretrieve_state_aware_from_intent(
             request,
             intent,
@@ -875,8 +1015,8 @@ class SchemaPlanner:
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
             additional_availability_predicate=additional_availability_predicate,
+            catalog_snapshot=catalog_snapshot,
         )
-
     def retrieve_state_aware(
         self,
         request: PlanRequest | str,
@@ -933,6 +1073,7 @@ class SchemaPlanner:
             preconditions_by_route=state_preconditions,
         )
 
+
     def retrieve_routes_with_additional_availability(
         self,
         request: PlanRequest | str,
@@ -943,20 +1084,16 @@ class SchemaPlanner:
         """Retrieve Top-K route references under one extra local visibility rule."""
 
         k = self._validate_retrieval_k(k)
-        request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, self.registry)
-        if inspect.isawaitable(intent):
-            if inspect.iscoroutine(intent):
-                intent.close()
-            raise PlanningError(
-                "the configured analyzer is asynchronous; use "
-                "await planner.aretrieve_routes_with_additional_availability(...)"
-            )
+        request, intent, catalog_snapshot = self._analyze_sync(
+            request,
+            async_method="planner.aretrieve_routes_with_additional_availability(...)",
+        )
         return self._retrieve_routes_from_intent(
             request,
             intent,
             k=k,
             additional_availability_predicate=predicate,
+            catalog_snapshot=catalog_snapshot,
         )
 
     async def aretrieve_routes_with_additional_availability(
@@ -969,15 +1106,13 @@ class SchemaPlanner:
         """Async counterpart to :meth:`retrieve_routes_with_additional_availability`."""
 
         k = self._validate_retrieval_k(k)
-        request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, self.registry)
-        if inspect.isawaitable(intent):
-            intent = await intent
+        request, intent, catalog_snapshot = await self._analyze_async(request)
         return self._retrieve_routes_from_intent(
             request,
             intent,
             k=k,
             additional_availability_predicate=predicate,
+            catalog_snapshot=catalog_snapshot,
         )
 
     def retrieve_with_additional_availability(
@@ -988,27 +1123,20 @@ class SchemaPlanner:
         k: int = 5,
         executable_only: bool = False,
     ) -> CapabilityRetrieval:
-        """Retrieve Top-K capabilities under one additional local availability rule.
-
-        Set executable_only=True only when predicate represents current execution readiness.
-        """
+        """Retrieve Top-K capabilities under one additional local availability rule."""
 
         k = self._validate_retrieval_k(k)
-        request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, self.registry)
-        if inspect.isawaitable(intent):
-            if inspect.iscoroutine(intent):
-                intent.close()
-            raise PlanningError(
-                "the configured analyzer is asynchronous; use "
-                "await planner.aretrieve_with_additional_availability(...)"
-            )
+        request, intent, catalog_snapshot = self._analyze_sync(
+            request,
+            async_method="planner.aretrieve_with_additional_availability(...)",
+        )
         return self._retrieve_from_intent(
             request,
             intent,
             k=k,
             executable_only=executable_only,
             additional_availability_predicate=predicate,
+            catalog_snapshot=catalog_snapshot,
         )
 
     async def aretrieve_with_additional_availability(
@@ -1022,16 +1150,14 @@ class SchemaPlanner:
         """Async counterpart to :meth:`retrieve_with_additional_availability`."""
 
         k = self._validate_retrieval_k(k)
-        request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, self.registry)
-        if inspect.isawaitable(intent):
-            intent = await intent
+        request, intent, catalog_snapshot = await self._analyze_async(request)
         return self._retrieve_from_intent(
             request,
             intent,
             k=k,
             executable_only=executable_only,
             additional_availability_predicate=predicate,
+            catalog_snapshot=catalog_snapshot,
         )
 
     def retrieve_with_scoped_schema(
@@ -1047,15 +1173,12 @@ class SchemaPlanner:
         """Retrieve under local availability and a non-authoritative visible schema view."""
 
         k = self._validate_retrieval_k(k)
-        request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, analysis_registry or self.registry)
-        if inspect.isawaitable(intent):
-            if inspect.iscoroutine(intent):
-                intent.close()
-            raise PlanningError(
-                "the configured analyzer is asynchronous; use "
-                "await planner.aretrieve_with_scoped_schema(...)"
-            )
+        request, intent, catalog_snapshot = self._analyze_sync(
+            request,
+            async_method="planner.aretrieve_with_scoped_schema(...)",
+            analysis_registry=analysis_registry,
+            scoring_endpoint_transform=endpoint_transform,
+        )
         return self._retrieve_from_intent(
             request,
             intent,
@@ -1063,6 +1186,7 @@ class SchemaPlanner:
             executable_only=executable_only,
             additional_availability_predicate=predicate,
             scoring_endpoint_transform=endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
         )
 
     async def aretrieve_with_scoped_schema(
@@ -1078,10 +1202,11 @@ class SchemaPlanner:
         """Async counterpart to :meth:`retrieve_with_scoped_schema`."""
 
         k = self._validate_retrieval_k(k)
-        request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, analysis_registry or self.registry)
-        if inspect.isawaitable(intent):
-            intent = await intent
+        request, intent, catalog_snapshot = await self._analyze_async(
+            request,
+            analysis_registry=analysis_registry,
+            scoring_endpoint_transform=endpoint_transform,
+        )
         return self._retrieve_from_intent(
             request,
             intent,
@@ -1089,6 +1214,7 @@ class SchemaPlanner:
             executable_only=executable_only,
             additional_availability_predicate=predicate,
             scoring_endpoint_transform=endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
         )
 
     def plan_with_scoped_schema(
@@ -1101,21 +1227,19 @@ class SchemaPlanner:
     ) -> ExecutionPlan:
         """Plan using a bounded visible schema while preserving authoritative identities."""
 
-        request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, analysis_registry or self.registry)
-        if inspect.isawaitable(intent):
-            if inspect.iscoroutine(intent):
-                intent.close()
-            raise PlanningError(
-                "the configured analyzer is asynchronous; use "
-                "await planner.aplan_with_scoped_schema(...)"
-            )
+        request, intent, catalog_snapshot = self._analyze_sync(
+            request,
+            async_method="planner.aplan_with_scoped_schema(...)",
+            analysis_registry=analysis_registry,
+            scoring_endpoint_transform=endpoint_transform,
+        )
         return self._build_plan(
             request,
             intent,
             async_decision=False,
             additional_availability_predicate=predicate,
             scoring_endpoint_transform=endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
         )
 
     async def aplan_with_scoped_schema(
@@ -1128,15 +1252,17 @@ class SchemaPlanner:
     ) -> ExecutionPlan:
         """Async counterpart to :meth:`plan_with_scoped_schema`."""
 
-        request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, analysis_registry or self.registry)
-        if inspect.isawaitable(intent):
-            intent = await intent
+        request, intent, catalog_snapshot = await self._analyze_async(
+            request,
+            analysis_registry=analysis_registry,
+            scoring_endpoint_transform=endpoint_transform,
+        )
         return await self._abuild_plan(
             request,
             intent,
             additional_availability_predicate=predicate,
             scoring_endpoint_transform=endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
         )
 
     def plan_with_additional_availability(
@@ -1144,27 +1270,18 @@ class SchemaPlanner:
         request: PlanRequest | str,
         predicate: Callable[[ToolSpec, EndpointSpec], bool],
     ) -> ExecutionPlan:
-        """Plan with one extra local availability predicate.
+        """Plan with one extra local availability predicate."""
 
-        The configured planner availability predicate still applies. This is used by
-        execution-facing runtimes to add local readiness constraints (for example, current
-        invoker binding state) without changing schema-only planning semantics.
-        """
-
-        request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, self.registry)
-        if inspect.isawaitable(intent):
-            if inspect.iscoroutine(intent):
-                intent.close()
-            raise PlanningError(
-                "the configured analyzer is asynchronous; use "
-                "await planner.aplan_with_additional_availability(...)"
-            )
+        request, intent, catalog_snapshot = self._analyze_sync(
+            request,
+            async_method="planner.aplan_with_additional_availability(...)",
+        )
         return self._build_plan(
             request,
             intent,
             async_decision=False,
             additional_availability_predicate=predicate,
+            catalog_snapshot=catalog_snapshot,
         )
 
     async def aplan_with_additional_availability(
@@ -1174,20 +1291,24 @@ class SchemaPlanner:
     ) -> ExecutionPlan:
         """Async counterpart to :meth:`plan_with_additional_availability`."""
 
-        request = self._prepare_request(request)
-        intent = self.analyzer.analyze(request, self.registry)
-        if inspect.isawaitable(intent):
-            intent = await intent
+        request, intent, catalog_snapshot = await self._analyze_async(request)
         return await self._abuild_plan(
             request,
             intent,
             additional_availability_predicate=predicate,
+            catalog_snapshot=catalog_snapshot,
         )
 
-    def _prepare_request(self, request: PlanRequest | str) -> PlanRequest:
+    def _prepare_request(
+        self,
+        request: PlanRequest | str,
+        *,
+        catalog_snapshot: RegistrySnapshot | None = None,
+    ) -> PlanRequest:
         if isinstance(request, str):
             request = PlanRequest(query=request)
-        if not self.registry.keys():
+        snapshot = catalog_snapshot or self._catalog_snapshot()
+        if not snapshot.tools:
             raise PlanningError("cannot plan with an empty registry")
 
         active_field_evidence = {
@@ -1196,12 +1317,12 @@ class SchemaPlanner:
             if self._evidence_request_active(requirement)
         }
         if active_field_evidence:
-            if self.candidate_index:
-                declared_semantics = self._index().declared_semantics
+            if snapshot.index is not None:
+                declared_semantics = snapshot.index.declared_semantics
             else:
                 declared_semantics = {
                     _normalize(field.semantic_id or field.name)
-                    for tool in self.registry.tools()
+                    for tool in snapshot.tools
                     for endpoint in tool.endpoints
                     for field in endpoint.output_fields
                     if not field.identifier
@@ -1216,7 +1337,6 @@ class SchemaPlanner:
                     "unknown field_evidence semantic ID(s): " + ", ".join(unknown)
                 )
         return request
-
     def _index(self) -> _CandidateIndex:
         current_version = self.registry.version
         if (
@@ -1267,6 +1387,7 @@ class SchemaPlanner:
             "registry changed repeatedly while capturing the planning catalog"
         )
 
+
     def _planning_context(
         self,
         request: PlanRequest,
@@ -1277,15 +1398,18 @@ class SchemaPlanner:
             EndpointSpec | None,
         ]
         | None = None,
+        catalog_snapshot: RegistrySnapshot | None = None,
     ) -> PlanningContext:
         return PlanningContext(
             request=request,
             intent=intent,
-            registry=self._catalog_snapshot(
-                scoring_endpoint_transform=scoring_endpoint_transform,
+            registry=(
+                catalog_snapshot
+                or self._catalog_snapshot(
+                    scoring_endpoint_transform=scoring_endpoint_transform,
+                )
             ),
         )
-
     def _snapshot_tool_fingerprint(self, tool: ToolSpec) -> str:
         """Reuse the fingerprint for an immutable index snapshot when available."""
 
@@ -3584,12 +3708,14 @@ class SchemaPlanner:
             EndpointSpec | None,
         ]
         | None = None,
+        catalog_snapshot: RegistrySnapshot | None = None,
     ) -> ExecutionPlan:
         del async_decision
         context = self._planning_context(
             request,
             intent,
             scoring_endpoint_transform=scoring_endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
         )
         catalog_snapshot = context.registry
         pipeline = run_candidate_pipeline_sync(
@@ -3760,11 +3886,13 @@ class SchemaPlanner:
             EndpointSpec | None,
         ]
         | None = None,
+        catalog_snapshot: RegistrySnapshot | None = None,
     ) -> ExecutionPlan:
         context = self._planning_context(
             request,
             intent,
             scoring_endpoint_transform=scoring_endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
         )
         catalog_snapshot = context.registry
         pipeline = await run_candidate_pipeline_async(
