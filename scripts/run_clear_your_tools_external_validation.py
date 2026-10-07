@@ -1,88 +1,35 @@
-"""Run Clear Your Tools v2 native BM25 pruning on a visible development fixture."""
+"""Run CYT v2 native BM25 composite pruning on visible development fixtures."""
 from __future__ import annotations
-
-import argparse
-import json
-import time
+import argparse, json, time
 from pathlib import Path
 from statistics import median
 from typing import Any
+from cyt_indexer import PolicyContext, apply_tool_kind, build_catalog_from_tools, prune_catalog_bm25_and_retrieve
 
-from cyt_indexer import PolicyContext, apply_tool_kind, build_catalog_from_tools, retrieve_tools
-from cyt_indexer.bm25_search import bm25_score_catalog
+CYT_OPTIONS={"score_tool":0.4,"score_tool_enum":0.1,"prune_enums":True,"pipeline":["bm25"]}
 
+def load(path: Path) -> Any: return json.loads(path.read_text(encoding="utf-8"))
 
-def load(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def run(package_dir: Path, repeats: int, revision: str) -> dict[str, Any]:
-    catalog = load(package_dir / "catalog.json")
-    cases = load(package_dir / "cases.json")["cases"]
-    tools = [
-        {
-            "name": tool["name"],
-            "description": tool.get("description", ""),
-            "input_schema": tool["input_schema"],
-        }
-        for tool in catalog["tools"]
-    ]
-    index = build_catalog_from_tools(tools)
-    decomposed = index.to_catalog_dict()
-    ctx = PolicyContext("prune_optional", "prune_all")
-    apply_tool_kind(ctx, "mcp")
-
-    rows = []
+def run(catalog_path: Path, cases_path: Path, repeats: int, revision: str) -> dict[str, Any]:
+    catalog=load(catalog_path); cases=load(cases_path)["cases"]
+    tools=[{"name":t["name"],"description":t.get("description",""),"input_schema":t["input_schema"]} for t in catalog["tools"]]
+    index=build_catalog_from_tools(tools)
+    catalog_data=index.to_catalog_dict()
+    build_catalog=catalog_data
+    scoring=apply_tool_kind(PolicyContext("prune_optional","prune_all"),"mcp")
+    output=apply_tool_kind(PolicyContext("prune_optional","prune_all"),"mcp")
+    rows=[]
     for case in cases:
-        durations = []
-        survivors = []
+        times=[]; result={}
         for _ in range(repeats):
-            data = json.loads(json.dumps(decomposed))
-            start = time.perf_counter()
-            scored = bm25_score_catalog(data, case["query"])
-            survivors = retrieve_tools(scored, catalog=index, ctx=ctx)
-            durations.append((time.perf_counter() - start) * 1000)
-        rows.append(
-            {
-                "id": case["id"],
-                "candidate_tools": [item["name"] for item in survivors],
-                "latency_ms": median(durations),
-                "exposed_contracts": survivors,
-            }
-        )
+            start=time.perf_counter()
+            result=prune_catalog_bm25_and_retrieve(catalog_data,build_catalog,index,case["query"],scoring,output,options=CYT_OPTIONS)
+            times.append((time.perf_counter()-start)*1000)
+        survivors=result.get("tools",[])
+        rows.append({"id":case["id"],"candidate_tools":[x["name"] for x in survivors],"candidate_count":len(survivors),"latency_ms":median(times),"optional_chunk_count_in":result.get("optional_chunk_count_in"),"optional_chunk_count_out":result.get("optional_chunk_count_out")})
+    return {"schema_version":1,"status":"development_unfrozen","performance_evidence":False,"catalog_size":len(tools),"implementation":{"name":"Clear Your Tools native composite BM25","revision":revision,"boundary":"cyt-indexer-sdk prune_catalog_bm25_and_retrieve","options":CYT_OPTIONS,"repeats_per_query":repeats},"results":rows}
 
-    return {
-        "schema_version": 1,
-        "status": "development_unfrozen",
-        "implementation": {
-            "name": "Clear Your Tools native BM25",
-            "revision": revision,
-            "boundary": (
-                "cyt-indexer-sdk build_catalog_from_tools + native "
-                "bm25_score_catalog + retrieve_tools"
-            ),
-            "repeats_per_query": repeats,
-        },
-        "results": rows,
-    }
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--package-dir", type=Path, required=True)
-    parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--repeats", type=int, default=5)
-    parser.add_argument("--implementation-revision", required=True)
-    args = parser.parse_args()
-
-    payload = run(args.package_dir, args.repeats, args.implementation_revision)
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
-    print(args.out)
-
-
-if __name__ == "__main__":
-    main()
+def main()->None:
+    p=argparse.ArgumentParser(); p.add_argument("--catalog",type=Path,required=True); p.add_argument("--cases",type=Path,required=True); p.add_argument("--out",type=Path,required=True); p.add_argument("--repeats",type=int,default=5); p.add_argument("--implementation-revision",required=True); a=p.parse_args()
+    payload=run(a.catalog,a.cases,a.repeats,a.implementation_revision); a.out.parent.mkdir(parents=True,exist_ok=True); a.out.write_text(json.dumps(payload,indent=2,sort_keys=True)+"\n",encoding="utf-8"); print(a.out)
+if __name__=="__main__": main()
