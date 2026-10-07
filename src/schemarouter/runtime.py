@@ -2477,6 +2477,79 @@ class SchemaRouter:
             )
         )
 
+    async def aadd_native_graph_store(
+        self,
+        backend_name: str,
+        resource: Any,
+        *,
+        database_name: str,
+        namespace: str | None = None,
+        graphs: set[str] | tuple[str, ...] | list[str] | None = None,
+        backend_options: Mapping[str, Any] | None = None,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
+        default_max_hops: int = RUNTIME_DEFAULTS.graph_max_hops,
+        remote: bool = True,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_schema_items_per_graph: int = 256,
+        max_generated_bytes: int = RUNTIME_DEFAULTS.max_generated_bytes,
+    ) -> tuple[str, ...]:
+        """Register a native graph backend through the descriptor registry."""
+
+        from .native_registration import build_native_graph_backend
+
+        backend = build_native_graph_backend(
+            backend_name,
+            resource,
+            **dict(backend_options or {}),
+        )
+        return await self.aadd_graph_store(
+            backend,
+            database_name=database_name,
+            namespace=namespace,
+            graphs=graphs,
+            default_limit=default_limit,
+            default_max_hops=default_max_hops,
+            remote=remote,
+            max_discovery_sources=max_discovery_sources,
+            max_schema_items_per_graph=max_schema_items_per_graph,
+            max_generated_bytes=max_generated_bytes,
+        )
+
+    def add_native_graph_store(
+        self,
+        backend_name: str,
+        resource: Any,
+        *,
+        database_name: str,
+        namespace: str | None = None,
+        graphs: set[str] | tuple[str, ...] | list[str] | None = None,
+        backend_options: Mapping[str, Any] | None = None,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
+        default_max_hops: int = RUNTIME_DEFAULTS.graph_max_hops,
+        remote: bool = True,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_schema_items_per_graph: int = 256,
+        max_generated_bytes: int = RUNTIME_DEFAULTS.max_generated_bytes,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_native_graph_store`."""
+
+        return _run_sync(
+            lambda: self.aadd_native_graph_store(
+                backend_name,
+                resource,
+                database_name=database_name,
+                namespace=namespace,
+                graphs=graphs,
+                backend_options=backend_options,
+                default_limit=default_limit,
+                default_max_hops=default_max_hops,
+                remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_schema_items_per_graph=max_schema_items_per_graph,
+                max_generated_bytes=max_generated_bytes,
+            )
+        )
+
     async def aadd_neo4j_graph(
         self,
         driver: Any,
@@ -2491,17 +2564,16 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned Neo4j driver through the bounded graph contract."""
 
-        from .adapters.graph_native import Neo4jGraphBackend
-
-        return await self.aadd_graph_store(
-            Neo4jGraphBackend(
-                driver,
-                database=database,
-                graph_name=graph_name,
-            ),
+        return await self.aadd_native_graph_store(
+            "neo4j",
+            driver,
             database_name=database,
             namespace=namespace,
             graphs=graphs,
+            backend_options={
+                "database": database,
+                "graph_name": graph_name,
+            },
             default_limit=default_limit,
             default_max_hops=default_max_hops,
             remote=remote,
@@ -2547,14 +2619,14 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned FalkorDB client through the bounded graph contract."""
 
-        from .adapters.graph_native import FalkorGraphBackend
-
         graph_names = None if graphs is None else tuple(sorted(graphs))
-        return await self.aadd_graph_store(
-            FalkorGraphBackend(client, graphs=graph_names),
+        return await self.aadd_native_graph_store(
+            "falkordb",
+            client,
             database_name=database_name,
             namespace=namespace,
             graphs=graphs,
+            backend_options={"graphs": graph_names},
             default_limit=default_limit,
             default_max_hops=default_max_hops,
             remote=remote,
@@ -2599,17 +2671,16 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned Neptune Database/Analytics client."""
 
-        from .adapters.graph_native import NeptuneOpenCypherBackend
-
-        return await self.aadd_graph_store(
-            NeptuneOpenCypherBackend(
-                client,
-                graph_name=graph_name,
-                graph_identifier=graph_identifier,
-            ),
+        return await self.aadd_native_graph_store(
+            "neptune",
+            client,
             database_name=database_name,
             namespace=namespace,
             graphs={graph_name},
+            backend_options={
+                "graph_name": graph_name,
+                "graph_identifier": graph_identifier,
+            },
             default_limit=default_limit,
             default_max_hops=default_max_hops,
             remote=remote,
@@ -2655,10 +2726,9 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned python-arango Database wrapper."""
 
-        from .adapters.graph_native import ArangoGraphBackend
-
-        return await self.aadd_graph_store(
-            ArangoGraphBackend(database),
+        return await self.aadd_native_graph_store(
+            "arangodb",
+            database,
             database_name=database_name,
             namespace=namespace,
             graphs=graphs,
@@ -2705,17 +2775,16 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned HTTP client for a SPARQL 1.1 query endpoint."""
 
-        from .adapters.graph_native import SparqlGraphBackend
-
-        return await self.aadd_graph_store(
-            SparqlGraphBackend(
-                client,
-                endpoint=endpoint,
-                graph_name=graph_name,
-            ),
+        return await self.aadd_native_graph_store(
+            "sparql",
+            client,
             database_name=database_name,
             namespace=namespace,
             graphs={graph_name},
+            backend_options={
+                "endpoint": endpoint,
+                "graph_name": graph_name,
+            },
             default_limit=default_limit,
             default_max_hops=RUNTIME_DEFAULTS.graph_max_hops,
             remote=remote,
