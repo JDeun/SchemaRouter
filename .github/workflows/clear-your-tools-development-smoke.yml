@@ -88,6 +88,40 @@ jobs:
               assert len(p["results"]) == 33
               assert all(row["candidate_count"] <= size for row in p["results"])
           PY
+      - name: Run SchemaRouter on identical scaling catalogs
+        run: |
+          for size in 100 250 500 1000; do
+            python scripts/run_schemarouter_external_validation.py \
+              --package-dir "${PACKAGE_DIR}" \
+              --catalog "artifacts/cyt-dev-scaling/catalog-${size}.json" \
+              --top-k 10 \
+              --repeats 3 \
+              --implementation-revision "${GITHUB_SHA}" \
+              --out "artifacts/cyt-dev-scaling/results/schemarouter-${size}.json"
+          done
+      - name: Compare supported recall and retention
+        run: |
+          python - <<'PY'
+          import json, statistics
+          from pathlib import Path
+          cases={x["id"]:x for x in json.loads(Path("${PACKAGE_DIR}/cases.json").read_text())["cases"]}
+          out={"status":"development_unfrozen","performance_evidence":False,"sizes":{}}
+          for size in (100,250,500,1000):
+              cyt=json.loads(Path(f"artifacts/cyt-dev-scaling/results/cyt-{size}.json").read_text())
+              sr=json.loads(Path(f"artifacts/cyt-dev-scaling/results/schemarouter-{size}.json").read_text())
+              def summarize(payload):
+                  rows=payload["results"]; supported=[r for r in rows if cases[r["id"]]["label"]=="supported"]
+                  recalls=[]; full=[]
+                  for r in supported:
+                      req=set(cases[r["id"]]["required_tools"]); got=set(r["candidate_tools"])
+                      recalls.append(len(req & got)/len(req)); full.append(float(req <= got))
+                  counts=[len(r["candidate_tools"]) for r in rows]
+                  lats=[r["latency_ms"] for r in rows]
+                  return {"supported_recall":statistics.mean(recalls),"supported_full_coverage":statistics.mean(full),"mean_candidates":statistics.mean(counts),"median_candidates":statistics.median(counts),"retention":statistics.mean(counts)/size,"median_latency_ms":statistics.median(lats)}
+              out["sizes"][str(size)]={"cyt":summarize(cyt),"schemarouter":summarize(sr)}
+          Path("artifacts/cyt-dev-scaling/comparison.json").write_text(json.dumps(out,indent=2,sort_keys=True)+"\n")
+          print(json.dumps(out,indent=2,sort_keys=True))
+          PY
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: clear-your-tools-development-smoke
