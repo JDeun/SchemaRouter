@@ -10,7 +10,6 @@ import os
 from pathlib import Path
 from typing import Any
 
-
 PINNED_UPSTREAM_REVISION = "5bcb83b29ab5b30aee07cabaa8df974881c47126"
 PINNED_UPSTREAM_VERSION = "2.1.2"
 EXPECTED_PUBLIC_TOOLS = 12
