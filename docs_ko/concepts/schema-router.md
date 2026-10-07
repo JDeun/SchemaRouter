@@ -95,5 +95,5 @@ SchemaRouter는 다음을 소유하려 하지 않습니다.
 
 이 기능은 LangChain/LangGraph/LlamaIndex 또는 애플리케이션 계층에 남겨 둡니다.
 
-[Capability retrieval 자세히 보기 →](capability-catalog.md) ·
+[Capability catalog 자세히 보기 →](capability-catalog.md) ·
 [Field-first execution →](field-first-execution.md)
