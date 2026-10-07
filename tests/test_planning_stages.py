@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import pytest
 
+from schemarouter.models import PlanCoverage, ToolCall
 from schemarouter.planning_stages import (
+    assemble_execution_plan,
     run_candidate_pipeline_async,
     run_candidate_pipeline_sync,
     select_fallbacks_async,
@@ -288,3 +290,54 @@ async def test_async_fallback_stage_preserves_executable_compatibility_gates() -
     )
 
     assert result.routes == ((0, ("GOOD",)),)
+
+
+def test_execution_plan_assembly_collects_coverage_and_warning() -> None:
+    call = ToolCall.model_construct(
+        tool_key="tool",
+        endpoint="read",
+        arguments={},
+        fields=["temperature"],
+        executable=True,
+    )
+    coverage = PlanCoverage.model_construct(
+        required=[],
+        covered=[],
+        uncovered=[],
+        complete=False,
+    )
+
+    def build_coverage(
+        required: frozenset[str],
+        covered: set[str],
+        candidates: list[str],
+    ) -> PlanCoverage:
+        assert required == frozenset({"temperature", "pressure"})
+        assert covered == {"temperature"}
+        assert candidates == ["candidate"]
+        return coverage
+
+    result = assemble_execution_plan(
+        query="read temperature",
+        registry_version=7,
+        primary_pairs=(("candidate", call),),
+        fallback_routes=(),
+        warnings=("base-warning",),
+        required_coverage={"temperature", "pressure"},
+        all_candidates=["candidate"],
+        selected_coverage=lambda _candidate, _call: {
+            "temperature",
+            "irrelevant",
+        },
+        build_coverage=build_coverage,
+        coverage_warning=lambda current: (
+            "coverage-warning" if current is coverage else None
+        ),
+    )
+
+    assert result.query == "read temperature"
+    assert result.registry_version == 7
+    assert result.calls == [call]
+    assert result.fallback_routes == []
+    assert result.coverage is coverage
+    assert result.warnings == ["base-warning", "coverage-warning"]
