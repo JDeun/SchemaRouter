@@ -9,7 +9,8 @@
 
 # 에이전트와 도구 사이에 타입 기반 실행 경계를 두세요
 
-SchemaRouter는 API·도구·데이터 시스템 전반에서 AI 에이전트를 위한 **타입 기반 capability routing과 정책 통제형 실행 경계(governed execution boundary)**를 제공합니다.
+SchemaRouter는 MCP, OpenAPI, Python, 프레임워크 도구를 하나의 **타입 기반 검색·실행 경계**로
+묶어 주는 라이브러리입니다.
 
 도구가 많아질수록 모든 스키마를 한꺼번에 모델에 넘기는 방식은 비용도 크고 통제하기도 어렵습니다.
 SchemaRouter는 질문에 필요한 **데이터 필드**를 먼저 찾고, 그 필드를 제공할 수 있는 등록된
@@ -75,8 +76,8 @@ pip install schemarouter
 ```mermaid
 flowchart LR
     Q["사용자 질문"] --> A["RAG / 에이전트 / 애플리케이션"]
-    A --> SR["SchemaRouter<br/>typed capability routing + governed execution"]
-    SR --> T["APIs / MCP / SDKs / databases"]
+    A --> SR["SchemaRouter<br/>typed capability retrieval + execution boundary"]
+    SR --> T["OpenAPI / MCP / OPTIMADE / Python / plugins"]
     SR --> D["검증된 typed external data"]
     D --> A
 ```
@@ -105,7 +106,9 @@ Tavily입니다.
 현재 안정판은 **0.17.0 (Beta / pre-1.0)** 입니다. Python 3.10–3.14는 release-blocking
 대상이고 Python 3.15는 preview 대상입니다.
 
-0.17은 provider-first routing, governed execution, enterprise authorization, 관계형/vector/graph/document 데이터의 schema-introspection 기반 onboarding, 강화된 runtime isolation과 외부 검증 인프라를 통합합니다. credential, 데이터 시스템의 native permission, raw query authority는 model-visible boundary 밖에 유지합니다.
+0.16은 enterprise authorization과 관계형/vector/graph/RDF/비관계형 데이터의 schema
+introspection 기반 onboarding을 추가하되, 인증·credential·DB-native permission·raw query
+authority는 model-visible boundary 밖에 유지합니다.
 
 [0.17.0 릴리스 노트 →](releases/0.17.0.md) ·
 [Enterprise data onboarding →](guides/enterprise-data-onboarding.md) ·

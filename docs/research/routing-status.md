@@ -1,6 +1,6 @@
-# Research status
+# Routing research status
 
-This page is the **current-state summary**, not the complete experiment log. Product capability and research evidence are intentionally separated: stable runtime features are documented elsewhere, while this page tracks empirical claims and their evidence boundaries.
+This page is the **current-state summary**, not the complete experiment log.
 
 For the full research record:
 
@@ -125,19 +125,6 @@ A separately preregistered strong-agent K3-vs-K5 gate completed in run `36670280
 
 The task-pass gate failed, so K3 is **not** promoted into #432. No K/weight/threshold retuning is
 permitted from those evaluated rows.
-
-## External validation status
-
-External comparisons are tracked separately from maintainer-owned product validation. Development fixtures and protocol preparation are **not external evidence**.
-
-| Track | Current state | Evidence boundary |
-| --- | --- | --- |
-| SmartMCP (#1114) | native development fixture/smoke prepared; maintainer protocol confirmation pending | held-out freeze waits for upstream agreement |
-| Clear Your Tools (#839) | v2.17.6 native BM25 development smoke being integrated | visible development fixture only; no held-out claim |
-| Jev (#796) | frozen 82-tool / 16-query package delivered upstream | waiting for upstream execution/review; no post-freeze tuning |
-| HYSET (#795) | public-code fresh-retraining protocol prepared | must be labeled independently retrained HYSET; no paper-checkpoint reproduction claim |
-
-The canonical freeze rules live in [External validation freeze](external-validation-freeze.md). Negative or null external results remain publishable evidence and must not be repaired from held-out rows.
 
 ### Active conveyor
 

@@ -102,6 +102,8 @@ def run(
     package_dir: Path,
     repeats: int | None,
     implementation_revision: str | None = None,
+    catalog_override: Path | None = None,
+    top_k_override: int | None = None,
 ) -> dict[str, Any]:
     manifest = _load(package_dir / "manifest.json")
     repeats = (
@@ -112,9 +114,13 @@ def run(
     if repeats < 1:
         raise ValueError("repeats must be positive")
 
-    catalog = _load(package_dir / manifest["files"]["catalog"])
+    catalog = (
+        _load(catalog_override)
+        if catalog_override
+        else _load(package_dir / manifest["files"]["catalog"])
+    )
     cases = _load(package_dir / manifest["files"]["cases"])
-    top_k = int(manifest["comparison"]["max_candidates"])
+    top_k = top_k_override or int(manifest["comparison"]["max_candidates"])
 
     build_start = time.perf_counter()
     router = build_router(catalog)
@@ -188,6 +194,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--package-dir", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--catalog", type=Path, help="Development-only catalog override.")
+    parser.add_argument("--top-k", type=int, help="Development-only candidate cap override.")
     parser.add_argument(
         "--repeats",
         type=int,
@@ -206,6 +214,8 @@ def main() -> None:
         package_dir=args.package_dir,
         repeats=args.repeats,
         implementation_revision=args.implementation_revision,
+        catalog_override=args.catalog,
+        top_k_override=args.top_k,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(

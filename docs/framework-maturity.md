@@ -6,12 +6,13 @@ to embed in larger ecosystems.
 
 This document tracks framework-level maturity rather than research metrics.
 
-> **0.17.0 maturity note:** the stable core now spans provider-first capability registration,
-> governed execution, host-verified authorization/data scope, schema-introspected data-system
-> onboarding, bounded decision backends, versioned snapshots/artifacts, and privacy-safe decision
-> traces. Retrieval still returns registered capability contracts and never grants execution
-> authority. Research evidence remains separate from stable product guarantees. See
-> [Research status](research/routing-status.md).
+> **0.14.0 maturity note:** the 0.12 stable-core boundary remains intact. The current main branch
+> adds provider-first onboarding, explicit typed-state retrieval/backfill, scalable capability-graph
+> infrastructure, atomic/versioned snapshot and artifact lifecycles, and privacy-safe unified
+> decision traces. Retrieval still returns registered capability contracts and never grants
+> execution authority. Active agent-utility research evaluates downstream quality/efficiency
+> separately from the stable runtime surface. See
+> [Routing research status](research/routing-status.md).
 
 | Capability | Current main | Direction |
 | --- | --- | --- |

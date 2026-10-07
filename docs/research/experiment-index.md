@@ -26,20 +26,6 @@ For **what to try next and why**, use the
 to canonical work items and record active/next/backlog/deferred state so a new session does not
 recreate terminal experiments.
 
-## Choose the right evidence surface
-
-Use this ledger when you need provenance for a specific experimental decision. For ordinary reading, start with the smaller surfaces below:
-
-| Question | Start here |
-| --- | --- |
-| What is the current defensible research claim? | [Research status](routing-status.md) |
-| What evidence is paper-ready? | [Paper evidence package](paper-evidence-package.md) |
-| What is still active or blocked? | [Prior-art roadmap](prior-art-roadmap.md) and the active research issues |
-| What exactly was tried, including failures? | This complete ledger |
-| How did the architecture evolve? | [Design and experiment history](design-and-experiment-history.md) |
-
-The sections below are intentionally archival. Historical failures are retained for reproducibility; they are not recommended product configurations.
-
 ## How to read the evidence
 
 A Git commit is not the same thing as an experiment. One squashed PR may contain implementation,

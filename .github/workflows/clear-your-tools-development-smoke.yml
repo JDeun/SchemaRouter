@@ -1,0 +1,150 @@
+name: Clear Your Tools Development Smoke
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "benchmarks/external-validation-clear-your-tools-dev-v1/**"
+      - "scripts/run_clear_your_tools_external_validation.py"
+      - "scripts/build_cyt_development_scaling_catalogs.py"
+      - ".github/workflows/clear-your-tools-development-smoke.yml"
+permissions:
+  contents: read
+env:
+  CYT_REVISION: 9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4
+  CYT_VERSION: "2.17.6"
+  PACKAGE_DIR: benchmarks/external-validation-smart-mcp-dev-v1
+jobs:
+  native-bm25-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13"
+      - name: Install SchemaRouter and pinned CYT SDK
+        run: |
+          python -m pip install .
+          python -m pip install "cyt-indexer-sdk==${CYT_VERSION}"
+      - name: Record provenance
+        run: |
+          mkdir -p artifacts/cyt-dev-smoke
+          python --version > artifacts/cyt-dev-smoke/python-version.txt
+          python -m pip freeze > artifacts/cyt-dev-smoke/pip-freeze.txt
+          git rev-parse HEAD > artifacts/cyt-dev-smoke/schemarouter-revision.txt
+          printf '%s\n' "${CYT_REVISION}" > artifacts/cyt-dev-smoke/cyt-revision.txt
+          printf '%s\n' "${CYT_VERSION}" > artifacts/cyt-dev-smoke/cyt-version.txt
+      - name: Run native CYT BM25 development smoke
+        run: |
+          python scripts/run_clear_your_tools_external_validation.py \
+            --catalog "${PACKAGE_DIR}/catalog.json" \
+            --cases "${PACKAGE_DIR}/cases.json" \
+            --implementation-revision "${CYT_REVISION}" \
+            --out artifacts/cyt-dev-smoke/cyt-result.json
+      - name: Validate result shape
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path("artifacts/cyt-dev-smoke/cyt-result.json").read_text())
+          assert p["status"] == "development_unfrozen"
+          assert p["implementation"]["revision"] == "9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4"
+          assert p["performance_evidence"] is False
+          assert len(p["results"]) == 33
+          assert all("candidate_tools" in row for row in p["results"])
+          PY
+      - name: Build visible scaling catalogs
+        run: |
+          python scripts/build_cyt_development_scaling_catalogs.py \
+            --source "${PACKAGE_DIR}/catalog.json" \
+            --out-dir artifacts/cyt-dev-scaling
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for size in (100, 250, 500, 1000):
+              p = json.loads(Path(f"artifacts/cyt-dev-scaling/catalog-{size}.json").read_text())
+              assert p["status"] == "development_unfrozen"
+              assert p["synthetic_distractors"] is True
+              assert len(p["tools"]) == size
+          PY
+      - name: Run native CYT scaling development preflight
+        run: |
+          mkdir -p artifacts/cyt-dev-scaling/results
+          for size in 100 250 500 1000; do
+            python scripts/run_clear_your_tools_external_validation.py \
+              --catalog "artifacts/cyt-dev-scaling/catalog-${size}.json" \
+              --cases "${PACKAGE_DIR}/cases.json" \
+              --implementation-revision "${CYT_REVISION}" \
+              --repeats 3 \
+              --out "artifacts/cyt-dev-scaling/results/cyt-${size}.json"
+          done
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for size in (100, 250, 500, 1000):
+              p=json.loads(Path(f"artifacts/cyt-dev-scaling/results/cyt-{size}.json").read_text())
+              assert p["catalog_size"] == size
+              assert p["performance_evidence"] is False
+              assert len(p["results"]) == 33
+              assert all(row["candidate_count"] <= size for row in p["results"])
+          PY
+      - name: Run SchemaRouter on identical scaling catalogs
+        run: |
+          for size in 100 250 500 1000; do
+            python scripts/run_schemarouter_external_validation.py \
+              --package-dir "${PACKAGE_DIR}" \
+              --catalog "artifacts/cyt-dev-scaling/catalog-${size}.json" \
+              --top-k 10 \
+              --repeats 3 \
+              --implementation-revision "${GITHUB_SHA}" \
+              --out "artifacts/cyt-dev-scaling/results/schemarouter-${size}.json"
+          done
+      - name: Compare supported recall and retention
+        run: |
+          python - <<'PY'
+          import json, statistics
+          from pathlib import Path
+          cases={x["id"]:x for x in json.loads(Path('benchmarks/external-validation-smart-mcp-dev-v1/cases.json').read_text())["cases"]}
+          out={"status":"development_unfrozen","performance_evidence":False,"sizes":{}}
+          for size in (100,250,500,1000):
+              cyt=json.loads(Path(f"artifacts/cyt-dev-scaling/results/cyt-{size}.json").read_text())
+              sr=json.loads(Path(f"artifacts/cyt-dev-scaling/results/schemarouter-{size}.json").read_text())
+              def summarize(payload):
+                  rows = payload["results"]
+                  supported = [r for r in rows if cases[r["id"]]["label"] == "supported"]
+                  unsupported = [r for r in rows if cases[r["id"]]["label"] != "supported"]
+                  recalls = []
+                  full = []
+                  for r in supported:
+                      req = set(cases[r["id"]]["required_tools"])
+                      got = set(r["candidate_tools"])
+                      recalls.append(len(req & got) / len(req))
+                      full.append(float(req <= got))
+
+                  def cohort(rows):
+                      counts = [len(r["candidate_tools"]) for r in rows]
+                      lats = [r["latency_ms"] for r in rows]
+                      return {
+                          "mean_candidates": statistics.mean(counts),
+                          "median_candidates": statistics.median(counts),
+                          "retention": statistics.mean(counts) / size,
+                          "median_latency_ms": statistics.median(lats),
+                      }
+
+                  return {
+                      "supported_recall": statistics.mean(recalls),
+                      "supported_full_coverage": statistics.mean(full),
+                      "supported": cohort(supported),
+                      "unsupported_or_ood": cohort(unsupported),
+                  }
+              out["sizes"][str(size)]={"cyt":summarize(cyt),"schemarouter":summarize(sr)}
+          Path("artifacts/cyt-dev-scaling/comparison.json").write_text(json.dumps(out,indent=2,sort_keys=True)+"\n")
+          print(json.dumps(out,indent=2,sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: clear-your-tools-development-smoke
+          path: |
+            artifacts/cyt-dev-smoke
+            artifacts/cyt-dev-scaling
+          if-no-files-found: error

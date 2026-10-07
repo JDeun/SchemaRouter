@@ -4,9 +4,9 @@ SchemaRouter는 general agent framework, MCP server, model router인 것처럼 �
 
 ## Canonical positioning
 
-> **SchemaRouter는 API, 도구, 데이터 시스템 전반에서 AI 에이전트를 위한 typed capability routing + governed execution layer입니다.**
+> **SchemaRouter는 MCP, OpenAPI, Python, framework tool을 사용하는 LLM/RAG agent를 위한 typed capability retrieval 및 schema-aware execution layer입니다.**
 
-짧은 표현은 “AI 에이전트를 위한 typed capability routing과 governed execution”입니다.
+짧은 표현은 “LLM/RAG agent를 위한 typed capability retrieval과 schema-aware tool execution”입니다.
 
 SchemaRouter는 typed tool/capability registry, capability retrieval layer, schema-aware planning/execution boundary, protocol/framework integration layer, validation/projection/policy/health/schema-lifecycle boundary입니다.
 

@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "kind": "hyset-public-retraining-development-manifest",
+  "status": "development_unfrozen",
+  "issue": 795,
+  "comparison_id": "schemarouter-hyset-public-retraining-v1",
+  "upstream": {
+    "repository": "stormwther18/HYSET",
+    "commit": "93808cb8d633b6b685f0f9353923b27c2ad7ad81",
+    "paper_checkpoint_available": false,
+    "result_label": "independently retrained HYSET"
+  },
+  "encoder": {
+    "repository": "reasonwang/ToolGen-Qwen2.5-1.5B-Tool-Retriever",
+    "revision": null
+  },
+  "data": {
+    "toolbench_source_revision": null,
+    "toolbench_digest": null,
+    "heldout_split_ids": "six data/test_query_ids/*_test_query_ids.json files at pinned HYSET commit"
+  },
+  "training": {
+    "seed": 42,
+    "primary_configuration": null,
+    "reward_cache_digest": null,
+    "annotation_only_eta0_allowed_if_reward_cache_not_publicly_reproducible": true
+  },
+  "governance": {
+    "paper_checkpoint_reproduction_claim_allowed": false,
+    "heldout_tuning_allowed": false,
+    "failed_training_and_oom_are_reportable_results": true,
+    "frozen_before_scoring": false
+  }
+}
