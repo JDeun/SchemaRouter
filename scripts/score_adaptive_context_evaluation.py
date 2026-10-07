@@ -124,7 +124,8 @@ def main() -> int:
         "rows": rows,
         "limitations": [
             "Deterministic development scorer only; not held-out evidence.",
-            "Required-field recall, unsupported rejection, and end-to-end task success require a later task corpus.",
+            "Required-field recall, unsupported rejection, and end-to-end task success "
+            "require a later task corpus.",
             "Timing is diagnostic and environment-dependent.",
         ],
     }
