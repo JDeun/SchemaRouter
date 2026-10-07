@@ -3593,13 +3593,15 @@ class SchemaPlanner:
                 scoring_endpoint_transform=scoring_endpoint_transform,
                 catalog_snapshot=stage_context.registry,
             ),
-            augment=lambda stage_context, lexical: self._augment_candidates_with_semantic_recall_sync(
-                stage_context.request,
-                stage_context.intent,
-                lexical,
-                additional_availability_predicate=additional_availability_predicate,
-                scoring_endpoint_transform=scoring_endpoint_transform,
-                catalog_snapshot=stage_context.registry,
+            augment=lambda stage_context, lexical: (
+                self._augment_candidates_with_semantic_recall_sync(
+                    stage_context.request,
+                    stage_context.intent,
+                    lexical,
+                    additional_availability_predicate=additional_availability_predicate,
+                    scoring_endpoint_transform=scoring_endpoint_transform,
+                    catalog_snapshot=stage_context.registry,
+                )
             ),
             coverage=lambda stage_context, ranked: self._field_coverage_matrix(
                 stage_context.request,
@@ -3826,13 +3828,15 @@ class SchemaPlanner:
                 scoring_endpoint_transform=scoring_endpoint_transform,
                 catalog_snapshot=stage_context.registry,
             ),
-            augment=lambda stage_context, lexical: self._augment_candidates_with_semantic_recall_async(
-                stage_context.request,
-                stage_context.intent,
-                lexical,
-                additional_availability_predicate=additional_availability_predicate,
-                scoring_endpoint_transform=scoring_endpoint_transform,
-                catalog_snapshot=stage_context.registry,
+            augment=lambda stage_context, lexical: (
+                self._augment_candidates_with_semantic_recall_async(
+                    stage_context.request,
+                    stage_context.intent,
+                    lexical,
+                    additional_availability_predicate=additional_availability_predicate,
+                    scoring_endpoint_transform=scoring_endpoint_transform,
+                    catalog_snapshot=stage_context.registry,
+                )
             ),
             coverage=lambda stage_context, ranked: self._field_coverage_matrix(
                 stage_context.request,
