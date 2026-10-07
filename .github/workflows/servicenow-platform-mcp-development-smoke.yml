@@ -1,0 +1,159 @@
+name: ServiceNow Platform MCP Development Smoke
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "benchmarks/external-validation-servicenow-platform-mcp-dev-v1/**"
+      - "scripts/capture_servicenow_platform_mcp_tools.py"
+      - "scripts/external_validation_servicenow_platform_mcp.py"
+      - "scripts/external_validation_provenance.py"
+      - "scripts/run_servicenow_static_external_validation.py"
+      - "scripts/run_servicenow_schemarouter_external_validation.py"
+      - ".github/workflows/servicenow-platform-mcp-development-smoke.yml"
+
+permissions:
+  contents: read
+
+env:
+  SERVICENOW_MCP_REVISION: 5bcb83b29ab5b30aee07cabaa8df974881c47126
+  PACKAGE_DIR: benchmarks/external-validation-servicenow-platform-mcp-dev-v1
+  ARTIFACT_DIR: artifacts/servicenow-platform-mcp-dev-smoke
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+
+      - name: Install SchemaRouter and pinned ServiceNow Platform MCP
+        run: |
+          python -m pip install ".[mcp]"
+          python -m pip install "git+https://github.com/Xerrion/servicenow-platform-mcp.git@${SERVICENOW_MCP_REVISION}"
+
+      - name: Record environment
+        run: |
+          mkdir -p "${ARTIFACT_DIR}"
+          python --version > "${ARTIFACT_DIR}/python-version.txt"
+          python -m pip freeze > "${ARTIFACT_DIR}/pip-freeze.txt"
+          uname -a > "${ARTIFACT_DIR}/uname.txt"
+          lscpu > "${ARTIFACT_DIR}/lscpu.txt"
+          git rev-parse HEAD > "${ARTIFACT_DIR}/schemarouter-revision.txt"
+          printf '%s\n' "${SERVICENOW_MCP_REVISION}" > "${ARTIFACT_DIR}/servicenow-mcp-revision.txt"
+
+      - name: Capture native readonly tools/list surface
+        run: |
+          python scripts/capture_servicenow_platform_mcp_tools.py \
+            --upstream-revision "${SERVICENOW_MCP_REVISION}" \
+            --out "${ARTIFACT_DIR}/servicenow-readonly-tools.json"
+
+      - name: Validate development fixture against captured schemas
+        run: |
+          python scripts/external_validation_servicenow_platform_mcp.py validate \
+            --package-dir "${PACKAGE_DIR}" \
+            --snapshot "${ARTIFACT_DIR}/servicenow-readonly-tools.json"
+
+      - name: Run static readonly baseline
+        run: |
+          python scripts/run_servicenow_static_external_validation.py \
+            --package-dir "${PACKAGE_DIR}" \
+            --snapshot "${ARTIFACT_DIR}/servicenow-readonly-tools.json" \
+            --out "${ARTIFACT_DIR}/static-result.json"
+
+      - name: Run SchemaRouter preselection at development K values
+        run: |
+          python scripts/run_servicenow_schemarouter_external_validation.py \
+            --package-dir "${PACKAGE_DIR}" \
+            --snapshot "${ARTIFACT_DIR}/servicenow-readonly-tools.json" \
+            --implementation-revision "$(git rev-parse HEAD)" \
+            --top-k 3 \
+            --out "${ARTIFACT_DIR}/schemarouter-k3-result.json"
+          python scripts/run_servicenow_schemarouter_external_validation.py \
+            --package-dir "${PACKAGE_DIR}" \
+            --snapshot "${ARTIFACT_DIR}/servicenow-readonly-tools.json" \
+            --implementation-revision "$(git rev-parse HEAD)" \
+            --top-k 5 \
+            --out "${ARTIFACT_DIR}/schemarouter-k5-result.json"
+
+      - name: Score development conditions
+        run: |
+          python scripts/external_validation_servicenow_platform_mcp.py score \
+            --package-dir "${PACKAGE_DIR}" \
+            --snapshot "${ARTIFACT_DIR}/servicenow-readonly-tools.json" \
+            --results "${ARTIFACT_DIR}/static-result.json" \
+            --out "${ARTIFACT_DIR}/static-score.json"
+          python scripts/external_validation_servicenow_platform_mcp.py score \
+            --package-dir "${PACKAGE_DIR}" \
+            --snapshot "${ARTIFACT_DIR}/servicenow-readonly-tools.json" \
+            --results "${ARTIFACT_DIR}/schemarouter-k3-result.json" \
+            --out "${ARTIFACT_DIR}/schemarouter-k3-score.json"
+          python scripts/external_validation_servicenow_platform_mcp.py score \
+            --package-dir "${PACKAGE_DIR}" \
+            --snapshot "${ARTIFACT_DIR}/servicenow-readonly-tools.json" \
+            --results "${ARTIFACT_DIR}/schemarouter-k5-result.json" \
+            --out "${ARTIFACT_DIR}/schemarouter-k5-score.json"
+
+      - name: Write comparison summary
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["ARTIFACT_DIR"])
+          rows = []
+          for key, label in [
+              ("static", "Static readonly"),
+              ("schemarouter-k3", "SchemaRouter K=3"),
+              ("schemarouter-k5", "SchemaRouter K=5"),
+          ]:
+              payload = json.loads((root / f"{key}-score.json").read_text())
+              s = payload["summary"]
+              rows.append(
+                  [
+                      label,
+                      s["supported_required_tool_recall"],
+                      s["supported_required_input_field_recall"],
+                      s["unsupported_nonempty_candidate_rate"],
+                      s["mean_active_tool_count"],
+                      s["mean_visible_schema_bytes"],
+                      s["median_selection_ms"],
+                      s["p95_selection_ms"],
+                      s["index_build_ms"],
+                  ]
+              )
+
+          lines = [
+              "# ServiceNow Platform MCP development-only smoke",
+              "",
+              "> Visible development fixture; not held-out evidence.",
+              "",
+              "| Condition | Tool recall | Input-field recall | Unsupported nonempty | Mean tools | Mean schema bytes | Median ms | p95 ms | Build ms |",
+              "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+          ]
+          for row in rows:
+              rendered = [row[0]] + [
+                  "n/a" if value is None else f"{value:.6f}" if isinstance(value, float) else str(value)
+                  for value in row[1:]
+              ]
+              lines.append("| " + " | ".join(rendered) + " |")
+
+          summary = "\n".join(lines) + "\n"
+          (root / "comparison-summary.md").write_text(summary, encoding="utf-8")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
+              handle.write(summary)
+          PY
+
+      - name: Upload development smoke artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: servicenow-platform-mcp-development-smoke
+          path: artifacts/servicenow-platform-mcp-dev-smoke
+          if-no-files-found: error

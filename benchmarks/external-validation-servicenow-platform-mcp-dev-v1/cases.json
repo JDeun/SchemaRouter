@@ -1,0 +1,364 @@
+{
+  "schema_version": 1,
+  "case_set_id": "servicenow-platform-mcp-cross-project-dev-v1",
+  "cases": [
+    {
+      "id": "sn-dev-001",
+      "label": "supported",
+      "stratum": "incident_list",
+      "query": "Show 10 active incidents with number, short description, priority, and assigned person, ordered by priority.",
+      "required_tools": [
+        "query"
+      ],
+      "required_fields": {
+        "query": [
+          "table",
+          "encoded_query",
+          "fields",
+          "limit",
+          "order_by",
+          "display_values"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-002",
+      "label": "supported",
+      "stratum": "incident_aggregate",
+      "query": "Count active incidents by assignment group.",
+      "required_tools": [
+        "query"
+      ],
+      "required_fields": {
+        "query": [
+          "table",
+          "encoded_query",
+          "aggregate",
+          "group_by"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-003",
+      "label": "supported",
+      "stratum": "exact_record_query",
+      "query": "Read the incident with this sys_id and return its number, state, and updated time.",
+      "required_tools": [
+        "query"
+      ],
+      "required_fields": {
+        "query": [
+          "table",
+          "sys_id",
+          "fields"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-004",
+      "label": "supported",
+      "stratum": "table_metadata",
+      "query": "Describe the incident state and assigned_to fields and include their documentation.",
+      "required_tools": [
+        "describe"
+      ],
+      "required_fields": {
+        "describe": [
+          "table",
+          "fields",
+          "include_docs"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-005",
+      "label": "supported",
+      "stratum": "table_discovery",
+      "query": "Find ServiceNow tables whose name or label contains request.",
+      "required_tools": [
+        "describe"
+      ],
+      "required_fields": {
+        "describe": [
+          "action",
+          "name_filter"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-006",
+      "label": "supported",
+      "stratum": "named_script_read",
+      "query": "Read the Business Rule named Validate priority.",
+      "required_tools": [
+        "record_read"
+      ],
+      "required_fields": {
+        "record_read": [
+          "table",
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-007",
+      "label": "supported",
+      "stratum": "choice_resolution",
+      "query": "List the supported incident state choices.",
+      "required_tools": [
+        "resolve_choice"
+      ],
+      "required_fields": {
+        "resolve_choice": [
+          "table",
+          "field"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-008",
+      "label": "supported",
+      "stratum": "journal_history",
+      "query": "Show comments and work notes for this incident sys_id from the last 30 days.",
+      "required_tools": [
+        "analysis"
+      ],
+      "required_fields": {
+        "analysis": [
+          "action",
+          "table",
+          "sys_id",
+          "window_days",
+          "limit"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-009",
+      "label": "supported",
+      "stratum": "ritm_variables",
+      "query": "Show the submitted answers for this requested-item sys_id.",
+      "required_tools": [
+        "analysis"
+      ],
+      "required_fields": {
+        "analysis": [
+          "action",
+          "sys_id",
+          "limit"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-010",
+      "label": "supported",
+      "stratum": "audit_check_fields",
+      "query": "Check whether incident state, priority, and assigned_to are audited over the last 30 days.",
+      "required_tools": [
+        "audit"
+      ],
+      "required_fields": {
+        "audit": [
+          "action",
+          "table",
+          "fields_csv",
+          "window_days"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-011",
+      "label": "supported",
+      "stratum": "audit_history",
+      "query": "Show field-change history for this incident sys_id over the last 30 days.",
+      "required_tools": [
+        "audit"
+      ],
+      "required_fields": {
+        "audit": [
+          "action",
+          "table",
+          "sys_id",
+          "window_days",
+          "limit"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-012",
+      "label": "supported",
+      "stratum": "investigation_error_analysis",
+      "query": "Investigate ServiceNow errors from the last 24 hours with at most 50 log entries.",
+      "required_tools": [
+        "investigate"
+      ],
+      "required_fields": {
+        "investigate": [
+          "action",
+          "name",
+          "params"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-013",
+      "label": "supported",
+      "stratum": "code_search",
+      "query": "Find scripts that call gs.eventQueue in the sys_script table.",
+      "required_tools": [
+        "code_search"
+      ],
+      "required_fields": {
+        "code_search": [
+          "term",
+          "table",
+          "limit"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-014",
+      "label": "supported",
+      "stratum": "flow_contract",
+      "query": "Inspect the New starter flow contract including inputs, outputs, stages, triggers, steps, and warnings.",
+      "required_tools": [
+        "flow"
+      ],
+      "required_fields": {
+        "flow": [
+          "action",
+          "name",
+          "sections",
+          "section_limit"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-015",
+      "label": "supported",
+      "stratum": "flow_by_table",
+      "query": "Find flows triggered by records on the incident table.",
+      "required_tools": [
+        "flow"
+      ],
+      "required_fields": {
+        "flow": [
+          "action",
+          "table"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-016",
+      "label": "supported",
+      "stratum": "flow_trigger_list",
+      "query": "List active record triggers for the incident table.",
+      "required_tools": [
+        "flow"
+      ],
+      "required_fields": {
+        "flow": [
+          "action",
+          "table",
+          "active",
+          "limit"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-017",
+      "label": "supported",
+      "stratum": "cmdb_query",
+      "query": "Find 10 server configuration items.",
+      "required_tools": [
+        "cmdb"
+      ],
+      "required_fields": {
+        "cmdb": [
+          "action",
+          "class_name",
+          "limit"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-018",
+      "label": "supported",
+      "stratum": "cmdb_get",
+      "query": "Inspect this server configuration item's attributes and relationships by sys_id.",
+      "required_tools": [
+        "cmdb"
+      ],
+      "required_fields": {
+        "cmdb": [
+          "action",
+          "class_name",
+          "sys_id"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-019",
+      "label": "supported",
+      "stratum": "attachment_list",
+      "query": "List attachments for this incident sys_id.",
+      "required_tools": [
+        "attachment"
+      ],
+      "required_fields": {
+        "attachment": [
+          "action",
+          "table",
+          "table_sys_id"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-020",
+      "label": "supported",
+      "stratum": "attachment_get",
+      "query": "Get metadata for this attachment sys_id.",
+      "required_tools": [
+        "attachment"
+      ],
+      "required_fields": {
+        "attachment": [
+          "action",
+          "sys_id"
+        ]
+      }
+    },
+    {
+      "id": "sn-dev-021",
+      "label": "unsupported",
+      "stratum": "readonly_negative_record_write",
+      "query": "Update this incident's work notes to say the issue is resolved.",
+      "required_tools": [],
+      "required_fields": {}
+    },
+    {
+      "id": "sn-dev-022",
+      "label": "unsupported",
+      "stratum": "readonly_negative_attachment_write",
+      "query": "Upload this local log file to the incident as an attachment.",
+      "required_tools": [],
+      "required_fields": {}
+    },
+    {
+      "id": "sn-dev-023",
+      "label": "unsupported",
+      "stratum": "readonly_negative_catalog_order",
+      "query": "Order the Standard Laptop catalog item for the current user.",
+      "required_tools": [],
+      "required_fields": {}
+    },
+    {
+      "id": "sn-dev-024",
+      "label": "unsupported",
+      "stratum": "ood",
+      "query": "Send a Slack message to the finance channel.",
+      "required_tools": [],
+      "required_fields": {}
+    }
+  ]
+}
