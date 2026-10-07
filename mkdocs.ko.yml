@@ -1,7 +1,7 @@
 INHERIT: mkdocs.yml
 
 site_name: SchemaRouter 문서
-site_description: LLM/RAG 에이전트를 위한 타입 기반 capability 검색과 스키마 인식 실행
+site_description: API·도구·데이터 시스템 전반에서 AI 에이전트를 위한 타입 기반 capability routing과 governed execution
 site_url: https://jdeun.github.io/SchemaRouter/ko/
 docs_dir: .build/docs-ko
 site_dir: site/ko
@@ -29,7 +29,7 @@ nav:
       - Capability Explorer: getting-started/schema-explorer.md
   - 핵심 개념:
       - SchemaRouter란?: concepts/schema-router.md
-      - RAG와 capability 검색: concepts/capability-catalog.md
+      - Capability catalog과 structured retrieval: concepts/capability-catalog.md
       - 설계 원칙: concepts/design-principles.md
       - Tool/Endpoint 계약: concepts/tool-endpoint.md
       - 계획과 필드 투영: concepts/planning.md
@@ -114,7 +114,7 @@ nav:
       - Adapter 작성: adapter-authoring.md
       - 보안 모델: security/threat-model.md
   - 연구:
-      - 라우팅 연구 현황: research/routing-status.md
+      - 연구 현황: research/routing-status.md
       - 전체 실험 인덱스: research/experiment-index.md
       - 라우팅 break-even 결과: research/realistic-break-even-result.md
       - 설계와 실험 이력: research/design-and-experiment-history.md
