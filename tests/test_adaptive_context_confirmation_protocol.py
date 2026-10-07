@@ -1,5 +1,5 @@
-import json
 from pathlib import Path
+import json
 
 
 MANIFEST = Path("benchmarks/adaptive-context-confirmation-v1/manifest.json")
