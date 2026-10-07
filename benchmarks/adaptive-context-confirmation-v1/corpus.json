@@ -1,0 +1,1130 @@
+{
+  "schema_version": 1,
+  "issue": 840,
+  "benchmark": "adaptive-context-confirmation-v1",
+  "status": "frozen_unscored",
+  "task_count": 120,
+  "languages": [
+    "en",
+    "ko"
+  ],
+  "kinds": [
+    "single",
+    "multi",
+    "near_unsupported",
+    "ood_unsupported"
+  ],
+  "tasks_sha256": "35911573c0d43a023cc9659fa3167a1c8870344701ec61fbccba6f3953c14707",
+  "tasks": [
+    {
+      "task_id": "acf-001",
+      "language": "en",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-EN-SINGLE-01. Read the current Young's modulus for material CONF-001 in GPa.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-002",
+      "language": "en",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-EN-SINGLE-02. Read the current Young's modulus for material CONF-002 in GPa.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-003",
+      "language": "en",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-EN-SINGLE-03. Read the current Young's modulus for material CONF-003 in GPa.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-004",
+      "language": "en",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-EN-SINGLE-04. Read the current Young's modulus for material CONF-004 in GPa.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-005",
+      "language": "en",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-EN-SINGLE-05. Read the current Young's modulus for material CONF-005 in GPa.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-006",
+      "language": "en",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-EN-SINGLE-06. Read the current Young's modulus for material CONF-006 in GPa.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-007",
+      "language": "en",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-EN-SINGLE-07. Read the current Young's modulus for material CONF-007 in GPa.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-008",
+      "language": "en",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-EN-SINGLE-08. Read the current Young's modulus for material CONF-008 in GPa.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-009",
+      "language": "en",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-EN-SINGLE-09. Read the current Young's modulus for material CONF-009 in GPa.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-010",
+      "language": "en",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-EN-SINGLE-10. Read the current Young's modulus for material CONF-010 in GPa.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-011",
+      "language": "en",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-EN-SINGLE-11. Read the current Young's modulus for material CONF-011 in GPa.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-012",
+      "language": "en",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-EN-SINGLE-12. Read the current Young's modulus for material CONF-012 in GPa.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-013",
+      "language": "en",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-EN-SINGLE-13. Read the current Young's modulus for material CONF-013 in GPa.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-014",
+      "language": "en",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-EN-SINGLE-14. Read the current Young's modulus for material CONF-014 in GPa.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-015",
+      "language": "en",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-EN-SINGLE-15. Read the current Young's modulus for material CONF-015 in GPa.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-016",
+      "language": "en",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-EN-MULTI-01. Search papers about confirmation alloy 1, then retrieve the selected paper using its returned identifier.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-017",
+      "language": "en",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-EN-MULTI-02. Search papers about confirmation alloy 2, then retrieve the selected paper using its returned identifier.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-018",
+      "language": "en",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-EN-MULTI-03. Search papers about confirmation alloy 3, then retrieve the selected paper using its returned identifier.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-019",
+      "language": "en",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-EN-MULTI-04. Search papers about confirmation alloy 4, then retrieve the selected paper using its returned identifier.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-020",
+      "language": "en",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-EN-MULTI-05. Search papers about confirmation alloy 5, then retrieve the selected paper using its returned identifier.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-021",
+      "language": "en",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-EN-MULTI-06. Search papers about confirmation alloy 6, then retrieve the selected paper using its returned identifier.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-022",
+      "language": "en",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-EN-MULTI-07. Search papers about confirmation alloy 7, then retrieve the selected paper using its returned identifier.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-023",
+      "language": "en",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-EN-MULTI-08. Search papers about confirmation alloy 8, then retrieve the selected paper using its returned identifier.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-024",
+      "language": "en",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-EN-MULTI-09. Search papers about confirmation alloy 9, then retrieve the selected paper using its returned identifier.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-025",
+      "language": "en",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-EN-MULTI-10. Search papers about confirmation alloy 10, then retrieve the selected paper using its returned identifier.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-026",
+      "language": "en",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-EN-MULTI-11. Search papers about confirmation alloy 11, then retrieve the selected paper using its returned identifier.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-027",
+      "language": "en",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-EN-MULTI-12. Search papers about confirmation alloy 12, then retrieve the selected paper using its returned identifier.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-028",
+      "language": "en",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-EN-MULTI-13. Search papers about confirmation alloy 13, then retrieve the selected paper using its returned identifier.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-029",
+      "language": "en",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-EN-MULTI-14. Search papers about confirmation alloy 14, then retrieve the selected paper using its returned identifier.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-030",
+      "language": "en",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-EN-MULTI-15. Search papers about confirmation alloy 15, then retrieve the selected paper using its returned identifier.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-031",
+      "language": "en",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-EN-NEAR_UNSUPPORTED-01. Use the registered neutron diffraction refinement capability for specimen CONF-001.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-032",
+      "language": "en",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-EN-NEAR_UNSUPPORTED-02. Use the registered neutron diffraction refinement capability for specimen CONF-002.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-033",
+      "language": "en",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-EN-NEAR_UNSUPPORTED-03. Use the registered neutron diffraction refinement capability for specimen CONF-003.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-034",
+      "language": "en",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-EN-NEAR_UNSUPPORTED-04. Use the registered neutron diffraction refinement capability for specimen CONF-004.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-035",
+      "language": "en",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-EN-NEAR_UNSUPPORTED-05. Use the registered neutron diffraction refinement capability for specimen CONF-005.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-036",
+      "language": "en",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-EN-NEAR_UNSUPPORTED-06. Use the registered neutron diffraction refinement capability for specimen CONF-006.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-037",
+      "language": "en",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-EN-NEAR_UNSUPPORTED-07. Use the registered neutron diffraction refinement capability for specimen CONF-007.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-038",
+      "language": "en",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-EN-NEAR_UNSUPPORTED-08. Use the registered neutron diffraction refinement capability for specimen CONF-008.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-039",
+      "language": "en",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-EN-NEAR_UNSUPPORTED-09. Use the registered neutron diffraction refinement capability for specimen CONF-009.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-040",
+      "language": "en",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-EN-NEAR_UNSUPPORTED-10. Use the registered neutron diffraction refinement capability for specimen CONF-010.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-041",
+      "language": "en",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-EN-NEAR_UNSUPPORTED-11. Use the registered neutron diffraction refinement capability for specimen CONF-011.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-042",
+      "language": "en",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-EN-NEAR_UNSUPPORTED-12. Use the registered neutron diffraction refinement capability for specimen CONF-012.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-043",
+      "language": "en",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-EN-NEAR_UNSUPPORTED-13. Use the registered neutron diffraction refinement capability for specimen CONF-013.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-044",
+      "language": "en",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-EN-NEAR_UNSUPPORTED-14. Use the registered neutron diffraction refinement capability for specimen CONF-014.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-045",
+      "language": "en",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-EN-NEAR_UNSUPPORTED-15. Use the registered neutron diffraction refinement capability for specimen CONF-015.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-046",
+      "language": "en",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-EN-OOD_UNSUPPORTED-01. Book a restaurant table for confirmation guest 1 tonight.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-047",
+      "language": "en",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-EN-OOD_UNSUPPORTED-02. Book a restaurant table for confirmation guest 2 tonight.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-048",
+      "language": "en",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-EN-OOD_UNSUPPORTED-03. Book a restaurant table for confirmation guest 3 tonight.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-049",
+      "language": "en",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-EN-OOD_UNSUPPORTED-04. Book a restaurant table for confirmation guest 4 tonight.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-050",
+      "language": "en",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-EN-OOD_UNSUPPORTED-05. Book a restaurant table for confirmation guest 5 tonight.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-051",
+      "language": "en",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-EN-OOD_UNSUPPORTED-06. Book a restaurant table for confirmation guest 6 tonight.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-052",
+      "language": "en",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-EN-OOD_UNSUPPORTED-07. Book a restaurant table for confirmation guest 7 tonight.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-053",
+      "language": "en",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-EN-OOD_UNSUPPORTED-08. Book a restaurant table for confirmation guest 8 tonight.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-054",
+      "language": "en",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-EN-OOD_UNSUPPORTED-09. Book a restaurant table for confirmation guest 9 tonight.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-055",
+      "language": "en",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-EN-OOD_UNSUPPORTED-10. Book a restaurant table for confirmation guest 10 tonight.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-056",
+      "language": "en",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-EN-OOD_UNSUPPORTED-11. Book a restaurant table for confirmation guest 11 tonight.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-057",
+      "language": "en",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-EN-OOD_UNSUPPORTED-12. Book a restaurant table for confirmation guest 12 tonight.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-058",
+      "language": "en",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-EN-OOD_UNSUPPORTED-13. Book a restaurant table for confirmation guest 13 tonight.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-059",
+      "language": "en",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-EN-OOD_UNSUPPORTED-14. Book a restaurant table for confirmation guest 14 tonight.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-060",
+      "language": "en",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-EN-OOD_UNSUPPORTED-15. Book a restaurant table for confirmation guest 15 tonight.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-061",
+      "language": "ko",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-KO-SINGLE-01. 재료 CONF-001의 현재 영률을 GPa 단위로 조회하세요.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-062",
+      "language": "ko",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-KO-SINGLE-02. 재료 CONF-002의 현재 영률을 GPa 단위로 조회하세요.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-063",
+      "language": "ko",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-KO-SINGLE-03. 재료 CONF-003의 현재 영률을 GPa 단위로 조회하세요.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-064",
+      "language": "ko",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-KO-SINGLE-04. 재료 CONF-004의 현재 영률을 GPa 단위로 조회하세요.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-065",
+      "language": "ko",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-KO-SINGLE-05. 재료 CONF-005의 현재 영률을 GPa 단위로 조회하세요.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-066",
+      "language": "ko",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-KO-SINGLE-06. 재료 CONF-006의 현재 영률을 GPa 단위로 조회하세요.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-067",
+      "language": "ko",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-KO-SINGLE-07. 재료 CONF-007의 현재 영률을 GPa 단위로 조회하세요.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-068",
+      "language": "ko",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-KO-SINGLE-08. 재료 CONF-008의 현재 영률을 GPa 단위로 조회하세요.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-069",
+      "language": "ko",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-KO-SINGLE-09. 재료 CONF-009의 현재 영률을 GPa 단위로 조회하세요.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-070",
+      "language": "ko",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-KO-SINGLE-10. 재료 CONF-010의 현재 영률을 GPa 단위로 조회하세요.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-071",
+      "language": "ko",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-KO-SINGLE-11. 재료 CONF-011의 현재 영률을 GPa 단위로 조회하세요.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-072",
+      "language": "ko",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-KO-SINGLE-12. 재료 CONF-012의 현재 영률을 GPa 단위로 조회하세요.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-073",
+      "language": "ko",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-KO-SINGLE-13. 재료 CONF-013의 현재 영률을 GPa 단위로 조회하세요.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-074",
+      "language": "ko",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-KO-SINGLE-14. 재료 CONF-014의 현재 영률을 GPa 단위로 조회하세요.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-075",
+      "language": "ko",
+      "kind": "single",
+      "supported": true,
+      "query": "ACF-KO-SINGLE-15. 재료 CONF-015의 현재 영률을 GPa 단위로 조회하세요.",
+      "required_routes": [
+        "materials.current"
+      ]
+    },
+    {
+      "task_id": "acf-076",
+      "language": "ko",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-KO-MULTI-01. 확인용 합금 1 관련 논문을 검색하고 반환된 식별자로 선택 논문을 조회하세요.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-077",
+      "language": "ko",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-KO-MULTI-02. 확인용 합금 2 관련 논문을 검색하고 반환된 식별자로 선택 논문을 조회하세요.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-078",
+      "language": "ko",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-KO-MULTI-03. 확인용 합금 3 관련 논문을 검색하고 반환된 식별자로 선택 논문을 조회하세요.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-079",
+      "language": "ko",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-KO-MULTI-04. 확인용 합금 4 관련 논문을 검색하고 반환된 식별자로 선택 논문을 조회하세요.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-080",
+      "language": "ko",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-KO-MULTI-05. 확인용 합금 5 관련 논문을 검색하고 반환된 식별자로 선택 논문을 조회하세요.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-081",
+      "language": "ko",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-KO-MULTI-06. 확인용 합금 6 관련 논문을 검색하고 반환된 식별자로 선택 논문을 조회하세요.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-082",
+      "language": "ko",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-KO-MULTI-07. 확인용 합금 7 관련 논문을 검색하고 반환된 식별자로 선택 논문을 조회하세요.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-083",
+      "language": "ko",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-KO-MULTI-08. 확인용 합금 8 관련 논문을 검색하고 반환된 식별자로 선택 논문을 조회하세요.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-084",
+      "language": "ko",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-KO-MULTI-09. 확인용 합금 9 관련 논문을 검색하고 반환된 식별자로 선택 논문을 조회하세요.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-085",
+      "language": "ko",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-KO-MULTI-10. 확인용 합금 10 관련 논문을 검색하고 반환된 식별자로 선택 논문을 조회하세요.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-086",
+      "language": "ko",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-KO-MULTI-11. 확인용 합금 11 관련 논문을 검색하고 반환된 식별자로 선택 논문을 조회하세요.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-087",
+      "language": "ko",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-KO-MULTI-12. 확인용 합금 12 관련 논문을 검색하고 반환된 식별자로 선택 논문을 조회하세요.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-088",
+      "language": "ko",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-KO-MULTI-13. 확인용 합금 13 관련 논문을 검색하고 반환된 식별자로 선택 논문을 조회하세요.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-089",
+      "language": "ko",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-KO-MULTI-14. 확인용 합금 14 관련 논문을 검색하고 반환된 식별자로 선택 논문을 조회하세요.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-090",
+      "language": "ko",
+      "kind": "multi",
+      "supported": true,
+      "query": "ACF-KO-MULTI-15. 확인용 합금 15 관련 논문을 검색하고 반환된 식별자로 선택 논문을 조회하세요.",
+      "required_routes": [
+        "papers.search",
+        "papers.retrieve"
+      ]
+    },
+    {
+      "task_id": "acf-091",
+      "language": "ko",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-KO-NEAR_UNSUPPORTED-01. 시료 CONF-001에 등록된 중성자 회절 정련 기능을 사용하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-092",
+      "language": "ko",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-KO-NEAR_UNSUPPORTED-02. 시료 CONF-002에 등록된 중성자 회절 정련 기능을 사용하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-093",
+      "language": "ko",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-KO-NEAR_UNSUPPORTED-03. 시료 CONF-003에 등록된 중성자 회절 정련 기능을 사용하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-094",
+      "language": "ko",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-KO-NEAR_UNSUPPORTED-04. 시료 CONF-004에 등록된 중성자 회절 정련 기능을 사용하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-095",
+      "language": "ko",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-KO-NEAR_UNSUPPORTED-05. 시료 CONF-005에 등록된 중성자 회절 정련 기능을 사용하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-096",
+      "language": "ko",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-KO-NEAR_UNSUPPORTED-06. 시료 CONF-006에 등록된 중성자 회절 정련 기능을 사용하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-097",
+      "language": "ko",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-KO-NEAR_UNSUPPORTED-07. 시료 CONF-007에 등록된 중성자 회절 정련 기능을 사용하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-098",
+      "language": "ko",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-KO-NEAR_UNSUPPORTED-08. 시료 CONF-008에 등록된 중성자 회절 정련 기능을 사용하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-099",
+      "language": "ko",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-KO-NEAR_UNSUPPORTED-09. 시료 CONF-009에 등록된 중성자 회절 정련 기능을 사용하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-100",
+      "language": "ko",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-KO-NEAR_UNSUPPORTED-10. 시료 CONF-010에 등록된 중성자 회절 정련 기능을 사용하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-101",
+      "language": "ko",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-KO-NEAR_UNSUPPORTED-11. 시료 CONF-011에 등록된 중성자 회절 정련 기능을 사용하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-102",
+      "language": "ko",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-KO-NEAR_UNSUPPORTED-12. 시료 CONF-012에 등록된 중성자 회절 정련 기능을 사용하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-103",
+      "language": "ko",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-KO-NEAR_UNSUPPORTED-13. 시료 CONF-013에 등록된 중성자 회절 정련 기능을 사용하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-104",
+      "language": "ko",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-KO-NEAR_UNSUPPORTED-14. 시료 CONF-014에 등록된 중성자 회절 정련 기능을 사용하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-105",
+      "language": "ko",
+      "kind": "near_unsupported",
+      "supported": false,
+      "query": "ACF-KO-NEAR_UNSUPPORTED-15. 시료 CONF-015에 등록된 중성자 회절 정련 기능을 사용하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-106",
+      "language": "ko",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-KO-OOD_UNSUPPORTED-01. 오늘 밤 확인용 손님 1 이름으로 식당 좌석을 예약하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-107",
+      "language": "ko",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-KO-OOD_UNSUPPORTED-02. 오늘 밤 확인용 손님 2 이름으로 식당 좌석을 예약하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-108",
+      "language": "ko",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-KO-OOD_UNSUPPORTED-03. 오늘 밤 확인용 손님 3 이름으로 식당 좌석을 예약하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-109",
+      "language": "ko",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-KO-OOD_UNSUPPORTED-04. 오늘 밤 확인용 손님 4 이름으로 식당 좌석을 예약하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-110",
+      "language": "ko",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-KO-OOD_UNSUPPORTED-05. 오늘 밤 확인용 손님 5 이름으로 식당 좌석을 예약하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-111",
+      "language": "ko",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-KO-OOD_UNSUPPORTED-06. 오늘 밤 확인용 손님 6 이름으로 식당 좌석을 예약하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-112",
+      "language": "ko",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-KO-OOD_UNSUPPORTED-07. 오늘 밤 확인용 손님 7 이름으로 식당 좌석을 예약하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-113",
+      "language": "ko",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-KO-OOD_UNSUPPORTED-08. 오늘 밤 확인용 손님 8 이름으로 식당 좌석을 예약하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-114",
+      "language": "ko",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-KO-OOD_UNSUPPORTED-09. 오늘 밤 확인용 손님 9 이름으로 식당 좌석을 예약하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-115",
+      "language": "ko",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-KO-OOD_UNSUPPORTED-10. 오늘 밤 확인용 손님 10 이름으로 식당 좌석을 예약하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-116",
+      "language": "ko",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-KO-OOD_UNSUPPORTED-11. 오늘 밤 확인용 손님 11 이름으로 식당 좌석을 예약하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-117",
+      "language": "ko",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-KO-OOD_UNSUPPORTED-12. 오늘 밤 확인용 손님 12 이름으로 식당 좌석을 예약하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-118",
+      "language": "ko",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-KO-OOD_UNSUPPORTED-13. 오늘 밤 확인용 손님 13 이름으로 식당 좌석을 예약하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-119",
+      "language": "ko",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-KO-OOD_UNSUPPORTED-14. 오늘 밤 확인용 손님 14 이름으로 식당 좌석을 예약하세요.",
+      "required_routes": []
+    },
+    {
+      "task_id": "acf-120",
+      "language": "ko",
+      "kind": "ood_unsupported",
+      "supported": false,
+      "query": "ACF-KO-OOD_UNSUPPORTED-15. 오늘 밤 확인용 손님 15 이름으로 식당 좌석을 예약하세요.",
+      "required_routes": []
+    }
+  ]
+}
