@@ -42,3 +42,14 @@ cumulative tool-schema/context bytes, agent steps, tool-call counts, end-to-end 
 when reproducibly exposed. Routing-only metrics remain secondary diagnostics.
 
 Do not claim independent validation from this contract or from maintainer agreement alone.
+
+## Catalog-size boundary
+
+The 21-tool / 33-case fixture is an **integration smoke only**. CYT v2.17.6 defaults to
+`tools.policy.minimum_tools: 50`, so the small fixture is below the product's normal pruning
+boundary and must not be used for a CYT-vs-SchemaRouter performance claim.
+
+Development scaling therefore uses **100 / 250 / 500 / 1000 tools** before any held-out freeze.
+Each size must use the same catalog and queries for full-catalog, native CYT, and SchemaRouter
+conditions. CYT must run its native configured BM25 pruning path rather than a locally recreated
+threshold. The 21-tool smoke remains useful only for import/API/provenance regression checks.
