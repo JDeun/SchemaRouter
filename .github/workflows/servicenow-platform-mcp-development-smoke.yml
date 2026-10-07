@@ -67,13 +67,20 @@ jobs:
             --snapshot "${ARTIFACT_DIR}/servicenow-readonly-tools.json" \
             --out "${ARTIFACT_DIR}/static-result.json"
 
-      - name: Run SchemaRouter preselection
+      - name: Run SchemaRouter preselection at development K values
         run: |
           python scripts/run_servicenow_schemarouter_external_validation.py \
             --package-dir "${PACKAGE_DIR}" \
             --snapshot "${ARTIFACT_DIR}/servicenow-readonly-tools.json" \
             --implementation-revision "$(git rev-parse HEAD)" \
-            --out "${ARTIFACT_DIR}/schemarouter-result.json"
+            --top-k 3 \
+            --out "${ARTIFACT_DIR}/schemarouter-k3-result.json"
+          python scripts/run_servicenow_schemarouter_external_validation.py \
+            --package-dir "${PACKAGE_DIR}" \
+            --snapshot "${ARTIFACT_DIR}/servicenow-readonly-tools.json" \
+            --implementation-revision "$(git rev-parse HEAD)" \
+            --top-k 5 \
+            --out "${ARTIFACT_DIR}/schemarouter-k5-result.json"
 
       - name: Score development conditions
         run: |
@@ -85,8 +92,13 @@ jobs:
           python scripts/external_validation_servicenow_platform_mcp.py score \
             --package-dir "${PACKAGE_DIR}" \
             --snapshot "${ARTIFACT_DIR}/servicenow-readonly-tools.json" \
-            --results "${ARTIFACT_DIR}/schemarouter-result.json" \
-            --out "${ARTIFACT_DIR}/schemarouter-score.json"
+            --results "${ARTIFACT_DIR}/schemarouter-k3-result.json" \
+            --out "${ARTIFACT_DIR}/schemarouter-k3-score.json"
+          python scripts/external_validation_servicenow_platform_mcp.py score \
+            --package-dir "${PACKAGE_DIR}" \
+            --snapshot "${ARTIFACT_DIR}/servicenow-readonly-tools.json" \
+            --results "${ARTIFACT_DIR}/schemarouter-k5-result.json" \
+            --out "${ARTIFACT_DIR}/schemarouter-k5-score.json"
 
       - name: Write comparison summary
         run: |
@@ -99,7 +111,8 @@ jobs:
           rows = []
           for key, label in [
               ("static", "Static readonly"),
-              ("schemarouter", "SchemaRouter preselection"),
+              ("schemarouter-k3", "SchemaRouter K=3"),
+              ("schemarouter-k5", "SchemaRouter K=5"),
           ]:
               payload = json.loads((root / f"{key}-score.json").read_text())
               s = payload["summary"]
