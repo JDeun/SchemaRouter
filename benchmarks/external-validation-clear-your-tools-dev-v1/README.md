@@ -53,3 +53,12 @@ Development scaling therefore uses **100 / 250 / 500 / 1000 tools** before any h
 Each size must use the same catalog and queries for full-catalog, native CYT, and SchemaRouter
 conditions. CYT must run its native configured BM25 pruning path rather than a locally recreated
 threshold. The 21-tool smoke remains useful only for import/API/provenance regression checks.
+
+## Visible scaling preflight observation
+
+The native composite BM25 development run on the visible 33-case fixture shows two distinct
+regimes. Supported/ambiguous cases generally prune aggressively (median candidate count 2 at
+100, 250, 500, and 1000 tools). The three unsupported/OOD cases (`sm-dev-031..033`) retain the
+entire catalog, so they must be reported separately rather than averaged into supported-query
+retrieval quality. This is a development diagnostic, not external evidence and not a tuning target.
+Tail latency is therefore also stratified by supported vs unsupported/OOD cases in later reports.
