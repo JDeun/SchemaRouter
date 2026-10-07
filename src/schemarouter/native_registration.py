@@ -10,6 +10,7 @@ from .errors import RegistrationError
 NativeBackendFactory = Callable[..., Any]
 NativeVectorBackendFactory = NativeBackendFactory
 NativeGraphBackendFactory = NativeBackendFactory
+NativeRecordBackendFactory = NativeBackendFactory
 
 
 class NativeBackendRegistry:
@@ -82,6 +83,13 @@ class NativeGraphBackendRegistry(NativeBackendRegistry):
         super().__init__("graph")
 
 
+class NativeRecordBackendRegistry(NativeBackendRegistry):
+    """Registry for trusted native record backend constructors."""
+
+    def __init__(self) -> None:
+        super().__init__("record")
+
+
 def _lazy_backend_factory(
     module_name: str,
     class_name: str,
@@ -102,8 +110,13 @@ def _lazy_graph_factory(class_name: str) -> NativeGraphBackendFactory:
     return _lazy_backend_factory(".adapters.graph_native", class_name)
 
 
+def _lazy_record_factory(class_name: str) -> NativeRecordBackendFactory:
+    return _lazy_backend_factory(".adapters.record_native", class_name)
+
+
 NATIVE_VECTOR_BACKENDS = NativeVectorBackendRegistry()
 NATIVE_GRAPH_BACKENDS = NativeGraphBackendRegistry()
+NATIVE_RECORD_BACKENDS = NativeRecordBackendRegistry()
 
 for _name, _class_name in (
     ("qdrant", "QdrantVectorBackend"),
@@ -123,6 +136,18 @@ for _name, _class_name in (
     ("sparql", "SparqlGraphBackend"),
 ):
     NATIVE_GRAPH_BACKENDS.register(_name, _lazy_graph_factory(_class_name))
+
+for _name, _class_name in (
+    ("mongodb", "MongoRecordBackend"),
+    ("elasticsearch", "ElasticRecordBackend"),
+    ("opensearch", "ElasticRecordBackend"),
+    ("dynamodb", "DynamoDBRecordBackend"),
+    ("cosmos", "CosmosRecordBackend"),
+    ("couchbase", "CouchbaseRecordBackend"),
+    ("clickhouse", "ClickHouseRecordBackend"),
+    ("influxdb", "InfluxRecordBackend"),
+):
+    NATIVE_RECORD_BACKENDS.register(_name, _lazy_record_factory(_class_name))
 
 
 def register_native_vector_backend(
@@ -165,3 +190,25 @@ def build_native_graph_backend(
     """Construct a registered native graph backend."""
 
     return NATIVE_GRAPH_BACKENDS.build(name, resource, **options)
+
+
+
+def register_native_record_backend(
+    name: str,
+    factory: NativeRecordBackendFactory,
+    *,
+    replace: bool = False,
+) -> None:
+    """Register a trusted native record backend constructor."""
+
+    NATIVE_RECORD_BACKENDS.register(name, factory, replace=replace)
+
+
+def build_native_record_backend(
+    name: str,
+    resource: Any,
+    **options: Any,
+) -> Any:
+    """Construct a registered native record backend."""
+
+    return NATIVE_RECORD_BACKENDS.build(name, resource, **options)
