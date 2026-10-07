@@ -1,5 +1,5 @@
 site_name: SchemaRouter
-site_description: Typed capability retrieval and schema-aware execution for LLM/RAG agents and tools
+site_description: Typed capability routing and governed execution for AI agents across APIs, tools, and data systems
 site_author: Yong-eun Cho
 site_url: https://jdeun.github.io/SchemaRouter/
 copyright: © 2026 Yong-eun Cho · MIT License
@@ -124,7 +124,7 @@ nav:
       - Capability Explorer: getting-started/schema-explorer.md
   - Concepts:
       - What SchemaRouter is: concepts/schema-router.md
-      - RAG positioning and capability retrieval: concepts/capability-catalog.md
+      - Capability catalog and structured retrieval: concepts/capability-catalog.md
       - Design principles: concepts/design-principles.md
       - Tool and endpoint contracts: concepts/tool-endpoint.md
       - Planning and field projection: concepts/planning.md
@@ -209,7 +209,7 @@ nav:
       - Adapter authoring: adapter-authoring.md
       - Security model: security/threat-model.md
   - Research:
-      - Routing research status: research/routing-status.md
+      - Research status: research/routing-status.md
       - Complete experiment index: research/experiment-index.md
       - Routing break-even result: research/realistic-break-even-result.md
       - Design and experiment history: research/design-and-experiment-history.md
