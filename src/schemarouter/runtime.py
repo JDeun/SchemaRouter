@@ -91,8 +91,8 @@ from .models import (
     ToolResult,
     ToolSpec,
 )
-from .network_policy import NetworkPolicy
 from .native_backend_factories import build_native_backend
+from .network_policy import NetworkPolicy
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
