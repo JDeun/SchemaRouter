@@ -4,6 +4,28 @@ SchemaRouter는 공식 MCP Python SDK를 사용합니다. MCP 자체의 tool con
 분리해 두었기 때문에 Streamable HTTP, 로컬 stdio subprocess, 애플리케이션이 직접 관리하는
 client factory를 같은 경계에서 사용할 수 있습니다.
 
+## MCP SDK와 host-side selection의 경계
+
+MCP Python SDK는 transport negotiation, `list_tools()`, `call_tool()` 같은 protocol/session
+기능을 담당합니다. 발견된 tool 중 무엇을 agent에 노출할지, 큰 catalog에서 어떤 bounded
+subset을 검색·선택할지는 SDK가 아니라 host 애플리케이션의 정책입니다.
+
+SchemaRouter는 이 책임을 다음처럼 분리합니다.
+
+```text
+MCP server
+  -> MCP Python SDK: protocol / transport / tools/list
+  -> SchemaRouter: typed catalog ingestion
+  -> host application: bounded retrieval / selection policy
+  -> MCP Python SDK: 승인된 선택 tool의 call_tool()
+```
+
+이 경계는 MCP Python SDK maintainer도
+[modelcontextprotocol/python-sdk#3617](https://github.com/modelcontextprotocol/python-sdk/issues/3617)에서
+확인했습니다. 따라서 SchemaRouter의 bounded tool retrieval benchmark는 이 저장소에서
+host-side 평가로 관리하며, MCP SDK에 selection policy hook이나 patch를 추가하지 않습니다.
+
+
 ## 설치
 
 ```bash
