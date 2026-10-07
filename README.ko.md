@@ -21,12 +21,12 @@
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml"><img alt="Docs" src="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml/badge.svg"></a>
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/codeql.yml"><img alt="CodeQL" src="https://github.com/JDeun/SchemaRouter/actions/workflows/codeql.yml/badge.svg"></a>
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/security.yml"><img alt="Security Audit" src="https://github.com/JDeun/SchemaRouter/actions/workflows/security.yml/badge.svg"></a>
-  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.16.0"></a>
+  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.17.0"></a>
   <a href="https://pypi.org/project/schemarouter/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/schemarouter"></a>
   <a href="https://github.com/JDeun/SchemaRouter/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
-> **현재 안정판: 0.16.0** · Beta / pre-1.0
+> **현재 안정판: 0.17.0** · Beta / pre-1.0
 
 SchemaRouter는 LLM/RAG 애플리케이션을 위한 **typed capability retrieval + schema-aware execution
 layer**입니다.
@@ -189,7 +189,7 @@ Retrieval 결과나 모델의 선택만으로 실행 권한이 생기지 않습�
 
 ## 안정성
 
-SchemaRouter `0.16.0`은 **Beta / pre-1.0**입니다. Public API는 발전할 수 있지만,
+SchemaRouter `0.17.0`은 **Beta / pre-1.0**입니다. Public API는 발전할 수 있지만,
 breaking change는 문서화하고 release gate를 통과하도록 관리합니다.
 
 Python 3.10–3.14는 release-blocking 대상이며 Python 3.15는 preview 대상입니다.
