@@ -37,7 +37,12 @@ from .models import (
     ToolSpec,
 )
 from .planning_context import PlanningContext, RegistrySnapshot
-from .planning_stages import run_candidate_pipeline_async, run_candidate_pipeline_sync
+from .planning_stages import (
+    run_candidate_pipeline_async,
+    run_candidate_pipeline_sync,
+    select_primary_candidates_async,
+    select_primary_candidates_sync,
+)
 from .registry import ToolRegistry
 from .state_retrieval import (
     StateAwareCapabilityRetrieval,
@@ -3653,80 +3658,35 @@ class SchemaPlanner:
                 coverage=coverage,
             )
 
-        primary_pairs: list[tuple[_Candidate, ToolCall]] = []
-        if request.max_calls <= 1:
-            for candidate in candidates:
-                call = self._compile_candidate_sync(
-                    request,
-                    intent,
-                    candidate,
-                    warnings,
-                )
-                if call is not None:
-                    primary_pairs.append((candidate, call))
-                    break
-        else:
-            candidate_coverage, required_coverage = self._field_coverage_matrix(
+        primary_selection = select_primary_candidates_sync(
+            candidates=candidates,
+            max_calls=request.max_calls,
+            retrieval_mode=request.retrieval_mode,
+            required_coverage=required_coverage,
+            coverage_matrix=lambda ranked: self._field_coverage_matrix(
                 request,
-                candidates,
-            )
-            uncovered_coverage = set(required_coverage)
-            selected_providers: set[str] = set()
-            for candidate, potential_coverage in zip(
-                candidates,
-                candidate_coverage,
-                strict=True,
-            ):
-                if len(primary_pairs) >= request.max_calls:
-                    break
-                provider_key = candidate.tool.provider or candidate.tool.key
-                if request.retrieval_mode == "corroborate":
-                    if required_coverage and not (potential_coverage & required_coverage):
-                        continue
-                    if provider_key in selected_providers:
-                        continue
-                elif required_coverage and not (
-                    potential_coverage & uncovered_coverage
-                ):
-                    continue
-                call = self._compile_candidate_sync(
-                    request,
-                    intent,
+                ranked,
+            ),
+            compile_candidate=lambda candidate: self._compile_candidate_sync(
+                request,
+                intent,
+                candidate,
+                warnings,
+            ),
+            provider_key=lambda candidate: (
+                candidate.tool.provider or candidate.tool.key
+            ),
+            corroboration_compatible=self._corroboration_semantics_compatible,
+            selected_coverage=lambda candidate, call: (
+                self._coverage_requirements_for_candidate(
                     candidate,
-                    warnings,
+                    request.query,
+                    field_names=set(call.fields),
                 )
-                if call is None:
-                    continue
-                if (
-                    request.retrieval_mode == "corroborate"
-                    and primary_pairs
-                    and not any(
-                        self._corroboration_semantics_compatible(
-                            selected_candidate,
-                            selected_call,
-                            candidate,
-                            call,
-                        )
-                        for selected_candidate, selected_call in primary_pairs
-                    )
-                ):
-                    continue
-                primary_pairs.append((candidate, call))
-                selected_providers.add(provider_key)
-                if required_coverage:
-                    selected_coverage = self._coverage_requirements_for_candidate(
-                        candidate,
-                        request.query,
-                        field_names=set(call.fields),
-                    )
-                    uncovered_coverage.difference_update(
-                        selected_coverage & potential_coverage
-                    )
-                    if (
-                        request.retrieval_mode == "coverage"
-                        and not uncovered_coverage
-                    ):
-                        break
+            ),
+        )
+        primary_pairs = list(primary_selection.pairs)
+        required_coverage = primary_selection.required_coverage
 
         calls = [call for _, call in primary_pairs]
         fallback_routes: list[FallbackRoute] = []
@@ -3888,80 +3848,35 @@ class SchemaPlanner:
                 coverage=coverage,
             )
 
-        primary_pairs: list[tuple[_Candidate, ToolCall]] = []
-        if request.max_calls <= 1:
-            for candidate in candidates:
-                call = await self._compile_candidate_async(
-                    request,
-                    intent,
-                    candidate,
-                    warnings,
-                )
-                if call is not None:
-                    primary_pairs.append((candidate, call))
-                    break
-        else:
-            candidate_coverage, required_coverage = self._field_coverage_matrix(
+        primary_selection = await select_primary_candidates_async(
+            candidates=candidates,
+            max_calls=request.max_calls,
+            retrieval_mode=request.retrieval_mode,
+            required_coverage=required_coverage,
+            coverage_matrix=lambda ranked: self._field_coverage_matrix(
                 request,
-                candidates,
-            )
-            uncovered_coverage = set(required_coverage)
-            selected_providers: set[str] = set()
-            for candidate, potential_coverage in zip(
-                candidates,
-                candidate_coverage,
-                strict=True,
-            ):
-                if len(primary_pairs) >= request.max_calls:
-                    break
-                provider_key = candidate.tool.provider or candidate.tool.key
-                if request.retrieval_mode == "corroborate":
-                    if required_coverage and not (potential_coverage & required_coverage):
-                        continue
-                    if provider_key in selected_providers:
-                        continue
-                elif required_coverage and not (
-                    potential_coverage & uncovered_coverage
-                ):
-                    continue
-                call = await self._compile_candidate_async(
-                    request,
-                    intent,
+                ranked,
+            ),
+            compile_candidate=lambda candidate: self._compile_candidate_async(
+                request,
+                intent,
+                candidate,
+                warnings,
+            ),
+            provider_key=lambda candidate: (
+                candidate.tool.provider or candidate.tool.key
+            ),
+            corroboration_compatible=self._corroboration_semantics_compatible,
+            selected_coverage=lambda candidate, call: (
+                self._coverage_requirements_for_candidate(
                     candidate,
-                    warnings,
+                    request.query,
+                    field_names=set(call.fields),
                 )
-                if call is None:
-                    continue
-                if (
-                    request.retrieval_mode == "corroborate"
-                    and primary_pairs
-                    and not any(
-                        self._corroboration_semantics_compatible(
-                            selected_candidate,
-                            selected_call,
-                            candidate,
-                            call,
-                        )
-                        for selected_candidate, selected_call in primary_pairs
-                    )
-                ):
-                    continue
-                primary_pairs.append((candidate, call))
-                selected_providers.add(provider_key)
-                if required_coverage:
-                    selected_coverage = self._coverage_requirements_for_candidate(
-                        candidate,
-                        request.query,
-                        field_names=set(call.fields),
-                    )
-                    uncovered_coverage.difference_update(
-                        selected_coverage & potential_coverage
-                    )
-                    if (
-                        request.retrieval_mode == "coverage"
-                        and not uncovered_coverage
-                    ):
-                        break
+            ),
+        )
+        primary_pairs = list(primary_selection.pairs)
+        required_coverage = primary_selection.required_coverage
 
         calls = [call for _, call in primary_pairs]
         fallback_routes: list[FallbackRoute] = []
