@@ -114,6 +114,7 @@ from .registry import (
     InMemoryRegistry,
     ToolRegistry,
     replace_if_current,
+    restore_many_if_current,
     unregister_if_current,
     update_many_if_current,
 )
@@ -3724,6 +3725,293 @@ class SchemaRouter:
             replace=replace,
         )
 
+    async def _add_provider_require_all(
+        self,
+        provider: str,
+        *,
+        methods: set[str] | list[str] | tuple[str, ...] | None,
+        trusted_headers_by_method: Mapping[str, Mapping[str, str]] | None,
+        replace: bool,
+        timeout: float,
+    ) -> ProviderRegistrationResult:
+        """Stage and publish one provider topology as an all-or-nothing batch."""
+
+        resolution = self.resolve_provider(provider, methods=methods)
+        profile = self.provider_profiles.get(provider)
+        profile_methods = {item.method_id: item for item in profile.methods}
+        headers_by_method = trusted_headers_by_method or {}
+        expected_version = self.registry.version
+
+        staged: dict[str, tuple[ToolSpec, BoundEndpointInvoker]] = {}
+        outcomes: dict[str, ProviderMethodRegistration] = {}
+        blocked = False
+
+        for method in resolution.methods:
+            if method.status != "available":
+                outcomes[method.method_id] = ProviderMethodRegistration(
+                    method_id=method.method_id,
+                    kind=method.kind,
+                    access_mode=method.access_mode,
+                    status=method.status,
+                    detail=method.detail,
+                )
+                blocked = True
+                continue
+
+            trusted_headers = dict(headers_by_method.get(method.method_id, {}))
+            provided_header_names = {name.lower() for name in trusted_headers}
+            missing_credentials = tuple(
+                name
+                for name in method.credential_names
+                if name.lower() not in provided_header_names
+            )
+            if missing_credentials:
+                outcomes[method.method_id] = ProviderMethodRegistration(
+                    method_id=method.method_id,
+                    kind=method.kind,
+                    access_mode=method.access_mode,
+                    status="auth_required",
+                    detail=(
+                        "credential header(s) required: "
+                        + ", ".join(missing_credentials)
+                    ),
+                )
+                blocked = True
+                continue
+
+            if method.url is None:
+                outcomes[method.method_id] = ProviderMethodRegistration(
+                    method_id=method.method_id,
+                    kind=method.kind,
+                    access_mode=method.access_mode,
+                    status="manual_binding_required",
+                    detail="method has no declarative URL source",
+                )
+                blocked = True
+                continue
+
+            profile_method = profile_methods[method.method_id]
+            try:
+                if method.kind == "http_json":
+                    if profile_method.tool is None:
+                        raise RegistrationError(
+                            "http_json provider method has no trusted ToolSpec"
+                        )
+                    from .adapters.http_json import (
+                        build_http_json_invoker,
+                        prepare_http_json_tool,
+                    )
+
+                    tool = prepare_http_json_tool(
+                        profile_method.tool,
+                        base_url=method.url,
+                        provider=resolution.provider_id,
+                        access_mode=method.access_mode,
+                    )
+                    invoker = build_http_json_invoker(
+                        tool,
+                        base_url=method.url,
+                        trusted_headers=trusted_headers or None,
+                        timeout=timeout,
+                        http_client=self.loader.http_client,
+                        network_policy=self.loader.network_policy,
+                    )
+                else:
+                    inspected = await self.loader.inspect(
+                        method.url,
+                        kind=method.kind,
+                        provider=resolution.provider_id,
+                        access_mode=method.access_mode,
+                        trusted_headers=trusted_headers or None,
+                        timeout=timeout,
+                    )
+                    tool = inspected.tool
+                    invoker = inspected.invoker
+                    if invoker is None:
+                        raise RegistrationError(
+                            "provider access method has no executable binding"
+                        )
+                staged[method.method_id] = (tool, invoker)
+            except Exception as exc:  # noqa: BLE001
+                outcomes[method.method_id] = ProviderMethodRegistration(
+                    method_id=method.method_id,
+                    kind=method.kind,
+                    access_mode=method.access_mode,
+                    status="unavailable",
+                    error_type=type(exc).__name__,
+                    detail="provider access method could not be prepared atomically",
+                )
+                blocked = True
+
+        if blocked:
+            for method in resolution.methods:
+                if method.method_id not in outcomes:
+                    outcomes[method.method_id] = ProviderMethodRegistration(
+                        method_id=method.method_id,
+                        kind=method.kind,
+                        access_mode=method.access_mode,
+                        status="aborted",
+                        detail=(
+                            "atomic provider registration aborted because another "
+                            "requested method could not be prepared"
+                        ),
+                    )
+            return ProviderRegistrationResult(
+                provider_id=resolution.provider_id,
+                registered_tool_keys=(),
+                methods=tuple(outcomes[item.method_id] for item in resolution.methods),
+            )
+
+        staged_items = tuple(
+            (method, *staged[method.method_id])
+            for method in resolution.methods
+        )
+        tool_keys = tuple(tool.key for _, tool, _ in staged_items)
+        if len(tool_keys) != len(set(tool_keys)):
+            raise RegistrationError(
+                "atomic provider registration produced duplicate tool keys"
+            )
+
+        if self.registry.version != expected_version:
+            raise RegistrationError(
+                "registry changed concurrently while provider methods were staged"
+            )
+
+        previous_tools: dict[str, ToolSpec | None] = {}
+        previous_bindings: dict[str, Any] = {}
+        for _, tool, _ in staged_items:
+            try:
+                previous = self.registry.get(tool.key)
+            except KeyError:
+                previous = None
+            if previous is not None and not replace:
+                outcomes = {
+                    method.method_id: ProviderMethodRegistration(
+                        method_id=method.method_id,
+                        kind=method.kind,
+                        access_mode=method.access_mode,
+                        status="unavailable",
+                        error_type="RegistrationError",
+                        detail=(
+                            "atomic provider registration requires replace=True "
+                            f"for existing tool {tool.key!r}"
+                        ),
+                    )
+                    for method, staged_tool, _ in staged_items
+                    if staged_tool.key == tool.key
+                }
+                for method, staged_tool, _ in staged_items:
+                    if method.method_id not in outcomes:
+                        outcomes[method.method_id] = ProviderMethodRegistration(
+                            method_id=method.method_id,
+                            kind=method.kind,
+                            access_mode=method.access_mode,
+                            status="aborted",
+                            detail=(
+                                "atomic provider registration aborted because another "
+                                "requested method collided with an existing tool"
+                            ),
+                        )
+                return ProviderRegistrationResult(
+                    provider_id=resolution.provider_id,
+                    registered_tool_keys=(),
+                    methods=tuple(
+                        outcomes[item.method_id] for item in resolution.methods
+                    ),
+                )
+            previous_tools[tool.key] = previous
+            previous_bindings[tool.key] = self.executor._binding_snapshot(tool.key)
+
+        if self.registry.version != expected_version:
+            raise RegistrationError(
+                "registry changed concurrently before provider batch publication"
+            )
+
+        new_keys = tuple(
+            key for key, previous in previous_tools.items() if previous is None
+        )
+        self.executor.ensure_tool_runtime_state_empty(new_keys)
+
+        keys = update_many_if_current(
+            self.registry,
+            (tool for _, tool, _ in staged_items),
+            expected_version=expected_version,
+            replace=replace,
+        )
+        published_version = expected_version + (1 if keys else 0)
+        expected_current = {
+            tool.key: tool.fingerprint for _, tool, _ in staged_items
+        }
+        published_generations: dict[str, int] = {}
+
+        try:
+            for _, tool, invoker in staged_items:
+                published_generations[tool.key] = self.executor.bind(
+                    tool.key,
+                    invoker,
+                    expected_fingerprint=tool.fingerprint,
+                )
+
+            if self.registry.version != published_version:
+                raise BindingDriftError(
+                    "registry changed concurrently while publishing provider bindings"
+                )
+            for _, tool, _ in staged_items:
+                if self.registry.get(tool.key).fingerprint != tool.fingerprint:
+                    raise BindingDriftError(
+                        f"tool {tool.key!r} changed during atomic provider publication"
+                    )
+        except Exception as exc:
+            try:
+                restore_many_if_current(
+                    self.registry,
+                    previous_tools,
+                    expected_current=expected_current,
+                    expected_version=published_version,
+                )
+            except Exception as rollback_exc:
+                for key, generation in published_generations.items():
+                    self.executor._remove_binding_if_generation(key, generation)
+                raise BindingDriftError(
+                    "atomic provider registration failed and registry rollback "
+                    "could not preserve concurrent state"
+                ) from rollback_exc
+
+            runtime_conflict = False
+            for key, generation in published_generations.items():
+                if not self.executor._restore_binding_if_generation(
+                    key,
+                    generation,
+                    previous_bindings[key],
+                ):
+                    runtime_conflict = True
+            if runtime_conflict:
+                raise BindingDriftError(
+                    "atomic provider registration rolled back registry state but "
+                    "newer executor state prevented binding rollback"
+                ) from exc
+            raise
+
+        registrations = tuple(
+            ProviderMethodRegistration(
+                method_id=method.method_id,
+                kind=method.kind,
+                access_mode=method.access_mode,
+                status="registered",
+                tool_key=tool.key,
+            )
+            for method, tool, _ in staged_items
+        )
+        for key in keys:
+            self.loader.remember_tool_schema_http_validators(
+                self.registry.get(key)
+            )
+        return ProviderRegistrationResult(
+            provider_id=resolution.provider_id,
+            registered_tool_keys=keys,
+            methods=registrations,
+        )
+
     async def add_provider(
         self,
         provider: str,
@@ -3732,13 +4020,29 @@ class SchemaRouter:
         trusted_headers_by_method: Mapping[str, Mapping[str, str]] | None = None,
         replace: bool = False,
         timeout: float = 20.0,
+        require_all: bool = False,
     ) -> ProviderRegistrationResult:
         """Register every safely usable declarative access method for one provider.
 
         This is an onboarding layer over the existing adapters, not a second schema
         compiler. Methods that need credentials, optional dependencies, or an explicit
         trusted SDK binding are reported and skipped rather than guessed or auto-installed.
+
+        By default registration remains best-effort for backward compatibility. Set
+        require_all=True to stage every requested method first and publish the resulting
+        provider topology as one version-guarded all-or-nothing batch.
         """
+
+        if not isinstance(require_all, bool):
+            raise TypeError("require_all must be a bool")
+        if require_all:
+            return await self._add_provider_require_all(
+                provider,
+                methods=methods,
+                trusted_headers_by_method=trusted_headers_by_method,
+                replace=replace,
+                timeout=timeout,
+            )
 
         resolution = self.resolve_provider(provider, methods=methods)
         profile = self.provider_profiles.get(provider)

@@ -8,13 +8,17 @@ import pytest
 
 import schemarouter.provider_profiles as provider_profiles
 from schemarouter import (
+    EndpointSpec,
+    FieldSpec,
     PlanRequest,
     ProviderAccessMethod,
     ProviderDiscoveryCandidate,
     ProviderProfile,
     ProviderProfileRegistry,
     SchemaRouter,
+    ToolSpec,
 )
+from schemarouter.errors import RegistrationError
 
 
 def test_unknown_provider_discovery_is_non_authoritative_and_ambiguous() -> None:
@@ -149,6 +153,7 @@ async def test_add_materials_project_registers_usable_methods_and_reports_skips(
     by_id = {method.method_id: method for method in result.methods}
 
     assert result.registered_tool_keys == ("materials-project-optimade",)
+    assert result.status == "partial"
     assert by_id["optimade"].status == "registered"
     assert by_id["openapi"].status == "auth_required"
     assert by_id["python-sdk"].status in {
@@ -287,6 +292,7 @@ async def test_crossref_provider_first_registration_and_execution() -> None:
         registration = await router.add_provider("crossref")
 
         assert registration.provider_id == "crossref"
+        assert registration.status == "complete"
         assert len(registration.registered_tool_keys) == 1
         assert registration.methods[0].status == "registered"
 
@@ -312,6 +318,7 @@ async def test_tavily_provider_reports_auth_then_executes_with_trusted_header() 
     router = SchemaRouter()
     missing = await router.add_provider("tavily", methods={"rest"})
     assert missing.registered_tool_keys == ()
+    assert missing.status == "failed"
     assert missing.methods[0].status == "auth_required"
     assert "Authorization" in missing.methods[0].detail
 
@@ -667,3 +674,202 @@ def test_provider_plugin_replace_batch_rolls_back_on_late_collision(
     assert registry.get("old-alpha").display_name == "Original Alpha"
     with pytest.raises(KeyError, match="unknown provider profile"):
         registry.get("new-alpha")
+
+
+
+def _atomic_provider_profile() -> ProviderProfile:
+    return ProviderProfile(
+        provider_id="atomic-example",
+        display_name="Atomic Example",
+        methods=(
+            ProviderAccessMethod(
+                method_id="alpha",
+                kind="openapi",
+                access_mode="alpha",
+                url="https://example.test/alpha.json",
+            ),
+            ProviderAccessMethod(
+                method_id="beta",
+                kind="openapi",
+                access_mode="beta",
+                url="https://example.test/beta.json",
+            ),
+        ),
+    )
+
+
+def _atomic_tool(name: str, version: str) -> ToolSpec:
+    return ToolSpec(
+        name=name,
+        description=f"{name}-{version}",
+        endpoints=(
+            EndpointSpec(
+                name="read",
+                output_fields=(FieldSpec(name="value"),),
+                read_only=True,
+            ),
+        ),
+    )
+
+
+def _atomic_invoker(label: str):
+    async def invoke(endpoint: str, arguments: dict[str, object]) -> dict[str, object]:
+        del endpoint, arguments
+        return {"value": label}
+
+    return invoke
+
+
+@pytest.mark.asyncio
+async def test_provider_require_all_publishes_prepared_methods_as_one_batch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    router = SchemaRouter()
+    router.register_provider_profile(_atomic_provider_profile())
+
+    async def fake_inspect(url: str, **kwargs: object) -> SimpleNamespace:
+        del kwargs
+        method = "alpha" if "alpha" in url else "beta"
+        return SimpleNamespace(
+            tool=_atomic_tool(f"atomic-{method}", "new"),
+            invoker=_atomic_invoker(method),
+        )
+
+    monkeypatch.setattr(router.loader, "inspect", fake_inspect)
+    result = await router.add_provider("atomic-example", require_all=True)
+
+    assert result.status == "complete"
+    assert result.registered_tool_keys == ("atomic-alpha", "atomic-beta")
+    assert [method.status for method in result.methods] == [
+        "registered",
+        "registered",
+    ]
+    assert set(router.registry.keys()) == {"atomic-alpha", "atomic-beta"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failing_method", ["alpha", "beta"])
+async def test_provider_require_all_preparation_failure_leaves_no_partial_topology(
+    monkeypatch: pytest.MonkeyPatch,
+    failing_method: str,
+) -> None:
+    router = SchemaRouter()
+    router.register_provider_profile(_atomic_provider_profile())
+
+    async def fake_inspect(url: str, **kwargs: object) -> SimpleNamespace:
+        del kwargs
+        method = "alpha" if "alpha" in url else "beta"
+        if method == failing_method:
+            raise RuntimeError("synthetic preparation failure")
+        return SimpleNamespace(
+            tool=_atomic_tool(f"atomic-{method}", "new"),
+            invoker=_atomic_invoker(method),
+        )
+
+    monkeypatch.setattr(router.loader, "inspect", fake_inspect)
+    result = await router.add_provider("atomic-example", require_all=True)
+
+    assert result.status == "failed"
+    assert result.registered_tool_keys == ()
+    by_id = {method.method_id: method for method in result.methods}
+    assert by_id[failing_method].status == "unavailable"
+    other = "beta" if failing_method == "alpha" else "alpha"
+    assert by_id[other].status == "aborted"
+    assert router.registry.keys() == ()
+
+
+
+@pytest.mark.asyncio
+async def test_provider_require_all_binding_failure_restores_replace_topology(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    router = SchemaRouter()
+    router.register_provider_profile(_atomic_provider_profile())
+
+    old_alpha = _atomic_tool("atomic-alpha", "old")
+    old_beta = _atomic_tool("atomic-beta", "old")
+    old_alpha_invoker = _atomic_invoker("old-alpha")
+    old_beta_invoker = _atomic_invoker("old-beta")
+    router.add_bound_tool(old_alpha, old_alpha_invoker)
+    router.add_bound_tool(old_beta, old_beta_invoker)
+
+    async def fake_inspect(url: str, **kwargs: object) -> SimpleNamespace:
+        del kwargs
+        method = "alpha" if "alpha" in url else "beta"
+        return SimpleNamespace(
+            tool=_atomic_tool(f"atomic-{method}", "new"),
+            invoker=_atomic_invoker(f"new-{method}"),
+        )
+
+    monkeypatch.setattr(router.loader, "inspect", fake_inspect)
+    original_bind = router.executor.bind
+
+    def fail_second_binding(tool_key: str, invoker, **kwargs: object) -> int:
+        if tool_key == "atomic-beta":
+            raise RuntimeError("synthetic binding failure")
+        return original_bind(tool_key, invoker, **kwargs)
+
+    monkeypatch.setattr(router.executor, "bind", fail_second_binding)
+
+    with pytest.raises(RuntimeError, match="synthetic binding failure"):
+        await router.add_provider(
+            "atomic-example",
+            require_all=True,
+            replace=True,
+        )
+
+    restored_alpha = router.registry.get("atomic-alpha")
+    restored_beta = router.registry.get("atomic-beta")
+    assert restored_alpha.fingerprint == old_alpha.fingerprint
+    assert restored_beta.fingerprint == old_beta.fingerprint
+    assert (
+        router.executor._bound_invoker_for_contract(
+            "atomic-alpha",
+            old_alpha.fingerprint,
+        )
+        is old_alpha_invoker
+    )
+    assert (
+        router.executor._bound_invoker_for_contract(
+            "atomic-beta",
+            old_beta.fingerprint,
+        )
+        is old_beta_invoker
+    )
+
+
+@pytest.mark.asyncio
+async def test_provider_require_all_rejects_concurrent_registry_mutation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    router = SchemaRouter()
+    router.register_provider_profile(_atomic_provider_profile())
+    calls = 0
+
+    async def fake_inspect(url: str, **kwargs: object) -> SimpleNamespace:
+        nonlocal calls
+        del kwargs
+        calls += 1
+        method = "alpha" if "alpha" in url else "beta"
+        if calls == 1:
+            router.add_tool(_atomic_tool("concurrent-tool", "external"))
+        return SimpleNamespace(
+            tool=_atomic_tool(f"atomic-{method}", "new"),
+            invoker=_atomic_invoker(method),
+        )
+
+    monkeypatch.setattr(router.loader, "inspect", fake_inspect)
+
+    with pytest.raises(RegistrationError, match="changed concurrently"):
+        await router.add_provider("atomic-example", require_all=True)
+
+    assert router.registry.keys() == ("concurrent-tool",)
+    assert "atomic-alpha" not in router.registry.keys()
+    assert "atomic-beta" not in router.registry.keys()
+
+
+@pytest.mark.asyncio
+async def test_provider_require_all_rejects_non_boolean_mode() -> None:
+    router = SchemaRouter()
+    with pytest.raises(TypeError, match="require_all"):
+        await router.add_provider("crossref", require_all=1)  # type: ignore[arg-type]
