@@ -18,6 +18,7 @@ from schemarouter import (
 from schemarouter.adapters.python import tool_from_callable
 from schemarouter.integrations.langchain import tool_from_langchain
 from schemarouter.integrations.llamaindex import tool_from_llamaindex
+from schemarouter.rebinding import register_rebinding_strategy
 
 
 def _tool(
@@ -580,7 +581,7 @@ def test_rehydrate_skips_resolver_for_already_ready_contract() -> None:
 def test_openapi_rebinding_reuses_router_injected_http_client(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import schemarouter.runtime as runtime_module
+    import schemarouter.rebinding as rebinding_module
 
     sentinel_client = object()
     captured: dict[str, object] = {}
@@ -600,7 +601,7 @@ def test_openapi_rebinding_reuses_router_injected_http_client(
         captured["network_policy"] = network_policy
         return lambda endpoint, arguments: arguments
 
-    monkeypatch.setattr(runtime_module, "OpenAPIRemoteInvoker", build_invoker)
+    monkeypatch.setattr(rebinding_module, "OpenAPIRemoteInvoker", build_invoker)
 
     router = SchemaRouter(http_client=sentinel_client)  # type: ignore[arg-type]
     tool = _tool(
@@ -839,3 +840,29 @@ def test_bind_existing_can_pin_caller_reviewed_fingerprint() -> None:
 
     assert item.status == "incompatible"
     assert item.error_type == "BindingDriftError"
+
+
+
+def test_registered_rebinding_strategy_extends_runtime_without_switch_edit() -> None:
+    adapter = "test_registered_rebinder"
+
+    def strategy(tool, config, context):
+        assert tool.key == "custom_rebind"
+        assert config.invoker is None
+        assert context.network_policy is not None
+        return lambda endpoint, arguments: {
+            "adapter": adapter,
+            "endpoint": endpoint,
+            **arguments,
+        }
+
+    register_rebinding_strategy(adapter, strategy)
+
+    router = SchemaRouter()
+    tool = _tool("custom_rebind", adapter)
+    router.add_tool(tool)
+
+    item = router.bind_existing(tool.key, TrustedBindingConfig())
+
+    assert item.status == "ready"
+    assert tool.key in router.executor.bound_keys()
