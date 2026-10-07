@@ -27,6 +27,16 @@ invalid tool output, output enum/type violation, invalid current input schema, s
 
 내장 OpenAPI/OPTIMADE HTTP invoker는 408, 425, 429, 500, 502, 503, 504를 retryable status로 분류하고 다른 HTTP error는 즉시 실패합니다. oversized response, malformed declared JSON, invalid OPTIMADE success shape도 fail-fast입니다.
 
+Custom invoker의 임의 예외를 자동으로 retry하지 않습니다. 알 수 없는 adapter/programming/configuration
+예외는 deterministic failure로 취급되어 현재 attempt에서 그대로 전파됩니다.
+
+복구 가능한 실패를 retry하려면 trusted invoker가 `TransientInvocationError`로 명시적으로
+분류해야 합니다. `InvocationUnavailableError`는 현재 access path가 unavailable함을 나타내는
+transient subtype이며, retry가 소진된 뒤 bounded fallback 및 health-unavailability 처리에도
+사용됩니다. 영구적인 invocation 실패에는 `NonRetryableInvocationError`를 사용하고, side effect가
+이미 완료되었을 가능성을 배제할 수 없으면 `IndeterminateInvocationError`를 사용합니다. 두 예외는
+자동 retry 대상이 아닙니다.
+
 ## 정책 선택
 
 underlying operation과 transport semantics가 자동 retry를 정당화하지 않는다면 기본 `max_attempts=1`을 유지하세요. backoff도 run wall-clock budget을 소비하며 요청 delay가 `ExecutionBudget.max_elapsed_seconds`를 넘으면 남은 budget 경계에서 중지합니다.

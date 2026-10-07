@@ -57,9 +57,16 @@ The built-in OpenAPI and OPTIMADE HTTP invokers classify `408`, `425`, `429`, `5
 Deterministic transport-contract failures such as an oversized response, malformed declared JSON,
 or an invalid OPTIMADE success shape also fail fast.
 
-Custom invokers keep the existing behavior: ordinary exceptions may be retried when the endpoint and
-`RetryPolicy` allow it. Raise `NonRetryableInvocationError` to opt a deterministic failure out of
-that retry loop.
+Custom invokers are **not** retried for arbitrary exceptions. Unknown adapter, programming, or
+configuration exceptions are treated as deterministic and escape after the current attempt.
+
+A trusted invoker must classify a recoverable invocation explicitly with
+`TransientInvocationError` for `RetryPolicy` to apply. `InvocationUnavailableError` is a
+transient subtype used when the current access path is unavailable; after retries are exhausted it
+also participates in the bounded fallback/health-unavailability path. Use
+`NonRetryableInvocationError` for known permanent invocation failures and
+`IndeterminateInvocationError` when a side-effecting invocation may still have completed. Neither
+is automatically retried.
 
 ## Choosing a policy
 

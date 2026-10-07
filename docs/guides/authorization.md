@@ -96,6 +96,17 @@ AuthorizationRule(
 Selectors across categories are ANDed; values inside an `*_any` selector are ORed. Rules are
 evaluated in declaration order and the first matching rule wins.
 
+For JSON/YAML policy configuration, use the declarative loader with its default linting enabled.
+`parse_authorization_policy(..., lint=True)` and `load_authorization_policy(..., lint=True)`
+reject duplicate rule names, duplicate match conditions, and rules that are provably shadowed by an
+earlier broader matcher. `lint_authorization_config()` exposes the same diagnostics for trusted
+configuration tooling. The linter does not silently reorder policy: first-match semantics remain the
+runtime contract.
+
+Directly constructed `AuthorizationPolicy` objects preserve the same ordered semantics but do not
+implicitly reinterpret caller-authored order. Applications building policies programmatically should
+run equivalent configuration validation before deployment when rule sets are generated dynamically.
+
 ## Default behavior
 
 `AuthorizationPolicy` is deny-by-default. If no rule matches, the route is invisible and cannot
@@ -202,8 +213,9 @@ Data-scope rules only narrow the application-visible surface. They never grant d
 Database-native roles, grants, row-level security, ACLs, tenant credentials, and network boundaries
 remain authoritative and should be configured independently.
 
-The first matching data-scope rule applies, mirroring capability-rule ordering. Keep broad rules
-after specific employee/team/department rules.
+The first matching data-scope rule applies, mirroring capability-rule ordering. Declarative policy
+linting applies the same duplicate/shadow checks to `data_rules`; a provably shadowed later scope is
+reported instead of relying only on a human ordering convention.
 
 
 

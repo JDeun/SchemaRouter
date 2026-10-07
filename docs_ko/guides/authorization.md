@@ -97,6 +97,17 @@ AuthorizationRule(
 서로 다른 selector category는 AND, 같은 `*_any` 안의 값은 OR로 평가합니다. Rule은 선언
 순서대로 평가하며 첫 번째 match가 적용됩니다.
 
+JSON/YAML 정책은 기본 lint가 활성화된 declarative loader를 사용하는 것이 안전합니다.
+`parse_authorization_policy(..., lint=True)`와 `load_authorization_policy(..., lint=True)`는
+중복 rule 이름, 동일한 match 조건, 앞선 더 넓은 matcher에 의해 명백히 shadow되는 rule을
+거부합니다. Trusted configuration tooling에서는 `lint_authorization_config()`로 같은 진단을
+얻을 수 있습니다. Linter가 rule 순서를 임의로 바꾸지는 않으며 runtime의 first-match 의미론은
+그대로 유지됩니다.
+
+`AuthorizationPolicy` 객체를 Python에서 직접 구성하면 동일한 순서 의미론을 유지하지만
+호출자가 작성한 순서를 자동으로 재해석하지 않습니다. 정책을 동적으로 생성하는
+애플리케이션은 배포 전에 동등한 configuration validation을 수행하는 것이 좋습니다.
+
 ## 기본 정책
 
 `AuthorizationPolicy`는 deny-by-default입니다. 어떤 rule에도 match하지 않으면 해당 route는
@@ -205,8 +216,9 @@ Data-scope rule은 application-visible 범위를 더 좁힐 뿐 DB 권한을 부
 DB-native role/grant/RLS/ACL, tenant credential, network boundary는 계속 최종 권한 경계이며
 별도로 구성해야 합니다.
 
-Data-scope rule도 선언 순서대로 첫 번째 match를 적용합니다. 넓은 rule은 사원/팀/부서별
-구체적인 rule 뒤에 두는 것이 안전합니다.
+Data-scope rule도 선언 순서대로 첫 번째 match를 적용합니다. Declarative policy lint는
+`data_rules`에도 동일한 duplicate/shadow 검사를 적용하므로, 뒤쪽 scope가 앞선 더 넓은
+matcher에 의해 명백히 도달 불가능하면 단순한 사람의 순서 관례에만 의존하지 않고 진단합니다.
 
 
 
