@@ -28,8 +28,7 @@
 
 > **현재 안정판: 0.17.0** · Beta / pre-1.0
 
-SchemaRouter는 LLM/RAG 애플리케이션을 위한 **typed capability retrieval + schema-aware execution
-layer**입니다.
+SchemaRouter는 API, 도구, 데이터 시스템 전반에서 AI 에이전트를 위한 **typed capability routing + governed execution layer**를 제공합니다.
 
 상위 agent/orchestrator와 외부 도구·데이터 소스 사이에서 서로 다른 스키마를 하나의 capability
 모델로 정리하고, 필요한 후보만 좁힌 뒤 실제 실행 직전에 스키마·권한·바인딩을 다시 검증합니다.
