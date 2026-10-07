@@ -4,9 +4,9 @@ from __future__ import annotations
 import argparse
 import asyncio
 import hashlib
-import importlib.metadata
 import json
 import os
+from importlib import metadata
 from pathlib import Path
 from typing import Any
 
@@ -60,7 +60,7 @@ async def capture(*, upstream_revision: str) -> dict[str, Any]:
         "source": {
             "repository": "Xerrion/servicenow-platform-mcp",
             "commit": upstream_revision,
-            "package_version": importlib.metadata.version("servicenow-platform-mcp"),
+            "package_version": metadata.version("servicenow-platform-mcp"),
             "python_package": "servicenow-platform-mcp",
         },
         "mcp_tool_package": "readonly",
