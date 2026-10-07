@@ -9,8 +9,7 @@
 
 # Put a typed execution boundary between agents and tools
 
-SchemaRouter is a **typed capability retrieval and schema-aware execution layer for LLM/RAG agents**
-across MCP, OpenAPI, Python, and framework tools.
+SchemaRouter is a **typed capability routing and governed execution layer for AI agents across APIs, tools, and data systems**.
 
 Agents get harder to steer as you connect more tools, and each tool can return far more than the
 request needs. SchemaRouter decides which **declared data fields** are needed, exposes a bounded set
@@ -58,12 +57,10 @@ pip install schemarouter
 ```mermaid
 flowchart TD
     F["LangChain / LangGraph / LlamaIndex / your orchestrator"] --> SR["SchemaRouter"]
-    SR --> T["OpenAPI / MCP / OPTIMADE / Python"]
+    SR --> T["APIs / MCP / SDKs / databases"]
 ```
 
-SchemaRouter does not replace an agent or RAG pipeline and does not perform final generation. It
-provides a structured retrieval/execution boundary when the external source is an API, MCP server,
-OPTIMADE service, or typed callable rather than a document corpus.
+SchemaRouter does not replace an agent or RAG pipeline and does not perform final generation. It provides a typed capability routing and governed execution boundary across structured APIs, tools, SDKs, and registered data systems.
 
 Its registry is a logical capability graph/index, while the registered schema is execution
 authority.
@@ -196,9 +193,7 @@ flow and never becomes executable automatically.
 **0.17.0** is the current stable Beta / pre-1.0 release. Python 3.10–3.14 are
 release-blocking targets and Python 3.15 is a preview target.
 
-0.16 adds enterprise authorization and schema-introspected relational, vector, graph/RDF, and
-non-relational data onboarding while keeping authentication, credentials, native database
-permissions, and raw query authority outside the model-visible boundary.
+0.17 consolidates provider-first routing, governed execution, enterprise authorization, schema-introspected relational/vector/graph/document data onboarding, stronger runtime isolation, and external-validation infrastructure while keeping credentials, native data-system permissions, and raw query authority outside the model-visible boundary.
 
 [0.17.0 release notes →](releases/0.17.0.md) ·
 [Enterprise data onboarding →](guides/enterprise-data-onboarding.md) ·
