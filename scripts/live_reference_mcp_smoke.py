@@ -28,7 +28,7 @@ def _free_port() -> int:
 
 
 async def _wait_for_port(port: int, process: subprocess.Popen[str]) -> None:
-    for _ in range(120):
+    for _ in range(300):
         if process.poll() is not None:
             stdout, stderr = process.communicate()
             raise RuntimeError(
@@ -44,7 +44,7 @@ async def _wait_for_port(port: int, process: subprocess.Popen[str]) -> None:
         writer.close()
         await writer.wait_closed()
         return
-    raise RuntimeError("MCP reference server did not become ready")
+    raise RuntimeError("MCP reference server did not become ready within 15 seconds")
 
 
 async def run_smoke() -> dict[str, object]:

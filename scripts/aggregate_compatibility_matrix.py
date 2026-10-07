@@ -8,12 +8,23 @@ from typing import Any
 
 REFERENCE_EVIDENCE = {
     "pinned_reference_implementation",
+    "local_reference_contract",
+    "required_reference_report",
 }
+PUBLIC_EVIDENCE = {"live_public_provider"}
 
 
-def _load_reports(directory: Path) -> list[dict[str, Any]]:
+def _load_reports(
+    directory: Path,
+    *,
+    required_reference_reports: tuple[str, ...] = (),
+) -> list[dict[str, Any]]:
     reports: list[dict[str, Any]] = []
+    required = set(required_reference_reports)
+    seen: set[str] = set()
+
     for path in sorted(directory.glob("*-compatibility.json")):
+        seen.add(path.name)
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
@@ -23,26 +34,83 @@ def _load_reports(directory: Path) -> list[dict[str, Any]]:
                     "source": str(path),
                     "status": "invalid_report",
                     "error_type": type(exc).__name__,
-                    "details": {},
+                    "details": {
+                        "evidence_kind": (
+                            "required_reference_report"
+                            if path.name in required
+                            else "unknown"
+                        ),
+                    },
                 }
             )
             continue
         if isinstance(payload, dict):
             reports.append(payload)
+        else:
+            reports.append(
+                {
+                    "adapter": path.name.removesuffix("-compatibility.json"),
+                    "source": str(path),
+                    "status": "invalid_report",
+                    "error_type": "NonObjectReport",
+                    "details": {
+                        "evidence_kind": (
+                            "required_reference_report"
+                            if path.name in required
+                            else "unknown"
+                        ),
+                    },
+                }
+            )
+
+    for filename in sorted(required - seen):
+        reports.append(
+            {
+                "adapter": filename.removesuffix("-compatibility.json"),
+                "source": str(directory / filename),
+                "status": "missing_report",
+                "error_type": "MissingReport",
+                "details": {
+                    "evidence_kind": "required_reference_report",
+                },
+            }
+        )
     return reports
+
+
+def _classification(
+    *,
+    status: str,
+    evidence_kind: str,
+) -> str:
+    if status == "success":
+        return "success"
+    if status == "skipped":
+        return "skipped"
+    if evidence_kind in REFERENCE_EVIDENCE:
+        return "contract_failure"
+    if evidence_kind in PUBLIC_EVIDENCE:
+        return "unavailable"
+    return "failure"
 
 
 def _row(report: dict[str, Any]) -> dict[str, Any]:
     details = report.get("details")
     if not isinstance(details, dict):
         details = {}
+    status = str(report.get("status", "unknown"))
+    evidence_kind = str(details.get("evidence_kind", "unknown"))
     return {
         "adapter": str(report.get("adapter", "unknown")),
-        "status": str(report.get("status", "unknown")),
+        "status": status,
+        "classification": _classification(
+            status=status,
+            evidence_kind=evidence_kind,
+        ),
         "source": str(report.get("source", "")),
         "generated_at": str(report.get("generated_at", "")),
         "schemarouter_version": str(report.get("schemarouter_version", "")),
-        "evidence_kind": str(details.get("evidence_kind", "unknown")),
+        "evidence_kind": evidence_kind,
         "provider": str(details.get("provider", "")),
         "discovery_success": bool(details.get("discovery_success", False)),
         "tool_count": details.get("tool_count"),
@@ -61,19 +129,31 @@ def _row(report: dict[str, Any]) -> dict[str, Any]:
 
 def build_matrix(reports: list[dict[str, Any]]) -> dict[str, Any]:
     rows = sorted((_row(report) for report in reports), key=lambda row: row["adapter"])
+    classifications = {
+        name: sum(row["classification"] == name for row in rows)
+        for name in (
+            "success",
+            "contract_failure",
+            "unavailable",
+            "skipped",
+        )
+    }
+    unclassified_failure = sum(
+        row["classification"] == "failure" for row in rows
+    )
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "adapters": rows,
         "summary": {
             "total": len(rows),
-            "success": sum(row["status"] == "success" for row in rows),
+            "success": classifications["success"],
             "failure": sum(row["status"] != "success" for row in rows),
-            "reference_failures": sum(
-                row["status"] != "success"
-                and row["evidence_kind"] in REFERENCE_EVIDENCE
-                for row in rows
-            ),
+            "reference_failures": classifications["contract_failure"],
+            "contract_failure": classifications["contract_failure"],
+            "unavailable": classifications["unavailable"],
+            "skipped": classifications["skipped"],
+            "unclassified_failure": unclassified_failure,
         },
     }
 
@@ -81,15 +161,19 @@ def build_matrix(reports: list[dict[str, Any]]) -> dict[str, Any]:
 def render_markdown(matrix: dict[str, Any]) -> str:
     rows = matrix["adapters"]
     lines = [
-        "# SchemaRouter live compatibility matrix",
+        "# SchemaRouter compatibility matrix",
         "",
         f"Generated: {matrix['generated_at']}",
         "",
         (
             "| Adapter | Evidence | Provider/source | Discovery | Endpoints | "
-            "Bound | Safe execution | Latency (discover/execute ms) | Auth | Status |"
+            "Bound | Safe execution | Latency (discover/execute ms) | Auth | "
+            "Classification | Status |"
         ),
-        "| --- | --- | --- | ---: | ---: | --- | --- | --- | --- | --- |",
+        (
+            "| --- | --- | --- | ---: | ---: | --- | --- | --- | --- | "
+            "--- | --- |"
+        ),
     ]
     for row in rows:
         discovery = "yes" if row["discovery_success"] else "no"
@@ -129,6 +213,7 @@ def render_markdown(matrix: dict[str, Any]) -> str:
                     execution,
                     latency,
                     auth,
+                    str(row["classification"]),
                     status,
                 ]
             )
@@ -139,12 +224,13 @@ def render_markdown(matrix: dict[str, Any]) -> str:
         [
             "",
             (
-                "Public-provider failures are external compatibility evidence and are not, "
-                "by themselves, classified as SchemaRouter regressions."
+                "Public-provider failures are classified as unavailable external "
+                "compatibility evidence and do not block compatibility qualification."
             ),
             (
-                "Pinned-reference failures indicate a local compatibility regression and "
-                "should be investigated."
+                "Local/pinned reference failures, invalid required reports, and "
+                "missing required reports are classified as contract_failure "
+                "and block qualification."
             ),
             "",
         ]
@@ -158,9 +244,20 @@ def main() -> int:
     parser.add_argument("--json-out", required=True, type=Path)
     parser.add_argument("--markdown-out", required=True, type=Path)
     parser.add_argument("--require-reference-success", action="store_true")
+    parser.add_argument(
+        "--required-reference-report",
+        action="append",
+        default=[],
+        metavar="FILENAME",
+    )
     args = parser.parse_args()
 
-    matrix = build_matrix(_load_reports(args.reports_dir))
+    matrix = build_matrix(
+        _load_reports(
+            args.reports_dir,
+            required_reference_reports=tuple(args.required_reference_report),
+        )
+    )
     args.json_out.parent.mkdir(parents=True, exist_ok=True)
     args.markdown_out.parent.mkdir(parents=True, exist_ok=True)
     args.json_out.write_text(
