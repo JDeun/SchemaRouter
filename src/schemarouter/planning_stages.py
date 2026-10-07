@@ -4,6 +4,8 @@ from collections.abc import Awaitable, Callable, Hashable, Sequence, Set
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 
+from .models import ExecutionPlan, FallbackRoute, PlanCoverage, ToolCall
+
 ContextT = TypeVar("ContextT")
 CandidateT = TypeVar("CandidateT")
 CallT = TypeVar("CallT")
@@ -456,3 +458,42 @@ async def select_fallbacks_async(
             routes.append((index, tuple(alternatives)))
 
     return FallbackSelectionResult(routes=tuple(routes))
+
+
+def assemble_execution_plan(
+    *,
+    query: str,
+    registry_version: int,
+    primary_pairs: Sequence[tuple[CandidateT, ToolCall]],
+    fallback_routes: Sequence[FallbackRoute],
+    warnings: Sequence[str],
+    required_coverage: Set[CoverageT],
+    all_candidates: list[CandidateT],
+    selected_coverage: Callable[[CandidateT, ToolCall], Set[CoverageT]],
+    build_coverage: Callable[
+        [frozenset[CoverageT], set[CoverageT], list[CandidateT]],
+        PlanCoverage | None,
+    ],
+    coverage_warning: Callable[[PlanCoverage | None], str | None],
+) -> ExecutionPlan:
+    """Assemble the final public plan from already-selected calls and fallbacks."""
+
+    required = frozenset(required_coverage)
+    covered: set[CoverageT] = set()
+    for candidate, call in primary_pairs:
+        covered.update(selected_coverage(candidate, call) & required)
+
+    coverage = build_coverage(required, covered, all_candidates)
+    plan_warnings = list(warnings)
+    warning = coverage_warning(coverage)
+    if warning:
+        plan_warnings.append(warning)
+
+    return ExecutionPlan(
+        query=query,
+        registry_version=registry_version,
+        calls=[call for _, call in primary_pairs],
+        fallback_routes=list(fallback_routes),
+        warnings=plan_warnings,
+        coverage=coverage,
+    )
