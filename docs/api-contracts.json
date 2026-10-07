@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "package": "schemarouter",
+  "contracts": [
+    {
+      "id": "quickstart-add-provider",
+      "target": "schemarouter.SchemaRouter.add_provider",
+      "documents": [
+        "getting-started/quickstart.md"
+      ],
+      "snippets": [
+        "await router.add_provider(\"materials-project\")"
+      ],
+      "parameters": {
+        "provider": {
+          "required": true
+        },
+        "methods": {
+          "default": null,
+          "keyword_only": true
+        },
+        "replace": {
+          "default": false,
+          "keyword_only": true
+        },
+        "timeout": {
+          "default": 20,
+          "keyword_only": true
+        }
+      }
+    },
+    {
+      "id": "quickstart-from-url",
+      "target": "schemarouter.SchemaRouter.from_url",
+      "documents": [
+        "getting-started/quickstart.md"
+      ],
+      "snippets": [
+        "SchemaRouter.from_url("
+      ],
+      "parameters": {
+        "url": {
+          "required": true
+        },
+        "kind": {
+          "default": "auto",
+          "keyword_only": true
+        },
+        "allow_active_probes": {
+          "default": false,
+          "keyword_only": true
+        },
+        "openapi_ref_max_depth": {
+          "default": 3,
+          "keyword_only": true
+        }
+      }
+    },
+    {
+      "id": "runtime-ainvoke",
+      "target": "schemarouter.SchemaRouter.ainvoke",
+      "documents": [
+        "guides/runtime.md"
+      ],
+      "snippets": [
+        "router.ainvoke(request)"
+      ],
+      "parameters": {
+        "request": {
+          "required": true
+        },
+        "config": {
+          "default": null,
+          "keyword_only": true
+        }
+      }
+    },
+    {
+      "id": "runtime-abatch",
+      "target": "schemarouter.SchemaRouter.abatch",
+      "documents": [
+        "guides/runtime.md"
+      ],
+      "snippets": [
+        "router.abatch("
+      ],
+      "parameters": {
+        "requests": {
+          "required": true
+        },
+        "config": {
+          "default": null,
+          "keyword_only": true
+        },
+        "return_exceptions": {
+          "default": false,
+          "keyword_only": true
+        }
+      }
+    },
+    {
+      "id": "runtime-events",
+      "target": "schemarouter.SchemaRouter.astream_events",
+      "documents": [
+        "guides/runtime.md"
+      ],
+      "snippets": [
+        "astream_events"
+      ],
+      "parameters": {
+        "request": {
+          "required": true
+        },
+        "config": {
+          "default": null,
+          "keyword_only": true
+        },
+        "trace_store": {
+          "default": null,
+          "keyword_only": true
+        }
+      }
+    }
+  ],
+  "model_defaults": [
+    {
+      "id": "run-config-max-concurrency",
+      "target": "schemarouter.RunConfig",
+      "field": "max_concurrency",
+      "default": 8,
+      "documents": [
+        "guides/runtime.md"
+      ]
+    },
+    {
+      "id": "run-config-execution-mode",
+      "target": "schemarouter.RunConfig",
+      "field": "execution_mode",
+      "default": "sequential",
+      "documents": [
+        "guides/runtime.md"
+      ]
+    },
+    {
+      "id": "run-config-max-parallel-calls",
+      "target": "schemarouter.RunConfig",
+      "field": "max_parallel_calls",
+      "default": 8,
+      "documents": [
+        "guides/runtime.md"
+      ]
+    },
+    {
+      "id": "run-config-include-payloads",
+      "target": "schemarouter.RunConfig",
+      "field": "include_payloads",
+      "default": false,
+      "documents": [
+        "guides/runtime.md"
+      ]
+    }
+  ],
+  "extras": [
+    "database",
+    "dev",
+    "docs",
+    "jev",
+    "langchain",
+    "langgraph",
+    "laya",
+    "llamaindex",
+    "mcp",
+    "otel",
+    "systemone"
+  ],
+  "cli_help_tokens": [
+    "inspect",
+    "source",
+    "--help"
+  ]
+}
