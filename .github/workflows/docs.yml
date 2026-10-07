@@ -47,6 +47,8 @@ jobs:
           fi
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[docs]"
+      - name: Validate documented public API contracts
+        run: python scripts/check_docs_api_contracts.py
       - name: Prepare Korean documentation tree
         run: python scripts/prepare_korean_docs.py
       - name: Build English documentation
