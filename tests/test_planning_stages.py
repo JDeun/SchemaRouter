@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import pytest
 
+from schemarouter.models import PlanCoverage, SemanticFieldRequirement, ToolCall
+
 from schemarouter.planning_stages import (
+    assemble_execution_plan,
     run_candidate_pipeline_async,
     run_candidate_pipeline_sync,
     select_fallbacks_async,
@@ -288,3 +291,71 @@ async def test_async_fallback_stage_preserves_executable_compatibility_gates() -
     )
 
     assert result.routes == ((0, ("GOOD",)),)
+
+def test_final_plan_assembly_preserves_fallback_coverage_and_warnings() -> None:
+    primary_call = ToolCall(
+        tool="demo",
+        endpoint="primary",
+        schema_fingerprint="primary-schema",
+    )
+    fallback_call = ToolCall(
+        tool="demo",
+        endpoint="fallback",
+        schema_fingerprint="fallback-schema",
+    )
+    fallback_selection = select_fallbacks_sync(
+        primary_pairs=(("primary", primary_call),),
+        all_candidates=("primary", "fallback"),
+        fallback_scope="same_provider",
+        max_fallbacks=1,
+        is_read_only=lambda _candidate: True,
+        ordered_candidates=lambda _primary, _all, _scope: ["fallback"],
+        compile_candidate=lambda _candidate: fallback_call,
+        is_executable=lambda call: call.executable,
+        compatible=lambda *_args: True,
+    )
+
+    requirement = SemanticFieldRequirement(semantic_id="field")
+
+    def plan_coverage(
+        required: frozenset[str],
+        covered: set[str],
+        candidates: list[str],
+    ) -> PlanCoverage:
+        assert required == frozenset({"field"})
+        assert covered == set()
+        assert candidates == ["primary", "fallback"]
+        return PlanCoverage(
+            required=[requirement],
+            covered=[],
+            uncovered=[requirement],
+            complete=False,
+        )
+
+    plan = assemble_execution_plan(
+        query="demo query",
+        registry_version=7,
+        primary_pairs=(("primary", primary_call),),
+        all_candidates=["primary", "fallback"],
+        fallback_selection=fallback_selection,
+        required_coverage=frozenset({"field"}),
+        warnings=["existing warning"],
+        selected_coverage=lambda _candidate, _call: set(),
+        plan_coverage=plan_coverage,
+        coverage_warning=lambda coverage: (
+            "coverage warning"
+            if coverage is not None and not coverage.complete
+            else None
+        ),
+    )
+
+    assert plan.query == "demo query"
+    assert plan.registry_version == 7
+    assert plan.calls == [primary_call]
+    assert len(plan.fallback_routes) == 1
+    assert plan.fallback_routes[0].primary_call_index == 0
+    assert plan.fallback_routes[0].alternatives == [fallback_call]
+    assert plan.coverage is not None
+    assert plan.coverage.uncovered == [requirement]
+    assert plan.warnings == ["existing warning", "coverage warning"]
+
