@@ -165,9 +165,16 @@ jobs:
           --cov=schemarouter.adapters.record_native
           --cov-config=.coveragerc-native
           --cov-branch
-          --cov-report=term-missing
-          --cov-report=xml:coverage-native.xml
-          --cov-fail-under=60
+          --cov-report=
+      - name: Enforce native adapter coverage ratchets
+        run: |
+          # These are independent floors: coverage gains in one vendor family
+          # must not mask a regression in another. Ratchets only move upward.
+          coverage report --show-missing --fail-under=67
+          coverage report --include="*/adapters/graph_native.py" --fail-under=72
+          coverage report --include="*/adapters/record_native.py" --fail-under=66
+          coverage report --include="*/adapters/vector_native.py" --fail-under=64
+          coverage xml --rcfile=.coveragerc-native -o coverage-native.xml
       - name: Upload native coverage report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
