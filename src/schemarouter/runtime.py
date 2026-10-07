@@ -92,6 +92,7 @@ from .models import (
     ToolSpec,
 )
 from .network_policy import NetworkPolicy
+from .native_backend_factories import build_native_backend
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
@@ -1786,17 +1787,15 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned Qdrant client through the vector capability contract."""
 
-        from .adapters.vector_native import QdrantVectorBackend
-
         return await self.aadd_vector_store(
-            QdrantVectorBackend(
+            build_native_backend(
+                "vector",
+                "qdrant",
                 client,
                 vector_name_by_collection=vector_name_by_collection,
                 metadata_fields_by_collection=metadata_fields_by_collection,
                 filter_builder=filter_builder,
-                collections=(
-                    None if collections is None else tuple(sorted(collections))
-                ),
+                collections=collections,
                 max_discovery_sources=max_discovery_sources,
                 max_fields_per_collection=max_fields_per_collection,
             ),
@@ -1862,16 +1861,14 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned MilvusClient through the vector capability contract."""
 
-        from .adapters.vector_native import MilvusVectorBackend
-
         return await self.aadd_vector_store(
-            MilvusVectorBackend(
+            build_native_backend(
+                "vector",
+                "milvus",
                 client,
                 vector_field_by_collection=vector_field_by_collection,
                 metric_by_collection=metric_by_collection,
-                collections=(
-                    None if collections is None else tuple(sorted(collections))
-                ),
+                collections=collections,
                 max_discovery_sources=max_discovery_sources,
                 max_fields_per_collection=max_fields_per_collection,
             ),
@@ -1934,15 +1931,13 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned Pinecone client."""
 
-        from .adapters.vector_native import PineconeVectorBackend
-
         return await self.aadd_vector_store(
-            PineconeVectorBackend(
+            build_native_backend(
+                "vector",
+                "pinecone",
                 client,
                 metadata_fields_by_index=metadata_fields_by_index,
-                collections=(
-                    None if collections is None else tuple(sorted(collections))
-                ),
+                collections=collections,
                 max_discovery_sources=max_discovery_sources,
                 max_fields_per_collection=max_fields_per_collection,
             ),
@@ -2003,17 +1998,15 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned Chroma client."""
 
-        from .adapters.vector_native import ChromaVectorBackend
-
         return await self.aadd_vector_store(
-            ChromaVectorBackend(
+            build_native_backend(
+                "vector",
+                "chroma",
                 client,
                 dimension_by_collection=dimension_by_collection,
                 metadata_fields_by_collection=metadata_fields_by_collection,
                 metric_by_collection=metric_by_collection,
-                collections=(
-                    None if collections is None else tuple(sorted(collections))
-                ),
+                collections=collections,
                 max_discovery_sources=max_discovery_sources,
                 max_fields_per_collection=max_fields_per_collection,
             ),
@@ -2079,18 +2072,16 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned Weaviate v4 client."""
 
-        from .adapters.vector_native import WeaviateVectorBackend
-
         return await self.aadd_vector_store(
-            WeaviateVectorBackend(
+            build_native_backend(
+                "vector",
+                "weaviate",
                 client,
                 dimension_by_collection=dimension_by_collection,
                 vector_name_by_collection=vector_name_by_collection,
                 metric_by_collection=metric_by_collection,
                 filter_builder=filter_builder,
-                collections=(
-                    None if collections is None else tuple(sorted(collections))
-                ),
+                collections=collections,
                 max_discovery_sources=max_discovery_sources,
                 max_fields_per_collection=max_fields_per_collection,
             ),
@@ -2158,20 +2149,13 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register caller-owned PostgreSQL/pgvector Engine."""
 
-        from .adapters.vector_native import PgvectorVectorBackend
-
         return await self.aadd_vector_store(
-            PgvectorVectorBackend(
+            build_native_backend(
+                "vector",
+                "pgvector",
                 engine,
-                tables=(
-                    tables
-                    if tables is not None
-                    else (
-                        None
-                        if collections is None
-                        else tuple(sorted(collections))
-                    )
-                ),
+                tables=tables,
+                collections=collections,
                 vector_field_by_table=vector_field_by_table,
                 metric_by_table=metric_by_table,
                 schema=schema,
