@@ -2912,6 +2912,7 @@ class SchemaRouter:
             default_limit=default_limit,
             remote=remote,
         )
+
     def add_mongodb_record_store(
         self,
         database: Any,
@@ -2966,6 +2967,7 @@ class SchemaRouter:
             default_limit=default_limit,
             remote=remote,
         )
+
     def add_elasticsearch_record_store(
         self,
         client: Any,
@@ -3002,6 +3004,7 @@ class SchemaRouter:
             default_limit=default_limit,
             remote=remote,
         )
+
     def add_opensearch_record_store(
         self,
         client: Any,
@@ -3037,6 +3040,7 @@ class SchemaRouter:
             default_limit=default_limit,
             remote=remote,
         )
+
     def add_dynamodb_record_store(
         self,
         client: Any,
@@ -3072,6 +3076,7 @@ class SchemaRouter:
             default_limit=default_limit,
             remote=remote,
         )
+
     def add_cosmos_record_store(
         self,
         database: Any,
@@ -3107,6 +3112,7 @@ class SchemaRouter:
             default_limit=default_limit,
             remote=remote,
         )
+
     def add_couchbase_record_store(
         self,
         cluster: Any,
@@ -3142,6 +3148,7 @@ class SchemaRouter:
             default_limit=default_limit,
             remote=remote,
         )
+
     def add_clickhouse_record_store(
         self,
         client: Any,
@@ -3181,6 +3188,7 @@ class SchemaRouter:
             default_limit=default_limit,
             remote=remote,
         )
+
     def add_influxdb_record_store(
         self,
         query_api: Any,
