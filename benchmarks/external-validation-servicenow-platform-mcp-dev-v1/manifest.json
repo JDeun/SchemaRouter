@@ -42,7 +42,12 @@
       "active-tool count",
       "selection latency p50/p95"
     ],
-    "secondary_end_to_end_agent_comparison": "deferred_until_primary_protocol_freeze"
+    "secondary_end_to_end_agent_comparison": "deferred_until_primary_protocol_freeze",
+    "development_top_k_sensitivity": [
+      3,
+      5
+    ],
+    "primary_top_k": "pending maintainer review/freeze"
   },
   "field_metric": {
     "definition": "Recall over required top-level MCP input parameters declared in the frozen case labels and present in the exact selected upstream inputSchema.",
