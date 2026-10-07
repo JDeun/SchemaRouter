@@ -4,6 +4,8 @@ from collections.abc import Awaitable, Callable, Hashable, Sequence, Set
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 
+from .models import ExecutionPlan, FallbackRoute, PlanCoverage, ToolCall
+
 ContextT = TypeVar("ContextT")
 CandidateT = TypeVar("CandidateT")
 CallT = TypeVar("CallT")
@@ -456,3 +458,56 @@ async def select_fallbacks_async(
             routes.append((index, tuple(alternatives)))
 
     return FallbackSelectionResult(routes=tuple(routes))
+
+def assemble_execution_plan(
+    *,
+    query: str,
+    registry_version: int,
+    primary_pairs: Sequence[tuple[CandidateT, ToolCall]],
+    all_candidates: list[CandidateT],
+    fallback_selection: FallbackSelectionResult[ToolCall],
+    required_coverage: frozenset[CoverageT],
+    warnings: Sequence[str],
+    selected_coverage: Callable[[CandidateT, ToolCall], Set[CoverageT]],
+    plan_coverage: Callable[
+        [frozenset[CoverageT], set[CoverageT], list[CandidateT]],
+        PlanCoverage | None,
+    ],
+    coverage_warning: Callable[[PlanCoverage | None], str | None],
+) -> ExecutionPlan:
+    """Assemble the final public plan from already-selected typed stage outputs."""
+
+    calls = [call for _, call in primary_pairs]
+    fallback_routes = [
+        FallbackRoute(
+            primary_call_index=index,
+            alternatives=list(alternatives),
+        )
+        for index, alternatives in fallback_selection.routes
+    ]
+
+    covered_coverage: set[CoverageT] = set()
+    for candidate, call in primary_pairs:
+        covered_coverage.update(
+            selected_coverage(candidate, call) & required_coverage
+        )
+
+    coverage = plan_coverage(
+        required_coverage,
+        covered_coverage,
+        all_candidates,
+    )
+    final_warnings = list(warnings)
+    warning = coverage_warning(coverage)
+    if warning:
+        final_warnings.append(warning)
+
+    return ExecutionPlan(
+        query=query,
+        registry_version=registry_version,
+        calls=calls,
+        fallback_routes=fallback_routes,
+        warnings=final_warnings,
+        coverage=coverage,
+    )
+
