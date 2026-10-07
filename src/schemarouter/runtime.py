@@ -3900,7 +3900,7 @@ class SchemaRouter:
                     for method, staged_tool, _ in staged_items
                     if staged_tool.key == tool.key
                 }
-                for method, staged_tool, _ in staged_items:
+                for method, _staged_tool, _ in staged_items:
                     if method.method_id not in outcomes:
                         outcomes[method.method_id] = ProviderMethodRegistration(
                             method_id=method.method_id,
