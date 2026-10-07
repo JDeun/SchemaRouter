@@ -6,9 +6,9 @@ from schemarouter import (
     IndeterminateInvocationError,
     InvocationUnavailableError,
     NonRetryableInvocationError,
+    parse_authorization_policy,
     SchemaRouter,
     TransientInvocationError,
-    parse_authorization_policy,
 )
 
 
