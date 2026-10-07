@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import inspect
 import json
 import re
 import time
@@ -312,6 +313,32 @@ def _response_body(value: Any) -> Any:
     return value if body is None else body
 
 
+def _elastic_search_call_style(search: Any) -> str:
+    """Select one SDK call shape without probing the backend by exception."""
+
+    if not callable(search):
+        raise RegistrationError("Elasticsearch/OpenSearch client.search must be callable")
+    try:
+        signature = inspect.signature(search)
+    except (TypeError, ValueError):
+        # Some extension/vendor callables do not expose a Python signature.
+        # Prefer the current keyword API; callers can wrap old SDKs with an
+        # explicit body-only callable rather than relying on exception retry.
+        return "modern"
+
+    parameters = signature.parameters
+    if any(
+        parameter.kind is inspect.Parameter.VAR_KEYWORD
+        for parameter in parameters.values()
+    ):
+        return "modern"
+    if "query" in parameters:
+        return "modern"
+    if "body" in parameters:
+        return "body"
+    return "modern"
+
+
 class ElasticRecordBackend:
     """Shared thin adapter for caller-owned Elasticsearch/OpenSearch clients."""
 
@@ -325,6 +352,9 @@ class ElasticRecordBackend:
         discovery_limits: NativeDiscoveryLimits | None = None,
     ) -> None:
         self._client = client
+        self._search_call_style = _elastic_search_call_style(
+            getattr(client, "search", None)
+        )
         self._discovery_limits = discovery_limits or NativeDiscoveryLimits()
         self._indices = None if indices is None else tuple(indices)
         self._time_fields = dict(time_field_by_index or {})
@@ -475,14 +505,7 @@ class ElasticRecordBackend:
             query = {"match_all": {}}
 
         source_fields = [field for field in include_fields if field != "_id"]
-        try:
-            raw = self._client.search(
-                index=source,
-                size=limit,
-                query=query,
-                source=source_fields,
-            )
-        except TypeError:
+        if self._search_call_style == "body":
             raw = self._client.search(
                 index=source,
                 body={
@@ -490,6 +513,13 @@ class ElasticRecordBackend:
                     "query": query,
                     "_source": source_fields,
                 },
+            )
+        else:
+            raw = self._client.search(
+                index=source,
+                size=limit,
+                query=query,
+                source=source_fields,
             )
         raw = _response_body(raw)
         hits = raw.get("hits", {}).get("hits", []) if isinstance(raw, Mapping) else []

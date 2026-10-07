@@ -18,6 +18,7 @@ from schemarouter import (
 from schemarouter.adapters.discovery_limits import NativeDiscoveryLimits
 from schemarouter.adapters.record_native import (
     DynamoDBRecordBackend,
+    ElasticRecordBackend,
     MongoRecordBackend,
 )
 from schemarouter.errors import RegistrationError
@@ -244,6 +245,67 @@ async def test_elastic_and_opensearch_native_mapping_and_query(
     assert query["bool"]["must"][0]["multi_match"]["query"] == "healthy"
     assert {"term": {"service": "router"}} in query["bool"]["filter"]
     assert any("range" in item for item in query["bool"]["filter"])
+
+
+class FakeLegacyElasticClient(FakeElasticClient):
+    def search(
+        self,
+        *,
+        index: str,
+        body: dict[str, Any],
+    ) -> dict[str, Any]:
+        return super().search(index=index, body=body)
+
+
+class FakeTypeErrorElasticClient(FakeElasticClient):
+    def search(self, **kwargs: Any) -> dict[str, Any]:
+        self.calls.append(dict(kwargs))
+        raise TypeError("transport raised after request dispatch")
+
+
+def test_elastic_backend_selects_legacy_body_signature_without_probe_retry() -> None:
+    client = FakeLegacyElasticClient()
+    backend = ElasticRecordBackend(client, indices=["logs"])
+    backend.list_sources()
+
+    rows = backend.query(
+        source="logs",
+        text_query="healthy",
+        filters={"service": "router"},
+        start_time=None,
+        end_time=None,
+        limit=3,
+        include_fields=("_id", "message"),
+    )
+
+    assert rows == [{"_id": "log-1", "message": "router healthy"}]
+    assert len(client.calls) == 1
+    call = client.calls[0]
+    assert call["index"] == "logs"
+    assert "query" not in call
+    assert call["body"]["query"]["bool"]["must"][0]["multi_match"]["query"] == "healthy"
+    assert call["body"]["_source"] == ["message"]
+
+
+def test_elastic_backend_propagates_internal_type_error_without_second_request() -> None:
+    client = FakeTypeErrorElasticClient()
+    backend = ElasticRecordBackend(client, indices=["logs"])
+    backend.list_sources()
+
+    with pytest.raises(TypeError, match="transport raised after request dispatch"):
+        backend.query(
+            source="logs",
+            text_query="healthy",
+            filters={},
+            start_time=None,
+            end_time=None,
+            limit=3,
+            include_fields=("_id", "message"),
+        )
+
+    assert len(client.calls) == 1
+    assert "query" in client.calls[0]
+    assert "body" not in client.calls[0]
 
 
 class FakeDynamoClient:
