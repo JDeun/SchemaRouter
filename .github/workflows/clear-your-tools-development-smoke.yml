@@ -104,7 +104,7 @@ jobs:
           python - <<'PY'
           import json, statistics
           from pathlib import Path
-          cases={x["id"]:x for x in json.loads(Path("${PACKAGE_DIR}/cases.json").read_text())["cases"]}
+          cases={x["id"]:x for x in json.loads(Path('benchmarks/external-validation-smart-mcp-dev-v1/cases.json').read_text())["cases"]}
           out={"status":"development_unfrozen","performance_evidence":False,"sizes":{}}
           for size in (100,250,500,1000):
               cyt=json.loads(Path(f"artifacts/cyt-dev-scaling/results/cyt-{size}.json").read_text())
