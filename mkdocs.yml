@@ -254,6 +254,7 @@ nav:
           - mcp-agent catalog validation: project/external-validation-mcp-agent.md
           - External case-study template: project/case-study-template.md
       - Launch and positioning:
+          - Why not send every tool schema to the model?: project/why-not-all-tool-schemas.md
           - Developer launch playbook: project/launch-playbook.md
           - Launch and outreach log: project/launch-log.md
           - Brand: project/brand.md
