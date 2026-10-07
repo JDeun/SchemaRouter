@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "issue": 840,
+  "experiment": "adaptive-context-confirmation-v1",
+  "status": "scorer_spec_frozen_unscored",
+  "corpus_tasks_sha256": "35911573c0d43a023cc9659fa3167a1c8870344701ec61fbccba6f3953c14707",
+  "catalog": {
+    "source": "benchmarks.agent_utility_b2_catalog.build_registry",
+    "endpoint_count": 100
+  },
+  "routing": {
+    "top_k": 10,
+    "prior_weight": 0.5,
+    "history_checkpoint": ["materials.current", "papers.search", "papers.retrieve"],
+    "history_mutation_during_scoring": false,
+    "unsupported_rule": "required_routes empty is rejected only when no accepted route remains after the existing hard unsupported safeguard"
+  },
+  "sessions": {
+    "group_by": ["language"],
+    "task_order": "corpus order",
+    "new_session_per_language": true,
+    "compaction_after_task_ordinal": 30,
+    "compaction_applies_before_next_task": true
+  },
+  "schema_context": {
+    "serialization": "scripts.evaluate_agent_utility_phase_a._endpoint_document",
+    "size_metric": "utf8_bytes",
+    "stateless": "sum selected Top-K schema bytes for every task",
+    "session": "sum only schemas not already exposed in current compaction epoch",
+    "duplicate_schema_injection": "route injected more than once within one compaction epoch"
+  },
+  "execution_oracle": {
+    "single": {
+      "materials.current": {"material_id": "task token CONF-NNN"}
+    },
+    "multi": {
+      "papers.search": {"query": "confirmation alloy N"},
+      "papers.retrieve": {"paper_id": "paper-confirmation-N"}
+    },
+    "completion": "all required routes selected and each deterministic oracle call schema-valid and semantically valid in required order"
+  },
+  "post_compaction_recovery": {
+    "definition": "first required route after compaction is injectable again when selected",
+    "minimum": 1.0
+  },
+  "scoring": {
+    "one_shot": true,
+    "result_mutation_after_first_score": false,
+    "performance_evidence_before_gate": false
+  }
+}
