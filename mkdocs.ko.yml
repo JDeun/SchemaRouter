@@ -146,18 +146,23 @@ nav:
           - 0.11 terminal report: research/operation-routing-v4-terminal-report.md
       - 선행연구 로드맵: research/prior-art-roadmap.md
   - 프로젝트:
-      - Stable core 계약: stable-core.md
-      - 공개 로드맵: project/roadmap.md
-      - 신뢰성·안정성·공개 근거: project/trust-and-evidence.md
-      - 도입 지표: project/adoption-scorecard.md
-      - 개발자 공개 playbook: project/launch-playbook.md
-      - 공개/아웃리치 로그: project/launch-log.md
-      - 외부 도입과 검증: project/external-adoption.md
-      - PydanticAI ToolSearch 검증: project/external-validation-pydanticai.md
-      - OpenAI Agents SDK MCP filter 검증: project/external-validation-openai-agents.md
-      - mcp-agent catalog 검증: project/external-validation-mcp-agent.md
-      - 외부 사례 템플릿: project/case-study-template.md
-      - 버전 정책: versioning.md
+      - 거버넌스와 로드맵:
+          - Stable core 계약: stable-core.md
+          - 공개 로드맵: project/roadmap.md
+          - 신뢰성·안정성·공개 근거: project/trust-and-evidence.md
+          - 버전 정책: versioning.md
+      - 도입과 외부 검증:
+          - 도입 지표: project/adoption-scorecard.md
+          - 외부 도입과 검증: project/external-adoption.md
+          - PydanticAI ToolSearch 검증: project/external-validation-pydanticai.md
+          - OpenAI Agents SDK MCP filter 검증: project/external-validation-openai-agents.md
+          - mcp-agent catalog 검증: project/external-validation-mcp-agent.md
+          - 외부 사례 템플릿: project/case-study-template.md
+      - 공개와 포지셔닝:
+          - 개발자 공개 playbook: project/launch-playbook.md
+          - 공개/아웃리치 로그: project/launch-log.md
+          - 브랜드: project/brand.md
+          - 검색/포지셔닝: project/discoverability.md
       - 릴리스 노트:
           - 0.17.0: releases/0.17.0.md
           - 0.16.0: releases/0.16.0.md
@@ -176,9 +181,8 @@ nav:
           - 0.3.0: releases/0.3.0.md
           - 0.3.0a1: releases/0.3.0a1.md
           - 0.2.0a1: releases/0.2.0a1.md
-      - 릴리스 체크리스트: release-checklist.md
-      - 기여하기: contributing.md
-      - 변경 이력: changelog.md
-      - 브랜드: project/brand.md
-      - 검색/포지셔닝: project/discoverability.md
-      - 라이선스: license.md
+      - 기여:
+          - 릴리스 체크리스트: release-checklist.md
+          - 기여하기: contributing.md
+          - 변경 이력: changelog.md
+          - 라이선스: license.md
