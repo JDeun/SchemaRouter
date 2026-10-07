@@ -65,7 +65,7 @@ SchemaRouter는 또 하나의 범용 agent loop가 아닙니다. LangChain, Lang
 
 Stable 0.17.0 release, quickstart, example, security model, 현재 research status는 모두 이 저장소에 함께 유지되며 product guarantee와 experimental evidence를 별도로 감사할 수 있습니다.
 
-- [SchemaRouter README](../../README.ko.md)
+- [SchemaRouter 한국어 README](https://github.com/JDeun/SchemaRouter/blob/main/README.ko.md)
 - [빠른 시작](../getting-started/quickstart.md)
 - [실행 경계](../concepts/execution.md)
 - [보안 모델](../security/threat-model.md)
