@@ -93,7 +93,7 @@
     },
     {
       "path": "getting-started/runtime-lifecycle.md",
-      "source_blob": "8a8372dbebecff4c1fcb98881e5d67c50b0cdf4a"
+      "source_blob": "d6c2ec32181a666182878cb13ad965dc0b61e791"
     },
     {
       "path": "getting-started/schema-explorer.md",
@@ -113,7 +113,7 @@
     },
     {
       "path": "guides/authorization.md",
-      "source_blob": "c85c62739b9b4190090e63363cc8393cb90cf4ed"
+      "source_blob": "dc069746d85cc3cb4a9150308ec407563264d856"
     },
     {
       "path": "guides/candidate-indexing.md",
@@ -265,7 +265,7 @@
     },
     {
       "path": "guides/retry.md",
-      "source_blob": "f44729659779cfce9bc50bb1a82f5bdb3578a655"
+      "source_blob": "407b4befbc9ccc6887f45168606a266401e02e2f"
     },
     {
       "path": "guides/run-traces.md",
