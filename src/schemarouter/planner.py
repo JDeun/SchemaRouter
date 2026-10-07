@@ -40,6 +40,8 @@ from .planning_context import PlanningContext, RegistrySnapshot
 from .planning_stages import (
     run_candidate_pipeline_async,
     run_candidate_pipeline_sync,
+    select_fallbacks_async,
+    select_fallbacks_sync,
     select_primary_candidates_async,
     select_primary_candidates_sync,
 )
@@ -3689,45 +3691,36 @@ class SchemaPlanner:
         required_coverage = primary_selection.required_coverage
 
         calls = [call for _, call in primary_pairs]
-        fallback_routes: list[FallbackRoute] = []
-        if request.fallback_scope != "disabled" and request.max_fallbacks > 0:
-            for index, (primary_candidate, primary_call) in enumerate(primary_pairs):
-                if primary_candidate.endpoint.read_only is not True:
-                    continue
-                alternatives: list[ToolCall] = []
-                for candidate in self._ordered_fallback_candidates(
-                    primary_candidate,
-                    all_candidates,
-                    scope=request.fallback_scope,
-                ):
-                    if len(alternatives) >= request.max_fallbacks:
-                        break
-                    if candidate.endpoint.read_only is not True:
-                        continue
-                    alternative = self._compile_candidate_sync(
-                        request,
-                        intent,
-                        candidate,
-                        warnings,
-                        warn_ignored_arguments=False,
-                    )
-                    if alternative is None or not alternative.executable:
-                        continue
-                    if not self._fallback_semantics_compatible(
-                        primary_candidate,
-                        primary_call,
-                        candidate,
-                        alternative,
-                    ):
-                        continue
-                    alternatives.append(alternative)
-                if alternatives:
-                    fallback_routes.append(
-                        FallbackRoute(
-                            primary_call_index=index,
-                            alternatives=alternatives,
-                        )
-                    )
+        fallback_selection = select_fallbacks_sync(
+            primary_pairs=tuple(primary_pairs),
+            all_candidates=tuple(all_candidates),
+            fallback_scope=request.fallback_scope,
+            max_fallbacks=request.max_fallbacks,
+            is_read_only=lambda candidate: candidate.endpoint.read_only is True,
+            ordered_candidates=lambda primary, ranked, scope: (
+                self._ordered_fallback_candidates(
+                    primary,
+                    list(ranked),
+                    scope=scope,
+                )
+            ),
+            compile_candidate=lambda candidate: self._compile_candidate_sync(
+                request,
+                intent,
+                candidate,
+                warnings,
+                warn_ignored_arguments=False,
+            ),
+            is_executable=lambda call: call.executable,
+            compatible=self._fallback_semantics_compatible,
+        )
+        fallback_routes = [
+            FallbackRoute(
+                primary_call_index=index,
+                alternatives=list(alternatives),
+            )
+            for index, alternatives in fallback_selection.routes
+        ]
 
         covered_coverage: set[tuple[str, tuple[str, ...]]] = set()
         for candidate, call in primary_pairs:
@@ -3879,45 +3872,36 @@ class SchemaPlanner:
         required_coverage = primary_selection.required_coverage
 
         calls = [call for _, call in primary_pairs]
-        fallback_routes: list[FallbackRoute] = []
-        if request.fallback_scope != "disabled" and request.max_fallbacks > 0:
-            for index, (primary_candidate, primary_call) in enumerate(primary_pairs):
-                if primary_candidate.endpoint.read_only is not True:
-                    continue
-                alternatives: list[ToolCall] = []
-                for candidate in self._ordered_fallback_candidates(
-                    primary_candidate,
-                    all_candidates,
-                    scope=request.fallback_scope,
-                ):
-                    if len(alternatives) >= request.max_fallbacks:
-                        break
-                    if candidate.endpoint.read_only is not True:
-                        continue
-                    alternative = await self._compile_candidate_async(
-                        request,
-                        intent,
-                        candidate,
-                        warnings,
-                        warn_ignored_arguments=False,
-                    )
-                    if alternative is None or not alternative.executable:
-                        continue
-                    if not self._fallback_semantics_compatible(
-                        primary_candidate,
-                        primary_call,
-                        candidate,
-                        alternative,
-                    ):
-                        continue
-                    alternatives.append(alternative)
-                if alternatives:
-                    fallback_routes.append(
-                        FallbackRoute(
-                            primary_call_index=index,
-                            alternatives=alternatives,
-                        )
-                    )
+        fallback_selection = await select_fallbacks_async(
+            primary_pairs=tuple(primary_pairs),
+            all_candidates=tuple(all_candidates),
+            fallback_scope=request.fallback_scope,
+            max_fallbacks=request.max_fallbacks,
+            is_read_only=lambda candidate: candidate.endpoint.read_only is True,
+            ordered_candidates=lambda primary, ranked, scope: (
+                self._ordered_fallback_candidates(
+                    primary,
+                    list(ranked),
+                    scope=scope,
+                )
+            ),
+            compile_candidate=lambda candidate: self._compile_candidate_async(
+                request,
+                intent,
+                candidate,
+                warnings,
+                warn_ignored_arguments=False,
+            ),
+            is_executable=lambda call: call.executable,
+            compatible=self._fallback_semantics_compatible,
+        )
+        fallback_routes = [
+            FallbackRoute(
+                primary_call_index=index,
+                alternatives=list(alternatives),
+            )
+            for index, alternatives in fallback_selection.routes
+        ]
 
         covered_coverage: set[tuple[str, tuple[str, ...]]] = set()
         for candidate, call in primary_pairs:

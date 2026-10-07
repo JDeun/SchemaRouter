@@ -340,3 +340,119 @@ async def select_primary_candidates_async(
         pairs=tuple(pairs),
         required_coverage=frozenset(effective_required),
     )
+
+
+
+@dataclass(frozen=True, slots=True)
+class FallbackSelectionResult(Generic[CallT]):
+    """Immutable fallback alternatives grouped by primary call index."""
+
+    routes: tuple[tuple[int, tuple[CallT, ...]], ...]
+
+
+def select_fallbacks_sync(
+    *,
+    primary_pairs: tuple[tuple[CandidateT, CallT], ...],
+    all_candidates: tuple[CandidateT, ...],
+    fallback_scope: str,
+    max_fallbacks: int,
+    is_read_only: Callable[[CandidateT], bool],
+    ordered_candidates: Callable[
+        [CandidateT, tuple[CandidateT, ...], str],
+        list[CandidateT],
+    ],
+    compile_candidate: Callable[[CandidateT], CallT | None],
+    is_executable: Callable[[CallT], bool],
+    compatible: Callable[[CandidateT, CallT, CandidateT, CallT], bool],
+) -> FallbackSelectionResult[CallT]:
+    """Build bounded executable fallbacks for read-only primary calls."""
+
+    if fallback_scope == "disabled" or max_fallbacks <= 0:
+        return FallbackSelectionResult(routes=())
+
+    routes: list[tuple[int, tuple[CallT, ...]]] = []
+    for index, (primary_candidate, primary_call) in enumerate(primary_pairs):
+        if not is_read_only(primary_candidate):
+            continue
+
+        alternatives: list[CallT] = []
+        for candidate in ordered_candidates(
+            primary_candidate,
+            all_candidates,
+            fallback_scope,
+        ):
+            if len(alternatives) >= max_fallbacks:
+                break
+            if not is_read_only(candidate):
+                continue
+
+            alternative = compile_candidate(candidate)
+            if alternative is None or not is_executable(alternative):
+                continue
+            if not compatible(
+                primary_candidate,
+                primary_call,
+                candidate,
+                alternative,
+            ):
+                continue
+            alternatives.append(alternative)
+
+        if alternatives:
+            routes.append((index, tuple(alternatives)))
+
+    return FallbackSelectionResult(routes=tuple(routes))
+
+
+async def select_fallbacks_async(
+    *,
+    primary_pairs: tuple[tuple[CandidateT, CallT], ...],
+    all_candidates: tuple[CandidateT, ...],
+    fallback_scope: str,
+    max_fallbacks: int,
+    is_read_only: Callable[[CandidateT], bool],
+    ordered_candidates: Callable[
+        [CandidateT, tuple[CandidateT, ...], str],
+        list[CandidateT],
+    ],
+    compile_candidate: Callable[[CandidateT], Awaitable[CallT | None]],
+    is_executable: Callable[[CallT], bool],
+    compatible: Callable[[CandidateT, CallT, CandidateT, CallT], bool],
+) -> FallbackSelectionResult[CallT]:
+    """Async counterpart preserving the exact fallback policy."""
+
+    if fallback_scope == "disabled" or max_fallbacks <= 0:
+        return FallbackSelectionResult(routes=())
+
+    routes: list[tuple[int, tuple[CallT, ...]]] = []
+    for index, (primary_candidate, primary_call) in enumerate(primary_pairs):
+        if not is_read_only(primary_candidate):
+            continue
+
+        alternatives: list[CallT] = []
+        for candidate in ordered_candidates(
+            primary_candidate,
+            all_candidates,
+            fallback_scope,
+        ):
+            if len(alternatives) >= max_fallbacks:
+                break
+            if not is_read_only(candidate):
+                continue
+
+            alternative = await compile_candidate(candidate)
+            if alternative is None or not is_executable(alternative):
+                continue
+            if not compatible(
+                primary_candidate,
+                primary_call,
+                candidate,
+                alternative,
+            ):
+                continue
+            alternatives.append(alternative)
+
+        if alternatives:
+            routes.append((index, tuple(alternatives)))
+
+    return FallbackSelectionResult(routes=tuple(routes))
