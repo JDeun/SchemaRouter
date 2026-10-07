@@ -97,6 +97,27 @@ AuthorizationRule(
 서로 다른 selector category는 AND, 같은 `*_any` 안의 값은 OR로 평가합니다. Rule은 선언
 순서대로 평가하며 첫 번째 match가 적용됩니다.
 
+## First-match 우선순위와 policy lint
+
+Runtime 평가는 선언 순서를 유지하며 첫 번째로 match한 authorization/data-scope rule이
+적용됩니다. 따라서 configuration loader는 뒤의 rule이 명백히 도달 불가능한 broad-before-
+narrow 순서나 중복 matcher를 기본적으로 lint 오류로 처리합니다.
+
+```python
+from schemarouter import parse_authorization_policy
+
+policy = parse_authorization_policy(policy_json)  # 기본 lint=True
+```
+
+Lint는 중복 rule name, 동일 match condition, 안전하게 증명할 수 있는 shadowing을
+진단합니다. 임의 wildcard predicate의 의미를 과도하게 추론하지 않으며, rule 이름/위치는
+trusted configuration surface에만 제공합니다. Runtime의 authorization denial message는 계속
+의도적으로 일반적인 형태를 유지합니다. `lint=False`는 기존 ordered policy를 마이그레이션할
+때 host가 순서를 별도로 검토한 경우에만 사용해야 합니다.
+
+Compiled lookup partition은 성능을 위해 무관한 rule을 건너뛸 수 있지만 원래 선언 순서와
+first-match 결과는 바꾸지 않습니다.
+
 ## 기본 정책
 
 `AuthorizationPolicy`는 deny-by-default입니다. 어떤 rule에도 match하지 않으면 해당 route는
