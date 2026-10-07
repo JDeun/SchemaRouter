@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "package_id": "servicenow-platform-mcp-cross-project-dev-v1",
+  "status": "development_unfrozen",
+  "purpose": "Development-only protocol-review fixture for ServiceNow Platform MCP static readonly packaging versus SchemaRouter query-driven preselection. Not held-out evidence.",
+  "source_revisions": {
+    "schemarouter": "da33d5a95f32984fee12692930d31fe0f4ee850a",
+    "servicenow_platform_mcp": "5bcb83b29ab5b30aee07cabaa8df974881c47126"
+  },
+  "upstream_runtime": {
+    "python": "3.12",
+    "servicenow_platform_mcp_version": "2.1.2",
+    "mcp_requirement": ">=2.1.1",
+    "tool_package": "readonly",
+    "servicenow_environment": "prod",
+    "expected_public_tool_count": 12,
+    "live_credentials_required": false,
+    "tool_execution": "disabled"
+  },
+  "files": {
+    "cases": "cases.json",
+    "generated_tool_snapshot": "servicenow-readonly-tools.json",
+    "result_template": "result-template.json"
+  },
+  "counts": {
+    "cases": 24,
+    "supported": 20,
+    "unsupported": 4
+  },
+  "comparison": {
+    "primary_conditions": [
+      "static_readonly",
+      "readonly_plus_schemarouter_preselection"
+    ],
+    "schemarouter_top_k": 3,
+    "latency_repeats": 20,
+    "primary_metrics": [
+      "required-tool recall",
+      "required-input-field recall",
+      "unsupported nonempty-candidate rate",
+      "model-visible MCP schema bytes",
+      "active-tool count",
+      "selection latency p50/p95"
+    ],
+    "secondary_end_to_end_agent_comparison": "deferred_until_primary_protocol_freeze"
+  },
+  "field_metric": {
+    "definition": "Recall over required top-level MCP input parameters declared in the frozen case labels and present in the exact selected upstream inputSchema.",
+    "output_field_recall": "not scored unless the upstream MCP schema exposes domain-level output field contracts",
+    "reason": "Do not invent ServiceNow domain output fields that are absent from the native MCP tool contract."
+  },
+  "exposure_definition": {
+    "unit": "UTF-8 bytes",
+    "serialization": "canonical JSON with ensure_ascii=false, sort_keys=true, separators=(',', ':')",
+    "value": "Exact upstream MCP tool contracts made model-visible for the condition. Both conditions serialize the same captured upstream contracts; only the selected subset may differ."
+  },
+  "governance": {
+    "heldout_scoring_allowed": false,
+    "dev_smoke_allowed": true,
+    "protocol_freeze_required_before_heldout": true,
+    "maintainer_review_required_before_freeze": true,
+    "negative_results_publishable_unchanged": true,
+    "authorization_and_execution_semantics_must_remain_unchanged": true,
+    "schemarouter_must_not_add_package_ineligible_tools": true,
+    "no_post_hoc_tuning_from_heldout_failures": true
+  }
+}
