@@ -72,3 +72,33 @@ def test_protected_required_contexts_never_use_job_level_path_skips() -> None:
         # skipped. Path qualification therefore belongs on expensive steps, while
         # the required job itself must always reach a successful conclusion.
         assert "\n    if:" not in block, job_id
+
+
+
+def test_core_python_workflows_cache_only_pip_downloads_with_complete_keys() -> None:
+    workflows = (
+        ".github/workflows/ci.yml",
+        ".github/workflows/compatibility.yml",
+        ".github/workflows/docs.yml",
+        ".github/workflows/post-merge-qualification.yml",
+        ".github/workflows/python-compatibility.yml",
+        ".github/workflows/python-preview.yml",
+        ".github/workflows/release.yml",
+        ".github/workflows/retrieval-fast-path-validation.yml",
+        ".github/workflows/security.yml",
+    )
+
+    for workflow_path in workflows:
+        workflow = Path(workflow_path).read_text(encoding="utf-8")
+        setup_steps = workflow.split("uses: actions/setup-python@")[1:]
+        assert setup_steps, workflow_path
+
+        for remainder in setup_steps:
+            block = remainder.split("\n      -", 1)[0]
+            assert "cache:" in block and "pip" in block, workflow_path
+            assert "cache-dependency-path:" in block, workflow_path
+            assert "pyproject.toml" in block, workflow_path
+            assert workflow_path in block, workflow_path
+
+        assert "site-packages" not in workflow
+        assert ".venv" not in workflow
