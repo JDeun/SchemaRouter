@@ -4,12 +4,26 @@
   "status": "development_unfrozen",
   "issue": 839,
   "comparison_id": "schemarouter-cyt-v1",
-  "conditions": ["full_catalog", "clear_your_tools", "schemarouter"],
-  "secondary_cyt_modes": ["en_bm25", "en_llm_pruning", "en_reranker", "ko_llm_pruning", "ko_reranker"],
+  "conditions": [
+    "full_catalog",
+    "clear_your_tools",
+    "schemarouter"
+  ],
+  "secondary_cyt_modes": [
+    "en_bm25",
+    "en_llm_pruning",
+    "en_reranker",
+    "ko_llm_pruning",
+    "ko_reranker"
+  ],
   "excluded_modes": {
     "ko_bm25": "pre-registered as non-meaningful cross-language lexical condition"
   },
-  "state_regimes": ["cold_start", "persistent_session", "sequential_adaptive"],
+  "state_regimes": [
+    "cold_start",
+    "persistent_session",
+    "sequential_adaptive"
+  ],
   "confirmed_cyt_identity": {
     "repository": "qdrddr/clear-your-tools",
     "version": "2.17.6",
@@ -22,10 +36,12 @@
     "bm25_score_tool_enum": 0.1,
     "native_composite": "prune_catalog_bm25_and_retrieve",
     "prune_enums": true,
-    "pipeline": ["bm25"]
+    "pipeline": [
+      "bm25"
+    ]
   },
   "freeze_required": {
-    "schemarouter_commit": null,
+    "schemarouter_commit": "f7a332220eb16d2264d85f2a87c56dc0c5c020f8",
     "clear_your_tools_commit": "9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4",
     "agent_implementation": null,
     "model_revision": null,
@@ -64,7 +80,12 @@
     "observed_behavior": "all 21 tools survived every query; no pruning claim"
   },
   "scaling_protocol": {
-    "catalog_sizes": [100, 250, 500, 1000],
+    "catalog_sizes": [
+      100,
+      250,
+      500,
+      1000
+    ],
     "cyt_minimum_tools_default": 50,
     "primary_cyt_mode": "native_bm25",
     "same_catalog_and_queries_across_conditions": true,
