@@ -85,7 +85,7 @@
     },
     {
       "path": "getting-started/installation.md",
-      "source_blob": "fd14a02567b228e5c93a5e978aa1ec815b651035"
+      "source_blob": "9870961d062b537dc7bb9f5f2d91e609755806c8"
     },
     {
       "path": "getting-started/quickstart.md",
@@ -293,7 +293,7 @@
     },
     {
       "path": "index.md",
-      "source_blob": "63574a4fa550547562b6c879b61166dcead48864"
+      "source_blob": "ad0f245ecddbaef8bc07f86ed582d4f719c60e65"
     },
     {
       "path": "integrations/decision-backend-plugins.md",
@@ -385,7 +385,7 @@
     },
     {
       "path": "project/trust-and-evidence.md",
-      "source_blob": "59968fd6ddd50a6c058b61b7b03ac1fed54ac334"
+      "source_blob": "cdc02abb82026528c0966e5308d28357cd262e08"
     },
     {
       "path": "recipes/many-tools.md",
@@ -446,6 +446,10 @@
     {
       "path": "releases/0.16.0.md",
       "source_blob": "03e99f7303b53ef8a9f33c2456c63e23c3db0dcc"
+    },
+    {
+      "path": "releases/0.17.0.md",
+      "source_blob": "31d94d28287a2ca5e6b09922ac1c8c444938833c"
     },
     {
       "path": "releases/0.2.0a1.md",
