@@ -121,10 +121,13 @@ def evaluate() -> dict[str, Any]:
         "rows": rows,
         "limitations": [
             "Development-only fixture; not held-out evidence.",
-            "Task success is a deterministic all-required-routes-covered proxy, not execution success.",
+            "Task success is a deterministic all-required-routes-covered proxy, "
+            "not execution success.",
             "Required-field recall is measured from output semantic fields on selected routes.",
-            "This frozen fixture contains no unsupported tasks, so unsupported rejection is unscored.",
-            "Session exposure models duplicate suppression only; no post-hoc routing tuning is applied.",
+            "This frozen fixture contains no unsupported tasks, so unsupported "
+            "rejection is unscored.",
+            "Session exposure models duplicate suppression only; no post-hoc routing "
+            "tuning is applied.",
         ],
     }
 
