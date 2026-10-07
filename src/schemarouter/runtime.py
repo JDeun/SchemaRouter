@@ -119,6 +119,7 @@ from .registry import (
     update_many_if_current,
 )
 from .runs import RunConfig, RunEvent
+from .runtime_defaults import RUNTIME_DEFAULTS
 from .schema_diff import (
     SchemaChange,
     SchemaDiffReport,
@@ -991,7 +992,7 @@ class SchemaRouter:
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: MCPClientFactory | None = None,
-        timeout_seconds: float = 20.0,
+        timeout_seconds: float = RUNTIME_DEFAULTS.transport_timeout_seconds,
     ) -> None:
         """Register one remote structured source for periodic schema refresh."""
 
@@ -1119,9 +1120,9 @@ class SchemaRouter:
         mcp_discovery_limits: MCPDiscoveryLimits | None = None,
         allow_active_probes: bool = False,
         openapi_external_refs: bool = False,
-        openapi_ref_max_depth: int = 3,
-        openapi_ref_max_documents: int = 8,
-        openapi_ref_max_bytes: int = 10 * 1024 * 1024,
+        openapi_ref_max_depth: int = RUNTIME_DEFAULTS.openapi_ref_max_depth,
+        openapi_ref_max_documents: int = RUNTIME_DEFAULTS.openapi_ref_max_documents,
+        openapi_ref_max_bytes: int = RUNTIME_DEFAULTS.openapi_ref_max_bytes,
     ) -> SchemaRouter:
         router = cls(
             analyzer=analyzer,
@@ -1545,7 +1546,7 @@ class SchemaRouter:
         max_default_rows: int = 100,
         max_discovery_relations: int = 128,
         max_columns_per_relation: int = 256,
-        max_generated_bytes: int = 8 * 1024 * 1024,
+        max_generated_bytes: int = RUNTIME_DEFAULTS.max_generated_bytes,
     ) -> tuple[str, ...]:
         """Introspect and register a caller-owned SQLite database as read-only capabilities.
 
@@ -1588,7 +1589,7 @@ class SchemaRouter:
         remote: bool = True,
         max_discovery_relations: int = 128,
         max_columns_per_relation: int = 256,
-        max_generated_bytes: int = 8 * 1024 * 1024,
+        max_generated_bytes: int = RUNTIME_DEFAULTS.max_generated_bytes,
     ) -> tuple[str, ...]:
         """Introspect and register a caller-owned SQLAlchemy Engine.
 
@@ -1673,11 +1674,11 @@ class SchemaRouter:
         database_name: str,
         namespace: str | None = None,
         collections: set[str] | tuple[str, ...] | list[str] | None = None,
-        default_top_k: int = 10,
+        default_top_k: int = RUNTIME_DEFAULTS.vector_top_k,
         remote: bool = True,
-        max_discovery_sources: int = 128,
-        max_fields_per_collection: int = 256,
-        max_generated_bytes: int = 8 * 1024 * 1024,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_fields_per_collection: int = RUNTIME_DEFAULTS.max_fields_per_collection,
+        max_generated_bytes: int = RUNTIME_DEFAULTS.max_generated_bytes,
     ) -> tuple[str, ...]:
         """Discover and register a caller-owned vector store as bounded search capabilities."""
 
@@ -1738,11 +1739,11 @@ class SchemaRouter:
         database_name: str,
         namespace: str | None = None,
         collections: set[str] | tuple[str, ...] | list[str] | None = None,
-        default_top_k: int = 10,
+        default_top_k: int = RUNTIME_DEFAULTS.vector_top_k,
         remote: bool = True,
-        max_discovery_sources: int = 128,
-        max_fields_per_collection: int = 256,
-        max_generated_bytes: int = 8 * 1024 * 1024,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_fields_per_collection: int = RUNTIME_DEFAULTS.max_fields_per_collection,
+        max_generated_bytes: int = RUNTIME_DEFAULTS.max_generated_bytes,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_vector_store`."""
 
@@ -1772,9 +1773,9 @@ class SchemaRouter:
         vector_name_by_collection: Mapping[str, str] | None = None,
         metadata_fields_by_collection: Mapping[str, Sequence[Any]] | None = None,
         filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
-        default_top_k: int = 10,
-        max_discovery_sources: int = 128,
-        max_fields_per_collection: int = 256,
+        default_top_k: int = RUNTIME_DEFAULTS.vector_top_k,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_fields_per_collection: int = RUNTIME_DEFAULTS.max_fields_per_collection,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned Qdrant client through the vector capability contract."""
@@ -1814,9 +1815,9 @@ class SchemaRouter:
         vector_name_by_collection: Mapping[str, str] | None = None,
         metadata_fields_by_collection: Mapping[str, Sequence[Any]] | None = None,
         filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
-        default_top_k: int = 10,
-        max_discovery_sources: int = 128,
-        max_fields_per_collection: int = 256,
+        default_top_k: int = RUNTIME_DEFAULTS.vector_top_k,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_fields_per_collection: int = RUNTIME_DEFAULTS.max_fields_per_collection,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_qdrant_vector_store`."""
@@ -1848,9 +1849,9 @@ class SchemaRouter:
         collections: set[str] | tuple[str, ...] | list[str] | None = None,
         vector_field_by_collection: Mapping[str, str] | None = None,
         metric_by_collection: Mapping[str, str] | None = None,
-        default_top_k: int = 10,
-        max_discovery_sources: int = 128,
-        max_fields_per_collection: int = 256,
+        default_top_k: int = RUNTIME_DEFAULTS.vector_top_k,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_fields_per_collection: int = RUNTIME_DEFAULTS.max_fields_per_collection,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned MilvusClient through the vector capability contract."""
@@ -1888,9 +1889,9 @@ class SchemaRouter:
         collections: set[str] | tuple[str, ...] | list[str] | None = None,
         vector_field_by_collection: Mapping[str, str] | None = None,
         metric_by_collection: Mapping[str, str] | None = None,
-        default_top_k: int = 10,
-        max_discovery_sources: int = 128,
-        max_fields_per_collection: int = 256,
+        default_top_k: int = RUNTIME_DEFAULTS.vector_top_k,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_fields_per_collection: int = RUNTIME_DEFAULTS.max_fields_per_collection,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_milvus_vector_store`."""
@@ -1920,9 +1921,9 @@ class SchemaRouter:
         namespace: str | None = None,
         collections: set[str] | tuple[str, ...] | list[str] | None = None,
         metadata_fields_by_index: Mapping[str, Sequence[Any]] | None = None,
-        default_top_k: int = 10,
-        max_discovery_sources: int = 128,
-        max_fields_per_collection: int = 256,
+        default_top_k: int = RUNTIME_DEFAULTS.vector_top_k,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_fields_per_collection: int = RUNTIME_DEFAULTS.max_fields_per_collection,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned Pinecone client."""
@@ -1958,9 +1959,9 @@ class SchemaRouter:
         namespace: str | None = None,
         collections: set[str] | tuple[str, ...] | list[str] | None = None,
         metadata_fields_by_index: Mapping[str, Sequence[Any]] | None = None,
-        default_top_k: int = 10,
-        max_discovery_sources: int = 128,
-        max_fields_per_collection: int = 256,
+        default_top_k: int = RUNTIME_DEFAULTS.vector_top_k,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_fields_per_collection: int = RUNTIME_DEFAULTS.max_fields_per_collection,
         remote: bool = True,
     ) -> tuple[str, ...]:
         return _run_sync(
@@ -1989,9 +1990,9 @@ class SchemaRouter:
         dimension_by_collection: Mapping[str, int] | None = None,
         metadata_fields_by_collection: Mapping[str, Sequence[Any]] | None = None,
         metric_by_collection: Mapping[str, str] | None = None,
-        default_top_k: int = 10,
-        max_discovery_sources: int = 128,
-        max_fields_per_collection: int = 256,
+        default_top_k: int = RUNTIME_DEFAULTS.vector_top_k,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_fields_per_collection: int = RUNTIME_DEFAULTS.max_fields_per_collection,
         remote: bool = False,
     ) -> tuple[str, ...]:
         """Register a caller-owned Chroma client."""
@@ -2031,9 +2032,9 @@ class SchemaRouter:
         dimension_by_collection: Mapping[str, int] | None = None,
         metadata_fields_by_collection: Mapping[str, Sequence[Any]] | None = None,
         metric_by_collection: Mapping[str, str] | None = None,
-        default_top_k: int = 10,
-        max_discovery_sources: int = 128,
-        max_fields_per_collection: int = 256,
+        default_top_k: int = RUNTIME_DEFAULTS.vector_top_k,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_fields_per_collection: int = RUNTIME_DEFAULTS.max_fields_per_collection,
         remote: bool = False,
     ) -> tuple[str, ...]:
         return _run_sync(
@@ -2065,9 +2066,9 @@ class SchemaRouter:
         vector_name_by_collection: Mapping[str, str] | None = None,
         metric_by_collection: Mapping[str, str] | None = None,
         filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
-        default_top_k: int = 10,
-        max_discovery_sources: int = 128,
-        max_fields_per_collection: int = 256,
+        default_top_k: int = RUNTIME_DEFAULTS.vector_top_k,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_fields_per_collection: int = RUNTIME_DEFAULTS.max_fields_per_collection,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned Weaviate v4 client."""
@@ -2109,9 +2110,9 @@ class SchemaRouter:
         vector_name_by_collection: Mapping[str, str] | None = None,
         metric_by_collection: Mapping[str, str] | None = None,
         filter_builder: Callable[[Mapping[str, Any]], Any] | None = None,
-        default_top_k: int = 10,
-        max_discovery_sources: int = 128,
-        max_fields_per_collection: int = 256,
+        default_top_k: int = RUNTIME_DEFAULTS.vector_top_k,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_fields_per_collection: int = RUNTIME_DEFAULTS.max_fields_per_collection,
         remote: bool = True,
     ) -> tuple[str, ...]:
         return _run_sync(
@@ -2144,9 +2145,9 @@ class SchemaRouter:
         vector_field_by_table: Mapping[str, str] | None = None,
         metric_by_table: Mapping[str, str] | None = None,
         schema: str | None = None,
-        default_top_k: int = 10,
-        max_discovery_sources: int = 128,
-        max_fields_per_collection: int = 256,
+        default_top_k: int = RUNTIME_DEFAULTS.vector_top_k,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_fields_per_collection: int = RUNTIME_DEFAULTS.max_fields_per_collection,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register caller-owned PostgreSQL/pgvector Engine."""
@@ -2193,9 +2194,9 @@ class SchemaRouter:
         vector_field_by_table: Mapping[str, str] | None = None,
         metric_by_table: Mapping[str, str] | None = None,
         schema: str | None = None,
-        default_top_k: int = 10,
-        max_discovery_sources: int = 128,
-        max_fields_per_collection: int = 256,
+        default_top_k: int = RUNTIME_DEFAULTS.vector_top_k,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_fields_per_collection: int = RUNTIME_DEFAULTS.max_fields_per_collection,
         remote: bool = True,
     ) -> tuple[str, ...]:
         return _run_sync(
@@ -2223,12 +2224,12 @@ class SchemaRouter:
         database_name: str,
         namespace: str | None = None,
         graphs: set[str] | tuple[str, ...] | list[str] | None = None,
-        default_limit: int = 100,
-        default_max_hops: int = 1,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
+        default_max_hops: int = RUNTIME_DEFAULTS.graph_max_hops,
         remote: bool = True,
-        max_discovery_sources: int = 128,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
         max_schema_items_per_graph: int = 256,
-        max_generated_bytes: int = 8 * 1024 * 1024,
+        max_generated_bytes: int = RUNTIME_DEFAULTS.max_generated_bytes,
     ) -> tuple[str, ...]:
         """Discover and register a caller-owned property-graph or RDF backend."""
 
@@ -2288,12 +2289,12 @@ class SchemaRouter:
         database_name: str,
         namespace: str | None = None,
         graphs: set[str] | tuple[str, ...] | list[str] | None = None,
-        default_limit: int = 100,
-        default_max_hops: int = 1,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
+        default_max_hops: int = RUNTIME_DEFAULTS.graph_max_hops,
         remote: bool = True,
-        max_discovery_sources: int = 128,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
         max_schema_items_per_graph: int = 256,
-        max_generated_bytes: int = 8 * 1024 * 1024,
+        max_generated_bytes: int = RUNTIME_DEFAULTS.max_generated_bytes,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_graph_store`."""
 
@@ -2319,11 +2320,11 @@ class SchemaRouter:
         database_name: str,
         namespace: str | None = None,
         sources: set[str] | tuple[str, ...] | list[str] | None = None,
-        default_limit: int = 100,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
         remote: bool = True,
-        max_discovery_sources: int = 128,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
         max_fields_per_source: int = 256,
-        max_generated_bytes: int = 8 * 1024 * 1024,
+        max_generated_bytes: int = RUNTIME_DEFAULTS.max_generated_bytes,
     ) -> tuple[str, ...]:
         """Discover and register document/search/key-value/time-series sources."""
 
@@ -2381,11 +2382,11 @@ class SchemaRouter:
         database_name: str,
         namespace: str | None = None,
         sources: set[str] | tuple[str, ...] | list[str] | None = None,
-        default_limit: int = 100,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
         remote: bool = True,
-        max_discovery_sources: int = 128,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
         max_fields_per_source: int = 256,
-        max_generated_bytes: int = 8 * 1024 * 1024,
+        max_generated_bytes: int = RUNTIME_DEFAULTS.max_generated_bytes,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_record_store`."""
 
@@ -2411,8 +2412,8 @@ class SchemaRouter:
         graph_name: str | None = None,
         namespace: str | None = None,
         graphs: set[str] | tuple[str, ...] | list[str] | None = None,
-        default_limit: int = 100,
-        default_max_hops: int = 1,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
+        default_max_hops: int = RUNTIME_DEFAULTS.graph_max_hops,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned Neo4j driver through the bounded graph contract."""
@@ -2441,8 +2442,8 @@ class SchemaRouter:
         graph_name: str | None = None,
         namespace: str | None = None,
         graphs: set[str] | tuple[str, ...] | list[str] | None = None,
-        default_limit: int = 100,
-        default_max_hops: int = 1,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
+        default_max_hops: int = RUNTIME_DEFAULTS.graph_max_hops,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_neo4j_graph`."""
@@ -2467,8 +2468,8 @@ class SchemaRouter:
         database_name: str = "falkordb",
         namespace: str | None = None,
         graphs: set[str] | tuple[str, ...] | list[str] | None = None,
-        default_limit: int = 100,
-        default_max_hops: int = 1,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
+        default_max_hops: int = RUNTIME_DEFAULTS.graph_max_hops,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned FalkorDB client through the bounded graph contract."""
@@ -2493,8 +2494,8 @@ class SchemaRouter:
         database_name: str = "falkordb",
         namespace: str | None = None,
         graphs: set[str] | tuple[str, ...] | list[str] | None = None,
-        default_limit: int = 100,
-        default_max_hops: int = 1,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
+        default_max_hops: int = RUNTIME_DEFAULTS.graph_max_hops,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_falkordb_graph`."""
@@ -2519,8 +2520,8 @@ class SchemaRouter:
         graph_identifier: str | None = None,
         database_name: str = "neptune",
         namespace: str | None = None,
-        default_limit: int = 100,
-        default_max_hops: int = 1,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
+        default_max_hops: int = RUNTIME_DEFAULTS.graph_max_hops,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned Neptune Database/Analytics client."""
@@ -2549,8 +2550,8 @@ class SchemaRouter:
         graph_identifier: str | None = None,
         database_name: str = "neptune",
         namespace: str | None = None,
-        default_limit: int = 100,
-        default_max_hops: int = 1,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
+        default_max_hops: int = RUNTIME_DEFAULTS.graph_max_hops,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_neptune_graph`."""
@@ -2575,8 +2576,8 @@ class SchemaRouter:
         database_name: str = "arangodb",
         namespace: str | None = None,
         graphs: set[str] | tuple[str, ...] | list[str] | None = None,
-        default_limit: int = 100,
-        default_max_hops: int = 1,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
+        default_max_hops: int = RUNTIME_DEFAULTS.graph_max_hops,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned python-arango Database wrapper."""
@@ -2600,8 +2601,8 @@ class SchemaRouter:
         database_name: str = "arangodb",
         namespace: str | None = None,
         graphs: set[str] | tuple[str, ...] | list[str] | None = None,
-        default_limit: int = 100,
-        default_max_hops: int = 1,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
+        default_max_hops: int = RUNTIME_DEFAULTS.graph_max_hops,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_arango_graph`."""
@@ -2626,7 +2627,7 @@ class SchemaRouter:
         graph_name: str = "sparql",
         database_name: str = "sparql",
         namespace: str | None = None,
-        default_limit: int = 100,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned HTTP client for a SPARQL 1.1 query endpoint."""
@@ -2643,7 +2644,7 @@ class SchemaRouter:
             namespace=namespace,
             graphs={graph_name},
             default_limit=default_limit,
-            default_max_hops=1,
+            default_max_hops=RUNTIME_DEFAULTS.graph_max_hops,
             remote=remote,
         )
 
@@ -2655,7 +2656,7 @@ class SchemaRouter:
         graph_name: str = "sparql",
         database_name: str = "sparql",
         namespace: str | None = None,
-        default_limit: int = 100,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_sparql_graph`."""
@@ -2681,7 +2682,7 @@ class SchemaRouter:
         collections: tuple[str, ...] | list[str] | None = None,
         text_search_collections: tuple[str, ...] | list[str] = (),
         time_field_by_collection: Mapping[str, str] | None = None,
-        default_limit: int = 100,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned PyMongo Database through the bounded record contract."""
@@ -2711,7 +2712,7 @@ class SchemaRouter:
         collections: tuple[str, ...] | list[str] | None = None,
         text_search_collections: tuple[str, ...] | list[str] = (),
         time_field_by_collection: Mapping[str, str] | None = None,
-        default_limit: int = 100,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Synchronous wrapper for :meth:`aadd_mongodb_record_store`."""
@@ -2737,7 +2738,7 @@ class SchemaRouter:
         namespace: str | None = None,
         indices: tuple[str, ...] | list[str] | None = None,
         time_field_by_index: Mapping[str, str] | None = None,
-        default_limit: int = 100,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned Elasticsearch client."""
@@ -2775,7 +2776,7 @@ class SchemaRouter:
         namespace: str | None = None,
         indices: tuple[str, ...] | list[str] | None = None,
         time_field_by_index: Mapping[str, str] | None = None,
-        default_limit: int = 100,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned OpenSearch client."""
@@ -2813,7 +2814,7 @@ class SchemaRouter:
         namespace: str | None = None,
         tables: tuple[str, ...] | list[str] | None = None,
         time_field_by_table: Mapping[str, str] | None = None,
-        default_limit: int = 100,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned low-level boto3 DynamoDB client."""
@@ -2850,7 +2851,7 @@ class SchemaRouter:
         namespace: str | None = None,
         containers: tuple[str, ...] | list[str] | None = None,
         time_field_by_container: Mapping[str, str] | None = None,
-        default_limit: int = 100,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned Azure Cosmos DB DatabaseProxy."""
@@ -2887,7 +2888,7 @@ class SchemaRouter:
         namespace: str | None = None,
         keyspaces: tuple[str, ...] | list[str] | None = None,
         time_field_by_source: Mapping[str, str] | None = None,
-        default_limit: int = 100,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned Couchbase Cluster."""
@@ -2924,7 +2925,7 @@ class SchemaRouter:
         namespace: str | None = None,
         tables: tuple[str, ...] | list[str] | None = None,
         time_field_by_table: Mapping[str, str] | None = None,
-        default_limit: int = 100,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned clickhouse-connect client."""
@@ -2963,7 +2964,7 @@ class SchemaRouter:
         namespace: str | None = None,
         measurements: tuple[str, ...] | list[str] | None = None,
         default_start: str = "-30d",
-        default_limit: int = 100,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
         remote: bool = True,
     ) -> tuple[str, ...]:
         """Register a caller-owned InfluxDB QueryApi."""
@@ -4019,7 +4020,7 @@ class SchemaRouter:
         methods: set[str] | list[str] | tuple[str, ...] | None = None,
         trusted_headers_by_method: Mapping[str, Mapping[str, str]] | None = None,
         replace: bool = False,
-        timeout: float = 20.0,
+        timeout: float = RUNTIME_DEFAULTS.transport_timeout_seconds,
         require_all: bool = False,
     ) -> ProviderRegistrationResult:
         """Register every safely usable declarative access method for one provider.
@@ -4294,8 +4295,8 @@ class SchemaRouter:
         provider: str | None = None,
         access_mode: str | None = None,
         trusted_headers: dict[str, str] | None = None,
-        timeout: float = 20.0,
-        max_response_bytes: int = 10 * 1024 * 1024,
+        timeout: float = RUNTIME_DEFAULTS.transport_timeout_seconds,
+        max_response_bytes: int = RUNTIME_DEFAULTS.max_response_bytes,
         replace: bool = False,
     ) -> str:
         """Register and bind a trusted declarative HTTP/JSON ToolSpec.
@@ -4336,8 +4337,8 @@ class SchemaRouter:
         url: str,
         *,
         model: DocumentationModelCallable,
-        timeout: float = 20.0,
-        max_document_chars: int = 60_000,
+        timeout: float = RUNTIME_DEFAULTS.transport_timeout_seconds,
+        max_document_chars: int = RUNTIME_DEFAULTS.documentation_max_chars,
     ) -> SchemaProposal:
         return await inspect_documentation_url(
             url,
@@ -4353,7 +4354,7 @@ class SchemaRouter:
         *,
         base_url: str,
         trusted_headers: dict[str, str] | None = None,
-        timeout: float = 20.0,
+        timeout: float = RUNTIME_DEFAULTS.transport_timeout_seconds,
     ) -> None:
         expected_version = self.registry.version
         tool = self.registry.get(tool_key)
@@ -4403,7 +4404,7 @@ class SchemaRouter:
         allow_mutations: bool = False,
         replace: bool = False,
         trusted_headers: dict[str, str] | None = None,
-        timeout: float = 20.0,
+        timeout: float = RUNTIME_DEFAULTS.transport_timeout_seconds,
     ) -> str:
         if proposal.status != "grounded" or proposal.tool is None:
             raise ProposalApprovalError("proposal has no grounded tool to approve")
@@ -4473,7 +4474,7 @@ class SchemaRouter:
         transport: str = "custom",
         transport_fingerprint: str | None = None,
         replace: bool = False,
-        timeout: float = 20.0,
+        timeout: float = RUNTIME_DEFAULTS.transport_timeout_seconds,
         discovery_limits: MCPDiscoveryLimits | None = None,
     ) -> ToolSpec:
         """Import MCP tools through a trusted transport-neutral client factory.
@@ -4538,7 +4539,7 @@ class SchemaRouter:
         provider: str | None = None,
         access_mode: str | None = None,
         replace: bool = False,
-        timeout: float = 20.0,
+        timeout: float = RUNTIME_DEFAULTS.transport_timeout_seconds,
         discovery_limits: MCPDiscoveryLimits | None = None,
     ) -> ToolSpec:
         """Spawn a trusted local MCP stdio server and register its advertised tools."""
@@ -4592,10 +4593,10 @@ class SchemaRouter:
         mcp_discovery_limits: MCPDiscoveryLimits | None = None,
         allow_active_probes: bool = False,
         openapi_external_refs: bool = False,
-        openapi_ref_max_depth: int = 3,
-        openapi_ref_max_documents: int = 8,
-        openapi_ref_max_bytes: int = 10 * 1024 * 1024,
-        timeout: float = 20.0,
+        openapi_ref_max_depth: int = RUNTIME_DEFAULTS.openapi_ref_max_depth,
+        openapi_ref_max_documents: int = RUNTIME_DEFAULTS.openapi_ref_max_documents,
+        openapi_ref_max_bytes: int = RUNTIME_DEFAULTS.openapi_ref_max_bytes,
+        timeout: float = RUNTIME_DEFAULTS.transport_timeout_seconds,
     ) -> SourceProbeResult:
         """Diagnose a structured URL source without mutating the registry or bindings."""
 
@@ -4636,10 +4637,10 @@ class SchemaRouter:
         mcp_discovery_limits: MCPDiscoveryLimits | None = None,
         allow_active_probes: bool = False,
         openapi_external_refs: bool = False,
-        openapi_ref_max_depth: int = 3,
-        openapi_ref_max_documents: int = 8,
-        openapi_ref_max_bytes: int = 10 * 1024 * 1024,
-        timeout: float = 20.0,
+        openapi_ref_max_depth: int = RUNTIME_DEFAULTS.openapi_ref_max_depth,
+        openapi_ref_max_documents: int = RUNTIME_DEFAULTS.openapi_ref_max_documents,
+        openapi_ref_max_bytes: int = RUNTIME_DEFAULTS.openapi_ref_max_bytes,
+        timeout: float = RUNTIME_DEFAULTS.transport_timeout_seconds,
     ) -> ToolSpec:
         return await self.loader.load(
             url,
@@ -4671,7 +4672,7 @@ class SchemaRouter:
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: MCPClientFactory | None = None,
         mcp_discovery_limits: MCPDiscoveryLimits | None = None,
-        timeout: float = 20.0,
+        timeout: float = RUNTIME_DEFAULTS.transport_timeout_seconds,
         _expected_fingerprint: str | None = None,
         _expected_source_identity: StructuredSourceIdentity | None = None,
         _accept_candidate_fingerprint: str | None = None,
@@ -5163,7 +5164,7 @@ class SchemaRouter:
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: MCPClientFactory | None = None,
         mcp_discovery_limits: MCPDiscoveryLimits | None = None,
-        timeout: float = 20.0,
+        timeout: float = RUNTIME_DEFAULTS.transport_timeout_seconds,
     ) -> SchemaRefreshResult:
         """Synchronous wrapper for :meth:`arefresh_schema`."""
 
