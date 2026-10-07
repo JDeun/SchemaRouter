@@ -114,7 +114,7 @@ def run(
     if repeats < 1:
         raise ValueError("repeats must be positive")
 
-    catalog = _load(catalog_override) if catalog_override else _load(package_dir / manifest["files"]["catalog"])
+    catalog = (\n        _load(catalog_override)\n        if catalog_override\n        else _load(package_dir / manifest["files"]["catalog"])\n    )
     cases = _load(package_dir / manifest["files"]["cases"])
     top_k = top_k_override or int(manifest["comparison"]["max_candidates"])
 
