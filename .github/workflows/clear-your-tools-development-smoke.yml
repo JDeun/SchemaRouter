@@ -1,0 +1,57 @@
+name: Clear Your Tools Development Smoke
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "benchmarks/external-validation-clear-your-tools-dev-v1/**"
+      - "scripts/run_clear_your_tools_external_validation.py"
+      - ".github/workflows/clear-your-tools-development-smoke.yml"
+permissions:
+  contents: read
+env:
+  CYT_REVISION: 9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4
+  CYT_VERSION: "2.17.6"
+  PACKAGE_DIR: benchmarks/external-validation-smart-mcp-dev-v1
+jobs:
+  native-bm25-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13"
+      - name: Install SchemaRouter and pinned CYT SDK
+        run: |
+          python -m pip install .
+          python -m pip install "cyt-indexer-sdk==${CYT_VERSION}"
+      - name: Record provenance
+        run: |
+          mkdir -p artifacts/cyt-dev-smoke
+          python --version > artifacts/cyt-dev-smoke/python-version.txt
+          python -m pip freeze > artifacts/cyt-dev-smoke/pip-freeze.txt
+          git rev-parse HEAD > artifacts/cyt-dev-smoke/schemarouter-revision.txt
+          printf '%s\n' "${CYT_REVISION}" > artifacts/cyt-dev-smoke/cyt-revision.txt
+          printf '%s\n' "${CYT_VERSION}" > artifacts/cyt-dev-smoke/cyt-version.txt
+      - name: Run native CYT BM25 development smoke
+        run: |
+          python scripts/run_clear_your_tools_external_validation.py \
+            --package-dir "${PACKAGE_DIR}" \
+            --implementation-revision "${CYT_REVISION}" \
+            --out artifacts/cyt-dev-smoke/cyt-result.json
+      - name: Validate result shape
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path("artifacts/cyt-dev-smoke/cyt-result.json").read_text())
+          assert p["status"] == "development_unfrozen"
+          assert p["implementation"]["revision"] == "9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4"
+          assert len(p["results"]) == 33
+          assert all("candidate_tools" in row for row in p["results"])
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: clear-your-tools-development-smoke
+          path: artifacts/cyt-dev-smoke
+          if-no-files-found: error
