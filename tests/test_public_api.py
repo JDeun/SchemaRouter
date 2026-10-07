@@ -1,3 +1,6 @@
+import subprocess
+import sys
+
 import schemarouter
 
 
@@ -427,3 +430,29 @@ def test_internal_implementation_types_are_not_top_level_exports() -> None:
     }
 
     assert internal.isdisjoint(schemarouter.__all__)
+
+
+
+def test_native_vendor_modules_are_lazy_on_core_import() -> None:
+    code = r"""
+import sys
+
+import schemarouter
+
+native_modules = (
+    "schemarouter.adapters.graph_native",
+    "schemarouter.adapters.record_native",
+    "schemarouter.adapters.vector_native",
+)
+assert all(name not in sys.modules for name in native_modules), {
+    name: name in sys.modules for name in native_modules
+}
+
+from schemarouter import QdrantVectorBackend
+
+assert QdrantVectorBackend.__name__ == "QdrantVectorBackend"
+assert "schemarouter.adapters.vector_native" in sys.modules
+assert "schemarouter.adapters.graph_native" not in sys.modules
+assert "schemarouter.adapters.record_native" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)

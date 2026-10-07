@@ -1,3 +1,6 @@
+from importlib import import_module
+from typing import TYPE_CHECKING, Any
+
 from ._version import __version__
 from .adapters.base import (
     AdapterContext,
@@ -8,13 +11,6 @@ from .adapters.base import (
     SourceAdapter,
 )
 from .adapters.discovery_limits import NativeDiscoveryLimits
-from .adapters.graph_native import (
-    ArangoGraphBackend,
-    FalkorGraphBackend,
-    Neo4jGraphBackend,
-    NeptuneOpenCypherBackend,
-    SparqlGraphBackend,
-)
 from .adapters.graph_store import (
     GraphModel,
     GraphNodeTypeSpec,
@@ -43,15 +39,6 @@ from .adapters.plugins import (
     load_adapter_plugins,
 )
 from .adapters.python import schema_tool, tool_from_callable
-from .adapters.record_native import (
-    ClickHouseRecordBackend,
-    CosmosRecordBackend,
-    CouchbaseRecordBackend,
-    DynamoDBRecordBackend,
-    ElasticRecordBackend,
-    InfluxRecordBackend,
-    MongoRecordBackend,
-)
 from .adapters.record_store import (
     RecordFieldSpec,
     RecordModel,
@@ -70,14 +57,6 @@ from .adapters.sqlite_database import (
     SQLiteTableBinding,
     SQLiteTableInvoker,
     introspect_sqlite_database,
-)
-from .adapters.vector_native import (
-    ChromaVectorBackend,
-    MilvusVectorBackend,
-    PgvectorVectorBackend,
-    PineconeVectorBackend,
-    QdrantVectorBackend,
-    WeaviateVectorBackend,
 )
 from .adapters.vector_store import (
     ScopedVectorStoreBackend,
@@ -492,6 +471,67 @@ from .traces import (
     record_run_events,
     replay_run_events,
 )
+
+if TYPE_CHECKING:
+    from .adapters.graph_native import (
+        ArangoGraphBackend,
+        FalkorGraphBackend,
+        Neo4jGraphBackend,
+        NeptuneOpenCypherBackend,
+        SparqlGraphBackend,
+    )
+    from .adapters.record_native import (
+        ClickHouseRecordBackend,
+        CosmosRecordBackend,
+        CouchbaseRecordBackend,
+        DynamoDBRecordBackend,
+        ElasticRecordBackend,
+        InfluxRecordBackend,
+        MongoRecordBackend,
+    )
+    from .adapters.vector_native import (
+        ChromaVectorBackend,
+        MilvusVectorBackend,
+        PgvectorVectorBackend,
+        PineconeVectorBackend,
+        QdrantVectorBackend,
+        WeaviateVectorBackend,
+    )
+
+_LAZY_EXPORTS: dict[str, tuple[str, str]] = {
+    "ArangoGraphBackend": (".adapters.graph_native", "ArangoGraphBackend"),
+    "FalkorGraphBackend": (".adapters.graph_native", "FalkorGraphBackend"),
+    "Neo4jGraphBackend": (".adapters.graph_native", "Neo4jGraphBackend"),
+    "NeptuneOpenCypherBackend": (".adapters.graph_native", "NeptuneOpenCypherBackend"),
+    "SparqlGraphBackend": (".adapters.graph_native", "SparqlGraphBackend"),
+    "ClickHouseRecordBackend": (".adapters.record_native", "ClickHouseRecordBackend"),
+    "CosmosRecordBackend": (".adapters.record_native", "CosmosRecordBackend"),
+    "CouchbaseRecordBackend": (".adapters.record_native", "CouchbaseRecordBackend"),
+    "DynamoDBRecordBackend": (".adapters.record_native", "DynamoDBRecordBackend"),
+    "ElasticRecordBackend": (".adapters.record_native", "ElasticRecordBackend"),
+    "InfluxRecordBackend": (".adapters.record_native", "InfluxRecordBackend"),
+    "MongoRecordBackend": (".adapters.record_native", "MongoRecordBackend"),
+    "ChromaVectorBackend": (".adapters.vector_native", "ChromaVectorBackend"),
+    "MilvusVectorBackend": (".adapters.vector_native", "MilvusVectorBackend"),
+    "PgvectorVectorBackend": (".adapters.vector_native", "PgvectorVectorBackend"),
+    "PineconeVectorBackend": (".adapters.vector_native", "PineconeVectorBackend"),
+    "QdrantVectorBackend": (".adapters.vector_native", "QdrantVectorBackend"),
+    "WeaviateVectorBackend": (".adapters.vector_native", "WeaviateVectorBackend"),
+}
+
+
+def __getattr__(name: str) -> Any:
+    target = _LAZY_EXPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module_name, attribute_name = target
+    value = getattr(import_module(module_name, __name__), attribute_name)
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
     "CapabilityOperationalMetadata",
