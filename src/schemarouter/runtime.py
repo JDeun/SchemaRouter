@@ -90,11 +90,11 @@ from .models import (
     ToolResult,
     ToolSpec,
 )
-from .network_policy import NetworkPolicy
 from .native_schema_lifecycle import (
     NativeSchemaLifecycleManager,
     NativeSchemaWatchSnapshot,
 )
+from .network_policy import NetworkPolicy
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
