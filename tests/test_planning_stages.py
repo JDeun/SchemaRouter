@@ -3,7 +3,6 @@ from __future__ import annotations
 import pytest
 
 from schemarouter.models import PlanCoverage, SemanticFieldRequirement, ToolCall
-
 from schemarouter.planning_stages import (
     assemble_execution_plan,
     run_candidate_pipeline_async,
