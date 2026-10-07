@@ -78,7 +78,6 @@ def test_runtime_does_not_own_native_vector_vendor_classes() -> None:
         assert class_name not in runtime
 
 
-
 def test_native_graph_registry_builds_registered_factory() -> None:
     registry = NativeGraphBackendRegistry()
     resource = object()
