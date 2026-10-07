@@ -2477,6 +2477,79 @@ class SchemaRouter:
             )
         )
 
+    async def aadd_native_graph_store(
+        self,
+        backend_name: str,
+        resource: Any,
+        *,
+        database_name: str,
+        namespace: str | None = None,
+        graphs: set[str] | tuple[str, ...] | list[str] | None = None,
+        backend_options: Mapping[str, Any] | None = None,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
+        default_max_hops: int = RUNTIME_DEFAULTS.graph_max_hops,
+        remote: bool = True,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_schema_items_per_graph: int = 256,
+        max_generated_bytes: int = RUNTIME_DEFAULTS.max_generated_bytes,
+    ) -> tuple[str, ...]:
+        """Register a native graph backend through the descriptor registry."""
+
+        from .native_registration import build_native_graph_backend
+
+        backend = build_native_graph_backend(
+            backend_name,
+            resource,
+            **dict(backend_options or {}),
+        )
+        return await self.aadd_graph_store(
+            backend,
+            database_name=database_name,
+            namespace=namespace,
+            graphs=graphs,
+            default_limit=default_limit,
+            default_max_hops=default_max_hops,
+            remote=remote,
+            max_discovery_sources=max_discovery_sources,
+            max_schema_items_per_graph=max_schema_items_per_graph,
+            max_generated_bytes=max_generated_bytes,
+        )
+
+    def add_native_graph_store(
+        self,
+        backend_name: str,
+        resource: Any,
+        *,
+        database_name: str,
+        namespace: str | None = None,
+        graphs: set[str] | tuple[str, ...] | list[str] | None = None,
+        backend_options: Mapping[str, Any] | None = None,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
+        default_max_hops: int = RUNTIME_DEFAULTS.graph_max_hops,
+        remote: bool = True,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_schema_items_per_graph: int = 256,
+        max_generated_bytes: int = RUNTIME_DEFAULTS.max_generated_bytes,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_native_graph_store`."""
+
+        return _run_sync(
+            lambda: self.aadd_native_graph_store(
+                backend_name,
+                resource,
+                database_name=database_name,
+                namespace=namespace,
+                graphs=graphs,
+                backend_options=backend_options,
+                default_limit=default_limit,
+                default_max_hops=default_max_hops,
+                remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_schema_items_per_graph=max_schema_items_per_graph,
+                max_generated_bytes=max_generated_bytes,
+            )
+        )
+
     async def aadd_neo4j_graph(
         self,
         driver: Any,
@@ -2491,17 +2564,16 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned Neo4j driver through the bounded graph contract."""
 
-        from .adapters.graph_native import Neo4jGraphBackend
-
-        return await self.aadd_graph_store(
-            Neo4jGraphBackend(
-                driver,
-                database=database,
-                graph_name=graph_name,
-            ),
+        return await self.aadd_native_graph_store(
+            "neo4j",
+            driver,
             database_name=database,
             namespace=namespace,
             graphs=graphs,
+            backend_options={
+                "database": database,
+                "graph_name": graph_name,
+            },
             default_limit=default_limit,
             default_max_hops=default_max_hops,
             remote=remote,
@@ -2547,14 +2619,14 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned FalkorDB client through the bounded graph contract."""
 
-        from .adapters.graph_native import FalkorGraphBackend
-
         graph_names = None if graphs is None else tuple(sorted(graphs))
-        return await self.aadd_graph_store(
-            FalkorGraphBackend(client, graphs=graph_names),
+        return await self.aadd_native_graph_store(
+            "falkordb",
+            client,
             database_name=database_name,
             namespace=namespace,
             graphs=graphs,
+            backend_options={"graphs": graph_names},
             default_limit=default_limit,
             default_max_hops=default_max_hops,
             remote=remote,
@@ -2599,17 +2671,16 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned Neptune Database/Analytics client."""
 
-        from .adapters.graph_native import NeptuneOpenCypherBackend
-
-        return await self.aadd_graph_store(
-            NeptuneOpenCypherBackend(
-                client,
-                graph_name=graph_name,
-                graph_identifier=graph_identifier,
-            ),
+        return await self.aadd_native_graph_store(
+            "neptune",
+            client,
             database_name=database_name,
             namespace=namespace,
             graphs={graph_name},
+            backend_options={
+                "graph_name": graph_name,
+                "graph_identifier": graph_identifier,
+            },
             default_limit=default_limit,
             default_max_hops=default_max_hops,
             remote=remote,
@@ -2655,10 +2726,9 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned python-arango Database wrapper."""
 
-        from .adapters.graph_native import ArangoGraphBackend
-
-        return await self.aadd_graph_store(
-            ArangoGraphBackend(database),
+        return await self.aadd_native_graph_store(
+            "arangodb",
+            database,
             database_name=database_name,
             namespace=namespace,
             graphs=graphs,
@@ -2705,17 +2775,16 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned HTTP client for a SPARQL 1.1 query endpoint."""
 
-        from .adapters.graph_native import SparqlGraphBackend
-
-        return await self.aadd_graph_store(
-            SparqlGraphBackend(
-                client,
-                endpoint=endpoint,
-                graph_name=graph_name,
-            ),
+        return await self.aadd_native_graph_store(
+            "sparql",
+            client,
             database_name=database_name,
             namespace=namespace,
             graphs={graph_name},
+            backend_options={
+                "endpoint": endpoint,
+                "graph_name": graph_name,
+            },
             default_limit=default_limit,
             default_max_hops=RUNTIME_DEFAULTS.graph_max_hops,
             remote=remote,
@@ -2746,6 +2815,75 @@ class SchemaRouter:
             )
         )
 
+    async def aadd_native_record_store(
+        self,
+        backend_name: str,
+        resource: Any,
+        *,
+        database_name: str,
+        namespace: str | None = None,
+        sources: set[str] | tuple[str, ...] | list[str] | None = None,
+        backend_options: Mapping[str, Any] | None = None,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
+        remote: bool = True,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_fields_per_source: int = 256,
+        max_generated_bytes: int = RUNTIME_DEFAULTS.max_generated_bytes,
+    ) -> tuple[str, ...]:
+        """Register a native record backend through the descriptor registry."""
+
+        from .native_registration import build_native_record_backend
+
+        backend = build_native_record_backend(
+            backend_name,
+            resource,
+            **dict(backend_options or {}),
+        )
+        return await self.aadd_record_store(
+            backend,
+            database_name=database_name,
+            namespace=namespace,
+            sources=sources,
+            default_limit=default_limit,
+            remote=remote,
+            max_discovery_sources=max_discovery_sources,
+            max_fields_per_source=max_fields_per_source,
+            max_generated_bytes=max_generated_bytes,
+        )
+
+    def add_native_record_store(
+        self,
+        backend_name: str,
+        resource: Any,
+        *,
+        database_name: str,
+        namespace: str | None = None,
+        sources: set[str] | tuple[str, ...] | list[str] | None = None,
+        backend_options: Mapping[str, Any] | None = None,
+        default_limit: int = RUNTIME_DEFAULTS.collection_limit,
+        remote: bool = True,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_fields_per_source: int = 256,
+        max_generated_bytes: int = RUNTIME_DEFAULTS.max_generated_bytes,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_native_record_store`."""
+
+        return _run_sync(
+            lambda: self.aadd_native_record_store(
+                backend_name,
+                resource,
+                database_name=database_name,
+                namespace=namespace,
+                sources=sources,
+                backend_options=backend_options,
+                default_limit=default_limit,
+                remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_source=max_fields_per_source,
+                max_generated_bytes=max_generated_bytes,
+            )
+        )
+
     async def aadd_mongodb_record_store(
         self,
         database: Any,
@@ -2760,18 +2898,17 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned PyMongo Database through the bounded record contract."""
 
-        from .adapters.record_native import MongoRecordBackend
-
-        return await self.aadd_record_store(
-            MongoRecordBackend(
-                database,
-                collections=collections,
-                text_search_collections=text_search_collections,
-                time_field_by_collection=time_field_by_collection,
-            ),
+        return await self.aadd_native_record_store(
+            "mongodb",
+            database,
             database_name=database_name,
             namespace=namespace,
             sources=None if collections is None else set(collections),
+            backend_options={
+                "collections": collections,
+                "text_search_collections": text_search_collections,
+                "time_field_by_collection": time_field_by_collection,
+            },
             default_limit=default_limit,
             remote=remote,
         )
@@ -2816,18 +2953,17 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned Elasticsearch client."""
 
-        from .adapters.record_native import ElasticRecordBackend
-
-        return await self.aadd_record_store(
-            ElasticRecordBackend(
-                client,
-                indices=indices,
-                time_field_by_index=time_field_by_index,
-                vendor="elasticsearch",
-            ),
+        return await self.aadd_native_record_store(
+            "elasticsearch",
+            client,
             database_name=database_name,
             namespace=namespace,
             sources=None if indices is None else set(indices),
+            backend_options={
+                "indices": indices,
+                "time_field_by_index": time_field_by_index,
+                "vendor": "elasticsearch",
+            },
             default_limit=default_limit,
             remote=remote,
         )
@@ -2854,18 +2990,17 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned OpenSearch client."""
 
-        from .adapters.record_native import ElasticRecordBackend
-
-        return await self.aadd_record_store(
-            ElasticRecordBackend(
-                client,
-                indices=indices,
-                time_field_by_index=time_field_by_index,
-                vendor="opensearch",
-            ),
+        return await self.aadd_native_record_store(
+            "opensearch",
+            client,
             database_name=database_name,
             namespace=namespace,
             sources=None if indices is None else set(indices),
+            backend_options={
+                "indices": indices,
+                "time_field_by_index": time_field_by_index,
+                "vendor": "opensearch",
+            },
             default_limit=default_limit,
             remote=remote,
         )
@@ -2892,17 +3027,16 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned low-level boto3 DynamoDB client."""
 
-        from .adapters.record_native import DynamoDBRecordBackend
-
-        return await self.aadd_record_store(
-            DynamoDBRecordBackend(
-                client,
-                tables=tables,
-                time_field_by_table=time_field_by_table,
-            ),
+        return await self.aadd_native_record_store(
+            "dynamodb",
+            client,
             database_name=database_name,
             namespace=namespace,
             sources=None if tables is None else set(tables),
+            backend_options={
+                "tables": tables,
+                "time_field_by_table": time_field_by_table,
+            },
             default_limit=default_limit,
             remote=remote,
         )
@@ -2929,17 +3063,16 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned Azure Cosmos DB DatabaseProxy."""
 
-        from .adapters.record_native import CosmosRecordBackend
-
-        return await self.aadd_record_store(
-            CosmosRecordBackend(
-                database,
-                containers=containers,
-                time_field_by_container=time_field_by_container,
-            ),
+        return await self.aadd_native_record_store(
+            "cosmos",
+            database,
             database_name=database_name,
             namespace=namespace,
             sources=None if containers is None else set(containers),
+            backend_options={
+                "containers": containers,
+                "time_field_by_container": time_field_by_container,
+            },
             default_limit=default_limit,
             remote=remote,
         )
@@ -2966,17 +3099,16 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned Couchbase Cluster."""
 
-        from .adapters.record_native import CouchbaseRecordBackend
-
-        return await self.aadd_record_store(
-            CouchbaseRecordBackend(
-                cluster,
-                keyspaces=keyspaces,
-                time_field_by_source=time_field_by_source,
-            ),
+        return await self.aadd_native_record_store(
+            "couchbase",
+            cluster,
             database_name=database_name,
             namespace=namespace,
             sources=None if keyspaces is None else set(keyspaces),
+            backend_options={
+                "keyspaces": keyspaces,
+                "time_field_by_source": time_field_by_source,
+            },
             default_limit=default_limit,
             remote=remote,
         )
@@ -3003,17 +3135,16 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned clickhouse-connect client."""
 
-        from .adapters.record_native import ClickHouseRecordBackend
-
-        return await self.aadd_record_store(
-            ClickHouseRecordBackend(
-                client,
-                tables=tables,
-                time_field_by_table=time_field_by_table,
-            ),
+        return await self.aadd_native_record_store(
+            "clickhouse",
+            client,
             database_name=database_name,
             namespace=namespace,
             sources=None if tables is None else set(tables),
+            backend_options={
+                "tables": tables,
+                "time_field_by_table": time_field_by_table,
+            },
             default_limit=default_limit,
             remote=remote,
         )
@@ -3042,19 +3173,18 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned InfluxDB QueryApi."""
 
-        from .adapters.record_native import InfluxRecordBackend
-
-        return await self.aadd_record_store(
-            InfluxRecordBackend(
-                query_api,
-                bucket=bucket,
-                org=org,
-                measurements=measurements,
-                default_start=default_start,
-            ),
+        return await self.aadd_native_record_store(
+            "influxdb",
+            query_api,
             database_name=database_name,
             namespace=namespace,
             sources=None if measurements is None else set(measurements),
+            backend_options={
+                "bucket": bucket,
+                "org": org,
+                "measurements": measurements,
+                "default_start": default_start,
+            },
             default_limit=default_limit,
             remote=remote,
         )

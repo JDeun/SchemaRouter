@@ -6,7 +6,11 @@ import pytest
 
 from schemarouter.errors import RegistrationError
 from schemarouter.native_registration import (
+    NATIVE_GRAPH_BACKENDS,
+    NATIVE_RECORD_BACKENDS,
     NATIVE_VECTOR_BACKENDS,
+    NativeGraphBackendRegistry,
+    NativeRecordBackendRegistry,
     NativeVectorBackendRegistry,
 )
 
@@ -72,5 +76,121 @@ def test_runtime_does_not_own_native_vector_vendor_classes() -> None:
         "ChromaVectorBackend",
         "WeaviateVectorBackend",
         "PgvectorVectorBackend",
+    ):
+        assert class_name not in runtime
+
+
+def test_native_graph_registry_builds_registered_factory() -> None:
+    registry = NativeGraphBackendRegistry()
+    resource = object()
+
+    registry.register(
+        "custom",
+        lambda value, **options: (value, options),
+    )
+
+    built_resource, options = registry.build(
+        "CUSTOM",
+        resource,
+        database="graph-db",
+    )
+
+    assert built_resource is resource
+    assert options == {"database": "graph-db"}
+    assert registry.names() == ("custom",)
+
+
+def test_native_graph_registry_fails_closed_for_unknown_backend() -> None:
+    registry = NativeGraphBackendRegistry()
+
+    with pytest.raises(RegistrationError, match="unknown native graph backend"):
+        registry.build("missing", object())
+
+
+def test_builtin_native_graph_backends_are_registered() -> None:
+    assert {
+        "neo4j",
+        "falkordb",
+        "neptune",
+        "arangodb",
+        "sparql",
+    } <= set(NATIVE_GRAPH_BACKENDS.names())
+
+
+def test_runtime_does_not_own_native_graph_vendor_classes() -> None:
+    runtime = (
+        Path(__file__).resolve().parents[1]
+        / "src"
+        / "schemarouter"
+        / "runtime.py"
+    ).read_text(encoding="utf-8")
+
+    for class_name in (
+        "Neo4jGraphBackend",
+        "FalkorGraphBackend",
+        "NeptuneOpenCypherBackend",
+        "ArangoGraphBackend",
+        "SparqlGraphBackend",
+    ):
+        assert class_name not in runtime
+
+
+
+def test_native_record_registry_builds_registered_factory() -> None:
+    registry = NativeRecordBackendRegistry()
+    resource = object()
+
+    registry.register(
+        "custom",
+        lambda value, **options: (value, options),
+    )
+
+    built_resource, options = registry.build(
+        "CUSTOM",
+        resource,
+        sources=("items",),
+    )
+
+    assert built_resource is resource
+    assert options == {"sources": ("items",)}
+    assert registry.names() == ("custom",)
+
+
+def test_native_record_registry_fails_closed_for_unknown_backend() -> None:
+    registry = NativeRecordBackendRegistry()
+
+    with pytest.raises(RegistrationError, match="unknown native record backend"):
+        registry.build("missing", object())
+
+
+def test_builtin_native_record_backends_are_registered() -> None:
+    assert {
+        "mongodb",
+        "elasticsearch",
+        "opensearch",
+        "dynamodb",
+        "cosmos",
+        "couchbase",
+        "clickhouse",
+        "influxdb",
+    } <= set(NATIVE_RECORD_BACKENDS.names())
+
+
+def test_runtime_does_not_own_native_record_vendor_classes() -> None:
+    runtime = (
+        Path(__file__).resolve().parents[1]
+        / "src"
+        / "schemarouter"
+        / "runtime.py"
+    ).read_text(encoding="utf-8")
+
+    for class_name in (
+        "MongoRecordBackend",
+        "ElasticRecordBackend",
+        "DynamoDBRecordBackend",
+        "CosmosRecordBackend",
+        "CouchbaseRecordBackend",
+        "ClickHouseRecordBackend",
+        "InfluxRecordBackend",
     ):
         assert class_name not in runtime
