@@ -1,6 +1,6 @@
 # Runtime lifecycle
 
-`SchemaRouter` owns the background tasks it starts for health monitoring and schema watching.
+`SchemaRouter` owns the background tasks it starts for health monitoring, managed schema watching, and native schema watching.
 Use `aclose()` during application shutdown, or use the router as an async context manager:
 
 ```python
@@ -12,8 +12,8 @@ async with SchemaRouter() as router:
     # use the router
 ```
 
-Leaving the context calls `await router.aclose()`. Shutdown is idempotent and attempts to stop both
-background managers even if one shutdown path reports an error.
+Leaving the context calls `await router.aclose()`. Shutdown is idempotent and attempts to stop every
+router-owned background lifecycle resource even if one shutdown path reports an error.
 
 ## Resource ownership
 
@@ -21,6 +21,7 @@ background managers even if one shutdown path reports an error.
 
 - the `AccessHealthMonitor` background task;
 - the `SchemaWatchManager` background task;
+- the native schema-watcher task started by `start_native_schema_watcher()`;
 - the bounded synchronous offload worker pool used by explicitly offloaded invokers and sync health probes.
 
 It deliberately does **not** close caller-owned resources, including:
@@ -32,8 +33,9 @@ It deliberately does **not** close caller-owned resources, including:
 
 Applications remain responsible for closing those resources according to their own ownership model.
 SchemaRouter adapters that create short-lived HTTP clients internally already close them within the
-individual operation that created them. Closing the router prevents new sync offloads; a Python
-thread that was already executing cannot be forcibly stopped and may finish after `aclose()` returns.
+individual operation that created them. `aclose()` also calls `stop_native_schema_watcher()`, so a router-created native watch loop does not
+survive context-manager shutdown. Closing the router prevents new sync offloads; a Python thread
+that was already executing cannot be forcibly stopped and may finish after `aclose()` returns.
 
 
 ## Synchronous and asynchronous loop ownership
