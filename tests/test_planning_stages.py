@@ -5,6 +5,8 @@ import pytest
 from schemarouter.planning_stages import (
     run_candidate_pipeline_async,
     run_candidate_pipeline_sync,
+    select_primary_candidates_async,
+    select_primary_candidates_sync,
 )
 
 
@@ -180,3 +182,60 @@ async def test_async_candidate_pipeline_matches_sync_stage_contract() -> None:
     assert result.candidates == (2, 1)
     assert result.required_coverage == frozenset({"field"})
     assert result.warnings == ("recall-warning", "decision-warning")
+
+
+
+def test_sync_primary_selection_covers_required_fields() -> None:
+    coverage_by_candidate = {
+        "a": {"x"},
+        "b": {"y"},
+        "c": {"y"},
+    }
+
+    result = select_primary_candidates_sync(
+        candidates=["a", "b", "c"],
+        max_calls=3,
+        retrieval_mode="coverage",
+        required_coverage={"stale"},
+        coverage_matrix=lambda candidates: (
+            [coverage_by_candidate[candidate] for candidate in candidates],
+            {"x", "y"},
+        ),
+        compile_candidate=lambda candidate: candidate.upper(),
+        provider_key=lambda candidate: candidate,
+        corroboration_compatible=lambda *_args: True,
+        selected_coverage=lambda candidate, _call: coverage_by_candidate[candidate],
+    )
+
+    assert result.pairs == (("a", "A"), ("b", "B"))
+    assert result.required_coverage == frozenset({"x", "y"})
+
+
+@pytest.mark.asyncio
+async def test_async_primary_selection_preserves_corroboration_provider_diversity() -> None:
+    providers = {
+        "a1": "provider-a",
+        "a2": "provider-a",
+        "b1": "provider-b",
+    }
+
+    async def compile_candidate(candidate: str) -> str:
+        return candidate.upper()
+
+    result = await select_primary_candidates_async(
+        candidates=["a1", "a2", "b1"],
+        max_calls=3,
+        retrieval_mode="corroborate",
+        required_coverage={"field"},
+        coverage_matrix=lambda candidates: (
+            [{"field"} for _candidate in candidates],
+            {"field"},
+        ),
+        compile_candidate=compile_candidate,
+        provider_key=lambda candidate: providers[candidate],
+        corroboration_compatible=lambda *_args: True,
+        selected_coverage=lambda _candidate, _call: {"field"},
+    )
+
+    assert result.pairs == (("a1", "A1"), ("b1", "B1"))
+    assert result.required_coverage == frozenset({"field"})
