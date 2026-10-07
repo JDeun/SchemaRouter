@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -65,6 +66,19 @@ def test_matrix_separates_public_and_reference_failures() -> None:
         "success": 1,
         "failure": 2,
         "reference_failures": 1,
+        "contract_failure": 1,
+        "unavailable": 1,
+        "skipped": 0,
+        "unclassified_failure": 0,
+    }
+    classifications = {
+        row["adapter"]: row["classification"]
+        for row in matrix["adapters"]
+    }
+    assert classifications == {
+        "graphql": "unavailable",
+        "mcp": "contract_failure",
+        "odata": "success",
     }
 
 
@@ -122,3 +136,126 @@ def test_matrix_json_is_serializable() -> None:
     payload = json.dumps(matrix, sort_keys=True)
 
     assert '"adapter": "odata"' in payload
+
+
+def test_required_reference_report_cannot_disappear_silently(tmp_path: Path) -> None:
+    module = _module()
+
+    reports = module._load_reports(
+        tmp_path,
+        required_reference_reports=("mcp-compatibility.json",),
+    )
+    matrix = module.build_matrix(reports)
+
+    assert matrix["summary"]["reference_failures"] == 1
+    assert matrix["adapters"][0]["status"] == "missing_report"
+    assert matrix["adapters"][0]["classification"] == "contract_failure"
+    assert matrix["adapters"][0]["error_type"] == "MissingReport"
+
+
+def test_invalid_required_reference_report_is_contract_failure(tmp_path: Path) -> None:
+    module = _module()
+    (tmp_path / "openrpc-compatibility.json").write_text(
+        "{broken",
+        encoding="utf-8",
+    )
+
+    reports = module._load_reports(
+        tmp_path,
+        required_reference_reports=("openrpc-compatibility.json",),
+    )
+    matrix = module.build_matrix(reports)
+
+    assert matrix["summary"]["reference_failures"] == 1
+    assert matrix["adapters"][0]["classification"] == "contract_failure"
+
+
+def test_skipped_status_remains_distinct_from_external_unavailability() -> None:
+    module = _module()
+    matrix = module.build_matrix(
+        [
+            _report(adapter="skipped-provider", status="skipped"),
+            _report(adapter="offline-provider", status="failure"),
+        ]
+    )
+
+    classifications = {
+        row["adapter"]: row["classification"]
+        for row in matrix["adapters"]
+    }
+    assert classifications["skipped-provider"] == "skipped"
+    assert classifications["offline-provider"] == "unavailable"
+
+
+
+def test_non_object_required_report_fails_closed(tmp_path: Path) -> None:
+    module = _module()
+    (tmp_path / "graphql-compatibility.json").write_text(
+        "[]",
+        encoding="utf-8",
+    )
+
+    reports = module._load_reports(
+        tmp_path,
+        required_reference_reports=("graphql-compatibility.json",),
+    )
+    matrix = module.build_matrix(reports)
+
+    assert matrix["adapters"][0]["status"] == "invalid_report"
+    assert matrix["adapters"][0]["error_type"] == "NonObjectReport"
+    assert matrix["adapters"][0]["classification"] == "contract_failure"
+
+
+def test_unknown_failure_remains_explicitly_unclassified() -> None:
+    module = _module()
+    report = _report(
+        adapter="custom",
+        status="failure",
+        evidence_kind="unknown",
+    )
+
+    matrix = module.build_matrix([report])
+
+    assert matrix["adapters"][0]["classification"] == "failure"
+    assert matrix["summary"]["unclassified_failure"] == 1
+
+
+def test_cli_required_reference_failure_returns_nonzero_and_writes_outputs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module = _module()
+    reports = tmp_path / "reports"
+    reports.mkdir()
+    (reports / "mcp-compatibility.json").write_text(
+        json.dumps(
+            _report(
+                adapter="mcp",
+                status="failure",
+                evidence_kind="pinned_reference_implementation",
+            )
+        ),
+        encoding="utf-8",
+    )
+    json_out = tmp_path / "matrix.json"
+    markdown_out = tmp_path / "matrix.md"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "aggregate_compatibility_matrix.py",
+            "--reports-dir",
+            str(reports),
+            "--json-out",
+            str(json_out),
+            "--markdown-out",
+            str(markdown_out),
+            "--require-reference-success",
+            "--required-reference-report",
+            "mcp-compatibility.json",
+        ],
+    )
+
+    assert module.main() == 2
+    assert json.loads(json_out.read_text(encoding="utf-8"))["schema_version"] == 2
+    assert "contract_failure" in markdown_out.read_text(encoding="utf-8")
