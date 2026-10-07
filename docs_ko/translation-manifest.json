@@ -61,7 +61,7 @@
     },
     {
       "path": "concepts/schema-router.md",
-      "source_blob": "d798d4b5342ddc7c6e1603fa9373568b3bb02f7d"
+      "source_blob": "4afc6bcd95ae5283fb5dd35c6c519461bf47b4e1"
     },
     {
       "path": "concepts/tool-endpoint.md",
@@ -73,7 +73,7 @@
     },
     {
       "path": "framework-maturity.md",
-      "source_blob": "9126f0ded318b6cdfb609208c5dde83f866803ae"
+      "source_blob": "5d949eaaa4d64dbdf5ac0464cb0dbbdb41e00350"
     },
     {
       "path": "getting-started/examples.md",
@@ -353,7 +353,7 @@
     },
     {
       "path": "project/discoverability.md",
-      "source_blob": "779256b7afee98aac989ecd3297c79017eb14d5b"
+      "source_blob": "5b6149edadeb505315c7979ac29f0316be8202ab"
     },
     {
       "path": "project/external-adoption.md",
