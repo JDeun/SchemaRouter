@@ -1768,6 +1768,79 @@ class SchemaRouter:
             )
         )
 
+    async def aadd_native_vector_store(
+        self,
+        backend_name: str,
+        resource: Any,
+        embed_query: Any,
+        *,
+        database_name: str,
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        backend_options: Mapping[str, Any] | None = None,
+        default_top_k: int = RUNTIME_DEFAULTS.vector_top_k,
+        remote: bool = True,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_fields_per_collection: int = RUNTIME_DEFAULTS.max_fields_per_collection,
+        max_generated_bytes: int = RUNTIME_DEFAULTS.max_generated_bytes,
+    ) -> tuple[str, ...]:
+        """Register a native vector backend through the descriptor registry."""
+
+        from .native_registration import build_native_vector_backend
+
+        backend = build_native_vector_backend(
+            backend_name,
+            resource,
+            **dict(backend_options or {}),
+        )
+        return await self.aadd_vector_store(
+            backend,
+            embed_query,
+            database_name=database_name,
+            namespace=namespace,
+            collections=collections,
+            default_top_k=default_top_k,
+            remote=remote,
+            max_discovery_sources=max_discovery_sources,
+            max_fields_per_collection=max_fields_per_collection,
+            max_generated_bytes=max_generated_bytes,
+        )
+
+    def add_native_vector_store(
+        self,
+        backend_name: str,
+        resource: Any,
+        embed_query: Any,
+        *,
+        database_name: str,
+        namespace: str | None = None,
+        collections: set[str] | tuple[str, ...] | list[str] | None = None,
+        backend_options: Mapping[str, Any] | None = None,
+        default_top_k: int = RUNTIME_DEFAULTS.vector_top_k,
+        remote: bool = True,
+        max_discovery_sources: int = RUNTIME_DEFAULTS.max_discovery_sources,
+        max_fields_per_collection: int = RUNTIME_DEFAULTS.max_fields_per_collection,
+        max_generated_bytes: int = RUNTIME_DEFAULTS.max_generated_bytes,
+    ) -> tuple[str, ...]:
+        """Synchronous wrapper for :meth:`aadd_native_vector_store`."""
+
+        return _run_sync(
+            lambda: self.aadd_native_vector_store(
+                backend_name,
+                resource,
+                embed_query,
+                database_name=database_name,
+                namespace=namespace,
+                collections=collections,
+                backend_options=backend_options,
+                default_top_k=default_top_k,
+                remote=remote,
+                max_discovery_sources=max_discovery_sources,
+                max_fields_per_collection=max_fields_per_collection,
+                max_generated_bytes=max_generated_bytes,
+            )
+        )
+
     async def aadd_qdrant_vector_store(
         self,
         client: Any,
@@ -1786,24 +1859,23 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned Qdrant client through the vector capability contract."""
 
-        from .adapters.vector_native import QdrantVectorBackend
-
-        return await self.aadd_vector_store(
-            QdrantVectorBackend(
-                client,
-                vector_name_by_collection=vector_name_by_collection,
-                metadata_fields_by_collection=metadata_fields_by_collection,
-                filter_builder=filter_builder,
-                collections=(
-                    None if collections is None else tuple(sorted(collections))
-                ),
-                max_discovery_sources=max_discovery_sources,
-                max_fields_per_collection=max_fields_per_collection,
-            ),
+        return await self.aadd_native_vector_store(
+            "qdrant",
+            client,
             embed_query,
             database_name=database_name,
             namespace=namespace,
             collections=collections,
+            backend_options={
+                "vector_name_by_collection": vector_name_by_collection,
+                "metadata_fields_by_collection": metadata_fields_by_collection,
+                "filter_builder": filter_builder,
+                "collections": (
+                    None if collections is None else tuple(sorted(collections))
+                ),
+                "max_discovery_sources": max_discovery_sources,
+                "max_fields_per_collection": max_fields_per_collection,
+            },
             default_top_k=default_top_k,
             remote=remote,
             max_discovery_sources=max_discovery_sources,
@@ -1862,23 +1934,22 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned MilvusClient through the vector capability contract."""
 
-        from .adapters.vector_native import MilvusVectorBackend
-
-        return await self.aadd_vector_store(
-            MilvusVectorBackend(
-                client,
-                vector_field_by_collection=vector_field_by_collection,
-                metric_by_collection=metric_by_collection,
-                collections=(
-                    None if collections is None else tuple(sorted(collections))
-                ),
-                max_discovery_sources=max_discovery_sources,
-                max_fields_per_collection=max_fields_per_collection,
-            ),
+        return await self.aadd_native_vector_store(
+            "milvus",
+            client,
             embed_query,
             database_name=database_name,
             namespace=namespace,
             collections=collections,
+            backend_options={
+                "vector_field_by_collection": vector_field_by_collection,
+                "metric_by_collection": metric_by_collection,
+                "collections": (
+                    None if collections is None else tuple(sorted(collections))
+                ),
+                "max_discovery_sources": max_discovery_sources,
+                "max_fields_per_collection": max_fields_per_collection,
+            },
             default_top_k=default_top_k,
             remote=remote,
             max_discovery_sources=max_discovery_sources,
@@ -1934,22 +2005,21 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned Pinecone client."""
 
-        from .adapters.vector_native import PineconeVectorBackend
-
-        return await self.aadd_vector_store(
-            PineconeVectorBackend(
-                client,
-                metadata_fields_by_index=metadata_fields_by_index,
-                collections=(
-                    None if collections is None else tuple(sorted(collections))
-                ),
-                max_discovery_sources=max_discovery_sources,
-                max_fields_per_collection=max_fields_per_collection,
-            ),
+        return await self.aadd_native_vector_store(
+            "pinecone",
+            client,
             embed_query,
             database_name=database_name,
             namespace=namespace,
             collections=collections,
+            backend_options={
+                "metadata_fields_by_index": metadata_fields_by_index,
+                "collections": (
+                    None if collections is None else tuple(sorted(collections))
+                ),
+                "max_discovery_sources": max_discovery_sources,
+                "max_fields_per_collection": max_fields_per_collection,
+            },
             default_top_k=default_top_k,
             remote=remote,
             max_discovery_sources=max_discovery_sources,
@@ -2003,24 +2073,23 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned Chroma client."""
 
-        from .adapters.vector_native import ChromaVectorBackend
-
-        return await self.aadd_vector_store(
-            ChromaVectorBackend(
-                client,
-                dimension_by_collection=dimension_by_collection,
-                metadata_fields_by_collection=metadata_fields_by_collection,
-                metric_by_collection=metric_by_collection,
-                collections=(
-                    None if collections is None else tuple(sorted(collections))
-                ),
-                max_discovery_sources=max_discovery_sources,
-                max_fields_per_collection=max_fields_per_collection,
-            ),
+        return await self.aadd_native_vector_store(
+            "chroma",
+            client,
             embed_query,
             database_name=database_name,
             namespace=namespace,
             collections=collections,
+            backend_options={
+                "dimension_by_collection": dimension_by_collection,
+                "metadata_fields_by_collection": metadata_fields_by_collection,
+                "metric_by_collection": metric_by_collection,
+                "collections": (
+                    None if collections is None else tuple(sorted(collections))
+                ),
+                "max_discovery_sources": max_discovery_sources,
+                "max_fields_per_collection": max_fields_per_collection,
+            },
             default_top_k=default_top_k,
             remote=remote,
             max_discovery_sources=max_discovery_sources,
@@ -2079,25 +2148,24 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register a caller-owned Weaviate v4 client."""
 
-        from .adapters.vector_native import WeaviateVectorBackend
-
-        return await self.aadd_vector_store(
-            WeaviateVectorBackend(
-                client,
-                dimension_by_collection=dimension_by_collection,
-                vector_name_by_collection=vector_name_by_collection,
-                metric_by_collection=metric_by_collection,
-                filter_builder=filter_builder,
-                collections=(
-                    None if collections is None else tuple(sorted(collections))
-                ),
-                max_discovery_sources=max_discovery_sources,
-                max_fields_per_collection=max_fields_per_collection,
-            ),
+        return await self.aadd_native_vector_store(
+            "weaviate",
+            client,
             embed_query,
             database_name=database_name,
             namespace=namespace,
             collections=collections,
+            backend_options={
+                "dimension_by_collection": dimension_by_collection,
+                "vector_name_by_collection": vector_name_by_collection,
+                "metric_by_collection": metric_by_collection,
+                "filter_builder": filter_builder,
+                "collections": (
+                    None if collections is None else tuple(sorted(collections))
+                ),
+                "max_discovery_sources": max_discovery_sources,
+                "max_fields_per_collection": max_fields_per_collection,
+            },
             default_top_k=default_top_k,
             remote=remote,
             max_discovery_sources=max_discovery_sources,
@@ -2158,12 +2226,15 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Register caller-owned PostgreSQL/pgvector Engine."""
 
-        from .adapters.vector_native import PgvectorVectorBackend
-
-        return await self.aadd_vector_store(
-            PgvectorVectorBackend(
-                engine,
-                tables=(
+        return await self.aadd_native_vector_store(
+            "pgvector",
+            engine,
+            embed_query,
+            database_name=database_name,
+            namespace=namespace,
+            collections=collections,
+            backend_options={
+                "tables": (
                     tables
                     if tables is not None
                     else (
@@ -2172,16 +2243,12 @@ class SchemaRouter:
                         else tuple(sorted(collections))
                     )
                 ),
-                vector_field_by_table=vector_field_by_table,
-                metric_by_table=metric_by_table,
-                schema=schema,
-                max_discovery_sources=max_discovery_sources,
-                max_fields_per_collection=max_fields_per_collection,
-            ),
-            embed_query,
-            database_name=database_name,
-            namespace=namespace,
-            collections=collections,
+                "vector_field_by_table": vector_field_by_table,
+                "metric_by_table": metric_by_table,
+                "schema": schema,
+                "max_discovery_sources": max_discovery_sources,
+                "max_fields_per_collection": max_fields_per_collection,
+            },
             default_top_k=default_top_k,
             remote=remote,
             max_discovery_sources=max_discovery_sources,
