@@ -51,7 +51,10 @@ def _input_fields(contract: dict[str, Any]) -> set[str]:
     return set(props) if isinstance(props, dict) else set()
 
 
-def load_package(package_dir: Path, snapshot_path: Path) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+def load_package(
+    package_dir: Path,
+    snapshot_path: Path,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     manifest = _load(package_dir / "manifest.json")
     cases = _load(package_dir / manifest["files"]["cases"])
     snapshot = _load(snapshot_path)
@@ -105,7 +108,9 @@ def validate_package(
 
         required_tools = case.get("required_tools", [])
         required_fields = case.get("required_fields", {})
-        if not isinstance(required_tools, list) or not all(isinstance(x, str) for x in required_tools):
+        if not isinstance(required_tools, list) or not all(
+            isinstance(x, str) for x in required_tools
+        ):
             raise ValueError(f"{case_id}: required_tools must be a string list")
         if not isinstance(required_fields, dict):
             raise ValueError(f"{case_id}: required_fields must be an object")
@@ -213,7 +218,10 @@ def score(
         for contract in visible:
             name = contract["name"]
             if contract != native_tools[name]:
-                raise ValueError(f"{case_id}: visible contract for {name} differs from frozen upstream snapshot")
+                raise ValueError(
+                    f"{case_id}: visible contract for {name} differs from "
+                    "frozen upstream snapshot"
+                )
 
         latency = row.get("latency_ms")
         if latency is not None:
