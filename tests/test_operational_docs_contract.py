@@ -27,8 +27,14 @@ def test_runtime_lifecycle_docs_track_owned_background_apis() -> None:
 
 
 def test_retry_docs_name_the_explicit_invocation_failure_taxonomy() -> None:
-    assert issubclass(schemarouter.InvocationUnavailableError, schemarouter.TransientInvocationError)
-    assert issubclass(schemarouter.IndeterminateInvocationError, schemarouter.NonRetryableInvocationError)
+    assert issubclass(
+        schemarouter.InvocationUnavailableError,
+        schemarouter.TransientInvocationError,
+    )
+    assert issubclass(
+        schemarouter.IndeterminateInvocationError,
+        schemarouter.NonRetryableInvocationError,
+    )
 
     expected = (
         "TransientInvocationError",
