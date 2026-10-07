@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 import pytest
 
 from schemarouter.errors import SchemaSourceError
@@ -8,7 +9,6 @@ from schemarouter.executor import BoundEndpointInvoker
 from schemarouter.models import ToolSpec
 from schemarouter.native_schema_lifecycle import NativeSchemaLifecycleManager
 from schemarouter.registry import InMemoryRegistry
-
 
 ROOT = Path(__file__).resolve().parents[1]
 
