@@ -487,6 +487,8 @@ from .traces import (
     RunTrace,
     RunTraceStore,
     SQLiteRunTraceStore,
+    TracePruneResult,
+    TraceRetentionPolicy,
     record_run_events,
     replay_run_events,
 )
@@ -728,6 +730,8 @@ __all__ = [
     "RunTrace",
     "RunTraceStore",
     "SQLiteRunTraceStore",
+    "TracePruneResult",
+    "TraceRetentionPolicy",
     "SQLiteTableBinding",
     "SQLiteTableInvoker",
     "SQLAlchemyTableBinding",
