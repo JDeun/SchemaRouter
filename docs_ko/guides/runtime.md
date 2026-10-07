@@ -69,6 +69,31 @@ run.end  | run.error
 
 한 invocation의 모든 event는 같은 `run_id`와 단조 증가하는 `sequence`를 공유합니다. provider/access fallback도 같은 event stream을 사용하며 open-ended replanning을 수행하지 않습니다.
 
+## Router가 소유하는 background lifecycle
+
+SchemaRouter가 소유할 수 있는 background activity는 세 종류입니다.
+
+- trusted endpoint health probe용 `AccessHealthMonitor`;
+- remote structured-source schema refresh용 `SchemaWatchManager`;
+- database/vector/graph/record refresh callback용
+  `start_native_schema_watcher()` native schema watcher.
+
+Native capability 등록은 refresh callback을 기록하지만 native watcher를 자동으로 시작하지
+않습니다. 주기적 refresh가 필요할 때 명시적으로 시작합니다.
+
+```python
+await router.start_native_schema_watcher(interval_seconds=300)
+
+# 필요하면 명시적으로 먼저 종료
+await router.stop_native_schema_watcher()
+```
+
+`SchemaRouter.aclose()`와 async context manager 종료는 세 종류의 router-owned background
+activity를 모두 중지하려고 시도합니다. 반복 shutdown은 idempotent하며 SchemaRouter는
+caller-owned database client, SDK client, engine, transport를 닫지 않습니다. 하나의 native
+schema source에서 예상치 못한 refresh 오류가 발생해도 해당 source에 격리되고 다음 sweep에서
+다시 시도되므로 다른 등록 source의 watcher까지 종료되지 않습니다.
+
 ## Access health와 복구
 
 `InvocationUnavailableError`로 retry를 모두 소진한 transport route는 유한한 process-local cooldown에 들어가고 만료 후 자동으로 다시 후보가 됩니다. 명시적 read-only path에는 trusted health probe를 등록할 수 있습니다. probe 성공은 즉시 route를 다시 열고 실패는 bounded cooldown만 연장합니다.

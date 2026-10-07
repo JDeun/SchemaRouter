@@ -138,6 +138,31 @@ All events in one invocation share a `run_id` and monotonic `sequence`.
 Provider/access fallback uses the same event stream and never performs open-ended replanning. See
 [Provider-aware fallback](provider-fallback.md).
 
+## Router-owned background lifecycle
+
+SchemaRouter can own three independent background activities:
+
+- `AccessHealthMonitor` for trusted endpoint health probes;
+- `SchemaWatchManager` for remote structured-source schema refresh;
+- the native schema watcher started by `start_native_schema_watcher()` for registered
+  database/vector/graph/record refresh callbacks.
+
+Native-capability registration records refresh callbacks but does **not** start the native watcher
+automatically. Start it explicitly when periodic refresh is required:
+
+```python
+await router.start_native_schema_watcher(interval_seconds=300)
+
+# optional explicit shutdown
+await router.stop_native_schema_watcher()
+```
+
+`SchemaRouter.aclose()` and async-context-manager exit attempt to stop all three router-owned
+background activities before returning. Shutdown remains idempotent, and SchemaRouter does not close
+caller-owned database clients, SDK clients, engines, or transports. An unexpected failure from one
+native schema source is isolated to that source and retried on a later sweep; it does not terminate
+the watcher for the other registered sources.
+
 ## Access health and recovery
 
 A transport route that exhausts retry with an `InvocationUnavailableError` enters a finite

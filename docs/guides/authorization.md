@@ -96,6 +96,27 @@ AuthorizationRule(
 Selectors across categories are ANDed; values inside an `*_any` selector are ORed. Rules are
 evaluated in declaration order and the first matching rule wins.
 
+## First-match precedence and policy lint
+
+Runtime evaluation preserves declaration order: the first matching authorization or data-scope rule
+wins. Configuration loading therefore treats provably shadowed or duplicate matchers as a
+configuration error by default instead of silently accepting an unreachable later rule.
+
+```python
+from schemarouter import parse_authorization_policy
+
+policy = parse_authorization_policy(policy_json)  # lint=True by default
+```
+
+The lint step diagnoses duplicate names, duplicate match conditions, and broad-before-narrow cases
+that can be proven unreachable without attempting unsafe inference over arbitrary wildcard
+predicates. It reports rule names/positions only to the trusted configuration surface; runtime
+authorization denial messages remain intentionally generic. Set `lint=False` only for an explicit
+backward-compatibility migration where the host has independently reviewed the ordering.
+
+Compiled lookup partitions may skip unrelated rules for performance, but they always preserve the
+original declaration order and first-match result.
+
 ## Default behavior
 
 `AuthorizationPolicy` is deny-by-default. If no rule matches, the route is invisible and cannot
