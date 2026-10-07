@@ -3632,7 +3632,7 @@ class SchemaPlanner:
         )
         all_candidates = list(pipeline.all_candidates)
         candidates = list(pipeline.candidates)
-        required_coverage = set(pipeline.required_coverage)
+        required_coverage = pipeline.required_coverage
         warnings = list(pipeline.warnings)
         if not candidates:
             coverage = self._plan_coverage(
@@ -3867,7 +3867,7 @@ class SchemaPlanner:
         )
         all_candidates = list(pipeline.all_candidates)
         candidates = list(pipeline.candidates)
-        required_coverage = set(pipeline.required_coverage)
+        required_coverage = pipeline.required_coverage
         warnings = list(pipeline.warnings)
         if not candidates:
             coverage = self._plan_coverage(
