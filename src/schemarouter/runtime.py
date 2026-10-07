@@ -90,11 +90,11 @@ from .models import (
     ToolResult,
     ToolSpec,
 )
+from .native_provider_convenience import NativeProviderConvenienceMixin
 from .native_schema_lifecycle import (
     NativeSchemaLifecycleManager,
     NativeSchemaWatchSnapshot,
 )
-from .native_provider_convenience import NativeProviderConvenienceMixin
 from .network_policy import NetworkPolicy
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
