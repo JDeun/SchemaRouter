@@ -103,7 +103,7 @@ success, and failures separately rather than optimizing only a retrieval score.
 The stable 0.17.0 release, quickstart, examples, security model, and current research status are all
 kept in this repository so product guarantees and experimental evidence can be audited separately.
 
-- [SchemaRouter README](../../README.md)
+- [SchemaRouter repository README](https://github.com/JDeun/SchemaRouter#readme)
 - [Quickstart](../getting-started/quickstart.md)
 - [Execution boundary](../concepts/execution.md)
 - [Security model](../security/threat-model.md)
