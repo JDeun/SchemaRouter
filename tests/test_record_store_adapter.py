@@ -683,7 +683,7 @@ async def test_native_record_schema_refresh_quarantines_breaking_drift() -> None
     assert result.action == "pending_review"
     assert result.report.compatibility == "breaking"
     assert router.registry.get("nosql.documents").fingerprint == before.fingerprint
-    assert "nosql.documents" in router._native_schema_pending
+    assert "nosql.documents" in router._native_schema_lifecycle._pending
 
 
 @pytest.mark.asyncio
@@ -716,7 +716,7 @@ async def test_native_schema_refresh_lifecycle_controls() -> None:
         await router.start_native_schema_watcher(interval_seconds=0)
 
     await router.aremove_tool("nosql.documents")
-    assert "nosql.documents" not in router._native_schema_refreshers
+    assert "nosql.documents" not in router._native_schema_lifecycle._refreshers
     with pytest.raises(Exception, match="no process-local native schema refresh binding"):
         await router.arefresh_native_schema("nosql.documents")
 
@@ -732,7 +732,7 @@ async def test_native_schema_watcher_isolates_unexpected_source_failure() -> Non
 
     healthy_key = "nosql.cache"
     failing_key = "nosql.documents"
-    healthy_refresh = router._native_schema_refreshers[healthy_key]
+    healthy_refresh = router._native_schema_lifecycle._refreshers[healthy_key]
     healthy_calls = 0
     healthy_reached_second_cycle = asyncio.Event()
 
@@ -746,13 +746,13 @@ async def test_native_schema_watcher_isolates_unexpected_source_failure() -> Non
             healthy_reached_second_cycle.set()
         return await healthy_refresh()
 
-    router._native_schema_refreshers[failing_key] = fail_refresh
-    router._native_schema_refreshers[healthy_key] = count_healthy_refresh
+    router._native_schema_lifecycle._refreshers[failing_key] = fail_refresh
+    router._native_schema_lifecycle._refreshers[healthy_key] = count_healthy_refresh
 
     await router.start_native_schema_watcher(interval_seconds=0.01)
     try:
         await asyncio.wait_for(healthy_reached_second_cycle.wait(), timeout=1.0)
-        task = router._native_schema_watch_task
+        task = router._native_schema_lifecycle._watch_task
         assert task is not None
         assert task.done() is False
     finally:
