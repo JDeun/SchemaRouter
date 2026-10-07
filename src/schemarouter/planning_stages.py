@@ -163,7 +163,10 @@ def select_primary_candidates_sync(
     required_coverage: Set[CoverageT],
     coverage_matrix: Callable[
         [list[CandidateT]],
-        tuple[Sequence[Set[CoverageT]], Set[CoverageT]],
+        tuple[
+            Sequence[Set[CoverageT] | frozenset[CoverageT]],
+            Set[CoverageT] | frozenset[CoverageT],
+        ],
     ],
     compile_candidate: Callable[[CandidateT], CallT | None],
     provider_key: Callable[[CandidateT], str],
@@ -255,7 +258,10 @@ async def select_primary_candidates_async(
     required_coverage: Set[CoverageT],
     coverage_matrix: Callable[
         [list[CandidateT]],
-        tuple[Sequence[Set[CoverageT]], Set[CoverageT]],
+        tuple[
+            Sequence[Set[CoverageT] | frozenset[CoverageT]],
+            Set[CoverageT] | frozenset[CoverageT],
+        ],
     ],
     compile_candidate: Callable[
         [CandidateT],
