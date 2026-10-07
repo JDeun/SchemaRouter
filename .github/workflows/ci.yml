@@ -760,6 +760,9 @@ jobs:
         if: ${{ needs.changes.outputs.docs == 'true' }}
       - run: pip install -e ".[docs]"
         if: ${{ needs.changes.outputs.docs == 'true' }}
+      - name: Validate documented public API contracts
+        if: ${{ needs.changes.outputs.docs == 'true' }}
+        run: python scripts/check_docs_api_contracts.py
       - name: Check canonical repository facts
         if: ${{ needs.changes.outputs.docs == 'true' }}
         run: python scripts/sync_repository_facts.py --check
