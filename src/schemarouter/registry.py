@@ -204,6 +204,18 @@ class BatchToolRegistry(ToolRegistry, Protocol):
     ) -> tuple[str, ...]: ...
 
 
+class RestorableBatchToolRegistry(BatchToolRegistry, Protocol):
+    """Optional capability for restoring a mixed add/replace batch atomically."""
+
+    def restore_many_if_version(
+        self,
+        previous: dict[str, ToolSpec | None],
+        *,
+        expected_current: dict[str, str],
+        expected_version: int,
+    ) -> None: ...
+
+
 def update_many_if_current(
     registry: ToolRegistry,
     tools: Iterable[ToolSpec],
@@ -231,6 +243,28 @@ def update_many_if_current(
             "atomic version-guarded batch registration returned invalid tool keys"
         )
     return result
+
+
+def restore_many_if_current(
+    registry: ToolRegistry,
+    previous: dict[str, ToolSpec | None],
+    *,
+    expected_current: dict[str, str],
+    expected_version: int,
+) -> None:
+    """Restore a mixed add/replace batch only while the published batch is current."""
+
+    restore = getattr(registry, "restore_many_if_version", None)
+    if not callable(restore):
+        raise RegistrationError(
+            "registry does not support atomic mixed-batch restore; "
+            "this operation requires RestorableBatchToolRegistry semantics"
+        )
+    restore(
+        previous,
+        expected_current=expected_current,
+        expected_version=expected_version,
+    )
 
 
 class MutableToolRegistry(ToolRegistry, Protocol):
@@ -435,6 +469,49 @@ class InMemoryRegistry:
             for key in expected:
                 del self._tools[key]
             if expected:
+                self._version += 1
+
+    def restore_many_if_version(
+        self,
+        previous: dict[str, ToolSpec | None],
+        *,
+        expected_current: dict[str, str],
+        expected_version: int,
+    ) -> None:
+        if set(previous) != set(expected_current):
+            raise RegistrationError(
+                "atomic batch restore requires identical previous/current key sets"
+            )
+        staged_previous: dict[str, ToolSpec | None] = {}
+        for key, tool in previous.items():
+            if tool is None:
+                staged_previous[key] = None
+                continue
+            validated = _validated_tool_snapshot(tool)
+            if validated.key != key:
+                raise RegistrationError(
+                    f"atomic batch restore key mismatch for {key!r}"
+                )
+            staged_previous[key] = validated
+
+        with self._lock:
+            if self._version != expected_version:
+                raise RegistrationError(
+                    f"registry changed concurrently; expected version "
+                    f"{expected_version}, found {self._version}"
+                )
+            for key, fingerprint in expected_current.items():
+                current = self._tools.get(key)
+                if current is None or current.fingerprint != fingerprint:
+                    raise RegistrationError(
+                        f"tool {key!r} changed before atomic batch restore"
+                    )
+            for key, tool in staged_previous.items():
+                if tool is None:
+                    self._tools.pop(key, None)
+                else:
+                    self._tools[key] = self._snapshot(tool)
+            if previous:
                 self._version += 1
 
     def update_many_if_version(
@@ -1160,6 +1237,75 @@ class SQLiteRegistry:
                     f"DELETE FROM schemarouter_registry_tools WHERE key IN ({placeholders})",
                     tuple(expected),
                 )
+                self._bump_version()
+            except Exception:
+                self._connection.rollback()
+                raise
+            else:
+                self._connection.commit()
+
+    def restore_many_if_version(
+        self,
+        previous: dict[str, ToolSpec | None],
+        *,
+        expected_current: dict[str, str],
+        expected_version: int,
+    ) -> None:
+        if set(previous) != set(expected_current):
+            raise RegistrationError(
+                "atomic batch restore requires identical previous/current key sets"
+            )
+        if not previous:
+            return
+
+        serialized_previous: dict[str, str | None] = {}
+        for key, tool in previous.items():
+            if tool is None:
+                serialized_previous[key] = None
+                continue
+            validated = _validated_tool_snapshot(tool)
+            if validated.key != key:
+                raise RegistrationError(
+                    f"atomic batch restore key mismatch for {key!r}"
+                )
+            serialized_previous[key] = self._serialize(validated)
+
+        with self._lock:
+            self._begin_write()
+            try:
+                current_version = self._validated_logical_version()
+                if current_version != expected_version:
+                    raise RegistrationError(
+                        f"registry changed concurrently; expected version "
+                        f"{expected_version}, found {current_version}"
+                    )
+                for key, fingerprint in expected_current.items():
+                    row = self._stored_document_row(key)
+                    if row is None:
+                        raise RegistrationError(
+                            f"tool {key!r} disappeared before atomic batch restore"
+                        )
+                    current = self._deserialize_row(key, row)
+                    if current.fingerprint != fingerprint:
+                        raise RegistrationError(
+                            f"tool {key!r} changed before atomic batch restore"
+                        )
+
+                for key, document in serialized_previous.items():
+                    if document is None:
+                        self._connection.execute(
+                            "DELETE FROM schemarouter_registry_tools WHERE key = ?",
+                            (key,),
+                        )
+                    else:
+                        self._connection.execute(
+                            """
+                            UPDATE schemarouter_registry_tools
+                            SET document = ?
+                            WHERE key = ?
+                            """,
+                            (document, key),
+                        )
                 self._bump_version()
             except Exception:
                 self._connection.rollback()

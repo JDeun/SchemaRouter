@@ -1,6 +1,13 @@
 import pytest
 
-from schemarouter import EndpointSpec, InMemoryRegistry, ParameterSpec, RegistrationError, ToolSpec
+from schemarouter import (
+    EndpointSpec,
+    InMemoryRegistry,
+    ParameterSpec,
+    RegistrationError,
+    SQLiteRegistry,
+    ToolSpec,
+)
 
 
 def test_registry_rejects_collisions_without_replace() -> None:
@@ -537,3 +544,83 @@ def test_inmemory_registry_batch_rollback_rejects_stale_version_without_partial_
         )
 
     assert set(reg.keys()) == {"batch_a", "batch_b", "concurrent"}
+
+
+
+def _exercise_mixed_batch_restore(registry) -> None:
+    old = ToolSpec(
+        name="existing",
+        description="old",
+        endpoints=[EndpointSpec(name="run")],
+    )
+    replacement = ToolSpec(
+        name="existing",
+        description="replacement",
+        endpoints=[EndpointSpec(name="run")],
+    )
+    added = ToolSpec(
+        name="added",
+        endpoints=[EndpointSpec(name="run")],
+    )
+
+    registry.register(old)
+    base_version = registry.version
+    keys = registry.update_many_if_version(
+        (replacement, added),
+        expected_version=base_version,
+        replace=True,
+    )
+    assert keys == ("existing", "added")
+    published_version = registry.version
+
+    registry.restore_many_if_version(
+        {"existing": old, "added": None},
+        expected_current={
+            "existing": replacement.fingerprint,
+            "added": added.fingerprint,
+        },
+        expected_version=published_version,
+    )
+
+    assert registry.keys() == ("existing",)
+    assert registry.get("existing").fingerprint == old.fingerprint
+    assert registry.version == published_version + 1
+
+
+def test_in_memory_registry_restores_mixed_add_replace_batch() -> None:
+    _exercise_mixed_batch_restore(InMemoryRegistry())
+
+
+def test_sqlite_registry_restores_mixed_add_replace_batch(tmp_path) -> None:
+    with SQLiteRegistry(tmp_path / "mixed-restore.sqlite3") as registry:
+        _exercise_mixed_batch_restore(registry)
+
+
+def test_mixed_batch_restore_refuses_to_overwrite_concurrent_registry_change() -> None:
+    registry = InMemoryRegistry()
+    old = ToolSpec(name="existing", endpoints=[EndpointSpec(name="run")])
+    replacement = ToolSpec(
+        name="existing",
+        description="replacement",
+        endpoints=[EndpointSpec(name="run")],
+    )
+    registry.register(old)
+    registry.update_many_if_version(
+        (replacement,),
+        expected_version=registry.version,
+        replace=True,
+    )
+    published_version = registry.version
+    registry.register(
+        ToolSpec(name="concurrent", endpoints=[EndpointSpec(name="run")])
+    )
+
+    with pytest.raises(RegistrationError, match="changed concurrently"):
+        registry.restore_many_if_version(
+            {"existing": old},
+            expected_current={"existing": replacement.fingerprint},
+            expected_version=published_version,
+        )
+
+    assert registry.get("existing").fingerprint == replacement.fingerprint
+    assert "concurrent" in registry.keys()
