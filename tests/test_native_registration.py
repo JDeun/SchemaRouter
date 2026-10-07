@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 
 import pytest
@@ -194,3 +195,46 @@ def test_runtime_does_not_own_native_record_vendor_classes() -> None:
         "InfluxRecordBackend",
     ):
         assert class_name not in runtime
+
+def test_adapter_modules_do_not_depend_on_runtime_facade() -> None:
+    adapters_root = (
+        Path(__file__).resolve().parents[1]
+        / "src"
+        / "schemarouter"
+        / "adapters"
+    )
+    violations: list[str] = []
+
+    for path in sorted(adapters_root.rglob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    if alias.name == "schemarouter.runtime" or alias.name.startswith(
+                        "schemarouter.runtime."
+                    ):
+                        violations.append(
+                            f"{path.relative_to(adapters_root)}:{node.lineno}: "
+                            f"import {alias.name}"
+                        )
+            elif isinstance(node, ast.ImportFrom):
+                absolute_runtime = (
+                    node.level == 0
+                    and node.module is not None
+                    and (
+                        node.module == "schemarouter.runtime"
+                        or node.module.startswith("schemarouter.runtime.")
+                    )
+                )
+                relative_runtime = node.level >= 2 and node.module == "runtime"
+                if absolute_runtime or relative_runtime:
+                    violations.append(
+                        f"{path.relative_to(adapters_root)}:{node.lineno}: "
+                        "runtime façade import"
+                    )
+
+    assert violations == [], (
+        "adapter modules must depend on core contracts, not runtime.py: "
+        + "; ".join(violations)
+    )
+
