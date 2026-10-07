@@ -107,11 +107,8 @@ from .provider_profiles import (
     ProviderProfileRegistry,
     ProviderRegistrationResult,
     ProviderResolution,
-    built_in_provider_profile_registry,
 )
-from .provider_profiles import (
-    load_provider_profile_plugins as _load_provider_profile_plugins,
-)
+from .provider_service import ProviderProfileService
 from .rebinding import (
     RebindingContext,
     persisted_adapter,
@@ -290,7 +287,7 @@ class SchemaRouter:
             self.arefresh_schema,
             self.loader.adapters,
         )
-        self.provider_profiles = built_in_provider_profile_registry()
+        self._provider_profile_service = ProviderProfileService()
         self._native_schema_lifecycle = NativeSchemaLifecycleManager(
             self.registry,
             self._apply_native_schema_binding,
@@ -3359,10 +3356,16 @@ class SchemaRouter:
         return self.loader.adapters
 
     @property
+    def provider_profiles(self) -> ProviderProfileRegistry:
+        """Compatibility view of the process-local provider profile registry."""
+
+        return self._provider_profile_service.registry
+
+    @property
     def provider_profile_registry(self) -> ProviderProfileRegistry:
         """Return the process-local provider profile registry."""
 
-        return self.provider_profiles
+        return self._provider_profile_service.registry
 
     def register_provider_profile(
         self,
@@ -3370,13 +3373,12 @@ class SchemaRouter:
         *,
         replace: bool = False,
     ) -> str:
-        """Register declarative provider identity metadata.
+        """Register declarative provider identity metadata."""
 
-        Provider profiles contain no credentials or executable authority. Access methods
-        still compile through the existing source adapters or explicit trusted bindings.
-        """
-
-        return self.provider_profiles.register(profile, replace=replace)
+        return self._provider_profile_service.register(
+            profile,
+            replace=replace,
+        )
 
     def resolve_provider(
         self,
@@ -3386,7 +3388,10 @@ class SchemaRouter:
     ) -> ProviderResolution:
         """Resolve one provider identity into known access methods without network I/O."""
 
-        return self.provider_profiles.resolve(provider, methods=methods)
+        return self._provider_profile_service.resolve(
+            provider,
+            methods=methods,
+        )
 
     def discover_provider(
         self,
@@ -3402,10 +3407,9 @@ class SchemaRouter:
         but its candidates remain inert until explicitly approved or registered.
         """
 
-        external = tuple(backend(provider)) if backend is not None else ()
-        return self.provider_profiles.discover(
+        return self._provider_profile_service.discover(
             provider,
-            external_candidates=external,
+            backend=backend,
             limit=limit,
         )
 
@@ -3418,7 +3422,7 @@ class SchemaRouter:
     ) -> str:
         """Register one reviewed discovery candidate after a digest check."""
 
-        return self.provider_profiles.approve_discovery_candidate(
+        return self._provider_profile_service.approve(
             candidate,
             expected_digest=expected_digest,
             replace=replace,
@@ -3432,8 +3436,7 @@ class SchemaRouter:
     ) -> tuple[str, ...]:
         """Load explicitly trusted installed provider-profile plugins."""
 
-        return _load_provider_profile_plugins(
-            self.provider_profiles,
+        return self._provider_profile_service.load_plugins(
             allowlist=allowlist,
             replace=replace,
         )
