@@ -54,9 +54,19 @@ def _arguments(task_id: str, route_id: str, state: dict[str, Any]) -> dict[str, 
     if (task_id, route_id) in fixed:
         return dict(fixed[(task_id, route_id)])
     if route_id == "papers.search":
-        return {"query": "perovskite stability" if task_id.startswith("multi-") else "solid-state battery electrolytes"}
+        query = (
+            "perovskite stability"
+            if task_id.startswith("multi-")
+            else "solid-state battery electrolytes"
+        )
+        return {"query": query}
     if route_id == "materials.search":
-        return {"query": "nickel-rich cathode" if task_id.startswith("multi-") else "lithium iron phosphate"}
+        query = (
+            "nickel-rich cathode"
+            if task_id.startswith("multi-")
+            else "lithium iron phosphate"
+        )
+        return {"query": query}
     if task_id == "multi-paper-search-retrieve" and route_id == "papers.retrieve":
         return {"paper_id": state["selected_paper_id"]}
     if task_id == "multi-material-search-current" and route_id == "materials.current":
@@ -67,7 +77,10 @@ def _arguments(task_id: str, route_id: str, state: dict[str, Any]) -> dict[str, 
         if route_id == "messaging.share":
             return {"artifact_id": state["created_artifact_id"], "recipient": "analyst@example.org"}
     if task_id == "multi-create-send" and route_id == "messaging.send":
-        return {"recipient": "analyst@example.org", "message": f"Created {state['created_item_id']}"}
+        return {
+            "recipient": "analyst@example.org",
+            "message": f"Created {state['created_item_id']}",
+        }
     if task_id == "multi-retrieve-export" and route_id == "exports.export":
         return {"artifact_id": state["material_artifact_id"]}
     return {}
@@ -113,7 +126,8 @@ def evaluate() -> dict[str, Any]:
         "limitations": [
             "Development-only; not held-out evidence.",
             "Oracle arguments are deterministic benchmark fixtures, not model-generated calls.",
-            "This measures executability after retrieval coverage, not end-to-end agent task success.",
+            "This measures executability after retrieval coverage, not end-to-end "
+            "agent task success.",
             "Unsupported rejection remains a separate unscored development slice.",
         ],
     }
