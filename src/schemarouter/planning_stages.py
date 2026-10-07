@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Hashable
+from collections.abc import Awaitable, Callable, Hashable, Set
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 
@@ -27,7 +27,7 @@ def run_candidate_pipeline_sync(
         [ContextT, list[CandidateT]],
         tuple[list[CandidateT], list[str]],
     ],
-    coverage: Callable[[ContextT, list[CandidateT]], set[CoverageT]],
+    coverage: Callable[[ContextT, list[CandidateT]], Set[CoverageT]],
     capability_fit: Callable[
         [ContextT, list[CandidateT]],
         tuple[list[CandidateT], list[str]],
@@ -90,7 +90,7 @@ async def run_candidate_pipeline_async(
         [ContextT, list[CandidateT]],
         Awaitable[tuple[list[CandidateT], list[str]]],
     ],
-    coverage: Callable[[ContextT, list[CandidateT]], set[CoverageT]],
+    coverage: Callable[[ContextT, list[CandidateT]], Set[CoverageT]],
     capability_fit: Callable[
         [ContextT, list[CandidateT]],
         Awaitable[tuple[list[CandidateT], list[str]]],
