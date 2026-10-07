@@ -22,17 +22,40 @@ def _query(language: str, kind: str, index: int) -> str:
     token = f"ACF-{language.upper()}-{kind.upper()}-{index:02d}"
     if language == "en":
         templates = {
-            "single": f"{token}. Read the current Young's modulus for material CONF-{index:03d} in GPa.",
-            "multi": f"{token}. Search papers about confirmation alloy {index}, then retrieve the selected paper using its returned identifier.",
-            "near_unsupported": f"{token}. Use the registered neutron diffraction refinement capability for specimen CONF-{index:03d}.",
-            "ood_unsupported": f"{token}. Book a restaurant table for confirmation guest {index} tonight.",
+            "single": (
+                f"{token}. Read the current Young's modulus for material "
+                f"CONF-{index:03d} in GPa."
+            ),
+            "multi": (
+                f"{token}. Search papers about confirmation alloy {index}, then "
+                "retrieve the selected paper using its returned identifier."
+            ),
+            "near_unsupported": (
+                f"{token}. Use the registered neutron diffraction refinement "
+                f"capability for specimen CONF-{index:03d}."
+            ),
+            "ood_unsupported": (
+                f"{token}. Book a restaurant table for confirmation guest "
+                f"{index} tonight."
+            ),
         }
     else:
         templates = {
-            "single": f"{token}. 재료 CONF-{index:03d}의 현재 영률을 GPa 단위로 조회하세요.",
-            "multi": f"{token}. 확인용 합금 {index} 관련 논문을 검색하고 반환된 식별자로 선택 논문을 조회하세요.",
-            "near_unsupported": f"{token}. 시료 CONF-{index:03d}에 등록된 중성자 회절 정련 기능을 사용하세요.",
-            "ood_unsupported": f"{token}. 오늘 밤 확인용 손님 {index} 이름으로 식당 좌석을 예약하세요.",
+            "single": (
+                f"{token}. 재료 CONF-{index:03d}의 현재 영률을 GPa 단위로 "
+                "조회하세요."
+            ),
+            "multi": (
+                f"{token}. 확인용 합금 {index} 관련 논문을 검색하고 반환된 식별자로 "
+                "선택 논문을 조회하세요."
+            ),
+            "near_unsupported": (
+                f"{token}. 시료 CONF-{index:03d}에 등록된 중성자 회절 정련 기능을 "
+                "사용하세요."
+            ),
+            "ood_unsupported": (
+                f"{token}. 오늘 밤 확인용 손님 {index} 이름으로 식당 좌석을 예약하세요."
+            ),
         }
     return templates[kind]
 
