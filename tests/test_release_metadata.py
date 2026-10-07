@@ -42,13 +42,13 @@ def test_release_workflow_derives_metadata_from_pyproject() -> None:
     assert "0.3.0.dev0" not in workflow
 
 
-def test_release_workflow_consumes_green_main_ci_and_can_create_tag() -> None:
+def test_release_workflow_consumes_green_post_merge_qualification_and_can_create_tag() -> None:
     workflow = (
         ROOT / ".github" / "workflows" / "release.yml"
     ).read_text(encoding="utf-8")
 
     assert "workflow_run:" in workflow
-    assert 'workflows: ["CI"]' in workflow
+    assert 'workflows: ["Post-merge Qualification"]' in workflow
     assert "github.event.workflow_run.conclusion == 'success'" in workflow
     assert "github.event.workflow_run.head_branch == 'main'" in workflow
     assert 'git rev-parse origin/main' in workflow
@@ -308,7 +308,7 @@ def test_python_preview_is_separate_from_release_blocking_ci() -> None:
     release = (
         ROOT / ".github" / "workflows" / "release.yml"
     ).read_text(encoding="utf-8")
-    assert 'workflows: ["CI"]' in release
+    assert 'workflows: ["Post-merge Qualification"]' in release
     assert 'workflows: ["Python Preview"]' not in release
 
 
