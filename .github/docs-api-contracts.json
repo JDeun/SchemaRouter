@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "contracts": [
+    {
+      "id": "runtime.invoke",
+      "target": "schemarouter.SchemaRouter.invoke",
+      "kind": "callable",
+      "parameters": {},
+      "docs": {
+        "en": "docs/guides/runtime.md",
+        "ko": "docs_ko/guides/runtime.md",
+        "needle": "router.invoke"
+      }
+    },
+    {
+      "id": "vector.add_vector_store",
+      "target": "schemarouter.SchemaRouter.add_vector_store",
+      "kind": "callable",
+      "parameters": {
+        "database_name": {
+          "required": true
+        },
+        "default_top_k": {
+          "default": 10
+        },
+        "remote": {
+          "default": true
+        },
+        "max_discovery_sources": {
+          "default": 128
+        },
+        "max_fields_per_collection": {
+          "default": 256
+        },
+        "max_generated_bytes": {
+          "default": 8388608
+        }
+      },
+      "docs": {
+        "en": "docs/guides/vector-store-onboarding.md",
+        "ko": "docs_ko/guides/vector-store-onboarding.md",
+        "needle": "add_vector_store"
+      }
+    },
+    {
+      "id": "graph.add_graph_store",
+      "target": "schemarouter.SchemaRouter.add_graph_store",
+      "kind": "callable",
+      "parameters": {
+        "database_name": {
+          "required": true
+        },
+        "default_limit": {
+          "default": 100
+        },
+        "default_max_hops": {
+          "default": 1
+        },
+        "remote": {
+          "default": true
+        },
+        "max_discovery_sources": {
+          "default": 128
+        },
+        "max_generated_bytes": {
+          "default": 8388608
+        }
+      },
+      "docs": {
+        "en": "docs/guides/graph-store-onboarding.md",
+        "ko": "docs_ko/guides/graph-store-onboarding.md",
+        "needle": "add_graph_store"
+      }
+    },
+    {
+      "id": "record.add_record_store",
+      "target": "schemarouter.SchemaRouter.add_record_store",
+      "kind": "callable",
+      "parameters": {
+        "database_name": {
+          "required": true
+        },
+        "default_limit": {
+          "default": 100
+        },
+        "remote": {
+          "default": true
+        },
+        "max_discovery_sources": {
+          "default": 128
+        },
+        "max_generated_bytes": {
+          "default": 8388608
+        }
+      },
+      "docs": {
+        "en": "docs/guides/record-store-onboarding.md",
+        "ko": "docs_ko/guides/record-store-onboarding.md",
+        "needle": "add_record_store"
+      }
+    },
+    {
+      "id": "http.add_http_tool",
+      "target": "schemarouter.SchemaRouter.add_http_tool",
+      "kind": "callable",
+      "parameters": {
+        "base_url": {
+          "required": true
+        },
+        "timeout": {
+          "default": 20
+        },
+        "max_response_bytes": {
+          "default": 10485760
+        },
+        "replace": {
+          "default": false
+        }
+      },
+      "docs": {
+        "en": "docs/guides/http-json.md",
+        "ko": "docs_ko/guides/http-json.md",
+        "needle": "add_http_tool"
+      }
+    },
+    {
+      "id": "symbol.ToolSpec",
+      "target": "schemarouter.ToolSpec",
+      "kind": "symbol",
+      "docs": {
+        "en": "docs/getting-started/quickstart.md",
+        "ko": "docs_ko/getting-started/quickstart.md",
+        "needle": "ToolSpec"
+      }
+    },
+    {
+      "id": "symbol.EndpointSpec",
+      "target": "schemarouter.EndpointSpec",
+      "kind": "symbol",
+      "docs": {
+        "en": "docs/getting-started/quickstart.md",
+        "ko": "docs_ko/getting-started/quickstart.md",
+        "needle": "EndpointSpec"
+      }
+    }
+  ],
+  "extras": [
+    "database",
+    "dev",
+    "docs",
+    "jev",
+    "langchain",
+    "langgraph",
+    "laya",
+    "llamaindex",
+    "mcp",
+    "otel",
+    "systemone"
+  ]
+}
