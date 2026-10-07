@@ -2,14 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from schemarouter import (
-    IndeterminateInvocationError,
-    InvocationUnavailableError,
-    NonRetryableInvocationError,
-    SchemaRouter,
-    TransientInvocationError,
-    parse_authorization_policy,
-)
+import schemarouter
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,9 +13,9 @@ def _read(path: str) -> str:
 
 
 def test_runtime_lifecycle_docs_track_owned_background_apis() -> None:
-    assert hasattr(SchemaRouter, "start_native_schema_watcher")
-    assert hasattr(SchemaRouter, "stop_native_schema_watcher")
-    assert hasattr(SchemaRouter, "aclose")
+    assert hasattr(schemarouter.SchemaRouter, "start_native_schema_watcher")
+    assert hasattr(schemarouter.SchemaRouter, "stop_native_schema_watcher")
+    assert hasattr(schemarouter.SchemaRouter, "aclose")
 
     for path in ("docs/guides/runtime.md", "docs_ko/guides/runtime.md"):
         text = _read(path)
@@ -34,8 +27,8 @@ def test_runtime_lifecycle_docs_track_owned_background_apis() -> None:
 
 
 def test_retry_docs_name_the_explicit_invocation_failure_taxonomy() -> None:
-    assert issubclass(InvocationUnavailableError, TransientInvocationError)
-    assert issubclass(IndeterminateInvocationError, NonRetryableInvocationError)
+    assert issubclass(schemarouter.InvocationUnavailableError, schemarouter.TransientInvocationError)
+    assert issubclass(schemarouter.IndeterminateInvocationError, schemarouter.NonRetryableInvocationError)
 
     expected = (
         "TransientInvocationError",
@@ -50,7 +43,7 @@ def test_retry_docs_name_the_explicit_invocation_failure_taxonomy() -> None:
 
 
 def test_authorization_docs_keep_lint_enabled_by_default() -> None:
-    assert callable(parse_authorization_policy)
+    assert callable(schemarouter.parse_authorization_policy)
 
     for path in (
         "docs/guides/authorization.md",
