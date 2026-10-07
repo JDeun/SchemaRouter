@@ -5,6 +5,7 @@ on:
     paths:
       - "benchmarks/external-validation-clear-your-tools-dev-v1/**"
       - "scripts/run_clear_your_tools_external_validation.py"
+      - "scripts/build_cyt_development_scaling_catalogs.py"
       - ".github/workflows/clear-your-tools-development-smoke.yml"
 permissions:
   contents: read
@@ -50,8 +51,24 @@ jobs:
           assert len(p["results"]) == 33
           assert all("candidate_tools" in row for row in p["results"])
           PY
+      - name: Build visible scaling catalogs
+        run: |
+          python scripts/build_cyt_development_scaling_catalogs.py \
+            --source "${PACKAGE_DIR}/catalog.json" \
+            --out-dir artifacts/cyt-dev-scaling
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for size in (100, 250, 500, 1000):
+              p = json.loads(Path(f"artifacts/cyt-dev-scaling/catalog-{size}.json").read_text())
+              assert p["status"] == "development_unfrozen"
+              assert p["synthetic_distractors"] is True
+              assert len(p["tools"]) == size
+          PY
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: clear-your-tools-development-smoke
-          path: artifacts/cyt-dev-smoke
+          path: |
+            artifacts/cyt-dev-smoke
+            artifacts/cyt-dev-scaling
           if-no-files-found: error
