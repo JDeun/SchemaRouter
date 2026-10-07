@@ -241,18 +241,23 @@ nav:
           - Terminal 0.11 report: research/operation-routing-v4-terminal-report.md
       - Prior-art roadmap: research/prior-art-roadmap.md
   - Project:
-      - Stable core contract: stable-core.md
-      - Public roadmap: project/roadmap.md
-      - Trust, stability, and public evidence: project/trust-and-evidence.md
-      - Adoption scorecard: project/adoption-scorecard.md
-      - Developer launch playbook: project/launch-playbook.md
-      - Launch and outreach log: project/launch-log.md
-      - External adoption and validation: project/external-adoption.md
-      - PydanticAI ToolSearch validation: project/external-validation-pydanticai.md
-      - OpenAI Agents SDK MCP filter validation: project/external-validation-openai-agents.md
-      - mcp-agent catalog validation: project/external-validation-mcp-agent.md
-      - External case-study template: project/case-study-template.md
-      - Versioning: versioning.md
+      - Governance and roadmap:
+          - Stable core contract: stable-core.md
+          - Public roadmap: project/roadmap.md
+          - Trust, stability, and public evidence: project/trust-and-evidence.md
+          - Versioning: versioning.md
+      - Adoption and validation:
+          - Adoption scorecard: project/adoption-scorecard.md
+          - External adoption and validation: project/external-adoption.md
+          - PydanticAI ToolSearch validation: project/external-validation-pydanticai.md
+          - OpenAI Agents SDK MCP filter validation: project/external-validation-openai-agents.md
+          - mcp-agent catalog validation: project/external-validation-mcp-agent.md
+          - External case-study template: project/case-study-template.md
+      - Launch and positioning:
+          - Developer launch playbook: project/launch-playbook.md
+          - Launch and outreach log: project/launch-log.md
+          - Brand: project/brand.md
+          - Discoverability and positioning: project/discoverability.md
       - Release notes:
           - 0.17.0: releases/0.17.0.md
           - 0.16.0: releases/0.16.0.md
@@ -271,9 +276,8 @@ nav:
           - 0.3.0: releases/0.3.0.md
           - 0.3.0a1: releases/0.3.0a1.md
           - 0.2.0a1: releases/0.2.0a1.md
-      - Release checklist: release-checklist.md
-      - Contributing: contributing.md
-      - Changelog: changelog.md
-      - Brand: project/brand.md
-      - Discoverability and positioning: project/discoverability.md
-      - License: license.md
+      - Contribute:
+          - Release checklist: release-checklist.md
+          - Contributing: contributing.md
+          - Changelog: changelog.md
+          - License: license.md
