@@ -1,4 +1,5 @@
 """Capture the native ServiceNow Platform MCP readonly tools/list surface."""
+
 from __future__ import annotations
 
 import argparse
