@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import math
 import sqlite3
+import time
 from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 from threading import RLock
@@ -70,6 +72,33 @@ class RunTrace(StrictModel):
         """Return detached events in their original validated order."""
         return tuple(event.model_copy(deep=True) for event in self.events)
 
+
+class TraceRetentionPolicy(StrictModel):
+    """Explicit retention bounds for persistent run traces."""
+
+    max_age_seconds: float | None = Field(default=None, gt=0)
+    max_runs: int | None = Field(default=None, ge=0)
+    stale_incomplete_after_seconds: float | None = Field(default=None, gt=0)
+    prune_on_terminal_append: bool = True
+
+    @model_validator(mode="after")
+    def validate_bounds(self) -> TraceRetentionPolicy:
+        if (
+            self.max_age_seconds is None
+            and self.max_runs is None
+            and self.stale_incomplete_after_seconds is None
+        ):
+            raise ValueError("trace retention policy requires at least one bound")
+        return self
+
+
+class TracePruneResult(StrictModel):
+    """Deterministic summary returned by SQLite trace pruning."""
+
+    deleted_runs: int = Field(ge=0)
+    deleted_events: int = Field(ge=0)
+    deleted_complete_runs: int = Field(ge=0)
+    deleted_stale_incomplete_runs: int = Field(ge=0)
 
 class RunTraceStore(Protocol):
     """Structural contract for append-only run-event persistence."""
@@ -268,6 +297,7 @@ class SQLiteRunTraceStore:
         *,
         timeout: float = 5.0,
         document_limits: PersistedDocumentLimits | None = None,
+        retention_policy: TraceRetentionPolicy | None = None,
     ) -> None:
         if timeout <= 0:
             raise ValueError("timeout must be > 0")
@@ -275,6 +305,7 @@ class SQLiteRunTraceStore:
         self._document_limits = _resolve_persisted_document_limits(
             document_limits
         )
+        self._retention_policy = retention_policy
         self._lock = RLock()
         self._closed = False
         self._connection = sqlite3.connect(
@@ -321,6 +352,20 @@ class SQLiteRunTraceStore:
             """
         )
 
+    def _create_retention_indexes(self) -> None:
+        self._connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS schemarouter_trace_runs_retention_idx
+            ON schemarouter_trace_runs (terminal, last_timestamp, run_id)
+            """
+        )
+        self._connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS schemarouter_trace_runs_created_idx
+            ON schemarouter_trace_runs (created_at, run_id)
+            """
+        )
+
     def _validate_legacy_storage(self) -> None:
         _validate_legacy_trace_storage(
             self._connection,
@@ -339,6 +384,7 @@ class SQLiteRunTraceStore:
                 self._connection.execute("BEGIN IMMEDIATE")
                 try:
                     self._create_component_tables()
+                    self._create_retention_indexes()
                     stamp_current_component_format(
                         self._connection,
                         "trace",
@@ -355,11 +401,20 @@ class SQLiteRunTraceStore:
                 "trace",
             )
             if status == "current":
+                self._connection.execute("BEGIN IMMEDIATE")
+                try:
+                    self._create_retention_indexes()
+                except Exception:
+                    self._connection.rollback()
+                    raise
+                else:
+                    self._connection.commit()
                 return
 
             self._connection.execute("BEGIN IMMEDIATE")
             try:
                 self._validate_legacy_storage()
+                self._create_retention_indexes()
                 stamp_current_component_format(
                     self._connection,
                     "trace",
@@ -557,11 +612,123 @@ class SQLiteRunTraceStore:
                         event.run_id,
                     ),
                 )
+                if (
+                    event.event in _TERMINAL_EVENTS
+                    and self._retention_policy is not None
+                    and self._retention_policy.prune_on_terminal_append
+                ):
+                    self._prune_locked(
+                        self._retention_policy,
+                        now=time.time(),
+                    )
             except Exception:
                 self._connection.rollback()
                 raise
             else:
                 self._connection.commit()
+
+    @staticmethod
+    def _retention_predicate(
+        policy: TraceRetentionPolicy,
+        *,
+        now: float,
+    ) -> tuple[str, tuple[object, ...]]:
+        if not math.isfinite(now):
+            raise ValueError("now must be finite")
+
+        clauses: list[str] = []
+        params: list[object] = []
+        if policy.max_age_seconds is not None:
+            clauses.append("(terminal = 1 AND last_timestamp < ?)")
+            params.append(now - policy.max_age_seconds)
+        if policy.stale_incomplete_after_seconds is not None:
+            clauses.append("(terminal = 0 AND last_timestamp < ?)")
+            params.append(now - policy.stale_incomplete_after_seconds)
+        if policy.max_runs is not None:
+            clauses.append(
+                """
+                run_id IN (
+                    SELECT run_id
+                    FROM schemarouter_trace_runs
+                    WHERE terminal = 1
+                    ORDER BY last_timestamp DESC, run_id DESC
+                    LIMIT -1 OFFSET ?
+                )
+                """
+            )
+            params.append(policy.max_runs)
+        return " OR ".join(clauses), tuple(params)
+
+    def _prune_locked(
+        self,
+        policy: TraceRetentionPolicy,
+        *,
+        now: float,
+    ) -> TracePruneResult:
+        predicate, params = self._retention_predicate(policy, now=now)
+        stats = self._connection.execute(
+            f"""
+            SELECT
+                COUNT(*) AS deleted_runs,
+                COALESCE(SUM(last_sequence + 1), 0) AS deleted_events,
+                COALESCE(SUM(CASE WHEN terminal = 1 THEN 1 ELSE 0 END), 0)
+                    AS deleted_complete_runs,
+                COALESCE(SUM(CASE WHEN terminal = 0 THEN 1 ELSE 0 END), 0)
+                    AS deleted_stale_incomplete_runs
+            FROM schemarouter_trace_runs
+            WHERE {predicate}
+            """,
+            params,
+        ).fetchone()
+        self._connection.execute(
+            f"""
+            DELETE FROM schemarouter_trace_runs
+            WHERE {predicate}
+            """,
+            params,
+        )
+        return TracePruneResult(
+            deleted_runs=int(stats["deleted_runs"]),
+            deleted_events=int(stats["deleted_events"]),
+            deleted_complete_runs=int(stats["deleted_complete_runs"]),
+            deleted_stale_incomplete_runs=int(
+                stats["deleted_stale_incomplete_runs"]
+            ),
+        )
+
+    def prune(
+        self,
+        *,
+        policy: TraceRetentionPolicy | None = None,
+        now: float | None = None,
+    ) -> TracePruneResult:
+        """Prune traces transactionally according to an explicit retention policy.
+
+        Complete runs may be bounded by age and/or count. Incomplete runs are
+        preserved unless stale_incomplete_after_seconds is explicitly set.
+        now is an optional Unix timestamp intended for deterministic operator
+        tooling and tests.
+        """
+        effective_policy = policy or self._retention_policy
+        if effective_policy is None:
+            raise ValueError("trace retention policy is not configured")
+        effective_now = time.time() if now is None else float(now)
+        if not math.isfinite(effective_now):
+            raise ValueError("now must be finite")
+
+        with self._lock:
+            self._begin_write()
+            try:
+                result = self._prune_locked(
+                    effective_policy,
+                    now=effective_now,
+                )
+            except Exception:
+                self._connection.rollback()
+                raise
+            else:
+                self._connection.commit()
+                return result
 
     def trace(self, run_id: str) -> RunTrace:
         with self._lock:

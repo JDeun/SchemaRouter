@@ -23,6 +23,41 @@ store = SQLiteRunTraceStore("schemarouter-traces.sqlite3")
 
 persisted run은 sequence 0의 `run.start`로 시작하고 하나의 immutable `run_id`, 연속 sequence, 단조 timestamp를 유지해야 합니다. 두 번째 `run.start`나 `run.end`/`run.error` 이후 event는 허용하지 않습니다. corrupt JSON, identity mismatch, gap, timestamp regression은 `TraceError`로 fail-closed됩니다. terminal event 전 process가 종료된 incomplete trace는 허용합니다.
 
+## Retention과 pruning
+
+기존 application의 persistence 동작을 바꾸지 않도록 retention은 opt-in입니다. 다음처럼
+명시적으로 설정합니다.
+
+```python
+from schemarouter import SQLiteRunTraceStore, TraceRetentionPolicy
+
+store = SQLiteRunTraceStore(
+    "schemarouter-traces.sqlite3",
+    retention_policy=TraceRetentionPolicy(
+        max_age_seconds=30 * 24 * 60 * 60,
+        max_runs=10_000,
+    ),
+)
+```
+
+설정된 policy에서 `prune_on_terminal_append=True`가 기본이며 terminal event append와
+retention cleanup은 하나의 SQLite write transaction으로 commit됩니다. `max_age_seconds`와
+`max_runs`는 complete run에만 적용되므로 이 두 제한으로 incomplete run을 삭제하지 않습니다.
+
+중단되거나 버려진 incomplete run을 지우려면 `stale_incomplete_after_seconds`를 별도로
+명시해야 합니다. 정상적으로 오래 실행되는 run을 지우지 않도록 충분히 긴 threshold를 사용해야
+합니다.
+
+Operator는 `store.prune(policy=TraceRetentionPolicy(...))`를 호출해 수동으로 deterministic
+pruning을 수행할 수도 있습니다. 여러 `SQLiteRunTraceStore` instance가 같은 DB file을
+사용하더라도 `BEGIN IMMEDIATE` write transaction으로 append와 prune이 부분적으로
+interleave되지 않습니다.
+
+Pruning은 SQLite의 logical delete입니다. WAL을 사용하므로 row를 삭제해도 DB/WAL file
+크기가 즉시 줄어드는 것을 보장하지 않습니다. 필요하면 maintenance window에서 application의
+trace store 사용을 중지한 뒤 WAL checkpoint와 SQLite `VACUUM`을 운영 절차로 수행해야 합니다.
+SchemaRouter는 pruning 과정에서 자동 `VACUUM`을 실행하지 않습니다.
+
 ## Privacy
 
 Trace store는 전달받은 event envelope를 그대로 저장합니다. Runtime이 생성한 event는 caller가

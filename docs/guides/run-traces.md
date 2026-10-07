@@ -65,6 +65,51 @@ store.run_ids(complete=True)
 store.run_ids(complete=False)
 ```
 
+## Retention and pruning
+
+Retention is opt-in so existing applications keep their current persistence behavior. Configure
+bounded retention explicitly:
+
+```python
+from schemarouter import SQLiteRunTraceStore, TraceRetentionPolicy
+
+store = SQLiteRunTraceStore(
+    "schemarouter-traces.sqlite3",
+    retention_policy=TraceRetentionPolicy(
+        max_age_seconds=30 * 24 * 60 * 60,
+        max_runs=10_000,
+    ),
+)
+```
+
+When `prune_on_terminal_append=True` (the default on a configured policy), a terminal append and
+its retention cleanup are committed in the same SQLite write transaction. `max_age_seconds` and
+`max_runs` apply only to complete runs. Incomplete runs are never removed by those bounds.
+
+Stale incomplete cleanup is deliberately separate and must be enabled explicitly with
+`stale_incomplete_after_seconds`. This can remove a crashed or abandoned run, so choose a threshold
+that is safely longer than the longest legitimate run.
+
+Operators can also prune deterministically:
+
+```python
+result = store.prune(
+    policy=TraceRetentionPolicy(max_runs=10_000),
+)
+print(result.deleted_runs, result.deleted_events)
+```
+
+SQLite writers are serialized with `BEGIN IMMEDIATE`; pruning and appending therefore cannot
+partially interleave, including when several `SQLiteRunTraceStore` instances point at the same
+database file. Retention indexes cover terminal state and last timestamp so bounded cleanup does not
+need to deserialize event documents.
+
+Deletion is logical SQLite deletion. With WAL enabled, pruning does **not** promise an immediate
+reduction in the database or WAL file size. File-space reclamation is an operational concern:
+checkpoint WAL as appropriate and run SQLite `VACUUM` only during a maintenance window when the
+application is not using the trace store. SchemaRouter intentionally does not auto-`VACUUM` during
+pruning.
+
 ## Privacy
 
 The trace store persists the exact event envelope it receives. Runtime-produced events are
