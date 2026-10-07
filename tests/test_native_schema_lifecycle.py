@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
-
 import pytest
 
 from schemarouter.errors import SchemaSourceError
+from schemarouter.executor import BoundEndpointInvoker
+from schemarouter.models import ToolSpec
 from schemarouter.native_schema_lifecycle import NativeSchemaLifecycleManager
 from schemarouter.registry import InMemoryRegistry
 
@@ -13,8 +13,19 @@ from schemarouter.registry import InMemoryRegistry
 ROOT = Path(__file__).resolve().parents[1]
 
 
-async def _unexpected_apply(**kwargs: Any) -> None:
-    raise AssertionError(f"apply callback should not run: {kwargs!r}")
+async def _unexpected_apply(
+    *,
+    current: ToolSpec,
+    candidate_tool: ToolSpec,
+    candidate_invoker: BoundEndpointInvoker,
+    offload_sync: bool,
+    expected_version: int,
+) -> None:
+    raise AssertionError(
+        "apply callback should not run: "
+        f"{current.key}, {candidate_tool.key}, {candidate_invoker!r}, "
+        f"{offload_sync}, {expected_version}"
+    )
 
 
 @pytest.mark.asyncio
@@ -24,16 +35,15 @@ async def test_native_schema_lifecycle_isolates_failures_and_forgets_state() -> 
         _unexpected_apply,
     )
 
-    async def refresh_missing() -> Any:
+    async def refresh_missing() -> tuple[ToolSpec, BoundEndpointInvoker, bool]:
         raise AssertionError("refresh binding should not run for a missing tool")
 
     manager.remember("missing", refresh_missing)
 
     assert await manager.check_once() == ()
-    assert manager.snapshots() == (
-        manager.snapshots()[0],
-    )
-    snapshot = manager.snapshots()[0]
+    snapshots = manager.snapshots()
+    assert len(snapshots) == 1
+    snapshot = snapshots[0]
     assert snapshot.tool_key == "missing"
     assert snapshot.consecutive_failures == 1
     assert snapshot.error_kind == "registration_error"
