@@ -4,6 +4,29 @@ SchemaRouter uses the official MCP Python SDK while keeping the **MCP protocol**
 its transport. Built-in paths cover Streamable HTTP, local stdio subprocess servers, and caller-owned
 transport-neutral client factories.
 
+## MCP SDK vs host-side selection
+
+The MCP Python SDK owns protocol/session mechanics such as transport negotiation, `list_tools()`,
+and `call_tool()`. It does **not** define which discovered tools a host should expose to an agent
+or how a host should rank/select a bounded subset from a large catalog.
+
+SchemaRouter therefore keeps these responsibilities separate:
+
+```text
+MCP server
+  -> MCP Python SDK: protocol / transport / tools/list
+  -> SchemaRouter: typed catalog ingestion
+  -> host application: bounded retrieval / selection policy
+  -> MCP Python SDK: call_tool() for an authorized selected tool
+```
+
+This boundary was also confirmed by the MCP Python SDK maintainers in
+[modelcontextprotocol/python-sdk#3617](https://github.com/modelcontextprotocol/python-sdk/issues/3617):
+host-side tool selection belongs outside SDK examples/core. SchemaRouter benchmarks for bounded
+tool retrieval therefore live in this repository and do not require patches or policy hooks in the
+MCP SDK.
+
+
 ## Install
 
 For consumers:

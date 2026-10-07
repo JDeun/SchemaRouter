@@ -7,6 +7,26 @@ This package implements the **development/smoke phase** discussed in:
 
 It is deliberately **not held-out evidence**. The catalog and cases are visible so both maintainers can review the protocol, naming, task strata, Top-K values, exposure accounting, and runner behavior before anything is frozen.
 
+## MCP/host boundary
+
+This is a **host-side retrieval benchmark**, not an MCP Python SDK benchmark. The official MCP SDK
+remains responsible for protocol/session behavior and the `tools/list` / `call_tool` primitives.
+SchemaRouter and SmartMCP are evaluated as host-owned selection layers over catalog data.
+
+The fixture stays repository-local and SDK-independent:
+
+- no MCP SDK source changes or selection hooks are required;
+- an MCP `tools/list` catalog can be projected offline into the benchmark surface using the
+  published tool name, description, `inputSchema`, and (for SchemaRouter when available)
+  `outputSchema`/typed metadata;
+- the benchmark never grants execution authority and does not call upstream tools;
+- protocol compatibility is tested separately by SchemaRouter's MCP integration suite.
+
+This follows the upstream boundary confirmed in
+[modelcontextprotocol/python-sdk#3617](https://github.com/modelcontextprotocol/python-sdk/issues/3617):
+tool selection is a host responsibility, so comparative retrieval evidence belongs here rather than
+inside the SDK repository.
+
 ## What is compared
 
 The planned primary comparison keeps the catalog, queries, Top-K values, and scoring procedure fixed while preserving each implementation's native retrieval behavior:
