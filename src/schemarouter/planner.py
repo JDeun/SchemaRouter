@@ -38,6 +38,7 @@ from .models import (
 )
 from .planning_context import PlanningContext, RegistrySnapshot
 from .planning_stages import (
+    assemble_execution_plan,
     run_candidate_pipeline_async,
     run_candidate_pipeline_sync,
     select_fallbacks_async,
@@ -3642,22 +3643,26 @@ class SchemaPlanner:
         required_coverage = pipeline.required_coverage
         warnings = list(pipeline.warnings)
         if not candidates:
-            coverage = self._plan_coverage(
-                required_coverage,
-                set(),
-                all_candidates,
-            )
-            coverage_warning = self._coverage_warning(coverage)
-            return ExecutionPlan(
+            return assemble_execution_plan(
                 query=request.query,
                 registry_version=catalog_snapshot.version,
-                calls=[],
+                primary_pairs=(),
+                fallback_routes=(),
                 warnings=[
                     *warnings,
                     "no schema candidate matched the request",
-                    *([coverage_warning] if coverage_warning else []),
                 ],
-                coverage=coverage,
+                required_coverage=required_coverage,
+                all_candidates=all_candidates,
+                selected_coverage=lambda candidate, call: (
+                    self._coverage_requirements_for_candidate(
+                        candidate,
+                        request.query,
+                        field_names=set(call.fields),
+                    )
+                ),
+                build_coverage=self._plan_coverage,
+                coverage_warning=self._coverage_warning,
             )
 
         primary_selection = select_primary_candidates_sync(
@@ -3690,7 +3695,6 @@ class SchemaPlanner:
         primary_pairs = list(primary_selection.pairs)
         required_coverage = primary_selection.required_coverage
 
-        calls = [call for _, call in primary_pairs]
         fallback_selection = select_fallbacks_sync(
             primary_pairs=tuple(primary_pairs),
             all_candidates=tuple(all_candidates),
@@ -3722,32 +3726,23 @@ class SchemaPlanner:
             for index, alternatives in fallback_selection.routes
         ]
 
-        covered_coverage: set[tuple[str, tuple[str, ...]]] = set()
-        for candidate, call in primary_pairs:
-            covered_coverage.update(
+        return assemble_execution_plan(
+            query=request.query,
+            registry_version=catalog_snapshot.version,
+            primary_pairs=primary_pairs,
+            fallback_routes=fallback_routes,
+            warnings=warnings,
+            required_coverage=required_coverage,
+            all_candidates=all_candidates,
+            selected_coverage=lambda candidate, call: (
                 self._coverage_requirements_for_candidate(
                     candidate,
                     request.query,
                     field_names=set(call.fields),
                 )
-                & required_coverage
-            )
-        coverage = self._plan_coverage(
-            required_coverage,
-            covered_coverage,
-            all_candidates,
-        )
-        coverage_warning = self._coverage_warning(coverage)
-        if coverage_warning:
-            warnings.append(coverage_warning)
-
-        return ExecutionPlan(
-            query=request.query,
-            registry_version=catalog_snapshot.version,
-            calls=calls,
-            fallback_routes=fallback_routes,
-            warnings=warnings,
-            coverage=coverage,
+            ),
+            build_coverage=self._plan_coverage,
+            coverage_warning=self._coverage_warning,
         )
 
     async def _abuild_plan(
@@ -3823,22 +3818,26 @@ class SchemaPlanner:
         required_coverage = pipeline.required_coverage
         warnings = list(pipeline.warnings)
         if not candidates:
-            coverage = self._plan_coverage(
-                required_coverage,
-                set(),
-                all_candidates,
-            )
-            coverage_warning = self._coverage_warning(coverage)
-            return ExecutionPlan(
+            return assemble_execution_plan(
                 query=request.query,
                 registry_version=catalog_snapshot.version,
-                calls=[],
+                primary_pairs=(),
+                fallback_routes=(),
                 warnings=[
                     *warnings,
                     "no schema candidate matched the request",
-                    *([coverage_warning] if coverage_warning else []),
                 ],
-                coverage=coverage,
+                required_coverage=required_coverage,
+                all_candidates=all_candidates,
+                selected_coverage=lambda candidate, call: (
+                    self._coverage_requirements_for_candidate(
+                        candidate,
+                        request.query,
+                        field_names=set(call.fields),
+                    )
+                ),
+                build_coverage=self._plan_coverage,
+                coverage_warning=self._coverage_warning,
             )
 
         primary_selection = await select_primary_candidates_async(
@@ -3871,7 +3870,6 @@ class SchemaPlanner:
         primary_pairs = list(primary_selection.pairs)
         required_coverage = primary_selection.required_coverage
 
-        calls = [call for _, call in primary_pairs]
         fallback_selection = await select_fallbacks_async(
             primary_pairs=tuple(primary_pairs),
             all_candidates=tuple(all_candidates),
@@ -3903,32 +3901,23 @@ class SchemaPlanner:
             for index, alternatives in fallback_selection.routes
         ]
 
-        covered_coverage: set[tuple[str, tuple[str, ...]]] = set()
-        for candidate, call in primary_pairs:
-            covered_coverage.update(
+        return assemble_execution_plan(
+            query=request.query,
+            registry_version=catalog_snapshot.version,
+            primary_pairs=primary_pairs,
+            fallback_routes=fallback_routes,
+            warnings=warnings,
+            required_coverage=required_coverage,
+            all_candidates=all_candidates,
+            selected_coverage=lambda candidate, call: (
                 self._coverage_requirements_for_candidate(
                     candidate,
                     request.query,
                     field_names=set(call.fields),
                 )
-                & required_coverage
-            )
-        coverage = self._plan_coverage(
-            required_coverage,
-            covered_coverage,
-            all_candidates,
-        )
-        coverage_warning = self._coverage_warning(coverage)
-        if coverage_warning:
-            warnings.append(coverage_warning)
-
-        return ExecutionPlan(
-            query=request.query,
-            registry_version=catalog_snapshot.version,
-            calls=calls,
-            fallback_routes=fallback_routes,
-            warnings=warnings,
-            coverage=coverage,
+            ),
+            build_coverage=self._plan_coverage,
+            coverage_warning=self._coverage_warning,
         )
 
     @staticmethod
