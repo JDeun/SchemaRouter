@@ -6,12 +6,12 @@ import asyncio
 import hashlib
 import json
 import os
-from importlib import metadata
 from pathlib import Path
 from typing import Any
 
 
 PINNED_UPSTREAM_REVISION = "5bcb83b29ab5b30aee07cabaa8df974881c47126"
+PINNED_UPSTREAM_VERSION = "2.1.2"
 EXPECTED_PUBLIC_TOOLS = 12
 
 
@@ -60,7 +60,7 @@ async def capture(*, upstream_revision: str) -> dict[str, Any]:
         "source": {
             "repository": "Xerrion/servicenow-platform-mcp",
             "commit": upstream_revision,
-            "package_version": metadata.version("servicenow-platform-mcp"),
+            "package_version": PINNED_UPSTREAM_VERSION,
             "python_package": "servicenow-platform-mcp",
         },
         "mcp_tool_package": "readonly",
