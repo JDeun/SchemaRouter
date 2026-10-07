@@ -37,7 +37,8 @@ jobs:
       - name: Run native CYT BM25 development smoke
         run: |
           python scripts/run_clear_your_tools_external_validation.py \
-            --package-dir "${PACKAGE_DIR}" \
+            --catalog "${PACKAGE_DIR}/catalog.json" \
+            --cases "${PACKAGE_DIR}/cases.json" \
             --implementation-revision "${CYT_REVISION}" \
             --out artifacts/cyt-dev-smoke/cyt-result.json
       - name: Validate result shape
@@ -48,6 +49,7 @@ jobs:
           p=json.loads(Path("artifacts/cyt-dev-smoke/cyt-result.json").read_text())
           assert p["status"] == "development_unfrozen"
           assert p["implementation"]["revision"] == "9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4"
+          assert p["performance_evidence"] is False
           assert len(p["results"]) == 33
           assert all("candidate_tools" in row for row in p["results"])
           PY
@@ -64,6 +66,27 @@ jobs:
               assert p["status"] == "development_unfrozen"
               assert p["synthetic_distractors"] is True
               assert len(p["tools"]) == size
+          PY
+      - name: Run native CYT scaling development preflight
+        run: |
+          mkdir -p artifacts/cyt-dev-scaling/results
+          for size in 100 250 500 1000; do
+            python scripts/run_clear_your_tools_external_validation.py \
+              --catalog "artifacts/cyt-dev-scaling/catalog-${size}.json" \
+              --cases "${PACKAGE_DIR}/cases.json" \
+              --implementation-revision "${CYT_REVISION}" \
+              --repeats 3 \
+              --out "artifacts/cyt-dev-scaling/results/cyt-${size}.json"
+          done
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for size in (100, 250, 500, 1000):
+              p=json.loads(Path(f"artifacts/cyt-dev-scaling/results/cyt-{size}.json").read_text())
+              assert p["catalog_size"] == size
+              assert p["performance_evidence"] is False
+              assert len(p["results"]) == 33
+              assert all(row["candidate_count"] <= size for row in p["results"])
           PY
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
