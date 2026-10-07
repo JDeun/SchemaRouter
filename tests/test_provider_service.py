@@ -34,3 +34,14 @@ def test_runtime_delegates_provider_profile_lifecycle_to_service() -> None:
     assert "ProviderProfileService(" in runtime
     assert "built_in_provider_profile_registry(" not in runtime
     assert "_load_provider_profile_plugins" not in runtime
+
+
+def test_runtime_delegates_provider_registration_orchestration() -> None:
+    runtime = (ROOT / "src" / "schemarouter" / "runtime.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "ProviderRegistrationService(" in runtime
+    assert "async def _add_provider_require_all(" not in runtime
+    assert "ProviderMethodRegistration(" not in runtime
+
