@@ -358,7 +358,7 @@ async def test_direct_tool_replacement_clears_native_schema_refresh_state() -> N
         return original, object(), False
 
     router._remember_native_schema_refresh(original.key, refresh)
-    router._native_schema_pending[original.key] = (original, object(), False)  # type: ignore[arg-type]
+    router._native_schema_lifecycle._pending[original.key] = (original, object(), False)  # type: ignore[arg-type]
 
     replacement = original.model_copy(deep=True)
     replacement.endpoints[0].description = "unvalidated replacement contract"
@@ -366,8 +366,8 @@ async def test_direct_tool_replacement_clears_native_schema_refresh_state() -> N
 
     router.add_tool(replacement, replace=True)
 
-    assert original.key not in router._native_schema_refreshers
-    assert original.key not in router._native_schema_pending
+    assert original.key not in router._native_schema_lifecycle._refreshers
+    assert original.key not in router._native_schema_lifecycle._pending
     assert await router.check_native_schema_watches_once() == ()
     assert calls == 0
 
