@@ -1294,6 +1294,33 @@ class SchemaRouter:
             raise
         return keys
 
+    def _register_refreshable_bound_batch(
+        self,
+        bindings: Any,
+        *,
+        refresh_binding: Callable[
+            [str],
+            Awaitable[tuple[ToolSpec, BoundEndpointInvoker, bool]],
+        ],
+        offload_sync: bool = False,
+    ) -> tuple[str, ...]:
+        """Publish one discovered batch and attach schema refresh callbacks."""
+
+        expected_version = self.registry.version
+        keys = self._register_bound_batch(
+            bindings,
+            expected_version=expected_version,
+            offload_sync=offload_sync,
+        )
+        for key in keys:
+            async def refresh_one(
+                tool_key: str = key,
+            ) -> tuple[ToolSpec, BoundEndpointInvoker, bool]:
+                return await refresh_binding(tool_key)
+
+            self._remember_native_schema_refresh(key, refresh_one)
+        return keys
+
     def _remember_native_schema_refresh(
         self,
         tool_key: str,
@@ -1514,19 +1541,11 @@ class SchemaRouter:
                     f"native database capability {tool_key!r} disappeared during refresh"
                 )
             return match.tool, match.invoker, remote
-        expected_version = self.registry.version
-        keys = self._register_bound_batch(
+        return self._register_refreshable_bound_batch(
             bindings,
-            expected_version=expected_version,
+            refresh_binding=refresh_binding,
             offload_sync=remote,
         )
-        for key in keys:
-            async def refresh_one(
-                tool_key: str = key,
-            ) -> tuple[ToolSpec, BoundEndpointInvoker, bool]:
-                return await refresh_binding(tool_key)
-            self._remember_native_schema_refresh(key, refresh_one)
-        return keys
 
     async def aadd_vector_store(
         self,
@@ -1580,18 +1599,10 @@ class SchemaRouter:
                     f"native vector capability {tool_key!r} disappeared during refresh"
                 )
             return match.tool, match.invoker, False
-        expected_version = self.registry.version
-        keys = self._register_bound_batch(
+        return self._register_refreshable_bound_batch(
             bindings,
-            expected_version=expected_version,
+            refresh_binding=refresh_binding,
         )
-        for key in keys:
-            async def refresh_one(
-                tool_key: str = key,
-            ) -> tuple[ToolSpec, BoundEndpointInvoker, bool]:
-                return await refresh_binding(tool_key)
-            self._remember_native_schema_refresh(key, refresh_one)
-        return keys
 
     def add_vector_store(
         self,
@@ -2198,18 +2209,10 @@ class SchemaRouter:
                     f"native graph capability {tool_key!r} disappeared during refresh"
                 )
             return match.tool, match.invoker, False
-        expected_version = self.registry.version
-        keys = self._register_bound_batch(
+        return self._register_refreshable_bound_batch(
             bindings,
-            expected_version=expected_version,
+            refresh_binding=refresh_binding,
         )
-        for key in keys:
-            async def refresh_one(
-                tool_key: str = key,
-            ) -> tuple[ToolSpec, BoundEndpointInvoker, bool]:
-                return await refresh_binding(tool_key)
-            self._remember_native_schema_refresh(key, refresh_one)
-        return keys
 
     def add_graph_store(
         self,
@@ -2291,18 +2294,10 @@ class SchemaRouter:
                     f"native record capability {tool_key!r} disappeared during refresh"
                 )
             return match.tool, match.invoker, False
-        expected_version = self.registry.version
-        keys = self._register_bound_batch(
+        return self._register_refreshable_bound_batch(
             bindings,
-            expected_version=expected_version,
+            refresh_binding=refresh_binding,
         )
-        for key in keys:
-            async def refresh_one(
-                tool_key: str = key,
-            ) -> tuple[ToolSpec, BoundEndpointInvoker, bool]:
-                return await refresh_binding(tool_key)
-            self._remember_native_schema_refresh(key, refresh_one)
-        return keys
 
     def add_record_store(
         self,
