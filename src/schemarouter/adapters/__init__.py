@@ -1,16 +1,12 @@
+from importlib import import_module
+from typing import TYPE_CHECKING, Any
+
 from ..openapi_compatibility import (
     OpenAPICompatibilityIssue,
     OpenAPICompatibilityReport,
     analyze_openapi_compatibility,
 )
 from .base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
-from .graph_native import (
-    ArangoGraphBackend,
-    FalkorGraphBackend,
-    Neo4jGraphBackend,
-    NeptuneOpenCypherBackend,
-    SparqlGraphBackend,
-)
 from .graph_store import (
     GraphModel,
     GraphNodeTypeSpec,
@@ -63,15 +59,6 @@ from .python import (
     schema_tool,
     tool_from_callable,
 )
-from .record_native import (
-    ClickHouseRecordBackend,
-    CosmosRecordBackend,
-    CouchbaseRecordBackend,
-    DynamoDBRecordBackend,
-    ElasticRecordBackend,
-    InfluxRecordBackend,
-    MongoRecordBackend,
-)
 from .record_store import (
     RecordFieldSpec,
     RecordModel,
@@ -91,14 +78,6 @@ from .sqlite_database import (
     SQLiteTableInvoker,
     introspect_sqlite_database,
 )
-from .vector_native import (
-    ChromaVectorBackend,
-    MilvusVectorBackend,
-    PgvectorVectorBackend,
-    PineconeVectorBackend,
-    QdrantVectorBackend,
-    WeaviateVectorBackend,
-)
 from .vector_store import (
     ScopedVectorStoreBackend,
     VectorCollectionBinding,
@@ -109,6 +88,69 @@ from .vector_store import (
     VectorStoreBackend,
     introspect_vector_backend,
 )
+
+if TYPE_CHECKING:
+    from .graph_native import (
+        ArangoGraphBackend,
+        FalkorGraphBackend,
+        Neo4jGraphBackend,
+        NeptuneOpenCypherBackend,
+        SparqlGraphBackend,
+    )
+    from .record_native import (
+        ClickHouseRecordBackend,
+        CosmosRecordBackend,
+        CouchbaseRecordBackend,
+        DynamoDBRecordBackend,
+        ElasticRecordBackend,
+        InfluxRecordBackend,
+        MongoRecordBackend,
+    )
+    from .vector_native import (
+        ChromaVectorBackend,
+        MilvusVectorBackend,
+        PgvectorVectorBackend,
+        PineconeVectorBackend,
+        QdrantVectorBackend,
+        WeaviateVectorBackend,
+    )
+
+
+_LAZY_EXPORTS: dict[str, tuple[str, str]] = {
+    "ArangoGraphBackend": (".graph_native", "ArangoGraphBackend"),
+    "FalkorGraphBackend": (".graph_native", "FalkorGraphBackend"),
+    "Neo4jGraphBackend": (".graph_native", "Neo4jGraphBackend"),
+    "NeptuneOpenCypherBackend": (".graph_native", "NeptuneOpenCypherBackend"),
+    "SparqlGraphBackend": (".graph_native", "SparqlGraphBackend"),
+    "ClickHouseRecordBackend": (".record_native", "ClickHouseRecordBackend"),
+    "CosmosRecordBackend": (".record_native", "CosmosRecordBackend"),
+    "CouchbaseRecordBackend": (".record_native", "CouchbaseRecordBackend"),
+    "DynamoDBRecordBackend": (".record_native", "DynamoDBRecordBackend"),
+    "ElasticRecordBackend": (".record_native", "ElasticRecordBackend"),
+    "InfluxRecordBackend": (".record_native", "InfluxRecordBackend"),
+    "MongoRecordBackend": (".record_native", "MongoRecordBackend"),
+    "ChromaVectorBackend": (".vector_native", "ChromaVectorBackend"),
+    "MilvusVectorBackend": (".vector_native", "MilvusVectorBackend"),
+    "PgvectorVectorBackend": (".vector_native", "PgvectorVectorBackend"),
+    "PineconeVectorBackend": (".vector_native", "PineconeVectorBackend"),
+    "QdrantVectorBackend": (".vector_native", "QdrantVectorBackend"),
+    "WeaviateVectorBackend": (".vector_native", "WeaviateVectorBackend"),
+}
+
+
+def __getattr__(name: str) -> Any:
+    target = _LAZY_EXPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module_name, attribute_name = target
+    value = getattr(import_module(module_name, __name__), attribute_name)
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted(set(globals()) | set(_LAZY_EXPORTS))
+
 
 __all__ = [
     "AdapterContext",
