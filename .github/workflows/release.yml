@@ -2,7 +2,7 @@ name: Release
 
 on:
   workflow_run:
-    workflows: ["CI"]
+    workflows: ["Post-merge Qualification"]
     types: [completed]
   push:
     tags:
@@ -45,7 +45,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify successful CI still refers to current main
+      - name: Verify successful post-merge qualification still refers to current main
         if: github.event_name == 'workflow_run'
         env:
           TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
@@ -53,7 +53,7 @@ jobs:
           git fetch origin main --tags
           current_main="$(git rev-parse origin/main)"
           if [[ "$current_main" != "$TESTED_SHA" ]]; then
-            echo "CI passed for stale main SHA $TESTED_SHA; current main is $current_main."
+            echo "Post-merge qualification passed for stale main SHA $TESTED_SHA; current main is $current_main."
             echo "SKIP_RELEASE=true" >> "$GITHUB_ENV"
           fi
 
