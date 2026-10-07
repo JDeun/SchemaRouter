@@ -2,7 +2,7 @@
 
 ## Decision
 
-SchemaRouter is a **typed capability retrieval, planning, and execution layer** for LLM and RAG tool ecosystems. It is not a general-purpose agent framework, model router, graph runtime, or MCP replacement.
+SchemaRouter is a **typed capability routing, planning, and governed execution layer** for AI agents across APIs, tools, and data systems. It is not a general-purpose agent framework, model router, graph runtime, database proxy, or MCP replacement.
 
 The core is designed around one principle:
 

@@ -1,5 +1,5 @@
 site_name: SchemaRouter
-site_description: Typed capability retrieval and schema-aware execution for LLM/RAG agents and tools
+site_description: Typed capability routing and governed execution for AI agents across APIs, tools, and data systems
 site_author: Yong-eun Cho
 site_url: https://jdeun.github.io/SchemaRouter/
 copyright: © 2026 Yong-eun Cho · MIT License
@@ -124,7 +124,7 @@ nav:
       - Capability Explorer: getting-started/schema-explorer.md
   - Concepts:
       - What SchemaRouter is: concepts/schema-router.md
-      - RAG positioning and capability retrieval: concepts/capability-catalog.md
+      - Capability catalog and structured retrieval: concepts/capability-catalog.md
       - Design principles: concepts/design-principles.md
       - Tool and endpoint contracts: concepts/tool-endpoint.md
       - Planning and field projection: concepts/planning.md
@@ -135,57 +135,65 @@ nav:
       - Protocol ingestion decisions: concepts/protocol-ingestion-decisions.md
       - Decision backends: concepts/decision-backends.md
   - Connect:
-      - Python tools: guides/python-tools.md
-      - OpenAPI: guides/openapi.md
-      - OpenAPI compatibility: guides/openapi-compatibility.md
-      - OpenRPC / JSON-RPC: guides/openrpc.md
-      - OData: guides/odata.md
-      - GraphQL: guides/graphql.md
-      - OPTIMADE: guides/optimade.md
-      - MCP: guides/mcp.md
-      - Declarative HTTP/JSON: guides/http-json.md
-      - Provider-first registration: guides/provider-first-registration.md
-      - Enterprise data onboarding: guides/enterprise-data-onboarding.md
-      - Database onboarding: guides/database-onboarding.md
-      - Vector store onboarding: guides/vector-store-onboarding.md
-      - Graph/RDF onboarding: guides/graph-store-onboarding.md
-      - NoSQL record-store onboarding: guides/record-store-onboarding.md
-      - Universal ingestion matrix: guides/universal-ingestion.md
-      - Live compatibility matrix: guides/live-compatibility-matrix.md
-      - Human-readable documentation: guides/html-documentation.md
-      - Third-party adapter plugins: guides/adapter-plugins.md
-      - Protocol plugin recipes: guides/protocol-plugin-recipes.md
+      - APIs and protocols:
+          - OpenAPI: guides/openapi.md
+          - OpenAPI compatibility: guides/openapi-compatibility.md
+          - OpenRPC / JSON-RPC: guides/openrpc.md
+          - OData: guides/odata.md
+          - GraphQL: guides/graphql.md
+          - OPTIMADE: guides/optimade.md
+          - MCP: guides/mcp.md
+          - Declarative HTTP/JSON: guides/http-json.md
+      - Code and providers:
+          - Python tools: guides/python-tools.md
+          - Provider-first registration: guides/provider-first-registration.md
+          - Third-party adapter plugins: guides/adapter-plugins.md
+          - Protocol plugin recipes: guides/protocol-plugin-recipes.md
+      - Data systems:
+          - Enterprise data onboarding: guides/enterprise-data-onboarding.md
+          - Database onboarding: guides/database-onboarding.md
+          - Vector store onboarding: guides/vector-store-onboarding.md
+          - Graph/RDF onboarding: guides/graph-store-onboarding.md
+          - NoSQL record-store onboarding: guides/record-store-onboarding.md
+      - Compatibility and discovery:
+          - Universal ingestion matrix: guides/universal-ingestion.md
+          - Live compatibility matrix: guides/live-compatibility-matrix.md
+          - Human-readable documentation: guides/html-documentation.md
       - Recipes:
           - OpenAPI agent boundary: recipes/openapi-agent.md
           - MCP agent boundary: recipes/mcp-agent.md
           - Many-tool catalogs: recipes/many-tools.md
   - Runtime:
-      - Batch, streaming, and events: guides/runtime.md
-      - Execution policy: guides/execution-policy.md
-      - Principal authorization: guides/authorization.md
-      - Provider-aware fallback: guides/provider-fallback.md
-      - State-aware retrieval: guides/state-aware-retrieval.md
-      - Capability constraints: guides/capability-constraints.md
-      - Capability decision traces: guides/capability-decision-traces.md
-      - Capability drift: guides/capability-graph-drift.md
-      - Capability graph scalability: guides/capability-graph-scalability.md
-      - Capability eligibility: guides/capability-eligibility.md
-      - Capability lineage: guides/capability-lineage.md
-      - Contract-aware fallback: guides/contract-aware-fallback.md
-      - Capability negotiation: guides/capability-negotiation.md
-      - Capability snapshots: guides/capability-snapshots.md
-      - Multi-provider evidence: guides/multi-provider-evidence.md
-      - Schema drift analysis: guides/schema-drift.md
-      - Portable capability artifacts: guides/capability-artifacts.md
-      - Retry policy: guides/retry.md
-      - Trusted execution hooks: guides/execution-hooks.md
-      - Persistent run traces: guides/run-traces.md
-      - Operational inspection: guides/inspection.md
-      - Field projection: guides/field-projection.md
-      - Candidate indexing: guides/candidate-indexing.md
-      - Model-assisted analysis: guides/model-analyzer.md
-      - Decision routing benchmark: guides/decision-benchmark.md
-      - Consumer acceptance validation: guides/consumer-acceptance.md
+      - Execute and authorize:
+          - Batch, streaming, and events: guides/runtime.md
+          - Execution policy: guides/execution-policy.md
+          - Principal authorization: guides/authorization.md
+          - Retry policy: guides/retry.md
+          - Trusted execution hooks: guides/execution-hooks.md
+      - Select and adapt:
+          - Provider-aware fallback: guides/provider-fallback.md
+          - State-aware retrieval: guides/state-aware-retrieval.md
+          - Capability constraints: guides/capability-constraints.md
+          - Contract-aware fallback: guides/contract-aware-fallback.md
+          - Capability negotiation: guides/capability-negotiation.md
+          - Field projection: guides/field-projection.md
+          - Candidate indexing: guides/candidate-indexing.md
+          - Model-assisted analysis: guides/model-analyzer.md
+      - Inspect and govern:
+          - Capability decision traces: guides/capability-decision-traces.md
+          - Capability drift: guides/capability-graph-drift.md
+          - Capability graph scalability: guides/capability-graph-scalability.md
+          - Capability eligibility: guides/capability-eligibility.md
+          - Capability lineage: guides/capability-lineage.md
+          - Capability snapshots: guides/capability-snapshots.md
+          - Multi-provider evidence: guides/multi-provider-evidence.md
+          - Schema drift analysis: guides/schema-drift.md
+          - Portable capability artifacts: guides/capability-artifacts.md
+          - Persistent run traces: guides/run-traces.md
+          - Operational inspection: guides/inspection.md
+      - Validate:
+          - Decision routing benchmark: guides/decision-benchmark.md
+          - Consumer acceptance validation: guides/consumer-acceptance.md
   - Integrations:
       - LangChain: integrations/langchain.md
       - LangGraph: integrations/langgraph.md
@@ -209,7 +217,7 @@ nav:
       - Adapter authoring: adapter-authoring.md
       - Security model: security/threat-model.md
   - Research:
-      - Routing research status: research/routing-status.md
+      - Research status: research/routing-status.md
       - Complete experiment index: research/experiment-index.md
       - Routing break-even result: research/realistic-break-even-result.md
       - Design and experiment history: research/design-and-experiment-history.md
@@ -233,18 +241,23 @@ nav:
           - Terminal 0.11 report: research/operation-routing-v4-terminal-report.md
       - Prior-art roadmap: research/prior-art-roadmap.md
   - Project:
-      - Stable core contract: stable-core.md
-      - Public roadmap: project/roadmap.md
-      - Trust, stability, and public evidence: project/trust-and-evidence.md
-      - Adoption scorecard: project/adoption-scorecard.md
-      - Developer launch playbook: project/launch-playbook.md
-      - Launch and outreach log: project/launch-log.md
-      - External adoption and validation: project/external-adoption.md
-      - PydanticAI ToolSearch validation: project/external-validation-pydanticai.md
-      - OpenAI Agents SDK MCP filter validation: project/external-validation-openai-agents.md
-      - mcp-agent catalog validation: project/external-validation-mcp-agent.md
-      - External case-study template: project/case-study-template.md
-      - Versioning: versioning.md
+      - Governance and roadmap:
+          - Stable core contract: stable-core.md
+          - Public roadmap: project/roadmap.md
+          - Trust, stability, and public evidence: project/trust-and-evidence.md
+          - Versioning: versioning.md
+      - Adoption and validation:
+          - Adoption scorecard: project/adoption-scorecard.md
+          - External adoption and validation: project/external-adoption.md
+          - PydanticAI ToolSearch validation: project/external-validation-pydanticai.md
+          - OpenAI Agents SDK MCP filter validation: project/external-validation-openai-agents.md
+          - mcp-agent catalog validation: project/external-validation-mcp-agent.md
+          - External case-study template: project/case-study-template.md
+      - Launch and positioning:
+          - Developer launch playbook: project/launch-playbook.md
+          - Launch and outreach log: project/launch-log.md
+          - Brand: project/brand.md
+          - Discoverability and positioning: project/discoverability.md
       - Release notes:
           - 0.17.0: releases/0.17.0.md
           - 0.16.0: releases/0.16.0.md
@@ -263,9 +276,8 @@ nav:
           - 0.3.0: releases/0.3.0.md
           - 0.3.0a1: releases/0.3.0a1.md
           - 0.2.0a1: releases/0.2.0a1.md
-      - Release checklist: release-checklist.md
-      - Contributing: contributing.md
-      - Changelog: changelog.md
-      - Brand: project/brand.md
-      - Discoverability and positioning: project/discoverability.md
-      - License: license.md
+      - Contribute:
+          - Release checklist: release-checklist.md
+          - Contributing: contributing.md
+          - Changelog: changelog.md
+          - License: license.md
