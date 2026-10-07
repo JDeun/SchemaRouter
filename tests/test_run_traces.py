@@ -16,6 +16,7 @@ from schemarouter import (
     RunTrace,
     SchemaRouter,
     SQLiteRunTraceStore,
+    TraceRetentionPolicy,
     ToolSpec,
     TraceError,
     TracePersistenceError,
@@ -798,3 +799,96 @@ def test_sqlite_trace_store_bounds_run_id_listing_cardinality(tmp_path) -> None:
     with SQLiteRunTraceStore(path, document_limits=limits) as reopened:
         with pytest.raises(TraceError, match="collection limits"):
             reopened.run_ids()
+
+
+def test_trace_retention_policy_requires_a_bound() -> None:
+    with pytest.raises(ValueError, match="at least one bound"):
+        TraceRetentionPolicy()
+
+
+def test_sqlite_trace_store_prunes_complete_runs_by_count_without_touching_incomplete(
+    tmp_path,
+) -> None:
+    path = tmp_path / "retention-count.sqlite3"
+    with SQLiteRunTraceStore(path) as store:
+        for index, seconds in enumerate((0, 10, 20)):
+            run_id = f"complete-{index}"
+            store.append(event(run_id, 0, "run.start", seconds=seconds))
+            store.append(event(run_id, 1, "run.end", seconds=seconds + 1))
+        store.append(event("active", 0, "run.start", seconds=1))
+
+        result = store.prune(
+            policy=TraceRetentionPolicy(max_runs=1),
+            now=event("clock", 0, "run.start", seconds=100).timestamp.timestamp(),
+        )
+
+        assert result.deleted_runs == 2
+        assert result.deleted_events == 4
+        assert result.deleted_complete_runs == 2
+        assert result.deleted_stale_incomplete_runs == 0
+        assert store.run_ids() == ("active", "complete-2")
+
+
+def test_sqlite_trace_store_prunes_by_age_and_requires_explicit_stale_cleanup(
+    tmp_path,
+) -> None:
+    path = tmp_path / "retention-age.sqlite3"
+    base = event("clock", 0, "run.start").timestamp.timestamp()
+    with SQLiteRunTraceStore(path) as store:
+        store.append(event("old-complete", 0, "run.start", seconds=0))
+        store.append(event("old-complete", 1, "run.end", seconds=1))
+        store.append(event("new-complete", 0, "run.start", seconds=20))
+        store.append(event("new-complete", 1, "run.end", seconds=21))
+        store.append(event("old-incomplete", 0, "run.start", seconds=0))
+        store.append(event("new-incomplete", 0, "run.start", seconds=20))
+
+        first = store.prune(
+            policy=TraceRetentionPolicy(max_age_seconds=15),
+            now=base + 30,
+        )
+        assert first.deleted_complete_runs == 1
+        assert first.deleted_stale_incomplete_runs == 0
+        assert "old-incomplete" in store.run_ids()
+
+        second = store.prune(
+            policy=TraceRetentionPolicy(stale_incomplete_after_seconds=15),
+            now=base + 30,
+        )
+        assert second.deleted_complete_runs == 0
+        assert second.deleted_stale_incomplete_runs == 1
+        assert store.run_ids() == ("new-complete", "new-incomplete")
+
+
+def test_sqlite_trace_store_auto_prunes_on_terminal_append(tmp_path) -> None:
+    path = tmp_path / "retention-auto.sqlite3"
+    policy = TraceRetentionPolicy(max_runs=1)
+    with SQLiteRunTraceStore(path, retention_policy=policy) as store:
+        store.append(event("first", 0, "run.start", seconds=0))
+        store.append(event("first", 1, "run.end", seconds=1))
+        store.append(event("second", 0, "run.start", seconds=10))
+        store.append(event("second", 1, "run.end", seconds=11))
+
+        assert store.run_ids() == ("second",)
+
+
+def test_sqlite_trace_store_pruning_is_safe_across_store_instances(tmp_path) -> None:
+    path = tmp_path / "retention-multi.sqlite3"
+    first = SQLiteRunTraceStore(path)
+    second = SQLiteRunTraceStore(path)
+    try:
+        first.append(event("active", 0, "run.start", seconds=0))
+        first.append(event("complete", 0, "run.start", seconds=10))
+        first.append(event("complete", 1, "run.end", seconds=11))
+
+        result = second.prune(
+            policy=TraceRetentionPolicy(max_runs=0),
+            now=event("clock", 0, "run.start", seconds=100).timestamp.timestamp(),
+        )
+        assert result.deleted_runs == 1
+        assert first.run_ids() == ("active",)
+
+        first.append(event("active", 1, "run.end", seconds=30))
+        assert second.trace("active").complete is True
+    finally:
+        second.close()
+        first.close()
