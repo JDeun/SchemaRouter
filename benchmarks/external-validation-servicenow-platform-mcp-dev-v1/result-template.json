@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "package_id": "servicenow-platform-mcp-cross-project-dev-v1",
+  "implementation": {
+    "name": "",
+    "commit": null,
+    "commit_source": "unavailable",
+    "fixture_reference_revision": null,
+    "package_version": null,
+    "configuration": {}
+  },
+  "index_build_ms": null,
+  "results": [
+    {
+      "id": "sn-dev-001",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-002",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-003",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-004",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-005",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-006",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-007",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-008",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-009",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-010",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-011",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-012",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-013",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-014",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-015",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-016",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-017",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-018",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-019",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-020",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-021",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-022",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-023",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    },
+    {
+      "id": "sn-dev-024",
+      "candidate_tools": [],
+      "visible_contracts": [],
+      "latency_ms": null
+    }
+  ]
+}
