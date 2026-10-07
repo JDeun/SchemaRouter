@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Mapping, Sequence
 from contextlib import nullcontext
-from dataclasses import dataclass
 from typing import Any, TypeVar
 from urllib.parse import urlparse
 from uuid import uuid4
@@ -92,6 +91,10 @@ from .models import (
     ToolSpec,
 )
 from .network_policy import NetworkPolicy
+from .native_schema_lifecycle import (
+    NativeSchemaLifecycleManager,
+    NativeSchemaWatchSnapshot,
+)
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
@@ -150,15 +153,6 @@ from .validation import projected_output_schema
 
 _T = TypeVar("_T")
 _SYNC_LOOP_RUNNER = SyncLoopRunner()
-
-
-@dataclass(frozen=True, slots=True)
-class NativeSchemaWatchSnapshot:
-    """Privacy-safe health state for one native schema refresh source."""
-
-    tool_key: str
-    consecutive_failures: int
-    error_kind: str
 
 
 def _require_execution_event_exception(
@@ -297,12 +291,10 @@ class SchemaRouter:
             self.loader.adapters,
         )
         self.provider_profiles = built_in_provider_profile_registry()
-        self._native_schema_refreshers: dict[str, Any] = {}
-        self._native_schema_pending: dict[
-            str, tuple[ToolSpec, BoundEndpointInvoker, bool]
-        ] = {}
-        self._native_schema_watch_task: asyncio.Task[None] | None = None
-        self._native_schema_watch_failures: dict[str, tuple[int, str]] = {}
+        self._native_schema_lifecycle = NativeSchemaLifecycleManager(
+            self.registry,
+            self._apply_native_schema_binding,
+        )
     def _is_snapshot_access_available(self, tool: ToolSpec, endpoint: Any) -> bool:
         return self.executor.is_access_available_for_contract(
             tool.key,
@@ -1180,9 +1172,7 @@ class SchemaRouter:
             self.health_monitor.unregister_tool(key)
             self.schema_watcher.unregister(key)
             self.loader.forget_schema_http_validators(key)
-            self._native_schema_refreshers.pop(key, None)
-            self._native_schema_pending.pop(key, None)
-            self._native_schema_watch_failures.pop(key, None)
+            self._native_schema_lifecycle.forget(key)
         return key
 
     async def aremove_tool(self, tool_key: str) -> ToolSpec:
@@ -1207,9 +1197,7 @@ class SchemaRouter:
                 self.health_monitor.unregister_tool(tool_key)
                 self.executor.purge_tool_runtime_state(tool_key)
                 self.loader.forget_schema_http_validators(tool_key)
-                self._native_schema_refreshers.pop(tool_key, None)
-                self._native_schema_pending.pop(tool_key, None)
-                self._native_schema_watch_failures.pop(tool_key, None)
+                self._native_schema_lifecycle.forget(tool_key)
                 return current
 
     def remove_tool(self, tool_key: str) -> ToolSpec:
@@ -1311,41 +1299,12 @@ class SchemaRouter:
         tool_key: str,
         refresh: Any,
     ) -> None:
-        self._native_schema_refreshers[tool_key] = refresh
-        self._native_schema_watch_failures.pop(tool_key, None)
-
-    def _record_native_schema_watch_failure(
-        self,
-        tool_key: str,
-        exc: Exception,
-    ) -> None:
-        previous_count = self._native_schema_watch_failures.get(tool_key, (0, ""))[0]
-        if isinstance(exc, KeyError):
-            error_kind = "missing_tool"
-        elif isinstance(exc, RegistrationError):
-            error_kind = "registration_error"
-        elif isinstance(exc, SchemaSourceError):
-            error_kind = "schema_source_error"
-        else:
-            error_kind = "unexpected_error"
-        self._native_schema_watch_failures[tool_key] = (
-            min(previous_count + 1, 2_147_483_647),
-            error_kind,
-        )
+        self._native_schema_lifecycle.remember(tool_key, refresh)
 
     def native_schema_watch_snapshots(self) -> tuple[NativeSchemaWatchSnapshot, ...]:
         """Return bounded watcher degradation state without exception messages."""
 
-        return tuple(
-            NativeSchemaWatchSnapshot(
-                tool_key=tool_key,
-                consecutive_failures=count,
-                error_kind=error_kind,
-            )
-            for tool_key, (count, error_kind) in sorted(
-                self._native_schema_watch_failures.items()
-            )
-        )
+        return self._native_schema_lifecycle.snapshots()
 
     def _prepare_health_contract_transition(
         self,
@@ -1398,65 +1357,11 @@ class SchemaRouter:
         *,
         apply_compatible: bool = True,
     ) -> SchemaRefreshResult:
-        """Re-introspect one caller-owned native data source without persisting its client."""
+        """Re-introspect one caller-owned native data source."""
 
-        refresh = self._native_schema_refreshers.get(tool_key)
-        if refresh is None:
-            raise SchemaSourceError(
-                f"tool {tool_key!r} has no process-local native schema refresh binding"
-            )
-        expected_version = self.registry.version
-        try:
-            current = self.registry.get(tool_key)
-        except KeyError as exc:
-            raise RegistrationError(f"unknown tool: {tool_key}") from exc
-        candidate_tool, candidate_invoker, offload_sync = await refresh()
-        if candidate_tool.key != tool_key:
-            raise SchemaSourceError(
-                "native schema refresh changed the registered tool key unexpectedly"
-            )
-        report = compare_tool_specs(current, candidate_tool)
-        if report.compatibility == "identical":
-            self._native_schema_pending.pop(tool_key, None)
-            return SchemaRefreshResult(
-                tool_key=tool_key,
-                action="unchanged",
-                applied=False,
-                report=report,
-            )
-        if report.compatibility == "compatible" and apply_compatible:
-            await self._apply_native_schema_binding(
-                current=current,
-                candidate_tool=candidate_tool,
-                candidate_invoker=candidate_invoker,
-                offload_sync=offload_sync,
-                expected_version=expected_version,
-            )
-            self._native_schema_pending.pop(tool_key, None)
-            return SchemaRefreshResult(
-                tool_key=tool_key,
-                action="applied",
-                applied=True,
-                report=report,
-            )
-        action = (
-            "report_only"
-            if report.compatibility == "compatible"
-            else "pending_review"
-        )
-        if action == "pending_review":
-            self._native_schema_pending[tool_key] = (
-                candidate_tool,
-                candidate_invoker,
-                offload_sync,
-            )
-        return SchemaRefreshResult(
-            tool_key=tool_key,
-            action=action,
-            applied=False,
-            report=report,
-            reviewed_current_fingerprint=current.fingerprint,
-            candidate_fingerprint=candidate_tool.fingerprint,
+        return await self._native_schema_lifecycle.refresh(
+            tool_key,
+            apply_compatible=apply_compatible,
         )
 
     async def aaccept_native_schema_pending(
@@ -1465,28 +1370,9 @@ class SchemaRouter:
         *,
         expected_candidate_fingerprint: str,
     ) -> SchemaRefreshResult:
-        pending = self._native_schema_pending.get(tool_key)
-        if pending is None:
-            raise SchemaSourceError(f"tool {tool_key!r} has no pending native schema")
-        candidate_tool, candidate_invoker, offload_sync = pending
-        if candidate_tool.fingerprint != expected_candidate_fingerprint:
-            raise SchemaSourceError("pending native schema candidate changed")
-        expected_version = self.registry.version
-        current = self.registry.get(tool_key)
-        report = compare_tool_specs(current, candidate_tool)
-        await self._apply_native_schema_binding(
-            current=current,
-            candidate_tool=candidate_tool,
-            candidate_invoker=candidate_invoker,
-            offload_sync=offload_sync,
-            expected_version=expected_version,
-        )
-        self._native_schema_pending.pop(tool_key, None)
-        return SchemaRefreshResult(
-            tool_key=tool_key,
-            action="applied",
-            applied=True,
-            report=report,
+        return await self._native_schema_lifecycle.accept_pending(
+            tool_key,
+            expected_candidate_fingerprint=expected_candidate_fingerprint,
         )
 
     async def check_native_schema_watches_once(
@@ -1494,22 +1380,9 @@ class SchemaRouter:
         *,
         apply_compatible: bool = True,
     ) -> tuple[SchemaRefreshResult, ...]:
-        results: list[SchemaRefreshResult] = []
-        for tool_key in tuple(self._native_schema_refreshers):
-            try:
-                result = await self.arefresh_native_schema(
-                    tool_key,
-                    apply_compatible=apply_compatible,
-                )
-            except Exception as exc:
-                # asyncio.CancelledError derives from BaseException, so watcher shutdown
-                # is never swallowed here. Any ordinary source/driver failure is isolated
-                # to this tool and retried on the next scheduled sweep.
-                self._record_native_schema_watch_failure(tool_key, exc)
-                continue
-            self._native_schema_watch_failures.pop(tool_key, None)
-            results.append(result)
-        return tuple(results)
+        return await self._native_schema_lifecycle.check_once(
+            apply_compatible=apply_compatible,
+        )
 
     async def start_native_schema_watcher(
         self,
@@ -1517,30 +1390,13 @@ class SchemaRouter:
         interval_seconds: float = 300.0,
         apply_compatible: bool = True,
     ) -> None:
-        if interval_seconds <= 0:
-            raise ValueError("interval_seconds must be > 0")
-        if (
-            self._native_schema_watch_task is not None
-            and not self._native_schema_watch_task.done()
-        ):
-            raise RuntimeError("native schema watcher is already running")
-
-        async def watch_loop() -> None:
-            while True:
-                await self.check_native_schema_watches_once(
-                    apply_compatible=apply_compatible,
-                )
-                await asyncio.sleep(interval_seconds)
-
-        self._native_schema_watch_task = asyncio.create_task(watch_loop())
+        await self._native_schema_lifecycle.start(
+            interval_seconds=interval_seconds,
+            apply_compatible=apply_compatible,
+        )
 
     async def stop_native_schema_watcher(self) -> None:
-        task = self._native_schema_watch_task
-        self._native_schema_watch_task = None
-        if task is None:
-            return
-        task.cancel()
-        await asyncio.gather(task, return_exceptions=True)
+        await self._native_schema_lifecycle.stop()
 
     def add_sqlite_database(
         self,
