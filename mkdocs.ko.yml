@@ -159,6 +159,7 @@ nav:
           - mcp-agent catalog 검증: project/external-validation-mcp-agent.md
           - 외부 사례 템플릿: project/case-study-template.md
       - 공개와 포지셔닝:
+          - 왜 모든 도구 스키마를 모델에 보내지 않는가?: project/why-not-all-tool-schemas.md
           - 개발자 공개 playbook: project/launch-playbook.md
           - 공개/아웃리치 로그: project/launch-log.md
           - 브랜드: project/brand.md
