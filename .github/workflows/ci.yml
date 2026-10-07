@@ -63,8 +63,11 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: ${{ matrix.python-version }}
-          cache: pip
-          cache-dependency-path: pyproject.toml
+          cache: "pip"
+          cache-dependency-path: |
+            pyproject.toml
+            .github/workflows/ci.yml
+            examples/external_validation/**/requirements.txt
       - run: python -m pip install --upgrade pip
       - name: Install compatibility test dependencies
         if: matrix.python-version != '3.12'
@@ -138,8 +141,11 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
+          cache: "pip"
+          cache-dependency-path: |
+            pyproject.toml
+            .github/workflows/ci.yml
+            examples/external_validation/**/requirements.txt
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel,database]"
       - run: ruff check .
@@ -154,8 +160,11 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
+          cache: "pip"
+          cache-dependency-path: |
+            pyproject.toml
+            .github/workflows/ci.yml
+            examples/external_validation/**/requirements.txt
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel,database]"
       - run: >-
@@ -190,8 +199,11 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
+          cache: "pip"
+          cache-dependency-path: |
+            pyproject.toml
+            .github/workflows/ci.yml
+            examples/external_validation/**/requirements.txt
       - run: python -m pip install --upgrade pip
       - run: pip install "coverage[toml]>=7.10.6,<8"
       - name: Verify coverage fan-out
