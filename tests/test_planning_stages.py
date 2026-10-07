@@ -1,0 +1,182 @@
+from __future__ import annotations
+
+import pytest
+
+from schemarouter.planning_stages import (
+    run_candidate_pipeline_async,
+    run_candidate_pipeline_sync,
+)
+
+
+def test_sync_candidate_pipeline_preserves_explicit_stage_order() -> None:
+    calls: list[str] = []
+
+    def recall(context: str) -> list[int]:
+        assert context == "snapshot-context"
+        calls.append("recall")
+        return [1, 2]
+
+    def augment(context: str, candidates: list[int]) -> tuple[list[int], list[str]]:
+        assert context == "snapshot-context"
+        assert candidates == [1, 2]
+        calls.append("augment")
+        return [1, 2, 3], ["recall-warning"]
+
+    def coverage(context: str, candidates: list[int]) -> set[str]:
+        assert context == "snapshot-context"
+        assert candidates == [1, 2, 3]
+        calls.append("coverage")
+        return {"required-field"}
+
+    def capability_fit(
+        context: str,
+        candidates: list[int],
+    ) -> tuple[list[int], list[str]]:
+        assert context == "snapshot-context"
+        calls.append("capability_fit")
+        return [2, 3], ["fit-warning"]
+
+    def operation_fit(
+        context: str,
+        candidates: list[int],
+    ) -> tuple[list[int], list[str]]:
+        assert context == "snapshot-context"
+        assert candidates == [2, 3]
+        calls.append("operation_fit")
+        return [3], ["operation-warning"]
+
+    def disambiguate(
+        context: str,
+        candidates: list[int],
+    ) -> tuple[list[int], list[str]]:
+        assert context == "snapshot-context"
+        assert candidates == [3]
+        calls.append("disambiguate")
+        return candidates, ["disambiguation-warning"]
+
+    def decide(
+        context: str,
+        candidates: list[int],
+    ) -> tuple[list[int], list[str]]:
+        assert context == "snapshot-context"
+        assert candidates == [3]
+        calls.append("decide")
+        return [3, 4], ["decision-warning"]
+
+    def order(context: str, candidates: list[int]) -> list[int]:
+        assert context == "snapshot-context"
+        assert candidates == [3, 4]
+        calls.append("order")
+        return [4, 3]
+
+    result = run_candidate_pipeline_sync(
+        context="snapshot-context",
+        recall=recall,
+        augment=augment,
+        coverage=coverage,
+        capability_fit=capability_fit,
+        operation_fit=operation_fit,
+        disambiguate=disambiguate,
+        decide=decide,
+        order=order,
+    )
+
+    assert calls == [
+        "recall",
+        "augment",
+        "coverage",
+        "capability_fit",
+        "operation_fit",
+        "disambiguate",
+        "decide",
+        "order",
+    ]
+    assert result.all_candidates == (1, 2, 3)
+    assert result.candidates == (4, 3)
+    assert result.required_coverage == frozenset({"required-field"})
+    assert result.warnings == (
+        "recall-warning",
+        "fit-warning",
+        "operation-warning",
+        "disambiguation-warning",
+        "decision-warning",
+    )
+
+
+@pytest.mark.asyncio
+async def test_async_candidate_pipeline_matches_sync_stage_contract() -> None:
+    calls: list[str] = []
+
+    def recall(context: str) -> list[int]:
+        calls.append("recall")
+        return [1]
+
+    async def augment(
+        context: str,
+        candidates: list[int],
+    ) -> tuple[list[int], list[str]]:
+        calls.append("augment")
+        return [1, 2], ["recall-warning"]
+
+    def coverage(context: str, candidates: list[int]) -> set[str]:
+        calls.append("coverage")
+        return {"field"}
+
+    async def capability_fit(
+        context: str,
+        candidates: list[int],
+    ) -> tuple[list[int], list[str]]:
+        calls.append("capability_fit")
+        return candidates, []
+
+    async def operation_fit(
+        context: str,
+        candidates: list[int],
+    ) -> tuple[list[int], list[str]]:
+        calls.append("operation_fit")
+        return candidates, []
+
+    async def disambiguate(
+        context: str,
+        candidates: list[int],
+    ) -> tuple[list[int], list[str]]:
+        calls.append("disambiguate")
+        return candidates, []
+
+    async def decide(
+        context: str,
+        candidates: list[int],
+    ) -> tuple[list[int], list[str]]:
+        calls.append("decide")
+        return candidates, ["decision-warning"]
+
+    def order(context: str, candidates: list[int]) -> list[int]:
+        calls.append("order")
+        return list(reversed(candidates))
+
+    result = await run_candidate_pipeline_async(
+        context="snapshot-context",
+        recall=recall,
+        augment=augment,
+        coverage=coverage,
+        capability_fit=capability_fit,
+        operation_fit=operation_fit,
+        disambiguate=disambiguate,
+        decide=decide,
+        order=order,
+    )
+
+    assert calls == [
+        "recall",
+        "augment",
+        "coverage",
+        "capability_fit",
+        "operation_fit",
+        "disambiguate",
+        "decide",
+        "order",
+    ]
+    assert result.all_candidates == (1, 2)
+    assert result.candidates == (2, 1)
+    assert result.required_coverage == frozenset({"field"})
+    assert result.warnings == ("recall-warning", "decision-warning")
