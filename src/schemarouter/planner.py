@@ -37,6 +37,7 @@ from .models import (
     ToolSpec,
 )
 from .planning_context import PlanningContext, RegistrySnapshot
+from .planning_stages import run_candidate_pipeline_async, run_candidate_pipeline_sync
 from .registry import ToolRegistry
 from .state_retrieval import (
     StateAwareCapabilityRetrieval,
@@ -3583,51 +3584,54 @@ class SchemaPlanner:
             scoring_endpoint_transform=scoring_endpoint_transform,
         )
         catalog_snapshot = context.registry
-        lexical_candidates = self._candidates(
-            context.request,
-            context.intent,
-            additional_availability_predicate=additional_availability_predicate,
-            scoring_endpoint_transform=scoring_endpoint_transform,
-            catalog_snapshot=catalog_snapshot,
-        )
-        all_candidates, recall_warnings = (
-            self._augment_candidates_with_semantic_recall_sync(
-                request,
-                intent,
-                lexical_candidates,
+        pipeline = run_candidate_pipeline_sync(
+            context=context,
+            recall=lambda stage_context: self._candidates(
+                stage_context.request,
+                stage_context.intent,
                 additional_availability_predicate=additional_availability_predicate,
                 scoring_endpoint_transform=scoring_endpoint_transform,
-                catalog_snapshot=catalog_snapshot,
-            )
+                catalog_snapshot=stage_context.registry,
+            ),
+            augment=lambda stage_context, lexical: self._augment_candidates_with_semantic_recall_sync(
+                stage_context.request,
+                stage_context.intent,
+                lexical,
+                additional_availability_predicate=additional_availability_predicate,
+                scoring_endpoint_transform=scoring_endpoint_transform,
+                catalog_snapshot=stage_context.registry,
+            ),
+            coverage=lambda stage_context, ranked: self._field_coverage_matrix(
+                stage_context.request,
+                ranked,
+            )[1],
+            capability_fit=lambda stage_context, ranked: self._apply_capability_fit_sync(
+                stage_context.request,
+                ranked,
+            ),
+            operation_fit=lambda stage_context, ranked: self._apply_operation_fit_sync(
+                stage_context.request,
+                ranked,
+            ),
+            disambiguate=lambda stage_context, ranked: self._disambiguate_endpoints_sync(
+                stage_context.request,
+                ranked,
+            ),
+            decide=lambda stage_context, ranked: self._select_candidates_sync(
+                stage_context.request,
+                ranked,
+            ),
+            order=lambda stage_context, ranked: (
+                self._order_candidates_for_field_coverage(
+                    stage_context.request,
+                    ranked,
+                )
+            ),
         )
-        _, required_coverage = self._field_coverage_matrix(request, all_candidates)
-        fit_candidates, fit_warnings = self._apply_capability_fit_sync(
-            request,
-            all_candidates,
-        )
-        operation_candidates, operation_warnings = self._apply_operation_fit_sync(
-            request,
-            fit_candidates,
-        )
-        disambiguated_candidates, disambiguation_warnings = (
-            self._disambiguate_endpoints_sync(
-                request,
-                operation_candidates,
-            )
-        )
-        candidates, decision_warnings = self._select_candidates_sync(
-            request,
-            disambiguated_candidates,
-        )
-        candidates = self._order_candidates_for_field_coverage(request, candidates)
-
-        warnings: list[str] = [
-            *recall_warnings,
-            *fit_warnings,
-            *operation_warnings,
-            *disambiguation_warnings,
-            *decision_warnings,
-        ]
+        all_candidates = list(pipeline.all_candidates)
+        candidates = list(pipeline.candidates)
+        required_coverage = set(pipeline.required_coverage)
+        warnings = list(pipeline.warnings)
         if not candidates:
             coverage = self._plan_coverage(
                 required_coverage,
@@ -3813,52 +3817,54 @@ class SchemaPlanner:
             scoring_endpoint_transform=scoring_endpoint_transform,
         )
         catalog_snapshot = context.registry
-        lexical_candidates = self._candidates(
-            context.request,
-            context.intent,
-            additional_availability_predicate=additional_availability_predicate,
-            scoring_endpoint_transform=scoring_endpoint_transform,
-            catalog_snapshot=catalog_snapshot,
-        )
-        all_candidates, recall_warnings = (
-            await self._augment_candidates_with_semantic_recall_async(
-                request,
-                intent,
-                lexical_candidates,
+        pipeline = await run_candidate_pipeline_async(
+            context=context,
+            recall=lambda stage_context: self._candidates(
+                stage_context.request,
+                stage_context.intent,
                 additional_availability_predicate=additional_availability_predicate,
                 scoring_endpoint_transform=scoring_endpoint_transform,
-                catalog_snapshot=catalog_snapshot,
-            )
+                catalog_snapshot=stage_context.registry,
+            ),
+            augment=lambda stage_context, lexical: self._augment_candidates_with_semantic_recall_async(
+                stage_context.request,
+                stage_context.intent,
+                lexical,
+                additional_availability_predicate=additional_availability_predicate,
+                scoring_endpoint_transform=scoring_endpoint_transform,
+                catalog_snapshot=stage_context.registry,
+            ),
+            coverage=lambda stage_context, ranked: self._field_coverage_matrix(
+                stage_context.request,
+                ranked,
+            )[1],
+            capability_fit=lambda stage_context, ranked: self._apply_capability_fit_async(
+                stage_context.request,
+                ranked,
+            ),
+            operation_fit=lambda stage_context, ranked: self._apply_operation_fit_async(
+                stage_context.request,
+                ranked,
+            ),
+            disambiguate=lambda stage_context, ranked: self._disambiguate_endpoints_async(
+                stage_context.request,
+                ranked,
+            ),
+            decide=lambda stage_context, ranked: self._select_candidates_async(
+                stage_context.request,
+                ranked,
+            ),
+            order=lambda stage_context, ranked: (
+                self._order_candidates_for_field_coverage(
+                    stage_context.request,
+                    ranked,
+                )
+            ),
         )
-        _, required_coverage = self._field_coverage_matrix(request, all_candidates)
-        fit_candidates, fit_warnings = await self._apply_capability_fit_async(
-            request,
-            all_candidates,
-        )
-        operation_candidates, operation_warnings = (
-            await self._apply_operation_fit_async(
-                request,
-                fit_candidates,
-            )
-        )
-        disambiguated_candidates, disambiguation_warnings = (
-            await self._disambiguate_endpoints_async(
-                request,
-                operation_candidates,
-            )
-        )
-        candidates, decision_warnings = await self._select_candidates_async(
-            request,
-            disambiguated_candidates,
-        )
-        candidates = self._order_candidates_for_field_coverage(request, candidates)
-        warnings = [
-            *recall_warnings,
-            *fit_warnings,
-            *operation_warnings,
-            *disambiguation_warnings,
-            *decision_warnings,
-        ]
+        all_candidates = list(pipeline.all_candidates)
+        candidates = list(pipeline.candidates)
+        required_coverage = set(pipeline.required_coverage)
+        warnings = list(pipeline.warnings)
         if not candidates:
             coverage = self._plan_coverage(
                 required_coverage,
