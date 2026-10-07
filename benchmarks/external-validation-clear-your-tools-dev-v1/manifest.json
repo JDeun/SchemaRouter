@@ -4,7 +4,11 @@
   "status": "development_unfrozen",
   "issue": 839,
   "comparison_id": "schemarouter-cyt-v1",
-  "conditions": ["full_catalog", "clear_your_tools", "schemarouter"],
+  "conditions": [
+    "full_catalog",
+    "clear_your_tools",
+    "schemarouter"
+  ],
   "secondary_cyt_modes": [
     "en_bm25",
     "en_llm_pruning",
@@ -15,7 +19,11 @@
   "excluded_modes": {
     "ko_bm25": "pre-registered as non-meaningful cross-language lexical condition"
   },
-  "state_regimes": ["cold_start", "persistent_session", "sequential_adaptive"],
+  "state_regimes": [
+    "cold_start",
+    "persistent_session",
+    "sequential_adaptive"
+  ],
   "freeze_required": {
     "schemarouter_commit": null,
     "clear_your_tools_commit": null,
@@ -46,5 +54,24 @@
     "post_freeze_semantic_tuning_allowed": false,
     "negative_results_publishable_unchanged": true,
     "development_artifacts_are_evidence": false
+  },
+  "development_smoke": {
+    "catalog_tools": 21,
+    "cases": 33,
+    "purpose": "native integration only",
+    "performance_evidence": false,
+    "observed_behavior": "all 21 tools survived every query; no pruning claim"
+  },
+  "scaling_protocol": {
+    "catalog_sizes": [
+      100,
+      250,
+      500,
+      1000
+    ],
+    "cyt_minimum_tools_default": 50,
+    "primary_cyt_mode": "native_bm25",
+    "same_catalog_and_queries_across_conditions": true,
+    "visible_development_before_freeze": true
   }
 }
