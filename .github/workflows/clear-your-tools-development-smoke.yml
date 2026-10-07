@@ -110,14 +110,33 @@ jobs:
               cyt=json.loads(Path(f"artifacts/cyt-dev-scaling/results/cyt-{size}.json").read_text())
               sr=json.loads(Path(f"artifacts/cyt-dev-scaling/results/schemarouter-{size}.json").read_text())
               def summarize(payload):
-                  rows=payload["results"]; supported=[r for r in rows if cases[r["id"]]["label"]=="supported"]
-                  recalls=[]; full=[]
+                  rows = payload["results"]
+                  supported = [r for r in rows if cases[r["id"]]["label"] == "supported"]
+                  unsupported = [r for r in rows if cases[r["id"]]["label"] != "supported"]
+                  recalls = []
+                  full = []
                   for r in supported:
-                      req=set(cases[r["id"]]["required_tools"]); got=set(r["candidate_tools"])
-                      recalls.append(len(req & got)/len(req)); full.append(float(req <= got))
-                  counts=[len(r["candidate_tools"]) for r in rows]
-                  lats=[r["latency_ms"] for r in rows]
-                  return {"supported_recall":statistics.mean(recalls),"supported_full_coverage":statistics.mean(full),"mean_candidates":statistics.mean(counts),"median_candidates":statistics.median(counts),"retention":statistics.mean(counts)/size,"median_latency_ms":statistics.median(lats)}
+                      req = set(cases[r["id"]]["required_tools"])
+                      got = set(r["candidate_tools"])
+                      recalls.append(len(req & got) / len(req))
+                      full.append(float(req <= got))
+
+                  def cohort(rows):
+                      counts = [len(r["candidate_tools"]) for r in rows]
+                      lats = [r["latency_ms"] for r in rows]
+                      return {
+                          "mean_candidates": statistics.mean(counts),
+                          "median_candidates": statistics.median(counts),
+                          "retention": statistics.mean(counts) / size,
+                          "median_latency_ms": statistics.median(lats),
+                      }
+
+                  return {
+                      "supported_recall": statistics.mean(recalls),
+                      "supported_full_coverage": statistics.mean(full),
+                      "supported": cohort(supported),
+                      "unsupported_or_ood": cohort(unsupported),
+                  }
               out["sizes"][str(size)]={"cyt":summarize(cyt),"schemarouter":summarize(sr)}
           Path("artifacts/cyt-dev-scaling/comparison.json").write_text(json.dumps(out,indent=2,sort_keys=True)+"\n")
           print(json.dumps(out,indent=2,sort_keys=True))
