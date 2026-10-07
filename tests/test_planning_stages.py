@@ -5,6 +5,8 @@ import pytest
 from schemarouter.planning_stages import (
     run_candidate_pipeline_async,
     run_candidate_pipeline_sync,
+    select_fallbacks_async,
+    select_fallbacks_sync,
     select_primary_candidates_async,
     select_primary_candidates_sync,
 )
@@ -239,3 +241,50 @@ async def test_async_primary_selection_preserves_corroboration_provider_diversit
 
     assert result.pairs == (("a1", "A1"), ("b1", "B1"))
     assert result.required_coverage == frozenset({"field"})
+
+
+
+def test_sync_fallback_stage_filters_and_bounds_alternatives() -> None:
+    result = select_fallbacks_sync(
+        primary_pairs=(("primary", "P"),),
+        all_candidates=("primary", "write", "alt1", "alt2"),
+        fallback_scope="same_provider",
+        max_fallbacks=1,
+        is_read_only=lambda candidate: candidate != "write",
+        ordered_candidates=lambda _primary, _all, _scope: [
+            "write",
+            "alt1",
+            "alt2",
+        ],
+        compile_candidate=lambda candidate: candidate.upper(),
+        is_executable=lambda _call: True,
+        compatible=lambda _pc, _pcall, candidate, _call: candidate != "alt2",
+    )
+
+    assert result.routes == ((0, ("ALT1",)),)
+
+
+@pytest.mark.asyncio
+async def test_async_fallback_stage_preserves_executable_compatibility_gates() -> None:
+    async def compile_candidate(candidate: str) -> str | None:
+        if candidate == "missing":
+            return None
+        return candidate.upper()
+
+    result = await select_fallbacks_async(
+        primary_pairs=(("primary", "P"),),
+        all_candidates=("primary", "missing", "blocked", "good"),
+        fallback_scope="global",
+        max_fallbacks=3,
+        is_read_only=lambda _candidate: True,
+        ordered_candidates=lambda _primary, _all, _scope: [
+            "missing",
+            "blocked",
+            "good",
+        ],
+        compile_candidate=compile_candidate,
+        is_executable=lambda call: call != "BLOCKED",
+        compatible=lambda _pc, _pcall, _candidate, _call: True,
+    )
+
+    assert result.routes == ((0, ("GOOD",)),)
