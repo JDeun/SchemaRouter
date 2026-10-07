@@ -7,13 +7,70 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+## 0.17.0 - 2026-10-07
+
 ### Added
-- added opt-in privacy-safe authorization audit events with run correlation, host-supplied opaque
-  principal audit identifiers, redacted DataScope summaries, and consistent native/LangChain/
-  LlamaIndex execution-boundary coverage;
+
+- added declarative authorization-policy loading and privacy-safe authorization audit events with
+  run correlation, opaque principal audit identifiers, redacted data-scope summaries, and consistent
+  native/LangChain/LlamaIndex execution-boundary coverage;
+- added native database schema-refresh lifecycle management and opt-in adaptive routing/session
+  context primitives while keeping execution authority local and schema-bound;
+- added host-controlled egress policy, bounded trace retention/pruning, bounded schema complexity,
+  and explicit compatibility dispatch for native/vendor integrations;
+- added reproducible external-validation infrastructure for shared router benchmarks, including
+  frozen protocol packages and pinned SmartMCP development smoke coverage.
+
+### Changed
+
+- decomposed the large runtime facade into dedicated provider-registration, trusted-rebinding,
+  native-schema-lifecycle, default-policy and compatibility components while preserving the public
+  SchemaRouter facade;
+- decomposed the planner into explicit immutable planning-context, candidate, primary-selection,
+  fallback-selection and final-plan-assembly stages so one registry snapshot is used end-to-end;
+- moved native vector/graph/record provider construction behind registration registries so backend
+  additions no longer require hard-coded central runtime dispatch;
+- reworked CI qualification around immutable package artifacts, blocking deterministic compatibility
+  checks, per-module native-adapter coverage ratchets, exact-main post-merge qualification,
+  documentation/API contract checks and dependency caching.
 
 ### Fixed
-- wired PrincipalContext/DataScope through exported LangChain and LlamaIndex tools so principal-visible schemas, trusted filters, and execution-time authorization remain enforced outside the native SchemaRouter invocation path;
+
+- propagated PrincipalContext/DataScope through exported LangChain and LlamaIndex tools and preserved
+  principal context through parallel preflight paths;
+- made multi-capability/provider registration, registry/binding publication, shared execution-budget
+  reservations and schema-refresh health transitions failure-atomic;
+- stopped router-owned native schema watchers during shutdown and invalidated stale/in-flight refresh
+  state consistently across replacement and unregister paths;
+- classified indeterminate offloaded mutation outcomes, post-invocation hook failures and trace
+  persistence failures without silently converting them into successful executions;
+- removed event-loop blocking and affinity hazards from synchronous remote I/O, trace persistence,
+  health probes and sync wrappers;
+- hardened concurrent tool-span identity, capability publication, semantic-equivalence handling,
+  trace replay ordering and graph traversal behavior.
+
+### Security
+
+- revalidated authorization at retry and final approval boundaries, made approval requirements
+  additive to side-effect authority, and failed closed when trusted vector/graph/data-scope filters
+  cannot be enforced;
+- centralized trusted HTTP-header validation and enforced host-owned network egress policy;
+- redacted sensitive trace payloads before event sinks and bounded persistent/adaptive checkpoint,
+  collection and administrative-document decoding work;
+- bounded runtime JSON-Schema evaluation and untrusted schema structural complexity to limit
+  pathological CPU/memory use;
+- hardened SQLite backup destination creation and persisted-document parsing against races and
+  unbounded resource consumption.
+
+### Compatibility and migration
+
+- no intentional breaking change is introduced to the documented retrieval/planning/execution
+  facade; refactored internals remain behind compatibility delegates and lazy exports;
+- some invalid, ambiguous or unenforceable states that could previously proceed are now rejected
+  earlier by stricter fail-closed security/correctness checks;
+- no new execution authority is reconstructed from persisted artifacts or schema refresh state;
+- active Research 0.14 experiments remain frozen separately from the 0.17.0 product code and are not
+  release claims.
 
 ## 0.16.0 - 2026-10-04
 
