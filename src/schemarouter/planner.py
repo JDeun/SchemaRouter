@@ -36,6 +36,7 @@ from .models import (
     ToolCall,
     ToolSpec,
 )
+from .planning_context import PlanningContext, RegistrySnapshot
 from .registry import ToolRegistry
 from .state_retrieval import (
     StateAwareCapabilityRetrieval,
@@ -500,24 +501,6 @@ class _CandidateIndex:
         return tuple(self._entries[ref] for ref in sorted(refs))
 
 
-@dataclass(frozen=True)
-class _CatalogSnapshot:
-    """Exact registry catalog/version used by one ranking or planning operation."""
-
-    version: int
-    tools: tuple[ToolSpec, ...]
-    index: _CandidateIndex | None = None
-
-    def all_endpoint_pairs(self) -> tuple[tuple[ToolSpec, EndpointSpec], ...]:
-        if self.index is not None:
-            return self.index.all_endpoint_pairs()
-        return tuple(
-            (tool, endpoint)
-            for tool in self.tools
-            for endpoint in tool.endpoints
-        )
-
-
 class SchemaPlanner:
     """Schema-aware planner with sync and async query-analysis paths."""
 
@@ -669,12 +652,15 @@ class SchemaPlanner:
         ]
         | None = None,
     ) -> CapabilityRetrieval:
-        catalog_snapshot = self._catalog_snapshot(
-            scoring_endpoint_transform=scoring_endpoint_transform,
-        )
-        candidates = self._semantic_recall_catalog(
+        context = self._planning_context(
             request,
             intent,
+            scoring_endpoint_transform=scoring_endpoint_transform,
+        )
+        catalog_snapshot = context.registry
+        candidates = self._semantic_recall_catalog(
+            context.request,
+            context.intent,
             additional_availability_predicate=additional_availability_predicate,
             scoring_endpoint_transform=scoring_endpoint_transform,
             catalog_snapshot=catalog_snapshot,
@@ -700,10 +686,11 @@ class SchemaPlanner:
         k: int,
         additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> CapabilityRouteRetrieval:
-        catalog_snapshot = self._catalog_snapshot()
+        context = self._planning_context(request, intent)
+        catalog_snapshot = context.registry
         candidates = self._semantic_recall_catalog(
-            request,
-            intent,
+            context.request,
+            context.intent,
             additional_availability_predicate=additional_availability_predicate,
             catalog_snapshot=catalog_snapshot,
         )
@@ -1249,12 +1236,12 @@ class SchemaPlanner:
             EndpointSpec | None,
         ]
         | None = None,
-    ) -> _CatalogSnapshot:
+    ) -> RegistrySnapshot:
         """Capture the exact version/tools pair used by downstream ranking."""
 
         if self.candidate_index and scoring_endpoint_transform is None:
             index = self._index()
-            return _CatalogSnapshot(
+            return RegistrySnapshot(
                 version=index.version,
                 tools=index.tools,
                 index=index,
@@ -1265,10 +1252,29 @@ class SchemaPlanner:
             tools = self.registry.tools()
             after = self.registry.version
             if before == after:
-                return _CatalogSnapshot(version=after, tools=tools)
+                return RegistrySnapshot(version=after, tools=tools)
 
         raise PlanningError(
             "registry changed repeatedly while capturing the planning catalog"
+        )
+
+    def _planning_context(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        *,
+        scoring_endpoint_transform: Callable[
+            [ToolSpec, EndpointSpec],
+            EndpointSpec | None,
+        ]
+        | None = None,
+    ) -> PlanningContext:
+        return PlanningContext(
+            request=request,
+            intent=intent,
+            registry=self._catalog_snapshot(
+                scoring_endpoint_transform=scoring_endpoint_transform,
+            ),
         )
 
     def _snapshot_tool_fingerprint(self, tool: ToolSpec) -> str:
@@ -1295,7 +1301,7 @@ class SchemaPlanner:
             EndpointSpec | None,
         ]
         | None = None,
-        catalog_snapshot: _CatalogSnapshot | None = None,
+        catalog_snapshot: RegistrySnapshot | None = None,
     ) -> list[_Candidate]:
         snapshot = catalog_snapshot or self._catalog_snapshot(
             scoring_endpoint_transform=scoring_endpoint_transform,
@@ -1440,7 +1446,7 @@ class SchemaPlanner:
         self,
         candidates: list[_Candidate],
         *,
-        catalog_snapshot: _CatalogSnapshot,
+        catalog_snapshot: RegistrySnapshot,
     ) -> None:
         """Sort candidates against only the catalog snapshot that produced them."""
 
@@ -1467,7 +1473,7 @@ class SchemaPlanner:
 
     def _structural_specificity_by_route(
         self,
-        catalog_snapshot: _CatalogSnapshot,
+        catalog_snapshot: RegistrySnapshot,
     ) -> dict[str, float]:
         if not self.structural_retrieval:
             return {}
@@ -1571,7 +1577,7 @@ class SchemaPlanner:
             EndpointSpec | None,
         ]
         | None = None,
-        catalog_snapshot: _CatalogSnapshot | None = None,
+        catalog_snapshot: RegistrySnapshot | None = None,
     ) -> list[_Candidate]:
         snapshot = catalog_snapshot or self._catalog_snapshot(
             scoring_endpoint_transform=scoring_endpoint_transform,
@@ -1756,7 +1762,7 @@ class SchemaPlanner:
             EndpointSpec | None,
         ]
         | None = None,
-        catalog_snapshot: _CatalogSnapshot | None = None,
+        catalog_snapshot: RegistrySnapshot | None = None,
     ) -> tuple[list[_Candidate], list[str]]:
         if self.candidate_recall_backend is None:
             return candidates, []
@@ -1814,7 +1820,7 @@ class SchemaPlanner:
             EndpointSpec | None,
         ]
         | None = None,
-        catalog_snapshot: _CatalogSnapshot | None = None,
+        catalog_snapshot: RegistrySnapshot | None = None,
     ) -> tuple[list[_Candidate], list[str]]:
         if self.candidate_recall_backend is None:
             return candidates, []
@@ -3571,12 +3577,15 @@ class SchemaPlanner:
         | None = None,
     ) -> ExecutionPlan:
         del async_decision
-        catalog_snapshot = self._catalog_snapshot(
-            scoring_endpoint_transform=scoring_endpoint_transform,
-        )
-        lexical_candidates = self._candidates(
+        context = self._planning_context(
             request,
             intent,
+            scoring_endpoint_transform=scoring_endpoint_transform,
+        )
+        catalog_snapshot = context.registry
+        lexical_candidates = self._candidates(
+            context.request,
+            context.intent,
             additional_availability_predicate=additional_availability_predicate,
             scoring_endpoint_transform=scoring_endpoint_transform,
             catalog_snapshot=catalog_snapshot,
@@ -3798,12 +3807,15 @@ class SchemaPlanner:
         ]
         | None = None,
     ) -> ExecutionPlan:
-        catalog_snapshot = self._catalog_snapshot(
-            scoring_endpoint_transform=scoring_endpoint_transform,
-        )
-        lexical_candidates = self._candidates(
+        context = self._planning_context(
             request,
             intent,
+            scoring_endpoint_transform=scoring_endpoint_transform,
+        )
+        catalog_snapshot = context.registry
+        lexical_candidates = self._candidates(
+            context.request,
+            context.intent,
             additional_availability_predicate=additional_availability_predicate,
             scoring_endpoint_transform=scoring_endpoint_transform,
             catalog_snapshot=catalog_snapshot,

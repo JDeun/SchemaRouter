@@ -26,7 +26,9 @@ ProviderMethodRegistrationStatus = Literal[
     "manual_binding_required",
     "disabled",
     "unavailable",
+    "aborted",
 ]
+ProviderRegistrationStatus = Literal["complete", "partial", "failed"]
 
 
 def _normalize_provider_name(value: str) -> str:
@@ -133,6 +135,26 @@ class ProviderRegistrationResult(StrictModel):
     provider_id: str
     registered_tool_keys: tuple[str, ...] = ()
     methods: tuple[ProviderMethodRegistration, ...] = ()
+    status: ProviderRegistrationStatus | None = None
+
+    @model_validator(mode="after")
+    def resolve_status(self) -> ProviderRegistrationResult:
+        registered = sum(
+            1 for method in self.methods if method.status == "registered"
+        )
+        if self.methods and registered == len(self.methods):
+            derived: ProviderRegistrationStatus = "complete"
+        elif registered:
+            derived = "partial"
+        else:
+            derived = "failed"
+        if self.status is None:
+            self.status = derived
+        elif self.status != derived:
+            raise ValueError(
+                "provider registration status does not match per-method outcomes"
+            )
+        return self
 
 
 ProviderDiscoveryStatus = Literal["resolved", "ambiguous", "unknown"]

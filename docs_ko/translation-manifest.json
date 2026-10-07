@@ -253,7 +253,7 @@
     },
     {
       "path": "guides/provider-first-registration.md",
-      "source_blob": "ae67e33c1144d3b5efc59624b56c754486bd87b4"
+      "source_blob": "448ff3c9ebde165f0b849f38468527a40aeb613a"
     },
     {
       "path": "guides/python-tools.md",
@@ -269,7 +269,7 @@
     },
     {
       "path": "guides/run-traces.md",
-      "source_blob": "0b484c4a2b9b182fbfc2e6086338a20c360832d8"
+      "source_blob": "0e13d584a86068a02a45ae6cbc32d3104e02b608"
     },
     {
       "path": "guides/runtime.md",

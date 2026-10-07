@@ -13,6 +13,22 @@ result = await router.add_provider("materials-project")
 
 The built-in profile resolves the provider into its known access methods and only registers methods that are safe and usable in the current process. Missing credentials or optional dependencies are reported rather than guessed or installed.
 
+The default is intentionally **best-effort**: usable methods are registered even when another method needs credentials, an optional dependency, or a manual binding. The returned `ProviderRegistrationResult.status` is `complete`, `partial`, or `failed`, so callers do not need to infer the aggregate outcome from each method.
+
+When the requested methods form one required fallback/topology unit, use all-or-nothing registration:
+
+```python
+result = await router.add_provider(
+    "my-provider",
+    methods={"openapi", "mcp"},
+    require_all=True,
+    replace=True,
+)
+assert result.status == "complete"
+```
+
+With `require_all=True`, SchemaRouter first prepares every requested declarative method without publishing it. Any missing credential, unavailable dependency/source, manual-only method, duplicate/collision, or preparation failure leaves the requested provider topology unchanged. If preparation succeeds, contracts are published through one version-guarded registry batch and trusted bindings are attached. A binding failure restores the previous contracts and bindings; concurrent registry mutation fails closed rather than overwriting the concurrent writer.
+
 ## Unknown or ambiguous provider names
 
 Known profiles still resolve locally and deterministically. Unknown names do **not** trigger implicit network discovery or execution authority.

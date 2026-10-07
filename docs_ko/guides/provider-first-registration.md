@@ -13,6 +13,22 @@ result = await router.add_provider("materials-project")
 
 내장 profile은 provider를 알려진 access method로 해석하고, 현재 프로세스에서 안전하게 사용할 수 있는 방법만 등록합니다. 필요한 credential이나 optional dependency가 없으면 임의로 추측하거나 설치하지 않고 상태로 보고합니다.
 
+기본 동작은 의도적으로 **best-effort**입니다. 어떤 method가 credential, optional dependency 또는 수동 binding을 필요로 하더라도 사용할 수 있는 다른 method는 등록합니다. 반환되는 `ProviderRegistrationResult.status`는 `complete`, `partial`, `failed` 중 하나이므로 caller가 method별 결과를 다시 집계할 필요가 없습니다.
+
+여러 access method가 하나의 필수 fallback/topology 단위라면 all-or-nothing 등록을 사용할 수 있습니다.
+
+```python
+result = await router.add_provider(
+    "my-provider",
+    methods={"openapi", "mcp"},
+    require_all=True,
+    replace=True,
+)
+assert result.status == "complete"
+```
+
+`require_all=True`에서는 모든 요청 method를 먼저 실제 registry에 공개하지 않은 상태로 준비합니다. Credential 누락, 사용할 수 없는 dependency/source, manual-only method, collision 또는 준비 실패가 하나라도 있으면 요청한 provider topology는 변경되지 않습니다. 모든 준비가 성공한 뒤에만 contract를 하나의 version-guarded registry batch로 공개하고 trusted binding을 연결합니다. Binding 단계가 실패하면 이전 contract와 binding을 복구하며, 동시에 registry가 변경되었다면 다른 writer의 상태를 덮어쓰지 않고 fail-closed합니다.
+
 ## 알 수 없거나 모호한 provider 이름
 
 등록된 profile은 계속 로컬에서 결정론적으로 해석합니다. 모르는 이름을 입력했다고 해서 네트워크 검색 결과를 곧바로 실행 권한으로 바꾸지는 않습니다.
