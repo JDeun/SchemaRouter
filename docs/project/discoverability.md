@@ -7,19 +7,19 @@ or model router.
 
 Use this sentence as the default long-form description:
 
-> **SchemaRouter is a typed capability retrieval and schema-aware execution layer for LLM/RAG
-> agents across MCP, OpenAPI, Python, and framework tools.**
+> **SchemaRouter is a typed capability routing and governed execution layer for AI agents across
+> APIs, tools, and data systems.**
 
 Supporting variants may be shorter, but they must preserve the same product boundary.
 
 ### Short variant
 
-> Typed capability retrieval and schema-aware tool execution for LLM/RAG agents.
+> Typed capability routing and governed execution for AI agents.
 
 ### Ecosystem variant
 
-> Put MCP, OpenAPI, Python, LangChain/LangGraph, and LlamaIndex tools behind one typed capability
-> registry instead of dumping the entire tool catalog into model context.
+> Put APIs, MCP tools, SDKs, and data systems behind one typed capability boundary instead of
+> dumping the entire capability catalog into model context.
 
 ## What it is / is not
 
