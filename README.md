@@ -28,7 +28,7 @@
 
 > **Stable release: 0.17.0** · Beta / pre-1.0
 
-SchemaRouter is a **typed capability retrieval and schema-aware execution layer for LLM/RAG agents**.
+SchemaRouter is a **typed capability routing and governed execution layer for AI agents across APIs, tools, and data systems**.
 
 It sits between an orchestrator and external tools/data sources, compiles heterogeneous schemas into
 one capability model, retrieves a bounded candidate set, and validates the selected call again at
