@@ -119,6 +119,8 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.14"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev]"
       - run: pytest -q tests/test_public_api.py tests/test_registry.py
@@ -225,6 +227,8 @@ jobs:
         if: ${{ needs.changes.outputs.deps == 'true' || needs.changes.outputs.runtime == 'true' }}
         with:
           python-version: "3.10"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - run: python -m pip install --upgrade pip
         if: ${{ needs.changes.outputs.deps == 'true' || needs.changes.outputs.runtime == 'true' }}
       - run: pip install "pytest>=8.2" "pytest-asyncio>=0.23" "hypothesis>=6.130,<7"
@@ -252,6 +256,8 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - run: python -m pip install --upgrade pip
       - run: pip install .
       - run: pip install "pip-audit>=2.9,<4"
@@ -267,6 +273,8 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - run: python -m pip install --upgrade pip
       - run: pip install build twine
       - run: python -m build
@@ -303,6 +311,8 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: package-dist-${{ github.run_id }}
@@ -327,6 +337,8 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: package-dist-${{ github.run_id }}
@@ -359,6 +371,8 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: package-dist-${{ github.run_id }}
@@ -395,6 +409,8 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: package-dist-${{ github.run_id }}
@@ -431,6 +447,8 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: package-dist-${{ github.run_id }}
@@ -491,6 +509,8 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: package-dist-${{ github.run_id }}
@@ -513,6 +533,8 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: package-dist-${{ github.run_id }}
@@ -539,6 +561,8 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: package-dist-${{ github.run_id }}
@@ -618,6 +642,8 @@ jobs:
         if: ${{ needs.changes.outputs.langchain == 'true' }}
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - run: python -m pip install --upgrade pip
         if: ${{ needs.changes.outputs.langchain == 'true' }}
       - run: pip install -e ".[dev,langchain,langgraph]"
@@ -642,6 +668,8 @@ jobs:
         if: ${{ needs.changes.outputs.llamaindex == 'true' }}
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - run: python -m pip install --upgrade pip
         if: ${{ needs.changes.outputs.llamaindex == 'true' }}
       - run: pip install -e ".[dev,llamaindex]"
@@ -664,6 +692,8 @@ jobs:
         if: ${{ needs.changes.outputs.jev == 'true' }}
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - run: python -m pip install --upgrade pip
         if: ${{ needs.changes.outputs.jev == 'true' }}
       - run: pip install -e ".[dev,jev]"
@@ -680,6 +710,8 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - run: python -m pip install --upgrade pip
       # Contract tests do not need CUDA. Satisfy Laya's torch dependency from the
       # official CPU wheel index so CI does not download multi-gigabyte CUDA wheels.
@@ -700,6 +732,8 @@ jobs:
         if: ${{ needs.changes.outputs.otel == 'true' }}
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - run: python -m pip install --upgrade pip
         if: ${{ needs.changes.outputs.otel == 'true' }}
       - run: pip install -e ".[dev,otel]"
@@ -720,6 +754,8 @@ jobs:
         if: ${{ needs.changes.outputs.mcp == 'true' }}
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - run: python -m pip install --upgrade pip
         if: ${{ needs.changes.outputs.mcp == 'true' }}
       - run: pip install -e ".[dev,mcp]"
@@ -738,6 +774,8 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev,database]"
       - run: pytest -q tests/test_sqlite_database_adapter.py tests/test_sqlalchemy_database_adapter.py
@@ -756,6 +794,8 @@ jobs:
         if: ${{ needs.changes.outputs.docs == 'true' }}
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - run: python -m pip install --upgrade pip
         if: ${{ needs.changes.outputs.docs == 'true' }}
       - run: pip install -e ".[docs]"
