@@ -40,57 +40,65 @@ nav:
       - 프로토콜 입력 결정: concepts/protocol-ingestion-decisions.md
       - Decision backend: concepts/decision-backends.md
   - 연결:
-      - Python 도구: guides/python-tools.md
-      - OpenAPI: guides/openapi.md
-      - OpenAPI 호환성: guides/openapi-compatibility.md
-      - OpenRPC / JSON-RPC: guides/openrpc.md
-      - OData: guides/odata.md
-      - GraphQL: guides/graphql.md
-      - OPTIMADE: guides/optimade.md
-      - MCP: guides/mcp.md
-      - 선언형 HTTP/JSON: guides/http-json.md
-      - Provider 중심 등록: guides/provider-first-registration.md
-      - Enterprise data onboarding: guides/enterprise-data-onboarding.md
-      - 데이터베이스 등록: guides/database-onboarding.md
-      - Vector store 등록: guides/vector-store-onboarding.md
-      - Graph/RDF 등록: guides/graph-store-onboarding.md
-      - NoSQL record-store 등록: guides/record-store-onboarding.md
-      - 범용 입력 매트릭스: guides/universal-ingestion.md
-      - 실서비스 호환성 매트릭스: guides/live-compatibility-matrix.md
-      - 사람이 읽는 API 문서: guides/html-documentation.md
-      - 서드파티 adapter plugin: guides/adapter-plugins.md
-      - 프로토콜 plugin recipe: guides/protocol-plugin-recipes.md
+      - API와 프로토콜:
+          - OpenAPI: guides/openapi.md
+          - OpenAPI 호환성: guides/openapi-compatibility.md
+          - OpenRPC / JSON-RPC: guides/openrpc.md
+          - OData: guides/odata.md
+          - GraphQL: guides/graphql.md
+          - OPTIMADE: guides/optimade.md
+          - MCP: guides/mcp.md
+          - 선언형 HTTP/JSON: guides/http-json.md
+      - 코드와 provider:
+          - Python 도구: guides/python-tools.md
+          - Provider 중심 등록: guides/provider-first-registration.md
+          - 서드파티 adapter plugin: guides/adapter-plugins.md
+          - 프로토콜 plugin recipe: guides/protocol-plugin-recipes.md
+      - 데이터 시스템:
+          - Enterprise data onboarding: guides/enterprise-data-onboarding.md
+          - 데이터베이스 등록: guides/database-onboarding.md
+          - Vector store 등록: guides/vector-store-onboarding.md
+          - Graph/RDF 등록: guides/graph-store-onboarding.md
+          - NoSQL record-store 등록: guides/record-store-onboarding.md
+      - 호환성과 탐색:
+          - 범용 입력 매트릭스: guides/universal-ingestion.md
+          - 실서비스 호환성 매트릭스: guides/live-compatibility-matrix.md
+          - 사람이 읽는 API 문서: guides/html-documentation.md
       - 레시피:
           - OpenAPI agent 경계: recipes/openapi-agent.md
           - MCP agent 경계: recipes/mcp-agent.md
           - 대규모 도구 카탈로그: recipes/many-tools.md
   - 런타임:
-      - Batch/stream/event: guides/runtime.md
-      - 실행 정책: guides/execution-policy.md
-      - Principal 권한 관리: guides/authorization.md
-      - Provider-aware fallback: guides/provider-fallback.md
-      - State-aware retrieval: guides/state-aware-retrieval.md
-      - Capability 제약: guides/capability-constraints.md
-      - Capability decision trace: guides/capability-decision-traces.md
-      - Capability drift: guides/capability-graph-drift.md
-      - Capability graph 확장성: guides/capability-graph-scalability.md
-      - Capability eligibility: guides/capability-eligibility.md
-      - Capability lineage: guides/capability-lineage.md
-      - Contract-aware fallback: guides/contract-aware-fallback.md
-      - Capability negotiation: guides/capability-negotiation.md
-      - Capability snapshot: guides/capability-snapshots.md
-      - 다중 provider 근거: guides/multi-provider-evidence.md
-      - 스키마 변경 분석: guides/schema-drift.md
-      - Portable capability artifacts: guides/capability-artifacts.md
-      - Retry 정책: guides/retry.md
-      - 신뢰 실행 hook: guides/execution-hooks.md
-      - 영속 실행 trace: guides/run-traces.md
-      - 운영 상태 확인: guides/inspection.md
-      - 필드 투영: guides/field-projection.md
-      - Candidate indexing: guides/candidate-indexing.md
-      - 모델 보조 분석: guides/model-analyzer.md
-      - Decision routing benchmark: guides/decision-benchmark.md
-      - Consumer acceptance 검증: guides/consumer-acceptance.md
+      - 실행과 권한:
+          - Batch/stream/event: guides/runtime.md
+          - 실행 정책: guides/execution-policy.md
+          - Principal 권한 관리: guides/authorization.md
+          - Retry 정책: guides/retry.md
+          - 신뢰 실행 hook: guides/execution-hooks.md
+      - 선택과 적응:
+          - Provider-aware fallback: guides/provider-fallback.md
+          - State-aware retrieval: guides/state-aware-retrieval.md
+          - Capability 제약: guides/capability-constraints.md
+          - Contract-aware fallback: guides/contract-aware-fallback.md
+          - Capability negotiation: guides/capability-negotiation.md
+          - 필드 투영: guides/field-projection.md
+          - Candidate indexing: guides/candidate-indexing.md
+          - 모델 보조 분석: guides/model-analyzer.md
+      - 관찰과 거버넌스:
+          - Capability decision trace: guides/capability-decision-traces.md
+          - Capability drift: guides/capability-graph-drift.md
+          - Capability graph 확장성: guides/capability-graph-scalability.md
+          - Capability eligibility: guides/capability-eligibility.md
+          - Capability lineage: guides/capability-lineage.md
+          - Capability snapshot: guides/capability-snapshots.md
+          - 다중 provider 근거: guides/multi-provider-evidence.md
+          - 스키마 변경 분석: guides/schema-drift.md
+          - Portable capability artifacts: guides/capability-artifacts.md
+          - 영속 실행 trace: guides/run-traces.md
+          - 운영 상태 확인: guides/inspection.md
+      - 검증:
+          - Decision routing benchmark: guides/decision-benchmark.md
+          - Consumer acceptance 검증: guides/consumer-acceptance.md
   - 통합:
       - LangChain: integrations/langchain.md
       - LangGraph: integrations/langgraph.md
