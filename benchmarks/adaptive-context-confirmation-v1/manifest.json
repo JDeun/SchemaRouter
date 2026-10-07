@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "experiment": "adaptive-context-confirmation-v1",
+  "issue": 840,
+  "status": "protocol_frozen_unscored",
+  "purpose": "One-shot confirmation of adaptive history and session exposure before any default enablement.",
+  "development_results_tuning_eligible": false,
+  "configuration": {
+    "prior_weight": 0.5,
+    "top_k": 10,
+    "history_source": "successful authorized executions only",
+    "history_mutation_during_scoring": false,
+    "session_scope": "independent user/session/role host scope",
+    "compaction_signal": "explicit host supplied"
+  },
+  "conditions": [
+    "stateless",
+    "cold_start",
+    "frozen_history",
+    "session_exposure",
+    "post_compaction"
+  ],
+  "corpus_contract": {
+    "must_be_created_after_this_protocol_is_merged": true,
+    "must_not_reuse_development_queries": true,
+    "must_not_reuse_gearlynx_no_route_cases": true,
+    "must_include_supported_single_step": true,
+    "must_include_supported_multi_step": true,
+    "must_include_near_domain_unsupported": true,
+    "must_include_out_of_domain_unsupported": true,
+    "minimum_tasks": 100,
+    "languages": ["en", "ko"],
+    "freeze_sha256_before_scoring": true,
+    "one_shot": true
+  },
+  "primary_metrics": [
+    "required_tool_recall",
+    "unsupported_rejection",
+    "oracle_execution_completion_rate",
+    "cumulative_schema_context_utf8_bytes",
+    "duplicate_schema_injections",
+    "post_compaction_recovery"
+  ],
+  "diagnostic_metrics": [
+    "required_field_recall",
+    "latency_ms"
+  ],
+  "promotion_gate": {
+    "required_tool_recall_regression_max_pp": 0.0,
+    "unsupported_rejection_regression_max_pp": 0.0,
+    "oracle_execution_completion_regression_max_pp": 0.0,
+    "post_compaction_recovery_min": 1.0,
+    "duplicate_schema_injections_max": 0,
+    "session_schema_context_reduction_min_fraction": 0.1,
+    "all_conditions_required": true
+  },
+  "guardrails": {
+    "post_freeze_semantic_tuning_allowed": false,
+    "failed_or_unauthorized_history_allowed": false,
+    "cross_scope_state_sharing_allowed": false,
+    "default_enablement_before_gate_pass_allowed": false,
+    "failed_confirmation_reuse_for_tuning_allowed": false
+  },
+  "evidence": {
+    "scored": false,
+    "performance_claims_allowed": false
+  }
+}
