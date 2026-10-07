@@ -1,5 +1,5 @@
-import json
 from pathlib import Path
+import json
 
 
 ROOT = Path("benchmarks/external-validation-clear-your-tools-dev-v1")
