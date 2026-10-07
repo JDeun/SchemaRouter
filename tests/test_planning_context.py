@@ -3,7 +3,11 @@ from dataclasses import FrozenInstanceError
 import pytest
 
 from schemarouter.models import EndpointSpec, PlanRequest, QueryIntent, ToolSpec
-from schemarouter.planning_context import PlanningContext, RegistrySnapshot
+from schemarouter.planning_context import (
+    PlanningContext,
+    RegistrySnapshot,
+    SnapshotToolRegistry,
+)
 
 
 def _tool() -> ToolSpec:
@@ -46,3 +50,20 @@ def test_planning_context_binds_request_intent_and_registry_version() -> None:
 
     with pytest.raises(FrozenInstanceError):
         context.registry = RegistrySnapshot(version=12, tools=(tool,))  # type: ignore[misc]
+
+
+def test_snapshot_tool_registry_is_read_only_and_detached() -> None:
+    tool = _tool()
+    snapshot = RegistrySnapshot(version=13, tools=(tool,))
+    registry = SnapshotToolRegistry(snapshot)
+
+    assert registry.version == 13
+    assert registry.keys() == ("catalog",)
+    assert registry.endpoint("catalog", "lookup").name == "lookup"
+
+    detached = registry.get("catalog")
+    detached.description = "mutated outside snapshot"
+    assert registry.get("catalog").description != "mutated outside snapshot"
+
+    with pytest.raises(TypeError, match="read-only"):
+        registry.register(_tool())
