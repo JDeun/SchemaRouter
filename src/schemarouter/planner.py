@@ -3695,7 +3695,6 @@ class SchemaPlanner:
         primary_pairs = list(primary_selection.pairs)
         required_coverage = primary_selection.required_coverage
 
-        calls = [call for _, call in primary_pairs]
         fallback_selection = select_fallbacks_sync(
             primary_pairs=tuple(primary_pairs),
             all_candidates=tuple(all_candidates),
@@ -3871,7 +3870,6 @@ class SchemaPlanner:
         primary_pairs = list(primary_selection.pairs)
         required_coverage = primary_selection.required_coverage
 
-        calls = [call for _, call in primary_pairs]
         fallback_selection = await select_fallbacks_async(
             primary_pairs=tuple(primary_pairs),
             all_candidates=tuple(all_candidates),
