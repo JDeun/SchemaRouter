@@ -62,8 +62,13 @@ def test_official_hook_uses_only_trusted_gateway_calls(
         hook, "gate_official_v1_record",
         lambda record, **kwargs: collected.append((record, kwargs)) or record,
     )
+    monkeypatch.setattr(hook, "verify_sources", lambda *a: [])
     hook.install_v1_gate(
-        fake, document={"public_observation_mappings": {}},
+        fake,
+        document={
+            "public_observation_mappings": {},
+            "case_coverage": {"SAB-V1-001": "refund_issue"},
+        },
         source_root=tmp_path, case_id="SAB-V1-001",
     )
     gateway = fake.ToolGateway("v1")
@@ -84,9 +89,37 @@ def test_official_hook_fails_closed_if_gateway_not_captured(tmp_path: Path) -> N
         ToolGateway=FakeGateway,
         normalize_v1=lambda *args: {"events": []},
     )
+    monkeypatch.setattr(hook, "verify_sources", lambda *a: [])
     hook.install_v1_gate(
-        fake, document={"public_observation_mappings": {}},
+        fake,
+        document={
+            "public_observation_mappings": {},
+            "case_coverage": {"SAB-V1-001": "refund_issue"},
+        },
         source_root=tmp_path, case_id="SAB-V1-001",
     )
     with pytest.raises(ValueError, match="one isolated"):
         fake.normalize_v1({}, {}, [], "codex", "model", "", None)
+
+
+def test_missing_or_tampered_independent_source_fails_before_runner(
+    monkeypatch, tmp_path: Path
+) -> None:
+    class FakeGateway:
+        def __init__(self, protocol: str):
+            self.protocol = protocol
+            self.calls = []
+
+    fake = SimpleNamespace(
+        ToolGateway=FakeGateway,
+        normalize_v1=lambda *args: {"events": []},
+    )
+    monkeypatch.setattr(
+        hook, "verify_sources", lambda *a: ["public source hash mismatch"]
+    )
+    with pytest.raises(ValueError, match="preflight failed"):
+        hook.install_v1_gate(
+            fake,
+            document={"case_coverage": {"SAB-V1-001": "refund_issue"}},
+            source_root=tmp_path, case_id="SAB-V1-001",
+        )

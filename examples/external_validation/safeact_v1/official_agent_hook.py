@@ -11,6 +11,7 @@ import argparse
 import importlib.util
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,9 @@ from examples.external_validation.safeact_v1.record_intervention import (
 from examples.external_validation.safeact_v1.trusted_session import (
     VerifiedToolEvidence,
 )
+from scripts.verify_safeact_v1_sources import verify_sources
+
+PINNED_SAFEACT_SHA = "841816cf1e376e6fbf8600cffac5df1736e1d369"
 
 
 def strict_public_evidence(
@@ -83,6 +87,11 @@ def install_v1_gate(
     The upstream CLI controls both model isolation and the trustworthy
     ToolGateway. The adapter captures only its public completed-call records.
     """
+    verified_errors = verify_sources(document, source_root)
+    if verified_errors:
+        raise ValueError("independent contract preflight failed: " + "; ".join(verified_errors))
+    if case_id not in document.get("case_coverage", {}):
+        raise ValueError("public V1 case has no independent contract coverage")
     existing_init = official_module.ToolGateway.__init__
     original_normalize = official_module.normalize_v1
     gateways: list[Any] = []
@@ -146,6 +155,24 @@ def main() -> int:
     if not isinstance(case_id, str) or not case_id.startswith("SAB-V1-"):
         raise ValueError("missing trusted SafeAct V1 case identity")
     root = find_official_root(Path.cwd().resolve())
+    revision = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=root,
+        check=True,
+        text=True,
+        capture_output=True,
+    ).stdout.strip()
+    if revision != PINNED_SAFEACT_SHA:
+        raise ValueError("unverified upstream SafeAct revision")
+    if "--strategy" in upstream_args:
+        index = upstream_args.index("--strategy")
+        if index + 1 >= len(upstream_args) or upstream_args[index + 1] != "baseline":
+            raise ValueError("upstream SCGR-EG strategy would confound arm identity")
+    if not any(
+        token == "--model" or token.startswith("--model=")
+        for token in upstream_args
+    ):
+        raise ValueError("explicit frozen runtime model required")
     module_path = root / "agents" / "coding_cli_safeact_agent.py"
     document = json.loads(args.contract_file.read_text(encoding="utf-8"))
     if not isinstance(document, dict):
