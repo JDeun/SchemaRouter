@@ -7,7 +7,6 @@ observed before an agent's consequential proposal and the public scenario.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import argparse
 import hashlib
 import importlib.util
@@ -15,6 +14,7 @@ import json
 import os
 import subprocess
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
