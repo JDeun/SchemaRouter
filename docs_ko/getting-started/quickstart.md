@@ -166,10 +166,10 @@ policy, approval callback, binding fingerprint 상태를 확인하십시오.
 
 더 자세한 protocol 설명:
 
-- [OpenAPI](../guides/openapi.md)
-- [MCP](../guides/mcp.md)
-- [GraphQL](../guides/graphql.md)
-- [OData](../guides/odata.md)
-- [OpenRPC / JSON-RPC](../guides/openrpc.md)
-- [OPTIMADE](../guides/optimade.md)
-- [Universal ingestion matrix](../guides/universal-ingestion.md)
+- [OpenAPI 안내](../guides/openapi.md)
+- [MCP 안내](../guides/mcp.md)
+- [GraphQL 안내](../guides/graphql.md)
+- [OData 안내](../guides/odata.md)
+- [OpenRPC / JSON-RPC 안내](../guides/openrpc.md)
+- [OPTIMADE 안내](../guides/optimade.md)
+- [범용 수집 지원 현황표](../guides/universal-ingestion.md)
