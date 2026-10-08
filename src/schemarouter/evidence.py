@@ -164,7 +164,7 @@ def build_evidence_ledger_entry(
     if not global_ok or not field_ok:
         raise EvidenceContractError("evidence contract unsatisfied: " + ", ".join(missing))
     if contract.minimum_corroboration != 1:
-        raise ValueError(
+        raise EvidenceContractError(
             "minimum_corroboration > 1 requires an explicit aggregation boundary"
         )
     return EvidenceLedgerEntry(
