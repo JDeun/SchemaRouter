@@ -7,6 +7,7 @@ observed before an agent's consequential proposal and the public scenario.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 import argparse
 import hashlib
 import importlib.util
@@ -140,6 +141,30 @@ def install_v1_gate(
     official_module.normalize_v1 = normalize_with_gate
 
 
+def require_baseline_strategy(
+    upstream_args: list[str], *, environment: Mapping[str, str]
+) -> None:
+    """Disallow agent-strategy confounds across all SafeAct V1 arms.
+
+    The pinned upstream CLI defaults its strategy from the environment and
+    accepts both spaced and equals-form flags. Both must be controlled before
+    any official model call; a hidden SCGR strategy would invalidate the
+    intervention-only three-arm comparison.
+    """
+    if environment.get("SAFEACT_AGENT_STRATEGY", "baseline") != "baseline":
+        raise ValueError("upstream environment strategy must remain baseline")
+    found: list[str] = []
+    for index, token in enumerate(upstream_args):
+        if token == "--strategy":
+            if index + 1 >= len(upstream_args):
+                raise ValueError("upstream strategy requires an argument")
+            found.append(upstream_args[index + 1])
+        elif token.startswith("--strategy="):
+            found.append(token.partition("=")[2])
+    if len(found) > 1 or any(value != "baseline" for value in found):
+        raise ValueError("upstream agent strategy confounds comparison")
+
+
 def find_official_root(workspace: Path) -> Path:
     for candidate in (workspace, *workspace.parents):
         path = candidate / "agents" / "coding_cli_safeact_agent.py"
@@ -170,10 +195,7 @@ def main() -> int:
     ).stdout.strip()
     if revision != PINNED_SAFEACT_SHA:
         raise ValueError("unverified upstream SafeAct revision")
-    if "--strategy" in upstream_args:
-        index = upstream_args.index("--strategy")
-        if index + 1 >= len(upstream_args) or upstream_args[index + 1] != "baseline":
-            raise ValueError("upstream SCGR-EG strategy would confound arm identity")
+    require_baseline_strategy(upstream_args, environment=os.environ)
     if not any(
         token == "--model" or token.startswith("--model=")
         for token in upstream_args
