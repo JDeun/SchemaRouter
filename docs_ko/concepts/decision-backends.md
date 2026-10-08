@@ -43,18 +43,11 @@ The master `enabled` switch must be true. Individual surfaces are separately con
 - `evidence_sufficiency`
 - `recall_on_empty`
 
-Bounded candidate selection is active when tool or endpoint selection is enabled. `field_selection`
-lets the backend choose only from declared non-identifier output fields while identifier fields are
-preserved locally. `evidence_sufficiency` is also implemented as a conservative binary gate:
-SchemaRouter first proves the requested provenance/license/unit/source-type requirements from local
-schema metadata, then the backend may only keep that locally sufficient call or veto it as
-insufficient. A provider can never upgrade missing local evidence.
+도구 또는 엔드포인트 선택 기능을 활성화하면 제한된 후보 선택 기능도 동작합니다. `field_selection`은 식별자 필드를 로컬에 보존하면서, 백엔드가 선언된 비식별자 출력 필드에서만 선택하도록 합니다. `evidence_sufficiency` 역시 보수적인 이진 게이트로 구현되어 있습니다. SchemaRouter가 먼저 로컬 스키마 메타데이터에서 요구된 출처·라이선스·단위·원본 유형의 근거를 확인한 다음, 백엔드는 로컬에서 충분하다고 판정된 호출을 유지하거나 불충분하다는 이유로 거부할 수만 있습니다. 제공자는 로컬에 없는 근거를 새로 만들어 충분한 상태로 바꿀 수 없습니다.
 
 ### 제한된 semantic candidate recall
 
-For multilingual or paraphrased queries, lexical recall can miss a valid endpoint even when the
-registered schema describes the right capability. `SchemaPlanner` can optionally add a separate
-**candidate recall backend** before final candidate selection:
+다국어 질의나 바꿔 쓴 질의에서는 등록된 스키마에 적절한 기능이 기술되어 있어도 어휘 기반 검색이 올바른 엔드포인트를 놓칠 수 있습니다. `SchemaPlanner`는 최종 후보 선택 전에 별도의 **후보 재현율 개선 백엔드**를 선택적으로 추가할 수 있습니다.
 
 ```python
 from schemarouter import EmbeddingDecisionBackend, SchemaPlanner
@@ -70,25 +63,15 @@ planner = SchemaPlanner(
 )
 ```
 
-This stage is recall-only. It receives the finite registered endpoint catalog and may return at most
-`candidate_recall_limit` option IDs. SchemaRouter unions those semantic top-k candidates with the
-ordinary lexical candidates, then the existing bounded decision/policy/schema/evidence/runtime
-pipeline decides what can actually execute.
+이 단계는 후보를 찾아내는 역할만 합니다. 유한한 등록 엔드포인트 카탈로그를 입력받아 최대 `candidate_recall_limit`개의 선택지 ID를 반환할 수 있습니다. SchemaRouter는 의미 기반 top-k 후보를 일반 어휘 검색 후보와 합친 후, 기존의 제한된 결정·정책·스키마·근거·런타임 파이프라인을 통해 실제 실행 가능 여부를 판단합니다.
 
-The semantic recall backend does **not** create tools, calls, arguments, fields, or execution
-authority. When it fails or abstains, SchemaRouter keeps lexical candidates and emits a warning.
-When lexical recall is empty and a semantic recall backend is configured, SchemaRouter does not
-additionally expose the full catalog through `recall_on_empty`; the semantic top-k remains bounded.
+의미 기반 재현율 백엔드는 도구, 호출, 인수, 필드 또는 실행 권한을 새로 만들지 **않습니다**. 백엔드가 실패하거나 선택을 포기하면 SchemaRouter는 어휘 기반 후보를 유지하고 경고를 남깁니다. 어휘 검색 결과가 없더라도 의미 기반 검색 백엔드가 설정된 경우 `recall_on_empty`를 통해 전체 카탈로그를 추가 노출하지 않습니다. 의미 기반 top-k 범위가 그대로 적용됩니다.
 
-A multilingual embedding model is a natural fit, but SchemaRouter does not depend on one. The
-existing `EmbeddingDecisionBackend` can wrap an application-owned SentenceTransformers, FastEmbed,
-remote embedding API, or domain encoder.
+다국어 임베딩 모델은 자연스러운 선택이지만 SchemaRouter가 특정 모델에 종속되지는 않습니다. 기존 `EmbeddingDecisionBackend`는 애플리케이션이 소유한 SentenceTransformers, FastEmbed, 원격 임베딩 API 또는 도메인 전용 인코더를 감쌀 수 있습니다.
 
 ### 제한된 capability-fit / no-route gate
 
-Semantic recall improves recall but, by itself, may force an in-catalog candidate for an
-out-of-domain query. `SchemaPlanner` also supports an optional
-`candidate_fit_backend` after lexical/semantic recall and before final candidate selection:
+의미 기반 후보 검색은 재현율을 높이지만 이것만으로는 도메인 밖 질의에도 카탈로그 내 후보를 억지로 선택할 수 있습니다. `SchemaPlanner`는 어휘·의미 검색 이후 최종 후보 선택 이전에 선택적 `candidate_fit_backend`도 지원합니다.
 
 ```python
 fit = EmbeddingDecisionBackend(
@@ -104,24 +87,16 @@ planner = SchemaPlanner(
 )
 ```
 
-The fit backend receives only the already-authorized bounded candidate set. A concrete selection
-means only “at least one offered capability plausibly fits”; SchemaRouter keeps the complete
-candidate set for the normal downstream ranker. The fit backend cannot choose the final
-route or create execution authority.
+적합성 백엔드는 이미 허용 범위로 제한된 후보 집합만 전달받습니다. 구체적인 선택을 반환해도 그 의미는 ‘제시된 기능 중 하나 이상이 질의에 그럴듯하게 맞는다’는 것뿐입니다. SchemaRouter는 일반 후속 순위 결정기를 위해 전체 후보 집합을 유지합니다. 적합성 백엔드는 최종 경로를 선택하거나 실행 권한을 만들 수 없습니다.
 
-Explicit abstention suppresses all candidate routes and produces a no-route plan. Backend exceptions
-do not suppress an otherwise authorized route: SchemaRouter retains the candidate set and emits a
-warning. This makes the gate a quality/abstention boundary rather than a new security authority.
+명시적으로 선택을 포기하면 모든 후보 경로를 억제하고 경로 없는 계획을 생성합니다. 반대로 백엔드 예외가 발생했다고 해서 이미 허용된 경로를 차단하지는 않습니다. SchemaRouter는 후보 집합을 유지하고 경고를 남깁니다. 따라서 이 게이트는 새로운 보안 권한이 아니라 품질·선택 포기 판단의 경계입니다.
 
 For embedding-based fit gates, calibrate `min_similarity` and `min_margin` on development or
 calibration data. Do not tune these thresholds against a held-out test split.
 
 ### 제한된 operation-capability fit
 
-Broad `candidate_fit_backend` answers whether at least one recalled capability plausibly belongs to
-the query at all. That is not sufficient for near-domain unsupported operations: a request can clearly
-belong to the `users` domain while asking to `delete` an account even though the registry exposes only
-`lookup` and `update`.
+광범위한 `candidate_fit_backend`는 검색된 기능 중 하나라도 질의의 도메인에 해당하는지 판단합니다. 그러나 유사 도메인에서 지원되지 않는 작업을 가려내기에는 부족합니다. 예를 들어 레지스트리에는 `lookup`, `update`만 등록돼 있는데 사용자가 계정 `delete`를 요청하더라도 질의가 `users` 도메인에 속한다는 사실 자체는 명확할 수 있습니다.
 
 For that case, `SchemaPlanner` supports an optional `operation_fit_backend` between broad capability
 fit and same-tool endpoint disambiguation:
@@ -142,25 +117,11 @@ planner = SchemaPlanner(
 )
 ```
 
-The operation-fit surface is narrower than the broad capability-fit surface. It sees
-only sibling endpoints in the currently leading tool domain and receives endpoint operation names,
-trusted `EndpointSpec.operation_aliases`, endpoint descriptions, operation class, and optional HTTP
-method. Tool descriptions, tool-name labels, and answer-field labels are omitted from the embedding
-text so domain or field similarity alone cannot turn an unsupported action into a supported one. The
-leading tool identity is available only as local request metadata; it is not part of the default
-embedding option text.
+작업 적합성 판단 범위는 일반 기능 적합성보다 좁습니다. 현재 가장 앞선 도구 도메인에 속하는 형제 엔드포인트만 살펴보고, 엔드포인트 작업 이름, 신뢰할 수 있는 `EndpointSpec.operation_aliases`, 엔드포인트 설명, 작업 분류 및 선택적인 HTTP 메서드를 입력받습니다. 단순히 도메인이나 필드가 유사하다는 이유로 미지원 작업을 지원 대상으로 바꾸지 않도록 임베딩 텍스트에는 도구 설명, 도구 이름 레이블, 답변 필드 레이블을 넣지 않습니다. 최상위 도구의 식별자는 로컬 요청 메타데이터로만 제공하며 기본 임베딩 선택지 텍스트에는 포함하지 않습니다.
 
-Operation aliases are explicit application-owned routing vocabulary, for example
-`["current conditions", "live conditions"]` or `["create support ticket", "open support case"]`.
-SchemaRouter does not infer them from user input or model output, and ingestion adapters do not
-fabricate them. They are planning hints only: aliases cannot create an endpoint, modify arguments,
-change side-effect classification or policy, or grant execution authority. Alias changes are
-fingerprinted and exposed through inspection/dashboard output.
+작업 별칭은 애플리케이션에서 명시적으로 관리하는 라우팅 어휘입니다. 예를 들어 `["current conditions", "live conditions"]`나 `["create support ticket", "open support case"]`가 있습니다. SchemaRouter는 사용자 입력이나 모델 출력에서 별칭을 추론하지 않고 수집 어댑터도 임의로 만들지 않습니다. 별칭은 계획 단계의 힌트일 뿐이며 엔드포인트 생성, 인수 수정, 부작용 분류·정책 변경 또는 실행 권한 부여에 사용할 수 없습니다. 별칭의 변경은 지문으로 기록되며 검사·대시보드 출력에서 확인할 수 있습니다.
 
-A positive decision only means that one offered operation plausibly matches the request. The stage
-keeps the candidate order unchanged and therefore cannot choose the final route. Explicit abstention
-suppresses the candidate set; backend failures retain the already-authorized candidates with a
-warning. The stage is skipped for `max_calls > 1`.
+긍정적인 판단은 제시된 작업 중 하나가 요청과 그럴듯하게 일치한다는 뜻일 뿐입니다. 이 단계는 후보의 순서를 바꾸지 않으므로 최종 경로를 결정할 수 없습니다. 명시적으로 선택을 포기하면 후보 집합을 억제하고, 백엔드 실패 시에는 이미 허용된 후보를 경고와 함께 유지합니다. `max_calls > 1`에서는 이 단계를 건너뜁니다.
 
 As with all model-assisted routing stages, operation-fit thresholds are workload/model specific.
 Calibrate them on development/calibration data and evaluate any claimed improvement on a fresh
@@ -168,9 +129,7 @@ untouched holdout.
 
 ### 제한된 same-tool endpoint disambiguation
 
-After semantic recall and capability-fit gating, multiple sibling endpoints from the same leading
-tool may still remain plausible. `SchemaPlanner` can optionally use
-`endpoint_disambiguation_backend` to reorder only those sibling endpoints:
+의미 기반 검색과 기능 적합성 게이트를 통과해도 선두 도구의 형제 엔드포인트 여러 개가 여전히 적합해 보일 수 있습니다. `SchemaPlanner`는 이 형제 엔드포인트의 순서만 바꾸기 위해 `endpoint_disambiguation_backend`를 선택적으로 사용할 수 있습니다.
 
 ```python
 disambiguator = EmbeddingDecisionBackend(multilingual_embed_batch)
@@ -184,44 +143,21 @@ planner = SchemaPlanner(
 )
 ```
 
-This stage is narrower than normal candidate selection. It receives only endpoints
-belonging to the already-leading tool domain and may move one of those siblings to the front. It
-cannot switch to another tool, add or remove candidates, create arguments or fields, or grant
-execution authority. Backend failure or abstention preserves the existing candidate order.
+이 단계는 일반 후보 선택보다 범위가 좁습니다. 이미 선두에 있는 도구 도메인의 엔드포인트만 받고, 그중 한 형제 엔드포인트를 맨 앞으로 이동할 수 있습니다. 다른 도구로 바꾸거나 후보를 추가·삭제하거나 인수·필드를 만들거나 실행 권한을 부여할 수 없습니다. 백엔드가 실패하거나 선택을 포기하면 기존 후보 순서가 유지됩니다.
 
-The stage is skipped for `max_calls > 1`, where semantic field coverage rather than single-route
-ordering should control selection. Endpoint descriptions include the trusted read-only/mutating
-operation class and declared answer-field labels so a generic semantic backend can distinguish
-pairs such as `search/update`, `lookup/update`, `list/create`, and `current/forecast`.
+이 단계는 `max_calls > 1`일 때 건너뜁니다. 이 경우 단일 경로의 순서보다 의미적으로 필요한 필드의 포괄 범위가 선택을 좌우해야 하기 때문입니다. 엔드포인트 설명에는 신뢰할 수 있는 읽기 전용·데이터 변경 작업 분류와 선언된 답변 필드 레이블이 포함돼 있어 일반 의미 기반 백엔드도 `search/update`, `lookup/update`, `list/create`, `current/forecast` 같은 조합을 구별할 수 있습니다.
 
 As with the recall and fit stages, evaluate disambiguation on development/calibration data and use a
 fresh untouched holdout for any claimed improvement.
 ### 빈 lexical recall
 
-`recall_on_empty=True` is an additional opt-in for candidate selection. It matters when the
-deterministic lexical stage finds no endpoint at all, for example when a Korean query must be routed
-against an English-only schema catalog.
+`recall_on_empty=True`는 후보 선택에 추가로 설정할 수 있는 선택 사항입니다. 한국어 질의를 영어 전용 스키마 카탈로그로 라우팅해야 하는 경우처럼 결정적인 어휘 검색 단계가 엔드포인트를 전혀 찾지 못할 때 의미가 있습니다.
 
-When enabled together with `tool_selection` or `endpoint_selection`, SchemaRouter may expose the
-finite registered endpoint catalog to the bounded decision backend even though every deterministic
-schema score is zero. The backend still receives only local option IDs and cannot invent a tool or
-endpoint.
+`tool_selection` 또는 `endpoint_selection`과 함께 활성화하면 모든 결정적 스키마 점수가 0이더라도 SchemaRouter가 유한한 등록 엔드포인트 카탈로그를 제한된 결정 백엔드에 보여줄 수 있습니다. 백엔드는 여전히 로컬 선택지 ID만 받으며 도구나 엔드포인트를 임의로 만들어낼 수 없습니다.
 
-The default is `False`. If the backend errors or abstains after this catalog expansion,
-SchemaRouter returns no call rather than selecting an arbitrary endpoint: there was no deterministic
-candidate to fall back to. A decision backend that returns a concrete option still selects that
-registered route, so out-of-domain suppression should use calibrated confidence plus
-`candidate_abstention="no_route"` when needed. Benchmark the workload before enabling this policy
-in production, especially for multilingual, out-of-domain, or adversarial requests.
+기본값은 `False`입니다. 카탈로그를 확장한 뒤 백엔드가 오류를 내거나 선택을 포기하면 SchemaRouter는 임의의 엔드포인트를 고르지 않고 호출 없는 결과를 반환합니다. 대체할 결정적 후보가 없기 때문입니다. 구체적인 선택지를 반환한 경우에는 등록된 경로를 선택하므로, 도메인 밖 요청을 억제하려면 필요에 따라 보정된 신뢰도와 `candidate_abstention="no_route"`를 함께 사용해야 합니다. 특히 다국어, 도메인 밖 또는 적대적 요청에서는 운영 환경에 이 정책을 켜기 전에 해당 작업 부하를 벤치마크하세요.
 
-Candidate abstention is independently configurable with
-`candidate_abstention="inherit" | "deterministic" | "no_route" | "error"`. The default
-`"inherit"` preserves historical behavior by following `fallback`, so existing
-`fallback="deterministic"` and `fallback="error"` configurations keep their prior
-abstention semantics. `"no_route"` suppresses the candidate
-route when the bounded backend explicitly abstains, which is useful for confidence-gated
-out-of-domain handling. Provider exceptions and malformed output are still governed by `fallback`,
-so choosing `"no_route"` does not silently convert provider outages into no-route results.
+후보 선택 포기 동작은 `candidate_abstention="inherit" | "deterministic" | "no_route" | "error"`로 별도 설정할 수 있습니다. 기본값 `"inherit"`는 `fallback`을 따르는 기존 동작을 보존하므로 이미 설정된 `fallback="deterministic"`, `fallback="error"`의 의미가 유지됩니다. `"no_route"`는 제한된 백엔드가 명시적으로 선택을 포기할 때 후보 경로를 억제하며, 신뢰도 기준으로 도메인 밖 요청을 처리할 때 유용합니다. 제공자 예외나 잘못된 출력은 여전히 `fallback`이 처리하므로 `"no_route"`를 택했다고 해서 제공자 장애가 조용히 경로 없음으로 바뀌지는 않습니다.
 
 ## 제한된 field selection
 
