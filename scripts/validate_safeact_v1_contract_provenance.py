@@ -66,7 +66,13 @@ def validate(document: dict[str, object]) -> list[str]:
                 or ":" in parts[0]
             ):
                 errors.append(f"unsafe source path: {path}")
-            if any(normalized.startswith(prefix) for prefix in FORBIDDEN_PREFIXES):
+            if any(
+                normalized == prefix
+                or normalized.startswith(prefix + "/")
+                or normalized.endswith("/" + prefix)
+                or ("/" + prefix + "/") in normalized
+                for prefix in FORBIDDEN_PREFIXES
+            ):
                 errors.append(f"forbidden evaluator source path: {path}")
             if any(fragment in normalized for fragment in FORBIDDEN_FRAGMENTS):
                 errors.append(f"forbidden evaluator/gold source fragment: {path}")

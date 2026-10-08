@@ -53,3 +53,21 @@ def test_evaluator_fields_cannot_be_embedded() -> None:
 def test_unknown_source_kind_fails_closed() -> None:
     errors = MODULE.validate(_contract("somewhere.json", "benchmark_gold"))
     assert any("forbidden source kind" in error for error in errors)
+
+
+def test_nested_evaluator_paths_are_forbidden_even_under_trusted_prefix() -> None:
+    # A checkout prefix must not turn benchmark evaluator inputs into trusted policy.
+    for path in (
+        "safeact/env/case_manifest.json",
+        "checkout/data/safeact/cases.json",
+        "trusted/env/case_provenance.json",
+        "root/env/case_evidence.json",
+        "SAFEACT/ENV/CASE_MANIFEST.JSON",
+    ):
+        errors = MODULE.validate(_contract(path))
+        assert any("forbidden evaluator source path" in error for error in errors), path
+
+
+def test_public_policy_under_workspace_prefix_remains_allowed() -> None:
+    document = _contract("workspace/env/customer_policy_qa/world/policies/refunds.md")
+    assert MODULE.validate(document) == []
