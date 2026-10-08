@@ -1,11 +1,10 @@
-# 도입 지표와 성장 스코어카드
+# 도입 지표와 성장 성과표
 
-SchemaRouter는 별(star) 수만이 아니라 **검증된 사용과 도입**을 성장 지표로 봅니다. 마케팅 분석만을 위해
-침습적인 제품 텔레메트리를 추가하지 않습니다.
+SchemaRouter는 별(star) 개수만이 아니라 **검증 가능한 사용과 실제 도입**을 성장 지표로 측정합니다. 마케팅 분석만을 위해 사생활을 침해하는 제품 텔레메트리를 추가하지 않습니다.
 
 ## 기준선
 
-캠페인 이전 GitHub 기준선은 **2026-10-01**에 기록했습니다.
+캠페인 전 GitHub 지표의 기준선은 **2026-10-01**에 수집했습니다.
 
 | 지표 | 기준선 |
 | --- | ---: |
@@ -15,24 +14,22 @@ SchemaRouter는 별(star) 수만이 아니라 **검증된 사용과 도입**을 
 | Network count | 0 |
 | Open issues + PRs | 26 |
 
-자동 스코어카드는 PyPIStats의 패키지 다운로드 수와 GitHub의 최근 14일 traffic endpoint도 조회합니다.
-이 값들은 시간 창에 따라 변하는 외부 데이터이므로 소스 코드에 추정값을 넣지 않고, 최초로 성공한
-스코어카드 실행 결과를 PyPI/traffic의 정식 기준선으로 사용합니다.
+자동화된 성과표는 PyPIStats에서 패키지 다운로드 수를 조회하고, GitHub의 최근 14일 트래픽 API도 시도합니다. 이 값들은 시간 구간에 따라 달라지는 외부 데이터이므로, 임의의 수치를 저장소에 적는 대신 **최초로 성공한 성과표 실행**을 정본 PyPI·트래픽 기준선으로 사용합니다.
 
 ## 자동 수집
 
-**Growth Scorecard** GitHub Actions workflow는 매주 월요일 실행되며 수동 실행도 가능합니다.
+**Growth Scorecard** GitHub Actions 워크플로는 매주 월요일에 실행되며 수동으로 실행할 수도 있습니다.
 
-다음을 기록합니다.
+수집하는 항목:
 
-- GitHub stars, forks, subscribers, 열린 issue/PR, network count, topics, repository 날짜;
-- 최근 일/주/월 PyPI 다운로드 수;
-- token에 충분한 traffic 권한이 있을 때 최근 14일 GitHub views와 clones;
-- 수집 시각과 명시적인 지표 한계.
+- GitHub stars, forks, subscribers, 열린 이슈와 PR, network count, topics, 저장소 관련 날짜
+- 직전 하루·일주일·한 달의 PyPI 다운로드
+- 토큰에 충분한 권한이 있을 경우 최근 14일 동안의 GitHub 조회수와 클론 수
+- 수집 시각과 각 지표의 명시적인 한계
 
-각 실행은 JSON과 Markdown artifact를 90일간 보존하고 workflow UI에 Markdown 요약을 표시합니다.
+매번 실행할 때 90일 동안 보존하는 JSON 및 Markdown 아티팩트를 작성하고, Markdown 요약을 워크플로 화면에도 표시합니다.
 
-수집기는 다음과 같습니다.
+수집기는 다음 명령으로 실행합니다.
 
 ```bash
 python scripts/capture_growth_scorecard.py \
@@ -42,60 +39,53 @@ python scripts/capture_growth_scorecard.py \
 
 ## 권한 모델
 
-공개 GitHub repository metadata와 PyPIStats에는 비공개 텔레메트리가 필요하지 않습니다.
-Repository traffic은 별도 API surface이며 GitHub는 repository traffic 접근 권한이 있는
-사용자/token으로 이를 제한합니다.
+공개 GitHub 저장소 메타데이터와 PyPIStats에는 비공개 텔레메트리가 필요하지 않습니다. 반면 저장소 트래픽은 별도의 API이며 GitHub에서 트래픽 조회 권한이 있는 사용자와 토큰만 접근할 수 있습니다.
 
-따라서 workflow는 traffic을 선택적 근거로 취급합니다. 기본 `GITHUB_TOKEN`으로 읽을 수 없다면
-전체 snapshot을 실패시키지 않고 artifact에 `unavailable`로 기록합니다.
+따라서 워크플로는 트래픽을 선택적 증거로 처리합니다. 기본 `GITHUB_TOKEN`으로 접근할 수 없는 경우 전체 수집을 실패시키지 않고 아티팩트에 `unavailable`이라고 표시합니다.
 
-Maintainer는 필요할 경우 traffic metric을 읽는 데 필요한 최소 read 권한만 가진
-`SCHEMAROUTER_GROWTH_GITHUB_TOKEN` secret을 설정할 수 있습니다. Write 권한은 필요하지 않습니다.
+유지보수 담당자는 필요한 최소 트래픽 읽기 권한만 부여한 `SCHEMAROUTER_GROWTH_GITHUB_TOKEN` 시크릿을 선택적으로 구성할 수 있습니다. 쓰기 권한은 필요하지 않습니다.
 
 ## 선행 지표와 후행 지표
 
 **선행 지표**
 
-- 일/주/월 PyPI 다운로드;
-- 가능한 경우 repository views와 unique visitors;
-- 가능한 경우 repository clones와 unique cloners;
-- issue로 확인되는 quickstart/example 실행 실패;
-- downstream project가 공개한 integration/package-extra 사용 근거.
+- 일간·주간·월간 PyPI 다운로드
+- 조회 가능한 경우 저장소 조회수와 순 방문자 수
+- 조회 가능한 경우 저장소 클론 수와 순 클론 사용자 수
+- 이슈로 드러난 Quickstart 및 예제 실행 실패
+- 다른 프로젝트가 공개한 통합 기능이나 패키지 extra 사용 근거
 
 **후행 지표**
 
-- stars;
-- forks;
-- subscribers;
-- 외부 contributor;
-- 검증 가능한 downstream adopter와 case study.
+- Stars
+- Forks
+- Subscribers
+- 외부 기여자
+- 검증 가능한 외부 도입 프로젝트와 사례 연구
 
-설치/도입 근거 없이 star만 증가한 경우 제품 도입으로 보고하지 않습니다.
+실제 설치·도입 근거 없이 별 개수만 증가했다면 제품 도입 성과로 보고하지 않습니다.
 
-## 근거 기반으로 수동 관리하는 지표
+## 근거 중심의 수동 조사 지표
 
-일부 유용한 신호에는 신뢰할 수 있고 privacy-preserving한 공개 API가 없습니다.
+일부 유용한 신호는 신뢰할 만하고 개인정보를 보호하는 공개 API가 없습니다.
 
-- SchemaRouter를 의존하거나 참조하는 외부 repository;
-- downstream CI 사용;
-- 설치부터 최초 성공까지의 시간;
-- framework/plugin integration 도입;
-- case study와 독립 재현.
+- SchemaRouter를 의존성으로 사용하거나 참조하는 외부 저장소
+- 하위 프로젝트에서의 CI 사용
+- 설치부터 첫 성공까지의 시간
+- 프레임워크·플러그인 연동 기능의 도입
+- 사례 연구와 독립적 재현 검증
 
-이 항목들은 검증 가능한 공개 근거가 있을 때만 추가합니다. GitHub 검색 노이즈나 traffic counter에서
-추론하거나 만들어내지 않습니다.
+이러한 항목은 확인 가능한 공개 근거가 있을 때만 추가합니다. GitHub 검색의 잡음으로부터 추정하거나 트래픽 숫자를 근거 없이 가공하지 않습니다.
 
-## Snapshot 주기
+## 스냅샷 수집 주기
 
-- **매주:** 자동 workflow snapshot.
-- **매월:** 대표 workflow artifact 하나를 보존하고 #583에 중요한 변화를 요약.
-- **캠페인 전/후:** 비교에 사용한 정확한 run ID를 기록.
-- **릴리스별:** 데이터 소스가 해당 주장을 뒷받침할 수 있을 때만 버전별 다운로드를 비교.
+- **매주:** 자동화된 워크플로 스냅샷을 생성합니다.
+- **매월:** 대표적인 워크플로 아티팩트 하나를 보존하고 의미 있는 변화를 #583에 요약합니다.
+- **캠페인 전후:** 비교에 사용한 정확한 실행 ID를 기록합니다.
+- **릴리스별:** 데이터 소스가 뒷받침할 때에만 버전별 다운로드를 비교합니다.
 
-## 해석상의 한계
+## 해석 시 유의사항
 
-PyPI 다운로드에는 CI와 반복 설치가 포함되며 unique user 수가 아닙니다. GitHub traffic은 최근
-14일 이동 창입니다. Star는 사용량보다 인지도를 더 많이 반영합니다. 열린 issue 수에는 bug report,
-research tracker, 계획 작업이 섞여 있습니다.
+PyPI 다운로드에는 CI 설치 및 반복 설치가 포함되므로 고유 사용자 수가 아닙니다. GitHub 트래픽은 이동하는 최근 14일 창으로 집계됩니다. Stars는 사용량보다 인지도를 반영하는 경향이 있습니다. 열린 이슈 수에는 버그 신고뿐 아니라 연구 트래커와 예정된 작업도 함께 포함됩니다.
 
-따라서 성장 판단은 여러 신호를 함께 사용하고, 외부 adopter 근거를 단순 counter와 분리해야 합니다.
+따라서 성장에 관한 결정에는 여러 신호를 종합하고, 외부 도입 근거를 단순 집계 수치와 분리해서 관리해야 합니다.

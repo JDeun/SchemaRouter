@@ -1,145 +1,106 @@
-# 버전 관리 및 호환성
+# 버전 관리와 호환성
 
-SchemaRouter는 릴리스된 Python 패키지에 Semantic Versioning을 적용합니다.
+SchemaRouter는 릴리스한 Python 패키지에 대해 시맨틱 버저닝(Semantic Versioning)을 따릅니다.
 
-프로젝트는 현재 pre-1.0입니다. 0.x 계열에서는 public API가 계속 정립되는 중이지만, 호환성 변경은 의도적이어야 하며 문서화되어야 합니다.
+현재 프로젝트는 1.0 이전 단계입니다. 0.x 시리즈에서는 공개 API를 계속 다듬을 수 있지만, 호환성에 영향을 주는 변경은 의도적으로 수행하고 문서화해야 합니다.
 
-## 개발 브랜치 버전
+## 개발 브랜치의 버전
 
-기본 branch는 미출시 작업에 PEP 440 development version을 사용합니다. For example, after
-`0.2.0a1` is published, `main` may identify as `0.3.0.dev0` until the next release is cut.
+기본 브랜치에서는 아직 릴리스하지 않은 작업에 PEP 440 개발 버전을 사용합니다. 예를 들어 `0.2.0a1`을 게시했다면 다음 릴리스 전까지 `main`의 패키지 버전을 `0.3.0.dev0`으로 표시할 수 있습니다.
 
-Release tag는 `pyproject.toml`에 선언된 version과 일치해야 합니다.
+릴리스 태그는 반드시 `pyproject.toml`에 선언한 버전과 일치해야 합니다.
 
-After a releasable version is merged to `main`, the top-level `Release` workflow waits for the
-normal `CI` workflow to succeed. It verifies that the tested SHA is still the current `main`
-head, rejects `.dev` versions, requires a matching `docs/releases/<version>.md` file and dated
-changelog heading, and creates `v<version>` only when that tag does not already exist.
+릴리스할 수 있는 버전이 `main`에 병합되면 최상위 `Release` 워크플로는 일반 `CI` 워크플로의 성공을 기다립니다. 테스트한 SHA가 여전히 현재 `main`의 HEAD인지 확인하고, `.dev` 버전을 거부하며, `docs/releases/<version>.md` 문서 및 날짜가 포함된 changelog 제목을 요구합니다. 일치하는 태그가 아직 없을 때에만 `v<version>` 태그를 생성합니다.
 
-If a tag already exists without a GitHub release, publication can resume from that tagged SHA only
-when it is an ancestor of the successful current `main` and contains the same package version.
-This makes interrupted releases recoverable without silently moving an existing tag.
+태그는 이미 있지만 GitHub 릴리스가 없는 경우에도 게시 절차를 재개할 수 있습니다. 다만 해당 태그의 SHA가 성공적으로 테스트한 현재 `main`의 조상이며 패키지 버전이 일치해야 합니다. 따라서 중단된 릴리스를 복구하더라도 기존 태그를 조용히 이동시키지 않습니다.
 
-The same top-level workflow then builds wheel and sdist artifacts from the resolved release SHA,
-clean-installs and smoke-tests both artifacts, generates the SPDX SBOM plus
-`SHA256SUMS.txt` / `release-manifest.json`, creates the GitHub release, and publishes through the
-configured PyPI Trusted Publisher. The manifest records the exact source SHA and artifact digests so
-those values do not need to be copied into documentation manually. Build jobs remain unprivileged;
-only the dedicated publishing job receives OIDC `id-token: write` permission.
+이후 동일한 최상위 워크플로가 확정된 릴리스 SHA에서 wheel과 sdist를 빌드하고, 두 아티팩트를 깨끗한 환경에 설치해 스모크 테스트를 실행합니다. SPDX SBOM과 `SHA256SUMS.txt` 및 `release-manifest.json`을 생성하고, GitHub 릴리스를 만들며 구성된 PyPI Trusted Publisher를 통해 게시합니다. 매니페스트에는 정확한 소스 SHA와 아티팩트 해시가 기록되므로 문서에 수동으로 복사할 필요가 없습니다. 빌드 작업은 권한을 최소화하고, 게시 전용 작업에만 OIDC `id-token: write` 권한을 제공합니다.
 
-This keeps source checkouts distinguishable from released artifacts, removes manual tag creation,
-and preserves PyPI Trusted Publishing on the stable `.github/workflows/release.yml` identity.
+이 방식은 개발용 소스 체크아웃과 배포된 아티팩트를 구분하고 수동 태그 생성을 없애면서 안정적인 `.github/workflows/release.yml` 식별자를 사용하는 PyPI Trusted Publishing을 유지합니다.
 
-## Public API
+## 공개 API
 
-The following are treated as public when they are documented and exported from the top-level
-`schemarouter` package or an explicitly documented integration module:
+다음 항목 중 최상위 `schemarouter` 패키지 또는 명시적으로 문서화한 통합 모듈에서 export되고 문서화된 것은 공개 API로 취급합니다.
 
-- typed contracts such as `ToolSpec`, `EndpointSpec`, `PlanRequest`, `CapabilityCandidate`,
-  `CapabilityRetrieval`, `StateAwareCapabilityRetrieval`,
-  `StateConditionedCapabilityRetrieval`, and `ExecutionPlan`;
-- `SchemaRouter` public registration/retrieval/planning/execution methods, including
-  `add_provider`, `retrieve`, `aretrieve`, `retrieve_executable`,
-  `aretrieve_executable`, `retrieve_state_aware`, `reretrieve_state_aware`, and the execution
-  verbs;
-- documented provider-profile, capability-snapshot/publication, portable artifact/migration, and
-  capability decision-trace contracts;
-- `RunConfig`, `RetryPolicy`, `ExecutionBudget`, `RunEvent`, and `ExecutionPolicy`;
-- documented approval, MCP transport-factory, compatibility-report, and adapter-plugin contracts;
-- documented adapters and optional integration entry points.
+- `ToolSpec`, `EndpointSpec`, `PlanRequest`, `CapabilityCandidate`, `CapabilityRetrieval`, `StateAwareCapabilityRetrieval`, `StateConditionedCapabilityRetrieval`, `ExecutionPlan` 등의 타입 계약
+- `add_provider`, `retrieve`, `aretrieve`, `retrieve_executable`, `aretrieve_executable`, `retrieve_state_aware`, `reretrieve_state_aware` 및 실행 메서드를 포함하는 `SchemaRouter`의 공개 등록·검색·계획·실행 메서드
+- 문서화된 provider profile, capability snapshot·publication, 이식 가능한 아티팩트·마이그레이션, 기능 의사결정 추적 계약
+- `RunConfig`, `RetryPolicy`, `ExecutionBudget`, `RunEvent`, `ExecutionPolicy`
+- 문서화된 승인, MCP 전송 팩토리, 호환성 보고, 어댑터 플러그인 계약
+- 문서화된 어댑터와 선택적 통합 엔트리 포인트
 
-밑줄로 시작하는 객체와 문서화되지 않은 내부 helper는 호환성 계약이 아닙니다.
+밑줄로 시작하는 객체와 문서화되지 않은 내부 헬퍼는 호환성 계약에 포함하지 않습니다.
 
 ## 0.x 정책
 
-- Patch releases should remain backward-compatible except for security or correctness defects that
-  would otherwise violate a fail-closed invariant.
-- Minor releases may introduce breaking changes while the framework is pre-1.0.
-- Breaking changes must be listed in the changelog with a migration note.
-- Serialized plans should not be assumed portable across breaking minor versions unless an explicit
-  codec/version contract is documented.
+- 패치 릴리스는 안전하게 거부하는 불변식(fail-closed invariant)을 위반하는 보안·정확성 결함을 고치는 경우를 제외하고 하위 호환성을 유지해야 합니다.
+- 프레임워크가 1.0 이전인 동안 마이너 릴리스에는 호환성을 깨는 변경이 포함될 수 있습니다.
+- 이러한 변경은 changelog에 마이그레이션 안내와 함께 명시해야 합니다.
+- 명시적인 코덱·버전 계약을 문서화하지 않았다면, 직렬화한 계획이 호환성을 깨는 마이너 버전 사이에서 이식 가능하다고 가정해서는 안 됩니다.
 
 ## 영속 SQLite 호환성
 
-`SQLiteRegistry` and `SQLiteRunTraceStore` have an explicit storage-format contract independent
-from the package version and from the registry's logical mutation counter.
+`SQLiteRegistry`와 `SQLiteRunTraceStore`에는 패키지 버전이나 레지스트리의 논리적 변경 횟수와 별도로 유지하는 **명시적인 저장 형식 계약**이 있습니다.
 
-During the pre-1.0 series:
+1.0 이전 시리즈에서 적용되는 규칙:
 
-- the current persisted storage format is versioned explicitly in SQLite metadata;
-- ToolSpec and RunEvent document formats are versioned separately from the database/container
-  format so future document migrations can be deterministic;
-- the immediately preceding unversioned legacy format (v0) is supported as an upgrade source;
-- opening a valid v0 store automatically performs the current v0 -> v1 metadata migration in one
-  SQLite transaction **after validating every legacy document and replay invariant**;
-- the current v0 -> v1 migration does not rewrite ToolSpec or RunEvent JSON, does not change the
-  registry logical version, and does not create execution bindings or other runtime authority;
-- unknown/newer storage or document versions fail closed with `StorageFormatError` rather than
-  attempting partial decoding;
-- incomplete/corrupt version metadata also fails closed instead of guessing;
-- each successful component migration is recorded in migration history.
+- 현재 영속 저장 형식의 버전을 SQLite 메타데이터에 명시합니다.
+- `ToolSpec`과 `RunEvent` 문서 형식은 데이터베이스·컨테이너 형식과 각각 별도로 버전 관리하여 향후 결정론적으로 마이그레이션할 수 있도록 합니다.
+- 바로 이전의 버전 정보가 없는 레거시 형식(v0)을 업그레이드 원본으로 지원합니다.
+- 유효한 v0 저장소를 열면 **모든 레거시 문서와 재생 불변식을 검증한 후**, 단일 SQLite 트랜잭션에서 현재의 v0 → v1 메타데이터 마이그레이션을 자동 수행합니다.
+- 현재의 v0 → v1 마이그레이션은 `ToolSpec` 또는 `RunEvent` JSON을 다시 쓰지 않으며, 레지스트리 논리 버전을 변경하거나 실행 바인딩 및 기타 런타임 권한을 생성하지 않습니다.
+- 알 수 없거나 더 새로운 저장·문서 버전은 일부만 디코딩하려 하지 않고 `StorageFormatError`로 안전하게 거부합니다.
+- 불완전하거나 손상된 버전 메타데이터도 추측하지 않고 거부합니다.
+- 각 구성 요소의 성공적인 마이그레이션은 이력에 기록합니다.
 
-For production databases, use `schemarouter storage inspect` before an upgrade and
-`schemarouter storage migrate` when an explicit preflight/backup is preferred. The migration
-command creates a SQLite-consistent backup by default before changing a legacy component. Keep
-that backup until the upgraded service has passed application-level verification.
+운영 데이터베이스는 업그레이드 전에 `schemarouter storage inspect`로 확인하십시오. 명시적인 사전 검사나 백업이 필요하면 `schemarouter storage migrate`를 사용합니다. 마이그레이션 명령은 레거시 구성 요소를 수정하기 전에 기본적으로 SQLite 일관성을 유지한 백업을 생성합니다. 업그레이드된 서비스가 애플리케이션 수준의 검증을 통과할 때까지 백업을 보관하십시오.
 
-A future migration that rewrites or drops persisted document content must provide an explicit
-backup/recovery path and release-note migration guidance before it can become automatic.
+향후 영속 문서 내용을 다시 쓰거나 삭제하는 마이그레이션을 자동화하려면, 먼저 명시적인 백업·복구 경로와 릴리스 노트의 마이그레이션 지침을 제공해야 합니다.
 
-## 이식 가능한 capability artifact 및 snapshot 호환성
+## 이식 가능한 기능 아티팩트와 스냅샷 호환성
 
-Portable capability graph data has an explicit format lifecycle separate from both the Python
-package version and SQLite storage versions.
+이식 가능한 기능 그래프 데이터는 Python 패키지 버전 및 SQLite 저장소 버전과 모두 별도로 관리하는 형식 수명주기를 가집니다.
 
-During the pre-1.0 series:
+1.0 이전 시리즈의 규칙:
 
-- the current `CapabilityGraphArtifact` format is `1.1`;
-- artifact `1.0` is a supported migration source and is validated before conversion;
-- legacy 1.0 edge metadata migrates as `origin="external"` rather than being promoted to derived
-  execution authority;
-- the current versioned snapshot document format is `1.0`;
-- a raw JSON dump of the pre-envelope public `CapabilityGraphSnapshot` model is supported as the
-  `legacy-unversioned` migration source after its existing `snapshot_id` is verified;
-- unknown/newer artifact or snapshot document versions fail closed;
-- migration is deterministic and idempotent for supported inputs;
-- credentials, invokers, live health state, and execution authority are never reconstructed by a
-  format migration.
+- 현재 `CapabilityGraphArtifact` 형식은 `1.1`입니다.
+- 아티팩트 `1.0`은 지원되는 마이그레이션 원본이며 변환 전에 검증합니다.
+- 레거시 1.0의 엣지 메타데이터는 `origin="external"`로 이전하며, 파생된 실행 권한으로 승격시키지 않습니다.
+- 현재 버전이 명시된 스냅샷 문서 형식은 `1.0`입니다.
+- 이전의 envelope 없는 공개 `CapabilityGraphSnapshot` 모델에서 만든 원시 JSON 덤프는 기존 `snapshot_id`를 검증한 후 `legacy-unversioned` 마이그레이션 원본으로 지원합니다.
+- 알 수 없거나 더 새로운 아티팩트 또는 스냅샷 문서 버전은 안전하게 거부합니다.
+- 지원되는 입력에 대한 마이그레이션은 결정론적이며 여러 번 실행해도 결과가 동일합니다.
+- 자격 증명, invoker, 실시간 상태 정보 및 실행 권한은 형식 마이그레이션으로 재구성하지 않습니다.
 
-Use `schemarouter artifact inspect/migrate` and `schemarouter snapshot inspect/migrate` for
-operator-facing validation and conversion. Migration writes a new file by default and requires
-explicit `--overwrite` before replacing an existing destination.
+운영자를 위한 검증과 변환에는 `schemarouter artifact inspect/migrate`, `schemarouter snapshot inspect/migrate`를 사용하십시오. 마이그레이션은 기본적으로 새 파일을 작성하며, 기존 대상 파일을 교체하려면 `--overwrite`를 명시해야 합니다.
 
-## Deprecation 정책
+## 지원 중단 정책
 
-Once an API has appeared in a non-alpha 0.x release, planned removals should normally:
+알파가 아닌 0.x 릴리스에서 공개된 API를 계획적으로 제거할 때는 일반적으로 다음 단계를 따라야 합니다.
 
-1. be documented as deprecated;
-2. remain available for at least one minor release when technically safe;
-3. include a replacement or migration path;
-4. be removed only in a subsequent minor release.
+1. 지원 중단(deprecated)을 문서화합니다.
+2. 기술적으로 안전하다면 최소 한 번의 마이너 릴리스 동안 유지합니다.
+3. 대체 수단이나 마이그레이션 경로를 제공합니다.
+4. 그다음 마이너 릴리스에서 제거합니다.
 
-Security-sensitive behavior may fail closed immediately when preserving the old behavior would
-create an authorization, credential, schema-integrity, or side-effect risk.
+기존 동작을 유지하는 것이 권한, 자격 증명, 스키마 무결성, 부작용과 관련한 위험을 만들 때는 보안상 민감한 동작을 즉시 안전하게 거부할 수 있습니다.
 
-## Integration 호환성
+## 통합 기능 호환성
 
-Optional integration은 core trust model과 별도로 버전 관리합니다.
+선택적 통합 기능의 버전은 핵심 신뢰 모델과 별도로 관리합니다.
 
-- The core package must import and operate without LangChain, LlamaIndex, Jev/TypeSafe, MCP, or
-  OpenTelemetry extras installed.
-- Integration dependencies use bounded major-version ranges.
-- The declared lower bounds of core runtime dependencies are exercised in required CI.
-- Integration CI must exercise the supported dependency range before a release.
-- An integration must route execution through SchemaRouter policy and validation rather than calling
-  the underlying transport directly.
+- 핵심 패키지는 LangChain, LlamaIndex, Jev/TypeSafe, MCP, OpenTelemetry extra를 설치하지 않아도 import되고 정상 동작해야 합니다.
+- 통합 기능의 의존성은 메이저 버전 범위를 제한해야 합니다.
+- 핵심 런타임 의존성에 선언한 최소 지원 버전은 필수 CI에서 검증합니다.
+- 통합 기능 CI는 릴리스 전에 지원 의존성 범위를 테스트해야 합니다.
+- 통합 기능은 하위 전송 계층을 직접 호출하지 않고 SchemaRouter 정책과 검증 경계를 통해 실행해야 합니다.
 
 ## 호환성 우선순위
 
-Trade-off를 피할 수 없다면 다음 순서를 따릅니다.
+피할 수 없는 절충이 필요할 때는 다음 순서로 우선합니다.
 
-1. execution authority and credential safety;
-2. schema/fingerprint correctness;
-3. deterministic plan semantics;
-4. public API compatibility;
-5. convenience behavior.
+1. 실행 권한과 자격 증명의 안전성
+2. 스키마·지문 정확성
+3. 결정론적 계획 의미
+4. 공개 API 호환성
+5. 편의 기능

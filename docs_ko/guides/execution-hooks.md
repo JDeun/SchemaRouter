@@ -1,10 +1,10 @@
-# Trusted execution hooks
+# 신뢰 가능한 실행 훅
 
-SchemaRouter는 검증된 tool execution 직전·직후에 순서가 보장되는 local callback을 지원합니다.
+SchemaRouter는 검증된 도구 실행 직전과 직후에 순서대로 로컬 콜백을 실행할 수 있습니다.
 
-hook은 조직별 audit, policy integration, metric, local veto 등 model-visible tool contract에 포함되면 안 되는 trusted middleware를 위한 기능입니다.
+훅은 조직별 감사, 정책 연동, 지표 수집, 로컬 실행 거부 및 모델에 노출되는 도구 계약에 포함되어서는 안 되는 기타 신뢰된 미들웨어를 위해 설계했습니다.
 
-## Hook 설정
+## 훅 설정
 
 ```python
 from schemarouter import ExecutionHooks, SchemaRouter
@@ -26,11 +26,11 @@ router = SchemaRouter(
 )
 ```
 
-sync/async callable을 모두 지원하며 hook은 선언 순서대로 실행됩니다. async hook은 남은 `ExecutionBudget.max_elapsed_seconds` budget으로 제한됩니다. synchronous hook은 중간에 preempt할 수 없지만 반환 직후 elapsed time을 검사합니다.
+동기·비동기 callable을 모두 지원하며 선언된 순서대로 실행합니다. 비동기 훅은 남아 있는 `ExecutionBudget.max_elapsed_seconds` 예산으로 제한합니다. 동기 훅은 실행 도중 선점 중단할 수 없지만, 반환한 직후 경과 시간을 확인합니다.
 
 ## 실행 순서
 
-하나의 logical tool call에서 관련 boundary는 다음과 같습니다:
+논리적 도구 호출 하나의 주요 실행 경계는 다음과 같습니다.
 
 ```text
 plan
@@ -48,54 +48,54 @@ plan
  -> return ToolResult
 ```
 
-before hook은 schema validation, execution policy, approval, binding check를 우회할 수 없습니다. hook이 await할 수 있으므로 SchemaRouter는 모든 before hook 종료 후 executable state를 갱신합니다.
+실행 전 훅으로 스키마 검증, 실행 정책, 승인 또는 바인딩 검사를 우회할 수 없습니다. 훅이 `await`를 통해 대기할 수 있으므로 모든 실행 전 훅이 끝난 이후 SchemaRouter가 실행 가능 상태를 다시 확인합니다.
 
-## Snapshot-only contract
+## 스냅샷 전용 계약
 
-hook은 전달된 model의 deep copy를 받습니다.
+훅은 자신에게 전달된 모델의 깊은 복사본을 받습니다.
 
-before hook은 다음을 받습니다:
+실행 전 훅에 전달되는 항목은 다음과 같습니다.
 
-- `ToolSpec`;
-- `EndpointSpec`;
-- `ToolCall`.
+- `ToolSpec`
+- `EndpointSpec`
+- `ToolCall`
 
-after hook은 여기에 최종 projected `ToolResult`도 받습니다.
+실행 후 훅에는 최종 필드 투영이 적용된 `ToolResult`가 추가됩니다.
 
-이 object들을 변경해도 executable call, registry schema, caller에게 반환되는 result는 변경되지 않습니다.
+이 객체들을 수정하더라도 실제 실행할 호출, 레지스트리 스키마, 호출자에게 반환할 결과는 변경되지 않습니다.
 
-hook은 `None`을 반환해야 합니다. before hook이 non-`None`을 반환하면 `ExecutionHookError`, after hook이 non-`None`을 반환하면 외부 operation과 result validation이 이미 성공했으므로 `PostInvocationHookError`가 발생합니다. 이를 통해 argument, field, schema, execution authority를 바꿀 수 있는 암묵적 transformation API를 방지합니다.
+훅은 반드시 `None`을 반환해야 합니다. 실행 전 훅이 `None` 이외의 값을 반환하면 `ExecutionHookError`가 발생합니다. 실행 후 훅이 `None` 이외의 값을 반환하면 외부 작업과 결과 검증은 이미 성공한 상태이므로 `PostInvocationHookError`가 발생합니다. 이는 인자·필드·스키마·실행 권한을 바꿀 수 있는 암묵적 변환 API가 생기는 것을 막기 위한 설계입니다.
 
 ## 실패 동작
 
-hook failure는 fail-closed되지만 pre/post-invocation failure의 semantic은 서로 다릅니다.
+훅 실패는 안전하게 닫히는(fail-closed) 방식으로 처리하지만 호출 전과 호출 후의 의미가 다릅니다.
 
-- before hook failure는 invoker 실행을 막고 `ExecutionHookError`로 노출됩니다.
-- after hook failure는 정상 return path를 차단하지만 성공한 projected `ToolResult`는 `PostInvocationHookError.result`에 보존됩니다.
-- `PostInvocationHookError.execution_succeeded`는 항상 `True`입니다.
-- post-invocation failure는 trusted code가 non-read-only endpoint의 retry를 명시적으로 활성화했더라도 non-retryable입니다. 따라서 audit/metrics hook 실패 때문에 성공한 mutation이 반복되지 않습니다.
-- event stream은 성공한 operation을 `tool.end`로 기록한 뒤 `stage="post_invocation_hook"`인 `run.error`를 노출하며, 해당 operation을 `tool.error`로 다시 쓰지 않습니다.
+- **실행 전 훅 실패:** invoker 실행을 막고 `ExecutionHookError`를 반환합니다.
+- **실행 후 훅 실패:** 일반적인 반환 경로를 중단하지만 성공한 투영 결과 `ToolResult`를 `PostInvocationHookError.result`에 보존합니다.
+- `PostInvocationHookError.execution_succeeded`는 언제나 `True`입니다.
+- 실행 후 훅의 실패는 재시도하지 않습니다. 신뢰된 코드가 읽기 전용이 아닌 엔드포인트에 명시적 재시도를 활성화한 경우에도 마찬가지입니다. 따라서 감사나 지표 훅이 실패했다는 이유로 이미 성공한 데이터 변경 작업을 반복하지 않습니다.
+- 이벤트 스트림에는 성공한 작업을 `tool.end`로 기록한 뒤 `stage="post_invocation_hook"`인 `run.error`를 노출합니다. 해당 작업의 결과를 `tool.error`로 바꾸지 않습니다.
 
-before-hook elapsed-budget expiration은 계속 `ExecutionBudgetExceededError`입니다. tool이 validated/projected result를 성공적으로 생성한 이후 after hook에서 exception, cancellation, invalid return, elapsed-budget failure가 발생하면 `PostInvocationHookError`로 감싸 caller가 tool success와 post-processing failure를 구분할 수 있게 합니다.
+실행 전 훅이 경과 시간 예산을 초과하면 `ExecutionBudgetExceededError`가 유지됩니다. 도구에서 검증과 투영까지 완료된 결과를 성공적으로 생성한 뒤 실행 후 훅에서 예외·취소·유효하지 않은 반환·시간 초과가 발생하면 `PostInvocationHookError`로 감쌉니다. 이를 통해 호출자는 **도구 실행 성공과 후처리 실패를 구분**할 수 있습니다.
 
-## Privacy
+## 개인정보 보호
 
-execution hook은 trusted local code이며 redacted telemetry가 아닙니다.
+실행 훅은 신뢰된 로컬 코드이며 민감 정보를 가리는 텔레메트리가 아닙니다.
 
-before hook은 validated call argument를 받고 after hook은 projected result payload를 받습니다. 해당 데이터를 받아도 신뢰할 수 있는 경우가 아니라면 third-party/remote callback을 hook으로 등록하지 않습니다.
+실행 전 훅은 검증된 호출 인자를 받습니다. 실행 후 훅은 투영된 결과 페이로드를 받습니다. 해당 데이터를 볼 권한이 없는 서드파티나 원격 콜백은 훅으로 등록하지 마십시오.
 
-신뢰도가 낮은 sink에서도 privacy-preserving observability가 필요하면 redacted `RunEvent` stream 또는 OpenTelemetry exporter를 사용합니다.
+신뢰도가 낮은 수신 대상으로 개인정보를 보호하며 관측 데이터를 전송하려면 민감 정보를 가린 `RunEvent` 스트림이나 OpenTelemetry exporter를 사용하십시오.
 
-## Approval과의 관계
+## 승인 기능과의 관계
 
-approval과 execution hook은 서로 다른 목적을 가집니다.
+승인과 실행 훅은 목적이 다릅니다.
 
-- approval은 `ExecutionPolicy.approval_mode`가 제어하는 명시적 boolean authority gate입니다.
-- hook은 이미 authorize된 execution 주변의 ordered middleware이며 관찰하거나 fail-closed할 수만 있습니다.
+- **승인:** `ExecutionPolicy.approval_mode`로 제어하는 명시적인 불리언 권한 게이트입니다.
+- **훅:** 이미 허가된 실행의 전후에서 동작하는 순서 있는 미들웨어이며, 관찰하거나 안전하게 실행을 중단할 수만 있습니다.
 
-hook은 policy 또는 approval callback이 거부한 operation을 승인할 수 없습니다.
+훅은 정책 또는 승인 콜백이 거부한 작업을 승인할 수 없습니다.
 
-## Direct executor 사용
+## 실행기 직접 사용
 
 ```python
 executor = RegistryExecutor(
@@ -107,4 +107,4 @@ executor = RegistryExecutor(
 )
 ```
 
-hook을 `SchemaRouter`에서 설정하든 `RegistryExecutor`에 직접 설정하든 동일한 contract가 적용됩니다.
+`SchemaRouter`를 통해 훅을 구성하든 `RegistryExecutor`에 직접 설정하든 동일한 계약이 적용됩니다.
