@@ -4,7 +4,10 @@ import argparse
 import json
 from pathlib import Path
 
-from benchmark_evidence_to_action import score
+try:
+    from scripts.benchmark_evidence_to_action import score
+except ModuleNotFoundError:  # direct script execution
+    from benchmark_evidence_to_action import score
 
 
 def decide(case: dict[str, object], condition: str) -> bool:
