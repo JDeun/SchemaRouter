@@ -80,5 +80,17 @@ No scored V1 run is authorized until:
 - the SafeAct adapter preserves the official evaluator boundary;
 - exact upstream and SchemaRouter revisions are frozen.
 
+## Action-target evidence binding
+
+An independently authored contract may specify `argument_bindings` that map a
+consequential action argument (for example, `charge_id`) to a record ID already
+required by `required_observations`. The evidence gate checks action arguments
+**and** previously observed evidence before invocation. Evidence collected for
+charge `C2` must not authorize a modification of charge `C1`.
+
+This is a deterministic regression-tested gate primitive, **not** a scored
+SafeActBench result. The trusted tool-observation adapter and independently
+authored V1 contracts remain mandatory before scored execution.
+
 The existing eight-case Evidence-to-Action seed remains deterministic mechanism/regression evidence
 only and is not a SafeActBench result.
