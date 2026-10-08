@@ -1,11 +1,11 @@
 # SchemaRouter design and experiment history
 
-> Active research/session roadmap: GitHub issue #417  
-> Historical 0.13 prior-art roadmap: GitHub issue #388  
-> Prior-art roadmap: `docs/research/prior-art-roadmap.md`  
-> Machine-readable prior-art registry: `benchmarks/research-prior-art-registry.json`  
-> Historical session-resume tracker: GitHub issue #200  
-> Machine-readable evidence ledger: `benchmarks/research-experiment-ledger.json`
+> 진행 중인 연구·세션 로드맵: GitHub 이슈 #417  
+> 과거 0.13 선행연구 로드맵: GitHub 이슈 #388  
+> 선행연구 로드맵: `docs/research/prior-art-roadmap.md`  
+> 기계 판독형 선행연구 레지스트리: `benchmarks/research-prior-art-registry.json`  
+> 이전 세션 재개 추적 이슈: GitHub 이슈 #200  
+> 기계 판독형 실증 근거 원장: `benchmarks/research-experiment-ledger.json`
 
 이 문서는 최초 repository implementation부터 이어진 SchemaRouter의 주요 design 및 research lineage를 재구성합니다. Release note보다 범위가 넓으며 architectural intent, empirical question, rejected alternative, data-consumption rule, 그리고 project가 routing design을 변경한 이유를 기록합니다.
 
@@ -35,14 +35,14 @@ Model/orchestrator는 execution authority가 아닙니다. Registered schema와 
 
 초기 주요 design decision은 다음과 같습니다:
 
-- typed tool/endpoint/parameter/field/plan/result contracts;
-- schema-aware planning and field projection;
-- argument and raw-result JSON Schema validation;
-- fail-closed handling for mutation, destructive and unclassified remote operations;
-- schema/invoker drift protection;
-- credential separation from model-visible arguments;
-- OpenAPI, MCP and Python callable ingestion;
-- LangChain integration without making SchemaRouter a general agent framework.
+- 도구·엔드포인트·매개변수·필드·계획·결과에 대한 타입 계약;
+- 스키마 인식 계획과 필드 투영;
+- 인수와 원시 결과의 JSON Schema 검증;
+- 변경·파괴적·미분류 원격 작업을 안전하게 거부하는 동작;
+- 스키마·호출기 변경에 대한 보호;
+- 모델에 보이는 인수와 인증정보의 분리;
+- OpenAPI·MCP·Python 호출 함수 수집;
+- SchemaRouter를 범용 에이전트 프레임워크로 만들지 않는 LangChain 통합.
 
 이것이 이후 experiment를 해석하는 기준이 되는 project invariant입니다.
 
@@ -55,11 +55,11 @@ Source revision: `1de6b4e14f4bb6607f58e6fc73b6b62d21e9473d`
 주요 추가 사항:
 
 - `SourceAdapter` / `AdapterRegistry`;
-- first-class OPTIMADE discovery;
-- field-aware `response_fields` projection;
-- call-aware protocol invokers;
-- live compatibility smoke evidence;
-- explicit transport/credential boundaries.
+- 일급 OPTIMADE 검색;
+- 필드를 인식하는 `response_fields` 투영;
+- 호출 구조를 인식하는 프로토콜 호출기;
+- 실제 호환성 스모크 검증 근거;
+- 명시적인 전송·인증정보 경계.
 
 이를 통해 SchemaRouter는 고정 integration 집합에서 capability-schema substrate로 이동했습니다.
 
@@ -79,13 +79,13 @@ Research/design question:
 
 This phase added:
 
-- provider-neutral bounded decisions;
-- deterministic fallback;
-- opt-in granular `DecisionPolicy`;
-- Jev/TypeSafe integration;
-- LlamaIndex integration;
-- approvals, budgets, telemetry and plugin contracts;
-- the first checked-in multilingual/adversarial benchmark corpus.
+- 제공자 중립적인 제한 결정;
+- 결정적 폴백;
+- 선택적으로 활성화하는 세부 `DecisionPolicy`;
+- Jev/TypeSafe 연동;
+- LlamaIndex 연동;
+- 승인·예산·텔레메트리 및 플러그인 계약;
+- 최초로 저장소에 포함된 다국어·적대적 벤치마크 코퍼스.
 
 ### decision-routing-v1
 
@@ -100,29 +100,29 @@ Historical workflow-level provenance for the earliest runs is being fully backfi
 
 v0.4 line에서는 이후 routing research의 기반이 된 여러 architectural layer를 추가했습니다:
 
-- LangGraph `StateGraph` bridge;
-- provider-neutral embedding decision backend;
-- local Ollama bounded backend;
-- transactional SQLite registry;
-- replayable run traces;
-- bounded output-field selection;
-- explicit nested projection paths;
-- conservative evidence sufficiency;
-- exact-recall candidate indexing;
-- bounded same-origin OpenAPI external refs;
-- trusted before/after execution hooks.
+- LangGraph `StateGraph` 연결 계층;
+- 제공자 중립적인 임베딩 결정 백엔드;
+- 로컬 Ollama 제한 결정 백엔드;
+- 트랜잭션 기반 SQLite 레지스트리;
+- 재생 가능한 실행 추적;
+- 제한된 출력 필드 선택;
+- 명시적인 중첩 투영 경로;
+- 보수적인 근거 충분성 판단;
+- 정확 일치를 유지하는 후보 색인;
+- 동일 출처에 제한된 OpenAPI 외부 참조;
+- 신뢰할 수 있는 실행 전후 후크.
 
 중요한 design progression은 단순히 “route를 선택”하는 것에서 “explicit evidence, output-field, execution-state contract를 유지하면서 route를 선택”하는 것으로 이동한 것입니다.
 
 ### Historical negative experiment: generic no-route sentinel
 
-Before the later operation-routing cycles, empty lexical recall could optionally expose the entire registered catalog to a bounded decision backend. An explicit `none_of_the_above` option was tested as a generic no-route sentinel.
+이후 작업별 라우팅 연구가 시작되기 전에는 어휘 검색 결과가 없을 때 전체 등록 카탈로그를 제한된 결정 백엔드에 선택적으로 노출할 수 있었습니다. 일반적인 경로 없음 신호로 명시적인 `none_of_the_above` 선택지를 실험했습니다.
 
-The first PR #85 experiment on the 144-case corpus found 56.25% overall / 29.09% Korean accuracy with recall-on-empty plus the sentinel. A 0.25 confidence + no-route configuration reached 54.17% overall / 25.45% Korean and 50% OOD/adversarial accuracy.
+PR #85의 첫 번째 144사례 실험에서 빈 검색 확장과 해당 선택지를 함께 사용한 정확도는 전체 56.25%, 한국어 29.09%였습니다. 신뢰도 0.25 및 경로 없음 설정에서는 전체 54.17%, 한국어 25.45%, OOD·적대적 사례 50%를 기록했습니다.
 
 The follow-up run showed why the mechanism was wrong: 16 explicit no-route selections contained 13 valid Korean in-domain requests and only 3 true no-route cases. PR #87 / commit `e41f57a0` removed the sentinel.
 
-Without the sentinel, recall-on-empty reached 61.81% overall and 43.64% Korean accuracy; adding the same 0.25 confidence/no-route policy reached 60.42% overall, 38.18% Korean and 50% OOD/adversarial accuracy. The project retained empty-recall expansion, confidence gating, candidate abstention and offline threshold calibration instead.
+해당 선택지를 제거한 빈 검색 확장에서는 전체 정확도 61.81%, 한국어 43.64%를 기록했습니다. 같은 신뢰도 0.25·경로 없음 정책을 추가하면 전체 60.42%, 한국어 38.18%, OOD·적대적 사례 50%였습니다. 이에 따라 프로젝트는 빈 검색 확장, 신뢰도 게이트, 후보 선택 포기 및 오프라인 임계값 보정 기능을 유지했습니다.
 
 현재 0.11 research 관점에서 generic catch-all sentinel을 이름만 바꿔 다시 도입해서는 안 됩니다. Negative capability evidence는 별도의 typed boundary signal로 표현하고 non-authoritative 상태를 유지해야 합니다.
 
@@ -130,13 +130,13 @@ Without the sentinel, recall-on-empty reached 61.81% overall and 43.64% Korean a
 
 이 phase에서는 주로 execution semantics를 강화했습니다:
 
-- transient-aware retry classification;
-- wall-clock bounded retry/approval/hook execution;
-- OpenAPI operation parameter override correctness;
-- collision-safe endpoint names;
-- required body preservation;
-- protocol/auth header isolation;
-- multiple success-response contract handling.
+- 일시적 장애를 인식하는 재시도 분류;
+- 실제 경과 시간으로 제한되는 재시도·승인·후크 실행;
+- OpenAPI 작업 매개변수 재정의의 정확성;
+- 이름 충돌을 방지하는 엔드포인트 명명;
+- 필수 요청 본문의 보존;
+- 프로토콜·인증 헤더 분리;
+- 여러 성공 응답 계약 처리.
 
 이 변경들은 benchmark 대상 plan이 planning-only abstraction이 아니라 실제 executable하고 contract-valid한 behavior에 대응해야 한다는 점에서 이후 experiment에 중요합니다.
 
@@ -161,16 +161,16 @@ Routing question은 다음과 같이 바뀌었습니다:
 
 주요 변경 사항:
 
-- provider/access identity;
-- bounded read-only fallback;
-- server-side projection;
-- typed scientific datatype/unit/qualifier contracts;
-- trusted parameter aliases;
-- schema-drift classification;
-- operation-scoped policy rules;
-- structured `PlanExplanation`;
-- bounded parallel read fan-out;
-- recoverable access-path health state.
+- 제공자·접근 경로 식별;
+- 제한된 읽기 전용 폴백;
+- 서버 측 필드 투영;
+- 타입이 지정된 과학 데이터형·단위·한정자 계약;
+- 신뢰할 수 있는 매개변수 별칭;
+- 스키마 변경 분류;
+- 작업 범위별 정책 규칙;
+- 구조화된 `PlanExplanation`;
+- 제한된 병렬 읽기 분기;
+- 복구 가능한 접근 경로의 상태.
 
 모든 source가 scientific/numeric한 것은 아니므로 unit metadata는 optional로 유지했습니다. Paper나 web/document search 같은 text source도 유효한 unitless capability입니다.
 
@@ -178,10 +178,10 @@ Routing question은 다음과 같이 바뀌었습니다:
 
 Project는 empirical evidence 보존 방식도 formalize했습니다:
 
-- multi-run benchmark history and machine-readable compatibility artifacts (#83);
-- an on-demand full-corpus research workflow with retained JSON/CSV/HTML artifacts (#84);
-- opt-in empty lexical recall recovery plus candidate-abstention and offline threshold-calibration tooling (#85);
-- exact source revision, corpus SHA-256, repeat count and case-limit metadata in benchmark reports (#89).
+- 여러 실행 결과를 포함한 벤치마크 이력과 기계 판독형 호환성 산출물(#83);
+- JSON/CSV/HTML 산출물을 보존하는 요청 시 전체 코퍼스 연구 워크플로(#84);
+- 선택적인 빈 어휘 검색 복구, 후보 선택 포기 및 오프라인 임계값 보정 도구(#85);
+- 벤치마크 보고서의 정확한 소스 리비전, 코퍼스 SHA-256, 반복 횟수 및 사례 수 제한 메타데이터(#89).
 
 이 변경은 methodology 측면에서 중요합니다. 이후 routing claim을 screenshot이나 chat note가 아니라 정확한 source/data configuration까지 추적할 수 있습니다.
 
@@ -205,25 +205,25 @@ validated plan
 
 중요한 boundary:
 
-- semantic candidate recall can add only registered candidates;
-- candidate-fit can suppress but not create authority;
-- operation-fit is bounded to sibling operations;
-- endpoint disambiguation stays inside the authorized tool domain;
-- operation aliases are explicit trusted schema, never model-authored.
+- 의미 기반 후보 검색은 등록된 후보만 추가할 수 있음;
+- 후보 적합성 판단은 경로를 억제할 수 있지만 권한을 만들 수 없음;
+- 작업 적합성 판단은 형제 작업으로만 제한됨;
+- 엔드포인트 구분은 허용된 도구 도메인 내부에서만 이뤄짐;
+- 작업 별칭은 명시적인 신뢰 스키마이며 모델이 작성하지 않음.
 
 ### Corpus lineage
 
 동일한 evidence에 반복 tuning하는 것을 피하도록 benchmark protocol을 발전시켰습니다:
 
-- v2 — 1,200-case multilingual stress corpus with fixed splits;
-- v3 — separate 600-case untouched capability-fit holdout;
-- v4 — operation-fit holdout;
-- v5 — operation development/calibration source;
-- v6 — 600-case operation regression holdout;
-- v7 — fresh post-change holdout;
-- v8 — alias-aware holdout later found to have been accidentally consumed by a diagnostic path;
-- v9 — replacement fresh alias-aware one-shot holdout;
-- v10 — fresh operation-generalization holdout.
+- v2 — 분할이 고정된 다국어 스트레스 코퍼스 1,200건;
+- v3 — 별도로 보존한 기능 적합성 홀드아웃 600건;
+- v4 — 작업 적합성 홀드아웃;
+- v5 — 작업 개발·보정용 원본;
+- v6 — 작업 회귀 홀드아웃 600건;
+- v7 — 변경 이후의 새로운 홀드아웃;
+- v8 — 별칭 인식 홀드아웃으로, 이후 진단 경로에서 실수로 사용된 사실이 확인됨;
+- v9 — 이를 대체하는 새로운 별칭 인식 일회성 홀드아웃;
+- v10 — 작업 일반화를 위한 새로운 홀드아웃.
 
 Known v9 result:
 
@@ -241,7 +241,7 @@ Known v10 result:
 
 v8 incident는 methodology evidence로 보존합니다. Diagnostic tuning에 사용된 holdout은 “reset”되지 않으며 consumed 상태로 남고 새 holdout으로 교체합니다.
 
-The same line also added explicit routing error taxonomy and failure-stage attribution, allowing later studies to separate candidate recall, capability-fit, operation-fit, wrong-tool and wrong-endpoint failures. The operation-fit semantic representation itself was simplified using v5 development/calibration only before the one-shot v10 generalization run.
+동시에 라우팅 오류 분류 체계와 실패 단계 귀속도 명시적으로 추가했습니다. 이를 통해 이후 연구에서 후보 검색, 기능 적합성, 작업 적합성, 잘못된 도구 선택, 잘못된 엔드포인트 선택을 구분할 수 있었습니다. 작업 적합성의 의미 표현은 v10 일회성 일반화 실행 전에 v5 개발·보정 데이터만 사용해 단순화했습니다.
 
 ## 9. v0.9: bounded pairwise reranking
 
@@ -363,14 +363,14 @@ Architecture explored:
 
 Frozen development candidate:
 
-- 1,200 cases;
-- supported: 63.281%;
-- near-domain rejection: 95.313%;
+- 1,200개 사례;
+- 지원 사례: 63.281%;
+- 유사 도메인 거부율: 95.313%;
 - OOD: 100%;
-- false routes: 18;
-- paired correctness +47 / -5;
-- mean/p95 latency materially improved;
-- all preregistered development gates passed.
+- 잘못된 경로: 18건;
+- 대응 쌍 정답 변화 +47 / -5;
+- 평균 및 p95 지연시간이 유의미하게 개선됨;
+- 사전등록된 개발 게이트를 모두 통과함.
 
 ### Invalidated calibration attempt
 
@@ -480,14 +480,14 @@ A preregistered opt-in selector was implemented.
 
 Result:
 
-- supported exact route: 44.01% → 54.08%;
-- wrong endpoint: 130 → 14;
-- wrong tool remains 3;
-- paired +129 / -13;
-- all 151 route changes were driven by the accepted operation-fit top route;
-- rejection: unchanged 94.10%;
-- false-route: unchanged 5.25%;
-- invalid plans/errors: 0.
+- 지원 사례 정확한 경로: 44.01% → 54.08%;
+- 잘못된 엔드포인트: 130 → 14;
+- 잘못된 도구는 3건으로 유지;
+- 대응 쌍 변화 +129 / -13;
+- 151건의 경로 변화는 모두 채택된 작업 적합성의 첫 번째 경로에서 발생;
+- 거부율: 94.10%로 변화 없음;
+- 잘못된 경로 비율: 5.25%로 변화 없음;
+- 유효하지 않은 계획·오류: 0건.
 
 Decision:
 
@@ -503,11 +503,11 @@ Behavior-preserving diagnostics measured candidate-fit geometry.
 
 Key observations:
 
-- 365 total candidate-fit abstentions;
-- 94 supported requests abstained;
-- in 43 of those supported abstentions, candidate-fit top route was already the expected route;
-- at similarity 0.25, supported gate pass rate was 91.84%;
-- but near-domain gate rejection was only 35.07%.
+- 후보 적합성 단계의 선택 포기 총 365건;
+- 지원 요청에서 선택 포기 94건;
+- 그중 43건은 후보 적합성의 첫 번째 경로가 이미 기대 경로였음;
+- 유사도 0.25에서는 지원 사례의 게이트 통과율 91.84%;
+- 그러나 유사 도메인 게이트 거부율은 35.07%에 불과했음.
 
 Interpretation:
 
@@ -537,23 +537,23 @@ Using the preregistered **winner-first** semantics (rank first, then apply only 
 
 이 결과로 immediate research conclusion이 다음과 같이 바뀌었습니다:
 
-- an additional NLI/negative model is not required to cross the current accuracy/rejection/false-route development gates;
-- threshold application order was a major safety variable;
-- the remaining primary gate is latency, because scoring four BGE candidates for every request is too expensive.
+- 현재 정확도·거부율·잘못된 경로에 대한 개발 게이트를 통과하기 위해 별도의 NLI/음성 모델이 필요하지는 않음;
+- 임계값을 적용하는 순서는 중요한 안전 변수였음;
+- 모든 요청마다 BGE 후보 4개의 점수를 계산하는 방식은 비용이 너무 높으므로 지연시간이 여전히 핵심 미해결 게이트임.
 
 Artifact provenance:
 
-- workflow: `36310955824`
-- artifact: `10929374346`
-- artifact digest: `47a1d7a5716b100edd654607816a6cceeb630be09091348fcc788928a73fdb09`
-- source revision: `f43535b6ef0acbc5492b9791e6757e28a343d9fa`
-- corpus SHA-256: `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`
+- 워크플로: `36310955824`
+- 산출물: `10929374346`
+- 산출물 다이제스트: `47a1d7a5716b100edd654607816a6cceeb630be09091348fcc788928a73fdb09`
+- 소스 리비전: `f43535b6ef0acbc5492b9791e6757e28a343d9fa`
+- 코퍼스 SHA-256: `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`
 
 ### Winner-only threshold mechanism and evidence infrastructure
 
 PR #208 added opt-in `rank_then_gate` semantics to `PairwiseDecisionBackend` and was merged into the active #195 research stack. The default historical `filter_then_rank` behavior remains unchanged.
 
-PR #210 then ported the score-kind-safe `EvidenceProjector` from #186 into the same stack without wiring it into planner behavior. This keeps explicit `match / no_match / unknown` evidence available for later robustness work without prematurely adding a second decision signal.
+이후 PR #210에서는 #186의 점수 유형을 안전하게 처리하는 `EvidenceProjector`를 같은 스택으로 옮겼지만 계획기에 연결하지는 않았습니다. 따라서 두 번째 결정 신호를 성급히 도입하지 않고도 후속 견고성 연구에 사용할 명시적인 `match / no_match / unknown` 근거를 유지했습니다.
 
 ### Recall-width latency ablation
 
@@ -561,10 +561,10 @@ Work item #214 / PR #216 preregistered a width-only development ablation.
 
 The selection rule was fixed before execution:
 
-1. evaluate recall widths 2 and 3;
-2. derive the same winner-only false-budget-12 frontier;
-3. choose the smallest width that preserves >=70% supported exact-route, <=2% canonical false-route, >=96% near-domain rejection lower bound, and zero invalid plans/errors;
-4. if neither passes, retain width 4.
+1. 후보 검색 폭 2와 3을 평가;
+2. 동일한 승자 경로만 대상으로 한 잘못된 경로 예산 12의 프런티어 도출;
+3. 지원 사례 정확 경로 70% 이상, 정식 잘못된 경로 비율 2% 이하, 유사 도메인 거부율 하한 96% 이상, 유효하지 않은 계획·오류 0건을 유지하는 최소 폭 선택;
+4. 모두 통과하지 못하면 폭 4 유지.
 
 The chosen width must still pass a separately executed paired latency gate before the candidate is frozen.
 
@@ -574,12 +574,12 @@ Tracked in issue #197.
 
 The next candidate must combine:
 
-1. accepted operation-fit selector;
-2. route/boundary-local calibration where justified only by fresh development;
-3. typed score-kind-safe evidence;
-4. explicit negative-capability evidence;
-5. explicit unknown handling;
-6. reranking only inside authorized schema candidates.
+1. 채택된 작업 적합성 선택기;
+2. 새로운 개발 데이터에서 정당화된 경우에만 경로·경계별 로컬 보정;
+3. 점수 유형에 안전한 타입 기반 근거;
+4. 명시적인 부정 기능 근거;
+5. 명시적인 알 수 없음 처리;
+6. 허용된 스키마 후보 안에서만 재순위화.
 
 Architectural principle은 변하지 않습니다:
 
@@ -598,12 +598,12 @@ Related work items:
 
 At the start of a new session:
 
-1. read #200;
-2. read the active child issue;
-3. read `benchmarks/research-experiment-ledger.json`;
-4. read the current preregistration/result manifests;
-5. inspect active PR/workflow state;
-6. continue the first incomplete task whose prerequisites are satisfied.
+1. #200 확인;
+2. 활성 하위 이슈 확인;
+3. `benchmarks/research-experiment-ledger.json` 확인;
+4. 현재 사전등록·결과 매니페스트 확인;
+5. 진행 중인 PR·워크플로 상태 점검;
+6. 선행 조건을 충족하는 첫 미완료 작업부터 재개.
 
 Chat history는 project state를 파악하기 위한 필수 source가 아닙니다.
 
@@ -611,19 +611,19 @@ Chat history는 project state를 파악하기 위한 필수 source가 아닙니�
 
 Every empirical result should preserve, where available:
 
-- source revision;
-- dataset role;
-- tuning eligibility;
-- preregistration/freeze state;
-- workflow run ID;
-- artifact ID;
-- artifact SHA-256;
-- corpus SHA-256;
-- exact configuration;
-- result metrics;
-- decision: accept/reject/diagnostic-only;
-- failure reason;
-- whether the evidence is permanently consumed.
+- 소스 리비전;
+- 데이터셋의 역할;
+- 튜닝 사용 가능 여부;
+- 사전등록·동결 상태;
+- 워크플로 실행 ID;
+- 산출물 ID;
+- 산출물 SHA-256;
+- 코퍼스 SHA-256;
+- 정확한 설정;
+- 결과 지표;
+- 판단: 채택·거부·진단 전용;
+- 실패 사유;
+- 해당 근거가 영구적으로 사용 완료됐는지 여부.
 
 Rejected 및 invalidated experiment도 record의 일부로 유지합니다.
 
@@ -700,7 +700,7 @@ Machine-readable ledger는 향후 paper table과 reproducibility appendix를 생
 
 ## 19. Cheap action-only evidence diagnostic
 
-Work item #226 / PR #230 tested a behavior-preserving evidence surface using the existing multilingual MiniLM. The representation included only the normalized endpoint action name and trusted `operation_aliases`; tool descriptions, endpoint descriptions, fields, parameters, corpus templates, and unsupported-operation labels were excluded.
+작업 항목 #226 / PR #230에서는 기존 다국어 MiniLM을 사용해 동작을 유지하는 근거 표현을 시험했습니다. 표현에는 정규화된 엔드포인트 작업 이름과 신뢰할 수 있는 `operation_aliases`만 포함했고, 도구·엔드포인트 설명, 필드, 매개변수, 코퍼스 템플릿 및 미지원 작업 레이블은 제외했습니다.
 
 DEV result:
 
