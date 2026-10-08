@@ -73,7 +73,11 @@ def run_bridge_compatibility(root: Path) -> dict[str, Any]:
             "tool": "delete_account", "arguments": {"account_id": "A1"}
         }
     }
-    original = official.normalize_v1(
+    # Keep an untouched upstream callable: these are mutually exclusive arms.
+    # A routing-modified normalizer cannot be chained into EvidenceGate because
+    # the second intervention must reject pre-existing attestation metadata.
+    pristine_normalize_v1 = official.normalize_v1
+    original = pristine_normalize_v1(
         scenario, allowed, info, "codex", "fixed-model", "{}", None
     )
     install_v1_routing(official, case_id="SAB-V1-001")
@@ -147,7 +151,7 @@ def run_bridge_compatibility(root: Path) -> dict[str, Any]:
 
         host = SimpleNamespace(
             ToolGateway=SyntheticGateway,
-            normalize_v1=official.normalize_v1,
+            normalize_v1=pristine_normalize_v1,
         )
         install_v1_gate(
             host, document=contract, source_root=public, case_id="SAB-V1-001"
