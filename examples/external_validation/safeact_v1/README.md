@@ -78,7 +78,11 @@ The controller accepts a pinned SafeAct checkout, a frozen model name,
 of its independently authored action contracts. The source-hash validator
 rejects forbidden evaluator/gold input paths.
 
-Each arm's command must declare the same `--model` argument. The intervention
+Each arm's command must declare the same `--model` argument.
+All three commands must also explicitly declare the **same** `--backend`
+(`codex` or `claude`) and `--strategy baseline`. The launcher additionally
+pins `SAFEACT_AGENT_STRATEGY=baseline` for the upstream runner, preventing
+ambient SCGR strategy settings from silently confounding the ungated arm. The intervention
 manifest must bind each condition to the corresponding `ungated`,
 `routing_only`, or `evidence_gate` implementation and a pinned 40-character
 adapter commit SHA, with explicit review. These are declared identities;
