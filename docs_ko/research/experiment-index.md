@@ -20,3 +20,7 @@ SchemaRouter 연구의 canonical experiment ledger와 주요 evidence를 찾기 
 
 아래의 장기 실험 목록은 의도적으로 보존한 archive입니다. 과거 실패 후보는 재현성을 위해 남겨 두지만 제품 권장 설정을 의미하지 않습니다.
 
+
+## Evidence-to-Action contract regression
+
+Issue #1203 / PR #1204에서 별도의 deterministic execution-boundary 실험을 추가했습니다. 고정된 8개 case에서 vanilla, routing-only, typed evidence gate를 비교합니다. 이 baseline은 regression artifact이며 위 routing experiment count에 포함하지 않고 SafeActBench 재현으로도 취급하지 않습니다. 정본 설명과 한계는 [Evidence-to-Action 경계](evidence-to-action.md)와 `benchmarks/evidence-to-action-v1/`에 기록합니다.
