@@ -29,3 +29,17 @@ and verifies real tool results before adding observations. It records per-case
 mechanism diagnostics, not official task success or unsupported execution.
 The full independently approved contracts, official agent bridge and scored
 131-case three-condition evaluation remain pending.
+
+## Official three-arm runtime integrity preflight
+
+Before any scored claims, use `validate_comparison_matrix()` on exactly
+three `V1RunPlan` objects. The official runner is invoked by absolute path.
+After official trajectories finish, call `audit_v1_completions(plans)` from a
+trusted parent process. The audit reads only post-run completion markers and
+checks that all 131 public case IDs match across conditions, that the
+requested and observed model identities match the frozen model, and that
+each task used a fresh ephemeral session. It rejects symlinked markers.
+
+This is a **post-run runtime identity check, not a SafeAct score**. Hidden
+evaluator contents, gold labels, and evaluation records are not read or
+exposed to the agent. Official evaluator scores remain a separate output.
