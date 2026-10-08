@@ -11,7 +11,7 @@ import argparse
 import json
 import os
 import shutil
-import stat
+import shlex
 from pathlib import Path
 
 BROKER_KEYS = (
@@ -85,10 +85,23 @@ def inspect_runner(*, backend: str, environ: dict[str, str] | None = None) -> di
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--backend", choices=["codex", "claude"], required=True)
+    parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
-    report = inspect_runner(backend=args.backend)
+    manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+    baseline = manifest["conditions"]["SAFEACT-UNGATED"]["agent_command"]
+    tokens = shlex.split(baseline)
+    backends = [
+        token.partition("=")[2]
+        for token in tokens if token.startswith("--backend=")
+    ]
+    backends.extend(
+        tokens[i + 1] for i, value in enumerate(tokens[:-1])
+        if value == "--backend"
+    )
+    if len(backends) != 1:
+        raise ValueError("reviewed official backend must be declared exactly once")
+    report = inspect_runner(backend=backends[0])
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
