@@ -27,6 +27,16 @@ The ordinary constructor is mechanism-test only and does not attest source files
 `TrustedEvidenceSession` wraps agent-inaccessible information/action callers
 and verifies real tool results before adding observations. It records per-case
 mechanism diagnostics, not official task success or unsupported execution.
+For post-run comparison only, validate three official `external_agent`
+output directories with `python scripts/verify_safeact_v1_comparison.py`
+and the required `--safeact-ungated`,
+`--safeact-schemarouter-no-evidence-gate`, and
+`--safeact-schemarouter-evidence-gate` directory options.
+This checks 131 paired case fingerprints, actual runtime-model attestation,
+ephemeral sessions and per-case official artifact SHA-256 values. It reports
+only the official strict task-success metric; unsupported executions,
+premature attempts and false refusals are **not yet scored here**.
+
 The full independently approved contracts, official agent bridge and scored
 131-case three-condition evaluation remain pending.
 

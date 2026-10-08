@@ -95,6 +95,21 @@ Only the parent harness chooses the trusted root. Direct construction of the
 mechanism-test session does not verify physical source files. This SHA check
 does **not** prove independent authorship, nor authorize a scored result.
 
+## Official three-arm post-run integrity audit
+
+After external agent trajectories and official evaluator runs finish, use
+`scripts/verify_safeact_v1_comparison.py` with one output directory per
+preregistered condition. The post-run auditor rejects simulator outputs,
+incomplete or reused cases, unmatched task fingerprints, divergent observed
+model identities, non-ephemeral sessions, and altered official artifact hashes.
+It checks all 131 V1 cases before comparing the official success-rate field.
+
+This auditor **does not** compute unsupported execution, premature attempts,
+or false refusals. Those metrics require an independently checked mapping to
+official per-case evaluation records and must not be inferred from task success.
+Gold/evaluator artifacts are inspected **only after** trajectories finish and
+never used as inputs to the action gate.
+
 ## Action-target evidence binding
 
 An independently authored contract may specify `argument_bindings` that map a
