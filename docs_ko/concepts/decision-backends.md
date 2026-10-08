@@ -175,13 +175,9 @@ For each already-selected endpoint, SchemaRouter offers only declared non-identi
 as finite `field:N` options. Identifier fields never enter the provider's choice set and are
 always retained locally.
 
-The decision request's `max_selections` never exceeds the deterministic projection's answer-field
-width. When deterministic projection is in recall-first mode and keeps all fields, the backend may
-select any bounded subset of those declared fields.
+결정 요청의 `max_selections`는 결정적 투영 단계에서 결정한 답변 필드 개수를 넘지 않습니다. 결정적 투영이 재현율 우선 모드에서 모든 필드를 유지하는 경우, 백엔드는 이렇게 선언된 필드 중 제한된 부분집합을 선택할 수 있습니다.
 
-Provider failure, malformed/unknown field IDs, duplicate IDs, overflow, or abstention follows the
-same fallback policy as candidate routing. Evidence requirements are recomputed from the final
-locally validated field set.
+제공자 장애, 잘못되거나 알려지지 않은 필드 ID, 중복 ID, 선택 개수 초과 또는 선택 포기는 후보 라우팅과 동일한 폴백 정책을 따릅니다. 근거 요구 사항은 최종적으로 로컬 검증을 거친 필드 집합을 기준으로 다시 계산합니다.
 
 ## 제한된 evidence sufficiency
 
@@ -205,15 +201,9 @@ request = PlanRequest(
 )
 ```
 
-SchemaRouter performs a deterministic local precheck before contacting the backend. Tool-level
-`source_type` / `license` metadata and selected answer-field `source_type`, `license`, and
-`unit` metadata are the only evidence that can satisfy this precheck.
+SchemaRouter는 백엔드에 연락하기 전에 결정적인 로컬 사전 검증을 수행합니다. 이 단계에서 근거가 될 수 있는 것은 도구 수준의 `source_type`·`license` 메타데이터와 선택된 답변 필드의 `source_type`, `license`, `unit` 메타데이터뿐입니다.
 
-If any requested requirement is locally missing, the call is rejected without asking the provider.
-If local evidence is sufficient, the provider receives exactly two finite options:
-`evidence:sufficient` and `evidence:insufficient`. Selecting `insufficient` acts only as a
-conservative veto. Selecting `sufficient` cannot add provenance, licenses, units, fields, tools, or
-execution authority.
+요청된 요건 중 하나라도 로컬에서 확인되지 않으면 제공자에게 묻지 않고 호출을 거부합니다. 로컬 근거가 충분하면 제공자에게 `evidence:sufficient`와 `evidence:insufficient`라는 유한한 선택지 두 개만 전달합니다. `insufficient`를 선택하면 보수적인 거부권으로만 작용합니다. `sufficient`를 선택해도 출처, 라이선스, 단위, 필드, 도구 또는 실행 권한을 추가할 수 없습니다.
 
 Provider failure or abstention can fall back to the local evidence assessment when
 `fallback="deterministic"`; `fallback="error"` fails planning instead.
@@ -229,15 +219,15 @@ Use `fallback="error"` when a decision failure must stop planning.
 
 A decision provider:
 
-- receives finite opaque option IDs;
-- cannot create a `ToolCall`;
-- cannot add tools, endpoints, fields, parameters, credentials, or execution permissions;
-- cannot make an unknown option executable;
-- cannot upgrade locally missing evidence;
-- may only veto a call that already passed the local evidence precheck;
-- must return bounded, finite scores;
-- may abstain;
-- supplies metadata that is always non-authoritative.
+- 유한하고 불투명한 선택지 ID만 전달받습니다;
+- `ToolCall`을 생성할 수 없습니다;
+- 도구, 엔드포인트, 필드, 매개변수, 인증정보 또는 실행 권한을 추가할 수 없습니다;
+- 알 수 없는 선택지를 실행 가능하게 만들 수 없습니다;
+- 로컬에 없는 근거를 충분한 것으로 승격시킬 수 없습니다;
+- 로컬 근거 사전 검증을 이미 통과한 호출을 거부할 수만 있습니다;
+- 제한된 범위의 유한한 점수를 반환해야 합니다;
+- 선택을 포기할 수 있습니다;
+- 반환한 메타데이터는 어떤 경우에도 권한의 근거가 되지 않습니다.
 
 The planner, execution policy, schema fingerprint checks, argument validation, and output validation
 remain unchanged.
@@ -254,16 +244,11 @@ The optional backends serve different deployment goals:
 | Ollama | Reuse a general local LLM that is already deployed for other application tasks | Autoregressive generation is heavier and slower than a purpose-built decision model |
 | Jev / TypeSafe | Hosted purpose-built bounded decisions without local model operations | External service/network dependency |
 
-Ollama is **not required** when Laya or a deterministic backend meets the workload. It
-remains useful as a broad compatibility path for teams that already operate local instruction
-models, for side-by-side benchmark evidence, and as a fallback when a task benefits from a general
-language model rather than a specialized System-One decision model.
+Laya 또는 결정적 백엔드로 작업 요구 사항을 충족한다면 Ollama는 **필수가 아닙니다**. 하지만 이미 로컬 지시 모델을 운영하는 팀의 폭넓은 호환성 경로로, 나란히 비교하는 벤치마크 근거로, 그리고 특화된 System-One 결정 모델보다 범용 언어 모델이 적합한 작업의 폴백으로 유용할 수 있습니다.
 
 ## 기존 cloud LLM client
 
-SchemaRouter does not require Ollama or Laya when the application already uses a hosted model API.
-The provider-neutral `CallableDecisionBackend` can wrap the same application-owned GPT, Gemini,
-Claude, or other structured-output client:
+애플리케이션이 이미 호스팅 모델 API를 사용한다면 SchemaRouter는 Ollama나 Laya를 요구하지 않습니다. 제공자 중립적인 `CallableDecisionBackend`로 애플리케이션이 소유한 GPT, Gemini, Claude 또는 기타 구조화 출력 클라이언트를 감쌀 수 있습니다.
 
 ```python
 from schemarouter import CallableDecisionBackend, DecisionPolicy, SchemaPlanner
@@ -299,9 +284,7 @@ planner = SchemaPlanner(
 )
 ```
 
-The callable may internally use OpenAI, Google, Anthropic, or another provider. SchemaRouter does
-not automatically inherit the application's provider client or API key; the application injects
-that trusted client explicitly. This keeps vendor SDKs and credentials outside SchemaRouter core.
+해당 호출 함수는 내부적으로 OpenAI, Google, Anthropic 또는 다른 제공자를 사용할 수 있습니다. SchemaRouter는 애플리케이션의 제공자 클라이언트나 API 키를 자동으로 상속하지 않으며, 애플리케이션이 신뢰할 수 있는 클라이언트를 명시적으로 주입합니다. 따라서 벤더 SDK와 인증정보는 SchemaRouter 코어 밖에 유지됩니다.
 
 The same fail-closed contract still applies: unknown IDs, duplicate IDs, or selections beyond
 `max_selections` are rejected before they can affect planning.
@@ -311,10 +294,7 @@ integration surface is the provider-neutral callable contract.
 
 ## Local embedding similarity
 
-`EmbeddingDecisionBackend` provides a zero-provider-dependency path for local or hosted embedding
-models. The embedder receives the user query followed by one text representation per authorized
-option; SchemaRouter computes cosine similarity locally and maps ranked vector positions back to the
-original opaque option IDs.
+`EmbeddingDecisionBackend`는 로컬·호스팅 임베딩 모델에 대해 특정 제공자 의존성을 추가하지 않는 경로를 제공합니다. 임베더에는 사용자 질의와 허용된 선택지 각각의 텍스트 표현을 순서대로 전달합니다. SchemaRouter는 코사인 유사도를 로컬에서 계산하고 순위가 매겨진 벡터 위치를 원래의 불투명한 선택지 ID로 되돌립니다.
 
 ```python
 from schemarouter import EmbeddingDecisionBackend
@@ -326,16 +306,9 @@ backend = EmbeddingDecisionBackend(
 )
 ```
 
-The backend can use any sync or async callable that returns one finite, same-dimensional vector per
-input text. This makes it compatible with application-owned SentenceTransformers, FastEmbed,
-semantic-router encoders, remote embedding APIs, or custom domain encoders without adding any of
-those packages to SchemaRouter's core dependency graph.
+백엔드는 입력 텍스트마다 유한하고 차원이 동일한 벡터 하나를 반환하는 동기·비동기 호출 함수를 모두 사용할 수 있습니다. 따라서 SchemaRouter의 핵심 의존성에 패키지를 추가하지 않고도 애플리케이션이 소유한 SentenceTransformers, FastEmbed, semantic-router 인코더, 원격 임베딩 API 또는 맞춤 도메인 인코더를 사용할 수 있습니다.
 
-The default option-text formatter does not pass `DecisionOption.metadata` to the embedder. A
-custom `option_text` callback is trusted application code and may choose a different
-data boundary. A zero-norm vector, NaN/Infinity, dimension mismatch, wrong batch size, or malformed
-vector fails closed. `min_similarity` can
-abstain on weak matches; `min_margin` can abstain when the selection boundary is ambiguous.
+기본 선택지 텍스트 포맷터는 `DecisionOption.metadata`를 임베더에 전달하지 않습니다. 사용자 정의 `option_text` 콜백은 신뢰할 수 있는 애플리케이션 코드이며 다른 데이터 경계를 선택할 수도 있습니다. 노름이 0인 벡터, NaN/Infinity, 차원 불일치, 잘못된 배치 크기 또는 잘못된 벡터 형태는 안전하게 거부합니다. `min_similarity`는 일치도가 낮을 때, `min_margin`은 선택 경계가 모호할 때 선택 포기를 허용합니다.
 
 For asymmetric retrieval encoders, wrap the callable so the first input (the query) uses the
 encoder's query path and option texts use its passage/document path.
@@ -355,21 +328,11 @@ backend = PairwiseDecisionBackend(
 )
 ```
 
-The scorer receives a batch of `(query, option_text)` pairs and returns exactly one confidence
-score in `[0, 1]` for each pair. SchemaRouter ranks those scores locally and maps positions back
-to the original opaque option IDs. The backend can therefore be used for `operation_fit_backend`,
-`candidate_fit_backend`, endpoint disambiguation, or final bounded decision surfaces without
-giving the scorer authority to invent a route.
+점수 계산기는 `(query, option_text)` 쌍의 배치를 받아 각 쌍마다 `[0, 1]` 범위의 신뢰도 점수 하나를 정확히 반환합니다. SchemaRouter는 이 점수를 로컬에서 정렬하고 각 위치를 원래 불투명한 선택지 ID로 연결합니다. 따라서 점수 계산기에 새로운 경로를 만들어낼 권한을 주지 않고도 `operation_fit_backend`, `candidate_fit_backend`, 엔드포인트 구분 또는 최종 제한 결정 단계에 사용할 수 있습니다.
 
-The default formatter forwards only the option label and description, never
-`DecisionOption.metadata`. Wrong batch size, malformed values, NaN/Infinity, or scores outside
-`[0, 1]` fail closed. Async scorers are supported through the normal async planning path.
+기본 포맷터는 선택지 레이블과 설명만 전달하며 `DecisionOption.metadata`는 전달하지 않습니다. 배치 크기 불일치, 잘못된 값, NaN/Infinity 또는 `[0, 1]` 밖의 점수는 안전하게 거부됩니다. 비동기 점수 계산기는 일반 비동기 계획 경로를 통해 지원됩니다.
 
-SchemaRouter does not depend on Transformers, Torch, a particular reranker, or a
-hosted ranking API. Applications own the scoring model and any score calibration. If a model emits
-unbounded logits, convert them to a calibrated or otherwise explicitly defined `[0, 1]` confidence
-before returning them to this backend. Thresholds remain model- and workload-specific and should be
-chosen on development/calibration data, not held-out evaluation data.
+SchemaRouter는 Transformers, Torch, 특정 재순위화 모델 또는 호스팅 순위 API에 종속되지 않습니다. 점수 계산 모델과 점수 보정은 애플리케이션이 소유합니다. 모델이 범위 제한 없는 로짓을 출력한다면 백엔드에 반환하기 전에 보정되었거나 별도로 명시적으로 정의된 `[0, 1]` 신뢰도로 바꿔야 합니다. 임계값은 모델과 작업 부하에 따라 달라지며 홀드아웃 평가 데이터가 아닌 개발·보정 데이터에서 결정해야 합니다.
 
 ## Jev / TypeSafe System One
 
@@ -389,9 +352,7 @@ backend = JevDecisionBackend(
 )
 ```
 
-The provider uses a TypeSafe `choice` primitive over the offered option IDs. Unknown IDs fail
-closed before confidence-based abstention is evaluated. Low-confidence valid choices may abstain and
-fall back to deterministic routing.
+제공자는 제시된 선택지 ID에 대해 TypeSafe `choice` 기본 연산을 사용합니다. 알 수 없는 ID는 신뢰도에 따른 선택 포기를 평가하기 전에 안전하게 거부합니다. 신뢰도가 낮은 유효 선택은 포기하고 결정적 라우팅으로 폴백할 수 있습니다.
 
 The adapter does not forward `DecisionOption.metadata`, and API credentials are client
 configuration rather than model state.
@@ -421,10 +382,7 @@ By default, Laya may route between its English and multilingual checkpoints from
 state. Applications may pin a checkpoint with `model=` and may preload checkpoints for a
 long-running process.
 
-The adapter maps Laya's finite `choice` primitive to SchemaRouter's existing
-`DecisionBackend` contract. Unknown option IDs fail closed before confidence gating,
-`DecisionOption.metadata` is not forwarded, and Hugging Face credentials remain trusted local
-configuration.
+어댑터는 Laya의 유한한 `choice` 기본 연산을 기존 SchemaRouter `DecisionBackend` 계약에 연결합니다. 알 수 없는 선택지 ID는 신뢰도 게이트보다 먼저 거부하고, `DecisionOption.metadata`는 전달하지 않으며, Hugging Face 인증정보는 신뢰할 수 있는 로컬 설정에 남겨둡니다.
 
 See [Laya](../integrations/laya.md) for checkpoint, device, preload, confidence, and benchmark
 guidance.
@@ -443,19 +401,13 @@ backend = OllamaDecisionBackend(
 )
 ```
 
-The backend constrains `option_id` with a JSON Schema enum, includes that schema in the prompt for
-grounding, and then revalidates the returned `DecisionResult` locally. `DecisionOption.metadata`
-is never forwarded. Model-reported scores are treated as self-assessments rather than calibrated
-probabilities.
+백엔드는 JSON Schema enum으로 `option_id`를 제한하고, 모델이 판단할 근거로 활용하도록 그 스키마를 프롬프트에 포함합니다. 이후 반환된 `DecisionResult`를 로컬에서 다시 검증합니다. `DecisionOption.metadata`는 어떤 경우에도 전달되지 않습니다. 모델이 보고하는 점수는 보정된 확률이 아닌 자체 평가값으로 취급합니다.
 
 See [Ollama](../integrations/ollama.md) for configuration and benchmark usage.
 
 ## Experimental provider
 
-Other System-One-style or decision-model providers should implement `DecisionBackend` rather than
-being imported into SchemaRouter core. Provider integrations remain optional and explicitly enabled.
-Embedding libraries should likewise remain application-owned unless a stable provider-specific
-contract justifies a dedicated adapter.
+그 밖의 System-One 방식 또는 결정 모델 제공자는 SchemaRouter 코어에 직접 가져오기보다 `DecisionBackend`를 구현해야 합니다. 제공자 연동은 선택적이며 명시적으로 활성화합니다. 임베딩 라이브러리 역시 안정적인 제공자별 계약이 전용 어댑터를 정당화하지 않는 한 애플리케이션이 소유하는 편이 적절합니다.
 
 This separation lets applications change, disable, or compare a decision provider without changing
 registered tools, execution policy, or the deterministic planner.
