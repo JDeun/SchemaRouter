@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import importlib.util
-import json
 from pathlib import Path
 
-
-SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "validate_safeact_v1_contract_provenance.py"
+SCRIPT = (
+    Path(__file__).resolve().parents[1]
+    / "scripts"
+    / "validate_safeact_v1_contract_provenance.py"
+)
 SPEC = importlib.util.spec_from_file_location("safeact_contract_provenance", SCRIPT)
 assert SPEC and SPEC.loader
 MODULE = importlib.util.module_from_spec(SPEC)
@@ -25,7 +27,8 @@ def _contract(path: str, kind: str = "public_policy") -> dict[str, object]:
 
 
 def test_public_policy_source_is_allowed() -> None:
-    assert MODULE.validate(_contract("env/customer_policy_qa/world/policies/workflow_policies.json")) == []
+    document = _contract("env/customer_policy_qa/world/policies/workflow_policies.json")
+    assert MODULE.validate(document) == []
 
 
 def test_case_evidence_is_forbidden() -> None:

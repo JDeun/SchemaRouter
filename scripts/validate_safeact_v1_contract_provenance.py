@@ -58,7 +58,13 @@ def validate(document: dict[str, object]) -> list[str]:
                 errors.append(f"forbidden source kind: {kind!r}")
             normalized = path.replace("\\", "/").lower()
             parts = normalized.split("/")
-            if not path or path.startswith(("/", "\\\\")) or ".." in parts or "." in parts or ":" in parts[0]:
+            if (
+                not path
+                or path.startswith(("/", "\\\\"))
+                or ".." in parts
+                or "." in parts
+                or ":" in parts[0]
+            ):
                 errors.append(f"unsafe source path: {path}")
             if any(normalized.startswith(prefix) for prefix in FORBIDDEN_PREFIXES):
                 errors.append(f"forbidden evaluator source path: {path}")
@@ -66,7 +72,14 @@ def validate(document: dict[str, object]) -> list[str]:
                 errors.append(f"forbidden evaluator/gold source fragment: {path}")
 
         serialized = json.dumps(contract, sort_keys=True).lower()
-        for key in ("gold_decision", "expected_outcome", "evidence_rules", "frozen_evidence_deltas", "case_spec", "gold_requirements"):
+        for key in (
+            "gold_decision",
+            "expected_outcome",
+            "evidence_rules",
+            "frozen_evidence_deltas",
+            "case_spec",
+            "gold_requirements",
+        ):
             if f'"{key}"' in serialized:
                 errors.append(f"forbidden evaluator field embedded in contract: {key}")
     return errors

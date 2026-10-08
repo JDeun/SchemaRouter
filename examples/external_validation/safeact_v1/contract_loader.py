@@ -3,11 +3,14 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
-from typing import Any, Mapping
 
 from .evidence_gate import ActionContract, EvidenceGate
 
-_VALIDATOR = Path(__file__).resolve().parents[3] / "scripts" / "validate_safeact_v1_contract_provenance.py"
+_VALIDATOR = (
+    Path(__file__).resolve().parents[3]
+    / "scripts"
+    / "validate_safeact_v1_contract_provenance.py"
+)
 
 
 def _validate(document: dict[str, object]) -> None:
@@ -26,7 +29,10 @@ def build_gate(document: dict[str, object], action: str) -> EvidenceGate:
     _validate(document)
     contracts = document["contracts"]
     assert isinstance(contracts, list)
-    matching = [item for item in contracts if isinstance(item, dict) and item.get("action") == action]
+    matching = [
+        item for item in contracts
+        if isinstance(item, dict) and item.get("action") == action
+    ]
     if len(matching) != 1:
         raise ValueError("action contract must match exactly once")
     requirements = matching[0].get("required_observations")
@@ -41,7 +47,11 @@ def build_gate(document: dict[str, object], action: str) -> EvidenceGate:
         fields = requirement.get("fields")
         if not isinstance(tool, str) or not tool or not isinstance(record, str) or not record:
             raise ValueError("observation must bind source tool and entity ID")
-        if not isinstance(fields, list) or not fields or not all(isinstance(f, str) and f for f in fields):
+        if (
+            not isinstance(fields, list)
+            or not fields
+            or not all(isinstance(f, str) and f for f in fields)
+        ):
             raise ValueError("observation must declare nonempty typed fields")
         observations.append((tool, record, frozenset(fields)))
     return EvidenceGate(ActionContract(action=action, required_observations=tuple(observations)))

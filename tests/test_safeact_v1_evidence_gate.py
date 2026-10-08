@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from examples.external_validation.safeact_v1.evidence_gate import (
-    ActionContract, EvidenceGate, Observation,
+    ActionContract,
+    EvidenceGate,
+    Observation,
 )
 
 
