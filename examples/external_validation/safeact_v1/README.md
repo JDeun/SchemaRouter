@@ -102,6 +102,18 @@ adapter commit SHA, with explicit review. These are declared identities;
 the upstream post-run audit independently checks the **observed model**
 and matched public/hidden case fingerprints after all trajectories finish.
 
+The separate `independent_contract_review` entry in the intervention
+manifest is also mandatory. It must contain `approved: true`, nonempty
+**different** `author` and `reviewer` identities, the SHA-256 digest of
+the frozen canonical `contracts.json` under `contract_sha256`, and the
+frozen upstream commit under `upstream_revision`. The launcher rejects
+missing, self-reviewed, stale or mismatched attestations. The reviewer must
+independently check public source authoring and all 131 case mappings before
+sign-off. **These fields attest review but cannot cryptographically prove
+human authorship, independence or semantic correctness.** Do not set them
+merely to make the preflight pass; no score is authorized without the actual
+independent review.
+
 By default, this command performs a **preflight only** and does not issue
 any model calls. The opt-in `--execute` runs all 131 official V1 cases
 for each arm and then runs the official full-pair verifier and post-run
