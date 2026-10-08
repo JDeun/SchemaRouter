@@ -49,13 +49,17 @@ def _inputs(tmp_path: Path) -> dict:
     }
 
 
-def _mock_public(monkeypatch, sample: dict) -> None:
+def _freeze_contract_hash(sample: dict) -> None:
     sample["intervention_manifest"]["contract_sha256"] = hashlib.sha256(
         json.dumps(
             sample["contracts"], sort_keys=True, ensure_ascii=False,
             separators=(",", ":"),
         ).encode("utf-8")
     ).hexdigest()
+
+
+def _mock_public(monkeypatch, sample: dict) -> None:
+    _freeze_contract_hash(sample)
     monkeypatch.setattr(launch, "verify_sources", lambda *a: [])
     monkeypatch.setattr(
         launch,
@@ -89,6 +93,7 @@ def test_rejects_missing_case_policy(monkeypatch, tmp_path: Path) -> None:
     sample = _inputs(tmp_path)
     _mock_public(monkeypatch, sample)
     sample["contracts"]["case_coverage"].pop("SAB-V1-001")
+    _freeze_contract_hash(sample)
     # The public listing is frozen separately from the mutable contract.
     monkeypatch.setattr(
         launch,
@@ -125,6 +130,7 @@ def test_duplicate_action_contract_is_rejected(monkeypatch, tmp_path: Path) -> N
     sample["contracts"]["contracts"].append(
         sample["contracts"]["contracts"][0].copy()
     )
+    _freeze_contract_hash(sample)
     with pytest.raises(ValueError, match="unique names"):
         launch.validate_launch(**sample)
 
