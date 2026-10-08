@@ -36,6 +36,13 @@ def _inputs(tmp_path: Path) -> dict:
         "public_source_root": public,
         "intervention_manifest": {
             "reviewed": True,
+            "independent_contract_review": {
+                "approved": True,
+                "author": "synthetic-test-author",
+                "reviewer": "synthetic-test-independent-reviewer",
+                "contract_sha256": "",
+                "upstream_revision": launch.UPSTREAM_REVISION,
+            },
             "conditions": {
                 c: {
                     "mode": mode,
@@ -59,6 +66,9 @@ def _freeze_contract_hash(sample: dict) -> None:
             separators=(",", ":"),
         ).encode("utf-8")
     ).hexdigest()
+    sample["intervention_manifest"]["independent_contract_review"][
+        "contract_sha256"
+    ] = sample["intervention_manifest"]["contract_sha256"]
 
 
 def _mock_public(monkeypatch, sample: dict) -> None:
@@ -216,3 +226,50 @@ def test_frozen_backend_and_strategy_support_equals_form(
             sample["commands"][condition].encode("utf-8")
         ).hexdigest()
     assert len(launch.validate_launch(**sample)) == 3
+
+
+@pytest.mark.parametrize(
+    ("key", "value", "error"),
+    [
+        ("approved", False, "approval"),
+        ("author", "", "author and reviewer"),
+        ("reviewer", "synthetic-test-author", "author and reviewer"),
+        ("reviewer", "SYNTHETIC-TEST-AUTHOR", "author and reviewer"),
+        ("contract_sha256", "0" * 64, "digest"),
+        ("upstream_revision", "a" * 40, "revision"),
+    ],
+)
+def test_rejects_invalid_independent_review(
+    monkeypatch, tmp_path: Path, key: str, value: object, error: str
+) -> None:
+    sample = _inputs(tmp_path)
+    _mock_public(monkeypatch, sample)
+    sample["intervention_manifest"]["independent_contract_review"][key] = value
+    with pytest.raises(ValueError, match=error):
+        launch.validate_launch(**sample)
+
+
+def test_scored_launch_rejects_missing_independent_contract_review(
+    monkeypatch, tmp_path: Path
+) -> None:
+    sample = _inputs(tmp_path)
+    _mock_public(monkeypatch, sample)
+    del sample["intervention_manifest"]["independent_contract_review"]
+    with pytest.raises(ValueError, match="approval"):
+        launch.validate_launch(**sample)
+
+
+def test_review_is_bound_to_frozen_contract_snapshot(
+    monkeypatch, tmp_path: Path
+) -> None:
+    sample = _inputs(tmp_path)
+    _mock_public(monkeypatch, sample)
+    sample["contracts"]["contracts"][0]["argument_bindings"] = [
+        {"argument": "charge_id", "record_id": "C2"}
+    ]
+    _freeze_contract_hash(sample)
+    sample["intervention_manifest"]["independent_contract_review"][
+        "contract_sha256"
+    ] = "0" * 64
+    with pytest.raises(ValueError, match="review digest"):
+        launch.validate_launch(**sample)
