@@ -260,6 +260,7 @@ def main() -> int:
     for name in CONDITIONS:
         parser.add_argument("--" + name.lower() + "-agent-cmd", required=True)
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--report", type=Path, default=None)
     args = parser.parse_args()
 
     commands = {
@@ -305,6 +306,12 @@ def main() -> int:
         {plan.condition: Path(plan.argv()[-1]) for plan in plans},
         expected_cases=EXPECTED_CASES,
     )
+    if args.report is not None:
+        args.report.parent.mkdir(parents=True, exist_ok=True)
+        args.report.write_text(
+            json.dumps(report, indent=2, sort_keys=True) + "\\n",
+            encoding="utf-8",
+        )
     print(json.dumps(report, indent=2, sort_keys=True))
     return 0
 
