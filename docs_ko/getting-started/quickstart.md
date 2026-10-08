@@ -35,7 +35,9 @@ OData.org V4 reference service입니다. Credential이나 optional SDK가 없으
 compatibility smoke와 같은 공개 OpenAPI source로 해석한 뒤 기존 OpenAPI adapter에 전달합니다.
 예제용으로 꾸며 낸 스키마나 고정 응답이 아니라 외부 provider의 실제 계약과 데이터를 사용합니다.
 
+```python
 --8<-- "examples/live_openapi_quickstart.py"
+```
 
 체크아웃한 저장소에서:
 
@@ -68,7 +70,9 @@ current numAPIs: <current positive integer>
 
 로컬 callable 예제도 별도로 유지합니다.
 
+```python
 --8<-- "examples/quickstart.py"
+```
 
 이 파일은 source/wheel/sdist acceptance에서 실행됩니다.
 
