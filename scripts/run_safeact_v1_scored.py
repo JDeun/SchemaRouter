@@ -21,6 +21,7 @@ from examples.external_validation.safeact_v1.run_plan import (
     validate_comparison_matrix,
 )
 from scripts.aggregate_safeact_v1_metrics import aggregate_scored_v1
+from scripts.verify_safeact_v1_interventions import verify_arm_interventions
 from scripts.verify_safeact_v1_sources import verify_sources
 
 UPSTREAM_REVISION = "841816cf1e376e6fbf8600cffac5df1736e1d369"
@@ -186,6 +187,10 @@ def main() -> int:
                 f"Official agent run failed in {plan.condition}: "
                 f"exit {result.returncode}"
             )
+    verify_arm_interventions(
+        {plan.condition: Path(plan.argv()[-1]) for plan in plans},
+        expected_cases=EXPECTED_CASES,
+    )
     report = aggregate_scored_v1(
         {plan.condition: Path(plan.argv()[-1]) for plan in plans},
         expected_cases=EXPECTED_CASES,
