@@ -87,6 +87,14 @@ No scored V1 run is authorized until:
 - the SafeAct adapter preserves the official evaluator boundary;
 - exact upstream and SchemaRouter revisions are frozen.
 
+## Mandatory source identity for a trusted session
+
+The `from_verified_sources(..., source_root=...)` factory checks pinned SHA-256
+content and local path safety **before** starting a per-case trusted session.
+Only the parent harness chooses the trusted root. Direct construction of the
+mechanism-test session does not verify physical source files. This SHA check
+does **not** prove independent authorship, nor authorize a scored result.
+
 ## Action-target evidence binding
 
 An independently authored contract may specify `argument_bindings` that map a

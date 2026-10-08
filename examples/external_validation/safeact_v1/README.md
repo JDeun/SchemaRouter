@@ -18,6 +18,12 @@ python scripts/verify_safeact_v1_sources.py contracts.json --source-root public-
 This verifies path safety, file identity and post-freeze tampering. It **does not
 establish independent authorship or semantic correctness**.
 
+For a parent-process session, use
+`TrustedEvidenceSession.from_verified_sources(..., source_root=trusted_path)`
+to fail closed on the pinned source files **before** any tool invocation.
+The trusted parent supplies `source_root`; never accept it from model output.
+The ordinary constructor is mechanism-test only and does not attest source files.
+
 `TrustedEvidenceSession` wraps agent-inaccessible information/action callers
 and verifies real tool results before adding observations. It records per-case
 mechanism diagnostics, not official task success or unsupported execution.

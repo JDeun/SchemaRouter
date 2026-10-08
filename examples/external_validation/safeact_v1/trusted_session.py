@@ -3,10 +3,12 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from .contract_loader import build_gate
 from .evidence_gate import Observation
+from scripts.verify_safeact_v1_sources import verify_sources
 
 
 @dataclass(frozen=True)
@@ -51,6 +53,34 @@ class TrustedEvidenceSession:
         self._action_dispatches = 0
         self._gate_denials = 0
         self._gate_reason_counts: dict[str, int] = {}
+
+    @classmethod
+    def from_verified_sources(
+        cls,
+        contract: dict[str, object],
+        action: str,
+        *,
+        source_root: Path,
+        information_call: InfoCaller,
+        verify_result: EvidenceVerifier,
+        execute_action: ActionCaller,
+    ) -> "TrustedEvidenceSession":
+        """Fail closed on actual pinned source files before any case session.
+
+        The trusted parent chooses source_root; it must never come from agent
+        input. Hash identity does not prove independent authorship or policy
+        correctness. Official scored integration is not provided here.
+        """
+        errors = verify_sources(contract, source_root)
+        if errors:
+            raise ValueError("unverified independent source: " + "; ".join(errors))
+        return cls(
+            contract,
+            action,
+            information_call=information_call,
+            verify_result=verify_result,
+            execute_action=execute_action,
+        )
 
     def information_call(
         self, tool: str, arguments: Mapping[str, Any]

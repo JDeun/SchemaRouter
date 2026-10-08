@@ -1,6 +1,8 @@
 """SafeAct V1 trusted evidence-session mechanism regression tests."""
 from __future__ import annotations
 
+import hashlib
+
 import pytest
 
 from examples.external_validation.safeact_v1.trusted_session import (
@@ -213,3 +215,60 @@ def test_missing_bound_argument_never_dispatches() -> None:
     with pytest.raises(PermissionError, match="argument_binding_mismatch"):
         session.execute_action("refund_issue", {})
     assert dispatched == []
+
+def test_verified_source_factory_accepts_frozen_independent_policy(tmp_path) -> None:
+    source = tmp_path / "policy.json"
+    source.write_text("public refund policy", encoding="utf-8")
+    contract = _contract()
+    contract["contracts"][0]["sources"][0] = {
+        "kind": "independent_contract",
+        "path": "policy.json",
+        "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+    }
+    session = TrustedEvidenceSession.from_verified_sources(
+        contract,
+        "refund_issue",
+        source_root=tmp_path,
+        information_call=lambda tool, args: {"charge_id": "C2", "owner": "Alice"},
+        verify_result=lambda tool, args, result: VerifiedToolEvidence(
+            record_id="C2", fields=frozenset({"amount", "owner"})
+        ),
+        execute_action=lambda action, args: (action, args),
+    )
+    with pytest.raises(PermissionError, match="evidence incomplete"):
+        session.execute_action("refund_issue", {})
+    session.information_call("charge_read", {})
+    assert session.execute_action("refund_issue", {}) == ("refund_issue", {})
+
+
+@pytest.mark.parametrize("mutation", ["missing_hash", "tamper", "symlink"])
+def test_verified_source_factory_rejects_unpinned_or_replaced_policy(
+    tmp_path, mutation
+) -> None:
+    source = tmp_path / "policy.json"
+    source.write_text("public policy", encoding="utf-8")
+    frozen = hashlib.sha256(source.read_bytes()).hexdigest()
+    contract = _contract()
+    contract["contracts"][0]["sources"][0] = {
+        "kind": "independent_contract",
+        "path": "policy.json",
+        "sha256": frozen,
+    }
+    if mutation == "missing_hash":
+        del contract["contracts"][0]["sources"][0]["sha256"]
+    elif mutation == "tamper":
+        source.write_text("post-freeze changed content", encoding="utf-8")
+    else:
+        source.rename(tmp_path / "original.json")
+        source.symlink_to(tmp_path / "original.json")
+    invoked: list[str] = []
+    with pytest.raises(ValueError, match="unverified independent source"):
+        TrustedEvidenceSession.from_verified_sources(
+            contract,
+            "refund_issue",
+            source_root=tmp_path,
+            information_call=lambda tool, args: invoked.append("read") or {},
+            verify_result=lambda tool, args, result: None,
+            execute_action=lambda action, args: invoked.append("action"),
+        )
+    assert invoked == []
