@@ -35,6 +35,9 @@ class EvidenceGate:
     def __init__(self, contract: ActionContract) -> None:
         if not contract.action or not contract.required_observations:
             raise ValueError("independent action contract must specify required observations")
+        for _, record_id, _ in contract.required_observations:
+            if record_id.startswith("$action.") and not record_id[8:].isidentifier():
+                raise ValueError("malformed action-bound observation record")
         known_records = {record_id for _, record_id, _ in contract.required_observations}
         bound_names: set[str] = set()
         for argument, record_id in contract.argument_bindings:
@@ -60,6 +63,13 @@ class EvidenceGate:
             if args is None or args.get(argument) != expected_record:
                 missing.append(f"argument_binding_mismatch:{argument}:{expected_record}")
         for tool, record_id, fields in self.contract.required_observations:
+            if record_id.startswith("$action."):
+                action_field = record_id[8:]
+                bound = args.get(action_field) if args is not None else None
+                if not isinstance(bound, str) or not bound:
+                    missing.append(f"action_record_argument_missing:{action_field}")
+                    continue
+                record_id = bound
             matched = any(
                 obs.tool == tool
                 and obs.record_id == record_id

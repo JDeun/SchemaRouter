@@ -86,3 +86,32 @@ def test_action_binding_must_name_a_declared_observation() -> None:
                 argument_bindings=(("charge_id", "C1"),),
             )
         )
+
+
+def test_dynamic_action_bound_record_only_accepts_observed_target() -> None:
+    gate = EvidenceGate(
+        ActionContract(
+            action="refund_issue",
+            required_observations=(
+                ("charge_read", "$action.charge_id", frozenset({"owner"})),
+            ),
+        )
+    )
+    gate.observe(Observation("charge_read", "C2", frozenset({"owner"})))
+    assert gate.check("refund_issue", {"charge_id": "C2"}).allowed
+    assert not gate.check("refund_issue", {"charge_id": "C1"}).allowed
+    assert not gate.check("refund_issue", {}).allowed
+    assert not gate.check("refund_issue", {"charge_id": 42}).allowed
+
+
+@pytest.mark.parametrize("reference", ["$action.", "$action.a-b", "$action.a.b"])
+def test_invalid_dynamic_argument_name_fails_closed(reference: str) -> None:
+    with pytest.raises(ValueError, match="malformed action-bound"):
+        EvidenceGate(
+            ActionContract(
+                action="refund_issue",
+                required_observations=(
+                    ("charge_read", reference, frozenset({"owner"})),
+                ),
+            )
+        )

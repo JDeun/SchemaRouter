@@ -82,3 +82,14 @@ def test_loader_rejects_duplicate_argument_bindings() -> None:
     ]
     with pytest.raises(ValueError, match="duplicate argument binding"):
         build_gate(document, "refund_issue")
+
+
+def test_loader_allows_independent_action_record_templates() -> None:
+    document = _document()
+    document["contracts"][0]["required_observations"][0]["record_id"] = (
+        "$action.charge_id"
+    )
+    gate = build_gate(document, "refund_issue")
+    gate.observe(Observation("charge_read", "C2", frozenset({"amount", "owner"})))
+    assert gate.check("refund_issue", {"charge_id": "C2"}).allowed
+    assert not gate.check("refund_issue", {"charge_id": "C1"}).allowed
