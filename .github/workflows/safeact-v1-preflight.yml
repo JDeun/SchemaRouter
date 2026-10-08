@@ -14,6 +14,8 @@ on:
       - 'scripts/verify_safeact_v1_host_bridge.py'
       - '.github/workflows/safeact-v1-preflight.yml'
   workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * 1' # weekly official 131-case gold reference simulator; no model
 
 permissions:
   contents: read
@@ -109,6 +111,7 @@ jobs:
           path: safeact-v1-public-tool-inventory.json
           retention-days: 30
       - name: Validate all 131 V1 evaluator paths (official gold simulator, never agent score)
+        if: github.event_name != 'pull_request'
         run: |
           python safeact-upstream/run_benchmark.py \
             --protocol v1 --simulate \
