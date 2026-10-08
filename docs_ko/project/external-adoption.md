@@ -1,84 +1,55 @@
-# External adoption 및 validation plan
+# External adoption과 validation plan
 
-Issue #584는 **maintainer 자신의 repository 밖에서 생성된 evidence**를 추적합니다. 목표는 endorsement를 모으는 것이 아닙니다. 다른 project가 구체적인 SchemaRouter integration을 쉽게 평가하고, 결과를 공개하며, limitation도 함께 드러낼 수 있도록 하는 것이 목표입니다.
+Issue #584는 **maintainer 자신의 repository 밖에 존재하는 evidence**를 추적합니다. Endorsement 수집이 목적이 아닙니다. 다른 project가 concrete SchemaRouter integration을 쉽게 평가하고 결과를 publish하며 limitation을 visible하게 유지하도록 하는 것이 목적입니다.
 
-## Outreach 규칙
+## Outreach rule
 
-Use a contribution-first sequence:
+Contribution-first sequence:
 
-1. understand the target project's existing tool/MCP abstraction;
-2. build or propose the smallest reproducible integration;
-3. show a runnable example or focused PR;
-4. ask whether the integration is useful to them;
-5. only after real use/evaluation, request permission to cite the project, maintainer, logo, or quote.
+1. target project의 기존 tool/MCP abstraction 이해
+2. 가장 작은 reproducible integration build/propose
+3. runnable example 또는 focused PR 제시
+4. integration이 실제로 유용한지 질문
+5. real use/evaluation 뒤에만 project/maintainer/logo/quote 인용 permission 요청
 
-Star 요청을 primary action으로 삼지 않습니다.
+Star를 primary action으로 요청하지 않습니다.
 
-## Candidate set — 2026-10-01 확인
+## Candidate set — checked 2026-10-01
 
-아래 항목은 **candidate**이며 실제 사용자라고 주장하는 목록이 아닙니다.
+아래는 **candidate**이며 claimed user가 아닙니다.
 
-| Project | Existing relevant surface | Smallest useful SchemaRouter evaluation | Evidence we would want |
+| Project | Existing relevant surface | Smallest useful SchemaRouter evaluation | 원하는 evidence |
 | --- | --- | --- | --- |
-| PydanticAI | toolsets, MCP, deferred tools, ToolSearch | implement an external/example ToolSearch strategy backed by SchemaRouter retrieval over the same toolset | candidate recall, context/tool-schema reduction, no change to PydanticAI execution authority |
-| OpenAI Agents SDK (Python) | MCP servers, dynamic per-run tool filters, approvals/guardrails | use SchemaRouter retrieval to produce the dynamic MCP allow-set while leaving Agents SDK invocation/approval behavior intact | filter parity, shortlist size, task success, no approval bypass |
-| lastmile-ai/mcp-agent | MCP connection lifecycle and composable agent workflows | let mcp-agent own MCP sessions while SchemaRouter ranks/structures a large discovered tool catalog before exposure | catalog size, shortlist size, task completion, lifecycle compatibility |
-| Hugging Face smolagents | Tool abstraction, MCP ToolCollection, LangChain tool reuse | expose a bounded SchemaRouter-selected tool collection to a smolagents agent | selected-tool recall, schema/context size, task success |
-| Agno | large Toolkit ecosystem and MCPTools include/exclude surfaces | map SchemaRouter retrieval results to a per-request bounded toolkit/MCP tool list | tool-list reduction, task success, added latency, incompatibilities |
-| CrewAI | BaseTool/custom tools and MCP tools | create a small external bridge/example that turns selected registered endpoints into CrewAI tools | bridge correctness, selected-tool recall, execution-boundary notes |
-| Langflow | visual MCP Tools component and agent flows | prototype a custom component/example that performs typed capability retrieval before the agent tool step | usability in a real flow, configuration friction, result shape preservation |
-| Letta | explicit MCP list/schema/search/call workflow with ranked search | treat as an **independent comparison/reproduction target**, not an adoption pitch; compare SchemaRouter's typed field/capability contract with Letta's existing MCP search workflow | reproducible comparison, unsupported-query behavior, schema/context differences |
+| PydanticAI | toolsets, MCP, deferred tools, ToolSearch | 같은 toolset에 SchemaRouter retrieval을 적용한 external/example ToolSearch strategy | candidate recall, context/tool-schema reduction, PydanticAI execution authority 불변 |
+| OpenAI Agents SDK (Python) | MCP servers, dynamic per-run tool filters, approvals/guardrails | Agents SDK invocation/approval을 유지하고 SchemaRouter retrieval로 dynamic MCP allow-set 생성 | filter parity, shortlist size, task success, approval bypass 없음 |
+| lastmile-ai/mcp-agent | MCP lifecycle, composable workflow | mcp-agent가 MCP session을 소유하고 SchemaRouter가 discovered catalog를 rank/structure | catalog/shortlist size, task completion, lifecycle compatibility |
+| Hugging Face smolagents | Tool, MCP ToolCollection, LangChain reuse | bounded SchemaRouter-selected collection 노출 | selected-tool recall, schema/context size, task success |
+| Agno | Toolkit ecosystem, MCPTools include/exclude | per-request bounded toolkit/MCP list에 retrieval mapping | tool-list reduction, task success, latency, incompatibility |
+| CrewAI | BaseTool/custom/MCP tools | selected endpoint를 CrewAI tool로 만드는 external bridge/example | bridge correctness, recall, boundary notes |
+| Langflow | visual MCP Tools, agent flows | agent tool step 전 typed retrieval custom component/example | real-flow usability, config friction, shape preservation |
+| Letta | MCP list/schema/search/call + ranked search | adoption pitch가 아닌 **independent comparison/reproduction target** | reproducible comparison, unsupported behavior, schema/context difference |
 
-Canonical repositories/docs should be re-checked immediately before any upstream issue or PR because
-these projects evolve quickly.
+Upstream issue/PR 전 canonical repo/docs를 다시 확인해야 합니다.
 
 ## Why these targets
 
-The candidates already have one or more of:
+Candidate는 many tools/toolsets, MCP discovery, dynamic filtering/search, framework integration point, explicit schema, runtime을 대체하지 않고 bounded retrieval을 평가할 realistic point 중 하나 이상을 이미 가집니다.
 
-- many tools/toolsets;
-- MCP discovery;
-- dynamic tool filtering/search;
-- agent framework integration points;
-- explicit tool schemas;
-- a realistic place where bounded capability retrieval can be evaluated without asking the project
-  to replace its runtime.
-
-That makes the proposed evaluation falsifiable. If their native search/filtering already solves the
-same problem better, that is useful evidence too.
+따라서 evaluation이 falsifiable합니다. Native search/filter가 같은 문제를 더 잘 풀면 그것도 유용한 evidence입니다.
 
 ## Project-specific contribution notes
 
 ### PydanticAI
 
-Current fit:
+Toolset, MCP, deferred ToolSearch, custom search strategy가 있습니다. SchemaRouter가 ToolSearch를 대체한다고 pitch하지 않습니다. Field-aware typed retrieval이 custom strategy/external boundary로 가치 있는지가 실험입니다.
 
-- toolsets gather multiple tools;
-- MCP is a first-class capability;
-- deferred tools can be searched through ToolSearch;
-- custom search strategies exist.
+Maintainer가 upstream example/listing을 원한다고 하기 전에는 SchemaRouter 또는 tiny external example에 둡니다.
 
-Do **not** pitch SchemaRouter as replacing PydanticAI ToolSearch. The useful experiment is whether
-SchemaRouter's field-aware typed capability retrieval is a valuable custom strategy or external
-toolset boundary.
-
-First contribution should live in SchemaRouter or a tiny external example package until Pydantic
-maintainers indicate that an upstream example/listing is welcome.
-
-The maintainer-owned E0 evaluation for this path is tracked in
-[#644](https://github.com/JDeun/SchemaRouter/issues/644) and documented in
-[PydanticAI ToolSearch validation](external-validation-pydanticai.md). It is intentionally labeled
-E0 until someone outside this repository evaluates or adopts it publicly.
+Maintainer-owned E0는 [#644](https://github.com/JDeun/SchemaRouter/issues/644), [PydanticAI ToolSearch validation](external-validation-pydanticai.md)에 있습니다. 외부 평가/adoption 전까지 E0입니다.
 
 ### OpenAI Agents SDK
 
-Current fit:
-
-- local MCP servers expose static and dynamic `tool_filter`;
-- dynamic filters receive run/agent context;
-- approval policies and input/output guardrails remain in the SDK.
-
-A clean experiment is:
+Local MCP server는 static/dynamic `tool_filter`, run/agent context, SDK approval/input-output guardrail을 가집니다.
 
 ```text
 run query
@@ -87,161 +58,122 @@ run query
   -> Agents SDK keeps its own approval/invocation semantics
 ```
 
-This is deliberately retrieval-only integration. It should not duplicate or bypass SDK approval
-authority.
+Retrieval-only integration이며 SDK approval authority를 duplicate/bypass하지 않습니다.
 
-The maintainer-owned E0 evaluation for this path is tracked in
-[#645](https://github.com/JDeun/SchemaRouter/issues/645) and documented in
-[OpenAI Agents SDK MCP filter validation](external-validation-openai-agents.md). The evaluation
-uses a real local stdio MCP lifecycle but remains E0 until someone outside this repository reviews,
-reproduces, or adopts it publicly.
+E0는 [#645](https://github.com/JDeun/SchemaRouter/issues/645)와 [validation](external-validation-openai-agents.md)에 있습니다. Real local stdio MCP lifecycle을 쓰지만 외부 review/reproduction/adoption 전까지 E0입니다.
 
 ### mcp-agent
 
-mcp-agent already owns MCP connection/session lifecycle. Avoid replacing that lifecycle.
+MCP connection/session lifecycle을 이미 소유하므로 대체하지 않습니다. Discovered schema surface를 ranking용으로 import/compile하고 mcp-agent를 orchestrator로 유지합니다. Conversion이 정보를 잃으면 fabricate하지 말고 limitation으로 기록합니다.
 
-The experiment should import/compile the discovered schema surface for ranking and preserve
-mcp-agent as the orchestrator. If tool schema conversion loses information, record that as a
-limitation rather than silently filling it in.
-
-The maintainer-owned E0 evaluation for this path is tracked in
-[#646](https://github.com/JDeun/SchemaRouter/issues/646) and documented in
-[mcp-agent catalog validation](external-validation-mcp-agent.md). It uses mcp-agent's real
-`MCPApp`/Agent stdio lifecycle and native `tool_filter` surface, but remains E0 until someone
-outside this repository reviews, reproduces, or adopts it publicly.
+E0는 [#646](https://github.com/JDeun/SchemaRouter/issues/646)와 [validation](external-validation-mcp-agent.md)에 있습니다. Native `MCPApp`/Agent stdio lifecycle 및 `tool_filter`를 사용하지만 외부 review/reproduction/adoption 전까지 E0입니다.
 
 ### smolagents
 
-smolagents can use MCP and other tool sources. A bounded collection experiment can test whether a
-large mixed tool set benefits from SchemaRouter retrieval before model exposure.
-
-Prefer a self-contained example over a new permanent core dependency.
+MCP/other tool source를 사용할 수 있습니다. Large mixed tool set에서 model exposure 전 SchemaRouter retrieval의 이점을 bounded collection으로 시험합니다. Permanent core dependency보다 self-contained example을 선호합니다.
 
 ### Agno
 
-Agno's MCP/toolkit layer already has explicit include/exclude surfaces. This is a good place to test
-whether a query-dependent SchemaRouter shortlist adds value beyond static filtering.
-
-Do not claim a security improvement merely because fewer tools are shown; Agno's own policy/runtime
-remains authoritative for its execution path.
+MCP/toolkit layer에 explicit include/exclude가 있습니다. Query-dependent shortlist가 static filtering 이상 가치가 있는지 시험하기 좋습니다. Tool 수 감소만으로 security improvement를 주장하지 않습니다. Execution은 Agno policy/runtime이 authoritative합니다.
 
 ### CrewAI
 
-Start with an external bridge/example around its normal tool abstraction. Keep the proof small:
-typed selection and schema preservation are enough. Do not add another agent lifecycle.
+Normal tool abstraction 주변 external bridge/example로 시작합니다. Typed selection/schema preservation 정도의 작은 proof로 충분하며 또 다른 agent lifecycle을 추가하지 않습니다.
 
 ### Langflow
 
-This is a higher-effort UI/integration target. A custom component can be useful only after the
-lower-friction Python integrations prove the contract. Treat it as `help wanted`, not the first
-outreach.
+Higher-effort UI/integration target입니다. Lower-friction Python integration이 contract를 증명한 뒤 custom component를 고려하며 첫 outreach가 아니라 `help wanted`로 취급합니다.
 
 ### Letta
 
-Letta already exposes MCP tool search/schema/call as an explicit workflow. That makes it more useful
-as independent prior-art/evaluation than as a "please adopt SchemaRouter" target.
-
-A fair comparison should record where the abstractions differ rather than forcing a winner.
+MCP tool search/schema/call을 explicit workflow로 이미 노출하므로 adoption target보다 independent prior-art/evaluation에 적합합니다. Abstraction 차이를 기록하며 억지 winner를 만들지 않습니다.
 
 ## Evaluation package
 
-A proposed adopter should not need to read the research history. Give them:
+Proposed adopter가 research history를 읽을 필요가 없도록 다음을 제공합니다.
 
-1. stable install:
+1. 안정 버전 설치:
    ```bash
    pip install schemarouter
    ```
-2. one framework-specific runnable example;
-3. the 30-second context-reduction demo;
-4. the trust/evidence page;
-5. this minimal evaluation protocol.
+2. framework-specific runnable example 하나
+3. 30-second context-reduction demo
+4. trust/evidence page
+5. 아래 minimal protocol
 
 ### Minimal protocol
 
-Record:
+기록:
 
-- target project + version/commit;
-- SchemaRouter version/commit;
-- Python/runtime/hardware;
-- original number of model-visible tools;
-- shortlisted number of tools;
-- full versus bounded serialized schema/context size;
-- required-tool/capability recall for the test requests;
-- task completion or explicit failure;
-- added routing latency;
-- invalid/unsupported query behavior;
-- authority/policy integration notes;
-- conversion gaps or unsupported schema constructs.
+- target project version/commit
+- SchemaRouter version/commit
+- Python/runtime/hardware
+- original model-visible tool 수
+- shortlisted tool 수
+- full vs bounded serialized schema/context size
+- test request의 required-tool/capability recall
+- task completion 또는 explicit failure
+- added routing latency
+- invalid/unsupported query behavior
+- authority/policy integration notes
+- conversion gap/unsupported schema construct
 
-Use at least one request where no registered capability should be selected.
+No registered capability가 선택되어야 하는 request를 최소 하나 포함합니다.
 
-Do not compare token cost unless the measurement is genuinely model-token based. Serialized byte
-counts must stay labeled as bytes.
+Measurement가 실제 model-token based가 아니면 token cost를 비교하지 않습니다. Serialized byte는 bytes로 label합니다.
 
 ## Outreach message template
 
-Use a short project-specific note, not a mass template.
+Mass template가 아니라 짧은 project-specific note를 사용합니다.
 
-> Hi — I maintain SchemaRouter, an MIT-licensed Python layer for typed capability retrieval and
-> schema-aware execution in large agent tool catalogs.
+> Hi — I maintain SchemaRouter, an MIT-licensed Python layer for typed capability retrieval and schema-aware execution in large agent tool catalogs.
 >
-> I noticed that <project> already has <specific tool/MCP surface>. Rather than asking you to adopt
-> another framework, I'd like to test one narrow integration: <specific bounded experiment>.
+> I noticed that <project> already has <specific tool/MCP surface>. Rather than asking you to adopt another framework, I'd like to test one narrow integration: <specific bounded experiment>.
 >
-> I can prepare the example/PR and keep <project>'s existing runtime/approval semantics authoritative.
-> If the result is not useful, I'll publish that limitation as part of the evaluation.
+> I can prepare the example/PR and keep <project>'s existing runtime/approval semantics authoritative. If the result is not useful, I'll publish that limitation as part of the evaluation.
 >
-> Would a small reproducible example like that be useful, and if so, where would you prefer it to
-> live?
+> Would a small reproducible example like that be useful, and if so, where would you prefer it to live?
 
-Do not send this unchanged to several projects.
+여러 project에 그대로 보내지 않습니다.
 
 ## Evidence levels
-
-External evidence should be labeled explicitly:
 
 | Level | Meaning |
 | --- | --- |
 | E0 | maintainer-owned example only |
-| E1 | external maintainer/user evaluated the example publicly |
-| E2 | downstream repository includes SchemaRouter in a reproducible branch/PR/test |
-| E3 | downstream default/released path uses SchemaRouter |
+| E1 | external maintainer/user가 example을 publicly 평가 |
+| E2 | downstream repo가 reproducible branch/PR/test에 SchemaRouter 포함 |
+| E3 | downstream default/released path가 SchemaRouter 사용 |
 | E4 | independent benchmark/reliability reproduction published |
 
-A GitHub star, repository mention, or friendly reply is not an adoption level.
+GitHub star, repo mention, friendly reply는 adoption level이 아닙니다.
 
 ## Public tracking
 
-For each contact/evaluation, record only public or permissioned information:
+Public/permissioned information만 기록합니다.
 
 | Project | Contact/evaluation URL | Level | Status | Evidence | Limitation / next action |
 | --- | --- | --- | --- | --- | --- |
-| PydanticAI | [#644](https://github.com/JDeun/SchemaRouter/issues/644) | E0 | maintainer-owned deterministic evaluation | [validation page](external-validation-pydanticai.md) | external review/evaluation still required |
-| OpenAI Agents SDK | [#645](https://github.com/JDeun/SchemaRouter/issues/645) | E0 | maintainer-owned local-MCP filter evaluation | [validation page](external-validation-openai-agents.md) | external review/evaluation still required |
-| mcp-agent | [#646](https://github.com/JDeun/SchemaRouter/issues/646) | E0 | maintainer-owned native-lifecycle catalog evaluation | [validation page](external-validation-mcp-agent.md) | external review/evaluation still required |
-| _other candidates_ | — | E0 | candidate set prepared | this page | external outreach/evaluation not yet performed |
+| PydanticAI | [#644](https://github.com/JDeun/SchemaRouter/issues/644) | E0 | maintainer-owned deterministic evaluation | [validation](external-validation-pydanticai.md) | external review 필요 |
+| OpenAI Agents SDK | [#645](https://github.com/JDeun/SchemaRouter/issues/645) | E0 | maintainer-owned local-MCP filter evaluation | [validation](external-validation-openai-agents.md) | external review 필요 |
+| mcp-agent | [#646](https://github.com/JDeun/SchemaRouter/issues/646) | E0 | maintainer-owned native-lifecycle catalog evaluation | [validation](external-validation-mcp-agent.md) | external review 필요 |
+| _other candidates_ | — | E0 | candidate set prepared | this page | outreach/evaluation 미실행 |
 
-Do not publish private email addresses, private conversations, or unpublished organization names.
+Private email address/conversation/unpublished organization name은 publish하지 않습니다.
 
 ## Case-study promotion rule
 
-A project may appear in a README "Used by" section only after:
+README "Used by"에 넣으려면:
 
-- at least E2 evidence exists;
-- the integration/use is still current;
-- the name/logo/quote usage has permission when required;
-- the case study includes a measurable outcome **and** a limitation.
+- 최소 E2
+- integration/use가 current
+- 필요 시 name/logo/quote permission
+- measurable outcome **및** limitation 포함
 
-See [External case-study template](case-study-template.md).
+[External case-study template](case-study-template.md)을 참고하십시오.
 
 ## Feedback loop
 
-Recurring adopter friction should result in a bounded issue in one of:
+Recurring friction은 onboarding/docs, adapter conformance, framework bridge, packaging/compatibility, benchmark/evidence 중 bounded issue로 만듭니다.
 
-- onboarding/docs;
-- adapter conformance;
-- framework bridge;
-- packaging/compatibility;
-- benchmark/evidence.
-
-Do not turn each adopter request into a new core abstraction.
+Adopter request마다 새 core abstraction을 만들지 않습니다.

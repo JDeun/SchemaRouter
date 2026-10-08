@@ -1,127 +1,78 @@
 # Decision backend plugin
 
-SchemaRouter는 model-specific integration을 core에 추가하지 않고도 설치된 Python package에서 third-party bounded decision backend를 load할 수 있습니다.
-
-This is intended for decision-model families whose runtime/API is not already covered by a stable
-built-in transport such as `SystemOneDecisionBackend`.
+SchemaRouter는 model-specific integration을 core에 추가하지 않고 installed Python package에서 third-party bounded decision backend를 load할 수 있습니다. `SystemOneDecisionBackend` 같은 stable built-in transport가 이미 커버하지 않는 decision-model family용입니다.
 
 ## Entry-point contract
-
-A plugin package registers one entry point in `pyproject.toml`:
 
 ```toml
 [project.entry-points."schemarouter.decision_backends"]
 anyjev = "schemarouter_anyjev:create_backend"
 ```
 
-The entry point may resolve to:
-
-- a backend class;
-- a factory callable;
-- a preconstructed object exposing `decide(request)`.
-
-A class or factory can receive explicit keyword configuration when loaded.
+Entry point는 backend class, factory callable, 또는 `decide(request)`를 가진 preconstructed object일 수 있습니다. Class/factory는 load 시 explicit keyword configuration을 받을 수 있습니다.
 
 ## Discovery는 metadata-only
 
 ```python
 from schemarouter import discover_decision_backend_plugins
-
 for plugin in discover_decision_backend_plugins():
     print(plugin.name, plugin.distribution, plugin.version)
 ```
 
-Discovery does **not** import or execute plugin code.
+Discovery는 plugin code를 import/execute하지 않습니다.
 
-## 명시적 loading
+## Explicit loading
 
 ```python
 from schemarouter import load_decision_backend_plugin
-
 backend = load_decision_backend_plugin(
     "anyjev",
-    config={
-        "model": "example/model",
-        "device": "cuda",
-    },
+    config={"model": "example/model", "device": "cuda"},
 )
 ```
 
-Only the exact named plugin is imported. Loading a plugin executes trusted installed Python code;
-SchemaRouter does not auto-load all installed decision plugins.
-
-The returned backend still participates in the normal bounded-decision contract. Any selected option
-ID is validated against the finite IDs offered by SchemaRouter before it can influence planning.
+정확히 지정한 plugin만 import합니다. Plugin load는 trusted installed Python code를 실행하며 SchemaRouter가 모든 installed decision plugin을 auto-load하지 않습니다. Returned backend도 normal bounded-decision contract를 따르고 selected option ID는 planning에 영향을 주기 전에 finite offered ID에 대해 검증됩니다.
 
 ## Runnable external-package example
-
-The repository includes a deterministic package that declares a real decision-backend entry point:
 
 ```bash
 python -m pip install -e examples/decision_backend_plugin_demo
 python examples/decision_backend_plugin_quickstart.py
 ```
 
-Its package metadata contains:
+Demo package:
 
 ```toml
 [project.entry-points."schemarouter.decision_backends"]
 demo_bounded = "schemarouter_demo_decision:DemoBoundedDecisionBackend"
 ```
 
-The demo backend never receives execution authority. It receives only the finite
-`DecisionRequest.options`, returns one of those IDs when the query exactly matches an offered
-ID/label, and explicitly abstains when none match. SchemaRouter still validates the returned ID
-through `choose_sync()` / `choose_async()`; a plugin that invents an ID fails closed with
-`PlanningError`.
+Demo backend는 execution authority를 받지 않습니다. Finite `DecisionRequest.options`만 받고 query가 offered ID/label과 정확히 맞을 때 그 ID를 반환하며 없으면 abstain합니다. SchemaRouter가 `choose_sync()`/`choose_async()`로 ID를 검증하므로 invented ID는 `PlanningError`로 fail-closed합니다.
 
-The deterministic implementation is intentionally not a quality benchmark. A hosted/local model can
-replace its `decide()` logic while the same finite-option validation remains in force.
+Deterministic implementation은 quality benchmark가 아닙니다. Hosted/local model이 `decide()` logic을 대체해도 finite-option validation은 유지됩니다.
 
-## Benchmark a plugin without editing SchemaRouter
-
-The shared decision benchmark can load the same installed plugin:
+## SchemaRouter 수정 없이 plugin benchmark
 
 ```bash
 export SCHEMAROUTER_DECISION_PLUGIN_CONFIG='{"model":"example/model","device":"cpu"}'
-
 python scripts/benchmark_decision_routing.py \
   --corpus benchmarks/decision-routing-v1.json \
   --decision-plugin anyjev \
   --decision-recall-on-empty
 ```
 
-Use `--decision-plugin-config-env NAME` to select a different configuration environment variable.
+다른 configuration env var는 `--decision-plugin-config-env NAME`으로 선택합니다. Report에는 plugin name, discoverable package distribution/version, configuration **key**, configuration env var name을 기록하며 value는 기록하지 않습니다. Secret은 ordinary benchmark metadata보다 dedicated provider credential env var에서 읽는 것이 좋습니다.
 
-Benchmark reports record:
+## 어떤 extension path를 사용할까?
 
-- plugin name;
-- package distribution/version when discoverable;
-- configuration **keys**;
-- the name of the environment variable used for configuration.
+1. System One wire-compatible model — `SystemOneDecisionBackend`
+2. One-off research callable — `CallableDecisionBackend` 또는 `--decision-callable module:function`
+3. Reusable third-party integration — `schemarouter.decision_backends` entry-point plugin
 
-Configuration values are not written to benchmark output. Plugins that need secrets should preferably
-read their provider credential from a dedicated environment variable rather than accepting the raw
-secret as ordinary benchmark metadata.
+Model churn을 SchemaRouter planning/authority model 밖에 유지합니다.
 
-## Which extension path to use
+## Quality와 compatibility는 별개
 
-Use the narrowest stable interface that fits the model:
+Installed plugin이 자동으로 recommended router가 되는 것은 아닙니다. Production model 교체 전 동일 frozen workload에서 exact routing, unsupported rejection, false-route rate, latency, error, authority violation을 비교해야 합니다.
 
-1. **System One wire-compatible model** — use `SystemOneDecisionBackend` and change
-   `base_url/model/provider_name`.
-2. **One-off research callable** — use `CallableDecisionBackend` or
-   `--decision-callable module:function`.
-3. **Reusable third-party integration** — publish a
-   `schemarouter.decision_backends` entry-point plugin.
-
-This keeps model churn outside SchemaRouter's planning and authority model.
-
-## Quality is separate from compatibility
-
-An installed plugin is not automatically a recommended router. Before replacing a production model,
-run the same frozen workload and compare exact routing, unsupported rejection, false-route rate,
-latency, errors, and authority violations.
-
-A provider can supply semantic evidence, but registered local schema and SchemaRouter validation
-remain the execution authority.
+Provider는 semantic evidence를 제공할 수 있지만 registered local schema와 SchemaRouter validation이 execution authority를 유지합니다.
