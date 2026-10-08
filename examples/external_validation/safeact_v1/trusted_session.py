@@ -89,10 +89,26 @@ class TrustedEvidenceSession:
         """Record only an actual and independently verified information result."""
         if not tool:
             raise ValueError("information tool name required")
-        self._information_attempts += 1
         safe_args = dict(arguments)
         result = self._information_call(tool, safe_args)
-        verified = self._verify_result(tool, safe_args, result)
+        self.record_trusted_result(tool, safe_args, result)
+        return result
+
+    def record_trusted_result(
+        self,
+        tool: str,
+        arguments: Mapping[str, Any],
+        result: Mapping[str, Any],
+    ) -> None:
+        """Only a trusted tool gateway may provide actual completed results.
+
+        Never call this using agent-authored traces or model-provided results.
+        This does not invoke the underlying tool a second time.
+        """
+        if not tool or not isinstance(result, Mapping):
+            raise ValueError("trusted tool response required")
+        self._information_attempts += 1
+        verified = self._verify_result(tool, dict(arguments), result)
         if verified is not None:
             if (
                 not isinstance(verified, VerifiedToolEvidence)
@@ -114,8 +130,6 @@ class TrustedEvidenceSession:
                     fields=verified.fields,
                 )
             )
-        return result
-
     def execute_action(self, action: str, arguments: Mapping[str, Any]) -> Any:
         """Track attempts and gate decisions without interpreting official outcomes."""
         self._action_attempts += 1
