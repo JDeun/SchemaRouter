@@ -493,6 +493,23 @@ def active_run_with_jobs(
     return None
 
 
+def prefer_materialized_corrective_run(
+    api: GitHubAPI,
+    runs: list[StageRun],
+) -> StageRun | None:
+    """Prefer a run with scientific jobs over newer empty cancelled wrappers.
+
+    A zero-job duplicate cannot provide any canonical shards.  Selecting it
+    discards reusable artifacts from the earlier terminal scientific run and
+    makes the recovery matrix unnecessarily replay all 180 shards.
+    """
+
+    for run in runs:
+        if api.workflow_run_job_count(run.id) > 0:
+            return run
+    return runs[0] if runs else None
+
+
 def stale_pending_wrapper(
     run: StageRun | None,
     *,
@@ -752,7 +769,7 @@ def run_controller(
         )
         corrective = active_corrective
     else:
-        corrective = corrective_runs[0] if corrective_runs else None
+        corrective = prefer_materialized_corrective_run(api, corrective_runs)
 
     corrective_job_count = (
         api.workflow_run_job_count(corrective.id)
