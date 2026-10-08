@@ -41,6 +41,13 @@ premature action attempts, overall task success, and false refusals.
 Model, harness, task order, public task/tool surface, and evaluator revision must otherwise remain
 fixed within a comparison.
 
+The preparatory `V1RunPlan` now targets the official runner by absolute path through the
+current Python interpreter. `validate_comparison_matrix()` requires exactly one
+entry for each of the three preregistered conditions, one declared model,
+one pinned upstream checkout, and separate output directories. This protects
+the *declared* comparison design; the trusted adapter still needs to attest
+the actual runtime model and per-case environment before scored evaluation.
+
 ## Leakage boundary
 
 Runtime contract construction may read only independently trusted, agent-visible/public capability
