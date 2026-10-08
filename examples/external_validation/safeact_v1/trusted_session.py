@@ -6,9 +6,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from scripts.verify_safeact_v1_sources import verify_sources
+
 from .contract_loader import build_gate
 from .evidence_gate import Observation
-from scripts.verify_safeact_v1_sources import verify_sources
 
 
 @dataclass(frozen=True)
@@ -64,7 +65,7 @@ class TrustedEvidenceSession:
         information_call: InfoCaller,
         verify_result: EvidenceVerifier,
         execute_action: ActionCaller,
-    ) -> "TrustedEvidenceSession":
+    ) -> TrustedEvidenceSession:
         """Fail closed on actual pinned source files before any case session.
 
         The trusted parent chooses source_root; it must never come from agent

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from collections.abc import Sequence
-from pathlib import Path
 
 from .run_plan import V1RunPlan, validate_comparison_matrix
 
