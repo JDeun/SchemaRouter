@@ -17,6 +17,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
+# Invoked by SafeAct from its own workspace; the SchemaRouter source root
+# must be resolved independently of cwd before importing the trusted package.
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+
 from examples.external_validation.safeact_v1.record_intervention import (
     gate_official_v1_record,
 )
