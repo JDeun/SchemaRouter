@@ -116,7 +116,7 @@ def check_rendered(site: Path) -> list[str]:
         if not p.relative_to(site).as_posix().startswith("ko/")
     }
     ko_root = site / "ko"
-    ko_pages = {p.relative_to(ko_root) for p in ko_root.rglob("*.html")}
+    ko_pages = {p.relative_to(ko_root) for p in ko_root.rglob("index.html")}
     for rel in sorted(en_pages - ko_pages):
         errors.append(f"rendered Korean page missing: {rel}")
     for rel in sorted(ko_pages - en_pages):
