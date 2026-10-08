@@ -10,6 +10,7 @@ from scripts.report_korean_translation_coverage import (
     analyze_pair,
     build_report,
     copied_english_paragraphs,
+    dissect,
     markdown_report,
 )
 
@@ -26,7 +27,8 @@ class KoreanTranslationCoverageTests(unittest.TestCase):
 
     def test_excludes_code_from_copy_detection(self) -> None:
         block = "```text\n" + ("verbatim code documentation example " * 15) + "\n```"
-        self.assertEqual(copied_english_paragraphs(block, block), [])
+        prose = str(dissect(block)["prose"])
+        self.assertEqual(copied_english_paragraphs(prose, prose), [])
 
     def test_missing_peer_and_skeletal_section(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
