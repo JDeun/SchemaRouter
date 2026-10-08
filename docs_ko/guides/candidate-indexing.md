@@ -1,29 +1,29 @@
-# Candidate indexing
+# 후보 인덱싱
 
-SchemaRouter는 deterministic endpoint scoring 전에 exact-recall lexical candidate index를 사용합니다.
+SchemaRouter는 엔드포인트에 결정론적 점수를 계산하기 전에, **정확 재현율(exact-recall)을 보존하는 어휘 기반 후보 인덱스**를 사용합니다.
 
-index는 성능 최적화일 뿐이며 기존 `_score_endpoint()` ranking rule을 대체하거나 변경하지 않습니다.
+이 인덱스는 성능 최적화를 위한 장치일 뿐이며 기존 `_score_endpoint()`의 순위 산정 규칙을 대체하거나 변경하지 않습니다.
 
-## Index 대상
+## 인덱싱 대상
 
-등록된 각 endpoint에 대해 planner는 현재 positive deterministic score를 만들 수 있는 input을 index합니다:
+플래너는 등록된 각 엔드포인트에 대해 현재 결정론적 스코어러에서 양수 점수를 만들 수 있는 입력을 인덱싱합니다.
 
-- tool key와 tool name
-- preferred endpoint identity
-- tool/endpoint name과 description의 token
-- output field name, alias, explicit dotted projection path
-- exact/substring concept matching에 사용하는 normalized output-field string
-- 제공된 request argument에서 사용하는 declared parameter name
+- 도구 키와 도구 이름
+- 선호 엔드포인트 식별자
+- 도구 및 엔드포인트 이름과 설명에서 추출한 토큰
+- 출력 필드 이름, 별칭, 점으로 구분한 명시적 투영 경로
+- 개념과의 정확한 일치 및 부분 문자열 일치에 사용되는 정규화된 출력 필드 문자열
+- 요청에 명시적으로 제공한 인자에서 사용되는 선언된 파라미터 이름
 
-따라서 index는 현재 deterministic scorer에서 positive score를 받을 수 있는 모든 endpoint의 superset을 반환합니다. 최종 score와 sorting은 기존 scorer가 그대로 계산합니다.
+따라서 이 인덱스는 현재의 결정론적 스코어러에서 양수 점수를 받을 수 있는 모든 엔드포인트를 **포함하는 상위 집합**을 반환합니다. 실제 최종 점수 계산과 정렬은 기존 스코어러가 계속 수행합니다.
 
-## Cache invalidation
+## 캐시 무효화
 
-index는 `ToolRegistry.version`을 기준으로 cache됩니다.
+인덱스 캐시는 `ToolRegistry.version`에 결부됩니다.
 
-registry mutation이 성공하면 version이 증가해 다음 request에서 planner cache를 invalidate합니다. index 구축은 stable registry snapshot을 읽으며 구축 중 registry가 반복 변경되면 mixed-version view를 cache하지 않고 planning을 실패시킵니다.
+레지스트리 변경이 성공하면 버전이 증가하고 다음 요청에서 플래너 캐시가 무효화됩니다. 인덱스를 생성할 때는 일관된 레지스트리 스냅샷을 읽습니다. 생성 중 레지스트리가 반복해서 변경되면 서로 다른 버전이 섞인 인덱스를 캐시하는 대신 계획 수립에 실패합니다.
 
-## 비교 또는 debugging을 위한 비활성화
+## 비교 또는 디버깅을 위해 비활성화하기
 
 ```python
 planner = SchemaPlanner(
@@ -32,20 +32,22 @@ planner = SchemaPlanner(
 )
 ```
 
-exhaustive mode는 모든 endpoint를 scoring하며 benchmark 비교와 semantic parity 검증에 유용합니다.
+전체 탐색(exhaustive) 모드는 모든 엔드포인트에 점수를 부여합니다. 벤치마크 비교나 의미적 동등성 검증에 유용합니다.
 
-## Benchmark
+## 벤치마크
 
-synthetic benchmark harness가 포함되어 있습니다:
+합성 데이터 기반 벤치마크 하네스를 포함하고 있습니다.
 
 ```bash
 python scripts/benchmark_candidate_index.py --tools 1000 --iterations 50
 ```
 
-indexed/exhaustive mode의 elapsed time과 endpoint scorer call 수를 보고합니다.
+인덱싱 모드와 전체 탐색 모드 각각의 경과 시간과 엔드포인트 스코어러 호출 횟수를 보고합니다.
 
-wall-clock 결과는 hardware와 registry shape에 따라 달라집니다. repository test는 더 강한 deterministic property도 검증합니다. indexed/exhaustive planning은 동일 plan을 생성해야 하며 selective synthetic case에서는 scorer call이 전체 registry가 아니라 정확한 candidate subset으로 줄어야 합니다.
+실제 실행 시간은 하드웨어와 레지스트리 구조에 따라 달라집니다. 저장소 테스트는 더 강한 결정론적 성질도 검증합니다. **인덱싱 및 전체 탐색이 같은 실행 계획을 생성해야 하며**, 선택적인 합성 사례에서는 스코어러 호출 횟수가 전체 레지스트리 규모에서 정확한 후보 부분집합 규모로 줄어들어야 합니다.
 
-## 범위
+## 적용 범위
 
-현재 index는 in-process이며 registry snapshot에서 재구축됩니다. vector database, remote search service, approximate-nearest-neighbor layer가 아닙니다. 규모상 필요하면 별도의 명시적 contract 뒤에 그런 system을 추가할 수 있지만 deterministic planner recall을 조용히 변경해서는 안 됩니다.
+현재 인덱스는 프로세스 내부에 존재하며 레지스트리 스냅샷에서 다시 생성됩니다. 벡터 데이터베이스나 원격 검색 서비스, 근사 최근접 이웃(ANN) 계층은 아닙니다.
+
+장차 확장성이 필요해지면 별도로 명시된 계약 뒤에 이러한 시스템을 추가할 수 있습니다. 다만 그 과정에서 결정론적 플래너의 재현율을 조용히 변경해서는 안 됩니다.

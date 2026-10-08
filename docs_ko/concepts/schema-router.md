@@ -1,28 +1,29 @@
-# SchemaRouter란?
+# SchemaRouter란 무엇인가
 
-SchemaRouter는 **API, tool, data system 전반에서 AI agent를 위한 typed capability routing 및 governed execution layer**입니다.
+SchemaRouter는 **API, 도구, 데이터 시스템 전반에서 AI 에이전트를 위한 타입 기반 기능 라우팅과 정책 통제형 실행 계층**입니다.
 
-범용 agent framework보다 역할은 좁고 semantic tool router보다 깊습니다. **Retrieval-Augmented Generation(RAG)**은 external source에서 가져온 정보로 generation을 보강합니다. 그 source가 API나 tool일 때 SchemaRouter는 retrieval/execution boundary의 일부를 담당할 수 있습니다. Source를 typed endpoint/field contract로 정규화하고 주변 RAG, agent, application에 필요한 가장 작은 trusted executable data surface를 검색합니다.
+역할은 일반적인 에이전트 프레임워크보다 좁지만 의미 기반 도구 라우터보다는 깊습니다. **검색 증강 생성(RAG)**은 외부 소스에서 검색한 정보를 생성에 결합합니다. SchemaRouter는 그러한 소스가 API나 도구인 경우 검색·실행 경계의 일부를 담당할 수 있습니다. 외부 소스를 타입이 명확한 엔드포인트 및 필드 계약으로 정규화하고, 이를 사용하는 RAG·에이전트·애플리케이션에 필요한 최소한의 신뢰 가능한 실행 가능 데이터 표면을 검색합니다.
 
-| 계층 | 책임 |
+담당 범위는 다음과 같이 명확하게 구분됩니다.
+
+| 계층 | 담당 책임 |
 | --- | --- |
-| 애플리케이션 / agent framework | 대화, agent loop, graph, model strategy, memory, checkpoint |
-| SchemaRouter | typed tool/endpoint planning, schema identity, validation, policy, execution boundary |
-| Optional decision backend | 로컬에서 허가된 유한 후보 중 bounded selection |
-| Capability source | OpenAPI, MCP, OPTIMADE, Python callable, 승인된 adapter/plugin |
+| 애플리케이션 / 에이전트 프레임워크 | 대화, 에이전트 반복 실행, 그래프, 모델 전략, 메모리, 체크포인트 |
+| SchemaRouter | 타입 기반 도구·엔드포인트 계획, 스키마 식별성, 검증, 정책, 실행 경계 |
+| 선택적 의사결정 백엔드 | 로컬에서 이미 허가된 유한한 후보 중 한 차례의 제한된 선택 |
+| 기능 제공원 | OpenAPI, MCP, OPTIMADE, Python callable, 승인된 어댑터·플러그인 |
 
-Laya, Ollama, Jev 같은 decision backend는 후보 선택을 보조할 뿐입니다. 새 capability를
-만들거나 별도의 tool loop를 시작할 수 없고, 실행 권한도 갖지 않습니다.
+Laya, Ollama, Jev 등의 의사결정 백엔드는 내부에 중첩된 에이전트가 아닙니다. 추가 도구 반복 실행을 시작하거나 기능을 임의로 생성하거나 실행 권한을 부여할 수 없습니다.
 
 ## 컴파일 모델
 
-일반 router:
+일반적인 라우터는 하나의 선택 결과를 반환하는 경우가 많습니다.
 
 ```text
 Query -> Tool
 ```
 
-SchemaRouter:
+SchemaRouter는 타입이 정의된 실행 계획을 만듭니다.
 
 ```text
 Query
@@ -36,66 +37,54 @@ Query
   -> execution policy / availability
 ```
 
-이 계획은 그대로 실행하지 않고, 실제 호출 직전에 다시 검증합니다.
+이 계획은 실제 실행 직전에 다시 검증됩니다.
 
-## Endpoint가 first-class인 이유
+## 엔드포인트 식별성이 중요한 이유
 
-하나의 API나 MCP server에는 여러 operation이 있을 수 있습니다. 서버 전체를 하나의 tool로
-보면 다음 차이를 잃습니다.
+하나의 API나 MCP 서버에 여러 작업이 노출될 수 있습니다. 서버 전체를 하나의 '도구'로 취급하면 다음 차이가 사라집니다.
 
-- read와 mutation
-- search와 detail
-- required parameter 차이
-- output schema 차이
+- 조회 작업과 데이터 변경 작업
+- 검색 엔드포인트와 상세 조회 엔드포인트
+- 서로 다른 필수 파라미터
+- 서로 다른 출력 스키마
 
-그래서 SchemaRouter는 `EndpointSpec`을 first-class contract로 다룹니다.
+따라서 SchemaRouter는 도구마다 엔드포인트가 하나뿐이라고 가정하지 않고 `EndpointSpec`을 독립적인 일급 계약으로 취급합니다.
 
-## Field가 중요한 이유
+## 응답 필드가 중요한 이유
 
-질문에 필요하지 않은 field까지 모두 가져오면 bandwidth, latency, parsing, downstream context,
-prompt token을 낭비할 수 있습니다. SchemaRouter는 **field-first, route-second** 원칙을 사용합니다.
+모든 필드를 가져오면 공급자 대역폭을 낭비하고 지연 시간을 늘리며, 하위 모델 컨텍스트를 불필요한 값으로 채우고 프롬프트 토큰을 추가로 소비할 수 있습니다. SchemaRouter는 **필드 우선, 경로 선택 후순위(field-first, route-second)** 계획 방식을 사용합니다. 논리적으로 필요한 필드를 먼저 정하고 이를 제공할 경로를 선택합니다.
 
-1. 논리적으로 필요한 field를 정합니다.
-2. 그 field를 제공할 수 있는 route를 찾습니다.
-3. 가능하면 server-side projection을 사용합니다.
-4. raw response를 검증합니다.
-5. 최종적으로 필요한 field만 `ToolResult`에 남깁니다.
+쿼리와 필드의 대응 관계가 명확하면 다음 단계를 따릅니다.
 
-Query-to-field match가 명확하면 confidently relevant field와 identifier만 유지하고, endpoint에 explicit `ServerProjectionSpec`이 있으면 해당 field를 upstream으로 push합니다. Raw projected response를 validate한 뒤 `ToolResult` 생성 전에 final local projection을 수행합니다.
+- 확실하게 관련된 필드와 식별자만 유지합니다.
+- 엔드포인트가 `ServerProjectionSpec`을 명시적으로 지원하면 필요한 필드 선택을 서버 측에 전달합니다.
+- 투영된 원시 응답을 검증합니다.
+- `ToolResult`를 만들기 전에 최종 로컬 필드 투영을 수행합니다.
 
-지나친 pruning은 recall을 훼손할 수 있으므로 field intent가 실제로 모호하면 default planner는 한 field로 충분하다고 가장하지 않고 declared field set을 우선합니다.
+그러나 지나치게 공격적인 필드 제거는 재현율을 떨어뜨릴 수도 있습니다. 필드 의도가 실제로 모호할 때 기본 플래너는 한 필드만으로 충분하다고 가정하지 않고 선언된 필드 집합을 우선합니다.
 
-[RAG positioning and capability retrieval →](capability-catalog.md) · [Field-first execution →](field-first-execution.md)
+[RAG의 위치와 기능 검색](capability-catalog.md) 및 [필드 우선 실행](field-first-execution.md)을 참고하십시오.
 
-## 실행 단계에서 다시 검증하는 이유
+## 실행기가 다시 검증하는 이유
 
-Plan은 execution authority가 아닙니다. Planning과 execution 사이에 schema가 바뀌거나 manually constructed `ToolCall`이 malformed일 수 있고, model이 invalid value를 제안하거나 bound transport가 registered contract와 더 이상 일치하지 않을 수 있습니다.
+실행 계획 자체에는 실행 권한이 없습니다. 계획 수립과 실제 실행 사이에 다음 변화가 발생할 수 있습니다.
 
-따라서 executor는 다음 항목을 다시 확인합니다.
+- 스키마가 변경될 수 있습니다.
+- 직접 구성한 `ToolCall`이 형식에 맞지 않을 수 있습니다.
+- 모델이 유효하지 않은 값을 제안했을 수 있습니다.
+- 바인딩된 전송 계층이 더 이상 등록된 계약과 일치하지 않을 수 있습니다.
 
-- 필수 argument
-- schema/tool fingerprint
-- local binding 준비 상태
-- execution policy / approval
-- input schema
-- trusted transport
-- raw output schema
-- field projection
+실행기는 필수 인자를 다시 계산하고, 지문을 확인하고, 정책을 적용하고, 입력을 검증한 뒤 신뢰 가능한 전송 계층을 호출합니다. 그리고 원시 출력을 검증한 후에만 필드 투영을 수행합니다.
 
-Executor는 required argument를 다시 계산하고 fingerprint와 policy를 검사하며 input을 validate한 뒤 trusted transport를 invoke합니다. 이후 raw output을 validate하고 마지막에 field를 projection합니다.
+## 범위에 포함되지 않는 기능
 
-## 하지 않는 것
+SchemaRouter는 다음 책임을 직접 가져오려 하지 않습니다.
 
-SchemaRouter는 다음을 소유하려 하지 않습니다.
+- 채팅 메시지 추상화
+- 프롬프트 템플릿 생태계
+- 모델 공급자 클라이언트
+- 대화 메모리
+- 그래프 오케스트레이션
+- 체크포인트 관리
 
-- chat message abstraction
-- prompt-template ecosystem
-- model-provider client
-- conversation memory
-- graph orchestration
-- checkpointing
-
-이 기능은 LangChain/LangGraph/LlamaIndex 또는 애플리케이션 계층에 남겨 둡니다.
-
-[Capability catalog 자세히 보기 →](capability-catalog.md) ·
-[Field-first execution →](field-first-execution.md)
+이러한 기능은 LangChain이나 LangGraph 등 상위 프레임워크가 담당합니다.
