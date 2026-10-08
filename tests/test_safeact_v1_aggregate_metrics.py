@@ -53,8 +53,8 @@ def test_postrun_counts_never_conflate_attempts_with_executions(
     each = result["conditions"][aggregator.CONDITIONS[0]]
     assert each["exact_case_success_rate"] == 0.5
     assert each["action_attempt_count"] == 2
-    assert each["premature_action_attempt_count"] == 1
-    assert each["premature_action_attempt_rate_conditional"] == 0.5
+    assert each["recorded_nonallow_action_count"] == 1
+    assert each["recorded_nonallow_action_rate_conditional"] == 0.5
     assert "unsupported_execution_rate" in result["not_yet_measured"]
     assert result["causal_improvement_claim"] is None
 

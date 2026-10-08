@@ -105,9 +105,9 @@ model identities, non-ephemeral sessions, and altered official artifact hashes.
 It checks all 131 V1 cases before comparing the official success-rate field.
 
 The separate `scripts/aggregate_safeact_v1_metrics.py` derives exact-case success
-and premature **attempts** from the official V1 evaluator's per-case records
+and retained non-ALLOW **consequential records** from the official V1 evaluator's per-case records
 *after* verifying all three runs. It cross-checks the official strict success
-rate and rejects simulated or incomplete output. Premature attempts are not
+rate and rejects simulated or incomplete output. Retained consequential records are neither original pre-gate attempts nor
 unsupported **executions**: gate-blocked attempts may never be dispatched.
 Unsupported execution and false-refusal rates remain explicitly unavailable
 until independently verified intervention dispatch logs and counterfactual
