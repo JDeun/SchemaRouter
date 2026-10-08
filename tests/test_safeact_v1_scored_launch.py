@@ -273,3 +273,64 @@ def test_review_is_bound_to_frozen_contract_snapshot(
     ] = "0" * 64
     with pytest.raises(ValueError, match="review digest"):
         launch.validate_launch(**sample)
+
+
+@pytest.mark.parametrize(
+    "mismatched_flag",
+    [
+        "--profile alternate-codex-profile",
+        "--cfuse-config /tmp/other-provider.json",
+        "--cli-bin /tmp/other-codex",
+        "--model-catalog /tmp/other-model-catalog.json",
+        "--timeout 420",
+        "--max-turns=24",
+        "--extra-arg=--different-solver-setting",
+        "--keep-sandbox",
+    ],
+)
+def test_rejects_cross_arm_solver_configuration_drift(
+    monkeypatch, tmp_path: Path, mismatched_flag: str
+) -> None:
+    sample = _inputs(tmp_path)
+    _mock_public(monkeypatch, sample)
+    sample["commands"][launch.CONDITIONS[1]] += " " + mismatched_flag
+    with pytest.raises(ValueError, match="runtime|keep-sandbox"):
+        launch.validate_launch(**sample)
+
+
+def test_allows_identical_explicit_solver_configuration(
+    monkeypatch, tmp_path: Path
+) -> None:
+    sample = _inputs(tmp_path)
+    _mock_public(monkeypatch, sample)
+    for condition in launch.CONDITIONS:
+        sample["commands"][condition] += (
+            " --timeout=420 --max-turns 24"
+            " --extra-arg=--alpha --extra-arg=--beta"
+        )
+        sample["intervention_manifest"]["conditions"][condition][
+            "agent_command_sha256"
+        ] = hashlib.sha256(
+            sample["commands"][condition].encode("utf-8")
+        ).hexdigest()
+    assert len(launch.validate_launch(**sample)) == 3
+
+
+@pytest.mark.parametrize(
+    "malformed",
+    [
+        "--timeout",
+        "--max-turns --keep-sandbox",
+        "--extra-arg=",
+        "--profile first --profile second",
+    ],
+)
+def test_rejects_broken_or_ambiguous_solver_option(
+    monkeypatch, tmp_path: Path, malformed: str
+) -> None:
+    sample = _inputs(tmp_path)
+    _mock_public(monkeypatch, sample)
+    sample["commands"][launch.CONDITIONS[2]] += " " + malformed
+    # A repeatable --extra-arg may appear more than once, but never empty.
+    with pytest.raises(ValueError, match="requires|runtime|duplicate"):
+        launch.validate_launch(**sample)
