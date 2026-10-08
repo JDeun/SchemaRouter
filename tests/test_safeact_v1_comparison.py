@@ -39,7 +39,13 @@ def _three(tmp_path: Path) -> dict[str, Path]:
         ):
             rel = f"{name}/v1/SAB-V1-001.json"
             file = root / rel
-            _write(file, {"case_id": "SAB-V1-001"})
+            entry = {"case_id": "SAB-V1-001"}
+            if name == "trace":
+                entry.update({
+                    "runtime_model": "model-a", "fresh_session": True,
+                    "session_persistence": "ephemeral",
+                })
+            _write(file, entry)
             artifacts[name] = {
                 "path": rel,
                 "sha256": hashlib.sha256(file.read_bytes()).hexdigest(),
@@ -47,7 +53,7 @@ def _three(tmp_path: Path) -> dict[str, Path]:
         _write(root / "completions/v1/SAB-V1-001.json", {
             "protocol": "v1", "schema_version": 1,
             "case_id": "SAB-V1-001",
-            "public_scenario_sha256": "frozen-public",
+            "public_scenario_sha256": artifacts["public_scenario"]["sha256"],
             "inputs": {
                 "hidden_case_spec_sha256": "frozen-gold-hash",
                 "runtime_identity": {"requested_model": "model-a"},
@@ -100,7 +106,23 @@ def test_different_case_fingerprint_rejected(tmp_path: Path) -> None:
     outputs = _three(tmp_path)
     file = outputs[CONDITIONS[2]] / "completions/v1/SAB-V1-001.json"
     data = json.loads(file.read_text(encoding="utf-8"))
-    data["public_scenario_sha256"] = "changed"
+    data["inputs"]["hidden_case_spec_sha256"] = "changed"
     _write(file, data)
     with pytest.raises(ValueError, match="different case set"):
+        verify_comparison(outputs, expected_cases=1)
+
+def test_rejects_forged_runtime_attestation(tmp_path: Path) -> None:
+    outputs = _three(tmp_path)
+    root = outputs[CONDITIONS[1]]
+    trace = root / "trace/v1/SAB-V1-001.json"
+    data = json.loads(trace.read_text(encoding="utf-8"))
+    data["runtime_model"] = "forged-model"
+    _write(trace, data)
+    marker = root / "completions/v1/SAB-V1-001.json"
+    value = json.loads(marker.read_text(encoding="utf-8"))
+    value["artifacts"]["trace"]["sha256"] = hashlib.sha256(
+        trace.read_bytes()
+    ).hexdigest()
+    _write(marker, value)
+    with pytest.raises(ValueError, match="runtime trace attestation mismatch"):
         verify_comparison(outputs, expected_cases=1)

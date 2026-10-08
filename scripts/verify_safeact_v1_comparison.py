@@ -126,6 +126,14 @@ def verify_comparison(
                     )):
                 raise ValueError(f"model attestation mismatch: {case}")
             verify_artifacts(root, marker)
+            artifacts = marker["artifacts"]
+            scenario_hash = artifacts["public_scenario"]["sha256"]
+            if marker.get("public_scenario_sha256") != scenario_hash:
+                raise ValueError(f"public scenario fingerprint mismatch: {case}")
+            trace = _json(root / artifacts["trace"]["path"])
+            for key in ("runtime_model", "fresh_session", "session_persistence"):
+                if trace.get(key) != identity.get(key):
+                    raise ValueError(f"runtime trace attestation mismatch: {case}")
             cases[case] = (
                 str(marker.get("public_scenario_sha256", "")),
                 str(inputs.get("hidden_case_spec_sha256", "")),
