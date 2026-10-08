@@ -4,12 +4,12 @@
 
 전체 research 기록:
 
-- [Complete experiment index](experiment-index.md) — all 92 machine-readable experiment records;
-- [Design and experiment history](design-and-experiment-history.md) — architectural chronology and decisions;
-- [0.11 terminal report](operation-routing-v4-terminal-report.md) — the closed-cycle decision;
-- [Prior-art roadmap](prior-art-roadmap.md) — cross-session literature/work-item map and experiment-order guardrail;
-- [machine-readable prior-art registry](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-prior-art-registry.json) — session bootstrap and canonical workstream state;
-- [machine-readable ledger](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json) — exact provenance index.
+- [전체 실험 색인](experiment-index.md) — 기계가 읽을 수 있는 실험 기록 92건;
+- [설계 및 실험 이력](design-and-experiment-history.md) — 아키텍처의 변화와 의사결정 연혁;
+- [0.11 최종 보고서](operation-routing-v4-terminal-report.md) — 종료된 연구 주기의 결론;
+- [선행연구 로드맵](prior-art-roadmap.md) — 세션 간 문헌·작업 항목 대응 관계와 실험 순서 통제;
+- [기계 판독형 선행연구 레지스트리](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-prior-art-registry.json) — 세션 초기화 및 정식 작업 흐름의 상태;
+- [기계 판독형 실험 원장](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json) — 정확한 출처 추적 색인.
 
 
 SchemaRouter는 routing research evidence를 stable library contract와 분리하여 공개합니다.
@@ -40,9 +40,9 @@ tool execution
 result evaluation / optional corrective re-retrieval
 ```
 
-SchemaRouter still owns registry-backed capability identity and typed metadata, but retrieval score
-does **not** grant irreversible execution authority. Top-1 exact route remains a useful diagnostic,
-not the sole product objective.
+SchemaRouter는 여전히 레지스트리에 등록된 기능 식별자와 타입이 지정된 메타데이터를 관리합니다.
+하지만 검색 점수가 높다는 사실만으로 되돌릴 수 없는 실행 권한이 부여되지는 **않습니다**.
+Top-1 경로의 정확한 일치는 유용한 진단 지표이지만 제품의 유일한 목표는 아닙니다.
 
 ### #418 Phase A — passed
 
@@ -70,10 +70,10 @@ Mean Top-5 serialized schema context relative to FULL:
 retrieval look artificially poor, while a compact Top-K set preserves every required capability on
 this frozen surface and rapidly reduces schema context as the catalog grows.
 
-Canonical B1-v2 freeze identity:
-- task SHA256 `bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`;
-- catalog SHA256 values unchanged from the corrected catalog freeze;
-- v2 preflight + exact-pinned smoke are part of canonical workflow `36529108855`.
+B1-v2 정식 동결 식별 정보:
+- 작업 SHA256: `bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`;
+- 카탈로그 SHA256 값은 수정된 카탈로그 동결본에서 변경되지 않음;
+- v2 사전 검증과 정확한 버전 고정 스모크 테스트는 정식 워크플로 `36529108855`에 포함됨.
 
 ### #420 Phase B1 — terminal
 
@@ -97,10 +97,10 @@ The materially stronger SmolLM3-3B replication completed successfully in canonic
 
 Canonical provenance:
 
-- source `01edb00fe7e8bff803988ce6bce5e05f79801e43`;
-- model revision `a07cc9a04f16550a088caea529712d1d335b0ac1`;
+- 소스 커밋 `01edb00fe7e8bff803988ce6bce5e05f79801e43`;
+- 모델 리비전 `a07cc9a04f16550a088caea529712d1d335b0ac1`;
 - ARM64 + PyTorch SDPA;
-- canonical artifact digest
+- 정식 산출물 다이제스트
   `sha256:edbccbbfb44d58ba936af7af82efe844177edc24dd587e3c52cff1505c37c256`.
 
 The earlier duplicate attempt `36641753066` is noncanonical and its partial rows are excluded.
@@ -109,13 +109,13 @@ The earlier duplicate attempt `36641753066` is noncanonical and its partial rows
 
 A separately preregistered strong-agent K3-vs-K5 gate completed in run `36670280971`:
 
-- STRUCT-FIXED-3 task pass: 82.61%;
-- STRUCT-FIXED-5 task pass: 85.87%;
-- paired K3-K5 delta: -3.26pp;
-- preregistered floor: -2pp;
-- bootstrap 95% interval: **[-13.04pp, +3.26pp]**;
-- K3 used fewer tool-schema tokens;
-- execution-policy integrity passed and unauthorized destructive executions were 0.
+- STRUCT-FIXED-3 작업 통과율: 82.61%;
+- STRUCT-FIXED-5 작업 통과율: 85.87%;
+- 대응 쌍 K3-K5 차이: -3.26%p;
+- 사전등록된 하한: -2%p;
+- 부트스트랩 95% 구간: **[-13.04%p, +3.26%p]**;
+- K3는 도구 스키마 토큰 사용량이 더 적었음;
+- 실행 정책의 무결성 검증을 통과했으며 승인되지 않은 파괴적 실행은 0건이었음.
 
 The task-pass gate failed, so K3 is **not** promoted into #432. No K/weight/threshold retuning is
 permitted from those evaluated rows.
@@ -205,9 +205,9 @@ experiments suggest that closed-set ranking is no longer the main blocker.
 
 > Request가 registered domain과 주제상 가깝더라도 실제로는 어떤 registered endpoint도 지원하지 않는 operation을 요구할 수 있습니다.
 
-Embedding similarity, route margins, generic NLI, learned DEV geometry, rerankers, several
-Jev/System-One model paths, ColBERT evidence, registry alias envelopes and model-consensus variants
-were all insufficient to establish the full independent target.
+임베딩 유사도, 경로 간 점수 차이, 범용 NLI, 학습된 DEV 기하학적 특성,
+재순위화 모델, 여러 Jev/System-One 모델 경로, ColBERT 근거, 레지스트리 별칭
+외피 및 모델 합의 방식 모두 독립적으로 정의된 전체 목표를 입증하기에는 부족했습니다.
 
 ## Conservative reference
 
@@ -225,9 +225,9 @@ Supported exact routing이 85% 미만이므로 production-target pass는 아닙�
 Experiment #338 tested a provider-neutral registry-compiled capability verifier after the closed
 architecture-search cycle.
 
-The infrastructure objective succeeded: the same compiler accepted native `ToolSpec`, OpenAPI and
-MCP registrations, preserved typed field/unit metadata, kept raw BGE route authority unchanged and
-introduced no authority or execution errors.
+인프라 측면의 목표는 달성했습니다. 동일한 컴파일러가 네이티브 `ToolSpec`, OpenAPI 및
+MCP 등록을 처리했고, 타입이 지정된 필드·단위 메타데이터를 보존했으며,
+원래 BGE의 경로 선택 권한을 변경하지 않았습니다. 권한 부여나 실행 오류도 추가하지 않았습니다.
 
 The learned synthetic veto, however, was far too conservative:
 
@@ -316,10 +316,11 @@ agreement across independent signals is far too conservative to provide enough u
 
 ## 0.12 capability-set membership consensus
 
-Experiment #363 relaxed #358's exact unsupported-leaf agreement into a finite-set membership question:
-each independent signal only had to agree that the requested capability lay outside the anchored
-tool's registered capability set. Raw BGE-M3 remained the sole positive selector; ontology evidence
-could only return `NO_ROUTE`.
+실험 #363은 #358에서 요구했던 미지원 세부 기능의 정확한 일치 조건을 완화하여
+유한 집합 소속 여부를 판단하도록 바꾸었습니다. 각 독립 신호는 요청된 기능이
+기준 도구에 등록된 기능 집합 밖에 있다는 점만 동의하면 되었습니다.
+Raw BGE-M3만 실제 경로를 긍정적으로 선택할 수 있었으며, 온톨로지 근거는
+`NO_ROUTE`를 반환하는 거부권만 가졌습니다.
 
 DEV result:
 
@@ -340,18 +341,18 @@ DEV result:
 Set-level consensus는 #358 대비 recall을 39.51%에서 64.20%로 크게 개선했지만 97% near-domain target에는 여전히 미달했고 올바른 supported winner를 reject하기 시작했습니다. This closes further rule
 tuning over the same BGE/MiniLM ontology-projection evidence family on consumed DEV.
 
-The exact #363 rule is terminal. Its separately frozen 552-case confirmation corpus remains
-**unscored**. A successor must introduce a materially different semantic membership signal rather
-than another threshold or agreement variant over the same projections.
+#363의 해당 규칙에 관한 실험은 종료됐습니다. 별도로 동결한 552개 사례의 확인 코퍼스는
+여전히 **채점되지 않았습니다**. 후속 연구는 같은 투영 결과를 대상으로 임계값이나
+합의 규칙만 다시 조절하는 대신, 실질적으로 다른 의미론적 소속 신호를 도입해야 합니다.
 
 
 ## 0.12 external multilingual zero-shot membership
 
-Experiment #371 replaced the BGE/MiniLM ontology-vote family with an independently pretrained
-multilingual zero-shot classifier while keeping frozen BGE-M3 as the sole positive route selector.
-For the BGE-anchored tool, registered operation leaves plus one generic
-`outside registered capabilities` label were presented as a finite multiclass label set. The
-external classifier could only preserve the raw winner or veto to `NO_ROUTE`.
+실험 #371은 동결된 BGE-M3만 긍정적 경로 선택자로 유지하면서 BGE/MiniLM 온톨로지
+투표 계열을 독립적으로 사전학습된 다국어 제로샷 분류기로 교체했습니다.
+BGE가 기준으로 선택한 도구에는 등록된 작업 세부 기능들과 일반적인
+`outside registered capabilities` 레이블 하나를 유한한 다중 분류 집합으로 제시했습니다.
+외부 분류기는 원래 선택된 경로를 유지하거나 `NO_ROUTE`로 거부할 수만 있었습니다.
 
 The model was resolved before scoring to immutable revision
 `d8c48cf2e7c7640ad5bbb379bdb2f72f5ebde7c4`.
@@ -382,10 +383,10 @@ question instead of asking one generic OUTSIDE label to compete with concrete po
 
 ## 0.12 set-conditioned binary entailment
 
-Experiment #374 replaced #371's generic OUTSIDE-label competition with one direct NLI pair whose
-hypothesis explicitly enumerated the anchored tool's registered capability descriptions. Frozen
-BGE-M3 remained the sole positive selector; the NLI model could only preserve that route or veto to
-`NO_ROUTE`.
+실험 #374는 #371의 일반적인 OUTSIDE 레이블 경쟁을 하나의 직접적인 NLI 문장 쌍으로
+교체했습니다. 그 가설에는 기준 도구의 등록된 기능 설명을 명시적으로 열거했습니다.
+동결된 BGE-M3만 긍정적인 경로 선택자였으며, NLI 모델에는 해당 경로를 유지하거나
+`NO_ROUTE`로 거부할 권한만 부여했습니다.
 
 DEV result:
 
@@ -406,17 +407,17 @@ DEV result:
 Single disjunctive hypothesis는 모든 supported request를 포함해 모든 DEV request에서 `not_entailment`로 collapse했습니다. The exact formulation is terminal, and its separately frozen confirmation
 corpus remains **unscored**.
 
-This establishes that finite capability-set membership should not be encoded as one long
-set-membership sentence for this NLI model. A successor must use a different contrastive
-representation rather than repairing the consumed hypothesis wording.
+이 결과는 해당 NLI 모델에서 유한한 기능 집합 소속 여부를 하나의 긴 집합 소속
+문장으로 표현해서는 안 된다는 점을 보여줍니다. 후속 연구는 이미 사용된 가설의
+문구만 수정하지 말고 다른 대조 표현을 사용해야 합니다.
 
 
 ## 0.12 independent per-capability entailment
 
-Experiment #377 decomposed the membership question into one independent NLI judgment for each
-registered capability leaf under the BGE-anchored tool. All judgments for one query were evaluated
-in one batch. Frozen BGE-M3 remained the sole positive route selector; NLI could only preserve that
-winner or veto to `NO_ROUTE`.
+실험 #377은 소속 여부의 질문을 BGE가 기준으로 선택한 도구 아래 등록된 각각의
+세부 기능에 대한 독립적인 NLI 판단으로 분해했습니다. 하나의 질의에 대한 판단은
+모두 단일 배치에서 평가했습니다. 동결된 BGE-M3만 긍정적인 경로를 선택할 수 있었고,
+NLI는 해당 결과를 유지하거나 `NO_ROUTE`로 거부할 수만 있었습니다.
 
 DEV result:
 
@@ -562,9 +563,10 @@ registered mixture than under the synthetic complement mixture.
 
 ### V6E — non-parametric kNN membership (#401)
 
-V6E removed Gaussian assumptions entirely. For the BGE-anchored tool it compared fixed k=3 cosine
-neighborhood distances to three immutable evidence banks: schema positives, same-resource
-complement negatives, and the pre-existing #279 16-anchor generic background bank.
+V6E에서는 가우시안 가정을 완전히 제거했습니다. BGE가 기준으로 선택한 도구에 대해
+고정된 k=3 코사인 이웃 거리를 세 가지 불변 근거 뱅크와 비교했습니다.
+해당 뱅크는 스키마 양성 사례, 동일 리소스의 여집합 음성 사례, 기존 #279의
+일반적 배경 앵커 16개로 구성됐습니다.
 
 | Metric | Result |
 | --- | ---: |
@@ -589,12 +591,12 @@ overlap substantially in natural-language embedding space.
 
 V6A–V6E rule out a progressively broader family of straightforward schema-synthetic geometry:
 
-- absolute spherical and ellipsoidal boundaries fail by synthetic-to-natural radius shift;
-- tied single- and multi-component Gaussian density ratios preserve supported traffic but
-  under-reject unsupported traffic;
-- threshold-free local kNN improves recall but still cannot separate the overlapping natural
-  positive/complement manifolds;
-- generic background anchors are insufficient as a natural OOD support model.
+- 절대적인 구형·타원체 경계는 합성 데이터와 실제 데이터 간 반경 이동 때문에 실패했습니다;
+- 연결된 단일·다중 성분 가우시안 밀도비는 지원 사례의 통과를 유지했지만
+  미지원 사례를 충분히 거부하지 못했습니다;
+- 임계값이 없는 로컬 kNN은 재현율을 개선했지만 서로 겹치는 실제 양성·여집합
+  분포를 여전히 구분하지 못했습니다;
+- 일반적인 배경 앵커만으로는 실제 분포 밖(OOD) 사례를 나타내기에 부족했습니다.
 
 다음 experiment는 **실질적으로 다른 semantic representation 또는 membership signal**을 도입해야 합니다. It must not be a post-hoc sweep over V6E k, distance thresholds, margins,
 neighbor weights, background anchors, or schema/complement wording. All V6A–V6E confirmation
@@ -630,10 +632,10 @@ machine-readable prior-art registry, and the experiment ledger.
 
 The following items are preregistered/staged and **must not** be selected from B1 row-level errors:
 
-- #428 — first-class public typed Top-K retrieval API;
-- #430 — adaptive per-query shortlist depth after fixed-K validation;
-- #431 — execution-state-aware corrective capability re-retrieval;
-- #432 — materially larger independent multilingual held-out benchmark with explicit
-  sample-size/precision planning.
+- #428 — 공개된 일급 타입 기반 Top-K 검색 API;
+- #430 — 고정 K 검증 이후 질의별 적응형 후보 목록 깊이;
+- #431 — 실행 상태를 인식한 기능 재검색;
+- #432 — 명시적인 표본 수·정밀도 계획을 포함한, 실질적으로 더 큰 독립 다국어
+  홀드아웃 벤치마크.
 
 These are successors to the fixed controlled baseline, not repairs to consumed B1 rows.
