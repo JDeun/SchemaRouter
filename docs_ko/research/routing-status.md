@@ -77,8 +77,7 @@ Canonical B1-v2 freeze identity:
 
 ### #420 Phase B1 — terminal
 
-Canonical B1 workflow `36529108855` completed all 30 frozen micro-shards and exactly 552 unique
-`(catalog_size, task_id, condition)` episodes.
+정본 B1 워크플로 `36529108855`는 동결된 마이크로 샤드 **30개**와 고유한 `(catalog_size, task_id, condition)` 에피소드 **552개**를 모두 완료했습니다.
 
 | Condition | Task pass | Mean tool-schema tokens | Schema tokens vs FULL |
 | --- | ---: | ---: | ---: |
@@ -89,10 +88,7 @@ Canonical B1 workflow `36529108855` completed all 30 frozen micro-shards and exa
 | SR-PROGRESSIVE | 82.61% | 2,986.9 | 12.31% |
 | ORACLE | 86.96% | 441.3 | 1.82% |
 
-SR-5 preserved 100% required-route retrieval recall on this controlled surface, improved task pass
-by +22.83pp versus FULL, and produced 0 unauthorized destructive executions. The
-task-clustered bootstrap interval for SR-5 minus FULL was **+9.78pp to +36.96pp**. This remains
-mechanism/sanity evidence, not population-level non-inferiority.
+이 통제된 표면에서 SR-5는 필요한 경로의 검색 재현율을 **100%** 보존했고, FULL 대비 과제 통과율은 **+22.83pp** 높았으며, 무단 파괴적 실행은 **0건**이었습니다. 과제별 클러스터 부트스트랩으로 측정한 SR-5 − FULL 차이의 신뢰구간은 **+9.78pp ~ +36.96pp**였습니다. 이는 메커니즘과 정상 동작을 확인하는 근거이며, 모집단 수준의 비열등성 증명은 아닙니다.
 
 ### #423 Phase B2 — terminal success
 
@@ -139,7 +135,7 @@ The canonical freeze rules live in [External validation freeze](external-validat
 
 ### Active conveyor
 
-The remaining primary 0.14 sequence is gated rather than manually queued:
+남은 0.14 주요 연구는 사람이 임의로 예약하는 방식이 아니라 앞 단계의 종료 게이트를 통과한 뒤 진행하는 컨베이어입니다.
 
 ```text
 #431 execution-state-aware corrective retrieval
@@ -156,22 +152,19 @@ freeze #432 held-out condition manifest
 #424 — 144-task final-answer quality
 ```
 
-#431 is currently active. #432 and #424 must not be manually launched around the conveyor.
+현재 활성 단계는 #431입니다. #432와 #424는 컨베이어를 우회해 수동으로 실행해서는 안 됩니다.
 
-The separate output-field-projection line (#506/#510) remains an independent field-level research
-question. Its runtime qualification is instrument evidence and must not be mixed into the
-capability-retrieval claim hierarchy.
+출력 필드 투영에 관한 별도 연구(#506/#510)는 독립된 필드 수준 문제입니다. 런타임 적격성 검사는 계측 근거이며 기능 검색 성과 주장과 섞어서는 안 됩니다.
 
-The active 0.14 promotion criteria remain:
-- required-tool-set Recall >= 97% for the effective candidate budget;
-- task pass rate >= FULL minus **2 percentage points**;
-- tool-schema tokens <= 40% of FULL;
-- total input tokens < FULL;
-- unauthorized destructive executions = 0.
+0.14 연구의 승격 기준:
 
+- 현재 후보 예산에서 필요한 도구 집합 Recall이 **97% 이상**
+- 과제 통과율이 FULL보다 **2 percentage points** 넘게 낮지 않을 것
+- 도구 스키마 토큰은 FULL의 **40% 이하**
+- 전체 입력 토큰은 FULL보다 적을 것
+- 무단 파괴적 실행은 **0건**
 
-This page is conservative: development-set success is not presented as production
-validation, and consumed fresh-confirmation corpora are never reused for tuning.
+이 문서는 개발 집합의 성공을 운영환경 검증으로 주장하지 않습니다. 새로운 확인 코퍼스를 한 번 소비하면 튜닝에 재사용하지 않습니다.
 
 ## Historical 0.11–0.13 operation-routing target
 
@@ -491,12 +484,9 @@ The terminal report is available at
 
 ## 0.13 schema-derived open-set membership sequence
 
-The 0.13 cycle isolates **positive route retrieval** from **open-set capability membership**.
-Frozen BGE-M3 remains the sole source of positive endpoint authority. Every 0.13 verifier is
-veto-only: it may preserve the raw registered top-1 route or return `NO_ROUTE`, but may never
-rerank to another endpoint, use rank-2 fallback, or invent a pseudo-route.
+0.13 단계에서는 **양수 경로 검색**과 **open-set 기능 소속 판별**을 분리했습니다. 동결 BGE-M3만 양수 엔드포인트 실행 권한을 갖습니다. 모든 0.13 검증기는 거부 전용(veto-only)이며 등록된 원시 1순위 경로를 유지하거나 `NO_ROUTE`를 반환할 수 있을 뿐, 다른 엔드포인트로 재정렬하거나 2순위 폴백을 실행하거나 가상의 경로를 만들어서는 안 됩니다.
 
-Standing production-oriented gates for this sequence are:
+이 연구에서 유지하는 운영 지향 승격 기준은 다음과 같습니다.
 
 | Metric | Gate |
 | --- | ---: |
