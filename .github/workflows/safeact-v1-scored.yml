@@ -5,6 +5,8 @@ on:
     paths:
       - '.github/workflows/safeact-v1-scored.yml'
       - 'scripts/launch_safeact_v1_scored_workflow.py'
+      - 'scripts/prepare_safeact_v1_scored_manifest.py'
+      - 'tests/test_safeact_v1_scored_manifest.py'
       - 'scripts/run_safeact_v1_scored.py'
       - 'tests/test_safeact_v1_scored_workflow.py'
       - 'research/safeact-v1/**'
@@ -43,7 +45,9 @@ jobs:
       - name: Install source and no-model regression dependencies
         run: |
           python -m pip install -e . "pytest>=8,<10" "pytest-asyncio>=0.24,<2"
-          python -m pytest -q tests/test_safeact_v1_scored_workflow.py
+          python -m pytest -q \
+            tests/test_safeact_v1_scored_workflow.py \
+            tests/test_safeact_v1_scored_manifest.py
       - name: Fetch the exact frozen official V1 source
         run: |
           git init safeact-upstream
