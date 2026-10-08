@@ -10,6 +10,7 @@ on:
       - 'tests/test_safeact_v1_*.py'
       - 'tests/test_evidence_gate_mechanism_experiment.py'
       - 'scripts/run_evidence_gate_mechanism_experiment.py'
+      - 'scripts/verify_safeact_v1_host_bridge.py'
       - '.github/workflows/safeact-v1-preflight.yml'
   workflow_dispatch:
 
@@ -61,6 +62,16 @@ jobs:
           git -C safeact-upstream checkout --detach FETCH_HEAD
       - name: Verify pinned revision and V1 case set
         run: python scripts/preflight_safeact_v1.py safeact-upstream
+      - name: Exercise the pinned official V1 normalization hook with real registry
+        run: |
+          python -m scripts.verify_safeact_v1_host_bridge \
+            safeact-upstream --json-out safeact-v1-host-bridge.json
+      - name: Upload official host-bridge compatibility report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: safeact-v1-host-bridge-no-model
+          path: safeact-v1-host-bridge.json
+          retention-days: 90
       - name: Exercise official V1 listing without running an agent
         run: |
           python safeact-upstream/run_benchmark.py --list-only --protocol v1 > safeact-v1-list.json
