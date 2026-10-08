@@ -23,6 +23,7 @@ from scripts.research_014_conveyor import (
     source_sha_from_run,
     stale_pending_wrapper,
     stale_zero_job_pending,
+    wait_for_marked_run,
 )
 from scripts.validate_agent_utility_v3_heldout_corpus import (
     validate_corpus as validate_heldout,
@@ -471,3 +472,52 @@ def test_issue_15_is_registered_as_nonblocking_external_dag_node() -> None:
     )
     assert "terminal evidence digest definition" in amendment["explicitly_unchanged"]
     assert amendment["automatic_dispatch"] is False
+
+
+class _MarkedRunAPI:
+    def __init__(self, runs: list[list[dict[str, object]]]) -> None:
+        self._runs = list(runs)
+        self.calls = 0
+
+    def workflow_runs(self, workflow_file: str) -> list[dict[str, object]]:
+        self.calls += 1
+        if self._runs:
+            return self._runs.pop(0)
+        return []
+
+
+def test_dispatch_ack_waits_for_exact_marked_recovery_run() -> None:
+    row = {
+        "id": 456,
+        "status": "queued",
+        "conclusion": None,
+        "display_title": "Corrective recovery parent=36931249518 shards=c100-g00",
+        "created_at": "2026-10-08T00:00:00Z",
+        "html_url": "https://example.invalid/456",
+        "run_attempt": 1,
+        "head_sha": "a" * 40,
+    }
+    api = _MarkedRunAPI([[], [row]])
+    run = wait_for_marked_run(
+        api,
+        "research-0.14-corrective-recovery.yml",
+        "parent=36931249518 ",
+        timeout_seconds=0.1,
+        poll_seconds=0.0,
+    )
+    assert run is not None
+    assert run.id == 456
+    assert api.calls == 2
+
+
+def test_dispatch_ack_fails_closed_when_run_never_appears() -> None:
+    api = _MarkedRunAPI([[], []])
+    run = wait_for_marked_run(
+        api,
+        "research-0.14-corrective-recovery.yml",
+        "parent=36931249518 ",
+        timeout_seconds=0.0,
+        poll_seconds=0.0,
+    )
+    assert run is None
+    assert api.calls == 1
