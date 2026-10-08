@@ -92,8 +92,8 @@ def test_single_substantial_copied_english_paragraph_fails(
         "authorization, local validation and the boundary between a model "
         "suggestion and an actual authorized tool dispatch. "
     ) * 2
-    _write(en, "guide.md", "# Guide\\n\\n" + source)
-    _write(ko, "guide.md", "# 안내\\n\\n" + source + "\\n\\n한국어 부연 설명입니다.")
+    _write(en, "guide.md", "# Guide\n\n" + source)
+    _write(ko, "guide.md", "# 안내\n\n" + source + "\n\n한국어 부연 설명입니다.")
     monkeypatch.setattr(checker, "EN", en)
     monkeypatch.setattr(checker, "KO", ko)
     assert any(
