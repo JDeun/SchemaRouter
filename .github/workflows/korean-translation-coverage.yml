@@ -1,6 +1,17 @@
 name: Korean Translation Whole-Corpus Coverage Report
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'docs_ko/**'
+      - 'scripts/audit_korean_translation_coverage.py'
+      - 'scripts/report_bilingual_coverage.py'
+      - '.github/workflows/korean-translation-coverage.yml'
+  schedule:
+    - cron: '43 4 * * 1'
   pull_request:
     paths:
       - 'docs/**'
