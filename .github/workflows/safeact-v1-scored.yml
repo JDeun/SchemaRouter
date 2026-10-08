@@ -7,6 +7,8 @@ on:
       - 'scripts/launch_safeact_v1_scored_workflow.py'
       - 'scripts/prepare_safeact_v1_scored_manifest.py'
       - 'tests/test_safeact_v1_scored_manifest.py'
+      - 'scripts/check_safeact_v1_runner.py'
+      - 'tests/test_safeact_v1_runner_preflight.py'
       - 'scripts/run_safeact_v1_scored.py'
       - 'tests/test_safeact_v1_scored_workflow.py'
       - 'research/safeact-v1/**'
@@ -47,7 +49,8 @@ jobs:
           python -m pip install -e . "pytest>=8,<10" "pytest-asyncio>=0.24,<2"
           python -m pytest -q \
             tests/test_safeact_v1_scored_workflow.py \
-            tests/test_safeact_v1_scored_manifest.py
+            tests/test_safeact_v1_scored_manifest.py \
+            tests/test_safeact_v1_runner_preflight.py
       - name: Fetch the exact frozen official V1 source
         run: |
           git init safeact-upstream
@@ -105,6 +108,19 @@ jobs:
           git -C safeact-upstream remote add origin https://github.com/caoshidong66/safeact.git
           git -C safeact-upstream fetch --depth=1 origin 841816cf1e376e6fbf8600cffac5df1736e1d369
           git -C safeact-upstream checkout --detach FETCH_HEAD
+      - name: Validate trusted Linux sandbox and broker before any model call
+        run: |
+          python -m scripts.check_safeact_v1_runner \
+            --manifest research/safeact-v1/intervention-manifest.json \
+            --report safeact-v1-protected-runner-preflight.json
+      - name: Upload non-secret protected-runner preflight
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: safeact-v1-protected-runner-preflight
+          path: safeact-v1-protected-runner-preflight.json
+          if-no-files-found: warn
+          retention-days: 30
       - name: Run official paired V1 external-agent benchmark (393 trajectories)
         # The wrapper REVALIDATES contract review, source hashes, actual
         # official entrypoint identities, frozen model and runtime flags.
