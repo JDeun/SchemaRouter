@@ -95,7 +95,15 @@ Each arm's command must declare the same `--model` argument.
 All three commands must also explicitly declare the **same** `--backend`
 (`codex` or `claude`) and `--strategy baseline`. The launcher additionally
 pins `SAFEACT_AGENT_STRATEGY=baseline` for the upstream runner, preventing
-ambient SCGR strategy settings from silently confounding the ungated arm. The intervention
+ambient SCGR strategy settings from silently confounding the ungated arm.
+The scored launcher also rejects differences in pinned upstream CLI runtime
+options across arms: `--profile`, `--cfuse-config`, `--cli-bin`,
+`--model-catalog`, `--timeout`, `--max-turns`, repeatable
+`--extra-arg`, and `--keep-sandbox`. Absent options must be absent in
+all arms; identical explicit options must match, including order of repeated
+extra arguments. Any runtime-level behavior not described by these flags
+(e.g. external CLI configuration, actual service provider or environment
+secrets) still requires independent runtime identity and execution audit. The intervention
 manifest must bind each condition to the corresponding `ungated`,
 `routing_only`, or `evidence_gate` implementation and a pinned 40-character
 adapter commit SHA, with explicit review. These are declared identities;
