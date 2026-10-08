@@ -2775,20 +2775,20 @@ DEV evaluation:
 - digest
   `sha256:4584f55a67b6744ba8ba3454290a2acb5e7cee1ce58695a0362618ab07f7faf8`.
 
-Results:
-- supported exact 0.0000%;
-- raw BGE supported exact 92.5439%;
-- raw BGE tool accuracy 99.5614%;
-- near-domain rejection 100%;
-- OOD rejection 100%;
-- false-route 0%;
-- entailment / not-entailment decisions 0 / 552;
-- raw-correct winners vetoed 211 / 100%;
-- veto precision 58.6957%;
-- veto recall 100%;
+결과:
+- 지원 사례 정확도 0.0000%;
+- 원시 BGE 지원 사례 정확도 92.5439%;
+- 원시 BGE 도구 정확도 99.5614%;
+- 유사 도메인 거부율 100%;
+- OOD 거부율 100%;
+- 잘못된 경로 0%;
+- 함의 / 비함의 판단 0 / 552;
+- 원시 정답 승자 거부 211건 / 100%;
+- 거부 정밀도 58.6957%;
+- 거부 재현율 100%;
 - NLI p95 56.1598 ms;
-- end-to-end p95 254.5495 ms;
-- positive route switches / authority violations / execution errors 0 / 0 / 0.
+- 종단 간 p95 254.5495 ms;
+- 긍정 경로 변경 / 권한 위반 / 실행 오류 0 / 0 / 0.
 
 이는 #371의 semantic mirror image입니다. The multiclass OUTSIDE formulation almost never rejected;
 the aggregate set-entailment formulation rejected everything. The external model itself is fast
@@ -2806,23 +2806,23 @@ Successor는 post-hoc threshold로 두 결과 사이를 interpolate하는 대신
 #377 replaced the failed aggregate set-entailment sentence with one independent NLI pair per
 registered capability leaf under the BGE-anchored tool.
 
-The frozen authority rule stayed unchanged:
-- BGE-M3 raw top-1 remained the sole positive selector;
-- every registered leaf received one fixed generic hypothesis;
-- all hypotheses for a query were evaluated in one batch;
-- any entailment preserved the raw BGE winner;
-- zero entailments vetoed to `NO_ROUTE`;
-- NLI could not select, rerank, replace, or filter to another endpoint;
-- no confidence, probability, margin, language, route, or learned threshold was used.
+동결된 권한 규칙은 변경하지 않았습니다.
+- BGE-M3 원시 Top-1만 긍정 경로 선택 가능;
+- 각 등록 세부 기능마다 하나의 고정 일반 가설을 제공;
+- 질의 하나에 대한 모든 가설을 단일 배치에서 평가;
+- 함의 판정이 하나라도 있으면 원시 BGE 승자를 유지;
+- 함의 판정이 0개라면 `NO_ROUTE`로 거부;
+- NLI는 다른 엔드포인트를 선택·재순위화·대체·필터링할 수 없음;
+- 신뢰도·확률·마진·언어·경로·학습 임계값을 사용하지 않음.
 
-Freeze evidence:
-- workflow `36424007584`;
-- frozen behavior/corpus source `b545999528b17a2782c76e6b6e546703b7b11da5`;
-- artifact `10970381458`;
-- digest `sha256:48afeead8687eb7d28aa2fce30485a017a368b2b5119b1278a162f7badad45af`;
-- DEV: 552 cases, SHA `c68bf11e52f960a7c8600d9d36b7fe13ab0b7b6e215a87f5b2bcffb783a67310`;
-- confirmation: 552 cases, SHA `ac4be0d6febda04fea60ae351691dfeebb932c1ec1161f14cf7754c44f49eefd`;
-- confirmation remained unopened.
+동결 근거:
+- 워크플로 `36424007584`;
+- 동결된 동작·코퍼스 소스 `b545999528b17a2782c76e6b6e546703b7b11da5`;
+- 산출물 `10970381458`;
+- 다이제스트 `sha256:48afeead8687eb7d28aa2fce30485a017a368b2b5119b1278a162f7badad45af`;
+- DEV: 552건, SHA `c68bf11e52f960a7c8600d9d36b7fe13ab0b7b6e215a87f5b2bcffb783a67310`;
+- 확인: 552건, SHA `ac4be0d6febda04fea60ae351691dfeebb932c1ec1161f14cf7754c44f49eefd`;
+- 확인 데이터는 열지 않았습니다.
 
 DEV evaluation:
 - workflow `36424336147`;
@@ -2830,30 +2830,26 @@ DEV evaluation:
 - artifact `10971456253`;
 - digest `sha256:153781b690336a863de5a4ad2f2a7cb0793a01718d5d6c053bcd99a3dd66a937`.
 
-Results:
-- supported exact 45.6140%;
-- raw BGE exact 96.4912%;
-- raw BGE tool accuracy 100%;
-- near-domain rejection 71.0317%;
-- OOD rejection 95.8333%;
-- false-route 23.4568%;
-- veto precision 66.8464%;
-- veto recall 76.5432%;
-- raw-correct winners vetoed 116 / 52.7273%;
-- NLI batch p95 79.5343 ms;
-- end-to-end p95 278.0917 ms;
-- positive route switches / authority violations / execution errors 0 / 0 / 0.
+결과:
+- 지원 사례 정확도 45.6140%;
+- 원시 BGE 정확도 96.4912%;
+- 원시 BGE 도구 정확도 100%;
+- 유사 도메인 거부율 71.0317%;
+- OOD 거부율 95.8333%;
+- 잘못된 경로 23.4568%;
+- 거부 정밀도 66.8464%;
+- 거부 재현율 76.5432%;
+- 원시 정답 승자 거부 116건 / 52.7273%;
+- NLI 배치 p95 79.5343 ms;
+- 종단 간 p95 278.0917 ms;
+- 긍정 경로 변경 / 권한 위반 / 실행 오류 0 / 0 / 0.
 
 이 experiment는 finite capability set을 independent leaf judgment로 분해하는 것이 하나의 aggregate set-membership sentence보다 유의미하게 낫지만 independent binary argmax는 hard membership veto로 쓰기에는 여전히 너무 brittle하다는 점을 보여줍니다. Supported queries frequently receive zero entailment,
 causing more than half of raw-correct winners to be rejected.
 
-Decision: terminal reject. No failed-row text, language slices, confusion pairs, score
-distributions, hypothesis rewrites, thresholds, margins, or vote rules may be used to repair #377.
-Its confirmation corpus remains unopened.
+판정: 최종 거부. 실패한 행의 문구, 언어별 부분집합, 혼동 쌍, 점수 분포, 가설 문구 수정, 임계값, 마진 또는 투표 규칙을 #377 수리에 사용해서는 안 됩니다. 확인 코퍼스는 계속 열지 않은 상태로 유지합니다.
 
-The already-preregistered #378 experiment is the next admissible step: compare the maximum
-entailment evidence among registered leaves with the maximum entailment evidence among
-counterfactual leaves while preserving BGE as the sole positive route selector.
+이미 사전등록된 #378은 다음으로 허용된 단계입니다. BGE를 유일한 긍정 경로 선택자로 유지하면서 등록된 세부 기능들에서 얻은 최대 함의 근거와 가상의 반사실적 세부 기능들에서 얻은 최대 함의 근거를 비교합니다.
 
 
 ## 62. #378 / PR #380 — pairwise registered-vs-counterfactual NLI remains below target
@@ -2866,32 +2862,32 @@ leaves.
 The authority rule remained asymmetric: counterfactual evidence could only veto to `NO_ROUTE`;
 frozen BGE-M3 raw top-1 remained the sole positive route selector.
 
-Freeze:
-- workflow `36424651535`;
-- source `7fccdb1eccb5f08d31ca87c798fc5f9f52a119f3`;
-- artifact `10971625459`;
-- digest `sha256:9a0f4cfa2f5fe3a47f81374a9867dd618ebe84fa17cbb0a09c2c8a2cd2503577`;
+동결:
+- 워크플로 `36424651535`;
+- 소스 `7fccdb1eccb5f08d31ca87c798fc5f9f52a119f3`;
+- 산출물 `10971625459`;
+- 다이제스트 `sha256:9a0f4cfa2f5fe3a47f81374a9867dd618ebe84fa17cbb0a09c2c8a2cd2503577`;
 - DEV SHA `75c7bab67de9c533df08ab5a76f7ce5e49acd92d3737f70b8dcfa50222c6abbd`;
-- confirmation SHA `caee6eb89b07e948b42130e4bb1ea3f6c1b4088fc76137f0d8e7cb394f8c6007`;
-- confirmation remained unopened.
+- 확인 SHA `caee6eb89b07e948b42130e4bb1ea3f6c1b4088fc76137f0d8e7cb394f8c6007`;
+- 확인 데이터는 열지 않았습니다.
 
 DEV:
-- workflow `36424971822`;
-- source `02aeefd4656f5b61a948142dfba74f51207bd979`;
-- artifact `10970443611`;
-- digest `sha256:8f24db27938f6924723d2088fd5ddc6811db433d0ceaf5b5e23c2412422dfd06`;
-- supported exact 67.5439%;
-- raw BGE exact 95.1754%;
-- raw BGE tool accuracy 98.2456%;
-- near-domain rejection 55.9524%;
-- OOD rejection 95.8333%;
-- false-route 35.1852%;
-- veto precision 75.5396%;
-- veto recall 64.8148%;
-- raw-correct winners vetoed 63 / 29.0323%;
-- NLI batch p95 387.8679 ms;
-- end-to-end p95 539.9184 ms;
-- positive route switches / authority violations / execution errors 0 / 0 / 0.
+- 워크플로 `36424971822`;
+- 소스 `02aeefd4656f5b61a948142dfba74f51207bd979`;
+- 산출물 `10970443611`;
+- 다이제스트 `sha256:8f24db27938f6924723d2088fd5ddc6811db433d0ceaf5b5e23c2412422dfd06`;
+- 지원 사례 정확도 67.5439%;
+- 원시 BGE 정확도 95.1754%;
+- 원시 BGE 도구 정확도 98.2456%;
+- 유사 도메인 거부율 55.9524%;
+- OOD 거부율 95.8333%;
+- 잘못된 경로 35.1852%;
+- 거부 정밀도 75.5396%;
+- 거부 재현율 64.8148%;
+- 원시 정답 승자 거부 63건 / 29.0323%;
+- NLI 배치 p95 387.8679 ms;
+- 종단 간 p95 539.9184 ms;
+- 긍정 경로 변경 / 권한 위반 / 실행 오류 0 / 0 / 0.
 
 Decision: terminal reject. The exact pairwise comparison neither met open-set quality nor runtime
 targets. No threshold, epsilon, tie rule, hypothesis wording, language rule or failed-row repair is
@@ -2905,36 +2901,20 @@ open-set evidence.
 
 ## 2026-09-28/29 — 0.13 post-V6E semantic-evidence sequence
 
-After V6A-V6E showed that schema-synthetic spherical, ellipsoidal, Gaussian-mixture and local-kNN
-geometry did not transfer cleanly to natural requests, the research line changed evidence sources
-rather than retuning geometry.
+V6A~V6E에서 합성 스키마에 기반한 구형·타원체·가우시안 혼합·로컬 kNN 분포가 실제 자연어 요청에 제대로 일반화되지 않는다는 사실이 드러나자, 연구는 분포를 다시 튜닝하는 대신 근거의 출처를 바꿨습니다.
 
 Five preregistered controls were consumed:
 
-1. #404 naturalistic generic-operation probes trained fixed MiniLM linear probes on a frozen
-   multilingual utterance bank. Broad OOD improved, but supported exact fell to 75.44%, near-domain
-   rejection reached only 59.52%, and p95 was 297.36 ms.
-2. #406 Tool-Embed positive retrieval tested an external tool-specialized embedding model as the
-   positive selector. It reached 78.07% exact versus 86.84% for same-surface BGE-M3 and missed the
-   latency target.
-3. #408 relative multilingual cross-encoding jointly scored requests against registered,
-   same-resource counterfactual, and background documents. It reached 79.39% supported exact,
-   19.84% near rejection, 59.72% OOD rejection, 71.30% false-route, and ~2.99 s p95.
-4. #409 frozen GTE multilingual positive retrieval revisited a historically strong pre-V6F
-   representation on a new supported-only registry. GTE reached 71.49% exact versus 88.16% for
-   same-surface BGE, despite a viable 100.14 ms p95.
-5. #412 multilingual-E5 split-conformal membership separated route selection from abstention and
-   calibrated a one-sided unsupported null at fixed alpha=0.01. It achieved 99.21% near rejection,
-   100% OOD rejection, 0.62% false-route and 244.24 ms p95, but supported exact collapsed to 10.09%
-   because 87.29% of raw-correct BGE winners were vetoed.
+1. #404 자연스러운 일반 작업 탐침은 동결된 다국어 발화 뱅크에서 MiniLM 선형 탐침을 학습했습니다. 넓은 OOD 성능은 향상됐지만 지원 사례 정확도는 75.44%, 유사 도메인 거부율은 59.52%, p95는 297.36 ms였습니다.
+2. #406 Tool-Embed 긍정 검색은 도구에 특화된 외부 임베딩 모델을 경로 선택자로 시험했습니다. 같은 표면의 BGE-M3 86.84%에 비해 정확도 78.07%에 그쳤고 지연시간 목표도 실패했습니다.
+3. #408 상대 다국어 교차 인코딩은 요청과 등록 문서, 동일 리소스의 반사실적 문서, 배경 문서의 점수를 함께 계산했습니다. 지원 사례 정확도 79.39%, 유사 도메인 거부율 19.84%, OOD 거부율 59.72%, 잘못된 경로 71.30%, p95 약 2.99초였습니다.
+4. #409 동결된 GTE 다국어 긍정 검색은 V6F 이전에 강했던 표현을 새로운 지원 사례 전용 레지스트리에서 재검토했습니다. p95 100.14 ms로 런타임은 가능했지만, GTE 정확도는 71.49%로 동일 표면 BGE의 88.16%보다 낮았습니다.
+5. #412 다국어 E5 분할 컨포멀 소속 판단은 경로 선택과 선택 포기를 분리하고 고정 alpha=0.01에서 단측 미지원 귀무가설을 보정했습니다. 유사 도메인 거부율 99.21%, OOD 거부율 100%, 잘못된 경로 0.62%, p95 244.24 ms였지만 정답인 원시 BGE 승자의 87.29%를 거부하면서 지원 사례 정확도는 10.09%까지 하락했습니다.
 
 Every associated confirmation surface remained unopened because DEV failed at least one
 preregistered gate.
 
-The resulting architectural constraint is stronger than before: a future candidate must improve the
-semantic separability of supported versus same-domain unsupported capability requests. Neither
-positive-retriever replacement, generic operation classification, relative relevance ranking nor
-conformal calibration over a weak scalar score is sufficient by itself.
+이 결과는 이전보다 강한 아키텍처 제약을 제시합니다. 후속 후보는 지원 요청과 같은 도메인의 미지원 기능 요청을 의미적으로 분리하는 능력을 개선해야 합니다. 긍정 검색기의 교체, 일반 작업 분류, 상대 관련성 순위 결정 또는 약한 스칼라 점수를 컨포멀 보정하는 방법만으로는 충분하지 않습니다.
 
 
 
@@ -2942,51 +2922,43 @@ conformal calibration over a weak scalar score is sufficient by itself.
 
 ### #415 / PR #416 — V6H end-to-end multilingual operation/OOS parser
 
-V6H was the last 0.13 attempt to make a learned semantic parser act as a veto over the frozen BGE
-winner. Unlike #404, the multilingual MiniLM encoder itself was fine-tuned end-to-end for
-TOOL_OPERATION/BACKGROUND scope and 18-way generic operation classification.
+V6H는 학습된 의미 파서가 동결된 BGE 승자의 거부권으로 작동하게 하는 0.13의 마지막 시도였습니다. #404와 달리 다국어 MiniLM 인코더 자체를 TOOL_OPERATION/BACKGROUND 범위 판단과 18종 일반 작업 분류에 맞춰 종단 간 미세조정했습니다.
 
-The experiment was frozen before model scoring:
-- freeze workflow `36501993390`;
-- source `5135a29f39633421136a0c13c39675947fd92f3b`;
-- training bank SHA `c9bf9d378f8f9ef7388fde833e9a04c941871514319961b4a0666d97983caa68`;
+모델 채점 전에 실험을 동결했습니다.
+- 동결 워크플로 `36501993390`;
+- 소스 `5135a29f39633421136a0c13c39675947fd92f3b`;
+- 학습 뱅크 SHA `c9bf9d378f8f9ef7388fde833e9a04c941871514319961b4a0666d97983caa68`;
 - DEV SHA `4da38c34929fcbd7ef828a5ccee9afa89b048c960b852cf315dd68b97370f09e`;
-- confirmation SHA `26140a4a77ef07fbda0d875cbcba421b0f7a7465990c775fe656bfa4115c7565`.
+- 확인 SHA `26140a4a77ef07fbda0d875cbcba421b0f7a7465990c775fe656bfa4115c7565`.
 
-DEV result:
-- gated supported exact 70.18%;
-- raw BGE exact 81.58%;
-- raw BGE tool accuracy 92.98%;
-- near-domain rejection 65.08%;
-- OOD rejection 98.61%;
-- false-route 27.47%;
-- raw-correct winner veto 13.98%;
-- scope accuracy 90.58%;
-- supported operation accuracy 70.61%;
-- near-domain unsupported operation accuracy 51.98%;
-- combined p95 181.44 ms;
-- authority / route-switch / execution errors 0 / 0 / 0.
+DEV 결과:
+- 게이트 통과 후 지원 사례 정확도 70.18%;
+- 원시 BGE 정확도 81.58%;
+- 원시 BGE 도구 정확도 92.98%;
+- 유사 도메인 거부율 65.08%;
+- OOD 거부율 98.61%;
+- 잘못된 경로 27.47%;
+- 원시 정답 승자 거부율 13.98%;
+- 범위 분류 정확도 90.58%;
+- 지원 사례 작업 정확도 70.61%;
+- 유사 도메인 미지원 작업 정확도 51.98%;
+- 결합 p95 181.44 ms;
+- 권한 / 경로 변경 / 실행 오류 0 / 0 / 0.
 
-The result is important because representation learning did improve the generic scope task and stayed
-inside the runtime target, yet the same-domain operation distinction still did not generalize well
-enough. Confirmation remained unopened and the exact V6H training/decision formulation is terminal.
+이 결과는 표현 학습이 일반적인 범위 판단을 개선하고 런타임 목표도 충족했지만, 동일 도메인의 작업을 구별하는 능력은 충분히 일반화되지 않았다는 점에서 중요합니다. 확인 데이터는 열지 않았고, 정확한 V6H 학습·결정 방식은 최종 종료됐습니다.
 
 ### The conceptual correction
 
 At this point the research question itself was re-examined.
 
-SchemaRouter's stable product architecture already compiles and indexes registered executable
-capabilities with typed metadata. In an LLM-agent system, that layer is naturally analogous to a
-typed executable retriever/index, not necessarily the final autonomous tool-choice authority.
+SchemaRouter의 안정된 제품 아키텍처는 이미 등록된 실행 가능 기능을 타입 기반 메타데이터와 함께 컴파일하고 색인합니다. LLM 에이전트 시스템에서 이 계층은 최종적인 자율 도구 선택 권한이라기보다 타입이 지정된 실행 가능 검색기·색인에 가깝습니다.
 
-The 0.11–0.13 research had gradually burdened the retrieval layer with three distinct responsibilities:
-1. retrieve the exact route;
-2. decide whether the request belongs to the registered capability set;
-3. make the final execution/no-execution decision.
+0.11~0.13 연구는 검색 계층에 점차 다음 세 책임을 동시에 부여했습니다.
+1. 정확한 경로 검색;
+2. 요청이 등록된 기능 집합에 속하는지 판단;
+3. 실행 또는 비실행에 대한 최종 결정.
 
-The terminal lineage showed that this combination can force a safety/coverage trade-off. #412 is the
-clearest example: near rejection 99.21%, OOD 100%, false-route 0.62%, and p95 244 ms
-were achieved only by collapsing supported exact to 10.09%.
+종료된 연구 계보는 이런 책임 결합이 안전성과 포괄 범위 간의 트레이드오프를 강요할 수 있음을 보여줬습니다. 가장 명확한 사례인 #412에서는 유사 도메인 거부율 99.21%, OOD 100%, 잘못된 경로 0.62%, p95 244 ms를 달성했지만 지원 사례 정확도는 10.09%까지 무너졌습니다.
 
 0.14 separates concerns:
 
@@ -3000,22 +2972,17 @@ query
   -> optional candidate expansion / retry
 ```
 
-This does not mean retrieval accuracy is irrelevant. It changes the relevant accuracy question from
-"did the retriever itself choose the one final endpoint?" to "did the compact candidate set preserve
-all capabilities needed by the downstream agent?"
+이는 검색 정확도가 중요하지 않다는 뜻은 아닙니다. 중요한 정확도의 질문이 "검색기가 최종 엔드포인트 하나를 직접 골랐는가?"에서 "압축된 후보 집합이 후속 에이전트에 필요한 모든 기능을 보존했는가?"로 바뀐다는 뜻입니다.
 
 ### #417 / #418 / PR #419 — Phase A establishes the retrieval premise
 
-The first 0.14 benchmark froze 23 single/multi-tool tasks across 20, 50, 100 and 250 endpoint
-catalogs. Before agent inference, two multi-tool data-dependency contracts and missing explicit task
-arguments were corrected so the benchmark was actually executable; the corrected corpus was then
-re-frozen and the old hashes superseded.
+첫 번째 0.14 벤치마크는 20·50·100·250개 엔드포인트 카탈로그에서 단일·다중 도구 작업 23개를 동결했습니다. 에이전트 추론 전에 다중 도구의 데이터 의존성 계약 두 개와 빠져 있던 명시적 작업 인수를 수정해 벤치마크가 실제로 실행 가능하도록 했습니다. 이후 수정된 코퍼스를 다시 동결하고 기존 해시를 대체했습니다.
 
-Corrected canonical freeze:
-- workflow `36507439562`;
-- artifact `11006614997`;
-- digest `sha256:5cec1c650bd2a98fc78f7fbb911c0b15d95a39c96a43848b939ba56302658022`;
-- task SHA `9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1`.
+수정된 정식 동결:
+- 워크플로 `36507439562`;
+- 산출물 `11006614997`;
+- 다이제스트 `sha256:5cec1c650bd2a98fc78f7fbb911c0b15d95a39c96a43848b939ba56302658022`;
+- 작업 SHA `9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1`.
 
 Phase A:
 - Recall@1 68.97%;
@@ -3050,34 +3017,25 @@ Conditions:
 - SR-PROGRESSIVE;
 - ORACLE.
 
-The same deterministic executor enforces typed arguments, multi-step data dependencies and destructive
-policy. SchemaRouter rank scores and positions are hidden; after Top-K set membership is chosen, tools
-are lexically ordered before being shown to the agent.
+동일한 결정적 실행기는 타입이 지정된 인수, 여러 단계의 데이터 의존성, 파괴적 작업 정책을 강제합니다. SchemaRouter의 경로 순위 점수와 위치는 숨기고, Top-K 집합을 결정한 다음 도구들을 어휘 순으로 정렬해서 에이전트에게 보여줍니다.
 
 The local model is `Qwen/Qwen3-0.6B` at immutable revision
 `c1899de289a04d12100db370d81485cdf75e47ca`. It is a reproducible sanity baseline, not
 the final product model.
 
-This does not revive #289. #289 tested `Qwen3-Reranker-0.6B` as a yes/no capability verifier
-inside the routing boundary and remains terminal. B1 uses a different causal model only as the
-downstream tool-using agent; no Qwen score affects retrieval.
+이것이 #289 연구를 되살리는 것은 아닙니다. #289는 `Qwen3-Reranker-0.6B`를 라우팅 경계 내부의 yes/no 기능 검증기로 시험한 종료된 연구입니다. B1에서는 서로 다른 인과적 모델을 후속 도구 사용 에이전트로만 이용하므로 Qwen 점수가 검색에 영향을 주지 않습니다.
 
 The canonical B1 evaluation contains 552 episodes:
 23 tasks × 4 catalog sizes × 6 conditions.
 
-A tool-calling smoke passed before the benchmark. Long CPU FULL-catalog episodes required runtime-only
-micro-sharding, but task/catalog/model/prompt/K/executor semantics remained frozen. The canonical
-aggregate is accepted only if all 552 episodes are reconstructed.
+도구 호출 스모크 테스트는 벤치마크 전에 통과했습니다. CPU에서 전체 카탈로그를 사용하는 긴 실행은 런타임 전용 마이크로 샤딩이 필요했지만 작업·카탈로그·모델·프롬프트·K·실행기 의미는 동결 상태를 유지했습니다. 정식 집계는 552개 에피소드가 모두 복원된 경우에만 인정합니다.
 
 ### #423 and #424 — required replication layers
 
 B1 alone cannot establish general agent utility.
 
-- #423 requires the same frozen benchmark to be replicated with a materially stronger tool-calling
-  agent before generalizing beyond the small local baseline.
-- #424 separates final-answer factual quality from tool-call success and will measure required fact
-  recall, hallucination, numeric/unit accuracy and provenance under FULL vs compact capability
-  context.
+- #423은 작은 로컬 기준선을 넘어서 일반화하려면 같은 동결 벤치마크를 실질적으로 더 강한 도구 호출 에이전트에서 복제하도록 요구합니다.
+- #424는 최종 답변의 사실적 품질을 도구 호출 성공률에서 분리해 FULL과 압축 기능 문맥에서 필수 사실의 재현율, 환각, 숫자·단위 정확도 및 출처를 측정합니다.
 
 The research endpoint is no longer "find a better open-set threshold." It is to establish
 whether a typed capability retrieval substrate improves downstream agent utility, efficiency and
