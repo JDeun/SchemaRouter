@@ -160,3 +160,56 @@ def test_mismatched_action_reason_is_coarsened() -> None:
     with pytest.raises(PermissionError):
         session.execute_action("delete_charge", {"charge_id": "C2"})
     assert session.diagnostics()["gate_reason_counts"] == {"action_mismatch": 1}
+
+
+
+def test_bound_action_target_checks_runtime_arguments() -> None:
+    contract = _contract()
+    contract["contracts"][0]["argument_bindings"] = [
+        {"argument": "charge_id", "record_id": "C2"}
+    ]
+    dispatched: list[tuple[str, dict]] = []
+    session = TrustedEvidenceSession(
+        contract,
+        "refund_issue",
+        information_call=lambda tool, args: {
+            "charge_id": "C2", "amount": 15, "owner": "Alice"
+        },
+        verify_result=lambda tool, args, result: VerifiedToolEvidence(
+            record_id=result["charge_id"],
+            fields=frozenset({"amount", "owner"}),
+        ),
+        execute_action=lambda action, args: dispatched.append((action, args)),
+    )
+    session.information_call("charge_read", {"charge_id": "C2"})
+    with pytest.raises(PermissionError, match="argument_binding_mismatch"):
+        session.execute_action("refund_issue", {"charge_id": "C1"})
+    assert dispatched == []
+    assert session.diagnostics()["gate_reason_counts"] == {
+        "argument_binding_mismatch": 1
+    }
+    assert session.diagnostics()["action_dispatches"] == 0
+    session.execute_action("refund_issue", {"charge_id": "C2"})
+    assert dispatched == [("refund_issue", {"charge_id": "C2"})]
+    assert session.diagnostics()["action_dispatches"] == 1
+
+
+def test_missing_bound_argument_never_dispatches() -> None:
+    contract = _contract()
+    contract["contracts"][0]["argument_bindings"] = [
+        {"argument": "charge_id", "record_id": "C2"}
+    ]
+    dispatched: list[str] = []
+    session = TrustedEvidenceSession(
+        contract,
+        "refund_issue",
+        information_call=lambda tool, args: {"charge_id": "C2", "owner": "Alice"},
+        verify_result=lambda tool, args, result: VerifiedToolEvidence(
+            record_id="C2", fields=frozenset({"amount", "owner"})
+        ),
+        execute_action=lambda action, args: dispatched.append(action),
+    )
+    session.information_call("charge_read", {"charge_id": "C2"})
+    with pytest.raises(PermissionError, match="argument_binding_mismatch"):
+        session.execute_action("refund_issue", {})
+    assert dispatched == []

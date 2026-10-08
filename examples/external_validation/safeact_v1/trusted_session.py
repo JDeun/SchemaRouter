@@ -88,13 +88,20 @@ class TrustedEvidenceSession:
     def execute_action(self, action: str, arguments: Mapping[str, Any]) -> Any:
         """Track attempts and gate decisions without interpreting official outcomes."""
         self._action_attempts += 1
-        decision = self._gate.check(action)
+        decision = self._gate.check(action, arguments)
         if not decision.allowed:
             self._gate_denials += 1
             reason = (
                 "action_mismatch"
                 if "action_mismatch" in decision.missing
-                else "missing_required_observation"
+                else (
+                    "argument_binding_mismatch"
+                    if any(
+                        item.startswith("argument_binding_mismatch:")
+                        for item in decision.missing
+                    )
+                    else "missing_required_observation"
+                )
             )
             self._gate_reason_counts[reason] = self._gate_reason_counts.get(reason, 0) + 1
         else:
