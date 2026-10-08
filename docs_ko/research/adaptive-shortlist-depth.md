@@ -22,10 +22,10 @@ Product default는 변하지 않습니다. `structural_retrieval`은 opt-in이�
 
 Canonical result files:
 
-- `benchmarks/agent-utility-v5-structural-confirmation-result.json`
-- `benchmarks/agent-utility-v5-structural-adaptive-v3-result.json`
-- `benchmarks/agent-utility-v5-structural-fixed3-v4-result.json`
-- `benchmarks/agent-utility-v5-structural-fixed3-agent-preregistration.json`
+- 구조 확인 결과 파일: `benchmarks/agent-utility-v5-structural-confirmation-result.json`
+- 적응형 v3 결과 파일: `benchmarks/agent-utility-v5-structural-adaptive-v3-result.json`
+- 고정 K3 v4 결과 파일: `benchmarks/agent-utility-v5-structural-fixed3-v4-result.json`
+- 고정 K3 에이전트 사전등록 파일: `benchmarks/agent-utility-v5-structural-fixed3-agent-preregistration.json`
 
 ## Historical protocol
 
