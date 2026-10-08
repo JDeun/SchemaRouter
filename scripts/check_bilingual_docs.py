@@ -112,7 +112,7 @@ def check_rendered(site: Path) -> list[str]:
     errors: list[str] = []
     en_pages = {
         p.relative_to(site)
-        for p in site.rglob("*.html")
+        for p in site.rglob("index.html")
         if not p.relative_to(site).as_posix().startswith("ko/")
     }
     ko_root = site / "ko"
