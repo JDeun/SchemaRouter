@@ -1,6 +1,7 @@
 """Anti-leakage regressions for read-only public tool identity inventory."""
 
 import hashlib
+import shutil
 from pathlib import Path
 
 import pytest
@@ -53,8 +54,6 @@ def test_tool_symlink_is_rejected(tmp_path: Path) -> None:
 
 def test_absent_domain_is_rejected(tmp_path: Path) -> None:
     root = _fixture(tmp_path)
-    import shutil
-
     shutil.rmtree(root / "templates" / PUBLIC_DOMAINS[0])
     with pytest.raises(ValueError, match="missing or symlinked"):
         build_inventory(root)
