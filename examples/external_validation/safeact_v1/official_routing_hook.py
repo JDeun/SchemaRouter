@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from examples.external_validation.safeact_v1.official_agent_hook import (
     PINNED_SAFEACT_SHA,
     find_official_root,
+    require_baseline_strategy,
 )
 from schemarouter import EndpointSpec, InMemoryRegistry, ToolSpec
 
@@ -124,10 +125,7 @@ def main() -> int:
     ).stdout.strip()
     if sha != PINNED_SAFEACT_SHA:
         raise ValueError("pinned official SafeAct revision mismatch")
-    if "--strategy" in upstream_args:
-        index = upstream_args.index("--strategy")
-        if index + 1 >= len(upstream_args) or upstream_args[index + 1] != "baseline":
-            raise ValueError("official agent strategy confounds ablation")
+    require_baseline_strategy(upstream_args, environment=os.environ)
     if not any(
         token == "--model" or token.startswith("--model=")
         for token in upstream_args
