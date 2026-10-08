@@ -124,3 +124,31 @@ def test_missing_or_tampered_independent_source_fails_before_runner(
             document={"case_coverage": {"SAB-V1-001": "refund_issue"}},
             source_root=tmp_path, case_id="SAB-V1-001",
         )
+
+
+@pytest.mark.parametrize(
+    ("arguments", "environment"),
+    [
+        (["--model", "fixed"], {"SAFEACT_AGENT_STRATEGY": "scgr_eg"}),
+        (["--strategy=scgr_eg"], {}),
+        (["--strategy", "scgr_eg"], {}),
+        (["--strategy"], {}),
+        (["--strategy", "baseline", "--strategy=baseline"], {}),
+    ],
+)
+def test_rejects_confounded_upstream_strategy(
+    arguments: list[str], environment: dict[str, str]
+) -> None:
+    with pytest.raises(ValueError, match="strategy"):
+        hook.require_baseline_strategy(arguments, environment=environment)
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [[], ["--strategy", "baseline"], ["--strategy=baseline"]],
+)
+def test_accepts_identical_baseline_strategy(arguments: list[str]) -> None:
+    hook.require_baseline_strategy(arguments, environment={})
+    hook.require_baseline_strategy(
+        arguments, environment={"SAFEACT_AGENT_STRATEGY": "baseline"}
+    )
