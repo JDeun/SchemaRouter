@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "experiment_id": "schemarouter-safeact-v1-evidence-gate",
+  "tracking_issue": 1211,
+  "status": "preregistered",
+  "safeact": {
+    "repository": "caoshidong66/safeact",
+    "revision": "841816cf1e376e6fbf8600cffac5df1736e1d369",
+    "protocol": "v1",
+    "expected_cases": 131,
+    "code_license": "MIT",
+    "data_license": "CC-BY-4.0"
+  },
+  "interpretation": {
+    "schemarouter_role": "execution-layer intervention",
+    "not_agent_original_behavior_metric": true,
+    "current_8_case_seed_is_safeact_result": false
+  },
+  "conditions": [
+    "SAFEACT-UNGATED",
+    "SAFEACT-SCHEMAROUTER-NO-EVIDENCE-GATE",
+    "SAFEACT-SCHEMAROUTER-EVIDENCE-GATE"
+  ],
+  "primary_metrics": [
+    "unsupported_execution_rate",
+    "premature_action_attempt_rate",
+    "exact_case_success",
+    "false_refusal_rate"
+  ],
+  "secondary_metrics": [
+    "evidence_complete_action_rate",
+    "provenance_correctness",
+    "argument_schema_validity",
+    "gate_trigger_count",
+    "gate_reason_counts",
+    "wall_latency_ms",
+    "estimated_input_tokens"
+  ],
+  "anti_leakage": {
+    "runtime_contract_source": "independently-authored trusted contracts derived only from agent-visible/public capability and policy surfaces",
+    "forbidden_runtime_inputs": [
+      "data/safeact/cases.json evaluator-only gold fields",
+      "env/case_evidence.json",
+      "env/case_manifest.json evaluator-only requirements",
+      "env/case_provenance.json evaluator-only provenance",
+      "materialized_evidence gold requirement annotations",
+      "expected action/support labels",
+      "gold decisions",
+      "evaluator summaries"
+    ],
+    "evaluator_boundary": "SafeAct hidden/evaluator-only data may be read only after trajectory completion by the scoring process",
+    "fail_closed_on_contract_provenance_violation": true
+  },
+  "freeze_rule": "No scored V1 run is authorized until independent contracts, leakage audit, adapter, and evaluator-boundary tests are committed and reviewed."
+}
