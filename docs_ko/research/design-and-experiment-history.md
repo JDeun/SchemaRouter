@@ -3037,30 +3037,16 @@ B1 alone cannot establish general agent utility.
 - #423은 작은 로컬 기준선을 넘어서 일반화하려면 같은 동결 벤치마크를 실질적으로 더 강한 도구 호출 에이전트에서 복제하도록 요구합니다.
 - #424는 최종 답변의 사실적 품질을 도구 호출 성공률에서 분리해 FULL과 압축 기능 문맥에서 필수 사실의 재현율, 환각, 숫자·단위 정확도 및 출처를 측정합니다.
 
-The research endpoint is no longer "find a better open-set threshold." It is to establish
-whether a typed capability retrieval substrate improves downstream agent utility, efficiency and
-safety under controlled and then realistic conditions.
+연구의 최종 목표는 더 나은 개방 집합 임계값을 찾는 것이 아닙니다. 타입 기반 기능 검색 기반 계층이 통제된 환경과 이후 현실적인 조건에서 후속 에이전트의 효용, 효율성, 안전성을 개선하는지 확인하는 것입니다.
 
 
 ## 2026-09-29 — B1 integrity hardening before canonical aggregate
 
-Before any accepted 552-episode B1 aggregate, artifact inspection exposed a mechanical shard-ID
-bug: the frozen task ID `multi-create-send` had been referenced as
-`multi-inventory-create-send` in the s06 execution workflow and executor-specific validation
-branch. The affected pre-correction run never produced an accepted full aggregate.
+552개 에피소드의 B1 집계를 인정하기 전에 산출물을 조사하면서 샤드 ID의 기계적 오류를 발견했습니다. 동결된 작업 ID `multi-create-send`가 s06 실행 워크플로와 실행기별 검증 분기에서 `multi-inventory-create-send`로 잘못 참조됐습니다. 수정 전 실행에서는 승인 가능한 전체 집계가 생성되지 않았습니다.
 
-The correction did not alter task text, catalog contents, model identity, K values, prompt,
-candidate ordering, executor success semantics, or thresholds. The evaluator now fails closed on
-unknown task IDs, workflow tests prove that each frozen task appears exactly once across shards, and
-the aggregator verifies unique `(catalog_size, task_id, condition)` identities and the exact frozen
-23-task set.
+이 수정에서는 작업 문구, 카탈로그 내용, 모델 식별자, K 값, 프롬프트, 후보 순서, 실행기의 성공 판정 의미 또는 임계값을 변경하지 않았습니다. 이제 평가기는 알 수 없는 작업 ID를 안전하게 거부하고, 워크플로 테스트는 모든 동결된 작업이 샤드 전체에 정확히 한 번씩 나타나는지 검증합니다. 집계기는 `(catalog_size, task_id, condition)` 식별자의 유일성과 정확한 동결 23작업 집합을 확인합니다.
 
-A second design-level correction was frozen before an accepted aggregate: because the same 23
-semantic tasks repeat under four catalog sizes, paired uncertainty is now bootstrapped by
-task_id cluster rather than treating 92 task×catalog rows as independent. This prevents
-pseudoreplication. The B1 -2pp non-inferiority margin is consequently interpreted only as a
-descriptive engineering sanity gate; #432 stages the larger independent held-out task population
-required for a population-level inference.
+두 번째 설계 수준 수정도 승인된 집계 전에 동결했습니다. 동일한 23개 의미 작업을 네 가지 카탈로그 크기로 반복하므로, 대응 쌍의 불확실성을 92개 작업×카탈로그 행이 각각 독립적이라고 가정하지 않고 `task_id` 클러스터 단위로 부트스트랩합니다. 이는 의사 반복을 방지합니다. 따라서 B1의 비열등성 허용치 -2%p는 기술적인 상태 점검용 설명 지표로만 해석하고, 모집단 수준 추론에 필요한 더 큰 독립 홀드아웃 작업 모집단은 #432에서 준비합니다.
 
 The staged 0.14 successors are:
 - #428 public typed Top-K retrieval API;
@@ -3073,24 +3059,15 @@ None may use B1 row-level failures to rewrite the frozen B1 task surface.
 
 ### B1 v2 canonical protocol
 
-A further static benchmark audit, still before any accepted complete B1 aggregate, found two user
-arguments that the executor required but the original task text did not explicitly provide:
-`single-message-send` lacked exact message content and `multi-create-share` lacked the numeric
-credit amount. The task contract was corrected rather than allowing the agent to guess hidden user
-intent.
+승인된 B1 전체 집계 전에 추가 정적 벤치마크 감사를 수행한 결과, 실행기는 요구하지만 원래 작업 문구에 명시되지 않았던 사용자 인수 두 개가 발견됐습니다. `single-message-send`에는 정확한 메시지 내용이 없었고 `multi-create-share`에는 숫자 형태의 크레딧 금액이 없었습니다. 에이전트가 숨겨진 사용자 의도를 추측하게 두지 않고 작업 계약을 수정했습니다.
 
-This changed the frozen task SHA from
-`9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1` to
-`bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`.
-Task IDs, required-route sets, task kinds, catalogs, K values and retrieval algorithm did not change.
+이로 인해 동결 작업 SHA는 `9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1`에서 `bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`로 변경됐습니다. 작업 ID, 필요한 경로 집합, 작업 유형, 카탈로그, K 값 및 검색 알고리즘은 변경하지 않았습니다.
 
-A separate causality audit also found that multiple tool calls emitted in one assistant turn could
-previously be executed sequentially before the model observed the first tool result. B1 v2 now
-enforces:
-- at most one executed tool call per assistant turn;
-- later same-turn calls are recorded but cannot advance task state;
-- dependent calls require a prior tool observation;
-- `multi-create-send` must propagate the observed `INV-NEW-1` identifier.
+별도의 인과성 감사에서도 하나의 어시스턴트 턴에서 여러 도구 호출이 발생하면 모델이 첫 번째 도구 결과를 관찰하기 전에 호출들이 순차적으로 실행될 수 있었던 문제가 발견됐습니다. B1 v2는 이제 다음을 강제합니다.
+- 어시스턴트 턴마다 실행되는 도구 호출은 최대 하나;
+- 같은 턴에서 뒤따르는 호출은 기록하되 작업 상태를 진전시킬 수 없음;
+- 의존성이 있는 호출은 선행 도구의 관찰 결과가 필요;
+- `multi-create-send`는 실제 관찰한 `INV-NEW-1` 식별자를 전파해야 함.
 
 The exact B1 runtime is frozen to:
 - Ubuntu 24.04;
@@ -3100,23 +3077,14 @@ The exact B1 runtime is frozen to:
 - tokenizers 0.22.2;
 - safetensors 0.8.0.
 
-A two-turn deterministic smoke must pass before inference in the same workflow. In canonical run
-`36529108855`, preflight and smoke both passed; the smoke produced
-`lookup__value(key="alpha")` followed, after the observation, by
-`calculator__add(a=41,b=1)`, with deterministic repeat behavior.
+같은 워크플로에서 추론 전에 2턴 결정적 스모크 테스트를 통과해야 합니다. 정식 실행 `36529108855`에서는 사전 검증과 스모크가 모두 통과했습니다. 스모크는 먼저 `lookup__value(key="alpha")`를 실행하고 관찰 후 `calculator__add(a=41,b=1)`를 실행했으며 반복 결과도 결정적으로 동일했습니다.
 
-B1 v2 Phase A re-passed:
-- Recall@3 96.55% across every catalog size;
+B1 v2의 Phase A도 다시 통과했습니다.
+- 모든 카탈로그 크기에서 Recall@3 96.55%;
 - Recall@5 / Recall@10 100% / 100%;
-- Top-1 68.97% for 20/50/100 endpoints and 65.52% at 250;
-- mean Top-5 serialized context at 250 endpoints 2.383% of FULL.
+- Top-1은 20/50/100개 엔드포인트에서 68.97%, 250개에서 65.52%;
+- 250개 엔드포인트에서 직렬화한 Top-5 문맥의 평균 길이는 FULL의 2.383%.
 
-The canonical v2 run is `36529108855` at
-`b9eadefd3cd076f026a54bbc55a949f0424f5dab`. It uses 30 execution jobs because the 250-endpoint
-surface is split into smaller task groups for wall-clock control. Scheduling is not an experimental
-treatment; all jobs are checked against the frozen sharding plan and aggregate into exactly 552
-unique `(catalog_size, task_id, condition)` episodes.
+정식 v2 실행은 커밋 `b9eadefd3cd076f026a54bbc55a949f0424f5dab`의 `36529108855`입니다. 실제 경과 시간을 제어하기 위해 250개 엔드포인트의 작업을 더 작은 묶음으로 나누어 총 30개 실행 작업을 사용합니다. 스케줄링은 실험 처치가 아니므로 모든 작업을 동결된 샤딩 계획에 대조하여 `(catalog_size, task_id, condition)`의 서로 다른 에피소드 정확히 552개로 집계합니다.
 
-No B1 result is accepted until that aggregate succeeds. The 23 semantic tasks remain a controlled
-mechanism surface, so the -2pp criterion is only a descriptive engineering gate; #432 is required
-before a population-level generalization or non-inferiority claim.
+해당 집계가 성공하기 전까지 어떤 B1 결과도 승인하지 않습니다. 23개 의미 작업은 통제된 메커니즘 실험 표면이므로 -2%p 기준은 설명적인 기술 게이트일 뿐입니다. 모집단 수준 일반화나 비열등성 주장을 하려면 #432가 필요합니다.
