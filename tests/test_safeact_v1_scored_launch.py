@@ -1,5 +1,6 @@
 """Fail-closed scored launch preflight without calling a paid model."""
 
+import hashlib
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -32,7 +33,13 @@ def _inputs(tmp_path: Path) -> dict:
         "intervention_manifest": {
             "reviewed": True,
             "conditions": {
-                c: {"mode": mode, "adapter_commit": "a" * 40}
+                c: {
+                    "mode": mode,
+                    "adapter_commit": "a" * 40,
+                    "agent_command_sha256": hashlib.sha256(
+                        commands[c].encode("utf-8")
+                    ).hexdigest(),
+                }
                 for c, mode in zip(
                     launch.CONDITIONS, launch.MODES, strict=True
                 )
@@ -120,4 +127,12 @@ def test_empty_declared_model_is_rejected(monkeypatch, tmp_path: Path) -> None:
     _mock_public(monkeypatch, sample)
     sample["model"] = " "
     with pytest.raises(ValueError, match="nonempty"):
+        launch.validate_launch(**sample)
+
+
+def test_rejects_post_review_command_mutation(monkeypatch, tmp_path: Path) -> None:
+    sample = _inputs(tmp_path)
+    _mock_public(monkeypatch, sample)
+    sample["commands"][launch.CONDITIONS[2]] += " --extra-arg=test"
+    with pytest.raises(ValueError, match="altered trusted adapter identity"):
         launch.validate_launch(**sample)

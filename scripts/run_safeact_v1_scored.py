@@ -7,7 +7,9 @@ Pass --execute only after independent review of the official agent bridges.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import re
 import shlex
 import subprocess
 import sys
@@ -134,9 +136,11 @@ def validate_launch(
             not isinstance(entry, dict)
             or entry.get("mode") != mode
             or not isinstance(entry.get("adapter_commit"), str)
-            or len(entry["adapter_commit"]) != 40
+            or re.fullmatch(r"[a-f0-9]{40}", entry["adapter_commit"]) is None
+            or entry.get("agent_command_sha256")
+            != hashlib.sha256(commands[name].encode("utf-8")).hexdigest()
         ):
-            raise ValueError("missing condition-specific trusted adapter identity")
+            raise ValueError("missing or altered trusted adapter identity")
     if intervention_manifest.get("reviewed") is not True:
         raise ValueError("independent adapter review must be recorded")
     return plans
