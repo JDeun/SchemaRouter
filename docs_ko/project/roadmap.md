@@ -34,10 +34,10 @@
 
 현재 공개 근거 및 작업:
 
-- [#15 — live decision-routing benchmark evidence](https://github.com/JDeun/SchemaRouter/issues/15)
-- [0.14 evidence checkpoint](../research/0.14-paper-evidence-checkpoint.md)
-- [Research evidence package](../research/paper-evidence-package.md)
-- [Research governance](../research/governance.md)
+- [#15 — 실제 결정 라우팅 벤치마크 근거](https://github.com/JDeun/SchemaRouter/issues/15)
+- [0.14 실증 근거 점검](../research/0.14-paper-evidence-checkpoint.md)
+- [연구 근거 패키지](../research/paper-evidence-package.md)
+- [연구 거버넌스](../research/governance.md)
 
 제품 변경에 맞추기 위해 frozen workload, split, promotion gate, negative result, historical evidence를 다시 작성해서는 안 됩니다. 새로운 hypothesis에는 새로운 versioned experiment가 필요합니다.
 
@@ -63,16 +63,16 @@ Integration은 선택 사항으로 유지되어야 하며 SchemaRouter execution
 
 현재 조정 항목:
 
-- [#576 — growth parent](https://github.com/JDeun/SchemaRouter/issues/576)
-- [#581 — contributor/community experience](https://github.com/JDeun/SchemaRouter/issues/581)
-- [#582 — developer-focused launch/content](https://github.com/JDeun/SchemaRouter/issues/582)
-- [#584 — external adopters/case studies/independent validation](https://github.com/JDeun/SchemaRouter/issues/584)
-- [Adoption scorecard](adoption-scorecard.md)
-- [Discoverability and positioning](discoverability.md)
-- [Developer launch playbook](launch-playbook.md)
-- [Launch and outreach log](launch-log.md)
-- [External adoption and validation](external-adoption.md)
-- [External case-study template](case-study-template.md)
+- [#576 — 성장 작업 총괄](https://github.com/JDeun/SchemaRouter/issues/576)
+- [#581 — 기여자·커뮤니티 경험](https://github.com/JDeun/SchemaRouter/issues/581)
+- [#582 — 개발자 중심 출시·콘텐츠](https://github.com/JDeun/SchemaRouter/issues/582)
+- [#584 — 외부 채택·사례 연구·독립 검증](https://github.com/JDeun/SchemaRouter/issues/584)
+- [채택 현황 점수표](adoption-scorecard.md)
+- [발견 가능성과 포지셔닝](discoverability.md)
+- [개발자 출시 안내서](launch-playbook.md)
+- [출시 및 외부 연락 기록](launch-log.md)
+- [외부 채택 및 검증](external-adoption.md)
+- [외부 사례 연구 양식](case-study-template.md)
 
 Stars는 후행 신호입니다. 허영성 홍보보다 재현 가능한 example, downstream integration, external reproduction, 반복 사용을 우선합니다.
 
