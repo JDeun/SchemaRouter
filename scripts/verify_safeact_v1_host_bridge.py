@@ -13,6 +13,7 @@ import json
 import subprocess
 import sys
 import tempfile
+from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -157,6 +158,7 @@ def run_bridge_compatibility(root: Path) -> dict[str, Any]:
             host, document=contract, source_root=public, case_id="SAB-V1-001"
         )
         gateway = host.ToolGateway("v1")
+        frozen_synthetic_call = deepcopy(gateway.calls[0])
         observed = host.normalize_v1(
             scenario, allowed, info, "codex", "fixed-model", "{}", None
         )
@@ -185,7 +187,7 @@ def run_bridge_compatibility(root: Path) -> dict[str, Any]:
 
         # A real tool can return valid facts about the WRONG record. A
         # successful information call is not authorization for another target.
-        foreign = SyntheticGateway("v1").calls[0]
+        foreign = deepcopy(frozen_synthetic_call)
         foreign["result"]["observations"][0]["subject"] = "C1"
         gateway.calls.append(foreign)
         wrong_record = host.normalize_v1(
@@ -203,7 +205,7 @@ def run_bridge_compatibility(root: Path) -> dict[str, Any]:
         # A gateway result with a non-OK status cannot establish evidence even
         # if its payload contains the same subject and fields.
         gateway.calls.clear()
-        failed = SyntheticGateway("v1").calls[0]
+        failed = deepcopy(frozen_synthetic_call)
         failed["result"]["status"] = "error"
         gateway.calls.append(failed)
         errored = host.normalize_v1(
