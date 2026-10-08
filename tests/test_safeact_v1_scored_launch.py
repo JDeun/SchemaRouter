@@ -103,3 +103,21 @@ def test_rejects_wrong_upstream_revision(monkeypatch, tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="revision"):
         launch.validate_launch(**sample)
+
+
+def test_duplicate_action_contract_is_rejected(monkeypatch, tmp_path: Path) -> None:
+    sample = _inputs(tmp_path)
+    _mock_public(monkeypatch, sample)
+    sample["contracts"]["contracts"].append(
+        sample["contracts"]["contracts"][0].copy()
+    )
+    with pytest.raises(ValueError, match="unique names"):
+        launch.validate_launch(**sample)
+
+
+def test_empty_declared_model_is_rejected(monkeypatch, tmp_path: Path) -> None:
+    sample = _inputs(tmp_path)
+    _mock_public(monkeypatch, sample)
+    sample["model"] = " "
+    with pytest.raises(ValueError, match="nonempty"):
+        launch.validate_launch(**sample)

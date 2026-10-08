@@ -10,6 +10,7 @@ import argparse
 import json
 import shlex
 import subprocess
+import sys
 from pathlib import Path
 
 from examples.external_validation.safeact_v1.run_plan import (
@@ -28,7 +29,7 @@ MODES = ("ungated", "routing_only", "evidence_gate")
 def public_case_ids(root: Path) -> set[str]:
     result = subprocess.run(
         [
-            "python3",
+            sys.executable,
             str(root / "run_benchmark.py"),
             "--list-only",
             "--protocol",
@@ -84,6 +85,8 @@ def validate_launch(
     ).stdout.strip()
     if revision != UPSTREAM_REVISION:
         raise ValueError("official SafeAct revision mismatch")
+    if not model.strip():
+        raise ValueError("frozen model identity must be nonempty")
     if set(commands) != set(CONDITIONS) or len(set(commands.values())) != 3:
         raise ValueError("three unique preregistered agent commands required")
     plans = validate_comparison_matrix(
@@ -104,11 +107,18 @@ def validate_launch(
         raise ValueError("explicit independent V1 case coverage required")
     if set(coverage) != public_case_ids(root):
         raise ValueError("independent contracts do not cover 131 public V1 cases")
-    available = {
+    names = [
         contract.get("action")
         for contract in contracts["contracts"]
         if isinstance(contract, dict)
-    }
+    ]
+    if (
+        not names
+        or any(not isinstance(name, str) or not name for name in names)
+        or len(set(names)) != len(names)
+    ):
+        raise ValueError("independent action contracts must have unique names")
+    available = set(names)
     if any(
         not isinstance(action, str) or action not in available
         for action in coverage.values()
