@@ -1,20 +1,25 @@
-name: Korean Documentation Translation Coverage
+name: Korean Translation Whole-Corpus Coverage Report
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
       - 'docs/**'
       - 'docs_ko/**'
-      - 'scripts/report_korean_translation_coverage.py'
-      - 'tests/test_korean_translation_coverage.py'
+      - 'scripts/audit_korean_translation_coverage.py'
+      - 'scripts/report_bilingual_coverage.py'
       - '.github/workflows/korean-translation-coverage.yml'
+  schedule:
+    - cron: '43 4 * * 1'
   pull_request:
     paths:
       - 'docs/**'
       - 'docs_ko/**'
-      - 'scripts/report_korean_translation_coverage.py'
-      - 'tests/test_korean_translation_coverage.py'
+      - 'scripts/audit_korean_translation_coverage.py'
+      - 'scripts/report_bilingual_coverage.py'
+      - 'tests/test_bilingual_coverage_report.py'
+      - 'tests/test_bilingual_docs_integrity.py'
       - '.github/workflows/korean-translation-coverage.yml'
   workflow_dispatch:
 
@@ -22,26 +27,32 @@ permissions:
   contents: read
 
 jobs:
-  inventory:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+  report:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: '3.12'
-      - name: Test coverage inventory
-        run: python -m unittest discover -s tests -p 'test_korean_translation_coverage.py' -q
-      - name: Report bilingual corpus without concealing known debt
+      - name: Check full-corpus audit regression tests
         run: |
-          python scripts/report_korean_translation_coverage.py \
-            --json-out translation-coverage.json \
-            --markdown-out translation-coverage.md
-          cat translation-coverage.md >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+          python -m pip install "pytest>=8,<10" "pytest-asyncio>=0.24,<2"
+          python -m pytest -q tests/test_bilingual_docs_integrity.py tests/test_bilingual_coverage_report.py
+      - name: Generate all-document EN/KO coverage evidence
+        run: |
+          python -m scripts.report_bilingual_coverage \
+            --json-out korean-translation-coverage.json \
+            --markdown-out korean-translation-coverage.md
+          cat korean-translation-coverage.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish audit evidence; findings do not falsely imply translation completion
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: korean-translation-coverage
+          name: korean-translation-whole-corpus-audit
           path: |
-            translation-coverage.json
-            translation-coverage.md
-          retention-days: 30
+            korean-translation-coverage.json
+            korean-translation-coverage.md
+          retention-days: 90
+      - name: Strict gate on explicit manual verification only
+        if: github.event_name == 'workflow_dispatch'
+        run: python -m scripts.audit_korean_translation_coverage

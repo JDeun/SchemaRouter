@@ -1,55 +1,37 @@
 # Laya
 
-SchemaRouter는 [Laya](https://github.com/NandhaKishorM/laya)를 optional local `DecisionBackend`로 사용할 수 있습니다.
+SchemaRouter는 Laya를 optional local `DecisionBackend`로 사용할 수 있습니다.
 
-Laya는 범용 text-generation model이 아니라 non-autoregressive decision model입니다. SchemaRouter 내부의 agent runtime이 아닙니다. Adapter는 Laya의 유한한 `choice` primitive만 사용합니다. Backend는 SchemaRouter가 이미 승인한 opaque option ID 중 하나를 선택할 수 있지만 tool, endpoint, field, parameter, credential, execution permission 또는 multi-step tool loop를 만들어낼 수 없습니다.
+Laya는 general text-generation model이 아니라 non-autoregressive decision model입니다. SchemaRouter 내부의 agent runtime이 아니며 adapter는 finite `choice` primitive만 사용합니다. Backend는 SchemaRouter가 이미 authorize한 opaque option ID 중 하나를 선택할 수 있지만 tool, endpoint, field, parameter, credential, execution permission, multi-step tool loop를 만들 수 없습니다.
 
 ## 설치
 
-Laya support는 현재 SchemaRouter distribution에 optional `laya` extra로 포함됩니다.
-
-개발 checkout:
+Current distribution에서는 optional `laya` extra로 제공합니다.
 
 ```bash
 pip install -e ".[laya]"
 ```
 
-이 integration이 포함된 다음 release부터 packaged 설치 형식은 다음과 같습니다:
+해당 integration이 포함된 release의 packaged form:
 
 ```bash
 pip install "schemarouter[laya]"
 ```
 
-The extra installs the Laya runtime and its local model dependencies. Model weights are downloaded
-by Laya/Hugging Face only when a checkpoint is first loaded unless they are already cached.
+Extra는 Laya runtime/local model dependency를 설치합니다. Model weight는 cache에 없을 때 checkpoint 최초 load 시 Laya/Hugging Face가 download합니다.
 
-## 자동 local routing
+## Automatic local routing
 
-기본적으로 SchemaRouter는 request state를 바탕으로 Laya가 English 또는 multilingual checkpoint를 선택하도록 합니다:
+기본적으로 request state에서 English/multilingual checkpoint를 Laya가 선택합니다.
 
 ```python
 from schemarouter.integrations import LayaDecisionBackend
-
-backend = LayaDecisionBackend(
-    min_confidence=0.65,
-)
+backend = LayaDecisionBackend(min_confidence=0.65)
 ```
 
-Adapter는 다음 항목을 전달합니다:
-
-- the user query;
-- optional bounded decision context;
-- finite option IDs;
-- option labels and descriptions.
-
-`DecisionOption.metadata`는 전달하지 않습니다.
-
-Laya routing metadata such as the selected checkpoint and routing reason is returned only as
-non-authoritative `DecisionResult.metadata`.
+Adapter는 user query, optional bounded decision context, finite option ID, option label/description을 전달하며 `DecisionOption.metadata`는 전달하지 않습니다. Selected checkpoint/routing reason 같은 Laya metadata는 non-authoritative `DecisionResult.metadata`로만 반환합니다.
 
 ## Checkpoint 고정
-
-Use `model=` when the application has already chosen the checkpoint:
 
 ```python
 backend = LayaDecisionBackend(
@@ -59,101 +41,57 @@ backend = LayaDecisionBackend(
 )
 ```
 
-Common Laya checkpoint names include `english`, `multilingual`, and
-`typed-decisions`. SchemaRouter does not select the benchmark-specific
-`typed-decisions` checkpoint automatically.
+Common checkpoint는 `english`, `multilingual`, `typed-decisions`이며 SchemaRouter는 benchmark-specific `typed-decisions`를 자동 선택하지 않습니다.
 
-`device` is an explicit performance control. Use `cpu`, `cuda`, or `mps` when the runtime
-should request a specific device. On Apple Silicon, `mps` uses PyTorch's Metal Performance
-Shaders backend, executing through Apple's Metal stack. It is not an MLX-native path;
-the current Laya runtime uses float32 on MPS, so memory use and latency can differ materially from
-CUDA. If Laya falls back to another device, SchemaRouter records both
-`requested_device` and, when the loaded agent exposes it, `actual_device` in non-authoritative
-decision metadata. This prevents a GPU-requested run that actually executed on CPU from being
-misreported as a GPU benchmark.
+`device`는 explicit performance control입니다. `cpu`, `cuda`, `mps`를 사용할 수 있습니다. Apple Silicon의 `mps`는 PyTorch Metal Performance Shaders backend이며 MLX-native path가 아닙니다. 현재 Laya runtime은 MPS에서 float32를 사용하므로 memory/latency가 CUDA와 크게 다를 수 있습니다.
 
-## 장기 실행 process용 preload
+Laya가 다른 device로 fallback하면 SchemaRouter는 `requested_device`와 가능한 경우 `actual_device`를 non-authoritative decision metadata에 기록합니다. 실제 CPU 실행을 GPU benchmark로 잘못 보고하는 것을 방지합니다.
 
-Laya can lazily load checkpoints, but switching between uncached checkpoints can dominate latency.
-A server that has enough memory can preload checkpoints before the first decision:
+## Long-running process에서 preload
 
 ```python
-backend = LayaDecisionBackend(
-    preload=True,
-    max_loaded=2,
-)
+backend = LayaDecisionBackend(preload=True, max_loaded=2)
 ```
 
-When `model=` is pinned, SchemaRouter preloads that checkpoint. In automatic language-routing
-mode, it preloads only `english` and `multilingual`; the benchmark-specific
-`typed-decisions` checkpoint is not downloaded implicitly. Preloading happens during backend
-construction, before per-case benchmark timing starts. Choose resident checkpoints according to
-available CPU/GPU/MPS memory. Preloading is trusted local configuration and is never controlled by
-the model or request.
+`model=` 고정 시 해당 checkpoint를 preload합니다. Automatic language routing에서는 `english`와 `multilingual`만 preload하며 `typed-decisions`는 implicit download하지 않습니다. Preload는 per-case benchmark timing 전 backend construction에서 일어납니다. Resident checkpoint는 사용 가능한 CPU/GPU/MPS memory에 맞게 선택합니다. Preload는 trusted local configuration이며 model/request가 제어하지 않습니다.
 
 ## Async planning
 
-Laya inference is synchronous. With `async_mode=True`, SchemaRouter moves the local inference call
-to a worker thread so an async planner does not execute the blocking call directly on the event
-loop:
+Laya inference는 synchronous입니다. `async_mode=True`이면 local inference를 worker thread로 옮겨 async planner event loop에서 blocking call을 직접 실행하지 않습니다.
 
 ```python
-backend = LayaDecisionBackend(
-    async_mode=True,
-)
+backend = LayaDecisionBackend(async_mode=True)
 ```
 
-This does not make a single model forward pass intrinsically asynchronous; it only preserves the
-async SchemaRouter contract.
+Single forward pass 자체를 asynchronous하게 만드는 것은 아니며 async SchemaRouter contract만 보존합니다.
 
 ## Confidence와 abstention
 
-Set `min_confidence` to make a valid low-confidence Laya choice abstain:
-
 ```python
-backend = LayaDecisionBackend(
-    min_confidence=0.70,
-)
+backend = LayaDecisionBackend(min_confidence=0.70)
 ```
 
-SchemaRouter checks the returned option ID **before** confidence-based abstention. An unknown option
-therefore fails closed even when Laya reports low confidence.
-
-Confidence is provider/model evidence, not execution authority. It should be calibrated on the
-actual workload before it is used as an operational threshold.
+SchemaRouter는 confidence-based abstention 전에 returned option ID를 검사하므로 unknown option은 low confidence여도 fail-closed합니다. Confidence는 execution authority가 아니라 provider/model evidence이며 operational threshold로 사용하기 전에 실제 workload에서 calibration해야 합니다.
 
 ## Trust boundary
 
-The adapter preserves the same bounded-decision invariants as the Jev and Ollama integrations:
-
-- only locally authorized finite option IDs are exposed;
-- unknown IDs fail closed;
-- `DecisionOption.metadata` is not forwarded;
-- Hugging Face tokens stay in trusted local router configuration;
-- provider metadata cannot grant execution authority;
-- SchemaRouter revalidates the final decision locally;
-- deterministic fallback policy is owned by SchemaRouter.
+- locally authorized finite option ID만 노출
+- unknown ID fail-closed
+- `DecisionOption.metadata` 미전달
+- Hugging Face token은 trusted local router configuration에 유지
+- provider metadata는 execution authority를 부여할 수 없음
+- SchemaRouter가 final decision을 local에서 재검증
+- deterministic fallback policy는 SchemaRouter 소유
 
 ## 현재 범위와 제한
 
-The SchemaRouter adapter maps only Laya's single-select `choice` primitive to the
-generic `DecisionBackend` contract. A request with `max_selections > 1` fails closed so the
-planner can apply its configured deterministic/error fallback rather than silently treating a
-multi-select surface as single-select. Laya also exposes score/probability-oriented primitives, but
-adding those to SchemaRouter would require a separate typed contract rather than overloading finite
-selection semantics.
+Adapter는 Laya single-select `choice`만 generic `DecisionBackend`에 mapping합니다. `max_selections > 1` request는 fail-closed하여 planner가 configured deterministic/error fallback을 적용하게 합니다. Laya의 score/probability primitive를 추가하려면 finite selection semantics에 억지로 넣지 말고 별도 typed contract가 필요합니다.
 
-Laya quality is checkpoint-, language-, option-count-, and domain-dependent. In particular,
-high-cardinality choice sets can require a larger option/head budget or a shortlist strategy.
-Do not treat published third-party or upstream benchmark numbers as a guarantee for a SchemaRouter
-workload.
+Laya quality는 checkpoint/language/option count/domain에 의존합니다. High-cardinality choice set은 더 큰 option/head budget 또는 shortlist strategy가 필요할 수 있습니다. Third-party/upstream benchmark 수치를 SchemaRouter workload 보장으로 취급하지 마십시오.
 
-Use the shared SchemaRouter corpus to measure the exact checkpoint and hardware before choosing a
-default backend or confidence threshold.
+Default backend/confidence threshold를 정하기 전에 shared SchemaRouter corpus에서 정확한 checkpoint/hardware를 측정하십시오.
 
 ## Benchmark
-
-Run Laya on the same corpus used by deterministic, embedding, Jev, and Ollama paths:
 
 ```bash
 python scripts/benchmark_decision_routing.py \
@@ -161,7 +99,7 @@ python scripts/benchmark_decision_routing.py \
   --laya
 ```
 
-Pin a checkpoint or device when needed:
+Checkpoint/device 고정:
 
 ```bash
 python scripts/benchmark_decision_routing.py \
@@ -173,8 +111,4 @@ python scripts/benchmark_decision_routing.py \
   --hardware-label "Apple M4 16GB"
 ```
 
-For a long-running benchmark on mixed languages, `--laya-preload` avoids repeated cold checkpoint
-loads. JSON/CSV rows record the selected checkpoint plus requested/actual device when available.
-The report also records platform metadata and the optional `--hardware-label`. Record the exact
-Laya version, checkpoint, hardware/device, preload policy, and confidence threshold when publishing
-results.
+Mixed-language 장시간 benchmark에서는 `--laya-preload`로 repeated cold checkpoint load를 피할 수 있습니다. JSON/CSV row는 selected checkpoint와 가능한 경우 requested/actual device를 기록하며 report는 platform metadata와 optional `--hardware-label`도 기록합니다. 결과 공개 시 exact Laya version, checkpoint, hardware/device, preload policy, confidence threshold를 기록해야 합니다.

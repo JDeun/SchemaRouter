@@ -1,9 +1,8 @@
 # OpenRPC / JSON-RPC
 
-SchemaRouter can ingest an OpenRPC document and compile its JSON-RPC methods into the same
-`ToolSpec -> EndpointSpec -> ParameterSpec -> FieldSpec` model used by other sources.
+SchemaRouter는 OpenRPC 문서를 수집해 JSON-RPC method를 다른 source와 동일한 `ToolSpec -> EndpointSpec -> ParameterSpec -> FieldSpec` 모델로 컴파일합니다.
 
-## OpenRPC service 등록
+## OpenRPC 서비스 등록
 
 ```python
 router = await SchemaRouter.from_url(
@@ -12,28 +11,17 @@ router = await SchemaRouter.from_url(
 )
 ```
 
-OpenRPC method names become endpoint names. Declared params become typed arguments and the result
-JSON Schema becomes the output contract.
+OpenRPC method name은 endpoint name이 되고, 선언된 param은 typed argument, result JSON Schema는 output contract가 됩니다. `components` 아래 local `$ref`를 해석하며 nested object와 array-item field도 planner에 노출합니다. projection 과정에서도 record alignment를 유지합니다.
 
-Local `$ref` values under `components` are resolved. Nested object fields and declared array-item
-fields become planner-visible. A result such as `results: [{title, score}, ...]` can expose
-`results[].title` and `results[].score`, with record alignment preserved through projection.
-Root result arrays keep implicit record semantics and expose their item fields directly.
+## 실행 권한은 로컬에 유지
 
-## Execution authority는 local에 유지
+OpenRPC는 interface shape를 설명할 뿐 신뢰할 수 있는 side-effect policy가 아닙니다. 따라서 SchemaRouter는 description/tag를 근거로 method를 read-only 또는 mutating으로 지정하지 않습니다.
 
-OpenRPC describes interface shape, not trusted side-effect policy. SchemaRouter therefore does not
-mark methods read-only or mutating from descriptions or tags.
-
-Remote OpenRPC methods are unclassified by default and fail closed under the default execution
-policy. Grant authority through trusted local policy or a trusted contract amendment.
+원격 OpenRPC method는 기본적으로 unclassified이며 기본 execution policy에서 fail-closed됩니다. 권한은 trusted local policy 또는 trusted contract amendment로 부여해야 합니다.
 
 ## Server binding
 
-If an OpenRPC document advertises an HTTP(S) server on the same origin as the schema URL,
-SchemaRouter may bind it automatically.
-
-A cross-origin advertised server is treated as a suggestion only:
+문서가 schema URL과 같은 origin의 HTTP(S) server를 광고하면 자동 바인딩할 수 있습니다. cross-origin server는 제안으로만 취급합니다.
 
 ```python
 router = await SchemaRouter.from_url(
@@ -43,10 +31,8 @@ router = await SchemaRouter.from_url(
 )
 ```
 
-This explicit `base_url` is a trusted local approval boundary.
+명시적 `base_url`이 trusted local approval boundary입니다. 인증 header도 trusted runtime binding에 속하며 model-visible contract에 들어가지 않습니다.
 
-Authentication headers belong to the trusted runtime binding and never enter the model-visible
-contract:
 
 ```python
 router = await SchemaRouter.from_url(
@@ -56,31 +42,14 @@ router = await SchemaRouter.from_url(
 )
 ```
 
-## Parameter structures
+## Parameter 구조
 
-OpenRPC `by-name` and `either` methods are sent with JSON object params.
-
-`by-position` methods are supported conservatively. SchemaRouter preserves declared order and
-refuses an invocation that skips an earlier optional positional parameter while supplying a later
-one, because silently shifting positions would change semantics.
+OpenRPC `by-name`, `either` method는 JSON object param으로 전송합니다. `by-position`은 보수적으로 지원하며, 앞선 optional positional parameter를 생략하고 뒤 parameter만 제공해 의미가 이동하는 호출은 거부합니다.
 
 ## Response validation
 
-The transport verifies:
-- HTTP status;
-- response-size bounds;
-- JSON decoding;
-- `jsonrpc == "2.0"`;
-- matching request/response IDs;
-- absence of an application-level `error`;
-- presence of `result`.
+transport는 HTTP status, response-size bound, JSON decoding, `jsonrpc == "2.0"`, request/response ID 일치, application-level `error` 부재, `result` 존재를 확인합니다. 이후 일반 SchemaRouter output JSON Schema validation과 field projection을 수행합니다.
 
-The resulting value then goes through the ordinary SchemaRouter output JSON Schema validation and
-field projection pipeline.
+## 범위
 
-## Scope
-
-Initial support covers ordinary request/response JSON-RPC methods.
-
-Notifications, batch requests, and long-lived/streaming RPC lifecycles are intentionally deferred
-until they have explicit runtime semantics.
+현재 일반 request/response JSON-RPC method를 지원합니다. notification, batch request, 장기/streaming RPC lifecycle은 명시적 runtime semantics가 마련될 때까지 보류합니다.

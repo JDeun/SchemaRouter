@@ -1,207 +1,119 @@
-# Compatibility test
+# Compatibility testing
 
 SchemaRouter는 deterministic release gate와 external-service smoke test를 분리합니다.
 
-## 지원 compatibility matrix
+## Supported compatibility matrix
 
-아래 표는 **declared dependency range**와 각 pull request에서 CI가 실제로 검증하는 범위를 구분합니다. CI installs the currently resolved package versions inside each declared range; it does not
-claim that every historical version inside the range is exhaustively tested.
+Declared dependency range와 PR마다 CI가 증명하는 범위를 구분합니다. CI는 각 declared range 안에서 현재 resolve된 version을 설치하며 range 내 모든 historical version을 exhaustive test했다고 주장하지 않습니다.
 
-| Surface | Declared support | Pull-request gate | Notes |
+| Surface | Declared support | PR gate | Notes |
 | --- | --- | --- | --- |
-| Python | 3.10, 3.11, 3.12, 3.13, 3.14 | Full core suite on all five versions | Package metadata requires Python >=3.10; Python 3.15 RC is exercised as a non-blocking preview |
-| LangChain | `langchain-core>=1.6,<2` | Dedicated contract tests + runnable example on Python 3.12 | Optional `schemarouter[langchain]` extra |
-| LangGraph | `langgraph>=1.2,<2` | Real `StateGraph` sync/async contract tests + runnable example on Python 3.12 | Optional `schemarouter[langgraph]` extra |
-| LlamaIndex | `llama-index-core>=0.14,<1` | Dedicated contract tests + runnable example on Python 3.12 | Optional `schemarouter[llamaindex]` extra |
-| Jev / TypeSafe | `typesafe-sdk>=0.7,<1` | Dedicated adversarial contract tests on Python 3.12 | Optional `schemarouter[jev]` extra; no live API call in required CI |
-| Laya | `laya>=0.3.6,<1` | Dedicated adversarial adapter tests plus optional-extra install on Python 3.12 | Optional `schemarouter[laya]` extra; required CI does not download model weights |
-| Ollama decision backend | Ollama structured-output HTTP API | Mock-transport adversarial tests in the core suite | No SDK dependency; live model benchmark is explicit and non-blocking |
-| MCP | `mcp>=2,<3` | Real Streamable HTTP integration + real local stdio subprocess discovery/execution + transport-boundary tests + scheduled pinned-reference evidence | Optional `schemarouter[mcp]` extra; public Internet MCP availability is not assumed |
-| OpenTelemetry | `opentelemetry-api/sdk>=1.44,<2` | In-memory span hierarchy, error status, and privacy tests | Optional `schemarouter[otel]` extra; core has no OTel dependency |
-| OpenAPI | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OpenAPI SDK dependency |
-| GraphQL | Built-in adapter | Deterministic introspection/selection-set fixtures + scheduled public-provider smoke | No GraphQL SDK dependency |
-| OData | Built-in adapter | Deterministic CSDL/$select fixtures + scheduled OData.org smoke | No OData SDK dependency |
-| OpenRPC / JSON-RPC | Built-in adapter | Deterministic schema/RPC transport fixtures + scheduled pinned-reference execution | No stable unauthenticated public execution endpoint is assumed |
-| OPTIMADE | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OPTIMADE client dependency |
-| Provider profiles | Built-in/local/plugin registry | Deterministic profile tests + live Materials Project/Crossref evidence + Tavily auth/live evidence | Profiles declare access methods; credentials remain process-local and SDK installation is never automatic |
-| Published PyPI package | Latest stable wheel + sdist | Scheduled/manual external smoke | Installs from PyPI in a fresh runner, runs `pip check`, and executes a public API scenario outside the checkout |
-| Published lightweight extras | Latest stable `mcp` + `jev` + `otel` extras | Scheduled/manual external smoke | Installs only those three extras from PyPI and validates their SDK integration surface without relying on framework transitive dependencies |
-| Published integration extras | Latest stable `mcp` + `langchain` + `langgraph` + `llamaindex` + `jev` + `otel` extras | Scheduled/manual external smoke | Resolves the combined published extras from PyPI, validates MCP/Jev/OpenTelemetry SDK integration imports, and executes the three framework bridges outside the checkout |
+| Python | 3.10–3.14 | 5개 version full core | >=3.10; 3.15 RC non-blocking preview |
+| LangChain | `langchain-core>=1.6,<2` | contract + runnable example | optional extra |
+| LangGraph | `langgraph>=1.2,<2` | real StateGraph sync/async + example | optional |
+| LlamaIndex | `llama-index-core>=0.14,<1` | contract + example | optional |
+| Jev/TypeSafe | `typesafe-sdk>=0.7,<1` | adversarial contract | no live API required |
+| Laya | `laya>=0.3.6,<1` | adversarial adapter + extra install | model weight download 없음 |
+| Ollama | structured-output HTTP API | mock transport adversarial | SDK dependency 없음 |
+| MCP | `mcp>=2,<3` | real HTTP + local stdio + boundary + scheduled evidence | public Internet availability 가정 안 함 |
+| OpenTelemetry | >=1.44,<2 | in-memory hierarchy/error/privacy | core dependency 없음 |
+| OpenAPI | built-in | deterministic + scheduled public smoke | SDK 없음 |
+| GraphQL | built-in | introspection/selection fixture + public smoke | SDK 없음 |
+| OData | built-in | CSDL/$select + OData.org smoke | SDK 없음 |
+| OpenRPC/JSON-RPC | built-in | deterministic + pinned reference | public execution endpoint 가정 안 함 |
+| OPTIMADE | built-in | deterministic + public smoke | client dependency 없음 |
+| Provider profiles | built-in/local/plugin | deterministic + MP/Crossref/Tavily evidence | credential process-local, SDK auto-install 없음 |
+| PyPI stable | wheel+sdist | scheduled/manual external smoke | fresh runner + pip check + checkout 밖 scenario |
+| Lightweight extras | mcp+jev+otel | scheduled/manual | framework transitive dependency 없이 검증 |
+| Integration extras | mcp+langchain+langgraph+llamaindex+jev+otel | scheduled/manual | installed package bridge 검증 |
 
-Before widening an upper bound or lowering a minimum supported version, the relevant integration
-tests must pass against that target and the change must be documented in release notes.
+Upper bound 확대/minimum 하향 전 relevant integration test를 target에 대해 통과시키고 release note에 문서화합니다.
 
-## 필수 CI
+## Required CI
 
-Every pull request runs the blocking `CI` workflow with:
+모든 PR의 blocking CI:
 
-- Python 3.10 / 3.11 / 3.12 / 3.13 / 3.14 core tests;
-- a Windows + Python 3.14 core smoke test;
-- warnings-as-errors;
-- Pyright static type checking across the packaged surface;
-- full-suite branch coverage with an 84% blocking floor and a retained XML artifact;
-- a minimum-runtime-dependency job that exercises the declared lower bounds;
-- executable core quickstart;
-- wheel and sdist build + metadata checks;
-- clean-environment installation and quickstart smoke tests from both wheel and sdist;
-- a clean downstream venv that installs the built wheel plus a separate
-  `schemarouter.adapters` distribution, verifies metadata-only discovery, explicit plugin loading,
-  schema validation, and local execution-policy enforcement;
-- LangChain integration contract tests and `examples/langchain_quickstart.py`;
-- LangGraph `StateGraph` sync/async contract tests and `examples/langgraph_quickstart.py`;
-- LlamaIndex integration contract tests and `examples/llamaindex_quickstart.py`;
-- bounded candidate and field-selection planner tests, including identifier preservation,
-  malformed/unknown IDs, abstention, sync/async paths, and deterministic fallback;
-- Jev adapter adversarial tests with the official SDK installed but no external API dependency;
-- Laya adapter adversarial tests with the official package installed but no model-weight download;
-- Ollama bounded-decision adversarial tests using a local mock HTTP transport;
-- real MCP Streamable HTTP integration using the official SDK and a local HTTP server;
-- real MCP stdio subprocess discovery/execution plus transport-neutral client-factory contract tests;
-- deterministic GraphQL, OData, and OpenRPC protocol-adapter tests;
-- provider-first resolution/registration tests for Materials Project, Crossref, and Tavily;
-- state-conditioned retrieval, indexed/incremental capability graph, atomic snapshot publication,
-  format migration, and decision-trace privacy/integration tests;
-- OpenTelemetry integration tests using the SDK in-memory exporter;
-- strict MkDocs build.
+- Python 3.10–3.14 core
+- Windows+3.14 smoke
+- warnings-as-errors
+- Pyright
+- full branch coverage 84% floor + XML
+- minimum runtime dependency
+- executable quickstart
+- wheel/sdist build+metadata
+- clean wheel/sdist install+quickstart
+- downstream venv에서 built wheel + separate adapter distribution discovery/load/schema/policy 검증
+- LangChain/LangGraph/LlamaIndex contract+examples
+- bounded candidate/field selection adversarial tests
+- Jev/Laya adapter tests without external/model download
+- Ollama mock HTTP adversarial
+- real MCP HTTP + stdio + client-factory
+- deterministic GraphQL/OData/OpenRPC
+- Materials Project/Crossref/Tavily provider-first tests
+- state retrieval, graph, snapshot, migration, decision-trace privacy
+- OTel in-memory exporter
+- strict MkDocs
 
-A separate `Python Preview` workflow runs Python 3.15 RC on pull requests and `main` pushes.
-It runs outside the blocking `CI` workflow and has a bounded runtime. Failures remain
-visible as forward-compatibility signals but cannot stall release publication.
+Separate `Python Preview`는 3.15 RC를 bounded runtime으로 실행하며 visible signal이지만 release blocker가 아닙니다.
 
-The top-level Release workflow consumes a successful current-`main` `CI` result before it
-resolves the release tag and builds artifacts. This keeps publication coupled to deterministic
-release blockers without waiting on preview-only interpreter experiments. After GitHub Release and
-PyPI publication both succeed, the workflow re-installs that exact release version from PyPI as a
-wheel, forced sdist, isolated `mcp,jev,otel` environment, and combined integration-extras
-environment, then executes the published-package smoke outside the checkout. PyPI index propagation is handled by a bounded retry window rather than by
-accepting a different version.
+Release workflow는 successful current-main CI를 소비한 뒤 tag/artifact를 resolve합니다. GitHub Release+PyPI 뒤 exact version을 wheel, forced sdist, isolated mcp/jev/otel, combined extras로 checkout 밖에서 재설치합니다. PyPI propagation은 bounded retry로 처리하며 다른 version을 허용하지 않습니다.
 
 ## Integration maintenance policy
 
-Optional ecosystem bridges remain thin adapters around SchemaRouter's existing trust boundary.
-
-- The core package must import and run without LangChain, LangGraph, LlamaIndex, Jev/TypeSafe,
-  Laya, MCP, or OpenTelemetry installed.
-- Integration modules use lazy imports and bounded dependency ranges.
-- An integration may translate framework/provider metadata, but execution must still flow through
-  SchemaRouter schema identity, policy, binding checks, and validation.
-- If a newly released upstream version breaks compatibility inside a declared range, the range may
-  be narrowed temporarily while the bridge is repaired. The change must be documented.
-- New upstream major versions are unsupported until dedicated CI coverage is added.
-- Public examples and documented security invariants are compatibility contracts.
+Core는 optional ecosystem 없이 import/run되어야 합니다. Integration은 lazy import+bounded range를 사용하고 metadata translation은 가능하지만 execution은 schema identity/policy/binding/validation을 통과해야 합니다. Declared range 내 upstream break가 생기면 temporary narrowing 가능하되 문서화합니다. New major는 dedicated CI 전 unsupported입니다. Public example/security invariant는 compatibility contract입니다.
 
 ### Package layout decision
 
-For now, the LangChain, LangGraph, and LlamaIndex bridges stay inside the main distribution as
-optional extras: `schemarouter[langchain]`, `schemarouter[langgraph]`, and
-`schemarouter[llamaindex]`.
-
-A separate package such as `langchain-schemarouter` should be introduced only if at least one of
-these becomes true:
-
-1. the integration needs an independent release cadence;
-2. dependency pressure would otherwise widen the core package's maintenance surface materially;
-3. upstream maintainers require a dedicated distribution for discoverability or certification;
-4. the integration grows beyond a thin translation layer.
-
-The Jev and Laya providers follow the same principle: they remain optional `schemarouter[jev]` and
-`schemarouter[laya]` extras and do not make either provider runtime a core dependency. OpenTelemetry
-likewise remains an optional
-`schemarouter[otel]` exporter integration.
+LangChain/LangGraph/LlamaIndex는 현재 main distribution optional extra로 유지합니다. Separate package는 independent cadence, material dependency pressure, upstream dedicated distribution requirement, thin translation layer를 넘어선 growth 중 하나가 발생할 때만 도입합니다. Jev/Laya/OTel도 같은 optional-extra 원칙입니다.
 
 ## Native database live-acceptance tiers
 
-Native database support has two separate evidence levels:
+두 evidence level:
 
-- **Contract / SDK-shape coverage** is deterministic and release-blocking where it is part of the
-  required CI suite. It proves SchemaRouter's bounded adapter contract against controlled client
-  shapes and fixtures.
-- **Live acceptance** runs the real client against a real local/container runtime. It proves the
-  current client/service combination still supports discovery, bounded reads/search/traversal,
-  projection, trusted principal/DataScope filters where applicable, and the no-raw-query authority
-  boundary.
+- **Contract/SDK-shape**: deterministic, required CI에서 release-blocking
+- **Live acceptance**: real local/container client/service로 discovery, bounded read/search/traversal, projection, trusted principal/DataScope filter, no-raw-query boundary 검증
 
-Tier A uses deterministic local containers or in-process runtimes and is reviewed as release
-evidence when native database adapters change. The compatibility workflow records exact service
-tags and resolved client versions in JSON artifacts.
+Tier A는 deterministic local container/in-process이며 adapter 변경 release에서 evidence로 review합니다.
 
-| Tier A runtime | Evidence surface |
+| Tier A runtime | Evidence |
 | --- | --- |
-| PostgreSQL + pgvector | real container; vector discovery/search, projection, trusted tenant filter |
-| Qdrant | real container; collection discovery/search, projection, trusted metadata filter |
-| FalkorDB | real container; graph discovery and bounded read-only traversal |
-| MongoDB | real container; document discovery/query, field projection, trusted tenant filter |
-| Chroma | in-process client/runtime; vector discovery/search, field projection, trusted metadata filter |
-| ClickHouse | real container; record/time-series discovery, bounded time range, projection, trusted tenant filter |
+| PostgreSQL+pgvector | real container; vector discovery/search/projection/tenant |
+| Qdrant | collection discovery/search/projection/filter |
+| FalkorDB | graph discovery/read-only traversal |
+| MongoDB | document discovery/query/projection/tenant |
+| Chroma | in-process vector discovery/search/projection/filter |
+| ClickHouse | record/time-series discovery/time range/projection/tenant |
 
-A green Tier A smoke is **not** a blanket claim for every native adapter. Elasticsearch/OpenSearch,
-Neo4j, ArangoDB, InfluxDB, Milvus, and Couchbase retain deterministic contract/SDK-shape coverage
-until dedicated live acceptance is added.
+Green Tier A가 모든 adapter blanket claim은 아닙니다. Elasticsearch/OpenSearch/Neo4j/ArangoDB/InfluxDB/Milvus/Couchbase는 dedicated live acceptance 전 deterministic contract coverage입니다.
 
-Tier B covers hosted-only or credential-gated vendors such as Pinecone, DynamoDB, Azure Cosmos DB,
-and Amazon Neptune. These checks remain manual or scheduled with repository/environment secrets and
-must not become ordinary pull-request requirements. Their artifacts must record the exact client
-version, target/service identity that is safe to disclose, and the same bounded-contract outcomes as
-Tier A. Missing hosted credentials are a documented non-goal for ordinary CI, not evidence of live
-vendor acceptance.
+Tier B는 Pinecone/DynamoDB/Azure Cosmos/Neptune 같은 hosted/credential-gated vendor이며 manual/scheduled secret environment에서만 실행합니다. Artifact는 exact client version, safe target identity, bounded outcomes를 기록합니다. Missing hosted credential은 ordinary CI non-goal입니다.
 
-For a release that changes native database adapters, the release checklist requires a recent green
-current-`main` Tier A compatibility run for the affected representative families. Public Internet
-provider smokes remain non-blocking because external availability is outside SchemaRouter's control.
+Native DB adapter 변경 release는 affected representative family의 recent green current-main Tier A run을 요구합니다. Public Internet provider smoke는 non-blocking입니다.
 
 ## External compatibility checks
 
-The `Compatibility Smoke` workflow runs weekly and can also be triggered manually for the
-protocol compatibility matrix (OpenAPI, OPTIMADE, GraphQL, OData, OpenRPC, and MCP), provider-first
-Materials Project/Crossref/Tavily evidence, plus the latest stable SchemaRouter package published on
-PyPI. The PyPI
-smoke separately forces wheel and sdist installation, runs `pip check`, and executes a public API
-scenario from outside the repository checkout. A dedicated isolated smoke installs only
-`schemarouter[mcp,jev,otel]` so those integrations cannot accidentally rely on framework
-transitive dependencies. A companion combined published-extras smoke resolves
-`schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]` from PyPI and executes each framework
-bridge through the installed stable package rather than the source checkout.
+Weekly/manual `Compatibility Smoke`는 OpenAPI/OPTIMADE/GraphQL/OData/OpenRPC/MCP, Materials Project/Crossref/Tavily, latest stable PyPI package를 검증합니다. PyPI smoke는 forced wheel/sdist, pip check, checkout 밖 public scenario를 실행합니다. Isolated mcp/jev/otel과 combined extras smoke도 source checkout이 아닌 stable package로 bridge를 실행합니다.
 
-External-service failures are compatibility signals, not pull-request blockers, because third-party
-availability is outside SchemaRouter's control.
-
-Live decision-model benchmarking is excluded from required CI. Run Jev explicitly
-with `TYPESAFE_API_KEY` and `--jev`, run local Laya with `--laya`, or run a trusted local Ollama
-model with `--ollama-model <installed-model>`.
+External-service failure는 third-party availability 때문에 PR blocker가 아닌 compatibility signal입니다. Live decision model은 required CI에서 제외하며 Jev/Laya/Ollama는 explicit benchmark로 실행합니다.
 
 ## Live OpenAPI smoke
 
-The public OpenAPI smoke imports and executes against APIs.guru.
-
-The default source is:
+APIs.guru를 import/execute합니다.
 
 ```text
 https://api.apis.guru/v2/openapi.yaml
 ```
 
-Set `SCHEMAROUTER_LIVE_OPENAPI_URL` when running the smoke script locally to use another compatible
-service.
+Local에서는 `SCHEMAROUTER_LIVE_OPENAPI_URL`로 다른 compatible service를 지정할 수 있습니다.
 
 ## Release interpretation
 
-A green required CI proves package and protocol behavior under controlled conditions. Recent green
-external smokes provide additional evidence that remote adapters remain compatible with real public
-services. Both should be reviewed before a release candidate is promoted.
-
+Green required CI는 controlled package/protocol behavior를 증명하고 recent external smoke는 real public service compatibility의 추가 evidence입니다. Release candidate 전 둘 다 review합니다.
 
 ## Scheduled live-smoke artifacts
 
-The non-blocking adapter/provider matrix, published-PyPI, and published-integration compatibility
-jobs emit machine-readable JSON artifacts. Provider-first jobs retain separate Materials Project,
-Crossref, and Tavily compatibility reports in addition to the adapter reports. The adapter matrix includes public OpenAPI, OPTIMADE, GraphQL, and
-OData evidence plus pinned-reference OpenRPC and MCP Streamable HTTP evidence. Reports include a schema version, UTC generation time, SchemaRouter version,
-adapter/source identity, runtime environment, success/failure state, and bounded success details.
-On failure, only the exception type is recorded; exception messages are omitted.
+Non-blocking adapter/provider matrix, PyPI, integration job은 machine-readable JSON artifact를 생성합니다. Provider-first는 MP/Crossref/Tavily separate report, adapter matrix는 public OpenAPI/OPTIMADE/GraphQL/OData + pinned OpenRPC/MCP evidence를 포함합니다.
 
-GitHub Actions retains these artifacts for 30 days. The unified
-`adapter-compatibility-matrix.json` and `adapter-compatibility-matrix.md` artifacts summarize the
-per-adapter reports and are also written to the workflow step summary. This makes compatibility
-drift inspectable without turning live third-party availability into a release-blocking gate. The
-raw JSON remains the source of truth for any later history/dashboard tooling. See
-[Live adapter compatibility matrix](guides/live-compatibility-matrix.md) for evidence policy and
-provider/reference choices.
+Report는 schema version, UTC time, SchemaRouter version, adapter/source identity, runtime environment, success/failure, bounded details를 기록하며 failure에서는 exception type만 기록하고 message는 생략합니다.
+
+Artifacts는 30일 retain합니다. Unified `adapter-compatibility-matrix.json/.md`가 per-adapter report를 summarize하고 workflow summary에도 씁니다. Raw JSON이 future history/dashboard의 source of truth입니다. [Live adapter compatibility matrix](guides/live-compatibility-matrix.md) 참고.

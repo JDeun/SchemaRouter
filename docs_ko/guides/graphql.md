@@ -1,7 +1,6 @@
 # GraphQL
 
-SchemaRouter can introspect a GraphQL endpoint and compile its root query and mutation fields into
-the canonical `ToolSpec -> EndpointSpec -> ParameterSpec -> FieldSpec` model.
+SchemaRouter는 GraphQL endpoint를 introspect하고 root query/mutation field를 canonical `ToolSpec -> EndpointSpec -> ParameterSpec -> FieldSpec` 모델로 컴파일할 수 있습니다.
 
 ## GraphQL endpoint 등록
 
@@ -12,28 +11,28 @@ router = await SchemaRouter.from_url(
 )
 ```
 
-SchemaRouter issues a bounded introspection query against the same URL and imports:
+SchemaRouter는 같은 URL에 제한된 introspection query를 보내 다음을 가져옵니다.
 
-- root query fields as read-only endpoints;
-- root mutation fields as non-read-only endpoints;
-- field arguments as typed `ParameterSpec` values;
-- object and input-object types as JSON Schema;
-- nested output fields as planner-visible `FieldSpec` paths;
-- enums as JSON Schema enum values.
+- root query field → read-only endpoint
+- root mutation field → non-read-only endpoint
+- field argument → typed `ParameterSpec`
+- object/input-object type → JSON Schema
+- nested output field → planner-visible `FieldSpec` path
+- enum → JSON Schema enum value
 
-Subscriptions are detected but not imported in the first implementation because they require a
-long-lived stream lifecycle rather than an ordinary request/response `ToolCall`.
+subscription은 감지하지만 일반 request/response `ToolCall`과 달리 장기 stream lifecycle이 필요하므로 초기 구현에서는 가져오지 않습니다.
 
 ## Field selection을 GraphQL selection set으로 변환
 
-If the plan asks for:
+plan이 `id`, `metadata.source`를 요청하면 SchemaRouter는 이에 해당하는 GraphQL selection을 전송합니다.
 
 ```text
 id
 metadata.source
 ```
 
-SchemaRouter sends a selection equivalent to:
+이는 사후 payload filter가 아니라 native server-side field projection입니다. 선택 field가 complex object인데 하위 field가 명시되지 않았다면 전체 subtree를 암묵적으로 요청하지 않고 제한된 기본 scalar/identifier selection을 선택합니다.
+
 
 ```graphql
 query SchemaRouter($id: ID!) {
@@ -46,26 +45,18 @@ query SchemaRouter($id: ID!) {
 }
 ```
 
-This is native server-side field projection, not a post-hoc payload filter.
+## 권한은 로컬에 유지
 
-When a selected field is itself a complex object and no descendant is selected explicitly,
-SchemaRouter chooses a bounded default scalar/identifier selection rather than requesting the whole
-subtree implicitly.
+GraphQL introspection에서 root field가 `Query`인지 `Mutation`인지 알 수 있지만 이는 권한을 **좁히는 데만** 사용합니다.
 
-## Authority remains local
+- root query → `read_only=True`
+- root mutation → `read_only=False`
 
-GraphQL schema introspection tells SchemaRouter whether a root field belongs to `Query` or
-`Mutation`. This is used only to **narrow** authority:
+mutation description/tag/name은 mutation 권한을 부여하지 않습니다. 기본 `ExecutionPolicy`는 신뢰된 로컬 정책이 허용하기 전까지 mutation을 거부합니다.
 
-- root query -> `read_only=True`;
-- root mutation -> `read_only=False`.
+## Secret
 
-Mutation descriptions, tags, or names never grant mutation permission. The default
-`ExecutionPolicy` still denies mutations until trusted local policy allows them.
-
-## Secrets
-
-Authentication belongs to trusted runtime headers:
+인증은 trusted runtime header에 둡니다.
 
 ```python
 router = await SchemaRouter.from_url(
@@ -76,20 +67,16 @@ router = await SchemaRouter.from_url(
 )
 ```
 
-These headers are not planner-selectable arguments and are not copied into the canonical tool
-contract.
+이 header들은 planner가 선택하는 argument가 아니며 canonical tool contract에 복사되지 않습니다.
 
-## Safety boundaries
+## 안전 경계
 
-- only HTTP(S) endpoints are accepted;
-- redirects are not followed automatically;
-- introspection and execution responses are size-bounded;
-- recursive type traversal is depth-bounded;
-- list fields use the same record-preserving item contract as other adapters; nested list children
-  are named like `results[].title` while GraphQL selection sets remain normal
-  `results { title }`;
-- GraphQL execution errors fail the invocation;
-- ordinary SchemaRouter input/output validation still applies after transport execution.
+- HTTP(S) endpoint만 허용
+- redirect 자동 추적 안 함
+- introspection/execution response 크기 제한
+- recursive type traversal depth 제한
+- list field는 다른 adapter와 같은 record-preserving item contract 사용
+- GraphQL execution error는 invocation 실패 처리
+- transport 실행 후에도 일반 SchemaRouter input/output validation 적용
 
-If a GraphQL service disables introspection, use a trusted local adapter/plugin or a declarative
-contract rather than inferring the schema from arbitrary responses.
+GraphQL service가 introspection을 비활성화했다면 임의 response에서 schema를 추론하지 말고 신뢰된 local adapter/plugin 또는 declarative contract를 사용하세요.

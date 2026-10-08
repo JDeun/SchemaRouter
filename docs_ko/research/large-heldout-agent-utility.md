@@ -1,218 +1,192 @@
-# 0.14 large held-out agent-utility benchmark
+# 0.14 대규모 held-out agent-utility 벤치마크
 
-추적 issue: #432
+Tracking issue: #432
 
-이 benchmark는 통제된 B1/B2 experiment 이후의 generalization layer입니다.
-B1/B2 row-level outcome을 사용하지 않은 상태로 freeze되었습니다.
+이 benchmark는 controlled B1/B2 experiment 이후의 generalization layer입니다. B1/B2의 row-level outcome을 사용하지 않고 동결합니다.
 
 ## 새로운 surface가 필요한 이유
 
-B1/B2는 catalog-size repeat 전반에서 23개 semantic task를 재사용합니다. 이는 mechanism replication에는 적합하지만 catalog repeat는 동일 task의 repeated measure이므로 independent sample로 계산할 수 없습니다.
+B1/B2는 catalog-size repeat 전반에서 23개 semantic task를 재사용합니다. 이는 mechanism replication에는 적절하지만 catalog repeat는 동일 task의 repeated measure이므로 독립 sample로 계산할 수 없습니다.
 
-따라서 held-out benchmark는 **780개의 independent semantic task**를 사용합니다.
+따라서 held-out benchmark는 **780개의 독립 semantic task**를 사용합니다.
 
-## Frozen population design
+## 동결된 population 설계
 
-780개 task는 다음과 같이 cross-balance합니다:
+780개 task는 다음과 같이 교차 균형화됩니다.
 
-- 13 task strata;
-- 6 language strata;
-- 10 independent semantic tasks per task-stratum × language cell.
+- 13개 task strata
+- 6개 language strata
+- 각 task-stratum × language cell당 10개의 독립 semantic task
 
-This gives:
+따라서 다음과 같습니다.
 
-- 60 independent tasks per task stratum;
-- 130 independent tasks per language;
-- 780 total independent semantic tasks.
+- task stratum당 독립 task 60개
+- language당 독립 task 130개
+- 총 780개의 독립 semantic task
 
-A task belongs to exactly one language stratum. The benchmark does **not** create six
-translations of one semantic task and count those translations as independent tasks.
+각 task는 정확히 하나의 language stratum에 속합니다. 하나의 semantic task를 6개 언어로 번역한 뒤 이를 6개의 독립 task로 계산하지 않습니다.
 
 Task strata:
 
-1. single-tool exact;
-2. two-step state-dependent;
-3. three-step state-dependent;
-4. sibling-operation ambiguity;
-5. typed numeric values and units;
-6. identifier/provenance propagation;
-7. read vs write siblings;
-8. destructive vs non-destructive siblings;
-9. insufficient information;
-10. recoverable execution failure;
-11. missing capability / unsupported;
-12. semantically adjacent distractors;
-13. genuine OOD.
+1. single-tool exact
+2. two-step state-dependent
+3. three-step state-dependent
+4. sibling-operation ambiguity
+5. typed numeric values and units
+6. identifier/provenance propagation
+7. read vs write siblings
+8. destructive vs non-destructive siblings
+9. insufficient information
+10. recoverable execution failure
+11. missing capability / unsupported
+12. semantically adjacent distractors
+13. genuine OOD
 
 Languages:
 
-- English;
-- Korean;
-- Spanish;
-- Japanese;
-- German;
-- realistic mixed-language identifiers/query text.
+- English
+- Korean
+- Spanish
+- Japanese
+- German
+- realistic mixed-language identifiers/query text
 
 ## Catalog scaling
 
-Retrieval-only characterization은 다음 nested catalog를 사용합니다:
+Retrieval-only characterization에서는 다음 nested catalog를 사용합니다.
 
-- 100;
-- 250;
-- 500;
-- 1000 endpoints.
+- 100
+- 250
+- 500
+- 1000 endpoints
 
-Downstream agent comparison은 다음을 사용합니다:
+Downstream agent comparison에서는 다음을 사용합니다.
 
-- 100;
-- 250;
-- 500 endpoints.
+- 100
+- 250
+- 500 endpoints
 
-The 1000-endpoint stratum is retained for retrieval scaling without forcing FULL into
-a predictably infeasible context regime for many 65k-class agents.
+1000-endpoint stratum은 retrieval scaling을 위해 유지하지만 많은 65k-class agent에서 FULL을 예측 가능한 infeasible context regime으로 강제하지는 않습니다.
 
-Catalog repeats are nested inside `semantic_task_id`.
+Catalog repeat는 `semantic_task_id` 내부에 nested됩니다.
 
 ## Conditions
 
-Held-out agent comparison은 다음 condition을 freeze합니다:
+Held-out agent comparison은 다음을 동결합니다.
 
-- FULL;
-- SR-5;
-- SR-10;
-- SR-PROGRESSIVE;
-- ORACLE.
+- FULL
+- SR-5
+- SR-10
+- SR-PROGRESSIVE
+- ORACLE
 
-No adaptive #430 policy was promoted. A later separately preregistered structural K3
-candidate also failed its strong-agent K3-vs-K5 task-pass promotion gate, so K3 is not carried into
-the held-out condition manifest. #431 state-aware corrective retrieval remains the active optional
-condition gate before the manifest is frozen.
+Adaptive #430 policy는 승격되지 않았습니다. 이후 별도로 preregister된 structural K3 candidate 역시 strong-agent K3-vs-K5 task-pass promotion gate에 실패했으므로 K3는 held-out condition manifest로 가져가지 않습니다. #431 state-aware corrective retrieval은 manifest가 동결되기 전까지 active optional condition gate로 남습니다.
 
-SchemaRouter ranking scores/positions remain hidden from the downstream agent.
-Visible candidates are sorted lexicographically by registered route ID.
+SchemaRouter ranking score/position은 downstream agent에 노출하지 않습니다. Visible candidate는 registered route ID의 사전식 순서로 정렬합니다.
 
-## Precision and the -2pp margin
+## Precision과 -2pp margin
 
-The practical engineering margin remains **-2 percentage points** versus FULL.
+실용적인 engineering margin은 FULL 대비 **-2 percentage points**를 유지합니다.
 
-The sample size is **not** chosen from observed B1 or B2 effects.
+Sample size는 관측된 B1/B2 effect에서 선택하지 않습니다.
 
-For a paired task-level difference bounded in [-1, 1], a conservative worst-case
-normal-approximate 95% half-width is:
+[-1, 1] 범위의 paired task-level difference에 대해 보수적인 worst-case normal-approximate 95% half-width는 다음과 같습니다.
 
 ```text
 1.96 / sqrt(n)
 ```
 
-At `n = 780`, that worst-case half-width is about 7.02pp.
+`n = 780`에서 worst-case half-width는 약 7.02pp입니다.
 
-A worst-case design guaranteed to have a 2pp half-width would require about
-**9,604 independent semantic tasks**, which is not a practical downstream-agent
-benchmark at the planned catalog/condition matrix.
+2pp half-width를 보장하는 worst-case design은 약 **9,604개의 독립 semantic task**가 필요하며, 계획된 catalog/condition matrix의 downstream-agent benchmark로는 실용적이지 않습니다.
 
-So:
+따라서:
 
-- -2pp remains an engineering threshold;
-- the preregistered task-cluster CI is reported without reinterpretation;
-- a statistical non-inferiority statement is allowed only if the actual frozen
-  paired 95% CI lower bound clears -2pp;
-- otherwise the result may support held-out generalization and uncertainty reporting,
-  but not a statistical non-inferiority claim.
+- -2pp는 engineering threshold로 유지
+- preregistered task-cluster CI는 재해석 없이 보고
+- 실제 frozen paired 95% CI lower bound가 -2pp를 넘는 경우에만 statistical non-inferiority statement 허용
+- 그렇지 않으면 held-out generalization과 uncertainty reporting을 지지할 수는 있지만 statistical non-inferiority claim은 할 수 없음
 
-Illustrative precision values are included in the preregistration only to document the
-design tradeoff; they are not fitted from B1/B2.
+Preregistration의 illustrative precision 값은 design tradeoff를 문서화하기 위한 것이며 B1/B2에서 fitting한 값이 아닙니다.
 
 ## Primary inference
 
-The primary interval uses a **stratified task-cluster bootstrap**:
+Primary interval은 **stratified task-cluster bootstrap**을 사용합니다.
 
-- unit: `semantic_task_id`;
-- strata: task type × language;
-- 78 cells;
-- resample 10 task IDs within each cell;
-- preserve catalog repeats inside each sampled task;
-- 10,000 iterations;
-- seed 20260929;
-- 95% interval.
+- unit: `semantic_task_id`
+- strata: task type × language
+- 78 cells
+- 각 cell에서 task ID 10개 resample
+- 각 sampled task 내부의 catalog repeat 유지
+- 10,000 iterations
+- seed 20260929
+- 95% interval
 
-This prevents catalog-size pseudoreplication while preserving the benchmark's balanced
-task/language population.
+이를 통해 catalog-size pseudoreplication을 방지하면서 benchmark의 균형 잡힌 task/language population을 유지합니다.
 
 ## Claim gate
 
-A broad SchemaRouter agent-utility claim requires all of the following:
+광범위한 SchemaRouter agent-utility claim을 하려면 다음을 모두 만족해야 합니다.
 
-1. B2 strong-agent replication is available;
-2. the same deployable SR condition passes the held-out product gate;
-3. required-tool-set retrieval remains at least 97%;
-4. tool-schema tokens are at most 40% of FULL;
-5. total input tokens are lower than FULL;
-6. unauthorized destructive executions remain zero;
-7. the held-out paired 95% CI lower bound versus FULL is at least -2pp;
-8. context-reduction direction is consistent with Phase A, B1 and B2.
+1. B2 strong-agent replication이 존재
+2. 동일한 deployable SR condition이 held-out product gate 통과
+3. required-tool-set retrieval이 최소 97%
+4. tool-schema token이 FULL의 최대 40%
+5. total input token이 FULL보다 적음
+6. unauthorized destructive execution이 0
+7. FULL 대비 held-out paired 95% CI lower bound가 최소 -2pp
+8. context-reduction 방향이 Phase A, B1, B2와 일치
 
-If the CI does not clear -2pp, the paper/README must report the uncertainty rather than
-promote the engineering threshold into a statistical theorem.
+CI가 -2pp를 넘지 못하면 paper/README는 uncertainty를 그대로 보고해야 하며 engineering threshold를 statistical theorem으로 승격해서는 안 됩니다.
 
-## Pre-B2-terminal authoring scaffold
+## B2 terminal 이전 authoring scaffold
 
-A deterministic scaffold may be prepared before B2 is terminal, but it is limited to
-**authoring slots**. It freezes only:
+B2가 terminal이 되기 전 deterministic scaffold를 준비할 수 있지만 **authoring slot**으로 제한합니다. 다음만 동결합니다.
 
-- 780 unique `semantic_task_id` values;
-- one preregistered task stratum per ID;
-- one preregistered language stratum per ID;
-- ten independent slots in each of the 78 task-stratum × language cells.
+- 780개의 unique `semantic_task_id`
+- ID당 하나의 preregistered task stratum
+- ID당 하나의 preregistered language stratum
+- 78개 task-stratum × language cell 각각에 10개의 독립 slot
 
-The scaffold does **not** generate or contain:
+Scaffold는 다음을 생성하거나 포함하지 않습니다.
 
-- task/query wording;
-- required/gold routes;
-- expected answers;
-- executor states or deterministic tool outputs;
-- catalogs or candidate sets;
-- scores or labels.
+- task/query wording
+- required/gold route
+- expected answer
+- executor state 또는 deterministic tool output
+- catalog 또는 candidate set
+- score 또는 label
 
-The generator is `scripts/generate_agent_utility_v3_heldout_authoring_plan.py`. B2 is
-now terminal; however actual held-out content/inference remains controlled by the #500 conveyor.
-The manifest is frozen only after the preregistered structural-K gate and #431 corrective gate are
-terminal. The structural K3 gate is already terminal negative; #431 remains active.
-
+Generator는 `scripts/generate_agent_utility_v3_heldout_authoring_plan.py`입니다. B2는 현재 terminal이지만 실제 held-out content/inference는 #500 conveyor가 계속 통제합니다. Manifest는 preregistered structural-K gate와 #431 corrective gate가 terminal이 된 뒤에만 동결됩니다. Structural K3 gate는 이미 terminal negative이며 #431은 active 상태입니다.
 
 ## Corpus identity validation
 
-Before any generated corpus can be frozen or scored, run
-`scripts/validate_agent_utility_corpus_identity.py` against the authored rows.
+생성된 corpus를 freeze하거나 score하기 전에 authored row에 대해 `scripts/validate_agent_utility_corpus_identity.py`를 실행합니다.
 
-The validator is narrower than the later semantic scorer. It enforces only
-pre-scoring integrity that must not depend on benchmark outcomes:
+Validator는 이후 semantic scorer보다 좁은 범위만 검사합니다. Benchmark outcome에 의존해서는 안 되는 pre-scoring integrity만 강제합니다.
 
-- every preregistered authoring slot appears exactly once;
-- semantic task IDs match the frozen slot plan;
-- task/answer stratum and language assignments cannot drift;
-- query text must be non-empty;
-- normalized query text must be unique across semantic tasks;
-- stable identity/query-content SHA-256 values are emitted for the freeze manifest.
+- 모든 preregistered authoring slot이 정확히 한 번 존재
+- semantic task ID가 frozen slot plan과 일치
+- task/answer stratum 및 language assignment drift 금지
+- query text는 비어 있지 않아야 함
+- normalized query text는 semantic task 사이에서 unique해야 함
+- freeze manifest를 위한 stable identity/query-content SHA-256 출력
 
-The validator does **not** generate content, approve content quality, authorize inference,
-or inspect model outcomes.
+Validator는 content를 생성하거나 content quality를 승인하거나 inference를 허가하거나 model outcome을 검사하지 않습니다.
 
 ## Independence rules
 
-The final 780 tasks may not use:
+최종 780개 task는 다음을 사용할 수 없습니다.
 
-- B1 task wording or paraphrases;
-- B1 row-level failures;
-- B2 task outcomes or failures;
-- #434 DEV queries;
-- post-scoring task deletion;
-- post-scoring prompt/K/representation tuning.
+- B1 task wording 또는 paraphrase
+- B1 row-level failure
+- B2 task outcome 또는 failure
+- #434 DEV query
+- scoring 이후 task 삭제
+- scoring 이후 prompt/K/representation tuning
 
-All task text, executor state transitions, deterministic outputs, catalogs, candidate
-sets, and hashes are frozen before held-out inference.
+모든 task text, executor state transition, deterministic output, catalog, candidate set, hash는 held-out inference 전에 동결합니다.
 
-## Boundary with #424
+## #424와의 경계
 
-This benchmark measures retrieval, tool use, execution state, efficiency and safety.
-It does not by itself establish final-answer factuality, unit correctness or provenance
-quality. Those claims remain scoped to #424.
+이 benchmark는 retrieval, tool use, execution state, efficiency, safety를 측정합니다. 그 자체로 final-answer factuality, unit correctness 또는 provenance quality를 입증하지 않습니다. 해당 주장은 계속 #424 범위에 속합니다.
