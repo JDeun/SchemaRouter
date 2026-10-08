@@ -53,3 +53,15 @@ each task used a fresh ephemeral session. It rejects symlinked markers.
 This is a **post-run runtime identity check, not a SafeAct score**. Hidden
 evaluator contents, gold labels, and evaluation records are not read or
 exposed to the agent. Official evaluator scores remain a separate output.
+
+
+## Verified official V1 reference evaluator (no model, no experiment effect)
+
+The pinned official evaluator completed all **131/131** V1 reference cases in
+`--simulate` mode on 2026-10-08. See
+[`benchmarks/safeact-v1-official-reference-20261008.json`](../../../benchmarks/safeact-v1-official-reference-20261008.json)
+for the exact upstream SHA, mode, checks and
+[GitHub Actions run](https://github.com/JDeun/SchemaRouter/actions/runs/37766251911).
+This execution does **not** constitute the three-arm model benchmark; the
+reference simulator uses official gold information and is strictly isolated
+from the agent runtime and Evidence Contract authoring.
