@@ -1678,32 +1678,29 @@ Calibration/blind는 blocked 및 untouched 상태를 유지합니다.
 
 Active experiments:
 
-1. #289 / PR #290 — Qwen3 external semantic capability verifier
-   - immutable BGE-M3 raw top-1 route authority;
-   - Qwen3-Reranker-0.6B veto only;
-   - no SchemaRouter verifier training;
-   - eight fixed yes-probability thresholds.
+1. #289 / PR #290 — Qwen3 외부 의미 기반 기능 검증기
+   - 변경할 수 없는 BGE-M3 원시 Top-1 경로 선택 권한;
+   - Qwen3-Reranker-0.6B는 거부권만 보유;
+   - SchemaRouter 데이터로 검증기를 학습하지 않음;
+   - 고정된 yes 확률 임계값 8개.
 
-2. #299 / PR #300 — pinned Kev-0.8B choice + noul
-   - pinned Kev source and Hub model revisions;
-   - 16 registered routes only;
-   - native System One `choice` and `noul` in one request;
-   - separate fixed choice-confidence and noul-capability rule families.
+2. #299 / PR #300 — 고정된 Kev-0.8B의 choice + noul
+   - 고정된 Kev 소스 및 Hub 모델 리비전;
+   - 등록된 경로 16개만 허용;
+   - 단일 요청에 네이티브 System One `choice` 및 `noul` 사용;
+   - 선택 신뢰도와 noul 기능 판단에 대한 별도의 고정 규칙군.
 
-3. #301 / PR #302 — pinned Laya noul veto
-   - BGE-M3 raw registered top-1 remains sole route authority;
-   - Laya may only return native `P(true)` capability evidence for that winner;
+3. #301 / PR #302 — 고정된 Laya noul 거부권
+   - BGE-M3 원시 등록 Top-1만 경로를 선택할 수 있음;
+   - Laya는 해당 승자에 대한 네이티브 `P(true)` 기능 근거만 반환 가능;
    - `laya==0.3.11`;
-   - exact Hub family revision `458d7563c5cab85ff9f7f6e06cf2dd166fb697e2`;
-   - the workflow materializes the immutable Hub snapshot locally before model construction;
-   - eight fixed global `P(true)` thresholds.
+   - 정확한 Hub 계열 리비전 `458d7563c5cab85ff9f7f6e06cf2dd166fb697e2`;
+   - 워크플로가 모델을 구성하기 전에 불변 Hub 스냅샷을 로컬에 준비;
+   - 고정 전역 `P(true)` 임계값 8개.
 
 당시 architectural hypothesis는 다음처럼 더 좁아졌습니다:
 
-> route ranking and open-set capability acceptance should remain separate concerns. High-capacity
-> registered-route ranking may stay with BGE-M3, while externally pretrained typed decision models
-> are evaluated as replaceable capability boundaries. Direct decision-model route authority is not
-> assumed merely because a provider supports `choice`.
+> 경로 순위 결정과 개방 집합 기능 승인 여부는 별개의 문제로 유지해야 합니다. 등록된 경로를 구별하는 고용량 순위 결정은 BGE-M3가 담당하되, 외부에서 사전학습한 타입 기반 결정 모델은 교체 가능한 기능 경계로 평가합니다. 제공자가 `choice`를 지원한다는 이유만으로 직접적인 경로 선택 권한을 인정하지는 않습니다.
 
 System One wire compatibility는 infrastructure이지 quality evidence가 아닙니다. Every model/checkpoint still
 requires the same frozen v4 gate and, if promoted, a new zero-overlap fresh-surface confirmation.
@@ -1712,23 +1709,22 @@ requires the same frozen v4 gate and, if promoted, a new zero-overlap fresh-surf
 
 The first externally pretrained reranker-as-capability-verifier experiment is terminal and rejected.
 
-Frozen protocol:
-- BGE-M3 raw registered top-1 remained sole route authority;
-- verifier: `Qwen/Qwen3-Reranker-0.6B` at revision
-  `e61197ed45024b0ed8a2d74b80b4d909f1255473`;
-- no SchemaRouter verifier training;
-- one fixed capability instruction;
-- eight global yes-probability thresholds;
-- verifier veto-only;
-- failed #270/#287 fresh sets, calibration, and blind evidence excluded.
+동결된 프로토콜:
+- BGE-M3 원시 등록 Top-1만 경로 선택 권한을 보유;
+- 검증기: 리비전 `e61197ed45024b0ed8a2d74b80b4d909f1255473`의 `Qwen/Qwen3-Reranker-0.6B`;
+- SchemaRouter 데이터로 검증기 학습 없음;
+- 하나의 고정 기능 지시문 사용;
+- 전역 yes 확률 임계값 8개;
+- 검증기는 거부만 가능;
+- 실패한 #270/#287의 새로운 집합, 보정·블라인드 근거는 제외.
 
-Result:
-- raw BGE supported top-1: 88.4549%;
-- passing rules: 0/8;
-- p=0.50: 82.8993% exact / 77.9514% near rejection / 97.2222% OOD / 19.9074% false-route;
-- p=0.98: 68.7500% exact / 97.3958% near rejection / 100% OOD / 2.3148% false-route;
-- p=0.99: 62.7604% exact / 99.1319% near rejection / 100% OOD / 0.7716% false-route;
-- p=0.995: 52.7778% exact / 100% near rejection / 100% OOD / 0% false-route.
+결과:
+- 원시 BGE의 지원 사례 Top-1: 88.4549%;
+- 통과 규칙: 0/8;
+- p=0.50: 정확도 82.8993% / 유사 도메인 거부율 77.9514% / OOD 97.2222% / 잘못된 경로 19.9074%;
+- p=0.98: 정확도 68.7500% / 유사 도메인 거부율 97.3958% / OOD 100% / 잘못된 경로 2.3148%;
+- p=0.99: 정확도 62.7604% / 유사 도메인 거부율 99.1319% / OOD 100% / 잘못된 경로 0.7716%;
+- p=0.995: 정확도 52.7778% / 유사 도메인 거부율 100% / OOD 100% / 잘못된 경로 0%.
 
 Mean verifier P(yes):
 - correct supported winner: 0.9266;
@@ -1745,11 +1741,11 @@ Runtime:
 
 Decision: direct generic reranker yes/no gating을 reject합니다. Quality가 실패했으므로 runtime optimization으로 이를 rescue할 수 없습니다.
 
-Provenance:
-- source revision: `68e812ab5c72bd42664e21f8c9f62a760465cb03`;
-- workflow: `36363863046`;
-- artifact: `10947604859`;
-- artifact digest: `sha256:4e89707dce04d37aece8e803e00751ea86fdd12e5fd9282531ccecc830a9c96c`.
+출처 추적:
+- 소스 리비전: `68e812ab5c72bd42664e21f8c9f62a760465cb03`;
+- 워크플로: `36363863046`;
+- 산출물: `10947604859`;
+- 산출물 다이제스트: `sha256:4e89707dce04d37aece8e803e00751ea86fdd12e5fd9282531ccecc830a9c96c`.
 
 The active external typed-decision paths are now #299 (Kev) and #301 (pinned Laya native noul).
 #303 remains a preregistered top-K provider-neutral contingency and is not active yet.
@@ -1759,12 +1755,12 @@ The active external typed-decision paths are now #299 (Kev) and #301 (pinned Lay
 The fast-moving Jev/System One ecosystem is tracked separately from core product code in
 `benchmarks/system-one-candidate-registry.json`.
 
-The registry records, for each discovery candidate:
-- repository and license status;
-- wire protocol or callable integration path;
-- current benchmark status;
-- model-family caveats;
-- the frozen promotion gate and intake checklist.
+레지스트리는 검색 후보마다 다음을 기록합니다.
+- 저장소와 라이선스 상태;
+- 전송 프로토콜 또는 호출 함수 연동 경로;
+- 현재 벤치마크 상태;
+- 모델 계열별 유의 사항;
+- 동결된 승격 게이트와 신규 접수 점검표.
 
 Current verified discovery entries include Laya, Kev, Decis, LiteVar System One, AnyJev,
 Bespoke Nimble, and System One Open.
@@ -1773,23 +1769,18 @@ Bespoke Nimble, and System One Open.
 
 > Model discovery는 mutable research metadata이고 execution authority와 provider contract는 stable product interface입니다.
 
-Wire-compatible models use `SystemOneDecisionBackend`. Non-wire typed models first enter through
-`CallableDecisionBackend` / `--decision-callable`. A permanent model-specific core integration
-is not required merely to test a new model.
+전송 규약이 호환되는 모델은 `SystemOneDecisionBackend`를 사용합니다. 그 외 타입 기반 모델은 먼저 `CallableDecisionBackend` / `--decision-callable`로 연결합니다. 새로운 모델을 시험한다는 이유만으로 코어에 모델 전용 연동을 영구적으로 추가할 필요는 없습니다.
 
-Infrastructure supporting this policy is now merged:
-- #291 / PR #292 — generic System One backend;
-- #297 / PR #298 — generic System One benchmark CLI;
-- #304 / PR #305 — arbitrary bounded decision callable benchmark path, merged as
-  `c9678b95a6dc592a1c3b850a6aea8b1675ff94a4`;
-- #306 / PR #308 — reusable third-party `schemarouter.decision_backends` entry-point
-  discovery/loading, benchmark plugin selection, security documentation, and candidate-registry
-  validation, squash-merged as `e782ebb87f80cdb2cefe5a716f77f546cd6309b1`.
+이 정책을 지원하는 인프라는 다음과 같이 병합됐습니다.
+- #291 / PR #292 — 범용 System One 백엔드;
+- #297 / PR #298 — 범용 System One 벤치마크 CLI;
+- #304 / PR #305 — 임의의 제한 결정 호출 함수를 벤치마크하는 경로. `c9678b95a6dc592a1c3b850a6aea8b1675ff94a4`로 병합;
+- #306 / PR #308 — 재사용 가능한 타사 `schemarouter.decision_backends` 진입점의 검색·로드, 벤치마크 플러그인 선택, 보안 문서 및 후보 레지스트리 검증. `e782ebb87f80cdb2cefe5a716f77f546cd6309b1`로 스쿼시 병합.
 
-The final extension hierarchy is:
-1. System One wire-compatible provider → `SystemOneDecisionBackend`;
-2. one-off bounded research adapter → `CallableDecisionBackend`;
-3. reusable non-wire integration → explicit third-party entry-point plugin.
+최종 확장 계층 구조는 다음과 같습니다.
+1. System One 전송 규약 호환 제공자 → `SystemOneDecisionBackend`;
+2. 일회성 제한 연구 어댑터 → `CallableDecisionBackend`;
+3. 재사용 가능한 비호환 연동 → 명시적인 타사 진입점 플러그인.
 
 Discovery is metadata-only. Plugin code is imported only by exact trusted name; plugin execution is
 not sandboxed, and local finite-option validation remains authoritative.
@@ -1798,20 +1789,20 @@ not sandboxed, and local finite-option validation remains authoritative.
 
 The winner-only Laya capability-boundary experiment is terminal and rejected.
 
-Frozen protocol:
-- BGE-M3 raw registered top-1 remained sole route authority;
-- Laya was veto-only through native `noul`;
+동결된 프로토콜:
+- BGE-M3 원시 등록 Top-1만 경로 선택 권한을 보유;
+- Laya는 네이티브 `noul`을 통한 거부권만 행사;
 - `laya==0.3.11`;
-- exact Hub family revision `458d7563c5cab85ff9f7f6e06cf2dd166fb697e2` was materialized locally before inference;
-- eight fixed global P(true) thresholds;
-- failed fresh surfaces, calibration, and blind evidence remained excluded.
+- 정확한 Hub 계열 리비전 `458d7563c5cab85ff9f7f6e06cf2dd166fb697e2`를 추론 전에 로컬에 준비;
+- 고정 전역 P(true) 임계값 8개;
+- 실패한 새로운 데이터 표면, 보정 및 블라인드 근거는 제외.
 
-Result:
-- raw BGE supported top-1: 88.4549%;
-- passing rules: 0/8;
-- p=0.50: 83.2465% exact / 7.9861% near rejection / 8.3333% OOD / 91.9753% false-route;
-- p=0.90: 5.2083% exact / 95.4861% near rejection / 91.6667% OOD / 4.9383% false-route;
-- p=0.95: 1.5625% exact / 99.4792% near rejection / 100% OOD / 0.4630% false-route.
+결과:
+- 원시 BGE 지원 사례 Top-1: 88.4549%;
+- 통과 규칙: 0/8;
+- p=0.50: 정확도 83.2465% / 유사 도메인 거부율 7.9861% / OOD 8.3333% / 잘못된 경로 91.9753%;
+- p=0.90: 정확도 5.2083% / 유사 도메인 거부율 95.4861% / OOD 91.6667% / 잘못된 경로 4.9383%;
+- p=0.95: 정확도 1.5625% / 유사 도메인 거부율 99.4792% / OOD 100% / 잘못된 경로 0.4630%.
 
 Mean P(true):
 - correct supported BGE winner: 0.6842;
@@ -1835,13 +1826,7 @@ Provenance:
 
 ### Consequence for staged top-4 Laya
 
-The staged #310 branch used the same Laya P(true) signal. It was closed without executing the
-manual research workflow. At p>=0.95, the first preregistered winner-only threshold satisfying the
-canonical false-route gate, only 18 of 1,019 already-correct BGE winners survive. Even granting the
-impossible best case that all remaining 133 supported rows are recovered from top-4 and exceed the
-same threshold, exact is bounded by 151/1152 = 13.1076%. Taking max P(true) over four candidates
-also cannot reduce unsupported acceptance relative to the winner-only candidate at the same
-threshold.
+준비해 두었던 #310 브랜치도 같은 Laya P(true) 신호를 사용했습니다. 수동 연구 워크플로는 실행하지 않고 종료했습니다. 사전등록된 조건에서 정식 잘못된 경로 게이트를 처음 만족하는 승자 전용 임계값 p>=0.95를 적용하면, 원래 정답인 BGE 승자 1,019개 중 18개만 남습니다. 나머지 지원 사례 133개를 Top-4에서 모두 찾아 동일 임계값을 통과한다고 가정하는 불가능한 최선의 경우에도 정확도 상한은 151/1152 = 13.1076%입니다. 네 후보의 P(true) 최댓값을 사용해도 같은 임계값에서 승자 전용 후보보다 미지원 요청의 승인을 줄일 수는 없습니다.
 
 #303 remains only as a provider-neutral top-K architecture contingency for a materially different
 model/checkpoint. The only active model-quality experiment at this checkpoint is pinned Kev-0.8B
@@ -1863,11 +1848,11 @@ The numeric 0.11 target remains:
 > Target operating point 자체는 tuning/development surface에서 이미 반복해서 달성했습니다.
 > 해결되지 않은 문제는 independent surface shift에서도 그 operating point를 보존하는 것입니다.
 
-Evidence:
-- grouped-OOF/frozen learned verifier reached the target on DEV/same-corpus;
-- #287 fresh confirmation then fell to 82.64% exact / 93.23% near rejection / 6.02% false-route;
-- generic Qwen3 capability gating (#289) and pinned Laya native noul (#301) both failed to provide a safer surface-invariant boundary;
-- direct Laya route authority (#293) was capacity-limited at 60.07% supported top-1.
+근거:
+- 그룹별 OOF 및 동결된 학습 검증기는 DEV·동일 코퍼스에서 목표에 도달;
+- #287의 새로운 확인에서는 정확도 82.64% / 유사 도메인 거부율 93.23% / 잘못된 경로 6.02%로 하락;
+- 범용 Qwen3 기능 게이트(#289)와 고정된 Laya 네이티브 noul(#301) 모두 데이터 표면에 견고한 안전 경계를 제공하지 못함;
+- Laya의 직접 경로 선택(#293)은 지원 사례 Top-1 60.07%로 능력의 한계가 드러남.
 
 따라서 research problem은 더 이상 일반적인 route-ranking accuracy가 아닙니다. BGE-M3 already exposes
 88.4549% raw supported top-1 capacity on the canonical DEV. The remaining bottleneck is a
@@ -1892,13 +1877,13 @@ permitted.
 
 A zero-new-inference Kev composition was preregistered before #299 result inspection.
 
-- BGE-M3 raw registered top-1 remains sole route authority;
-- the exact frozen #299 `supported_probability` is reused as veto-only evidence;
-- exact #299 per-row Kev request latency is reused for combined latency;
-- Kev route choice and choice confidence are ignored;
-- no new Kev model call is allowed;
-- eight fixed global thresholds are retained;
-- the manual workflow requires the exact terminal #299 artifact ID and validates its source run, artifact name, case IDs, probabilities, latency, execution errors, and authority violations before composition.
+- BGE-M3 원시 등록 Top-1만 경로 선택 권한을 유지;
+- 동결된 #299의 정확한 `supported_probability`를 거부 전용 근거로 재사용;
+- #299의 행별 Kev 요청 지연시간을 결합 지연시간 계산에 재사용;
+- Kev의 경로 선택과 선택 신뢰도는 무시;
+- 새로운 Kev 모델 호출은 금지;
+- 고정 전역 임계값 8개 유지;
+- 수동 워크플로는 정확한 #299 최종 산출물 ID가 필요하며 합성 전에 출처 실행·산출물 이름·사례 ID·확률·지연시간·실행 오류·권한 위반을 검증.
 
 이는 learned component를 추가하지 않고 다음 research question을 분리해 검증합니다:
 
@@ -1911,35 +1896,33 @@ The staging PR is #315. It must remain unexecuted until #299 is terminal.
 
 A second architecture is fully staged but not executed while Kev is unresolved:
 
-- AnyJev source revision `45add301a7aa60ed3420c83d15c061e84e5bce61`;
-- zero-label L0;
-- content-free prior rather than evaluation-batch prior;
-- Qwen3-0.6B pinned base revision;
-- BGE raw top-1 remains sole route authority;
-- AnyJev native `noul` is veto-only;
-- eight fixed global thresholds;
-- no L1/L2 fitting on SchemaRouter data;
-- workflow is manual-dispatch only.
+- AnyJev 소스 리비전 `45add301a7aa60ed3420c83d15c061e84e5bce61`;
+- 레이블 없는 L0;
+- 평가 배치 사전확률 대신 내용이 없는 사전확률 사용;
+- Qwen3-0.6B 기본 리비전 고정;
+- BGE 원시 Top-1만 경로 선택 권한을 유지;
+- AnyJev 네이티브 `noul`은 거부 전용;
+- 고정 전역 임계값 8개;
+- SchemaRouter 데이터로 L1/L2 학습 없음;
+- 워크플로는 수동 실행만 허용.
 
 #312 was closed as a duplicate of #311 so the research line has one canonical fallback record.
 
-Operationally, the framework is now prepared for rapid model replacement:
-- Jev-wire-compatible engines use `SystemOneDecisionBackend`;
-- arbitrary bounded models can enter through `CallableDecisionBackend` and the generic callable benchmark path;
-- model discovery remains separate from stable execution authority.
+운영 측면에서 프레임워크는 신속한 모델 교체를 지원할 준비가 됐습니다.
+- Jev 전송 규약 호환 엔진은 `SystemOneDecisionBackend`를 사용;
+- 임의의 제한 결정 모델은 `CallableDecisionBackend`와 범용 호출 함수 벤치마크 경로로 연결 가능;
+- 모델 검색은 안정적인 실행 권한과 계속 분리.
 
 ### Precommitted Kev-family promotion policy
 
 Before #299 terminal metrics were available, the cross-candidate selection rule was fixed:
 
-1. complete #299 exactly as preregistered;
-2. if #299 yields complete valid row-level `supported_probability`, run the already-staged #314
-   offline composition even if Kev's own route choice fails;
-3. compare only full-gate passers;
-4. if both #299 and #314 pass quality and runtime, prefer #314 because it preserves the established
-   BGE registered-route authority and keeps Kev veto-only;
-5. if #314 fails but #299 passes, promote #299;
-6. do not select from post-hoc language/route/family slices, prompt variants, or failed-fresh behavior.
+1. 사전등록된 방식 그대로 #299 완료;
+2. #299가 유효한 전체 행별 `supported_probability`를 생성하면 Kev 자체의 경로 선택이 실패하더라도 이미 준비된 #314 오프라인 합성을 실행;
+3. 모든 게이트를 통과한 후보만 비교;
+4. #299와 #314가 품질·런타임을 모두 통과하면 이미 확립된 BGE 등록 경로 권한을 유지하고 Kev를 거부 전용으로 제한하는 #314를 우선;
+5. #314가 실패하고 #299가 통과하면 #299 승격;
+6. 사후적인 언어·경로·집단별 부분집합, 프롬프트 변형 또는 실패한 새 데이터 표면을 이용해 선택하지 않음.
 
 Outcome-driven architecture choice를 피하기 위해 이 selection policy는 result inspection 전에 commit했습니다.
 
@@ -1991,34 +1974,26 @@ validated fresh-confirmed manifest
 #198 one-shot blind-final
 ```
 
-No semantic change is allowed after freeze. A quality-pass/latency-fail candidate may undergo only a
-preregistered runtime-only optimization with unchanged semantics, and that optimized runtime must
-itself pass fresh confirmation before #198.
+동결 후에는 의미적 변경을 허용하지 않습니다. 품질은 통과했지만 지연시간에 실패한 후보는 사전등록된 런타임 전용 최적화만 수행할 수 있으며 의미를 변경해서는 안 됩니다. 최적화된 런타임 역시 #198 이전에 새로운 확인을 통과해야 합니다.
 
 ### Guarded staged-experiment activation
 
 The staged fallback workflows no longer depend on a human UI click.
 
-- #314 / PR #315 remains dormant until a terminal #299 artifact exists. It can be activated by
-  committing `benchmarks/operation-routing-v4-bge-kev-noul-compose.activation.json` with
-  `activate=true`, source workflow run `36366508183`, and the exact artifact ID. The workflow
-  revalidates source-run and artifact identity before reading rows.
-- #311 / PR #313 remains dormant until the Kev family is non-promotable. Its activation marker must
-  declare `activate=true`, `after_issue=299`, and `reason="kev_family_non_promotable"`.
+- #314 / PR #315는 #299의 최종 산출물이 나올 때까지 비활성 상태로 유지합니다. 소스 워크플로 실행 `36366508183`과 정확한 산출물 ID를 지정한 `benchmarks/operation-routing-v4-bge-kev-noul-compose.activation.json`에 `activate=true`를 커밋하면 활성화할 수 있습니다. 워크플로는 행을 읽기 전에 출처 실행과 산출물 식별 정보를 다시 검증합니다.
+- #311 / PR #313은 Kev 계열이 승격 불가능해질 때까지 비활성 상태입니다. 활성화 표식에는 `activate=true`, `after_issue=299`, `reason="kev_family_non_promotable"`를 선언해야 합니다.
 
-The workflow-definition commits themselves do not start model evaluation because push filters match
-only the activation-marker paths. This keeps staging separate from evidence consumption while allowing
-session-resume automation to proceed without manual Actions UI access.
+워크플로 정의 자체를 커밋하더라도 push 필터가 활성화 표식 경로에만 반응하므로 모델 평가는 시작되지 않습니다. 이를 통해 준비 단계와 실증 근거의 사용을 분리하면서도 수동 Actions UI 없이 세션 재개 자동화를 이어갈 수 있습니다.
 
 ### Freeze infrastructure merged — #316
 
 PR #316 was squash-merged as `fad004cdfce8e40c2119d3758ab47332d52e6253`.
 
-Main now contains:
-- `benchmarks/operation-routing-production-targets.json` as the machine-readable 85/97/100/1 + 250 ms target;
+현재 `main`에는 다음이 포함됩니다.
+- 기계 판독형 목표 85/97/100/1 + 250 ms를 정의한 `benchmarks/operation-routing-production-targets.json`;
 - `benchmarks/operation-routing-freeze-manifest.template.json`;
 - `scripts/validate_operation_routing_freeze_manifest.py`;
-- validator tests covering target drift, authority drift, provenance, metric ranges, provider revision IDs, and GitHub artifact digests;
+- 목표·권한·출처·지표 범위·제공자 리비전 ID·GitHub 산출물 다이제스트 변경을 검증하는 테스트;
 - `docs/research/operation-routing-freeze-protocol.md`.
 
 Canonical ownership boundary는 이제 documentation과 machine-readable governance에서 강제됩니다:
@@ -2030,17 +2005,14 @@ Canonical ownership boundary는 이제 documentation과 machine-readable governa
 
 PR #320 was merged as `acaca1e14b2f387094100dde3e1186aa4520d01d`.
 
-Main now contains `scripts/validate_routing_runtime_parity.py`, which compares a frozen reference
-analysis with a runtime variant and rejects:
-- case-set drift;
-- selected-route drift;
-- any execute/abstain threshold crossing;
-- execution errors;
-- authority violations.
+`main`에는 동결된 참조 분석과 런타임 변형을 비교하는 `scripts/validate_routing_runtime_parity.py`도 포함됩니다. 이 도구는 다음 변경을 거부합니다.
+- 사례 집합 변경;
+- 선택된 경로 변경;
+- 실행·선택 포기 임계값 경계의 교차;
+- 실행 오류;
+- 권한 위반.
 
-It records max/mean/p50/p95 probability drift and the frozen reference boundary margin.
-This is the mandatory gate for #318 runtime-only optimization. Any parity failure turns the runtime
-variant into a new semantic candidate that requires a separate preregistered experiment.
+이 도구는 확률 차이의 최대·평균·p50·p95와 동결 참조의 경계 여유를 기록합니다. 이는 #318 런타임 전용 최적화의 필수 게이트입니다. 동등성 검사에 실패한 런타임 변형은 별도 사전등록 실험이 필요한 새로운 의미적 후보가 됩니다.
 
 ### Kev CPU runtime terminated without quality evidence
 
