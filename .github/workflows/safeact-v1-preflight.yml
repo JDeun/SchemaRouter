@@ -17,7 +17,7 @@ permissions:
 jobs:
   official-v1-list-only:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
@@ -47,10 +47,10 @@ jobs:
           assert len(set(ids)) == 131, "duplicate case ids"
           print("Official SafeAct V1 listing validated: 131 cases (no scored execution)")
           PY
-      - name: Smoke-test pinned V1 evaluator with official gold simulator only
+      - name: Validate all 131 V1 evaluator paths (official gold simulator, never agent score)
         run: |
           python safeact-upstream/run_benchmark.py \
-            --protocol v1 --limit 1 --simulate \
+            --protocol v1 --simulate \
             --output-dir "$RUNNER_TEMP/safeact-v1-simulator" \
             > "$RUNNER_TEMP/safeact-v1-simulator-stdout.json"
           python - <<'PY'
@@ -64,7 +64,10 @@ jobs:
           )
           assert result["mode"] == "simulate"
           assert result["selected_protocols"] == ["v1"]
-          assert result["new_cases_run"] == 1
+          assert result["new_cases_run"] == 131
+          assert result["metrics"]["selected_cases"] == 131
+          assert result["metrics"]["evaluated_cases"] == 131
+          assert result["metrics"]["scored_cases"] == 131
           assert result["failures"] == []
-          print("Official V1 gold-simulator smoke passed; no agent result reported")
+          print("Official V1 reference evaluator validated 131/131; not an agent benchmark")
           PY
