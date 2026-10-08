@@ -179,6 +179,70 @@ condition fidelity and independent review remain prerequisites. The
 post-run verifier still rejects substituting ordinary baseline records.
 
 
+## Scored GitHub Actions setup and explicit blockers
+
+The scored workflow is
+`.github/workflows/safeact-v1-scored.yml`. PR checks intentionally execute
+**no model calls** and cannot read production model credentials. The public
+131-case listing, synthetic adapter tests, and no-model readiness artifacts
+do **not** imply that the scored job ran. To avoid billing an unauthorized
+or invalid three-arm comparison, the scored job requires **all** of:
+
+1. Freeze `research/safeact-v1/contracts.json` with 131 complete
+   public-case mappings and action-specific evidence requirements.
+   Each source file must exist under
+   `research/safeact-v1/public-sources/` with a pinned SHA-256.
+   Author solely from independently visible public policies/tools.
+   Never infer evidence requirements from evaluator, case manifest or gold.
+2. Generate the initially **unapproved** three-arm command manifest from
+   that contract snapshot and the actual pinned adapter Git commit:
+
+   ```bash
+   python -m scripts.prepare_safeact_v1_scored_manifest \
+     --contracts research/safeact-v1/contracts.json \
+     --out research/safeact-v1/intervention-manifest.json \
+     --backend codex --model YOUR_FROZEN_MODEL \
+     --adapter-commit YOUR_40_HEX_ADAPTER_COMMIT
+   ```
+
+   Have an **actual second person** independently review all source
+   citations, mappings, policy semantics and execution adapters.
+   Only the reviewers themselves should populate
+   `independent_contract_review.author`,
+   `independent_contract_review.reviewer`,
+   `independent_contract_review.approved=true` and
+   `reviewed=true` after completing the review. An auto-generated
+   manifest must never self-approve.
+3. Configure a **trusted Linux** GitHub Actions runner with labels
+   `self-hosted`, `linux`, `safeact-v1`, restricted to approved code.
+   The pinned upstream official CLI requires root-owned immutable
+   `bwrap`, `/usr/bin/timeout`, `/usr/bin/prlimit`, a working
+   Codex/Claude CLI, and an already configured **trusted Unix-socket
+   model broker** (`SAFEACT_MODEL_BROKER_DIR`,
+   `SAFEACT_MODEL_BROKER_SOCKET`, `SAFEACT_MODEL_BROKER_PORT`).
+   These credentials and broker must be supplied on the secured host,
+   never committed to the repo or a PR artifact.
+4. Protect the GitHub Actions environment `safeact-research`,
+   restrict deployment to reviewed `main`, and configure
+   environment secret `SAFEACT_V1_RUNTIME_VERIFIED=1` only after
+   the authenticated runner has been independently qualified.
+   This secret is an authorization marker, not a model credential.
+5. Once a reviewed PR is merged, go to **Actions → SafeAct V1
+   Scored Experiment (Gated) → Run workflow**, choose the `main`
+   branch, enter the exact frozen `model`, and select `execute=true`.
+   The workflow first runs readiness checks and then the protected
+   runner's `scripts/check_safeact_v1_runner.py` before any agent call.
+   Scoring must produce and verify all 393 official trajectories, paired
+   intervention attestations, and post-run aggregate artifacts.
+   If any check fails, **do not relabel simulation or partial records
+   as official V1 results**.
+
+There is deliberately no automatic `push` or `schedule` path that runs
+393 paid model calls merely because a new PR was opened. Without the
+independent contract review and working external broker, the experiment is
+**not ready to execute**; Github reports a successful no-model readiness
+job and **skips** the scored job.
+
 No credential-bearing model runtime, independent 131-case policy coverage,
 or full 393-case scored result is bundled with these source files.
 
