@@ -807,6 +807,27 @@ class EvidenceRequirements(StrictModel):
     source_type: str | None = None
 
 
+class EvidenceContract(StrictModel):
+    """Trusted local evidence precondition for one consequential action."""
+
+    required: EvidenceRequirements = Field(default_factory=EvidenceRequirements)
+    field_requirements: dict[str, EvidenceRequirements] = Field(default_factory=dict)
+    minimum_corroboration: int = Field(default=1, ge=1, le=32)
+
+
+class EvidenceLedgerEntry(StrictModel):
+    """Payload-free record of evidence established at the execution boundary."""
+
+    tool: str
+    endpoint: str
+    fields: list[str] = Field(default_factory=list)
+    tool_fingerprint: str
+    endpoint_fingerprint: str
+    available: EvidenceRequirements = Field(default_factory=EvidenceRequirements)
+    field_evidence: dict[str, dict[str, object]] = Field(default_factory=dict)
+    validated: bool = True
+
+
 class QueryIntent(StrictModel):
     concepts: list[str] = Field(default_factory=list)
     preferred_tools: list[str] = Field(default_factory=list)
