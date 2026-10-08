@@ -132,9 +132,15 @@ a separate, coarse intervention diagnostic. Denied model proposals
 The final orchestrator also requires `verify_arm_interventions()` to
 attest every scored case: genuine ungated baseline, SchemaRouter
 `schemarouter_typed_route` routing-only records, and
-`trusted_official_v1_record_gate` records. **The routing-only official
-adapter has not yet been implemented or approved**; any attempt to
-present three baseline runs as a completed comparison will fail.
+`trusted_official_v1_record_gate` records. The routing-only host adapter is now implemented in
+`official_routing_hook.py`. It constructs a real SchemaRouter typed registry
+from the **public fixed candidate action** and validates the routed action
+before record commit without applying an evidence gate. This only validates
+tool identity and object-shaped arguments; it does not infer a complete
+vendor parameter schema from example argument values. Actual 131-case
+condition fidelity and independent review remain prerequisites. The
+post-run verifier still rejects substituting ordinary baseline records.
+
 
 No credential-bearing model runtime, independent 131-case policy coverage,
 or full 393-case scored result is bundled with these source files.

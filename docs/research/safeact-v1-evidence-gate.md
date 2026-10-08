@@ -115,6 +115,24 @@ justification are implemented. Never infer them from task success.
 Gold/evaluator artifacts are inspected **only after** trajectories finish and
 never used as inputs to the action gate.
 
+## Typed routing-only official V1 host adapter
+
+`official_routing_hook.py` now supplies a distinct host-side routing-only
+ablation. It builds a real SchemaRouter `ToolSpec` / `EndpointSpec` /
+`InMemoryRegistry` from the **agent-visible fixed public candidate tool**,
+retains information observations, and checks the proposed consequential
+tool identity and object-shaped arguments before official record commit.
+It does not consult SafeAct evaluator labels, infer detailed argument
+schemas from example values, or enforce an evidence requirement. A
+distinct `schemarouter_typed_route` intervention marker enables
+post-run separation from both ungated and evidence-gated conditions.
+
+The eight-case controlled regression now invokes the actual `EvidenceGate`
+implementation and checks the frozen synthetic expected outcomes. It is
+**not a SafeActBench model experiment**. Official 131×3 scored evaluation
+still requires independently reviewed case contracts, a trusted
+Codex/Claude model broker, and end-to-end treatment fidelity.
+
 ## Action-target evidence binding
 
 An independently authored contract may specify `argument_bindings` that map a
