@@ -194,7 +194,7 @@ def run_bridge_compatibility(root: Path) -> dict[str, Any]:
         "independent_contracts_for_real_cases_approved": False,
         "meaning": (
             "Pinned official normalizer + SchemaRouter typed-registry routing "
-            "and trusted EvidenceGate integration passed using synthetic public " 
+            "and trusted EvidenceGate integration passed using synthetic public "
             "data and independently hashed synthetic policy, with no model."
         ),
     }
