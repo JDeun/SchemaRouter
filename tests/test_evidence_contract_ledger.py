@@ -1,6 +1,14 @@
 import pytest
 
-from schemarouter import (\n    EndpointSpec,\n    EvidenceContract,\n    EvidenceContractError,\n    EvidenceRequirements,\n    FieldSpec,\n    ToolSpec,\n)
+from schemarouter import (
+    EndpointSpec,
+    EvidenceContract,
+    EvidenceContractError,
+    EvidenceRequirements,
+    FieldSpec,
+    ToolCall,
+    ToolSpec,
+)
 from schemarouter.evidence import build_evidence_ledger_entry, contract_for_call
 
 
