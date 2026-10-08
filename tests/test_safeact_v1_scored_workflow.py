@@ -61,10 +61,17 @@ def test_untrusted_command_substitution_refused_even_if_manifest_signed(
     public = tmp_path / "public-sources"
     public.mkdir()
     (tmp_path / "contracts.json").write_text('{"contracts":[]}')
+    import hashlib
+    rogue = tmp_path / "rogue-agent.py"
+    rogue.write_text("# not the trusted official host adapter")
+    rogue_cmd = f"python3 {rogue} --model fixed-model"
     (tmp_path / "manifest.json").write_text(json.dumps({
         "conditions": {
             c: {
-                "agent_command": "python3 /tmp/attacker-script.py --model fixed-model"
+                "agent_command": rogue_cmd,
+                "agent_command_sha256": hashlib.sha256(
+                    rogue_cmd.encode("utf-8")
+                ).hexdigest(),
             }
             for c in CONDITIONS
         }
