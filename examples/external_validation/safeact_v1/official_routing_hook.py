@@ -18,11 +18,11 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from schemarouter import EndpointSpec, InMemoryRegistry, ToolSpec
 from examples.external_validation.safeact_v1.official_agent_hook import (
     PINNED_SAFEACT_SHA,
     find_official_root,
 )
+from schemarouter import EndpointSpec, InMemoryRegistry, ToolSpec
 
 
 def route_public_v1_record(
