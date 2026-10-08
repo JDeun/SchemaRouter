@@ -8,6 +8,7 @@ observed before an agent's consequential proposal and the public scenario.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
@@ -146,6 +147,7 @@ def find_official_root(workspace: Path) -> Path:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--contract-file", type=Path, required=True)
+    parser.add_argument("--contract-sha256", required=True)
     parser.add_argument("--public-source-root", type=Path, required=True)
     parser.add_argument("--condition", choices=["evidence_gate"], required=True)
     args, upstream_args = parser.parse_known_args()
@@ -177,6 +179,14 @@ def main() -> int:
     document = json.loads(args.contract_file.read_text(encoding="utf-8"))
     if not isinstance(document, dict):
         raise ValueError("independent contract document must be an object")
+    digest = hashlib.sha256(
+        json.dumps(
+            document, sort_keys=True, ensure_ascii=False,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    if digest != args.contract_sha256:
+        raise ValueError("frozen independent contract hash mismatch")
     spec = importlib.util.spec_from_file_location("safeact_official_v1", module_path)
     if spec is None or spec.loader is None:
         raise RuntimeError("official V1 adapter import failed")

@@ -1,6 +1,7 @@
 """Fail-closed scored launch preflight without calling a paid model."""
 
 import hashlib
+import json
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -49,6 +50,12 @@ def _inputs(tmp_path: Path) -> dict:
 
 
 def _mock_public(monkeypatch, sample: dict) -> None:
+    sample["intervention_manifest"]["contract_sha256"] = hashlib.sha256(
+        json.dumps(
+            sample["contracts"], sort_keys=True, ensure_ascii=False,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
     monkeypatch.setattr(launch, "verify_sources", lambda *a: [])
     monkeypatch.setattr(
         launch,
@@ -135,4 +142,16 @@ def test_rejects_post_review_command_mutation(monkeypatch, tmp_path: Path) -> No
     _mock_public(monkeypatch, sample)
     sample["commands"][launch.CONDITIONS[2]] += " --extra-arg=test"
     with pytest.raises(ValueError, match="altered trusted adapter identity"):
+        launch.validate_launch(**sample)
+
+
+def test_changed_case_contract_snapshot_is_rejected(
+    monkeypatch, tmp_path: Path
+) -> None:
+    sample = _inputs(tmp_path)
+    _mock_public(monkeypatch, sample)
+    sample["contracts"]["contracts"][0]["required_observations"] = [
+        {"tool": "unknown", "record_id": "$action.id", "fields": ["x"]}
+    ]
+    with pytest.raises(ValueError, match="contract snapshot hash changed"):
         launch.validate_launch(**sample)

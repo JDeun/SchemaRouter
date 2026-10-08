@@ -101,6 +101,14 @@ def validate_launch(
     if any(_declared_model(plan.agent_command) != model for plan in plans):
         raise ValueError("each arm must explicitly declare the frozen model")
 
+    frozen_contract_hash = hashlib.sha256(
+        json.dumps(
+            contracts, sort_keys=True, ensure_ascii=False,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    if intervention_manifest.get("contract_sha256") != frozen_contract_hash:
+        raise ValueError("independent contract snapshot hash changed")
     errors = verify_sources(contracts, public_source_root)
     if errors:
         raise ValueError("unverified independent sources: " + "; ".join(errors))
