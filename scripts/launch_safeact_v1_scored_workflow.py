@@ -118,6 +118,7 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--model", default="")
     parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument("--scored-report", type=Path)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--require-ready", action="store_true")
     args = parser.parse_args()
@@ -167,6 +168,8 @@ def main() -> int:
         argv.extend([
             "--" + condition.lower() + "-agent-cmd", commands[condition]
         ])
+    if args.scored_report is not None:
+        argv.extend(["--report", str(args.scored_report)])
     argv.append("--execute")
     print("Starting official 131 x 3 V1 model trajectories", flush=True)
     result = subprocess.run(argv, check=False)
