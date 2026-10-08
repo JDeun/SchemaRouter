@@ -101,3 +101,21 @@ def test_record_symlink_to_forbidden_file_is_rejected(tmp_path: Path) -> None:
     path.symlink_to(target)
     with pytest.raises(ValueError, match="unsafe"):
         aggregator.derive_condition_metrics(first, 2)
+
+
+def test_exact_paired_discordance_calculation() -> None:
+    assert aggregator._exact_mcnemar_p(0, 0) == 1.0
+    assert aggregator._exact_mcnemar_p(5, 0) == 0.0625
+    assert aggregator._exact_mcnemar_p(1, 1) == 1.0
+    with pytest.raises(ValueError, match="negative"):
+        aggregator._exact_mcnemar_p(-1, 2)
+
+
+def test_paired_success_analysis_uses_shared_case_id(
+    tmp_path: Path,
+) -> None:
+    outputs = _outputs(tmp_path)
+    result = aggregator.paired_success_contrasts(outputs, expected_cases=2)
+    assert len(result) == 3
+    assert all(x["net_success_delta"] == 0.0 for x in result.values())
+    assert all(x["exact_mcnemar_p_two_sided"] == 1.0 for x in result.values())

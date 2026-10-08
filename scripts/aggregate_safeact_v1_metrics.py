@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections.abc import Mapping
+from math import comb
 from pathlib import Path
 
 from scripts.verify_safeact_v1_comparison import CONDITIONS, verify_comparison
@@ -86,6 +87,77 @@ def derive_condition_metrics(root: Path, expected_cases: int) -> dict:
     }
 
 
+
+def _exact_mcnemar_p(improved: int, worsened: int) -> float:
+    """Two-sided exact paired sign test on discordant binary outcomes."""
+    if improved < 0 or worsened < 0:
+        raise ValueError("negative paired discordance count")
+    total = improved + worsened
+    if not total:
+        return 1.0
+    smaller = min(improved, worsened)
+    tail = sum(comb(total, i) for i in range(smaller + 1)) / 2**total
+    return min(1.0, 2 * tail)
+
+
+def _case_successes(root: Path, expected_cases: int) -> dict[str, bool]:
+    folder = root / "records" / "v1"
+    if folder.is_symlink() or not folder.is_dir():
+        raise ValueError("official V1 records missing or unsafe")
+    paths = sorted(folder.glob("SAB-V1-*.json"))
+    if len(paths) != expected_cases:
+        raise ValueError("case count mismatch before paired analysis")
+    result: dict[str, bool] = {}
+    for path in paths:
+        record = _read_record(root, path.stem)
+        if record.get("state_action_case_id") != path.stem:
+            raise ValueError("case identity drift in paired analysis")
+        summary = record.get("state_action_summary")
+        if not isinstance(summary, dict):
+            raise ValueError("missing official evaluator summary")
+        outcome = summary.get("safe_commit_success")
+        if type(outcome) is not bool:
+            raise ValueError("invalid paired success outcome")
+        result[path.stem] = outcome
+    return result
+
+
+def paired_success_contrasts(
+    outputs: Mapping[str, Path], *, expected_cases: int
+) -> dict[str, dict]:
+    """Compare paired official outcomes without promoting p to a causal claim."""
+    rows = {
+        arm: _case_successes(outputs[arm].resolve(), expected_cases)
+        for arm in CONDITIONS
+    }
+    contrasts: dict[str, dict] = {}
+    comparisons = (
+        (CONDITIONS[0], CONDITIONS[1]),
+        (CONDITIONS[0], CONDITIONS[2]),
+        (CONDITIONS[1], CONDITIONS[2]),
+    )
+    for control, treatment in comparisons:
+        baseline = rows[control]
+        candidate = rows[treatment]
+        if baseline.keys() != candidate.keys():
+            raise ValueError("unpaired case IDs in success analysis")
+        improved = sum(
+            not baseline[k] and candidate[k] for k in baseline
+        )
+        worsened = sum(
+            baseline[k] and not candidate[k] for k in baseline
+        )
+        contrasts[f"{treatment} vs {control}"] = {
+            "improved_cases": improved,
+            "worsened_cases": worsened,
+            "net_success_delta": (improved - worsened) / expected_cases,
+            "exact_mcnemar_p_two_sided": _exact_mcnemar_p(
+                improved, worsened
+            ),
+        }
+    return contrasts
+
+
 def aggregate_scored_v1(
     outputs: Mapping[str, Path], *, expected_cases: int = 131
 ) -> dict:
@@ -106,6 +178,9 @@ def aggregate_scored_v1(
         "paired_cases": expected_cases,
         "attested_runtime_model": attested["attested_model"],
         "conditions": scores,
+        "paired_success_contrasts": paired_success_contrasts(
+            outputs, expected_cases=expected_cases
+        ),
         "not_yet_measured": [
             "unsupported_execution_rate",
             "false_refusal_rate",
