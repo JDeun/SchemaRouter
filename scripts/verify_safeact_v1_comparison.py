@@ -67,8 +67,8 @@ def verify_comparison(
                 or summary.get("selected_protocols") != ["v1"]
                 or not summary.get("agent_cmd")
                 or summary.get("failures") != []
-                or summary.get("reused_cases") != 0
-                or summary.get("deferred_cases") != 0
+                or summary.get("reused_cases") != []
+                or summary.get("deferred_cases") != []
                 or summary.get("new_cases_run") != expected_cases):
             raise ValueError(f"incomplete or simulated run: {condition}")
         metrics = summary.get("metrics")

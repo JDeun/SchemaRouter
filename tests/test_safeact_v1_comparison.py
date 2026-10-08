@@ -23,7 +23,7 @@ def _three(tmp_path: Path) -> dict[str, Path]:
         _write(root / "summary.json", {
             "mode": "external_agent", "agent_cmd": "python3 agent.py",
             "selected_protocols": ["v1"], "failures": [],
-            "reused_cases": 0, "deferred_cases": 0, "new_cases_run": 1,
+            "reused_cases": [], "deferred_cases": [], "new_cases_run": 1,
             "dataset_id": "dataset", "dataset_version": "v1",
             "evaluation_contract": "official",
             "metrics": {
@@ -125,4 +125,30 @@ def test_rejects_forged_runtime_attestation(tmp_path: Path) -> None:
     ).hexdigest()
     _write(marker, value)
     with pytest.raises(ValueError, match="runtime trace attestation mismatch"):
+        verify_comparison(outputs, expected_cases=1)
+
+
+@pytest.mark.parametrize("field", ["reused_cases", "deferred_cases"])
+def test_official_run_rejects_reused_or_deferred_case_lists(
+    tmp_path: Path, field: str
+) -> None:
+    outputs = _three(tmp_path)
+    path = outputs[CONDITIONS[0]] / "summary.json"
+    summary = json.loads(path.read_text(encoding="utf-8"))
+    summary[field] = ["SAB-V1-001"]
+    _write(path, summary)
+    with pytest.raises(ValueError, match="incomplete or simulated run"):
+        verify_comparison(outputs, expected_cases=1)
+
+
+@pytest.mark.parametrize("field", ["reused_cases", "deferred_cases"])
+def test_non_list_case_accounting_rejected(
+    tmp_path: Path, field: str
+) -> None:
+    outputs = _three(tmp_path)
+    path = outputs[CONDITIONS[1]] / "summary.json"
+    summary = json.loads(path.read_text(encoding="utf-8"))
+    summary[field] = 0
+    _write(path, summary)
+    with pytest.raises(ValueError, match="incomplete or simulated run"):
         verify_comparison(outputs, expected_cases=1)
