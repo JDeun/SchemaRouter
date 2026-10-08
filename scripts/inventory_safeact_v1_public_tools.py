@@ -40,7 +40,9 @@ def build_inventory(root: Path) -> dict[str, Any]:
             if path.is_symlink() or not path.is_file():
                 raise ValueError(f"unsafe public tool path: {domain}/{path.name}")
             if not path.resolve().is_relative_to(root):
-                raise ValueError(f"public tool escapes pinned root: {domain}/{path.name}")
+                raise ValueError(
+                    f"public tool escapes pinned root: {domain}/{path.name}"
+                )
             digest = hashlib.sha256(path.read_bytes()).hexdigest()
             records.append({
                 "domain": domain,
