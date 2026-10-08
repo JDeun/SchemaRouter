@@ -17,6 +17,7 @@ from scripts.research_014_conveyor import (
     DOWNSTREAM_IMPLEMENTATION_SHA,
     StageRun,
     active_run_with_jobs,
+    prefer_materialized_corrective_run,
     combine_digests,
     missing_corrective_shards,
     retry_infrastructure_failure,
@@ -362,6 +363,44 @@ def test_active_run_with_jobs_wins_over_newer_pending_duplicate() -> None:
     )
     api = _JobCountAPI({96: 0, 95: 182})
     assert active_run_with_jobs(api, [pending, active]) == active
+
+
+def test_terminal_materialized_parent_beats_newer_zero_job_cancellation() -> None:
+    """Recovery must reuse old frozen shards, not replay a cancelled wrapper."""
+    frozen = "a" * 40
+    older = StageRun(
+        id=36931249518,
+        status="completed",
+        conclusion="cancelled",
+        display_title="Research 0.14 Corrective source=" + frozen,
+        created_at="2026-10-01T21:49:55Z",
+        html_url="",
+        run_attempt=1,
+        head_sha=frozen,
+    )
+    newer = StageRun(
+        id=37236128646,
+        status="completed",
+        conclusion="cancelled",
+        display_title=older.display_title,
+        created_at="2026-10-04T21:26:55Z",
+        html_url="",
+        run_attempt=1,
+        head_sha=frozen,
+    )
+    api = _JobCountAPI({newer.id: 0, older.id: 182})
+    assert prefer_materialized_corrective_run(api, [newer, older]) == older
+    assert prefer_materialized_corrective_run(api, [newer]) == newer
+    assert prefer_materialized_corrective_run(api, []) is None
+
+
+def test_recovery_wrapper_exposes_repo_import_root() -> None:
+    workflow = (
+        Path(__file__).resolve().parents[1]
+        / ".github/workflows/research-0.14-corrective-recovery.yml"
+    ).read_text(encoding="utf-8")
+    assert 'PYTHONPATH: "${{ github.workspace }}"' in workflow
+    assert "python scripts/generate_agent_utility_v6_corrective_corpus.py" in workflow
 
 
 def test_zero_job_pending_is_recoverable_only_prejob() -> None:
