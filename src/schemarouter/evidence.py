@@ -137,3 +137,16 @@ def field_evidence_status(
 
     return not missing, available_context, missing
 \n\ndef build_evidence_ledger_entry(\n    tool: ToolSpec,\n    endpoint: EndpointSpec,\n    selected_fields: list[str],\n    contract: EvidenceContract,\n) -> EvidenceLedgerEntry:\n    """Validate a trusted evidence contract and return a payload-free ledger entry."""\n\n    global_ok, available, global_missing = global_evidence_status(\n        tool, endpoint, selected_fields, contract.required\n    )\n    field_ok, field_context, field_missing = field_evidence_status(\n        tool, endpoint, selected_fields, contract.field_requirements\n    )\n    missing = [*global_missing, *field_missing]\n    if not global_ok or not field_ok:\n        raise EvidenceContractError("evidence contract unsatisfied: " + ", ".join(missing))\n    if contract.minimum_corroboration != 1:\n        raise ValueError(\n            "minimum_corroboration > 1 requires an explicit aggregation boundary"\n        )\n    return EvidenceLedgerEntry(\n        tool=tool.key,\n        endpoint=endpoint.name,\n        fields=list(selected_fields),\n        tool_fingerprint=tool.fingerprint,\n        endpoint_fingerprint=endpoint.fingerprint,\n        available=available,\n        field_evidence=field_context,\n    )\n
+
+def contract_for_call(call: object) -> EvidenceContract:
+    """Materialize the existing compiled-call evidence requirements as a contract."""
+
+    required = getattr(call, "required_evidence")
+    field_requirements = getattr(call, "field_evidence")
+    return EvidenceContract(
+        required=required.model_copy(deep=True),
+        field_requirements={
+            name: requirement.model_copy(deep=True)
+            for name, requirement in field_requirements.items()
+        },
+    )
