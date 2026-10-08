@@ -1,8 +1,8 @@
-# Model-assisted analysis
+# 모델 보조 분석
 
-기본 planner는 `KeywordAnalyzer`로 오프라인에서도 동작합니다. 자연어에서 tool, endpoint, argument, field, evidence requirement를 더 풍부하게 추출해야 할 때 `ModelQueryAnalyzer`를 사용합니다.
+기본 플래너는 `KeywordAnalyzer`를 통해 오프라인에서 동작할 수 있습니다. 자연어 요청에서 도구·엔드포인트·인자·필드·증거 요구사항을 더 풍부하게 추출해야 한다면 `ModelQueryAnalyzer`를 사용하십시오.
 
-## Provider-neutral callable
+## 공급자에 종속되지 않는 callable
 
 SchemaRouter는 특정 LLM SDK를 요구하지 않습니다.
 
@@ -25,20 +25,20 @@ router = SchemaRouter(
 )
 ```
 
-payload에는 현재 catalog와 response schema가 포함됩니다.
+전달되는 페이로드에는 현재 기능 카탈로그와 응답 스키마가 포함됩니다.
 
-callable은 애플리케이션이 이미 사용하는 hosted model client를 사용할 수 있습니다. 예를 들어 GPT, Gemini, Claude 또는 다른 provider의 structured-output API를 연결해도 해당 SDK를 SchemaRouter 자체 dependency로 추가할 필요가 없습니다.
+이 callable은 애플리케이션에서 이미 사용하는 호스팅 모델 클라이언트로 구현할 수 있습니다. 예를 들어 GPT, Gemini, Claude 또는 다른 공급자의 구조화 출력 API를 연결하되, SchemaRouter 자체에 해당 공급자의 SDK를 추가하지 않아도 됩니다.
 
-이는 bounded `DecisionBackend`와 별개의 surface입니다.
+이 방식은 범위가 제한된 `DecisionBackend`와 구분됩니다.
 
-| Surface | Model이 보는 것 | Model이 반환할 수 있는 것 | 이후 SchemaRouter 동작 |
+| 인터페이스 | 모델에 보이는 정보 | 모델이 반환할 수 있는 정보 | SchemaRouter의 후속 처리 |
 | --- | --- | --- | --- |
-| `ModelQueryAnalyzer` | query + schema catalog + response contract | tool/endpoint preference, 선언된 argument/field, concept, evidence request | 현재 registry에 대해 모두 sanitize한 뒤 deterministic planning |
-| `CallableDecisionBackend` | query + 이미 허가된 유한 option ID | bounded option selection만 | ID/count를 검증한 뒤 기존 planner 계속 |
+| `ModelQueryAnalyzer` | 쿼리 + 스키마 카탈로그 + 응답 계약 | 도구/엔드포인트 선호도, 선언된 인자/필드, 개념, 증거 요청 | 모든 값을 현재 레지스트리 기준으로 정제한 뒤 결정론적 계획 실행 |
+| `CallableDecisionBackend` | 쿼리 + 이미 허가된 유한한 후보 ID | 제한된 범위의 후보 선택만 가능 | ID 및 개수를 검증한 후 기존 플래너로 진행 |
 
-어느 쪽도 cloud model을 agent runtime으로 만들지 않습니다. tool execution, policy, schema fingerprint, authority는 SchemaRouter 로컬에 남습니다.
+어느 인터페이스에서도 클라우드 모델이 에이전트 실행 런타임이 되는 것은 아닙니다. 도구 실행, 정책, 스키마 지문, 실행 권한은 계속 SchemaRouter의 로컬 경계 안에 남습니다.
 
-지원되는 OpenAPI discriminated request body에서는 catalog가 원래 composed schema를 가진 하나의 `body` parameter를 포함합니다. hosted model은 다음처럼 반환할 수 있습니다:
+OpenAPI에서 구분자(discriminator)가 있는 요청 본문을 지원하는 경우, 카탈로그에는 원래의 합성 스키마를 유지한 하나의 `body` 파라미터가 들어갑니다. 호스팅 모델은 다음과 같이 반환할 수 있습니다.
 
 ```json
 {
@@ -57,11 +57,11 @@ callable은 애플리케이션이 이미 사용하는 hosted model client를 사
 }
 ```
 
-HTTP request를 허용하기 전에 SchemaRouter가 이 object를 endpoint input schema에 대해 로컬에서 다시 검증합니다.
+SchemaRouter는 어떠한 HTTP 요청도 허용하기 전에 그 객체를 엔드포인트의 입력 스키마와 대조해 로컬에서 다시 검증합니다.
 
-## Model output은 실행 권한이 아님
+## 모델 출력 자체에는 실행 권한이 없습니다
 
-analyzer는 response shape를 검증한 뒤 현재 registry에 다시 projection합니다.
+분석기는 응답 형태를 검증한 다음 현재 레지스트리로 다시 투영합니다.
 
 ```text
 model output
@@ -73,18 +73,18 @@ model output
  -> deterministic planner
 ```
 
-알 수 없거나 모델이 만들어낸 schema element는 executable call이 될 수 없습니다.
+알려지지 않았거나 모델이 임의로 만들어 낸 스키마 요소는 실행 가능한 호출이 될 수 없습니다.
 
-애플리케이션이 명시적으로 제공한 argument가 model-produced argument보다 우선합니다.
+애플리케이션이 명시적으로 제공한 인자는 모델이 생성한 인자보다 우선합니다.
 
-## Remote description은 untrusted
+## 원격 설명은 신뢰할 수 없는 데이터입니다
 
-OpenAPI description, MCP annotation, documentation text에는 prompt injection이나 오도하는 지시가 포함될 수 있습니다. analyzer prompt는 catalog description을 명시적으로 untrusted data로 취급합니다.
+OpenAPI의 description, MCP의 annotation, 문서 텍스트에는 프롬프트 인젝션이나 잘못된 지시가 포함될 수 있습니다. 분석기 프롬프트는 카탈로그 설명을 명시적으로 신뢰할 수 없는 데이터로 취급합니다.
 
-credential을 catalog description이나 model-visible argument에 넣지 마세요.
+자격 증명을 카탈로그 설명이나 모델에 노출되는 인자에 넣지 마십시오.
 
-## Sync/async
+## 동기식과 비동기식 호출
 
-`ModelQueryAnalyzer`는 async를 지원합니다. async analyzer를 연결했다면 `aplan()`, `ainvoke()` 또는 다른 async execution surface를 사용합니다.
+`ModelQueryAnalyzer`는 비동기 동작을 지원합니다. 비동기 분석기를 연결했다면 `aplan()`, `ainvoke()` 또는 다른 비동기 실행 인터페이스를 사용하십시오.
 
-async analyzer를 synchronous planning surface에서 호출하면 un-awaited coroutine을 조용히 누출하지 않고 명시적으로 실패합니다.
+비동기 분석기를 동기식 계획 인터페이스에서 호출하면, await되지 않은 코루틴이 조용히 누출되는 대신 명시적으로 실패합니다.

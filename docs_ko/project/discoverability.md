@@ -1,46 +1,46 @@
-# 검색 가능성과 포지셔닝
+# 발견 가능성과 제품 포지셔닝
 
-SchemaRouter는 일반 agent framework, MCP server 또는 model router인 것처럼 보이지 않으면서도 쉽게 발견될 수 있어야 합니다.
+SchemaRouter는 범용 에이전트 프레임워크, MCP 서버 또는 모델 라우터라고 오해받지 않으면서 사용자가 쉽게 찾을 수 있어야 합니다.
 
 ## 정본 포지셔닝
 
-기본 장문 설명은 다음 문장을 사용합니다.
+기본 장문 설명에는 다음 문장을 사용합니다.
 
-> **SchemaRouter는 API, 도구, 데이터 시스템 전반에서 AI agent를 위한 typed capability routing 및 governed execution layer입니다.**
+> **SchemaRouter는 API, 도구, 데이터 시스템 전반에서 AI 에이전트를 위한 타입 기반 기능 라우팅 및 정책 통제형 실행 계층입니다.**
 
-보조 문구는 더 짧을 수 있지만 동일한 제품 경계를 유지해야 합니다.
+짧은 표현에서도 동일한 제품 책임 범위를 유지해야 합니다.
 
-### 짧은 문구
+### 짧은 설명
 
-> AI agent를 위한 typed capability routing 및 governed execution.
+> AI 에이전트를 위한 타입 기반 기능 라우팅과 정책 통제형 실행.
 
-### 생태계 문구
+### 생태계 중심 설명
 
-> 전체 capability catalog를 model context에 쏟아 넣는 대신 API, MCP tool, SDK, data system을 하나의 typed capability boundary 뒤에 둡니다.
+> API, MCP 도구, SDK, 데이터 시스템의 전체 기능 카탈로그를 모델 컨텍스트에 쏟아 넣는 대신, 하나의 타입 기반 기능 경계 뒤에 연결합니다.
 
-## 무엇이고 무엇이 아닌가
+## 해당하는 것과 해당하지 않는 것
 
-SchemaRouter는 다음과 **같습니다**.
+SchemaRouter가 **제공하는 기능**:
 
-- typed tool/capability registry
-- capability-retrieval layer
-- schema-aware planning 및 execution boundary
-- MCP/OpenAPI/Python/tool-framework integration layer
-- validation, projection, policy, health, schema-lifecycle boundary
+- 타입이 정의된 도구 및 기능 레지스트리
+- 기능 검색(capability retrieval) 계층
+- 스키마를 인식하는 계획 수립·실행 경계
+- MCP·OpenAPI·Python·도구 프레임워크 연동 계층
+- 검증, 필드 투영, 정책, 상태, 스키마 수명주기를 관리하는 경계
 
-SchemaRouter는 다음과 **같지 않습니다**.
+SchemaRouter가 **아닌 것**:
 
-- 범용 agent framework
-- LLM provider gateway
-- model router
-- MCP server catalog
-- document retriever 또는 final-answer generator
+- 범용 에이전트 프레임워크
+- LLM 공급자 게이트웨이
+- 모델 라우터
+- MCP 서버 카탈로그
+- 문서 검색기 또는 최종 답변 생성기
 
-이 구분은 기술적 정확성과 검색 품질 모두에 중요합니다. "tool routing"을 검색한 방문자가 SchemaRouter가 LLM model 사이를 routing한다고 오해하게 해서는 안 됩니다.
+이 구분은 기술적 정확성뿐 아니라 검색 결과의 품질에도 중요합니다. 'tool routing'을 검색한 사용자가 SchemaRouter가 LLM 모델 간 트래픽을 라우팅한다고 잘못 이해해서는 안 됩니다.
 
 ## 검색 용어
 
-실제 기능을 설명할 때 다음 용어를 자연스럽게 사용합니다.
+실제로 지원하는 기능을 설명하는 맥락에서만 다음 용어를 자연스럽게 사용합니다.
 
 - agent tool routing
 - typed tool registry
@@ -56,69 +56,69 @@ SchemaRouter는 다음과 **같지 않습니다**.
 - provider/access fallback
 - field projection
 
-검색 순위만을 위해 용어를 반복하지 않습니다.
+검색 순위를 올리기 위한 목적으로만 반복하지 않습니다.
 
-## 노출면 정렬
+## 노출 채널 간 일관성
 
-모든 안정 릴리스에서 다음을 일치시켜야 합니다.
+안정 버전 릴리스마다 다음 항목을 일관되게 유지해야 합니다.
 
-| 노출면 | 요구사항 |
+| 노출 채널 | 요구사항 |
 | --- | --- |
-| GitHub description | typed capability/execution을 설명하는 한 문장 |
-| GitHub homepage | 게시된 문서 사이트 |
-| GitHub topics | 실제 지원하는 protocol/framework |
-| README 첫 화면 | 문제 정의 + 정본 포지셔닝 + 설치 |
-| PyPI summary | 동일한 제품 범주와 경계 |
-| PyPI keywords | 실제 protocol/framework/search term만 사용 |
-| Docs home | 현재 안정판과 동일한 제품 경계 |
-| Release notes | 안정 제품 주장과 연구 주장 분리 |
+| GitHub 설명 | 타입 기반 기능·실행을 설명하는 한 문장 |
+| GitHub 홈페이지 | 공개된 문서 사이트 |
+| GitHub 토픽 | 실제 지원하는 프로토콜 및 프레임워크 |
+| README 첫 화면 | 문제 설명 + 정본 포지셔닝 + 설치 방법 |
+| PyPI 요약 | 동일한 제품 분류와 책임 경계 |
+| PyPI 키워드 | 실제 프로토콜·프레임워크·검색 용어만 포함 |
+| 문서 홈페이지 | 현재 안정 버전과 동일한 제품 책임 경계 |
+| 릴리스 노트 | 안정 제품 기능 주장과 연구 성과 주장 분리 |
 
-## 권장 GitHub topics
+## 권장 GitHub 토픽
 
-현재 topics는 의도한 표면 대부분을 이미 포함합니다. 저장소 설정을 수정할 때 정확한 기존 topic은 유지하고, 유용하다면 다음 high-signal term을 추가합니다.
+현재 설정된 토픽은 의도한 영역 대부분을 다룹니다. 저장소 설정을 수정할 때 기존의 정확한 토픽을 유지하면서 필요하다면 다음 검색 신호가 높은 용어를 추가합니다.
 
 - `langgraph`
 - `capability-retrieval`
 - `schema-aware-execution`
 
-관련 없는 고검색량 topic은 추가하지 않습니다.
+관계없는 인기 토픽은 추가하지 않습니다.
 
-저장소 homepage는 게시된 docs URL을 유지해야 합니다. Social preview는 release checklist에서 처리합니다.
+저장소 홈페이지는 공개 문서 URL로 유지합니다. 소셜 미리보기는 릴리스 체크리스트에서 관리합니다.
 
-## 외부 listing 기회
+## 외부 목록 등재 기회
 
-Listing 제출은 대상의 자체 규칙과 SchemaRouter의 근거에 따라 결정합니다.
+외부 목록에 제출하려면 해당 목록의 자체 규칙과 SchemaRouter의 증거 요구사항을 충족해야 합니다.
 
-| 대상 | 적합성 | 현재 상태 |
+| 대상 | 적합한 분류 | 현재 상태 |
 | --- | --- | --- |
-| `Christian-Sidak/awesome-mcp-tools` | MCP frameworks/tools | **보류**: 외부/커뮤니티 가치가 입증될 때까지 기다립니다. 해당 규칙은 피상적인 자기 홍보를 거부합니다. |
-| `kaushikb11/awesome-llm-agents` | Agent Infrastructure | **아직 자격 없음**: 현재 정책상 인정된 조직/연구실이 게시하지 않았다면 최소 25 stars가 필요합니다. |
-| `awesome-llms-labs/awesome-ai-agents` | Agent infrastructure/ecosystem | **보류**: 실제 외부 사용/영향이 문서화될 때까지 기다립니다. |
-| Model-routing awesome lists | LLM model 간 routing | **제출하지 않음**: SchemaRouter는 tool/capability router이지 model router가 아닙니다. |
-| MCP server-only catalogs | MCP servers | **제출하지 않음**: SchemaRouter는 MCP capability source를 소비/통합하지만 MCP server directory 자체는 아닙니다. |
+| `Christian-Sidak/awesome-mcp-tools` | MCP 프레임워크·도구 | **보류:** 외부·커뮤니티 가치가 입증되어야 하며, 해당 목록은 피상적인 자기 홍보를 허용하지 않음 |
+| `kaushikb11/awesome-llm-agents` | Agent Infrastructure | **현재 자격 미충족:** 인정받는 조직·연구실이 게시한 경우가 아니라면 현행 정책상 최소 25 stars 필요 |
+| `awesome-llms-labs/awesome-ai-agents` | 에이전트 인프라·생태계 | **보류:** 실제 외부 사용이나 영향력에 대한 근거 필요 |
+| 모델 라우팅 관련 목록 | LLM 모델 간 라우팅 | **제출하지 않음:** SchemaRouter는 모델 라우터가 아니라 도구·기능 라우터 |
+| MCP 서버 전용 카탈로그 | MCP 서버 | **제출하지 않음:** SchemaRouter는 MCP 기능 소스를 소비·통합하지만 MCP 서버 디렉터리는 아님 |
 
-LangChain/LlamaIndex 배포는 upstream package/listing 정책이 일반 discoverability 작업과 독립적으로 바뀔 수 있으므로 issue #10에서 별도 추적합니다.
+LangChain/LlamaIndex 배포 및 목록 등재는 이슈 #10에서 별도로 추적합니다. 상위 프로젝트의 패키지·등재 정책은 일반적인 발견 가능성 작업과 무관하게 바뀔 수 있기 때문입니다.
 
-## 릴리스 discoverability 체크리스트
+## 릴리스 발견 가능성 체크리스트
 
-안정 릴리스 전:
+안정 버전 릴리스 전에 다음을 확인합니다.
 
-- [ ] README, docs home, PyPI summary, release notes가 동일한 안정 버전을 표시합니다.
-- [ ] 정본 포지셔닝이 실제 제품 경계와 일치합니다.
-- [ ] 새로운 protocol/framework 이름은 first-class 지원 후에만 추가합니다.
-- [ ] deprecated/removed integration을 검색 metadata에서 제거합니다.
-- [ ] PyPI keyword와 project URL이 유지되는 surface로 연결됩니다.
-- [ ] GitHub description, topics, homepage, social preview를 검토합니다.
-- [ ] 광고하는 주요 integration마다 실행 가능한 example gallery 경로가 하나 이상 있습니다.
-- [ ] benchmark/research 주장은 재현 가능한 근거에 연결되고 안정 제품 주장과 분리됩니다.
-- [ ] 제출 전 외부 listing 자격을 다시 확인하며 과거 contribution policy가 그대로라고 가정하지 않습니다.
+- [ ] README, 문서 홈페이지, PyPI 요약, 릴리스 노트의 안정 버전 표시가 동일합니다.
+- [ ] 정본 포지셔닝이 실제 제품 책임 범위와 일치합니다.
+- [ ] 새 프로토콜·프레임워크 이름은 정식 지원이 존재한 후에만 추가합니다.
+- [ ] 더 이상 지원하지 않는 연동 기능을 검색 메타데이터에서 제거합니다.
+- [ ] PyPI 키워드와 프로젝트 URL이 실제 유지보수 중인 페이지를 가리킵니다.
+- [ ] GitHub 설명, 토픽, 홈페이지, 소셜 미리보기를 점검합니다.
+- [ ] 예제 모음에 광고하는 주요 연동 기능마다 실행 가능한 경로가 하나 이상 있습니다.
+- [ ] 벤치마크·연구 주장은 재현 가능한 근거로 연결되며 안정 제품의 기능 주장과 구분합니다.
+- [ ] 제출 전에 외부 목록의 자격 조건을 다시 확인합니다. 과거의 기여 정책이 그대로라고 가정하지 않습니다.
 
 ## 제출 규칙
 
-Backlink만 얻기 위해 SchemaRouter를 외부 directory에 제출하지 않습니다. 다음 조건을 모두 만족할 때만 제출합니다.
+백링크를 얻는 목적으로만 외부 디렉터리에 SchemaRouter를 제출하지 않습니다. 다음 조건을 모두 만족할 때만 제출합니다.
 
-1. category가 프로젝트를 정확히 설명합니다.
-2. 저장소가 해당 directory의 현재 객관적 요구사항을 충족합니다.
-3. 연결된 quickstart/docs가 작동합니다.
-4. 설명에 근거 없는 성능 주장이 없습니다.
-5. community value를 요구하는 목록에는 충분한 외부 사용/근거가 있습니다.
+1. 목록의 분류가 프로젝트를 정확히 설명합니다.
+2. 저장소가 해당 디렉터리의 현재 객관적 요구조건을 충족합니다.
+3. 연결된 빠른 시작 가이드와 문서가 정상 작동합니다.
+4. 설명에 증거가 없는 성능 주장이 없습니다.
+5. 커뮤니티 가치를 요구하는 목록이라면 충분한 외부 사용·검증 근거가 있습니다.
