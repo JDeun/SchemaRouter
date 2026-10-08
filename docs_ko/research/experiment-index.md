@@ -6,23 +6,24 @@ Public summary page가 "현재 연구가 어디까지 왔는가"에 답한다면
 
 현재 machine-readable ledger:
 
-- independent experiment records: 92;
-- legacy routing corpus lineage: 13 versioned corpora;
-- routine bugfix-only commits are not counted as independent experiments unless they changed an
-  architecture invariant, evaluation protocol, or empirical claim;
-- failed, superseded, invalidated, and terminal experiments are retained rather than hidden.
+- 별도의 실험으로 등록된 기록: 92건;
+- 기존 라우팅 코퍼스 계보: 버전이 명시된 코퍼스 13개;
+- 일반적인 버그 수정 커밋은 아키텍처의 불변 조건, 평가 프로토콜 또는 실증적
+  주장에 영향을 준 경우가 아니면 독립 실험으로 집계하지 않습니다;
+- 실패·대체·무효화·종료된 실험도 숨기지 않고 기록에 유지합니다.
 
 92개 record에는 terminal 0.13 V6A–V6H/open-set control과 active 0.14 agent-utility lineage가 포함됩니다. Terminal 0.13 confirmation surfaces remain unopened unless explicitly recorded otherwise.
 
-The canonical machine-readable source is
-[`benchmarks/research-experiment-ledger.json`](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json).
-The narrative source is
-[Design and experiment history](design-and-experiment-history.md).
+기계적으로 읽을 수 있는 정본은
+[`benchmarks/research-experiment-ledger.json`](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json)입니다.
+서술형 이력의 정본은
+[설계 및 실험 이력](design-and-experiment-history.md)입니다.
 
-For **what to try next and why**, use the
-[Prior-art roadmap](prior-art-roadmap.md) and active GitHub issue #417. Historical 0.13 prior-art mapping remains in #388. Those surfaces map literature
-to canonical work items and record active/next/backlog/deferred state so a new session does not
-recreate terminal experiments.
+**다음에 무엇을 왜 시도해야 하는지**는
+[선행연구 기반 로드맵](prior-art-roadmap.md)과 진행 중인 GitHub 이슈 #417을 참고하세요.
+과거 0.13 단계의 선행연구 대응 관계는 #388에 남아 있습니다. 이 자료들은
+선행연구를 정식 작업 항목에 연결하고 진행 중·다음·대기·보류 상태를 기록하므로,
+새 작업 세션에서 이미 종료된 실험을 다시 시작하지 않도록 돕습니다.
 
 ## 적절한 evidence surface 선택
 
@@ -205,9 +206,9 @@ Repository Git history는 계속 exhaustive engineering record 역할을 합니�
 
 ## Why the summary page shows fewer rows
 
-[Routing research status](routing-status.md) is a current-state summary. It shows
-the standing target, strongest reference points, decisive fresh-confirmation failures, and the
-present interpretation. It is not meant to replace the complete ledger.
+[라우팅 연구 현황](routing-status.md)은 최신 상태의 요약 자료입니다.
+현재 유지되는 목표, 가장 강한 비교 기준, 새 확인 실험에서 드러난 결정적인 실패,
+그리고 그에 대한 현재 해석을 정리합니다. 전체 실험 원장을 대체하는 문서는 아닙니다.
 
 For full reconstruction, use all three surfaces:
 
