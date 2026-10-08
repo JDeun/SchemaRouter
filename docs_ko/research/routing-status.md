@@ -77,8 +77,7 @@ Canonical B1-v2 freeze identity:
 
 ### #420 Phase B1 — terminal
 
-Canonical B1 workflow `36529108855` completed all 30 frozen micro-shards and exactly 552 unique
-`(catalog_size, task_id, condition)` episodes.
+정본 B1 워크플로 `36529108855`는 동결된 마이크로 샤드 **30개**와 고유한 `(catalog_size, task_id, condition)` 에피소드 **552개**를 모두 완료했습니다.
 
 | Condition | Task pass | Mean tool-schema tokens | Schema tokens vs FULL |
 | --- | ---: | ---: | ---: |
@@ -89,10 +88,7 @@ Canonical B1 workflow `36529108855` completed all 30 frozen micro-shards and exa
 | SR-PROGRESSIVE | 82.61% | 2,986.9 | 12.31% |
 | ORACLE | 86.96% | 441.3 | 1.82% |
 
-SR-5 preserved 100% required-route retrieval recall on this controlled surface, improved task pass
-by +22.83pp versus FULL, and produced 0 unauthorized destructive executions. The
-task-clustered bootstrap interval for SR-5 minus FULL was **+9.78pp to +36.96pp**. This remains
-mechanism/sanity evidence, not population-level non-inferiority.
+이 통제된 표면에서 SR-5는 필요한 경로의 검색 재현율을 **100%** 보존했고, FULL 대비 과제 통과율은 **+22.83pp** 높았으며, 무단 파괴적 실행은 **0건**이었습니다. 과제별 클러스터 부트스트랩으로 측정한 SR-5 − FULL 차이의 신뢰구간은 **+9.78pp ~ +36.96pp**였습니다. 이는 메커니즘과 정상 동작을 확인하는 근거이며, 모집단 수준의 비열등성 증명은 아닙니다.
 
 ### #423 Phase B2 — terminal success
 
@@ -139,7 +135,7 @@ The canonical freeze rules live in [External validation freeze](external-validat
 
 ### Active conveyor
 
-The remaining primary 0.14 sequence is gated rather than manually queued:
+남은 0.14 주요 연구는 사람이 임의로 예약하는 방식이 아니라 앞 단계의 종료 게이트를 통과한 뒤 진행하는 컨베이어입니다.
 
 ```text
 #431 execution-state-aware corrective retrieval
@@ -156,22 +152,19 @@ freeze #432 held-out condition manifest
 #424 — 144-task final-answer quality
 ```
 
-#431 is currently active. #432 and #424 must not be manually launched around the conveyor.
+현재 활성 단계는 #431입니다. #432와 #424는 컨베이어를 우회해 수동으로 실행해서는 안 됩니다.
 
-The separate output-field-projection line (#506/#510) remains an independent field-level research
-question. Its runtime qualification is instrument evidence and must not be mixed into the
-capability-retrieval claim hierarchy.
+출력 필드 투영에 관한 별도 연구(#506/#510)는 독립된 필드 수준 문제입니다. 런타임 적격성 검사는 계측 근거이며 기능 검색 성과 주장과 섞어서는 안 됩니다.
 
-The active 0.14 promotion criteria remain:
-- required-tool-set Recall >= 97% for the effective candidate budget;
-- task pass rate >= FULL minus **2 percentage points**;
-- tool-schema tokens <= 40% of FULL;
-- total input tokens < FULL;
-- unauthorized destructive executions = 0.
+0.14 연구의 승격 기준:
 
+- 현재 후보 예산에서 필요한 도구 집합 Recall이 **97% 이상**
+- 과제 통과율이 FULL보다 **2 percentage points** 넘게 낮지 않을 것
+- 도구 스키마 토큰은 FULL의 **40% 이하**
+- 전체 입력 토큰은 FULL보다 적을 것
+- 무단 파괴적 실행은 **0건**
 
-This page is conservative: development-set success is not presented as production
-validation, and consumed fresh-confirmation corpora are never reused for tuning.
+이 문서는 개발 집합의 성공을 운영환경 검증으로 주장하지 않습니다. 새로운 확인 코퍼스를 한 번 소비하면 튜닝에 재사용하지 않습니다.
 
 ## Historical 0.11–0.13 operation-routing target
 
@@ -258,15 +251,11 @@ Digest: `sha256:2a24d50c563ee872fdad8d498e30ab7a55e6c82e0650bf27ac4bfbadc4fc4269
 
 ## 0.12 query-first typed-frame screen
 
-The first 0.12 successor experiment (#347) changed the representation rather than adding another
-endpoint-similarity threshold. It parsed a registry-independent explicit request frame, used frozen
-BGE-M3 only to anchor the tool/domain, and then filtered that tool's endpoints by trusted typed
-contract contradictions before one bounded ranking decision.
+0.12의 첫 후속 실험(#347)은 엔드포인트 유사도 임계값을 더하는 대신 표현 방식을 바꿨습니다. 레지스트리와 독립적인 명시적 요청 프레임을 파싱하고, 동결한 BGE-M3로 도구·도메인만 고정한 다음 신뢰된 타입 계약과 모순되는 엔드포인트를 제거했습니다. 마지막에 제한된 한 번의 순위 선택을 수행했습니다.
 
-A new 936-case DEV corpus and a separate 1,008-case registration confirmation corpus were generated
-and frozen before any scoring. The confirmation surface remains **unscored** because DEV failed.
+새로운 **936개 DEV 사례**와 별도의 **1,008개 등록 확인 사례**를 점수 계산 전에 동결했습니다. DEV가 실패했으므로 확인 코퍼스는 **아직 점수를 산출하지 않았습니다**.
 
-DEV result:
+DEV 결과:
 
 | Metric | Result |
 | --- | ---: |
@@ -278,12 +267,9 @@ DEV result:
 | p95 | 179.53 ms |
 | Authority / execution errors | 0 / 0 |
 
-The result shows that typed query-side filtering can preserve supported routing and runtime very
-well, but a high-precision lexical frame does not cover enough natural-language operation intent to
-solve open-set membership. This exact candidate is terminal and is not repaired from DEV rows.
+타입 기반 쿼리 필터링은 지원 요청의 경로 선택과 실행 성능을 잘 보존하지만, 정밀한 어휘 기반 프레임만으로는 자연어 작업 의도를 충분히 포괄하지 못해 open-set 소속 판단을 해결하지 못했습니다. 이 후보는 종료되었으며 DEV의 개별 행을 이용해 수정하지 않습니다.
 
-The next successor hypothesis must add a materially broader **query-side semantic operation signal**
-without turning endpoint similarity back into capability authority.
+다음 후속 가설은 엔드포인트 유사도를 기능 실행 권한으로 되돌리지 않으면서 **쿼리 측의 의미적 작업 신호**를 실질적으로 넓히는 것입니다.
 
 ## 0.12 semantic ontology screens
 
@@ -458,11 +444,9 @@ strongest counterfactual-leaf entailment, without adding thresholds or positive 
 
 ## 0.12 pairwise supported-vs-counterfactual NLI
 
-Experiment #378 compared the strongest independent NLI entailment among the BGE-anchored tool's
-registered capability leaves with the strongest counterfactual tool/non-tool leaf. Counterfactual
-evidence could only veto to `NO_ROUTE`; frozen BGE-M3 remained the sole positive selector.
+실험 #378은 BGE가 지정한 도구의 등록된 기능 leaf에서 가장 강한 독립 NLI 함의 점수와 가상 반례 도구·비도구 leaf의 가장 강한 점수를 비교했습니다. 반례 근거에는 `NO_ROUTE`로 거부할 권한만 부여했고, 동결한 BGE-M3만이 양수 경로를 선택할 수 있었습니다.
 
-DEV result:
+DEV 결과:
 
 | Metric | Result |
 | --- | ---: |
@@ -479,11 +463,9 @@ DEV result:
 | End-to-end p95 | 539.92 ms |
 | Positive route switches / authority / execution errors | 0 / 0 / 0 |
 
-The exact formulation is terminal and its frozen confirmation corpus remains **unscored**. Together
-with #371, #374 and #377, this closes the current Horizon NLI semantic-decomposition family.
+**결정: 해당 구조 종료.** 동결된 확인 코퍼스는 **점수를 산출하지 않은 상태**로 유지합니다. #371, #374, #377과 함께 Horizon NLI 의미 분해 계열을 종료하는 근거입니다.
 
-Research has moved to #382/#383: schema-derived open-set decision boundaries following the
-ADB, hard-negative OOS and energy-based OOD literature.
+연구는 ADB, hard-negative OOS 및 에너지 기반 OOD 문헌에 따른 스키마 유도 open-set 의사결정 경계를 살피는 #382/#383으로 이동했습니다.
 
 ## Reproducibility
 
@@ -502,12 +484,9 @@ The terminal report is available at
 
 ## 0.13 schema-derived open-set membership sequence
 
-The 0.13 cycle isolates **positive route retrieval** from **open-set capability membership**.
-Frozen BGE-M3 remains the sole source of positive endpoint authority. Every 0.13 verifier is
-veto-only: it may preserve the raw registered top-1 route or return `NO_ROUTE`, but may never
-rerank to another endpoint, use rank-2 fallback, or invent a pseudo-route.
+0.13 단계에서는 **양수 경로 검색**과 **open-set 기능 소속 판별**을 분리했습니다. 동결 BGE-M3만 양수 엔드포인트 실행 권한을 갖습니다. 모든 0.13 검증기는 거부 전용(veto-only)이며 등록된 원시 1순위 경로를 유지하거나 `NO_ROUTE`를 반환할 수 있을 뿐, 다른 엔드포인트로 재정렬하거나 2순위 폴백을 실행하거나 가상의 경로를 만들어서는 안 됩니다.
 
-Standing production-oriented gates for this sequence are:
+이 연구에서 유지하는 운영 지향 승격 기준은 다음과 같습니다.
 
 | Metric | Gate |
 | --- | ---: |
@@ -528,9 +507,7 @@ rejection were both 100% only because every query lay outside every learned regi
 
 ### V6B — hard-negative ellipsoid (#395)
 
-V6B added same-resource unsupported-operation negatives from the registered capability complement
-and a low-rank anisotropic ellipsoid. The synthetic evidence separated as intended, but the
-synthetic-to-natural surface shift remained: every DEV query still fell outside the boundaries.
+V6B는 등록된 기능의 보완 집합에서 동일 리소스의 미지원 작업에 해당하는 부정 사례와 저차원 비등방성 타원체 경계를 추가했습니다. 합성 데이터에서는 의도한 대로 분리됐지만 자연어 DEV 표면으로 옮기는 과정에서 분포 이동이 발생했습니다. 모든 DEV 쿼리가 경계 밖에 놓였습니다.
 
 | Metric | Result |
 | --- | ---: |
@@ -541,8 +518,7 @@ synthetic-to-natural surface shift remained: every DEV query still fell outside 
 | Raw-correct winners vetoed | 222 / 100% |
 | p95 | 139.91 ms |
 
-**Decision:** terminal. The complement-negative evidence remains reusable; the ellipsoid
-formulation does not. Confirmation remains unopened.
+**결정: 종료.** 보완 집합에서 얻은 부정 근거는 재사용할 수 있지만 타원체 공식은 재사용하지 않습니다. 확인 코퍼스는 아직 열지 않았습니다.
 
 ### V6C — tied-Gaussian density ratio (#397)
 
