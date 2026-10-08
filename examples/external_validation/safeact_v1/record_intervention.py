@@ -8,7 +8,6 @@ from typing import Any
 
 from examples.external_validation.safeact_v1.trusted_session import (
     TrustedEvidenceSession,
-    VerifiedToolEvidence,
 )
 
 EvidenceVerifier = Any

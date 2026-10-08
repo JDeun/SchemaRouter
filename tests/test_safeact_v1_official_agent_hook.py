@@ -47,7 +47,6 @@ def test_official_hook_uses_only_trusted_gateway_calls(
     monkeypatch, tmp_path: Path
 ) -> None:
     collected = []
-    params = {}
 
     class FakeGateway:
         def __init__(self, protocol: str):

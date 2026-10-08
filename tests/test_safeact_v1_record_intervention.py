@@ -48,10 +48,11 @@ def _fixture(tmp_path: Path):
             "result": {"record_id": "C2", "owner": "Alice"},
         }
     ]
-    verifier = lambda _tool, _args, result: VerifiedToolEvidence(
-        record_id=result["record_id"],
-        fields=frozenset({"owner"}) if "owner" in result else frozenset(),
-    )
+    def verifier(_tool, _args, result):
+        return VerifiedToolEvidence(
+            record_id=result["record_id"],
+            fields=frozenset({"owner"}) if "owner" in result else frozenset(),
+        )
     return document, record, gateway_calls, verifier
 
 
