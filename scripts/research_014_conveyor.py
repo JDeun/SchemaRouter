@@ -318,6 +318,31 @@ def find_marked_run(
     return matches[0] if matches else None
 
 
+def wait_for_marked_run(
+    api: GitHubAPI,
+    workflow_file: str,
+    marker: str,
+    *,
+    timeout_seconds: float = 30.0,
+    poll_seconds: float = 1.0,
+) -> StageRun | None:
+    """Wait briefly for GitHub to acknowledge a workflow dispatch.
+
+    The workflow-dispatch endpoint returns no run ID.  Treating a successful
+    POST as a created run can therefore hide a stalled research conveyor.
+    Positive acknowledgement requires observing the exact frozen run marker.
+    """
+
+    deadline = time.monotonic() + timeout_seconds
+    while True:
+        run = find_marked_run(api, workflow_file, marker)
+        if run is not None:
+            return run
+        if time.monotonic() >= deadline:
+            return None
+        time.sleep(poll_seconds)
+
+
 def source_sha_from_run(run: StageRun) -> str:
     match = re.search(r"(?:^| )source=([0-9a-f]{40})(?:$| )", run.display_title)
     if match is not None:
@@ -833,15 +858,39 @@ def run_controller(
                         ref=ref,
                         inputs=recovery_inputs,
                     )
+                    recovery = wait_for_marked_run(
+                        api,
+                        CORRECTIVE_RECOVERY_WORKFLOW,
+                        f"parent={corrective.id} ",
+                    )
+                    if recovery is None:
+                        actions.append(
+                            "corrective_shard_recovery_dispatch_unacknowledged:"
+                            f"parent={corrective.id}:missing={len(missing_shards)}:"
+                            f"source={retry_source_sha}"
+                        )
+                        return {
+                            "state": "blocked_corrective_shard_recovery_dispatch_ack",
+                            "actions": actions,
+                            "status": [_status_line("corrective", corrective)],
+                        }
                 actions.append(
                     "dispatch_corrective_shard_recovery:"
                     f"parent={corrective.id}:missing={len(missing_shards)}:"
                     f"source={retry_source_sha}"
+                    + (
+                        f":run={recovery.id}"
+                        if recovery is not None
+                        else ""
+                    )
                 )
                 return {
                     "state": "corrective_shard_recovery_dispatched",
                     "actions": actions,
-                    "status": [_status_line("corrective", corrective)],
+                    "status": [
+                        _status_line("corrective", corrective),
+                        _status_line("corrective_recovery", recovery),
+                    ],
                 }
 
             if terminal_failure(recovery):
