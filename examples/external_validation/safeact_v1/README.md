@@ -103,3 +103,38 @@ The aggregator reports official exact-case success, post-run premature
 are unadjusted exploratory statistics, not proof of causality. Unsupported
 **executions** and false refusals must remain unmeasured until the trusted
 dispatch/denial and counterfactual evaluation boundary is connected.
+
+
+### Host-side official adapter integration
+
+`official_agent_hook.py` patches the pinned official coding agent's **host-side**
+V1 normalization point, not the model or sandbox. The official `ToolGateway`
+continues to execute information queries, and only its completed public
+`gateway.calls` may contribute verified observations. No hidden SafeAct
+requirements or expected decisions are examined by the hook.
+
+The evidence-gate arm must call the hook with `--contract-file`,
+`--contract-sha256`, `--public-source-root`, and
+`--condition evidence_gate`, followed by the usual official agent
+`--backend` / `--model` arguments. The contract hash is computed over
+canonical JSON (sorted keys, UTF-8, compact separators). The official
+upstream revision, frozen policy source files and 131-case coverage are
+verified before invoking the model. The only recognized verifier shape is
+an explicit independent `public_observation_mappings` contract, mapping
+information-tool names to `record_id_key` and `field_name_key` in the
+**actual public returned observations**.
+
+The trusted gate preserves model proposals as counters, denies unsupported
+proposals before they enter the official normalized action record and stores
+a separate, coarse intervention diagnostic. Denied model proposals
+**must not** be counted as physically dispatched actions.
+
+The final orchestrator also requires `verify_arm_interventions()` to
+attest every scored case: genuine ungated baseline, SchemaRouter
+`schemarouter_typed_route` routing-only records, and
+`trusted_official_v1_record_gate` records. **The routing-only official
+adapter has not yet been implemented or approved**; any attempt to
+present three baseline runs as a completed comparison will fail.
+
+No credential-bearing model runtime, independent 131-case policy coverage,
+or full 393-case scored result is bundled with these source files.
