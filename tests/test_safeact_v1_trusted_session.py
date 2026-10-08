@@ -205,9 +205,14 @@ def test_missing_bound_argument_never_dispatches() -> None:
     session = TrustedEvidenceSession(
         contract,
         "refund_issue",
-        information_call=lambda tool, args: {"charge_id": "C2", "owner": "Alice"},
+        information_call=lambda tool, args: {
+            "charge_id": "C2", "amount": 15, "owner": "Alice"
+        },
         verify_result=lambda tool, args, result: VerifiedToolEvidence(
-            record_id="C2", fields=frozenset({"amount", "owner"})
+            record_id=result["charge_id"],
+            fields=frozenset(
+                field for field in ("amount", "owner") if field in result
+            ),
         ),
         execute_action=lambda action, args: dispatched.append(action),
     )
