@@ -29,6 +29,18 @@ UPSTREAM_REVISION = "841816cf1e376e6fbf8600cffac5df1736e1d369"
 EXPECTED_CASES = 131
 MODES = ("ungated", "routing_only", "evidence_gate")
 
+# Pinned upstream CLI solver/runtime flags. All three arms must use the same
+# effective explicit values, including repeated --extra-arg switches.
+UNIFORM_RUNTIME_OPTIONS = (
+    "--profile",
+    "--cfuse-config",
+    "--cli-bin",
+    "--model-catalog",
+    "--timeout",
+    "--max-turns",
+    "--extra-arg",
+)
+
 
 def public_case_ids(root: Path) -> set[str]:
     result = subprocess.run(
@@ -58,16 +70,29 @@ def public_case_ids(root: Path) -> set[str]:
     return set(ids)
 
 
-def _declared_option(command: str, option: str) -> str | None:
-    """Return exactly one CLI value; reject missing, duplicated and empty options."""
+def _declared_options(command: str, option: str) -> tuple[str, ...]:
+    """Extract option values while rejecting broken spaced flag forms."""
     tokens = shlex.split(command)
     found: list[str] = []
     for index, token in enumerate(tokens):
-        if token == option and index + 1 < len(tokens):
+        if token == option:
+            if index + 1 >= len(tokens) or tokens[index + 1].startswith("--"):
+                raise ValueError(f"{option} requires a nonempty argument")
             found.append(tokens[index + 1])
         elif token.startswith(option + "="):
-            found.append(token.partition("=")[2])
-    return found[0] if len(found) == 1 and found[0] else None
+            value = token.partition("=")[2]
+            if not value:
+                raise ValueError(f"{option} requires a nonempty argument")
+            found.append(value)
+    return tuple(found)
+
+
+def _declared_option(command: str, option: str) -> str | None:
+    """Return at most one declared value, rejecting duplicate flags."""
+    found = _declared_options(command, option)
+    if len(found) > 1:
+        raise ValueError(f"duplicate {option} declarations")
+    return found[0] if found else None
 
 
 def _declared_model(command: str) -> str | None:
@@ -89,6 +114,21 @@ def _validate_agent_fairness(plans: tuple[V1RunPlan, ...]) -> None:
         for p in plans
     ):
         raise ValueError("all V1 arms must explicitly declare baseline strategy")
+    for option in UNIFORM_RUNTIME_OPTIONS:
+        values = {
+            _declared_options(plan.agent_command, option)
+            for plan in plans
+        }
+        if len(values) != 1:
+            raise ValueError(
+                f"all V1 arms must use the same upstream runtime {option}"
+            )
+    keep_sandbox = {
+        "--keep-sandbox" in shlex.split(plan.agent_command)
+        for plan in plans
+    }
+    if len(keep_sandbox) != 1:
+        raise ValueError("all V1 arms must agree on --keep-sandbox")
 
 
 def validate_independent_contract_review(
