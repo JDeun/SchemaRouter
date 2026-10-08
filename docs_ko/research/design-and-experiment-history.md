@@ -632,70 +632,71 @@ Machine-readable ledger는 향후 paper table과 reproducibility appendix를 생
 
 ## 17. Complete repository-history audit
 
-Mainline history는 initial commit부터 이 reconstruction에 사용한 research-cycle baseline까지 전부 enumerate했습니다.
+최초 커밋부터 이 재구성에 사용한 연구 주기 기준 시점까지의 mainline 이력을 모두 열거해 감사했습니다.
 
-Canonical audit manifest:
+정본 감사 매니페스트:
 
 - `benchmarks/repository-history-audit.json`
-- mainline commits enumerated: 140
-- initial revision: `5691c3c922f0209231f112c06096fe8744681fc5`
-- audited main head: `526d0c588bbec053fba54c55d982cc67d2a74d56`
+- 열거된 mainline 커밋: **140개**
+- 최초 리비전: `5691c3c922f0209231f112c06096fe8744681fc5`
+- 감사 대상 main head: `526d0c588bbec053fba54c55d982cc67d2a74d56`
 
-Subject-index counts at the audit point:
+해당 시점에 커밋 제목으로 분류한 결과:
 
-- 42 feature commits
-- 21 fixes
-- 14 research commits
-- 10 releases
-- 10 documentation commits
-- 9 test commits
-- 7 CI commits
-- 4 security commits
-- 4 benchmark commits
-- 3 performance commits
-- 15 chores
-- 1 initial/other commit
+- 기능(feature) 42개
+- 수정(fix) 21개
+- 연구(research) 14개
+- 릴리스(release) 10개
+- 문서(documentation) 10개
+- 테스트(test) 9개
+- CI 7개
+- 보안(security) 4개
+- 벤치마크(benchmark) 4개
+- 성능(performance) 3개
+- 기타 유지보수(chore) 15개
+- 최초 커밋 및 기타 1개
 
-이 enumeration은 위 narrative보다 범위가 넓으므로 formal 0.10/0.11 experiment manifest보다 먼저 수행됐다는 이유만으로 초기 implementation work가 research record에서 조용히 제외되지 않습니다.
+이 전수 열거는 앞선 서술보다 범위가 넓습니다. 공식 0.10/0.11 실험 매니페스트가 도입되기 전의 초기 구현을 연구 기록에서 조용히 제외하지 않기 위한 것입니다.
 
-Rejected 및 unmerged research branch는 mainline history에 나타나지 않는 것이 정상입니다. They remain represented independently in `benchmarks/research-experiment-ledger.json` through PR, branch, workflow-run, artifact, and decision provenance.
+반려되거나 병합되지 않은 연구 브랜치는 mainline 커밋 이력에 나타나지 않는 것이 정상입니다. 이들의 PR, 브랜치, 워크플로 실행, 아티팩트, 판단 근거는 별도의 `benchmarks/research-experiment-ledger.json`에 유지합니다.
 
-Audit에는 서로 보완적인 두 axis가 있습니다:
+이 감사에는 상호 보완적인 두 축이 있습니다.
 
-1. mainline history completeness — every commit from repository inception is enumerated;
-2. research evidence completeness — material unmerged/rejected experiments remain in the experiment ledger instead of disappearing when their PR is closed.
+1. **mainline 이력의 완전성:** 저장소 최초 생성 이후 모든 커밋을 열거합니다.
+2. **연구 근거의 완전성:** 병합되지 않았거나 기각된 실험도 PR이 닫힐 때 사라지지 않고 실험 원장에 남도록 합니다.
 
 
 ## 18. Width-2 frozen winner-gate executable result
 
-Work item #227 / PR #228 executed the preregistered width-2, score-only, route-local `rank_then_gate` candidate on the fresh 1,800-case v4 development corpus. The threshold map was frozen before execution from canonical width-selection artifact `10930665000`; no calibration or blind evidence was used.
+작업 항목 #227 / PR #228에서는 사전 등록된 width-2, 점수 전용, route-local `rank_then_gate` 후보를 새로운 v4 개발 코퍼스 **1,800개 사례**에서 실행했습니다. 임계값 맵은 정본 width-selection 아티팩트 `10930665000`에서 실행 전에 동결했으며, calibration이나 blind 평가 근거를 사용하지 않았습니다.
 
-Quality/safety result:
+품질·안전성 결과:
 
-- supported exact-route: 72.57% (gate >=70%);
-- near-domain unsupported rejection: 98.09% (gate >=96%);
-- canonical false routes: 12/648 = 1.85% (gate <=2%);
-- OOD rejection: 98.61%;
-- invalid plans / execution errors: 0 / 0.
+- 지원되는 요청의 정확 경로 선택: **72.57%** (통과 기준 70% 이상)
+- 근접 도메인의 미지원 요청 거부율: **98.09%** (통과 기준 96% 이상)
+- 정본 false route: **12/648 = 1.85%** (통과 기준 2% 이하)
+- OOD 거부율: **98.61%**
+- 무효 계획 / 실행 오류: **0 / 0**
 
-The quality gates passed. The paired same-runner latency gate did not:
+품질 기준은 통과했지만 동일 러너에서 측정한 대응 지연 시간 기준은 통과하지 못했습니다.
 
-- baseline mean/p50/p95: 531.031 / 605.144 / 697.912 ms;
-- candidate mean/p50/p95: 765.187 / 582.750 / 1836.868 ms;
-- mean latency: +44.09%;
-- p95 latency: +163.19%.
+- 기준선 평균/p50/p95: **531.031 / 605.144 / 697.912 ms**
+- 후보 평균/p50/p95: **765.187 / 582.750 / 1836.868 ms**
+- 평균 지연 시간 증가: **44.09%**
+- p95 지연 시간 증가: **163.19%**
 
-Decision: development latency gate에서 reject했습니다. 이 candidate는 confirmation용으로 freeze하지 않으며 #198 calibration/blind evaluation으로 진행해서는 안 됩니다. 이 결과는 중요한 negative evidence입니다. Winner-only route-local gating은 width 2에서 현재 quality/safety frontier를 넘을 수 있지만 unconditional BGE invocation은 여전히 허용하기 어려운 CPU mean/tail latency를 발생시킵니다.
+**결정: 개발 단계 지연 시간 기준에서 기각.** 이 후보는 확인 평가용으로 동결되지 않았으며 #198 calibration/blind 평가 단계로 승격해서는 안 됩니다. 이 부정적 결과는 width 2에서 승자 전용 route-local 게이트가 품질·안전성 경계를 넘더라도, BGE를 매번 호출하면 CPU 평균 및 꼬리 지연 시간이 허용 범위를 벗어남을 보여 줍니다.
 
-Provenance:
+출처:
 
-- source revision: `fdaf3f77e95b504e81739c69cd1d9889d36afabb`;
-- workflow run: `36315784179`;
-- artifact: `10931078672`;
-- artifact SHA-256: `00517181c286197fe61156d04348eb9519bc8dab3681d20650216bfb923b37e1`;
-- corpus SHA-256: `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`.
+- 소스 리비전: `fdaf3f77e95b504e81739c69cd1d9889d36afabb`
+- 워크플로 실행: `36315784179`
+- 아티팩트: `10931078672`
+- 아티팩트 SHA-256: `00517181c286197fe61156d04348eb9519bc8dab3681d20650216bfb923b37e1`
+- 코퍼스 SHA-256: `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`
 
-The next development-only evidence task was #226: measure a cheap multilingual action-only signal built solely from endpoint action names and trusted `operation_aliases`. Any behavior-changing fast path, veto, or evidence projection remained subject to separate preregistration.
+다음 개발 단계 한정 근거 수집 작업은 #226이었습니다. 엔드포인트 행동 이름과 신뢰 가능한 `operation_aliases`만 사용하여 비용이 낮은 다국어 행동 신호를 측정하는 것이었습니다. 실행 동작을 바꾸는 빠른 경로, 거부(veto), 증거 투영은 모두 별도의 사전 등록 절차를 거쳐야 했습니다.
+
 
 ## 19. Cheap action-only evidence diagnostic
 
@@ -963,107 +964,111 @@ Sections 26–27 described #255/#256 while they were still active. Their termina
 
 ### #255 — zero-additional-false cross-encoder rescue
 
-Work item #255 / PR #258 kept the strict BGE-M3 0.55/0.45 base immutable and invoked the pinned BGE reranker only on base abstentions.
+작업 항목 #255 / PR #258에서는 엄격한 BGE-M3 0.55/0.45 기준선을 변경하지 않고, 기준선이 기권한 경우에만 고정된 BGE 리랭커를 호출했습니다.
 
-Primary zero-additional-false result:
+추가 오탐 경로 0개를 요구한 1차 결과:
 
-- base: 965/1152 = 83.77% supported exact;
-- base false-route: 6/648 = 0.93%;
-- rescued correct supported cases: 5;
-- additional false routes: 0;
-- composed supported exact: 970/1152 = 84.20%;
-- near-domain rejection remained 98.96%;
-- composed mean / p95 latency: 301.05 / 473.75 ms.
+- 기준선: **965/1152 = 83.77%** 지원 요청 정확 선택
+- 기준선 false route: **6/648 = 0.93%**
+- 추가로 올바르게 복구한 지원 사례: **5개**
+- 추가 false route: **0개**
+- 결합된 정확 선택: **970/1152 = 84.20%**
+- 근접 도메인 거부율: **98.96%** 유지
+- 결합 평균/p95 지연 시간: **301.05 / 473.75 ms**
 
-Decision: reject했습니다. Same-winner cross-encoder rescue는 안전했지만 85%를 넘기 위해 필요한 15 case 중 1/3만 복구했습니다.
+**결정: 기각.** 동일 승자에 적용한 크로스 인코더 복구는 안전했지만 목표인 85%를 넘기기 위해 필요했던 15개 사례 중 3분의 1인 5개만 복구했습니다.
 
-Provenance:
+출처:
 
-- workflow: `36325681661`;
-- artifact: `10934276251`;
-- artifact SHA-256: `a51ae289ed3dd4dd2e9bdb06bbf70e26f32f1df030a119feeb9883cd131b8e25`.
+- 워크플로: `36325681661`
+- 아티팩트: `10934276251`
+- 아티팩트 SHA-256: `a51ae289ed3dd4dd2e9bdb06bbf70e26f32f1df030a119feeb9883cd131b8e25`
+
 
 ### #256 — route-local stable fusion
 
-Work item #256 / PR #257 froze route-local schema/action weights selected from the already-preregistered #246 grid and replaced literal observed-score boundaries with midpoint + upward-rounded thresholds.
+작업 항목 #256 / PR #257에서는 사전 등록된 #246 그리드에서 선정한 route-local 스키마/행동 가중치를 동결하고, 실제 관찰 점수와 일치하는 임계 경계 대신 중간점과 올림한 임계값을 사용했습니다.
 
-Result:
+결과:
 
-- raw supported exact: 90.54%;
-- strict 6/648:
-  - supported exact: 963/1152 = 83.59%;
-  - near-domain rejection: 98.96%;
-  - false-route: 0.93%;
-- secondary 12/648:
-  - supported exact: 84.46%;
-  - near-domain rejection: 97.92%;
-  - false-route: 1.85%;
-- strict metrics were unchanged under adversarial ±1e-6 and ±1e-5 stability diagnostics;
-- mean / p95 latency: 180.50 / 197.16 ms.
+- 게이트 적용 전 지원 요청 정확 선택: **90.54%**
+- 엄격한 예산 **6/648**:
+  - 지원 요청 정확 선택: **963/1152 = 83.59%**
+  - 근접 도메인 거부율: **98.96%**
+  - false route: **0.93%**
+- 2차 예산 **12/648**:
+  - 지원 요청 정확 선택: **84.46%**
+  - 근접 도메인 거부율: **97.92%**
+  - false route: **1.85%**
+- 적대적 수치 안정성 진단 **±1e-6**, **±1e-5**에서도 엄격 기준 지표 변화 없음
+- 평균/p95 지연 시간: **180.50 / 197.16 ms**
 
-Decision: reject했습니다. Route-local fusion은 90% 이상의 ranking headroom이 존재함을 보였지만 open-set acceptance boundary 때문에 <=1% false-route constraint에서 >=85% exact를 달성하지 못했습니다.
+**결정: 기각.** Route-local fusion을 통해 90% 이상의 순위화 성능 여유는 확인했지만, open-set 허용 경계 때문에 false route 1% 이하 제약에서 정확 선택률 85% 이상을 달성하지 못했습니다.
 
-Provenance:
+출처:
 
-- workflow: `36325721448`;
-- artifact: `10933809684`;
-- artifact SHA-256: `ca4df26ba5307b8e5aad22e2443f9e69713428b0898303939d8fd1cba3d443c0`.
+- 워크플로: `36325721448`
+- 아티팩트: `10933809684`
+- 아티팩트 SHA-256: `ca4df26ba5307b8e5aad22e2443f9e69713428b0898303939d8fd1cba3d443c0`
+
 
 ### #259 — numerically robust frozen BGE-M3 base
 
-The failed #245 confirmation showed that a literal observed-score threshold could flip one case from a runtime drift of only ~1.35e-7.
+실패한 #245 확인 평가에서는 실제 관찰 점수와 같은 리터럴 임계값이 런타임 편차 약 **1.35e-7**만으로도 한 사례의 결과를 뒤집을 수 있음을 확인했습니다.
 
-Work item #259 / PR #260 froze, before execution:
+작업 항목 #259 / PR #260에서는 실행 전에 다음 항목을 동결했습니다.
 
-- BGE-M3 revision `5617a9f...`;
-- schema/action fusion 0.55 / 0.45;
-- #246 strict budget-6 route-local thresholds;
-- winner-only rank-then-gate;
-- no rank-2 fallthrough;
-- a comparison epsilon of 1e-6:
-  - `top_score + epsilon >= min_score`;
-  - `top_margin + epsilon >= min_margin`.
+- BGE-M3 리비전 `5617a9f...`
+- 스키마/행동 융합 가중치 **0.55 / 0.45**
+- #246의 엄격한 예산 6에 따른 route-local 임계값
+- 승자 전용 rank-then-gate
+- rank-2 후순위 대체(fallthrough) 금지
+- 비교 허용오차(epsilon) **1e-6**:
+  - `top_score + epsilon >= min_score`
+  - `top_margin + epsilon >= min_margin`
 
-Executable confirmation passed:
+실행 확인 평가는 다음 결과로 통과했습니다.
 
-- supported exact: 83.7674%;
-- near-domain rejection: 98.9583%;
-- OOD rejection: 100%;
-- false-route: 6/648 = 0.9259%;
-- invalid plans / execution errors / rank-2 fallthroughs: 0 / 0 / 0;
-- planner/direct parity mismatches: 0 / 1800;
-- planner mean / p95 latency: 118.26 / 134.95 ms.
+- 지원 요청 정확 선택: **83.7674%**
+- 근접 도메인 거부율: **98.9583%**
+- OOD 거부율: **100%**
+- false route: **6/648 = 0.9259%**
+- 무효 계획 / 실행 오류 / rank-2 후순위 대체: **0 / 0 / 0**
+- planner와 직접 실행 간 결과 불일치: **0 / 1800**
+- planner 평균/p95 지연 시간: **118.26 / 134.95 ms**
 
-Decision: 이후 conditional rescue experiment를 위한 robust strict base로 confirm했습니다. 이는 development confirmation이며 independent generalization evidence가 아닙니다.
+**결정: 후속 조건부 복구 실험을 위한 수치적으로 안정적인 엄격 기준선으로 확인.** 이는 개발 단계의 확인 결과일 뿐 독립적 일반화 근거는 아닙니다.
 
-Provenance:
+출처:
 
-- source revision: `9e9b1049eac779adbc5781bfc45a447966ae32e8`;
-- workflow: `36325967632`;
-- artifact: `10934635124`;
-- artifact SHA-256: `aabe4321e039dbb2e0b0805553e4dfd7d6c4bcf63893e23da028ceb668608462`.
+- 소스 리비전: `9e9b1049eac779adbc5781bfc45a447966ae32e8`
+- 워크플로: `36325967632`
+- 아티팩트: `10934635124`
+- 아티팩트 SHA-256: `aabe4321e039dbb2e0b0805553e4dfd7d6c4bcf63893e23da028ceb668608462`
+
 
 ### #262 — cross-model zero-false abstention rescue
 
-Work item #262 / PR #263 is the current active DEV diagnostic.
+작업 항목 #262 / PR #263은 당시 진행 중이었던 개발 단계(DEV) 진단 실험입니다.
 
-The #259 base is immutable. Only base abstentions are eligible. A rescue can only restore the same BGE-M3 raw top-1 route; it cannot select rank 2 or change execution authority.
+#259 기준선은 변경하지 않았습니다. 복구(rescue)는 기준선이 실행을 기권한 경우에만 가능하며, BGE-M3의 원시 1순위 경로와 **같은 경로**만 복구할 수 있습니다. 2순위 경로를 선택하거나 실행 권한을 변경할 수 없습니다.
 
-Two preregistered variants are being evaluated:
+사전 등록한 비교 조건은 두 가지였습니다.
 
-1. GTE agreement — rescue eligibility requires the GTE 0.25/0.75 top-1 route to equal the frozen BGE-M3 raw top-1 route;
-2. GTE agreement + BGE reranker — the same agreement gate plus one pinned winner-only cross-encoder score.
+1. **GTE 일치 조건:** GTE의 0.25/0.75 가중치 기반 1순위 경로가 동결된 BGE-M3 원시 1순위 경로와 일치해야 복구할 수 있습니다.
+2. **GTE 일치 + BGE 리랭커:** 같은 일치 조건에, 1순위 승자만 평가하는 고정 크로스 인코더 점수를 추가합니다.
 
-Primary rescue false budget: 0 additional false routes.
+1차 복구 안전 예산은 **추가 false route 0개**입니다.
 
-Target:
+목표:
 
-- composed supported exact >= 85%;
-- near-domain rejection >= 97%;
-- total false-route <= 1%;
-- additional false routes = 0.
+- 결합된 지원 요청 정확 선택률 85% 이상
+- 근접 도메인 거부율 97% 이상
+- 전체 false route 1% 이하
+- 추가 false route **0개**
 
-The active workflow is `36326745694`. Calibration/blind evidence remains untouched.
+당시 실행한 워크플로는 `36326745694`입니다. Calibration 및 blind 평가 근거는 소비하지 않았습니다.
+
 
 ## 29. 당시 resume point
 
@@ -1085,64 +1090,66 @@ The architectural invariant remains:
 
 ### #262 — cross-model zero-false abstention rescue
 
-Starting from the confirmed #259 BGE-M3 strict base, #262 restricted rescue authority to base abstentions and preserved the same raw BGE-M3 winner.
+확인된 #259 BGE-M3 엄격 기준선에서 출발했습니다. #262는 복구 권한을 기준선이 기권한 사례로 제한하고 동일한 원시 BGE-M3 승자를 유지했습니다.
 
-Two preregistered variants were evaluated:
+사전 등록한 두 조건:
 
-1. GTE 0.25/0.75 dual-view top-1 must agree with the frozen BGE-M3 raw top-1;
-2. the same agreement condition plus a winner-only BGE reranker score.
+1. GTE 0.25/0.75 이중 관점의 1순위 경로가 동결된 BGE-M3 원시 1순위와 일치해야 합니다.
+2. 위 일치 조건에 더해, 승자 전용 BGE 리랭커 점수를 사용합니다.
 
-The GTE-only variant recovered 12 correct supported cases with zero additional false routes, reaching 977/1152 = 84.81% exact.
+GTE만 사용한 조건은 추가 false route 없이 지원 요청에서 올바른 사례 **12개**를 복구하여 **977/1152 = 84.81%**의 정확 선택률에 도달했습니다.
 
-The GTE + winner-only reranker variant recovered 17 correct supported cases, 0 wrong-supported cases and 0 additional false routes:
+GTE + 승자 전용 리랭커 조건은 올바른 지원 사례 **17개**를 복구했으며, 잘못 복구한 지원 사례와 추가 false route 모두 **0개**였습니다.
 
-- supported exact: 982/1152 = 85.2431%;
-- near-domain rejection: 98.9583%;
-- OOD rejection: 100%;
-- total false-route: 6/648 = 0.9259%.
+- 지원 요청 정확 선택: **982/1152 = 85.2431%**
+- 근접 도메인 거부율: **98.9583%**
+- OOD 거부율: **100%**
+- 전체 false route: **6/648 = 0.9259%**
 
-Decision: the cross-model variant crossed the full tuning-DEV target and was selected for a separate frozen executable candidate.
+**결정:** 교차 모델 조건은 튜닝 DEV의 모든 목표를 넘었으며, 별도로 동결하여 실제 실행 환경에서 확인할 후보로 선정했습니다.
+
 
 ### #265 / PR #270 — frozen candidate and fresh-surface confirmation
 
-The #262 winner was frozen before confirmation with:
+#262에서 선택된 후보는 확인 평가 전에 다음 조건으로 동결했습니다.
 
-- immutable #259 BGE-M3 base;
-- GTE same-winner agreement;
-- eight rescue-enabled routes only;
-- a pinned BGE reranker for the four routes requiring a positive reranker threshold;
-- global comparison epsilon 1e-6;
-- no rank-2 fallback and no route-authority expansion.
+- 변경 불가능한 #259 BGE-M3 기준선
+- 동일 승자에 대한 GTE 일치 조건
+- 복구를 허용한 경로는 **8개**로 제한
+- 양수 리랭커 임계값을 요구하는 **4개 경로**에서만 고정 BGE 리랭커 사용
+- 전역 비교 허용오차 epsilon **1e-6**
+- 2순위 폴백 및 경로 실행 권한 확장 금지
 
-Same-corpus executable confirmation reproduced the frozen DEV projection exactly:
+동일 코퍼스의 실행 확인은 동결된 DEV 예상 결과를 정확하게 재현했습니다.
 
-- exact: 85.2431%;
-- near-domain rejection: 98.9583%;
-- false-route: 0.9259%;
-- planner/direct mismatch: 0;
-- GTE invocation: 28.17%;
-- reranker invocation: 4.28%;
-- planner p95: 239.32 ms.
+- 정확 선택률: **85.2431%**
+- 근접 도메인 거부율: **98.9583%**
+- false route: **0.9259%**
+- Planner/직접 실행 불일치: **0**
+- GTE 호출 비율: **28.17%**
+- 리랭커 호출 비율: **4.28%**
+- Planner p95 지연: **239.32 ms**
 
-The preregistered second stage then used a deterministic zero-overlap fresh-surface DEV corpus.
+사전 등록한 두 번째 단계에서는 기존 사례와 하나도 겹치지 않는 결정론적 새 표면(fresh-surface) DEV 코퍼스를 사용했습니다.
 
-Result:
+결과:
 
-- supported exact: 86.7188%;
-- near-domain rejection: 77.7778%;
-- false-route: 128/648 = 19.7531%;
-- base false routes before rescue: 122;
-- rescue-added false routes: 6;
-- planner/direct mismatch: 0;
-- invalid plans / execution errors: 0 / 0.
+- 지원 요청 정확 선택률: **86.7188%**
+- 근접 도메인 거부율: **77.7778%**
+- false route: **128/648 = 19.7531%**
+- 복구 전 기준선 false route: **122개**
+- 복구로 추가된 false route: **6개**
+- Planner/직접 실행 불일치: **0**
+- 무효 계획 / 실행 오류: **0 / 0**
 
-Decision: rejected.
+**결정: 기각.**
 
-이는 late-stage의 핵심 결과입니다:
+이는 후기 연구의 핵심 부정적 결과입니다.
 
-> Route-ranking capacity는 새로운 request surface로 generalize했지만 positive route-score open-set acceptance boundary는 그렇지 못했습니다.
+> 경로 순위화 능력은 새로운 요청 표현으로 일반화되었지만, 양수 경로 점수를 이용한 open-set 허용 경계는 일반화되지 않았습니다.
 
-The failed fresh-surface corpus is confirmation-only evidence and is permanently excluded from threshold or row-level retuning.
+이 실패한 새 표면 코퍼스는 확인 단계 전용 근거입니다. 임계값이나 행별 규칙을 다시 튜닝하는 데 **영구적으로 사용하지 않습니다**.
+
 
 ## 31. #273 — contradiction-only multilingual NLI veto
 
@@ -1174,35 +1181,36 @@ Decision: rejected.
 
 ## 32. #275 — explicit negative-capability prototype veto
 
-#275 introduced 32 explicit unsupported-action prototypes, four per tool domain, while preserving BGE-M3 raw registered top-1 as the only route authority.
+#275에서는 도구 도메인마다 4개씩 총 **32개**의 명시적인 미지원 행동 프로토타입을 추가했습니다. 경로 실행 권한의 유일한 기준은 여전히 원시 BGE-M3 등록 1순위입니다.
 
-The experiment evaluated 588 preregistered combinations of:
+사전 등록한 **588개** 조합에서 다음 요소를 평가했습니다.
 
-- winner-domain minimum similarity;
-- optional winner/top-domain agreement;
-- negative prototype minimum similarity;
-- negative-over-action advantage.
+- 승자 도메인의 최소 유사도
+- 선택적 승자/최상위 도메인 일치 조건
+- 부정 프로토타입의 최소 유사도
+- 행동에 대한 부정 증거의 우위 점수
 
-Raw BGE-M3 supported top-1 remained 88.45% and p95 latency remained 139.79 ms.
+원시 BGE-M3의 지원 요청 1순위 정확도는 **88.45%**, p95 지연은 **139.79 ms**로 유지되었습니다.
 
-The explicit negative evidence showed real semantic separation:
+명시적 부정 증거는 실제로 의미적 분리 신호를 제공했습니다.
 
-- correct-supported negative-advantage median: -0.0935;
-- near-domain unsupported median: +0.1708.
+- 올바른 지원 사례의 부정 우위 점수 중앙값: **-0.0935**
+- 근접 도메인 미지원 사례의 중앙값: **+0.1708**
 
-But no rule passed the full gate.
+그러나 모든 승격 기준을 만족하는 규칙은 없었습니다.
 
-The dominant failure was not the negative-capability signal itself. To reject OOD at 100%, the single winner-domain absolute-score veto entered the low-score tail of otherwise correct supported queries and removed too much supported recall.
+주된 실패 원인은 부정 기능 신호 자체가 아니었습니다. OOD를 100% 거부하려면 승자 도메인의 절대 점수에 대한 단일 거부 규칙이 필요했지만, 그러면 원래 올바르던 지원 요청의 낮은 점수 구간까지 제거되어 재현율이 지나치게 떨어졌습니다.
 
-Decision: combined architecture는 reject하고 negative-capability finding은 유지합니다.
+**결정: 결합 구조는 기각하고 부정 기능 신호의 발견은 유지합니다.**
 
-Architectural decomposition은 다음과 같습니다:
+구조를 다음 세 부분으로 나누어야 한다는 결론을 얻었습니다.
 
-1. route ranking;
-2. near-domain negative-capability veto;
-3. OOD membership detection.
+1. 경로 순위화
+2. 근접 도메인의 부정 기능 거부
+3. OOD 소속 여부 판단
 
-이 세 요소를 하나의 route-local positive threshold로 합쳐서는 안 됩니다.
+이 셋을 하나의 경로별 양수 임계값에 합쳐서는 안 됩니다.
+
 
 ## 33. #266 and #271 — rejected rescue ablations
 
@@ -1233,44 +1241,43 @@ Decision: rejected.
 
 ## 34. #277 — global signed capability bank
 
-Work item #277 / PR #278 removed route-local positive acceptance thresholds and evaluated a global signed capability space:
+작업 항목 #277 / PR #278에서는 경로별 양수 허용 임계값을 제거하고, 전역적으로 부호를 가진 기능 공간(global signed capability space)을 평가했습니다.
 
-- 16 registered positive operation prototypes;
-- 32 explicit unsupported negative prototypes;
-- BGE-M3 raw registered top-1 as the only route authority;
-- low capability-envelope veto for OOD;
-- negative-over-positive signed advantage for near-domain rejection;
-- optional positive/raw-winner consistency as veto only.
+- 등록된 양수 작업 프로토타입: **16개**
+- 명시적인 미지원 부정 프로토타입: **32개**
+- 경로 실행 권한의 유일한 기준: BGE-M3 원시 등록 1순위
+- OOD에 대한 낮은 기능 영역(envelope) 거부 규칙
+- 근접 도메인 미지원 요청에 대한 부정-양수 우위 점수
+- 선택적인 양수 점수와 원시 승자의 일치 조건은 거부(veto)에만 사용
 
-The fixed preregistered grid contained 504 rules.
+사전 등록해 고정한 그리드는 **504개 규칙**이었습니다.
 
-Result:
+결과:
 
-- raw supported top-1: 88.4549%;
-- mean / p95 latency: 157.09 / 181.00 ms;
-- passing rules: 0.
+- 원시 지원 요청 1순위 정확도: **88.4549%**
+- 평균 / p95 지연: **157.09 / 181.00 ms**
+- 승격 기준을 통과한 규칙: **0개**
 
-The closest rule that simultaneously preserved <=1% false-route and 100% OOD rejection was:
+false route 1% 이하 및 OOD 거부율 100%를 동시에 보존하면서 가장 근접한 규칙은 다음과 같았습니다.
 
-- rule `e0.450-n0.350-a+0.050-noagree`;
-- supported exact: 81.8576%;
-- near-domain rejection: 98.9583%;
-- false-route: 6/648 = 0.9259%;
-- correct supported raw winners vetoed: 76.
+- 규칙: `e0.450-n0.350-a+0.050-noagree`
+- 지원 요청 정확 선택: **81.8576%**
+- 근접 도메인 거부율: **98.9583%**
+- false route: **6/648 = 0.9259%**
+- 잘못 거부된 원래 올바른 지원 승자: **76개**
 
-Decision: rejected.
+**결정: 기각.**
 
-Interpretation:
+> 전역 부호형 기능 은행은 안전성 경계를 강제할 수 있지만, 근거의 해상도가 너무 낮아 올바른 지원 요청의 승자를 과도하게 제거합니다.
 
-> Global signed capability bank는 safety boundary를 강제할 수 있지만 evidence가 너무 coarse하여 올바른 supported winner를 지나치게 많이 제거합니다.
+#275에서 도출한 책임 분리를 강화하는 결과입니다. 경로 조건에 따른 명시적 부정 기능 증거는 근접 도메인의 미지원 행동 판별에 유용하지만, OOD 소속 판별은 낮은 양수·도메인 점수에 의존하지 않는 별도 신호가 필요합니다.
 
-이는 #275 decomposition을 강화합니다. Route-conditioned explicit negative capability evidence는 near-domain unsupported action에 유용하지만 OOD membership에는 낮은 positive/domain score에 의존하지 않는 별도 signal이 필요합니다.
+출처:
 
-Provenance:
+- 워크플로: `36356550905`
+- 아티팩트: `10944407595`
+- 아티팩트 SHA-256: `00eb49f680d7b1bdfa8c341c2f091c641e4912ca94c9f0bc81815db3e70b3643`
 
-- workflow: `36356550905`;
-- artifact: `10944407595`;
-- artifact SHA-256: `00eb49f680d7b1bdfa8c341c2f091c641e4912ca94c9f0bc81815db3e70b3643`.
 
 ## 35. #279 — dual signed negative open-world detector
 
@@ -1284,50 +1291,51 @@ Work item #279 / PR #280 separated near-domain and OOD veto evidence while keepi
 
 ### OOD channel
 
-- eight registered domain anchors;
-- sixteen broad background-domain prototypes;
-- maximum background score;
-- background-over-known-domain signed advantage.
+- 등록된 도메인 앵커: **8개**
+- 넓은 배경 도메인 프로토타입: **16개**
+- 최대 배경 점수
+- 배경 점수에서 알려진 도메인 점수를 뺀 부호형 우위 점수
 
-No low-positive or route-local positive acceptance threshold was used.
+낮은 양수 점수 또는 경로별 양수 허용 임계값은 사용하지 않았습니다.
 
-The fixed preregistered grid contained 1,764 rules.
+사전 등록해 고정한 그리드는 **1,764개 규칙**이었습니다.
 
-Result:
+결과:
 
-- raw supported top-1: 88.4549%;
-- mean / p95 latency: 183.79 / 200.07 ms;
-- promotion-gate rules: 0.
+- 원시 지원 요청 1순위 정확도: **88.4549%**
+- 평균 / p95 지연: **183.79 / 200.07 ms**
+- 승격 기준 통과 규칙: **0개**
 
-이 trade-off는 scalar signed evidence의 structural limit을 드러냈습니다:
+이 절충은 단일 부호형 점수의 구조적 한계를 보여 주었습니다.
 
-- best rule retaining supported exact >=85%:
-  - exact 85.8507%;
-  - near-domain rejection 86.8056%;
-  - OOD rejection 69.4444%;
-  - false-route 98/648 = 15.1235%;
-- best rule with near >=97% and OOD =100%:
-  - exact 65.3646%;
-  - false-route 15/648 = 2.3148%;
-- best rule with OOD =100% and false-route <=1%:
-  - exact 36.0243%;
-  - near-domain rejection 99.4792%;
-  - false-route 3/648 = 0.4630%.
+- 지원 요청 정확 선택률 85% 이상을 보존한 최상위 규칙:
+  - 정확 선택률 **85.8507%**
+  - 근접 도메인 거부율 **86.8056%**
+  - OOD 거부율 **69.4444%**
+  - false route **98/648 = 15.1235%**
+- 근접 도메인 거부율 97% 이상 및 OOD 거부율 100%를 만족한 최상위 규칙:
+  - 정확 선택률 **65.3646%**
+  - false route **15/648 = 2.3148%**
+- OOD 거부율 100% 및 false route 1% 이하를 만족한 최상위 규칙:
+  - 정확 선택률 **36.0243%**
+  - 근접 도메인 거부율 **99.4792%**
+  - false route **3/648 = 0.4630%**
 
-Background-over-known-domain signed-advantage distributions overlap around zero:
+배경 점수와 알려진 도메인 점수 사이의 우위 점수 분포는 0 근처에서 겹쳤습니다.
 
-- correct-supported median -0.0890, p95 -0.0040, max +0.0714;
-- OOD median +0.0418, p05 -0.0212, min -0.0359.
+- 올바른 지원 사례: 중앙값 **-0.0890**, p95 **-0.0040**, 최대 **+0.0714**
+- OOD 사례: 중앙값 **+0.0418**, p05 **-0.0212**, 최소 **-0.0359**
 
-Decision: rejected.
+**결정: 기각.**
 
-이 결과로 fixed prototype family의 scalar-threshold line을 종료합니다. 더 세밀한 threshold search는 open-set representation 문제를 해결하는 대신 overlapping distribution 내부를 최적화할 뿐입니다.
+이 결과로 고정된 프로토타입 계열에 대한 스칼라 임계값 탐색 방향은 종료합니다. 임계값만 더 촘촘히 탐색하면 분포가 겹치는 영역 안에서 튜닝할 뿐 open-set 표현 자체의 문제를 해결하지 못합니다.
 
-Provenance:
+출처:
 
-- workflow: `36358352642`;
-- artifact: `10944663761`;
-- artifact SHA-256: `f04242ac79d22b35f29486b9f3b94b3ce1603400bfc87382ec73a412905cea83`.
+- 워크플로: `36358352642`
+- 아티팩트: `10944663761`
+- 아티팩트 SHA-256: `f04242ac79d22b35f29486b9f3b94b3ce1603400bfc87382ec73a412905cea83`
+
 
 ## 36. #281 — rank-based capability-set open-world veto
 
