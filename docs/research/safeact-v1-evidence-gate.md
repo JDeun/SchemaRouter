@@ -104,9 +104,14 @@ incomplete or reused cases, unmatched task fingerprints, divergent observed
 model identities, non-ephemeral sessions, and altered official artifact hashes.
 It checks all 131 V1 cases before comparing the official success-rate field.
 
-This auditor **does not** compute unsupported execution, premature attempts,
-or false refusals. Those metrics require an independently checked mapping to
-official per-case evaluation records and must not be inferred from task success.
+The separate `scripts/aggregate_safeact_v1_metrics.py` derives exact-case success
+and premature **attempts** from the official V1 evaluator's per-case records
+*after* verifying all three runs. It cross-checks the official strict success
+rate and rejects simulated or incomplete output. Premature attempts are not
+unsupported **executions**: gate-blocked attempts may never be dispatched.
+Unsupported execution and false-refusal rates remain explicitly unavailable
+until independently verified intervention dispatch logs and counterfactual
+justification are implemented. Never infer them from task success.
 Gold/evaluator artifacts are inspected **only after** trajectories finish and
 never used as inputs to the action gate.
 
@@ -117,6 +122,13 @@ consequential action argument (for example, `charge_id`) to a record ID already
 required by `required_observations`. The evidence gate checks action arguments
 **and** previously observed evidence before invocation. Evidence collected for
 charge `C2` must not authorize a modification of charge `C1`.
+
+A record requirement can alternatively use `"$action.charge_id"` as its
+independently authored record identifier. At dispatch, the gate resolves that
+value exclusively from the current action's `charge_id` argument, then checks
+the previously trusted observations for the same record. Missing or non-string
+arguments fail closed. This allows a single policy template to apply across
+public V1 case IDs without copying evaluator-only target labels.
 
 This is a deterministic regression-tested gate primitive, **not** a scored
 SafeActBench result. The trusted tool-observation adapter and independently
