@@ -181,3 +181,47 @@ post-run verifier still rejects substituting ordinary baseline records.
 
 No credential-bearing model runtime, independent 131-case policy coverage,
 or full 393-case scored result is bundled with these source files.
+
+
+## Gated GitHub Actions scored experiment and hourly tracking
+
+[`SafeAct V1 Scored Experiment (Gated)`](../../../.github/workflows/safeact-v1-scored.yml)
+is the official launch entrypoint. Each pull-request update first runs the
+`readiness` job **without credentials, agents or evaluator scores** and uploads
+`safeact-v1-scored-readiness.json`. A successful readiness CI job only proves
+that the *checker ran*; if the report says `ready: false`, scored execution
+**has not started**.
+
+The scored launch is permitted **only after the reviewed workflow is merged
+to protected `main`**, via an explicit `workflow_dispatch` with
+`execute: true` and the exact frozen `model`. It requires the
+`safeact-research` GitHub Environment (with independent approval), a trusted
+Linux self-hosted runner labeled `safeact-v1`, verified provider CLI/auth,
+and the `SAFEACT_V1_RUNTIME_VERIFIED=1` Environment secret. **Never put
+credentials in the repo or in pull-request workflow jobs.**
+
+Independent reviewed material is expected at:
+
+- `research/safeact-v1/contracts.json`: 131 public case mappings, pinned
+  independently authored public policy sources, explicit observation mappings.
+- `research/safeact-v1/public-sources/`: the exact pinned, independently
+  reviewed publicly accessible policy and tool interfaces referenced by hashes.
+- `research/safeact-v1/intervention-manifest.json`: exact three conditions,
+  pinned actual adapter commits and reviewed agent commands plus SHA-256s,
+  independent author/reviewer attestation bound to the frozen contract JSON.
+
+The launcher validates each agent command actually points to the expected
+official upstream baseline, SchemaRouter routing adapter or SchemaRouter
+EvidenceGate adapter—not merely a command with a matching SHA. Only on the
+approved runner may the `--execute` path issue model calls. The actual
+three-arm controller refuses incomplete 131-case sets, invalid intervention
+identity, reused/fabricated records and mismatched model/runtime identity,
+and then writes `safeact-v1-scored-summary.json` **after** all official
+model evaluations pass. Only the post-run aggregate and readiness status
+are uploaded; raw hidden evaluator data, agent traces and credentials are
+not uploaded as public workflow artifacts.
+
+**Current status:** these three approved inputs and a verified credentialed
+research runner are *not yet provided*. The official 393 trajectories are
+**not yet running**; simulator and PR preflight checks are unscored. Do not
+fake attestations to bypass this safety and scientific-validity boundary.
