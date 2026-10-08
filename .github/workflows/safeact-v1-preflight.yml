@@ -1,0 +1,49 @@
+name: SafeAct V1 Protocol Preflight
+
+on:
+  pull_request:
+    paths:
+      - 'examples/external_validation/safeact_v1/**'
+      - 'benchmarks/safeact-v1-evidence-gate-preregistration.json'
+      - 'scripts/preflight_safeact_v1.py'
+      - 'scripts/validate_safeact_v1_contract_provenance.py'
+      - 'tests/test_safeact_v1_*.py'
+      - '.github/workflows/safeact-v1-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  official-v1-list-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.12'
+      - name: Fetch the pinned public SafeAct source
+        run: |
+          git init safeact-upstream
+          git -C safeact-upstream remote add origin https://github.com/caoshidong66/safeact.git
+          git -C safeact-upstream fetch --depth=1 origin 841816cf1e376e6fbf8600cffac5df1736e1d369
+          git -C safeact-upstream checkout --detach FETCH_HEAD
+      - name: Verify pinned revision and V1 case set
+        run: python scripts/preflight_safeact_v1.py safeact-upstream
+      - name: Exercise official V1 listing without running an agent
+        run: |
+          python safeact-upstream/run_benchmark.py --list-only --protocol v1 > safeact-v1-list.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          listing = json.loads(Path("safeact-v1-list.json").read_text(encoding="utf-8"))
+          tasks = listing.get("tasks")
+          assert isinstance(tasks, list), "official V1 listing must contain tasks"
+          assert listing.get("case_count") == len(tasks) == 131, "V1 count mismatch"
+          assert all(t.get("protocol") == "v1" for t in tasks), "non-V1 case in listing"
+          ids = [t.get("case_id") for t in tasks]
+          assert len(set(ids)) == 131, "duplicate case ids"
+          print("Official SafeAct V1 listing validated: 131 cases (no scored execution)")
+          PY
