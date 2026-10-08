@@ -1,13 +1,8 @@
 # SchemaRouter란?
 
-SchemaRouter는 MCP, OpenAPI, Python, 프레임워크 도구를 **하나의 타입 기반 capability
-검색·실행 경계**로 다루는 라이브러리입니다.
+SchemaRouter는 **API, tool, data system 전반에서 AI agent를 위한 typed capability routing 및 governed execution layer**입니다.
 
-범용 agent framework처럼 대화와 추론 루프 전체를 맡지는 않습니다. 대신 API나 tool에서 외부
-데이터를 가져와야 할 때, 각 source를 endpoint/field 계약으로 정리하고 상위 agent가 볼 수 있는
-실행 후보를 필요한 범위로 줄여 줍니다.
-
-## 역할 분리
+범용 agent framework보다 역할은 좁고 semantic tool router보다 깊습니다. **Retrieval-Augmented Generation(RAG)**은 external source에서 가져온 정보로 generation을 보강합니다. 그 source가 API나 tool일 때 SchemaRouter는 retrieval/execution boundary의 일부를 담당할 수 있습니다. Source를 typed endpoint/field contract로 정규화하고 주변 RAG, agent, application에 필요한 가장 작은 trusted executable data surface를 검색합니다.
 
 | 계층 | 책임 |
 | --- | --- |
@@ -19,7 +14,7 @@ SchemaRouter는 MCP, OpenAPI, Python, 프레임워크 도구를 **하나의 타�
 Laya, Ollama, Jev 같은 decision backend는 후보 선택을 보조할 뿐입니다. 새 capability를
 만들거나 별도의 tool loop를 시작할 수 없고, 실행 권한도 갖지 않습니다.
 
-## 단순 라우팅보다 더 세분화된 계획
+## 컴파일 모델
 
 일반 router:
 
@@ -66,21 +61,28 @@ prompt token을 낭비할 수 있습니다. SchemaRouter는 **field-first, route
 4. raw response를 검증합니다.
 5. 최종적으로 필요한 field만 `ToolResult`에 남깁니다.
 
-모호한 경우에는 지나친 pruning보다 recall을 우선합니다.
+Query-to-field match가 명확하면 confidently relevant field와 identifier만 유지하고, endpoint에 explicit `ServerProjectionSpec`이 있으면 해당 field를 upstream으로 push합니다. Raw projected response를 validate한 뒤 `ToolResult` 생성 전에 final local projection을 수행합니다.
+
+지나친 pruning은 recall을 훼손할 수 있으므로 field intent가 실제로 모호하면 default planner는 한 field로 충분하다고 가장하지 않고 declared field set을 우선합니다.
+
+[RAG positioning and capability retrieval →](capability-catalog.md) · [Field-first execution →](field-first-execution.md)
 
 ## 실행 단계에서 다시 검증하는 이유
 
-계획 결과만으로는 도구를 실행할 수 없습니다. 계획을 만든 뒤 실제 호출까지 사이에 schema,
-binding, parameter, policy가 달라질 수 있기 때문에 executor가 다음 항목을 다시 확인합니다.
+Plan은 execution authority가 아닙니다. Planning과 execution 사이에 schema가 바뀌거나 manually constructed `ToolCall`이 malformed일 수 있고, model이 invalid value를 제안하거나 bound transport가 registered contract와 더 이상 일치하지 않을 수 있습니다.
 
-- required arguments
+따라서 executor는 다음 항목을 다시 확인합니다.
+
+- 필수 argument
 - schema/tool fingerprint
-- local binding readiness
+- local binding 준비 상태
 - execution policy / approval
 - input schema
 - trusted transport
 - raw output schema
 - field projection
+
+Executor는 required argument를 다시 계산하고 fingerprint와 policy를 검사하며 input을 validate한 뒤 trusted transport를 invoke합니다. 이후 raw output을 validate하고 마지막에 field를 projection합니다.
 
 ## 하지 않는 것
 

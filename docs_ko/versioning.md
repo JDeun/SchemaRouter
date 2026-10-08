@@ -1,82 +1,145 @@
-# 버전과 호환성
+# 버전 관리 및 호환성
 
-SchemaRouter released Python package는 Semantic Versioning을 따릅니다. 현재 pre-1.0이며 0.x 동안
-public API가 계속 다듬어질 수 있지만 compatibility change는 의도적이고 문서화되어야 합니다.
+SchemaRouter는 릴리스된 Python 패키지에 Semantic Versioning을 적용합니다.
 
-## Development branch version
+프로젝트는 현재 pre-1.0입니다. 0.x 계열에서는 public API가 계속 정립되는 중이지만, 호환성 변경은 의도적이어야 하며 문서화되어야 합니다.
 
-default branch는 unreleased work에 PEP 440 development version을 사용합니다. release tag는
-`pyproject.toml` version과 일치해야 합니다.
+## 개발 브랜치 버전
 
-releasable version이 main에 merge되면 top-level Release workflow는 일반 CI 성공을 기다리고
-tested SHA가 여전히 current main인지 검증합니다. `.dev` version을 거부하고 matching release
-note와 dated changelog를 요구하며 tag가 없을 때만 `v<version>`을 생성합니다.
+기본 branch는 미출시 작업에 PEP 440 development version을 사용합니다. For example, after
+`0.2.0a1` is published, `main` may identify as `0.3.0.dev0` until the next release is cut.
 
-이후 exact release SHA에서 wheel/sdist를 build·clean-install·smoke-test하고 SPDX SBOM,
-`SHA256SUMS.txt`, `release-manifest.json`을 생성해 GitHub Release와 PyPI Trusted Publisher로
-게시합니다. manifest에는 source SHA와 artifact digest가 기록됩니다.
+Release tag는 `pyproject.toml`에 선언된 version과 일치해야 합니다.
 
-## Public API / 0.x 정책
+After a releasable version is merged to `main`, the top-level `Release` workflow waits for the
+normal `CI` workflow to succeed. It verifies that the tested SHA is still the current `main`
+head, rejects `.dev` versions, requires a matching `docs/releases/<version>.md` file and dated
+changelog heading, and creates `v<version>` only when that tag does not already exist.
 
-문서화되고 top-level package 또는 명시적 integration module에서 export된 다음 surface는 public
-contract로 취급합니다.
+If a tag already exists without a GitHub release, publication can resume from that tagged SHA only
+when it is an ancestor of the successful current `main` and contains the same package version.
+This makes interrupted releases recoverable without silently moving an existing tag.
 
-- `ToolSpec`, `EndpointSpec`, `PlanRequest`, `CapabilityCandidate`,
+The same top-level workflow then builds wheel and sdist artifacts from the resolved release SHA,
+clean-installs and smoke-tests both artifacts, generates the SPDX SBOM plus
+`SHA256SUMS.txt` / `release-manifest.json`, creates the GitHub release, and publishes through the
+configured PyPI Trusted Publisher. The manifest records the exact source SHA and artifact digests so
+those values do not need to be copied into documentation manually. Build jobs remain unprivileged;
+only the dedicated publishing job receives OIDC `id-token: write` permission.
+
+This keeps source checkouts distinguishable from released artifacts, removes manual tag creation,
+and preserves PyPI Trusted Publishing on the stable `.github/workflows/release.yml` identity.
+
+## Public API
+
+The following are treated as public when they are documented and exported from the top-level
+`schemarouter` package or an explicitly documented integration module:
+
+- typed contracts such as `ToolSpec`, `EndpointSpec`, `PlanRequest`, `CapabilityCandidate`,
   `CapabilityRetrieval`, `StateAwareCapabilityRetrieval`,
-  `StateConditionedCapabilityRetrieval`, `ExecutionPlan` 같은 typed contract;
-- `SchemaRouter.add_provider`, `retrieve` / `aretrieve`, executable retrieval,
-  `retrieve_state_aware`, `reretrieve_state_aware`, planning/execution method;
-- `ProviderProfile`과 provider resolution/registration 결과;
-- capability snapshot/publication, portable artifact/migration, decision trace의 문서화된 contract;
-- RunConfig/RetryPolicy/Budget/Event/Policy, adapter, integration surface.
+  `StateConditionedCapabilityRetrieval`, and `ExecutionPlan`;
+- `SchemaRouter` public registration/retrieval/planning/execution methods, including
+  `add_provider`, `retrieve`, `aretrieve`, `retrieve_executable`,
+  `aretrieve_executable`, `retrieve_state_aware`, `reretrieve_state_aware`, and the execution
+  verbs;
+- documented provider-profile, capability-snapshot/publication, portable artifact/migration, and
+  capability decision-trace contracts;
+- `RunConfig`, `RetryPolicy`, `ExecutionBudget`, `RunEvent`, and `ExecutionPolicy`;
+- documented approval, MCP transport-factory, compatibility-report, and adapter-plugin contracts;
+- documented adapters and optional integration entry points.
 
-underscore-prefixed 또는 문서화되지 않은 helper는 public compatibility contract가 아닙니다.
+밑줄로 시작하는 객체와 문서화되지 않은 내부 helper는 호환성 계약이 아닙니다.
 
-patch release는 security/correctness fail-closed invariant를 제외하면 backward-compatible해야
-합니다. minor release는 pre-1.0 동안 breaking change를 포함할 수 있지만 changelog와 migration
-note가 필요합니다.
+## 0.x 정책
 
-## Persisted SQLite 호환성
+- Patch releases should remain backward-compatible except for security or correctness defects that
+  would otherwise violate a fail-closed invariant.
+- Minor releases may introduce breaking changes while the framework is pre-1.0.
+- Breaking changes must be listed in the changelog with a migration note.
+- Serialized plans should not be assumed portable across breaking minor versions unless an explicit
+  codec/version contract is documented.
 
-`SQLiteRegistry`, `SQLiteRunTraceStore`는 package version과 별도의 explicit storage-format
-contract를 가집니다. storage/document format을 metadata로 versioning하고 legacy v0를 upgrade
-source로 지원합니다. valid v0는 모든 document/replay invariant를 검증한 뒤 transaction에서 v1
-metadata migration을 수행합니다.
+## 영속 SQLite 호환성
 
-unknown/newer/incomplete/corrupt version은 추측하지 않고 `StorageFormatError`로 fail-closed합니다.
-production에서는 upgrade 전 `schemarouter storage inspect`, 필요하면 backup을 만드는
-`storage migrate`를 권장합니다.
+`SQLiteRegistry` and `SQLiteRunTraceStore` have an explicit storage-format contract independent
+from the package version and from the registry's logical mutation counter.
 
-## Portable capability artifact / snapshot 호환성
+During the pre-1.0 series:
 
-Portable capability graph data는 Python package version, SQLite storage version과 별도의 format
-lifecycle을 가집니다.
+- the current persisted storage format is versioned explicitly in SQLite metadata;
+- ToolSpec and RunEvent document formats are versioned separately from the database/container
+  format so future document migrations can be deterministic;
+- the immediately preceding unversioned legacy format (v0) is supported as an upgrade source;
+- opening a valid v0 store automatically performs the current v0 -> v1 metadata migration in one
+  SQLite transaction **after validating every legacy document and replay invariant**;
+- the current v0 -> v1 migration does not rewrite ToolSpec or RunEvent JSON, does not change the
+  registry logical version, and does not create execution bindings or other runtime authority;
+- unknown/newer storage or document versions fail closed with `StorageFormatError` rather than
+  attempting partial decoding;
+- incomplete/corrupt version metadata also fails closed instead of guessing;
+- each successful component migration is recorded in migration history.
 
-- 현재 `CapabilityGraphArtifact` format은 `1.1`입니다.
-- artifact `1.0`은 지원되는 migration source이며 변환 전에 기존 digest를 검증합니다.
-- 1.0의 edge metadata는 migration 시 `origin="external"`로 보존하며 derived execution
-  authority로 승격하지 않습니다.
-- 현재 versioned snapshot document format은 `1.0`입니다.
-- envelope 도입 전 공개 `CapabilityGraphSnapshot` JSON은 기존 `snapshot_id`를 검증한 후
-  `legacy-unversioned` migration source로 지원합니다.
-- 알 수 없는 미래 artifact/snapshot version은 fail-closed합니다.
-- 지원되는 migration은 deterministic/idempotent하며 credential, invoker, live health,
-  execution authority를 복원하지 않습니다.
+For production databases, use `schemarouter storage inspect` before an upgrade and
+`schemarouter storage migrate` when an explicit preflight/backup is preferred. The migration
+command creates a SQLite-consistent backup by default before changing a legacy component. Keep
+that backup until the upgraded service has passed application-level verification.
 
-운영자는 `schemarouter artifact inspect/migrate`,
-`schemarouter snapshot inspect/migrate`를 사용할 수 있습니다. Migration은 기본적으로 새 파일을
-만들며 기존 destination을 덮어쓰려면 `--overwrite`를 명시해야 합니다.
+A future migration that rewrites or drops persisted document content must provide an explicit
+backup/recovery path and release-note migration guidance before it can become automatic.
 
-## Deprecation과 integration
+## 이식 가능한 capability artifact 및 snapshot 호환성
 
-non-alpha 0.x에 등장한 API의 계획된 제거는 일반적으로 deprecation 문서화 → 최소 한 minor
-release 유지 → replacement/migration path → 후속 minor에서 제거 순서를 따릅니다.
-security-sensitive behavior는 필요하면 즉시 fail-closed할 수 있습니다.
+Portable capability graph data has an explicit format lifecycle separate from both the Python
+package version and SQLite storage versions.
 
-core는 LangChain/LlamaIndex/Jev/MCP/OpenTelemetry extra 없이 동작해야 하고 integration
-dependency는 bounded major range를 사용하며 CI에서 supported range를 검증해야 합니다.
-integration은 underlying transport를 직접 호출해 SchemaRouter policy/validation을 우회하면 안
-됩니다.
+During the pre-1.0 series:
 
-trade-off 우선순위는 execution authority/credential safety → schema/fingerprint correctness →
-deterministic plan semantics → public API compatibility → convenience입니다.
+- the current `CapabilityGraphArtifact` format is `1.1`;
+- artifact `1.0` is a supported migration source and is validated before conversion;
+- legacy 1.0 edge metadata migrates as `origin="external"` rather than being promoted to derived
+  execution authority;
+- the current versioned snapshot document format is `1.0`;
+- a raw JSON dump of the pre-envelope public `CapabilityGraphSnapshot` model is supported as the
+  `legacy-unversioned` migration source after its existing `snapshot_id` is verified;
+- unknown/newer artifact or snapshot document versions fail closed;
+- migration is deterministic and idempotent for supported inputs;
+- credentials, invokers, live health state, and execution authority are never reconstructed by a
+  format migration.
+
+Use `schemarouter artifact inspect/migrate` and `schemarouter snapshot inspect/migrate` for
+operator-facing validation and conversion. Migration writes a new file by default and requires
+explicit `--overwrite` before replacing an existing destination.
+
+## Deprecation 정책
+
+Once an API has appeared in a non-alpha 0.x release, planned removals should normally:
+
+1. be documented as deprecated;
+2. remain available for at least one minor release when technically safe;
+3. include a replacement or migration path;
+4. be removed only in a subsequent minor release.
+
+Security-sensitive behavior may fail closed immediately when preserving the old behavior would
+create an authorization, credential, schema-integrity, or side-effect risk.
+
+## Integration 호환성
+
+Optional integration은 core trust model과 별도로 버전 관리합니다.
+
+- The core package must import and operate without LangChain, LlamaIndex, Jev/TypeSafe, MCP, or
+  OpenTelemetry extras installed.
+- Integration dependencies use bounded major-version ranges.
+- The declared lower bounds of core runtime dependencies are exercised in required CI.
+- Integration CI must exercise the supported dependency range before a release.
+- An integration must route execution through SchemaRouter policy and validation rather than calling
+  the underlying transport directly.
+
+## 호환성 우선순위
+
+Trade-off를 피할 수 없다면 다음 순서를 따릅니다.
+
+1. execution authority and credential safety;
+2. schema/fingerprint correctness;
+3. deterministic plan semantics;
+4. public API compatibility;
+5. convenience behavior.

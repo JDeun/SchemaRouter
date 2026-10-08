@@ -1,6 +1,9 @@
-# 선언형 HTTP/JSON tool
+# Declarative HTTP/JSON tool
 
-모든 API가 OpenAPI, MCP 또는 다른 machine-discoverable capability schema를 제공하는 것은 아닙니다. SchemaRouter는 신뢰된 로컬 `ToolSpec`을 HTTP/JSON base URL에 직접 바인딩할 수 있습니다. `ToolSpec` 자체가 manifest이며 별도의 REST 전용 schema language는 없습니다.
+모든 API가 OpenAPI, MCP 또는 다른 machine-discoverable capability schema를 제공하는 것은 아닙니다.
+SchemaRouter can bind a trusted local `ToolSpec` directly to an HTTP/JSON base URL.
+
+`ToolSpec` 자체가 manifest입니다. 별도의 REST-specific schema language는 없습니다.
 
 ## REST capability 등록
 
@@ -34,37 +37,99 @@ crossref = ToolSpec(
                     identifier=True,
                 ),
             ],
-            output_schema={"type": "object"},
+            output_schema={
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "object",
+                        "properties": {
+                            "DOI": {"type": "string"},
+                        },
+                    }
+                },
+            },
         )
     ],
 )
 
 router = SchemaRouter()
-router.add_http_tool(crossref, base_url="https://api.crossref.org/v1")
+router.add_http_tool(
+    crossref,
+    base_url="https://api.crossref.org/v1",
+)
 ```
 
-같은 경로에서 SchemaRouter의 trusted HTTP transport가 지원하는 query/path/non-sensitive header/flattened JSON-body/root JSON-body parameter를 처리합니다.
+The same path handles query, path, non-sensitive header, flattened JSON-body, and root JSON-body
+parameters supported by SchemaRouter's trusted HTTP transport.
 
-## Secret은 manifest 밖에 유지
+## Secrets stay outside the manifest
 
-인증은 trusted binding에 둡니다. trusted header는 `ToolSpec`, planner state, model-selectable argument에 복사되지 않으며 선언된 header argument가 trusted header나 일반적인 민감 authorization header를 덮어쓸 수 없습니다.
+Authentication belongs to the trusted binding:
 
-## 언제 사용하는가
+```python
+router.add_http_tool(
+    brave_search,
+    base_url="https://api.search.brave.com",
+    trusted_headers={
+        "X-Subscription-Token": BRAVE_SEARCH_API_KEY,
+    },
+)
+```
 
-가능하면 더 풍부한 machine-readable source를 우선합니다.
+Trusted headers are never copied into `ToolSpec`, planner state, or model-selectable arguments.
+A declared header argument cannot override a trusted header or common sensitive authorization
+headers.
 
-1. native MCP, OPTIMADE, OpenAPI
-2. 기존 typed LangChain/LlamaIndex tool import
-3. typed Python callable / SDK wrapper
-4. declarative HTTP/JSON ToolSpec
-5. 근거가 있는 human-readable documentation proposal + 명시적 승인
+## When to use this path
 
-이 경로는 애플리케이션이 정확한 machine-known contract를 알고 있지만 SchemaRouter가 자동 탐색할 schema endpoint는 없는 안정적인 REST API에 적합합니다.
+Prefer a richer machine-readable source when one is available:
 
-## 같은 provider의 여러 access mode
+1. native MCP, OPTIMADE, or OpenAPI;
+2. an existing typed LangChain/LlamaIndex tool import;
+3. a typed Python callable / SDK wrapper;
+4. a declarative HTTP/JSON ToolSpec;
+5. grounded human-readable documentation proposal plus explicit approval.
 
-한 provider를 `optimade`, `openapi`, `python` 등 여러 access path로 등록할 수 있습니다. route들이 호환 가능한 semantic ID, datatype, unit, qualifier를 제공한다면 `fallback_scope="same_provider"`에서 서로 다른 과학적 source로 취급하지 않고 대체 경로로 사용할 수 있습니다.
+The HTTP/JSON path is useful for stable REST APIs that have precise machine-known contracts in your
+application but do not expose a schema endpoint SchemaRouter can discover automatically.
 
-## 안전 경계
+## Same provider, multiple access modes
 
-declarative HTTP 등록은 trusted local configuration입니다. SchemaRouter는 임의 REST service를 crawl해 endpoint나 permission을 추측하지 않습니다. method/path는 명시해야 하고 mutation authority는 `ExecutionPolicy`가 관리합니다. base origin은 trusted binding으로 고정되고 credential을 base URL에 넣을 수 없으며 redirect를 추적하지 않습니다. input/output JSON Schema validation과 response size limit도 유지합니다. unit, semantic ID, qualifier, licence, normalization contract를 prose에서 추론하지 않습니다.
+A provider may be registered through several access paths:
+
+```text
+provider="materials-project"
+  access_mode="optimade"
+  access_mode="openapi"
+  access_mode="python"
+```
+
+or:
+
+```text
+provider="tavily"
+  access_mode="langchain"
+  access_mode="python"
+  access_mode="http_json"
+```
+
+If the routes expose compatible semantic IDs, datatypes, units, and qualifiers,
+`fallback_scope="same_provider"` can use them as alternatives without treating them as different
+scientific sources.
+
+## Safety boundaries
+
+Declarative HTTP registration is trusted local configuration. SchemaRouter does not crawl an
+arbitrary REST service to guess endpoints or permissions.
+
+- `method` and `path` must be explicit.
+- mutation authority remains governed by `ExecutionPolicy`.
+- the base origin is fixed by the trusted binding.
+- credentials cannot be embedded in the base URL.
+- redirects are not followed by the transport.
+- input/output JSON Schema validation still runs.
+- response size limits remain enforced.
+- units, semantic IDs, qualifiers, licence, and normalization contracts are never inferred from
+  prose.
+
+For human-readable documentation, use the proposal/approval workflow instead.

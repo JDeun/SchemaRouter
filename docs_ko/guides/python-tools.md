@@ -1,6 +1,6 @@
-# Python 도구
+# Python tool
 
-타입이 선언된 Python 함수는 가장 간단한 로컬 연결 방식입니다.
+Typed Python callable은 가장 단순한 local integration 경로입니다.
 
 ## Callable 등록
 
@@ -31,44 +31,47 @@ result = router.invoke(
 )
 ```
 
-## 자동으로 도출되는 것
+## 자동으로 파생되는 항목
 
-함수의 타입 정보에서 다음 항목을 만듭니다.
+SchemaRouter uses Python type information to derive:
 
-- endpoint input JSON Schema
-- function signature 기반 required argument
-- output JSON Schema
-- projection 가능한 top-level response field
+- endpoint input JSON Schema;
+- required arguments from the function signature;
+- output JSON Schema;
+- top-level response fields for projection.
 
-Pydantic model과 dataclass output은 runtime validation 전에 JSON-compatible value로 변환됩니다.
+Pydantic model and dataclass outputs are converted to JSON-compatible values before runtime output
+validation.
 
-## Sync / async
+## Sync 및 async function
 
-둘 다 지원합니다.
+Both are supported:
 
 ```python
 async def lookup_user(user_id: int) -> dict[str, str]:
     ...
 ```
 
-공통 executor가 반환값이 awaitable이면 알아서 기다립니다.
+The common executor awaits the result when necessary.
 
-## 제한
+## 명시적 제약
 
-자동 변환에서는 variadic `*args` / `**kwargs`와 positional-only parameter를 받지 않습니다.
-이름이 있는 JSON 인자로 안전하게 표현하기 어렵다면 `ToolSpec`을 직접 선언해야 합니다.
+Variadic `*args` / `**kwargs` and positional-only parameters are rejected by automatic derivation.
+Use an explicit `ToolSpec` when the function contract cannot be represented as named JSON arguments.
 
-## `@schema_tool`과 `add_callable`
+## Decorator versus add_callable options
 
-`@schema_tool(...)`은 function을 감싸지 않고 로컬 authoring metadata를 저장합니다.
-`add_callable(...)`에 명시적으로 넘긴 값이 decorator metadata보다 우선합니다.
+`@schema_tool(...)` stores local authoring metadata without wrapping the function. Explicit arguments
+to `add_callable(...)` take precedence over decorator metadata.
 
-`read_only=True`는 실제로 retry-safe한 operation에만 사용하십시오.
+Use `read_only=True` when it is genuinely safe to retry the operation. Do not label a mutation
+read-only merely to enable retry behavior.
 
 ## Explicit ToolSpec + trusted invoker
 
-SDK가 안정적인 Python signature/output annotation을 제공하지 않는다면 package 전체를 reflection
-하거나 runtime sample에서 schema를 추측하지 말고 contract를 명시적으로 선언합니다.
+Some SDKs do not expose stable Python signatures or return annotations. Do not reflect an entire
+package or guess a schema from runtime values. Declare the capability explicitly and bind trusted
+local code:
 
 ```python
 tool = ToolSpec(
@@ -84,8 +87,24 @@ router.add_bound_tool(
 )
 ```
 
-`ToolSpec`은 model-visible contract이고 client object, API key, DB connection 같은 trusted
-runtime state는 schema로 복사되지 않습니다.
+The supplied `ToolSpec` remains the complete model-visible contract. The invoker may capture a
+client object, API key, database connection, CLI wrapper, or other trusted transport state; none of
+that state is copied into the schema.
 
-일반 typed function이면 `add_callable()`, opaque SDK/protocol이면 `add_bound_tool()`을
-사용하는 것이 기본 원칙입니다.
+Both endpoint-style invokers:
+
+```python
+invoker(endpoint_name, arguments)
+```
+
+and call-aware invokers:
+
+```python
+invoker.invoke_call(tool_call)
+```
+
+are supported. Bindings are pinned to the exact tool fingerprint, and replacement uses the normal
+registry compare-and-swap boundary.
+
+Prefer `add_callable()` when a normal typed Python function is available. Use
+`add_bound_tool()` when the external SDK/protocol surface cannot be safely introspected.

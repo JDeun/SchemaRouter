@@ -107,7 +107,6 @@ tool = await router.add_mcp_stdio(
 
 Subprocess 실행에는 `shell=True`를 쓰지 않고 shell command 문자열도 받지 않습니다.
 
-## Caller-owned client factory
 
 애플리케이션이 이미 MCP 연결의 수명주기를 관리하고 있다면 억지로 HTTP URL을 만들 필요가
 없습니다.
@@ -124,7 +123,20 @@ tool = await router.add_mcp_client_factory(
 Credential과 연결 상태는 factory 쪽에 남습니다. SchemaRouter는 넘겨받은 MCP client로
 `list_tools()`와 `call_tool()`만 호출합니다.
 
-## 인증된 HTTP
+## Transport-neutral client factory
+
+bound factory는 다음 형태를 가집니다.
+
+```python
+@asynccontextmanager
+async def my_bound_factory(*, timeout: float = 20.0):
+    async with my_mcp_client() as client:
+        yield client
+```
+
+factory가 credential과 transport state를 소유하며 SchemaRouter는 연결된 MCP client만 `list_tools()`와 `call_tool()`에 사용합니다.
+
+## 인증된 Streamable HTTP
 
 ```python
 import os
@@ -139,8 +151,21 @@ router = await SchemaRouter.from_url(
 ```
 
 Credential은 planner state, `ToolSpec`, model-visible argument로 복사되지 않습니다.
-복잡한 OAuth, mTLS, proxy, gateway는 `MCPClientFactory`로 caller가 lifecycle을 소유하는
-방식이 권장됩니다.
+동일한 trusted header set을 discovery와 runtime call에 사용하지만 header value는 `ToolSpec`, endpoint metadata, planner state, model-visible argument에 복사되지 않습니다. `Mcp-Protocol-Version` 같은 MCP protocol header는 trusted header로 override할 수 없으며 URL에 credential을 넣는 것도 거부합니다.
+
+## Custom OAuth, mTLS, proxy 또는 gateway transport
+
+더 복잡한 인증에는 `MCPClientFactory`를 주입합니다.
+
+```python
+router = await SchemaRouter.from_url(
+    "https://mcp.example.com/mcp",
+    kind="mcp",
+    mcp_client_factory=my_trusted_factory,
+)
+```
+
+factory가 공식 SDK client/transport lifecycle을 소유하므로 OAuth, client credential, mTLS, proxy, enterprise gateway 또는 application-specific HTTP client를 설정하면서 secret을 SchemaRouter planning contract 밖에 유지할 수 있습니다.
 
 ## Schema refresh / watch
 
@@ -152,7 +177,11 @@ await router.start_schema_watcher()
 Tool 목록이 그대로면 아무것도 바꾸지 않습니다. 호환 가능한 변경은 기존 fingerprint를 확인한
 뒤 교체할 수 있고, breaking change나 보안 의미가 달라지는 변경은 검토 대기 상태로 남깁니다.
 
-현재 process에 맞는 binding이 없거나 fingerprint가 오래됐으면 refresh를 진행하지 않습니다.
+live factory, credential, environment value, subprocess configuration, socket 등 transport state는 `ToolSpec`이나 watcher snapshot에 저장하지 않습니다. 현재 process-local binding이 없거나 stale이면 refresh는 fail closed하며 SchemaRouter가 HTTP URL이나 trusted transport state를 임의로 재구성하지 않습니다.
+
+## 실행
+
+bound invoker는 `call_tool()`을 호출합니다. structured content를 우선 사용하며 advertised output schema가 있으면 projection 전에 검증할 수 있습니다.
 
 ## MCP annotation은 permission이 아닙니다
 
@@ -175,11 +204,24 @@ ExecutionPolicy(
 
 ## 서버가 공개하지 않는 result contract 선언
 
-MCP에서 `outputSchema`는 필수가 아닙니다. 서버가 결과를 text block으로만 돌려주면
-SchemaRouter가 field 구조를 안전하게 알아낼 근거가 없습니다.
+MCP에서 `outputSchema`는 필수가 아닙니다. 서버가 전체 결과를 text block으로 직렬화하면 SchemaRouter는 declared `outputSchema`에서만 output field를 도출하므로 projection/normalization할 field가 없습니다.
+
+선언된 output array도 published `outputSchema`에서만 순회합니다. `results: array<object{title,url}>` 형태는 `results[].title`, `results[].url`을 노출하며 내부 `"*"` path segment가 projection 중 record alignment를 보존합니다. example tool response에서 array-item field를 추론하지 않습니다.
 
 이 경우 애플리케이션 코드에서 필요한 결과 계약을 직접 선언할 수 있습니다.
 
+
+## Integration coverage
+
+```text
+HTTP or stdio server
+ -> discovery
+ -> input/output schema import
+ -> planning
+ -> execution policy
+ -> call_tool()
+ -> structured output validation
+```
 ```python
 from schemarouter import FieldSpec
 
@@ -199,6 +241,8 @@ amended_endpoint = endpoint.model_copy(
     }
 )
 
+# endpoint set은 고정됩니다. 선언할 endpoint 하나를 amend하면서
+# 나머지 endpoint는 그대로 유지해야 합니다.
 amended = tool.model_copy(
     update={
         "endpoints": [
@@ -211,13 +255,17 @@ amended = tool.model_copy(
 router.amend_capability(key, amended)
 ```
 
-이 선언은 routing, projection, unit normalization, fallback 가능 여부에 실제로 영향을 줍니다.
-그래서 원격 서버가 보내는 값이 아니라 애플리케이션이 신뢰하는 코드에서만 추가할 수 있습니다.
+capability는 계속 executable하며 invoker는 사용자 코드에 노출되지 않습니다. 서버가 공개하지 않은 field를 선언하거나 기존 field의 의미를 annotate할 수 있지만 execution identity(path, method, parameter, read-only/destructive classification)나 서버가 공개한 field의 validation shape는 바꿀 수 없습니다. 그 외 변경은 `ContractAmendmentError`를 발생시키고 아무것도 변경하지 않습니다.
 
-서버가 이미 선언한 실행 경로나 validation shape를 바꾸려 하면
-`ContractAmendmentError`가 발생합니다.
+**이것은 inert annotation이 아닙니다.** 승인된 amendment는 실제 routing/result 경계를 바꿀 수 있습니다.
 
-## CI coverage
+- semantic ID/unit 선언은 이전에 불가능했던 cross-provider fallback을 compatible하게 만들 수 있습니다.
+- `unit_normalization`은 caller가 보기 전에 result path의 numeric value를 `item * scale + offset`으로 변환합니다.
+- `path` / `result_path` 변경은 sanctioned field name이 반환하는 값을 바꿀 수 있으므로 projection/redaction boundary에 영향을 줍니다.
+- `source_type`, `license`, `unit`은 executor가 hard gate로 강제하는 evidence availability에 영향을 줍니다.
+- amendment는 tool fingerprint를 바꾸므로 해당 capability의 active availability cooldown을 초기화합니다.
+- amendment 이전에 만든 LangChain/LlamaIndex bridge는 기존 fingerprint/output field를 캡처하므로 이후 호출에서 `SchemaDriftError`가 발생합니다. amended router에서 bridge tool을 다시 만들어야 합니다. `to_langgraph_node`는 매 호출마다 `router.invoke()`를 사용하므로 이 문제의 영향을 받지 않습니다.
+
 
 Repository CI는 실제 Streamable HTTP와 stdio MCP server를 올려 discovery → schema import →
 planning → execution policy → `call_tool()` → structured output validation을 검증합니다.

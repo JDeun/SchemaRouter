@@ -1,14 +1,14 @@
-# 사람이 읽는 API 문서
+# Human-readable documentation
 
-사람이 읽는 API 페이지는 OpenAPI/MCP보다 약한 근거이므로 SchemaRouter는 이를 실행 가능한 schema source가 아니라 **proposal source**로 취급합니다.
+Human-readable API page는 OpenAPI나 MCP보다 약한 evidence이므로 SchemaRouter는 이를 executable schema source가 아니라 **proposal source**로 취급합니다.
 
-## 문서 페이지 검사
+## Documentation page 검사
 
 ```python
 from schemarouter import SchemaRouter
 
 async def documentation_model(payload: dict) -> dict:
-    # structured-output model로 payload 전송
+    # Send payload to a structured-output model.
     ...
 
 router = SchemaRouter()
@@ -18,15 +18,31 @@ proposal = await router.inspect_url(
 )
 ```
 
-proposal에는 grounded 여부, 근거가 충분할 때의 proposed `ToolSpec`, grounding score, uncertainty, rejected item이 포함됩니다.
+The proposal contains:
+
+- a grounded/non-grounded status;
+- a proposed `ToolSpec` when enough evidence survives;
+- a grounding score;
+- uncertainties;
+- rejected items.
 
 ## Grounding 규칙
 
-허용되는 모든 endpoint, parameter, field에는 가져온 문서에 실제로 존재하는 evidence quote가 있어야 합니다. model proposal의 exact quote가 문서에 없으면 해당 candidate는 거부됩니다. script/style/noscript/SVG는 model에 문서 text를 전달하기 전에 제거합니다.
+Every accepted endpoint, parameter, and field must carry an evidence quote that appears in the
+fetched document.
 
-## 승인은 별도의 권한 전환
+```mermaid
+flowchart LR
+    P["model proposal"] --> Q{"exact quote present?"}
+    Q -- yes --> S["candidate survives"]
+    Q -- no --> R["candidate is rejected"]
+```
 
-grounded proposal도 아직 실행할 수 없습니다.
+Scripts, styles, noscript content, and SVG are removed before the model sees the document text.
+
+## Approval은 별도의 authority transition
+
+A grounded proposal is still non-executable.
 
 ```python
 router.approve_proposal(
@@ -36,12 +52,29 @@ router.approve_proposal(
 )
 ```
 
-mutating method에는 추가 명시적 opt-in이 필요합니다. 승인 후에도 execution policy가 적용되므로 runtime side-effect gate를 우회하지 않습니다.
+Mutating methods require an additional explicit opt-in:
 
-## Redirect와 URL 안전
+```python
+router.approve_proposal(
+    proposal,
+    base_url="https://api.example.com",
+    allow_mutations=True,
+)
+```
 
-문서 URL은 embedded credential이 없는 absolute HTTP(S) URL이어야 하며 redirect는 원래 origin으로 제한됩니다. SchemaRouter는 local/private endpoint를 의도적으로 지원하므로 untrusted end user가 URL을 제공할 수 있는 서비스라면 hosting application이 자체 URL admission/egress policy를 추가해야 합니다. [보안 threat model](../security/threat-model.md)을 참고하세요.
+Execution policy still applies after approval, so approval does not bypass the runtime side-effect
+gate.
 
-## 한계
+## Redirect and URL safety
 
-현재는 최초 HTTP response를 읽습니다. browser-side JavaScript rendering이 필요하거나 여러 페이지에 걸친 문서는 향후 crawler/rendering adapter가 필요할 수 있습니다.
+Documentation URLs must be absolute HTTP(S) URLs without embedded credentials. Redirects are limited
+to the original origin.
+
+SchemaRouter deliberately supports local/private endpoints. If untrusted end users can supply URLs,
+the hosting application must add its own URL admission and egress policy. See the
+[security threat model](../security/threat-model.md).
+
+## Limitations
+
+The current path reads the initial HTTP response. Documentation that requires browser-side
+JavaScript rendering or spans many pages may need a future crawler/rendering adapter.

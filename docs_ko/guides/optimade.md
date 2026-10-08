@@ -1,6 +1,8 @@
 # OPTIMADE
 
-OPTIMADE는 상호운용 가능한 재료 데이터베이스를 위한 표준 API입니다. SchemaRouter는 provider별 custom integration 대신 first-class protocol adapter로 지원합니다.
+OPTIMADE는 interoperable materials database를 위한 표준 API입니다. SchemaRouter는 각 provider를 별도의 custom integration으로 취급하지 않고 first-class protocol adapter로 지원합니다.
+
+The adapter follows the standard discovery model:
 
 ```text
 base URL
@@ -22,11 +24,22 @@ router = await SchemaRouter.from_url(
 )
 ```
 
-version이 없는 provider root와 이미 version이 붙은 `.../v1` base를 모두 지원합니다.
+Both an unversioned provider root and an already versioned `.../v1` base are supported.
 
-## 탐색되는 endpoint
+## 발견된 endpoint
 
-사용 가능한 각 entry type마다 `search_structures`, `get_structures`, `search_references`, `get_references` 같은 read-only endpoint를 만듭니다. entry-info 문서가 유효한 schema를 제공하면 provider-specific entry type/property도 보존합니다.
+For each usable entry type, SchemaRouter creates read-only endpoints:
+
+```text
+search_structures
+get_structures
+search_references
+get_references
+...
+```
+
+Provider-specific entry types and properties are preserved when their entry-info documents expose
+valid schemas.
 
 ## 검색
 
@@ -42,25 +55,97 @@ results = await router.ainvoke(
 )
 ```
 
-표준 query parameter에는 `filter`, `page_limit`, `sort`, `include`, `page_offset`, `page_number`, `page_cursor`, `email_address`가 포함됩니다.
+The standard query parameters exposed by the adapter include:
 
-## Field-aware 실행
+- `filter`
+- `page_limit`
+- `sort`
+- `include`
+- `page_offset`
+- `page_number`
+- `page_cursor`
+- `email_address`
 
-planning에서 `id`, `chemical_formula_descriptive`, `nelements`를 선택하면 call-aware invoker는 `response_fields=chemical_formula_descriptive,nelements`를 전송합니다. OPTIMADE resource-object 규칙 때문에 `id`, `type`은 normalized result에 유지됩니다.
+## Field-aware execution
 
-provider-specific property도 일반 `FieldSpec`이 되며 `x-optimade-unit` 같은 unit metadata는 `FieldSpec.unit`으로 보존됩니다. list-of-dictionary property는 record-preserving item field를 사용하고 wire request에는 provider의 top-level `response_fields`만 보냅니다.
+OPTIMADE is especially well aligned with SchemaRouter because it has protocol-native field
+projection.
 
-## 안전 경계
+If planning selects:
 
-- OPTIMADE endpoint는 read-only로 분류
-- index meta-database를 실행 가능한 entry database로 자동 취급하지 않음
-- URL 생성 전 entry-type path segment 검증
-- runtime redirect 비활성화
-- discovery/data response byte limit 적용
-- runtime header를 model-selected argument와 분리
+```text
+id
+chemical_formula_descriptive
+nelements
+```
 
-## 현재 범위
+the call-aware invoker sends:
 
-현재 concrete OPTIMADE provider database와 표준 entry-list/single-entry semantics를 지원합니다. index meta-database traversal/federation, 자연어→OPTIMADE filter 자동 컴파일, cross-provider normalization/merging 등은 별도 확장 영역입니다.
+```text
+response_fields=chemical_formula_descriptive,nelements
+```
 
-프로토콜 semantics는 [OPTIMADE 공식 명세](https://www.optimade.org/specification/latest/)를 참고하세요.
+`id` and `type` remain part of the normalized result because OPTIMADE requires them at the
+resource-object level.
+
+The returned JSON:API resource is normalized from:
+
+```json
+{
+  "id": "123",
+  "type": "structures",
+  "attributes": {
+    "chemical_formula_descriptive": "O2Si",
+    "nelements": 2
+  }
+}
+```
+
+to:
+
+```json
+{
+  "id": "123",
+  "type": "structures",
+  "chemical_formula_descriptive": "O2Si",
+  "nelements": 2
+}
+```
+
+before SchemaRouter output validation.
+
+## Provider-specific fields
+
+Properties exposed through `/info/<entry_type>` become normal `FieldSpec` objects. OPTIMADE unit
+metadata such as `x-optimade-unit` is preserved as `FieldSpec.unit`.
+
+Declared list-of-dictionary properties expose record-preserving item fields. For example,
+`trajectories[].energy` uses `["trajectories", "*", "energy"]` internally. The wire request still
+uses only the provider's top-level `response_fields=trajectories`; item projection happens locally
+without converting the list into parallel arrays.
+
+This means fields such as provider-specific band gaps or formation energies can participate in the
+same planner and evidence logic as standard fields.
+
+## Safety boundaries
+
+- OPTIMADE endpoints are classified read-only.
+- Index meta-databases are not silently treated as executable entry databases.
+- Entry-type path segments are validated before URL construction.
+- Runtime redirects are disabled.
+- Discovery responses and data responses have hard byte limits.
+- Runtime headers stay outside model-selected arguments.
+
+## Current scope
+
+v0.2 supports concrete OPTIMADE provider databases and standard entry-list/single-entry semantics.
+
+Deferred extensions include:
+
+- traversing index meta-databases and provider federation;
+- automatically compiling arbitrary natural language into OPTIMADE filter expressions;
+- cross-provider normalization/merging;
+- provider health scoring and fallback.
+
+See the official [OPTIMADE specification](https://www.optimade.org/specification/latest/) for the
+protocol semantics.

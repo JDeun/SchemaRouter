@@ -1,104 +1,125 @@
 # 0.14 final-answer quality benchmark
 
-추적 이슈: #424
+추적 issue: #424
 
-이 benchmark는 deterministic task completion과 분리합니다.
+이 benchmark는 deterministic task completion과 분리해 유지합니다.
 
-B1/B2의 질문:
+B1/B2는 다음 질문에 답합니다:
 
 > Agent가 필요한 tool을 선택하고 실행할 수 있는가?
 
-#424의 질문:
+#424 asks:
 
-> 해당 tool을 사용한 뒤 visible capability catalog를 줄여도 final answer의 factual quality, unit, provenance가 유지되는가?
+> 해당 tool을 사용한 뒤 visible capability catalog를 줄여도 final answer의 factual quality, unit 및 provenance가 유지되는가?
 
-## Run gate
+## 실행 gate
 
-B2는 terminal이지만 더 이상 그것만으로 최종 launch condition이 되지는 않습니다. 자동화된 #500 research conveyor에서 #424 answer inference는 **#432가 성공적으로 완료될 때까지 blocked**입니다. #432 자체도 terminal #431 corrective result와 frozen held-out condition manifest에 의해 gate됩니다.
+B2는 현재 terminal 상태지만 더 이상 이것만으로 final launch condition이 충족되지는 않습니다. Under the automated
+#500 research conveyor, #424 answer inference remains **blocked until #432 finishes
+successfully**. #432 itself is gated by the terminal #431 corrective result and the frozen
+held-out condition manifest.
 
-이 순서를 우회해 #424를 수동 dispatch하지 않습니다.
+해당 sequence를 우회해 #424를 수동 dispatch하지 않습니다.
 
-Benchmark는 preregistered infrastructure-only feasibility rule이 달리 요구하지 않는 한 B2와 동일한 frozen strong-agent model family/runtime lineage를 유지합니다. Replacement는 #424 task outcome을 보고 선택할 수 없습니다.
+The benchmark keeps the same frozen strong-agent model family/runtime lineage as B2 unless a
+preregistered infrastructure-only feasibility rule requires otherwise. A replacement may never be
+selected from #424 task outcomes.
 
-## Authoring scaffold와 현재 gate
+## Authoring scaffold 및 현재 gate
 
 Benchmark는 model outcome과 독립적으로 deterministic **authoring slot**을 freeze합니다.
+Scaffold는 다음을 고정합니다:
 
-Scaffold가 고정하는 것:
+- 144 unique `semantic_task_id` values;
+- one preregistered answer-task stratum per ID;
+- one preregistered language stratum per ID;
+- four independent slots in each of the 36 stratum × language cells.
 
-- 144 unique `semantic_task_id`
-- ID당 하나의 preregistered answer-task stratum
-- ID당 하나의 preregistered language stratum
-- 36 stratum × language cell 각각 독립 slot 4개
+다음 항목은 생성하거나 포함하지 **않습니다**:
 
-생성하거나 포함하지 않는 것:
+- task/query wording;
+- gold/required routes;
+- deterministic evidence payloads or tool outputs;
+- reference/forbidden facts;
+- numeric tolerances or canonical units;
+- provenance/source IDs;
+- expected answers;
+- catalogs, candidate sets, scores or labels.
 
-- task/query wording
-- gold/required route
-- deterministic evidence payload 또는 tool output
-- reference/forbidden fact
-- numeric tolerance 또는 canonical unit
-- provenance/source ID
-- expected answer
-- catalog, candidate set, score 또는 label
-
-Generator는 `scripts/generate_agent_utility_v4_final_answer_authoring_plan.py`입니다. Authoring scaffold는 outcome-independent 상태를 유지합니다. Content generation과 answer inference는 B2 terminal state만이 아니라 현재 conveyor gate의 제어를 받으며 active launch boundary는 성공적인 terminal #432입니다.
+The generator is
+`scripts/generate_agent_utility_v4_final_answer_authoring_plan.py`.
+The authoring scaffold remains outcome-independent. Content generation and answer inference are
+controlled by the current conveyor gate rather than by B2 terminal state alone; the active launch
+boundary is successful terminal #432.
 
 ## Surface
 
-최종 benchmark는 **144개의 독립 semantic task**를 포함합니다.
+The final benchmark contains **144 independent semantic tasks**:
 
-- 6 answer task strata
-- 6 language strata
-- task-stratum × language cell당 독립 task 4개
+- 6 answer task strata;
+- 6 language strata;
+- 4 independent tasks per task-stratum × language cell.
 
-각 semantic task는 하나의 language에만 속합니다.
+Each semantic task belongs to one language only.
 
 Answer strata:
 
-1. property value + unit + provenance
-2. literature fact + source attribution
-3. multi-source comparison
-4. transform/export action 이후 status/provenance answer
-5. corrective expansion required
-6. distractor/contradiction resistance
+1. property value + unit + provenance;
+2. literature fact + source attribution;
+3. multi-source comparison;
+4. transform/export action followed by status/provenance answer;
+5. corrective expansion required;
+6. distractor/contradiction resistance.
 
-Catalog size: 100, 250 endpoints.
+Catalog sizes:
 
-Conditions: FULL, SR-5, SR-10, SR-PROGRESSIVE, ORACLE.
+- 100 endpoints;
+- 250 endpoints.
+
+Conditions:
+
+- FULL;
+- SR-5;
+- SR-10;
+- SR-PROGRESSIVE;
+- ORACLE.
+
 
 ## Corpus identity validation
 
-생성 corpus를 freeze/scoring하기 전에 authored row에 `scripts/validate_agent_utility_corpus_identity.py`를 실행합니다.
+Before any generated corpus can be frozen or scored, run
+`scripts/validate_agent_utility_corpus_identity.py` against the authored rows.
 
-Validator는 이후 semantic scorer보다 좁은 범위에서 outcome-independent pre-scoring integrity만 강제합니다.
+The validator is narrower than the later semantic scorer. It enforces only
+pre-scoring integrity that must not depend on benchmark outcomes:
 
-- preregistered authoring slot이 정확히 한 번씩 존재
-- semantic task ID가 frozen slot plan과 일치
-- task/answer stratum과 language assignment drift 금지
-- query text non-empty
-- normalized query text가 semantic task 간 unique
-- freeze manifest용 stable identity/query-content SHA-256 출력
+- every preregistered authoring slot appears exactly once;
+- semantic task IDs match the frozen slot plan;
+- task/answer stratum and language assignments cannot drift;
+- query text must be non-empty;
+- normalized query text must be unique across semantic tasks;
+- stable identity/query-content SHA-256 values are emitted for the freeze manifest.
 
-Content 생성/품질 승인/inference authorization/model outcome 검사는 하지 않습니다.
+The validator does **not** generate content, approve content quality, authorize inference,
+or inspect model outcomes.
 
 ## Deterministic evidence
 
-각 task에서 freeze하는 항목:
+Every task freezes:
 
-- deterministic tool evidence payload
-- required reference fact
-- 선택적 forbidden/contradictory fact
-- 해당하는 경우 numeric tolerance
-- canonical 또는 accepted convertible unit
-- allowed provenance/source ID
-- expected state transition
+- deterministic tool evidence payloads;
+- required reference facts;
+- optional forbidden/contradictory facts;
+- numeric tolerances where applicable;
+- canonical or accepted convertible units;
+- allowed provenance/source IDs;
+- expected state transitions.
 
-모든 condition은 정확히 동일한 tool output을 받습니다.
+All conditions receive exactly the same tool outputs.
 
 ## Final answer contract
 
-Evidence collection 뒤 agent는 하나의 machine-readable final envelope를 출력합니다.
+After evidence collection, the agent emits one machine-readable final envelope:
 
 ```json
 {
@@ -115,66 +136,71 @@ Evidence collection 뒤 agent는 하나의 machine-readable final envelope를 �
 }
 ```
 
-Natural-language `answer`는 secondary coherence/completeness review용으로 보존하지만 deterministic scoring은 structured fact surface를 사용합니다.
+The natural-language `answer` is retained for secondary coherence/completeness review,
+but deterministic scoring uses the structured fact surface.
 
-Malformed final envelope는 evaluator가 repair하지 않고 answer failure로 처리합니다.
+A malformed final envelope is an answer failure rather than something repaired by the
+evaluator.
 
 ## Primary factual metrics
 
-각각 별도로 보고합니다.
+Report separately:
 
-- required fact recall
-- unsupported fact count/rate
-- numeric value accuracy
-- unit accuracy
-- provenance accuracy
-- contradiction count
-- exact mandatory-field completion
+- required fact recall;
+- unsupported fact count and rate;
+- numeric value accuracy;
+- unit accuracy;
+- provenance accuracy;
+- contradiction count;
+- exact mandatory-field completion.
 
-Weighted score 하나로 합치지 않습니다.
+Do not collapse these into a weighted score.
 
-Primary product gate의 deployable SchemaRouter condition은 모두 만족해야 합니다.
+The primary product gate requires a deployable SchemaRouter condition to satisfy all of:
 
-- fact recall >= FULL - 2pp
-- numeric accuracy >= FULL - 2pp
-- unit accuracy >= FULL - 2pp
-- provenance accuracy >= FULL - 2pp
-- unsupported-fact rate <= FULL + 1pp
-- contradiction count <= FULL
-- required evidence coverage >=97%
-- total input tokens < FULL
-- tool-schema tokens <= FULL의 40%
-- unauthorized destructive executions = 0
+- fact recall >= FULL - 2pp;
+- numeric accuracy >= FULL - 2pp;
+- unit accuracy >= FULL - 2pp;
+- provenance accuracy >= FULL - 2pp;
+- unsupported-fact rate <= FULL + 1pp;
+- contradiction count no greater than FULL;
+- required evidence coverage >=97%;
+- total input tokens < FULL;
+- tool-schema tokens <=40% of FULL;
+- unauthorized destructive executions = 0.
 
 ## Secondary LLM judge
 
-LLM judge는 선택적이며 secondary입니다.
+An LLM judge is optional and secondary.
 
-사용한다면:
+If used:
 
-- condition-blinded answer를 봄
-- coherence/completeness만 scoring
-- evaluated answer를 열기 전에 prompt freeze
-- deterministic factual metric을 override할 수 없음
+- it sees condition-blinded answers;
+- it scores coherence/completeness only;
+- its prompt is frozen before evaluated answers are opened;
+- it cannot override deterministic factual metrics.
 
 ## Statistics
 
-Independent unit은 semantic task입니다. 두 catalog size는 task 내부의 repeated measure입니다.
+The semantic task is the independent unit.
 
-Answer-task-stratum × language 기준 stratified task-cluster bootstrap:
+The two catalog sizes are repeated measures nested inside task.
 
-- 36 cells
-- cell당 독립 task 4개
-- 10,000 iterations
-- seed 20260929
-- 95% interval
+Use a stratified task-cluster bootstrap over answer-task-stratum × language:
 
-Language와 task-stratum 결과는 diagnostic으로 별도 보고합니다.
+- 36 cells;
+- 4 independent tasks per cell;
+- 10,000 iterations;
+- seed 20260929;
+- 95% interval.
 
-## Claim 경계
+Report language and task-stratum results separately as diagnostics.
 
-#424가 통과하면 frozen answer-bearing benchmark 범위에서 다음 claim만 허용합니다.
+## Claim boundary
 
-> 평가된 strong-agent surface에서 bounded SchemaRouter capability context는 capability context를 줄이면서 final-answer factual quality를 유지했습니다.
+If #424 passes, the permitted claim is scoped to the frozen answer-bearing benchmark:
 
-#424만으로 broad population generalization을 확립하지 않습니다. 그것은 #432가 필요합니다.
+> Bounded SchemaRouter capability context preserved final-answer factual quality while
+> reducing capability context on the evaluated strong-agent surface.
+
+#424 alone does not establish broad population generalization. That requires #432.
