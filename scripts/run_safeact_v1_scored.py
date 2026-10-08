@@ -91,6 +91,34 @@ def _validate_agent_fairness(plans: tuple[V1RunPlan, ...]) -> None:
         raise ValueError("all V1 arms must explicitly declare baseline strategy")
 
 
+def validate_independent_contract_review(
+    manifest: dict, *, contract_sha256: str
+) -> None:
+    """Require a separately recorded contract review before any scored launch.
+
+    This validates an attestation's structure and frozen identity. It is NOT
+    cryptographic proof that human review happened: reviewers must verify the
+    actual public-policy authoring process independently.
+    """
+    review = manifest.get("independent_contract_review")
+    if not isinstance(review, dict) or review.get("approved") is not True:
+        raise ValueError("independent contract review approval is required")
+    author = review.get("author")
+    reviewer = review.get("reviewer")
+    if (
+        not isinstance(author, str)
+        or not author.strip()
+        or not isinstance(reviewer, str)
+        or not reviewer.strip()
+        or author.strip().casefold() == reviewer.strip().casefold()
+    ):
+        raise ValueError("independent contract author and reviewer must differ")
+    if review.get("contract_sha256") != contract_sha256:
+        raise ValueError("independent contract review digest does not match frozen contract")
+    if review.get("upstream_revision") != UPSTREAM_REVISION:
+        raise ValueError("independent contract review upstream revision mismatch")
+
+
 def validate_launch(
     *,
     safeact_root: Path,
@@ -133,6 +161,9 @@ def validate_launch(
     ).hexdigest()
     if intervention_manifest.get("contract_sha256") != frozen_contract_hash:
         raise ValueError("independent contract snapshot hash changed")
+    validate_independent_contract_review(
+        intervention_manifest, contract_sha256=frozen_contract_hash
+    )
     errors = verify_sources(contracts, public_source_root)
     if errors:
         raise ValueError("unverified independent sources: " + "; ".join(errors))
