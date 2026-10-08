@@ -2018,20 +2018,20 @@ PR #320 was merged as `acaca1e14b2f387094100dde3e1186aa4520d01d`.
 
 #299 / PR #300 attempted pinned Kev-0.8B native `choice+noul` on GitHub-hosted CPU/fp32.
 
-The run completed infrastructure setup but did not complete the 1,800-row diagnostic:
-- workflow: `36366508183`;
-- conclusion: `cancelled`;
-- artifact: `10951921452`;
-- artifact digest: `sha256:58d3c1b4aec1bb70eb2aa1747e3acd86278a16da45582930bb80dbca92f54ee0`;
-- `analysis.json`: absent.
+이 실행은 인프라 설정까지 마쳤지만 1,800행 진단은 완료하지 못했습니다.
+- 워크플로: `36366508183`;
+- 종료 상태: `cancelled`;
+- 산출물: `10951921452`;
+- 산출물 다이제스트: `sha256:58d3c1b4aec1bb70eb2aa1747e3acd86278a16da45582930bb80dbca92f54ee0`;
+- `analysis.json`: 없음.
 
 The server log shows correct-but-slow reference PyTorch fallbacks for causal convolution and gated-delta kernels. 이 CPU/fp32 runtime은 impractical execution path로서 terminal이지만 negative model-quality evidence는 아닙니다.
 
-Consequences:
-- #317 six-hour timeout retry retired unexecuted;
-- #314/#315 frozen BGE+Kev composition closed because its required row-level source analysis does not exist;
-- #313 AnyJev CPU execution retired before inference;
-- future typed-decision work requires a preregistered runtime with a credible <=250 ms deployment path.
+후속 조치:
+- #317의 6시간 제한 재시도는 실행하지 않은 채 종료;
+- #314/#315의 동결된 BGE+Kev 합성은 필수 행별 분석 자료가 없으므로 종료;
+- #313의 AnyJev CPU 실행은 추론 전에 종료;
+- 향후 타입 기반 결정 연구는 250 ms 이하의 신뢰할 만한 운영 경로가 포함된 사전등록 런타임이 필요.
 
 The research frontier returns to lightweight BGE-native/open-set evidence where latency is an architectural constraint from the start.
 
@@ -2039,7 +2039,7 @@ The research frontier returns to lightweight BGE-native/open-set evidence where 
 
 PR #320 was merged as `acaca1e14b2f387094100dde3e1186aa4520d01d`.
 
-`scripts/validate_routing_runtime_parity.py` is the mandatory gate for any later quality-pass/runtime-fail optimization. It rejects case-set drift, route drift, execute/abstain threshold crossings, execution errors, and authority violations while recording probability drift and reference boundary margin.
+`scripts/validate_routing_runtime_parity.py`는 이후 품질 통과·지연시간 실패 후보를 최적화할 때 필수 게이트입니다. 사례 집합이나 경로의 변경, 실행·선택 포기 임계값 교차, 실행 오류, 권한 위반을 거부하며 확률 차이와 참조 경계의 여유를 기록합니다.
 
 ## 47. Lightweight BGE composition becomes active frontier
 
@@ -2048,18 +2048,18 @@ candidate reuses only previously measured lightweight evidence.
 
 ### #322 / PR #323 — offline composition PASS
 
-Immutable source artifacts:
-- #262 GTE-only rescue: workflow `36326745694`, artifact `10934337695`,
-  digest `sha256:7881a3594ecdab6a242a946a60cfde14d64e3c452ec9d0956c9cfa75a1e0c748`;
-- #275 negative-capability diagnostic: workflow `36352558325`, artifact `10942243493`,
-  digest `sha256:a831a35098b546c8003435ea04927fb8767aab1435320823ba4763e0b6608ae1`.
+변경할 수 없는 출처 산출물:
+- #262 GTE 전용 복구: 워크플로 `36326745694`, 산출물 `10934337695`,
+  다이제스트 `sha256:7881a3594ecdab6a242a946a60cfde14d64e3c452ec9d0956c9cfa75a1e0c748`;
+- #275 부정 기능 진단: 워크플로 `36352558325`, 산출물 `10942243493`,
+  다이제스트 `sha256:a831a35098b546c8003435ea04927fb8767aab1435320823ba4763e0b6608ae1`.
 
-Frozen composition:
-- #259 strict BGE base;
-- negative veto only on original base accepts at max-negative >=0.55 and advantage >=0.05;
-- vetoed base accepts cannot enter rescue;
-- exact #262 GTE-only route rules with rescue false budget 4;
-- rescue only original base abstentions and only the same raw BGE winner.
+동결된 합성 규칙:
+- #259의 엄격한 BGE 기준;
+- 원래 기준이 승인한 사례 중 최대 음성 점수 >=0.55, 우위 >=0.05인 경우에만 음성 거부권 적용;
+- 거부된 기준 승인 사례는 복구 대상으로 넘기지 않음;
+- 복구 시 잘못된 경로 예산 4를 가진 정확한 #262 GTE 전용 경로 규칙 사용;
+- 원래 기준이 선택을 포기한 경우에만, 동일한 원시 BGE 승자를 복구.
 
 Workflow `36379888054`, artifact `10951119927`,
 digest `sha256:1e86c0ebd881ff98f73d30d65ea618ff4525ead164f7f8a0b04c4ccf98190303`.
@@ -2092,17 +2092,17 @@ The offline #322 composition was executed directly in workflow `36380771103` at 
 Artifact `10952711288`, digest
 `sha256:4ad9d0cc76500dd8705e0db0f677a21e44dbebb74cc3a9ca097723eb453abdc3`.
 
-Result:
-- exact 85.0694%;
-- near-domain rejection 99.3056%;
+결과:
+- 정확도 85.0694%;
+- 유사 도메인 거부율 99.3056%;
 - OOD 100%;
-- false-route 0.6173%;
-- authority/errors 0/0;
-- offline row-level parity mismatches 0;
+- 잘못된 경로 0.6173%;
+- 권한 위반·오류 0/0;
+- 오프라인 행별 동등성 불일치 0건;
 - BGE p95 134.05 ms;
-- conditional GTE p95 54.39 ms;
-- end-to-end p95 176.94 ms;
-- GTE invoked on 42.61% of rows.
+- 조건부 GTE p95 54.39 ms;
+- 종단 간 p95 176.94 ms;
+- GTE 호출 비율 42.61%.
 
 이는 당시 cycle에서 quality, authority/parity, standing 250 ms runtime gate를 동시에 통과한 최초의 executable candidate입니다.
 
@@ -2111,13 +2111,12 @@ Result:
 The candidate was frozen with a machine-readable `frozen-dev` manifest. Representation digests and
 the canonical production target validated successfully.
 
-Before fresh execution, a new confirmation surface was preregistered:
-- seed `operation-routing-quality-v4-lightweight-bge-gte-confirmation-2026-09-28-a`;
-- surface `lightweight-bge-gte-operational-envelope-v1`;
-- confirmation-only, not tuning-eligible;
-- normalized exact overlap required to be zero against canonical DEV and deterministically regenerated
-  #270/#287 fresh surfaces;
-- frozen evaluator/manifest must be byte-diff clean against semantic source `caca039…`.
+새로운 확인 실행 전에 다음 데이터 표면을 사전등록했습니다.
+- 시드 `operation-routing-quality-v4-lightweight-bge-gte-confirmation-2026-09-28-a`;
+- 표면 `lightweight-bge-gte-operational-envelope-v1`;
+- 확인 전용이며 튜닝에 사용할 수 없음;
+- 정식 DEV 및 결정적으로 다시 생성한 #270/#287 새 표면과 정규화된 정확 중복이 0이어야 함;
+- 동결된 평가기·매니페스트는 의미론적 소스 `caca039…`와 바이트 단위 차이가 없어야 함.
 
 Active fresh workflow: `36382202178`.
 
@@ -2138,21 +2137,21 @@ Fresh seed/surface were preregistered before scoring:
 - seed `operation-routing-quality-v4-lightweight-bge-gte-confirmation-2026-09-28-a`;
 - surface `lightweight-bge-gte-operational-envelope-v1`.
 
-Two early runs were invalid infrastructure evidence only:
-- `36382202178`: historical #270/#287 payload regeneration added current-only split metadata and failed contracts;
-- `36382467222`: a split-marker test caught an implementation omission and failed contracts.
+초기 두 실행은 인프라 오류에 관한 증거로만 취급되어 무효입니다.
+- `36382202178`: 과거 #270/#287 페이로드 재생성 시 현재 버전 전용 분할 메타데이터가 추가돼 계약 위반;
+- `36382467222`: 분할 표식 테스트에서 구현 누락을 발견해 계약 위반.
 
 Neither run generated a fresh corpus artifact or model score.
 
-Current valid run:
-- workflow `36382647406`;
-- head `b19d7b0255ee9717464b6fa65ce1ebdeaf58a1bd`;
-- contracts PASS;
-- historical #270/#287 corpus SHA reproduction PASS;
-- frozen semantic diff check PASS;
-- frozen DEV manifest PASS;
-- new fresh generator/gate tests PASS;
-- evaluate job queued.
+당시 유효했던 실행:
+- 워크플로 `36382647406`;
+- 헤드 `b19d7b0255ee9717464b6fa65ce1ebdeaf58a1bd`;
+- 계약 검사 통과;
+- 과거 #270/#287 코퍼스 SHA 재현 통과;
+- 동결된 의미론적 차이 검사 통과;
+- 동결 DEV 매니페스트 통과;
+- 새로운 데이터 생성기·게이트 테스트 통과;
+- 평가 작업 대기.
 
 Technical fix 과정에서 frozen candidate의 semantic parameter는 변경되지 않았습니다.
 
@@ -2165,11 +2164,11 @@ The executable lightweight candidate from #324/#325 passed canonical DEV at:
 - false-route 0.6173%;
 - p95 176.9436 ms.
 
-It was frozen without semantic retuning and evaluated once on a new confirmation surface:
-- seed `operation-routing-quality-v4-lightweight-bge-gte-confirmation-2026-09-28-a`;
-- surface `lightweight-bge-gte-operational-envelope-v1`;
-- corpus SHA256 `7d960bb43924569eede34748acc95f5bcd2cc04f2b9f8e396ec59c495dd3e1ec`;
-- normalized exact overlap = 0 against canonical DEV and regenerated #270/#287 surfaces.
+의미론적 재튜닝 없이 동결한 뒤 새로운 확인 표면에서 단 한 번 평가했습니다.
+- 시드 `operation-routing-quality-v4-lightweight-bge-gte-confirmation-2026-09-28-a`;
+- 표면 `lightweight-bge-gte-operational-envelope-v1`;
+- 코퍼스 SHA256 `7d960bb43924569eede34748acc95f5bcd2cc04f2b9f8e396ec59c495dd3e1ec`;
+- 정식 DEV 및 재생성한 #270/#287 표면과 정규화된 정확 중복: 0건.
 
 Terminal fresh result:
 - exact 977/1152 = 84.8090%;
@@ -2183,24 +2182,21 @@ Terminal fresh result:
 
 해당 candidate는 종료했습니다. Fresh corpus는 영구적으로 confirmation-only이며 threshold, route/language/family repair, prototype change, rescue-rule change, model selection, calibration 또는 다른 tuning에 사용할 수 없습니다.
 
-Together with #270 and #287, this is the third independent demonstration that a candidate can look
-strong on the canonical DEV while its open-set acceptance boundary degrades under request-surface
-shift. The next architecture must be motivated from tuning-eligible DEV and registry-level operational
-invariants rather than another refinement of DEV-fitted score geometry.
+#270과 #287에 이어 세 번째로, 정식 DEV에서 유망해 보이는 후보도 요청 표면이 바뀌면 개방 집합 승인 경계가 약화될 수 있다는 사실을 독립적으로 보여줬습니다. 다음 아키텍처는 DEV에 맞춘 점수 분포의 추가 수정이 아니라 튜닝 가능한 DEV와 레지스트리 수준의 운영 불변 조건에서 근거를 찾아야 합니다.
 
 ## 48. #328 / PR #329 — BGE-M3 multi-representation operation gate
 
 After the valid #326 fresh failure, the next cycle stops refining DEV-fitted dense
 acceptance geometry.
 
-The repository history already contains negative evidence for:
-- route-local scalar operation-fit thresholds;
-- action-only MiniLM gating;
-- winner-only BGE cross-encoder rejection;
-- cross-encoder rescue;
-- signed/negative dense prototypes;
-- learned DEV-geometry verifiers;
-- externally pretrained Qwen/Laya typed gates.
+저장소에는 이미 다음 접근들의 부정적 결과가 기록돼 있습니다.
+- 경로별 스칼라 작업 적합성 임계값;
+- 작업 이름만 이용한 MiniLM 게이트;
+- 승자 전용 BGE 교차 인코더 거부;
+- 교차 인코더 복구;
+- 부호 있는·음성 밀집 프로토타입;
+- DEV 분포를 학습한 검증기;
+- 외부 사전학습 Qwen/Laya 타입 게이트.
 
 새 hypothesis는 또 다른 threshold repair를 추가하는 대신 representation 자체를 변경합니다.
 
@@ -2222,11 +2218,11 @@ BGE-M3 natively exposes three retrieval representations:
 - no second threshold dimension;
 - exact row-level raw-winner parity against the frozen #259 artifact.
 
-The four permitted ColBERT rule families are:
-1. global route agreement only;
-2. same-tool endpoint agreement only;
-3. global agreement + one global winner-score threshold;
-4. same-tool agreement + one global winner-score threshold.
+허용된 ColBERT 규칙군은 네 가지입니다.
+1. 전역 경로 일치만 사용;
+2. 동일 도구의 엔드포인트 일치만 사용;
+3. 전역 일치와 하나의 전역 승자 점수 임계값;
+4. 동일 도구 일치와 하나의 전역 승자 점수 임계값.
 
 Threshold families report only false-route budgets 0/6/12 on canonical tuning DEV.
 
@@ -2243,27 +2239,26 @@ evaluation and are invalid for quality conclusions. The first model-quality exec
 Canonical workflow `36385740263` completed successfully at source
 `4c72f2dd1939edb6ecf8415d620dbb5d58683fa0`.
 
-Artifact:
-- id `10955036349`;
-- digest `sha256:6e6bfbd2cb352aba03e2d98683ae6967a64115f90a04cf49f74e7cd1ab76dde7`;
-- canonical DEV SHA remained `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`;
-- dense raw-winner parity mismatches: 0;
-- authority violations / execution errors: 0 / 0.
+산출물:
+- ID `10955036349`;
+- 다이제스트 `sha256:6e6bfbd2cb352aba03e2d98683ae6967a64115f90a04cf49f74e7cd1ab76dde7`;
+- 정식 DEV SHA는 `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`로 유지;
+- 밀집 벡터 원시 승자 동등성 불일치: 0건;
+- 권한 위반 / 실행 오류: 0 / 0.
 
 Dense BGE-M3 raw supported top-1 remained 88.4549%, confirming that route-ranking capacity was unchanged.
 The preregistered ColBERT operation-contract families did not produce a promotable open-set boundary:
 
-- global agreement only: 82.5521% exact / 32.8125% near rejection / 64.5062% false-route;
-- same-tool agreement only: 83.7674% exact / 7.4653% near rejection / 91.2037% false-route;
-- global agreement + one global score threshold at the <=1% false-route budget: 38.6285% exact / 98.9583% near rejection / 100% OOD / 0.9259% false-route;
-- same-tool agreement + one global score threshold at the same budget: 38.7153% exact / 98.9583% near rejection / 100% OOD / 0.9259% false-route.
+- 전역 일치만 사용: 정확도 82.5521% / 유사 도메인 거부율 32.8125% / 잘못된 경로 64.5062%;
+- 동일 도구 일치만 사용: 정확도 83.7674% / 유사 도메인 거부율 7.4653% / 잘못된 경로 91.2037%;
+- 전역 일치 + 잘못된 경로 1% 이하 예산의 전역 점수 임계값: 정확도 38.6285% / 유사 도메인 거부율 98.9583% / OOD 100% / 잘못된 경로 0.9259%;
+- 동일 도구 일치 + 같은 예산의 전역 점수 임계값: 정확도 38.7153% / 유사 도메인 거부율 98.9583% / OOD 100% / 잘못된 경로 0.9259%.
 
 Preregistered rule 중 standing 85 / 97 / 100 / 1 quality gate를 통과한 것은 없었습니다.
 
-The measured full-path p95 was 398.6848 ms. PR #331 was opened before result inspection because sparse scoring is diagnostic-only. Recomputing the executable latency from the already persisted per-row components
-(`encode + dense scoring + ColBERT scoring`) gives **398.6149 ms p95**, so excluding sparse diagnostics does not change the terminal decision and no rerun is required.
+측정된 전체 경로 p95는 398.6848 ms였습니다. 희소 점수 계산은 진단 전용이었으므로 PR #331은 결과를 확인하기 전에 열렸습니다. 이미 저장된 행별 구성 요소(`encode + dense scoring + ColBERT scoring`)로 실제 실행 지연시간을 다시 계산해도 **398.6149 ms p95**여서 희소 진단 부분을 제외해도 최종 판단이 바뀌지 않았습니다. 따라서 재실행은 필요하지 않습니다.
 
-A post-hoc sparse-only diagnostic was also checked strictly as non-promotion evidence. At the <=1% false-route budget it preserved only 12.6736% supported exact-route accuracy. This is retained solely to prevent repeating the same BGE-M3 sparse representation as another promotion attempt.
+사후적인 희소 벡터 전용 진단도 승격 근거가 아니라는 조건으로 검토했습니다. 잘못된 경로 1% 이하 예산에서 지원 사례의 정확한 경로는 12.6736%만 유지됐습니다. 동일한 BGE-M3 희소 표현을 새로운 승격 시도로 반복하지 않도록 이 결과를 보존합니다.
 
 Decision: 이 cycle의 BGE-M3 native ColBERT/sparse operation-contract representation을 reject하고 종료합니다. Do not add a post-hoc second threshold, route-local exception, margin search, rank-2 fallback, or pseudo-route to repair it.
 
@@ -2274,30 +2269,29 @@ Decision: 이 cycle의 BGE-M3 native ColBERT/sparse operation-contract represent
 After ColBERT failed, #332 tested whether trusted registry metadata itself could define a
 surface-independent operation boundary without another query model or a labeled-DEV threshold.
 
-Frozen design:
-- BGE-M3 raw registered top-1 remained the sole route authority;
-- the same normalized query embedding was reused for route ranking and the gate;
-- alias banks contained only normalized endpoint name + trusted `operation_aliases`;
-- route margin/cohesion floors were derived only from leave-one-out alias self-cohesion and
-  same-tool sibling separation;
-- exactly four fixed families A/B/C/D were evaluated;
-- #270/#287/#326 fresh surfaces were excluded.
+동결된 설계:
+- BGE-M3 원시 등록 Top-1만 경로 선택 권한을 보유;
+- 동일하게 정규화한 질의 임베딩을 경로 순위 결정과 게이트에 재사용;
+- 별칭 뱅크에는 정규화된 엔드포인트 이름과 신뢰할 수 있는 `operation_aliases`만 포함;
+- 경로 마진·응집도 하한은 별칭의 leave-one-out 자체 응집도와 동일 도구 형제 엔드포인트 간 거리만으로 도출;
+- 고정 규칙군 A/B/C/D 네 가지를 정확히 평가;
+- #270/#287/#326의 새로운 표면은 제외.
 
-Canonical evidence:
-- workflow `36388641609`;
-- source `fa091f43296eb1ca680f39921010482275bb4cda`;
-- artifact `10955736650`;
-- digest `sha256:21166d8c10009401b34380e6e24ddbcdcf4ec06c760d86b4d19eaf99930a1e1e`;
-- canonical DEV SHA `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`;
-- dense raw supported top-1 88.4549%;
-- dense parity / authority / execution errors 0 / 0 / 0;
-- routing-path p95 198.0714 ms.
+정식 근거:
+- 워크플로 `36388641609`;
+- 소스 `fa091f43296eb1ca680f39921010482275bb4cda`;
+- 산출물 `10955736650`;
+- 다이제스트 `sha256:21166d8c10009401b34380e6e24ddbcdcf4ec06c760d86b4d19eaf99930a1e1e`;
+- 정식 DEV SHA `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`;
+- 밀집 벡터 원시 지원 사례 Top-1 88.4549%;
+- 밀집 동등성 / 권한 / 실행 오류 0 / 0 / 0;
+- 라우팅 경로 p95 198.0714 ms.
 
-Results:
-- A sibling contrast: 84.8958% exact / 11.9792% near rejection / 18.0556% OOD / 87.3457% false-route;
-- B registry margin: 72.3090% exact / 24.1319% near rejection / 68.0556% OOD / 70.9877% false-route;
-- C registry cohesion: 24.3056% exact / 98.4375% near rejection / 100% OOD / 1.3889% false-route;
-- D joint envelope: 23.5243% exact / 98.4375% near rejection / 100% OOD / 1.3889% false-route.
+결과:
+- A 형제 작업 대조: 정확도 84.8958% / 유사 도메인 거부율 11.9792% / OOD 18.0556% / 잘못된 경로 87.3457%;
+- B 레지스트리 마진: 정확도 72.3090% / 유사 도메인 거부율 24.1319% / OOD 68.0556% / 잘못된 경로 70.9877%;
+- C 레지스트리 응집도: 정확도 24.3056% / 유사 도메인 거부율 98.4375% / OOD 100% / 잘못된 경로 1.3889%;
+- D 결합 범위: 정확도 23.5243% / 유사 도메인 거부율 98.4375% / OOD 100% / 잘못된 경로 1.3889%.
 
 No fixed family passed the standing 85/97/100/1 target.
 
@@ -2320,33 +2314,33 @@ another transformation of the same dense score/alias geometry.
 
 마지막 lightweight 0.11 hypothesis는 추가 score threshold 없이 cross-backbone route agreement만 분리해 검증했습니다.
 
-Frozen rule:
-- BGE-M3 #259 raw registered top-1 remained the sole execution authority;
-- GTE multilingual base used the previously frozen 0.25/0.75 schema/action representation;
-- execute the BGE winner only when GTE raw top-1 exactly equals the BGE raw top-1;
-- otherwise abstain;
-- no score, margin, route-local, language, or family threshold;
-- no rank-2 fallback, pseudo-route, calibration, blind data, or failed fresh evidence.
+동결된 규칙:
+- BGE-M3 #259 원시 등록 Top-1만 실행 권한을 보유;
+- GTE 다국어 기본 모델은 이전에 동결한 스키마/작업 표현 0.25/0.75를 사용;
+- GTE 원시 Top-1이 BGE 원시 Top-1과 정확히 일치할 때만 BGE 승자 실행;
+- 그렇지 않으면 선택 포기;
+- 점수·마진·경로별·언어별·집단별 임계값 없음;
+- 두 번째 순위 폴백, 가상 경로, 보정·블라인드 데이터 또는 실패한 새로운 근거 없음.
 
-Canonical evidence:
-- workflow `36390328100`;
-- source `d25f427569fc4419a72963c6f31994fa170805f6`;
-- artifact `10956013271`;
-- digest `sha256:56fad4070ef97782f398a259192bc5ad0e4ec3ac7d6c0fd4d531f17bfc89ccf9`;
-- canonical DEV SHA `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`;
-- authority violations / execution errors 0 / 0.
+정식 근거:
+- 워크플로 `36390328100`;
+- 소스 `d25f427569fc4419a72963c6f31994fa170805f6`;
+- 산출물 `10956013271`;
+- 다이제스트 `sha256:56fad4070ef97782f398a259192bc5ad0e4ec3ac7d6c0fd4d531f17bfc89ccf9`;
+- 정식 DEV SHA `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`;
+- 권한 위반 / 실행 오류 0 / 0.
 
 Raw ranking capacity remained high:
 - BGE-M3 supported top-1 88.4549%;
 - GTE supported top-1 89.1493%.
 
-However, route agreement was not an open-set capability signal:
-- BGE/GTE route agreement over all rows 72.7222%;
-- supported exact 937/1152 = 81.3368%;
-- near-domain rejection 251/576 = 43.5764%;
-- OOD rejection 59/72 = 81.9444%;
-- false routes 338/648 = 52.1605%;
-- wrong-supported accepted 34.
+하지만 경로 일치는 개방 집합 기능 판단 신호가 아니었습니다.
+- 전체 행에서 BGE/GTE 경로 일치율 72.7222%;
+- 지원 사례 정확도 937/1152 = 81.3368%;
+- 유사 도메인 거부율 251/576 = 43.5764%;
+- OOD 거부율 59/72 = 81.9444%;
+- 잘못된 경로 338/648 = 52.1605%;
+- 잘못 수락된 지원 사례 34건.
 
 GTE query+scoring p95 was 83.3360 ms and the frozen #259 BGE direct p95 was
 132.1553 ms, but no combined executable latency claim was made because quality failed first.
@@ -2386,17 +2380,12 @@ The exact frozen candidate then failed its new zero-overlap fresh confirmation (
 
 이 failure가 promotion을 결정하는 결과이며 calibration과 blind-final은 실행하지 않습니다.
 
-After the fresh failure, the cycle tested materially different non-fresh-derived representations rather
-than repairing from confirmation rows:
-- BGE-M3 ColBERT/sparse operation evidence (#328/#329): terminal reject;
-- registry-self-calibrated alias envelope (#332/#333): terminal reject;
-- threshold-free BGE/GTE consensus (#336/#337): terminal reject.
+새 표면에서 실패한 뒤에는 확인 데이터의 개별 행을 수정하지 않고, 실질적으로 다른 표현을 시험했습니다.
+- BGE-M3 ColBERT·희소 작업 근거(#328/#329): 최종 거부;
+- 레지스트리 자체 보정 별칭 경계(#332/#333): 최종 거부;
+- 임계값 없는 BGE/GTE 합의(#336/#337): 최종 거부.
 
-Combined with the earlier negative lines (positive dense thresholds, NLI, signed/negative prototypes,
-rank heuristics, learned DEV verifier geometry, Qwen/Laya/Kev/AnyJev typed-decision paths, and
-cross-encoder variants), the current canonical DEV has been mined far enough. Continuing to add
-thresholds or hand-written exceptions would increase selection bias without supplying independent
-evidence.
+기존 부정적 결과(긍정 밀집 임계값, NLI, 부호 있는·음성 프로토타입, 순위 휴리스틱, 학습된 DEV 검증기 분포, Qwen/Laya/Kev/AnyJev 타입 결정 경로, 교차 인코더 변형)와 함께 보면 정식 DEV는 이미 충분히 탐색됐습니다. 임계값이나 사람이 직접 작성한 예외를 계속 추가하면 독립적 근거 없이 선택 편향만 키울 수 있습니다.
 
 0.11 research conclusion은 다음과 같습니다:
 
