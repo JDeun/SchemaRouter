@@ -1,6 +1,6 @@
-# Capability graph drift
+# 기능 그래프 변경 감지
 
-SchemaRouter는 이전에 컴파일한 capability-contract snapshot과 갱신된 snapshot을 비교해 어떤 capability graph node를 다시 컴파일해야 하는지 식별할 수 있습니다.
+SchemaRouter는 이전에 컴파일한 기능 계약 스냅샷과 새로고침한 스냅샷을 비교하여 어떤 기능 그래프 노드를 다시 컴파일해야 하는지 식별할 수 있습니다.
 
 ```python
 from schemarouter import compare_capability_graph_snapshot
@@ -11,12 +11,12 @@ if report.changed:
     print(report.invalidated_capability_ids)
 ```
 
-비교는 deterministic합니다. capability contract fingerprint는 canonical JSON의 SHA-256 digest이므로 mapping insertion order가 fingerprint를 바꾸지 않습니다.
+비교 결과는 결정론적입니다. 기능 계약 지문은 정규화된 JSON의 SHA-256 해시이므로 매핑에 키를 삽입한 순서가 달라도 지문은 바뀌지 않습니다.
 
-## Invalidation 경계
+## 무효화 경계
 
-변경되거나 제거된 contract는 breaking change이며 해당 capability와 기존 immediate graph predecessor/successor를 invalidate합니다. 이 incident edge들이 stale해졌을 수 있는 compatibility decision입니다. 새 capability 추가는 compatible additive drift로 취급하며 새 edge를 계산할 수 있도록 새 node만 invalidate합니다.
+변경되거나 제거된 계약은 호환성을 깨는 변경입니다. 해당 기능과 기존 그래프에서 바로 연결된 선행·후행 노드를 무효화합니다. 그 노드에 연결된 간선의 호환성 판단은 더 이상 유효하지 않을 수 있기 때문입니다. 새로 추가된 기능은 호환 가능한 추가 변경이며, 호스트 또는 컴파일러가 새로운 간선을 계산할 수 있도록 새 노드만 무효화합니다.
 
-이 API는 **invalidation metadata만** 생성합니다. capability 실행, invocation migration, authorization 확대, host execution policy 대체는 하지 않습니다. provider schema 갱신, 영향받은 graph node 재빌드, 갱신 graph 배포 시점은 host가 결정합니다.
+이 API는 **무효화 메타데이터만 생성합니다**. 기능을 실행하거나, 호출을 다른 곳으로 이전하거나, 권한을 확대하거나, 호스트의 실행 정책을 교체하지 않습니다. 공급자 스키마를 새로고침할 시점, 영향받는 노드를 재구성할 시점, 새 그래프를 배포할 시점은 호스트가 결정합니다.
 
-provider 수준의 OpenAPI, MCP, scientific-provider schema 변경은 먼저 기존 ToolSpec/schema-diff layer로 normalize해야 합니다. 그 다음 capability graph drift가 갱신 schema에서 생성된 provider-neutral capability contract를 비교합니다. runtime health는 별도 overlay이며 deterministic contract fingerprint에 포함되지 않습니다.
+공급자 수준의 OpenAPI, MCP 또는 과학 데이터 공급자 스키마 변경은 먼저 기존 `ToolSpec` 및 스키마 차이 분석 계층으로 정규화해야 합니다. 그 후 기능 그래프 변경 감지가 갱신된 스키마에서 생성한 공급자 중립적인 기능 계약을 비교합니다. 런타임 상태는 별도의 오버레이로 유지되며 결정론적 계약 지문에 포함하지 않습니다.
