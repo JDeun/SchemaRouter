@@ -159,7 +159,12 @@ def test_empty_declared_model_is_rejected(monkeypatch, tmp_path: Path) -> None:
 def test_rejects_post_review_command_mutation(monkeypatch, tmp_path: Path) -> None:
     sample = _inputs(tmp_path)
     _mock_public(monkeypatch, sample)
-    sample["commands"][launch.CONDITIONS[2]] += " --extra-arg=test"
+    # Change only the trusted adapter identity; solver runtime flags remain
+    # identical, so the snapshot-hash guard is the intended failure.
+    name = launch.CONDITIONS[2]
+    sample["commands"][name] = sample["commands"][name].replace(
+        "agent_2.py", "agent_2_replaced.py"
+    )
     with pytest.raises(ValueError, match="altered trusted adapter identity"):
         launch.validate_launch(**sample)
 
