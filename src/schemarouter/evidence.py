@@ -1,7 +1,14 @@
 from __future__ import annotations
 
 from .errors import EvidenceContractError
-from .models import (\n    EndpointSpec,\n    EvidenceContract,\n    EvidenceLedgerEntry,\n    EvidenceRequirements,\n    FieldSpec,\n    ToolSpec,\n)
+from .models import (
+    EndpointSpec,
+    EvidenceContract,
+    EvidenceLedgerEntry,
+    EvidenceRequirements,
+    FieldSpec,
+    ToolSpec,
+)
 
 
 def _selected_answer_fields(
@@ -136,7 +143,39 @@ def field_evidence_status(
             )
 
     return not missing, available_context, missing
-\n\ndef build_evidence_ledger_entry(\n    tool: ToolSpec,\n    endpoint: EndpointSpec,\n    selected_fields: list[str],\n    contract: EvidenceContract,\n) -> EvidenceLedgerEntry:\n    """Validate a trusted evidence contract and return a payload-free ledger entry."""\n\n    global_ok, available, global_missing = global_evidence_status(\n        tool, endpoint, selected_fields, contract.required\n    )\n    field_ok, field_context, field_missing = field_evidence_status(\n        tool, endpoint, selected_fields, contract.field_requirements\n    )\n    missing = [*global_missing, *field_missing]\n    if not global_ok or not field_ok:\n        raise EvidenceContractError("evidence contract unsatisfied: " + ", ".join(missing))\n    if contract.minimum_corroboration != 1:\n        raise ValueError(\n            "minimum_corroboration > 1 requires an explicit aggregation boundary"\n        )\n    return EvidenceLedgerEntry(\n        tool=tool.key,\n        endpoint=endpoint.name,\n        fields=list(selected_fields),\n        tool_fingerprint=tool.fingerprint,\n        endpoint_fingerprint=endpoint.fingerprint,\n        available=available,\n        field_evidence=field_context,\n    )\n
+
+
+def build_evidence_ledger_entry(
+    tool: ToolSpec,
+    endpoint: EndpointSpec,
+    selected_fields: list[str],
+    contract: EvidenceContract,
+) -> EvidenceLedgerEntry:
+    """Validate a trusted evidence contract and return a payload-free ledger entry."""
+
+    global_ok, available, global_missing = global_evidence_status(
+        tool, endpoint, selected_fields, contract.required
+    )
+    field_ok, field_context, field_missing = field_evidence_status(
+        tool, endpoint, selected_fields, contract.field_requirements
+    )
+    missing = [*global_missing, *field_missing]
+    if not global_ok or not field_ok:
+        raise EvidenceContractError("evidence contract unsatisfied: " + ", ".join(missing))
+    if contract.minimum_corroboration != 1:
+        raise ValueError(
+            "minimum_corroboration > 1 requires an explicit aggregation boundary"
+        )
+    return EvidenceLedgerEntry(
+        tool=tool.key,
+        endpoint=endpoint.name,
+        fields=list(selected_fields),
+        tool_fingerprint=tool.fingerprint,
+        endpoint_fingerprint=endpoint.fingerprint,
+        available=available,
+        field_evidence=field_context,
+    )
+
 
 def contract_for_call(call: object) -> EvidenceContract:
     """Materialize the existing compiled-call evidence requirements as a contract."""
