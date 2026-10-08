@@ -37,6 +37,7 @@ jobs:
             tests/test_safeact_v1_record_intervention.py \
             tests/test_safeact_v1_trusted_session.py \
             tests/test_safeact_v1_official_agent_hook.py \
+            tests/test_safeact_v1_routing_hook.py \
             tests/test_safeact_v1_interventions.py \
             tests/test_safeact_v1_contract_review.py
       - name: Run actual eight-case EvidenceGate mechanism experiment
