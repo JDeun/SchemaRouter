@@ -103,12 +103,16 @@ def inspect(
                 / "examples/external_validation/safeact_v1/official_agent_hook.py"
             ),
         }
+        permitted_python = {
+            "python", "python3", "python3.11", "python3.12", "python3.13", "python3.14",
+        }
         for condition, command in commands.items():
             tokens = shlex.split(command)
             if (
                 len(tokens) < 3
-                or Path(tokens[0]).name not in {"python", "python3", "python3.11", "python3.12", "python3.13", "python3.14"}
-                or Path(tokens[1]).resolve(strict=True) != expected_scripts[condition].resolve(strict=True)
+                or Path(tokens[0]).name not in permitted_python
+                or Path(tokens[1]).resolve(strict=True)
+                != expected_scripts[condition].resolve(strict=True)
             ):
                 raise ValueError(
                     f"{condition}: untrusted official host adapter command"
