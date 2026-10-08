@@ -126,3 +126,37 @@ def test_evaluator_only_contract_rejected_before_execution() -> None:
             verify_result=lambda tool, args, result: None,
             execute_action=lambda action, args: None,
         )
+
+
+def test_mechanism_diagnostics_track_attempts_and_denials() -> None:
+    session = _session()
+    with pytest.raises(PermissionError):
+        session.execute_action("refund_issue", {})
+    session.information_call("charge_read", {})
+    assert session.execute_action("refund_issue", {}) == ("refund_issue", {})
+    assert session.diagnostics() == {
+        "information_attempts": 1,
+        "verified_observations": 1,
+        "action_attempts": 2,
+        "action_dispatches": 1,
+        "gate_denials": 1,
+        "gate_reason_counts": {"missing_required_observation": 1},
+    }
+
+
+def test_failed_read_counts_attempt_without_crediting_evidence() -> None:
+    def fail(tool, args):
+        raise RuntimeError("transport failed")
+
+    session = _session(read=fail)
+    with pytest.raises(RuntimeError):
+        session.information_call("charge_read", {})
+    assert session.diagnostics()["information_attempts"] == 1
+    assert session.diagnostics()["verified_observations"] == 0
+
+
+def test_mismatched_action_reason_is_coarsened() -> None:
+    session = _session()
+    with pytest.raises(PermissionError):
+        session.execute_action("delete_charge", {"charge_id": "C2"})
+    assert session.diagnostics()["gate_reason_counts"] == {"action_mismatch": 1}

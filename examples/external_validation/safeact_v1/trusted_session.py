@@ -45,6 +45,12 @@ class TrustedEvidenceSession:
         self._information_call = information_call
         self._verify_result = verify_result
         self._execute_action = execute_action
+        self._information_attempts = 0
+        self._verified_observations = 0
+        self._action_attempts = 0
+        self._action_dispatches = 0
+        self._gate_denials = 0
+        self._gate_reason_counts: dict[str, int] = {}
 
     def information_call(
         self, tool: str, arguments: Mapping[str, Any]
@@ -52,6 +58,7 @@ class TrustedEvidenceSession:
         """Record only an actual and independently verified information result."""
         if not tool:
             raise ValueError("information tool name required")
+        self._information_attempts += 1
         safe_args = dict(arguments)
         result = self._information_call(tool, safe_args)
         verified = self._verify_result(tool, safe_args, result)
@@ -68,6 +75,7 @@ class TrustedEvidenceSession:
                 )
             ):
                 raise ValueError("trusted verifier returned malformed observed evidence")
+            self._verified_observations += 1
             self._gate.observe(
                 Observation(
                     tool=tool,
@@ -78,5 +86,31 @@ class TrustedEvidenceSession:
         return result
 
     def execute_action(self, action: str, arguments: Mapping[str, Any]) -> Any:
-        """Never invoke the executor if the evidence gate refuses execution."""
+        """Track attempts and gate decisions without interpreting official outcomes."""
+        self._action_attempts += 1
+        decision = self._gate.check(action)
+        if not decision.allowed:
+            self._gate_denials += 1
+            reason = (
+                "action_mismatch"
+                if "action_mismatch" in decision.missing
+                else "missing_required_observation"
+            )
+            self._gate_reason_counts[reason] = self._gate_reason_counts.get(reason, 0) + 1
+        else:
+            self._action_dispatches += 1
         return self._gate.dispatch(action, arguments, self._execute_action)
+
+    def diagnostics(self) -> dict[str, object]:
+        """Mechanism-only counters; not SafeAct evaluator outcome metrics.
+
+        Reason categories intentionally omit record IDs and other source values.
+        """
+        return {
+            "information_attempts": self._information_attempts,
+            "verified_observations": self._verified_observations,
+            "action_attempts": self._action_attempts,
+            "action_dispatches": self._action_dispatches,
+            "gate_denials": self._gate_denials,
+            "gate_reason_counts": dict(self._gate_reason_counts),
+        }
