@@ -282,6 +282,7 @@ from .errors import (
     AuthorizationAuditDeliveryError,
     BindingDriftError,
     ContractAmendmentError,
+    EvidenceContractError,
     ExecutionBudgetExceededError,
     ExecutionError,
     ExecutionHookError,
@@ -373,6 +374,8 @@ from .models import (
     CapabilityRouteCandidate,
     CapabilityRouteRetrieval,
     EndpointSpec,
+    EvidenceContract,
+    EvidenceLedgerEntry,
     EvidenceRequirements,
     ExecutionPlan,
     FallbackRoute,
@@ -646,6 +649,8 @@ __all__ = [
     "EffectKind",
     "EligibilityStatus",
     "EndpointSpec",
+    "EvidenceContract",
+    "EvidenceLedgerEntry",
     "EvidenceRequirements",
     "ExecutionBudget",
     "ExecutionStatus",
@@ -653,6 +658,7 @@ __all__ = [
     "ExecutionError",
     "ExecutionHookError",
     "ExecutionInvariantError",
+    "EvidenceContractError",
     "IndeterminateInvocationError",
     "InvocationUnavailableError",
     "ExecutionMode",
@@ -939,3 +945,4 @@ __all__ = [
     "inspect_capability_decision_trace",
 
 ]
+

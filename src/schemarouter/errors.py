@@ -53,6 +53,10 @@ class PlanValidationError(SchemaRouterError):
     """Raised when an execution plan violates the current schema."""
 
 
+class EvidenceContractError(PlanValidationError):
+    """Raised when trusted evidence preconditions are not established."""
+
+
 class PolicyViolationError(PlanValidationError):
     """Raised when local execution policy denies a tool call."""
 

@@ -1,6 +1,15 @@
 from __future__ import annotations
 
-from .models import EndpointSpec, EvidenceRequirements, FieldSpec, ToolSpec
+from .errors import EvidenceContractError
+from .models import (
+    EndpointSpec,
+    EvidenceContract,
+    EvidenceLedgerEntry,
+    EvidenceRequirements,
+    FieldSpec,
+    ToolCall,
+    ToolSpec,
+)
 
 
 def _selected_answer_fields(
@@ -135,3 +144,49 @@ def field_evidence_status(
             )
 
     return not missing, available_context, missing
+
+
+def build_evidence_ledger_entry(
+    tool: ToolSpec,
+    endpoint: EndpointSpec,
+    selected_fields: list[str],
+    contract: EvidenceContract,
+) -> EvidenceLedgerEntry:
+    """Validate a trusted evidence contract and return a payload-free ledger entry."""
+
+    global_ok, available, global_missing = global_evidence_status(
+        tool, endpoint, selected_fields, contract.required
+    )
+    field_ok, field_context, field_missing = field_evidence_status(
+        tool, endpoint, selected_fields, contract.field_requirements
+    )
+    missing = [*global_missing, *field_missing]
+    if not global_ok or not field_ok:
+        raise EvidenceContractError("evidence contract unsatisfied: " + ", ".join(missing))
+    if contract.minimum_corroboration != 1:
+        raise EvidenceContractError(
+            "minimum_corroboration > 1 requires an explicit aggregation boundary"
+        )
+    return EvidenceLedgerEntry(
+        tool=tool.key,
+        endpoint=endpoint.name,
+        fields=list(selected_fields),
+        tool_fingerprint=tool.fingerprint,
+        endpoint_fingerprint=endpoint.fingerprint,
+        available=available,
+        field_evidence=field_context,
+    )
+
+
+def contract_for_call(call: ToolCall) -> EvidenceContract:
+    """Materialize the existing compiled-call evidence requirements as a contract."""
+
+    required = call.required_evidence
+    field_requirements = call.field_evidence
+    return EvidenceContract(
+        required=required.model_copy(deep=True),
+        field_requirements={
+            name: requirement.model_copy(deep=True)
+            for name, requirement in field_requirements.items()
+        },
+    )
