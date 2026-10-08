@@ -6,6 +6,8 @@ The same model and frozen benchmark must be used across conditions.
 from __future__ import annotations
 
 import shlex
+import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -32,11 +34,37 @@ class V1RunPlan:
     def argv(self) -> tuple[str, ...]:
         """SafeAct's batch runner controls workspace and post-run evaluator."""
         return (
-            "python", "run_benchmark.py",
+            sys.executable, str(self.safeact_root.resolve() / "run_benchmark.py"),
             "--protocol", "v1",
             "--agent-cmd", self.agent_command,
-            "--output-dir", str(self.safeact_root / "output" / self.condition.lower()),
+            "--output-dir", str(self.safeact_root.resolve() / "output" / self.condition.lower()),
         )
 
     def command_string(self) -> str:
         return shlex.join(self.argv())
+
+
+def validate_comparison_matrix(plans: Sequence[V1RunPlan]) -> tuple[V1RunPlan, ...]:
+    """Freeze exactly one three-arm comparison under one model and checkout.
+
+    This validates *declared* model identity. The trusted agent adapter must
+    separately attest the model it actually ran for each official task.
+    """
+    if len(plans) != len(CONDITIONS):
+        raise ValueError("all three preregistered conditions are required")
+    by_condition: dict[str, V1RunPlan] = {}
+    for plan in plans:
+        if plan.condition in by_condition:
+            raise ValueError("duplicate experiment condition")
+        by_condition[plan.condition] = plan
+    if set(by_condition) != set(CONDITIONS):
+        raise ValueError("experiment must cover all preregistered conditions")
+    ordered = tuple(by_condition[condition] for condition in CONDITIONS)
+    if len({plan.model for plan in ordered}) != 1:
+        raise ValueError("comparison must freeze one declared model")
+    if len({plan.safeact_root.resolve() for plan in ordered}) != 1:
+        raise ValueError("comparison must use one pinned SafeAct checkout")
+    outputs = {plan.argv()[-1] for plan in ordered}
+    if len(outputs) != len(CONDITIONS):
+        raise ValueError("comparison output paths must not overlap")
+    return ordered
