@@ -340,14 +340,14 @@ Trusted adapter는 planned logical field를 `fields=...` 또는 OPTIMADE `respon
 
 ## 현재 extension backlog
 
-- trusted local classification for individual MCP tool side effects and richer MCP retry semantics;
-- OpenAPI `$id`/anchor-aware resolution and richer composition-aware planning/execution;
-- non-object request-body ergonomics and typed array-element projection if justified;
-- organization-specific policy/approval and license/provenance extensions;
-- compensation, transactions, and distributed execution;
-- distributed/remote registry implementations beyond the built-in SQLite persistence;
-- multi-page and client-rendered documentation crawling;
-- additional trusted trace/export sinks;
-- dated live-provider benchmark evidence and compatibility dashboards.
+- 개별 MCP 도구의 부작용에 대한 신뢰할 수 있는 로컬 분류와 개선된 MCP 재시도 의미론;
+- OpenAPI `$id`·앵커를 인식하는 참조 처리와 복합 구성을 인식하는 계획·실행;
+- 타당성이 확인되는 경우 객체가 아닌 요청 본문의 사용 편의성과 타입 기반 배열 원소 투영;
+- 조직별 정책·승인 및 라이선스·출처 추적 확장;
+- 보상 작업, 트랜잭션 및 분산 실행;
+- 내장 SQLite 지속성 저장소를 넘어서는 분산·원격 레지스트리 구현;
+- 여러 페이지 및 클라이언트 렌더링 문서 크롤링;
+- 신뢰할 수 있는 추가 실행 추적·내보내기 저장 대상;
+- 날짜가 명시된 실제 제공자 벤치마크 근거와 호환성 대시보드.
 
 이들은 extension layer이며 위 core fail-closed contract를 약화해서는 안 됩니다.
