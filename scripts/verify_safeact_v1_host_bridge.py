@@ -183,6 +183,41 @@ def run_bridge_compatibility(root: Path) -> dict[str, Any]:
         ):
             raise AssertionError("synthetic EvidenceGate missing-evidence seam failed")
 
+        # A real tool can return valid facts about the WRONG record. A
+        # successful information call is not authorization for another target.
+        foreign = SyntheticGateway("v1").calls[0]
+        foreign["result"]["observations"][0]["subject"] = "C1"
+        gateway.calls.append(foreign)
+        wrong_record = host.normalize_v1(
+            scenario, allowed, info, "codex", "fixed-model", "{}", None
+        )
+        wrong_marker = wrong_record["metadata"]["schemarouter_intervention"]
+        if (
+            wrong_record["events"] != info
+            or wrong_marker["authorized_action_dispatches"] != 0
+            or wrong_marker["denied_action_attempts"] != 1
+            or wrong_marker["verified_observations"] != 1
+        ):
+            raise AssertionError("foreign record was treated as target evidence")
+
+        # A gateway result with a non-OK status cannot establish evidence even
+        # if its payload contains the same subject and fields.
+        gateway.calls.clear()
+        failed = SyntheticGateway("v1").calls[0]
+        failed["result"]["status"] = "error"
+        gateway.calls.append(failed)
+        errored = host.normalize_v1(
+            scenario, allowed, info, "codex", "fixed-model", "{}", None
+        )
+        error_marker = errored["metadata"]["schemarouter_intervention"]
+        if (
+            errored["events"] != info
+            or error_marker["authorized_action_dispatches"] != 0
+            or error_marker["denied_action_attempts"] != 1
+            or error_marker["verified_observations"] != 0
+        ):
+            raise AssertionError("failed public information read authorized action")
+
     return {
         "kind": "official_safeact_v1_host_adapter_compatibility",
         "official_revision": PINNED_SAFEACT_SHA,
@@ -195,6 +230,8 @@ def run_bridge_compatibility(root: Path) -> dict[str, Any]:
         "actual_schemarouter_registry": True,
         "synthetic_verified_evidence_gate_allow": True,
         "synthetic_missing_evidence_gate_denied": True,
+        "synthetic_foreign_record_evidence_denied": True,
+        "synthetic_failed_tool_result_denied": True,
         "independent_contracts_for_real_cases_approved": False,
         "meaning": (
             "Pinned official normalizer + SchemaRouter typed-registry routing "
