@@ -1,0 +1,47 @@
+name: Korean Documentation Translation Coverage
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'docs_ko/**'
+      - 'scripts/report_korean_translation_coverage.py'
+      - 'tests/test_korean_translation_coverage.py'
+      - '.github/workflows/korean-translation-coverage.yml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'docs_ko/**'
+      - 'scripts/report_korean_translation_coverage.py'
+      - 'tests/test_korean_translation_coverage.py'
+      - '.github/workflows/korean-translation-coverage.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.12'
+      - name: Test coverage inventory
+        run: python -m unittest discover -s tests -p 'test_korean_translation_coverage.py' -q
+      - name: Report bilingual corpus without concealing known debt
+        run: |
+          python scripts/report_korean_translation_coverage.py \
+            --json-out translation-coverage.json \
+            --markdown-out translation-coverage.md
+          cat translation-coverage.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: korean-translation-coverage
+          path: |
+            translation-coverage.json
+            translation-coverage.md
+          retention-days: 30
