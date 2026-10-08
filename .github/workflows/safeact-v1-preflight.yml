@@ -47,3 +47,24 @@ jobs:
           assert len(set(ids)) == 131, "duplicate case ids"
           print("Official SafeAct V1 listing validated: 131 cases (no scored execution)")
           PY
+      - name: Smoke-test pinned V1 evaluator with official gold simulator only
+        run: |
+          python safeact-upstream/run_benchmark.py \
+            --protocol v1 --limit 1 --simulate \
+            --output-dir "$RUNNER_TEMP/safeact-v1-simulator" \
+            > "$RUNNER_TEMP/safeact-v1-simulator-stdout.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(
+              (Path(os.environ["RUNNER_TEMP"]) / "safeact-v1-simulator"
+               / "summary.json").read_text(encoding="utf-8")
+          )
+          assert result["mode"] == "simulate"
+          assert result["selected_protocols"] == ["v1"]
+          assert result["new_cases_run"] == 1
+          assert result["failures"] == []
+          print("Official V1 gold-simulator smoke passed; no agent result reported")
+          PY
