@@ -107,18 +107,29 @@ async for event in router.astream_events(request):
 
 이벤트 payload는 기본 설정에서 민감한 값을 가린 상태로 기록됩니다.
 
+## Time-to-value 예산
+
+권장 경로는 의도적으로 다음 범위 안에 맞춰져 있습니다.
+
+- **설치 명령 1개**: `pip install schemarouter`
+- credential이 필요 없는 **실행 가능한 Python snippet 1개**
+- 첫 유용한 결과 전까지 **핵심 개념 4개**: provider 이름, 해석된 capability, 선택된 plan, 검증된 결과
+- database, model API, vector store, agent framework가 필요하지 않음
+
+실제 live request 시간은 인터넷/provider latency에 좌우되지만 로컬 설정 경로에는 숨겨진 infrastructure 요구사항이 없습니다. caller가 구체적인 protocol endpoint를 이미 가지고 있다면 lower-level `from_url(...)`도 계속 사용할 수 있습니다.
+
 ## 어떤 경로를 쓰면 되나
 
 | 이미 가지고 있는 것 | 설치 | 권장 시작점 |
 | --- | --- | --- |
-| Provider 이름 | core | `await router.add_provider("materials-project")` 및 [Provider 중심 등록](../guides/provider-first-registration.md) |
-| OpenAPI URL | `pip install schemarouter` | lower-level `SchemaRouter.from_url(..., kind="openapi")` |
-| typed Python function | core | [Python tools](../guides/python-tools.md) |
-| MCP server | `schemarouter[mcp]` | [MCP](../guides/mcp.md) |
-| LangChain tools | `schemarouter[langchain]` | `examples/langchain_quickstart.py` |
-| LangGraph app | `schemarouter[langgraph]` | `examples/langgraph_quickstart.py` |
-| LlamaIndex tools | `schemarouter[llamaindex]` | `examples/llamaindex_quickstart.py` |
-| 사람이 읽는 API 문서 | core | inspect → proposal → approval |
+| Provider 이름 | `pip install schemarouter` | `await router.add_provider("materials-project")` 및 [Provider 중심 등록](../guides/provider-first-registration.md) |
+| OpenAPI URL | `pip install schemarouter` | [live OpenAPI quickstart](#3-실제-provider-capability-해석-및-실행) |
+| typed Python function | core install | [Python tools](../guides/python-tools.md) 및 `examples/quickstart.py` |
+| MCP server | `pip install "schemarouter[mcp]"` | [MCP HTTP / stdio guide](../guides/mcp.md) |
+| LangChain tools | `pip install "schemarouter[langchain]"` | `examples/langchain_quickstart.py` |
+| LangGraph app | `pip install "schemarouter[langgraph]"` | `examples/langgraph_quickstart.py` |
+| LlamaIndex tools | `pip install "schemarouter[llamaindex]"` | `examples/llamaindex_quickstart.py` |
+| 사람이 읽는 API 문서 | core install | [inspect → proposal → approval](../guides/html-documentation.md) |
 
 ## 문제 해결
 
@@ -132,6 +143,10 @@ async for event in router.astream_events(request):
 credential은 `trusted_headers`나 caller-owned client factory 같은 trusted runtime configuration에
 두십시오. `ToolSpec`, planner argument, URL에 secret을 넣지 마십시오.
 
+**MCP server 연결 실패**
+
+실제로 소유한 transport를 선택하십시오. `from_url(..., kind="mcp")`를 통한 Streamable HTTP, `add_mcp_stdio()`를 통한 local stdio, 또는 `add_mcp_client_factory()`를 통한 caller-owned client lifecycle을 사용할 수 있습니다.
+
 **Schema discovery 실패**
 
 `router.probe_url(...)`로 privacy-safe typed diagnosis를 확인하십시오. 일반 웹사이트는 빈 tool
@@ -141,3 +156,16 @@ credential은 `trusted_headers`나 caller-owned client factory 같은 trusted ru
 
 Discovery는 execution authority가 아닙니다. read/write/destructive classification, execution
 policy, approval callback, binding fingerprint 상태를 확인하십시오.
+
+
+## 다음 단계
+
+더 자세한 protocol 설명:
+
+- [OpenAPI](../guides/openapi.md)
+- [MCP](../guides/mcp.md)
+- [GraphQL](../guides/graphql.md)
+- [OData](../guides/odata.md)
+- [OpenRPC / JSON-RPC](../guides/openrpc.md)
+- [OPTIMADE](../guides/optimade.md)
+- [Universal ingestion matrix](../guides/universal-ingestion.md)

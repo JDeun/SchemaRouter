@@ -1,27 +1,138 @@
 # LangGraph
 
-SchemaRouter는 planning, policy, schema validation, execution authority를 내부에 유지하면서 native LangGraph `StateGraph` node로 실행할 수 있습니다.
+SchemaRouter는 planning, policy, schema validation, execution authority를 SchemaRouter 내부에 유지하면서 native LangGraph `StateGraph` node로 실행할 수 있습니다.
 
 ## 설치
+
+사용자 설치:
 
 ```bash
 pip install "schemarouter[langgraph]"
 ```
 
-core package는 LangGraph에 의존하지 않습니다.
+저장소 개발 환경:
 
-## Graph node 추가
+```bash
+pip install -e ".[dev,langgraph]"
+```
 
-`to_langgraph_node(router)`를 `StateGraph` node로 등록할 수 있으며 sync/async graph execution을 모두 지원합니다.
+Core package는 LangGraph에 의존하지 않습니다.
 
-기본 node는 `state["schemarouter_request"]`의 string/`PlanRequest`/compatible mapping 또는 `state["query"]` + optional `state["arguments"]`를 받습니다. 결과는 `schemarouter_results` partial state update로 반환되고 checkpoint/persistence 친화성을 위해 기본적으로 JSON serialize됩니다.
+## SchemaRouter를 graph node로 추가
 
-application-specific state는 `request_factory`와 `result_key`로 변환할 수 있습니다.
+```python
+from typing import Any, TypedDict
 
-## 신뢰 경계
+from langgraph.graph import END, START, StateGraph
+from schemarouter.integrations import to_langgraph_node
 
-LangGraph → SchemaRouter node → planning → current schema validation → policy/approval/budget → binding-drift check → trusted invoker → output validation → partial graph-state update 순입니다.
 
-LangGraph는 graph control flow, checkpoint, memory, runtime context, HITL orchestration을 담당하고 SchemaRouter는 schema-aware tool planning과 validated execution을 담당합니다. LangGraph `RunnableConfig`와 SchemaRouter `RunConfig`는 의도적으로 합치지 않습니다.
+class State(TypedDict, total=False):
+    query: str
+    arguments: dict[str, Any]
+    schemarouter_results: list[dict[str, Any]]
 
-repository의 `examples/langgraph_quickstart.py`를 CI에서 실제 `StateGraph` sync/async mode로 실행합니다.
+
+builder = StateGraph(State)
+builder.add_node("schema_router", to_langgraph_node(router))
+builder.add_edge(START, "schema_router")
+builder.add_edge("schema_router", END)
+
+graph = builder.compile()
+```
+
+Node는 synchronous 및 asynchronous graph execution을 모두 지원합니다.
+
+```python
+state = graph.invoke(
+    {
+        "query": "current weather",
+        "arguments": {"city": "Seoul"},
+    }
+)
+
+state = await graph.ainvoke(
+    {
+        "query": "current weather",
+        "arguments": {"city": "Seoul"},
+    }
+)
+```
+
+## 기본 state contract
+
+기본 node는 다음 두 형식 중 하나를 받습니다:
+
+1. a complete request in `state["schemarouter_request"]` as a string, `PlanRequest`, or mapping
+   compatible with `PlanRequest`; or
+2. a string at `state["query"]` plus an optional mapping at `state["arguments"]`.
+
+결과는 partial LangGraph state update로 반환됩니다:
+
+```python
+{
+    "schemarouter_results": [
+        {
+            "tool": "...",
+            "endpoint": "...",
+            "data": ...,
+            "projected_fields": [...],
+        }
+    ]
+}
+```
+
+결과는 기본적으로 JSON serialize되어 checkpointing과 persistence에 적합하게 유지됩니다.
+Set `serialize_results=False` when an in-process graph wants typed `ToolResult`
+objects.
+
+## Application별 state 적용
+
+A graph does not need to adopt SchemaRouter's default keys. Use `request_factory` to translate
+arbitrary graph state into a bounded SchemaRouter request:
+
+```python
+node = to_langgraph_node(
+    router,
+    request_factory=lambda state: {
+        "query": state["task"],
+        "arguments": {
+            "city": state["selected_city"],
+        },
+    },
+    result_key="tool_results",
+)
+```
+
+The factory may return a string, a `PlanRequest`, or a mapping compatible with `PlanRequest`.
+
+## Trust boundary
+
+The graph node does not expose the registered invoker directly.
+
+```text
+LangGraph StateGraph
+ -> SchemaRouter Runnable node
+ -> SchemaRouter planning
+ -> current schema validation
+ -> ExecutionPolicy / approval / budgets
+ -> binding-drift check
+ -> trusted invoker
+ -> output validation
+ -> partial graph-state update
+```
+
+LangGraph is responsible for graph control flow, checkpointing, memory, runtime context, and
+human-in-the-loop orchestration. SchemaRouter is responsible for schema-aware tool planning
+and validated execution.
+
+The LangGraph `RunnableConfig` and SchemaRouter `RunConfig` are intentionally not conflated.
+Pass a SchemaRouter `run_config` explicitly when constructing the node.
+
+## 실행 가능한 예제
+
+```bash
+python examples/langgraph_quickstart.py
+```
+
+CI compiles and executes a real `StateGraph` in both sync and async modes.

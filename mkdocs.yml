@@ -74,6 +74,9 @@ theme:
 extra_css:
   - stylesheets/brand.css
 
+extra_javascript:
+  - javascripts/bilingual-switch.js
+
 plugins:
   - search
   - mkdocstrings:

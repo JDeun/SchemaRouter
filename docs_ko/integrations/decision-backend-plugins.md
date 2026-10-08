@@ -1,32 +1,127 @@
 # Decision backend plugin
 
-SchemaRouter core에 model-specific integration을 추가하지 않고 설치된 Python package에서 서드파티 bounded decision backend를 로드할 수 있습니다.
+SchemaRouter는 model-specific integration을 core에 추가하지 않고도 설치된 Python package에서 third-party bounded decision backend를 load할 수 있습니다.
+
+This is intended for decision-model families whose runtime/API is not already covered by a stable
+built-in transport such as `SystemOneDecisionBackend`.
 
 ## Entry-point contract
+
+A plugin package registers one entry point in `pyproject.toml`:
 
 ```toml
 [project.entry-points."schemarouter.decision_backends"]
 anyjev = "schemarouter_anyjev:create_backend"
 ```
 
-entry point는 backend class, factory callable, 또는 `decide(request)`를 가진 preconstructed object가 될 수 있습니다.
+The entry point may resolve to:
 
-## Discovery와 명시적 로드
+- a backend class;
+- a factory callable;
+- a preconstructed object exposing `decide(request)`.
 
-`discover_decision_backend_plugins()`는 metadata만 읽고 plugin code를 import/execute하지 않습니다. `load_decision_backend_plugin("anyjev", config={...})`로 정확히 지정한 plugin만 import합니다. plugin loading은 trusted installed Python code 실행입니다.
+A class or factory can receive explicit keyword configuration when loaded.
 
-반환 backend도 일반 bounded-decision contract를 따르며 selected option ID는 planning에 영향을 주기 전에 SchemaRouter가 finite offered ID와 대조합니다.
+## Discovery는 metadata-only
 
-repository에는 실제 entry point를 선언한 deterministic demo package가 있으며 plugin이 execution authority를 받지 않고 finite option만 선택/abstain하는 경계를 검증합니다.
+```python
+from schemarouter import discover_decision_backend_plugins
 
-## Benchmark와 확장 경로
+for plugin in discover_decision_backend_plugins():
+    print(plugin.name, plugin.distribution, plugin.version)
+```
 
-shared decision benchmark는 설치된 plugin을 `--decision-plugin anyjev`로 로드할 수 있습니다. report에는 plugin/distribution/version/config key와 config env 이름만 기록하고 값은 기록하지 않습니다.
+Discovery does **not** import or execute plugin code.
 
-새 모델은 가장 좁은 안정 interface를 사용합니다.
+## 명시적 loading
 
-1. System One wire-compatible → `SystemOneDecisionBackend`
-2. 일회성 연구 callable → `CallableDecisionBackend`
-3. 재사용 서드파티 integration → `schemarouter.decision_backends` plugin
+```python
+from schemarouter import load_decision_backend_plugin
 
-호환성은 추천 품질과 별개이며 production 교체 전 frozen workload에서 routing/rejection/false-route/latency/error/authority violation을 비교해야 합니다.
+backend = load_decision_backend_plugin(
+    "anyjev",
+    config={
+        "model": "example/model",
+        "device": "cuda",
+    },
+)
+```
+
+Only the exact named plugin is imported. Loading a plugin executes trusted installed Python code;
+SchemaRouter does not auto-load all installed decision plugins.
+
+The returned backend still participates in the normal bounded-decision contract. Any selected option
+ID is validated against the finite IDs offered by SchemaRouter before it can influence planning.
+
+## Runnable external-package example
+
+The repository includes a deterministic package that declares a real decision-backend entry point:
+
+```bash
+python -m pip install -e examples/decision_backend_plugin_demo
+python examples/decision_backend_plugin_quickstart.py
+```
+
+Its package metadata contains:
+
+```toml
+[project.entry-points."schemarouter.decision_backends"]
+demo_bounded = "schemarouter_demo_decision:DemoBoundedDecisionBackend"
+```
+
+The demo backend never receives execution authority. It receives only the finite
+`DecisionRequest.options`, returns one of those IDs when the query exactly matches an offered
+ID/label, and explicitly abstains when none match. SchemaRouter still validates the returned ID
+through `choose_sync()` / `choose_async()`; a plugin that invents an ID fails closed with
+`PlanningError`.
+
+The deterministic implementation is intentionally not a quality benchmark. A hosted/local model can
+replace its `decide()` logic while the same finite-option validation remains in force.
+
+## Benchmark a plugin without editing SchemaRouter
+
+The shared decision benchmark can load the same installed plugin:
+
+```bash
+export SCHEMAROUTER_DECISION_PLUGIN_CONFIG='{"model":"example/model","device":"cpu"}'
+
+python scripts/benchmark_decision_routing.py \
+  --corpus benchmarks/decision-routing-v1.json \
+  --decision-plugin anyjev \
+  --decision-recall-on-empty
+```
+
+Use `--decision-plugin-config-env NAME` to select a different configuration environment variable.
+
+Benchmark reports record:
+
+- plugin name;
+- package distribution/version when discoverable;
+- configuration **keys**;
+- the name of the environment variable used for configuration.
+
+Configuration values are not written to benchmark output. Plugins that need secrets should preferably
+read their provider credential from a dedicated environment variable rather than accepting the raw
+secret as ordinary benchmark metadata.
+
+## Which extension path to use
+
+Use the narrowest stable interface that fits the model:
+
+1. **System One wire-compatible model** — use `SystemOneDecisionBackend` and change
+   `base_url/model/provider_name`.
+2. **One-off research callable** — use `CallableDecisionBackend` or
+   `--decision-callable module:function`.
+3. **Reusable third-party integration** — publish a
+   `schemarouter.decision_backends` entry-point plugin.
+
+This keeps model churn outside SchemaRouter's planning and authority model.
+
+## Quality is separate from compatibility
+
+An installed plugin is not automatically a recommended router. Before replacing a production model,
+run the same frozen workload and compare exact routing, unsupported rejection, false-route rate,
+latency, errors, and authority violations.
+
+A provider can supply semantic evidence, but registered local schema and SchemaRouter validation
+remain the execution authority.

@@ -1,32 +1,74 @@
-# 영속 run trace
+# Persistent run trace
 
-SchemaRouter는 tool call을 재실행하지 않고 audit/debug/replay할 수 있도록 typed `RunEvent` stream을 SQLite에 저장할 수 있습니다.
+SchemaRouter can persist its typed `RunEvent` stream into SQLite for audit, debugging, and replay
+without re-executing tool calls.
 
 ## Trace store 생성
 
 ```python
 from schemarouter import SQLiteRunTraceStore
+
 store = SQLiteRunTraceStore("schemarouter-traces.sqlite3")
 ```
 
-표준 library `sqlite3`만 사용합니다.
+The store uses only Python's standard-library `sqlite3` module. No new package dependency is
+required.
 
-## Runtime에서 직접 저장
+## Runtime에서 직접 persist
 
-`router.astream_events(request, trace_store=store)`로 event를 저장할 수 있습니다. 각 event는 downstream consumer에 yield되기 전에 기록되므로 persistence 실패를 조용히 무시해 unaudited execution history를 만들지 않습니다.
+```python
+events = [
+    event
+    async for event in router.astream_events(
+        request,
+        trace_store=store,
+    )
+]
 
-## 실행 없는 replay
+run_id = events[0].run_id
+trace = store.trace(run_id)
+```
 
-`replay_run_events(store, run_id)`는 검증된 historical `RunEvent`만 읽으며 planner/executor/network/tool invoker를 호출하지 않습니다.
+Each event is written before it is yielded to the downstream consumer. Persistence failure therefore
+fails the trace-producing stream instead of silently creating an unaudited execution history.
+
+## Execution 없이 replay
+
+```python
+from schemarouter import replay_run_events
+
+for event in replay_run_events(store, run_id):
+    print(event.sequence, event.event)
+```
+
+Replay reads validated historical `RunEvent` objects only. It does **not** call the planner,
+executor, network, or registered tool invokers.
 
 ## Trace invariant
 
-persisted run은 sequence 0의 `run.start`로 시작하고 하나의 immutable `run_id`, 연속 sequence, 단조 timestamp를 유지해야 합니다. 두 번째 `run.start`나 `run.end`/`run.error` 이후 event는 허용하지 않습니다. corrupt JSON, identity mismatch, gap, timestamp regression은 `TraceError`로 fail-closed됩니다. terminal event 전 process가 종료된 incomplete trace는 허용합니다.
+A persisted run must:
 
-## Retention과 pruning
+- begin with `run.start` at sequence 0;
+- keep one immutable `run_id`;
+- use contiguous sequence numbers;
+- use monotonic timestamps;
+- contain no second `run.start`;
+- contain no events after `run.end` or `run.error`.
 
-기존 application의 persistence 동작을 바꾸지 않도록 retention은 opt-in입니다. 다음처럼
-명시적으로 설정합니다.
+Corrupt JSON, event identity mismatches, gaps, timestamp regressions, and post-terminal appends fail
+closed with `TraceError`.
+
+Incomplete traces are allowed. They are useful when a process stops before a terminal event.
+
+```python
+store.run_ids(complete=True)
+store.run_ids(complete=False)
+```
+
+## Retention and pruning
+
+Retention is opt-in so existing applications keep their current persistence behavior. Configure
+bounded retention explicitly:
 
 ```python
 from schemarouter import SQLiteRunTraceStore, TraceRetentionPolicy
@@ -40,34 +82,45 @@ store = SQLiteRunTraceStore(
 )
 ```
 
-설정된 policy에서 `prune_on_terminal_append=True`가 기본이며 terminal event append와
-retention cleanup은 하나의 SQLite write transaction으로 commit됩니다. `max_age_seconds`와
-`max_runs`는 complete run에만 적용되므로 이 두 제한으로 incomplete run을 삭제하지 않습니다.
+When `prune_on_terminal_append=True` (the default on a configured policy), a terminal append and
+its retention cleanup are committed in the same SQLite write transaction. `max_age_seconds` and
+`max_runs` apply only to complete runs. Incomplete runs are never removed by those bounds.
 
-중단되거나 버려진 incomplete run을 지우려면 `stale_incomplete_after_seconds`를 별도로
-명시해야 합니다. 정상적으로 오래 실행되는 run을 지우지 않도록 충분히 긴 threshold를 사용해야
-합니다.
+Stale incomplete cleanup is deliberately separate and must be enabled explicitly with
+`stale_incomplete_after_seconds`. This can remove a crashed or abandoned run, so choose a threshold
+that is safely longer than the longest legitimate run.
 
-Operator는 `store.prune(policy=TraceRetentionPolicy(...))`를 호출해 수동으로 deterministic
-pruning을 수행할 수도 있습니다. 여러 `SQLiteRunTraceStore` instance가 같은 DB file을
-사용하더라도 `BEGIN IMMEDIATE` write transaction으로 append와 prune이 부분적으로
-interleave되지 않습니다.
+Operators can also prune deterministically:
 
-Pruning은 SQLite의 logical delete입니다. WAL을 사용하므로 row를 삭제해도 DB/WAL file
-크기가 즉시 줄어드는 것을 보장하지 않습니다. 필요하면 maintenance window에서 application의
-trace store 사용을 중지한 뒤 WAL checkpoint와 SQLite `VACUUM`을 운영 절차로 수행해야 합니다.
-SchemaRouter는 pruning 과정에서 자동 `VACUUM`을 실행하지 않습니다.
+```python
+result = store.prune(
+    policy=TraceRetentionPolicy(max_runs=10_000),
+)
+print(result.deleted_runs, result.deleted_events)
+```
+
+SQLite writers are serialized with `BEGIN IMMEDIATE`; pruning and appending therefore cannot
+partially interleave, including when several `SQLiteRunTraceStore` instances point at the same
+database file. Retention indexes cover terminal state and last timestamp so bounded cleanup does not
+need to deserialize event documents.
+
+Deletion is logical SQLite deletion. With WAL enabled, pruning does **not** promise an immediate
+reduction in the database or WAL file size. File-space reclamation is an operational concern:
+checkpoint WAL as appropriate and run SQLite `VACUUM` only during a maintenance window when the
+application is not using the trace store. SchemaRouter intentionally does not auto-`VACUUM` during
+pruning.
 
 ## Privacy
 
-Trace store는 전달받은 event envelope를 그대로 저장합니다. Runtime이 생성한 event는 caller가
-raw tracing을 명시하지 않는 한 store에 도달하기 **전에** structured redaction을 거칩니다.
+The trace store persists the exact event envelope it receives. Runtime-produced events are
+structured-redacted **before** they reach the store unless the caller explicitly selects raw tracing.
 
-`RunConfig.metadata`는 trusted process-local context입니다. `include_payloads` 값과 무관하게
-runtime `RunEvent` envelope로 복사되지 않습니다. Tenant routing, host 내부 correlation context,
-주변 application code에서만 필요한 credential처럼 trace data가 되어서는 안 되는 값에 사용합니다.
+`RunConfig.metadata` is trusted process-local context. It is never copied into runtime
+`RunEvent` envelopes, regardless of `include_payloads`. Use it for tenant routing, host-only
+correlation context, credentials required by surrounding application code, or other values that
+must not become trace data.
 
-Trace에 노출할 metadata는 별도로 명시해야 합니다.
+Trace-visible metadata requires a separate, explicit opt-in:
 
 ```python
 RunConfig(
@@ -76,26 +129,25 @@ RunConfig(
 )
 ```
 
-`tags`는 filtering을 위한 structural label로 event에 유지됩니다. `trace_metadata`는 동일한
-run metadata가 모든 event에 반복 저장되지 않도록 `run.start` event에 한 번만 기록됩니다.
-과거 trace처럼 이후 event에도 metadata가 들어 있는 기록은 계속 replay할 수 있습니다.
+`tags` are structural labels and remain present on events for filtering. `trace_metadata` is
+written only on the `run.start` event so identical run metadata is not duplicated into every
+stored event. Replayed older traces that contain metadata on later events remain valid.
 
-기본값에서는 request/tool payload value를 포함하지 않습니다. 다음과 같이 payload tracing을 켜면:
+By default, request/tool payload values are omitted entirely. With:
 
 ```python
 RunConfig(include_payloads=True)
 ```
 
-argument, plan, result, exception message가 포함될 수 있습니다. 이 설정은
-`RunConfig.metadata`를 trace에 노출시키지 않습니다. Payload 또는 `trace_metadata` 안의
-일반적인 credential key와 설정된 sensitive path는 emission/persistence 전에 `[REDACTED]`로
-대체됩니다. Heuristic key redaction은 defense in depth일 뿐이므로 민감한 값을
-`trace_metadata`에 넣지 않는 원칙을 대체하지 않습니다. 설정된 key/path에서 발견된 secret
-값은 같은 run의 이후 문자열 message에서도 제거됩니다.
+arguments, plans, results, and exception messages may be included. This setting does **not** make
+`RunConfig.metadata` trace-visible. Common credential keys in payloads or `trace_metadata`, plus
+configured sensitive paths, are replaced with `[REDACTED]` before emission and persistence.
+Heuristic key redaction is defense in depth, not a substitute for keeping sensitive values out of
+`trace_metadata`. Secret values discovered under configured keys/paths are also removed from later
+string messages in the same run.
 
-Application-specific 개인정보나 규제 대상 field는
-`TraceRedactionConfig(sensitive_paths={...})`로 지정할 수 있습니다. 원문 저장은 별도의
-명시적 escape hatch가 필요합니다.
+Use `TraceRedactionConfig(sensitive_paths={...})` for application-specific personal or regulated
+fields. Raw persistence requires the additional explicit escape hatch:
 
 ```python
 RunConfig(
@@ -105,13 +157,42 @@ RunConfig(
 )
 ```
 
-Raw tracing은 payload와 명시적으로 opt-in한 trace metadata를 그대로 저장할 수 있습니다.
-이런 DB는 민감 application data로 취급하고 적절한 access control, encryption-at-rest,
-backup, retention policy를 적용해야 합니다. SchemaRouter 자체는 SQLite file을 암호화하지 않습니다.
+Raw tracing can persist payloads and explicitly opted-in trace metadata verbatim. Treat such
+databases as sensitive application data and apply appropriate access control, encryption-at-rest,
+backup, and retention policy. SchemaRouter does not encrypt the SQLite file itself.
 
-외부 producer가 `SQLiteRunTraceStore.append()`를 직접 호출하는 경우에는 자신의
-`RunEvent`를 직접 redact해야 합니다. Store는 event envelope를 의도적으로 수정하지 않습니다.
+External producers that call `SQLiteRunTraceStore.append()` directly are responsible for
+redacting their own `RunEvent` objects; the store deliberately does not mutate envelopes.
 
-## 범위
+## External event streams
 
-run trace는 observability/audit 기능이며 agent control flow 재개를 위한 checkpoint system이 아닙니다. workflow checkpoint와 memory는 LangGraph 같은 orchestration layer가 담당합니다.
+The persistence helper can wrap any compatible async `RunEvent` stream:
+
+```python
+from schemarouter import record_run_events
+
+async for event in record_run_events(source, store=store):
+    consume(event)
+```
+
+This keeps storage independent of the high-level runtime facade.
+
+## Deletion and lifecycle
+
+```python
+store.delete(run_id)
+store.close()
+```
+
+The store also supports context-manager usage:
+
+```python
+with SQLiteRunTraceStore("traces.sqlite3") as store:
+    ...
+```
+
+## Scope
+
+Run traces are an observability/audit mechanism, not a checkpoint system for resuming agent control
+flow. LangGraph or another orchestration layer should continue to own workflow checkpoints and
+memory. SchemaRouter trace replay stays non-executing.

@@ -1,7 +1,208 @@
-# Field projection과 답변 품질
+# 0.14 output-field projection and final-answer quality
 
-output field를 더 공격적으로 줄이면 context는 작아지지만 downstream answer에 필요한 보조 field를 제거할 수 있습니다. 이 연구는 projection precision이 아니라 final answer fact/value/unit/provenance quality와 context cost의 trade-off를 측정합니다.
+추적 issue: #506
 
-#506의 최초 DEV screen은 agent가 tool을 호출하지 않아 projection 조건 자체를 비교하지 못했으므로 **instrument failure**로 처리했습니다. 이를 scientific result로 해석하지 않고 successor runtime qualification #510을 통해 tool-use envelope를 먼저 검증합니다.
+> **현재 상태 — 2026-10-02:** 기존 #506 DEV screen은 frozen small agent가 tool을 호출하지 않아 instrument failure로 소비되었습니다. Preregistered #510 successor runtime qualification이 진행 중입니다. 여기서 발생한 infrastructure recovery는 projection evidence가 아니라 instrument-transport 작업이며, projection successor는 terminal qualified runtime이 확보될 때까지 gated 상태입니다.
 
-product default는 이 evidence가 충분해질 때까지 recall-first projection을 유지합니다.
+## 질문
+
+> Query, candidate exposure, selected route, raw tool response를 고정했을 때 **planned declared output field만** 반환하면 final answer의 factual quality가 달라지는가? 그리고 agent context를 얼마나 줄이는가?
+
+## 별도 experiment인 이유
+
+SchemaRouter validates a raw tool response and then hands the agent only the
+declared fields the plan asked for. That step is implemented, shipped, and stated
+as a core principle in [Field-first execution](../concepts/field-first-execution.md):
+
+> The goal is not merely to choose a tool. The goal is to identify the smallest
+> declared data surface that can answer the user's question.
+
+기존 experiment 중 이를 측정한 것은 없습니다.
+
+| Experiment | What it varies |
+| --- | --- |
+| [B1 (#420)](agent-utility-b1-result.md) | how many tools the agent can see |
+| [#434](typed-capability-retrieval-ablation.md) | how a capability is represented for retrieval |
+| [#424](final-answer-quality.md) | answer quality under catalog-level context reduction |
+| #506 | what an executed tool hands back |
+
+더 적은 tool을 선택하는 것은 이미 일반화된 아이디어입니다. Descending to the field level is
+the part of this design that is not shared with an ordinary Top-K tool router,
+and until now the claim for it rested on argument rather than evidence.
+
+## Isolation
+
+모든 condition은 동일한 query, 동일한 candidate exposure (`SR-5`), 동일한 route, 동일한 frozen raw record를 받습니다. Agent에게 반환되는 observation만 달라집니다.
+
+| Condition | Observation given to the agent |
+| --- | --- |
+| `RAW-FULL` | the entire validated raw response record |
+| `PROJECTED` | the declared planned output fields only |
+| `PROJECTED+CONTRACT` | planned fields plus their declared `semantic_id` / unit / qualifiers |
+| `ORACLE-MINIMAL` | only the fields the gold answer requires |
+
+The transform applies to the agent's context only. The executor's own record,
+the task state and every completion check keep seeing the untransformed
+observation, so presentation cannot move ground truth. That property is pinned by
+test rather than asserted here.
+
+`ORACLE-MINIMAL` earns its place: B1 found that `ORACLE` did **not** dominate
+`SR-5`, so over-minimizing is a live hypothesis, not a strawman.
+
+## Corpus
+
+144 semantic tasks: 6 projection strata × 6 languages × 4 independent tasks.
+Catalog sizes 100 and 250 are repeated measures nested inside the task.
+
+| Stratum | Competing content placed in the raw record |
+| --- | --- |
+| `qualifier_sibling` | the same quantity at other declared temperatures |
+| `unit_variant` | the same quantity in MPa and psi alongside GPa |
+| `superseded_duplicate` | legacy and draft revisions of the current value |
+| `nested_record` | a computed value nested under an audit record |
+| `cross_provider_name_collision` | generic `value` / `result` keys and a second provider's copy |
+| `multi_step_provenance` | staging, cache, temp and mirror URIs across two steps |
+
+Corpus validation **fails closed** when a raw record carries nothing beyond its
+declared plan. Without competing content, `RAW-FULL` and `PROJECTED` would be the
+same observation and the comparison would measure nothing. Validation also
+rejects a task whose required fact is unreachable after projection, which would
+otherwise score `PROJECTED` against evidence it was never shown.
+
+## Metrics
+
+Reported separately and never collapsed into one score, following #424's rule:
+
+- required-fact recall;
+- numeric value accuracy;
+- unit accuracy;
+- provenance accuracy;
+- unsupported-fact rate;
+- contradiction count;
+- exact mandatory-field completion;
+- observation characters and total input tokens;
+- turns, wall latency;
+- unauthorized destructive executions.
+
+The statistical unit is the semantic task. Catalog repeats are averaged within a
+task before resampling, so they cannot inflate the sample. Deltas against
+`RAW-FULL` are paired within task and reported with a 10,000-iteration cluster
+bootstrap at 95%.
+
+## Promotion gate
+
+Non-inferiority on quality **and** a strict reduction in observation context:
+
+| Requirement | Threshold vs `RAW-FULL` |
+| --- | ---: |
+| required-fact recall | ≥ −2pp |
+| numeric value accuracy | ≥ −2pp |
+| unit accuracy | ≥ −2pp |
+| provenance accuracy | ≥ −2pp |
+| unsupported-fact rate | ≤ +1pp |
+| contradiction count | no greater |
+| unauthorized destructive executions | 0 |
+| observation characters | strictly lower |
+
+A quality *gain* is reportable but is not required. A context reduction alone
+does not pass.
+
+## Staging
+
+Both arms are driven by the 0.14 conveyor; neither needs a manual dispatch.
+
+1. **Development screen** — the frozen B1 small agent
+   (`Qwen/Qwen3-0.6B` @ `c1899de2`). Reusing the exact published B1 runtime keeps
+   context measurements comparable instead of introducing a fourth
+   uncharacterised model.
+
+    It consumes no upstream artifact, so the conveyor advances it **before the
+    B2 gate**: queuing it behind the frozen chain would delay development
+    evidence for no scientific reason, and advancing it first keeps every early
+    return in the controller from starving it.
+
+2. **Confirmation** — the canonical strong agent
+   (`HuggingFaceTB/SmolLM3-3B` @ `a07cc9a0`), **appended after the conveyor's
+   terminal-evidence stage** and keyed on the terminal digest.
+
+    Appending rather than inserting matters here. The conveyor DAG was
+    preregistered before downstream corpus generation and is already in flight;
+    inserting a stage would move an existing stage's inputs or ordering, while
+    appending after terminal evidence cannot. The amendment, and the list of what
+    it explicitly did not change, is recorded in
+    `benchmarks/agent-utility-0.14-conveyor-preregistration.json`.
+
+    The workflow still verifies that the canonical B2 run succeeded without
+    reading B2 outcomes.
+
+### Source freeze
+
+#506 has **its own** frozen implementation revision. It is resolved on first
+dispatch, checked to actually contain the experiment's scripts, and then reused
+verbatim by both arms.
+
+It is never `DOWNSTREAM_IMPLEMENTATION_SHA`. That SHA belongs to the already
+frozen #431/#432/#424 chain and predates every projection script, so a stage
+dispatched against it would check out a tree that cannot run the experiment —
+while unit tests, which use stubs rather than a real checkout, stayed green. Both
+workflows now also refuse such a checkout in a preflight step, and the controller
+refuses to dispatch a revision missing those files.
+
+### Development vs confirmation
+
+Both arms run the **same** frozen corpus, generator, conditions and scorer, so
+the development screen is **diagnostic only**. Once its scoring starts, its
+results may not change:
+
+- conditions;
+- task wording or content;
+- distractor strata;
+- thresholds and promotion gates;
+- the scorer;
+- prompt or harness semantics;
+- row inclusion;
+- the frozen projection source.
+
+Confirmation may differ in exactly one preregistered respect: the runtime. This
+is the same relationship B1 has to B2: one frozen protocol, a stronger agent.
+
+Wanting a design change out of the screen's results means closing this
+experiment as consumed and preregistering a successor with its own
+query-disjoint surface, not amending this one.
+
+The development screen returned a null result on run 36682589574: the frozen B1
+agent never called a tool, so there was nothing for projection to affect. It is
+consumed. Its replacement, with an instrument chosen by a frozen capability gate
+and its own query-disjoint surface, is the
+[successor screen](successor-screen.md). The confirmation arm is unaffected.
+
+## Independence
+
+- fresh disjoint task surface;
+- B1 rows are not tuning data;
+- #432 held-out rows are not tuning data;
+- the sealed #424 corpus is not used, and results here may not tune it;
+- no retrofit into B1.
+
+## Claim boundary
+
+If the gate passes, the permitted claim is scoped to the frozen surface:
+
+> On the evaluated surface, returning only the planned declared fields preserved
+> final-answer factual quality while reducing agent observation context.
+
+This does not establish population-level generalization. That remains
+[#432](large-heldout-agent-utility.md)'s role.
+
+## Reproduction
+
+```bash
+python scripts/generate_agent_utility_v7_projection_corpus.py \
+  --source-revision "$(git rev-parse HEAD)" \
+  --out artifacts/projection/projection-corpus.json
+
+python scripts/validate_agent_utility_v7_projection_corpus.py \
+  --corpus artifacts/projection/projection-corpus.json
+```
+
+Preregistration: `benchmarks/agent-utility-v7-field-projection-preregistration.json`.

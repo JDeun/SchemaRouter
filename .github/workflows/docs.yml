@@ -12,6 +12,7 @@ on:
       - "mkdocs.ko.yml"
       - "scripts/prepare_korean_docs.py"
       - "scripts/check_rendered_docs.py"
+      - "scripts/check_bilingual_docs.py"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
 
@@ -53,6 +54,8 @@ jobs:
       - run: pip install -e ".[docs]"
       - name: Validate documented public API contracts
         run: python scripts/check_docs_api_contracts.py
+      - name: Verify bilingual source integrity
+        run: python scripts/check_bilingual_docs.py
       - name: Prepare Korean documentation tree
         run: python scripts/prepare_korean_docs.py
       - name: Build English documentation
@@ -66,6 +69,8 @@ jobs:
       - name: Verify rendered Markdown/code-block structure
         run: |
           python scripts/check_rendered_docs.py site
+      - name: Verify rendered bilingual integrity
+        run: python scripts/check_bilingual_docs.py --site site
       - name: Verify bilingual Pages layout
         run: |
           python - <<'PY'

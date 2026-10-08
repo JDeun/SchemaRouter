@@ -1,12 +1,101 @@
-# Release 체크리스트
+# Release checklist
 
-stable release 전 version/changelog/release note/docs/README/PyPI surface가 같은 version과 product boundary를 가리키는지 확인합니다. public API/compatibility/security/docs/package tests와 clean wheel/sdist consumer acceptance가 모두 통과해야 합니다.
+SchemaRouter alpha, beta, release candidate 또는 stable tag를 승격하기 전에 이 checklist를 사용합니다.
 
-Release workflow는 exact tested main SHA를 확인하고 wheel/sdist, SPDX SBOM, `SHA256SUMS.txt`, `release-manifest.json`을 생성합니다. manifest에는 source SHA, artifact name/size/SHA256을 기록하고 GitHub Release와 PyPI Trusted Publisher publication을 검증합니다.
+## Blocking gate
 
-optional extras, integration examples, docs navigation, social preview/metadata, release discoverability도 점검합니다. research evidence와 stable product claim은 분리하며 외부 provider outage나 미완료 연구가 package correctness gate와 혼동되지 않게 합니다.
+- [ ] Core CI passes on every supported Python version.
+- [ ] Warnings are treated as failures.
+- [ ] Static type checking passes for the typed package surface.
+- [ ] The 84% branch-coverage floor passes.
+- [ ] Minimum declared runtime dependencies pass the core suite.
+- [ ] Optional integration CI passes, including LangChain, LlamaIndex, Jev, Laya, MCP, and OpenTelemetry.
+- [ ] Linux core CI passes on Python 3.10 through 3.14.
+- [ ] The Windows + Python 3.14 smoke job passes.
+- [ ] The separate Python 3.15 preview workflow is reviewed for forward-compatibility signals,
+  but is not treated as a release blocker.
+- [ ] Quickstart examples execute successfully.
+- [ ] Package wheel and sdist build successfully.
+- [ ] Wheel and sdist both install and run the quickstart in clean environments.
+- [ ] Package metadata can be inspected without errors.
+- [ ] The public trust/evidence page names the intended stable release and documents any changed
+  verification limitations; per-release digests come from the generated release manifest rather
+  than being copied into documentation by hand.
+- [ ] README, PyPI summary/keywords, docs home, and release notes use consistent positioning and
+  stable-version language.
+- [ ] The [discoverability checklist](project/discoverability.md#release-discoverability-checklist)
+  is reviewed; GitHub description/topics/homepage still match supported capabilities.
+- [ ] Public API changes are reflected in README and architecture docs.
+- [ ] CHANGELOG contains the release entry and migration notes for breaking changes.
+- [ ] Security invariants have regression tests.
+- [ ] Every external GitHub Action reference is pinned to an immutable 40-character commit SHA.
+- [ ] SECURITY.md still matches URL, credential, retry, and observability behavior.
+- [ ] No credentials, tokens, fixtures containing secrets, or generated local state are committed.
+- [ ] MIT license metadata and the root LICENSE file are present in the release artifact.
+- [ ] README, documentation header, favicon, and brand guide use the approved SchemaRouter mark.
+- [ ] The GitHub repository social preview is exported from the approved 1280×640 brand source and set in repository settings.
 
+## Compatibility gates
 
-Native database adapter가 바뀌는 release에서는 affected family를 대표하는 Tier A native database
-Compatibility Smoke가 current `main`에서 최근 green인지 확인합니다. Hosted credential이 필요한
-Tier B vendor와 public Internet provider outage는 일반 package correctness gate와 분리합니다.
+- [ ] A recent public OpenAPI live smoke is green.
+- [ ] A recent public OPTIMADE live smoke is green.
+- [ ] For releases that change native database adapters, a recent current-`main` Compatibility Smoke is green for the affected representative Tier A native-database runtimes.
+- [ ] The real MCP Streamable HTTP integration job is green when the MCP extra is part of the release.
+- [ ] Optional framework/provider integration jobs are green for every extra included in the release.
+- [ ] The merge-blocking CI dependency audit passes; the latest independent audit, PR/main CodeQL analysis, and OpenSSF Scorecard findings are green or explicitly triaged.
+- [ ] Property-based OpenAPI serialization tests pass on supported Python versions.
+- [ ] Cross-origin OpenAPI behavior is tested with explicit local approval.
+- [ ] Schema drift and stale binding tests pass.
+- [ ] Input/output JSON Schema validation tests pass.
+- [ ] Mutation/destructive policy tests pass.
+- [ ] Retry tests prove that non-read-only operations are not retried by default.
+- [ ] Event tests prove payload redaction is the default.
+- [ ] OpenTelemetry tests prove payload values and exception messages are not exported.
+- [ ] Approval tests prove missing/denied/error decisions fail closed.
+- [ ] Budget tests prove retries consume attempt/remote/cost limits before invocation.
+- [ ] Adapter plugin tests prove discovery does not import code and loading requires an allowlist.
+- [ ] MCP auth tests prove trusted credentials remain transport-local and protected headers cannot be overridden.
+- [ ] OpenAPI compatibility tests make unsupported semantics visible.
+
+## Release mechanics
+
+- [ ] Replace the development version in `pyproject.toml` with the intended release version.
+- [ ] Add `docs/releases/<version>.md`; release metadata is derived from this version automatically.
+- [ ] The release commit is merged to `main` and the normal CI workflow is green.
+- [ ] The top-level `Release` workflow consumes that successful `main` CI event and verifies that
+  the tested SHA is still the current `main` head.
+- [ ] The release workflow rejects `.dev` versions and requires matching release notes and a dated
+  changelog heading.
+- [ ] If `v<version>` does not already exist, the release workflow creates an annotated tag at the
+  exact green `main` SHA.
+- [ ] If the tag already exists but the GitHub release does not, the workflow may resume from that
+  tagged SHA only when it is an ancestor of the green current `main` and carries the same version.
+- [ ] Build wheel and sdist from the resolved release SHA in an unprivileged job.
+- [ ] Clean-install and smoke-test both built artifacts before publication.
+- [ ] Generate GitHub artifact provenance attestations for the wheel and sdist from the build job before upload.
+- [ ] Generate an SPDX JSON SBOM, attach it to the GitHub release, and create an SBOM attestation for the wheel and sdist.
+- [ ] Generate `SHA256SUMS.txt` and `release-manifest.json` from the exact built artifacts and
+  attach both to the GitHub release.
+- [ ] Publish GitHub release assets and PyPI artifacts from separate jobs; only the PyPI job receives
+  OIDC `id-token: write` permission.
+- [ ] Confirm the PyPI Trusted Publisher is configured for the `pypi` GitHub environment.
+- [ ] Publish to the package index only after all blocking gates are green.
+- [ ] Let the release workflow download the exact published wheel and sdist from public PyPI and
+  verify their SHA-256 digests match the trusted build artifacts byte-for-byte.
+- [ ] Let the release workflow re-install the exact published version from PyPI as wheel, sdist,
+  isolated lightweight extras (MCP, Jev, OpenTelemetry), and the combined
+  MCP/LangChain/LangGraph/LlamaIndex/Jev/OpenTelemetry extras after both GitHub Release and PyPI
+  publication succeed.
+- [ ] Verify install/import in a clean environment.
+- [ ] Verify the release provenance and SPDX SBOM attestations with GitHub CLI for at least one published artifact.
+
+## Release 이후
+
+- [ ] Confirm the exact-version post-publish PyPI verification job is green for wheel, sdist,
+  isolated MCP/Jev/OpenTelemetry extras, and the combined
+  MCP/LangChain/LangGraph/LlamaIndex/Jev/OpenTelemetry extras.
+- [ ] Confirm `SHA256SUMS.txt` and `release-manifest.json` are attached to the GitHub Release and
+  identify the exact release source SHA.
+- [ ] Confirm documentation examples match the released package.
+- [ ] Record any compatibility regressions as release blockers for the next patch.
+- [ ] Keep security/correctness fixes separate from convenience refactors where practical.

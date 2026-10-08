@@ -1,6 +1,6 @@
-# Batch, streaming, event
+# Batch, streaming 및 event
 
-SchemaRouter는 capability source와 관계없이 일관된 실행 vocabulary를 사용합니다.
+SchemaRouter는 capability source 전반에서 일관된 execution vocabulary를 사용합니다.
 
 ## Invoke
 
@@ -9,16 +9,28 @@ result = router.invoke(request)
 result = await router.ainvoke(request)
 ```
 
-두 경로 모두 planning과 execution을 수행합니다.
+Both paths perform planning and execution.
 
 ## Batch
 
 ```python
 results = router.batch(requests)
-results = await router.abatch(requests, config={"max_concurrency": 8})
+results = await router.abatch(
+    requests,
+    config={"max_concurrency": 8},
+)
 ```
 
-`abatch()`는 input 순서를 유지합니다. 완료 순서대로 소비하려면 `router.abatch_as_completed(requests)`를 사용하며 반환 index는 항상 원래 input을 가리킵니다.
+`abatch()` preserves input order.
+
+For completion-order consumption:
+
+```python
+async for index, result in router.abatch_as_completed(requests):
+    print(index, result)
+```
+
+The yielded index always points back to the original input.
 
 ## Result streaming
 
@@ -27,83 +39,165 @@ async for result in router.astream(request):
     print(result.tool, result.endpoint)
 ```
 
-기본 실행은 plan 순서를 유지하는 sequential mode입니다. 독립적인 read-only fan-out은 `RunConfig(execution_mode="parallel_read_only", max_parallel_calls=4)`로 명시적으로 활성화합니다.
+The default execution mode is sequential, preserving plan order.
 
-parallel task를 시작하기 전에 모든 planned call을 현재 schema, binding, execution policy로 preflight하고 모든 call에서 `endpoint.read_only is True`인지 확인합니다. mutating/unclassified call이 하나라도 있으면 invocation 전에 parallel run 전체가 실패합니다.
+For an independent read-only fan-out, opt into `parallel_read_only`:
 
-`ainvoke()`는 plan 순서로 결과를 반환하지만 `astream()`, `astream_events()`는 completion order를 노출할 수 있습니다. 모든 parallel call은 동일한 per-run execution budget을 공유합니다. 이는 flat fan-out이며 DAG/workflow runtime이 아닙니다. dependency, branching, checkpoint, multi-step orchestration은 LangGraph 같은 상위 framework가 담당합니다.
+```python
+from schemarouter import RunConfig
 
-### Bound registration의 원자성
+config = RunConfig(
+    execution_mode="parallel_read_only",
+    max_parallel_calls=4,
+)
 
-`add_bound_tool()`, 실행 가능한 adapter를 포함한 URL ingestion, Python/LangChain/LlamaIndex/HTTP
-등록, MCP 등록처럼 capability contract와 trusted invoker를 하나의 논리적 작업으로 등록하는
-public API는 registry contract와 binding을 failure-atomic transition으로 publish합니다.
+results = await router.ainvoke(request, config=config)
+```
 
-binding이 실패하면 SchemaRouter는 자신이 방금 publish한 정확한 registry version/fingerprint를
-여전히 소유하고 있을 때만 이전 contract와 binding을 복원합니다. 신규 capability라면 방금
-등록한 contract를 제거합니다. 다른 writer가 동시에 registry를 변경해 rollback이 안전하지
-않아진 경우에는 그 변경을 덮어쓰지 않고 fail-closed로 종료하며, 해당 binding은 ready 상태로
-남기지 않습니다. Schema HTTP validator 같은 post-publication 상태도 registry + binding 전환이
-완전히 성공한 뒤에만 갱신됩니다.
+Before any parallel task is launched, SchemaRouter preflights every planned call through current
+schema, binding, and execution-policy validation and requires `endpoint.read_only is True` for all
+calls. Mutating or unclassified calls fail the parallel run before invocation.
 
-### Async 실행 안의 동기 I/O
+`ainvoke()` returns results in plan order. `astream()` and `astream_events()` can expose
+completion order so a fast read-only call is not held behind a slower sibling. All parallel calls share the same per-run execution budget. `max_parallel_calls` limits
+in-plan fan-out independently from `max_concurrency`, which continues to bound concurrent
+inputs in batch APIs.
 
-trusted sync invoker는 기본적으로 현재 thread에서 실행됩니다. 해당 invoker가 worker thread에서 안전하게 실행될 수 있다는 것을 caller가 알고 있다면 `offload_sync=True`로 bind할 수 있습니다. 이 경우 SchemaRouter는 event loop를 막지 않고, worker를 기다리는 동안 남은 elapsed execution budget도 적용합니다.
+This is flat fan-out, not a DAG/workflow runtime. Dependencies, branching, checkpoints, and
+multi-step orchestration remain the responsibility of LangGraph or another surrounding framework.
 
-provider-neutral vector/graph/record-store backend는 `remote` 분류를 기준으로 같은 정책을 자동 적용합니다. `remote=True` backend의 동기 메서드는 worker thread로 offload하고, `remote=False`인 local/thread-affine backend는 inline으로 유지합니다. SQLite는 inline으로 유지됩니다.
+### Atomic bound registration
 
-Python은 이미 시작된 worker thread를 강제로 중단할 수 없습니다. 따라서 SchemaRouter는 명시적 sync offload를 무제한 `to_thread` 제출이 아니라 router 소유의 bounded worker pool에서 실행합니다. read-only 호출이 timeout된 뒤에도 backend가 반환할 때까지 worker slot 하나를 계속 점유할 수 있지만, 반복 timeout/retry가 router가 만든 worker 압력을 무한히 늘리지는 못합니다. 모든 slot이 점유된 경우 새 blocking 호출을 queue에 계속 쌓는 대신 local unavailable로 실패합니다.
+Public operations that logically register a capability and its trusted invoker together—such as
+`add_bound_tool()`, URL ingestion with an executable adapter, Python/LangChain/LlamaIndex/HTTP
+registration, and MCP registration—publish the registry contract and binding as one failure-atomic
+transition.
 
-명시적으로 read-only인 endpoint는 elapsed budget을 넘으면 기존처럼 `ExecutionBudgetExceededError`를 발생시키지만, backend 호출이 반환될 때까지 worker가 리소스를 계속 사용할 수 있음을 caller가 고려해야 합니다. 반대로 non-read-only 또는 effect가 불명확한 endpoint는 worker가 시작된 뒤 timeout이나 task cancellation이 발생하면 `IndeterminateInvocationError`를 발생시킵니다. 이 오류는 non-retryable이며 mutation이 뒤늦게 완료될 수 있으므로 SchemaRouter가 같은 호출을 자동 재시도하지 않습니다. 더 강한 완료 보장이 필요하면 vendor-level timeout, transaction, idempotency key, 또는 cancellation-safe async client를 사용해야 합니다.
+If binding fails, SchemaRouter restores the previous contract and binding when it still owns the
+exact post-write registry version. For a new capability it removes the just-published contract.
+Rollback is guarded by registry version and fingerprint checks, so a concurrent writer is never
+overwritten merely to hide a binding failure. When concurrent drift makes rollback unsafe,
+publication fails closed and the affected binding is removed rather than being marked ready for an
+unowned contract. Schema HTTP validators and other post-publication state are updated only after
+the registry + binding transition succeeds.
 
-## Typed lifecycle event
+### Synchronous I/O inside async execution
+
+Trusted synchronous invokers are inline by default. When a caller knows that a synchronous
+invoker is safe to run in a worker thread, bind it with `offload_sync=True`; SchemaRouter then
+keeps the event loop responsive and applies the remaining elapsed execution budget while awaiting
+that worker.
+
+Provider-neutral vector, graph, and record-store backends follow the same rule automatically from
+their `remote` classification: synchronous methods on `remote=True` backends are offloaded,
+while `remote=False` keeps local/thread-affine backends inline. SQLite remains inline.
+
+Python cannot forcibly stop a worker thread after it has started. SchemaRouter therefore runs
+explicit sync offloads in a bounded router-owned worker pool rather than submitting an unbounded
+sequence of `to_thread` work. A timed-out read-only call may still consume one worker slot until the
+backend returns, but repeated timeout/retry cycles cannot grow router-induced worker pressure without
+bound. If all slots remain occupied, a new offload fails as locally unavailable instead of queueing
+another blocking call.
+
+For explicitly read-only endpoints, an elapsed-budget timeout still raises
+`ExecutionBudgetExceededError`; the caller must therefore treat the worker as potentially still
+consuming resources until its backend call returns. For non-read-only or unknown-effect endpoints,
+timeout or task cancellation after the worker starts raises `IndeterminateInvocationError` instead.
+That error is non-retryable: the mutation may still complete, so SchemaRouter will not automatically
+repeat it. Use vendor-level timeouts, transactions, idempotency keys, or a cancellation-safe async
+client when a stronger completion contract is required.
+
+## Typed lifecycle events
+
+```python
+from schemarouter import RunConfig
+
+async for event in router.astream_events(
+    request,
+    config=RunConfig(
+        tags=["production"],
+        metadata={"service": "research-agent"},
+    ),
+):
+    print(event.sequence, event.event)
+```
+
+The lifecycle includes:
 
 ```text
 run.start
 plan.end
 tool.start
 tool.end | tool.error
-tool.fallback
+tool.fallback  # only after an explicitly unavailable precompiled read-only route
 run.end  | run.error
 ```
 
-한 invocation의 모든 event는 같은 `run_id`와 단조 증가하는 `sequence`를 공유합니다. provider/access fallback도 같은 event stream을 사용하며 open-ended replanning을 수행하지 않습니다.
+All events in one invocation share a `run_id` and monotonic `sequence`.
 
-## Router가 소유하는 background lifecycle
+Provider/access fallback uses the same event stream and never performs open-ended replanning. See
+[Provider-aware fallback](provider-fallback.md).
 
-SchemaRouter가 소유할 수 있는 background activity는 세 종류입니다.
+## Router-owned background lifecycle
 
-- trusted endpoint health probe용 `AccessHealthMonitor`;
-- remote structured-source schema refresh용 `SchemaWatchManager`;
-- database/vector/graph/record refresh callback용
-  `start_native_schema_watcher()` native schema watcher.
+SchemaRouter can own three independent background activities:
 
-Native capability 등록은 refresh callback을 기록하지만 native watcher를 자동으로 시작하지
-않습니다. 주기적 refresh가 필요할 때 명시적으로 시작합니다.
+- `AccessHealthMonitor` for trusted endpoint health probes;
+- `SchemaWatchManager` for remote structured-source schema refresh;
+- the native schema watcher started by `start_native_schema_watcher()` for registered
+  database/vector/graph/record refresh callbacks.
+
+Native-capability registration records refresh callbacks but does **not** start the native watcher
+automatically. Start it explicitly when periodic refresh is required:
 
 ```python
 await router.start_native_schema_watcher(interval_seconds=300)
 
-# 필요하면 명시적으로 먼저 종료
+# optional explicit shutdown
 await router.stop_native_schema_watcher()
 ```
 
-`SchemaRouter.aclose()`와 async context manager 종료는 세 종류의 router-owned background
-activity를 모두 중지하려고 시도합니다. 반복 shutdown은 idempotent하며 SchemaRouter는
-caller-owned database client, SDK client, engine, transport를 닫지 않습니다. 하나의 native
-schema source에서 예상치 못한 refresh 오류가 발생해도 해당 source에 격리되고 다음 sweep에서
-다시 시도되므로 다른 등록 source의 watcher까지 종료되지 않습니다.
+`SchemaRouter.aclose()` and async-context-manager exit attempt to stop all three router-owned
+background activities before returning. Shutdown remains idempotent, and SchemaRouter does not close
+caller-owned database clients, SDK clients, engines, or transports. An unexpected failure from one
+native schema source is isolated to that source and retried on a later sweep; it does not terminate
+the watcher for the other registered sources.
 
-## Access health와 복구
+## Access health and recovery
 
-`InvocationUnavailableError`로 retry를 모두 소진한 transport route는 유한한 process-local cooldown에 들어가고 만료 후 자동으로 다시 후보가 됩니다. 명시적 read-only path에는 trusted health probe를 등록할 수 있습니다. probe 성공은 즉시 route를 다시 열고 실패는 bounded cooldown만 연장합니다.
+A transport route that exhausts retry with an `InvocationUnavailableError` enters a finite
+process-local cooldown. It is automatically eligible again when that cooldown expires.
 
-SchemaRouter는 remote metadata에서 probe를 만들어내거나 model output으로 health state를 수정하지 않습니다. 외부 service-health system이 있다면 `mark_access_unavailable()` / `mark_access_available()`을 직접 사용할 수 있습니다.
+For faster recovery, register a trusted probe for an explicitly read-only path:
+
+```python
+router.register_health_probe(
+    "mp_optimade",
+    "search_structures",
+    mp_optimade_health,
+)
+
+await router.start_health_monitor(
+    interval_seconds=30,
+    probe_timeout_seconds=5,
+)
+
+# during shutdown
+await router.stop_health_monitor()
+```
+
+Probe success immediately reopens the path; probe failure only extends the bounded cooldown.
+SchemaRouter never invents probes from remote metadata and never lets model output modify health
+state. Applications with an external service-health system can instead call
+`mark_access_unavailable()` / `mark_access_available()` directly.
+
+Live `router.inspect()` exposes current cooldown paths, probe status, and whether the monitor is
+running. Static SQLite registry inspection cannot report process-local health state.
 
 ## Payload redaction
 
-argument와 result payload는 기본 event에 포함하지 않습니다. Payload tracing을 활성화해도
-SchemaRouter는 event를 yield하거나 저장하기 **전에** structured trace content를 redact합니다.
+Arguments and result payloads are not included by default. When payload tracing is enabled,
+SchemaRouter now redacts structured trace content **before** events are yielded or persisted:
 
 ```python
 from schemarouter import RunConfig, TraceRedactionConfig
@@ -119,17 +213,18 @@ config = RunConfig(
 )
 ```
 
-기본 key matcher는 password, API key, authorization, cookie, token, private key와 일부 고위험
-identity/payment field를 포함합니다. Key matching은 대소문자를 구분하지 않으며
-`db_password` 같은 일반적인 prefix가 붙은 이름도 감지합니다. 민감 key/path 아래에서 찾은
-값은 현재 run 동안 기억하여 이후 exception message에 같은 값이 나타나도 제거합니다. 문자열
-안의 Bearer token과 일반적인 `key=value` credential 형식도 scrub합니다.
+The default key matcher covers common credential names such as passwords, API keys, authorization
+values, cookies, tokens, private keys, and several high-risk identity/payment fields. Matching is
+case-insensitive and also catches common prefixed names such as `db_password`. Values discovered
+under sensitive keys/paths are remembered for the current run so the same secret can be removed from
+later exception messages. Bearer tokens and common `key=value` credential forms in strings are
+also scrubbed.
 
-`RunConfig.metadata`, request/plan payload, tool argument, result, exception message는 동일한
-run-scoped redactor를 통과합니다. Principal authorization context와 trusted-filter 값은 run
-event에 추가하지 않습니다.
+`RunConfig.metadata`, request/plan payloads, tool arguments, results, and exception messages pass
+through the same run-scoped redactor. Principal authorization context and trusted-filter values are
+not added to run events.
 
-원문 payload가 반드시 필요한 디버깅에서는 별도의 escape hatch를 명시해야 합니다.
+Raw payload tracing remains available only as an explicit debugging escape hatch:
 
 ```python
 RunConfig(
@@ -138,20 +233,87 @@ RunConfig(
 )
 ```
 
-`raw_trace_payloads=True`는 metadata redaction도 비활성화합니다. credential과 개인정보가
-그대로 저장될 수 있으므로 trusted sink와 적절한 retention/access control이 있는 경우에만
-사용해야 합니다.
+`raw_trace_payloads=True` also disables metadata redaction. Use it only with a trusted sink and
+appropriate retention/access controls; it can persist credentials and personal data verbatim.
 
 ## Bound configuration
 
-`router.with_config(RunConfig(...))`는 underlying router를 변경하지 않고 가벼운 configured facade를 만듭니다.
+```python
+configured = router.with_config(
+    RunConfig(
+        tags=["service-a"],
+        max_concurrency=4,
+    )
+)
 
-## OpenTelemetry와 영속 trace
+await configured.ainvoke(request)
+```
 
-optional OpenTelemetry integration은 같은 typed event stream을 사용하며 payload, metadata, tag, exception message를 제외합니다. `SQLiteRunTraceStore`를 사용하면 process restart 후에도 event stream을 보존할 수 있습니다. replay는 historical event만 읽고 tool을 재실행하지 않습니다.
+This creates a lightweight configured facade without mutating the underlying router.
 
-## Schema planning과 execution-ready planning
 
-`plan()`/`aplan()`은 schema-oriented이며 그 순간 trusted invoker가 바인딩되어 있을 필요가 없습니다. 반면 `plan_executable()`/`aplan_executable()`은 현재 tool fingerprint에 trusted invoker가 바인딩되어 있어야 합니다. `invoke`, `ainvoke`, stream/batch/event API는 자동으로 이 stricter path를 사용합니다.
+## OpenTelemetry
 
-명시적인 `execute(plan)`은 replan하지 않습니다. 전달된 plan을 일반 fail-closed binding/schema/policy 규칙과 precompiled fallback route 아래에서 검증하고 실행합니다.
+The optional OpenTelemetry integration consumes this same typed event stream:
+
+```python
+from schemarouter.integrations import OpenTelemetryRunExporter, trace_run_events
+
+async for event in trace_run_events(
+    router.astream_events(request),
+    exporter=OpenTelemetryRunExporter(),
+):
+    ...
+```
+
+The exporter omits payload values, RunConfig metadata, tags, and exception messages
+even when `include_payloads=True`. See [OpenTelemetry](../integrations/opentelemetry.md).
+
+
+## Persist and replay event traces
+
+Use `SQLiteRunTraceStore` when the event stream must survive process restarts:
+
+```python
+from schemarouter import SQLiteRunTraceStore
+
+with SQLiteRunTraceStore("traces.sqlite3") as store:
+    events = [
+        event
+        async for event in router.astream_events(
+            request,
+            trace_store=store,
+        )
+    ]
+```
+
+Replay reads historical events only and never re-executes tools. See
+[Persistent run traces](run-traces.md) for privacy, corruption handling, and lifecycle details.
+
+
+## Schema planning vs execution-ready planning
+
+`SchemaRouter.plan()` and `aplan()` are schema-oriented. They answer which registered
+contracts can satisfy the request while respecting the configured access-health predicate, but they
+do not require a trusted invoker to be bound at that moment. This is useful for inspection,
+authoring, and pre-binding planning workflows.
+
+Execution-facing APIs use a stricter route set:
+
+```python
+schema_plan = router.plan(request)
+execution_plan = router.plan_executable(request)
+
+results = router.invoke(request)
+```
+
+`plan_executable()` / `aplan_executable()` apply one additional local constraint: the tool must
+have a trusted invoker bound to the current tool fingerprint. `invoke`, `ainvoke`, `stream`,
+`astream`, batches, and typed event streams use this execution-ready planning path automatically.
+
+A schema-valid but currently unbound preferred route can still show up in
+`router.plan()`, while the live execution path chooses another healthy, bound route that can
+provide the same requested fields.
+
+Explicit `execute(plan)` does not replan. It validates and executes the supplied plan under the
+normal fail-closed binding/schema/policy rules and any precompiled fallback routes.
