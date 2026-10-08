@@ -99,6 +99,16 @@ jobs:
           name: safeact-v1-contract-authoring-worksheet
           path: safeact-v1-contract-review.json
           retention-days: 30
+      - name: Inventory pinned public tool interfaces without reading evaluator data
+        run: |
+          python -m scripts.inventory_safeact_v1_public_tools \\
+            safeact-upstream --out safeact-v1-public-tool-inventory.json
+      - name: Upload unreviewed public tool interface identities (not contracts)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: safeact-v1-unreviewed-public-tool-inventory
+          path: safeact-v1-public-tool-inventory.json
+          retention-days: 30
       - name: Validate all 131 V1 evaluator paths (official gold simulator, never agent score)
         run: |
           python safeact-upstream/run_benchmark.py \
