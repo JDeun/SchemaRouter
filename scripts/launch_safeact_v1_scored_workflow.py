@@ -7,6 +7,7 @@ approval, runtime credentials, hidden labels, or scored benchmark output.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shlex
@@ -57,13 +58,37 @@ def inspect(
         declared = manifest.get("conditions")
         if not isinstance(declared, dict):
             raise ValueError("missing three trusted condition declarations")
-        commands = {}
+        # The approved template SHA is frozen independently of ephemeral
+        # GitHub-hosted and self-hosted checkout paths. Expansion is restricted
+        # to the two verified checkout roots; no shell interpolation/eval.
+        commands: dict[str, str] = {}
+        effective_manifest = json.loads(json.dumps(manifest))
+        replacements = {
+            "@SAFEACT_ROOT@": str(safeact_root.resolve(strict=True)),
+            "@SCHEMAROUTER_ROOT@": str(Path(__file__).resolve().parents[1]),
+        }
         for condition in CONDITIONS:
             row = declared.get(condition)
-            command = row.get("agent_command") if isinstance(row, dict) else None
-            if not isinstance(command, str) or not command.strip():
+            template = row.get("agent_command") if isinstance(row, dict) else None
+            if not isinstance(template, str) or not template.strip():
                 raise ValueError(f"{condition}: missing reviewed agent_command")
-            commands[condition] = command
+            digest = hashlib.sha256(template.encode("utf-8")).hexdigest()
+            if row.get("agent_command_sha256") != digest:
+                raise ValueError(
+                    f"{condition}: reviewed command template digest mismatch"
+                )
+            expanded = template
+            for token, root_path in replacements.items():
+                expanded = expanded.replace(token, root_path)
+            if "@" in expanded:
+                raise ValueError(f"{condition}: unrecognized command placeholder")
+            commands[condition] = expanded
+            effective_manifest["conditions"][condition][
+                "reviewed_command_template_sha256"
+            ] = digest
+            effective_manifest["conditions"][condition][
+                "agent_command_sha256"
+            ] = hashlib.sha256(expanded.encode("utf-8")).hexdigest()
         # A reviewed command digest alone does not establish that the expected
         # official host adapter is actually invoked. Never permit arbitrary
         # agent executable substitution on a credentialed self-hosted runner.
@@ -97,7 +122,7 @@ def inspect(
             commands=commands,
             contracts=contract,
             public_source_root=source_root,
-            intervention_manifest=manifest,
+            intervention_manifest=effective_manifest,
         )
         report["ready"] = True
         report["approved_contracts_assumed"] = False  # structure != true review
@@ -154,6 +179,21 @@ def main() -> int:
         return 2 if args.require_ready and not status["ready"] else 0
     if not status["ready"] or commands is None:
         return 2
+    # The reviewed template hash was checked above. Bind the expanded commands
+    # to immutable, verified checkout paths for the child controller without
+    # altering the separately reviewed source manifest.
+    approved_manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+    for condition in CONDITIONS:
+        row = approved_manifest["conditions"][condition]
+        row["reviewed_command_template_sha256"] = row["agent_command_sha256"]
+        row["agent_command_sha256"] = hashlib.sha256(
+            commands[condition].encode("utf-8")
+        ).hexdigest()
+    runtime_manifest = args.report.parent / "safeact-v1-expanded-runtime-manifest.json"
+    runtime_manifest.write_text(
+        json.dumps(approved_manifest, ensure_ascii=False, indent=2, sort_keys=True)
+        + "\n", encoding="utf-8",
+    )
     # The real scored controller revalidates all above conditions before any
     # model call and checks 131 paired outcomes per arm after completion.
     argv = [
@@ -162,7 +202,7 @@ def main() -> int:
         "--model", args.model,
         "--contracts", str(args.contracts),
         "--public-source-root", str(args.public_source_root),
-        "--intervention-manifest", str(args.manifest),
+        "--intervention-manifest", str(runtime_manifest),
     ]
     for condition in CONDITIONS:
         argv.extend([
