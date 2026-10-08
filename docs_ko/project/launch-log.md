@@ -1,31 +1,30 @@
-# Launch and outreach log
+# 출시와 외부 소통 기록
 
-이 log는 correlation이 causation을 증명한다고 과장하지 않으면서 external launch activity와 public adoption scorecard를 연결합니다.
+이 기록은 외부 출시·홍보 활동과 공개 도입 성과표를 연결합니다. 단순한 상관관계가 인과관계를 증명하는 것처럼 주장하지 않습니다.
 
 ## 기록 규칙
 
-Add one row for each public launch/outreach item. Do not record private conversations, email
-addresses, account identifiers, or unpublished adopter names.
+공개된 출시 또는 소통 활동마다 한 행을 추가합니다. 비공개 대화, 이메일 주소, 계정 식별자, 공개되지 않은 도입 조직의 이름은 기록하지 않습니다.
 
-| Date (UTC) | Channel | Public URL | Asset / variant | Pre snapshot | Post snapshot | Observable outcome | Follow-up issue/PR |
+| 날짜(UTC) | 채널 | 공개 URL | 자료 / 버전 | 이전 스냅샷 | 이후 스냅샷 | 관측된 결과 | 후속 이슈/PR |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| _pending_ | _none yet_ | — | Launch kit prepared in #582 | first Growth Scorecard snapshot | — | No external campaign published yet | #582 |
+| _대기 중_ | _아직 없음_ | — | #582 출시 자료 준비 | 첫 Growth Scorecard 스냅샷 | — | 아직 공개된 외부 캠페인 없음 | #582 |
 
-## Outcome note
+## 성과 기록 시 참고사항
 
-Useful outcomes include:
+유용한 결과에는 다음이 포함됩니다.
 
-- new external issue/PR;
-- install/download change in a comparable time window;
-- GitHub stars/forks as lagging signals;
-- framework/provider integration request;
-- independent benchmark reproduction;
-- public downstream reference;
-- onboarding failure that produces a concrete fix.
+- 외부에서 새로 생성한 이슈 또는 PR
+- 비교 가능한 기간의 설치·다운로드 변화
+- 후행 지표인 GitHub 별과 포크 수
+- 프레임워크 또는 공급자 통합 요청
+- 독립적으로 재현한 벤치마크
+- 외부 프로젝트의 공개 참조
+- 구체적인 수정으로 이어진 온보딩 실패
 
-Avoid:
+다음은 피해야 합니다.
 
-- inferring individual visitors from aggregate metrics;
-- claiming a post caused all metric changes;
-- collecting invasive product telemetry merely to improve this table;
-- publishing private adopter conversations without permission.
+- 집계 지표만으로 개별 방문자를 추정하는 것
+- 특정 게시물이 모든 지표 변화를 일으켰다고 주장하는 것
+- 이 표를 개선하기 위해 침습적인 제품 텔레메트리를 수집하는 것
+- 허락 없이 비공개 도입 상담 내용을 공개하는 것
