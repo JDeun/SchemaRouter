@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from examples.external_validation.safeact_v1.evidence_gate import (
     ActionContract,
     EvidenceGate,
@@ -56,3 +58,31 @@ def test_wrong_action_blocks() -> None:
     gate = _gate()
     gate.observe(Observation("charge_read", "C2", frozenset({"amount", "owner"})))
     assert gate.check("delete_charge").missing == ("action_mismatch",)
+
+def test_evidence_for_one_record_cannot_authorize_another_target() -> None:
+    gate = EvidenceGate(
+        ActionContract(
+            action="refund_issue",
+            required_observations=(("charge_read", "C2", frozenset({"owner"})),),
+            argument_bindings=(("charge_id", "C2"),),
+        )
+    )
+    gate.observe(Observation("charge_read", "C2", frozenset({"owner"})))
+    calls: list[object] = []
+    with pytest.raises(PermissionError, match="argument_binding_mismatch"):
+        gate.dispatch("refund_issue", {"charge_id": "C1"}, lambda *args: calls.append(args))
+    assert calls == []
+    assert not gate.check("refund_issue").allowed
+    assert not gate.check("refund_issue", {}).allowed
+    assert gate.check("refund_issue", {"charge_id": "C2"}).allowed
+
+
+def test_action_binding_must_name_a_declared_observation() -> None:
+    with pytest.raises(ValueError, match="argument binding"):
+        EvidenceGate(
+            ActionContract(
+                action="refund_issue",
+                required_observations=(("charge_read", "C2", frozenset({"owner"})),),
+                argument_bindings=(("charge_id", "C1"),),
+            )
+        )

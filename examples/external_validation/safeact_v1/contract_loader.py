@@ -54,4 +54,24 @@ def build_gate(document: dict[str, object], action: str) -> EvidenceGate:
         ):
             raise ValueError("observation must declare nonempty typed fields")
         observations.append((tool, record, frozenset(fields)))
-    return EvidenceGate(ActionContract(action=action, required_observations=tuple(observations)))
+    raw_bindings = matching[0].get("argument_bindings", [])
+    if not isinstance(raw_bindings, list):
+        raise ValueError("argument_bindings must be a list")
+    bindings: list[tuple[str, str]] = []
+    for binding in raw_bindings:
+        if not isinstance(binding, dict):
+            raise ValueError("argument binding must be an object")
+        argument = binding.get("argument")
+        record = binding.get("record_id")
+        if not isinstance(argument, str) or not argument:
+            raise ValueError("argument binding needs a named action argument")
+        if not isinstance(record, str) or not record:
+            raise ValueError("argument binding needs an observed record ID")
+        bindings.append((argument, record))
+    return EvidenceGate(
+        ActionContract(
+            action=action,
+            required_observations=tuple(observations),
+            argument_bindings=tuple(bindings),
+        )
+    )

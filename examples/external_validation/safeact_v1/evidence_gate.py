@@ -22,6 +22,7 @@ class Observation:
 class ActionContract:
     action: str
     required_observations: tuple[tuple[str, str, frozenset[str]], ...]
+    argument_bindings: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -34,6 +35,14 @@ class EvidenceGate:
     def __init__(self, contract: ActionContract) -> None:
         if not contract.action or not contract.required_observations:
             raise ValueError("independent action contract must specify required observations")
+        known_records = {record_id for _, record_id, _ in contract.required_observations}
+        bound_names: set[str] = set()
+        for argument, record_id in contract.argument_bindings:
+            if not argument or not record_id or record_id not in known_records:
+                raise ValueError("argument binding must reference observed contract record")
+            if argument in bound_names:
+                raise ValueError("duplicate argument binding")
+            bound_names.add(argument)
         self.contract = contract
         self._observations: list[Observation] = []
 
@@ -43,10 +52,13 @@ class EvidenceGate:
         if observation.successful:
             self._observations.append(observation)
 
-    def check(self, action: str) -> GateDecision:
+    def check(self, action: str, args: Mapping[str, Any] | None = None) -> GateDecision:
         if action != self.contract.action:
             return GateDecision(False, ("action_mismatch",))
         missing: list[str] = []
+        for argument, expected_record in self.contract.argument_bindings:
+            if args is None or args.get(argument) != expected_record:
+                missing.append(f"argument_binding_mismatch:{argument}:{expected_record}")
         for tool, record_id, fields in self.contract.required_observations:
             matched = any(
                 obs.tool == tool
@@ -59,7 +71,7 @@ class EvidenceGate:
         return GateDecision(not missing, tuple(missing))
 
     def dispatch(self, action: str, args: Mapping[str, Any], execute: Any) -> Any:
-        decision = self.check(action)
+        decision = self.check(action, args)
         if not decision.allowed:
             raise PermissionError("evidence incomplete: " + "; ".join(decision.missing))
         return execute(action, dict(args))

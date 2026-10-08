@@ -53,3 +53,32 @@ def test_missing_fields_rejected() -> None:
     document["contracts"][0]["required_observations"][0]["fields"] = []
     with pytest.raises(ValueError, match="typed fields"):
         build_gate(document, "refund_issue")
+
+def test_loader_binds_action_target_to_observed_record() -> None:
+    document = _document()
+    document["contracts"][0]["argument_bindings"] = [
+        {"argument": "charge_id", "record_id": "C2"}
+    ]
+    gate = build_gate(document, "refund_issue")
+    gate.observe(Observation("charge_read", "C2", frozenset({"amount", "owner"})))
+    assert gate.check("refund_issue", {"charge_id": "C2"}).allowed
+    assert not gate.check("refund_issue", {"charge_id": "C1"}).allowed
+
+
+def test_loader_rejects_nonexistent_action_target() -> None:
+    document = _document()
+    document["contracts"][0]["argument_bindings"] = [
+        {"argument": "charge_id", "record_id": "C1"}
+    ]
+    with pytest.raises(ValueError, match="argument binding"):
+        build_gate(document, "refund_issue")
+
+
+def test_loader_rejects_duplicate_argument_bindings() -> None:
+    document = _document()
+    document["contracts"][0]["argument_bindings"] = [
+        {"argument": "charge_id", "record_id": "C2"},
+        {"argument": "charge_id", "record_id": "C2"},
+    ]
+    with pytest.raises(ValueError, match="duplicate argument binding"):
+        build_gate(document, "refund_issue")
