@@ -2389,13 +2389,11 @@ The exact frozen candidate then failed its new zero-overlap fresh confirmation (
 
 0.11 research conclusion은 다음과 같습니다:
 
-1. Registered-route ranking capacity is sufficient. BGE-M3 raw top-1 is ~88.45%.
-2. Open-set capability membership is the unresolved problem.
-3. A DEV pass is not sufficient evidence. Three independent lines degraded under fresh request
-   surfaces, and the strongest current executable candidate failed the formal fresh gate.
-4. The safe stopping action is to close the architecture-search cycle, not tune against consumed
-   evidence.
-5. #198 calibration/blind-final stays unexecuted because its entry requirements were never met.
+1. 등록 경로의 순위 결정 능력은 충분함. BGE-M3 원시 Top-1은 약 88.45%;
+2. 해결되지 않은 문제는 개방 집합에서의 기능 소속 여부;
+3. DEV 통과만으로는 충분한 근거가 아님. 세 가지 독립된 접근이 새로운 요청 표면에서 악화됐고, 현재 가장 강력한 실행 가능 후보도 정식 새 표면 게이트에서 실패;
+4. 근거를 이미 사용한 데이터에 맞춰 튜닝하는 대신 아키텍처 탐색 주기를 종료하는 것이 안전한 조치;
+5. 진입 조건을 충족하지 못했으므로 #198 보정·블라인드 최종 평가는 실행하지 않음.
 
 The robust #259 profile remains a useful conservative reference:
 - exact 83.7674%;
@@ -2405,9 +2403,7 @@ The robust #259 profile remains a useful conservative reference:
 
 85% exact requirement를 충족하지 못하므로 production-target pass로 다시 labeling하지 않습니다.
 
-Any successor cycle must introduce a materially new source of capability evidence and a new
-preregistered protocol. It may not tune on #270/#287/#326, revive terminal 0.11 families with
-post-hoc thresholds, or convert compatibility evidence into quality evidence.
+후속 연구 주기는 실질적으로 새로운 기능 근거와 새로운 사전등록 프로토콜을 도입해야 합니다. #270/#287/#326에 맞춰 튜닝하거나, 사후 임계값으로 종료된 0.11 계열을 되살리거나, 호환성 근거를 품질 근거로 바꿔 해석해서는 안 됩니다.
 
 
 ## 53. #338 / PR #341 — arbitrary-tool registry-compiled verifier rejected
@@ -2420,16 +2416,14 @@ constraint that earlier benchmark-specific work did not fully exercise:
 
 The experiment was preregistered before execution.
 
-Design constraints:
-- native ToolSpec, OpenAPI, and MCP had to compile into the same provider-neutral capability IR;
-- endpoint names could be opaque and `operation_aliases` could be empty;
-- route IDs, fixed endpoint counts, and benchmark-domain keyword tables were forbidden as learned
-  features;
-- JSON datatype/shape, semantic IDs, source units, explicit unit normalization, and qualifiers were
-  preserved as registered deterministic metadata;
-- BGE-M3 raw top-1 remained the sole route authority;
-- the learned component was veto-only, with no rank-2 fallback or pseudo-route;
-- newly registered routes could not require route-specific retraining.
+설계 제약:
+- 네이티브 ToolSpec, OpenAPI, MCP는 동일한 제공자 중립 기능 중간 표현으로 컴파일;
+- 엔드포인트 이름은 불투명할 수 있고 `operation_aliases`는 비어 있을 수 있음;
+- 경로 ID, 고정 엔드포인트 개수, 벤치마크 도메인 키워드 표를 학습 특징으로 사용 금지;
+- JSON 데이터형·구조, 의미 식별자, 원본 단위, 명시적인 단위 정규화, 한정자는 등록된 결정적 메타데이터로 보존;
+- BGE-M3 원시 Top-1만 경로 선택 권한을 보유;
+- 학습 구성 요소는 거부권만 가지며 두 번째 경로 폴백이나 가상 경로를 허용하지 않음;
+- 새로 등록된 경로마다 별도 재학습을 요구하지 않음.
 
 Canonical execution:
 - workflow `36393153612`;
@@ -2478,13 +2472,11 @@ query
 Unlike #338, there was no learned binary veto, probability threshold, route-local threshold,
 pseudo-route, or post-ranking rank-2 fallback.
 
-A new 0.12 data protocol was frozen before scoring:
-- development: 936 cases, SHA
-  `79a7cb9672e6633739e0acd08882019f5cfeff479df103f8199aabacb8501a9f`;
-- registration confirmation: 1,008 cases, SHA
-  `15587c646d64b4f3462127742c05d59092938f68a4c047b731e9a8c78c0eb673`;
-- both catalogs used new tool identities and native/OpenAPI/MCP registrations;
-- the confirmation corpus was generated and frozen before DEV scoring.
+새로운 0.12 데이터 프로토콜은 채점 전에 동결했습니다.
+- 개발: 936건, SHA `79a7cb9672e6633739e0acd08882019f5cfeff479df103f8199aabacb8501a9f`;
+- 등록 확인: 1,008건, SHA `15587c646d64b4f3462127742c05d59092938f68a4c047b731e9a8c78c0eb673`;
+- 두 카탈로그 모두 새로운 도구 식별자와 네이티브/OpenAPI/MCP 등록을 사용;
+- 확인 코퍼스는 DEV 채점 전에 생성하고 동결.
 
 DEV evidence:
 - workflow `36404647843`;
@@ -2493,15 +2485,15 @@ DEV evidence:
 - digest
   `sha256:74df3e068421bb2c551a30c2b5c5cdb9547e17066bf3f4ce7f8154c11690849c`.
 
-Results:
-- supported exact 97.2222%;
-- raw supported exact 96.7593%;
-- raw supported tool accuracy 99.5370%;
-- near-domain unsupported rejection 70.3704%;
-- OOD rejection 95.8333%;
-- false-route 25.9921%;
+결과:
+- 지원 사례 정확도 97.2222%;
+- 원시 지원 사례 정확도 96.7593%;
+- 원시 지원 도구 정확도 99.5370%;
+- 유사 도메인 미지원 거부율 70.3704%;
+- OOD 거부율 95.8333%;
+- 잘못된 경로 25.9921%;
 - p95 179.526 ms;
-- authority violations / execution errors 0 / 0.
+- 권한 위반 / 실행 오류 0 / 0.
 
 이는 #338과 거의 정반대의 결과입니다. The query-first structural filter preserves valid
 supported requests extremely well and can correct some endpoint choices, but the high-precision
@@ -2517,20 +2509,14 @@ Architectural lesson은 명확합니다. 다음 materially new signal은 endpoin
 
 ## 55. #349 / PR #352 — flat semantic action ontology rejected
 
-After #347 showed that explicit lexical request frames preserve supported routing but miss too many
-unsupported operations, #349 replaced the surface lexicon with a registry-independent multilingual
-semantic action ontology.
+#347에서 명시적인 어휘 기반 요청 형식이 지원 요청의 라우팅은 보존하지만 미지원 작업을 너무 많이 놓친다는 사실이 드러나자, #349는 표면상의 어휘집을 레지스트리와 독립적인 다국어 의미 기반 작업 온톨로지로 교체했습니다.
 
-The request was projected onto one generic action class by frozen BGE-M3 prototype similarity, then
-that action was used as a deterministic within-tool capability constraint. No learned veto,
-probability threshold, route-local threshold, pseudo-route, or cross-tool fallback was allowed.
+요청은 동결된 BGE-M3 프로토타입 유사도를 통해 일반적인 작업 분류 하나에 투영되고, 해당 작업은 도구 내부의 결정적 기능 제약으로 사용됐습니다. 학습된 거부권, 확률 임계값, 경로별 임계값, 가상 경로 또는 도구 간 폴백을 허용하지 않았습니다.
 
-A new pair of corpora was generated and frozen before scoring:
-- DEV: 504 cases, SHA
-  `1a497bcd36192913840d7ecd4c6bed714c908468baed6f2b0b9f4367bf57ffc6`;
-- confirmation: 552 cases, SHA
-  `548fe42da09e7c8dc89530c43d409db05618f57a39c277fca27aebe79b6802b9`;
-- confirmation was never scored.
+새 코퍼스 두 개는 채점 전에 생성하고 동결했습니다.
+- DEV: 504건, SHA `1a497bcd36192913840d7ecd4c6bed714c908468baed6f2b0b9f4367bf57ffc6`;
+- 확인: 552건, SHA `548fe42da09e7c8dc89530c43d409db05618f57a39c277fca27aebe79b6802b9`;
+- 확인 데이터는 채점하지 않았습니다.
 
 DEV evidence:
 - workflow `36406845612`;
@@ -2539,15 +2525,15 @@ DEV evidence:
 - digest
   `sha256:de687d850e619cb1ce143648ef6fe21950f6a395a33bc6835a7564b24f9a03a1`.
 
-Results:
-- supported exact 44.9074%;
-- raw BGE supported exact 77.3148%;
-- raw BGE supported tool accuracy 94.4444%;
-- near-domain unsupported rejection 56.4815%;
-- OOD rejection 100%;
-- false-route 32.6389%;
+결과:
+- 지원 사례 정확도 44.9074%;
+- 원시 BGE 지원 사례 정확도 77.3148%;
+- 원시 BGE 지원 도구 정확도 94.4444%;
+- 유사 도메인 미지원 거부율 56.4815%;
+- OOD 거부율 100%;
+- 잘못된 경로 32.6389%;
 - p95 197.549 ms;
-- authority violations / execution errors 0 / 0.
+- 권한 위반 / 실행 오류 0 / 0.
 
 Flat semantic ontology는 terminal reject했습니다. 핵심 lesson은 ontology가 쓸모없다는 것이 아니라 noisy semantic label에 hard endpoint-removal authority를 부여해서는 안 된다는 점입니다.
 
@@ -2555,50 +2541,42 @@ Flat semantic ontology는 terminal reject했습니다. 핵심 lesson은 ontology
 
 #354 made the ontology explicit and hierarchical rather than flat.
 
-The generic ontology separated:
-- read: search / retrieve / list;
-- mutate: create / update / delete / cancel / refund;
-- transfer: send / share;
-- transform: export / translate / summarize / compare / merge;
-- control: restart / execute;
-- predict: forecast;
-- non-tool: compose / explain / calculate / chat.
+일반 온톨로지는 다음을 구분했습니다.
+- 읽기: 검색 / 조회 / 목록 확인;
+- 변경: 생성 / 수정 / 삭제 / 취소 / 환불;
+- 전송: 보내기 / 공유;
+- 변환: 내보내기 / 번역 / 요약 / 비교 / 병합;
+- 제어: 재시작 / 실행;
+- 예측: 예보;
+- 비도구 작업: 작성 / 설명 / 계산 / 대화.
 
-Request-side root/leaf evidence came from fixed multilingual contrastive prototypes. Endpoint
-root/leaf facts came from trusted registry metadata, with HTTP/read-only/destructive metadata taking
-precedence over semantic inference.
+요청 측 상위·하위 기능 근거는 고정된 다국어 대조 프로토타입에서 얻었습니다. 엔드포인트 측 상위·하위 기능 사실은 신뢰할 수 있는 레지스트리 메타데이터에서 얻었으며, HTTP·읽기 전용·파괴적 작업 메타데이터를 의미 추론보다 우선했습니다.
 
-The freeze completed before scoring:
-- freeze workflow `36408654108`;
-- frozen ontology/corpus source
-  `9777e1c76df27bff38cb3060d672d4f8baf65334`;
-- freeze artifact `10963536169`;
-- freeze digest
-  `sha256:ac8bb723e8def4dca002c21662504ccbc169d02d2bdcc72905d621710f128bd2`;
-- DEV: 564 cases, SHA
-  `3731ade0c1cfc69fbf234c00e9090a35b8fca5340af98077e1a18f98782d2a4a`;
-- confirmation: 576 cases, SHA
-  `1e965111a7835af002b397d0be6b4776ea2a9295f417991f5b7733f79f23a24e`;
-- confirmation remained unopened.
+동결 작업은 채점 전에 끝났습니다.
+- 동결 워크플로 `36408654108`;
+- 동결된 온톨로지·코퍼스 소스 `9777e1c76df27bff38cb3060d672d4f8baf65334`;
+- 동결 산출물 `10963536169`;
+- 동결 다이제스트 `sha256:ac8bb723e8def4dca002c21662504ccbc169d02d2bdcc72905d621710f128bd2`;
+- DEV: 564건, SHA `3731ade0c1cfc69fbf234c00e9090a35b8fca5340af98077e1a18f98782d2a4a`;
+- 확인: 576건, SHA `1e965111a7835af002b397d0be6b4776ea2a9295f417991f5b7733f79f23a24e`;
+- 확인 데이터는 열지 않았습니다.
 
-DEV evaluation:
-- workflow `36408861468`;
-- evaluated source `250845bba058a704ab50cdde43326cc1e5c26d62`;
-- the workflow first verified all frozen ontology/corpus files were byte-identical to the frozen
-  source;
-- artifact `10964025921`;
-- digest
-  `sha256:40eb58bc091380257409d93b662bbfbfa9b966e8c752b9a63df04b68237f7e2b`.
+DEV 평가:
+- 워크플로 `36408861468`;
+- 평가 소스 `250845bba058a704ab50cdde43326cc1e5c26d62`;
+- 워크플로는 먼저 모든 동결 온톨로지·코퍼스 파일이 동결 소스와 바이트 단위로 동일한지 검증;
+- 산출물 `10964025921`;
+- 다이제스트 `sha256:40eb58bc091380257409d93b662bbfbfa9b966e8c752b9a63df04b68237f7e2b`.
 
-Results:
-- supported exact 30.4167%;
-- raw BGE supported exact 85.4167%;
-- raw BGE supported tool accuracy 100%;
-- near-domain rejection 68.6508%;
-- OOD rejection 88.8889%;
-- false-route 26.8519%;
+결과:
+- 지원 사례 정확도 30.4167%;
+- 원시 BGE 지원 사례 정확도 85.4167%;
+- 원시 BGE 지원 도구 정확도 100%;
+- 유사 도메인 거부율 68.6508%;
+- OOD 거부율 88.8889%;
+- 잘못된 경로 26.8519%;
 - p95 164.328 ms;
-- authority violations / execution errors 0 / 0.
+- 권한 위반 / 실행 오류 0 / 0.
 
 이는 강한 architectural negative result였습니다. On this new DEV, the raw BGE ranker already met the
 supported exact target and identified the correct tool for every supported case. The hierarchical
@@ -2625,33 +2603,31 @@ After #347, #349 and #354, the ontology was removed from positive route-selectio
 - the veto requires exact unsupported-leaf agreement under a fixed rule;
 - no similarity, margin, confidence, route-local or learned threshold is used.
 
-Frozen corpus evidence:
-- freeze run `36411756496`;
-- freeze source `e29b6e0006dd64bab31c613b97ea68de8c2931f6`;
-- freeze artifact `10965015475`;
-- digest `sha256:1d93e8441224051ce63aacc050eb6cd99979f613945e5a21419abc5aa65b0a39`;
-- DEV: 552 cases, SHA256
-  `e2f3ab0f93584d896f401c94200200d7a39c8f00a4983addd4ebc8889757ee07`;
-- confirmation: 552 cases, SHA256
-  `bbe4984681472ad5ffe1ed881fd2b92937668fed453a45d6afbba587ffa376e8`.
+동결 코퍼스 근거:
+- 동결 실행 `36411756496`;
+- 동결 소스 `e29b6e0006dd64bab31c613b97ea68de8c2931f6`;
+- 동결 산출물 `10965015475`;
+- 다이제스트 `sha256:1d93e8441224051ce63aacc050eb6cd99979f613945e5a21419abc5aa65b0a39`;
+- DEV: 552건, SHA256 `e2f3ab0f93584d896f401c94200200d7a39c8f00a4983addd4ebc8889757ee07`;
+- 확인: 552건, SHA256 `bbe4984681472ad5ffe1ed881fd2b92937668fed453a45d6afbba587ffa376e8`.
 
 DEV workflow `36412029437` at source
 `759359882c3deb1be310fc540bbb1780b1543885` produced artifact `10964703106`,
 digest `sha256:6b25f94698650175475a4c7339526298e7582b1be43366a8c695cfeecdcf9aaa`.
 
-Result:
-- supported exact 96.0526%;
-- raw supported exact 96.0526%;
-- raw tool accuracy 99.5614%;
-- raw-correct winner veto rate 0%;
-- near-domain rejection 26.5873%;
-- OOD rejection 84.7222%;
-- false-route 60.4938%;
-- veto precision 99.2248%;
-- veto recall 39.5062%;
-- positive route switches 0;
+결과:
+- 지원 사례 정확도 96.0526%;
+- 원시 지원 사례 정확도 96.0526%;
+- 원시 도구 정확도 99.5614%;
+- 원시 정답 승자 거부율 0%;
+- 유사 도메인 거부율 26.5873%;
+- OOD 거부율 84.7222%;
+- 잘못된 경로 60.4938%;
+- 거부 정밀도 99.2248%;
+- 거부 재현율 39.5062%;
+- 긍정 경로 변경 0;
 - p95 236.0203 ms;
-- authority/execution errors 0/0.
+- 권한·실행 오류 0/0.
 
 Interpretation:
 
@@ -2669,26 +2645,24 @@ confirmation corpus remains unopened.
 #363 kept the authority rule established by #358: frozen BGE-M3 raw top-1 was the sole positive
 route selector, and ontology evidence could only veto to `NO_ROUTE`.
 
-The only behavioral change was the unit of semantic agreement. Instead of requiring BGE and MiniLM
-to name the exact same unsupported leaf, each signal was mapped against the anchored tool's finite
-registered capability set as `SUPPORTED`, `OUTSIDE_SET`, or `UNKNOWN`.
+변경된 동작은 의미 기반 합의의 단위뿐이었습니다. BGE와 MiniLM이 정확히 같은 미지원 하위 기능의 이름을 제시하도록 요구하는 대신, 각 신호를 기준 도구에 등록된 유한한 기능 집합에 대응시키고 `SUPPORTED`, `OUTSIDE_SET`, `UNKNOWN`으로 분류했습니다.
 
-The rule was preregistered before creating a new evaluation surface:
-- explicit `OUTSIDE_SET` plus at least one semantic `OUTSIDE_SET` -> veto;
-- explicit `UNKNOWN` plus both semantic encoders `OUTSIDE_SET` -> veto;
-- explicit `SUPPORTED` -> preserve raw BGE route;
-- otherwise preserve;
-- no threshold, learned head, endpoint filter, rank-2 fallback, pseudo-route, or positive rerank.
+규칙은 새로운 평가 표면을 만들기 전에 사전등록했습니다.
+- 명시적인 `OUTSIDE_SET`와 하나 이상의 의미 기반 `OUTSIDE_SET` → 거부;
+- 명시적인 `UNKNOWN`와 두 의미 인코더 모두의 `OUTSIDE_SET` → 거부;
+- 명시적인 `SUPPORTED` → 원시 BGE 경로 유지;
+- 그 외에는 유지;
+- 임계값, 학습 헤드, 엔드포인트 필터, 두 번째 순위 폴백, 가상 경로, 긍정 재순위화 없음.
 
-A new native/OpenAPI/MCP pair was frozen before scoring:
-- freeze run `36415762115`;
-- frozen source `a1a9eb20622dd8a47082ca8fa5cd02c52d27e653`;
-- freeze artifact `10966724823`;
-- digest `sha256:d957f82e29bdec0723fb0dda0622098563354a8ecdb45e8108b4633bc3bc6915`;
-- DEV: 552 cases, SHA `1d3d18975b33156d97f3b4fd518158cba418c449fae01e864977f8bdf77b5e62`;
-- confirmation: 552 cases, SHA `ba92c3c25da3601bd50f580dcfaf7b512ec2e26971e10ec9e501bb59cbf35d37`;
-- typed numeric/unit examples were present (`W/m2`, `L/s`);
-- confirmation remained unopened.
+새로운 네이티브/OpenAPI/MCP 코퍼스 쌍을 채점 전에 동결했습니다.
+- 동결 실행 `36415762115`;
+- 동결 소스 `a1a9eb20622dd8a47082ca8fa5cd02c52d27e653`;
+- 동결 산출물 `10966724823`;
+- 다이제스트 `sha256:d957f82e29bdec0723fb0dda0622098563354a8ecdb45e8108b4633bc3bc6915`;
+- DEV: 552건, SHA `1d3d18975b33156d97f3b4fd518158cba418c449fae01e864977f8bdf77b5e62`;
+- 확인: 552건, SHA `ba92c3c25da3601bd50f580dcfaf7b512ec2e26971e10ec9e501bb59cbf35d37`;
+- 타입 기반 숫자·단위 예제(`W/m2`, `L/s`) 포함;
+- 확인 데이터는 열지 않았습니다.
 
 DEV evaluation:
 - run `36415951667`;
@@ -2696,19 +2670,19 @@ DEV evaluation:
 - artifact `10967871097`;
 - digest `sha256:799006f7d69b94a29bfa0cfc62384ca2a8640cba668ac69e04ab2702a08f3f93`.
 
-Results:
-- supported exact 86.4035%;
-- raw BGE supported exact 94.2982%;
-- raw BGE tool accuracy 99.5614%;
-- near-domain rejection 54.7619%;
-- OOD rejection 97.2222%;
-- false-route 35.8025%;
-- veto precision 91.2281%;
-- veto recall 64.1975%;
-- raw-correct winners vetoed 18 / 8.3721%;
-- positive route switches 0;
+결과:
+- 지원 사례 정확도 86.4035%;
+- 원시 BGE 지원 사례 정확도 94.2982%;
+- 원시 BGE 도구 정확도 99.5614%;
+- 유사 도메인 거부율 54.7619%;
+- OOD 거부율 97.2222%;
+- 잘못된 경로 35.8025%;
+- 거부 정밀도 91.2281%;
+- 거부 재현율 64.1975%;
+- 원시 정답 승자 거부 18건 / 8.3721%;
+- 긍정 경로 변경 0;
 - p95 249.7303 ms;
-- authority/execution errors 0 / 0.
+- 권한·실행 오류 0 / 0.
 
 #358과 비교하면 set membership이 veto recall을 크게 높였지만 같은 projection family는 충분한 open-set coverage를 제공하지 못했고 correct supported winner를 해치기 시작했습니다.
 
@@ -2724,25 +2698,22 @@ family was closed. Frozen BGE-M3 remained the sole positive route selector, whil
 pretrained multilingual zero-shot classifier could only preserve that winner or veto to
 `NO_ROUTE`.
 
-For each anchored tool, the candidate label set consisted of:
-- one fixed descriptive label for every registered operation leaf;
-- one generic `request an operation outside the registered capabilities of this tool` label.
+기준 도구마다 후보 레이블 집합은 다음으로 구성됐습니다.
+- 등록된 각 작업 세부 기능에 대한 고정 설명 레이블 하나;
+- 일반적인 `request an operation outside the registered capabilities of this tool` 레이블 하나.
 
 No classifier output could select, rerank, filter to, or fall through to another endpoint. No
 probability/margin threshold or SchemaRouter fine-tuning was used.
 
-The pair of V5F corpora was frozen before scoring:
-- freeze run `36419226642`;
-- frozen behavior/corpus source `6c02c313a022740100377ead5890fd1f0d782978`;
-- freeze artifact `10968721554`;
-- digest
-  `sha256:1820bafd0e5c745e7175e75cca32e6e27f20a7b3bafd53b7138a138d11429a62`;
-- DEV: 552 cases, SHA
-  `64a89e96a2beaf90e9b44febdef033a2ec9a17c60459c909a0718b759dd9baae`;
-- confirmation: 552 cases, SHA
-  `9beebb5957f1bfd264a14349582c74ad9b15627c6530324f792d3e1d249ecbe9`;
-- typed unit-bearing fields were preserved, including `degC -> K` and `kPa -> Pa`;
-- confirmation remained unopened.
+V5F 코퍼스 두 개는 채점 전에 동결했습니다.
+- 동결 실행 `36419226642`;
+- 동결된 동작·코퍼스 소스 `6c02c313a022740100377ead5890fd1f0d782978`;
+- 동결 산출물 `10968721554`;
+- 다이제스트 `sha256:1820bafd0e5c745e7175e75cca32e6e27f20a7b3bafd53b7138a138d11429a62`;
+- DEV: 552건, SHA `64a89e96a2beaf90e9b44febdef033a2ec9a17c60459c909a0718b759dd9baae`;
+- 확인: 552건, SHA `9beebb5957f1bfd264a14349582c74ad9b15627c6530324f792d3e1d249ecbe9`;
+- `degC -> K`, `kPa -> Pa`를 포함한 단위 필드 보존;
+- 확인 데이터는 열지 않았습니다.
 
 The external model was pinned at runtime from tag `v1.1` to immutable revision
 `d8c48cf2e7c7640ad5bbb379bdb2f72f5ebde7c4`.
@@ -2754,19 +2725,19 @@ DEV evaluation:
 - digest
   `sha256:fe53e28362d9d9d78573e68f41bcb1cce6eab0c26294f1b73a599d36fafbb6d5`.
 
-Results:
-- supported exact 93.4211%;
-- raw BGE exact 93.8596%;
-- raw BGE tool accuracy 99.1228%;
-- near-domain rejection 1.5873%;
-- OOD rejection 2.7778%;
-- false-route 98.1481%;
-- veto precision 85.7143%;
-- veto recall 1.8519%;
-- one raw-correct supported winner vetoed (0.4673%);
-- zero positive route switches / authority violations / execution errors;
-- external classifier p95 93.1540 ms;
-- end-to-end p95 274.5241 ms.
+결과:
+- 지원 사례 정확도 93.4211%;
+- 원시 BGE 정확도 93.8596%;
+- 원시 BGE 도구 정확도 99.1228%;
+- 유사 도메인 거부율 1.5873%;
+- OOD 거부율 2.7778%;
+- 잘못된 경로 98.1481%;
+- 거부 정밀도 85.7143%;
+- 거부 재현율 1.8519%;
+- 원시 정답 지원 승자 거부 1건(0.4673%);
+- 긍정 경로 변경 / 권한 위반 / 실행 오류 모두 0;
+- 외부 분류기 p95 93.1540 ms;
+- 종단 간 p95 274.5241 ms.
 
 External model은 bounded semantic verifier로서 operationally 관심을 가질 만큼 빨랐지만 generic OUTSIDE catch-all은 native single-label normalization에서 concrete supported label을 거의 이기지 못했습니다. 실패 원인은 runtime뿐 아니라 semantic formulation입니다.
 
@@ -2781,24 +2752,21 @@ directly in a binary entailment/not-entailment question.
 
 #374 tested the direct set-conditioned NLI formulation suggested by #371's failure.
 
-The architecture remained authority-safe:
-- frozen BGE-M3 raw top-1 was the sole positive route selector;
-- the anchored tool's registered capability leaves were compiled from trusted schema metadata;
-- one sequence-pair NLI judgment received the raw query as premise and the finite registered
-  capability set as hypothesis;
-- entailment preserved the raw route; not-entailment vetoed to `NO_ROUTE`;
-- no threshold, calibration, language rule, rank-2 fallback, pseudo-route, or positive reranking.
+아키텍처는 실행 권한 측면에서 안전한 상태를 유지했습니다.
+- 동결된 BGE-M3 원시 Top-1만 긍정적 경로 선택 권한을 가짐;
+- 기준 도구에 등록된 하위 기능은 신뢰할 수 있는 스키마 메타데이터에서 컴파일;
+- 하나의 NLI 문장 쌍에서 원시 질의를 전제로, 유한한 등록 기능 집합을 가설로 제공;
+- 함의 판단은 원시 경로를 유지하고 비함의 판단은 `NO_ROUTE`로 거부;
+- 임계값, 보정, 언어 규칙, 두 번째 순위 폴백, 가상 경로 또는 긍정 재순위화 없음.
 
-The new V5G corpora were frozen before scoring:
-- freeze workflow `36421851941`;
-- frozen behavior/corpus source `c456214daba7d98d6822f99bd74aa50fb887a8f4`;
-- freeze artifact `10969746736`;
-- digest `sha256:d52241d155c043ae4398a471a25b9ce35700229d46377da5f86a41e02b851d8d`;
-- DEV: 552 cases, SHA
-  `f24d874afb5c248ff0ece71da27f89fd4d442e745e6e610269a9300c1851c034`;
-- confirmation: 552 cases, SHA
-  `214d59f25e755c73d15d9d6814363604ff88d5f7f6e66a93e1c0f133b0633332`;
-- confirmation remained unopened.
+새 V5G 코퍼스는 채점 전에 동결했습니다.
+- 동결 워크플로 `36421851941`;
+- 동결된 동작·코퍼스 소스 `c456214daba7d98d6822f99bd74aa50fb887a8f4`;
+- 동결 산출물 `10969746736`;
+- 다이제스트 `sha256:d52241d155c043ae4398a471a25b9ce35700229d46377da5f86a41e02b851d8d`;
+- DEV: 552건, SHA `f24d874afb5c248ff0ece71da27f89fd4d442e745e6e610269a9300c1851c034`;
+- 확인: 552건, SHA `214d59f25e755c73d15d9d6814363604ff88d5f7f6e66a93e1c0f133b0633332`;
+- 확인 데이터는 열지 않았습니다.
 
 DEV evaluation:
 - workflow `36422168708`;
