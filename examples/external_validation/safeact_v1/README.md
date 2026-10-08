@@ -71,6 +71,14 @@ This execution does **not** constitute the three-arm model benchmark; the
 reference simulator uses official gold information and is strictly isolated
 from the agent runtime and Evidence Contract authoring.
 
+For CI efficiency, pull requests run the pinned public V1 listing, synthetic
+host-bridge checks, and independent-contract preflight without rerunning all
+131 official gold-reference simulations. The 131-case gold-reference
+regression remains available via explicit workflow dispatch and a weekly
+schedule **after the workflow is merged to the repository default branch**;
+its result is never an actual agent score. The previously completed 131/131
+reference run is linked above.
+
 
 ## Launching a scored three-arm experiment (requires a trusted model runtime)
 
