@@ -1,7 +1,6 @@
 """No-model regression tests for required pinned SafeAct V1 broker runner."""
 
 import socket
-import stat
 from pathlib import Path
 
 import pytest
