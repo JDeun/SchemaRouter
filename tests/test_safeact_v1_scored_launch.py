@@ -14,7 +14,10 @@ def _inputs(tmp_path: Path) -> dict:
     root = tmp_path / "safeact"
     root.mkdir()
     commands = {
-        c: f"python3 agent_{i}.py --model same-model"
+        c: (
+            f"python3 agent_{i}.py --model same-model "
+            "--backend codex --strategy baseline"
+        )
         for i, c in enumerate(launch.CONDITIONS)
     }
     public = tmp_path / "public"
@@ -161,3 +164,55 @@ def test_changed_case_contract_snapshot_is_rejected(
     ]
     with pytest.raises(ValueError, match="contract snapshot hash changed"):
         launch.validate_launch(**sample)
+
+
+@pytest.mark.parametrize(
+    ("replacement", "error"),
+    [
+        ("--backend claude", "backend"),
+        ("--backend wrong", "backend"),
+        ("--strategy=scgr_eg", "strategy"),
+        ("--strategy baseline --strategy baseline", "strategy"),
+        ("--strategy", "strategy"),
+    ],
+)
+def test_rejects_confounded_official_agent_arms(
+    monkeypatch, tmp_path: Path, replacement: str, error: str
+) -> None:
+    sample = _inputs(tmp_path)
+    _mock_public(monkeypatch, sample)
+    original = sample["commands"][launch.CONDITIONS[0]]
+    tokens = original.replace(" --backend codex", "").replace(
+        " --strategy baseline", ""
+    )
+    if error == "backend":
+        sample["commands"][launch.CONDITIONS[0]] = (
+            tokens + " --strategy baseline " + replacement
+        )
+    else:
+        sample["commands"][launch.CONDITIONS[0]] = (
+            tokens + " --backend codex " + replacement
+        )
+    with pytest.raises(ValueError, match=error):
+        launch.validate_launch(**sample)
+
+
+def test_frozen_backend_and_strategy_support_equals_form(
+    monkeypatch, tmp_path: Path
+) -> None:
+    sample = _inputs(tmp_path)
+    _mock_public(monkeypatch, sample)
+    sample["commands"] = {
+        key: cmd.replace("--backend codex", "--backend=codex").replace(
+            "--strategy baseline", "--strategy=baseline"
+        )
+        for key, cmd in sample["commands"].items()
+    }
+    _freeze_contract_hash(sample)
+    for condition in launch.CONDITIONS:
+        sample["intervention_manifest"]["conditions"][condition][
+            "agent_command_sha256"
+        ] = hashlib.sha256(
+            sample["commands"][condition].encode("utf-8")
+        ).hexdigest()
+    assert len(launch.validate_launch(**sample)) == 3
