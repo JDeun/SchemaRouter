@@ -31,6 +31,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  # Frozen scientific source invokes scripts/*.py directly; preserve the
+  # repository root on sys.path so `from scripts.*` imports resolve.
+  PYTHONPATH: "${{ github.workspace }}"
   HF_HUB_DISABLE_TELEMETRY: "1"
   TOKENIZERS_PARALLELISM: "false"
   HF_HOME: "${{ github.workspace }}/.hf-cache"
