@@ -129,7 +129,7 @@ owns a concrete protocol endpoint.
 | You already have | Install | Minimal tested path |
 | --- | --- | --- |
 | Provider name | `pip install schemarouter` | `await router.add_provider("materials-project")` and [provider-first registration](../guides/provider-first-registration.md) |
-| OpenAPI URL | `pip install schemarouter` | [live OpenAPI quickstart](#3-discover-and-execute-a-real-openapi-capability) |
+| OpenAPI URL | `pip install schemarouter` | [live OpenAPI quickstart](#3-resolve-and-execute-a-real-provider-capability) |
 | Typed Python function | core install | [Python tools](../guides/python-tools.md) and `examples/quickstart.py` |
 | MCP server | `pip install "schemarouter[mcp]"` | [MCP HTTP / stdio guide](../guides/mcp.md) |
 | LangChain tools | `pip install "schemarouter[langchain]"` | `examples/langchain_quickstart.py` |
