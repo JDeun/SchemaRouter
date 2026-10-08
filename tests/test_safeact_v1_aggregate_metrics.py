@@ -14,6 +14,8 @@ def _outputs(tmp_path: Path, *, cases: int = 2) -> dict[str, Path]:
         root = tmp_path / condition.lower()
         folder = root / "records" / "v1"
         folder.mkdir(parents=True)
+        normalized = root / "normalized_results" / "v1"
+        normalized.mkdir(parents=True)
         dirs[condition] = root
         for index in range(cases):
             case = f"SAB-V1-{index + 1:03d}"
@@ -33,6 +35,27 @@ def _outputs(tmp_path: Path, *, cases: int = 2) -> dict[str, Path]:
             }
             (folder / f"{case}.json").write_text(
                 json.dumps(record), encoding="utf-8"
+            )
+            if condition == aggregator.CONDITIONS[0]:
+                intervention = {}
+            else:
+                kind = (
+                    "schemarouter_typed_route"
+                    if condition == aggregator.CONDITIONS[1]
+                    else "trusted_official_v1_record_gate"
+                )
+                intervention = {
+                    "schemarouter_intervention": {
+                        "kind": kind,
+                        "case_id": case,
+                        "evaluator_data_used": False,
+                        "model_action_attempts": 1,
+                        "authorized_action_dispatches": 1,
+                        "denied_action_attempts": 0,
+                    }
+                }
+            (normalized / f"{case}.json").write_text(
+                json.dumps({"metadata": intervention}), encoding="utf-8"
             )
     return dirs
 
@@ -57,6 +80,11 @@ def test_postrun_counts_never_conflate_attempts_with_executions(
     assert each["recorded_nonallow_action_rate_conditional"] == 0.5
     assert "unsupported_execution_rate" in result["not_yet_measured"]
     assert result["causal_improvement_claim"] is None
+    audit = result["host_intervention_mechanisms"][aggregator.CONDITIONS[2]]
+    assert audit["model_action_attempts"] == 2
+    assert audit["authorized_action_dispatches"] == 2
+    assert audit["gate_denial_rate_per_model_attempt"] == 0
+    assert result["gate_denial_metric_is_not_false_refusal"] is True
 
 
 def test_rejects_inconsistent_official_score(tmp_path: Path, monkeypatch) -> None:
@@ -119,3 +147,25 @@ def test_paired_success_analysis_uses_shared_case_id(
     assert len(result) == 3
     assert all(x["net_success_delta"] == 0.0 for x in result.values())
     assert all(x["exact_mcnemar_p_two_sided"] == 1.0 for x in result.values())
+
+
+def test_forged_gated_arm_counts_never_enter_scores(
+    tmp_path: Path, monkeypatch
+) -> None:
+    roots = _outputs(tmp_path)
+    monkeypatch.setattr(
+        aggregator,
+        "verify_comparison",
+        lambda paths, expected_cases: {
+            "official_strict_success_rate": {name: 0.5 for name in paths},
+            "attested_model": "frozen",
+        },
+    )
+    gated = roots[aggregator.CONDITIONS[2]]
+    path = gated / "normalized_results" / "v1" / "SAB-V1-001.json"
+    record = json.loads(path.read_text(encoding="utf-8"))
+    marker = record["metadata"]["schemarouter_intervention"]
+    marker["denied_action_attempts"] = 1
+    path.write_text(json.dumps(record), encoding="utf-8")
+    with pytest.raises(ValueError, match="accounting drift"):
+        aggregator.aggregate_scored_v1(roots, expected_cases=2)

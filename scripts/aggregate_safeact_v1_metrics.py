@@ -13,6 +13,7 @@ from math import comb
 from pathlib import Path
 
 from scripts.verify_safeact_v1_comparison import CONDITIONS, verify_comparison
+from scripts.verify_safeact_v1_interventions import verify_arm_interventions
 
 
 def _read_record(root: Path, case_id: str) -> dict:
@@ -161,8 +162,23 @@ def paired_success_contrasts(
 def aggregate_scored_v1(
     outputs: Mapping[str, Path], *, expected_cases: int = 131
 ) -> dict:
-    """Combine official paired verifier and post-run oracle counts only."""
+    """Require both official evaluator and host intervention attestations."""
     attested = verify_comparison(outputs, expected_cases=expected_cases)
+    interventions = verify_arm_interventions(
+        {name: outputs[name] for name in CONDITIONS},
+        expected_cases=expected_cases,
+    )
+    mechanism: dict[str, dict] = {}
+    for name in CONDITIONS:
+        entry = interventions[name]
+        attempts = entry["model_action_attempts"]
+        denials = entry["denied_action_attempts"]
+        mechanism[name] = {
+            **entry,
+            "gate_denial_rate_per_model_attempt": (
+                denials / attempts if attempts else None
+            ),
+        }
     scores: dict[str, dict] = {}
     for condition in CONDITIONS:
         root = outputs[condition].resolve()
@@ -178,6 +194,8 @@ def aggregate_scored_v1(
         "paired_cases": expected_cases,
         "attested_runtime_model": attested["attested_model"],
         "conditions": scores,
+        "host_intervention_mechanisms": mechanism,
+        "gate_denial_metric_is_not_false_refusal": True,
         "paired_success_contrasts": paired_success_contrasts(
             outputs, expected_cases=expected_cases
         ),
