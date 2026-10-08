@@ -1,69 +1,74 @@
-# Framework 성숙도 매트릭스
+# Framework maturity matrix
 
-SchemaRouter는 의도적으로 LangChain보다 좁은 범위를 다룹니다. 목표는 범용 agent framework를 재현하는 것이 아니라 schema-aware tool planning과 execution을 production-grade로 만들고 더 큰 ecosystem에 쉽게 내장할 수 있게 하는 것입니다.
+SchemaRouter는 의도적으로 LangChain보다 좁은 범위를 가집니다. 목표는 범용 agent framework를 재현하는 것이 아니라 schema-aware tool planning/execution을 production-grade로 만들고 더 큰 ecosystem에 쉽게 내장되도록 하는 것입니다.
 
 이 문서는 research metric이 아니라 framework-level maturity를 추적합니다.
 
-> **0.17.0 maturity note:** stable core는 이제 provider-first capability registration, governed execution, host-verified authorization/data scope, schema-introspected data-system onboarding, bounded decision backend, versioned snapshot/artifact, privacy-safe decision trace를 포함합니다. Retrieval은 여전히 registered capability contract를 반환할 뿐 execution authority를 부여하지 않습니다. Research evidence는 stable product guarantee와 분리됩니다. [Research status](research/routing-status.md)를 참고하십시오.
+> **0.17.0 성숙도 참고:** 안정 핵심 기능에는 공급자 중심 기능 등록, 정책 통제형 실행,
+> 호스트에서 확인한 권한 및 데이터 범위, 데이터 시스템의 스키마 파악 기반 등록,
+> 후보를 제한하는 의사결정 백엔드, 버전이 지정된 스냅샷·아티팩트,
+> 개인정보를 보호하는 의사결정 추적이 포함됩니다. 검색은 등록된 기능 계약만
+> 반환하며 **실행 권한을 부여하지 않습니다.** 연구 근거는 안정 제품의 보장 사항과
+> 별도로 관리합니다. [연구 현황](research/routing-status.md)을 참고하십시오.
 
-| Capability | 현재 main | 방향 |
+| Capability | Current main | Direction |
 | --- | --- | --- |
-| Typed tool / endpoint / parameter / field contract | 구현됨 | Core invariant |
-| Capability retrieval | Registered route에 대한 first-class deterministic `retrieve` / `aretrieve` + executable-ready variant | 명시적 contract와 evidence 뒤에서만 alternate index/representation 추가 |
-| Provider-first onboarding | 명시적 method/credential/dependency status를 가진 built-in/local/plugin `ProviderProfile` registry; Materials Project, Crossref, Tavily acceptance coverage | Planner에 provider branch를 추가하지 않고 provider catalog 확장 |
-| State-aware capability retrieval | 동일 visible surface에서 명시적 fixed-Top-K filtering + 별도 eligible-Top-K corrective backfill | Host state를 명시적으로 유지하고 orchestration authority는 core 밖에 유지 |
-| Capability dependency graph | Semantic-indexed construction, incremental rebuild, deterministic SCC, bounded cycle witness, sparse 1k/10k/50k benchmark | 실제 registry scale이 요구할 때만 distributed storage 추가 |
-| Capability snapshot / artifact | Content-addressed snapshot, atomic CAS publication, versioned portable artifact/snapshot document, deterministic legacy migration | Host-owned infrastructure 뒤에서만 external artifact store/signing 추가 |
-| Unified decision trace | CLI/dashboard inspection을 포함한 retrieval/eligibility/state/health/drift/policy/constraint/negotiation/fallback/lineage result의 privacy-safe aggregation | Hidden inventory 또는 payload leakage 없이 trusted export sink 추가 |
-| Natural-language planning | Deterministic scoring + registry version별 cached exact-recall candidate index | Planning/execution authority를 external agent selection과 분리 유지 |
-| Sync / async invocation | 구현됨 | 안정적인 public surface |
-| Batch execution | completion-order API를 포함해 구현됨 | 안정적인 public surface |
-| Result streaming | 기본 sequential + 명시적 read-only parallel completion streaming | Dependency/DAG semantic을 core 밖에 유지 |
-| Typed event streaming | 구현됨 | Payload를 노출하지 않고 exporter ecosystem 확장 |
-| Input / output / config schema introspection | 구현됨 | Machine-readable 상태 유지 |
-| Retry policy | Read-only gate + 명시적 non-retryable invocation marker + built-in OpenAPI/OPTIMADE HTTP classification | Recovery semantic이 명확한 경우에만 protocol-specific classifier 확장 |
-| Python callable tool | 구현됨 | Docstring parameter description 개선 |
-| Structured-source adapter registry | 명시적 entry-point plugin으로 구현됨 | Certified third-party adapter 확장 |
+| Typed tool / endpoint / parameter / field contracts | Implemented | Core invariant |
+| Capability retrieval | First-class deterministic `retrieve` / `aretrieve` + executable-ready variants over registered routes | Add alternate indexes/representations only behind explicit contracts and evidence |
+| Provider-first onboarding | Built-in/local/plugin `ProviderProfile` registry with explicit method/credential/dependency status; Materials Project, Crossref, and Tavily acceptance coverage | Expand provider catalog without adding provider branches to planner |
+| State-aware capability retrieval | Explicit fixed-Top-K filtering plus separate eligible-Top-K corrective backfill over the same visible surface | Keep host state explicit and orchestration authority outside core |
+| Capability dependency graph | Semantic-indexed construction, incremental rebuild, deterministic SCCs, bounded cycle witnesses, sparse 1k/10k/50k benchmark | Add distributed storage only if real registry scale requires it |
+| Capability snapshots / artifacts | Content-addressed snapshots, atomic CAS publication, versioned portable artifacts/snapshot documents, deterministic legacy migration | Add external artifact stores/signing only behind host-owned infrastructure |
+| Unified decision traces | Privacy-safe aggregation of retrieval/eligibility/state/health/drift/policy/constraint/negotiation/fallback/lineage results with CLI/dashboard inspection | Add trusted export sinks without hidden-inventory or payload leakage |
+| Natural-language planning | Deterministic scoring + exact-recall candidate index cached by registry version | Keep planning/execution authority separate from external agent selection |
+| Sync / async invocation | Implemented | Stable public surface |
+| Batch execution | Implemented, including completion-order APIs | Stable public surface |
+| Result streaming | Sequential by default + explicit read-only parallel completion streaming | Keep dependency/DAG semantics out of core |
+| Typed event streaming | Implemented | Extend exporter ecosystem without exposing payloads |
+| Input / output / config schema introspection | Implemented | Keep machine-readable |
+| Retry policy | Read-only gate + explicit non-retryable invocation marker + built-in OpenAPI/OPTIMADE HTTP classification | Extend protocol-specific classifiers only where recovery semantics are well-defined |
+| Python callable tools | Implemented | Improve docstring parameter descriptions |
+| Structured-source adapter registry | Implemented with explicit entry-point plugins | Expand certified third-party adapters |
 | OpenAPI ingestion | Common subset + operation-over-path parameter overrides + default path/query/header serialization + flattened object bodies + generic typed JSON root bodies + discriminator-aware tagged oneOf bodies + schema-less body reporting + spec-ignored header filtering + collision-safe generated operation names + multi-2xx JSON/no-content response validation + local refs + opt-in bounded same-origin cross-document refs + static same-origin $id/$anchor resolution + OpenAPI 3.0 nullable normalization + allOf object flattening + oneOf/anyOf response-field discovery + compatibility report | Keep dynamic refs, non-default parameter styles, and automatic variant selection fail-closed; expand only behind typed contracts |
-| OPTIMADE ingestion 및 execution | v0.2에서 구현됨 | Provider federation / index meta-database traversal 추가 |
-| MCP ingestion 및 execution | Streamable HTTP, trusted stdio subprocess, caller-owned transport-neutral client factory로 구현됨 | OAuth/gateway example 확장 |
-| GraphQL / OData / OpenRPC ingestion | Native selection/projection 또는 RPC semantic으로 현재 main에 구현됨 | Protocol semantic이 deterministic한 경우에만 확장 |
-| 사람이 읽는 API documentation | Grounded proposal flow | Multi-page/browser discovery 추가 |
-| Runtime policy | Category default + ordered operation-scoped allow/deny/approval rule + execution budget | Trusted local boundary 뒤에서만 external organization policy adapter 추가 |
-| Runtime JSON Schema validation / projection | Full raw validation + 명시적 nested object projection path + trusted server-side field selector | 필요한 경우에만 typed array-element projection 추가 |
-| Schema drift analysis | Conservative endpoint/tool compatibility report; exact fingerprint가 계속 execution을 gate | Drift rejection을 약화하지 않고 CI/reporting integration 추가 |
-| Planning explanation | Structured score component, field-selection reason, ignored-argument record, decision-selection source | Explanation을 structural하게 유지하고 model chain-of-thought는 노출하지 않음 |
-| In-plan concurrency | Preflight validation, completion streaming, shared budget을 갖는 명시적 flat `parallel_read_only` fan-out | DAG/dependency/write orchestration을 core 밖에 유지 |
-| Provider/access fallback | Semantic field compatibility와 typed fallback event를 갖는 precompiled read-only same-provider/cross-provider route | 명시적 contract를 통해서만 provider federation 확장 |
-| Multi-provider corroboration / aggregation | Explicit cross-provider corroboration + strict trusted-identifier identity resolution + provenance-preserving scientific observation | Fuzzy identity와 truth adjudication은 core 밖에 유지 |
-| Scientific field contract | Explicit JSON value shape, optional exact unit, affine canonical normalization, exact trusted qualifier, qualifier-aware routing, fail-closed fallback compatibility | Ontology/unit inference는 core 밖에 유지하고 richer scientific semantic은 explicit trusted contract로만 추가 |
-| Provider parameter alias | Trusted exact/alias binding + ambiguity fail-closed + independent fallback compilation | Model-generated parameter remapping은 execution boundary 밖에 유지 |
-| Access health | 유한 passive cooldown + early reopen을 지원하는 optional trusted background probe | Model authority 없이 external health source 통합 |
-| LangChain / LangGraph / LlamaIndex integration | Optional adapter와 native graph node 구현됨 | Ecosystem listing 확장 |
+| OPTIMADE ingestion and execution | Implemented in v0.2 | Add provider federation / index meta-database traversal |
+| MCP ingestion and execution | Implemented with Streamable HTTP, trusted stdio subprocesses, and caller-owned transport-neutral client factories | Expand OAuth/gateway examples |
+| GraphQL / OData / OpenRPC ingestion | Implemented on current main with native selection/projection or RPC semantics | Extend only where protocol semantics are deterministic |
+| Human-readable API documentation | Grounded proposal flow | Add multi-page/browser discovery |
+| Runtime policy | Category defaults + ordered operation-scoped allow/deny/approval rules + execution budgets | Add external organization policy adapters only behind the trusted local boundary |
+| Runtime JSON Schema validation / projection | Full raw validation + explicit nested object projection paths + trusted server-side field selectors | Add typed array-element projection only if needed |
+| Schema drift analysis | Conservative endpoint/tool compatibility reports; exact fingerprints still gate execution | Add CI/reporting integrations without weakening drift rejection |
+| Planning explanations | Structured score components, field-selection reasons, ignored-argument records, and decision-selection source | Keep explanations structural; never expose model chain-of-thought |
+| In-plan concurrency | Explicit flat `parallel_read_only` fan-out with preflight validation, completion streaming, and shared budgets | Keep DAG/dependency/write orchestration out of core |
+| Provider/access fallback | Precompiled read-only same-provider/cross-provider routes with semantic field compatibility and typed fallback events | Expand provider federation only through explicit contracts |
+| Multi-provider corroboration / aggregation | Explicit cross-provider corroboration plus strict trusted-identifier identity resolution and provenance-preserving scientific observations | Keep fuzzy identity and truth adjudication outside core |
+| Scientific field contracts | Explicit JSON value shape, optional exact units, affine canonical normalization, exact trusted qualifiers, qualifier-aware routing, and fail-closed fallback compatibility | Keep ontology/unit inference outside core; add richer scientific semantics only through explicit trusted contracts |
+| Provider parameter aliases | Trusted exact/alias binding with ambiguity fail-closed behavior and independent fallback compilation | Keep model-generated parameter remapping out of the execution boundary |
+| Access health | Finite passive cooldown + optional trusted background probes with early reopen | Integrate external health sources without model authority |
+| LangChain / LangGraph / LlamaIndex integrations | Implemented optional adapters and native graph node | Expand ecosystem listings |
 | Bounded decision backends | Semantic candidate recall, broad capability-fit, operation-fit, same-tool endpoint disambiguation, candidate/field selection, and conservative evidence-sufficiency surfaces; provider-neutral callable/embedding + optional Jev/Laya/Ollama, all opt-in | Gather live decision evidence and keep model authority bounded |
-| Jev / TypeSafe decision provider | Optional adapter 구현됨 | Quality gain을 주장하기 전에 live workload evidence 수집 |
-| Local Laya decision provider | Auto language routing, confidence abstention, lazy/preloaded checkpoint, shared benchmark support를 갖는 optional local choice adapter | Default 선택 전에 checkpoint/hardware-specific evidence 수집 |
-| Local Ollama decision provider | Structured-output HTTP API 기반 구현됨 | Quality claim 전에 특정 local model/hardware benchmark |
+| Jev / TypeSafe decision provider | Implemented optional adapter | Gather live workload evidence before claiming quality gains |
+| Local Laya decision provider | Optional local choice adapter with auto language routing, confidence abstention, lazy/preloaded checkpoints, and shared benchmark support | Gather checkpoint/hardware-specific evidence before choosing defaults |
+| Local Ollama decision provider | Implemented over structured-output HTTP API | Benchmark specific local models/hardware before quality claims |
 | Decision benchmark harness | Versioned multilingual stress/calibration/fresh-confirmation corpora, machine-readable freeze/terminal evidence, JSON/CSV/HTML reporting, and an explicit 85/97/100/1 + 250 ms standing target; latest closed cycle has no promoted target candidate | Continue only with preregistered materially new capability evidence and independent fresh confirmation |
-| Framework callback / exporter | Typed redacted event + optional OpenTelemetry exporter | 필요에 따라 additional trusted sink 추가 |
-| Middleware interception | Detached snapshot을 사용하는 trusted ordered before/after execution hook | 필요한 경우에만 organization-specific hook library 추가 |
-| Composition / DAG runtime | Core 범위 밖 | 중복 구현 대신 LangGraph와 통합 |
-| Replayable run trace persistence | SQLite append-only event trace + non-executing replay | 필요에 따라 alternate trusted store/export path 추가 |
-| Persistence / checkpoint | Workflow checkpoint는 범위 밖 | Orchestration state를 LangGraph 또는 다른 runtime에 위임 |
-| HTTP serving layer | 미구현 | Optional server package 검토 |
-| Pluggable registry boundary | `ToolRegistry` protocol + transactional `SQLiteRegistry` | 필요한 경우에만 distributed/remote implementation 추가 |
-| Release / compatibility policy | 구현됨 | RC review에서 강제 |
+| Framework callbacks / exporters | Typed redacted events + optional OpenTelemetry exporter | Add additional trusted sinks as needed |
+| Middleware interception | Trusted ordered before/after execution hooks with detached snapshots | Add organization-specific hook libraries only when needed |
+| Composition / DAG runtime | Out of scope for core | Integrate with LangGraph rather than duplicate it |
+| Replayable run trace persistence | SQLite append-only event traces + non-executing replay | Add alternate trusted stores/export paths as needed |
+| Persistence / checkpoints | Workflow checkpoints remain out of scope | Delegate orchestration state to LangGraph or another runtime |
+| HTTP serving layer | Not implemented | Consider optional server package |
+| Pluggable registry boundary | `ToolRegistry` protocol + transactional `SQLiteRegistry` | Add distributed/remote implementations only when needed |
+| Release / compatibility policy | Implemented | Enforce during RC reviews |
 | Package artifact CI | Implemented with clean wheel/sdist smoke, public-surface consumer acceptance scenarios, built-wheel optional-extra resolution/import smoke, framework-example execution, provenance, and SPDX SBOM attestations | Keep artifact verification blocking |
-| Security automation | Weekly/PR dependency audit + push/PR/scheduled CodeQL + OpenSSF Scorecard + immutable Action pin | Fail-closed runtime policy를 약화하지 않고 finding triage |
-| Documentation site | MkDocs Material로 구현됨 | Strict docs build를 blocking으로 유지 |
-| Integration certification suite | Baseline 구현 + machine-readable OpenAPI/OPTIMADE smoke artifact 보존 | Live compatibility matrix 확장 |
+| Security automation | Weekly/PR dependency audit + push/PR/scheduled CodeQL + OpenSSF Scorecard + immutable Action pins | Triage findings without weakening fail-closed runtime policy |
+| Documentation site | Implemented with MkDocs Material | Keep strict docs build blocking |
+| Integration certification suite | Implemented baseline + retained machine-readable OpenAPI/OPTIMADE smoke artifacts | Extend the live compatibility matrix |
 
-## 성숙한 framework에서 SchemaRouter가 가져와야 할 점
+## 성숙한 framework에서 가져와야 할 것
 
-### 1. 하나의 실행 vocabulary
+### 1. One execution vocabulary
 
-모든 주요 component가 동일한 execution verb를 따르면 framework를 더 쉽게 학습할 수 있습니다.
-따라서 SchemaRouter는 다음을 제공합니다:
+A framework becomes easier to learn when every major component follows the same execution verbs.
+SchemaRouter therefore exposes:
 
 - `invoke` / `ainvoke`
 - `batch` / `abatch`
@@ -71,114 +76,112 @@ SchemaRouter는 의도적으로 LangChain보다 좁은 범위를 다룹니다. �
 - `astream_events`
 - `with_config`
 
-이 method들은 planner, policy, schema validation, binding-drift check를 우회하지 않습니다.
+These methods do not bypass planner, policy, schema validation, or binding-drift checks.
 
-### 2. 공개 contract로서의 introspection
+### 2. Introspection as a public contract
 
-`input_schema`, `output_schema`, `config_schema`는 public machine-readable interface입니다.
-이 interface들은 serving layer, UI generation, testing, framework integration을 위한 것입니다.
+`input_schema`, `output_schema`, and `config_schema` are public machine-readable interfaces.
+They are intended for serving layers, UI generation, testing, and framework integrations.
 
-### 3. Tool 작성 비용은 낮아야 함
+### 3. Tool authoring must be cheap
 
-Python callables can be registered directly through `add_callable()` and optionally annotated with
-`@schema_tool`. Explicit ToolSpec + trusted invoker binding covers opaque SDKs. OpenAPI, OPTIMADE,
-MCP, GraphQL, OData, and OpenRPC are built-in structured paths, while `AdapterRegistry` keeps
-additional protocol logic out of the core planner. Existing LangChain/LlamaIndex tools can also be
-imported into the canonical capability model.
+Python callable은 `add_callable()`로 직접 등록할 수 있고, 선택적으로 `@schema_tool`을 붙일 수 있습니다.
+불투명한 SDK에는 명시적인 `ToolSpec`과 신뢰된 invoker 바인딩을 사용합니다.
+OpenAPI, OPTIMADE, MCP, GraphQL, OData, OpenRPC는 내장된 구조화 입력 경로이며,
+`AdapterRegistry`는 추가 프로토콜 로직을 핵심 플래너 밖에 둡니다.
+기존 LangChain 또는 LlamaIndex 도구도 정본 기능 모델로 가져올 수 있습니다.
 
-### 4. Integration은 선택적이어야 함
+### 4. Integrations should be optional
 
-Core package가 dependency aggregator가 되어서는 안 됩니다. Ecosystem bridge와 decision provider는 optional extra와 lazy import 뒤에 두어야 합니다.
+The core package should not become a dependency aggregator. Ecosystem bridges and decision
+providers belong behind optional extras and lazy imports.
 
-### 5. Observability가 privacy를 약화해서는 안 됨
+### 5. Observability must not weaken privacy
 
-Event payload는 기본적으로 redaction됩니다. Argument와 result payload는 `RunConfig(include_payloads=True)`를 명시적으로 선택한 경우에만 나타납니다.
+Event payloads are redacted by default. Arguments and result payloads appear only when
+`RunConfig(include_payloads=True)` is explicitly selected.
 
-## SchemaRouter가 따라 하지 말아야 할 점
+## 가져오지 말아야 할 것
 
-- general chat/message abstraction;
-- prompt template ecosystem;
-- schema planning과 무관한 model-provider wrapper;
-- memory/checkpoint system;
-- 두 번째 graph runtime;
-- schema contract를 약화하는 hidden coercion.
+- 범용 채팅·메시지 추상화
+- 프롬프트 템플릿 생태계
+- 스키마 기반 계획과 관련 없는 모델 공급자 래퍼
+- 메모리·체크포인트 시스템
+- 또 하나의 그래프 런타임
+- 스키마 계약을 약화시키는 암묵적 형식 변환
 
-이러한 concern은 surrounding framework가 처리하는 편이 낫습니다. SchemaRouter는 tool schema를 위한 집중된 compiler/runtime boundary로 남아야 합니다.
+Those concerns are better handled by surrounding frameworks. SchemaRouter should remain a focused
+compiler/runtime boundary for tool schemas.
 
-## 다음 성숙도 gate
+## 다음 maturity gate
 
-### Gate A — 공개된 non-prerelease baseline
+### Gate A — published non-prerelease baseline
 
-Package, documentation, release automation, deterministic compatibility test, public OpenAPI/OPTIMADE smoke가 마련되어 있습니다.
+The package, documentation, release automation, deterministic compatibility tests, and public
+OpenAPI/OPTIMADE smokes are in place.
 
 ### Gate B — ecosystem-ready
 
-로컬에서 완료된 항목:
+Completed locally:
 
-- 실행 가능한 LangChain, LangGraph, LlamaIndex example;
-- 공개된 ecosystem compatibility 및 maintenance policy;
-- adversarial contract test를 갖는 optional Jev decision provider;
-- bounded choice validation과 shared benchmark support를 갖는 optional local Laya decision provider;
-- provider-neutral embedding-similarity decision backend with threshold/margin abstention and
-  malformed-vector fail-closed validation;
-- provider-neutral pairwise query-option decision backend for application-owned rerankers, with
-  bounded score validation and no model/runtime dependency in core;
-- identifier preservation과 deterministic fallback을 갖는 bounded field-selection contract;
-- conservative evidence-sufficiency contract with local provenance/license/unit/source-type precheck
-  and provider veto-only semantics;
-- provider-neutral decision benchmark harness;
-- live Materials Project/Crossref acceptance와 explicit Tavily auth handling을 갖는 provider-first registration profile;
-- stable stateless retrieval facade를 보존하는 explicit state-conditioned re-retrieval;
-- bounded SCC cycle analysis를 갖는 indexed/incremental capability dependency graph;
-- atomic capability snapshot publication + versioned artifact/snapshot migration 및 integrity check;
-- inspection, CLI, dashboard와 통합된 unified privacy-safe capability decision trace;
-- registry-version cache invalidation과 exhaustive parity test를 갖는 exact-recall candidate index;
-- 1,200-case multilingual/adversarial v2 benchmark corpus plus separate frozen calibration/holdout corpora for capability-fit, endpoint disambiguation, and operation-fit evaluation;
-- OpenAPI compatibility reporting;
-- opt-in bounded same-origin cross-document OpenAPI reference bundling;
-- authenticated MCP transport boundary;
-- per-call approval 및 per-run execution budget;
-- explicit allow/deny/approval effect를 갖는 operation-scoped local policy rule;
-- fingerprint check를 절대 우회하지 않는 conservative endpoint/tool schema diff report;
-- deterministic/runtime-visible signal에서 도출된 structured planning explanation;
-- preflight validation과 shared run budget을 갖는 flat read-only parallel fan-out;
-- field-first server-side projection contract + final local projection;
-- finite cooldown과 trusted health-probe recovery를 갖는 bounded provider/access fallback;
-- privacy-preserving OpenTelemetry exporter;
-- 명시적으로 allowlist된 third-party adapter plugin;
-- property-based OpenAPI default-serialization coverage;
-- self-contained decision benchmark HTML reporting and multi-run history rendering;
-- retained machine-readable public OpenAPI/OPTIMADE compatibility smoke artifacts;
-- public-surface consumer acceptance validation across supported Python versions, Windows,
-  minimum dependencies, wheel, and sdist installs, with built-wheel MCP/Jev/OpenTelemetry
-  import/initialization smoke plus LangChain/LangGraph/LlamaIndex runnable examples.
+- 실행 가능한 LangChain, LangGraph, LlamaIndex 예제
+- 공개된 생태계 호환성 및 유지보수 정책
+- 적대적 계약 테스트를 포함한 선택적 Jev 의사결정 공급자
+- 제한된 선택 검증 및 공통 벤치마크 지원을 갖춘 선택적 로컬 Laya 의사결정 공급자
+- 점수 임계값·여유 점수에 따른 기권 및 유효하지 않은 벡터의 안전한 거부를 지원하는 공급자 중립 임베딩 유사도 의사결정 백엔드
+- 애플리케이션이 소유한 리랭커를 위한 쿼리·후보 쌍별 의사결정 백엔드. 점수를 제한해 검증하며 핵심 패키지에 모델·런타임 의존성을 추가하지 않음
+- 식별자를 보존하고 결정론적 폴백을 제공하는 제한된 필드 선택 계약
+- 출처·라이선스·단위·소스 유형을 사전 검사하고 공급자에게는 거부 권한만 주는 보수적인 증거 충분성 계약
+- 공급자 중립적인 의사결정 벤치마크 하네스
+- 실제 Materials Project·Crossref 검증 및 명시적 Tavily 인증 처리를 포함한 공급자 중심 등록 프로필
+- 안정적인 상태 비의존 검색 인터페이스를 유지하는 명시적 상태 조건부 재검색
+- 제한된 SCC 순환 분석을 제공하는 인덱스·증분 방식의 기능 의존성 그래프
+- 원자적 기능 스냅샷 게시와 버전별 아티팩트·스냅샷 마이그레이션 및 무결성 검사
+- 검사 기능, CLI, 대시보드와 연동하는 통합 개인정보 보호형 기능 의사결정 추적
+- 레지스트리 버전에 따른 캐시 무효화 및 전체 탐색과의 결과 일치 테스트를 갖춘 정확 재현율 후보 인덱스
+- 기능 적합성·엔드포인트 구분·작업 적합성 평가를 위해 1,200개 사례의 다국어·적대적 v2 코퍼스와 별도 동결된 보정·홀드아웃 코퍼스
+- OpenAPI 호환성 보고
+- 명시적 활성화가 필요한 동일 출처·문서 간 OpenAPI 참조의 제한된 번들링
+- 인증된 MCP 전송 경계
+- 호출별 승인 및 실행별 예산
+- 허용·거부·승인 효과를 명시한 작업 범위의 로컬 정책
+- 지문 검사를 우회하지 않는 보수적인 엔드포인트·도구 스키마 차이 보고
+- 결정론적·런타임 관찰 신호로부터 구성된 계획 설명
+- 실행 전 검증과 공통 실행 예산을 사용하는 단층 읽기 전용 병렬 fan-out
+- 필드 우선 서버 측 투영 계약 및 최종 로컬 투영
+- 유한한 쿨다운과 신뢰된 상태 프로브 복구를 갖춘 제한된 공급자·접근 경로 폴백
+- 개인정보 보호형 OpenTelemetry 내보내기
+- 명시적 허용 목록으로 로드하는 서드파티 어댑터 플러그인
+- 속성 기반 OpenAPI 기본 직렬화 검증
+- 외부 자산에 의존하지 않는 의사결정 벤치마크 HTML 보고와 여러 실행 이력 시각화
+- 기계가 읽을 수 있는 공개 OpenAPI·OPTIMADE 호환성 스모크 아티팩트의 보존
+- 지원 Python 버전, Windows, 최소 의존성, wheel·sdist 설치를 아우르는 소비자 관점의 공개 API 검증. 빌드한 wheel의 MCP·Jev·OpenTelemetry 임포트·초기화 스모크와 LangChain·LangGraph·LlamaIndex 실행 예제도 포함
 
-아직 external 또는 follow-up 작업:
+Still external or follow-up work:
 
-- upstream ecosystem listing/discussion requests;
-- broader live hosted-provider benchmark evidence; local/open routing evidence includes consumed
-  v10 MiniLM and v11 pairwise-BGE generalization holdouts;
-- dynamic OpenAPI/JSON-Schema reference semantics and automatic planner-side schema-variant selection.
+- 상위 생태계의 목록 등재·논의 요청
+- 실제 호스팅 공급자를 이용한 더 넓은 벤치마크 근거. 로컬·오픈 라우팅 근거에는 이미 소비한 v10 MiniLM 및 v11 pairwise-BGE 일반화 홀드아웃이 포함됨
+- 동적인 OpenAPI·JSON Schema 참조 의미 체계와 플래너의 자동 스키마 변형 선택
 
-### Gate C — production 운영
+### Gate C — production operations
 
-로컬 구현 완료:
+Implemented locally:
 
-- deterministic call/attempt/remote/time/cost budget;
-- trusted sync/async per-call approval;
-- redacted event stream의 OpenTelemetry span export;
-- authenticated MCP/custom client-factory boundary;
-- 명시적으로 allowlist된 adapter plugin loading;
-- transactional persistent SQLite registry behind the `ToolRegistry` protocol;
-- OpenAPI compatibility report;
-- transactional SQLite tool registry persistence;
-- validated SQLite run-event trace persistence with non-executing replay;
-- trusted sync/async before/after execution hooks with snapshot-only, fail-closed semantics;
-- dependency vulnerability auditing, CodeQL scanning, OpenSSF Scorecard supply-chain analysis, signed release build provenance, and SPDX SBOM attestations;
-- remote asset 없이 생성되는 benchmark summary/history dashboard;
-- versioned machine-readable artifact로 보존되는 scheduled compatibility smoke.
+- 호출·시도·원격 요청·시간·비용에 대한 결정론적 실행 예산
+- 신뢰된 동기·비동기 호출별 승인
+- 민감 정보가 제거된 이벤트 스트림으로부터의 OpenTelemetry span 내보내기
+- 인증된 MCP·커스텀 클라이언트 팩토리 경계
+- 명시적인 허용 목록 기반 어댑터 플러그인 로드
+- `ToolRegistry` 프로토콜 뒤에 위치한 트랜잭션형 영속 SQLite 레지스트리
+- OpenAPI 호환성 보고
+- 트랜잭션을 사용하는 SQLite 도구 레지스트리 영속화
+- 검증된 SQLite 실행 이벤트 추적의 영속 저장과 실행 없는 재생
+- 스냅샷 전용 및 안전한 거부 동작을 보장하는 신뢰된 동기·비동기 실행 전후 훅
+- 의존성 취약점 감사, CodeQL 검사, OpenSSF Scorecard 공급망 분석, 서명된 릴리스 빌드 출처 기록 및 SPDX SBOM 증명
+- 원격 자산을 사용하지 않고 생성하는 벤치마크 요약·이력 대시보드
+- 버전이 있는 기계 판독 아티팩트로 보관하는 예약 호환성 스모크 테스트
 
-남은 큰 follow-up 작업:
+Remaining larger follow-up work:
 
 - populate history views with dated live model/provider measurements;
 - organization-specific policy/approval integrations.
