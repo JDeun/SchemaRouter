@@ -35,6 +35,7 @@ class V1RunPlan:
             "python", "run_benchmark.py",
             "--protocol", "v1",
             "--agent-cmd", self.agent_command,
+            "--output-dir", str(self.safeact_root / "output" / self.condition.lower()),
         )
 
     def command_string(self) -> str:
