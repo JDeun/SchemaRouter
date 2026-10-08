@@ -358,3 +358,9 @@ mean Top-5 schema context **2.383% of FULL** at 250 endpoints.
 Paired uncertainty uses task-cluster bootstrap because catalog sizes are repeated measures of the
 same 23 semantic tasks. This prevents pseudoreplication but does not make B1 a population-level
 non-inferiority study; #432 remains mandatory for that claim.
+
+## Evidence-to-Action / SafeActBench
+
+Issue #1203과 PR #1204는 Lin et al., *From Evidence to Action: How Tool-Using Agents Fail* (arXiv:2610.07753)에서 직접 동기를 얻은 별도 execution-boundary 연구 track입니다. SafeActBench는 6개 operational domain, 656개 case, 5개 protocol을 provenance-bound Evidence Ledger와 deterministic trajectory evaluator로 평가합니다. SchemaRouter의 현재 8-case corpus는 deterministic contract regression일 뿐 SafeActBench 재현으로 계산하지 않습니다. 자세한 내용은 [Evidence-to-Action 경계](evidence-to-action.md)를 참고합니다.
+
+다음 연구 단계는 공개 benchmark/evaluator를 사용한 외부 평가입니다. Multi-action dependency 평가를 이유로 SchemaRouter core에 일반 DAG orchestration을 넣지 않습니다.
