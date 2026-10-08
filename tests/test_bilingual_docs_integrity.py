@@ -78,3 +78,25 @@ def test_code_blocks_are_not_flagged_as_untranslated_prose() -> None:
     en = "# Example\n\n```text\n" + long_code + "\n```\n"
     ko = "# 예시\n\n```text\n" + long_code + "\n```\n"
     assert checker.unchanged_english_prose(en, ko) == []
+
+
+def test_single_substantial_copied_english_paragraph_fails(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """One untranslated substantive paragraph must not silently pass."""
+    en = tmp_path / "docs"
+    ko = tmp_path / "docs_ko"
+    source = (
+        "A substantive English policy paragraph explains trusted execution "
+        "and independent review requirements, including provenance, "
+        "authorization, local validation and the boundary between a model "
+        "suggestion and an actual authorized tool dispatch. "
+    ) * 2
+    _write(en, "guide.md", "# Guide\n\n" + source)
+    _write(ko, "guide.md", "# 안내\n\n" + source + "\n\n한국어 부연 설명입니다.")
+    monkeypatch.setattr(checker, "EN", en)
+    monkeypatch.setattr(checker, "KO", ko)
+    assert any(
+        "1 substantial English source paragraphs" in error
+        for error in checker.check_sources()
+    )

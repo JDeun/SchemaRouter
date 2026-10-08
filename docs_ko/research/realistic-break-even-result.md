@@ -55,13 +55,13 @@ high ambiguity의 tail cost는 무시할 수 없습니다. p95는 250 tools에�
 
 정정된 canonical 20-iteration workflow run: `37017834707`.
 
-Artifact:
-- name: `realistic-break-even`
-- id: `11231726626`
-- digest: `sha256:2a7323b1ab6c23519f139901e74bd49d999cb152f65a96a2213ac2f643f522ad`
-- benchmark head: `4b26027601cf7ebedbc69fd46fc3fbedb9acf30e`
-- benchmark implementation: `scripts/benchmark_realistic_break_even.py`
-- workflow: `.github/workflows/realistic-break-even.yml`
+산출물:
+- 이름: `realistic-break-even`
+- ID: `11231726626`
+- 다이제스트: `sha256:2a7323b1ab6c23519f139901e74bd49d999cb152f65a96a2213ac2f643f522ad`
+- 벤치마크 헤드: `4b26027601cf7ebedbc69fd46fc3fbedb9acf30e`
+- 벤치마크 구현: `scripts/benchmark_realistic_break_even.py`
+- 워크플로: `.github/workflows/realistic-break-even.yml`
 
 초기 exploratory matrix는 unsupported field를 free-form concept로만 표현했습니다. 이 결과는 **evidence가 아니며**, semantic ID와 active field-evidence requirement 및 fail-closed unsupported request를 사용하는 위 정정 run으로 대체됐습니다.
 

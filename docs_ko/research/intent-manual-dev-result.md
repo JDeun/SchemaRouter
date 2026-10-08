@@ -10,10 +10,10 @@ Canonical source: `9cf85e3c45491886a5f01a190e8e8e04f24898a7`
 
 Canonical artifact:
 
-- artifact: `intent-manual-dev-36547832179`
-- artifact id: `11023311599`
-- artifact digest: `sha256:04719f39ab2e9198da8ead2ae276090c072df339854d19d5d4d5300bd604df40`
-- full result JSON SHA-256: `bb05aa1f53c084a45500fd3437dcd420dc204a8c82c8e84501b8655f52bd4e82`
+- 산출물: `intent-manual-dev-36547832179`
+- 산출물 ID: `11023311599`
+- 산출물 다이제스트: `sha256:04719f39ab2e9198da8ead2ae276090c072df339854d19d5d4d5300bd604df40`
+- 전체 결과 JSON SHA-256: `bb05aa1f53c084a45500fd3437dcd420dc204a8c82c8e84501b8655f52bd4e82`
 
 Compact record는 `benchmarks/results/agent-utility-v2-intent-manual-dev-summary.json`입니다.
 

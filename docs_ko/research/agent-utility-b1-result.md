@@ -13,28 +13,28 @@ Canonical run은 frozen micro-shard 30개를 모두 완료했고 정확히 552�
 
 Canonical aggregate:
 
-- artifact: `agent-utility-b1-canonical-36529108855`
-- artifact id: `11021506964`
-- artifact digest: `sha256:2e101d62dbe7f3202a24f0f40c49000064991b1521c4154c8feeb587de510271`
-- aggregate JSON SHA-256: `33678700298a47b451ea1f03377cd874a1a1e373597cf961d207e07ae39f568d`
-- corrected task SHA-256: `bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`
+- 산출물: `agent-utility-b1-canonical-36529108855`
+- 산출물 ID: `11021506964`
+- 산출물 다이제스트: `sha256:2e101d62dbe7f3202a24f0f40c49000064991b1521c4154c8feeb587de510271`
+- 집계 JSON SHA-256: `33678700298a47b451ea1f03377cd874a1a1e373597cf961d207e07ae39f568d`
+- 수정된 작업 SHA-256: `bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`
 
 Compact machine-readable record는 `benchmarks/results/agent-utility-b1-canonical-summary.json`에 저장됩니다.
 
 ## Frozen runtime
 
-- model: `Qwen/Qwen3-0.6B`
-- revision: `c1899de289a04d12100db370d81485cdf75e47ca`
+- 모델: `Qwen/Qwen3-0.6B`
+- 리비전: `c1899de289a04d12100db370d81485cdf75e47ca`
 - CPU float32
 - Python 3.12.14
 - torch 2.14.0+cpu
 - transformers 4.57.6
 - tokenizers 0.22.2
 - safetensors 0.8.0
-- greedy decoding
-- thinking disabled
-- maximum 6 agent turns
-- seed 20260929
+- 탐욕적 디코딩
+- 추론 시 사고 모드 비활성화
+- 에이전트 최대 6턴
+- 시드 20260929
 
 B1은 **sanity and reproducibility baseline**입니다. 23개 semantic task는 네 catalog repeat에 걸쳐 cluster되어 있으며 broad population-level non-inferiority claim을 지원하지 않습니다.
 
