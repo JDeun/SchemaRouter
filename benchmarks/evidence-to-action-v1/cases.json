@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "read_with_provenance",
+      "consequential": false,
+      "required": [
+        "provenance"
+      ],
+      "available": [
+        "provenance"
+      ],
+      "expected_action": true
+    },
+    {
+      "id": "act_missing_license",
+      "consequential": true,
+      "required": [
+        "provenance",
+        "license"
+      ],
+      "available": [
+        "provenance"
+      ],
+      "expected_action": false
+    },
+    {
+      "id": "act_complete_evidence",
+      "consequential": true,
+      "required": [
+        "provenance",
+        "license"
+      ],
+      "available": [
+        "provenance",
+        "license"
+      ],
+      "expected_action": true
+    },
+    {
+      "id": "unit_sensitive_missing_units",
+      "consequential": true,
+      "required": [
+        "units"
+      ],
+      "available": [],
+      "expected_action": false
+    },
+    {
+      "id": "unit_sensitive_complete",
+      "consequential": true,
+      "required": [
+        "units"
+      ],
+      "available": [
+        "units"
+      ],
+      "expected_action": true
+    },
+    {
+      "id": "source_type_mismatch",
+      "consequential": true,
+      "required_source_type": "experimental",
+      "available_source_type": "calculated",
+      "expected_action": false
+    },
+    {
+      "id": "source_type_exact",
+      "consequential": true,
+      "required_source_type": "experimental",
+      "available_source_type": "experimental",
+      "expected_action": true
+    },
+    {
+      "id": "nonconsequential_no_requirement",
+      "consequential": false,
+      "required": [],
+      "available": [],
+      "expected_action": true
+    }
+  ]
+}
