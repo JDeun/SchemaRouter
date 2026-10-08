@@ -64,6 +64,30 @@ def inspect(
             if not isinstance(command, str) or not command.strip():
                 raise ValueError(f"{condition}: missing reviewed agent_command")
             commands[condition] = command
+        # A reviewed command digest alone does not establish that the expected
+        # official host adapter is actually invoked. Never permit arbitrary
+        # agent executable substitution on a credentialed self-hosted runner.
+        expected_scripts = {
+            CONDITIONS[0]: safeact_root / "agents" / "coding_cli_safeact_agent.py",
+            CONDITIONS[1]: (
+                Path(__file__).resolve().parents[1]
+                / "examples/external_validation/safeact_v1/official_routing_hook.py"
+            ),
+            CONDITIONS[2]: (
+                Path(__file__).resolve().parents[1]
+                / "examples/external_validation/safeact_v1/official_agent_hook.py"
+            ),
+        }
+        for condition, command in commands.items():
+            tokens = shlex.split(command)
+            if (
+                len(tokens) < 3
+                or Path(tokens[0]).name not in {"python", "python3", "python3.11", "python3.12", "python3.13", "python3.14"}
+                or Path(tokens[1]).resolve(strict=True) != expected_scripts[condition].resolve(strict=True)
+            ):
+                raise ValueError(
+                    f"{condition}: untrusted official host adapter command"
+                )
         # Performs the pinned upstream checkout identity, full 131 public IDs,
         # canonical contract digest, independent source and human review
         # attestations, cross-arm runner equality and adapter command hashes.
@@ -95,6 +119,7 @@ def main() -> int:
     parser.add_argument("--model", default="")
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--require-ready", action="store_true")
     args = parser.parse_args()
 
     status, commands = inspect(
@@ -123,7 +148,9 @@ def main() -> int:
     print(json.dumps(status, sort_keys=True), flush=True)
 
     if not args.execute:
-        return 0  # readiness artifact only: no model calls, no scores
+        # Pull requests publish a non-scored readiness report even when blocked.
+        # Explicit dispatch instead fails closed before reserving a model runner.
+        return 2 if args.require_ready and not status["ready"] else 0
     if not status["ready"] or commands is None:
         return 2
     # The real scored controller revalidates all above conditions before any
