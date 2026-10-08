@@ -23,6 +23,15 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: '3.12'
+      - name: Verify scored-controller and no-leakage regression contracts
+        run: |
+          python -m pip install "pytest>=8,<10" "pytest-asyncio>=0.24,<2"
+          python -m pytest -q \
+            tests/test_safeact_v1_aggregate_metrics.py \
+            tests/test_safeact_v1_scored_launch.py \
+            tests/test_safeact_v1_evidence_gate.py \
+            tests/test_safeact_v1_contract_loader.py \
+            tests/test_safeact_v1_completion_audit.py
       - name: Fetch the pinned public SafeAct source
         run: |
           git init safeact-upstream
