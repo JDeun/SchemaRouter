@@ -79,7 +79,9 @@ def test_official_hook_uses_only_trusted_gateway_calls(
     assert collected[0][1]["case_id"] == "SAB-V1-001"
 
 
-def test_official_hook_fails_closed_if_gateway_not_captured(tmp_path: Path) -> None:
+def test_official_hook_fails_closed_if_gateway_not_captured(
+    monkeypatch, tmp_path: Path
+) -> None:
     class FakeGateway:
         def __init__(self, protocol: str):
             self.protocol = protocol
