@@ -210,9 +210,21 @@ Independent reviewed material is expected at:
   pinned actual adapter commits and reviewed agent commands plus SHA-256s,
   independent author/reviewer attestation bound to the frozen contract JSON.
 
-The launcher validates each agent command actually points to the expected
-official upstream baseline, SchemaRouter routing adapter or SchemaRouter
-EvidenceGate adapter—not merely a command with a matching SHA. Only on the
+Agent commands must be reviewed as **portable templates**, using
+`@SAFEACT_ROOT@` for the pinned official checkout and
+`@SCHEMAROUTER_ROOT@` for the reviewed SchemaRouter checkout. Store
+`agent_command_sha256` as SHA-256 of the original UTF-8 template, *not*
+the machine-specific expanded command. The launcher checks the reviewed
+template digest **before** expanding only these two tokens into verified
+absolute checkout paths, and separately binds the expanded command hash
+in a local ephemeral runtime manifest. This prevents GitHub-hosted readiness
+and trusted self-hosted execution from disagreeing solely over workspace
+paths while retaining auditable template provenance.
+
+The launcher validates each expanded agent command actually points to the
+expected official upstream baseline, SchemaRouter routing adapter or
+SchemaRouter EvidenceGate adapter—not merely a command with a matching SHA.
+Only on the
 approved runner may the `--execute` path issue model calls. The actual
 three-arm controller refuses incomplete 131-case sets, invalid intervention
 identity, reused/fabricated records and mismatched model/runtime identity,
