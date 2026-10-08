@@ -7,6 +7,7 @@ from .models import (
     EvidenceLedgerEntry,
     EvidenceRequirements,
     FieldSpec,
+    ToolCall,
     ToolSpec,
 )
 
@@ -177,11 +178,11 @@ def build_evidence_ledger_entry(
     )
 
 
-def contract_for_call(call: object) -> EvidenceContract:
+def contract_for_call(call: ToolCall) -> EvidenceContract:
     """Materialize the existing compiled-call evidence requirements as a contract."""
 
-    required = getattr(call, "required_evidence")
-    field_requirements = getattr(call, "field_evidence")
+    required = call.required_evidence
+    field_requirements = call.field_evidence
     return EvidenceContract(
         required=required.model_copy(deep=True),
         field_requirements={
