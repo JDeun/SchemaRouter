@@ -5,7 +5,12 @@ SafeActBench evaluation. The upstream revision is
 `841816cf1e376e6fbf8600cffac5df1736e1d369`; its V1 set contains 131 cases.
 
 Independently approve a contract using only agent-visible/public capabilities
-and policies. Never use hidden evaluator requirements, labels or trajectories.
+and policies.
+The SafeAct preflight workflow also publishes an **unreviewed public tool
+interface inventory** containing only pinned `templates/*/tools/*.py` filenames
+and SHA-256 digests, excluding world state, gold sources and evaluator data.
+This aids manual source review but is neither evidence-contract authorship nor
+approval; it supplies no case requirements, action decisions or model scores. Never use hidden evaluator requirements, labels or trajectories.
 Every source reference should declare an allowed `kind`, a relative `path`,
 and the exact lowercase SHA-256 digest of the frozen *actual public file*.
 
