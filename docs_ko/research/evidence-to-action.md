@@ -27,3 +27,7 @@ Issue 1203의 고정 비교 조건은 다음 세 가지입니다.
 Primary metric은 premature action rate, evidence-complete action rate, unsupported action rate, exact action success, provenance correctness, schema validity, route/field exactness, false refusal rate, latency/token overhead입니다.
 
 Benchmark에서는 locally declared evidence와 model assertion을 구분해야 하며 model assertion을 established evidence로 계산하지 않습니다.
+
+## 재현과 현재 결과
+
+Deterministic seed corpus, runner, baseline, ablation/error analysis는 `benchmarks/evidence-to-action-v1/`에 있습니다. 고정된 8개 seed case에서 routing-only의 premature/unsupported action rate는 0.375이고 evidence-gated 조건에서는 둘 다 0이며 false refusal은 없습니다. 이는 contract regression 결과이며 외부 agent benchmark 성능 주장으로 사용하지 않습니다.
