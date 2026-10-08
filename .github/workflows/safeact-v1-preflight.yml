@@ -35,7 +35,8 @@ jobs:
             tests/test_safeact_v1_record_intervention.py \
             tests/test_safeact_v1_trusted_session.py \
             tests/test_safeact_v1_official_agent_hook.py \
-            tests/test_safeact_v1_interventions.py
+            tests/test_safeact_v1_interventions.py \
+            tests/test_safeact_v1_contract_review.py
       - name: Fetch the pinned public SafeAct source
         run: |
           git init safeact-upstream
@@ -60,6 +61,16 @@ jobs:
           assert len(set(ids)) == 131, "duplicate case ids"
           print("Official SafeAct V1 listing validated: 131 cases (no scored execution)")
           PY
+      - name: Produce public-ID-only contract authoring worksheet
+        run: |
+          python -m scripts.prepare_safeact_v1_contract_review \
+            safeact-v1-list.json --out safeact-v1-contract-review.json
+      - name: Upload unreviewed public contract worksheet
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: safeact-v1-contract-authoring-worksheet
+          path: safeact-v1-contract-review.json
+          retention-days: 30
       - name: Validate all 131 V1 evaluator paths (official gold simulator, never agent score)
         run: |
           python safeact-upstream/run_benchmark.py \
