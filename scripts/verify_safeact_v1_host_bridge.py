@@ -7,15 +7,19 @@ This is official-adapter API compatibility, NOT a SafeActBench score.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 from examples.external_validation.safeact_v1.official_agent_hook import (
     PINNED_SAFEACT_SHA,
+    install_v1_gate,
 )
 from examples.external_validation.safeact_v1.official_routing_hook import (
     install_v1_routing,
@@ -92,6 +96,89 @@ def run_bridge_compatibility(root: Path) -> dict[str, Any]:
         raise AssertionError("typed route intervention accounting mismatch")
     if any("schemarouter_intervention" in original.get("metadata", {}) for _ in (0,)):
         raise AssertionError("ungated baseline was contaminated by routing marker")
+    # Exercise the genuine upstream normalization function through the
+    # independent trusted EvidenceGate host adapter. All observations and the
+    # local policy file are SYNTHETIC. No case labels/gold, model or evaluator.
+    with tempfile.TemporaryDirectory(prefix="safeact-public-smoke-") as tmp:
+        public = Path(tmp)
+        policy = public / "synthetic-policy.txt"
+        policy.write_text(
+            "Synthetic policy for bridge compatibility only; NOT approved for V1.",
+            encoding="utf-8",
+        )
+        contract = {
+            "case_coverage": {"SAB-V1-001": "refund_issue"},
+            "contracts": [{
+                "action": "refund_issue",
+                "sources": [{
+                    "kind": "independent_contract",
+                    "path": policy.name,
+                    "sha256": hashlib.sha256(policy.read_bytes()).hexdigest(),
+                }],
+                "required_observations": [{
+                    "tool": "charge_read",
+                    "record_id": "$action.charge_id",
+                    "fields": ["owner"],
+                }],
+            }],
+            "public_observation_mappings": {
+                "charge_read": {
+                    "record_id_key": "subject",
+                    "field_name_key": "predicate",
+                }
+            },
+        }
+
+        class SyntheticGateway:
+            def __init__(self, protocol: str) -> None:
+                self.protocol = protocol
+                self.calls = [{
+                    "tool": "charge_read",
+                    "arguments": {"charge_id": "C2"},
+                    "result": {
+                        "status": "ok",
+                        "tool": "charge_read",
+                        "call_id": "call_01",
+                        "observations": [{
+                            "subject": "C2", "predicate": "owner", "object": "test",
+                        }],
+                    },
+                }]
+
+        host = SimpleNamespace(
+            ToolGateway=SyntheticGateway,
+            normalize_v1=official.normalize_v1,
+        )
+        install_v1_gate(
+            host, document=contract, source_root=public, case_id="SAB-V1-001"
+        )
+        gateway = host.ToolGateway("v1")
+        observed = host.normalize_v1(
+            scenario, allowed, info, "codex", "fixed-model", "{}", None
+        )
+        observed_marker = observed["metadata"]["schemarouter_intervention"]
+        if observed["events"] != original["events"] or (
+            observed_marker["authorized_action_dispatches"] != 1
+            or observed_marker["denied_action_attempts"] != 0
+            or observed_marker["verified_observations"] != 1
+        ):
+            raise AssertionError("synthetic public EvidenceGate allow seam failed")
+
+        # The same model proposal is forbidden without matching real tool
+        # observations; an agent-authored INFO_CALL is never sufficient.
+        gateway.calls.clear()
+        denied = host.normalize_v1(
+            scenario, allowed, info, "codex", "fixed-model", "{}", None
+        )
+        denied_marker = denied["metadata"]["schemarouter_intervention"]
+        if (
+            denied["events"] != info
+            or denied_marker["authorized_action_dispatches"] != 0
+            or denied_marker["denied_action_attempts"] != 1
+            or denied_marker["verified_observations"] != 0
+        ):
+            raise AssertionError("synthetic EvidenceGate missing-evidence seam failed")
+
     return {
         "kind": "official_safeact_v1_host_adapter_compatibility",
         "official_revision": PINNED_SAFEACT_SHA,
@@ -102,9 +189,13 @@ def run_bridge_compatibility(root: Path) -> dict[str, Any]:
         "wrong_public_candidate_denied": True,
         "information_events_preserved": True,
         "actual_schemarouter_registry": True,
+        "synthetic_verified_evidence_gate_allow": True,
+        "synthetic_missing_evidence_gate_denied": True,
+        "independent_contracts_for_real_cases_approved": False,
         "meaning": (
             "Pinned official normalizer + SchemaRouter typed-registry routing "
-            "integration passed on synthetic public scenario, with no model."
+            "and trusted EvidenceGate integration passed using synthetic public " 
+            "data and independently hashed synthetic policy, with no model."
         ),
     }
 
