@@ -13,3 +13,7 @@ python scripts/run_evidence_to_action_ablation.py \
 The seed corpus deliberately contains supported and unsupported consequential actions. The routing-only conditions execute every selected action; the evidence-gated condition applies the frozen trusted-local evidence contract before action.
 
 The checked-in `baseline-results.json` is the expected deterministic seed result. Any future external-agent or SafeActBench-derived evaluation must be reported separately with model, prompt, tool environment, dataset version, repetitions, and confidence intervals.
+
+## Analysis
+
+See [`ablation-error-analysis.md`](ablation-error-analysis.md) for the deterministic failure slices, interpretation limits, and the external-evaluation gaps that remain.
