@@ -133,7 +133,7 @@ def check_sources() -> list[str]:
         if len(en_text.strip()) > 100 and en_text == ko_text:
             errors.append(f"{rel}: Korean page is byte-identical to English source")
         copied = unchanged_english_prose(en_text, ko_text)
-        if len(copied) >= 3:
+        if copied:
             errors.append(
                 f"{rel}: {len(copied)} substantial English source paragraphs "
                 "appear verbatim in Korean; translate explanatory prose"
