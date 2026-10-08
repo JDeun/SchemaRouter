@@ -1,6 +1,7 @@
 """SafeAct V1 official batch-CLI plan contract tests."""
 from __future__ import annotations
 
+import shlex
 from pathlib import Path
 
 import pytest
@@ -52,4 +53,4 @@ def test_agent_command_remains_one_argument() -> None:
     command = "python3 my_agent.py --model 'frozen model'"
     plan = V1RunPlan(CONDITIONS[0], Path("."), "frozen model", command)
     assert plan.argv()[5] == command
-    assert "'frozen model'" in plan.command_string()
+    assert shlex.split(plan.command_string()) == list(plan.argv())
