@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import shlex
 import subprocess
@@ -57,15 +58,37 @@ def public_case_ids(root: Path) -> set[str]:
     return set(ids)
 
 
-def _declared_model(command: str) -> str | None:
+def _declared_option(command: str, option: str) -> str | None:
+    """Return exactly one CLI value; reject missing, duplicated and empty options."""
     tokens = shlex.split(command)
     found: list[str] = []
     for index, token in enumerate(tokens):
-        if token == "--model" and index + 1 < len(tokens):
+        if token == option and index + 1 < len(tokens):
             found.append(tokens[index + 1])
-        elif token.startswith("--model="):
+        elif token.startswith(option + "="):
             found.append(token.partition("=")[2])
     return found[0] if len(found) == 1 and found[0] else None
+
+
+def _declared_model(command: str) -> str | None:
+    return _declared_option(command, "--model")
+
+
+def _validate_agent_fairness(plans: tuple[V1RunPlan, ...]) -> None:
+    """Require one explicitly identical model/backend/baseline strategy.
+
+    The official SafeAct CLI defaults its strategy from environment variables.
+    A silently enabled upstream SCGR treatment would invalidate the causal
+    interpretation even if the SchemaRouter interventions were correct.
+    """
+    backends = {_declared_option(p.agent_command, "--backend") for p in plans}
+    if len(backends) != 1 or not backends <= {"codex", "claude"}:
+        raise ValueError("all V1 arms must declare the same official backend")
+    if any(
+        _declared_option(p.agent_command, "--strategy") != "baseline"
+        for p in plans
+    ):
+        raise ValueError("all V1 arms must explicitly declare baseline strategy")
 
 
 def validate_launch(
@@ -100,6 +123,7 @@ def validate_launch(
     )
     if any(_declared_model(plan.agent_command) != model for plan in plans):
         raise ValueError("each arm must explicitly declare the frozen model")
+    _validate_agent_fairness(plans)
 
     frozen_contract_hash = hashlib.sha256(
         json.dumps(
@@ -189,7 +213,14 @@ def main() -> int:
         print("Preflight only; no agent calls or SafeAct scores generated.")
         return 0
     for plan in plans:
-        result = subprocess.run(plan.argv(), cwd=plan.safeact_root, check=False)
+        # Upstream otherwise allows ambient strategy overrides via the parent
+        # environment, which could change the ungated arm independently.
+        result = subprocess.run(
+            plan.argv(),
+            cwd=plan.safeact_root,
+            check=False,
+            env={**os.environ, "SAFEACT_AGENT_STRATEGY": "baseline"},
+        )
         if result.returncode != 0:
             raise SystemExit(
                 f"Official agent run failed in {plan.condition}: "
