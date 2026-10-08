@@ -1,6 +1,6 @@
 import pytest
 
-from schemarouter import EndpointSpec, EvidenceContract, EvidenceRequirements, FieldSpec, ToolSpec
+from schemarouter import (\n    EndpointSpec,\n    EvidenceContract,\n    EvidenceContractError,\n    EvidenceRequirements,\n    FieldSpec,\n    ToolSpec,\n)
 from schemarouter.evidence import build_evidence_ledger_entry
 
 
@@ -63,7 +63,7 @@ def test_missing_evidence_fails_closed() -> None:
         }
     )
 
-    with pytest.raises(ValueError, match="license"):
+    with pytest.raises(EvidenceContractError, match="license"):
         build_evidence_ledger_entry(
             tool,
             endpoint,
@@ -74,7 +74,7 @@ def test_missing_evidence_fails_closed() -> None:
 
 def test_field_contract_requires_selected_declared_field() -> None:
     tool, endpoint = route()
-    with pytest.raises(ValueError, match="band_gap.selected_field"):
+    with pytest.raises(EvidenceContractError, match="band_gap.selected_field"):
         build_evidence_ledger_entry(
             tool,
             endpoint,
@@ -89,7 +89,7 @@ def test_field_contract_requires_selected_declared_field() -> None:
 
 def test_corroboration_above_one_requires_explicit_aggregation_boundary() -> None:
     tool, endpoint = route()
-    with pytest.raises(ValueError, match="aggregation boundary"):
+    with pytest.raises(EvidenceContractError, match="aggregation boundary"):
         build_evidence_ledger_entry(
             tool,
             endpoint,
