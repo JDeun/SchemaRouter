@@ -30,11 +30,13 @@ def _session(*, read=None, verify=None, execute=None) -> TrustedEvidenceSession:
     return TrustedEvidenceSession(
         _contract(),
         "refund_issue",
-        information_call=read or (lambda tool, args: {"charge_id": "C2", "amount": 15}),
+        information_call=read or (
+            lambda tool, args: {"charge_id": "C2", "amount": 15, "owner": "Alice"}
+        ),
         verify_result=verify or (
             lambda tool, args, result: VerifiedToolEvidence(
                 record_id=result["charge_id"],
-                fields=frozenset({"amount", "owner"}),
+                fields=frozenset(field for field in ("amount", "owner") if field in result),
             )
         ),
         execute_action=execute or (lambda action, args: (action, args)),
@@ -51,8 +53,9 @@ def test_no_prior_observation_never_executes_action() -> None:
 
 def test_real_verified_read_unblocks_only_matching_action() -> None:
     calls = []
-    session = _session(read=lambda tool, args: calls.append(tool) or {"charge_id": "C2"})
-    assert session.information_call("charge_read", {}) == {"charge_id": "C2"}
+    observed = {"charge_id": "C2", "amount": 15, "owner": "Alice"}
+    session = _session(read=lambda tool, args: calls.append(tool) or observed)
+    assert session.information_call("charge_read", {}) == observed
     assert calls == ["charge_read"]
     assert session.execute_action("refund_issue", {"charge_id": "C2"}) == (
         "refund_issue", {"charge_id": "C2"},
