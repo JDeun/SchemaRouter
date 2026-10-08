@@ -9,6 +9,8 @@ on:
       - 'scripts/*safeact_v1*.py'
       - 'scripts/validate_safeact_v1_contract_provenance.py'
       - 'tests/test_safeact_v1_*.py'
+      - 'scripts/launch_safeact_v1_scored_workflow.py'
+      - '.github/workflows/safeact-v1-scored.yml'
       - 'tests/test_evidence_gate_mechanism_experiment.py'
       - 'scripts/run_evidence_gate_mechanism_experiment.py'
       - 'scripts/verify_safeact_v1_host_bridge.py'
@@ -44,7 +46,8 @@ jobs:
             tests/test_safeact_v1_routing_hook.py \
             tests/test_safeact_v1_interventions.py \
             tests/test_safeact_v1_contract_review.py \
-            tests/test_safeact_v1_public_tool_inventory.py
+            tests/test_safeact_v1_public_tool_inventory.py \
+            tests/test_safeact_v1_scored_workflow.py
       - name: Run actual eight-case EvidenceGate mechanism experiment
         run: |
           python -m pytest -q tests/test_evidence_gate_mechanism_experiment.py
