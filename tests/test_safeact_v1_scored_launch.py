@@ -349,3 +349,25 @@ def test_per_case_expected_action_oracle_never_authorized(
     _freeze_contract_hash(sample)
     with pytest.raises(ValueError, match="oracle"):
         launch.validate_launch(**sample)
+
+def test_domain_scoped_contracts_may_reuse_action_names(
+    monkeypatch, tmp_path: Path
+) -> None:
+    sample = _inputs(tmp_path)
+    sample["contracts"]["contracts"].append({
+        "domain": "legal_finance_advice",
+        "action": "act",
+        "sources": [],
+    })
+    _mock_public(monkeypatch, sample)
+    assert len(launch.validate_launch(**sample)) == 3
+
+
+def test_scored_contracts_require_real_public_domain(
+    monkeypatch, tmp_path: Path
+) -> None:
+    sample = _inputs(tmp_path)
+    sample["contracts"]["contracts"][0]["domain"] = "untrusted"
+    _mock_public(monkeypatch, sample)
+    with pytest.raises(ValueError, match="per public domain"):
+        launch.validate_launch(**sample)
