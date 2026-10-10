@@ -92,11 +92,11 @@ This phase added:
 - 144 cases;
 - multilingual/adversarial coverage;
 - JSON/CSV benchmark reporting;
-- accuracy, abstention, invalid-plan and latency metrics.
+- 정확도·선택 보류·잘못된 계획·지연시간 지표
 
-Historical workflow-level provenance for the earliest runs is being fully backfilled under issue #196. The corpus and commit history are retained.
+최초 실험의 워크플로 수준 출처 정보는 이슈 #196에서 보완 중이며, 코퍼스와 커밋 이력은 그대로 보존합니다.
 
-## 4. v0.4: persistence, local decisions and evidence surfaces
+## 4. v0.4: 영속성·로컬 판단·근거 자료
 
 v0.4 line에서는 이후 routing research의 기반이 된 여러 architectural layer를 추가했습니다:
 
@@ -114,13 +114,13 @@ v0.4 line에서는 이후 routing research의 기반이 된 여러 architectural
 
 중요한 design progression은 단순히 “route를 선택”하는 것에서 “explicit evidence, output-field, execution-state contract를 유지하면서 route를 선택”하는 것으로 이동한 것입니다.
 
-### Historical negative experiment: generic no-route sentinel
+### 과거의 부정적 실험: 범용 경로 없음 표식
 
 이후 작업별 라우팅 연구가 시작되기 전에는 어휘 검색 결과가 없을 때 전체 등록 카탈로그를 제한된 결정 백엔드에 선택적으로 노출할 수 있었습니다. 일반적인 경로 없음 신호로 명시적인 `none_of_the_above` 선택지를 실험했습니다.
 
 PR #85의 첫 번째 144사례 실험에서 빈 검색 확장과 해당 선택지를 함께 사용한 정확도는 전체 56.25%, 한국어 29.09%였습니다. 신뢰도 0.25 및 경로 없음 설정에서는 전체 54.17%, 한국어 25.45%, OOD·적대적 사례 50%를 기록했습니다.
 
-The follow-up run showed why the mechanism was wrong: 16 explicit no-route selections contained 13 valid Korean in-domain requests and only 3 true no-route cases. PR #87 / commit `e41f57a0` removed the sentinel.
+후속 실행에서 명시적인 경로 없음 선택 16개 중 13개는 정상적인 한국어 도메인 내 요청이었고, 실제 경로 없음 사례는 3개뿐이었습니다. 이 결과로 해당 방식의 오류를 확인해 PR #87 / 커밋 `e41f57a0`에서 표식을 제거했습니다.
 
 해당 선택지를 제거한 빈 검색 확장에서는 전체 정확도 61.81%, 한국어 43.64%를 기록했습니다. 같은 신뢰도 0.25·경로 없음 정책을 추가하면 전체 60.42%, 한국어 38.18%, OOD·적대적 사례 50%였습니다. 이에 따라 프로젝트는 빈 검색 확장, 신뢰도 게이트, 후보 선택 포기 및 오프라인 임계값 보정 기능을 유지했습니다.
 
@@ -147,7 +147,7 @@ Project에는 다음이 추가됐습니다:
 - read-only inspection API and CLI;
 - self-contained HTML dashboard;
 - Laya local decision backend;
-- expanded OpenAPI composition and serialization fidelity.
+- OpenAPI 구성과 직렬화의 충실도 개선
 
 이를 통해 UI나 model surface에 mutation authority를 부여하지 않고도 routing decision과 runtime state를 inspect할 수 있어야 한다는 operational principle을 확립했습니다.
 
@@ -174,7 +174,7 @@ Routing question은 다음과 같이 바뀌었습니다:
 
 모든 source가 scientific/numeric한 것은 아니므로 unit metadata는 optional로 유지했습니다. Paper나 web/document search 같은 text source도 유효한 unitless capability입니다.
 
-### Benchmark/reproducibility methodology added during the 0.7 line
+### 0.7 버전에서 도입한 벤치마크·재현성 방법론
 
 Project는 empirical evidence 보존 방식도 formalize했습니다:
 
@@ -185,7 +185,7 @@ Project는 empirical evidence 보존 방식도 formalize했습니다:
 
 이 변경은 methodology 측면에서 중요합니다. 이후 routing claim을 screenshot이나 chat note가 아니라 정확한 source/data configuration까지 추적할 수 있습니다.
 
-## 8. v0.8: semantic routing stages and holdout discipline
+## 8. v0.8: 의미 기반 라우팅 단계와 홀드아웃 통제
 
 이 phase에서는 이후 주요 research subject가 된 routing stage를 도입했습니다:
 
@@ -299,11 +299,11 @@ Calibration confirmation:
 
 ### v12 hygiene classification
 
-v12 had been inspected before architecture selection, so it was classified as design-known stress evidence, not blind evidence.
+v12는 아키텍처 선택 전에 이미 살펴봤으므로 블라인드 근거가 아니라 설계에 노출된 스트레스 실험 근거로 분류했습니다.
 
 ### v13 blind-final
 
-Generated only after full candidate freeze.
+후보를 완전히 동결한 뒤에만 생성
 
 Result:
 
@@ -326,7 +326,7 @@ Question:
 
 > Cheap MiniLM decision이 easy case를 처리하고 필요할 때만 BGE로 escalate하면서 quality를 유지할 수 있는가?
 
-The selected development candidate reduced mean latency by about 10.47% and passed development floors.
+선택된 개발 후보는 평균 지연시간을 약 10.47% 줄이면서 개발 단계의 최소 기준을 충족했습니다.
 
 Fresh same-job calibration:
 
@@ -374,7 +374,7 @@ Frozen development candidate:
 
 ### Invalidated calibration attempt
 
-Workflow run `36285424108` generated a corpus but was cancelled before metric inspection because a structural audit found unsupported-family reuse from development.
+워크플로 실행 `36285424108`은 코퍼스를 생성했지만 구조 감사에서 개발 집합의 미지원 요청 계열이 재사용된 사실을 확인했습니다. 따라서 지표를 확인하기 전에 해당 실행을 취소했습니다.
 
 해당 attempt는 integrity event로 보존하지만 empirical evidence에서는 제외합니다.
 
@@ -407,8 +407,8 @@ Standing development gates:
 - supported exact route >= 70%;
 - near-domain unsupported rejection >= 96%;
 - false-route <= 2%;
-- invalid plan / authority violation / execution error = 0;
-- paired mean and p95 latency non-regression.
+- 잘못된 계획·권한 위반·실행 오류 = 0
+- 쌍대 비교 평균 및 p95 지연시간의 비악화
 
 Standing production target:
 
@@ -491,7 +491,7 @@ Result:
 
 Decision:
 
-Standalone candidate rejected, selector primitive retained.
+독립 후보는 기각했지만 선택기 구성 요소는 유지했습니다.
 
 Interpretation:
 
@@ -499,7 +499,7 @@ Endpoint selection은 unsupported-operation rejection과 독립적으로 개선�
 
 ### Stage signal diagnostics
 
-Behavior-preserving diagnostics measured candidate-fit geometry.
+동작을 바꾸지 않는 진단으로 후보 적합성의 기하학적 특성을 측정했습니다.
 
 Key observations:
 
@@ -515,19 +515,19 @@ Interpretation:
 
 ### Bounded retrieve → rerank diagnostic
 
-PR #205 / work item #204 tested the preregistered architecture that removed the generic candidate-fit gate and let the existing contrastive BGE reranker score all already-authorized semantic-recall candidates.
+PR #205 / 작업 #204는 범용 후보 적합성 게이트를 제거하고 기존 대조형 BGE 재순위화 모델이 이미 승인된 의미 검색 후보 전체를 평가하도록 하는 사전 등록 아키텍처를 시험했습니다.
 
 Zero-threshold run은 ranking-ceiling diagnostic이지 promotable router가 아닙니다.
 
-Result on the same fresh 1,800-case v4 development corpus:
+새로 생성한 동일한 v4 개발 코퍼스 1,800개 사례의 결과:
 
 - raw supported top-route exactness: 90.71% (1045 / 1152);
 - invalid plans / execution errors: 0 / 0;
-- mean / p95 latency: 1014 / 1916 ms on the GitHub CPU runner.
+- GitHub CPU 실행 환경의 평균 / p95 지연시간: 1014 / 1916ms
 
-The raw score distributions showed strong separation between most supported-correct winners and no-route requests, although route-specific tails remained.
+원시 점수 분포에서는 올바르게 선택된 대부분의 지원 경로와 경로 없는 요청이 잘 구분됐지만, 경로별 분포의 끝부분에는 여전히 중첩이 있었습니다.
 
-Using the preregistered **winner-first** semantics (rank first, then apply only the raw winner's route-local threshold, and abstain instead of falling through), the following development-only score frontier resulted:
+사전에 등록한 **승자 우선** 규칙(먼저 순위를 정한 후 원래 승자의 경로별 임계값만 적용하고, 다른 후보로 넘어가지 않고 선택 보류)에 따른 개발 전용 점수 경계는 다음과 같습니다:
 
 | canonical false-route budget | supported exact-route | false-route rate | actual near-domain rejection | actual OOD rejection |
 | ---: | ---: | ---: | ---: | ---: |
@@ -549,24 +549,24 @@ Artifact provenance:
 - 소스 리비전: `f43535b6ef0acbc5492b9791e6757e28a343d9fa`
 - 코퍼스 SHA-256: `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`
 
-### Winner-only threshold mechanism and evidence infrastructure
+### 최상위 후보 전용 임계값 처리와 근거 인프라
 
-PR #208 added opt-in `rank_then_gate` semantics to `PairwiseDecisionBackend` and was merged into the active #195 research stack. The default historical `filter_then_rank` behavior remains unchanged.
+PR #208은 선택적 `rank_then_gate` 규칙을 `PairwiseDecisionBackend`에 추가해 진행 중인 #195 연구 브랜치에 병합했습니다. 기존 기본 규칙인 `filter_then_rank`는 그대로 유지했습니다.
 
 이후 PR #210에서는 #186의 점수 유형을 안전하게 처리하는 `EvidenceProjector`를 같은 스택으로 옮겼지만 계획기에 연결하지는 않았습니다. 따라서 두 번째 결정 신호를 성급히 도입하지 않고도 후속 견고성 연구에 사용할 명시적인 `match / no_match / unknown` 근거를 유지했습니다.
 
 ### Recall-width latency ablation
 
-Work item #214 / PR #216 preregistered a width-only development ablation.
+작업 #214 / PR #216에서는 후보 폭만 변경하는 개발 실험을 사전에 등록했습니다.
 
-The selection rule was fixed before execution:
+선택 규칙은 실행 전에 고정했습니다:
 
 1. 후보 검색 폭 2와 3을 평가;
 2. 동일한 승자 경로만 대상으로 한 잘못된 경로 예산 12의 프런티어 도출;
 3. 지원 사례 정확 경로 70% 이상, 정식 잘못된 경로 비율 2% 이하, 유사 도메인 거부율 하한 96% 이상, 유효하지 않은 계획·오류 0건을 유지하는 최소 폭 선택;
 4. 모두 통과하지 못하면 폭 4 유지.
 
-The chosen width must still pass a separately executed paired latency gate before the candidate is frozen.
+선택된 후보 폭도 최종 동결 전에 별도의 쌍대 지연시간 검증을 통과해야 합니다.
 
 ## 14. Current research direction
 
@@ -607,9 +607,9 @@ At the start of a new session:
 
 Chat history는 project state를 파악하기 위한 필수 source가 아닙니다.
 
-## 16. Evidence policy for the follow-up paper
+## 16. 후속 논문의 근거 관리 원칙
 
-Every empirical result should preserve, where available:
+각 실증 결과에서는 가능한 한 다음 사항을 보존해야 합니다:
 
 - 소스 리비전;
 - 데이터셋의 역할;
@@ -666,7 +666,7 @@ Machine-readable ledger는 향후 paper table과 reproducibility appendix를 생
 2. **연구 근거의 완전성:** 병합되지 않았거나 기각된 실험도 PR이 닫힐 때 사라지지 않고 실험 원장에 남도록 합니다.
 
 
-## 18. Width-2 frozen winner-gate executable result
+## 18. 후보 폭 2의 동결된 승자 게이트 실행 결과
 
 작업 항목 #227 / PR #228에서는 사전 등록된 width-2, 점수 전용, route-local `rank_then_gate` 후보를 새로운 v4 개발 코퍼스 **1,800개 사례**에서 실행했습니다. 임계값 맵은 정본 width-selection 아티팩트 `10930665000`에서 실행 전에 동결했으며, calibration이나 blind 평가 근거를 사용하지 않았습니다.
 
@@ -709,10 +709,10 @@ DEV result:
 - 질의 임베딩 및 코사인 유사도 계산 평균/p50/p95: 13.836 / 13.604 / 15.515 ms;
 - 고정된 16개 선택지 임베딩 비용: 68.724 ms로 캐시 가능.
 
-The high-precision direct-accept frontier was narrow:
+정밀도가 높은 직접 수락 후보의 범위는 좁았습니다:
 
-- score >=0.50 and margin >=0.10: 155/1800 accepted, 98.06% precision, 8.61% overall coverage;
-- score >=0.55 and margin >=0.15: 67/1800 accepted, 100% observed precision, 3.72% overall coverage.
+- 점수 >=0.50 및 마진 >=0.10: 1800개 중 155개 수락, 정밀도 98.06%, 전체 포괄률 8.61%
+- 점수 >=0.55 및 마진 >=0.15: 1800개 중 67개 수락, 관측 정밀도 100%, 전체 포괄률 3.72%
 
 Decision: signal을 cheap bounded selector/supporting evidence surface로 유지하되 global direct fast path로 promote하지 않습니다. High-precision coverage가 너무 작아 BGE p95 bottleneck을 제거하지 못합니다.
 
@@ -724,11 +724,11 @@ Provenance:
 - 산출물 SHA-256: `ae12b6a9abb3f6d7bc2d53792ce75b12bcb853971c8f6367f97a8f949c499011`;
 - 코퍼스 SHA-256: `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`.
 
-PR #230 was merged into the active v4 research integration branch because it adds diagnostic instrumentation only; it does not change default routing behavior.
+PR #230은 진단 기능만 추가하고 기본 라우팅 동작은 변경하지 않으므로 진행 중인 v4 연구 통합 브랜치에 병합했습니다.
 
-## 20. Action-guided single-pair BGE diagnostic
+## 20. 작업 안내 단일 쌍 BGE 진단
 
-Work item #231 / PR #232 tested whether the cheap action-only signal could choose one candidate from the already-authorized width-2 recall set before invoking BGE on only one query-route pair.
+작업 #231 / PR #232는 저비용 작업 전용 신호로 이미 허용된 후보 폭 2의 검색 집합에서 하나를 고른 다음 단일 질의·경로 쌍에만 BGE를 적용할 수 있는지 시험했습니다.
 
 Result:
 
@@ -756,7 +756,7 @@ Provenance:
 
 ### Bounded action embedding
 
-Work item #233 / PR #236 tested cached multilingual MiniLM action-only evidence inside the bounded width-2 set.
+작업 #233 / PR #236은 후보 폭 2로 제한한 집합 내에서 캐시된 다국어 MiniLM의 작업 전용 근거를 시험했습니다.
 
 Valid revision-2 result:
 
@@ -766,24 +766,24 @@ Valid revision-2 result:
 - false-route: 1.85%;
 - mean / p95 latency: 44.29 / 47.98 ms.
 
-An earlier run was invalidated before result inspection because projected metrics could have used only scored rows rather than the fixed 1,800-case denominator.
+이전 실행에서는 예상 지표가 고정된 1,800개 사례 대신 점수가 계산된 행만 분모로 사용할 가능성이 발견돼, 결과를 확인하기 전에 무효 처리했습니다.
 
-Decision: rejected. The architecture was fast, but score/margin open-set gating collapsed supported recall.
+결정: 기각. 아키텍처는 빨랐지만 점수·마진 기반 오픈셋 게이트가 지원 요청 재현율을 크게 떨어뜨렸습니다.
 
 ### Single-query MiniLM dual view
 
-Work item #240 / PR #241 scored two cached route representations from one query embedding:
+작업 #240 / PR #241은 하나의 질의 임베딩으로부터 캐시된 두 경로 표현을 평가했습니다:
 
 - schema/domain view;
 - action/alias view.
 
 원시 점수에서는 스키마/작업 가중치 0.25/0.75 전략이 지원 사례 정확도 75.00%로 가장 좋았습니다. 정식 12/648 지점에서는 정확도가 54.77%, 유사 도메인 거부율 97.92%, 잘못된 경로 비율 1.85%에 그쳤지만, 평균/p95 지연시간은 약 14.02 / 15.31 ms로 감소했습니다.
 
-Decision: rejected for quality, retained as evidence that representation capacity rather than runtime had become the limiting factor.
+결정: 품질 문제로 기각했으며 실행 속도보다 표현 능력이 병목이라는 근거로 보존했습니다.
 
 ## 22. Multilingual embedding backbone screen
 
-Work item #242 / PR #243 kept the dual-view architecture fixed and changed only the multilingual embedding backbone.
+작업 #242 / PR #243은 이중 표현 아키텍처를 고정한 채 다국어 임베딩 기반 모델만 변경했습니다.
 
 ### E5-base
 
@@ -793,15 +793,15 @@ Work item #242 / PR #243 kept the dual-view architecture fixed and changed only 
 
 ### GTE multilingual base
 
-- best raw exact: 89.15% using schema/action 0.25/0.75;
+- 최상의 원시 정확도: 스키마·작업 가중치 0.25/0.75에서 89.15%
 - best canonical 12/648 exact: 63.11%;
 - latency: 69.37 / 76.58 ms mean/p95.
 
-GTE proved that >=85% ranking capacity was available, but its native score geometry was not a sufficient open-set boundary.
+GTE는 85% 이상의 순위화 능력이 있음을 보여줬지만, 자체 점수 분포만으로는 충분한 오픈셋 경계를 만들지 못했습니다.
 
 ### BGE-M3 embedding
 
-BGE-M3 was the first embedding-only architecture to combine high ranking quality with a strong open-set frontier:
+BGE-M3는 높은 순위화 품질과 강한 오픈셋 경계를 동시에 보인 최초의 임베딩 전용 아키텍처였습니다:
 
 - 최고 원시 정확도: 88.45%;
 - 잘못된 경로 12/648 기준:
@@ -814,30 +814,30 @@ BGE-M3 was the first embedding-only architecture to combine high ranking quality
   - 잘못된 경로 비율: 0.93%;
 - p95 지연시간: 약 168 ms.
 
-Decision: BGE-M3 selected as the main strict open-set optimization line.
+결정: BGE-M3를 엄격한 오픈셋 최적화의 주요 연구 방향으로 선택했습니다.
 
 ## 23. GTE winner + BGE rejector
 
 Work item #244 / PR #249 tested a factorized architecture:
 
-1. GTE 0.25/0.75 dual-view selects one registered route;
-2. BGE reranker scores only that winner;
-3. BGE may accept/reject but may not switch routes.
+1. GTE 0.25/0.75 이중 표현이 등록 경로 하나를 선택
+2. BGE 재순위화 모델은 선택된 경로만 평가
+3. BGE는 수락·거부만 가능하며 다른 경로로 전환할 수 없음
 
-All four preregistered action/capability × max-length variants preserved raw GTE ranking at 89.15%, but the best canonical open-set result was only:
+사전 등록한 네 가지 작업·기능 × 최대 길이 조합은 모두 GTE 원시 순위화 성능 89.15%를 보존했지만, 최상의 정식 오픈셋 결과는 다음에 그쳤습니다:
 
 - supported exact: 76.13%;
 - near-domain rejection: 97.92%;
 - false-route: 1.85%;
 - best end-to-end mean / p95 latency: 293.89 / 328.11 ms.
 
-Decision: rejected. A cross-encoder winner relevance score was not a clean enough open-set separator to preserve GTE's ranking headroom.
+결정: 기각. 크로스 인코더의 최상위 경로 관련성 점수는 GTE의 우수한 순위화 성능을 보존할 만큼 명확한 오픈셋 구분 신호가 아니었습니다.
 
-## 24. Frozen BGE-M3 candidate and numerical-stability finding
+## 24. 동결된 BGE-M3 후보와 수치 안정성 조사
 
-Work item #245 / PR #247 froze the BGE-M3 50/50, budget-6 profile and executed it through the actual `SchemaPlanner`.
+작업 #245 / PR #247에서는 BGE-M3 가중치 50/50, 예산 6인 구성을 동결하고 실제 `SchemaPlanner`를 통해 실행했습니다.
 
-Safety and authority behavior reproduced exactly:
+안전성 및 실행 권한 관련 동작이 정확하게 재현됐습니다:
 
 - 계획기·직접 실행 간 불일치: 0 / 1800;
 - 무효한 계획: 0건;
@@ -848,9 +848,9 @@ Safety and authority behavior reproduced exactly:
 - OOD 거부율: 100%;
 - 계획기 평균 / p95 지연시간: 188.73 / 206.00 ms.
 
-However, the frozen projection expected 960 supported-correct cases and executable confirmation produced 959/1152 = 83.25%.
+하지만 동결된 예상 결과는 지원 요청 정답 960개였으나 실제 실행 확인에서는 959/1152 = 83.25%를 기록했습니다.
 
-Artifact inspection localized the single-case drift:
+산출물을 조사해 단일 사례의 차이가 발생한 지점을 확인했습니다:
 
 - case: `v4-dev-papers-citations-ko-08`;
 - route: `papers.citations`;
@@ -858,7 +858,7 @@ Artifact inspection localized the single-case drift:
 - rerun score: `0.4630872644672503`;
 - difference: approximately -1.35e-7.
 
-The route winner and planner/direct behavior did not change; only the accept/reject boundary flipped.
+선택된 경로와 계획기·직접 실행 동작은 바뀌지 않았고 수락·거부 경계만 반대로 판정됐습니다.
 
 Decision: not promoted.
 
@@ -872,7 +872,7 @@ Provenance:
 
 ## 25. BGE-M3 fine global fusion
 
-Work item #246 / PR #248 preregistered schema weights 0.30–0.60 with no post-run interpolation.
+작업 #246 / PR #248은 사후 보간 없이 스키마 가중치 0.30~0.60을 사전 등록했습니다.
 
 Best strict 6/648 result:
 
@@ -889,9 +889,9 @@ Best secondary 12/648 result:
 - near-domain rejection: 97.92%;
 - false-route: 1.85%.
 
-The final >=85% strict target requires at least 980/1152 correct cases, so the best global fusion was 15 cases short.
+엄격한 최종 정확도 목표 85%를 충족하려면 1152개 중 적어도 980개를 맞혀야 하므로 최상의 전역 융합 구성은 15개가 부족했습니다.
 
-Decision: global fine-fusion search exhausted without passing the production target.
+결정: 전역 세부 융합 탐색은 운영 목표를 통과하지 못하고 종료됐습니다.
 
 Provenance:
 
@@ -910,7 +910,7 @@ The largest examples include:
 
 ### #256 route-local stable fusion
 
-Work item #256 / PR #257 is the lower-cost active line.
+작업 #256 / PR #257은 상대적으로 계산 비용이 낮은 연구 방향입니다.
 
 실행 전에 route-local weight map을 freeze하고 boundary construction을 다음과 같이 변경합니다:
 
@@ -926,28 +926,28 @@ Primary gate:
 - false-route <=1%;
 - OOD rejection 100%;
 - p95 <=250 ms;
-- the same primary quality/safety gates must survive ±1e-6 perturbation.
+- 동일한 주요 품질·안전 게이트가 ±1e-6의 변동에서도 통과해야 함
 
 ### #255 conditional zero-false rescue
 
-Work item #255 / PR #258 runs in parallel as a more expensive fallback.
+작업 #255 / PR #258은 계산 비용이 큰 대체 경로로 병렬 진행했습니다.
 
-It keeps the immutable #246 strict 0.55/0.45 base and invokes a pinned BGE cross-encoder only on base abstentions, with a primary rescue budget of zero additional false routes.
+변경 불가능한 #246의 엄격한 0.55/0.45 기준을 유지하면서 기존 게이트가 선택을 보류한 경우에만 고정된 BGE 크로스 인코더를 호출했고, 추가적인 잘못된 경로 허용 예산은 0으로 설정했습니다.
 
-The validator may only rescue the same raw rank-1 winner; it cannot switch to rank 2 or create execution authority.
+검증기는 기존 원시 1순위 경로만 복구할 수 있으며 2순위 경로로 전환하거나 실행 권한을 새로 만들 수 없습니다.
 
 두 line 모두 DEV-only입니다. Fully frozen candidate가 development, numerical-stability, runtime gate를 모두 통과할 때까지 calibration/blind evidence는 blocked 상태를 유지합니다.
 
 
 ## 27. Parallel numerical-stability experiment
 
-Work item #256 / PR #257 runs in parallel with the rejected-winner rescue line.
+작업 #256 / PR #257은 거부된 최상위 후보 복구 실험과 병렬로 수행했습니다.
 
 Motivation:
 
 전역 0.55/0.45 BGE-M3 기준은 최종 목표에 근접했지만, #246에서는 경로마다 선호하는 스키마·작업 융합 가중치가 다름도 확인됐습니다. 이미 사전등록된 #246 격자에서 경로별 가중치를 고르면 원시 지원 요청 순위 정확도의 상한이 **1046/1152**로, 전역 0.55 순위기의 1019/1152보다 높습니다.
 
-The route-local fusion map was frozen before execution. To avoid repeating the #245 numerical-boundary failure, its threshold protocol is stability-oriented:
+경로별 융합 매핑은 실행 전에 동결했습니다. #245의 수치 경계 실패가 반복되지 않도록 임계값 프로토콜을 안정성 중심으로 설계했습니다:
 
 - 점수 임계값은 관측된 표본 점수가 아니라 인접 승자 점수 사이의 중간값으로 정함;
 - 선택된 최소 점수는 소수점 여섯 자리로 올림;
@@ -955,14 +955,14 @@ The route-local fusion map was frozen before execution. To avoid repeating the #
 - 엄격 프로필은 적대적인 ±1e-6 점수·마진 교란에도 정확도 85% 이상, 유사 도메인 거부율 97% 이상, 잘못된 경로 1% 이하를 유지해야 함;
 - ±1e-5는 보조 스트레스 진단으로 보존.
 
-This experiment is diagnostic only. Even a passing map requires a separate frozen executable confirmation before any calibration or blind evaluation.
+이 실험은 진단용일 뿐입니다. 매핑이 기준을 통과하더라도 보정이나 블라인드 평가에 앞서 별도의 동결된 실행 확인이 필요합니다.
 
 
-## 28. Late-stage strict-base, stability, and rescue results
+## 28. 후기 엄격 기준선·안정성·복구 실험 결과
 
-Sections 26–27 described #255/#256 while they were still active. Their terminal results, and the numerically robust successor base, are recorded here so the paper/research narrative has an unambiguous current state.
+26~27절은 #255/#256이 진행 중이던 시점의 설계입니다. 혼동 없이 현재 연구 상태를 파악할 수 있도록 최종 결과와 수치적으로 견고한 후속 기준선을 여기에 기록합니다.
 
-### #255 — zero-additional-false cross-encoder rescue
+### #255 — 잘못된 경로를 추가하지 않는 크로스 인코더 복구
 
 작업 항목 #255 / PR #258에서는 엄격한 BGE-M3 0.55/0.45 기준선을 변경하지 않고, 기준선이 기권한 경우에만 고정된 BGE 리랭커를 호출했습니다.
 
