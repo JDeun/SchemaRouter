@@ -41,8 +41,12 @@ def payload(data, catalog, task_ids):
         "conditions": data["condition_manifest"]["conditions"],
         "model": {"name": "HuggingFaceTB/SmolLM3-3B",
                   "revision": "a07cc9a04f16550a088caea529712d1d335b0ac1",
-                  "attention_implementation": "sdpa"},
+                  "attention_implementation": "sdpa",
+                  "max_new_tokens": 256, "max_turns": 6,
+                  "seed": 20260929, "threads": 4},
         "runtime": {"machine": "aarch64", "python": "3.12.14",
+                    "jinja2": "3.1.6", "tokenizers": "0.22.2",
+                    "safetensors": "0.8.0",
                     "torch": "2.14.0+cpu", "transformers": "4.57.6"},
         "rows": [
             {"task_id": task, "catalog_size": catalog, "condition": cond,
