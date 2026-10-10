@@ -22,7 +22,7 @@ jobs:
           python-version: "3.13"
       - name: Install exact frozen upstream native CYT Proxy source
         run: |
-          python -m pip install "clear-your-tools[proxy] @ git+https://github.com/qdrddr/clear-your-tools.git@9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4"
+          python -m pip install "clear-your-tools[proxy,pruners] @ git+https://github.com/qdrddr/clear-your-tools.git@9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4"
           python -m pip install httpx
       - name: Record reproducible host and CYT source identity
         run: |
