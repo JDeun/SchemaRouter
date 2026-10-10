@@ -16,13 +16,13 @@ import subprocess
 import sys
 from pathlib import Path
 
+from examples.external_validation.safeact_v1.contract_loader import (
+    SAFEACT_PUBLIC_DOMAINS,
+)
 from examples.external_validation.safeact_v1.run_plan import (
     CONDITIONS,
     V1RunPlan,
     validate_comparison_matrix,
-)
-from examples.external_validation.safeact_v1.contract_loader import (
-    SAFEACT_PUBLIC_DOMAINS,
 )
 from scripts.aggregate_safeact_v1_metrics import aggregate_scored_v1
 from scripts.verify_safeact_v1_interventions import verify_arm_interventions
