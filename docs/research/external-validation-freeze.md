@@ -91,6 +91,45 @@ A materially different, opt-in protocol must address every boundary below before
 No combined winner score, independent reproduction, or upstream endorsement is established.
 Declined outreach must not enter the frozen 0.14 scientific result table.
 
+### ClicShopping 4.33 pinned endpoint/action source audit
+
+[#1208](https://github.com/JDeun/SchemaRouter/issues/1208) uses the upstream
+`version4.33` commit `3bac851759234a4babb49d3f351e472cd9e0f31f` and
+a [machine-readable source inventory](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/external-validation-clicshopping-v433/source-inventory.json).
+This is a **public-source contract audit, not a scored benchmark**. Reproduce its offline checks with:
+
+```bash
+python scripts/validate_clicshopping_v433_inventory.py
+pytest -q tests/test_clicshopping_v433_inventory.py
+```
+
+The native interface is a **REST endpoint/action matrix**, not MCP JSON-RPC
+`tools/list` / `inputSchema`. The pinned tree verifies the
+`AnthropicEcommerce`, `CustomersProducts`, and `ChatRagBI` endpoint pages
+and their permission whitelists. The `CustomerOrdersPermissions.php` class
+declares three read and two write actions, **but the corresponding
+`CustomerOrders` endpoint page is absent from that exact pinned tree**.
+Its actions therefore remain *permissions-only, not proven callable* and
+cannot enter a scored executable-route denominator without fresh upstream
+source evidence and a new prospective freeze.
+
+The overlap between `AnthropicEcommerce` product actions and
+`CustomersProducts` is six names: `products`, `product`, `search`,
+`categories`, `stats`, and `recommendations`. These must be
+disambiguated by endpoint identity, not by action string alone.
+`CustomersProducts` has **zero write actions**; `DISPLAY_BROWSER_JSON`
+restricts browser GET reachability without removing declared actions.
+`customerOrders` requires authenticated `customers_id` and the source's
+per-action read/write grants. `ChatRagBI` is read-only, requires a
+select-only principal, and has 4.33-specific `RATE_LIMITED` and
+`ai_disclaimer` response behavior.
+
+No live endpoint, credentials, writes, model scoring, field-recall score, or
+product-performance conclusion is represented by this source snapshot. The
+next benchmark step must independently preregister case labels and scoring
+on the *verified* source surface; a later upstream revision is not silently
+substituted for the frozen commit.
+
 | Evaluation or feedback | Tracking issue | Evidence boundary |
 | --- | --- | --- |
 | SafeActBench V1 (external research) | [#1211](https://github.com/JDeun/SchemaRouter/issues/1211), [#1224](https://github.com/JDeun/SchemaRouter/issues/1224) | 131 V1 cases × three arms are *not scored*; independent, no-hidden-gold contracts and protected runner required |
