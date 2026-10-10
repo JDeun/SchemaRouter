@@ -667,10 +667,10 @@ machine-readable prior-art registry, and the experiment ledger.
 
 The following items are preregistered/staged and **must not** be selected from B1 row-level errors:
 
-- #428 — first-class public typed Top-K retrieval API;
-- #430 — adaptive per-query shortlist depth after fixed-K validation;
-- #431 — execution-state-aware corrective capability re-retrieval;
-- #432 — materially larger independent multilingual held-out benchmark with explicit
+- Issue #428 — first-class public typed Top-K retrieval API;
+- Issue #430 — adaptive per-query shortlist depth after fixed-K validation;
+- Issue #431 — execution-state-aware corrective capability re-retrieval;
+- Issue #432 — materially larger independent multilingual held-out benchmark with explicit
   sample-size/precision planning.
 
 These are successors to the fixed controlled baseline, not repairs to consumed B1 rows.
