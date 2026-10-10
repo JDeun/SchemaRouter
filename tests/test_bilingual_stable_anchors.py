@@ -39,3 +39,11 @@ def test_known_links_target_stable_anchors() -> None:
 def test_anchor_errors_fail_strict_mkdocs_build() -> None:
     config = (ROOT / "mkdocs.yml").read_text(encoding="utf-8")
     assert "  links:\n    anchors: warn\n" in config
+
+
+def test_korean_checklist_link_is_not_adjacent_to_task_marker() -> None:
+    import re
+
+    page = (ROOT / "docs_ko/release-checklist.md").read_text(encoding="utf-8")
+    assert not re.search(r"^\s*- \[ \] \[", page, re.MULTILINE)
+    assert "project/discoverability.md#release-discoverability-checklist" in page
