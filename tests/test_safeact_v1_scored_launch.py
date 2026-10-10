@@ -29,7 +29,7 @@ def _inputs(tmp_path: Path) -> dict:
         "contracts": {
             "contracts": [{"action": "act", "sources": []}],
             "case_coverage": {
-                f"SAB-V1-{i:03d}": "act"
+                f"SAB-V1-{i:03d}": None
                 for i in range(1, launch.EXPECTED_CASES + 1)
             },
         },
@@ -338,4 +338,14 @@ def test_rejects_broken_or_ambiguous_solver_option(
     sample["commands"][launch.CONDITIONS[2]] += " " + malformed
     # A repeatable --extra-arg may appear more than once, but never empty.
     with pytest.raises(ValueError, match="requires|runtime|duplicate"):
+        launch.validate_launch(**sample)
+
+def test_per_case_expected_action_oracle_never_authorized(
+    monkeypatch, tmp_path: Path
+) -> None:
+    sample = _inputs(tmp_path)
+    _mock_public(monkeypatch, sample)
+    sample["contracts"]["case_coverage"]["SAB-V1-001"] = "act"
+    _freeze_contract_hash(sample)
+    with pytest.raises(ValueError, match="oracle"):
         launch.validate_launch(**sample)
