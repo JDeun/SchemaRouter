@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-10",
+  "scope": "docs/security/threat-model.md ⇄ docs_ko/security/threat-model.md only",
+  "source_en_blob": "1e1446c4e2e38f033495fd2d20728dff57084a15",
+  "reviewed_ko_blob": "9d540623352571e2b7e37dd1d1e4328e3852a7fe",
+  "review_type": "targeted full-page bilingual editorial pass; reviewer-independent attestation not established",
+  "findings": [
+    {
+      "category": "literal untranslated paragraph",
+      "section": "Human-readable documentation",
+      "fix": "Replaced English-only paragraph about untrusted documentation and pre-analysis script/style removal with complete Korean translation."
+    },
+    {
+      "category": "security boundary clarity",
+      "section": "Remote schema and model output",
+      "fix": "Localized core authority boundary and refusal rules while retaining trusted-local-policy obligation."
+    },
+    {
+      "category": "security terminology",
+      "section": "credentials, audit delivery, SSRF and plugins",
+      "fix": "Localized security prose and headings without changing executable symbols, URLs or measured values."
+    }
+  ],
+  "checked_contracts": [
+    "remote schema and model output are not execution authority",
+    "audit delivery is separate from authorization and strict mode fails closed",
+    "credentials stay outside model-selected arguments",
+    "same-key source substitution invalidates schema watchers",
+    "initial URL admission remains the application's responsibility",
+    "payload trace and plugin loading are trust decisions",
+    "documentation proposals require grounding and explicit approval"
+  ],
+  "conclusion": "targeted page reviewed and repaired; other 146 pairs remain unverified at sentence level and issue #1202 stays open"
+}
