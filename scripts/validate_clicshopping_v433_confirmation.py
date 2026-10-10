@@ -52,6 +52,8 @@ def check_confirmation(plan: dict, candidate: dict, dev: dict, inventory: dict) 
         raise ValueError("permission roles changed")
     if candidate.get("protocol", {}).get("top_k") != plan["primary_top_k"]:
         raise ValueError("posthoc Top-K change not permitted")
+    if candidate.get("protocol") != dev.get("protocol"):
+        raise ValueError("confirmation protocol drift from frozen development setup")
     check = deepcopy(candidate)
     check["status"] = "preregistered_development_only_no_heldout_claim"
     validate_cases(check, inventory)
