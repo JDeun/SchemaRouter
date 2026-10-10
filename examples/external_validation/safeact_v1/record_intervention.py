@@ -9,6 +9,9 @@ from typing import Any
 from examples.external_validation.safeact_v1.trusted_session import (
     TrustedEvidenceSession,
 )
+from examples.external_validation.safeact_v1.contract_loader import (
+    SAFEACT_PUBLIC_DOMAINS,
+)
 from scripts.verify_safeact_v1_sources import verify_sources
 
 EvidenceVerifier = Any
@@ -22,6 +25,7 @@ def gate_official_v1_record(
     public_source_root: Path,
     actual_gateway_calls: list[dict[str, Any]],
     verify_result: EvidenceVerifier,
+    domain: str | None = None,
 ) -> dict[str, Any]:
     """Filter the model's proposed consequential event before official scoring.
 
@@ -30,6 +34,8 @@ def gate_official_v1_record(
     from model prose, reconstructed INFO_CALL events or evaluator gold files.
     The agent-visible information trace is preserved byte-for-byte.
     """
+    if domain is not None and domain not in SAFEACT_PUBLIC_DOMAINS:
+        raise ValueError("unknown public SafeAct domain")
     coverage = contract_document.get("case_coverage")
     if not isinstance(coverage, dict) or case_id not in coverage:
         raise ValueError("public case ID not covered by independent cohort")
@@ -73,7 +79,9 @@ def gate_official_v1_record(
             raise ValueError("trusted contract catalogue missing")
         matches = [
             item for item in contracts
-            if isinstance(item, dict) and item.get("action") == proposed_tool
+            if isinstance(item, dict)
+            and item.get("action") == proposed_tool
+            and item.get("domain") == domain
         ]
         if not matches:
             # An action absent from independent policy has no authority.
@@ -91,6 +99,7 @@ def gate_official_v1_record(
             session = TrustedEvidenceSession.from_verified_sources(
                 contract_document,
                 proposed_tool,
+                domain=domain,
                 source_root=public_source_root,
                 information_call=lambda *a: (_ for _ in ()).throw(
                     RuntimeError("double execution forbidden")
@@ -132,6 +141,7 @@ def gate_official_v1_record(
     metadata["schemarouter_intervention"] = {
         "kind": "trusted_official_v1_record_gate",
         "case_id": case_id,
+        "contract_domain": domain,
         "contract_selection": "proposed_action_not_case_id",
         "model_action_attempts": len(actions),
         "authorized_action_dispatches": dispatches,
