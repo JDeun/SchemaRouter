@@ -12,7 +12,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 EN = ROOT / "docs"
 KO = ROOT / "docs_ko"
-EXCLUDED = {"assets/brand/README.md"}
 FENCE = re.compile(r"^\s*(```|~~~)([^\s`]*)")
 HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 MOJIBAKE = ("\ufffd", "Ã", "Â", "â€™", "â€œ", "â€", "â€“", "â€”", "ðŸ")
@@ -23,7 +22,6 @@ def markdown_files(root: Path) -> dict[str, Path]:
     return {
         p.relative_to(root).as_posix(): p
         for p in root.rglob("*.md")
-        if p.relative_to(root).as_posix() not in EXCLUDED
     }
 
 

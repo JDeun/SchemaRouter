@@ -32,3 +32,12 @@ def test_numeric_issue_id_escaped_as_prose_is_allowed(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     assert unescaped_numeric_issue_references(page) == []
+
+
+def test_brand_assets_participate_in_whole_corpus_integrity(tmp_path: Path) -> None:
+    from scripts.check_bilingual_docs import markdown_files
+
+    asset = tmp_path / "assets" / "brand" / "README.md"
+    asset.parent.mkdir(parents=True)
+    asset.write_text("# Brand assets\\n", encoding="utf-8")
+    assert "assets/brand/README.md" in markdown_files(tmp_path)
