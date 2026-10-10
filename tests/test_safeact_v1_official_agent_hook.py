@@ -72,7 +72,9 @@ def test_official_hook_uses_only_trusted_gateway_calls(
     )
     gateway = fake.ToolGateway("v1")
     events = [{"type": "INFO_CALL"}, {"type": "CONSEQUENTIAL_CALL"}]
-    got = fake.normalize_v1({"env_id": "customer_policy_qa"}, {}, events, "codex", "model", "", None)
+    got = fake.normalize_v1(
+        {"env_id": "customer_policy_qa"}, {}, events, "codex", "model", "", None
+    )
     assert got["events"] == events
     assert collected[0][1]["actual_gateway_calls"] is gateway.calls
     assert collected[0][1]["case_id"] == "SAB-V1-001"
@@ -100,7 +102,9 @@ def test_official_hook_fails_closed_if_gateway_not_captured(
         source_root=tmp_path, case_id="SAB-V1-001",
     )
     with pytest.raises(ValueError, match="one isolated"):
-        fake.normalize_v1({"env_id": "customer_policy_qa"}, {}, [], "codex", "model", "", None)
+        fake.normalize_v1(
+            {"env_id": "customer_policy_qa"}, {}, [], "codex", "model", "", None
+        )
 
 
 def test_missing_or_tampered_independent_source_fails_before_runner(
@@ -152,3 +156,27 @@ def test_accepts_identical_baseline_strategy(arguments: list[str]) -> None:
     hook.require_baseline_strategy(
         arguments, environment={"SAFEACT_AGENT_STRATEGY": "baseline"}
     )
+
+def test_official_host_rejects_missing_public_domain(
+    monkeypatch, tmp_path: Path
+) -> None:
+    class FakeGateway:
+        def __init__(self, protocol: str):
+            self.protocol = protocol
+            self.calls = []
+
+    fake = SimpleNamespace(
+        ToolGateway=FakeGateway,
+        normalize_v1=lambda *args: {"events": []},
+    )
+    monkeypatch.setattr(hook, "verify_sources", lambda *args: [])
+    hook.install_v1_gate(
+        fake, document={
+            "public_observation_mappings": {},
+            "case_coverage": {"SAB-V1-001": None},
+        },
+        source_root=tmp_path, case_id="SAB-V1-001",
+    )
+    fake.ToolGateway("v1")
+    with pytest.raises(ValueError, match="domain"):
+        fake.normalize_v1({}, {}, [], "codex", "model", "", None)
