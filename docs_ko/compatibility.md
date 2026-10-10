@@ -66,6 +66,8 @@ Declared dependency range와 PR마다 CI가 증명하는 범위를 구분합니�
 
 필수 CI에는 다음 세부 검증도 포함됩니다. Pyright는 배포 패키지의 정적 타입을 검사합니다. 전체 테스트의 분기 커버리지는 차단 기준 84%와 XML 산출물로 확인합니다. 최소 런타임 의존성 검사에서는 선언된 하한 버전을 확인합니다. Wheel 및 sdist 각각을 별도의 깨끗한 환경에 설치하고 quickstart를 실행하며, 별도 `schemarouter.adapters` 배포 패키지의 메타데이터만을 이용한 탐색·명시적 로드·스키마 검증·로컬 실행 정책 강제를 확인합니다. 플래너는 식별자 보존, 잘못된·알 수 없는 ID, abstention, 동기·비동기 경로 및 결정론적 fallback을 검사합니다. 상태 인식 검색, 인덱싱된 증분 capability graph, 원자적 snapshot publication, 포맷 마이그레이션과 결정 trace의 privacy도 검사합니다.
 
+프레임워크 quickstart도 별도 CI에서 실제로 수행합니다. LangChain은 `examples/langchain_quickstart.py`, LangGraph는 `examples/langgraph_quickstart.py`, LlamaIndex는 `examples/llamaindex_quickstart.py`를 실행해 문서상의 연결 경로가 동작함을 확인합니다. Python 버전은 3.10, 3.11, 3.12, 3.13, 3.14를 각각 검사하며, 특정 버전 범위 전체의 모든 과거 의존성 조합을 증명한다는 뜻은 아닙니다.
+
 별도 `Python Preview` 워크플로는 Python 3.15 RC를 제한된 실행시간 안에서 시험합니다. 실패는 전방 호환성 신호로 표시하지만 릴리스의 차단 조건은 아닙니다.
 
 Release workflow는 successful current-main CI를 소비한 뒤 tag/artifact를 resolve합니다. GitHub Release+PyPI 뒤 exact version을 wheel, forced sdist, isolated mcp/jev/otel, combined extras로 checkout 밖에서 재설치합니다. PyPI propagation은 bounded retry로 처리하며 다른 version을 허용하지 않습니다.
