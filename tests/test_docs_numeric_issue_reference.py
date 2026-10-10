@@ -11,6 +11,7 @@ def test_numeric_issue_id_paragraph_is_rejected(tmp_path: Path) -> None:
         "# Actual heading\n"
         "\n"
         "#431 is a GitHub issue, not a heading.\n"
+        "- #423 in a list is not an intended heading.\n"
         "이슈 #432는 본문에 포함됩니다.\n"
         "\n"
         "```python\n"
@@ -18,7 +19,7 @@ def test_numeric_issue_id_paragraph_is_rejected(tmp_path: Path) -> None:
         "```\n",
         encoding="utf-8",
     )
-    assert unescaped_numeric_issue_references(page) == [3]
+    assert unescaped_numeric_issue_references(page) == [3, 4]
 
 
 def test_numeric_issue_id_escaped_as_prose_is_allowed(tmp_path: Path) -> None:
