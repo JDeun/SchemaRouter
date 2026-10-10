@@ -46,7 +46,7 @@ jobs:
       - run: pip install -e ".[docs]" "pytest>=8.2" "pytest-asyncio>=0.23" "playwright==1.55.0"
       - run: python -m playwright install --with-deps chromium
       - name: Verify final QA harness regressions
-        run: pytest -q tests/test_docs_final_qa.py
+        run: python -m pytest -q tests/test_docs_final_qa.py
       - name: Prepare Korean documentation tree
         run: python scripts/prepare_korean_docs.py
       - name: Build English strict
