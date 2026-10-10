@@ -1,0 +1,77 @@
+name: ClicShopping 4.33 Offline Development Benchmark
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "benchmarks/external-validation-clicshopping-v433/**"
+      - "scripts/validate_clicshopping_v433_inventory.py"
+      - "scripts/run_clicshopping_v433_dev.py"
+      - ".github/workflows/external-validation-clicshopping-v433-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: clicshopping-v433-dev-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  evaluate-dev:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -e ".[dev]"
+      - name: Validate immutable public source and scope constraints
+        run: |
+          python scripts/validate_clicshopping_v433_inventory.py
+          python -m pytest -q tests/test_clicshopping_v433_inventory.py tests/test_clicshopping_v433_dev.py
+      - name: Run offline dev-only full vs typed-preselection comparison
+        run: |
+          mkdir -p artifacts/clicshopping-v433
+          python scripts/run_clicshopping_v433_dev.py \
+            --out artifacts/clicshopping-v433/dev-report.json
+      - name: Freeze workflow provenance and report digest
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("artifacts/clicshopping-v433")
+          report_path = root / "dev-report.json"
+          report = json.loads(report_path.read_text(encoding="utf-8"))
+          assert report["status"] == "development_fixture_only_not_independent_confirmation"
+          assert report["upstream_commit"] == "3bac851759234a4babb49d3f351e472cd9e0f31f"
+          provenance = {
+              "schema_version": 1,
+              "evidence_level": "maintainer_owned_development_only",
+              "schema_router_source_sha": os.environ["GITHUB_SHA"],
+              "github_run_id": os.environ["GITHUB_RUN_ID"],
+              "upstream_commit": report["upstream_commit"],
+              "report_sha256": hashlib.sha256(report_path.read_bytes()).hexdigest(),
+              "model_calls": 0,
+              "upstream_calls": 0,
+              "live_credentials": False,
+              "independent_confirmation": False,
+          }
+          (root / "provenance.json").write_text(
+              json.dumps(provenance, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+          )
+          print("Source-pinned offline DEV artifact; no held-out or product winner claim.")
+          PY
+          sha256sum artifacts/clicshopping-v433/*.json > artifacts/clicshopping-v433/SHA256SUMS
+      - name: Publish development-only artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: clicshopping-v433-offline-dev-${{ github.run_id }}
+          path: artifacts/clicshopping-v433/
+          if-no-files-found: error
+          retention-days: 30
