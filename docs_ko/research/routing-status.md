@@ -114,14 +114,14 @@ Canonical provenance:
 
 ## External validation 상태
 
-External comparison은 maintainer-owned product validation과 분리해 추적합니다. Development fixtures and protocol preparation are **not external evidence**.
+외부 비교 평가는 자체 제품 검증과 분리해 추적합니다. 개발용 테스트 자료나 프로토콜을 준비했다는 사실만으로 **외부 검증 근거가 확보된 것은 아닙니다**.
 
-| Track | Current state | Evidence boundary |
+| 검증 대상 | 현재 상태 | 근거 해석의 경계 |
 | --- | --- | --- |
-| SmartMCP (#1114) | native development fixture/smoke prepared; maintainer protocol confirmation pending | held-out freeze waits for upstream agreement |
-| Clear Your Tools (#839) | v2.17.6 native BM25 development smoke being integrated | visible development fixture only; no held-out claim |
-| Jev (#796) | frozen 82-tool / 16-query package delivered upstream | waiting for upstream execution/review; no post-freeze tuning |
-| HYSET (#795) | public-code fresh-retraining protocol prepared | must be labeled independently retrained HYSET; no paper-checkpoint reproduction claim |
+| SmartMCP (#1114) | 자체 개발용 자료와 스모크 테스트 준비, 상대 유지관리자의 프로토콜 확인 대기 | 홀드아웃 동결에는 사전 합의 필요 |
+| Clear Your Tools (#839) | v2.17.6 기본 BM25 개발용 스모크 테스트 연동 중 | 공개된 개발 자료이며 홀드아웃 성능 근거는 아님 |
+| Jev (#796) | 도구 82개·질의 16개의 동결 패키지 전달 | 상대측 실행·검토 대기, 동결 이후 조정 금지 |
+| HYSET (#795) | 공개 코드 기반 신규 재학습 프로토콜 준비 | 독립 재학습 결과로 표시, 비공개 논문 체크포인트 재현이라 주장할 수 없음 |
 
 정식 동결 규칙은 [외부 검증 동결](external-validation-freeze.md)에 설명돼 있습니다. 부정적 결과와 효과가 확인되지 않은 결과도 그대로 공개할 수 있는 근거이며, 홀드아웃 결과를 보고 수정해서는 안 됩니다.
 
@@ -151,7 +151,7 @@ flowchart TD
 
 이 문서는 개발 집합의 성공을 운영환경 검증으로 주장하지 않습니다. 새로운 확인 코퍼스를 한 번 소비하면 튜닝에 재사용하지 않습니다.
 
-## Historical 0.11–0.13 operation-routing target
+## 과거 0.11–0.13 작업 라우팅 목표
 
 다국어 오픈셋 작업 라우팅 연구의 목표는 다음과 같습니다:
 
@@ -228,7 +228,7 @@ Source: `ef75100abc1bb03a80ef2d7cfbd9d463accfb623`
 Artifact: `10957952613`  
 Digest: `sha256:2a24d50c563ee872fdad8d498e30ab7a55e6c82e0650bf27ac4bfbadc4fc4269`
 
-## 0.12 query-first typed-frame screen
+## 0.12 질의 우선 타입 프레임 평가
 
 0.12의 첫 후속 실험(#347)은 엔드포인트 유사도 임계값을 더하는 대신 표현 방식을 바꿨습니다. 레지스트리와 독립적인 명시적 요청 프레임을 파싱하고, 동결한 BGE-M3로 도구·도메인만 고정한 다음 신뢰된 타입 계약과 모순되는 엔드포인트를 제거했습니다. 마지막에 제한된 한 번의 순위 선택을 수행했습니다.
 
@@ -318,7 +318,7 @@ DEV result:
 합의 규칙만 다시 조절하는 대신, 실질적으로 다른 의미론적 소속 신호를 도입해야 합니다.
 
 
-## 0.12 external multilingual zero-shot membership
+## 0.12 외부 다국어 제로샷 집합 소속 판정
 
 실험 #371은 동결된 BGE-M3만 긍정적 경로 선택자로 유지하면서 BGE/MiniLM 온톨로지
 투표 계열을 독립적으로 사전학습된 다국어 제로샷 분류기로 교체했습니다.
@@ -439,7 +439,7 @@ DEV 결과:
 
 종료된 연구 주기의 기계 판독형 결정은 `benchmarks/operation-routing-v4-terminal-decision.json`에 저장되어 있습니다.
 
-The full evidence ledger is stored at
+전체 실험 근거 원장은 다음 파일에 저장돼 있습니다:
 `benchmarks/research-experiment-ledger.json`.
 
 전체 설계·실험 이력은 `docs/research/design-and-experiment-history.md`에 정리되어 있습니다.
@@ -499,9 +499,9 @@ V6B는 등록된 기능의 보완 집합에서 동일 리소스의 미지원 작
 
 이 결과는 relative evidence가 supported traffic에 더 안전하지만 class당 하나의 Gaussian으로는 multimodal operation structure가 collapse된다는 점을 보여줍니다.
 
-**Decision:** terminal. Confirmation remains unopened.
+**결정: 종료.** 확인용 코퍼스는 개봉하지 않았습니다.
 
-### V6D — component Gaussian-mixture density ratio (#399)
+### V6D — 성분별 가우시안 혼합 밀도비 (#399)
 
 V6D는 엔드포인트별 긍정 성분과 리소스×작업별 여집합 성분을 유지하면서, 공유하는 대각 공분산과 고정된 로그우도비 0의 경계를 사용했습니다.
 
