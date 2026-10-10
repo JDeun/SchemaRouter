@@ -219,9 +219,31 @@ def plan(
     if len(jobs) < EXPECTED_SHARDS + 2:
         raise ValueError("parent has no complete materialized matrix")
     artifacts = api.artifacts(parent)
-    successful = successful_parent_shards(jobs, artifacts, parent)
-    if not successful <= set(shards):
+    candidate_successes = successful_parent_shards(jobs, artifacts, parent)
+    if not candidate_successes <= set(shards):
         raise ValueError("unknown successful shard")
+    # Artifact existence / job success is not evidence of a complete shard.
+    # Check the GitHub ZIP digest and all provenance/episode identities before
+    # deciding NOT to re-execute a shard. Never inspect pass/fail values.
+    original_artifacts = {
+        match.group(1): artifact
+        for artifact in artifacts
+        if (match := ARTIFACT_RE.fullmatch(str(artifact.get("name", ""))))
+        and int(match.group(2)) == parent
+        and not artifact.get("expired")
+    }
+    successful: set[str] = set()
+    invalid: dict[str, str] = {}
+    for shard_id in sorted(candidate_successes):
+        catalog, task_ids = shards[shard_id]
+        artifact = original_artifacts[shard_id]
+        try:
+            payload = _artifact_payload(api, artifact, f"{shard_id}.json")
+            validate_shard(payload, corpus=corpus, catalog=catalog, task_ids=task_ids)
+        except (ValueError, KeyError, TypeError, IndexError, OSError) as exc:
+            invalid[shard_id] = type(exc).__name__
+            continue
+        successful.add(shard_id)
     missing = sorted(set(shards) - successful)
     matrix, waves = wave_parts(shards, missing, wave)
     return {
@@ -231,6 +253,7 @@ def plan(
         "evidence_digest": digest,
         "tasks_sha256": corpus["tasks_sha256"],
         "successful_parent_shards": sorted(successful),
+        "invalid_parent_shards": invalid,
         "missing_parent_shards": missing,
         "total_waves": waves,
         "wave": wave,
