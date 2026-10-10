@@ -47,6 +47,7 @@ jobs:
             tests/test_safeact_v1_interventions.py \
             tests/test_safeact_v1_contract_review.py \
             tests/test_safeact_v1_public_tool_inventory.py \
+            tests/test_safeact_v1_review_queue.py \
             tests/test_safeact_v1_scored_workflow.py
       - name: Run actual eight-case EvidenceGate mechanism experiment
         run: |
@@ -119,6 +120,18 @@ jobs:
         with:
           name: safeact-v1-unreviewed-public-tool-inventory
           path: safeact-v1-public-tool-inventory.json
+          retention-days: 30
+      - name: Assemble case-blind, unapproved public contract author review queue
+        run: |
+          python -m scripts.prepare_safeact_v1_review_queue \
+            --public-listing safeact-v1-list.json \
+            --inventory safeact-v1-public-tool-inventory.json \
+            --out safeact-v1-review-queue.json
+      - name: Upload public-domain action review queue (no contracts approved)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: safeact-v1-unreviewed-domain-action-queue
+          path: safeact-v1-review-queue.json
           retention-days: 30
       - name: Validate all 131 V1 evaluator paths (official gold simulator, never agent score)
         if: github.event_name != 'pull_request'
