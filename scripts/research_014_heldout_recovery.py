@@ -42,6 +42,9 @@ ARTIFACT_RE = re.compile(r"^heldout-shard-(c(?:100|250|500)-g\d{2})-(\d+)$")
 MICRO_RE = re.compile(
     r"^heldout-recovery-part-(c(?:100|250|500)-g\d{2}-p\d{2})-(\d+)$"
 )
+RECOVERY_JOB_RE = re.compile(
+    r"^recover \\(c(?:100|250|500)-g\\d{2}-p\\d{2})(?:,|\\))"
+)
 
 
 def frozen_shards(corpus: dict[str, Any]) -> dict[str, tuple[int, tuple[str, ...]]]:
@@ -342,6 +345,21 @@ def collect(
     for wave, run_id in wave_runs.items():
         selected, _ = wave_parts(shards, missing, wave)
         selected_ids = {part["job_id"] for part in selected}
+        # Artifact uploads execute under always(), including timed-out or
+        # cancelled evaluators. A ZIP alone is never proof of a successful run.
+        job_conclusions: dict[str, str] = {}
+        for job in latest_jobs(api, run_id):
+            match = RECOVERY_JOB_RE.match(str(job.get("name", "")))
+            if match is None:
+                continue
+            part = match.group(1)
+            if part in job_conclusions:
+                raise ValueError(f"duplicate recovery job: {part}")
+            job_conclusions[part] = str(job.get("conclusion"))
+        if set(job_conclusions) != selected_ids or any(
+            result != "success" for result in job_conclusions.values()
+        ):
+            raise ValueError(f"incomplete or unsuccessful recovery jobs in wave {wave}")
         seen: set[str] = set()
         for artifact in api.artifacts(run_id):
             match = MICRO_RE.fullmatch(str(artifact.get("name", "")))
