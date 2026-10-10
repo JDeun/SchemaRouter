@@ -193,7 +193,7 @@
       "path": "research/design-and-experiment-history.md",
       "section": 34,
       "en_blob": "27bdc35c44010cfd1c15d4a5702ed2b9ad6f9c5c",
-      "ko_blob": "2a3ffebc02fc9e0c577d61bbeb72f9976c721d70",
+      "ko_blob": "7209d91638d859ab08137e6f1b31ff8d3c9c8804",
       "decision": "meaning-preserved",
       "evidence": "Korean preserves prior freeze/no-retuning and same-corpus non-generalization limits"
     },
@@ -201,7 +201,7 @@
       "path": "research/design-and-experiment-history.md",
       "section": 82,
       "en_blob": "27bdc35c44010cfd1c15d4a5702ed2b9ad6f9c5c",
-      "ko_blob": "2a3ffebc02fc9e0c577d61bbeb72f9976c721d70",
+      "ko_blob": "7209d91638d859ab08137e6f1b31ff8d3c9c8804",
       "decision": "meaning-preserved",
       "evidence": "Korean preserves prior freeze/no-retuning and same-corpus non-generalization limits"
     },
@@ -238,5 +238,6 @@
       "research/routing-status.md"
     ],
     "boundary": "This re-pinning does not establish independent sentence-level equivalence for 147 pages."
-  }
+  },
+  "translation_leakage_followup_2026_10_10": "Additional full paragraphs corrected: BGE ColBERT no posthoc thresholds; closed-set ranker agreement not capability membership; no tuning on failed rows; fixed unopened confirmation. Human independent 147-pair attestation remains outstanding."
 }
