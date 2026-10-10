@@ -1,0 +1,33 @@
+"""Prevent rendered H1 corruption from issue IDs at the start of prose."""
+
+from pathlib import Path
+
+from scripts.check_bilingual_docs import unescaped_numeric_issue_references
+
+
+def test_numeric_issue_id_paragraph_is_rejected(tmp_path: Path) -> None:
+    page = tmp_path / "source.md"
+    page.write_text(
+        "# Actual heading\n"
+        "\n"
+        "#431 is a GitHub issue, not a heading.\n"
+        "이슈 #432는 본문에 포함됩니다.\n"
+        "\n"
+        "```python\n"
+        "#506 comment inside fenced source is allowed\n"
+        "```\n",
+        encoding="utf-8",
+    )
+    assert unescaped_numeric_issue_references(page) == [3]
+
+
+def test_numeric_issue_id_escaped_as_prose_is_allowed(tmp_path: Path) -> None:
+    page = tmp_path / "source.md"
+    page.write_text(
+        "# Actual heading\n\n"
+        "Issue #431 is in the body.\n"
+        "이슈 #432는 본문에 포함됩니다.\n"
+        "\\#506 escaped text also stays in the body.\n",
+        encoding="utf-8",
+    )
+    assert unescaped_numeric_issue_references(page) == []
