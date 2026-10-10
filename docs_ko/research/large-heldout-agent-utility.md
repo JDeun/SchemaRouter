@@ -49,7 +49,7 @@ Languages:
 - Spanish
 - Japanese
 - German
-- realistic mixed-language identifiers/query text
+- 실제와 유사한 다국어 혼합 식별자·질의 텍스트
 
 ## Catalog scaling
 

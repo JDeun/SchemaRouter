@@ -1,4 +1,4 @@
-# Multi-provider retrieval and evidence aggregation
+# 다중 제공자 검색과 근거 통합
 
 SchemaRouter는 흔히 혼동되는 두 결정을 분리합니다:
 
