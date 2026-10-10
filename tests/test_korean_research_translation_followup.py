@@ -14,7 +14,7 @@ LEDGER = ROOT / "audits" / "ko-research-translation-followup-2026-10-10.json"
 def test_revision_pinned_research_translation_review() -> None:
     data = json.loads(LEDGER.read_text(encoding="utf-8"))
     assert data["schema_version"] == 1
-    assert len(data["reviewed"]) == 4
+    assert len(data["reviewed"]) == 5
     assert "not 147-pair" in data["scope"]
     for entry in data["reviewed"]:
         assert entry["en_blob"] == git_blob_sha(
@@ -64,3 +64,16 @@ def test_release_hooks_and_elapsed_time_keep_safety_limits() -> None:
     assert "신뢰된 실행 전후 훅의 시간도 포함됩니다" in r05
     assert "Trusted before/after hook" not in r04
     assert "Trusted middleware가 run-level wall-clock" not in r05
+
+
+def test_architecture_local_authority_and_trace_privacy_remain_explicit() -> None:
+    architecture = (ROOT / "docs_ko/architecture.md").read_text(
+        encoding="utf-8"
+    )
+    assert "Jev에는 `DecisionOption.metadata`도 전달하지 않습니다" in architecture
+    assert "누락된 증거를 충족한 것으로 바꿀 수 없습니다" in architecture
+    assert "실행 후 훅의 오류를 도구 자체의 오류로 간주해 재시도하지 않습니다" in architecture
+    assert "추적 데이터베이스는 원본 이벤트 스트림의 개인정보 보호 수준" in architecture
+    assert "include_payloads=True" in architecture
+    assert "For evidence\\nEvidence sufficiency" not in architecture
+    assert "Trace database는 source event의 privacy level을 보존합니다 stream" not in architecture
