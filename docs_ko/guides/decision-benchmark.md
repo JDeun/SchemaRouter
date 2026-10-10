@@ -294,7 +294,7 @@ operator가 local cost model을 명시적으로 부여하지 않는 한 순수 l
 
 각 row에는 다음을 기록합니다:
 
-- case ID, category, fixed split, language label
+- 사례 ID, 분류, 고정된 데이터 분할, 언어 레이블
 - 보고된 경우 provider/model identifier
 - backend가 보고할 수 있는 경우 requested/actual local device
 - expected/predicted `tool.endpoint`
@@ -345,7 +345,7 @@ protected GitHub Actions holdout job은 현재 v9를 대상으로 하며 manual-
 
 - semantic candidate recall top-k = 2;
 - broad capability-fit min similarity = 0.25;
-- same-tool endpoint disambiguation min margin = 0.03.
+- 동일 도구 내 엔드포인트 구분 최소 마진 = 0.03.
 
 v5 calibration에서는 operation-fit threshold만 변경합니다. label-cleaned operation-fit surface에서는 v7 평가 전에 threshold를 고정하고 v7 result로 재조정하지 않습니다.
 
@@ -362,7 +362,7 @@ v9 one-shot 결과 이후 stage-attributed v5 dev/calibration profiling에서 op
 
 - concise endpoint name + trusted alias + endpoint description: endpoint disambiguation 이후 dev/calibration 모두 balanced operation score 69.792%
 - 반복 natural-language `Supported operation:` phrase: dev 64.062% / calibration 63.542%
-- independent max-over-alias variant: dev 59.635% / calibration 60.417%
+- 별칭별 최대값을 독립적으로 취하는 변형: 개발 집합 59.635% / 보정 집합 60.417%
 
 concise representation은 v10을 확인하기 전에 선택했습니다. 이후 0.05~0.70의 새 threshold sweep 역시 v5 dev/calibration만 사용했습니다. robustness score는 dev와 calibration balanced operation score 중 더 낮은 값입니다. 선택 threshold는 `operation_fit_min_similarity = 0.40`으로 유지되었습니다. 0.35는 67.188%, 0.40은 69.792%, 0.45는 67.708% robustness를 기록했습니다.
 

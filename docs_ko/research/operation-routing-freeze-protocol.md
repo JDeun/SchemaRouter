@@ -44,7 +44,7 @@ Template을 candidate-specific JSON으로 복사합니다. DEV candidate freeze 
 - decision rule과 threshold
 - development corpus/workflow/artifact provenance
 - development metrics
-- independent fresh-confirmation corpus/workflow/artifact provenance
+- 독립적인 신규 확인용 코퍼스·워크플로·산출물의 출처 기록
 - fresh-confirmation metrics
 
 DEV freeze validation:
@@ -83,7 +83,7 @@ Independent confirmation을 생존한 candidate만 #198에 들어갈 수 있습�
 
 Ownership:
 
-- **#197: DEV → exact freeze → independent fresh confirmation**
+- **#197: 개발 데이터 평가 → 정확한 동결 → 독립적인 신규 확인 평가**
 - validated `fresh-confirmed` manifest 이후 **#198: calibration → one-shot blind-final**
 
 ## Calibration과 blind-final

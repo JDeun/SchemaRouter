@@ -150,7 +150,7 @@ router = await SchemaRouter.from_url(
 )
 ```
 
-## Custom OAuth, mTLS, proxies, or gateway transports
+## 사용자 정의 OAuth, mTLS, 프록시 및 게이트웨이 전송 방식
 
 OAuth, mTLS, 프록시, 기업용 게이트웨이 등 복잡한 인증이 필요하다면 신뢰할 수 있는 `MCPClientFactory`를 주입하십시오. 팩토리는 공식 MCP SDK 클라이언트와 전송 수명주기를 소유합니다. 이 경로를 통해 클라이언트 자격 증명, OAuth, mTLS, 전용 HTTP 클라이언트를 구성하되 비밀 정보는 SchemaRouter의 모델 노출 계획 계약 밖에 유지합니다. 이는 Streamable HTTP 전송에 전달하는 호출자 소유 HTTP 클라이언트에서 인증을 처리하는 MCP SDK의 계층 분리와 일치합니다.
 

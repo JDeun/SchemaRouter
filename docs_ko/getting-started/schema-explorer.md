@@ -18,9 +18,9 @@ Explorer에는 다음 정보가 포함됩니다.
 - schema와 endpoint fingerprint
 - read-only / mutating / destructive 분류
 - credential 값이 제외된 authentication requirement
-- parameter, wire name, location, serialization semantics, JSON Schema
+- 매개변수, 전송 계층 이름, 위치, 직렬화 의미, JSON Schema
 - 전체 input/output schema
-- output semantic ID, unit, normalization contract, qualifier, projection path
+- 출력 의미 식별자, 단위, 정규화 계약, 한정자, 투영 경로
 - tool, endpoint, provider, field, semantic ID, unit, method, mode 통합 검색
 
 문서에 포함된 example credential이나 다른 sample secret이 우발적으로 공개되지 않도록 schema의 `default` / `example` / `examples` 값은 Explorer 문서에서 제외됩니다. 임의의 ToolSpec metadata도 복사하지 않습니다.
