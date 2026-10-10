@@ -67,8 +67,7 @@ AuthorizationRule(
 권한이 없는 collection은 model selection 이전에 숨기고 실행 직전에 다시 검증합니다.
 
 Principal DataScope 규칙에서 나온 metadata/tenant filter는 execution 시 trusted filter로
-적용합니다. Vendor adapter는 모델 argument가 trusted tenant/department filter를 덮어쓰게
-해서는 안 됩니다.
+적용합니다. Filter를 강제할 수 있는 백엔드는 공개된 `ScopedVectorStoreBackend` 계약을 구현하고 `supports_trusted_filters = True`로 선언해야 합니다. 이를 충족하지 못하면 SchemaRouter는 **백엔드 I/O 이전에 fail-closed**합니다. Scalar filter 값은 정확한 일치 조건이며 tuple 값은 해당 필드에서의 any-of 조건입니다. 모든 filter는 신뢰할 수 있는 principal 상태에서만 생성되며 모델이 제어하는 검색 인자로 노출해서는 안 됩니다. Vendor adapter는 모델 argument가 trusted tenant/department filter를 덮어쓰게 해서도 안 됩니다.
 
 ## Vendor adapter
 
