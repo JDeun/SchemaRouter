@@ -6,8 +6,9 @@ from __future__ import annotations
 import argparse
 import json
 import re
-from scripts.prepare_korean_docs import git_blob_sha
 from pathlib import Path
+
+from scripts.prepare_korean_docs import git_blob_sha
 
 ROOT = Path(__file__).resolve().parents[1]
 FENCE = re.compile(r"^\s*(\x60{3,}|~{3,})")

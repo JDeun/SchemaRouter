@@ -1,10 +1,16 @@
+import json
 from pathlib import Path
 
-from scripts.audit_translation_semantic_sections import audit, sections
+from scripts.audit_translation_semantic_sections import audit, sections, verify_reviewed
+from scripts.prepare_korean_docs import git_blob_sha
+
 
 
 def test_section_fence_and_heading() -> None:
-    data = "# Main\n\nExplaining the topic.\n\n~~~python\n# Code fake heading\n~~~\n\n## Details\n\nNever do this."
+    data = (
+        "# Main\n\nExplaining the topic.\n\n~~~python\n"
+        "# Code fake heading\n~~~\n\n## Details\n\nNever do this."
+    )
     result = sections(data)
     assert len(result) == 2
     assert result[0]["heading"] == "Main"
@@ -52,10 +58,6 @@ def test_korean_negative_forms_are_recognized(tmp_path: Path) -> None:
 
 
 def test_stale_review_is_rejected(tmp_path: Path) -> None:
-    import json
-    from scripts.audit_translation_semantic_sections import verify_reviewed
-    from scripts.prepare_korean_docs import git_blob_sha
-
     en, ko = tmp_path / "en", tmp_path / "ko"
     en.mkdir()
     ko.mkdir()
