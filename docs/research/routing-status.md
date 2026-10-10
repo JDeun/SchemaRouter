@@ -147,7 +147,7 @@ flowchart TD
     D -->|"Canonical success and verified digest"| E["#500 Terminal evidence synthesis"]
 ```
 
-#431's canonical corrective/recovery evidence has been consumed by the conveyor. Its optional state-aware condition and the structural K3 condition were **not promoted**. #432 is running on the frozen held-out surface; #424 must start only after #432 reaches canonical success. Neither stage may be manually launched around the conveyor. No held-out pass rate, interval or final-answer quality claim is available yet.
+Issue #431's canonical corrective/recovery evidence has been consumed by the conveyor. Its optional state-aware condition and the structural K3 condition were **not promoted**. #432 is running on the frozen held-out surface; #424 must start only after #432 reaches canonical success. Neither stage may be manually launched around the conveyor. No held-out pass rate, interval or final-answer quality claim is available yet.
 
 The separate output-field-projection line (#506/#510) remains an independent field-level research
 question. Its runtime qualification is instrument evidence and must not be mixed into the
