@@ -11,6 +11,7 @@ on:
       - 'scripts/report_bilingual_coverage.py'
       - 'scripts/report_translation_semantic_risks.py'
       - 'scripts/audit_translation_semantic_sections.py'
+      - 'audits/ko-semantic-section-review-2026-10-10.json'
       - '.github/workflows/korean-translation-coverage.yml'
   schedule:
     - cron: '43 4 * * 1'
@@ -22,6 +23,7 @@ on:
       - 'scripts/report_bilingual_coverage.py'
       - 'scripts/report_translation_semantic_risks.py'
       - 'scripts/audit_translation_semantic_sections.py'
+      - 'audits/ko-semantic-section-review-2026-10-10.json'
       - 'tests/test_bilingual_coverage_report.py'
       - 'tests/test_bilingual_docs_integrity.py'
       - 'tests/test_translation_semantic_risks.py'
@@ -59,6 +61,11 @@ jobs:
         run: |
           python -m scripts.audit_translation_semantic_sections --json-out translation-section-risks.json
           echo "Per-section triage is not a semantic certificate." >> "$GITHUB_STEP_SUMMARY"
+      - name: Gate new or stale semantic risk findings on editorial review
+        run: |
+          python -m scripts.audit_translation_semantic_sections \
+            --review-ledger audits/ko-semantic-section-review-2026-10-10.json \
+            --strict --max-show 0
       - name: Publish audit evidence; findings do not falsely imply translation completion
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

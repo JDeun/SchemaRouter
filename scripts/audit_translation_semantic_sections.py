@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from scripts.prepare_korean_docs import git_blob_sha
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -101,10 +102,42 @@ def audit(en_root: Path, ko_root: Path) -> dict[str, object]:
     }
 
 
+
+def verify_reviewed(
+    report: dict[str, object],
+    ledger_path: Path,
+    en_root: Path,
+    ko_root: Path,
+) -> list[str]:
+    """Require fresh source/translation provenance for every editorial waiver."""
+    review = json.loads(ledger_path.read_text(encoding="utf-8"))
+    if review.get("schema_version") != 1 or not isinstance(review.get("reviews"), list):
+        return ["invalid semantic editorial ledger schema"]
+    approved = {
+        (entry["path"], entry["section"]): entry
+        for entry in review["reviews"]
+        if entry.get("decision") == "meaning-preserved"
+    }
+    errors: list[str] = []
+    for item in report["findings"]:
+        path = item["path"]
+        section = item.get("section")
+        entry = approved.get((path, section))
+        if entry is None:
+            errors.append(f"{path} section {section}: missing editorial disposition")
+            continue
+        for prefix, root in (("en", en_root), ("ko", ko_root)):
+            actual_sha = git_blob_sha((root / path).read_bytes())
+            if entry.get(f"{prefix}_blob") != actual_sha:
+                errors.append(f"{path} section {section}: {prefix} document changed since review")
+    return errors
+
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--json-out", type=Path, default=Path("translation-section-risks.json"))
     p.add_argument("--max-show", type=int, default=70)
+    p.add_argument("--review-ledger", type=Path)
+    p.add_argument("--strict", action="store_true")
     args = p.parse_args()
     report = audit(ROOT / "docs", ROOT / "docs_ko")
     args.json_out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
@@ -114,6 +147,15 @@ def main() -> None:
         f"flagged pages: {report['flagged_pages']}; "
         f"flagged sections: {report['flagged_sections']}"
     )
+    if args.strict:
+        if not args.review_ledger:
+            raise SystemExit("--strict requires --review-ledger")
+        problems = verify_reviewed(
+            report, args.review_ledger, ROOT / "docs", ROOT / "docs_ko"
+        )
+        if problems:
+            raise SystemExit("unreviewed semantic risk:\n- " + "\n- ".join(problems))
+        print("All rule-flagged sections have revision-pinned editorial dispositions.")
     for item in report["findings"][:args.max_show]:
         print(f"{item['path']} :: {item.get('section', '?')} "
               f"{item.get('en_heading', '')} {item.get('signals', [item.get('error', '')])} "

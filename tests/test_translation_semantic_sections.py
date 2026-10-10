@@ -49,3 +49,30 @@ def test_korean_negative_forms_are_recognized(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     assert audit(en, ko)["flagged_sections"] == 0
+
+
+def test_stale_review_is_rejected(tmp_path: Path) -> None:
+    import json
+    from scripts.audit_translation_semantic_sections import verify_reviewed
+    from scripts.prepare_korean_docs import git_blob_sha
+
+    en, ko = tmp_path / "en", tmp_path / "ko"
+    en.mkdir()
+    ko.mkdir()
+    (en / "a.md").write_text(
+        "# First\n\nThis must not be executed without approval.", encoding="utf-8"
+    )
+    (ko / "a.md").write_text("# 검증\n\n필요합니다.", encoding="utf-8")
+    report = audit(en, ko)
+    ledger = tmp_path / "ledger.json"
+    entry = {
+        "path": "a.md",
+        "section": 1,
+        "en_blob": git_blob_sha((en / "a.md").read_bytes()),
+        "ko_blob": git_blob_sha((ko / "a.md").read_bytes()),
+        "decision": "meaning-preserved",
+    }
+    ledger.write_text(json.dumps({"schema_version": 1, "reviews": [entry]}))
+    assert verify_reviewed(report, ledger, en, ko) == []
+    (ko / "a.md").write_text("# 검증\n\n이제 달라졌습니다.", encoding="utf-8")
+    assert verify_reviewed(audit(en, ko), ledger, en, ko)
