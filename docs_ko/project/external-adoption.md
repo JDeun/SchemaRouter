@@ -116,7 +116,7 @@ Proposed adopter가 research history를 읽을 필요가 없도록 다음을 제
 - added routing latency
 - invalid/unsupported query behavior
 - authority/policy integration notes
-- conversion gap/unsupported schema construct
+- 변환하지 못한 부분과 지원하지 않는 스키마 구성 요소
 
 No registered capability가 선택되어야 하는 request를 최소 하나 포함합니다.
 
