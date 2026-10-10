@@ -96,13 +96,13 @@ The evidence package should be read with these limits:
 ## Final-paper closure
 
 The package can be regenerated throughout the active 0.14 cycle, but final paper tables must not
-treat an active or infrastructure-invalid run as scientific evidence. The current closure path is:
+treat an active or infrastructure-invalid run as scientific evidence. As of 2026-10-10 the remaining
+closure path and already-resolved gates are distinct:
 
-- terminal #431 corrective aggregate and preregistered gate;
-- terminal #432 large held-out generalization result;
-- terminal #424 final-answer factual/value/unit/provenance result;
-- terminal #510 runtime qualification and the successor projection result if that field-level line
-  is included in the paper.
+- **#431 resolved:** the frozen corrective condition did **not** qualify for held-out promotion; report this negative gate unchanged rather than listing it as an active experiment.
+- **#432 active:** the frozen 780-task large held-out evaluation was dispatched in run [`38012340016`](https://github.com/JDeun/SchemaRouter/actions/runs/38012340016). No canonical aggregate or generalization result is accepted yet.
+- **#424 pending:** final-answer fact/value/unit/provenance scoring starts only after canonical #432 success and artifact-digest verification.
+- **#510 terminal negative:** none of the preregistered stronger-agent candidates qualified as a grounded-output measurement instrument. The separate #506 output-field projection successor is **not authorized** by that qualification; neither a projection benefit nor equivalence can be claimed from it.
 
 Historical calibration/blind work from the earlier operation-routing lineage remains part of the
 ledger, but it is not a substitute for the frozen 0.14 held-out and final-answer evidence above.
