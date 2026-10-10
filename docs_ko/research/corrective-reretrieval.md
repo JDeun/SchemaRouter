@@ -4,7 +4,7 @@ Tracking issue: #431
 
 이 실험은 multi-step agent가 original query에서 생성된 candidate list를 단순히 넓히는 대신 **observable typed execution state**로 다시 retrieval하여 누락된 next-step capability를 복구할 수 있는지 묻습니다.
 
-#423 B2는 terminal이므로 automated #500 conveyor를 통해 실험이 허용됐습니다.
+이슈 #423 B2는 terminal이므로 automated #500 conveyor를 통해 실험이 허용됐습니다.
 
 2026-10-02 기준 recovery run `36897645512`는 변경되지 않은 frozen scientific source `30663de8f618bc88a893d9bf6214035a70e8e894`를 실행 중입니다. 이전 wrapper/cache failure는 infrastructure evidence일 뿐입니다. Terminal aggregate와 preregistered gate가 나오기 전에 partial shard outcome을 해석·tuning·promotion해서는 안 됩니다.
 

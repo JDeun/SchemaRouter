@@ -88,7 +88,7 @@ Issue #198은 다음 candidate를 요구합니다.
 
 금지:
 
-- #270, #287, #326에서 train/tune
+- 이슈 #270, #287, #326에서 train/tune
 - route/language/family exception으로 terminal 0.11 family 부활
 - rejected winner를 rescue하기 위한 rank-2 fallback 또는 pseudo-route 추가
 - provider compatibility를 routing-quality evidence로 취급
