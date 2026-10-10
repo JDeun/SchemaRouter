@@ -27,7 +27,7 @@ PUBLIC_POLICY_SUFFIXES = frozenset({".json", ".md", ".txt", ".yaml", ".yml"})
 
 
 def build_inventory(root: Path) -> dict[str, Any]:
-    """Inspect only templates/<fixed-domain>/tools/*.py, without code parsing."""
+    """Hash fixed public template tools and policy candidates, without parsing."""
     root = root.resolve(strict=True)
     records: list[dict[str, str]] = []
     policy_candidates: list[dict[str, str]] = []
