@@ -21,6 +21,9 @@ from examples.external_validation.safeact_v1.run_plan import (
     V1RunPlan,
     validate_comparison_matrix,
 )
+from examples.external_validation.safeact_v1.contract_loader import (
+    SAFEACT_PUBLIC_DOMAINS,
+)
 from scripts.aggregate_safeact_v1_metrics import aggregate_scored_v1
 from scripts.verify_safeact_v1_interventions import verify_arm_interventions
 from scripts.verify_safeact_v1_sources import verify_sources
@@ -213,17 +216,26 @@ def validate_launch(
         raise ValueError("explicit independent V1 case coverage required")
     if set(coverage) != public_case_ids(root):
         raise ValueError("independent contracts do not cover 131 public V1 cases")
-    names = [
-        contract.get("action")
+    scopes = [
+        (contract.get("domain"), contract.get("action"))
         for contract in contracts["contracts"]
         if isinstance(contract, dict)
     ]
     if (
-        not names
-        or any(not isinstance(name, str) or not name for name in names)
-        or len(set(names)) != len(names)
+        not scopes
+        or len(scopes) != len(contracts["contracts"])
+        or any(
+            not isinstance(domain, str)
+            or domain not in SAFEACT_PUBLIC_DOMAINS
+            or not isinstance(action, str)
+            or not action
+            for domain, action in scopes
+        )
+        or len(set(scopes)) != len(scopes)
     ):
-        raise ValueError("independent action contracts must have unique names")
+        raise ValueError(
+            "independent action contracts must have unique names per public domain"
+        )
     # Public V1 IDs are an opaque cohort, never a per-case expected-action oracle.
     # Each actual model-proposed tool must select its own reviewed contract.
     if any(value is not None for value in coverage.values()):
