@@ -96,8 +96,11 @@ def install_v1_gate(
     verified_errors = verify_sources(document, source_root)
     if verified_errors:
         raise ValueError("independent contract preflight failed: " + "; ".join(verified_errors))
-    if case_id not in document.get("case_coverage", {}):
-        raise ValueError("public V1 case has no independent contract coverage")
+    coverage = document.get("case_coverage")
+    if not isinstance(coverage, dict) or case_id not in coverage:
+        raise ValueError("public V1 case has no independent cohort coverage")
+    if any(value is not None for value in coverage.values()):
+        raise ValueError("case-specific expected-action oracle is forbidden")
     existing_init = official_module.ToolGateway.__init__
     original_normalize = official_module.normalize_v1
     gateways: list[Any] = []
