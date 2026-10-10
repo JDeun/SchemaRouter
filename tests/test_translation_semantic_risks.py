@@ -33,3 +33,9 @@ def test_missing_values_are_only_risk_candidates(tmp_path: Path) -> None:
 
 def test_tilde_fence_is_stripped() -> None:
     assert "123" not in prose("# Header\n\n~~~bash\n123\n~~~\n")
+
+
+def test_korean_particles_and_number_separator_do_not_look_missing() -> None:
+    english = tokens("# Results\n\n158 of 181 instances and 1,200 queries.")
+    korean = tokens("# 결과\n\n181개 중 158개와 1200개 질의.")
+    assert english["numbers"] <= korean["numbers"]

@@ -10,8 +10,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 FENCE = re.compile(r"^\s*(\x60{3,}|~{3,})")
 INLINE = re.compile(r"(?<!\x60)\x60([^\x60\n]{1,180})\x60(?!\x60)")
-NUMBER = re.compile(r"(?<![\w/.#])\d+(?:[.,]\d+)*(?:%|pp|ms|GiB|MiB)?(?![\w])")
-PROVENANCE = re.compile(r"(?<!\w)(?:#[1-9]\d{1,5}|\d{10,12}|[a-f0-9]{40})(?!\w)")
+NUMBER = re.compile(r"(?<![A-Za-z0-9_/.#])\d+(?:[.,]\d+)*(?:%|pp|ms|GiB|MiB)?(?![A-Za-z0-9_])")
+PROVENANCE = re.compile(r"(?<![A-Za-z0-9_])(?:#[1-9]\d{1,5}|\d{10,12}|[a-f0-9]{40})(?![A-Za-z0-9_])")
 
 
 def prose(source: str) -> str:
@@ -39,7 +39,7 @@ def tokens(text: str) -> dict[str, set[str]]:
             for match in INLINE.finditer(visible)
             if re.search(r"[._/()\[\]<>=-]", match.group(1))
         },
-        "numbers": {match.group(0) for match in NUMBER.finditer(visible)},
+        "numbers": {match.group(0).replace(",", "") for match in NUMBER.finditer(visible)},
         "provenance": {match.group(0) for match in PROVENANCE.finditer(visible)},
     }
 
