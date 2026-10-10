@@ -60,9 +60,9 @@ Relevant current work:
 - #418 — FULL vs Top-K vs progressive utility protocol, terminal;
 - #420 — B1 local downstream-agent A/B, terminal;
 - #423 — stronger-agent B2 replication, terminal success;
-- #431 — active execution-state-aware corrective retrieval;
-- #432 — gated 780-task held-out generalization benchmark;
-- #424 — gated final-answer factual-quality benchmark.
+- #431 — canonical corrective gate terminal, optional condition not promoted;
+- #432 — 780-task held-out generalization, evaluation run `38012340016` active;
+- #424 — final-answer factual-quality benchmark gated on #432 canonical success.
 
 Phase A already establishes the retrieval-side premise on the corrected frozen benchmark:
 - Recall@1 68.97%;
