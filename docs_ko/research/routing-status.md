@@ -12,32 +12,28 @@
 - [기계 판독형 실험 원장](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json) — 정확한 출처 추적 색인.
 
 
-SchemaRouter는 routing research evidence를 stable library contract와 분리하여 공개합니다.
+SchemaRouter는 라우팅 연구 근거를 안정적인 라이브러리 계약과 구분해 공개합니다.
 
-## Active cycle: 0.14 end-to-end agent utility
+**실행 현황(2026-10-10):** 동결된 #431 교정 검색 게이트는 승격 없이 종료 판정됐습니다. [홀드아웃 실행 38012340016](https://github.com/JDeun/SchemaRouter/actions/runs/38012340016)은 234개 평가 샤드의 실행 단계에 들어갔습니다. 정식 결과와 후속 #424 답변 품질 결과는 아직 **미확정**입니다. 컨베이어 실행이 성공했다는 것은 오케스트레이션이 정상 동작했다는 의미이지 홀드아웃 평가가 완료됐다는 뜻은 아닙니다.
+
+## 진행 중인 연구: 0.14 에이전트 작업 효용성
 
 현재 research question은 더 이상 SchemaRouter가 final authoritative open-set classifier 역할을 할 수 있는가가 아닙니다.
 
-The active question is:
+현재 연구 질문은 다음과 같습니다:
 
 > **SchemaRouter가 대규모 registered catalog에서 compact typed executable capability set을 retrieve함으로써 LLM agent의 end-to-end tool-use performance를 개선하는가?**
 
 현재 의도한 product boundary는 다음과 같습니다:
 
-```text
-OpenAPI / MCP / ToolSpec
-        ↓
-typed capability compiler + registry
-        ↓
-SchemaRouter Top-K retrieval
-        ↓
-LLM agent / planner
-        ↓
-schema + argument + permission + destructive-action policy
-        ↓
-tool execution
-        ↓
-result evaluation / optional corrective re-retrieval
+```mermaid
+flowchart TD
+    A["OpenAPI / MCP / ToolSpec"] --> B["타입 기반 기능 컴파일러 및 레지스트리"]
+    B --> C["SchemaRouter Top-K 검색"]
+    C --> D["LLM 에이전트 / 계획기"]
+    D --> E["스키마·인수·권한·파괴적 작업 정책"]
+    E --> F["도구 실행"]
+    F --> G["결과 평가 / 선택적 교정 검색"]
 ```
 
 SchemaRouter는 여전히 레지스트리에 등록된 기능 식별자와 타입이 지정된 메타데이터를 관리합니다.
@@ -46,7 +42,7 @@ Top-1 경로의 정확한 일치는 유용한 진단 지표이지만 제품의 �
 
 ### #418 Phase A — passed
 
-The corrected frozen benchmark contains 23 tasks across 20 / 50 / 100 / 250 endpoint catalogs.
+수정 후 동결된 벤치마크는 엔드포인트 카탈로그 크기 20 / 50 / 100 / 250에 걸친 과제 23개로 구성됩니다.
 
 | Metric | Result |
 | --- | ---: |
@@ -57,7 +53,7 @@ The corrected frozen benchmark contains 23 tasks across 20 / 50 / 100 / 250 endp
 | All-required task coverage@5 | 100% |
 | MRR | 0.80172–0.81897 by catalog |
 
-Mean Top-5 serialized schema context relative to FULL:
+FULL 대비 Top-5 직렬화 스키마 컨텍스트의 평균 비율:
 
 | Catalog | Top-5 / FULL |
 | --- | ---: |
@@ -66,9 +62,7 @@ Mean Top-5 serialized schema context relative to FULL:
 | 100 endpoints | 5.872% |
 | 250 endpoints | 2.383% |
 
-이 결과가 research objective를 변경한 결정적 이유입니다. A Top-1-only score makes multi-tool
-retrieval look artificially poor, while a compact Top-K set preserves every required capability on
-this frozen surface and rapidly reduces schema context as the catalog grows.
+이 결과는 연구 목표를 변경한 핵심 이유입니다. Top-1 정확도만으로 평가하면 여러 도구를 사용하는 과제의 검색 성능이 과도하게 낮아 보입니다. 반면 제한된 Top-K 집합은 이 동결된 과제 집합에서 필요한 기능을 모두 유지하면서 카탈로그가 커질수록 스키마 컨텍스트를 크게 줄였습니다.
 
 B1-v2 정식 동결 식별 정보:
 - 작업 SHA256: `bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`;
@@ -92,8 +86,7 @@ B1-v2 정식 동결 식별 정보:
 
 ### #423 Phase B2 — terminal success
 
-The materially stronger SmolLM3-3B replication completed successfully in canonical run
-`36642658406` on the frozen 23-task / 4-catalog / 5-condition / 460-episode protocol.
+더 강력한 SmolLM3-3B 모델을 이용한 재현 실험은 동결된 23개 과제, 카탈로그 크기 4종, 조건 5종, 에피소드 460개의 프로토콜을 사용해 정식 실행 `36642658406`에서 성공적으로 종료됐습니다.
 
 Canonical provenance:
 
@@ -103,7 +96,7 @@ Canonical provenance:
 - 정식 산출물 다이제스트
   `sha256:edbccbbfb44d58ba936af7af82efe844177edc24dd587e3c52cff1505c37c256`.
 
-The earlier duplicate attempt `36641753066` is noncanonical and its partial rows are excluded.
+이전 중복 실행 `36641753066`은 정본이 아니며, 해당 실행의 부분 결과는 최종 분석에서 제외합니다.
 
 ### Structural shortlist-depth result — K3 not promoted
 
@@ -137,22 +130,15 @@ The canonical freeze rules live in [External validation freeze](external-validat
 
 남은 0.14 주요 연구는 사람이 임의로 예약하는 방식이 아니라 앞 단계의 종료 게이트를 통과한 뒤 진행하는 컨베이어입니다.
 
-```text
-#431 execution-state-aware corrective retrieval
-    |
-    | terminal preregistered gate
-    v
-freeze #432 held-out condition manifest
-    |
-    v
-#432 — 780 independent semantic tasks
-    |
-    | terminal success
-    v
-#424 — 144-task final-answer quality
+```mermaid
+flowchart TD
+    A["#431 교정 검색 — 동결된 게이트 판정 완료"] --> B["#432 조건 매니페스트 동결"]
+    B --> C["#432 홀드아웃 — 독립 과제 780개"]
+    C -->|"정본 성공 및 해시 검증"| D["#424 최종 답변 품질 — 과제 144개"]
+    D -->|"정본 성공 및 해시 검증"| E["#500 최종 근거 종합"]
 ```
 
-현재 활성 단계는 #431입니다. #432와 #424는 컨베이어를 우회해 수동으로 실행해서는 안 됩니다.
+#431의 정식 교정·복구 근거는 컨베이어에서 확인됐으며, 상태 인식 교정 조건과 구조적 K3 조건은 **승격되지 않았습니다**. #432는 동결된 홀드아웃 평가를 실행 중입니다. #424는 #432의 정식 성공 이후에만 시작해야 합니다. 컨베이어를 우회해 직접 실행하면 안 됩니다. 홀드아웃 통과율·신뢰구간·최종 답변 품질에 대해서는 아직 결과를 주장할 수 없습니다.
 
 출력 필드 투영에 관한 별도 연구(#506/#510)는 독립된 필드 수준 문제입니다. 런타임 적격성 검사는 계측 근거이며 기능 검색 성과 주장과 섞어서는 안 됩니다.
 

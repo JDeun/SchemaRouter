@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from scripts.audit_korean_translation_coverage import untranslated_english_prose_lines
 from scripts.report_bilingual_coverage import build_report, markdown_summary
 
 
@@ -52,3 +53,34 @@ def test_report_is_not_confused_by_code_blocks(tmp_path: Path) -> None:
     assert page["copied_english_paragraphs"] == 0
     assert page["code_fence_languages_match"] is True
     assert page["heading_levels_match"] is True
+
+
+def test_english_prose_triage_excludes_code_and_korean() -> None:
+    source = (
+        "# Long English overview explaining routing and provenance\n"
+        "This English paragraph describes execution authority and evidence contracts.\n"
+        "한국어로 작성한 상세 설명은 추적 대상에서 제외합니다.\n"
+        "The `SchemaPlanner`\n"
+        "```python\n"
+        "This English comment is inside a protected code fence and not prose.\n"
+        "```\n"
+        "| Column | This is a technical table cell with labels and values |\n"
+    )
+    assert untranslated_english_prose_lines(source) == [1, 2]
+
+
+def test_report_includes_advisory_english_prose_lines(tmp_path: Path) -> None:
+    en = tmp_path / "docs"
+    ko = tmp_path / "docs_ko"
+    _write(en, "guide.md", "# Guide\n\nEnglish original with technical caveats.\n")
+    _write(
+        ko,
+        "guide.md",
+        "# 안내\n\nThis English paragraph describes execution authority and evidence contracts.\n",
+    )
+    report = build_report(en, ko)
+    summary = report["summary"]
+    assert summary["pages_with_english_prose_candidates"] == 1
+    assert summary["english_prose_candidate_lines"] == 1
+    assert report["pages"][0]["untranslated_english_prose_lines"] == [3]
+    assert "English prose lines" in markdown_summary(report)

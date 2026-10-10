@@ -33,7 +33,7 @@
     },
     {
       "path": "concepts/decision-backends.md",
-      "source_blob": "02e33c77d141113df65abc1e33bf0a9ae780f801"
+      "source_blob": "d8af579c3b868c1675ad6d88ed4f4d63c27bc8e2"
     },
     {
       "path": "concepts/design-principles.md",
@@ -493,7 +493,7 @@
     },
     {
       "path": "research/0.14-paper-evidence-checkpoint.md",
-      "source_blob": "08c22e5d28f3fd831ad89ac041180168461ad805"
+      "source_blob": "b35b349fb57dd30f5fa5214a7a22759fcee25fbc"
     },
     {
       "path": "research/adaptive-shortlist-depth.md",
@@ -521,7 +521,7 @@
     },
     {
       "path": "research/external-validation-freeze.md",
-      "source_blob": "e02cd98208f749ccd2fe6cfd33e31b9099429611"
+      "source_blob": "fc09c96561582a3489fe3bb9169b037b122f4fa2"
     },
     {
       "path": "research/field-projection-answer-quality.md",
@@ -557,7 +557,7 @@
     },
     {
       "path": "research/paper-evidence-package.md",
-      "source_blob": "c004febd49f0f5bf341afdb65eb98e132d98193c"
+      "source_blob": "2a39163afd9ed110f4da032813b767bf840f517f"
     },
     {
       "path": "research/prior-art-roadmap.md",
@@ -569,7 +569,7 @@
     },
     {
       "path": "research/routing-status.md",
-      "source_blob": "6b70840a0250be6585fa22c319af6ee2c924c483"
+      "source_blob": "45afea3a7e8e4f6546ec7700db5700bc49fc394a"
     },
     {
       "path": "research/successor-screen.md",

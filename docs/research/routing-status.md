@@ -14,6 +14,8 @@ For the full research record:
 
 SchemaRouter publishes routing research evidence separately from the stable library contract.
 
+**Execution checkpoint (2026-10-10):** the frozen #431 corrective gate has been resolved without promotion; [held-out run 38012340016](https://github.com/JDeun/SchemaRouter/actions/runs/38012340016) has entered the 234-shard evaluation matrix. Its canonical result and the subsequent #424 answer-quality result remain **pending**. A successful conveyor/controller job means the orchestration ran, not that held-out scoring has finished.
+
 ## Active cycle: 0.14 end-to-end agent utility
 
 The active research question is no longer whether SchemaRouter can act as the final authoritative
@@ -26,20 +28,14 @@ The active question is:
 
 The intended product boundary is now:
 
-```text
-OpenAPI / MCP / ToolSpec
-        ↓
-typed capability compiler + registry
-        ↓
-SchemaRouter Top-K retrieval
-        ↓
-LLM agent / planner
-        ↓
-schema + argument + permission + destructive-action policy
-        ↓
-tool execution
-        ↓
-result evaluation / optional corrective re-retrieval
+```mermaid
+flowchart TD
+    A["OpenAPI / MCP / ToolSpec"] --> B["Typed capability compiler + registry"]
+    B --> C["SchemaRouter Top-K retrieval"]
+    C --> D["LLM agent / planner"]
+    D --> E["Schema, arguments, permissions and destructive-action policy"]
+    E --> F["Tool execution"]
+    F --> G["Result evaluation / optional corrective retrieval"]
 ```
 
 SchemaRouter still owns registry-backed capability identity and typed metadata, but retrieval score
@@ -143,22 +139,15 @@ The canonical freeze rules live in [External validation freeze](external-validat
 
 The remaining primary 0.14 sequence is gated rather than manually queued:
 
-```text
-#431 execution-state-aware corrective retrieval
-    |
-    | terminal preregistered gate
-    v
-freeze #432 held-out condition manifest
-    |
-    v
-#432 — 780 independent semantic tasks
-    |
-    | terminal success
-    v
-#424 — 144-task final-answer quality
+```mermaid
+flowchart TD
+    A["#431 Corrective retrieval — frozen gate resolved"] --> B["#432 condition manifest frozen"]
+    B --> C["#432 Held-out — 780 independent semantic tasks"]
+    C -->|"Canonical success and verified digest"| D["#424 Final-answer quality — 144 tasks"]
+    D -->|"Canonical success and verified digest"| E["#500 Terminal evidence synthesis"]
 ```
 
-#431 is currently active. #432 and #424 must not be manually launched around the conveyor.
+#431's canonical corrective/recovery evidence has been consumed by the conveyor. Its optional state-aware condition and the structural K3 condition were **not promoted**. #432 is running on the frozen held-out surface; #424 must start only after #432 reaches canonical success. Neither stage may be manually launched around the conveyor. No held-out pass rate, interval or final-answer quality claim is available yet.
 
 The separate output-field-projection line (#506/#510) remains an independent field-level research
 question. Its runtime qualification is instrument evidence and must not be mixed into the
