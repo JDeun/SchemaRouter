@@ -67,8 +67,7 @@ SchemaRouter는 의도적으로 LangChain보다 좁은 범위를 가집니다. �
 
 ### 1. One execution vocabulary
 
-A framework becomes easier to learn when every major component follows the same execution verbs.
-SchemaRouter therefore exposes:
+주요 구성 요소가 동일한 실행 메서드를 사용하면 프레임워크를 더 쉽게 익힐 수 있습니다. 따라서 SchemaRouter는 다음 인터페이스를 제공합니다:
 
 - `invoke` / `ainvoke`
 - `batch` / `abatch`
@@ -76,12 +75,11 @@ SchemaRouter therefore exposes:
 - `astream_events`
 - `with_config`
 
-These methods do not bypass planner, policy, schema validation, or binding-drift checks.
+이 메서드들도 계획기, 정책, 스키마 검증 또는 바인딩 변경 검사를 우회하지 않습니다.
 
 ### 2. Introspection as a public contract
 
-`input_schema`, `output_schema`, and `config_schema` are public machine-readable interfaces.
-They are intended for serving layers, UI generation, testing, and framework integrations.
+`input_schema`, `output_schema`, `config_schema`는 외부에 공개된 기계 판독형 인터페이스입니다. 서비스 계층, UI 생성, 테스트 및 프레임워크 연동에 사용하도록 설계됐습니다.
 
 ### 3. Tool authoring must be cheap
 
@@ -93,13 +91,11 @@ OpenAPI, OPTIMADE, MCP, GraphQL, OData, OpenRPC는 내장된 구조화 입력 �
 
 ### 4. Integrations should be optional
 
-The core package should not become a dependency aggregator. Ecosystem bridges and decision
-providers belong behind optional extras and lazy imports.
+코어 패키지가 모든 외부 의존성을 한데 모으는 집합체가 되어서는 안 됩니다. 생태계 연결 어댑터와 결정 제공자는 선택적 설치 항목과 지연 임포트 뒤에 배치합니다.
 
 ### 5. Observability must not weaken privacy
 
-Event payloads are redacted by default. Arguments and result payloads appear only when
-`RunConfig(include_payloads=True)` is explicitly selected.
+이벤트 페이로드는 기본적으로 마스킹됩니다. 인수와 결과 페이로드는 `RunConfig(include_payloads=True)`를 명시적으로 지정했을 때만 표시됩니다.
 
 ## 가져오지 말아야 할 것
 
@@ -110,15 +106,13 @@ Event payloads are redacted by default. Arguments and result payloads appear onl
 - 또 하나의 그래프 런타임
 - 스키마 계약을 약화시키는 암묵적 형식 변환
 
-Those concerns are better handled by surrounding frameworks. SchemaRouter should remain a focused
-compiler/runtime boundary for tool schemas.
+이러한 기능은 주변 프레임워크가 담당하는 편이 적절합니다. SchemaRouter는 도구 스키마를 위한 컴파일러·런타임 경계에 집중해야 합니다.
 
 ## 다음 maturity gate
 
 ### Gate A — published non-prerelease baseline
 
-The package, documentation, release automation, deterministic compatibility tests, and public
-OpenAPI/OPTIMADE smokes are in place.
+패키지, 문서, 릴리스 자동화, 결정론적 호환성 테스트 및 공개 OpenAPI·OPTIMADE 스모크 테스트가 갖춰져 있습니다.
 
 ### Gate B — ecosystem-ready
 
@@ -183,5 +177,5 @@ Implemented locally:
 
 Remaining larger follow-up work:
 
-- populate history views with dated live model/provider measurements;
-- organization-specific policy/approval integrations.
+- 기록 화면에 측정 날짜가 포함된 실제 모델·제공자 결과 표시
+- 조직별 정책·승인 시스템 통합
