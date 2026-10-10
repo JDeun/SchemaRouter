@@ -591,10 +591,10 @@ Canonical tracker: #200
 
 Related work items:
 
-- #196 — historical design/experiment backfill;
-- #197 — active 0.11 composite candidate;
-- #198 — freeze/calibration/blind confirmation;
-- #199 — follow-up paper evidence package.
+- Issue #196 — historical design/experiment backfill;
+- Issue #197 — active 0.11 composite candidate;
+- Issue #198 — freeze/calibration/blind confirmation;
+- Issue #199 — follow-up paper evidence package.
 
 At the start of a new session:
 
@@ -1017,7 +1017,7 @@ Work item #259 / PR #260 froze, before execution:
 
 - BGE-M3 revision `5617a9f...`;
 - schema/action fusion 0.55 / 0.45;
-- #246 strict budget-6 route-local thresholds;
+- Issue #246 strict budget-6 route-local thresholds;
 - winner-only rank-then-gate;
 - no rank-2 fallthrough;
 - a comparison epsilon of 1e-6:
@@ -1773,11 +1773,11 @@ Wire-compatible models use `SystemOneDecisionBackend`. Non-wire typed models fir
 is not required merely to test a new model.
 
 Infrastructure supporting this policy is now merged:
-- #291 / PR #292 — generic System One backend;
-- #297 / PR #298 — generic System One benchmark CLI;
-- #304 / PR #305 — arbitrary bounded decision callable benchmark path, merged as
+- Issue #291 / PR #292 — generic System One backend;
+- Issue #297 / PR #298 — generic System One benchmark CLI;
+- Issue #304 / PR #305 — arbitrary bounded decision callable benchmark path, merged as
   `c9678b95a6dc592a1c3b850a6aea8b1675ff94a4`;
-- #306 / PR #308 — reusable third-party `schemarouter.decision_backends` entry-point
+- Issue #306 / PR #308 — reusable third-party `schemarouter.decision_backends` entry-point
   discovery/loading, benchmark plugin selection, security documentation, and candidate-registry
   validation, squash-merged as `e782ebb87f80cdb2cefe5a716f77f546cd6309b1`.
 
@@ -1861,7 +1861,7 @@ An important distinction is now explicit:
 
 Evidence:
 - grouped-OOF/frozen learned verifier reached the target on DEV/same-corpus;
-- #287 fresh confirmation then fell to 82.64% exact / 93.23% near rejection / 6.02% false-route;
+- Issue #287 fresh confirmation then fell to 82.64% exact / 93.23% near rejection / 6.02% false-route;
 - generic Qwen3 capability gating (#289) and pinned Laya native noul (#301) both failed to provide a safer surface-invariant boundary;
 - direct Laya route authority (#293) was capacity-limited at 60.07% supported top-1.
 
@@ -1996,11 +1996,11 @@ itself pass fresh confirmation before #198.
 
 The staged fallback workflows no longer depend on a human UI click.
 
-- #314 / PR #315 remains dormant until a terminal #299 artifact exists. It can be activated by
+- Issue #314 / PR #315 remains dormant until a terminal #299 artifact exists. It can be activated by
   committing `benchmarks/operation-routing-v4-bge-kev-noul-compose.activation.json` with
   `activate=true`, source workflow run `36366508183`, and the exact artifact ID. The workflow
   revalidates source-run and artifact identity before reading rows.
-- #311 / PR #313 remains dormant until the Kev family is non-promotable. Its activation marker must
+- Issue #311 / PR #313 remains dormant until the Kev family is non-promotable. Its activation marker must
   declare `activate=true`, `after_issue=299`, and `reason="kev_family_non_promotable"`.
 
 The workflow-definition commits themselves do not start model evaluation because push filters match
@@ -2019,8 +2019,8 @@ Main now contains:
 - `docs/research/operation-routing-freeze-protocol.md`.
 
 The canonical ownership boundary is now enforced in documentation and machine-readable governance:
-- #197 owns DEV qualification → exact freeze → NEW zero-overlap fresh confirmation;
-- #198 begins only after a validated `fresh-confirmed` manifest and owns calibration → one-shot blind-final.
+- Issue #197 owns DEV qualification → exact freeze → NEW zero-overlap fresh confirmation;
+- Issue #198 begins only after a validated `fresh-confirmed` manifest and owns calibration → one-shot blind-final.
 
 
 ### Runtime parity infrastructure merged — #320
@@ -2053,9 +2053,9 @@ The run completed infrastructure setup but did not complete the 1,800-row diagno
 The server log shows correct-but-slow reference PyTorch fallbacks for causal convolution and gated-delta kernels. This exact CPU/fp32 runtime is terminal as an impractical execution path, but it is not negative model-quality evidence.
 
 Consequences:
-- #317 six-hour timeout retry retired unexecuted;
-- #314/#315 frozen BGE+Kev composition closed because its required row-level source analysis does not exist;
-- #313 AnyJev CPU execution retired before inference;
+- Issue #317 six-hour timeout retry retired unexecuted;
+- Issue #314/#315 frozen BGE+Kev composition closed because its required row-level source analysis does not exist;
+- Issue #313 AnyJev CPU execution retired before inference;
 - future typed-decision work requires a preregistered runtime with a credible <=250 ms deployment path.
 
 The research frontier returns to lightweight BGE-native/open-set evidence where latency is an architectural constraint from the start.
@@ -2074,13 +2074,13 @@ candidate reuses only previously measured lightweight evidence.
 ### #322 / PR #323 — offline composition PASS
 
 Immutable source artifacts:
-- #262 GTE-only rescue: workflow `36326745694`, artifact `10934337695`,
+- Issue #262 GTE-only rescue: workflow `36326745694`, artifact `10934337695`,
   digest `sha256:7881a3594ecdab6a242a946a60cfde14d64e3c452ec9d0956c9cfa75a1e0c748`;
-- #275 negative-capability diagnostic: workflow `36352558325`, artifact `10942243493`,
+- Issue #275 negative-capability diagnostic: workflow `36352558325`, artifact `10942243493`,
   digest `sha256:a831a35098b546c8003435ea04927fb8767aab1435320823ba4763e0b6608ae1`.
 
 Frozen composition:
-- #259 strict BGE base;
+- Issue #259 strict BGE base;
 - negative veto only on original base accepts at max-negative >=0.55 and advantage >=0.05;
 - vetoed base accepts cannot enter rescue;
 - exact #262 GTE-only route rules with rescue false budget 4;
@@ -2309,7 +2309,7 @@ Frozen design:
 - route margin/cohesion floors were derived only from leave-one-out alias self-cohesion and
   same-tool sibling separation;
 - exactly four fixed families A/B/C/D were evaluated;
-- #270/#287/#326 fresh surfaces were excluded.
+- Issue #270/#287/#326 fresh surfaces were excluded.
 
 Canonical evidence:
 - workflow `36388641609`;
@@ -3157,9 +3157,9 @@ aggregate is accepted only if all 552 episodes are reconstructed.
 
 B1 alone cannot establish general agent utility.
 
-- #423 requires the same frozen benchmark to be replicated with a materially stronger tool-calling
+- Issue #423 requires the same frozen benchmark to be replicated with a materially stronger tool-calling
   agent before generalizing beyond the small local baseline.
-- #424 separates final-answer factual quality from tool-call success and will measure required fact
+- Issue #424 separates final-answer factual quality from tool-call success and will measure required fact
   recall, hallucination, numeric/unit accuracy and provenance under FULL vs compact capability
   context.
 
@@ -3189,10 +3189,10 @@ descriptive engineering sanity gate; #432 stages the larger independent held-out
 required for a population-level inference.
 
 The staged 0.14 successors are:
-- #428 public typed Top-K retrieval API;
-- #430 adaptive shortlist depth;
-- #431 execution-state-aware corrective re-retrieval;
-- #432 independent held-out generalization surface.
+- Issue #428 public typed Top-K retrieval API;
+- Issue #430 adaptive shortlist depth;
+- Issue #431 execution-state-aware corrective re-retrieval;
+- Issue #432 independent held-out generalization surface.
 
 None may use B1 row-level failures to rewrite the frozen B1 task surface.
 
