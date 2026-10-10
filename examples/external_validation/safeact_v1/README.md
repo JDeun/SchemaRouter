@@ -1,5 +1,21 @@
 # SafeAct V1 independent-contract preflight
 
+## Prospective repeated-trajectory research gate (not yet executed)
+
+The first official 131-case × 3-arm execution is only a **single-rollout
+feasibility study**, even if every trajectory receives an official score.
+The 2026-10-10 researcher follow-up highlighted two additional requirements:
+independently justified evidence-contract authorship (including the risk of
+case-specific human heuristics and uncertain LLM-authored proposals) and
+repeated open-ended agent rollouts with blinded human trajectory annotation.
+
+See [the prospective repeated-evaluation protocol](../../../research/safeact-v1/repeated-evaluation-protocol.md).
+Do **not** treat the existing 393-output aggregator as repeated-run,
+manually annotated, or unseen-domain generalization evidence. The
+machine-readable scored summary explicitly marks these unmeasured boundaries.
+No new model calls, privileged broker permission, approval or hidden case
+information are conferred by this design document.
+
 These files provide **unscored** research mechanisms, not a completed
 SafeActBench evaluation. The upstream revision is
 `841816cf1e376e6fbf8600cffac5df1736e1d369`; its V1 set contains 131 cases.
