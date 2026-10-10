@@ -21,6 +21,7 @@ from scripts.research_014_conveyor import (
     missing_corrective_shards,
     prefer_materialized_corrective_run,
     retry_infrastructure_failure,
+    retry_materialized_downstream_failure,
     source_sha_from_run,
     stale_pending_wrapper,
     stale_zero_job_pending,
@@ -560,3 +561,85 @@ def test_dispatch_ack_fails_closed_when_run_never_appears() -> None:
     )
     assert run is None
     assert api.calls == 1
+
+class _MaterializedRetryAPI(_RetryAPI):
+    def __init__(self, counts: dict[int, int]) -> None:
+        super().__init__()
+        self.counts = counts
+
+    def workflow_run_job_count(self, run_id: int) -> int:
+        return self.counts.get(run_id, 0)
+
+
+def _failed_downstream_run(
+    run_id: int,
+    *,
+    attempt: int = 1,
+    conclusion: str = "failure",
+) -> StageRun:
+    return StageRun(
+        id=run_id,
+        status="completed",
+        conclusion=conclusion,
+        display_title="frozen-downstream",
+        created_at="2026-10-10T00:00:00Z",
+        html_url="",
+        run_attempt=attempt,
+        head_sha="a" * 40,
+    )
+
+
+def test_materialized_heldout_retry_reuses_successful_shards() -> None:
+    api = _MaterializedRetryAPI({123: 236})
+    actions: list[str] = []
+    assert retry_materialized_downstream_failure(
+        api, _failed_downstream_run(123),
+        execute=True, actions=actions, label="heldout"
+    )
+    assert api.rerun_ids == [123]
+    assert actions == ["rerun_failed_heldout:run=123:attempt=2"]
+
+
+def test_materialized_final_retry_is_bounded_by_run_attempt() -> None:
+    api = _MaterializedRetryAPI({456: 74})
+    actions: list[str] = []
+    assert retry_materialized_downstream_failure(
+        api, _failed_downstream_run(456, attempt=2),
+        execute=False, actions=actions, label="final_answer"
+    )
+    assert actions == ["rerun_failed_final_answer:run=456:attempt=3"]
+    assert api.rerun_ids == []
+
+    assert not retry_materialized_downstream_failure(
+        api, _failed_downstream_run(456, attempt=3),
+        execute=True, actions=actions, label="final_answer"
+    )
+    assert api.rerun_ids == []
+
+
+def test_materialized_retry_does_not_retry_prematrix_or_cancellation() -> None:
+    api = _MaterializedRetryAPI({1: 1, 2: 2, 3: 236, 4: 236})
+    actions: list[str] = []
+    for run in (
+        _failed_downstream_run(1),
+        _failed_downstream_run(2),
+        _failed_downstream_run(3, conclusion="cancelled"),
+        _failed_downstream_run(4, conclusion="neutral"),
+    ):
+        assert not retry_materialized_downstream_failure(
+            api, run, execute=True, actions=actions, label="heldout"
+        )
+    assert api.rerun_ids == []
+    assert actions == []
+
+
+def test_materialized_retry_controller_branches_are_bounded() -> None:
+    controller = (
+        Path(__file__).resolve().parents[1] / "scripts/research_014_conveyor.py"
+    ).read_text(encoding="utf-8")
+    assert 'label="heldout"' in controller
+    assert 'label="final_answer"' in controller
+    assert "stopped_heldout_failed_job_retries_exhausted" in controller
+    assert "stopped_final_failed_job_retries_exhausted" in controller
+    assert "recover_dispatch_heldout_after_failure" in controller
+    assert "recover_dispatch_final_after_failure" in controller
