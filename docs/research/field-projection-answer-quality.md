@@ -145,7 +145,7 @@ Both arms are driven by the 0.14 conveyor; neither needs a manual dispatch.
 
 ### Source freeze
 
-#506 has **its own** frozen implementation revision. It is resolved on first
+Issue #506 has **its own** frozen implementation revision. It is resolved on first
 dispatch, checked to actually contain the experiment's scripts, and then reused
 verbatim by both arms.
 
