@@ -43,7 +43,7 @@ jobs:
             pyproject.toml
             .github/workflows/docs-final-qa.yml
       - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[docs]" "pytest>=8.2" "playwright==1.55.0"
+      - run: pip install -e ".[docs]" "pytest>=8.2" "pytest-asyncio>=0.23" "playwright==1.55.0"
       - run: python -m playwright install --with-deps chromium
       - name: Verify final QA harness regressions
         run: pytest -q tests/test_docs_final_qa.py

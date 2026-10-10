@@ -98,13 +98,16 @@ def run(site: Path | None, base_url: str, smoke_only: bool, shots: Path | None) 
         browser = engine.chromium.launch(headless=True, args=["--no-sandbox"])
         context = browser.new_context(viewport={"width": 1280, "height": 800})
         page = context.new_page()
-        for index, rel in enumerate(pages):
+        checked = 0
+        for rel in pages:
+            checked += 1
             url = base_url + rel
             try:
                 _check_page(page, url)
                 if shots and rel in {"", "ko/", "getting-started/quickstart/",
                                       "ko/getting-started/quickstart/", "reference/api/",
-                                      "ko/reference/api/", "research/design-and-experiment-history/",
+                                      "ko/reference/api/",
+                                      "research/design-and-experiment-history/",
                                       "ko/research/design-and-experiment-history/"}:
                     shots.mkdir(parents=True, exist_ok=True)
                     name = (rel.replace("/", "_") or "en-home") + ".png"
@@ -113,7 +116,7 @@ def run(site: Path | None, base_url: str, smoke_only: bool, shots: Path | None) 
                 errors.append(f"{rel}: {exc}")
                 if len(errors) >= 30:
                     break
-        print(f"browser pages attempted: {min(len(pages), index + 1)} / {len(pages)}")
+        print(f"browser pages attempted: {checked} / {len(pages)}")
 
         # Deep route with both search and fragment must survive EN->KO->EN.
         english = base_url + "getting-started/quickstart/?browser_qa=1#" + ANCHOR
