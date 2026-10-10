@@ -63,3 +63,27 @@ def test_security_policy_critical_negations_and_literals_are_preserved() -> None
     )
     for phrase in required:
         assert phrase in korean, phrase
+
+
+def test_korean_retry_and_hook_prose_keeps_original_safety_contract() -> None:
+    korean = KO_PATH.read_text(encoding="utf-8")
+    # A successful tool must not be retried because an observer failed.
+    assert "실행 후 훅의 실패는 재시도 가능한 도구 실행 실패로 분류하지 않으므로" in korean
+    assert "비어 있지 않은 명시적 허용 목록" in korean
+    assert "읽기 전용으로 분류된 엔드포인트로 제한됩니다" in korean
+    assert "그 밖의 HTTP 오류나 결정적인 응답 계약 위반에서는 즉시 실패" in korean
+    assert "`NonRetryableInvocationError`" in korean
+    assert "예산 초과로 거부된 호출과 스키마 계약 위반은 재시도하지 않습니다" in korean
+    assert "신뢰된 로컬 실행 코드이며, 민감값을 제거한 원격 측정 데이터가 아닙니다" in korean
+    assert "실행 전 훅은 검증된 인수 값을" in korean
+    assert "실행 후 훅은 최종 투영된 결과 본문" in korean
+    assert "신뢰할 수 없는 원격 또는 제3자 콜백에 전달하지 마십시오" in korean
+    assert "인수 값, 결과 본문, RunConfig 메타데이터, 태그 및 예외 메시지는 내보내지 않습니다" in korean
+    for leftover in (
+        "Automatic retry는 trusted local code",
+        "Built-in OpenAPI/OPTIMADE HTTP invoker는",
+        "Before/after execution hook은 trusted local executable code",
+        "Before hook은 validated argument value",
+        "Optional OpenTelemetry exporter는 더 엄격합니다",
+    ):
+        assert leftover not in korean
