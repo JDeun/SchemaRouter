@@ -160,13 +160,22 @@ def validate_shard(
     if len(observed) != len(expected) or set(observed) != expected:
         raise ValueError("missing, duplicated or extraneous held-out episode identities")
     model = payload.get("model", {})
-    if (model.get("name") != "HuggingFaceTB/SmolLM3-3B"
-            or model.get("revision") != "a07cc9a04f16550a088caea529712d1d335b0ac1"
-            or model.get("attention_implementation") != "sdpa"):
-        raise ValueError("pinned scientific model drift")
+    expected_model = {
+        "name": "HuggingFaceTB/SmolLM3-3B",
+        "revision": "a07cc9a04f16550a088caea529712d1d335b0ac1",
+        "attention_implementation": "sdpa",
+        "max_new_tokens": 256,
+        "max_turns": 6,
+        "seed": 20260929,
+        "threads": 4,
+    }
+    if any(model.get(key) != value for key, value in expected_model.items()):
+        raise ValueError("pinned scientific model and inference settings drift")
     runtime = payload.get("runtime", {})
     if runtime.get("machine") not in {"aarch64", "arm64"} or runtime.get("python") != "3.12.14":
         raise ValueError("pinned ARM64 Python runtime drift")
+    if any(runtime.get(key) is None for key in RUNTIME_KEYS):
+        raise ValueError("incomplete pinned model runtime metadata")
     if runtime.get("torch") != "2.14.0+cpu" or runtime.get("transformers") != "4.57.6":
         raise ValueError("pinned torch/transformers runtime drift")
 
