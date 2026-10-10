@@ -224,12 +224,10 @@ def validate_launch(
         or len(set(names)) != len(names)
     ):
         raise ValueError("independent action contracts must have unique names")
-    available = set(names)
-    if any(
-        not isinstance(action, str) or action not in available
-        for action in coverage.values()
-    ):
-        raise ValueError("case coverage references missing action contract")
+     # Public V1 IDs are an opaque cohort, never a per-case expected-action oracle.
+    # Each actual model-proposed tool must select its own reviewed contract.
+    if any(value is not None for value in coverage.values()):
+        raise ValueError("case-specific expected-action oracle is forbidden")
 
     declared_arms = intervention_manifest.get("conditions")
     if not isinstance(declared_arms, dict):
