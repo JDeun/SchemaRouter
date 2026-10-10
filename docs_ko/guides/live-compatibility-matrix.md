@@ -14,7 +14,7 @@ SchemaRouter는 필수 CI에서 deterministic fixture coverage를 유지하고, 
 | MCP Streamable HTTP | Yes | Pinned reference implementation | Local `add` tool | in-repo MCP SDK fixture server | public MCP endpoint 대신 reference server 사용 |
 | Provider profile: Materials Project | Yes | Live public provider | provider identity -> public OPTIMADE -> read-only structure query | Materials Project OPTIMADE | 인증 OpenAPI/SDK는 별도 gate |
 | Provider profile: Crossref | Yes | Live public provider | provider identity -> public REST works query | Crossref REST API | public availability는 외부 상태 |
-| Provider profile: Tavily | Yes | Auth-contract + optional live | provider identity -> auth-required REST, key가 있으면 live search | Tavily Search API | secret이 없으면 auth-required를 명시하고 실행 성공을 꾸미지 않음 |
+| Provider profile: Tavily | Yes | Auth-contract + optional live | provider identity -> auth-required REST, `TAVILY_API_KEY`가 설정돼 있을 때만 live search | Tavily Search API | secret이 없으면 auth-required를 명시하고 실행 성공을 꾸미지 않음 |
 | Provider profile: APIs.guru | Yes | Live public provider | provider identity -> OpenAPI -> read-only metrics request | APIs.guru | public availability는 외부 상태 |
 | Provider profile: OData V4 reference | Yes | Live public provider | provider identity -> OData -> read-only Products query | OData.org V4 reference service | reference service availability는 외부 상태 |
 
@@ -22,7 +22,7 @@ workflow는 timestamp, SchemaRouter version, source, discovery/execution success
 
 ## 매트릭스 실행
 
-GitHub Actions **Compatibility Smoke** workflow는 매주 실행되며 수동 실행도 가능합니다. 각 adapter JSON, 통합 JSON/Markdown과 workflow step summary를 생성합니다.
+GitHub Actions **Compatibility Smoke** workflow는 매주 실행되며 수동 실행도 가능합니다. `adapter-compatibility-matrix` 작업은 adapter별 `*-compatibility.json` 보고서, 종합 `adapter-compatibility-matrix.json`과 `adapter-compatibility-matrix.md`, 그리고 workflow step summary에 동일한 Markdown 표를 생성합니다.
 
 public-provider job은 의도적으로 non-blocking입니다. pinned-reference failure는 repository가 통제하는 compatibility evidence이므로 aggregator에서 다르게 취급합니다.
 

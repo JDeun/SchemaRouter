@@ -61,7 +61,7 @@ PlanRequest(
 )
 ```
 
-Materials route의 `band_gap`에는 unit metadata가 필요하지만 arXiv `abstract`는 unitless여도 됩니다. Field evidence는 trusted `semantic_id`로 매칭하며 없으면 field name을 사용합니다. Execution 시 evidence를 다시 검사하고 compiled call은 **required** evidence와 **available** route evidence를 분리하므로 forged/edited `ToolCall`이 flag 하나로 authority를 얻을 수 없습니다.
+Materials route의 `band_gap`에는 unit metadata가 필요하지만 arXiv `abstract`는 unitless여도 됩니다. Field-specific evidence는 trusted `FieldSpec.semantic_id`로 매칭하며 선언이 없으면 field name을 사용합니다. Execution 시 evidence를 다시 검사하고 compiled call은 **required** evidence와 **available** route evidence를 분리하므로 forged/edited `ToolCall`이 flag 하나로 authority를 얻을 수 없습니다.
 
 ## Heterogeneous multi-source field requirement
 
@@ -244,7 +244,7 @@ FieldSpec(
 )
 ```
 
-Qualifier는 optional trusted exact-string map입니다. Text/document/search field나 fixed constraint가 없는 scientific field는 보통 `{}`입니다.
+`FieldSpec.qualifiers`는 측정·재료 조건을 보존하는 선택적 trusted exact-string map입니다. Text/document/search field나 fixed constraint가 없는 scientific field는 보통 `qualifiers={}`입니다.
 
 Automatic fallback은 semantic/type/unit 검사 뒤 exact qualifier equality를 요구합니다. 300 K field를 500 K 또는 unqualified field로 조용히 대체하지 않습니다.
 

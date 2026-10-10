@@ -163,6 +163,8 @@ Full registry section에는 safe tool/endpoint inspection record와 fingerprint�
 
 ## Dashboard export
 
+0.6 개발 계열부터 동일한 읽기 전용 inspection model을 별도의 서버가 필요 없는 단일 HTML 문서로 렌더링할 수 있습니다.
+
 ```bash
 schemarouter dashboard \
   --registry ./schemarouter-registry.sqlite3 \

@@ -1,6 +1,6 @@
 # Laya
 
-SchemaRouter는 Laya를 optional local `DecisionBackend`로 사용할 수 있습니다.
+SchemaRouter는 [Laya](https://github.com/NandhaKishorM/laya)를 optional local `DecisionBackend`로 사용할 수 있습니다.
 
 Laya는 general text-generation model이 아니라 non-autoregressive decision model입니다. SchemaRouter 내부의 agent runtime이 아니며 adapter는 finite `choice` primitive만 사용합니다. Backend는 SchemaRouter가 이미 authorize한 opaque option ID 중 하나를 선택할 수 있지만 tool, endpoint, field, parameter, credential, execution permission, multi-step tool loop를 만들 수 없습니다.
 

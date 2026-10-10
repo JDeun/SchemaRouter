@@ -69,7 +69,7 @@ SchemaRouter latency를 hardware label 없이 직접 비교하지 않습니다.
 | --- | --- | --- |
 | SafeActBench V1(별도 외부 연구) | [#1211](https://github.com/JDeun/SchemaRouter/issues/1211), [#1224](https://github.com/JDeun/SchemaRouter/issues/1224) | V1 131개 사례 × 3개 조건의 실제 평가는 미완료. 정답 정보 비노출 계약과 격리 실행 환경 필요 |
 | Xerrion ServiceNow | [#1228](https://github.com/JDeun/SchemaRouter/issues/1228) | 동일한 권한 허용 도구 패키지와 질의별 사전 선택을 오프라인 비교 |
-| ClicShopping 4.33 | [#1208](https://github.com/JDeun/SchemaRouter/issues/1208) | MCP 도구 목록이 아닌 REST 엔드포인트·작업 표가 기준이며, 권한과 고객 범위를 보존 |
+| ClicShopping 4.33 | [#1208](https://github.com/JDeun/SchemaRouter/issues/1208) | MCP `tools/list` 응답이 아닌 REST 엔드포인트·작업 표가 기준이며, 권한과 고객 범위를 보존 |
 | SmartMCP | [#1114](https://github.com/JDeun/SchemaRouter/issues/1114) | 공통 동결 카탈로그·예산 필요. 협업 관심은 재현 성공 증거가 아님 |
 | Clear Your Tools | [#839](https://github.com/JDeun/SchemaRouter/issues/839) | 기존 단계 관리 및 BM25를 보존하고 개발 테스트와 홀드아웃 결과를 구분 |
 | HYSET / pi-jev / hope-agent | [#795](https://github.com/JDeun/SchemaRouter/issues/795), [#796](https://github.com/JDeun/SchemaRouter/issues/796), [#799](https://github.com/JDeun/SchemaRouter/issues/799) | 공개 코드 재학습과 논문 체크포인트 재현을 구분하며, 도구·필드 재현율을 분리 |
