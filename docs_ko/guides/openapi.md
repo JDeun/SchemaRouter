@@ -210,10 +210,10 @@ data[].band_gap + data[].density
 - `paths` operation
 - path/query/header parameter와 spec-faithful default simple/form serialization
 - object-like JSON body 및 JSON response
-- local component/path-item reference chain
+- 로컬 컴포넌트·경로 항목 참조 체인
 - same-document URI-reference normalization
 - explicit enable된 bounded same-origin cross-document `$ref`
-- bounded same-origin JSON Schema `$id` rebasing/static `$anchor`
+- 제한된 동일 출처 JSON Schema `$id` 기준 URI 재설정 및 정적 `$anchor` 처리
 - same Schema Object에 type이 있는 OpenAPI 3.0 `nullable: true`
 - `allOf` object-property/required planner flattening
 - runtime composed validation을 유지하는 `oneOf`/`anyOf` response field discovery
