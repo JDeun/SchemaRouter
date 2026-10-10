@@ -381,7 +381,7 @@
     },
     {
       "path": "project/roadmap.md",
-      "source_blob": "2a65b2809c07854b6f96dd4a68a360185f99e828"
+      "source_blob": "d7f9c40df8f03ea69e9d5aabb888789c83eadb80"
     },
     {
       "path": "project/trust-and-evidence.md",
@@ -505,7 +505,7 @@
     },
     {
       "path": "research/corrective-reretrieval.md",
-      "source_blob": "92bd4c19d2b72519111c297394505ff365958c7f"
+      "source_blob": "b9bfcfb62181bd93cc3dd1be14cf72dffd7cd5fe"
     },
     {
       "path": "research/design-and-experiment-history.md",
@@ -545,7 +545,7 @@
     },
     {
       "path": "research/large-heldout-agent-utility.md",
-      "source_blob": "4784627f0972783c45e29ef49aed0d6174176bfd"
+      "source_blob": "31213184bb15fb40d52752131ed07a140a616431"
     },
     {
       "path": "research/operation-routing-freeze-protocol.md",
@@ -577,7 +577,7 @@
     },
     {
       "path": "research/typed-capability-retrieval-ablation.md",
-      "source_blob": "6fdd48f06546ad6aeda224cb8b59e77a80e02808"
+      "source_blob": "1cc0b4609eb3f26d7cf9d7249758ec60548d028a"
     },
     {
       "path": "security/threat-model.md",

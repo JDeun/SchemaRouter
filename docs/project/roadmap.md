@@ -16,12 +16,12 @@ policy, and protocol-neutral contracts.
 
 Recent product follow-ups on current `main`:
 
-- #743 — explicit state-conditioned corrective re-retrieval;
-- #744 — scalable indexed/incremental capability dependency graphs;
-- #745 — atomic validated snapshot rebuild/publication;
-- #746 — versioned capability artifact/snapshot migration and semantic integrity;
-- #747 — unified privacy-safe capability decision traces;
-- #748 — provider-first registration with Materials Project, Crossref, and Tavily acceptance.
+- Issue #743 — explicit state-conditioned corrective re-retrieval;
+- Issue #744 — scalable indexed/incremental capability dependency graphs;
+- Issue #745 — atomic validated snapshot rebuild/publication;
+- Issue #746 — versioned capability artifact/snapshot migration and semantic integrity;
+- Issue #747 — unified privacy-safe capability decision traces;
+- Issue #748 — provider-first registration with Materials Project, Crossref, and Tavily acceptance.
 
 Current coordination:
 
