@@ -103,8 +103,10 @@ def test_partial_duplicate_and_model_drift_are_rejected():
 class StubAPI:
     def __init__(self, terminal):
         self.terminal = terminal
-        self.jobs = [job(shard, "success") for shard in frozen_shards(corpus())]
-        self.jobs[0]["conclusion"] = "cancelled"
+        self.jobs = ([{"name": "prepare", "conclusion": "success"},
+                      {"name": "model-cache", "conclusion": "success"}] +
+                     [job(shard, "success") for shard in frozen_shards(corpus())])
+        self.jobs[2]["conclusion"] = "cancelled"
     def run(self, run_id):
         return {
             "path": ".github/workflows/research-0.14-heldout-generalization.yml",
