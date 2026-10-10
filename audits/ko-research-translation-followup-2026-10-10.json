@@ -17,13 +17,14 @@
     {
       "path": "research/design-and-experiment-history.md",
       "en_blob": "27bdc35c44010cfd1c15d4a5702ed2b9ad6f9c5c",
-      "ko_blob": "2a3ffebc02fc9e0c577d61bbeb72f9976c721d70",
+      "ko_blob": "7209d91638d859ab08137e6f1b31ff8d3c9c8804",
       "reviewed_contracts": [
         "Route-local weights 0.55: 1019 cases vs diagnostic ceiling 1046, +27 is not promoted score",
         "Issue 281 excludes post-hoc scalar thresholds/Top-k/route exceptions; successor is veto-only learned/external open-set model",
         "Kev PyTorch CPU/fp32 slowness is runtime-negative, not model-quality-negative",
         "Alias geometry result is terminal and failed fresh confirmation is not tuning input",
-        "Raw BGE supported 100% tool detection must not be generalized to ontology filter performance"
+        "Raw BGE supported 100% tool detection must not be generalized to ontology filter performance",
+        "Additional unrendered English clauses converted: no post-hoc second threshold, wrong-path ranker agreement, no failed-row rules or confirmation-data opening"
       ]
     },
     {
@@ -54,5 +55,6 @@
   "limitations": [
     "This is an editorial correction of identified risky paragraphs, not proof of all sentences or independent review of all 147 pages.",
     "Metrics, frozen experiment inputs and English canonical research text were not edited."
-  ]
+  ],
+  "followup_context": "Exact Korean source hash advanced after correcting six research negative-evidence passages discovered by the new prose-leakage scanner."
 }
