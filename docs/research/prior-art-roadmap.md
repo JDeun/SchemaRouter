@@ -50,13 +50,13 @@ flowchart TD
 ```
 
 Relevant current work:
-- #417 — active research parent;
-- #418 — FULL vs Top-K vs progressive utility protocol, terminal;
-- #420 — B1 local downstream-agent A/B, terminal;
-- #423 — stronger-agent B2 replication, terminal success;
-- #431 — canonical corrective gate terminal, optional condition not promoted;
-- #432 — 780-task held-out generalization, evaluation run `38012340016` active;
-- #424 — final-answer factual-quality benchmark gated on #432 canonical success.
+- Issue #417 — active research parent;
+- Issue #418 — FULL vs Top-K vs progressive utility protocol, terminal;
+- Issue #420 — B1 local downstream-agent A/B, terminal;
+- Issue #423 — stronger-agent B2 replication, terminal success;
+- Issue #431 — canonical corrective gate terminal, optional condition not promoted;
+- Issue #432 — 780-task held-out generalization, evaluation run `38012340016` active;
+- Issue #424 — final-answer factual-quality benchmark gated on #432 canonical success.
 
 Phase A already establishes the retrieval-side premise on the corrected frozen benchmark:
 - Recall@1 68.97%;
@@ -103,7 +103,7 @@ SchemaRouter difference:
 
 Terminal canonical experiment:
 
-- #384
+- Issue #384
 - branch: `research/0.13-schema-adb-baseline`
 - protocol: V6A
 - raw BGE supported exact: 91.67%
