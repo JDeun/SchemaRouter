@@ -104,8 +104,10 @@ class _CrossOriginSafeRedirect(urllib.request.HTTPRedirectHandler):
         if (original.scheme.lower(), original.netloc.lower()) != (
             target.scheme.lower(), target.netloc.lower()
         ):
-            for header in ("Authorization", "X-GitHub-Api-Version"):
-                redirected.remove_header(header)
+            secret_headers = {"authorization", "x-github-api-version"}
+            for header in (*redirected.headers, *redirected.unredirected_hdrs):
+                if header.lower() in secret_headers:
+                    redirected.remove_header(header)
         return redirected
 
 
