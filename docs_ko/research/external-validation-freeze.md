@@ -57,7 +57,26 @@ Cold/hot 정의는 scoring 전에 고정합니다. 일반적인 offline 정의�
 결과를 공개할 때 hardware/environment도 함께 기록합니다. GPU HYSET latency와 CPU
 SchemaRouter latency를 hardware label 없이 직접 비교하지 않습니다.
 
-## 현재 외부 검증 queue
+## 현재 외부 검증 대기열
+
+전체 외부 검증을 관리하는 상위 이슈는 [#584](https://github.com/JDeun/SchemaRouter/issues/584)입니다.
+외부 평가는 동결된 #431/#432/#424 실험과 **독립적**입니다.
+상대 관리자의 긍정적인 답변은 평가 논의에 대한 관심이지,
+독립 재현 성공이나 제품 추천을 의미하지 않습니다.
+협업이 거절된 경우에도 근거를 기록하고 반복적으로 요청하지 않습니다.
+
+| 평가·회신 대상 | 관리 이슈 | 해석 및 비교 범위 |
+| --- | --- | --- |
+| SafeActBench V1(별도 외부 연구) | [#1211](https://github.com/JDeun/SchemaRouter/issues/1211), [#1224](https://github.com/JDeun/SchemaRouter/issues/1224) | V1 131개 사례 × 3개 조건의 실제 평가는 미완료. 정답 정보 비노출 계약과 격리 실행 환경 필요 |
+| Xerrion ServiceNow | [#1228](https://github.com/JDeun/SchemaRouter/issues/1228) | 동일한 권한 허용 도구 패키지와 질의별 사전 선택을 오프라인 비교 |
+| ClicShopping 4.33 | [#1208](https://github.com/JDeun/SchemaRouter/issues/1208) | MCP 도구 목록이 아닌 REST 엔드포인트·작업 표가 기준이며, 권한과 고객 범위를 보존 |
+| SmartMCP | [#1114](https://github.com/JDeun/SchemaRouter/issues/1114) | 공통 동결 카탈로그·예산 필요. 협업 관심은 재현 성공 증거가 아님 |
+| Clear Your Tools | [#839](https://github.com/JDeun/SchemaRouter/issues/839) | 기존 단계 관리 및 BM25를 보존하고 개발 테스트와 홀드아웃 결과를 구분 |
+| HYSET / pi-jev / hope-agent | [#795](https://github.com/JDeun/SchemaRouter/issues/795), [#796](https://github.com/JDeun/SchemaRouter/issues/796), [#799](https://github.com/JDeun/SchemaRouter/issues/799) | 공개 코드 재학습과 논문 체크포인트 재현을 구분하며, 도구·필드 재현율을 분리 |
+| mcp-gateway | [#1209](https://github.com/JDeun/SchemaRouter/issues/1209) | 공동 비교 거절. 신원·권한·네트워크 경계를 고려한 별도 설계 없이는 비교 불가 |
+| ToolHive / Knuckles / pmcp | [#1229](https://github.com/JDeun/SchemaRouter/issues/1229) | 거절·보류 내역 기록. 상대 프로젝트의 보증으로 해석하지 않으며 폐기 예정 비교 대상 제외 |
+
+
 
 - HYSET (#795): discovery anchor `93808cb8d633b6b685f0f9353923b27c2ad7ad81`. Source는 MIT이지만 `data/hyset_corpus.json`은 ToolBench 파생 데이터이므로 ToolBench 조건을 따릅니다. 호환되는 공개 ToolBench subset을 사용하고 라이선스가 허용하지 않는 데이터는 재배포하지 않습니다.
 - pi-jev (#796): discovery anchor `c5b5847aa189fe5ffec52893b7051fe8f9e7a548`, MIT. 작은 shared catalog를 먼저 고정하고 Jev tool activation과 SchemaRouter field narrowing을 별도 지표로 기록합니다.
