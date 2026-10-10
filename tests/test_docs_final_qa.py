@@ -59,3 +59,13 @@ def test_path_cannot_escape_site_root(tmp_path: Path) -> None:
     errors, _ = inspect(tmp_path)
     assert errors and "escapes docs root" in errors[0]
     assert resolve(tmp_path, doc, "https://example.com/help") is None
+
+
+def test_bilingual_inspection_dashboard_embed_resolves_shared_published_asset() -> None:
+    root = Path(__file__).resolve().parents[1]
+    shared = "/SchemaRouter/assets/inspection-dashboard-preview.html"
+    assert (root / "docs/assets/inspection-dashboard-preview.html").is_file()
+    for tree in ("docs", "docs_ko"):
+        text = (root / tree / "guides/inspection.md").read_text(encoding="utf-8")
+        assert f'src="{shared}"' in text
+        assert f"]({shared})" in text

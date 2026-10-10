@@ -231,12 +231,12 @@ The preview below is a checked-in representative output using the same layout an
 as the generated dashboard. It contains demo data only.
 
 <iframe
-  src="../assets/inspection-dashboard-preview.html"
+  src="/SchemaRouter/assets/inspection-dashboard-preview.html"
   title="SchemaRouter inspection dashboard preview"
   style="width: 100%; height: 720px; border: 1px solid var(--md-default-fg-color--lightest); border-radius: 12px;"
 ></iframe>
 
-[Open the dashboard preview in a separate page](../assets/inspection-dashboard-preview.html)
+[Open the dashboard preview in a separate page](/SchemaRouter/assets/inspection-dashboard-preview.html)
 
 ### Run the end-to-end example
 
