@@ -30,7 +30,7 @@ TYPED-MULTIFIELD에서는 independent field ranking을 frozen `k=60` reciprocal-
 
 ## Fresh surfaces
 
-#418/#420 row 대신 새로운 task surface를 사용합니다.
+이슈 #418/#420 row 대신 새로운 task surface를 사용합니다.
 
 - DEV: unique semantic task 60개 × 6 language rendering = 360 rows
 - Confirmation: unique semantic task 120개 × 6 language rendering = 720 rows
