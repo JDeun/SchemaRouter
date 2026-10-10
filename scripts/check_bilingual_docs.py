@@ -124,6 +124,9 @@ class RenderedArticleLayout(HTMLParser):
         self.tables = 0
         self.pre_blocks = 0
         self.images = 0
+        self.h1_titles: list[str] = []
+        self._in_h1 = False
+        self._h1_text: list[str] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         if tag == "article":
@@ -135,6 +138,9 @@ class RenderedArticleLayout(HTMLParser):
             return
         if re.fullmatch(r"h[1-6]", tag):
             self.headings.append(int(tag[1]))
+            if tag == "h1":
+                self._in_h1 = True
+                self._h1_text = []
         elif tag == "table":
             self.tables += 1
         elif tag == "pre":
@@ -142,7 +148,14 @@ class RenderedArticleLayout(HTMLParser):
         elif tag == "img":
             self.images += 1
 
+    def handle_data(self, data: str) -> None:
+        if self._in_h1:
+            self._h1_text.append(data)
+
     def handle_endtag(self, tag: str) -> None:
+        if tag == "h1" and self._in_h1:
+            self.h1_titles.append(" ".join(" ".join(self._h1_text).split())[:100])
+            self._in_h1 = False
         if tag == "article" and self.article_depth:
             self.article_depth -= 1
 
@@ -189,7 +202,8 @@ def check_rendered(site: Path) -> list[str]:
         if en_layout.signature() != ko_layout.signature():
             errors.append(
                 f"{rel}: rendered article layout differs "
-                f"EN={en_layout.signature()} KO={ko_layout.signature()}"
+                f"EN={en_layout.signature()} KO={ko_layout.signature()}; "
+                f"EN H1={en_layout.h1_titles[:14]} KO H1={ko_layout.h1_titles[:14]}"
             )
     return errors
 
