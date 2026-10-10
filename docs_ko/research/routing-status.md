@@ -98,9 +98,9 @@ Canonical provenance:
 
 이전 중복 실행 `36641753066`은 정본이 아니며, 해당 실행의 부분 결과는 최종 분석에서 제외합니다.
 
-### Structural shortlist-depth result — K3 not promoted
+### 구조적 후보 목록 깊이 비교 — K3 미승격
 
-A separately preregistered strong-agent K3-vs-K5 gate completed in run `36670280971`:
+별도로 사전 등록한 강한 에이전트의 K3와 K5 비교 게이트는 실행 `36670280971`에서 종료됐습니다:
 
 - STRUCT-FIXED-3 작업 통과율: 82.61%;
 - STRUCT-FIXED-5 작업 통과율: 85.87%;
@@ -110,23 +110,22 @@ A separately preregistered strong-agent K3-vs-K5 gate completed in run `36670280
 - K3는 도구 스키마 토큰 사용량이 더 적었음;
 - 실행 정책의 무결성 검증을 통과했으며 승인되지 않은 파괴적 실행은 0건이었음.
 
-The task-pass gate failed, so K3 is **not** promoted into #432. No K/weight/threshold retuning is
-permitted from those evaluated rows.
+과제 통과율 게이트를 충족하지 못했으므로 K3는 #432에 **승격되지 않았습니다**. 평가된 행을 이용해 K값, 가중치 또는 임계값을 다시 조정하는 행위는 허용되지 않습니다.
 
 ## External validation 상태
 
-External comparison은 maintainer-owned product validation과 분리해 추적합니다. Development fixtures and protocol preparation are **not external evidence**.
+외부 비교 평가는 자체 제품 검증과 분리해 추적합니다. 개발용 테스트 자료나 프로토콜을 준비했다는 사실만으로 **외부 검증 근거가 확보된 것은 아닙니다**.
 
-| Track | Current state | Evidence boundary |
+| 검증 대상 | 현재 상태 | 근거 해석의 경계 |
 | --- | --- | --- |
-| SmartMCP (#1114) | native development fixture/smoke prepared; maintainer protocol confirmation pending | held-out freeze waits for upstream agreement |
-| Clear Your Tools (#839) | v2.17.6 native BM25 development smoke being integrated | visible development fixture only; no held-out claim |
-| Jev (#796) | frozen 82-tool / 16-query package delivered upstream | waiting for upstream execution/review; no post-freeze tuning |
-| HYSET (#795) | public-code fresh-retraining protocol prepared | must be labeled independently retrained HYSET; no paper-checkpoint reproduction claim |
+| SmartMCP (#1114) | 자체 개발용 데이터와 스모크 테스트 준비; 상대 유지관리자의 프로토콜 확인 대기 | 홀드아웃 동결에는 사전 합의 필요 |
+| Clear Your Tools (#839) | v2.17.6의 기본 BM25 개발용 스모크 테스트 연동 중 | 공개된 개발용 테스트일 뿐, 홀드아웃 성능 근거는 아님 |
+| Jev (#796) | 도구 82개·질의 16개의 동결 패키지 전달 | 상대측 실행·검토 대기, 동결 이후 조정 금지 |
+| HYSET (#795) | 공개 코드 기반 신규 재학습 프로토콜 준비 | 독립적으로 재학습한 HYSET으로 표시해야 하며 논문 체크포인트 재현이라 주장할 수 없음 |
 
-The canonical freeze rules live in [External validation freeze](external-validation-freeze.md). Negative or null external results remain publishable evidence and must not be repaired from held-out rows.
+공식 동결 규칙은 [외부 검증 동결 절차](external-validation-freeze.md)에 있습니다. 부정적 결과나 차이가 없는 결과도 그대로 공개할 수 있으며, 홀드아웃 결과를 이용해 사후에 수정해서는 안 됩니다.
 
-### Active conveyor
+### 실행 중인 자동 실험 컨베이어
 
 남은 0.14 주요 연구는 사람이 임의로 예약하는 방식이 아니라 앞 단계의 종료 게이트를 통과한 뒤 진행하는 컨베이어입니다.
 
@@ -152,9 +151,9 @@ flowchart TD
 
 이 문서는 개발 집합의 성공을 운영환경 검증으로 주장하지 않습니다. 새로운 확인 코퍼스를 한 번 소비하면 튜닝에 재사용하지 않습니다.
 
-## Historical 0.11–0.13 operation-routing target
+## 과거 0.11–0.13 작업 라우팅 목표
 
-The current research target for the multilingual open-set operation-routing work is:
+과거 다국어 오픈셋 작업 라우팅 연구에서 설정한 목표는 다음과 같습니다:
 
 | Metric | Target |
 | --- | ---: |
@@ -165,7 +164,7 @@ The current research target for the multilingual open-set operation-routing work
 | Authority / execution errors | 0 |
 | Executable p95 | <= 250 ms |
 
-The canonical v4 development corpus contains 1,800 cases. Its SHA-256 is
+정식 v4 개발용 코퍼스는 1,800개 사례로 구성되며, SHA-256은 다음과 같습니다:
 `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`.
 
 ## 실제로 입증된 내용
@@ -179,13 +178,11 @@ The canonical v4 development corpus contains 1,800 cases. Its SHA-256 is
 
 두 번째 row가 결정적입니다. 변경하지 않은 candidate가 independent request-surface shift에 실패했으므로 **promote하지 않았습니다**. Calibration과 blind-final evidence는 소비하지 않았습니다.
 
-So the closed cycle does **not** claim that SchemaRouter has validated the 85/97/100/1 +
-250 ms production target under independent surface shift.
+따라서 종료된 연구 주기에서 SchemaRouter가 독립적인 질의 분포 변화에도 85/97/100/1 및 250ms 운영 목표를 충족했다고 **주장하지 않습니다**.
 
 ## Experiment가 시사하는 점
 
-The frozen BGE-M3 registered-route ranker reaches about **88.45% raw top-1** on canonical DEV. Late
-experiments suggest that closed-set ranking is no longer the main blocker.
+동결된 BGE-M3 등록 경로 순위화기는 정식 개발 데이터에서 **약 88.45%의 원시 Top-1 정확도**를 기록했습니다. 후기 실험은 닫힌 후보 집합 안에서의 순위 결정이 더 이상 주요 병목이 아닐 수 있음을 시사합니다.
 
 더 어려운 문제는 open-set **capability membership**입니다:
 
@@ -195,9 +192,9 @@ experiments suggest that closed-set ranking is no longer the main blocker.
 재순위화 모델, 여러 Jev/System-One 모델 경로, ColBERT 근거, 레지스트리 별칭
 외피 및 모델 합의 방식 모두 독립적으로 정의된 전체 목표를 입증하기에는 부족했습니다.
 
-## Conservative reference
+## 보수적 비교 기준
 
-The #259 BGE-M3 reference profile remains useful for safety-oriented comparison:
+#259 BGE-M3 기준 구성은 안전성 중심 비교에서 여전히 유용합니다:
 
 - supported exact: 83.77%;
 - near-domain unsupported rejection: 98.96%;
@@ -208,25 +205,22 @@ Supported exact routing이 85% 미만이므로 production-target pass는 아닙�
 
 ## 최초 registry-compiled capability prototype
 
-Experiment #338 tested a provider-neutral registry-compiled capability verifier after the closed
-architecture-search cycle.
+실험 #338에서는 아키텍처 탐색 주기가 종료된 뒤, 제공자에 종속되지 않고 레지스트리에서 컴파일되는 기능 검증기를 시험했습니다.
 
 인프라 측면의 목표는 달성했습니다. 동일한 컴파일러가 네이티브 `ToolSpec`, OpenAPI 및
 MCP 등록을 처리했고, 타입이 지정된 필드·단위 메타데이터를 보존했으며,
 원래 BGE의 경로 선택 권한을 변경하지 않았습니다. 권한 부여나 실행 오류도 추가하지 않았습니다.
 
-The learned synthetic veto, however, was far too conservative:
+그러나 합성 데이터로 학습한 거부 판단은 지나치게 보수적이었습니다:
 
 | Surface | Exact | Near reject | OOD | False-route | Correct raw-winner retention | p95 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Canonical DEV (1,800) | 5.03% | 100% | 100% | 0% | 5.69% | 196.93 ms |
 | Registration holdout (228) | 2.08% | 100% | 100% | 0% | 2.46% | 192.85 ms |
 
-The registration holdout contained previously unseen native/OpenAPI/MCP tool identities, opaque
-endpoint names, empty operation aliases and variable endpoint counts.
+등록 홀드아웃에는 이전에 보지 못한 네이티브·OpenAPI·MCP 도구 식별자, 의미를 알기 어려운 엔드포인트 이름, 비어 있는 작업 별칭, 가변적인 엔드포인트 수가 포함됐습니다.
 
-This candidate is **terminally rejected** under its preregistered stopping rule. It may not
-be repaired using canonical/holdout labels.
+이 후보는 사전 등록한 중단 규칙에 따라 **최종 기각**됐습니다. 정식 데이터나 홀드아웃 정답 레이블을 이용해 수정해서는 안 됩니다.
 
 유용한 결과는 promoted quality method가 아니라 architecture 측면에 있습니다. Provider-neutral typed capability/data-contract compilation은 SchemaRouter의 product model과 계속 정렬되지만, 이 synthetic learned veto는 그렇지 않습니다.
 
@@ -259,24 +253,20 @@ DEV 결과:
 
 ## 0.12 semantic ontology screens
 
-Two follow-up experiments tested whether a generic operation ontology could provide that broader
-signal without route-specific retraining.
+두 후속 실험에서는 경로별로 모델을 다시 학습하지 않고도 범용 작업 온톨로지가 더 폭넓은 의미 신호를 제공할 수 있는지 평가했습니다.
 
 | Experiment | Supported exact | Near reject | OOD | False-route | Raw exact | Raw tool | p95 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | #349 flat semantic action ontology | 44.91% | 56.48% | 100% | 32.64% | 77.31% | 94.44% | 197.55 ms |
 | #354 hierarchical capability ontology | 30.42% | 68.65% | 88.89% | 26.85% | 85.42% | 100% | 164.33 ms |
 
-Both candidates were terminally rejected on their newly frozen DEV surfaces; neither confirmation
-corpus was opened.
+두 후보 모두 새로 동결한 개발 데이터에서 최종 기각됐고, 어느 확인용 코퍼스도 개봉하지 않았습니다.
 
 #354에서 얻은 가장 중요한 architectural lesson은 raw BGE ranker가 이미 supported exact target을 충족하고 모든 supported DEV request에서 올바른 tool을 선택했지만 hard semantic ontology filtering이 그 좋은 signal을 훼손했다는 점입니다. Ontology는 registered capability semantics의 structured representation으로는 유용하지만 **endpoint removal authority를 가진 noisy positive selector로 사용해서는 안 됩니다**.
 
 ## 0.12 asymmetric ontology veto
 
-Experiment #358 preserved the raw BGE-M3 top-1 as the sole positive selector and allowed ontology
-evidence only to veto to `NO_ROUTE`. It never filtered to another endpoint and never reranked a
-positive route.
+실험 #358에서는 BGE-M3 원시 Top-1만 긍정적 경로 선택자로 유지하고 온톨로지 근거는 `NO_ROUTE`로 거부하는 용도로만 허용했습니다. 다른 엔드포인트로 바꾸거나 긍정 경로의 순위를 다시 정하지 않았습니다.
 
 DEV result:
 
@@ -294,9 +284,7 @@ DEV result:
 | p95 | 236.02 ms |
 | Authority / execution errors | 0 / 0 |
 
-이는 유용한 authority result이지만 quality pass는 아닙니다. Negative-only ontology evidence can preserve
-supported routing when it is not allowed to choose another endpoint, but requiring exact same-leaf
-agreement across independent signals is far too conservative to provide enough unsupported recall.
+이는 실행 권한 보존에 관한 유용한 결과지만 품질 기준을 통과했다는 뜻은 아닙니다. 온톨로지 근거가 다른 엔드포인트를 선택할 수 없다면 지원되는 경로를 보존할 수 있으나, 독립적인 신호 사이에 정확히 같은 최하위 기능의 일치를 요구하면 지원되지 않는 요청을 충분히 찾아내기 어렵습니다.
 
 정확한 #358 rule은 terminal이며 frozen confirmation corpus는 **unscored** 상태로 유지합니다.
 
@@ -340,8 +328,7 @@ BGE가 기준으로 선택한 도구에는 등록된 작업 세부 기능들과 
 `outside registered capabilities` 레이블 하나를 유한한 다중 분류 집합으로 제시했습니다.
 외부 분류기는 원래 선택된 경로를 유지하거나 `NO_ROUTE`로 거부할 수만 있었습니다.
 
-The model was resolved before scoring to immutable revision
-`d8c48cf2e7c7640ad5bbb379bdb2f72f5ebde7c4`.
+모델은 점수 산출 전에 변경할 수 없는 리비전 `d8c48cf2e7c7640ad5bbb379bdb2f72f5ebde7c4`로 고정했습니다.
 
 DEV result:
 
@@ -363,8 +350,7 @@ DEV result:
 Architecture는 authority-safe 상태를 유지했지만 generic OUTSIDE catch-all은 concrete supported capability label과의 multiclass normalization에서 거의 선택되지 않았습니다. The exact formulation is
 terminal and its separately frozen confirmation corpus remains **unscored**.
 
-The next candidate must condition the actual registered capability set directly in the membership
-question instead of asking one generic OUTSIDE label to compete with concrete positive labels.
+다음 후보는 하나의 포괄적 OUTSIDE 레이블을 구체적인 긍정 레이블과 경쟁시키는 대신, 실제로 등록된 기능 집합을 집합 소속 여부 판단에 직접 반영해야 합니다.
 
 
 ## 0.12 set-conditioned binary entailment
@@ -423,7 +409,7 @@ DEV result:
 | Positive route switches / authority / execution errors | 0 / 0 / 0 |
 
 Per-capability decomposition은 하나의 aggregate set hypothesis보다 더 informative했지만 binary argmax는 여전히 supported request를 과도하게 veto하여 raw-correct winner의 절반 이상을 reject했습니다.
-The exact #377 formulation is terminal and its frozen confirmation corpus remains **unscored**.
+#377의 정확한 실험 구성은 종료됐으며 동결한 확인용 코퍼스는 **채점하지 않은 상태**로 유지합니다.
 
 The next preregistered experiment (#378) compares the strongest supported-leaf entailment with the
 strongest counterfactual-leaf entailment, without adding thresholds or positive reranking.
@@ -454,18 +440,18 @@ DEV 결과:
 
 연구는 ADB, hard-negative OOS 및 에너지 기반 OOD 문헌에 따른 스키마 유도 open-set 의사결정 경계를 살피는 #382/#383으로 이동했습니다.
 
-## Reproducibility
+## 재현성
 
-The closed-cycle machine-readable decision is stored at
+종료된 연구 주기의 기계 판독형 의사결정은 다음 파일에 있습니다:
 `benchmarks/operation-routing-v4-terminal-decision.json`.
 
-The full evidence ledger is stored at
+전체 실험 근거 원장은 다음 파일에 있습니다:
 `benchmarks/research-experiment-ledger.json`.
 
-The complete design/experiment narrative is stored at
+전체 설계·실험 이력 문서는 다음 위치에 있습니다:
 `docs/research/design-and-experiment-history.md`.
 
-The terminal report is available at
+최종 결과 보고서는 다음 위치에 있습니다:
 [Operation routing v4 terminal report](operation-routing-v4-terminal-report.md).
 
 
@@ -528,8 +514,7 @@ catastrophic supported vetoes.
 
 ### V6D — component Gaussian-mixture density ratio (#399)
 
-V6D preserved endpoint-level positive components and complement resource×operation components with
-one tied diagonal covariance and a fixed zero log-likelihood-ratio boundary.
+V6D에서는 엔드포인트 수준의 긍정 성분과 리소스×작업 단위의 여집합 성분을 유지하면서, 하나의 공유된 대각 공분산과 고정된 로그 우도비 0 경계를 적용했습니다.
 
 | Metric | Result |
 | --- | ---: |
@@ -575,7 +560,7 @@ overlap substantially in natural-language embedding space.
 
 ### 현재 0.13 결론
 
-V6A–V6E rule out a progressively broader family of straightforward schema-synthetic geometry:
+V6A–V6E 실험은 단순한 스키마 기반 합성 데이터 기하학적 접근법의 여러 범주를 점차 폭넓게 배제했습니다:
 
 - 절대적인 구형·타원체 경계는 합성 데이터와 실제 데이터 간 반경 이동 때문에 실패했습니다;
 - 연결된 단일·다중 성분 가우시안 밀도비는 지원 사례의 통과를 유지했지만
@@ -591,7 +576,7 @@ surfaces remain unopened.
 
 ## 0.13 post-V6E evidence
 
-The first 0.13 open-set sequence is now terminal with **no active frozen child experiment**.
+첫 번째 0.13 오픈셋 실험 계열은 이제 종료됐으며 **활성 상태인 동결 후속 실험은 없습니다**.
 
 | Experiment | Tested signal | Supported exact | Near reject | OOD | False-route | p95 | Result |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
@@ -604,19 +589,18 @@ The first 0.13 open-set sequence is now terminal with **no active frozen child e
 #412의 핵심 contrast는 이 sequence에서 최초로 near-domain rejection, OOD rejection, false-route, authority, runtime gate를 동시에 충족했지만 raw-correct BGE winner **181개 중 158개**를 veto했다는 점입니다. The safety calibration worked; the underlying scalar catalog-membership
 score did not separate supported traffic strongly enough.
 
-The retained research conclusion is:
+유지되는 연구 결론은 다음과 같습니다:
 
-> The unresolved bottleneck is a **surface-invariant executable-capability membership
-> representation**, not another threshold or calibration rule over a weak score.
+> 해결되지 않은 병목은 약한 점수에 임계값이나 보정 규칙을 추가하는 일이 아니라, **평가 데이터 표면이 바뀌어도 유지되는 실행 가능 기능의 집합 소속 표현**을 확보하는 데 있습니다.
 
 Terminal DEV row는 successor tuning에 사용할 수 없으며 위의 모든 confirmation surface는 unopened 상태로 유지합니다. The canonical continuation point is issue #388, then issue #382, the
 machine-readable prior-art registry, and the experiment ledger.
 
 
 
-### Staged post-B1 work
+### B1 이후 계획된 후속 작업
 
-The following items are preregistered/staged and **must not** be selected from B1 row-level errors:
+다음 작업들은 사전 등록·계획된 항목이며 B1의 개별 오류 사례를 보고 **사후 선택해서는 안 됩니다**:
 
 - #428 — 공개된 일급 타입 기반 Top-K 검색 API;
 - #430 — 고정 K 검증 이후 질의별 적응형 후보 목록 깊이;
