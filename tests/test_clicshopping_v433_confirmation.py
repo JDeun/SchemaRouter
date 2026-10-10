@@ -106,3 +106,15 @@ def test_no_automatic_review_or_scoring_even_after_structural_pass() -> None:
     assert report["scoring_authorized"] is False
     assert report["independent_human_review_pending"] is True
     assert report["model_calls"] == 0
+
+
+def test_hot_repeats_and_measurement_authority_are_frozen() -> None:
+    plan, dev, inventory = docs()
+    candidate = sample(dev)
+    candidate["protocol"]["hot_repeats"] = 99
+    with pytest.raises(ValueError, match="protocol drift"):
+        check_confirmation(plan, candidate, dev, inventory)
+    candidate = sample(dev)
+    candidate["protocol"]["exposure_measure"] = "native MCP inputSchema"
+    with pytest.raises(ValueError, match="protocol drift"):
+        check_confirmation(plan, candidate, dev, inventory)
