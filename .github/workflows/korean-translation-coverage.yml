@@ -15,6 +15,7 @@ on:
       - 'audits/ko-semantic-section-review-2026-10-10.json'
       - 'audits/ko-security-policy-review-2026-10-10.json'
       - 'audits/ko-targeted-contract-review-2026-10-10.json'
+      - 'audits/ko-english-prose-review-2026-10-10.json'
       - 'audits/ko-research-translation-followup-2026-10-10.json'
       - '.github/workflows/korean-translation-coverage.yml'
   schedule:
@@ -31,6 +32,7 @@ on:
       - 'audits/ko-semantic-section-review-2026-10-10.json'
       - 'audits/ko-security-policy-review-2026-10-10.json'
       - 'audits/ko-targeted-contract-review-2026-10-10.json'
+      - 'audits/ko-english-prose-review-2026-10-10.json'
       - 'audits/ko-research-translation-followup-2026-10-10.json'
       - 'tests/test_bilingual_coverage_report.py'
       - 'tests/test_bilingual_docs_integrity.py'
@@ -73,6 +75,13 @@ jobs:
         run: |
           python -m scripts.report_korean_english_prose --json-out korean-prose-leakage.json --max-show 50
           echo 'English prose detections are advisory, not a translation certificate.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Gate unreviewed English prose on exact Korean blob and source line
+        run: |
+          python -m scripts.report_korean_english_prose \
+            --json-out korean-prose-leakage.json \
+            --review-ledger audits/ko-english-prose-review-2026-10-10.json \
+            --strict --max-show 0
+          echo 'Passing this gate is NOT a 147-page semantic translation certificate.' >> "$GITHUB_STEP_SUMMARY"
       - name: Check per-section translation omission and negation risk
         run: |
           python -m scripts.audit_translation_semantic_sections --json-out translation-section-risks.json
