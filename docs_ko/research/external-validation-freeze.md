@@ -74,7 +74,9 @@ SchemaRouter latency를 hardware label 없이 직접 비교하지 않습니다.
 | Clear Your Tools | [#839](https://github.com/JDeun/SchemaRouter/issues/839) | 기존 단계 관리 및 BM25를 보존하고 개발 테스트와 홀드아웃 결과를 구분 |
 | HYSET / pi-jev / hope-agent | [#795](https://github.com/JDeun/SchemaRouter/issues/795), [#796](https://github.com/JDeun/SchemaRouter/issues/796), [#799](https://github.com/JDeun/SchemaRouter/issues/799) | 공개 코드 재학습과 논문 체크포인트 재현을 구분하며, 도구·필드 재현율을 분리 |
 | mcp-gateway | [#1209](https://github.com/JDeun/SchemaRouter/issues/1209) | 공동 비교 거절. 신원·권한·네트워크 경계를 고려한 별도 설계 없이는 비교 불가 |
-| ToolHive / Knuckles / pmcp | [#1229](https://github.com/JDeun/SchemaRouter/issues/1229) | 거절·보류 내역 기록. 상대 프로젝트의 보증으로 해석하지 않으며 폐기 예정 비교 대상 제외 |
+| ToolHive VirtualMCPServer | [#1229](https://github.com/JDeun/SchemaRouter/issues/1229), [관리자 회신](https://github.com/stacklok/toolhive/issues/6742#issuecomment-6065169010) | 상대 저장소에서 제3자 벤치마크 및 문서 수용을 거절했습니다. 독립적인 SchemaRouter 자체 비교만 가능하며 상대의 보증이나 반복 요청을 의미하지 않습니다 |
+| Knuckles agent-utilities | [#1229](https://github.com/JDeun/SchemaRouter/issues/1229), [관리자 회신](https://github.com/Knuckles-Team/agent-utilities/issues/20#issuecomment-6084040055) | 공동 비교를 거절했습니다. `DynamicToolOrchestrator`는 폐기 예정이므로 현행 비교에서 제외합니다. 실제 Graph OS 대체 기능과 AU-RETRIEVAL 규격에 대해서만 새로운 동의 기반 제안을 검토합니다 |
+| Consiliency pmcp | [#1229](https://github.com/JDeun/SchemaRouter/issues/1229), [관리자 회신](https://github.com/Consiliency/pmcp/issues/236#issuecomment-5996966650) | 공동 평가 및 보증은 거절됐습니다. 공식 공개 pmcp 검색 벤치마크가 나오기 전까지 독립 재현을 보류합니다 |
 
 
 
