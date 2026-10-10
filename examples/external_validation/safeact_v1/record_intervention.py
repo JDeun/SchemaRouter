@@ -6,11 +6,11 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-from examples.external_validation.safeact_v1.trusted_session import (
-    TrustedEvidenceSession,
-)
 from examples.external_validation.safeact_v1.contract_loader import (
     SAFEACT_PUBLIC_DOMAINS,
+)
+from examples.external_validation.safeact_v1.trusted_session import (
+    TrustedEvidenceSession,
 )
 from scripts.verify_safeact_v1_sources import verify_sources
 
