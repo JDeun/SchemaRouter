@@ -39,14 +39,14 @@ Fresh run이 promotion decision입니다. Supported-exact floor, near-domain rej
 - positive dense score/margin boundary와 winner-first gating
 - operation-fit selector와 hierarchical ranking variant
 - multilingual NLI
-- explicit negative capability prototype, signed bank, dual negative/background bank, rank-based prototype rule
+- 명시적 미지원 기능 프로토타입·부호가 있는 근거 뱅크·부정/배경 이중 뱅크·순위 기반 프로토타입 규칙
 - grouped-OOF learned verifier geometry 후 fit-once fresh confirmation
 - BGE reranker / cross-encoder veto 및 rescue variant
-- Qwen, Laya, Kev, AnyJev typed-decision path
-- lightweight BGE negative veto + conditional GTE rescue
-- BGE-M3 native ColBERT/sparse operation evidence
-- registry-self-calibrated endpoint alias envelope
-- threshold-free BGE/GTE top-1 consensus
+- Qwen·Laya·Kev·AnyJev의 타입 기반 의사결정 경로
+- 경량 BGE 부정 판단에 따른 거부와 조건부 GTE 복구
+- BGE-M3의 기본 ColBERT 및 희소 벡터 기반 작업 근거
+- 레지스트리에서 자체 보정한 엔드포인트 별칭 허용 범위
+- 임계값을 사용하지 않는 BGE·GTE Top-1 합의 판정
 
 마지막 세 post-fresh experiment는 canonical tuning DEV와 trusted registry/model invariant에서만 파생됐습니다. #270/#287/#326 row를 repair에 사용하지 않았습니다.
 
@@ -97,10 +97,10 @@ Issue #198은 다음 candidate를 요구합니다.
 
 ## Reproducibility
 
-Machine-readable closure: `benchmarks/operation-routing-v4-terminal-decision.json`
+기계 판독형 최종 판정: `benchmarks/operation-routing-v4-terminal-decision.json`
 
-Canonical evidence ledger: `benchmarks/research-experiment-ledger.json`
+정식 근거 원장: `benchmarks/research-experiment-ledger.json`
 
-Full design and experiment history: `docs/research/design-and-experiment-history.md`
+전체 설계 및 실험 이력: `docs/research/design-and-experiment-history.md`
 
-Paper-ready exports: `python scripts/export_research_evidence.py`
+논문용 근거 내보내기 명령어: `python scripts/export_research_evidence.py`
