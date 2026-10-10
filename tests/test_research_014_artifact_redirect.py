@@ -62,3 +62,25 @@ def test_redirect_refuses_tls_downgrade_even_on_same_host() -> None:
             {},
             "http://api.github.com/repos/JDeun/SchemaRouter/actions/artifacts/123",
         )
+
+
+def test_frozen_heldout_preflight_patches_transport_without_changing_source() -> None:
+    from pathlib import Path
+
+    workflow = (
+        Path(__file__).resolve().parents[1]
+        / ".github/workflows/research-0.14-heldout-generalization.yml"
+    ).read_text(encoding="utf-8")
+
+    assert 'ref: "${{ inputs.source_sha }}"' in workflow
+    preflight = workflow.split(
+        "- name: Verify exact upstream artifacts and optional-condition gates", 1
+    )[1].split("- name: Generate fresh held-out corpus", 1)[0]
+    assert "urllib.request.install_opener(" in preflight
+    assert "urllib.request.build_opener(_SafeArtifactRedirect())" in preflight
+    assert "target.scheme.lower() != \"https\"" in preflight
+    assert "redirected.remove_header(header)" in preflight
+    assert "GitHubAPI, combine_digests" in preflight
+    assert preflight.index("urllib.request.install_opener(") < preflight.index(
+        "from scripts.research_014_conveyor import GitHubAPI"
+    )
