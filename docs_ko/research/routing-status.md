@@ -137,7 +137,7 @@ flowchart TD
     D -->|"정본 성공 및 해시 검증"| E["#500 최종 근거 종합"]
 ```
 
-#431의 정식 교정·복구 근거는 컨베이어에서 확인됐으며, 상태 인식 교정 조건과 구조적 K3 조건은 **승격되지 않았습니다**. #432는 동결된 홀드아웃 평가를 실행 중입니다. #424는 #432의 정식 성공 이후에만 시작해야 합니다. 컨베이어를 우회해 직접 실행하면 안 됩니다. 홀드아웃 통과율·신뢰구간·최종 답변 품질에 대해서는 아직 결과를 주장할 수 없습니다.
+이슈 #431의 정식 교정·복구 근거는 컨베이어에서 확인됐으며, 상태 인식 교정 조건과 구조적 K3 조건은 **승격되지 않았습니다**. #432는 동결된 홀드아웃 평가를 실행 중입니다. #424는 #432의 정식 성공 이후에만 시작해야 합니다. 컨베이어를 우회해 직접 실행하면 안 됩니다. 홀드아웃 통과율·신뢰구간·최종 답변 품질에 대해서는 아직 결과를 주장할 수 없습니다.
 
 출력 필드 투영에 관한 별도 연구(#506/#510)는 독립된 필드 수준 문제입니다. 런타임 적격성 검사는 계측 근거이며 기능 검색 성과 주장과 섞어서는 안 됩니다.
 
@@ -193,7 +193,7 @@ flowchart TD
 
 ## Conservative reference
 
-#259 BGE-M3 기준 프로필은 안전성 중심의 비교에 계속 유용합니다:
+이슈 #259 BGE-M3 기준 프로필은 안전성 중심의 비교에 계속 유용합니다:
 
 - supported exact: 83.77%;
 - near-domain unsupported rejection: 98.96%;
@@ -261,7 +261,7 @@ DEV 결과:
 
 두 후보 모두 새로 동결한 개발 표면에서 최종 기각됐으며 확인 코퍼스는 어느 쪽도 개봉하지 않았습니다.
 
-#354에서 얻은 가장 중요한 architectural lesson은 raw BGE ranker가 이미 supported exact target을 충족하고 모든 supported DEV request에서 올바른 tool을 선택했지만 hard semantic ontology filtering이 그 좋은 signal을 훼손했다는 점입니다. Ontology는 registered capability semantics의 structured representation으로는 유용하지만 **endpoint removal authority를 가진 noisy positive selector로 사용해서는 안 됩니다**.
+이슈 #354에서 얻은 가장 중요한 architectural lesson은 raw BGE ranker가 이미 supported exact target을 충족하고 모든 supported DEV request에서 올바른 tool을 선택했지만 hard semantic ontology filtering이 그 좋은 signal을 훼손했다는 점입니다. Ontology는 registered capability semantics의 structured representation으로는 유용하지만 **endpoint removal authority를 가진 noisy positive selector로 사용해서는 안 됩니다**.
 
 ## 0.12 asymmetric ontology veto
 
@@ -313,7 +313,7 @@ DEV result:
 
 집합 수준 합의는 #358 대비 재현율을 39.51%에서 64.20%로 높였지만, 여전히 유사 도메인 거부율 목표인 97%에는 미달했고 올바른 지원 경로도 거부하기 시작했습니다. 이미 사용한 개발 집합에서 동일한 BGE/MiniLM 온톨로지 투영 근거 계열의 규칙을 추가 조정하지 않기로 했습니다.
 
-#363의 해당 규칙에 관한 실험은 종료됐습니다. 별도로 동결한 552개 사례의 확인 코퍼스는
+이슈 #363의 해당 규칙에 관한 실험은 종료됐습니다. 별도로 동결한 552개 사례의 확인 코퍼스는
 여전히 **채점되지 않았습니다**. 후속 연구는 같은 투영 결과를 대상으로 임계값이나
 합의 규칙만 다시 조절하는 대신, 실질적으로 다른 의미론적 소속 신호를 도입해야 합니다.
 
@@ -570,7 +570,7 @@ V6A–V6E는 단순한 스키마 합성 기반 기하 접근법의 폭넓은 계
 | #409 | frozen GTE multilingual positive selector | 71.49% | — | — | — | 100.14 ms | terminal; BGE 88.16% on same surface |
 | #412 | multilingual-E5 + fixed alpha=0.01 split conformal | 10.09% | 99.21% | 100% | 0.62% | 244.24 ms | terminal |
 
-#412의 핵심 대조 결과는 이 계열에서 처음으로 유사 도메인 거부, 도메인 밖 거부, 잘못된 경로, 권한 및 실행시간 기준을 동시에 만족했지만 원래 BGE가 올바르게 선택한 경로 **181개 중 158개**를 거부했다는 점입니다. 안전성 보정은 동작했지만 기반이 된 단일 카탈로그 소속성 점수가 지원 요청을 충분히 구별하지 못했습니다.
+이슈 #412의 핵심 대조 결과는 이 계열에서 처음으로 유사 도메인 거부, 도메인 밖 거부, 잘못된 경로, 권한 및 실행시간 기준을 동시에 만족했지만 원래 BGE가 올바르게 선택한 경로 **181개 중 158개**를 거부했다는 점입니다. 안전성 보정은 동작했지만 기반이 된 단일 카탈로그 소속성 점수가 지원 요청을 충분히 구별하지 못했습니다.
 
 The retained research conclusion is:
 
