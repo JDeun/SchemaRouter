@@ -22,11 +22,11 @@ from typing import Any
 # must be resolved independently of cwd before importing the trusted package.
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from examples.external_validation.safeact_v1.record_intervention import (
-    gate_official_v1_record,
-)
 from examples.external_validation.safeact_v1.contract_loader import (
     SAFEACT_PUBLIC_DOMAINS,
+)
+from examples.external_validation.safeact_v1.record_intervention import (
+    gate_official_v1_record,
 )
 from examples.external_validation.safeact_v1.trusted_session import (
     VerifiedToolEvidence,
