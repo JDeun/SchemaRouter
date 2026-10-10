@@ -34,7 +34,7 @@ TYPED-MULTIFIELD에서는 independent field ranking을 frozen `k=60` reciprocal-
 
 - DEV: unique semantic task 60개 × 6 language rendering = 360 rows
 - Confirmation: unique semantic task 120개 × 6 language rendering = 720 rows
-- Languages: English, Korean, Spanish, Japanese, German, mixed identifiers/text
+- 언어: 영어·한국어·스페인어·일본어·독일어 및 여러 언어가 섞인 식별자·텍스트
 - Catalog sizes: 100 / 250 / 500 / 1000 endpoints
 - Statistical unit: semantic task. Language/catalog repeat는 repeated measure이며 독립 sample이 아님
 
@@ -77,7 +77,7 @@ Frozen Qwen3-0.6B tokenizer revision은 B1과 context measurement를 비교할 �
 
 - **Toollery (2026)** — capability candidate compression과 offline intent-manual construction
 - **Multi-Field Tool Retrieval (2026)** — raw document flattening 대신 structured field-level representation
-- **ToolSense (2026)** — ambiguity-tiered/naturalistic retrieval diagnostic
+- **ToolSense (2026)** — 모호성 수준별·자연스러운 질의 기반 검색 진단
 - **ToolSearcher (NeurIPS 2026)** — iterative large-scale tool search. Static ablation에 가져오지 않고 이후 dynamic-retrieval 연구용으로 유지
 
 결과는 SchemaRouter typed schema graph가 downstream execution을 위한 metadata에 불과한지, 아니면 측정 가능한 retrieval advantage도 제공하는지를 답해야 합니다.
