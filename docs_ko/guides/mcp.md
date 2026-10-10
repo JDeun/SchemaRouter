@@ -91,7 +91,7 @@ tool = await router.add_url(
 `command`, `args`, `cwd`, `env`는 애플리케이션이 관리하는 로컬 설정입니다. 모델이
 선택할 수 있는 인자가 아니며, 환경 변수의 secret 값도 `ToolSpec`에 복사하지 않습니다.
 
-Subprocess 실행에는 `shell=True`를 쓰지 않고 shell command 문자열도 받지 않습니다.
+Subprocess는 MCP SDK의 `StdioServerParameters`를 통해 실행합니다. `shell=True`를 사용하지 않으며 shell command 문자열도 받지 않습니다. `allowed_commands`는 실행 파일에 대한 선택적 명시 allowlist입니다. 환경 값에는 secret이 있을 수 있으므로 비밀이 아닌 환경 변수 **이름**만 transport fingerprint에 반영합니다. 가져온 MCP 도구는 로컬 subprocess라 해도 실행 정책상 원격·비신뢰 도구로 분류합니다. 로컬 subprocess 또한 임의의 부작용을 일으킬 수 있으므로 분류되지 않은 작업은 신뢰할 수 있는 로컬 정책에서 허용하지 않는 한 실행을 거부합니다.
 
 ```python
 import os
@@ -150,6 +150,8 @@ router = await SchemaRouter.from_url(
 )
 ```
 
+같은 `trusted_headers`를 discovery와 runtime 호출에 적용하지만 헤더 **값**은 `ToolSpec`, endpoint metadata, planner state 또는 model-visible argument에 복사하지 않습니다. 특히 `Mcp-Protocol-Version` 같은 MCP 프로토콜 헤더는 `trusted_headers`로 재정의할 수 없고 URL 자체에 넣은 자격 증명도 거부합니다.
+
 ## 사용자 정의 OAuth, mTLS, 프록시 및 게이트웨이 전송 방식
 
 OAuth, mTLS, 프록시, 기업용 게이트웨이 등 복잡한 인증이 필요하다면 신뢰할 수 있는 `MCPClientFactory`를 주입하십시오. 팩토리는 공식 MCP SDK 클라이언트와 전송 수명주기를 소유합니다. 이 경로를 통해 클라이언트 자격 증명, OAuth, mTLS, 전용 HTTP 클라이언트를 구성하되 비밀 정보는 SchemaRouter의 모델 노출 계획 계약 밖에 유지합니다. 이는 Streamable HTTP 전송에 전달하는 호출자 소유 HTTP 클라이언트에서 인증을 처리하는 MCP SDK의 계층 분리와 일치합니다.
@@ -167,7 +169,11 @@ router = await SchemaRouter.from_url(
 Tool 목록이 그대로면 아무것도 바꾸지 않습니다. 호환 가능한 변경은 기존 fingerprint를 확인한
 뒤 교체할 수 있고, breaking change나 보안 의미가 달라지는 변경은 검토 대기 상태로 남깁니다.
 
-현재 process에 맞는 binding이 없거나 fingerprint가 오래됐으면 refresh를 진행하지 않습니다.
+첫째, 모든 MCP transport는 동일한 보수적 schema drift 경계를 사용합니다. Streamable HTTP 등록은 저장된 안전한 URL provenance를 통해 다시 검사합니다. stdio 및 transport-neutral 등록에는 원래 URL이 없으므로 현재 프로세스에 바인딩된 fingerprint 일치 factory만 재사용합니다.
+
+둘째, tool 목록이 같으면 no-op이고 호환 가능한 변경만 compare-and-swap 교체 경로를 통해 적용하여 새 fingerprint 아래 동일한 trusted transport factory에 다시 바인딩합니다. Breaking 또는 security-semantic drift는 review 대기 상태로 남으며 기존 승인된 계약이나 바인딩을 교체하지 않습니다.
+
+셋째, live factory, credentials, env 값, subprocess 구성, socket 등 전송 상태는 `ToolSpec`이나 watcher snapshot에 저장하지 않습니다. 현재 process에 맞는 binding이 없거나 fingerprint가 오래됐으면 refresh는 fail-closed합니다. 새 HTTP URL을 꾸며 내거나 model-visible metadata에서 trusted transport 상태를 재구성하지 않습니다.
 
 ```python
 router.register_schema_watch(tool.key, interval_seconds=300)
@@ -218,6 +224,8 @@ HTTP or stdio server
 MCP에서 `outputSchema`는 필수가 아닙니다. 서버가 결과를 text block으로만 돌려주면
 SchemaRouter가 field 구조를 안전하게 알아낼 근거가 없습니다.
 
+SchemaRouter는 공개된 `outputSchema`에서만 결과 필드를 도출합니다. 결과가 text block으로만 제공된다면 자동 projection/normalization 대상으로 삼을 필드가 없습니다. 공개 스키마에 `results: array<object{title,url}>`가 있을 경우에는 `results[].title`, `results[].url`처럼 배열 요소 필드를 도출하며, 내부 `"*"` 경로 세그먼트로 배열 항목의 정렬 관계를 보존합니다. 예시 응답의 형태를 보고 배열 요소 필드를 추론하지는 않습니다.
+
 이 경우 애플리케이션 코드에서 필요한 결과 계약을 직접 선언할 수 있습니다.
 
 이 선언은 routing, projection, unit normalization, fallback 가능 여부에 실제로 영향을 줍니다.
@@ -262,3 +270,14 @@ amended = tool.model_copy(
 
 router.amend_capability(key, amended)
 ```
+
+승인된 변경은 capability의 실행 가능 상태를 유지하며 invoker 구현은 사용자 코드에 노출하지 않습니다. 미공개 필드를 선언하거나 기존 필드의 의미를 설명할 수 있지만, 실행 식별성(path, method, parameter, 읽기 전용 또는 파괴적 작업 분류)과 서버가 이미 공개한 필드의 validation shape는 변경할 수 없습니다. 이 밖의 변경은 `ContractAmendmentError`로 거부되며 원래 상태를 보존합니다.
+
+**이것은 단순 설명용 주석이 아닙니다.** 승인된 수정은 다음 실제 실행 동작에 영향을 줍니다.
+
+- **라우팅:** `semantic_id`나 단위 추가로 기존에 불가능했던 제공자 간 fallback이 호환 가능해질 수 있습니다.
+- **값:** `unit_normalization`은 호출자에게 결과를 전달하기 전에 `item * scale + offset`으로 수치를 조정합니다.
+- **투영 경계:** 기존 필드의 `path`나 `result_path` 수정은 같은 필드 이름으로 반환하는 데이터 위치를 바꿉니다. 이것은 field-selection의 redaction 경계이므로 기존에 제외됐던 내부 값을 노출시킬 위험이 있습니다. 예를 들어 `{"public": {"band_gap": 1.1}}` 대신 `{"internal": {"unreleased_band_gap": 9.9}}`를 가리키게 만들 수도 있습니다.
+- **근거 게이트:** `source_type`, `license`, `unit`은 실행기가 강제하는 evidence availability를 바꾸므로 실제 서버 반환값은 그대로여도 선언만으로 차단됐던 경로를 통과시킬 수 있습니다.
+- **접근 가용성:** `mark_access_unavailable`에 따른 cooldown은 tool fingerprint에 연결됩니다. 수정으로 fingerprint가 바뀌면 활성 cooldown이 해제됩니다. `add_tool(..., replace=True)`도 cooldown을 해제하지만 재바인딩 전까지 실행할 수 없고, amendment는 재발급된 바인딩 아래 실행 가능 상태를 유지한다는 차이가 있습니다.
+- **프레임워크 브리지:** `to_langchain_tool`, `to_langchain_tools` 및 LlamaIndex 브리지는 생성 시 fingerprint와 output field 목록을 캡처합니다. 수정 이전 브리지는 이후 호출에서 모두 `SchemaDriftError`로 거부되므로 변경된 라우터로 다시 만들어야 합니다. 반면 `to_langgraph_node`는 매 호출 `router.invoke()`를 실행하므로 영향받지 않습니다.

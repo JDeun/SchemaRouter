@@ -118,7 +118,7 @@ nullable: true
 
 SchemaRouter가 정확히 직렬화하지 못하는 `matrix`, `label`, `spaceDelimited`,
 `pipeDelimited`, `deepObject`, `allowReserved: true`는 임의로 흉내 내지 않습니다.
-호환성 검사에서 지원하지 않는 항목으로 표시하고 실행하지 않습니다.
+호환성 검사에서 지원하지 않는 항목으로 표시하고 실행하지 않습니다. 특히 `allowReserved: true` 쿼리 파라미터는 reserved character의 해석을 조용히 변경하지 않도록 거부합니다. 실행 전에 호환성 보고서에서 `parameter_style` 또는 `allow_reserved` finding으로 드러납니다.
 
 같은 wire name이 path/query/header/body에 중복되면 논리 argument를 분리합니다.
 
