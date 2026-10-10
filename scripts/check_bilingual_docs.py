@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import re
 from collections import Counter
+from html.parser import HTMLParser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -108,6 +109,54 @@ def check_sources() -> list[str]:
     return errors
 
 
+class RenderedArticleLayout(HTMLParser):
+    """Extract article-only layout structure from built Material HTML.
+
+    Ignore the navigation, language picker and shared page chrome, which
+    legitimately differ by locale. Do not compare translated text or slugs.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.article_depth = 0
+        self.articles = 0
+        self.headings: list[int] = []
+        self.tables = 0
+        self.pre_blocks = 0
+        self.images = 0
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == "article":
+            if self.article_depth == 0:
+                self.articles += 1
+            self.article_depth += 1
+            return
+        if not self.article_depth:
+            return
+        if re.fullmatch(r"h[1-6]", tag):
+            self.headings.append(int(tag[1]))
+        elif tag == "table":
+            self.tables += 1
+        elif tag == "pre":
+            self.pre_blocks += 1
+        elif tag == "img":
+            self.images += 1
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "article" and self.article_depth:
+            self.article_depth -= 1
+
+    def signature(self) -> tuple[tuple[int, ...], int, int, int]:
+        return (tuple(self.headings), self.tables, self.pre_blocks, self.images)
+
+
+def rendered_article_layout(html: str) -> RenderedArticleLayout:
+    parser = RenderedArticleLayout()
+    parser.feed(html)
+    parser.close()
+    return parser
+
+
 def check_rendered(site: Path) -> list[str]:
     errors: list[str] = []
     en_pages = {
@@ -130,6 +179,18 @@ def check_rendered(site: Path) -> list[str]:
             errors.append(f"{rel}: Korean page lacks en alternate")
         if "bilingual-switch.js" not in en_html or "bilingual-switch.js" not in ko_html:
             errors.append(f"{rel}: bilingual route-preserving switch script missing")
+        en_layout = rendered_article_layout(en_html)
+        ko_layout = rendered_article_layout(ko_html)
+        if en_layout.articles != 1 or ko_layout.articles != 1:
+            errors.append(
+                f"{rel}: expected one rendered content article per language; "
+                f"EN={en_layout.articles} KO={ko_layout.articles}"
+            )
+        if en_layout.signature() != ko_layout.signature():
+            errors.append(
+                f"{rel}: rendered article layout differs "
+                f"EN={en_layout.signature()} KO={ko_layout.signature()}"
+            )
     return errors
 
 
