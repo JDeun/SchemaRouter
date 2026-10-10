@@ -60,7 +60,8 @@ def test_stale_review_is_rejected(tmp_path: Path) -> None:
     en.mkdir()
     ko.mkdir()
     (en / "a.md").write_text(
-        "# First\n\nThis must not be executed without approval.", encoding="utf-8"
+        ("# First\n\n" + "This must not be executed without approval. " * 4),
+        encoding="utf-8"
     )
     (ko / "a.md").write_text("# 검증\n\n필요합니다.", encoding="utf-8")
     report = audit(en, ko)
