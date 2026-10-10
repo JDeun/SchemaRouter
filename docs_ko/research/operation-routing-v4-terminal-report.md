@@ -62,7 +62,7 @@ BGE-M3 raw registered-route top-1은 약 88.45%에 도달하므로 closed-set ro
 
 ## Safe reference profile
 
-#259 robust BGE-M3 profile은 가장 유용한 conservative reference로 남습니다.
+이슈 #259 robust BGE-M3 profile은 가장 유용한 conservative reference로 남습니다.
 
 - supported exact: 83.77%
 - near-domain rejection: 98.96%
