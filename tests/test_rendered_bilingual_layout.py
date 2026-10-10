@@ -77,3 +77,27 @@ def test_rendered_bilingual_missing_article_fails(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     assert any("expected one rendered content article" in msg for msg in check_rendered(site))
+
+
+def test_reference_api_autodoc_directives_preserve_block_separation() -> None:
+    """Both languages must actually expand mkdocstrings, not render ::: as prose."""
+    root = Path(__file__).resolve().parents[1]
+    for relative in ("api.md", "models.md", "planning.md", "runtime.md"):
+        directives: list[list[str]] = []
+        for tree in ("docs", "docs_ko"):
+            page = (root / tree / "reference" / relative).read_text(encoding="utf-8")
+            lines = page.splitlines()
+            entries: list[str] = []
+            for index, line in enumerate(lines):
+                if not line.startswith("::: schemarouter."):
+                    continue
+                entries.append(line)
+                assert index > 0 and not lines[index - 1].strip(), (
+                    tree, relative, index + 1, "missing blank line before API directive"
+                )
+                assert index + 1 == len(lines) or not lines[index + 1].strip(), (
+                    tree, relative, index + 1, "missing blank line after API directive"
+                )
+            assert entries, (tree, relative)
+            directives.append(entries)
+        assert directives[0] == directives[1], relative
