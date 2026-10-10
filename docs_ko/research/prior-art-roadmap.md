@@ -21,9 +21,11 @@
 | Hard-negative OOS generation | #389 / #395 | terminal | V6B가 synthetic evidence는 분리했지만 모든 natural DEV query를 거부 |
 | Energy/density/open-space scoring | #390 / #397 / #399 / #401 | terminal / active successor 없음 | V6C/V6D/V6E terminal; consumed geometry 재튜닝 금지 |
 | Selective/conformal abstention | #391 / #412 | terminal tested formulation | E5 conformal safety가 open-set gate는 통과했지만 supported recall 파괴 |
-| Tool/executable-schema retrieval / agent utility | #392 / #417 / #418 / #420 | active primary direction | Phase A/B1 terminal, B2 strong-agent replication terminal success, #431이 #432/#424 전 active gate |
+| Tool/executable-schema retrieval / agent utility | #392 / #417 / #418 / #420 | active primary direction | Phase A/B1 및 B2 종료, #431 게이트 판정 완료·미승격, #432 홀드아웃 실행 중, #424 대기 |
 
-Active research parent는 #417이며 historical 0.13 prior-art parent는 #388입니다.
+진행 중인 연구의 상위 이슈는 #417이며, 과거 0.13 선행연구의 상위 이슈는 #388입니다.
+
+**실행 현황(2026-10-10):** #431 교정 검색의 게이트 판정이 종료됐고 조건은 승격되지 않았습니다. 동결된 #432 홀드아웃 평가는 [워크플로 38012340016](https://github.com/JDeun/SchemaRouter/actions/runs/38012340016)에서 실행 중이나 아직 정식 집계 결과는 없습니다. #424는 계속 게이트로 대기합니다. 과거 원장 상태를 현재 실행 상태로 해석하지 말고 [최신 연구 현황](routing-status.md)과 #500을 참조하세요.
 
 ## 0. Active 0.14 연구 질문: agent용 typed capability retrieval
 
@@ -31,20 +33,14 @@ Active research parent는 #417이며 historical 0.13 prior-art parent는 #388입
 
 Active 0.14 architecture:
 
-```text
-registered executable schemas
-        ↓
-typed capability index
-        ↓
-high-recall Top-K retrieval
-        ↓
-downstream LLM agent
-        ↓
-execution validation / policy
-        ↓
-tool execution
-        ↓
-result evaluation and optional candidate expansion
+```mermaid
+flowchart TD
+    A["등록된 실행 가능 스키마"] --> B["타입 기반 기능 색인"]
+    B --> C["고재현율 Top-K 검색"]
+    C --> D["하위 LLM 에이전트"]
+    D --> E["실행 검증 및 정책"]
+    E --> F["도구 실행"]
+    F --> G["결과 평가 / 선택적 후보 확장"]
 ```
 
 현재 관련 작업:
@@ -53,9 +49,9 @@ result evaluation and optional candidate expansion
 - #418 — FULL vs Top-K vs progressive utility protocol, terminal
 - #420 — B1 local downstream-agent A/B, terminal
 - #423 — stronger-agent B2 replication, terminal success
-- #431 — active execution-state-aware corrective retrieval
-- #432 — gated 780-task held-out generalization benchmark
-- #424 — gated final-answer factual-quality benchmark
+- #431 — 실행 상태 인식 교정 검색, 게이트 판정 완료·조건 미승격
+- #432 — 독립 과제 780개의 동결된 홀드아웃 평가 실행 중, 결과 대기
+- #424 — 최종 답변 사실성 평가 144개 과제, #432 결과를 기다리는 중
 
 Phase A의 corrected frozen benchmark는 Recall@1 68.97%, Recall@3 96.55%, Recall@5/10 **100%/100%**이며 250 endpoints에서 Top-5는 평균 FULL serialized schema context의 2.38%만 노출합니다.
 
