@@ -138,6 +138,7 @@ def run(site: Path | None, base_url: str, smoke_only: bool, shots: Path | None) 
 
         try:
             page.route(re.compile(r"/SchemaRouter/ko/getting-started/quickstart/"), reject_head)
+            page.goto(base_url + "guides/mcp/", wait_until="domcontentloaded", timeout=30000)
             _check_page(page, english)
             _switch(page, "ko", base_url + "ko/?browser_qa=1")
             print("missing counterpart graceful language-root fallback: OK")
