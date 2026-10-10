@@ -132,7 +132,7 @@ Adapter는 다음 동작을 해서는 안 됩니다:
 - SchemaRouter input/output validation 생략;
 - planning에서 remote service를 직접 호출.
 
-원격 어댑터는 `tool.remote = True`를 설정하여 분류되지 않은 부작용에도 정책 검사가 적용되도록 해야 합니다. 일반 `metadata`는 설명 목적으로만 사용하며, 호출기가 실행 출처·전송 대상·요청 인코딩 또는 다른 실행 의미를 결정하는 데 읽어서는 안 됩니다.
+원격 어댑터는 `tool.remote = True`를 설정하거나 `ToolSpec(remote=True, ...)`로 생성하여 분류되지 않은 부작용에도 정책 검사가 적용되도록 해야 합니다. 일반 `metadata`는 설명 목적으로만 사용하며, 호출기가 실행 출처·전송 대상·요청 인코딩 또는 다른 실행 의미를 결정하는 데 읽어서는 안 됩니다.
 
 Invoker에 adapter-specific runtime value가 필요하면 fingerprint 대상인 `execution_metadata`에 넣습니다. 예:
 

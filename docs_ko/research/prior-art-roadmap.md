@@ -217,7 +217,7 @@ Historical 0.13 order는 V6A, V6B, V6C/V6D, V6E, #404/#406/#408/#409/#412를 ter
 B1 aggregate 이전에 staging되며 B1 row-level failure에서 파생되어서는 안 됩니다.
 
 - **#428** public typed Top-K API — final agent choice/execution authority를 retriever 밖에 둔 first-class retrieval surface
-- **#430** adaptive shortlist depth — fixed K=3/5/10 evidence 이후 preregistered per-query K 시험
+- **#430** adaptive shortlist depth — fixed K=3/5/10 evidence 이후 preregistered per-query K 시험. Repantis 등의 연구(arXiv:2605.24660)는 후보 목록 깊이를 독립적으로 조절할 중요한 변수로 다뤄야 한다는 근거를 제공합니다.
 - **#431** execution-state-aware corrective re-retrieval — bounded typed observation/current state 기반 retrieval과 static widening 비교
 - **#432** large independent held-out surface — B1이 23 unique semantic task만 catalog size별 반복하므로 필수
 

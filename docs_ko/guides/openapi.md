@@ -91,7 +91,7 @@ schema:
 
 OpenAPI 3.0에서는 `type`과 `nullable: true`가 같은 Schema Object에 선언됐을 때 일반 JSON Schema의 `null` 타입을 포함하는 union으로 정규화합니다. 아래 첫 번째 YAML 선언은 두 번째 JSON Schema와 동일한 의미입니다.
 
-OpenAPI 3.1은 원래 JSON Schema 표현을 그대로 사용합니다.
+OpenAPI 3.1은 원래 JSON Schema 표현을 그대로 사용합니다. 예를 들어 `type: ["string", "null"]`과 같이 타입 배열로 nullable을 표시하며, 3.0 정규화 규칙을 3.1 문서에 다시 적용하지 않습니다.
 
 다른 제약도 계속 적용됩니다. 예를 들어 `enum`에 `null`이 없다면 nullable 선언만으로 통과하지 않습니다. 정규화는 component와 제한된 외부 참조에 재귀적으로 적용되지만 examples·default·임의 확장 데이터는 변경하지 않습니다. nullable 객체 루트는 평탄화하지 않습니다.
 
