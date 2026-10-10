@@ -129,3 +129,28 @@ external provider/model and audited tool/catalog setup. These experiments
 form separate layers of the CYT compatibility ladder:
 indexer SDK, proxy HTTP transport, actual Codex/agent transport, then
 independently frozen task-level end-to-end outcomes.
+
+
+## Frozen macOS native CYT Hook daemon loopback (engineering-only)
+
+A separate hosted macOS workflow
+`.github/workflows/cyt-hook-daemon-macos-loopback.yml` checks out the
+**exact** upstream CYT source commit
+`9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4`, installs its fixed
+runtime/test dependencies, and runs **two of the upstream's own local
+runtime tests** (native Hook daemon health and local BM25 tool injection).
+The tests use isolated fixture workspaces, spawn a real local Hook daemon
+and exercise its `/hook/inject` HTTP endpoint without a model account.
+JUnit, interpreter/OS, frozen upstream SHA and package versions are
+preserved as artifacts. Skipped tests are **not** treated as passes.
+
+This is distinct from the prior native `cyt-indexer-sdk` macOS smoke
+and the CYT OpenAI Responses Proxy loopback transport smoke. This proves
+only local Hook daemon launch/injection compatibility. It does **not**
+exercise an actual Codex/Cursor/Claude executable, a real hosted model,
+the **CYT-MCP aggregator's agent-side installation**, tool dispatch denial,
+session cost accounting, production MCP authorization or held-out tasks.
+Damien's key distinction remains: Hook can block certain tool calls
+under appropriate supported agent integration, whereas Proxy cannot.
+Only a real, explicitly authorized agent-side interception test can verify
+whether Hook blocking is effective in the selected agent/environment.
