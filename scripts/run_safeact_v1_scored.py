@@ -224,7 +224,7 @@ def validate_launch(
         or len(set(names)) != len(names)
     ):
         raise ValueError("independent action contracts must have unique names")
-     # Public V1 IDs are an opaque cohort, never a per-case expected-action oracle.
+    # Public V1 IDs are an opaque cohort, never a per-case expected-action oracle.
     # Each actual model-proposed tool must select its own reviewed contract.
     if any(value is not None for value in coverage.values()):
         raise ValueError("case-specific expected-action oracle is forbidden")
