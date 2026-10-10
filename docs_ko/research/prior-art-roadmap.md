@@ -113,7 +113,7 @@ hard-negative OOS examples
 
 Generator는 registry-independent 상태를 유지하며 benchmark route name이나 failed DEV row를 사용해 특수 negative를 만들 수 없습니다.
 
-#389의 concrete experiment #395/V6B는 terminal입니다. Registry-derived same-resource hard negative와 low-rank anisotropic ellipsoid boundary를 결합하고 raw BGE-M3만 positive route authority로 유지했습니다. DEV에서 unsupported rejection은 완벽했지만 모든 natural query가 learned ellipsoid 밖에 있어 supported request를 전부 거부했습니다. Raw BGE supported exact는 97.37%였고 confirmation은 열지 않았습니다. Hard-negative evidence bank는 재사용할 수 있지만 exact ellipsoid formulation은 재사용하지 않습니다.
+이슈 #389의 concrete experiment #395/V6B는 terminal입니다. Registry-derived same-resource hard negative와 low-rank anisotropic ellipsoid boundary를 결합하고 raw BGE-M3만 positive route authority로 유지했습니다. DEV에서 unsupported rejection은 완벽했지만 모든 natural query가 learned ellipsoid 밖에 있어 supported request를 전부 거부했습니다. Raw BGE supported exact는 97.37%였고 confirmation은 열지 않았습니다. Hard-negative evidence bank는 재사용할 수 있지만 exact ellipsoid formulation은 재사용하지 않습니다.
 
 ## 3. Energy, density, open-space scoring
 
@@ -208,7 +208,7 @@ Work item #392입니다. 주요 reference는 ToolRet(Findings ACL 2025)과 ToolR
 
 이전 pre-terminal 0.14 launch plan은 이 gated conveyor로 대체됐습니다. Historical run/protocol provenance는 Git history, experiment ledger, terminal issue comment에 남습니다.
 
-#392는 executable-schema retrieval과 active 0.14 agent-utility work 사이 prior-art bridge로 유지합니다. Open-set/conformal method는 consumed DEV의 post-hoc repair가 아니라 새로 preregistered question에 대해서만 다시 검토합니다.
+이슈 #392는 executable-schema retrieval과 active 0.14 agent-utility work 사이 prior-art bridge로 유지합니다. Open-set/conformal method는 consumed DEV의 post-hoc repair가 아니라 새로 preregistered question에 대해서만 다시 검토합니다.
 
 Historical 0.13 order는 V6A, V6B, V6C/V6D, V6E, #404/#406/#408/#409/#412를 terminal reference로 유지하고 모든 confirmation을 unopened로 두며, successor 전 prior art/repository history에서 materially different representation을 찾고, 더 discriminative한 semantic membership score가 생긴 뒤에만 #391 selective/conformal safety를 재검토하는 순서였습니다.
 
