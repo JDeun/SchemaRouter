@@ -291,7 +291,9 @@ def test_false_and_zero_values_are_present_public_facts(
     }
     assert hook.strict_public_evidence(
         "charge_read", {}, payload, mapping=config
-    ) == VerifiedToolEvidence("C2", frozenset({"owner"}))
+    ) == VerifiedToolEvidence(
+        "C2", frozenset({"owner"}), values=(("owner", present_value),)
+    )
 
 
 def test_mixed_complete_and_incomplete_facts_cannot_credit_partial_set() -> None:
