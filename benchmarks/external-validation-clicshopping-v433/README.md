@@ -34,3 +34,27 @@ The route identity is the **(endpoint, action) pair**, never just the action str
 - The 32 authored cases are a **development example**, not held-out evidence. No changing their wording, labels, shortlist budget or enrichment after seeing output to manufacture a favorable result.
 - No credentials, permission bypass, action execution, customer records, writes, or paid models.
 - Any negative or null measurement must remain visible. The next independent confirmation set, if warranted, needs its own prospective freeze and provenance before scoring.
+
+
+## Independent confirmation intake — prospective only
+
+A separate `confirmation-plan.json` fixes the **original upstream source**
+`3bac851759234a4babb49d3f351e472cd9e0f31f`, native eligible
+endpoint/action-matrix controls and primary Top-3 **before any new scored
+confirmation**. No new held-out cases exist in this branch.
+
+`python -m scripts.validate_clicshopping_v433_confirmation` accepts an
+externally authored candidate case package and rejects known reused
+development IDs/queries, permission-scope drift, post-hoc K changes and
+unverified `customerOrders` calls. Passing these mechanical tests
+**does not prove true independent case authorship** or authorize scoring.
+A distinct human reviewer must verify that the cases were authored without
+viewing failed development rows, sign their semantic labels, freeze the
+candidate SHA-256 and source bytes, and authorize a separate execution run.
+
+The already observed 32-case development errors/unsupported behavior
+**must not** influence the new held-out design. A later ClicShopping
+`version4.33` revision containing a CustomerOrders page requires an
+entirely separate source/permission/authentication protocol; this original
+source freeze must not silently move. No customer credentials, native
+HTTP calls, writes, or claims of field recall are permitted here.
