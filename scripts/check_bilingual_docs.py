@@ -69,7 +69,7 @@ def unfenced_python_snippets(path: Path) -> list[int]:
 def unescaped_numeric_issue_references(path: Path) -> list[int]:
     """Reject issue IDs mistakenly interpreted as Markdown ATX headings.
 
-    Python-Markdown can interpret a paragraph beginning with '#123' as an
+    Python-Markdown can interpret a paragraph or list item beginning with '#123' as an
     H1 even without a separating space. Real headings are explicitly spaced;
     preserve issue IDs by writing 'Issue #123' (or '이슈 #123') instead.
     """
@@ -81,7 +81,7 @@ def unescaped_numeric_issue_references(path: Path) -> list[int]:
         if FENCE.match(line):
             in_fence = not in_fence
             continue
-        if not in_fence and re.match(r"^#\\d+", line):
+        if not in_fence and re.match(r"^(?:#\\d+|\\s*[-*]\\s+#\\d+)", line):
             violations.append(line_number)
     return violations
 
