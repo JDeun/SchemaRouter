@@ -134,7 +134,7 @@ Development screen은 run `36682589574`에서 null result를 반환했습니다.
 
 - fresh disjoint task surface
 - B1 row는 tuning data가 아님
-- #432 held-out row는 tuning data가 아님
+- 이슈 #432 held-out row는 tuning data가 아님
 - sealed #424 corpus를 사용하지 않으며 여기의 결과로 #424를 tune할 수 없음
 - B1에 retrofit하지 않음
 
