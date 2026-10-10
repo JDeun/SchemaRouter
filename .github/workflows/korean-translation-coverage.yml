@@ -13,6 +13,7 @@ on:
       - 'scripts/audit_translation_semantic_sections.py'
       - 'audits/ko-semantic-section-review-2026-10-10.json'
       - 'audits/ko-security-policy-review-2026-10-10.json'
+      - 'audits/ko-research-translation-followup-2026-10-10.json'
       - '.github/workflows/korean-translation-coverage.yml'
   schedule:
     - cron: '43 4 * * 1'
@@ -26,11 +27,13 @@ on:
       - 'scripts/audit_translation_semantic_sections.py'
       - 'audits/ko-semantic-section-review-2026-10-10.json'
       - 'audits/ko-security-policy-review-2026-10-10.json'
+      - 'audits/ko-research-translation-followup-2026-10-10.json'
       - 'tests/test_bilingual_coverage_report.py'
       - 'tests/test_bilingual_docs_integrity.py'
       - 'tests/test_translation_semantic_risks.py'
       - 'tests/test_translation_semantic_sections.py'
       - 'tests/test_korean_security_policy_review.py'
+      - 'tests/test_korean_research_translation_followup.py'
       - '.github/workflows/korean-translation-coverage.yml'
   workflow_dispatch:
 
@@ -49,7 +52,7 @@ jobs:
       - name: Check full-corpus audit regression tests
         run: |
           python -m pip install "pytest>=8,<10" "pytest-asyncio>=0.24,<2"
-          python -m pytest -q tests/test_bilingual_docs_integrity.py tests/test_bilingual_coverage_report.py tests/test_translation_semantic_risks.py tests/test_translation_semantic_sections.py tests/test_korean_security_policy_review.py
+          python -m pytest -q tests/test_bilingual_docs_integrity.py tests/test_bilingual_coverage_report.py tests/test_translation_semantic_risks.py tests/test_translation_semantic_sections.py tests/test_korean_security_policy_review.py tests/test_korean_research_translation_followup.py
       - name: Generate all-document EN/KO coverage evidence
         run: |
           python -m scripts.report_bilingual_coverage \
