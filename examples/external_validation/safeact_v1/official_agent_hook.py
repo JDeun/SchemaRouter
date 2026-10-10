@@ -25,6 +25,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from examples.external_validation.safeact_v1.record_intervention import (
     gate_official_v1_record,
 )
+from examples.external_validation.safeact_v1.contract_loader import (
+    SAFEACT_PUBLIC_DOMAINS,
+)
 from examples.external_validation.safeact_v1.trusted_session import (
     VerifiedToolEvidence,
 )
@@ -126,12 +129,18 @@ def install_v1_gate(
         gateway = gateways[0]
         if gateway.protocol != "v1":
             raise ValueError("trusted record gate is restricted to official V1")
+        # The official public scenario supplies the domain. Never infer it from
+        # the model's proposed action, an opaque case ID or evaluator gold.
+        domain = scenario.get("env_id") if isinstance(scenario, dict) else None
+        if domain not in SAFEACT_PUBLIC_DOMAINS:
+            raise ValueError("trusted public scenario domain is missing or invalid")
         mapping = document.get("public_observation_mappings")
         if not isinstance(mapping, dict):
             raise ValueError("independent public observation mappings required")
         return gate_official_v1_record(
             result,
             case_id=case_id,
+            domain=domain,
             contract_document=document,
             public_source_root=source_root,
             actual_gateway_calls=gateway.calls,
