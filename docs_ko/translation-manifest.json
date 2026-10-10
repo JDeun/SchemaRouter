@@ -493,7 +493,7 @@
     },
     {
       "path": "research/0.14-paper-evidence-checkpoint.md",
-      "source_blob": "b35b349fb57dd30f5fa5214a7a22759fcee25fbc"
+      "source_blob": "6c5915d879db3a59bfd960cd6c2a4c116b01c72b"
     },
     {
       "path": "research/adaptive-shortlist-depth.md",
@@ -509,7 +509,7 @@
     },
     {
       "path": "research/design-and-experiment-history.md",
-      "source_blob": "a171a8e0486e4ccf0fa63fedb7817e36062f1675"
+      "source_blob": "6883c1658180a27102dae94924cf36cd994d71b4"
     },
     {
       "path": "research/evidence-to-action.md",
@@ -525,7 +525,7 @@
     },
     {
       "path": "research/field-projection-answer-quality.md",
-      "source_blob": "e9c253dcf4605a6ee4e3ab9e4cfe075feb589770"
+      "source_blob": "8bbb7413c42950cf105667d91701e43e6d9d1c86"
     },
     {
       "path": "research/final-answer-quality.md",
@@ -541,7 +541,7 @@
     },
     {
       "path": "research/intent-manual-dev-result.md",
-      "source_blob": "0c7c1a8331d751256be567e033d51c6f6779d508"
+      "source_blob": "390e3b55f407827f8ae21d448b8ab579624118af"
     },
     {
       "path": "research/large-heldout-agent-utility.md",
@@ -561,7 +561,7 @@
     },
     {
       "path": "research/prior-art-roadmap.md",
-      "source_blob": "9aa1467b46c684957a3e15de1e570dde6e5be01a"
+      "source_blob": "010e7b42529f641e626706663c0dc3bc4afde181"
     },
     {
       "path": "research/realistic-break-even-result.md",
@@ -569,7 +569,7 @@
     },
     {
       "path": "research/routing-status.md",
-      "source_blob": "be5ed792af97e677a5f5fb24a54184dcd00e8e30"
+      "source_blob": "13c37940df75f028b74c41c798a6cfa7432e7636"
     },
     {
       "path": "research/successor-screen.md",
