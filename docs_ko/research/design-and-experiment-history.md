@@ -1047,7 +1047,7 @@ Motivation:
 - 아티팩트 SHA-256: `aabe4321e039dbb2e0b0805553e4dfd7d6c4bcf63893e23da028ceb668608462`
 
 
-### #262 — cross-model zero-false abstention rescue
+### #262 — 추가적인 잘못된 경로를 만들지 않는 모델 간 선택 보류 복구
 
 작업 항목 #262 / PR #263은 당시 진행 중이었던 개발 단계(DEV) 진단 실험입니다.
 
@@ -1088,7 +1088,7 @@ The architectural invariant remains:
 
 ## 30. 모델 간 복구·새로운 평가 표면에서의 실패·타입 기반 오픈셋 근거
 
-### #262 — cross-model zero-false abstention rescue
+### #262 — 추가적인 잘못된 경로를 만들지 않는 모델 간 선택 보류 복구
 
 확인된 #259 BGE-M3 엄격 기준선에서 출발했습니다. #262는 복구 권한을 기준선이 기권한 사례로 제한하고 동일한 원시 BGE-M3 승자를 유지했습니다.
 
