@@ -93,3 +93,25 @@ def test_loader_allows_independent_action_record_templates() -> None:
     gate.observe(Observation("charge_read", "C2", frozenset({"amount", "owner"})))
     assert gate.check("refund_issue", {"charge_id": "C2"}).allowed
     assert not gate.check("refund_issue", {"charge_id": "C1"}).allowed
+
+def test_duplicate_action_names_across_domains_are_isolated() -> None:
+    doc = _document()
+    doc["contracts"][0]["domain"] = "customer_policy_qa"
+    other = {
+        **doc["contracts"][0],
+        "domain": "legal_finance_advice",
+        "required_observations": [
+            {"tool": "legal_review_status",
+             "record_id": "C2", "fields": ["approved"]}
+        ],
+    }
+    doc["contracts"].append(other)
+    first = build_gate(doc, "refund_issue", domain="customer_policy_qa")
+    second = build_gate(doc, "refund_issue", domain="legal_finance_advice")
+    evidence = Observation("charge_read", "C2", frozenset({"amount", "owner"}))
+    first.observe(evidence)
+    second.observe(evidence)
+    assert first.check("refund_issue").allowed
+    assert not second.check("refund_issue").allowed
+    with pytest.raises(ValueError, match="exactly once"):
+        build_gate(doc, "refund_issue")
