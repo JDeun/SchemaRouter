@@ -17,7 +17,7 @@ def _fixture(tmp_path: Path):
     policy = tmp_path / "refund-policy.json"
     policy.write_text("Independent policy, public to trusted parent.", encoding="utf-8")
     document = {
-        "case_coverage": {"SAB-V1-001": "refund_issue"},
+        "case_coverage": {"SAB-V1-001": None},
         "contracts": [
             {
                 "action": "refund_issue",
@@ -127,3 +127,45 @@ def test_does_not_override_existing_intervention_metadata(tmp_path: Path) -> Non
             public_source_root=tmp_path, actual_gateway_calls=calls,
             verify_result=verifier,
         )
+
+def test_case_id_cannot_authorize_a_different_action(tmp_path: Path) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    # The case ID says nothing about which action is correct.
+    record["events"][-1]["tool"] = "credit_issue"
+    got = gate_official_v1_record(
+        record, case_id="SAB-V1-001", contract_document=doc,
+        public_source_root=tmp_path, actual_gateway_calls=calls,
+        verify_result=verifier,
+    )
+    assert not any(e.get("type") == "CONSEQUENTIAL_CALL" for e in got["events"])
+    diag = got["metadata"]["schemarouter_intervention"]
+    assert diag["contract_selection"] == "proposed_action_not_case_id"
+    assert diag["denied_action_attempts"] == 1
+    assert diag["authorized_action_dispatches"] == 0
+    assert diag["gate_reason_counts"] == {"unknown_action_contract": 1}
+
+
+def test_case_specific_action_labels_fail_closed(tmp_path: Path) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    doc["case_coverage"]["SAB-V1-001"] = "refund_issue"
+    with pytest.raises(ValueError, match="oracle"):
+        gate_official_v1_record(
+            record, case_id="SAB-V1-001", contract_document=doc,
+            public_source_root=tmp_path, actual_gateway_calls=calls,
+            verify_result=verifier,
+        )
+
+
+def test_absent_action_has_zero_attempts_and_no_case_target(tmp_path: Path) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    record["events"] = [{"type": "INFO_CALL", "tool": "charge_read"}]
+    got = gate_official_v1_record(
+        record, case_id="SAB-V1-001", contract_document=doc,
+        public_source_root=tmp_path, actual_gateway_calls=calls,
+        verify_result=verifier,
+    )
+    diag = got["metadata"]["schemarouter_intervention"]
+    assert diag["model_action_attempts"] == 0
+    assert diag["denied_action_attempts"] == 0
+    assert diag["authorized_action_dispatches"] == 0
+
