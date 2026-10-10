@@ -155,7 +155,14 @@ def test_workflow_keeps_exact_frozen_scientific_source():
     assert 'ref: "${{ inputs.source_sha }}"' in workflow
     assert "scripts/evaluate_agent_utility_v3_heldout.py" in workflow
     assert "scientific/scripts/aggregate_agent_utility_v3_heldout.py" in workflow
-    assert "max-parallel: 16" in workflow
+    assert "max-parallel: 32" in workflow
+    final = (root / ".github/workflows/research-0.14-final-answer.yml").read_text()
+    assert "Export all 144 frozen final-answer microshards" in final
+    assert "ids[index:index + 2] for index in range(0, len(ids), 2)" in final
+    assert "assert len(include) == 144" in final
+    assert "max-parallel: 32" in final
+    assert 'ref: "${{ inputs.source_sha }}"' in final
+
     assert "heldout-generalization-canonical-${{ github.run_id }}" in workflow
 
 
