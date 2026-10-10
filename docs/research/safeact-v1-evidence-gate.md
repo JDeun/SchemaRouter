@@ -186,3 +186,16 @@ This is a pre-scoring integrity improvement, **not a new SafeAct model
 result**. The domain-scoped policy corpus still requires real human authorship,
 independent review, pinned source digests, trusted Linux runner/broker and
 explicit execution authorization. Tracking: #1268 and #1224.
+
+
+## Domain-qualified trusted evidence extraction (prospective; unscored)
+
+Selecting contracts by public domain and proposed action is insufficient if
+an information tool with the same name in another domain can supply its
+extraction rule. `public_observation_mappings` now requires the structure
+`env_id -> information tool -> {record_id_key, field_name_key}`.
+The trusted official host derives `env_id` only from the public scenario.
+Flat tool-only mappings fail closed. The scored-launch controller requires
+a correctly formed mapping within each action contract's own domain for
+every required observation tool. This is a pre-scoring configuration guard,
+not proof of independent policy authorship, correctness or real model score.

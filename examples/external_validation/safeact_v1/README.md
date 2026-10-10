@@ -367,3 +367,14 @@ official model benchmark. A human must independently decide which public
 tools are consequential, cite their actual public policy interfaces and
 grounded observations, write scoped evidence requirements and obtain
 independent second-person approval before the protected scored run.
+
+
+### Domain-qualified public observation extraction
+
+The scored contract document must declare a nested
+`public_observation_mappings` object, e.g.
+`{"customer_policy_qa":{"charge_read":{"record_id_key":"subject","field_name_key":"predicate"}}}`.
+Every required observation tool needs an extraction rule under its **own**
+public `env_id`, not merely a matching tool name in another domain.
+The host and launch controller reject legacy flat mappings. Human source
+review and approved, grounded evidence semantics remain necessary.
