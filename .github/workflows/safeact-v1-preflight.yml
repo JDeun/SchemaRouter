@@ -69,6 +69,13 @@ jobs:
           git -C safeact-upstream checkout --detach FETCH_HEAD
       - name: Verify pinned revision and V1 case set
         run: python scripts/preflight_safeact_v1.py safeact-upstream
+      - name: Validate public policy source snapshots against exact frozen upstream bytes
+        run: |
+          python -m pytest -q tests/test_safeact_v1_public_snapshot.py
+          python -m scripts.verify_safeact_v1_public_snapshot \
+            --manifest research/safeact-v1/public-policy-source-candidates.json \
+            --source-root research/safeact-v1/public-sources \
+            --upstream-root safeact-upstream
       - name: Exercise the pinned official V1 normalization hook with real registry
         run: |
           python -m scripts.verify_safeact_v1_host_bridge \
