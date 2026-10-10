@@ -74,7 +74,9 @@ comparison in the evidence register without further unsolicited outreach.
 | Clear Your Tools | [#839](https://github.com/JDeun/SchemaRouter/issues/839) | Hold native tier/BM25 behavior fixed; distinguish development smoke from held-out |
 | HYSET / pi-jev / hope-agent | [#795](https://github.com/JDeun/SchemaRouter/issues/795), [#796](https://github.com/JDeun/SchemaRouter/issues/796), [#799](https://github.com/JDeun/SchemaRouter/issues/799) | Public fresh retraining must not be called a paper-checkpoint reproduction; tool and field recall remain separate |
 | mcp-gateway | [#1209](https://github.com/JDeun/SchemaRouter/issues/1209) | Joint benchmark declined; identity/permission and transport boundaries are non-comparable unless redesigned |
-| ToolHive / Knuckles / pmcp | [#1229](https://github.com/JDeun/SchemaRouter/issues/1229) | Declined or deferred; record non-endorsement and exclude obsolete competitors |
+| ToolHive VirtualMCPServer | [#1229](https://github.com/JDeun/SchemaRouter/issues/1229), [maintainer reply](https://github.com/stacklok/toolhive/issues/6742#issuecomment-6065169010) | Upstream declined to host a third-party benchmark or docs; independent SchemaRouter-owned comparisons only, without endorsement or repeated solicitation |
+| Knuckles agent-utilities | [#1229](https://github.com/JDeun/SchemaRouter/issues/1229), [maintainer reply](https://github.com/Knuckles-Team/agent-utilities/issues/20#issuecomment-6084040055) | Joint comparison declined; `DynamicToolOrchestrator` is being retired and excluded as an active comparator. Only a shipped Graph OS replacement and its AU-RETRIEVAL protocol could warrant a new opt-in proposal |
+| Consiliency pmcp | [#1229](https://github.com/JDeun/SchemaRouter/issues/1229), [maintainer reply](https://github.com/Consiliency/pmcp/issues/236#issuecomment-5996966650) | Joint benchmarking and endorsement declined; await the native public pmcp discovery benchmark before considering independent reproduction |
 
 
 
