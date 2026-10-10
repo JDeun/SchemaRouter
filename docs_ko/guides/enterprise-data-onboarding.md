@@ -43,9 +43,9 @@ Vendor client와 connection pool은 caller-owned 상태로 남고 SchemaRouter�
 관계형 DB는 table, view, column, primary key를 reflection합니다. 다른 계열은 각 데이터 모델의
 native schema를 사용합니다.
 
-- vector collection/index, dimension, metric, metadata field
-- graph label/class, relationship/predicate type, property, traversal limit
-- document/search mapping, key field, filterable field, text/time capability
+- 벡터 컬렉션·색인, 차원, 거리 측정 기준, 메타데이터 필드
+- 그래프 레이블·클래스, 관계·술어 유형, 속성, 탐색 범위 제한
+- 문서·검색 매핑, 키 필드, 필터 가능한 필드, 텍스트·시간 처리 기능
 
 Schema discovery 자체가 실행 권한을 만들지는 않습니다. 등록된 capability도 실행 직전에
 authorization, binding, argument, output validation을 다시 통과해야 합니다.

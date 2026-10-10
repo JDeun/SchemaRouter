@@ -145,7 +145,7 @@ Default:
 - proven-compatible -> `apply_compatible=True`면 atomic apply
 - compatible + false -> `report_only`
 - breaking/security -> current contract 유지 + `pending_review`
-- transport/schema error -> `error`, next interval retry
+- 전송·스키마 오류 → `error`, 다음 점검 주기에 재시도
 - removed/unrefreshable -> `stale`
 
 Credential 노출 없이 inspect:

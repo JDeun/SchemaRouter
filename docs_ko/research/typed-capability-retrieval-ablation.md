@@ -34,8 +34,8 @@ TYPED-MULTIFIELD에서는 independent field ranking을 frozen `k=60` reciprocal-
 
 - DEV: unique semantic task 60개 × 6 language rendering = 360 rows
 - Confirmation: unique semantic task 120개 × 6 language rendering = 720 rows
-- Languages: English, Korean, Spanish, Japanese, German, mixed identifiers/text
-- Catalog sizes: 100 / 250 / 500 / 1000 endpoints
+- 언어: 영어, 한국어, 스페인어, 일본어, 독일어, 식별자·본문 혼합
+- 카탈로그 크기: 엔드포인트 100 / 250 / 500 / 1000개
 - Statistical unit: semantic task. Language/catalog repeat는 repeated measure이며 독립 sample이 아님
 
 Required strata에는 multi-step composition, sibling-operation ambiguity, semantic-ID collision, unit compatibility, read/write 및 destructive sibling, implicit argument, near-domain unsupported request, OOD가 포함됩니다.

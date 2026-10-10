@@ -68,7 +68,7 @@ Repantis et al., *How Many Tools Should an LLM Agent See? A Chance-Corrected Ans
 
 Controls: fixed K=3, K=5, K=10.
 
-Adaptive candidates: REL-GAP-005, REL-GAP-010, REL-GAP-020, MAX-GAP-010.
+적응형 후보 구성: REL-GAP-005, REL-GAP-010, REL-GAP-020, MAX-GAP-010.
 
 Learned depth policy는 허용하지 않습니다.
 

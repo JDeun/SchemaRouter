@@ -1,4 +1,4 @@
-# 0.14 output-field projection successor development screen
+# 0.14 출력 필드 투영 후속 개발 실험
 
 Tracking issue: #510
 
