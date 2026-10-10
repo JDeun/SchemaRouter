@@ -68,12 +68,11 @@ def test_partition_preserves_all_780_tasks_and_234_scientific_shards():
     missing = sorted(shards)[:81]
     wave0, n = wave_parts(shards, missing, 0)
     wave1, _ = wave_parts(shards, missing, 1)
-    wave2, _ = wave_parts(shards, missing, 2)
-    assert n == 3
-    assert tuple(map(len, (wave0, wave1, wave2))) == (200, 200, 5)
-    assert all(len(m["task_ids"].split(",")) == 2 for m in wave0 + wave1 + wave2)
-    assert len({m["job_id"] for m in wave0 + wave1 + wave2}) == 405
-    for invalid in (3, -1):
+    assert n == 2
+    assert tuple(map(len, (wave0, wave1))) == (250, 155)
+    assert all(len(m["task_ids"].split(",")) == 2 for m in wave0 + wave1)
+    assert len({m["job_id"] for m in wave0 + wave1}) == 405
+    for invalid in (2, -1):
         with pytest.raises(ValueError):
             wave_parts(shards, missing, invalid)
     with pytest.raises(ValueError):
