@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from scripts.research_014_heldout_recovery import (
-    FROZEN_SOURCE, frozen_shards, latest_jobs, plan, successful_parent_shards,
+    FROZEN_SOURCE, frozen_shards, plan, successful_parent_shards,
     validate_shard, wave_parts,
 )
 
