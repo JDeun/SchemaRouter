@@ -17,6 +17,19 @@ Default output `docs/research/generated/`:
 
 Generated file은 canonical ledger의 대체물이 아니라 build artifact입니다. CI가 exporter를 실행해 paper preparation 전에 schema drift를 잡습니다.
 
+## 0.14 최종 연구 결과 보고서 준비
+
+[0.14 최종 근거 보고서 템플릿](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/agent-utility-0.14-terminal-report-prep.md)에는
+동결된 출처 정보, 홀드아웃 쌍대 비교의 통계 분석 단위, 최종 답변 품질표,
+논문 주장 허용 조건, 무효 실행 분류 및 종료 점검표를 정리했습니다.
+아직 검증되지 않은 측정값은 추정하지 않고 **Pending(미확정)**으로 표시합니다.
+
+[0.14 실험 컨베이어](https://github.com/JDeun/SchemaRouter/issues/500)는 동결된 실험 순서와 완료 조건을 추적합니다.
+컨트롤러 실행이 성공하더라도 내부 상태가 `waiting_heldout`이면 연구가 완료된 것이 아닙니다.
+모든 샤드가 모인 정본 아티팩트를 출처 및 집계 기준으로 검증한 뒤에만
+연구 결과로 인정합니다. 일부 샤드, 실행 중인 워크플로 또는 인프라 재시도를
+완료된 홀드아웃 결과로 서술해서는 안 됩니다.
+
 ## Evidence roles
 
 Exporter는 ledger의 evidence-role distinction을 보존합니다. 특히 tuning DEV, fresh confirmation, calibration, blind-final, design-known stress, compatibility, infrastructure evidence를 role 없이 하나의 accuracy table로 합치면 안 됩니다.

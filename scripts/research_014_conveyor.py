@@ -472,6 +472,34 @@ def retry_infrastructure_failure(
     return True
 
 
+def retry_materialized_downstream_failure(
+    api: GitHubAPI,
+    run: StageRun,
+    *,
+    execute: bool,
+    actions: list[str],
+    label: str,
+) -> bool:
+    """Rerun failed jobs on the same frozen held-out/final run.
+
+    These large workflows create at least prepare, model-cache and evaluation
+    jobs. Once the matrix exists, a fresh dispatch would needlessly recompute
+    previously successful scientific shards, and could consume the last fresh-
+    wrapper recovery slot. A *pre-matrix* failure still needs the existing
+    fresh-wrapper dispatch to pick up infrastructure fixes on main.
+
+    Do not retry cancelled/unknown outcomes, or alter frozen benchmark inputs.
+    Each workflow run is capped by GitHub's run_attempt counter.
+    """
+    if run.conclusion not in {"failure", "timed_out"}:
+        return False
+    if api.workflow_run_job_count(run.id) < 3:
+        return False
+    return retry_infrastructure_failure(
+        api, run, execute=execute, actions=actions, label=label
+    )
+
+
 def _artifact_digest(artifact: dict[str, Any]) -> str:
     digest = artifact.get("digest")
     if not isinstance(digest, str) or not digest.startswith("sha256:"):
@@ -1115,6 +1143,29 @@ def run_controller(
             },
         }
     if terminal_failure(heldout):
+        if heldout.conclusion not in {"failure", "timed_out"}:
+            return {
+                "state": "stopped_heldout_nonretryable_conclusion",
+                "actions": actions,
+                "status": [_status_line("heldout", heldout)],
+            }
+        if retry_materialized_downstream_failure(
+            api, heldout, execute=execute, actions=actions, label="heldout"
+        ):
+            return {
+                "state": "retrying_heldout_failed_jobs",
+                "actions": actions,
+                "status": [_status_line("heldout", heldout)],
+            }
+        if (
+            heldout.conclusion in {"failure", "timed_out"}
+            and api.workflow_run_job_count(heldout.id) >= 3
+        ):
+            return {
+                "state": "stopped_heldout_failed_job_retries_exhausted",
+                "actions": actions,
+                "status": [_status_line("heldout", heldout)],
+            }
         failed_heldout_runs = [
             run for run in heldout_runs if terminal_failure(run)
         ]
@@ -1176,6 +1227,29 @@ def run_controller(
             "actions": actions,
         }
     if terminal_failure(final):
+        if final.conclusion not in {"failure", "timed_out"}:
+            return {
+                "state": "stopped_final_nonretryable_conclusion",
+                "actions": actions,
+                "status": [_status_line("final", final)],
+            }
+        if retry_materialized_downstream_failure(
+            api, final, execute=execute, actions=actions, label="final_answer"
+        ):
+            return {
+                "state": "retrying_final_failed_jobs",
+                "actions": actions,
+                "status": [_status_line("final", final)],
+            }
+        if (
+            final.conclusion in {"failure", "timed_out"}
+            and api.workflow_run_job_count(final.id) >= 3
+        ):
+            return {
+                "state": "stopped_final_failed_job_retries_exhausted",
+                "actions": actions,
+                "status": [_status_line("final", final)],
+            }
         failed_final_runs = [
             run for run in final_runs if terminal_failure(run)
         ]
