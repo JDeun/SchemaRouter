@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.research_014_conveyor import GitHubAPI
+from scripts.research_014_conveyor import GitHubAPI  # noqa: E402
 
 FROZEN_SOURCE = "30663de8f618bc88a893d9bf6214035a70e8e894"
 PARENT_WORKFLOW = "research-0.14-heldout-generalization.yml"
@@ -355,9 +355,13 @@ def main() -> None:
     parser.add_argument("--wave", type=int, default=0)
     parser.add_argument("--source-sha", default=FROZEN_SOURCE)
     parser.add_argument("--evidence-digest", required=True)
-    parser.add_argument("--plan-out", type=Path, default=Path("artifacts/heldout-recovery-plan.json"))
+    parser.add_argument(
+        "--plan-out", type=Path, default=Path("artifacts/heldout-recovery-plan.json")
+    )
     parser.add_argument("--out-dir", type=Path, default=Path("artifacts/heldout-verified"))
-    parser.add_argument("--proof-out", type=Path, default=Path("artifacts/heldout-recovery-proof.json"))
+    parser.add_argument(
+        "--proof-out", type=Path, default=Path("artifacts/heldout-recovery-proof.json")
+    )
     args = parser.parse_args()
 
     api = GitHubAPI(os.environ["GITHUB_REPOSITORY"], os.environ["GH_TOKEN"])
