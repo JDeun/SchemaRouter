@@ -1143,6 +1143,12 @@ def run_controller(
             },
         }
     if terminal_failure(heldout):
+        if heldout.conclusion not in {"failure", "timed_out"}:
+            return {
+                "state": "stopped_heldout_nonretryable_conclusion",
+                "actions": actions,
+                "status": [_status_line("heldout", heldout)],
+            }
         if retry_materialized_downstream_failure(
             api, heldout, execute=execute, actions=actions, label="heldout"
         ):
@@ -1221,6 +1227,12 @@ def run_controller(
             "actions": actions,
         }
     if terminal_failure(final):
+        if final.conclusion not in {"failure", "timed_out"}:
+            return {
+                "state": "stopped_final_nonretryable_conclusion",
+                "actions": actions,
+                "status": [_status_line("final", final)],
+            }
         if retry_materialized_downstream_failure(
             api, final, execute=execute, actions=actions, label="final_answer"
         ):
