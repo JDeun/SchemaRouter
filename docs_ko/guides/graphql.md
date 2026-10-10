@@ -75,7 +75,7 @@ router = await SchemaRouter.from_url(
 - redirect 자동 추적 안 함
 - introspection/execution response 크기 제한
 - recursive type traversal depth 제한
-- list field는 다른 adapter와 같은 record-preserving item contract 사용
+- list field는 다른 adapter와 같은 record-preserving item contract 사용. 예를 들어 중첩 배열 필드 ID는 `results[].title`이고 실제 GraphQL selection set은 일반적인 `results { title }`를 사용하며 같은 레코드의 필드 관계를 보존
 - GraphQL execution error는 invocation 실패 처리
 - transport 실행 후에도 일반 SchemaRouter input/output validation 적용
 

@@ -4,6 +4,8 @@ SchemaRouter는 model-specific integration을 core에 추가하지 않고 instal
 
 ## Entry-point contract
 
+플러그인 배포 패키지는 `pyproject.toml`의 entry point에 backend를 등록합니다.
+
 ```toml
 [project.entry-points."schemarouter.decision_backends"]
 anyjev = "schemarouter_anyjev:create_backend"
@@ -65,7 +67,7 @@ python scripts/benchmark_decision_routing.py \
 
 ## 어떤 extension path를 사용할까?
 
-1. System One wire-compatible model — `SystemOneDecisionBackend`
+1. System One wire-compatible model — `SystemOneDecisionBackend`에서 `base_url/model/provider_name`만 변경
 2. One-off research callable — `CallableDecisionBackend` 또는 `--decision-callable module:function`
 3. 재사용 가능한 서드파티 연동 — `schemarouter.decision_backends` 엔트리 포인트 플러그인
 

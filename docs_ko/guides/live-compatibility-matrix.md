@@ -14,7 +14,7 @@ SchemaRouter는 필수 CI에서 deterministic fixture coverage를 유지하고, 
 | MCP Streamable HTTP | Yes | Pinned reference implementation | Local `add` tool | in-repo MCP SDK fixture server | public MCP endpoint 대신 reference server 사용 |
 | Provider profile: Materials Project | Yes | Live public provider | provider identity -> public OPTIMADE -> read-only structure query | Materials Project OPTIMADE | 인증 OpenAPI/SDK는 별도 gate |
 | Provider profile: Crossref | Yes | Live public provider | provider identity -> public REST works query | Crossref REST API | public availability는 외부 상태 |
-| Provider profile: Tavily | Yes | Auth-contract + optional live | provider identity -> auth-required REST, key가 있으면 live search | Tavily Search API | secret이 없으면 auth-required를 명시하고 실행 성공을 꾸미지 않음 |
+| Provider profile: Tavily | Yes | Auth-contract + optional live | provider identity -> auth-required REST, `TAVILY_API_KEY`가 설정돼 있을 때만 live search | Tavily Search API | secret이 없으면 auth-required를 명시하고 실행 성공을 꾸미지 않음 |
 | Provider profile: APIs.guru | Yes | Live public provider | provider identity -> OpenAPI -> read-only metrics request | APIs.guru | public availability는 외부 상태 |
 | Provider profile: OData V4 reference | Yes | Live public provider | provider identity -> OData -> read-only Products query | OData.org V4 reference service | reference service availability는 외부 상태 |
 
