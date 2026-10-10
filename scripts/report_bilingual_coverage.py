@@ -14,6 +14,7 @@ from scripts.audit_korean_translation_coverage import (
     section_prose_lengths,
     structure,
     unchanged_english_prose,
+    untranslated_english_prose_lines,
 )
 
 
@@ -50,6 +51,7 @@ def build_report(en_root: Path = EN, ko_root: Path = KO) -> dict[str, object]:
                 "copied_english_paragraphs": len(
                     unchanged_english_prose(en_text, ko_text)
                 ),
+                "untranslated_english_prose_lines": untranslated_english_prose_lines(ko_text),
                 "skeletal_sections": skeletal,
                 "heading_levels_match": en_structure[0] == ko_structure[0],
                 "code_fence_languages_match": en_structure[1] == ko_structure[1],
@@ -70,6 +72,12 @@ def build_report(en_root: Path = EN, ko_root: Path = KO) -> dict[str, object]:
         ),
         "copied_english_paragraphs": sum(
             int(page["copied_english_paragraphs"]) for page in pages
+        ),
+        "pages_with_english_prose_candidates": sum(
+            bool(page["untranslated_english_prose_lines"]) for page in pages
+        ),
+        "english_prose_candidate_lines": sum(
+            len(page["untranslated_english_prose_lines"]) for page in pages
         ),
         "skeletal_sections": sum(
             int(page["skeletal_sections"] or 0) for page in pages
@@ -99,6 +107,7 @@ def markdown_summary(report: dict[str, object]) -> str:
         pages,
         key=lambda p: (
             -int(p["copied_english_paragraphs"]),
+            -len(p["untranslated_english_prose_lines"]),
             -int(p["skeletal_sections"] or 0),
             str(p["path"]),
         ),
@@ -113,6 +122,10 @@ def markdown_summary(report: dict[str, object]) -> str:
         f"{summary['pages_with_copied_english_paragraphs']}",
         f"- Copied long English paragraphs: "
         f"{summary['copied_english_paragraphs']}",
+        f"- Pages with substantial English-only prose candidates: "
+        f"{summary['pages_with_english_prose_candidates']}",
+        f"- English-only prose candidate lines: "
+        f"{summary['english_prose_candidate_lines']}",
         f"- Skeletal sections: {summary['skeletal_sections']}",
         f"- Heading mismatch pages: {summary['heading_mismatch_pages']}",
         f"- Code-fence mismatch pages: "
@@ -124,14 +137,15 @@ def markdown_summary(report: dict[str, object]) -> str:
         "",
         "## Prioritized review candidates",
         "",
-        "| Page | Copied EN paragraphs | Skeletal sections | KO/EN bytes |",
-        "| --- | ---: | ---: | ---: |",
+        "| Page | Copied EN paragraphs | English prose lines | Skeletal sections | KO/EN bytes |",
+        "| --- | ---: | ---: | ---: | ---: |",
     ]
     for page in rows[:35]:
         ratio = page["byte_ratio"]
         ratio_text = f"{ratio:.2f}" if ratio is not None else "N/A"
         lines.append(
             f"| {page['path']} | {page['copied_english_paragraphs']} | "
+            f"{len(page['untranslated_english_prose_lines'])} | "
             f"{page['skeletal_sections'] or 0} | {ratio_text} |"
         )
     lines.extend(
