@@ -206,7 +206,23 @@ SafeActBench의 서로 다른 공개 도메인에는 `reply_send`처럼 이름�
 공개 관측 필드를 명시해야 합니다. `action_argument`는 비교의
 왼쪽 값, 신뢰된 조회 결과의 실제 필드 값은 오른쪽 값입니다.
 예를 들어 환불 요청 금액이 조회된 허용 금액보다 작거나 같은지를
-비교할 수 있습니다. `action_argument` 대신 공개 정책에 근거한
+비교할 수 있습니다.
+
+```json
+{
+  "value_conditions": [
+    {
+      "tool": "charge_read",
+      "record_id": "$action.charge_id",
+      "field": "amount",
+      "operator": "lte",
+      "action_argument": "refund_amount"
+    }
+  ]
+}
+```
+
+`action_argument` 대신 공개 정책에 근거한
 스칼라 `literal`을 지정할 수 있지만 둘을 함께 지정할 수 없습니다.
 
 게이트는 실제 호스트 `ToolGateway`의 완료된 조회 결과에서
