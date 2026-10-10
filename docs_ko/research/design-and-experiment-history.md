@@ -901,12 +901,12 @@ Provenance:
 
 ## 26. 당시 active optimization: 마지막 15 case 복구
 
-이슈 #246의 route-level analysis에서 route마다 선호하는 schema/action weight가 다르다는 점을 확인했습니다. Holding the global 0.55 weight produced 1,019 raw supported-correct cases, while independently choosing the best preregistered grid weight for each route yields a diagnostic raw ceiling of **1,046**, a +27-case headroom.
+이슈 #246의 경로별 분석에서 경로마다 적합한 스키마/작업 가중치가 다르다는 사실을 확인했습니다. 전역 가중치 0.55를 유지했을 때는 지원 사례 중 원시 정답이 1,019건이었습니다. 반면 각 경로에 대해 사전 등록된 격자 내 최적 가중치를 별도로 선택하면 진단용 원시 상한은 **1,046건**으로, 추가 개선 여지가 27건입니다. 이는 진단용 상한일 뿐 확정된 개선 결과가 아닙니다.
 
-The largest examples include:
+차이가 큰 대표 사례는 다음과 같습니다.
 
 - `inventory.search`: 전역 가중치 0.55에서 원시 정확도 50.00%, 경로별 가중치 0.35에서 69.44%
-- `papers.search`: 81.94% versus 90.28% at route-local 0.30.
+- `papers.search`: 전역 가중치 0.55에서 81.94%, 경로별 가중치 0.30에서 90.28%.
 
 ### #256 route-local stable fusion
 
@@ -1401,11 +1401,11 @@ Closest high-rejection rule:
 - 정답인 지원 사례의 소속 판단 Top-1 배경 판정률: 4.32%;
 - OOD 소속 판단 Top-1 배경 판정률: 81.94%.
 
-하지만 두 channel을 합성하면 85/97/1/100 target을 만족하기에는 overlap이 여전히 너무 큽니다. Top-k composition is additionally sensitive to prototype-bank cardinality (8 known anchors vs 16 background anchors).
+하지만 두 채널을 결합해도 85/97/1/100 목표를 충족하기에는 두 결과의 중첩이 여전히 지나치게 큽니다. 또한 Top-k 결합 결과는 프로토타입 뱅크의 항목 수(알려진 기능 기준점 8개, 배경 기준점 16개)에 민감합니다.
 
 Decision: reject했습니다. 이 capability-bank family에 대한 fixed-prototype heuristic refinement를 종료합니다.
 
-이에 따라 #281에서 preregister한 stopping rule이 발동됩니다. Do not continue with finer scalar thresholds, larger top-k grids, route-specific exceptions or post-result hand rules. The next architecture must use a learned or externally pretrained open-set capability verifier/classifier under strict veto-only authority.
+이에 따라 #281에서 사전 등록한 중단 규칙을 적용합니다. 더 세밀한 스칼라 임계값, 더 큰 Top-k 격자, 경로별 예외 또는 결과 확인 후 추가하는 수작업 규칙으로 실험을 이어가지 않습니다. 다음 아키텍처는 학습하거나 외부에서 사전 학습한 오픈셋 기능 검증기/분류기를 사용해야 하며, 그 권한은 엄격히 **거부(veto) 전용**으로 제한해야 합니다.
 
 Provenance:
 
@@ -2018,7 +2018,7 @@ PR #320 was merged as `acaca1e14b2f387094100dde3e1186aa4520d01d`.
 - 산출물 다이제스트: `sha256:58d3c1b4aec1bb70eb2aa1747e3acd86278a16da45582930bb80dbca92f54ee0`;
 - `analysis.json`: 없음.
 
-The server log shows correct-but-slow reference PyTorch fallbacks for causal convolution and gated-delta kernels. 이 CPU/fp32 runtime은 impractical execution path로서 terminal이지만 negative model-quality evidence는 아닙니다.
+서버 로그에서는 인과적 합성곱과 gated-delta 커널에 대해 결과는 올바르지만 속도가 느린 PyTorch 참조 구현으로 대체 실행된 사실이 확인됐습니다. 이 CPU/fp32 런타임은 실용적이지 않은 실행 경로로서 종료됐지만, **모델 품질이 낮다는 부정적 증거는 아닙니다**.
 
 후속 조치:
 - 이슈 #317의 6시간 제한 재시도는 실행하지 않은 채 종료;
@@ -2283,16 +2283,11 @@ ColBERT 실패 후 #332는 다른 질의 모델이나 레이블이 있는 개발
 
 고정된 규칙 계열 중 기존 목표 85/97/100/1을 통과한 것은 없었습니다.
 
-이 결과는 structure 관점에서 유의미합니다. Same-tool alias contrast is useful for operation preference but
-기능 소속성을 입증하지 못합니다. 미지원 요청도 보통 등록된 형제 작업 하나를 선호하기 때문입니다. 반대로 별칭의 자체 응집도 하한은 지원되는 자연어 요청이 엄선된 레지스트리
-aliases, which collapses supported recall.
+이 결과는 구조적 한계를 보여줍니다. 같은 도구의 별칭을 대비하는 방식은 작업 선호도를 판별하는 데 도움이 되지만, 해당 기능을 실제로 지원하는지는 입증하지 못합니다. 지원되지 않는 요청도 보통 등록된 유사 작업 하나를 선호하기 때문입니다. 반대로 별칭 간 자체 응집도의 하한을 적용하면 지원되는 자연어 요청에도 정제된 레지스트리 별칭 수준의 내부 일치도를 요구하게 되어 지원 사례 재현율이 무너집니다.
 
-이 representation은 terminal입니다. Per preregistration, it is not repaired with a
-개발 데이터에 맞춘 점수 임계값, 두 번째 임계값 차원, 경로·언어·계열 예외 또는 실패한
-fresh-confirmation rows.
+이 표현 방식에 대한 연구는 종료합니다. 사전 등록 규칙에 따라 개발 데이터에 맞춘 점수 임계값, 추가 임계값 차원, 경로·언어·계열별 예외 또는 실패한 신규 확인 데이터의 개별 행을 이용해 사후 수정하지 않습니다.
 
-0.11 cycle에는 이제 active candidate가 없으며 #198은 blocked 상태를 유지합니다. A subsequent behavior-changing
-가설에는 동일한 밀집 점수·별칭 구조를 다시 변환하는 방법이 아니라 실질적으로 다른 오픈셋 기능 근거가 필요합니다.
+0.11 연구 주기에는 더 이상 진행 중인 후보가 없으며 #198은 차단 상태를 유지합니다. 이후 동작 변경을 제안하는 가설에는 동일한 밀집 점수와 별칭 구조의 또 다른 변형이 아니라, 실질적으로 다른 오픈셋 기능 판정 근거가 필요합니다.
 
 
 ## 51. #336 / PR #337 — 임계값 없는 BGE/GTE 합의 방식 기각
@@ -2558,8 +2553,7 @@ DEV 평가:
 - p95 164.328 ms;
 - 권한 위반 / 실행 오류 0 / 0.
 
-이는 강한 architectural negative result였습니다. On this new DEV, the raw BGE ranker already met the
-지원 요청의 정확도 목표를 충족하고 모든 지원 사례에서 올바른 도구를 찾았습니다. 그러나 계층형 온톨로지 강제 필터가 그 우수한 신호를 손상시켰습니다.
+이는 아키텍처에 관한 뚜렷한 부정적 결과입니다. 새 개발 데이터에서 원시 BGE 순위기는 이미 지원 요청의 정확도 목표를 달성했고, 모든 지원 사례에서 올바른 도구를 찾았습니다. 그러나 계층형 온톨로지의 강제 필터링이 이러한 유효한 신호를 훼손했습니다.
 
 Decision: row-driven repair 없이 terminal reject합니다.
 
