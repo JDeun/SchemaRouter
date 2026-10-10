@@ -74,6 +74,8 @@ AuthorizationRule(
 Node/property/relationship visibility, 허용 relationship 집합, 최대 traversal depth는 principal
 DataScope rule로 적용하고 실행 시점에 다시 검증합니다.
 
+숨겨야 하는 노드·간선·속성을 위한 추가 predicate는 `supports_trusted_filters = True`를 명시한 `ScopedGraphStoreBackend` 구현이 필요합니다. DataScope가 trusted filter를 요구하는데 백엔드가 해당 계약을 선언하고 실제로 구현하지 않았다면 **그래프 탐색 I/O 이전에 fail-closed**합니다. 현재 내장 native graph/RDF 어댑터는 이러한 predicate 기능을 지원한다고 주장하지 않습니다.
+
 ## Native vendor adapter
 
 Provider-neutral contract 위에 caller-owned native adapter가 추가됩니다.

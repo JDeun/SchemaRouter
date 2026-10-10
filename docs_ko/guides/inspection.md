@@ -198,6 +198,8 @@ Checked-in preview는 generated dashboard와 같은 layout/interaction model을 
 
 ### End-to-end example
 
+저장되는 registry를 생성하고, SchemaRouter 실제 실행 결과를 trace 저장소에 기록한 다음, 살아 있는 라우터의 `router.inspect()` snapshot을 출력하고 읽기 전용 HTML dashboard까지 생성하는 예제입니다.
+
 ```bash
 python examples/inspection_dashboard.py
 ```

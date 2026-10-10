@@ -64,3 +64,20 @@ def test_language_specific_navigation_links_do_not_count_as_scholarly_loss() -> 
     english = tokens('# Info\n\n[README](https://github.com/org/repo#readme)')
     korean = tokens('# 정보\n\n[한국어 README](https://github.com/org/repo/blob/main/README.ko.md)')
     assert english['source_links'] == korean['source_links'] == set()
+
+
+def test_security_critical_bilingual_datascope_contracts_remain_explicit() -> None:
+    root = Path(__file__).resolve().parents[1] / "docs_ko" / "guides"
+    graph = (root / "graph-store-onboarding.md").read_text(encoding="utf-8")
+    vector = (root / "vector-store-onboarding.md").read_text(encoding="utf-8")
+    inspection = (root / "inspection.md").read_text(encoding="utf-8")
+    assert "ScopedGraphStoreBackend" in graph
+    assert "supports_trusted_filters = True" in graph
+    assert "이전에 fail-closed" in graph
+    assert "지원한다고 주장하지 않습니다" in graph
+    assert "ScopedVectorStoreBackend" in vector
+    assert "supports_trusted_filters = True" in vector
+    assert "tuple 값은" in vector
+    assert "I/O 이전에 fail-closed" in vector
+    assert "`router.inspect()` snapshot" in inspection
+    assert "trace 저장소" in inspection
