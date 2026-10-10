@@ -187,12 +187,12 @@ Static export이므로 server dependency/external JavaScript/analytics/tool exec
 Checked-in preview는 generated dashboard와 같은 layout/interaction model을 사용하며 demo data만 포함합니다.
 
 <iframe
-  src="../assets/inspection-dashboard-preview.html"
+  src="/SchemaRouter/assets/inspection-dashboard-preview.html"
   title="SchemaRouter inspection dashboard preview"
   style="width: 100%; height: 720px; border: 1px solid var(--md-default-fg-color--lightest); border-radius: 12px;"
 ></iframe>
 
-[별도 페이지에서 dashboard preview 열기](../assets/inspection-dashboard-preview.html)
+[별도 페이지에서 dashboard preview 열기](/SchemaRouter/assets/inspection-dashboard-preview.html)
 
 ### End-to-end example
 
