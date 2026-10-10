@@ -2142,7 +2142,7 @@ Before fresh execution, a new confirmation surface was preregistered:
 - surface `lightweight-bge-gte-operational-envelope-v1`;
 - confirmation-only, not tuning-eligible;
 - normalized exact overlap required to be zero against canonical DEV and deterministically regenerated
-  #270/#287 fresh surfaces;
+  Issues #270/#287 fresh surfaces;
 - frozen evaluator/manifest must be byte-diff clean against semantic source `caca039…`.
 
 Active fresh workflow: `36382202178`.
