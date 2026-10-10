@@ -249,7 +249,7 @@ Upstream OpenAPI가 필요한 output field를 충분히 선언하지 않았다�
 `amend_capability()`로 semantic ID, unit, field contract를 보완할 수 있습니다. 다만 이 기능으로
 endpoint의 실행 정체성이나 원격 권한을 바꿀 수는 없습니다.
 
-[MCP의 result contract 보완 예제 →](mcp.md#서버가-공개하지-않는-result-contract-선언)
+[MCP의 result contract 보완 예제 →](mcp.md#declare-a-result-contract-the-server-does-not-publish)
 
 공개된 스키마가 단순한 객체로만 응답을 설명하는 경우, 상위 문서를 수정하지 않고도 신뢰할 수 있는 코드에서 필드의 의미 ID와 단위를 선언할 수 있습니다. 허용되는 선언 변경과 금지되는 실행 권한 변경은 아래 예제를 참고하십시오.
 
