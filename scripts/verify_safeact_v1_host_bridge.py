@@ -114,6 +114,7 @@ def run_bridge_compatibility(root: Path) -> dict[str, Any]:
         contract = {
             "case_coverage": {"SAB-V1-001": None},
             "contracts": [{
+                "domain": "customer_policy_qa",
                 "action": "refund_issue",
                 "sources": [{
                     "kind": "independent_contract",
