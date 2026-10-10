@@ -1,0 +1,47 @@
+name: CYT macOS Codex Proxy HTTP Mock (Unscored)
+
+on:
+  pull_request:
+    paths:
+      - "scripts/verify_cyt_proxy_http_mock.py"
+      - ".github/workflows/cyt-proxy-http-macos-mock.yml"
+      - "benchmarks/external-validation-clear-your-tools-dev-v1/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-proxy-http-mock:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13"
+      - name: Install exact frozen upstream native CYT Proxy source
+        run: |
+          python -m pip install "clear-your-tools[proxy] @ git+https://github.com/qdrddr/clear-your-tools.git@9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4"
+          python -m pip install httpx
+      - name: Record reproducible host and CYT source identity
+        run: |
+          mkdir -p artifacts/cyt-proxy-macos-mock
+          sw_vers > artifacts/cyt-proxy-macos-mock/macos.txt
+          uname -a > artifacts/cyt-proxy-macos-mock/kernel.txt
+          python --version > artifacts/cyt-proxy-macos-mock/python.txt
+          python -m pip freeze > artifacts/cyt-proxy-macos-mock/pip-freeze.txt
+          git rev-parse HEAD > artifacts/cyt-proxy-macos-mock/schemarouter-commit.txt
+          printf '%s\n' "9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4" > artifacts/cyt-proxy-macos-mock/frozen-cyt-commit.txt
+      - name: Run actual CYT OpenAI Proxy HTTP with in-memory mock upstream
+        run: |
+          python -m scripts.verify_cyt_proxy_http_mock \
+            --out artifacts/cyt-proxy-macos-mock/result.json
+      - name: Preserve explicit unscored source and forward trace metadata
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: cyt-macos-codex-proxy-mock-${{ github.run_id }}
+          path: artifacts/cyt-proxy-macos-mock
+          if-no-files-found: error
+          retention-days: 30
