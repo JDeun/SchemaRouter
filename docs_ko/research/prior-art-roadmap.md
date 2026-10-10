@@ -46,7 +46,7 @@ flowchart TD
 현재 관련 작업:
 
 - #417 — active research parent
-- #418 — FULL vs Top-K vs progressive utility protocol, terminal
+- #418 — FULL·Top-K·점진적 검색 간 작업 효용성 비교 프로토콜, 종료
 - #420 — B1 local downstream-agent A/B, terminal
 - #423 — stronger-agent B2 replication, terminal success
 - #431 — 실행 상태 인식 교정 검색, 게이트 판정 완료·조건 미승격
@@ -137,8 +137,8 @@ open-space membership score
 
 현재 0.13 sequence:
 
-- **#397/V6C** tied-Gaussian density ratio: supported exact 93.86%, near reject 39.29%, OOD 56.94%, false-route 56.79%, raw-correct veto 0
-- **#399/V6D** component Gaussian-mixture ratio: supported exact 89.91%, near reject 39.68%, OOD 5.56%, false-route 67.90%, raw-correct veto 0, p95 250.49ms
+- **#397/V6C** 공유 가우시안 밀도비: 지원 요청 정확도 93.86%, 근접 도메인 거부율 39.29%, 분포 밖 거부율 56.94%, 잘못된 경로 비율 56.79%, 원래 정답이던 경로의 거부 0건
+- **#399/V6D** 성분별 가우시안 혼합 밀도비: 지원 요청 정확도 89.91%, 근접 도메인 거부율 39.68%, 분포 밖 거부율 5.56%, 잘못된 경로 비율 67.90%, 원래 정답이던 경로의 거부 0건, p95 250.49ms
 - **#401/V6E** non-parametric local membership: k=3 cosine-neighborhood에서 supported exact 83.33%, near reject 60.71%, OOD 54.17%, false-route 40.74%, p95 176.50ms
 
 V6C는 relative evidence가 supported route를 보존할 수 있지만 class당 Gaussian 하나가 multimodal structure를 무너뜨림을 보였습니다. V6D는 endpoint-level Gaussian mode를 보존해도 synthetic-to-natural membership gap이 해결되지 않음을 보였습니다. V6E는 Gaussian assumption을 제거하고 unsupported recall을 개선했지만 rejection target에 크게 못 미쳤고 supported routing도 손상했습니다. 다음 실험은 consumed DEV에서 또 다른 distance threshold, neighborhood size, Gaussian parameter를 tuning하는 대신 semantic signal/representation 자체를 바꿔야 합니다.
