@@ -19,12 +19,12 @@ SchemaRouter는 compatibility list를 늘리기 위해 모든 protocol의 built-
 
 GraphQL introspection은 root query/mutation/subscription type, named type, field, argument, description, deprecation metadata를 노출합니다.
 
-- root query field -> read-oriented endpoint
+- 루트 질의 필드 → 읽기 중심 엔드포인트
 - root mutation field -> mutation endpoint, 자동 authorization은 아님
 - argument -> `ParameterSpec`
 - return field -> `FieldSpec`
-- selection set -> call-aware server projection
-- nested GraphQL field -> explicit planner-visible path
+- 선택 필드 집합 → 호출을 인식하는 서버 측 필드 투영
+- 중첩 GraphQL 필드 → 계획기가 확인할 수 있는 명시적 경로
 
 Field selection 자체가 protocol의 first-class 부분이므로 generic HTTP보다 실제 가치가 있습니다. Subscription은 long-lived stream lifecycle contract가 생길 때까지 initial implementation 밖에 둡니다.
 
@@ -50,7 +50,7 @@ OpenRPC는 JSON-RPC 2.0의 machine-readable interface description입니다. Meth
 - OpenRPC method -> `EndpointSpec`
 - params -> `ParameterSpec`
 - result JSON Schema -> output contract
-- JSON-RPC method name -> trusted transport metadata
+- JSON-RPC 메서드 이름 → 신뢰된 전송 계층 메타데이터
 - `rpc.discover` -> optional schema discovery/refresh
 
 OpenRPC 없는 plain JSON-RPC endpoint에는 standard discovery information이 충분하지 않습니다. Method surface를 추측하지 말고 trusted declarative contract/plugin을 사용합니다.

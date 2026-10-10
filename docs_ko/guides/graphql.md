@@ -13,11 +13,11 @@ router = await SchemaRouter.from_url(
 
 SchemaRouter는 같은 URL에 제한된 introspection query를 보내 다음을 가져옵니다.
 
-- root query field → read-only endpoint
-- root mutation field → non-read-only endpoint
+- 루트 질의 필드 → 읽기 전용 엔드포인트
+- 루트 변경 필드 → 읽기 전용이 아닌 엔드포인트
 - field argument → typed `ParameterSpec`
-- object/input-object type → JSON Schema
-- nested output field → planner-visible `FieldSpec` path
+- 객체·입력 객체 타입 → JSON Schema
+- 중첩 출력 필드 → 계획기에 노출되는 `FieldSpec` 경로
 - enum → JSON Schema enum value
 
 subscription은 감지하지만 일반 request/response `ToolCall`과 달리 장기 stream lifecycle이 필요하므로 초기 구현에서는 가져오지 않습니다.

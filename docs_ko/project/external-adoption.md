@@ -110,7 +110,7 @@ Proposed adopter가 research history를 읽을 필요가 없도록 다음을 제
 - Python/runtime/hardware
 - original model-visible tool 수
 - shortlisted tool 수
-- full vs bounded serialized schema/context size
+- 전체 노출 대비 제한된 직렬화 스키마·컨텍스트 크기
 - test request의 required-tool/capability recall
 - task completion 또는 explicit failure
 - added routing latency
@@ -122,9 +122,9 @@ No registered capability가 선택되어야 하는 request를 최소 하나 포�
 
 Measurement가 실제 model-token based가 아니면 token cost를 비교하지 않습니다. Serialized byte는 bytes로 label합니다.
 
-## Outreach message template
+## 외부 프로젝트 연락용 영문 메시지 예시
 
-Mass template가 아니라 짧은 project-specific note를 사용합니다.
+상대 프로젝트에 맞춰 간결한 개별 메시지를 작성합니다. 아래 인용문은 해외 유지관리자에게 실제로 전달하는 **영문 템플릿**이므로 번역하지 않고 유지하며, 각 자리표시자와 검증 범위는 전송 전에 해당 프로젝트에 맞게 수정해야 합니다.
 
 > Hi — I maintain SchemaRouter, an MIT-licensed Python layer for typed capability retrieval and schema-aware execution in large agent tool catalogs.
 >
@@ -134,7 +134,7 @@ Mass template가 아니라 짧은 project-specific note를 사용합니다.
 >
 > Would a small reproducible example like that be useful, and if so, where would you prefer it to live?
 
-여러 project에 그대로 보내지 않습니다.
+서로 다른 프로젝트에 동일한 문구를 그대로 발송하지 않습니다.
 
 ## Evidence levels
 
