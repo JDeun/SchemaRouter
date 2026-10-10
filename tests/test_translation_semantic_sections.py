@@ -33,3 +33,19 @@ def test_preserved_korean_negation_is_not_flagged(tmp_path: Path) -> None:
     (en / "a.md").write_text("# Guide\n\nNever do this.", encoding="utf-8")
     (ko / "a.md").write_text("# 설명\n\n이 작업은 허용하지 않습니다.", encoding="utf-8")
     assert audit(en, ko)["flagged_sections"] == 0
+
+
+
+def test_korean_negative_forms_are_recognized(tmp_path: Path) -> None:
+    en, ko = tmp_path / "en", tmp_path / "ko"
+    en.mkdir()
+    ko.mkdir()
+    (en / "a.md").write_text(
+        "# Guide\n\nThe model cannot grant permission or execute a mutation.",
+        encoding="utf-8",
+    )
+    (ko / "a.md").write_text(
+        "# 설명\n\n모델에 실행 권한이 없으며 데이터 변경을 허가할 수 없습니다.",
+        encoding="utf-8",
+    )
+    assert audit(en, ko)["flagged_sections"] == 0

@@ -17,7 +17,7 @@ SENTENCE_NEGATION = re.compile(
     re.IGNORECASE,
 )
 KOREAN_NEGATION = re.compile(
-    r"않|못|금지|거부|차단|실패|불가|안 됩|않습|없이|아니|"
+    r"않|못|없|아닌|금지|거부|차단|실패|불가|안 됩|않습|없이|아니|"
     r"않도|금해야|제외|제한|fail.closed|cannot|does not|not allowed|never",
     re.IGNORECASE,
 )
