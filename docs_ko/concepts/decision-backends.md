@@ -322,7 +322,7 @@ SchemaRouter는 Transformers, Torch, 특정 재순위화 모델 또는 호스팅
 
 ## Jev / TypeSafe System One
 
-SchemaRouter includes an optional `JevDecisionBackend` on current unreleased `main`:
+현재 아직 릴리스되지 않은 `main` 브랜치에서는 선택적으로 `JevDecisionBackend`를 사용할 수 있습니다:
 
 ```bash
 pip install -e ".[jev]"
