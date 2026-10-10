@@ -10,7 +10,7 @@ def _fixture(tmp_path: Path):
     local, upstream = tmp_path / "sources", tmp_path / "pinned"
     for root in (local, upstream):
         target = root / path
-        target.parent.mkdir(parents=True)
+        target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text("synthetic policy, no evaluator gold\n", encoding="utf-8")
     doc = {
         "kind": "safeact_v1_unreviewed_public_policy_snapshot",
