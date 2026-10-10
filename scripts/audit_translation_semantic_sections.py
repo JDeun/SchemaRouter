@@ -111,7 +111,7 @@ def main() -> None:
           f"flagged pages: {report['flagged_pages']}; flagged sections: {report['flagged_sections']}")
     for item in report["findings"][:args.max_show]:
         print(f"{item['path']} :: {item.get('section', '?')} "
-              f"{item.get('en_heading', '')} [{', '.join(item.get('signals', [item.get('error', '')])))}] "
+              f"{item.get('en_heading', '')} {item.get('signals', [item.get('error', '')])} "
               f"ratio={item.get('ratio', 'n/a')}")
 
 
