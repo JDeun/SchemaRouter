@@ -22,6 +22,19 @@ The default output directory is `docs/research/generated/` and contains:
 Generated files are build artifacts rather than a replacement for the canonical ledger. CI
 runs the exporter so schema drift is caught before paper preparation.
 
+## 0.14 terminal report preparation
+
+The [0.14 terminal evidence report template](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/agent-utility-0.14-terminal-report-prep.md)
+records the frozen provenance fields, held-out paired-estimand and final-answer
+tables, claim-eligibility gates, invalid-run separation, and terminal checklist.
+All open measurements are intentionally marked **Pending**, not estimated.
+
+The controller tracks the frozen [0.14 experiment conveyor](https://github.com/JDeun/SchemaRouter/issues/500).
+A green controller run can still mean `waiting_heldout`; a research result only
+exists when the complete canonical stage artifact passes provenance and
+aggregation checks. A partial model shard, running workflow or infrastructure
+retry must never be described as an evaluated held-out outcome.
+
 ## Evidence roles
 
 The exporter preserves the ledger's evidence-role distinctions. In particular, tuning DEV,
