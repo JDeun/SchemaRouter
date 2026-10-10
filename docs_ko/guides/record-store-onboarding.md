@@ -87,9 +87,9 @@ AuthorizationRule(
 Bounded record contract 위에 caller-owned native adapter를 추가합니다.
 
 - **MongoDB**: collection discovery, sample document schema, bounded `find()`, 선택적 text/time 경로
-- **Elasticsearch / OpenSearch**: mapping discovery, bounded `multi_match`/term/range, field projection
-- **Amazon DynamoDB**: table/key discovery, sample field, parameterized filter/projection expression
-- **Azure Cosmos DB for NoSQL**: container discovery, sample item schema, parameterized `query_items()`
+- **Elasticsearch / OpenSearch**: 매핑 자동 탐지, 제한된 `multi_match`·term·range 검색, 필드 투영
+- **Amazon DynamoDB**: 테이블·키 탐지, 표본 필드 추론, 매개변수화된 필터·투영 표현식
+- **Azure Cosmos DB for NoSQL**: 컨테이너 탐지, 표본 항목 스키마, 매개변수화된 `query_items()`
 - **Couchbase**: keyspace discovery와 named-parameter SQL++ bounded query
 - **ClickHouse**: table/column discovery와 bound read-only ClickHouse Connect query
 - **InfluxDB 2.x / Flux**: measurement/field-key/tag-key discovery와 bounded time/tag/field query
@@ -111,7 +111,7 @@ router.add_influxdb_record_store(
 
 이 client/credential은 model-visible contract에 저장하지 않습니다. Native adapter는 이미
 제한된 record-store contract만 vendor API로 번역하며 raw Mongo query document,
-Elasticsearch/OpenSearch Query DSL, Dynamo expression, Cosmos SQL, SQL++, raw
+Elasticsearch/OpenSearch Query DSL, DynamoDB 표현식, Cosmos SQL, SQL++, 원시
 ClickHouse SQL, arbitrary Flux를 모델 권한으로 노출하지 않습니다.
 
 Deterministic SDK-shape test는 release gate에 포함합니다. Native adapter가 있다는 사실과 모든
