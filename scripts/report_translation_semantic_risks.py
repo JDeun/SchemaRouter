@@ -6,6 +6,7 @@ import argparse
 import json
 import re
 from pathlib import Path
+from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 FENCE = re.compile(r"^\s*(\x60{3,}|~{3,})")
@@ -53,7 +54,22 @@ def tokens(text: str) -> dict[str, set[str]]:
         },
         "numbers": {normalize_number(match) for match in NUMBER.finditer(visible)},
         "provenance": {match.group(0) for match in PROVENANCE.finditer(visible)},
-        "source_links": {match.group(0) for match in EXTERNAL_REFERENCE.finditer(visible)},
+        "source_links": {
+            url
+            for match in EXTERNAL_REFERENCE.finditer(visible)
+            if (url := match.group(0))
+            and (urlsplit(url).hostname or "").lower() in {
+                "aclanthology.org",
+                "www.aclanthology.org",
+                "arxiv.org",
+                "www.arxiv.org",
+                "doi.org",
+                "www.doi.org",
+                "openreview.net",
+                "www.openreview.net",
+                "proceedings.mlr.press",
+            }
+        },
     }
 
 

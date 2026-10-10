@@ -58,3 +58,9 @@ def test_source_only_scholarly_references_are_flagged() -> None:
     assert english["source_links"] - korean["source_links"] == {
         "https://aclanthology.org/2025.findings-acl.1258/"
     }
+
+
+def test_language_specific_navigation_links_do_not_count_as_scholarly_loss() -> None:
+    english = tokens('# Info\n\n[README](https://github.com/org/repo#readme)')
+    korean = tokens('# 정보\n\n[한국어 README](https://github.com/org/repo/blob/main/README.ko.md)')
+    assert english['source_links'] == korean['source_links'] == set()
