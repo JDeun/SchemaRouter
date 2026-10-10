@@ -1,0 +1,230 @@
+name: Research 0.14 Held-out Shard Recovery
+run-name: Held-out recovery parent=${{ inputs.parent_run_id }} wave=${{ inputs.wave }} source=${{ inputs.source_sha }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      parent_run_id:
+        description: Original terminal materialized #432 run
+        type: string
+        required: true
+      evidence_digest:
+        description: Frozen upstream K3/corrective evidence digest
+        type: string
+        required: true
+      source_sha:
+        description: Exact frozen scientific revision
+        type: string
+        required: true
+      wave:
+        description: Zero-based missing-parent-shard recovery wave
+        type: number
+        required: true
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: research-0.14-heldout-recovery-${{ inputs.parent_run_id }}
+  cancel-in-progress: false
+
+env:
+  HF_HUB_DISABLE_TELEMETRY: "1"
+  TOKENIZERS_PARALLELISM: "false"
+  HF_HOME: "${{ github.workspace }}/.hf-cache"
+  B2_MODEL: "HuggingFaceTB/SmolLM3-3B"
+  B2_REVISION: "a07cc9a04f16550a088caea529712d1d335b0ac1"
+  B2_CACHE_KEY: "b2-smollm3-arm64-a07cc9a04f16550a088caea529712d1d335b0ac1-torch2.14-transformers4.57.6"
+  B2_ATTN_IMPLEMENTATION: "sdpa"
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    outputs:
+      matrix: "${{ steps.plan.outputs.matrix }}"
+      conditions: "${{ steps.plan.outputs.conditions }}"
+      last_wave: "${{ steps.plan.outputs.last_wave }}"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - name: Download original corpus and retrieval evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+        with:
+          name: "heldout-corpus-${{ inputs.parent_run_id }}"
+          path: artifacts/recovery-plan
+          run-id: "${{ inputs.parent_run_id }}"
+          github-token: "${{ github.token }}"
+          repository: "${{ github.repository }}"
+      - id: plan
+        name: Freeze only infrastructure-missing shard identities
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          GITHUB_REPOSITORY: "${{ github.repository }}"
+        run: |
+          python scripts/research_014_heldout_recovery.py plan \
+            --corpus artifacts/recovery-plan/heldout-corpus.json \
+            --parent-run "${{ inputs.parent_run_id }}" \
+            --wave "${{ inputs.wave }}" \
+            --source-sha "${{ inputs.source_sha }}" \
+            --evidence-digest "${{ inputs.evidence_digest }}" \
+            --plan-out artifacts/recovery-plan/heldout-recovery-plan.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "heldout-recovery-plan-${{ github.run_id }}"
+          path: artifacts/recovery-plan/
+          if-no-files-found: error
+          retention-days: 30
+
+  recover:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      max-parallel: 32
+      matrix: "${{ fromJSON(needs.prepare.outputs.matrix) }}"
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 360
+    env:
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ inputs.source_sha }}"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch==2.14.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
+      - run: pip install -e .
+      - id: hf-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .hf-cache
+          key: "${{ env.B2_CACHE_KEY }}"
+      - name: Restore exact model revision after cache eviction
+        if: steps.hf-cache.outputs.cache-hit != 'true'
+        env:
+          HF_HUB_OFFLINE: "0"
+          TRANSFORMERS_OFFLINE: "0"
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import snapshot_download
+          snapshot_download(repo_id=os.environ["B2_MODEL"], revision=os.environ["B2_REVISION"])
+          PY
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+        with:
+          name: "heldout-recovery-plan-${{ github.run_id }}"
+          path: artifacts/heldout
+      - name: Verify exact ARM64 SDPA runtime
+        run: |
+          python - <<'PY'
+          import os
+          import platform
+          import torch
+          import transformers
+          assert platform.python_version() == "3.12.14"
+          assert platform.machine() in {"aarch64", "arm64"}
+          assert os.environ["B2_ATTN_IMPLEMENTATION"] == "sdpa"
+          assert torch.__version__ == "2.14.0+cpu"
+          assert transformers.__version__ == "4.57.6"
+          PY
+      - name: Evaluate only two frozen task identities per microshard
+        run: |
+          mkdir -p artifacts/recovered
+          python -u scripts/evaluate_agent_utility_v3_heldout.py \
+            --corpus artifacts/heldout/heldout-corpus.json \
+            --catalog-size "${{ matrix.catalog_size }}" \
+            --task-ids "${{ matrix.task_ids }}" \
+            --conditions "${{ needs.prepare.outputs.conditions }}" \
+            --out "artifacts/recovered/${{ matrix.job_id }}.json"
+      - name: Upload recovery output (not proof of evaluator success)
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "heldout-recovery-part-${{ matrix.job_id }}-${{ github.run_id }}"
+          path: artifacts/recovered/
+          if-no-files-found: warn
+          retention-days: 30
+
+  next-wave:
+    needs: [prepare, recover]
+    if: "${{ needs.recover.result == 'success' && needs.prepare.outputs.last_wave == 'false' }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Continue deterministic microshard waves
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          GH_REPO: "${{ github.repository }}"
+          PARENT: "${{ inputs.parent_run_id }}"
+          EVIDENCE: "${{ inputs.evidence_digest }}"
+          SOURCE: "${{ inputs.source_sha }}"
+          WAVE: "${{ inputs.wave }}"
+        run: |
+          gh workflow run research-0.14-heldout-recovery.yml \
+            --repo "$GH_REPO" --ref main \
+            -f parent_run_id="$PARENT" \
+            -f evidence_digest="$EVIDENCE" \
+            -f source_sha="$SOURCE" \
+            -f wave="$((WAVE + 1))"
+
+  aggregate:
+    needs: [prepare, recover]
+    if: "${{ needs.recover.result == 'success' && needs.prepare.outputs.last_wave == 'true' }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ inputs.source_sha }}"
+          path: scientific
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+        with:
+          name: "heldout-recovery-plan-${{ github.run_id }}"
+          path: artifacts/recovery-plan
+      - name: Verify all frozen episodes and publish evidence provenance
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          GITHUB_REPOSITORY: "${{ github.repository }}"
+        run: |
+          python scripts/research_014_heldout_recovery.py collect \
+            --corpus artifacts/recovery-plan/heldout-corpus.json \
+            --parent-run "${{ inputs.parent_run_id }}" \
+            --source-sha "${{ inputs.source_sha }}" \
+            --evidence-digest "${{ inputs.evidence_digest }}" \
+            --plan-out artifacts/recovery-plan/heldout-recovery-plan.json \
+            --out-dir artifacts/heldout-verified \
+            --proof-out artifacts/heldout-recovery-proof.json
+      - name: Aggregate via pinned historical scientific source
+        run: |
+          python scientific/scripts/aggregate_agent_utility_v3_heldout.py \
+            --input-dir artifacts/heldout-verified \
+            --corpus artifacts/recovery-plan/heldout-corpus.json \
+            --retrieval artifacts/recovery-plan/heldout-retrieval.json \
+            --out artifacts/heldout-generalization-canonical.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "heldout-generalization-canonical-${{ github.run_id }}"
+          path: |
+            artifacts/heldout-generalization-canonical.json
+            artifacts/recovery-plan/heldout-corpus.json
+            artifacts/recovery-plan/heldout-retrieval.json
+            artifacts/heldout-recovery-proof.json
+            scientific/benchmarks/agent-utility-v3-heldout-preregistration.json
+          if-no-files-found: error
+          retention-days: 30

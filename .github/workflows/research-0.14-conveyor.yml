@@ -8,6 +8,8 @@ on:
     paths:
       - ".github/workflows/research-0.14-conveyor.yml"
       - ".github/workflows/research-0.14-corrective-recovery.yml"
+      - ".github/workflows/research-0.14-heldout-recovery.yml"
+      - "scripts/research_014_heldout_recovery.py"
       - ".github/workflows/research-0.14-structural-k3-agent.yml"
       - ".github/workflows/research-0.14-field-projection-dev.yml"
       - ".github/workflows/research-0.14-field-projection.yml"
@@ -24,6 +26,7 @@ on:
       - Research 0.14 Corrective Re-retrieval
       - Research 0.14 Corrective Shard Recovery
       - Research 0.14 Held-out Generalization
+      - Research 0.14 Held-out Shard Recovery
       - Research 0.14 Final Answer
       - Research 0.14 Field Projection DEV
       - Research 0.14 Field Projection Confirmation

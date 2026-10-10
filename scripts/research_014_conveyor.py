@@ -32,6 +32,7 @@ CORRECTIVE_WORKFLOW = "research-0.14-corrective-reretrieval.yml"
 CORRECTIVE_RECOVERY_WORKFLOW = "research-0.14-corrective-recovery.yml"
 CORRECTIVE_ARTIFACT_PREFIX = "corrective-reretrieval-canonical-"
 HELDOUT_WORKFLOW = "research-0.14-heldout-generalization.yml"
+HELDOUT_RECOVERY_WORKFLOW = "research-0.14-heldout-recovery.yml"
 HELDOUT_ARTIFACT_PREFIX = "heldout-generalization-canonical-"
 FINAL_WORKFLOW = "research-0.14-final-answer.yml"
 FINAL_ARTIFACT_PREFIX = "final-answer-canonical-"
@@ -1142,6 +1143,76 @@ def run_controller(
                 "SR-5-STATE-AWARE": include_corrective,
             },
         }
+    # A materialized #432 evaluation that terminates with a job timeout must
+    # never be replayed as the same 10-task shards. Recover only missing frozen
+    # scientific identities in two-task execution batches. The original run's
+    # successfully completed shard artifacts remain the canonical inputs.
+    if terminal_failure(heldout) and api.workflow_run_job_count(heldout.id) >= 3:
+        recovery_marker = f"parent={heldout.id} "
+        recovery_runs = find_marked_runs(
+            api, HELDOUT_RECOVERY_WORKFLOW, recovery_marker
+        )
+        completed_recovery = next(
+            (
+                run for run in recovery_runs
+                if terminal_success(run)
+                and api.artifact(run.id, HELDOUT_ARTIFACT_PREFIX) is not None
+            ),
+            None,
+        )
+        if completed_recovery is not None:
+            actions.append(
+                f"select_verified_heldout_recovery:parent={heldout.id}:"
+                f"canonical_run={completed_recovery.id}"
+            )
+            heldout = completed_recovery
+        elif not recovery_runs:
+            if execute:
+                api.dispatch(
+                    HELDOUT_RECOVERY_WORKFLOW,
+                    ref=ref,
+                    inputs={
+                        "parent_run_id": str(heldout.id),
+                        "evidence_digest": parallel_digest,
+                        "source_sha": frozen_source_sha,
+                        "wave": "0",
+                    },
+                )
+            actions.append(
+                f"dispatch_heldout_microshard_recovery:parent={heldout.id}"
+            )
+            return {
+                "state": "heldout_microshard_recovery_dispatched",
+                "actions": actions,
+                "status": [_status_line("heldout", heldout)],
+            }
+        elif terminal_failure(recovery_runs[0]):
+            failed_recovery = recovery_runs[0]
+            if failed_recovery.conclusion in {"failure", "timed_out"}:
+                if retry_infrastructure_failure(
+                    api,
+                    failed_recovery,
+                    execute=execute,
+                    actions=actions,
+                    label="heldout_microshard_recovery",
+                ):
+                    return {
+                        "state": "retrying_heldout_microshard_recovery",
+                        "actions": actions,
+                        "status": [_status_line("heldout-recovery", failed_recovery)],
+                    }
+            return {
+                "state": "stopped_heldout_microshard_recovery_failure",
+                "actions": actions,
+                "status": [_status_line("heldout-recovery", failed_recovery)],
+            }
+        else:
+            return {
+                "state": "waiting_heldout_microshard_recovery",
+                "actions": actions,
+                "status": [_status_line("heldout-recovery", recovery_runs[0])],
+            }
+
     if terminal_failure(heldout):
         if heldout.conclusion not in {"failure", "timed_out"}:
             return {

@@ -91,7 +91,7 @@ jobs:
           python scripts/generate_agent_utility_v4_final_answer_corpus.py             --source-revision "${{ inputs.source_sha }}"             --forbidden-corpus artifacts/final/heldout-forbidden-corpus.json             --out artifacts/final/final-answer-corpus.json
           python scripts/validate_agent_utility_v4_final_answer_corpus.py             --corpus artifacts/final/final-answer-corpus.json             --forbidden-corpus artifacts/final/heldout-forbidden-corpus.json
       - id: matrix
-        name: Export frozen 72-job final-answer matrix
+        name: Export all 144 frozen final-answer microshards
         run: |
           python - <<'PY'
           import json
@@ -102,8 +102,8 @@ jobs:
               Path("artifacts/final/final-answer-corpus.json").read_text(encoding="utf-8")
           )
           ids = [str(task["semantic_task_id"]) for task in data["tasks"]]
-          chunks = [ids[index:index + 4] for index in range(0, len(ids), 4)]
-          assert len(chunks) == 36
+          chunks = [ids[index:index + 2] for index in range(0, len(ids), 2)]
+          assert len(chunks) == 72
           include = []
           for catalog in (100, 250):
               for index, chunk in enumerate(chunks):
@@ -114,7 +114,7 @@ jobs:
                           "task_ids": ",".join(chunk),
                       }
                   )
-          assert len(include) == 72
+          assert len(include) == 144
           conditions = ",".join(data["condition_manifest"]["conditions"])
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
               handle.write(
@@ -176,7 +176,7 @@ jobs:
       - model-cache
     strategy:
       fail-fast: false
-      max-parallel: 16
+      max-parallel: 32
       matrix: "${{ fromJSON(needs.prepare.outputs.matrix) }}"
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 300
