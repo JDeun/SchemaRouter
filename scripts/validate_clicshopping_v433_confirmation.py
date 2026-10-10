@@ -15,7 +15,7 @@ def _query_tokens(value: str) -> tuple[str, ...]:
     """Conservatively normalize punctuation and Unicode for reuse screening."""
     if not isinstance(value, str):
         raise ValueError("confirmation query must be text")
-    return tuple(re.findall(r"\\w+", value.casefold(), flags=re.UNICODE))
+    return tuple(re.findall(r"\w+", value.casefold(), flags=re.UNICODE))
 
 
 def _overlaps_dev(candidate: tuple[str, ...], prior: tuple[str, ...]) -> bool:
