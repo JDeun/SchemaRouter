@@ -22,7 +22,11 @@ def sample(dev):
     new["status"] = "external_confirmation_unscored"
     for index, case in enumerate(new["cases"]):
         case["id"] = f"candidate-unscored-{index:03d}"
-        case["query"] = f"UNSCORED SYNTHETIC TEST {index}: " + case["query"]
+        # Synthetic validator fixture, NOT independently authored task text.
+        case["query"] = (
+            f"Invented offline verification scenario {index}: "
+            f"review invented scope beta{index} and fictional condition gamma{index}"
+        )
     return new
 
 
@@ -56,3 +60,49 @@ def test_topk_and_permission_scope_cannot_change():
     candidate["cases"][0]["required_routes"] = ["customerOrders.list_orders"]
     with pytest.raises(ValueError, match="customerOrders"):
         check_confirmation(plan, candidate, dev, inventory)
+
+
+def test_prefixed_development_query_is_not_independent() -> None:
+    plan, dev, inventory = docs()
+    candidate = sample(dev)
+    candidate["cases"][0]["query"] = (
+        "Independent benchmark draft: " + dev["cases"][0]["query"]
+    )
+    with pytest.raises(ValueError, match="reuse of development queries"):
+        check_confirmation(plan, candidate, dev, inventory)
+
+
+def test_punctuation_only_rewrite_is_detected() -> None:
+    plan, dev, inventory = docs()
+    candidate = sample(dev)
+    original = dev["cases"][0]["query"]
+    candidate["cases"][0]["query"] = original.replace(" ", " — ")
+    with pytest.raises(ValueError, match="reuse of development queries"):
+        check_confirmation(plan, candidate, dev, inventory)
+
+
+def test_reordered_development_terms_cannot_pass() -> None:
+    plan, dev, inventory = docs()
+    candidate = sample(dev)
+    original = dev["cases"][0]["query"]
+    candidate["cases"][0]["query"] = " ".join(reversed(original.split()))
+    with pytest.raises(ValueError, match="reuse of development queries"):
+        check_confirmation(plan, candidate, dev, inventory)
+
+
+def test_identical_candidate_queries_after_punctuation_normalization() -> None:
+    plan, dev, inventory = docs()
+    candidate = sample(dev)
+    candidate["cases"][1]["query"] = candidate["cases"][0]["query"].replace(
+        " ", ", "
+    )
+    with pytest.raises(ValueError, match="reuse of development queries"):
+        check_confirmation(plan, candidate, dev, inventory)
+
+
+def test_no_automatic_review_or_scoring_even_after_structural_pass() -> None:
+    plan, dev, inventory = docs()
+    report = check_confirmation(plan, sample(dev), dev, inventory)
+    assert report["scoring_authorized"] is False
+    assert report["independent_human_review_pending"] is True
+    assert report["model_calls"] == 0
