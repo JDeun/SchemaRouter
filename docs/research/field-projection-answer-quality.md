@@ -2,10 +2,13 @@
 
 Tracking issue: #506
 
-> **Current status — 2026-10-02:** the original #506 DEV screen is consumed as an instrument
+> **Current status — 2026-10-10:** the original #506 DEV screen is consumed as an instrument
 > failure because the frozen small agent did not call tools. The preregistered #510 successor
-> runtime qualification is active. Its infrastructure recoveries are instrument-transport work,
-> not projection evidence; the projection successor remains gated on a terminal qualified runtime.
+> runtime qualification ended with **no qualified agent** under its frozen eligibility criteria;
+> see terminal [#510](https://github.com/JDeun/SchemaRouter/issues/510), run `36922946442`.
+> Thus the projection successor was **not executed**, and neither the failed instrument screen
+> nor the qualification result establishes an output-field-projection quality effect. Invalid
+> infrastructure attempts remain excluded from model-quality conclusions.
 
 ## The question
 

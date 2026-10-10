@@ -2,7 +2,7 @@
 
 Tracking issue: #506
 
-> **현재 상태 — 2026-10-02:** 원래 #506 DEV screen은 frozen small agent가 tool을 호출하지 않았기 때문에 instrument failure로 소비됐습니다. Preregistered #510 successor runtime qualification이 active 상태입니다. 이 과정의 infrastructure recovery는 instrument-transport 작업이지 projection evidence가 아니며, projection successor는 terminal qualified runtime이 나올 때까지 gated 상태입니다.
+> **현재 상태 — 2026-10-10:** 원래 #506 개발 실험은 동결된 소형 에이전트가 도구를 호출하지 않아 계측에 실패한 상태로 종료됐습니다. 사전 등록한 [#510 적격성 검사](https://github.com/JDeun/SchemaRouter/issues/510)도 동결된 기준을 충족하는 모델 **없이 종료**됐습니다(실행 `36922946442`). 따라서 출력 필드 투영의 후속 실험은 **실행되지 않았습니다**. 원래 계측 실패와 모델 적격성 검사 결과 어느 쪽도 출력 필드 투영의 답변 품질 효과를 입증하지 않습니다. 인프라 장애로 무효 처리된 실행도 모델 품질 평가에서 제외합니다.
 
 ## 질문
 

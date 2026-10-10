@@ -140,7 +140,7 @@ PR #85의 첫 번째 144사례 실험에서 빈 검색 확장과 해당 선택�
 
 이 변경들은 benchmark 대상 plan이 planning-only abstraction이 아니라 실제 executable하고 contract-valid한 behavior에 대응해야 한다는 점에서 이후 experiment에 중요합니다.
 
-## 6. v0.6: operational observability and local inference
+## 6. v0.6: 운영 관측 가능성과 로컬 추론
 
 Project에는 다음이 추가됐습니다:
 
@@ -521,15 +521,15 @@ Zero-threshold run은 ranking-ceiling diagnostic이지 promotable router가 아�
 
 새로 생성한 동일한 v4 개발 코퍼스 1,800개 사례의 결과:
 
-- raw supported top-route exactness: 90.71% (1045 / 1152);
-- invalid plans / execution errors: 0 / 0;
+- 원시 상위 경로의 지원 요청 정확도: 90.71%(1045 / 1152);
+- 유효하지 않은 계획 / 실행 오류: 0 / 0;
 - GitHub CPU 실행 환경의 평균 / p95 지연시간: 1014 / 1916ms
 
 원시 점수 분포에서는 올바르게 선택된 대부분의 지원 경로와 경로 없는 요청이 잘 구분됐지만, 경로별 분포의 끝부분에는 여전히 중첩이 있었습니다.
 
 사전에 등록한 **승자 우선** 규칙(먼저 순위를 정한 후 원래 승자의 경로별 임계값만 적용하고, 다른 후보로 넘어가지 않고 선택 보류)에 따른 개발 전용 점수 경계는 다음과 같습니다:
 
-| canonical false-route budget | supported exact-route | false-route rate | actual near-domain rejection | actual OOD rejection |
+| 정식 잘못된 경로 허용량 | 지원 요청 정확 경로율 | 잘못된 경로 비율 | 실제 근접 도메인 거부율 | 실제 분포 밖 거부율 |
 | ---: | ---: | ---: | ---: | ---: |
 | 0 / 648 | 70.57% | 0.00% | 100.00% | 100.00% |
 | 6 / 648 | 74.05% | 0.93% | 99.13% | 98.61% |
@@ -585,7 +585,7 @@ Architectural principle은 변하지 않습니다:
 
 > Semantic evidence는 registered authority 위에서 rank, veto 또는 abstain할 수 있지만 authority를 만들 수는 없습니다.
 
-## 15. Research governance and session continuity
+## 15. 연구 관리 원칙과 세션 간 작업 연속성
 
 Canonical tracker: #200
 
@@ -818,7 +818,7 @@ BGE-M3는 높은 순위화 품질과 강한 오픈셋 경계를 동시에 보인
 
 ## 23. GTE winner + BGE rejector
 
-Work item #244 / PR #249 tested a factorized architecture:
+작업 #244와 PR #249에서는 구성 요소를 분리한 아키텍처를 시험했습니다:
 
 1. GTE 0.25/0.75 이중 표현이 등록 경로 하나를 선택
 2. BGE 재순위화 모델은 선택된 경로만 평가
@@ -829,7 +829,7 @@ Work item #244 / PR #249 tested a factorized architecture:
 - supported exact: 76.13%;
 - near-domain rejection: 97.92%;
 - false-route: 1.85%;
-- best end-to-end mean / p95 latency: 293.89 / 328.11 ms.
+- 가장 낮은 엔드투엔드 평균 / p95 지연시간: 293.89 / 328.11ms.
 
 결정: 기각. 크로스 인코더의 최상위 경로 관련성 점수는 GTE의 우수한 순위화 성능을 보존할 만큼 명확한 오픈셋 구분 신호가 아니었습니다.
 
@@ -1151,7 +1151,7 @@ GTE + 승자 전용 리랭커 조건은 올바른 지원 사례 **17개**를 복
 이 실패한 새 표면 코퍼스는 확인 단계 전용 근거입니다. 임계값이나 행별 규칙을 다시 튜닝하는 데 **영구적으로 사용하지 않습니다**.
 
 
-## 31. #273 — contradiction-only multilingual NLI veto
+## 31. #273 — 다국어 NLI의 모순 근거만 사용하는 거부 판단
 
 긍정적 경로 점수의 보정을 피하기 위해 #273은 경로별 긍정 승인 임계값을 제거하고 BGE-M3의 원시 Top-1만 경로 권한으로 사용했습니다. 다국어 NLI 모델에는 모순 확률이 사전등록된 전역 임계값을 초과할 때 승자를 거부하는 권한만 부여했습니다.
 
@@ -1179,7 +1179,7 @@ Decision: rejected.
 
 해석: generic textual contradiction은 registered operation capability의 부재와 동일하지 않습니다. Open-set rejection에는 explicit negative-capability semantics가 필요합니다.
 
-## 32. #275 — explicit negative-capability prototype veto
+## 32. #275 — 명시적인 미지원 기능 원형에 의한 거부 판단
 
 #275에서는 도구 도메인마다 4개씩 총 **32개**의 명시적인 미지원 행동 프로토타입을 추가했습니다. 경로 실행 권한의 유일한 기준은 여전히 원시 BGE-M3 등록 1순위입니다.
 
@@ -1353,7 +1353,7 @@ The route authority remained unchanged:
 
 원래 최상위 경로의 도메인 안에서 다음 항목의 순위를 비교했습니다:
 
-- registered positive endpoint capability prototypes;
+- 등록된 긍정 엔드포인트 기능 원형
 - 동결된 명시적 미지원 작업 원형 4개
 
 고정된 유사 도메인 거부 방식 5종은 로컬 Top-1/Top-K 부정 사례의 구성과 최상의 부정 사례가 원래 경로의 긍정 원형보다 높은 순위를 차지하는지 평가했습니다.
@@ -1432,7 +1432,7 @@ The architectural invariant remains:
 
 > 의미 모델은 로컬에 등록된 권한 범위 안에서만 순위를 결정하거나 거부할 수 있으며 실행 권한을 새로 만들지는 않습니다.
 
-## 38. #285 — grouped-OOF learned winner verifier
+## 38. #285 — 그룹 단위 OOF 학습을 이용한 최상위 경로 검증기
 
 작업 #285 / PR #286에서는 고정 원형 실험의 중단 규칙 이후 처음으로 학습 기반 오픈셋 경계를 평가했습니다.
 
@@ -1466,9 +1466,9 @@ The fixed feature schema contained:
 
 분류기 계열 2종과 임계값 12개를 사전 등록해 고정 규칙 총 24개를 구성했습니다:
 
-- regularized logistic regression;
-- shallow regularized histogram gradient boosting;
-- thresholds from 0.50 to 0.995.
+- 정규화된 로지스틱 회귀
+- 얕은 정규화 히스토그램 그래디언트 부스팅
+- 0.50부터 0.995까지의 임계값
 
 ### Result
 
@@ -1748,7 +1748,7 @@ Decision: direct generic reranker yes/no gating을 reject합니다. Quality가 �
 이 시점에서 진행 중인 외부 타입 기반 결정 연구 경로는 #299(Kev)와 #301(고정된 Laya 기본 `noul`)이었습니다.
 #303은 제공자에 종속되지 않는 Top-K 대체 방안으로 사전 등록됐지만 당시에는 실행하지 않았습니다.
 
-## 44. Replaceable typed-decision candidate registry
+## 44. 교체 가능한 타입 기반 의사결정 후보 레지스트리
 
 빠르게 변화하는 Jev/System One 생태계는 코어 제품 코드와 분리해 다음 문서에서 추적합니다.
 `benchmarks/system-one-candidate-registry.json`.
@@ -1781,7 +1781,7 @@ Decision: direct generic reranker yes/no gating을 reject합니다. Quality가 �
 
 탐색에서는 메타데이터만 조회합니다. 플러그인 코드는 신뢰된 이름을 정확히 지정했을 때만 임포트합니다. 플러그인 실행은 별도 샌드박스로 격리되지 않으며, 로컬의 유한 후보 집합 검증이 최종 권한을 유지합니다.
 
-## 45. #301 / PR #302 — pinned Laya native noul veto
+## 45. #301 / PR #302 — 버전을 고정한 Laya 기본 거부 판단
 
 최상위 경로에만 적용하는 Laya 기능 경계 실험은 최종 기각됐습니다.
 
@@ -2075,7 +2075,7 @@ Result:
 
 #324가 통과하면 아키텍처를 다시 탐색하지 않고 #316의 동결 매니페스트를 생성한 다음 #270/#287과 중복되지 않는 새로운 평가 표면에서 확인합니다.
 
-### Lightweight executable candidate passes DEV — #324/#325
+### 경량 실행 가능 후보의 개발 평가 통과 — #324/#325
 
 오프라인 #322 결합 실험은 다음 의미적 소스 버전의 워크플로 `36380771103`에서 직접 실행됐습니다:
 `caca039aff1c7b2960d167196f883e3bcbc5d431`.
@@ -2174,7 +2174,7 @@ Terminal fresh result:
 
 #270과 #287에 이어 세 번째로, 정식 DEV에서 유망해 보이는 후보도 요청 표면이 바뀌면 개방 집합 승인 경계가 약화될 수 있다는 사실을 독립적으로 보여줬습니다. 다음 아키텍처는 DEV에 맞춘 점수 분포의 추가 수정이 아니라 튜닝 가능한 DEV와 레지스트리 수준의 운영 불변 조건에서 근거를 찾아야 합니다.
 
-## 48. #328 / PR #329 — BGE-M3 multi-representation operation gate
+## 48. #328 / PR #329 — BGE-M3 다중 표현 작업 게이트
 
 유효한 #326의 신규 평가 실패 이후 다음 연구 주기는 개발 집합에 맞춰 조정한 밀집 표현의 개선을 중단하고
 acceptance geometry.
@@ -2226,8 +2226,7 @@ BGE-M3는 기본적으로 다음 세 가지 검색 표현을 지원합니다:
 
 ## 49. #328 / PR #329 — BGE-M3 ColBERT 작업 계약 게이트 기각
 
-Canonical workflow `36385740263` completed successfully at source
-`4c72f2dd1939edb6ecf8415d620dbb5d58683fa0`.
+정식 워크플로 `36385740263`은 소스 커밋 `4c72f2dd1939edb6ecf8415d620dbb5d58683fa0`에서 성공적으로 종료됐습니다.
 
 산출물:
 - ID `10955036349`;
@@ -2419,7 +2418,7 @@ Canonical execution:
 
 Results:
 
-| Surface | Exact | Near reject | OOD | False-route | Correct raw-winner retention | p95 |
+| 평가 데이터 | 정확 경로율 | 근접 도메인 거부율 | 분포 밖 거부율 | 잘못된 경로 비율 | 원시 정답 경로 유지율 | p95 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Canonical DEV (1,800) | 5.0347% | 100% | 100% | 0% | 5.6919% | 196.93 ms |
 | Registration holdout (228) | 2.0833% | 100% | 100% | 0% | 2.4590% | 192.85 ms |
@@ -2488,7 +2487,7 @@ unscored.
 Architectural lesson은 명확합니다. 다음 materially new signal은 endpoint-similarity membership threshold로 돌아가지 않으면서 여기서 입증한 높은 supported-route retention을 희생하지 않고 **query-side operation-frame coverage**를 개선해야 합니다.
 
 
-## 55. #349 / PR #352 — flat semantic action ontology rejected
+## 55. #349 / PR #352 — 평면 의미 기반 작업 온톨로지 기각
 
 #347에서 명시적인 어휘 기반 요청 형식이 지원 요청의 라우팅은 보존하지만 미지원 작업을 너무 많이 놓친다는 사실이 드러나자, #349는 표면상의 어휘집을 레지스트리와 독립적인 다국어 의미 기반 작업 온톨로지로 교체했습니다.
 
@@ -2938,7 +2937,7 @@ query
 
 이는 검색 정확도가 중요하지 않다는 뜻은 아닙니다. 중요한 정확도의 질문이 "검색기가 최종 엔드포인트 하나를 직접 골랐는가?"에서 "압축된 후보 집합이 후속 에이전트에 필요한 모든 기능을 보존했는가?"로 바뀐다는 뜻입니다.
 
-### #417 / #418 / PR #419 — Phase A establishes the retrieval premise
+### #417 / #418 / PR #419 — Phase A에서 검색 방식의 핵심 가설 확인
 
 첫 번째 0.14 벤치마크는 20·50·100·250개 엔드포인트 카탈로그에서 단일·다중 도구 작업 23개를 동결했습니다. 에이전트 추론 전에 다중 도구의 데이터 의존성 계약 두 개와 빠져 있던 명시적 작업 인수를 수정해 벤치마크가 실제로 실행 가능하도록 했습니다. 이후 수정된 코퍼스를 다시 동결하고 기존 해시를 대체했습니다.
 
@@ -2988,8 +2987,7 @@ the final product model.
 
 이것이 #289 연구를 되살리는 것은 아닙니다. #289는 `Qwen3-Reranker-0.6B`를 라우팅 경계 내부의 yes/no 기능 검증기로 시험한 종료된 연구입니다. B1에서는 서로 다른 인과적 모델을 후속 도구 사용 에이전트로만 이용하므로 Qwen 점수가 검색에 영향을 주지 않습니다.
 
-The canonical B1 evaluation contains 552 episodes:
-23 tasks × 4 catalog sizes × 6 conditions.
+정식 B1 평가는 552개 에피소드로 구성됩니다. 과제 23개 × 카탈로그 크기 4종 × 실험 조건 6종입니다.
 
 도구 호출 스모크 테스트는 벤치마크 전에 통과했습니다. CPU에서 전체 카탈로그를 사용하는 긴 실행은 런타임 전용 마이크로 샤딩이 필요했지만 작업·카탈로그·모델·프롬프트·K·실행기 의미는 동결 상태를 유지했습니다. 정식 집계는 552개 에피소드가 모두 복원된 경우에만 인정합니다.
 
@@ -3003,7 +3001,7 @@ B1만으로는 일반적인 에이전트 작업 효용성을 입증할 수 없�
 연구의 최종 목표는 더 나은 개방 집합 임계값을 찾는 것이 아닙니다. 타입 기반 기능 검색 기반 계층이 통제된 환경과 이후 현실적인 조건에서 후속 에이전트의 효용, 효율성, 안전성을 개선하는지 확인하는 것입니다.
 
 
-## 2026-09-29 — B1 integrity hardening before canonical aggregate
+## 2026-09-29 — 정식 B1 집계 전 데이터·실행 무결성 강화
 
 552개 에피소드의 B1 집계를 인정하기 전에 산출물을 조사하면서 샤드 ID의 기계적 오류를 발견했습니다. 동결된 작업 ID `multi-create-send`가 s06 실행 워크플로와 실행기별 검증 분기에서 `multi-inventory-create-send`로 잘못 참조됐습니다. 수정 전 실행에서는 승인 가능한 전체 집계가 생성되지 않았습니다.
 
@@ -3012,10 +3010,10 @@ B1만으로는 일반적인 에이전트 작업 효용성을 입증할 수 없�
 두 번째 설계 수준 수정도 승인된 집계 전에 동결했습니다. 동일한 23개 의미 작업을 네 가지 카탈로그 크기로 반복하므로, 대응 쌍의 불확실성을 92개 작업×카탈로그 행이 각각 독립적이라고 가정하지 않고 `task_id` 클러스터 단위로 부트스트랩합니다. 이는 의사 반복을 방지합니다. 따라서 B1의 비열등성 허용치 -2%p는 기술적인 상태 점검용 설명 지표로만 해석하고, 모집단 수준 추론에 필요한 더 큰 독립 홀드아웃 작업 모집단은 #432에서 준비합니다.
 
 The staged 0.14 successors are:
-- #428 public typed Top-K retrieval API;
-- #430 adaptive shortlist depth;
-- #431 execution-state-aware corrective re-retrieval;
-- #432 independent held-out generalization surface.
+- #428 공개 타입 기반 Top-K 검색 API
+- #430 적응형 후보 목록 깊이
+- #431 실행 상태 인식 교정 재검색
+- #432 독립 홀드아웃 일반화 평가 데이터
 
 어느 실험도 B1의 개별 실패 행을 근거로 동결된 B1 과제 표면을 다시 작성할 수 없습니다.
 
