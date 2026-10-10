@@ -79,6 +79,27 @@ def test_partition_preserves_all_780_tasks_and_234_scientific_shards():
         wave_parts(shards, [missing[0], missing[0]], 0)
 
 
+def test_heavy_catalog_work_is_balanced_across_serial_recovery_waves():
+    shards = frozen_shards(corpus())
+    missing = sorted(
+        shard for shard, (catalog, _) in shards.items()
+        if catalog == 500 or (catalog == 250 and shard >= "c250-g13")
+    )
+    assert len(missing) == 143
+    waves = [wave_parts(shards, missing, i)[0] for i in range(3)]
+    assert tuple(map(len, waves)) == (250, 250, 215)
+    heavy_counts = [
+        sum(part["catalog_size"] == 500 for part in wave)
+        for wave in waves
+    ]
+    assert heavy_counts == [130, 130, 130]
+    parts = [part["job_id"] for wave in waves for part in wave]
+    assert len(parts) == 715 and len(set(parts)) == 715
+    assert all(len(part["task_ids"].split(",")) == 2 for wave in waves for part in wave)
+    with pytest.raises(ValueError):
+        wave_parts(shards, missing, 3)
+
+
 def test_timed_out_job_artifact_is_not_a_success():
     shards = successful_parent_shards(
         [job("c250-g01", "cancelled"), job("c250-g08", "success")],
