@@ -129,9 +129,9 @@ Retain:
 
 So the main 0.14 evidence sequence returns to:
 
-- #423 strong-agent B2 replication;
-- #432 large independent held-out generalization;
-- #424 final-answer factuality / units / provenance.
+- Issue #423 strong-agent B2 replication;
+- Issue #432 large independent held-out generalization;
+- Issue #424 final-answer factuality / units / provenance.
 
 This result does not modify the released 0.11.0 product default and is not retrofitted
 into B1.

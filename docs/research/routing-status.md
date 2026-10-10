@@ -147,7 +147,7 @@ flowchart TD
     D -->|"Canonical success and verified digest"| E["#500 Terminal evidence synthesis"]
 ```
 
-#431's canonical corrective/recovery evidence has been consumed by the conveyor. Its optional state-aware condition and the structural K3 condition were **not promoted**. #432 is running on the frozen held-out surface; #424 must start only after #432 reaches canonical success. Neither stage may be manually launched around the conveyor. No held-out pass rate, interval or final-answer quality claim is available yet.
+Issue #431's canonical corrective/recovery evidence has been consumed by the conveyor. Its optional state-aware condition and the structural K3 condition were **not promoted**. #432 is running on the frozen held-out surface; #424 must start only after #432 reaches canonical success. Neither stage may be manually launched around the conveyor. No held-out pass rate, interval or final-answer quality claim is available yet.
 
 The separate output-field-projection line (#506/#510) remains an independent field-level research
 question. Its runtime qualification is instrument evidence and must not be mixed into the
@@ -667,10 +667,10 @@ machine-readable prior-art registry, and the experiment ledger.
 
 The following items are preregistered/staged and **must not** be selected from B1 row-level errors:
 
-- #428 — first-class public typed Top-K retrieval API;
-- #430 — adaptive per-query shortlist depth after fixed-K validation;
-- #431 — execution-state-aware corrective capability re-retrieval;
-- #432 — materially larger independent multilingual held-out benchmark with explicit
+- Issue #428 — first-class public typed Top-K retrieval API;
+- Issue #430 — adaptive per-query shortlist depth after fixed-K validation;
+- Issue #431 — execution-state-aware corrective capability re-retrieval;
+- Issue #432 — materially larger independent multilingual held-out benchmark with explicit
   sample-size/precision planning.
 
 These are successors to the fixed controlled baseline, not repairs to consumed B1 rows.

@@ -6,7 +6,7 @@ This experiment asks whether a multi-step agent can recover missing next-step ca
 re-retrieving from **observable typed execution state**, rather than only widening the candidate
 list generated from the original query.
 
-#423 B2 is terminal, so the experiment is now authorized through the automated #500 conveyor.
+Issue #423 B2 is terminal, so the experiment is now authorized through the automated #500 conveyor.
 
 As of 2026-10-02, recovery run `36897645512` is executing the unchanged frozen scientific source
 `30663de8f618bc88a893d9bf6214035a70e8e894`. Earlier wrapper/cache failures are infrastructure

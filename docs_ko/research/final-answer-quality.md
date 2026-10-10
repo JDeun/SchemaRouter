@@ -156,8 +156,8 @@ Language와 task-stratum 결과도 diagnostic으로 별도 보고합니다.
 
 ## Claim boundary
 
-#424가 통과할 경우 허용되는 주장은 frozen answer-bearing benchmark 범위입니다.
+이슈 #424가 통과할 경우 허용되는 주장은 frozen answer-bearing benchmark 범위입니다.
 
 > 평가된 strong-agent surface에서 bounded SchemaRouter capability context가 capability context를 줄이면서 final-answer factual quality를 보존했습니다.
 
-#424만으로 broad population generalization을 확립하지 않습니다. 그 역할은 #432입니다.
+이슈 #424만으로 broad population generalization을 확립하지 않습니다. 그 역할은 #432입니다.

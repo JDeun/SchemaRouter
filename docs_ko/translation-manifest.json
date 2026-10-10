@@ -381,7 +381,7 @@
     },
     {
       "path": "project/roadmap.md",
-      "source_blob": "2a65b2809c07854b6f96dd4a68a360185f99e828"
+      "source_blob": "d7f9c40df8f03ea69e9d5aabb888789c83eadb80"
     },
     {
       "path": "project/trust-and-evidence.md",
@@ -493,7 +493,7 @@
     },
     {
       "path": "research/0.14-paper-evidence-checkpoint.md",
-      "source_blob": "b35b349fb57dd30f5fa5214a7a22759fcee25fbc"
+      "source_blob": "6c5915d879db3a59bfd960cd6c2a4c116b01c72b"
     },
     {
       "path": "research/adaptive-shortlist-depth.md",
@@ -505,11 +505,11 @@
     },
     {
       "path": "research/corrective-reretrieval.md",
-      "source_blob": "92bd4c19d2b72519111c297394505ff365958c7f"
+      "source_blob": "b9bfcfb62181bd93cc3dd1be14cf72dffd7cd5fe"
     },
     {
       "path": "research/design-and-experiment-history.md",
-      "source_blob": "37c24c4109568c8107a1259cdf58eda75f66d100"
+      "source_blob": "27bdc35c44010cfd1c15d4a5702ed2b9ad6f9c5c"
     },
     {
       "path": "research/evidence-to-action.md",
@@ -525,11 +525,11 @@
     },
     {
       "path": "research/field-projection-answer-quality.md",
-      "source_blob": "5365b6534f528abbe7b2e613fc414fb6d151b858"
+      "source_blob": "fbf90b1bfb68bd697591cfe7563f1bd7ba85c8ef"
     },
     {
       "path": "research/final-answer-quality.md",
-      "source_blob": "a5bf04fe8cd645b9c4ce2e8fbf77eda990f44fd0"
+      "source_blob": "4c381ad8f834b38af0b0fe896c2c90150d221dd1"
     },
     {
       "path": "research/governance.md",
@@ -541,11 +541,11 @@
     },
     {
       "path": "research/intent-manual-dev-result.md",
-      "source_blob": "0c7c1a8331d751256be567e033d51c6f6779d508"
+      "source_blob": "390e3b55f407827f8ae21d448b8ab579624118af"
     },
     {
       "path": "research/large-heldout-agent-utility.md",
-      "source_blob": "4784627f0972783c45e29ef49aed0d6174176bfd"
+      "source_blob": "31213184bb15fb40d52752131ed07a140a616431"
     },
     {
       "path": "research/operation-routing-freeze-protocol.md",
@@ -561,7 +561,7 @@
     },
     {
       "path": "research/prior-art-roadmap.md",
-      "source_blob": "9aa1467b46c684957a3e15de1e570dde6e5be01a"
+      "source_blob": "010e7b42529f641e626706663c0dc3bc4afde181"
     },
     {
       "path": "research/realistic-break-even-result.md",
@@ -569,15 +569,15 @@
     },
     {
       "path": "research/routing-status.md",
-      "source_blob": "45afea3a7e8e4f6546ec7700db5700bc49fc394a"
+      "source_blob": "13c37940df75f028b74c41c798a6cfa7432e7636"
     },
     {
       "path": "research/successor-screen.md",
-      "source_blob": "80e7597e85ccd2550892f1b04f5c9e4984b03932"
+      "source_blob": "2fbfb4ba68a41c0ebd03cc96eb72864bfe4bb606"
     },
     {
       "path": "research/typed-capability-retrieval-ablation.md",
-      "source_blob": "6fdd48f06546ad6aeda224cb8b59e77a80e02808"
+      "source_blob": "1cc0b4609eb3f26d7cf9d7249758ec60548d028a"
     },
     {
       "path": "security/threat-model.md",

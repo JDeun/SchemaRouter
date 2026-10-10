@@ -88,7 +88,7 @@ Ownership:
 
 ## Calibration과 blind-final
 
-#197이 validated `fresh-confirmed` manifest를 만들면 #198이 나머지 evidence sequence를 소유합니다.
+이슈 #197이 validated `fresh-confirmed` manifest를 만들면 #198이 나머지 evidence sequence를 소유합니다.
 
 1. 새로운 900-case calibration corpus 생성
 2. unchanged frozen candidate로 calibration 정확히 한 번 평가

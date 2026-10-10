@@ -148,7 +148,7 @@ Both arms are driven by the 0.14 conveyor; neither needs a manual dispatch.
 
 ### Source freeze
 
-#506 has **its own** frozen implementation revision. It is resolved on first
+Issue #506 has **its own** frozen implementation revision. It is resolved on first
 dispatch, checked to actually contain the experiment's scripts, and then reused
 verbatim by both arms.
 
@@ -191,7 +191,7 @@ and its own query-disjoint surface, is the
 
 - fresh disjoint task surface;
 - B1 rows are not tuning data;
-- #432 held-out rows are not tuning data;
+- Issue #432 held-out rows are not tuning data;
 - the sealed #424 corpus is not used, and results here may not tune it;
 - no retrofit into B1.
 

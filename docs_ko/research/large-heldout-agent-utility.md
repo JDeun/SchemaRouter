@@ -181,7 +181,7 @@ Validator는 content를 생성하거나 content quality를 승인하거나 infer
 - B1 task wording 또는 paraphrase
 - B1 row-level failure
 - B2 task outcome 또는 failure
-- #434 DEV query
+- 이슈 #434 DEV query
 - scoring 이후 task 삭제
 - scoring 이후 prompt/K/representation tuning
 

@@ -66,7 +66,7 @@ A frozen Qwen3-0.6B tokenizer revision is used only to project schema-token cost
 ## Research governance
 
 - B1 row-level failures are not tuning data.
-- #432 held-out rows are not tuning data.
+- Issue #432 held-out rows are not tuning data.
 - Confirmation rows cannot change field weights, fusion rules, K, or conditions.
 - Intent generation may use authoritative capability specifications and typed metadata only.
 - Generated intents must retain source-capability provenance.

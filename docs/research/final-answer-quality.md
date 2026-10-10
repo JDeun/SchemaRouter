@@ -8,7 +8,7 @@ B1/B2 answer the question:
 
 > Can the agent select and execute the required tools?
 
-#424 asks:
+Issue #424 asks:
 
 > After using those tools, does reducing the visible capability catalog preserve the
 > factual quality, units and provenance of the final answer?
@@ -16,7 +16,7 @@ B1/B2 answer the question:
 ## Run gate
 
 B2 is now terminal, but that is no longer the final launch condition. Under the automated
-#500 research conveyor, #424 answer inference remains **blocked until #432 finishes
+Issue #500 research conveyor, #424 answer inference remains **blocked until #432 finishes
 successfully**. #432 itself is gated by the terminal #431 corrective result and the frozen
 held-out condition manifest.
 
@@ -204,4 +204,4 @@ If #424 passes, the permitted claim is scoped to the frozen answer-bearing bench
 > Bounded SchemaRouter capability context preserved final-answer factual quality while
 > reducing capability context on the evaluated strong-agent surface.
 
-#424 alone does not establish broad population generalization. That requires #432.
+Issue #424 alone does not establish broad population generalization. That requires #432.

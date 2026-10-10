@@ -591,10 +591,10 @@ Canonical tracker: #200
 
 Related work items:
 
-- #196 — historical design/experiment backfill;
-- #197 — active 0.11 composite candidate;
-- #198 — freeze/calibration/blind confirmation;
-- #199 — follow-up paper evidence package.
+- Issue #196 — historical design/experiment backfill;
+- Issue #197 — active 0.11 composite candidate;
+- Issue #198 — freeze/calibration/blind confirmation;
+- Issue #199 — follow-up paper evidence package.
 
 At the start of a new session:
 
@@ -1017,7 +1017,7 @@ Work item #259 / PR #260 froze, before execution:
 
 - BGE-M3 revision `5617a9f...`;
 - schema/action fusion 0.55 / 0.45;
-- #246 strict budget-6 route-local thresholds;
+- Issue #246 strict budget-6 route-local thresholds;
 - winner-only rank-then-gate;
 - no rank-2 fallthrough;
 - a comparison epsilon of 1e-6:
@@ -1069,10 +1069,10 @@ The active workflow is `36326745694`. Calibration/blind evidence remains untouch
 
 The canonical current state is:
 
-1. #259 is the confirmed robust strict base;
-2. #255 and #256 are terminal negative results;
-3. #262 is the only active quality-improvement experiment;
-4. #198 calibration/blind confirmation remains blocked;
+1. Issue #259 is the confirmed robust strict base;
+2. Issue #255 and #256 are terminal negative results;
+3. Issue #262 is the only active quality-improvement experiment;
+4. Issue #198 calibration/blind confirmation remains blocked;
 5. if #262 passes, freeze the exact rescue profile in a separate executable candidate before any fresh confirmation;
 6. if #262 fails, do not weaken the <=1% false-route boundary merely to hit the 85% exact target.
 
@@ -1174,7 +1174,7 @@ Interpretation: generic textual contradiction is not equivalent to absence of a 
 
 ## 32. #275 — explicit negative-capability prototype veto
 
-#275 introduced 32 explicit unsupported-action prototypes, four per tool domain, while preserving BGE-M3 raw registered top-1 as the only route authority.
+Issue #275 introduced 32 explicit unsupported-action prototypes, four per tool domain, while preserving BGE-M3 raw registered top-1 as the only route authority.
 
 The experiment evaluated 588 preregistered combinations of:
 
@@ -1417,7 +1417,7 @@ The current 0.11 research state is now:
 3. generic contradiction NLI does not encode missing capability;
 4. fixed positive/negative/background prototype banks contain signal but scalar and relative-rank heuristics cannot jointly satisfy >=85% exact / >=97% near rejection / 100% OOD / <=1% false-route;
 5. fixed-prototype heuristic refinement is closed;
-6. #198 calibration/blind remains blocked;
+6. Issue #198 calibration/blind remains blocked;
 7. the next behavior-changing experiment must test a learned or externally pretrained match / no_match / unknown verifier that can veto the raw registered winner but can never reroute or create execution authority.
 
 The architectural invariant remains:
@@ -1585,7 +1585,7 @@ The 0.11 architecture-search evidence now supports a stronger conclusion:
 4. fixed semantic prototype thresholds and relative ranks do not provide a safe open-set boundary;
 5. a shallow learned verifier can pass grouped OOF but still fails zero-overlap fresh-surface confirmation;
 6. further supervised complexity on the same DEV geometry is prohibited by the preregistered stopping rule;
-7. #198 calibration/blind remains blocked and untouched;
+7. Issue #198 calibration/blind remains blocked and untouched;
 8. the next architecture must use an externally pretrained semantic capability verifier whose capability judgment is learned independently of this benchmark.
 
 The authority invariant remains unchanged:
@@ -1602,7 +1602,7 @@ surface.
 ### Provider infrastructure — #291 / PR #292
 
 SchemaRouter already had direct `JevDecisionBackend` and `LayaDecisionBackend` integrations.
-#291 generalized the Jev-compatible wire boundary instead of adding one class per new model family.
+Issue #291 generalized the Jev-compatible wire boundary instead of adding one class per new model family.
 
 PR #292 merged a generic `SystemOneDecisionBackend` to main:
 
@@ -1673,19 +1673,19 @@ Calibration/blind remains blocked and untouched.
 
 Active experiments:
 
-1. #289 / PR #290 — Qwen3 external semantic capability verifier
+1. Issue #289 / PR #290 — Qwen3 external semantic capability verifier
    - immutable BGE-M3 raw top-1 route authority;
    - Qwen3-Reranker-0.6B veto only;
    - no SchemaRouter verifier training;
    - eight fixed yes-probability thresholds.
 
-2. #299 / PR #300 — pinned Kev-0.8B choice + noul
+2. Issue #299 / PR #300 — pinned Kev-0.8B choice + noul
    - pinned Kev source and Hub model revisions;
    - 16 registered routes only;
    - native System One `choice` and `noul` in one request;
    - separate fixed choice-confidence and noul-capability rule families.
 
-3. #301 / PR #302 — pinned Laya noul veto
+3. Issue #301 / PR #302 — pinned Laya noul veto
    - BGE-M3 raw registered top-1 remains sole route authority;
    - Laya may only return native `P(true)` capability evidence for that winner;
    - `laya==0.3.11`;
@@ -1747,7 +1747,7 @@ Provenance:
 - artifact digest: `sha256:4e89707dce04d37aece8e803e00751ea86fdd12e5fd9282531ccecc830a9c96c`.
 
 The active external typed-decision paths are now #299 (Kev) and #301 (pinned Laya native noul).
-#303 remains a preregistered top-K provider-neutral contingency and is not active yet.
+Issue #303 remains a preregistered top-K provider-neutral contingency and is not active yet.
 
 ## 44. Replaceable typed-decision candidate registry
 
@@ -1773,11 +1773,11 @@ Wire-compatible models use `SystemOneDecisionBackend`. Non-wire typed models fir
 is not required merely to test a new model.
 
 Infrastructure supporting this policy is now merged:
-- #291 / PR #292 — generic System One backend;
-- #297 / PR #298 — generic System One benchmark CLI;
-- #304 / PR #305 — arbitrary bounded decision callable benchmark path, merged as
+- Issue #291 / PR #292 — generic System One backend;
+- Issue #297 / PR #298 — generic System One benchmark CLI;
+- Issue #304 / PR #305 — arbitrary bounded decision callable benchmark path, merged as
   `c9678b95a6dc592a1c3b850a6aea8b1675ff94a4`;
-- #306 / PR #308 — reusable third-party `schemarouter.decision_backends` entry-point
+- Issue #306 / PR #308 — reusable third-party `schemarouter.decision_backends` entry-point
   discovery/loading, benchmark plugin selection, security documentation, and candidate-registry
   validation, squash-merged as `e782ebb87f80cdb2cefe5a716f77f546cd6309b1`.
 
@@ -1839,9 +1839,9 @@ same threshold, exact is bounded by 151/1152 = 13.1076%. Taking max P(true) over
 also cannot reduce unsupported acceptance relative to the winner-only candidate at the same
 threshold.
 
-#303 remains only as a provider-neutral top-K architecture contingency for a materially different
+Issue #303 remains only as a provider-neutral top-K architecture contingency for a materially different
 model/checkpoint. The only active model-quality experiment at this checkpoint is pinned Kev-0.8B
-#299 / PR #300.
+Issue #299 / PR #300.
 
 ## 46. Current target-distance checkpoint — Kev active, AnyJev staged
 
@@ -1861,7 +1861,7 @@ An important distinction is now explicit:
 
 Evidence:
 - grouped-OOF/frozen learned verifier reached the target on DEV/same-corpus;
-- #287 fresh confirmation then fell to 82.64% exact / 93.23% near rejection / 6.02% false-route;
+- Issue #287 fresh confirmation then fell to 82.64% exact / 93.23% near rejection / 6.02% false-route;
 - generic Qwen3 capability gating (#289) and pinned Laya native noul (#301) both failed to provide a safer surface-invariant boundary;
 - direct Laya route authority (#293) was capacity-limited at 60.07% supported top-1.
 
@@ -1917,7 +1917,7 @@ A second architecture is fully staged but not executed while Kev is unresolved:
 - no L1/L2 fitting on SchemaRouter data;
 - workflow is manual-dispatch only.
 
-#312 was closed as a duplicate of #311 so the research line has one canonical fallback record.
+Issue #312 was closed as a duplicate of #311 so the research line has one canonical fallback record.
 
 Operationally, the framework is now prepared for rapid model replacement:
 - Jev-wire-compatible engines use `SystemOneDecisionBackend`;
@@ -1947,7 +1947,7 @@ The end of architecture search now has an explicit ownership boundary.
 
 A DEV candidate that meets the standing target does not immediately enter calibration.
 
-#197 must first:
+Issue #197 must first:
 1. select the exact passing DEV rule;
 2. freeze source, architecture, authority semantics, models, runtime, representations and threshold;
 3. write a machine-readable freeze manifest;
@@ -1960,7 +1960,7 @@ PR #316 introduces the reusable freeze-manifest template, validator and protocol
 
 ### #198 owns only the final consumed evidence
 
-#198 remains blocked until a validated `fresh-confirmed` manifest exists.
+Issue #198 remains blocked until a validated `fresh-confirmed` manifest exists.
 
 After that point it owns:
 1. a NEW 900-case calibration corpus and one evaluation;
@@ -1996,11 +1996,11 @@ itself pass fresh confirmation before #198.
 
 The staged fallback workflows no longer depend on a human UI click.
 
-- #314 / PR #315 remains dormant until a terminal #299 artifact exists. It can be activated by
+- Issue #314 / PR #315 remains dormant until a terminal #299 artifact exists. It can be activated by
   committing `benchmarks/operation-routing-v4-bge-kev-noul-compose.activation.json` with
   `activate=true`, source workflow run `36366508183`, and the exact artifact ID. The workflow
   revalidates source-run and artifact identity before reading rows.
-- #311 / PR #313 remains dormant until the Kev family is non-promotable. Its activation marker must
+- Issue #311 / PR #313 remains dormant until the Kev family is non-promotable. Its activation marker must
   declare `activate=true`, `after_issue=299`, and `reason="kev_family_non_promotable"`.
 
 The workflow-definition commits themselves do not start model evaluation because push filters match
@@ -2019,8 +2019,8 @@ Main now contains:
 - `docs/research/operation-routing-freeze-protocol.md`.
 
 The canonical ownership boundary is now enforced in documentation and machine-readable governance:
-- #197 owns DEV qualification → exact freeze → NEW zero-overlap fresh confirmation;
-- #198 begins only after a validated `fresh-confirmed` manifest and owns calibration → one-shot blind-final.
+- Issue #197 owns DEV qualification → exact freeze → NEW zero-overlap fresh confirmation;
+- Issue #198 begins only after a validated `fresh-confirmed` manifest and owns calibration → one-shot blind-final.
 
 
 ### Runtime parity infrastructure merged — #320
@@ -2041,7 +2041,7 @@ variant into a new semantic candidate that requires a separate preregistered exp
 
 ### Kev CPU runtime terminated without quality evidence
 
-#299 / PR #300 attempted pinned Kev-0.8B native `choice+noul` on GitHub-hosted CPU/fp32.
+Issue #299 / PR #300 attempted pinned Kev-0.8B native `choice+noul` on GitHub-hosted CPU/fp32.
 
 The run completed infrastructure setup but did not complete the 1,800-row diagnostic:
 - workflow: `36366508183`;
@@ -2053,9 +2053,9 @@ The run completed infrastructure setup but did not complete the 1,800-row diagno
 The server log shows correct-but-slow reference PyTorch fallbacks for causal convolution and gated-delta kernels. This exact CPU/fp32 runtime is terminal as an impractical execution path, but it is not negative model-quality evidence.
 
 Consequences:
-- #317 six-hour timeout retry retired unexecuted;
-- #314/#315 frozen BGE+Kev composition closed because its required row-level source analysis does not exist;
-- #313 AnyJev CPU execution retired before inference;
+- Issue #317 six-hour timeout retry retired unexecuted;
+- Issue #314/#315 frozen BGE+Kev composition closed because its required row-level source analysis does not exist;
+- Issue #313 AnyJev CPU execution retired before inference;
 - future typed-decision work requires a preregistered runtime with a credible <=250 ms deployment path.
 
 The research frontier returns to lightweight BGE-native/open-set evidence where latency is an architectural constraint from the start.
@@ -2074,13 +2074,13 @@ candidate reuses only previously measured lightweight evidence.
 ### #322 / PR #323 — offline composition PASS
 
 Immutable source artifacts:
-- #262 GTE-only rescue: workflow `36326745694`, artifact `10934337695`,
+- Issue #262 GTE-only rescue: workflow `36326745694`, artifact `10934337695`,
   digest `sha256:7881a3594ecdab6a242a946a60cfde14d64e3c452ec9d0956c9cfa75a1e0c748`;
-- #275 negative-capability diagnostic: workflow `36352558325`, artifact `10942243493`,
+- Issue #275 negative-capability diagnostic: workflow `36352558325`, artifact `10942243493`,
   digest `sha256:a831a35098b546c8003435ea04927fb8767aab1435320823ba4763e0b6608ae1`.
 
 Frozen composition:
-- #259 strict BGE base;
+- Issue #259 strict BGE base;
 - negative veto only on original base accepts at max-negative >=0.55 and advantage >=0.05;
 - vetoed base accepts cannot enter rescue;
 - exact #262 GTE-only route rules with rescue false budget 4;
@@ -2100,7 +2100,7 @@ This is a tuning-DEV offline artifact composition, not executable or generalizat
 
 ### #324 / PR #325 — executable candidate
 
-#324 freezes the exact #322 semantics and recomputes them from the models:
+Issue #324 freezes the exact #322 semantics and recomputes them from the models:
 - BGE query embedding is shared between route scoring and negative prototypes;
 - GTE is invoked only on original #259 base abstentions;
 - the executable output must have exact row-level parity with #322;
@@ -2142,7 +2142,7 @@ Before fresh execution, a new confirmation surface was preregistered:
 - surface `lightweight-bge-gte-operational-envelope-v1`;
 - confirmation-only, not tuning-eligible;
 - normalized exact overlap required to be zero against canonical DEV and deterministically regenerated
-  #270/#287 fresh surfaces;
+  Issues #270/#287 fresh surfaces;
 - frozen evaluator/manifest must be byte-diff clean against semantic source `caca039…`.
 
 Active fresh workflow: `36382202178`.
@@ -2239,7 +2239,7 @@ BGE-M3 natively exposes three retrieval representations:
 
 SchemaRouter's 0.11 BGE-M3 work before #328 used only the dense representation.
 
-#328 preregisters:
+Issue #328 preregisters:
 - the same pinned BGE-M3 model/revision;
 - dense schema/action fusion as the sole route authority;
 - token-level ColBERT evidence against only the trusted endpoint action name +
@@ -2295,7 +2295,7 @@ A post-hoc sparse-only diagnostic was also checked strictly as non-promotion evi
 
 Decision: reject and close the BGE-M3 native ColBERT/sparse operation-contract representation for this cycle. Do not add a post-hoc second threshold, route-local exception, margin search, rank-2 fallback, or pseudo-route to repair it.
 
-#198 remains blocked. The next behavior-changing architecture, if any, must be separately preregistered using only tuning-eligible DEV plus registry-defined operational semantics; failed fresh-confirmation surfaces #270/#287/#326 remain permanently non-tuning.
+Issue #198 remains blocked. The next behavior-changing architecture, if any, must be separately preregistered using only tuning-eligible DEV plus registry-defined operational semantics; failed fresh-confirmation surfaces #270/#287/#326 remain permanently non-tuning.
 
 ## 50. #332 / PR #333 — registry-self-calibrated alias envelope rejected
 
@@ -2309,7 +2309,7 @@ Frozen design:
 - route margin/cohesion floors were derived only from leave-one-out alias self-cohesion and
   same-tool sibling separation;
 - exactly four fixed families A/B/C/D were evaluated;
-- #270/#287/#326 fresh surfaces were excluded.
+- Issue #270/#287/#326 fresh surfaces were excluded.
 
 Canonical evidence:
 - workflow `36388641609`;
@@ -2436,7 +2436,7 @@ The 0.11 research conclusion is:
    surfaces, and the strongest current executable candidate failed the formal fresh gate.
 4. The safe stopping action is to close the architecture-search cycle, not tune against consumed
    evidence.
-5. #198 calibration/blind-final stays unexecuted because its entry requirements were never met.
+5. Issue #198 calibration/blind-final stays unexecuted because its entry requirements were never met.
 
 The robust #259 profile remains a useful conservative reference:
 - exact 83.7674%;
@@ -2598,7 +2598,7 @@ is useless, but that a noisy semantic label must not receive hard endpoint-remov
 
 ## 56. #354 / PR #357 — hierarchical executable-capability ontology rejected as a hard filter
 
-#354 made the ontology explicit and hierarchical rather than flat.
+Issue #354 made the ontology explicit and hierarchical rather than flat.
 
 The generic ontology separated:
 - read: search / retrieve / list;
@@ -2661,7 +2661,7 @@ The resulting design rule for the next candidate is sharper:
 
 After #347, #349 and #354, the ontology was removed from positive route-selection authority.
 
-#358 preregistered a stricter authority separation:
+Issue #358 preregistered a stricter authority separation:
 - frozen BGE-M3 raw top-1 is the sole positive route selector;
 - the anchored tool's registered capability leaves define the finite authority set;
 - the explicit parser, BGE ontology projection and an independent pinned multilingual MiniLM
@@ -2712,7 +2712,7 @@ confirmation corpus remains unopened.
 
 ## 58. #363 / PR #364 — capability-set membership consensus improves recall but remains insufficient
 
-#363 kept the authority rule established by #358: frozen BGE-M3 raw top-1 was the sole positive
+Issue #363 kept the authority rule established by #358: frozen BGE-M3 raw top-1 was the sole positive
 route selector, and ontology evidence could only veto to `NO_ROUTE`.
 
 The only behavioral change was the unit of semantic agreement. Instead of requiring BGE and MiniLM
@@ -2766,7 +2766,7 @@ materially different semantic membership evidence source.
 
 ## 59. #371 / PR #372 — external multilingual zero-shot OUTSIDE-label membership rejected
 
-#371 introduced a materially different semantic evidence source after the BGE/MiniLM ontology-vote
+Issue #371 introduced a materially different semantic evidence source after the BGE/MiniLM ontology-vote
 family was closed. Frozen BGE-M3 remained the sole positive route selector, while an independently
 pretrained multilingual zero-shot classifier could only preserve that winner or veto to
 `NO_ROUTE`.
@@ -2828,7 +2828,7 @@ directly in a binary entailment/not-entailment question.
 
 ## 60. #374 / PR #375 — set-conditioned binary entailment collapses to universal rejection
 
-#374 tested the direct set-conditioned NLI formulation suggested by #371's failure.
+Issue #374 tested the direct set-conditioned NLI formulation suggested by #371's failure.
 
 The architecture remained authority-safe:
 - frozen BGE-M3 raw top-1 was the sole positive route selector;
@@ -2885,7 +2885,7 @@ two outcomes with post-hoc thresholds.
 
 ## 61. #377 / PR #379 — independent registered-leaf entailment improves recall but over-vetoes support
 
-#377 replaced the failed aggregate set-entailment sentence with one independent NLI pair per
+Issue #377 replaced the failed aggregate set-entailment sentence with one independent NLI pair per
 registered capability leaf under the BGE-anchored tool.
 
 The frozen authority rule stayed unchanged:
@@ -2942,7 +2942,7 @@ counterfactual leaves while preserving BGE as the sole positive route selector.
 
 ## 62. #378 / PR #380 — pairwise registered-vs-counterfactual NLI remains below target
 
-#378 was preregistered before #377 DEV was opened. It evaluated all 22 fixed generic operation
+Issue #378 was preregistered before #377 DEV was opened. It evaluated all 22 fixed generic operation
 hypotheses independently in one batch, then compared the maximum entailment score among the
 BGE-anchored tool's registered leaves with the maximum score among counterfactual tool/non-tool
 leaves.
@@ -2995,19 +2995,19 @@ rather than retuning geometry.
 
 Five preregistered controls were consumed:
 
-1. #404 naturalistic generic-operation probes trained fixed MiniLM linear probes on a frozen
+1. Issue #404 naturalistic generic-operation probes trained fixed MiniLM linear probes on a frozen
    multilingual utterance bank. Broad OOD improved, but supported exact fell to 75.44%, near-domain
    rejection reached only 59.52%, and p95 was 297.36 ms.
-2. #406 Tool-Embed positive retrieval tested an external tool-specialized embedding model as the
+2. Issue #406 Tool-Embed positive retrieval tested an external tool-specialized embedding model as the
    positive selector. It reached 78.07% exact versus 86.84% for same-surface BGE-M3 and missed the
    latency target.
-3. #408 relative multilingual cross-encoding jointly scored requests against registered,
+3. Issue #408 relative multilingual cross-encoding jointly scored requests against registered,
    same-resource counterfactual, and background documents. It reached 79.39% supported exact,
    19.84% near rejection, 59.72% OOD rejection, 71.30% false-route, and ~2.99 s p95.
-4. #409 frozen GTE multilingual positive retrieval revisited a historically strong pre-V6F
+4. Issue #409 frozen GTE multilingual positive retrieval revisited a historically strong pre-V6F
    representation on a new supported-only registry. GTE reached 71.49% exact versus 88.16% for
    same-surface BGE, despite a viable 100.14 ms p95.
-5. #412 multilingual-E5 split-conformal membership separated route selection from abstention and
+5. Issue #412 multilingual-E5 split-conformal membership separated route selection from abstention and
    calibrated a one-sided unsupported null at fixed alpha=0.01. It achieved 99.21% near rejection,
    100% OOD rejection, 0.62% false-route and 244.24 ms p95, but supported exact collapsed to 10.09%
    because 87.29% of raw-correct BGE winners were vetoed.
@@ -3157,9 +3157,9 @@ aggregate is accepted only if all 552 episodes are reconstructed.
 
 B1 alone cannot establish general agent utility.
 
-- #423 requires the same frozen benchmark to be replicated with a materially stronger tool-calling
+- Issue #423 requires the same frozen benchmark to be replicated with a materially stronger tool-calling
   agent before generalizing beyond the small local baseline.
-- #424 separates final-answer factual quality from tool-call success and will measure required fact
+- Issue #424 separates final-answer factual quality from tool-call success and will measure required fact
   recall, hallucination, numeric/unit accuracy and provenance under FULL vs compact capability
   context.
 
@@ -3189,10 +3189,10 @@ descriptive engineering sanity gate; #432 stages the larger independent held-out
 required for a population-level inference.
 
 The staged 0.14 successors are:
-- #428 public typed Top-K retrieval API;
-- #430 adaptive shortlist depth;
-- #431 execution-state-aware corrective re-retrieval;
-- #432 independent held-out generalization surface.
+- Issue #428 public typed Top-K retrieval API;
+- Issue #430 adaptive shortlist depth;
+- Issue #431 execution-state-aware corrective re-retrieval;
+- Issue #432 independent held-out generalization surface.
 
 None may use B1 row-level failures to rewrite the frozen B1 task surface.
 

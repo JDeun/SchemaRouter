@@ -19,7 +19,7 @@ SchemaRouter alpha, beta, release candidate 또는 stable tag를 promote하기 �
 - [ ] package metadata inspect 가능
 - [ ] public trust/evidence page가 intended stable release와 changed verification limitation을 명시; per-release digest는 generated release manifest에서 가져오고 수동 복사 금지
 - [ ] README/PyPI summary·keywords/docs home/release notes positioning과 stable-version language 일치
-- [ ] [discoverability checklist](project/discoverability.md#release-discoverability-checklist) 검토 및 GitHub description/topics/homepage 확인
+- [ ] 공개 전 [발견 가능성 체크리스트](project/discoverability.md#release-discoverability-checklist)를 검토하고 GitHub description/topics/homepage 확인
 - [ ] public API change를 README/architecture docs에 반영
 - [ ] CHANGELOG release entry 및 breaking migration note
 - [ ] security invariant regression test

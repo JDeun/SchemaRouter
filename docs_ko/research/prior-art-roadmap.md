@@ -43,13 +43,13 @@ flowchart TD
 
 현재 관련 작업:
 
-- #417 — 진행 중인 0.14 연구의 상위 이슈
-- #418 — FULL·Top-K·점진적 검색을 비교한 효용성 프로토콜, 종료
-- #420 — B1 로컬 후속 에이전트 A/B 평가, 종료
-- #423 — 강한 에이전트의 B2 재현 실험, 최종 성공
-- #431 — 실행 상태 기반 교정 검색, 정식 게이트 종료 및 조건 미승격
-- #432 — 과제 780개의 홀드아웃 일반화 평가, 실행 `38012340016` 진행 중
-- #424 — #432의 정식 성공 이후 실행하는 최종 답변 사실 정확도 평가
+- 이슈 #417 — 진행 중인 0.14 연구의 상위 이슈
+- 이슈 #418 — FULL·Top-K·점진적 검색을 비교한 효용성 프로토콜, 종료
+- 이슈 #420 — B1 로컬 후속 에이전트 A/B 평가, 종료
+- 이슈 #423 — 강한 에이전트의 B2 재현 실험, 최종 성공
+- 이슈 #431 — 실행 상태 기반 교정 검색, 정식 게이트 종료 및 조건 미승격
+- 이슈 #432 — 과제 780개의 홀드아웃 일반화 평가, 실행 `38012340016` 진행 중
+- 이슈 #424 — #432의 정식 성공 이후 실행하는 최종 답변 사실 정확도 평가
 
 Phase A의 corrected frozen benchmark는 Recall@1 68.97%, Recall@3 96.55%, Recall@5/10 **100%/100%**이며 250 endpoints에서 Top-5는 평균 FULL serialized schema context의 2.38%만 노출합니다.
 
@@ -113,7 +113,7 @@ hard-negative OOS examples
 
 Generator는 registry-independent 상태를 유지하며 benchmark route name이나 failed DEV row를 사용해 특수 negative를 만들 수 없습니다.
 
-#389의 concrete experiment #395/V6B는 terminal입니다. Registry-derived same-resource hard negative와 low-rank anisotropic ellipsoid boundary를 결합하고 raw BGE-M3만 positive route authority로 유지했습니다. DEV에서 unsupported rejection은 완벽했지만 모든 natural query가 learned ellipsoid 밖에 있어 supported request를 전부 거부했습니다. Raw BGE supported exact는 97.37%였고 confirmation은 열지 않았습니다. Hard-negative evidence bank는 재사용할 수 있지만 exact ellipsoid formulation은 재사용하지 않습니다.
+이슈 #389의 concrete experiment #395/V6B는 terminal입니다. Registry-derived same-resource hard negative와 low-rank anisotropic ellipsoid boundary를 결합하고 raw BGE-M3만 positive route authority로 유지했습니다. DEV에서 unsupported rejection은 완벽했지만 모든 natural query가 learned ellipsoid 밖에 있어 supported request를 전부 거부했습니다. Raw BGE supported exact는 97.37%였고 confirmation은 열지 않았습니다. Hard-negative evidence bank는 재사용할 수 있지만 exact ellipsoid formulation은 재사용하지 않습니다.
 
 ## 3. Energy, density, open-space scoring
 
@@ -208,7 +208,7 @@ Work item #392입니다. 주요 reference는 ToolRet(Findings ACL 2025)과 ToolR
 
 이전 pre-terminal 0.14 launch plan은 이 gated conveyor로 대체됐습니다. Historical run/protocol provenance는 Git history, experiment ledger, terminal issue comment에 남습니다.
 
-#392는 executable-schema retrieval과 active 0.14 agent-utility work 사이 prior-art bridge로 유지합니다. Open-set/conformal method는 consumed DEV의 post-hoc repair가 아니라 새로 preregistered question에 대해서만 다시 검토합니다.
+이슈 #392는 executable-schema retrieval과 active 0.14 agent-utility work 사이 prior-art bridge로 유지합니다. Open-set/conformal method는 consumed DEV의 post-hoc repair가 아니라 새로 preregistered question에 대해서만 다시 검토합니다.
 
 Historical 0.13 order는 V6A, V6B, V6C/V6D, V6E, #404/#406/#408/#409/#412를 terminal reference로 유지하고 모든 confirmation을 unopened로 두며, successor 전 prior art/repository history에서 materially different representation을 찾고, 더 discriminative한 semantic membership score가 생긴 뒤에만 #391 selective/conformal safety를 재검토하는 순서였습니다.
 

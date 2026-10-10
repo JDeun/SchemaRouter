@@ -64,7 +64,7 @@ Observed discovery revision의 source repository는 MIT이지만 selected runtim
 
 `nokia-applied-research/AnyJev`는 causal LLM을 typed-decision/readout variant로 변환합니다. Runtime/readout support는 level/model마다 다릅니다. Stable System One-compatible server contract가 pin되기 전에는 third-party plugin 또는 research callable을 사용합니다.
 
-#311/PR #313은 immutable BGE winner 뒤에 zero-label L0 content-free `noul` veto를 staging합니다. Research workflow는 guarded marker/manual activation 전에는 dormant이며 모든 preregistered Kev-based candidate가 non-promotable이 되기 전 marker 사용은 금지됩니다.
+이슈 #311/PR #313은 immutable BGE winner 뒤에 zero-label L0 content-free `noul` veto를 staging합니다. Research workflow는 guarded marker/manual activation 전에는 dormant이며 모든 preregistered Kev-based candidate가 non-promotable이 되기 전 marker 사용은 금지됩니다.
 
 ### Bespoke Nimble
 

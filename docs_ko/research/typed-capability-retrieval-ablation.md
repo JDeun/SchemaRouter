@@ -30,7 +30,7 @@ TYPED-MULTIFIELD에서는 각 필드를 독립적으로 순위화한 뒤, 동결
 
 ## 독립적인 새 평가 데이터
 
-#418/#420의 기존 결과 행을 재사용하지 않고 새로운 과제 집합을 사용합니다.
+이슈 #418/#420의 기존 결과 행을 재사용하지 않고 새로운 과제 집합을 사용합니다.
 
 - 개발 평가: 독립적인 의미 과제 60개 × 언어 표현 6종 = 360개 행
 - 확인 평가: 독립적인 의미 과제 120개 × 언어 표현 6종 = 720개 행
@@ -64,7 +64,7 @@ Frozen Qwen3-0.6B tokenizer revision은 B1과 context measurement를 비교할 �
 ## 연구 통제 규칙
 
 - B1의 개별 실패 행은 모델 조정 데이터로 사용할 수 없음
-- #432 홀드아웃 결과 행도 모델 조정 데이터로 사용할 수 없음
+- 이슈 #432 홀드아웃 결과 행도 모델 조정 데이터로 사용할 수 없음
 - 확인 평가 결과를 보고 필드 가중치, 융합 규칙, K 또는 실험 조건을 변경할 수 없음
 - Intent generation은 authoritative capability specification과 typed metadata만 사용 가능
 - Generated intent는 source-capability provenance를 유지해야 함
