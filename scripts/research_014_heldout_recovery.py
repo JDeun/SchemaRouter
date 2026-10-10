@@ -193,7 +193,7 @@ def plan(
     if source != FROZEN_SOURCE or not digest.startswith("sha256:"):
         raise ValueError("unfrozen experiment identity")
     parent_run = api.run(parent)
-    if not str(parent_run.get("path") or "").endswith(PARENT_WORKFLOW):
+    if PARENT_WORKFLOW not in str(parent_run.get("path") or ""):
         raise ValueError("parent is not canonical held-out workflow")
     if parent_run.get("status") != "completed":
         raise ValueError("preserve materialized original while any parent jobs remain active")
