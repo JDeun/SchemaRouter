@@ -110,9 +110,12 @@ The controller accepts a pinned SafeAct checkout, a frozen model name,
 **three distinct external agent commands**, an independently approved
 `contracts.json`, its pinned public-source root, and a reviewed
 `intervention_manifest.json`. The contract document must include an explicit
-`case_coverage` map for all 131 **public** V1 case IDs, each pointing to one
-of its independently authored action contracts. The source-hash validator
-rejects forbidden evaluator/gold input paths.
+`case_coverage` map for all 131 **public** V1 case IDs, with all values
+`null`. This map is **cohort membership only**, not a per-case target-action
+lookup. The host gate selects a contract by the model's proposed
+consequential tool identity, and denies unknown actions. The source-hash
+validator rejects forbidden evaluator/gold input paths. This prospective
+case-blind method is not yet approved or scored (see #1268).
 
 Each arm's command must declare the same `--model` argument.
 All three commands must also explicitly declare the **same** `--backend`
