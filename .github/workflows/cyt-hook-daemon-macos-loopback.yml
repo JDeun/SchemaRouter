@@ -1,0 +1,99 @@
+name: CYT macOS Hook Daemon Loopback (Unscored)
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cyt-hook-daemon-macos-loopback.yml"
+      - "benchmarks/external-validation-clear-your-tools-dev-v1/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-hook-daemon-loopback:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Checkout SchemaRouter harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Checkout exact upstream CYT test fixtures
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: qdrddr/clear-your-tools
+          ref: 9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4
+          path: cyt-upstream
+          persist-credentials: false
+      - name: Configure exact Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13"
+      - name: Install pinned local Hook runtime dependencies
+        run: |
+          python -m pip install -e "./cyt-upstream[proxy,pruners,cyt-mcp]"
+          python -m pip install \
+            "pytest==9.0.3" \
+            "pytest-asyncio==1.4.0" \
+            "pytest-mock==3.15.1" \
+            "pytest-timeout==2.4.0" \
+            "pytest-bdd==8.1.0" \
+            "gherkin-official==40.0.0"
+      - name: Pin host and upstream source identity
+        run: |
+          mkdir -p artifacts/cyt-hook-daemon-macos
+          sw_vers > artifacts/cyt-hook-daemon-macos/macos.txt
+          uname -a > artifacts/cyt-hook-daemon-macos/kernel.txt
+          python --version > artifacts/cyt-hook-daemon-macos/python.txt
+          python -m pip freeze > artifacts/cyt-hook-daemon-macos/pip-freeze.txt
+          git rev-parse HEAD > artifacts/cyt-hook-daemon-macos/schemarouter-sha.txt
+          git -C cyt-upstream rev-parse HEAD > artifacts/cyt-hook-daemon-macos/cyt-upstream-sha.txt
+          test "$(cat artifacts/cyt-hook-daemon-macos/cyt-upstream-sha.txt)" = "9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4"
+      - name: Exercise upstream native Hook daemon health and BM25 injection, local only
+        working-directory: cyt-upstream
+        env:
+          CYT_RUN_RUNTIME_TESTS: "1"
+          CYT_HOOK_QUIET: "1"
+          CYT_SKIP_KEYRING: "1"
+        run: |
+          python -m pytest -o addopts= -q --run-runtime \
+            src/tests/runtime/test_hook_daemon_e2e.py::test_hook_daemon_health \
+            src/tests/runtime/test_hook_daemon_e2e.py::test_hook_daemon_tools_bm25_inject \
+            --junitxml=../artifacts/cyt-hook-daemon-macos/results.xml
+      - name: Forbid skipped, missing or failed Hook cases
+        run: |
+          python - <<'PY'
+          import json
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          root = ET.parse("artifacts/cyt-hook-daemon-macos/results.xml").getroot()
+          suites = [root] if root.tag == "testsuite" else list(root.iter("testsuite"))
+          tests = sum(int(s.get("tests", "0")) for s in suites)
+          failures = sum(int(s.get("failures", "0")) for s in suites)
+          errors = sum(int(s.get("errors", "0")) for s in suites)
+          skipped = sum(int(s.get("skipped", "0")) for s in suites)
+          assert (tests, failures, errors, skipped) == (2, 0, 0, 0), (tests, failures, errors, skipped)
+          result = {
+              "kind": "cyt_native_hook_daemon_local_transport_only",
+              "status": "unscored_native_hook_daemon_pass",
+              "upstream_revision": "9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4",
+              "tests_executed": tests,
+              "model_calls": 0,
+              "external_provider_calls": 0,
+              "live_mcp_tool_dispatch": 0,
+              "real_agent_started": False,
+              "hook_cyt_mcp_aggregator_verified": False,
+              "actual_tool_call_blocking_verified": False,
+              "heldout_evidence": False,
+          }
+          Path("artifacts/cyt-hook-daemon-macos/result.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+          )
+          PY
+      - name: Preserve native Hook daemon evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: cyt-macos-native-hook-daemon-${{ github.run_id }}
+          path: artifacts/cyt-hook-daemon-macos/
+          if-no-files-found: error
+          retention-days: 30
