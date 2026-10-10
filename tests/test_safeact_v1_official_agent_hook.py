@@ -66,7 +66,7 @@ def test_official_hook_uses_only_trusted_gateway_calls(
         fake,
         document={
             "public_observation_mappings": {},
-            "case_coverage": {"SAB-V1-001": "refund_issue"},
+            "case_coverage": {"SAB-V1-001": None},
         },
         source_root=tmp_path, case_id="SAB-V1-001",
     )
@@ -95,7 +95,7 @@ def test_official_hook_fails_closed_if_gateway_not_captured(
         fake,
         document={
             "public_observation_mappings": {},
-            "case_coverage": {"SAB-V1-001": "refund_issue"},
+            "case_coverage": {"SAB-V1-001": None},
         },
         source_root=tmp_path, case_id="SAB-V1-001",
     )
@@ -121,7 +121,7 @@ def test_missing_or_tampered_independent_source_fails_before_runner(
     with pytest.raises(ValueError, match="preflight failed"):
         hook.install_v1_gate(
             fake,
-            document={"case_coverage": {"SAB-V1-001": "refund_issue"}},
+            document={"case_coverage": {"SAB-V1-001": None}},
             source_root=tmp_path, case_id="SAB-V1-001",
         )
 
