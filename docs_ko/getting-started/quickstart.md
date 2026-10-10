@@ -45,7 +45,7 @@ compatibility smoke와 같은 공개 OpenAPI source로 해석한 뒤 기존 Open
 python examples/live_openapi_quickstart.py
 ```
 
-성공 출력은 대략 다음 형태입니다.
+호출 결과의 정확한 숫자는 provider의 현재 데이터에 따라 달라집니다. 성공 출력은 대략 다음 형태입니다.
 
 ```text
 provider: apis-guru
@@ -74,7 +74,7 @@ current numAPIs: <current positive integer>
 --8<-- "examples/quickstart.py"
 ```
 
-이 파일은 source/wheel/sdist acceptance에서 실행됩니다.
+이 파일은 source/wheel/sdist acceptance에서 실행됩니다. 패키징과 로컬 실행을 검증하지만, 고정된 예시 날씨 값을 실제 provider 데이터인 것처럼 주장하지 않습니다.
 
 ## 5. 일반 웹사이트는 조용히 tool로 변환되지 않습니다
 
@@ -134,6 +134,8 @@ async for event in router.astream_events(request):
 | LangGraph app | `pip install "schemarouter[langgraph]"` | `examples/langgraph_quickstart.py` |
 | LlamaIndex tools | `pip install "schemarouter[llamaindex]"` | `examples/llamaindex_quickstart.py` |
 | 사람이 읽는 API 문서 | core install | [inspect → proposal → approval](../guides/html-documentation.md) |
+
+Framework별 예제는 전용 CI 작업에서 실제로 실행됩니다. Provider-first APIs.guru/OpenAPI 경로는 별도의 compatibility workflow와 오프라인에서 계약상 동등한 quickstart smoke에서도 검증합니다.
 
 ## 문제 해결
 
