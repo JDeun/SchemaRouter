@@ -1,4 +1,4 @@
-# SchemaRouter design and experiment history
+# SchemaRouter 설계 및 실험 이력
 
 > 진행 중인 연구·세션 로드맵: GitHub 이슈 #417  
 > 과거 0.13 선행연구 로드맵: GitHub 이슈 #388  
@@ -7,17 +7,17 @@
 > 이전 세션 재개 추적 이슈: GitHub 이슈 #200  
 > 기계 판독형 실증 근거 원장: `benchmarks/research-experiment-ledger.json`
 
-이 문서는 최초 repository implementation부터 이어진 SchemaRouter의 주요 design 및 research lineage를 재구성합니다. Release note보다 범위가 넓으며 architectural intent, empirical question, rejected alternative, data-consumption rule, 그리고 project가 routing design을 변경한 이유를 기록합니다.
+이 문서는 최초 저장소 구현 이후 이어진 SchemaRouter의 주요 설계와 연구의 흐름을 정리합니다. 릴리스 노트보다 범위가 넓으며 아키텍처 설계 의도, 실증 연구 질문, 채택하지 않은 대안, 평가 데이터 사용 규칙, 라우팅 설계를 변경한 이유를 기록합니다.
 
-Architectural invariant, evaluation contract 또는 empirical conclusion을 바꾸지 않는 일반 bugfix는 Git history에 남기되 여기서는 독립적인 research event로 승격하지 않습니다.
+아키텍처의 불변 조건, 평가 계약 또는 실증적 결론에 영향을 주지 않는 일반적인 버그 수정은 Git 기록에 남기되, 여기서는 별도 연구 사건으로 분류하지 않습니다.
 
-## 1. Origin: schema-aware execution boundary
+## 1. 시작: 스키마 인식 실행 경계
 
-### Initial commit → v0.1 framework core
+### 최초 커밋 → v0.1 프레임워크 핵심
 
 Source revision: `55e2563966b7c656a59f6fe1862ff7d01ef87bee`
 
-최초 design은 지금도 project를 지배하는 다음 core thesis를 확립했습니다:
+최초 설계에서 정립한 다음 핵심 원칙은 지금도 프로젝트에 적용됩니다:
 
 ```text
 natural-language intent
@@ -31,9 +31,9 @@ policy + validation
 execution
 ```
 
-Model/orchestrator는 execution authority가 아닙니다. Registered schema와 local runtime이 authority를 가집니다.
+모델이나 오케스트레이터는 실행 권한의 최종 주체가 아닙니다. 등록된 스키마와 로컬 런타임이 그 권한을 갖습니다.
 
-초기 주요 design decision은 다음과 같습니다:
+초기 단계에서 내린 주요 설계 결정은 다음과 같습니다:
 
 - 도구·엔드포인트·매개변수·필드·계획·결과에 대한 타입 계약;
 - 스키마 인식 계획과 필드 투영;
@@ -44,13 +44,13 @@ Model/orchestrator는 execution authority가 아닙니다. Registered schema와 
 - OpenAPI·MCP·Python 호출 함수 수집;
 - SchemaRouter를 범용 에이전트 프레임워크로 만들지 않는 LangChain 통합.
 
-이것이 이후 experiment를 해석하는 기준이 되는 project invariant입니다.
+이 원칙은 이후 실험을 해석하는 기준이 되는 프로젝트 불변 조건입니다.
 
-## 2. v0.2: adapter ecosystem and OPTIMADE
+## 2. v0.2: 어댑터 생태계와 OPTIMADE
 
 Source revision: `1de6b4e14f4bb6607f58e6fc73b6b62d21e9473d`
 
-두 번째 architectural phase에서는 explicit adapter contract를 중심으로 source ingestion을 일반화했습니다.
+두 번째 아키텍처 단계에서는 명시적인 어댑터 계약을 중심으로 데이터 소스 수집 방식을 일반화했습니다.
 
 주요 추가 사항:
 
