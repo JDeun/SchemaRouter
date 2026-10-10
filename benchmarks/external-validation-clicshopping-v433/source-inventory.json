@@ -101,23 +101,9 @@
         "stats",
         "recommendations"
       ],
-      "write_actions": [
-        "table",
-        "username",
-        "security_level",
-        "allowed_actions",
-        "read_actions",
-        "write_actions",
-        "allowed_tables",
-        "forbidden_tables",
-        "restrictions",
-        "table_whitelist_enforced",
-        "forbidden_table_access_blocked",
-        "write_requires_explicit_permission",
-        "delete_never_allowed"
-      ],
+      "write_actions": [],
       "permission_owner": "upstream_endpoint",
-      "authorization_model": "select_data required; write actions require upstream-granted write flags",
+      "authorization_model": "All six declared actions are read-only; select_data and upstream endpoint permissions remain authoritative.",
       "status": "page_and_permissions_verified",
       "configuration_boundary": "DISPLAY_BROWSER_JSON restricts direct GET to search when enabled; five other declared actions are configuration-gated, not absent",
       "dispatch_actions": [
@@ -149,7 +135,7 @@
         "send_message"
       ],
       "permission_owner": "upstream_endpoint",
-      "authorization_model": "select_data required; write actions require upstream-granted write flags",
+      "authorization_model": "Upstream per-action grants are authoritative. read: select_data; cancel_order: select_data+update_data; send_message: select_data+create_data; authenticated customers_id scope required.",
       "status": "permissions_only_unverified_endpoint",
       "authentication_scope": "Every action requires authenticated customers_id; no endpoint source exists at this pinned SHA; do not score callability."
     },
@@ -177,7 +163,7 @@
       ],
       "write_actions": [],
       "permission_owner": "upstream_endpoint",
-      "authorization_model": "select_data required; write actions require upstream-granted write flags",
+      "authorization_model": "Must hold select_data and no write/admin flags; upstream RagBIPermissions remains authoritative.",
       "status": "page_and_permissions_verified",
       "response_contract": "4.33 RATE_LIMITED JSON error, ai_disclaimer; read-only-only principal with no write/admin flags."
     }
