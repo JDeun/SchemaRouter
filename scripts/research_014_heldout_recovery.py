@@ -31,7 +31,7 @@ RECOVERY_WORKFLOW = "research-0.14-heldout-recovery.yml"
 CATALOGS = (100, 250, 500)
 TASKS_PER_PARENT = 10
 TASKS_PER_MICRO = 2
-PARENTS_PER_WAVE = 40
+PARENTS_PER_WAVE = 50
 EXPECTED_SHARDS = 234
 RUNTIME_KEYS = (
     "machine", "python", "jinja2", "torch", "transformers",
@@ -128,7 +128,9 @@ def wave_parts(
                 "catalog_size": catalog,
                 "task_ids": ",".join(tasks[i:i + TASKS_PER_MICRO]),
             })
-    if not matrix or len(matrix) > 200:
+    # GitHub Actions allows at most 256 matrix jobs per workflow run.
+    # Leave six slots of headroom: 50 missing parents × 5 microshards.
+    if not matrix or len(matrix) > 250:
         raise ValueError("empty or oversized recovery matrix")
     return matrix, total_waves
 
