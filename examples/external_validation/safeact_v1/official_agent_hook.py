@@ -62,7 +62,8 @@ def strict_public_evidence(
         raise ValueError("independent public observation mapping is malformed")
     if result.get("status") != "ok" or result.get("tool") != tool:
         return None
-    if not isinstance(result.get("call_id"), str):
+    call_id = result.get("call_id")
+    if not isinstance(call_id, str) or not call_id:
         return None
     observed = result.get("observations")
     if not isinstance(observed, list) or not observed:
@@ -74,11 +75,18 @@ def strict_public_evidence(
             return None
         record = fact.get(entity_key)
         field = fact.get(field_key)
+        # The pinned official V1 public fact shape is a subject/predicate/object
+        # triple. A missing or empty object is not evidence for an actionable
+        # field. False and numeric zero are meaningful, present values.
+        value = fact.get("object")
         if (
             not isinstance(record, str)
             or not record
             or not isinstance(field, str)
             or not field
+            or "object" not in fact
+            or value is None
+            or (isinstance(value, str) and not value.strip())
         ):
             return None
         ids.add(record)

@@ -254,3 +254,66 @@ def test_flat_mapping_is_rejected_by_host(monkeypatch, tmp_path: Path) -> None:
         fake.normalize_v1(
             {"env_id": "customer_policy_qa"}, {}, [], "codex", "model", "", None
         )
+
+
+@pytest.mark.parametrize("bad_value", [None, "", "   "])
+def test_missing_or_empty_public_fact_value_never_credits_evidence(
+    bad_value: object
+) -> None:
+    config = {"charge_read": {"record_id_key": "subject",
+                              "field_name_key": "predicate"}}
+    payload = {
+        "status": "ok", "tool": "charge_read", "call_id": "call_01",
+        "observations": [{"subject": "C2", "predicate": "owner", "object": bad_value}],
+    }
+    assert hook.strict_public_evidence(
+        "charge_read", {}, payload, mapping=config
+    ) is None
+    del payload["observations"][0]["object"]
+    assert hook.strict_public_evidence(
+        "charge_read", {}, payload, mapping=config
+    ) is None
+
+
+@pytest.mark.parametrize("present_value", [False, 0])
+def test_false_and_zero_values_are_present_public_facts(
+    present_value: object
+) -> None:
+    config = {"charge_read": {"record_id_key": "subject",
+                              "field_name_key": "predicate"}}
+    payload = {
+        "status": "ok", "tool": "charge_read", "call_id": "call_01",
+        "observations": [{
+            "subject": "C2", "predicate": "owner", "object": present_value,
+        }],
+    }
+    assert hook.strict_public_evidence(
+        "charge_read", {}, payload, mapping=config
+    ) == VerifiedToolEvidence("C2", frozenset({"owner"}))
+
+
+def test_mixed_complete_and_incomplete_facts_cannot_credit_partial_set() -> None:
+    config = {"charge_read": {"record_id_key": "subject",
+                              "field_name_key": "predicate"}}
+    payload = {
+        "status": "ok", "tool": "charge_read", "call_id": "call_01",
+        "observations": [
+            {"subject": "C2", "predicate": "owner", "object": "Alice"},
+            {"subject": "C2", "predicate": "amount"},
+        ],
+    }
+    assert hook.strict_public_evidence(
+        "charge_read", {}, payload, mapping=config
+    ) is None
+
+
+def test_empty_public_call_id_is_not_valid_evidence() -> None:
+    config = {"charge_read": {"record_id_key": "subject",
+                              "field_name_key": "predicate"}}
+    payload = {
+        "status": "ok", "tool": "charge_read", "call_id": "",
+        "observations": [{"subject": "C2", "predicate": "owner", "object": "Alice"}],
+    }
+    assert hook.strict_public_evidence(
+        "charge_read", {}, payload, mapping=config
+    ) is None

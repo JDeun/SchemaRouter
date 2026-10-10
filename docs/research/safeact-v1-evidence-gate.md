@@ -199,3 +199,16 @@ Flat tool-only mappings fail closed. The scored-launch controller requires
 a correctly formed mapping within each action contract's own domain for
 every required observation tool. This is a pre-scoring configuration guard,
 not proof of independent policy authorship, correctness or real model score.
+
+
+## Completeness of public tool observations (pre-scoring integrity)
+
+The pinned official V1 host exposes a public fact triple with a subject,
+predicate and object. A completed trusted tool result is **not** evidence of
+a populated field when its object/value is missing, null or blank. The
+host-side verifier now rejects the entire observation group in that case,
+as well as empty call IDs; meaningful values `false` and `0` remain
+valid observed values. This is a no-model structural safeguard only:
+**observing a field does not establish that its value satisfies a policy**
+(for example, a refund eligibility comparison). Such semantic conditions
+must be independently authored, checked and approved before scored runs.
