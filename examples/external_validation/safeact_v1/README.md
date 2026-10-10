@@ -327,3 +327,17 @@ not uploaded as public workflow artifacts.
 research runner are *not yet provided*. The official 393 trajectories are
 **not yet running**; simulator and PR preflight checks are unscored. Do not
 fake attestations to bypass this safety and scientific-validity boundary.
+
+
+### Public-domain authorization boundary
+
+The scored V1 adapter must select a trusted contract by the tuple
+`(public scenario env_id, model-proposed consequential tool)`. The case ID
+is a pairing/cohort identifier, never an expected action label; the tool
+name alone is also insufficient because several public SafeAct domains reuse
+tool names. For example, the public interfaces in customer policy and legal
+finance both expose `reply_send`. Scoped policies cannot be substituted
+across domains. Production launch validates recognized public domains and
+uniqueness of every `(domain, action)` contract, while missing/unknown
+domain scope fails closed. Isolated unscoped synthetic tests are not proof
+of a scored-run-ready domain-scoped contract catalogue.
