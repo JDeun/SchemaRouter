@@ -437,20 +437,17 @@ DEV 결과:
 
 ## Reproducibility
 
-The closed-cycle machine-readable decision is stored at
-`benchmarks/operation-routing-v4-terminal-decision.json`.
+종료된 연구 주기의 기계 판독형 결정은 `benchmarks/operation-routing-v4-terminal-decision.json`에 저장되어 있습니다.
 
 The full evidence ledger is stored at
 `benchmarks/research-experiment-ledger.json`.
 
-The complete design/experiment narrative is stored at
-`docs/research/design-and-experiment-history.md`.
+전체 설계·실험 이력은 `docs/research/design-and-experiment-history.md`에 정리되어 있습니다.
 
-The terminal report is available at
-[Operation routing v4 terminal report](operation-routing-v4-terminal-report.md).
+최종 보고서는 [작업 라우팅 v4 최종 보고서](operation-routing-v4-terminal-report.md)에서 확인할 수 있습니다.
 
 
-## 0.13 schema-derived open-set membership sequence
+## 0.13 스키마 기반 오픈셋 기능 소속성 실험
 
 0.13 단계에서는 **양수 경로 검색**과 **open-set 기능 소속 판별**을 분리했습니다. 동결 BGE-M3만 양수 엔드포인트 실행 권한을 갖습니다. 모든 0.13 검증기는 거부 전용(veto-only)이며 등록된 원시 1순위 경로를 유지하거나 `NO_ROUTE`를 반환할 수 있을 뿐, 다른 엔드포인트로 재정렬하거나 2순위 폴백을 실행하거나 가상의 경로를 만들어서는 안 됩니다.
 
@@ -467,9 +464,7 @@ The terminal report is available at
 
 ### V6A — schema-derived spherical ADB (#384)
 
-Positive-only schema-derived spherical region은 synthetic schema surface에서 natural user request로 전이하는 데 치명적으로 실패했습니다. Raw BGE supported exact remained 91.67%, but the gate
-rejected every supported DEV request and all 209 raw-correct winners. Near-domain and OOD
-rejection were both 100% only because every query lay outside every learned region.
+스키마에서 합성한 긍정 사례만으로 만든 구형 영역은 합성 스키마 표현에서 실제 사용자 요청으로 일반화하는 데 실패했습니다. 원래 BGE의 지원 요청 정확도는 91.67%였지만, 게이트는 지원되는 개발 요청 전체와 원래 올바르게 선택한 경로 209개를 모두 거부했습니다. 유사 도메인 및 도메인 밖 요청 거부율이 모두 100%였던 이유도 모든 질의가 학습된 모든 영역 밖에 위치했기 때문입니다.
 
 **Decision:** terminal. Confirmation은 열지 않은 상태로 유지합니다.
 
@@ -490,8 +485,7 @@ V6B는 등록된 기능의 보완 집합에서 동일 리소스의 미지원 작
 
 ### V6C — tied-Gaussian density ratio (#397)
 
-Replacing absolute inclusion with a relative positive-vs-complement density score eliminated
-catastrophic supported vetoes.
+절대적인 영역 포함 여부 대신 긍정 분포와 여집합 분포의 상대 밀도 점수를 사용하자 지원 요청을 대량으로 거부하는 문제가 사라졌습니다.
 
 | Metric | Result |
 | --- | ---: |
@@ -509,8 +503,7 @@ catastrophic supported vetoes.
 
 ### V6D — component Gaussian-mixture density ratio (#399)
 
-V6D preserved endpoint-level positive components and complement resource×operation components with
-one tied diagonal covariance and a fixed zero log-likelihood-ratio boundary.
+V6D는 엔드포인트별 긍정 성분과 리소스×작업별 여집합 성분을 유지하면서, 공유하는 대각 공분산과 고정된 로그우도비 0의 경계를 사용했습니다.
 
 | Metric | Result |
 | --- | ---: |
@@ -523,10 +516,9 @@ one tied diagonal covariance and a fixed zero log-likelihood-ratio boundary.
 | Raw-correct winner veto | 0% |
 | p95 | 250.49 ms |
 
-Component structure는 supported winner를 보존했지만 핵심 synthetic-to-natural membership 문제를 해결하지 못했습니다. Natural unsupported/OOD queries were often still more likely under the
-registered mixture than under the synthetic complement mixture.
+혼합 성분 구조는 지원 요청의 기존 정답 경로를 보존했지만 합성 데이터에서 자연어 요청으로 이어지는 소속성 문제를 해결하지 못했습니다. 실제 미지원 및 도메인 밖 질의의 우도가 합성 여집합 혼합보다 등록된 기능 혼합에서 더 높은 경우가 여전히 많았습니다.
 
-**Decision:** terminal; PR #400 closed without merge. Confirmation remains unopened.
+**결정:** 실험 종료. PR #400은 병합하지 않고 종료됐으며 확인 데이터는 개봉하지 않았습니다.
 
 ### V6E — non-parametric kNN membership (#401)
 
@@ -548,15 +540,13 @@ V6E에서는 가우시안 가정을 완전히 제거했습니다. BGE가 기준�
 | Background / complement vetoes | 6 / 196 |
 | p95 | 176.50 ms |
 
-이는 latency target 안에서 V6C–V6E density/local-geometry sequence 중 가장 강한 unsupported recall이지만 모든 open-set quality gate를 여전히 충족하지 못했고 supported routing도 소폭 악화했습니다. The complement bank supplies most useful veto signal; the generic
-background bank is too sparse to cover natural OOD. Positive and complement neighborhoods still
-overlap substantially in natural-language embedding space.
+이 방법은 지연시간 목표를 만족하면서 V6C–V6E 밀도·국소 기하 실험 중 가장 높은 미지원 요청 탐지 재현율을 기록했지만, 오픈셋 품질 기준 전체를 충족하지 못했고 지원 요청 라우팅 성능도 소폭 악화됐습니다. 유용한 거부 신호 대부분은 여집합 데이터에서 나오지만 일반적인 배경 데이터는 자연스러운 도메인 밖 질의를 충분히 포괄하지 못했습니다. 긍정 및 여집합의 이웃 영역도 자연어 임베딩 공간에서 상당히 겹칩니다.
 
-**Decision:** terminal; PR #402 closed without merge. Confirmation remains unopened.
+**결정:** 실험 종료. PR #402는 병합하지 않고 종료됐으며 확인 데이터는 개봉하지 않았습니다.
 
 ### 현재 0.13 결론
 
-V6A–V6E rule out a progressively broader family of straightforward schema-synthetic geometry:
+V6A–V6E는 단순한 스키마 합성 기반 기하 접근법의 폭넓은 계열을 단계적으로 배제했습니다:
 
 - 절대적인 구형·타원체 경계는 합성 데이터와 실제 데이터 간 반경 이동 때문에 실패했습니다;
 - 연결된 단일·다중 성분 가우시안 밀도비는 지원 사례의 통과를 유지했지만
@@ -565,14 +555,12 @@ V6A–V6E rule out a progressively broader family of straightforward schema-synt
   분포를 여전히 구분하지 못했습니다;
 - 일반적인 배경 앵커만으로는 실제 분포 밖(OOD) 사례를 나타내기에 부족했습니다.
 
-다음 experiment는 **실질적으로 다른 semantic representation 또는 membership signal**을 도입해야 합니다. It must not be a post-hoc sweep over V6E k, distance thresholds, margins,
-neighbor weights, background anchors, or schema/complement wording. All V6A–V6E confirmation
-surfaces remain unopened.
+다음 실험에는 **실질적으로 다른 의미 표현 또는 기능 소속성 신호**가 필요합니다. V6E의 k, 거리 임계값, 마진, 이웃 가중치, 배경 기준점, 스키마·여집합 문구를 결과 확인 후 탐색하는 방식이어서는 안 됩니다. V6A–V6E의 모든 확인 데이터는 개봉하지 않은 상태입니다.
 
 
 ## 0.13 post-V6E evidence
 
-The first 0.13 open-set sequence is now terminal with **no active frozen child experiment**.
+첫 번째 0.13 오픈셋 실험 계열은 **진행 중인 동결 하위 실험 없이 종료**됐습니다.
 
 | Experiment | Tested signal | Supported exact | Near reject | OOD | False-route | p95 | Result |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
@@ -582,22 +570,19 @@ The first 0.13 open-set sequence is now terminal with **no active frozen child e
 | #409 | frozen GTE multilingual positive selector | 71.49% | — | — | — | 100.14 ms | terminal; BGE 88.16% on same surface |
 | #412 | multilingual-E5 + fixed alpha=0.01 split conformal | 10.09% | 99.21% | 100% | 0.62% | 244.24 ms | terminal |
 
-#412의 핵심 contrast는 이 sequence에서 최초로 near-domain rejection, OOD rejection, false-route, authority, runtime gate를 동시에 충족했지만 raw-correct BGE winner **181개 중 158개**를 veto했다는 점입니다. The safety calibration worked; the underlying scalar catalog-membership
-score did not separate supported traffic strongly enough.
+#412의 핵심 대조 결과는 이 계열에서 처음으로 유사 도메인 거부, 도메인 밖 거부, 잘못된 경로, 권한 및 실행시간 기준을 동시에 만족했지만 원래 BGE가 올바르게 선택한 경로 **181개 중 158개**를 거부했다는 점입니다. 안전성 보정은 동작했지만 기반이 된 단일 카탈로그 소속성 점수가 지원 요청을 충분히 구별하지 못했습니다.
 
 The retained research conclusion is:
 
-> The unresolved bottleneck is a **surface-invariant executable-capability membership
-> representation**, not another threshold or calibration rule over a weak score.
+> 아직 해결되지 않은 병목은 약한 점수에 임계값이나 보정 규칙을 추가하는 문제가 아니라, **평가 표면에 따라 흔들리지 않는 실행 가능 기능 소속성 표현**입니다.
 
-Terminal DEV row는 successor tuning에 사용할 수 없으며 위의 모든 confirmation surface는 unopened 상태로 유지합니다. The canonical continuation point is issue #388, then issue #382, the
-machine-readable prior-art registry, and the experiment ledger.
+종료된 개발 결과 행은 후속 실험의 튜닝에 사용할 수 없으며, 위의 모든 확인 데이터는 개봉하지 않은 상태를 유지합니다. 정식 후속 작업 경로는 이슈 #388, #382, 기계 판독형 선행연구 레지스트리 및 실험 원장에 기록되어 있습니다.
 
 
 
 ### Staged post-B1 work
 
-The following items are preregistered/staged and **must not** be selected from B1 row-level errors:
+다음 항목은 사전 등록되거나 실행 준비된 작업이며, **B1의 개별 결과 오류를 보고 선택해서는 안 됩니다**:
 
 - #428 — 공개된 일급 타입 기반 Top-K 검색 API;
 - #430 — 고정 K 검증 이후 질의별 적응형 후보 목록 깊이;
@@ -605,4 +590,4 @@ The following items are preregistered/staged and **must not** be selected from B
 - #432 — 명시적인 표본 수·정밀도 계획을 포함한, 실질적으로 더 큰 독립 다국어
   홀드아웃 벤치마크.
 
-These are successors to the fixed controlled baseline, not repairs to consumed B1 rows.
+이들은 동결된 통제 실험 기준선의 후속 실험이지, 이미 소비한 B1 결과 행을 수리하는 실험이 아닙니다.
