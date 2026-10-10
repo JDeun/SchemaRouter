@@ -81,7 +81,7 @@ def unescaped_numeric_issue_references(path: Path) -> list[int]:
         if FENCE.match(line):
             in_fence = not in_fence
             continue
-        if not in_fence and re.match(r"^(?:#\\d+|\\s*[-*]\\s+#\\d+)", line):
+        if not in_fence and re.match(r"^(?:#\d+|\s*[-*]\s+#\d+)", line):
             violations.append(line_number)
     return violations
 
