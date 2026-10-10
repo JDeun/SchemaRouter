@@ -23,7 +23,7 @@
 | Selective/conformal abstention | #391 / #412 | terminal tested formulation | E5 conformal safety가 open-set gate는 통과했지만 supported recall 파괴 |
 | Tool/executable-schema retrieval / agent utility | #392 / #417 / #418 / #420 | active primary direction | Phase A/B1 및 B2 종료, #431 게이트 판정 완료·미승격, #432 홀드아웃 실행 중, #424 대기 |
 
-Active research parent는 #417이며 historical 0.13 prior-art parent는 #388입니다.
+현재 연구 상위 이슈는 #417이며, 과거 0.13 선행연구의 상위 이슈는 #388입니다.
 
 ## 0. Active 0.14 연구 질문: agent용 typed capability retrieval
 

@@ -256,7 +256,7 @@ Suggested first comment:
 >
 > 특히 대규모 도구 카탈로그를 운영하는 분들의 기술적 비판을 듣고 싶습니다. 여러분의 스택에서는 기능 검색이 어느 시점부터 유용해지며, 어떤 연동 장벽이 별도의 타입 기반 경계를 도입하는 것을 가로막을까요?
 
-Rules for the actual submission:
+실제 게시 시 지켜야 할 규칙:
 
 - 가입이나 마케팅 페이지가 아닌 실행 가능한 저장소에 직접 연결합니다;
 - 기술적인 질문이 올라오면 답변할 수 있도록 참여합니다;
@@ -359,37 +359,37 @@ Suggested format:
 
 > SchemaRouter는 에이전트 도구 카탈로그를 위한 오픈소스 타입 기반 기능 검색·실행 계층입니다. 결정적인 40개 도구 데모와 MCP/OpenAPI 연동을 제공하고 있습니다. 이 채널이 짧은 기술 피드백을 요청하기에 적절할까요? 그렇다면 실행 가능한 예제를 공유하겠습니다.
 
-### Conference / meetup lightning talk
+### 학회·밋업의 짧은 기술 발표
 
-Title:
+발표 제목:
 
 > **Tool retrieval is not execution authority**
 
-Five-slide structure:
+슬라이드 5장 구성:
 
-1. large tool catalog problem;
-2. field-first typed retrieval;
-3. trusted execution boundary;
-4. controlled positive + negative evidence;
-5. runnable OSS demo / open questions.
+1. 대규모 도구 카탈로그의 문제
+2. 필드 우선 타입 기반 검색
+3. 신뢰된 실행 경계
+4. 통제된 긍정·부정 결과
+5. 실행 가능한 오픈소스 데모와 토론 질문
 
-## Campaign sequence
+## 대외 공개 진행 순서
 
-Do not publish everywhere at once.
+모든 채널에 동시에 게시하지 않습니다.
 
-### Phase 0 — baseline
+### 0단계 — 기본 준비
 
-Already available:
+이미 준비한 자료:
 
-- public adoption scorecard;
-- stable 0.13.0 release;
-- runnable examples;
-- trust/evidence page;
-- contributor roadmap and issue templates.
+- 공개 도입 현황 점검표
+- 안정화된 0.13.0 릴리스
+- 실행 가능한 예제
+- 신뢰성·검증 근거 안내 페이지
+- 기여자 로드맵과 이슈 템플릿
 
 첫 공개 게시 직전에 기존 주간 기록이 오래됐다면 최신 점검표 산출물을 저장합니다.
 
-### Phase 1 — high-signal technical feedback
+### 1단계 — 구체적인 기술 피드백 확보
 
 1. Show HN 게시
 2. 기술적 피드백에 응답
@@ -398,7 +398,7 @@ Already available:
 
 반응이 적다는 이유만으로 여러 곳에 재게시하지 않습니다.
 
-### Phase 2 — owned-network explanation
+### 2단계 — 직접 관리하는 네트워크에서 설명
 
 1단계에서 받은 유용한 의견을 반영한 뒤 LinkedIn 기술 게시글 또는 기술 아티클을 공개합니다.
 

@@ -67,7 +67,7 @@ python scripts/benchmark_decision_routing.py \
 
 1. System One wire-compatible model — `SystemOneDecisionBackend`
 2. One-off research callable — `CallableDecisionBackend` 또는 `--decision-callable module:function`
-3. Reusable third-party integration — `schemarouter.decision_backends` entry-point plugin
+3. 재사용 가능한 서드파티 통합 — `schemarouter.decision_backends` 진입점 플러그인
 
 Model churn을 SchemaRouter planning/authority model 밖에 유지합니다.
 
