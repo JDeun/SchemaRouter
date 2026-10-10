@@ -169,6 +169,36 @@ def test_plan_refuses_active_parent_and_recovers_only_cancelled_shard(monkeypatc
     assert len(p["matrix"]) == 5
 
 
+def test_cancelled_original_run_is_recoverable_without_scoring_rows(monkeypatch):
+    import scripts.research_014_heldout_recovery as module
+
+    data = corpus()
+    shards = frozen_shards(data)
+
+    def read_complete_payload(_api, _artifact, filename):
+        catalog, task_ids = shards[filename[:-5]]
+        return payload(data, catalog, task_ids)
+
+    class CancelledOriginal(StubAPI):
+        def run(self, run_id):
+            report = super().run(run_id)
+            report["conclusion"] = "cancelled"
+            return report
+
+    monkeypatch.setattr(module, "_artifact_payload", read_complete_payload)
+    result = plan(
+        CancelledOriginal(True),
+        data,
+        parent=123,
+        wave=0,
+        source=FROZEN_SOURCE,
+        digest="sha256:test",
+    )
+    assert result["successful_parent_shards"] == sorted(set(shards) - {"c100-g00"})
+    assert result["missing_parent_shards"] == ["c100-g00"]
+    assert len(result["matrix"]) == 5
+
+
 def test_workflow_keeps_exact_frozen_scientific_source():
     root = Path(__file__).resolve().parents[1]
     workflow = (root / ".github/workflows/research-0.14-heldout-recovery.yml").read_text()
