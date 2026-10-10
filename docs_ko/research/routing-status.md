@@ -449,7 +449,7 @@ DEV 결과:
 `docs/research/design-and-experiment-history.md`.
 
 최종 결과 보고서는 다음 위치에 있습니다:
-[Operation routing v4 terminal report](operation-routing-v4-terminal-report.md).
+[작업 라우팅 v4 최종 결과 보고서](operation-routing-v4-terminal-report.md).
 
 
 ## 0.13 스키마 기반 오픈셋 기능 소속 판정 계열
