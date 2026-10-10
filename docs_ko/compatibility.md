@@ -115,7 +115,7 @@ Native DB adapter 변경 release는 affected representative family의 recent gre
 
 Weekly/manual `Compatibility Smoke`는 OpenAPI/OPTIMADE/GraphQL/OData/OpenRPC/MCP, Materials Project/Crossref/Tavily, latest stable PyPI package를 검증합니다. PyPI smoke는 forced wheel/sdist, pip check, checkout 밖 public scenario를 실행합니다. Isolated mcp/jev/otel과 combined extras smoke도 source checkout이 아닌 stable package로 bridge를 실행합니다.
 
-External-service failure는 third-party availability 때문에 PR blocker가 아닌 compatibility signal입니다. Live decision model은 required CI에서 제외하며 Jev/Laya/Ollama는 explicit benchmark로 실행합니다.
+External-service failure는 third-party availability 때문에 PR blocker가 아닌 compatibility signal입니다. Live decision model은 required CI에서 제외합니다. Jev는 `TYPESAFE_API_KEY`와 `--jev`로 명시적으로 실행하고, 로컬 Laya는 `--laya`, 신뢰하는 로컬 Ollama 모델은 `--ollama-model <installed-model>`로 따로 벤치마킹합니다.
 
 ## Live OpenAPI smoke
 
@@ -137,4 +137,4 @@ Non-blocking adapter/provider matrix, PyPI, integration job은 machine-readable 
 
 Report는 schema version, UTC time, SchemaRouter version, adapter/source identity, runtime environment, success/failure, bounded details를 기록하며 failure에서는 exception type만 기록하고 message는 생략합니다.
 
-Artifacts는 30일 retain합니다. Unified `adapter-compatibility-matrix.json/.md`가 per-adapter report를 summarize하고 workflow summary에도 씁니다. Raw JSON이 future history/dashboard의 source of truth입니다. [Live adapter compatibility matrix](guides/live-compatibility-matrix.md) 참고.
+GitHub Actions는 이 artifact를 30일 동안 유지합니다. 종합 보고서 `adapter-compatibility-matrix.json`과 `adapter-compatibility-matrix.md`는 adapter별 보고서를 요약하고 동일 내용을 workflow step summary에도 기록합니다. 추후 이력·대시보드의 source of truth는 원본 JSON이며, 제3자 서비스의 일시적 장애를 release-blocking gate로 전환하지 않습니다. [Live adapter compatibility matrix](guides/live-compatibility-matrix.md) 참고.
