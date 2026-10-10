@@ -78,7 +78,10 @@ def test_korean_retry_and_hook_prose_keeps_original_safety_contract() -> None:
     assert "실행 전 훅은 검증된 인수 값을" in korean
     assert "실행 후 훅은 최종 투영된 결과 본문" in korean
     assert "신뢰할 수 없는 원격 또는 제3자 콜백에 전달하지 마십시오" in korean
-    assert "인수 값, 결과 본문, RunConfig 메타데이터, 태그 및 예외 메시지는 내보내지 않습니다" in korean
+    assert (
+        "인수 값, 결과 본문, RunConfig 메타데이터, 태그 및 예외 메시지는 내보내지 않습니다"
+        in korean
+    )
     for leftover in (
         "Automatic retry는 trusted local code",
         "Built-in OpenAPI/OPTIMADE HTTP invoker는",
