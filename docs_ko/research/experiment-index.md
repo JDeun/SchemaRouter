@@ -202,22 +202,21 @@ Repository Git history는 계속 exhaustive engineering record 역할을 합니�
 | ---: | --- | --- | --- | --- |
 | 1 | `0.12-pairwise-supported-counterfactual-nli-v1` | **terminal_rejected_pairwise_nli_membership_and_latency** | Compare maximum independent NLI entailment over the anchored tool's registered capability leaves against maximum entailment over counterfactual tool/non-tool leaves; veto only whe… | [issue #378](https://github.com/JDeun/SchemaRouter/issues/378) · [PR #380](https://github.com/JDeun/SchemaRouter/pull/380) · [`02aeefd465`](https://github.com/JDeun/SchemaRouter/commit/02aeefd4656f5b61a948142dfba74f51207bd979) |
 
-## Why the summary page shows fewer rows
+## 요약 페이지에 표시된 결과가 적은 이유
 
 [라우팅 연구 현황](routing-status.md)은 최신 상태의 요약 자료입니다.
 현재 유지되는 목표, 가장 강한 비교 기준, 새 확인 실험에서 드러난 결정적인 실패,
 그리고 그에 대한 현재 해석을 정리합니다. 전체 실험 원장을 대체하는 문서는 아닙니다.
 
-For full reconstruction, use all three surfaces:
+전체 연구 과정을 재구성하려면 다음 세 자료를 함께 확인하세요:
 
-1. this experiment index for the complete catalog;
-2. [Design and experiment history](design-and-experiment-history.md) for architectural chronology;
-3. the machine-readable ledger and Git history for exact provenance.
+1. 실험 항목을 빠짐없이 확인할 수 있는 이 전체 색인
+2. 아키텍처 변화와 결정 과정을 기록한 [설계 및 실험 이력](design-and-experiment-history.md)
+3. 정확한 출처와 커밋 이력을 확인할 수 있는 기계 판독형 실험 원장 및 Git 기록
 
-This separation keeps the main documentation readable without erasing negative results or abandoned
-branches.
+이 자료들을 분리하면 부정적인 결과나 중단된 실험 계열을 삭제하지 않으면서도 기본 설명 문서를 읽기 쉽게 유지할 수 있습니다.
 
-## 0.13 schema-derived open-set membership
+## 0.13 스키마 기반 오픈셋 소속성
 
 | # | Experiment | Decision / state | Purpose / interpretation | Evidence |
 | ---: | --- | --- | --- | --- |
