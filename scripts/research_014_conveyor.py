@@ -106,7 +106,6 @@ class _CrossOriginSafeRedirect(urllib.request.HTTPRedirectHandler):
         ):
             for header in ("Authorization", "X-GitHub-Api-Version"):
                 redirected.remove_header(header)
-                redirected.remove_unredirected_header(header)
         return redirected
 
 
