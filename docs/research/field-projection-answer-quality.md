@@ -188,7 +188,7 @@ and its own query-disjoint surface, is the
 
 - fresh disjoint task surface;
 - B1 rows are not tuning data;
-- #432 held-out rows are not tuning data;
+- Issue #432 held-out rows are not tuning data;
 - the sealed #424 corpus is not used, and results here may not tune it;
 - no retrofit into B1.
 
