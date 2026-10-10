@@ -49,13 +49,13 @@ result evaluation and optional candidate expansion
 
 현재 관련 작업:
 
-- #417 — active research parent
-- #418 — FULL vs Top-K vs progressive utility protocol, terminal
-- #420 — B1 local downstream-agent A/B, terminal
-- #423 — stronger-agent B2 replication, terminal success
-- #431 — active execution-state-aware corrective retrieval
-- #432 — gated 780-task held-out generalization benchmark
-- #424 — gated final-answer factual-quality benchmark
+- #417 — 진행 중인 0.14 연구의 상위 이슈
+- #418 — FULL·Top-K·점진적 검색을 비교한 효용성 프로토콜, 종료
+- #420 — B1 로컬 후속 에이전트 A/B 평가, 종료
+- #423 — 강한 에이전트의 B2 재현 실험, 최종 성공
+- #431 — 실행 상태 기반 교정 검색, 정식 게이트 종료 및 조건 미승격
+- #432 — 과제 780개의 홀드아웃 일반화 평가, 실행 `38012340016` 진행 중
+- #424 — #432의 정식 성공 이후 실행하는 최종 답변 사실 정확도 평가
 
 Phase A의 corrected frozen benchmark는 Recall@1 68.97%, Recall@3 96.55%, Recall@5/10 **100%/100%**이며 250 endpoints에서 Top-5는 평균 FULL serialized schema context의 2.38%만 노출합니다.
 
@@ -141,8 +141,8 @@ open-space membership score
 
 현재 0.13 sequence:
 
-- **#397/V6C** tied-Gaussian density ratio: supported exact 93.86%, near reject 39.29%, OOD 56.94%, false-route 56.79%, raw-correct veto 0
-- **#399/V6D** component Gaussian-mixture ratio: supported exact 89.91%, near reject 39.68%, OOD 5.56%, false-route 67.90%, raw-correct veto 0, p95 250.49ms
+- **#397/V6C** 공유 가우시안 밀도비: 지원 경로 정확도 93.86%, 유사 도메인 거부율 39.29%, OOD 거부율 56.94%, 잘못된 경로율 56.79%, 원래 정답인 경로 거부 0건
+- **#399/V6D** 성분별 가우시안 혼합 밀도비: 지원 경로 정확도 89.91%, 유사 도메인 거부율 39.68%, OOD 거부율 5.56%, 잘못된 경로율 67.90%, 원래 정답인 경로 거부 0건, p95 250.49ms
 - **#401/V6E** non-parametric local membership: k=3 cosine-neighborhood에서 supported exact 83.33%, near reject 60.71%, OOD 54.17%, false-route 40.74%, p95 176.50ms
 
 V6C는 relative evidence가 supported route를 보존할 수 있지만 class당 Gaussian 하나가 multimodal structure를 무너뜨림을 보였습니다. V6D는 endpoint-level Gaussian mode를 보존해도 synthetic-to-natural membership gap이 해결되지 않음을 보였습니다. V6E는 Gaussian assumption을 제거하고 unsupported recall을 개선했지만 rejection target에 크게 못 미쳤고 supported routing도 손상했습니다. 다음 실험은 consumed DEV에서 또 다른 distance threshold, neighborhood size, Gaussian parameter를 tuning하는 대신 semantic signal/representation 자체를 바꿔야 합니다.
@@ -238,7 +238,7 @@ Accepted B1 path는 v2입니다.
 - frozen task SHA: `bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`
 - canonical workflow: `36529108855`
 - canonical source: `b9eadefd3cd076f026a54bbc55a949f0424f5dab`
-- runtime: Python 3.12.14, torch 2.14.0+cpu, transformers 4.57.6, tokenizers 0.22.2, safetensors 0.8.0
+- 실행 환경: Python 3.12.14, torch 2.14.0+cpu, transformers 4.57.6, tokenizers 0.22.2, safetensors 0.8.0
 - 30 frozen inference job이 정확히 552 unique episode로 aggregate
 
 Accepted aggregate 전 B1 v2는 hidden user-argument requirement를 수정하고 tool-observation causality barrier를 강제했습니다. Assistant turn당 tool call 하나만 실행하며 dependent call은 이전 observation이 필요합니다.
