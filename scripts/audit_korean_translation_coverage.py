@@ -109,6 +109,34 @@ def unchanged_english_prose(en_text: str, ko_text: str) -> list[str]:
     return copies
 
 
+def untranslated_english_prose_lines(text: str) -> list[int]:
+    """Advisory triage of substantial English-only Korean-document prose.
+
+    Exclude code fences, link destinations, inline code, tables, and short
+    identifier headings. Mixed-language technical prose is *not* judged here;
+    neither this heuristic nor a zero count proves semantic equivalence.
+    """
+    hits: list[int] = []
+    in_fence = False
+    for number, line in enumerate(text.splitlines(), 1):
+        if FENCE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        trimmed = line.strip()
+        if not trimmed or trimmed.startswith(("|", "<", "http", "!", "    ")):
+            continue
+        if re.search(r"[\uac00-\ud7a3]", trimmed):
+            continue
+        cleaned = re.sub(r"`[^`]*`", "", trimmed)
+        cleaned = re.sub(r"\]\([^)]*\)", "]", cleaned)
+        words = re.findall(r"[A-Za-z]{3,}", cleaned)
+        if len(cleaned) >= 36 and len(words) >= 6:
+            hits.append(number)
+    return hits
+
+
 def suspicious_unicode(path: Path) -> list[str]:
     text = path.read_text(encoding="utf-8")
     return [token for token in MOJIBAKE if token in text]
