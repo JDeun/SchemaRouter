@@ -22,11 +22,18 @@ SafeActBench evaluation. The upstream revision is
 
 Independently approve a contract using only agent-visible/public capabilities
 and policies.
-The SafeAct preflight workflow also publishes an **unreviewed public tool
-interface inventory** containing only pinned `templates/*/tools/*.py` filenames
-and SHA-256 digests, excluding world state, gold sources and evaluator data.
-This aids manual source review but is neither evidence-contract authorship nor
-approval; it supplies no case requirements, action decisions or model scores. Never use hidden evaluator requirements, labels or trajectories.
+The SafeAct preflight workflow also publishes an **unreviewed public source
+inventory**: pinned `templates/*/tools/*.py` tool filenames and the files
+directly under `templates/*/world/policies/`, with SHA-256 digests only.
+Domains with no policy directory are listed explicitly. No other world state,
+gold, case manifests, labels or evaluator files are traversed; symlinks fail
+closed. Public policy candidates are **not automatically Evidence Contracts**
+or verified runtime observations. A human author must interpret the public
+sources, establish the action/field semantics and cite pinned source bytes;
+a different person must independently review the complete mapping.
+Opaque 131-case IDs alone do not establish which contract an action requires.
+Never infer that correspondence from hidden evaluator requirements, labels
+or trajectories. This inventory supplies no case decisions or model scores.
 Every source reference should declare an allowed `kind`, a relative `path`,
 and the exact lowercase SHA-256 digest of the frozen *actual public file*.
 
