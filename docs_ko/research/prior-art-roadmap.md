@@ -1,6 +1,6 @@
 # Open-set capability routing 선행연구 로드맵
 
-이 문서는 `benchmarks/research-prior-art-registry.json`과 GitHub Issue #388의 사람이 읽을 수 있는 companion입니다. 새 연구 세션이 대화 기억에 의존하지 않고 이미 검토한 문헌, 그 문헌이 만든 SchemaRouter 가설, terminal experiment, 다음 실험을 재구성하도록 하는 것이 목적입니다.
+이 문서는 [`benchmarks/research-prior-art-registry.json`](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-prior-art-registry.json)과 GitHub Issue #388의 사람이 읽을 수 있는 companion입니다. 새 연구 세션이 대화 기억에 의존하지 않고 이미 검토한 문헌, 그 문헌이 만든 SchemaRouter 가설, terminal experiment, 다음 실험을 재구성하도록 하는 것이 목적입니다.
 
 ## Session bootstrap
 
@@ -66,7 +66,7 @@ Top-1 exact는 diagnostic이며 이 여섯 outcome 전체의 proxy로 취급하�
 
 ## 1. Adaptive Decision Boundary
 
-Primary reference는 Hanlei Zhang, Hua Xu, Ting-En Lin의 *Deep Open Intent Classification with Adaptive Decision Boundary* (AAAI 2021)입니다.
+Primary reference는 Hanlei Zhang, Hua Xu, Ting-En Lin의 *Deep Open Intent Classification with Adaptive Decision Boundary* (AAAI 2021)입니다. [논문](https://ojs.aaai.org/index.php/AAAI/article/view/17690)과 [공개 코드](https://github.com/thuiar/Adaptive-Decision-Boundary)를 원문 근거로 참조합니다.
 
 전이 가능한 아이디어:
 
@@ -87,7 +87,7 @@ Positive-only spherical formulation은 terminal이며 failed DEV evidence로 rad
 
 ## 2. Hard-negative OOS
 
-주요 참고문헌은 LREC-COLING 2024의 *Generating Hard-Negative Out-of-Scope Data with ChatGPT for Intent Classification*과 *Improved Out-of-Scope Intent Classification with Dual Encoding and Threshold-based Re-Classification*입니다.
+주요 참고문헌은 LREC-COLING 2024의 [*Generating Hard-Negative Out-of-Scope Data with ChatGPT for Intent Classification*](https://aclanthology.org/2024.lrec-main.674/)과 [*Improved Out-of-Scope Intent Classification with Dual Encoding and Threshold-based Re-Classification*](https://aclanthology.org/2024.lrec-main.763/)입니다.
 
 핵심은 단순히 synthetic data를 쓰는 것이 아니라, supported class와 vocabulary/domain feature를 공유하면서 unsupported behavior를 요구하는 **near-domain OOS가 어려운 경우**라는 점입니다.
 
@@ -143,13 +143,13 @@ V6C는 relative evidence가 supported route를 보존할 수 있지만 class당 
 
 ## 4. Selective prediction과 conformal abstention
 
-Work item #391입니다. 추적 reference는 covariate shift 아래 conformal predictive systems와 fine-grained robust conformal inference입니다.
+Work item #391입니다. 추적 reference는 [*Conformal Predictive Systems Under Covariate Shift*](https://proceedings.mlr.press/v230/jonkers24a.html)와 [*Not all distributional shifts are equal: Fine-grained robust conformal inference*](https://proceedings.mlr.press/v235/ai24a.html)입니다.
 
 SchemaRouter에서 conformal/selective prediction은 semantic detector 자체가 아니라 **safety layer**입니다. Membership score가 신뢰할 수 있는 precision/recall profile을 가진 뒤에만 시험해야 하며, 약한 detector를 구하기 위해 protected #198 calibration/blind surface를 소비해서는 안 됩니다.
 
 ## 5. Tool retrieval과 executable-schema retrieval
 
-Work item #392입니다. 주요 reference는 ToolRet(Findings ACL 2025)과 ToolReAGt(KnowLLM 2025)입니다.
+Work item #392입니다. 주요 reference는 [ToolRet(Findings ACL 2025)](https://aclanthology.org/2025.findings-acl.1258/)과 [ToolReAGt(KnowLLM 2025)](https://aclanthology.org/2025.knowllm-1.7/)입니다.
 
 | RAG | SchemaRouter |
 | --- | --- |
