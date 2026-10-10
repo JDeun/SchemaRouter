@@ -43,6 +43,13 @@ A separate `confirmation-plan.json` fixes the **original upstream source**
 endpoint/action-matrix controls and primary Top-3 **before any new scored
 confirmation**. No new held-out cases exist in this branch.
 
+The independent-author handoff and second-reviewer checklist are in
+[`CONFIRMATION_REVIEW_PROTOCOL.md`](CONFIRMATION_REVIEW_PROTOCOL.md).
+The linter now rejects prefixed and near-complete token-reordered copies
+of visible development queries as well as exact/punctuation-normalized reuse,
+and refuses changes to the rest of the frozen protocol (not just Top-K).
+These conservative textual checks still cannot certify semantic independence.
+
 `python -m scripts.validate_clicshopping_v433_confirmation` accepts an
 externally authored candidate case package and rejects known reused
 development IDs/queries, permission-scope drift, post-hoc K changes and
