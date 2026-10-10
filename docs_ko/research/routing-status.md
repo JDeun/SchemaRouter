@@ -312,15 +312,14 @@ DEV result:
 | p95 | 249.73 ms |
 | Positive route switches / authority / execution errors | 0 / 0 / 0 |
 
-Set-level consensus는 #358 대비 recall을 39.51%에서 64.20%로 크게 개선했지만 97% near-domain target에는 여전히 미달했고 올바른 supported winner를 reject하기 시작했습니다. This closes further rule
-tuning over the same BGE/MiniLM ontology-projection evidence family on consumed DEV.
+집합 수준의 합의 방식은 #358 대비 거부 재현율을 39.51%에서 64.20%로 크게 개선했지만, 근접 도메인 목표인 97%에는 여전히 미달했고 올바른 지원 요청 결과를 거부하기 시작했습니다. 이미 사용한 개발 데이터에서 동일한 BGE/MiniLM 온톨로지 투영 근거에 대해 규칙을 추가 조정하는 연구는 여기서 종료합니다.
 
 #363의 해당 규칙에 관한 실험은 종료됐습니다. 별도로 동결한 552개 사례의 확인 코퍼스는
 여전히 **채점되지 않았습니다**. 후속 연구는 같은 투영 결과를 대상으로 임계값이나
 합의 규칙만 다시 조절하는 대신, 실질적으로 다른 의미론적 소속 신호를 도입해야 합니다.
 
 
-## 0.12 external multilingual zero-shot membership
+## 0.12 외부 다국어 제로샷 집합 소속 판정
 
 실험 #371은 동결된 BGE-M3만 긍정적 경로 선택자로 유지하면서 BGE/MiniLM 온톨로지
 투표 계열을 독립적으로 사전학습된 다국어 제로샷 분류기로 교체했습니다.
@@ -347,8 +346,7 @@ DEV result:
 | End-to-end p95 | 274.52 ms |
 | Positive route switches / authority / execution errors | 0 / 0 / 0 |
 
-Architecture는 authority-safe 상태를 유지했지만 generic OUTSIDE catch-all은 concrete supported capability label과의 multiclass normalization에서 거의 선택되지 않았습니다. The exact formulation is
-terminal and its separately frozen confirmation corpus remains **unscored**.
+아키텍처는 실행 권한을 침해하지 않았지만, 포괄적인 OUTSIDE 레이블은 구체적인 지원 기능 레이블과 함께 다중분류 정규화를 거치면 거의 선택되지 않았습니다. 이 실험 구성은 종료됐으며 별도로 동결한 확인 코퍼스는 **채점되지 않은 상태**로 유지합니다.
 
 다음 후보는 하나의 포괄적 OUTSIDE 레이블을 구체적인 긍정 레이블과 경쟁시키는 대신, 실제로 등록된 기능 집합을 집합 소속 여부 판단에 직접 반영해야 합니다.
 
@@ -411,8 +409,7 @@ DEV result:
 Per-capability decomposition은 하나의 aggregate set hypothesis보다 더 informative했지만 binary argmax는 여전히 supported request를 과도하게 veto하여 raw-correct winner의 절반 이상을 reject했습니다.
 #377의 정확한 실험 구성은 종료됐으며 동결한 확인용 코퍼스는 **채점하지 않은 상태**로 유지합니다.
 
-The next preregistered experiment (#378) compares the strongest supported-leaf entailment with the
-strongest counterfactual-leaf entailment, without adding thresholds or positive reranking.
+다음 사전 등록 실험인 #378에서는 임계값을 추가하거나 긍정 경로를 재순위화하지 않고, 지원 기능의 최강 함의 점수와 반사실 기능의 최강 함의 점수를 비교합니다.
 
 
 ## 0.12 pairwise supported-vs-counterfactual NLI
@@ -455,7 +452,7 @@ DEV 결과:
 [Operation routing v4 terminal report](operation-routing-v4-terminal-report.md).
 
 
-## 0.13 schema-derived open-set membership sequence
+## 0.13 스키마 기반 오픈셋 기능 소속 판정 계열
 
 0.13 단계에서는 **양수 경로 검색**과 **open-set 기능 소속 판별**을 분리했습니다. 동결 BGE-M3만 양수 엔드포인트 실행 권한을 갖습니다. 모든 0.13 검증기는 거부 전용(veto-only)이며 등록된 원시 1순위 경로를 유지하거나 `NO_ROUTE`를 반환할 수 있을 뿐, 다른 엔드포인트로 재정렬하거나 2순위 폴백을 실행하거나 가상의 경로를 만들어서는 안 됩니다.
 
