@@ -1,13 +1,13 @@
 # 브랜드 에셋
 
-SchemaRouter는 **중괄호 + routing hub** 마크를 사용합니다.
+SchemaRouter는 **중괄호와 라우팅 허브**를 결합한 마크를 사용합니다.
 
 ## 의미
 
-- **중괄호**는 schema와 structured contract를 나타냅니다.
-- **중앙 hub**는 routing과 의사결정을 나타냅니다.
-- **연결된 세 개의 node**는 하나의 검증된 execution boundary로 모이는 tool, endpoint, field를 나타냅니다.
-- **Teal accent**는 신뢰된 routing decision을 표시하고, graphite는 개발자 infrastructure 프로젝트에 맞는 시각적 일관성을 유지합니다.
+- **중괄호**는 스키마와 구조화된 계약을 나타냅니다.
+- **중앙 허브**는 라우팅과 의사결정을 나타냅니다.
+- **연결된 세 개의 노드**는 하나의 검증된 실행 경계로 모이는 도구·엔드포인트·필드를 나타냅니다.
+- **청록색 강조 색상**은 신뢰할 수 있는 라우팅 결정을 표시하며, 흑연색은 개발자 인프라 프로젝트에 어울리는 시각적 일관성을 유지합니다.
 
 ## 팔레트
 
@@ -22,12 +22,12 @@ SchemaRouter는 **중괄호 + routing hub** 마크를 사용합니다.
 
 ## 파일
 
-- `schemarouter-mark-light.svg` — 밝은 배경용 마크.
-- `schemarouter-mark-dark.svg` — 어두운 배경용 마크.
-- `schemarouter-lockup-light.svg` — 밝은 배경용 가로형 마크 + wordmark.
-- `schemarouter-lockup-dark.svg` — 어두운 배경용 가로형 마크 + wordmark.
-- `schemarouter-social-preview.svg` — 링크 미리보기용 1280×640 원본 artwork.
+- `schemarouter-mark-light.svg` — 밝은 배경에 사용하는 마크.
+- `schemarouter-mark-dark.svg` — 어두운 배경에 사용하는 마크.
+- `schemarouter-lockup-light.svg` — 밝은 배경에 사용하는 가로형 마크와 워드마크.
+- `schemarouter-lockup-dark.svg` — 어두운 배경에 사용하는 가로형 마크와 워드마크.
+- `schemarouter-social-preview.svg` — 링크 미리보기에 사용하는 1280×640 크기의 원본 이미지.
 
-favicon, avatar, 작은 navigation에는 mark를 사용합니다. README, 문서 landing page, social graphic에는 lockup을 사용합니다.
+파비콘·아바타·좁은 탐색 영역에는 마크를 사용합니다. README·문서 첫 화면·소셜 이미지에는 워드마크를 포함한 가로형 로고를 사용합니다.
 
-core mark를 늘이거나 회전하지 말고, 개별 node의 색상을 따로 변경하거나 shadow/glow 같은 효과를 추가하지 마세요.
+핵심 마크를 늘이거나 회전하지 말고, 노드별 색상을 임의로 바꾸거나 그림자·광채 효과를 추가하지 마세요.
