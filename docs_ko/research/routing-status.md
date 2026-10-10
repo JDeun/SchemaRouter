@@ -373,8 +373,7 @@ DEV result:
 | End-to-end p95 | 254.55 ms |
 | Positive route switches / authority / execution errors | 0 / 0 / 0 |
 
-Single disjunctive hypothesis는 모든 supported request를 포함해 모든 DEV request에서 `not_entailment`로 collapse했습니다. The exact formulation is terminal, and its separately frozen confirmation
-corpus remains **unscored**.
+단일 논리합 가설은 지원되는 요청까지 포함해 모든 개발 데이터 요청을 `not_entailment`로 판정하는 상태로 수렴했습니다. 이 정확한 가설 표현은 종료됐으며, 별도로 동결한 확인용 데이터셋은 아직 **채점하지 않았습니다**.
 
 이 결과는 해당 NLI 모델에서 유한한 기능 집합 소속 여부를 하나의 긴 집합 소속
 문장으로 표현해서는 안 된다는 점을 보여줍니다. 후속 연구는 이미 사용된 가설의
