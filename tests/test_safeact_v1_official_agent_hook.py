@@ -65,7 +65,7 @@ def test_official_hook_uses_only_trusted_gateway_calls(
     hook.install_v1_gate(
         fake,
         document={
-            "public_observation_mappings": {},
+            "public_observation_mappings": {"customer_policy_qa": {}},
             "case_coverage": {"SAB-V1-001": None},
         },
         source_root=tmp_path, case_id="SAB-V1-001",
@@ -96,7 +96,7 @@ def test_official_hook_fails_closed_if_gateway_not_captured(
     hook.install_v1_gate(
         fake,
         document={
-            "public_observation_mappings": {},
+            "public_observation_mappings": {"customer_policy_qa": {}},
             "case_coverage": {"SAB-V1-001": None},
         },
         source_root=tmp_path, case_id="SAB-V1-001",
@@ -172,7 +172,7 @@ def test_official_host_rejects_missing_public_domain(
     monkeypatch.setattr(hook, "verify_sources", lambda *args: [])
     hook.install_v1_gate(
         fake, document={
-            "public_observation_mappings": {},
+            "public_observation_mappings": {"customer_policy_qa": {}},
             "case_coverage": {"SAB-V1-001": None},
         },
         source_root=tmp_path, case_id="SAB-V1-001",
@@ -180,3 +180,77 @@ def test_official_host_rejects_missing_public_domain(
     fake.ToolGateway("v1")
     with pytest.raises(ValueError, match="domain"):
         fake.normalize_v1({}, {}, [], "codex", "model", "", None)
+
+
+def test_scoped_evidence_ignores_other_domain_mapping(monkeypatch, tmp_path: Path) -> None:
+    seen = []
+
+    class FakeGateway:
+        def __init__(self, protocol: str) -> None:
+            self.protocol = protocol
+            self.calls = []
+
+    fake = SimpleNamespace(
+        ToolGateway=FakeGateway,
+        normalize_v1=lambda *args: {"events": []},
+    )
+    monkeypatch.setattr(hook, "verify_sources", lambda *args: [])
+    monkeypatch.setattr(
+        hook, "gate_official_v1_record",
+        lambda record, **kwargs: seen.append(kwargs) or record,
+    )
+    hook.install_v1_gate(
+        fake, source_root=tmp_path, case_id="SAB-V1-001",
+        document={
+            "case_coverage": {"SAB-V1-001": None},
+            "public_observation_mappings": {
+                "customer_policy_qa": {},
+                "legal_finance_advice": {
+                    "charge_read": {
+                        "record_id_key": "subject",
+                        "field_name_key": "predicate",
+                    }
+                },
+            },
+        },
+    )
+    fake.ToolGateway("v1")
+    fake.normalize_v1(
+        {"env_id": "customer_policy_qa"}, {}, [], "codex", "model", "", None
+    )
+    payload = {
+        "status": "ok", "tool": "charge_read", "call_id": "call_01",
+        "observations": [{"subject": "C2", "predicate": "owner"}],
+    }
+    assert seen[0]["verify_result"]("charge_read", {}, payload) is None
+    assert seen[0]["domain"] == "customer_policy_qa"
+
+
+def test_flat_mapping_is_rejected_by_host(monkeypatch, tmp_path: Path) -> None:
+    class FakeGateway:
+        def __init__(self, protocol: str) -> None:
+            self.protocol = protocol
+            self.calls = []
+
+    fake = SimpleNamespace(
+        ToolGateway=FakeGateway,
+        normalize_v1=lambda *args: {"events": []},
+    )
+    monkeypatch.setattr(hook, "verify_sources", lambda *args: [])
+    hook.install_v1_gate(
+        fake, source_root=tmp_path, case_id="SAB-V1-001",
+        document={
+            "case_coverage": {"SAB-V1-001": None},
+            "public_observation_mappings": {
+                "charge_read": {
+                    "record_id_key": "subject",
+                    "field_name_key": "predicate",
+                },
+            },
+        },
+    )
+    fake.ToolGateway("v1")
+    with pytest.raises(ValueError, match="domain"):
+        fake.normalize_v1(
+            {"env_id": "customer_policy_qa"}, {}, [], "codex", "model", "", None
+        )

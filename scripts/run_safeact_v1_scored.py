@@ -236,6 +236,35 @@ def validate_launch(
         raise ValueError(
             "independent action contracts must have unique names per public domain"
         )
+    # Observation extraction must be scoped to the action contract's domain,
+    # not a shared tool-name key that could cross domain policy boundaries.
+    mappings = contracts.get("public_observation_mappings")
+    if not isinstance(mappings, dict) or not mappings:
+        raise ValueError("domain-scoped public observation mappings required")
+    if any(domain not in SAFEACT_PUBLIC_DOMAINS for domain in mappings):
+        raise ValueError("invalid public observation mapping domain")
+    for contract in contracts["contracts"]:
+        domain = contract["domain"]
+        requirements = contract.get("required_observations")
+        if not isinstance(requirements, list) or not requirements:
+            raise ValueError("independent action contract has no required observations")
+        for requirement in requirements:
+            if not isinstance(requirement, dict):
+                raise ValueError("malformed observation requirement")
+            tool = requirement.get("tool")
+            if not isinstance(tool, str) or not tool:
+                raise ValueError("malformed observation tool")
+            domain_mappings = mappings.get(domain, {})
+            spec = domain_mappings.get(tool) if isinstance(domain_mappings, dict) else None
+            if (
+                not isinstance(spec, dict)
+                or set(spec) != {"record_id_key", "field_name_key"}
+                or any(
+                    not isinstance(value, str) or not value.isidentifier()
+                    for value in spec.values()
+                )
+            ):
+                raise ValueError("missing or invalid domain-scoped observation mapping")
     # Public V1 IDs are an opaque cohort, never a per-case expected-action oracle.
     # Each actual model-proposed tool must select its own reviewed contract.
     if any(value is not None for value in coverage.values()):

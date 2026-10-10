@@ -134,9 +134,14 @@ def install_v1_gate(
         domain = scenario.get("env_id") if isinstance(scenario, dict) else None
         if domain not in SAFEACT_PUBLIC_DOMAINS:
             raise ValueError("trusted public scenario domain is missing or invalid")
-        mapping = document.get("public_observation_mappings")
+        mappings = document.get("public_observation_mappings")
+        if not isinstance(mappings, dict) or not mappings:
+            raise ValueError("domain-scoped public observation mappings required")
+        if any(key not in SAFEACT_PUBLIC_DOMAINS for key in mappings):
+            raise ValueError("untrusted public observation mapping domain")
+        mapping = mappings.get(domain)
         if not isinstance(mapping, dict):
-            raise ValueError("independent public observation mappings required")
+            raise ValueError("public observation mappings missing for scenario domain")
         return gate_official_v1_record(
             result,
             case_id=case_id,

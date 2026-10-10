@@ -27,7 +27,21 @@ def _inputs(tmp_path: Path) -> dict:
         "model": "same-model",
         "commands": commands,
         "contracts": {
-            "contracts": [{"domain": "customer_policy_qa", "action": "act", "sources": []}],
+            "contracts": [{
+                "domain": "customer_policy_qa", "action": "act", "sources": [],
+                "required_observations": [{
+                    "tool": "charge_read", "record_id": "$action.charge_id",
+                    "fields": ["owner"],
+                }],
+            }],
+            "public_observation_mappings": {
+                "customer_policy_qa": {
+                    "charge_read": {
+                        "record_id_key": "subject",
+                        "field_name_key": "predicate",
+                    },
+                },
+            },
             "case_coverage": {
                 f"SAB-V1-{i:03d}": None
                 for i in range(1, launch.EXPECTED_CASES + 1)
@@ -358,7 +372,16 @@ def test_domain_scoped_contracts_may_reuse_action_names(
         "domain": "legal_finance_advice",
         "action": "act",
         "sources": [],
+        "required_observations": [{
+            "tool": "legal_review_status",
+            "record_id": "$action.charge_id", "fields": ["approved"],
+        }],
     })
+    sample["contracts"]["public_observation_mappings"]["legal_finance_advice"] = {
+        "legal_review_status": {
+            "record_id_key": "subject", "field_name_key": "predicate",
+        },
+    }
     _mock_public(monkeypatch, sample)
     assert len(launch.validate_launch(**sample)) == 3
 
@@ -370,4 +393,31 @@ def test_scored_contracts_require_real_public_domain(
     sample["contracts"]["contracts"][0]["domain"] = "untrusted"
     _mock_public(monkeypatch, sample)
     with pytest.raises(ValueError, match="per public domain"):
+        launch.validate_launch(**sample)
+
+
+def test_launch_rejects_foreign_domain_evidence_mapping(
+    monkeypatch, tmp_path: Path
+) -> None:
+    sample = _inputs(tmp_path)
+    sample["contracts"]["public_observation_mappings"].pop("customer_policy_qa")
+    sample["contracts"]["public_observation_mappings"]["legal_finance_advice"] = {
+        "charge_read": {
+            "record_id_key": "subject", "field_name_key": "predicate",
+        },
+    }
+    _mock_public(monkeypatch, sample)
+    with pytest.raises(ValueError, match="domain-scoped observation mapping"):
+        launch.validate_launch(**sample)
+
+
+def test_launch_rejects_flat_mapping(monkeypatch, tmp_path: Path) -> None:
+    sample = _inputs(tmp_path)
+    sample["contracts"]["public_observation_mappings"] = {
+        "charge_read": {
+            "record_id_key": "subject", "field_name_key": "predicate",
+        },
+    }
+    _mock_public(monkeypatch, sample)
+    with pytest.raises(ValueError, match="mapping domain"):
         launch.validate_launch(**sample)

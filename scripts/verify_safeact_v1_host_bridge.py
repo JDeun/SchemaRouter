@@ -128,9 +128,11 @@ def run_bridge_compatibility(root: Path) -> dict[str, Any]:
                 }],
             }],
             "public_observation_mappings": {
-                "charge_read": {
-                    "record_id_key": "subject",
-                    "field_name_key": "predicate",
+                "customer_policy_qa": {
+                    "charge_read": {
+                        "record_id_key": "subject",
+                        "field_name_key": "predicate",
+                    }
                 }
             },
         }
