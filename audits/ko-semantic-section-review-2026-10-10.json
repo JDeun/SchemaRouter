@@ -193,7 +193,7 @@
       "path": "research/design-and-experiment-history.md",
       "section": 34,
       "en_blob": "27bdc35c44010cfd1c15d4a5702ed2b9ad6f9c5c",
-      "ko_blob": "bdaaebfbf24acefacbd4a16cd30bea688d030985",
+      "ko_blob": "2a3ffebc02fc9e0c577d61bbeb72f9976c721d70",
       "decision": "meaning-preserved",
       "evidence": "Korean preserves prior freeze/no-retuning and same-corpus non-generalization limits"
     },
@@ -201,7 +201,7 @@
       "path": "research/design-and-experiment-history.md",
       "section": 82,
       "en_blob": "27bdc35c44010cfd1c15d4a5702ed2b9ad6f9c5c",
-      "ko_blob": "bdaaebfbf24acefacbd4a16cd30bea688d030985",
+      "ko_blob": "2a3ffebc02fc9e0c577d61bbeb72f9976c721d70",
       "decision": "meaning-preserved",
       "evidence": "Korean preserves prior freeze/no-retuning and same-corpus non-generalization limits"
     },
@@ -217,7 +217,7 @@
       "path": "research/routing-status.md",
       "section": 12,
       "en_blob": "13c37940df75f028b74c41c798a6cfa7432e7636",
-      "ko_blob": "27de0dac6937d4f7a85f8b3a523205667c9da0d4",
+      "ko_blob": "906a4daea4a58ac662702320ffb57f039f62b15f",
       "decision": "meaning-preserved",
       "evidence": "Korean clearly states sub-85% supported exact rate is not production pass"
     },
@@ -229,5 +229,14 @@
       "decision": "meaning-preserved",
       "evidence": "Korean distinguishes fixed tokenizer cost proxy from the retrieval model"
     }
-  ]
+  ],
+  "followup_translation_review": {
+    "date": "2026-10-10",
+    "reason": "Explicit English prose remnants in research stop rules, frozen unscored confirmation and architecture-negative conclusions corrected; previous review waivers rechecked for unchanged underlying logic at the pinned whole-document blobs.",
+    "reviewed_modified_documents": [
+      "research/design-and-experiment-history.md",
+      "research/routing-status.md"
+    ],
+    "boundary": "This re-pinning does not establish independent sentence-level equivalence for 147 pages."
+  }
 }
