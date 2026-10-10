@@ -57,7 +57,90 @@ Cold/hot 정의는 scoring 전에 고정합니다. 일반적인 offline 정의�
 결과를 공개할 때 hardware/environment도 함께 기록합니다. GPU HYSET latency와 CPU
 SchemaRouter latency를 hardware label 없이 직접 비교하지 않습니다.
 
-## 현재 외부 검증 queue
+## 현재 외부 검증 대기열
+
+전체 외부 검증을 관리하는 상위 이슈는 [#584](https://github.com/JDeun/SchemaRouter/issues/584)입니다.
+외부 평가는 동결된 #431/#432/#424 실험과 **독립적**입니다.
+상대 관리자의 긍정적인 답변은 평가 논의에 대한 관심이지,
+독립 재현 성공이나 제품 추천을 의미하지 않습니다.
+협업이 거절된 경우에도 근거를 기록하고 반복적으로 요청하지 않습니다.
+
+### 사용자 신원·권한 조건부 게이트웨이 비교 범위
+
+mcp-gateway [#2641에 제안한 공동 순위표](https://github.com/MikkoParkkola/mcp-gateway/issues/2641#issuecomment-5956919228)는
+**거절**됐고 [계획 없음으로 종료](https://github.com/MikkoParkkola/mcp-gateway/issues/2641#issuecomment-6053555230)됐습니다. 이는 외부 교류 결과이지
+**제품 성능이 나쁘다는 실험 증거가 아닙니다**. 같은 제안을 반복하지 않습니다.
+평가를 다시 제안하려면 본질적으로 다른 신규 프로토콜에 대한 상대 측 동의와 다음 조건이 필요합니다.
+
+1. **신원·권한별 후보 집합:** 사례마다 호출자 신원, 허가 및 권한을 동결합니다.
+   각 시스템의 고유 권한 필터를 통과한 도구만 정답 후보로 채점하고
+   접근 금지 도구를 올바른 검색 결과로 간주하지 않습니다.
+2. **시스템 고유 입력 근거:** mcp-gateway는 서버가 공개한 도구 설명을 사용하지만
+   SchemaRouter는 별도로 선언한 타입 기반 필드 계약도 사용할 수 있습니다.
+   SchemaRouter의 주석을 상대 측 기본 비교 조건에 주입하지 않습니다.
+   독립된 정답 라벨과 양측의 고유 필드 근거가 없는 경우 필드 재현율은
+   **비교 불가**로 표기하며 존재하지 않는 필드 주석을 추정하지 않습니다.
+3. **측정 경계:** 라이브러리 내부 검색 시간과 게이트웨이의 인증·정책 검사·
+   신원 전달·감사·네트워크 전송을 포함한 전체 시간을 구분합니다.
+   지연 시간과 노출 바이트는 동등한 경계에서만 비교하고, 그 외에는 비교 불가로 표시합니다.
+4. **고유 순위 기준:** 상태, 권한 적합성, 신뢰, 비용, 지연, 최신성, 피드백을
+   사용하는 게이트웨이의 고유 순위 방식을 임의로 바꾸지 않습니다.
+   상대 프로젝트의 4.0.0 출시 우선순위를 존중하고 실질적으로 새로운 프로토콜만 검토 요청합니다.
+
+공통 승자 점수, 독립 재현 성공, 상대 프로젝트의 보증은 입증되지 않았습니다.
+거절된 교류를 동결된 0.14 연구 결과에 포함하지 않습니다.
+
+### ClicShopping 4.33 엔드포인트·작업 고정 소스 감사
+
+[#1208](https://github.com/JDeun/SchemaRouter/issues/1208)는 상대 저장소
+`version4.33`의 커밋 `3bac851759234a4babb49d3f351e472cd9e0f31f`과
+[기계 판독형 소스 인벤토리](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/external-validation-clicshopping-v433/source-inventory.json)를
+기준으로 합니다. 이는 **공개 소스 계약 감사이며, 성능 벤치마크 점수는 아닙니다**.
+오프라인 검사 명령은 다음과 같습니다.
+
+```bash
+python scripts/validate_clicshopping_v433_inventory.py
+pytest -q tests/test_clicshopping_v433_inventory.py
+```
+
+기본 인터페이스는 MCP JSON-RPC `tools/list`나 `inputSchema`가 아닌
+**REST 엔드포인트·작업 표**입니다. 고정 트리에서
+`AnthropicEcommerce`, `CustomersProducts`, `ChatRagBI` 페이지 및
+각 권한 화이트리스트를 확인했습니다. `CustomerOrdersPermissions.php`에는
+읽기 작업 3개와 쓰기 작업 2개가 선언됐지만 **정확히 이 고정 트리에
+`CustomerOrders` 엔드포인트 페이지 구현은 없습니다**.
+따라서 이 작업들은 *권한 선언만 확인됨, 실제 호출 가능성 미확인*으로 분류하며,
+새로운 상위 프로젝트 구현 증거와 사전 동결 없이는 실행 경로의 점수 분모에 포함하지 않습니다.
+
+`AnthropicEcommerce`의 제품 작업과 `CustomersProducts`에는
+`products`, `product`, `search`, `categories`, `stats`,
+`recommendations`의 **중복 이름 6개**가 존재합니다. 작업 이름만으로
+동일한 엔드포인트라고 판단하지 않고 엔드포인트 정체성으로 구분합니다.
+`CustomersProducts`의 쓰기 작업은 **0개**이며, `DISPLAY_BROWSER_JSON`은
+브라우저 GET 접근을 제한하는 설정이지 선언된 작업을 삭제하는 기능이 아닙니다.
+`customerOrders`는 인증된 `customers_id`와 작업별 읽기·쓰기 권한이 필요합니다.
+`ChatRagBI`는 읽기 전용 및 읽기 권한만 있는 사용자 조건을 요구하며,
+4.33의 `RATE_LIMITED` 오류와 `ai_disclaimer` 응답 계약도 유지합니다.
+
+이 스냅샷은 라이브 엔드포인트 호출, 자격 증명, 쓰기, 모델 평가,
+필드 재현율 점수, 제품 성능 결론을 포함하지 않습니다. 다음 단계에서는
+**검증된 소스 범위**만 대상으로 사례·채점 규칙을 독립적으로 사전 동결해야 하며,
+이후 상위 프로젝트의 변경 커밋을 기존 동결 입력으로 몰래 대체하지 않습니다.
+
+| 평가·회신 대상 | 관리 이슈 | 해석 및 비교 범위 |
+| --- | --- | --- |
+| SafeActBench V1(별도 외부 연구) | [#1211](https://github.com/JDeun/SchemaRouter/issues/1211), [#1224](https://github.com/JDeun/SchemaRouter/issues/1224) | V1 131개 사례 × 3개 조건의 실제 평가는 미완료. 정답 정보 비노출 계약과 격리 실행 환경 필요 |
+| Xerrion ServiceNow | [#1228](https://github.com/JDeun/SchemaRouter/issues/1228) | 동일한 권한 허용 도구 패키지와 질의별 사전 선택을 오프라인 비교 |
+| ClicShopping 4.33 | [#1208](https://github.com/JDeun/SchemaRouter/issues/1208) | MCP `tools/list` 응답이 아닌 REST 엔드포인트·작업 표가 기준이며, 권한과 고객 범위를 보존 |
+| SmartMCP | [#1114](https://github.com/JDeun/SchemaRouter/issues/1114) | 공통 동결 카탈로그·예산 필요. 협업 관심은 재현 성공 증거가 아님 |
+| Clear Your Tools | [#839](https://github.com/JDeun/SchemaRouter/issues/839) | 기존 단계 관리 및 BM25를 보존하고 개발 테스트와 홀드아웃 결과를 구분 |
+| HYSET / pi-jev / hope-agent | [#795](https://github.com/JDeun/SchemaRouter/issues/795), [#796](https://github.com/JDeun/SchemaRouter/issues/796), [#799](https://github.com/JDeun/SchemaRouter/issues/799) | 공개 코드 재학습과 논문 체크포인트 재현을 구분하며, 도구·필드 재현율을 분리 |
+| mcp-gateway | [#1209](https://github.com/JDeun/SchemaRouter/issues/1209) | 공동 비교 거절. 신원·권한·네트워크 경계를 고려한 별도 설계 없이는 비교 불가 |
+| ToolHive VirtualMCPServer | [#1229](https://github.com/JDeun/SchemaRouter/issues/1229), [관리자 회신](https://github.com/stacklok/toolhive/issues/6742#issuecomment-6065169010) | 상대 저장소에서 제3자 벤치마크 및 문서 수용을 거절했습니다. 독립적인 SchemaRouter 자체 비교만 가능하며 상대의 보증이나 반복 요청을 의미하지 않습니다 |
+| Knuckles agent-utilities | [#1229](https://github.com/JDeun/SchemaRouter/issues/1229), [관리자 회신](https://github.com/Knuckles-Team/agent-utilities/issues/20#issuecomment-6084040055) | 공동 비교를 거절했습니다. `DynamicToolOrchestrator`는 폐기 예정이므로 현행 비교에서 제외합니다. 실제 Graph OS 대체 기능과 AU-RETRIEVAL 규격에 대해서만 새로운 동의 기반 제안을 검토합니다 |
+| Consiliency pmcp | [#1229](https://github.com/JDeun/SchemaRouter/issues/1229), [관리자 회신](https://github.com/Consiliency/pmcp/issues/236#issuecomment-5996966650) | 공동 평가 및 보증은 거절됐습니다. 공식 공개 pmcp 검색 벤치마크가 나오기 전까지 독립 재현을 보류합니다 |
+
+
 
 - HYSET (#795): discovery anchor `93808cb8d633b6b685f0f9353923b27c2ad7ad81`. Source는 MIT이지만 `data/hyset_corpus.json`은 ToolBench 파생 데이터이므로 ToolBench 조건을 따릅니다. 호환되는 공개 ToolBench subset을 사용하고 라이선스가 허용하지 않는 데이터는 재배포하지 않습니다.
 - pi-jev (#796): discovery anchor `c5b5847aa189fe5ffec52893b7051fe8f9e7a548`, MIT. 작은 shared catalog를 먼저 고정하고 Jev tool activation과 SchemaRouter field narrowing을 별도 지표로 기록합니다.

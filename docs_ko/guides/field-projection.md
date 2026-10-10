@@ -1,10 +1,10 @@
-# Field projection
+# 필드 투영(Field projection)
 
-SchemaRouter는 projection을 적용하기 전에 전체 raw tool output을 검증합니다. 따라서 projection으로 invalid response를 숨길 수 없습니다.
+SchemaRouter는 어떤 필드 투영을 적용하기 전에 **원시 도구 출력 전체를 검증**합니다. 따라서 투영을 통해 잘못된 응답을 숨길 수 없습니다.
 
-## Top-level field
+## 최상위 필드
 
-기본 field contract는 그대로 유지됩니다:
+기본 필드 계약은 기존과 같습니다.
 
 ```python
 from schemarouter import FieldSpec
@@ -12,11 +12,11 @@ from schemarouter import FieldSpec
 FieldSpec(name="temperature")
 ```
 
-명시적 path가 없으면 동일한 이름의 top-level key를 projection합니다.
+명시적인 경로를 지정하지 않으면 해당 필드는 같은 이름의 최상위 키를 투영합니다.
 
-## Nested object field
+## 중첩 객체 필드
 
-logical field ID를 nested JSON object path에 매핑하려면 `FieldSpec.path`를 사용합니다:
+논리적 필드 ID를 중첩된 JSON 객체 경로에 매핑할 때는 `FieldSpec.path`를 사용합니다.
 
 ```python
 FieldSpec(
@@ -26,13 +26,13 @@ FieldSpec(
 )
 ```
 
-logical ID는 `display_name`으로 유지됩니다. plan은 임의 JSONPath 대신 이 선언된 ID를 선택합니다:
+논리적 ID는 계속 `display_name`입니다. 계획에서는 임의의 JSONPath가 아니라 이 선언된 ID를 선택합니다.
 
 ```python
 call.fields == ["display_name"]
 ```
 
-다음 raw response가 주어지면:
+다음과 같은 원시 응답을 받았다고 가정합니다.
 
 ```json
 {
@@ -49,7 +49,7 @@ call.fields == ["display_name"]
 }
 ```
 
-projected result는 선언된 object shape를 보존합니다:
+투영된 결과는 선언된 객체 구조를 유지합니다.
 
 ```json
 {
@@ -61,28 +61,28 @@ projected result는 선언된 object shape를 보존합니다:
 }
 ```
 
-## Security boundary
+## 보안 경계
 
-`FieldSpec.path`는 trusted schema metadata이며 model이 생성하는 execution authority가 아닙니다.
+`FieldSpec.path`는 신뢰할 수 있는 스키마 메타데이터입니다. 모델이 생성한 실행 권한이 아닙니다.
 
-SchemaRouter는 다음을 보장합니다:
+SchemaRouter는 다음을 보장합니다.
 
-- `ToolCall.fields`에는 선언된 logical field ID만 허용합니다;
-- 선언된 field ID가 아닌 위조 path 문자열을 거부합니다;
-- 중복되거나 조상·자손 관계로 겹치는 선언 path를 거부합니다;
-- nested value 추출 전에 전체 raw output schema를 검증합니다;
-- projection result를 통해 원래 invoker result가 변경되지 않도록 값을 복사합니다;
-- call-aware invoker가 transport-level field projection을 제공하더라도 명시적 nested path가 있으면 local projection을 강제합니다.
+- `ToolCall.fields`에는 선언된 논리적 필드 ID만 허용합니다.
+- 선언된 필드 ID가 아닌, 위조된 경로 문자열을 거부합니다.
+- 선언된 경로 사이의 중복 또는 조상·자손 겹침을 거부합니다.
+- 중첩값을 추출하기 전에 원시 출력 전체를 스키마로 검증합니다.
+- 투영된 값을 복사하므로 소비자가 투영 결과를 수정해도 원래 invoker 결과는 변경되지 않습니다.
+- 호출 인식 invoker가 전송 계층 필드 투영을 제공하더라도 명시적인 중첩 경로가 있으면 로컬 투영을 강제합니다.
 
-## Planner 동작
+## 플래너 동작
 
-planner matching은 logical field name, alias, explicit path segment를 고려합니다. 생성된 `ToolCall.fields`에는 여전히 logical field ID만 포함됩니다.
+플래너의 매칭은 논리 필드 이름, 별칭(alias), 명시적인 경로 구간을 고려합니다. 그래도 출력되는 `ToolCall.fields`에는 논리적 필드 ID만 포함됩니다.
 
-이를 통해 transport/schema representation과 bounded decision surface를 분리합니다.
+이렇게 전송·스키마 표현과 범위가 제한된 의사결정 표면을 분리합니다.
 
-## Array-item field
+## 배열 항목 필드
 
-array traversal은 명시적이며 record를 보존합니다. 예약된 `"*"` path segment는 trusted `FieldSpec.path` / `result_path` metadata에서만 사용합니다:
+배열 순회는 명시적으로 지정하며 레코드의 대응 관계를 보존합니다. 예약된 `"*"` 경로 구간은 신뢰할 수 있는 `FieldSpec.path` 및 `result_path` 메타데이터에서만 사용하십시오.
 
 ```python
 FieldSpec(
@@ -93,7 +93,7 @@ FieldSpec(
 )
 ```
 
-`results[].title`과 `results[].url`을 함께 선택해도 각 source record를 보존합니다:
+`results[].title`과 `results[].url`을 함께 선택해도 각 원천 레코드가 보존됩니다.
 
 ```json
 {
@@ -104,19 +104,19 @@ FieldSpec(
 }
 ```
 
-SchemaRouter는 row/entity alignment를 훼손할 수 있으므로 child를 독립 array로 flatten하지 않습니다. 누락된 optional child는 해당 record에서도 누락 상태로 유지됩니다.
+SchemaRouter는 자식 필드들을 서로 독립된 배열로 평탄화하지 않습니다. 그렇게 하면 행이나 개체의 대응 관계가 깨질 수 있습니다. 선택적인 자식 필드가 없다면 해당 레코드에서만 누락된 상태를 유지합니다.
 
-wildcard array path에는 더 엄격한 invariant가 적용됩니다:
+와일드카드 배열 경로에는 더 엄격한 불변 조건이 적용됩니다.
 
-- source path는 명시적인 `result_path`를 선언해야 합니다;
-- source와 result path의 wildcard 위치가 같아야 합니다;
-- wildcard는 선언된 JSON Schema array만 순회합니다;
-- server-projected schema는 array `items`를 통해 좁혀집니다;
-- unit normalization과 selected-field validation은 보존된 record별로 적용됩니다;
-- 상위 array를 선택해도 모든 하위 field가 자동 선택되지는 않습니다.
+- 원천 경로에 명시적인 `result_path`가 있어야 합니다.
+- 원천·결과 경로의 와일드카드 위치가 일치해야 합니다.
+- 와일드카드는 JSON Schema에 선언된 배열만 순회합니다.
+- 서버 측 투영 스키마는 배열의 `items`를 통해 축소됩니다.
+- 단위 정규화 및 선택된 필드 검증은 보존된 각 레코드에 적용됩니다.
+- 부모 배열을 선택하더라도 모든 하위 필드가 자동으로 선택되지는 않습니다.
 
-`"*"` segment는 내부 typed path marker이며 model이 제공하는 임의 JSONPath syntax가 아닙니다.
+`"*"` 구간은 내부의 타입 기반 경로 표시자이며, 모델이 제공한 임의의 JSONPath 문법이 아닙니다.
 
-## 현재 범위
+## 현재 지원 범위
 
-explicit path는 nested object와 명시적인 record-preserving array-item traversal을 지원합니다. 일반 JSONPath expression, filter, slice, inferred wildcard traversal은 지원하지 않습니다.
+명시적인 경로는 중첩 객체와 레코드 관계를 보존하는 배열 항목 순회를 지원합니다. 일반 JSONPath 표현식, 필터, 슬라이스, 추론된 와일드카드 순회는 지원하지 않습니다.

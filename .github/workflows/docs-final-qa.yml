@@ -1,0 +1,71 @@
+name: Docs Browser and Link QA
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "docs_ko/**"
+      - "mkdocs*.yml"
+      - "scripts/qa_docs_browser.py"
+      - "scripts/qa_docs_links.py"
+      - "tests/test_docs_final_qa.py"
+      - ".github/workflows/docs-final-qa.yml"
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "docs_ko/**"
+      - "mkdocs*.yml"
+      - "scripts/qa_docs_browser.py"
+      - "scripts/qa_docs_links.py"
+      - "tests/test_docs_final_qa.py"
+      - ".github/workflows/docs-final-qa.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-final-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docs-final-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            .github/workflows/docs-final-qa.yml
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[docs]" "pytest>=8.2" "pytest-asyncio>=0.23" "playwright==1.55.0"
+      - run: python -m playwright install --with-deps chromium
+      - name: Verify final QA harness regressions
+        run: python -m pytest -q tests/test_docs_final_qa.py
+      - name: Prepare Korean documentation tree
+        run: python scripts/prepare_korean_docs.py
+      - name: Build English strict
+        env:
+          NO_MKDOCS_2_WARNING: "1"
+        run: mkdocs build --strict -f mkdocs.yml
+      - name: Build Korean strict
+        env:
+          NO_MKDOCS_2_WARNING: "1"
+        run: mkdocs build --strict -f mkdocs.ko.yml
+      - name: Check every rendered internal link and asset
+        run: python scripts/qa_docs_links.py site
+      - name: Check all rendered pages and language switching in Chromium
+        run: python scripts/qa_docs_browser.py site --screenshots .build/docs-qa-screenshots
+      - name: Upload representative page screenshots
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: docs-browser-screenshots
+          path: .build/docs-qa-screenshots/
+          retention-days: 14
+          if-no-files-found: warn

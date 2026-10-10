@@ -1,57 +1,48 @@
-# 0.14 intent-manual DEV result
+# 0.14 intent-manual DEV 결과
 
-추적 issue: #434  
-정본 DEV workflow: 36547832179  
-정본 source: `9cf85e3c45491886a5f01a190e8e8e04f24898a7`
+Tracking issue: #434  
+Canonical DEV workflow: 36547832179  
+Canonical source: `9cf85e3c45491886a5f01a190e8e8e04f24898a7`
 
 ## 상태
 
-이번 DEV iteration은 **promoted representation 없이 종료**되었습니다.
-
-Held-out confirmation surface는 계속 **sealed, ungenerated, unscored** 상태입니다. Candidate condition 중 preregistered DEV guardrail을 모두 만족하는 것이 없으므로 confirmation을 여는 것은 이미 promotion 자격이 없는 candidate에 held-out evidence를 소비하는 결과만 낳습니다.
+이 DEV iteration은 **승격된 representation 없이** terminal입니다. 어떤 candidate도 preregistered DEV guardrail을 모두 만족하지 못했으므로 held-out confirmation surface는 **sealed, ungenerated, unscored** 상태를 유지합니다.
 
 Canonical artifact:
 
-- artifact: `intent-manual-dev-36547832179`
-- artifact id: `11023311599`
-- artifact digest:
-  `sha256:04719f39ab2e9198da8ead2ae276090c072df339854d19d5d4d5300bd604df40`
-- full result JSON SHA-256:
-  `bb05aa1f53c084a45500fd3437dcd420dc204a8c82c8e84501b8655f52bd4e82`
+- 산출물: `intent-manual-dev-36547832179`
+- 산출물 ID: `11023311599`
+- 산출물 다이제스트: `sha256:04719f39ab2e9198da8ead2ae276090c072df339854d19d5d4d5300bd604df40`
+- 전체 결과 JSON SHA-256: `bb05aa1f53c084a45500fd3437dcd420dc204a8c82c8e84501b8655f52bd4e82`
 
-Compact machine-readable record는
-`benchmarks/results/agent-utility-v2-intent-manual-dev-summary.json`.
+Compact record는 `benchmarks/results/agent-utility-v2-intent-manual-dev-summary.json`입니다.
 
 ## Frozen intent-manual generator
 
-Generator는 intent-manual DEV scoring 전에 freeze했습니다:
+DEV scoring 전에 generator를 동결했습니다.
 
-- revision: `deterministic-capability-intent-manual-v1`;
-- no LLM or hosted API;
-- source: authoritative registered capability metadata only;
-- forbidden inputs: evaluation queries, gold routes, B1 rows/errors, confirmation rows,
-  retrieval ranks/results, and post-scoring manual edits;
-- exact route, tool fingerprint, endpoint fingerprint, source-catalog SHA and generator
-  revision retained for provenance;
-- exact duplicate/empty removal only.
+- revision: `deterministic-capability-intent-manual-v1`
+- LLM/hosted API 없음
+- authoritative registered capability metadata만 source로 사용
+- evaluation query, gold route, B1 row/error, confirmation row, retrieval rank/result, post-scoring manual edit 금지
+- provenance용 exact route/tool fingerprint/endpoint fingerprint/source-catalog SHA/generator revision 보존
+- exact duplicate/empty removal만 수행
 
-The generator amendment SHA-256 is
-`c199bb6f027e394e9e23e34e77b2ec424b57f8eb93e11953f7d617853da444c7`.
+Generator amendment SHA-256: `c199bb6f027e394e9e23e34e77b2ec424b57f8eb93e11953f7d617853da444c7`.
 
 ## DEV surface
 
-- 60 semantic tasks;
-- 12 equal strata;
-- 6 language renderings per semantic task;
-- 360 rows;
-- nested 100 / 250 / 500 / 1000 endpoint catalogs;
-- same BM25 backbone within each representation comparison;
-- repeated latency protocol: 3 warmups + 31 measurements per row, row median,
-  then p95 of row medians.
+- semantic task 60개
+- 균등 stratum 12개
+- task당 language rendering 6개
+- 360 rows
+- nested 100/250/500/1000 endpoint catalog
+- representation 비교마다 동일 BM25 backbone
+- latency: 3 warmups + row당 31 measurements, row median 후 row-median p95
 
-## Promotion gate result
+## Promotion gate 결과
 
-모든 delta는 동일한 BM25 implementation에서 RAW-SPEC을 기준으로 계산했습니다.
+모든 delta는 동일 BM25의 RAW-SPEC 대비입니다.
 
 | Candidate | Recall@5 Δ | FullCoverage@5 Δ | Recall@10 Δ | Max p95 ratio | Max index ratio | DEV promotion |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
@@ -61,74 +52,46 @@ The generator amendment SHA-256 is
 
 Frozen requirements:
 
-- Recall@5 **or** FullCoverage@5 improvement >= +2pp;
-- Recall@10 delta >= -0.5pp;
-- retrieval p95 <= 1.5× RAW-SPEC;
-- index bytes <= 3× RAW-SPEC;
-- deterministic provenance retained.
+- Recall@5 **또는** FullCoverage@5 improvement >= +2pp
+- Recall@10 delta >= -0.5pp
+- retrieval p95 <= 1.5× RAW-SPEC
+- index bytes <= 3× RAW-SPEC
+- deterministic provenance 유지
 
 ### TYPED-MULTIFIELD
 
-This condition produced a real quality signal: FullCoverage@5 improved exactly
-+2.0pp, and Recall@10 was unchanged. It nevertheless fails the unchanged
-latency guardrail at 1.873× RAW-SPEC.
+FullCoverage@5는 정확히 +2.0pp 개선되고 Recall@10은 유지되어 실제 quality signal이 있었지만 latency가 1.873× RAW-SPEC으로 guardrail을 실패했습니다.
 
-The gain is not uniform. Its largest DEV benefit is concentrated in
-three-step composition, where mean FullCoverage@5 improves by about +35pp.
-It loses about 10pp on destructive/non-destructive sibling tasks and about
-5pp on read/write sibling tasks.
-
-This is useful representation evidence, but not enough to promote the multi-field
-RRF path as a default.
+Gain은 균일하지 않습니다. three-step composition에서 FullCoverage@5가 약 +35pp인 반면 destructive/non-destructive sibling에서 약 10pp, read/write sibling에서 약 5pp 손실됩니다. Typed structure의 유용한 representation evidence이지만 multi-field RRF를 default로 승격하기에는 부족합니다.
 
 ### INTENT-MANUAL
 
-The deterministic capability-conditioned manual improves three-step composition
-FullCoverage@5 by about +15pp, but the global gains are smaller than the
-preregistered +2pp threshold.
+Deterministic capability-conditioned manual은 three-step composition FullCoverage@5를 약 +15pp 개선하지만 global gain은 preregistered +2pp보다 작습니다. Recall@10도 약 1.54pp 낮아지고 latency ratio gate도 초과하므로 승격하지 않습니다.
 
-It also lowers Recall@10 by about 1.54pp and exceeds the latency ratio gate.
-Metadata-only deterministic intent expansion is not promoted.
+1000 endpoint에서는 scaling signal이 있습니다.
 
-At 1000 endpoints, the intent manual does show a scaling signal:
+- RAW-SPEC Recall@5: 93.85%
+- INTENT-MANUAL Recall@5: 96.92%
+- RAW-SPEC FullCoverage@5: 92%
+- INTENT-MANUAL FullCoverage@5: 96%
 
-- RAW-SPEC Recall@5: 93.85%;
-- INTENT-MANUAL Recall@5: 96.92%;
-- RAW-SPEC FullCoverage@5: 92%;
-- INTENT-MANUAL FullCoverage@5: 96%.
-
-However, its Recall@10 is lower (96.92% vs 98.46%), so the global guardrail still
-fails. This observation is hypothesis-generating only.
+그러나 Recall@10은 96.92% 대 98.46%로 더 낮아 global guardrail은 실패합니다. 이는 hypothesis-generating observation일 뿐입니다.
 
 ### TYPED+INTENT
 
-Equal component-level RRF does not add complementary utility on this DEV surface.
-It fails the quality threshold, misses the Recall@10 guardrail, and is substantially
-slower because both retrieval paths must execute before fusion.
+Equal component-level RRF는 이 DEV surface에서 complementary utility를 추가하지 못했습니다. Quality threshold와 Recall@10 guardrail을 실패하고 두 retrieval path를 모두 실행해야 해 크게 느립니다. Combined-condition promotion claim은 지원되지 않습니다.
 
-No combined-condition promotion claim is supported.
+## 결정
 
-## Decision
+Candidate에 대해 confirmation surface를 열지 않습니다. Pass를 강제하기 위한 post-hoc weight/template/K/query tuning도 하지 않습니다.
 
-Do **not** open the confirmation surface for these candidates.
+유지할 항목:
 
-Do **not** continue post-hoc weight, template, K, or query tuning on this DEV surface
-to force a pass.
+1. simple controlled representation baseline인 RAW-SPEC
+2. typed structure가 multi-step coverage를 개선할 수 있으나 runtime/ambiguity cost가 있다는 multi-field 결과
+3. negative/partial-positive prior-art replication인 intent-manual 결과
+4. 향후 독립 preregistered successor용 exact generator/evaluation artifact
 
-Retain:
+따라서 0.14 main evidence sequence는 #423 strong-agent B2 replication, #432 large independent held-out generalization, #424 final-answer factuality/units/provenance로 돌아갑니다.
 
-1. RAW-SPEC as the simple controlled representation baseline;
-2. the typed multi-field result as evidence that typed structure can improve
-   multi-step coverage but currently carries a runtime/ambiguity cost;
-3. the intent-manual result as a negative/partial-positive prior-art replication;
-4. the exact generator and evaluation artifacts for a future independently
-   preregistered successor, if one is warranted.
-
-So the main 0.14 evidence sequence returns to:
-
-- #423 strong-agent B2 replication;
-- #432 large independent held-out generalization;
-- #424 final-answer factuality / units / provenance.
-
-This result does not modify the released 0.11.0 product default and is not retrofitted
-into B1.
+이 결과는 released 0.11.0 product default를 변경하지 않으며 B1에 retrofit하지 않습니다.

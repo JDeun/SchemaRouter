@@ -1,136 +1,95 @@
-# Open-set capability routing prior-art roadmap
+# Open-set capability routing 선행연구 로드맵
 
-이 페이지는 `benchmarks/research-prior-art-registry.json`과 GitHub issue #388의 human-readable companion입니다.
-
-목적은 연구의 연속성입니다. 새로운 research session이 chat memory에 의존하지 않고 이미 검토한 literature, 그로부터 도출된 SchemaRouter hypothesis, terminal experiment, 다음에 시도할 항목을 재구성할 수 있어야 합니다.
+이 문서는 [`benchmarks/research-prior-art-registry.json`](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-prior-art-registry.json)과 GitHub Issue #388의 사람이 읽을 수 있는 companion입니다. 새 연구 세션이 대화 기억에 의존하지 않고 이미 검토한 문헌, 그 문헌이 만든 SchemaRouter 가설, terminal experiment, 다음 실험을 재구성하도록 하는 것이 목적입니다.
 
 ## Session bootstrap
 
-새 routing experiment를 만들기 전에 다음을 수행합니다:
+새 routing experiment를 만들기 전에:
 
-1. read issue #388;
-2. read `benchmarks/research-prior-art-registry.json`;
-3. read `benchmarks/research-experiment-ledger.json`;
-4. read [Routing research status](routing-status.md);
-5. search existing issues and `research/*` branches;
-6. resume the first active canonical experiment instead of creating a duplicate.
+1. Issue #388을 읽습니다.
+2. `benchmarks/research-prior-art-registry.json`을 읽습니다.
+3. `benchmarks/research-experiment-ledger.json`을 읽습니다.
+4. [Routing research status](routing-status.md)를 읽습니다.
+5. 기존 issue와 `research/*` branch를 검색합니다.
+6. 중복 experiment를 만들지 말고 첫 active canonical experiment를 이어갑니다.
 
 ## 현재 workstream map
 
-| Workstream | Work item | State | Current SchemaRouter use |
+| Workstream | Work item | 상태 | 현재 SchemaRouter 사용 |
 | --- | ---: | --- | --- |
-| Adaptive/open decision boundaries | #384 | terminal | V6A positive-only spherical ADB rejected every DEV request |
-| Hard-negative OOS generation | #389 / #395 | terminal | V6B separated synthetic evidence but rejected every natural DEV query |
-| Energy/density/open-space scoring | #390 / #397 / #399 / #401 | terminal / no active successor | V6C/V6D/V6E terminal; do not retune consumed geometry |
-| Selective/conformal abstention | #391 / #412 | terminal tested formulation | E5 conformal safety passed open-set gates but destroyed supported recall |
-| Tool/executable-schema retrieval / agent utility | #392 / #417 / #418 / #420 | active primary direction | Phase A/B1 are terminal; B2 strong-agent replication is terminal success; #431 is the active gate before #432/#424 |
+| Adaptive/open decision boundaries | #384 | terminal | V6A positive-only spherical ADB가 모든 DEV request를 거부 |
+| Hard-negative OOS generation | #389 / #395 | terminal | V6B가 synthetic evidence는 분리했지만 모든 natural DEV query를 거부 |
+| Energy/density/open-space scoring | #390 / #397 / #399 / #401 | terminal / active successor 없음 | V6C/V6D/V6E terminal; consumed geometry 재튜닝 금지 |
+| Selective/conformal abstention | #391 / #412 | terminal tested formulation | E5 conformal safety가 open-set gate는 통과했지만 supported recall 파괴 |
+| Tool/executable-schema retrieval / agent utility | #392 / #417 / #418 / #420 | active primary direction | Phase A/B1 및 B2 종료, #431 게이트 판정 완료·미승격, #432 홀드아웃 실행 중, #424 대기 |
 
-Active research parent: #417. Historical 0.13 prior-art parent: #388.
+현재 연구 상위 이슈는 #417이며, 과거 0.13 선행연구의 상위 이슈는 #388입니다.
 
-## 0. Active 0.14 research question: typed capability retrieval for agents
+## 0. Active 0.14 연구 질문: agent용 typed capability retrieval
 
-0.11–0.13 open-set 작업은 evidence로 유지하지만 더 이상 primary product objective는 아닙니다. 해당 cycle들은 하나의 retrieval layer에 positive route selection과 executor-grade abstention을 동시에 요구하면 심각한 safety/coverage trade-off가 생긴다는 점을 반복해서 보여줬습니다.
+0.11~0.13 open-set 연구는 evidence로 보존하지만 더 이상 primary product objective가 아닙니다. 해당 cycle은 하나의 retrieval layer가 positive route selection과 executor-grade abstention을 동시에 담당하면 심각한 safety/coverage trade-off가 생긴다는 점을 반복해서 보여줬습니다.
 
-The active 0.14 architecture is:
+Active 0.14 architecture:
 
-```text
-registered executable schemas
-        ↓
-typed capability index
-        ↓
-high-recall Top-K retrieval
-        ↓
-downstream LLM agent
-        ↓
-execution validation / policy
-        ↓
-tool execution
-        ↓
-result evaluation and optional candidate expansion
+```mermaid
+flowchart TD
+    A["등록된 실행 가능 스키마"] --> B["타입 기반 기능 색인"]
+    B --> C["고재현율 Top-K 검색"]
+    C --> D["하위 LLM 에이전트"]
+    D --> E["실행 검증 및 정책"]
+    E --> F["도구 실행"]
+    F --> G["결과 평가 / 선택적 후보 확장"]
 ```
 
-Relevant current work:
-- #417 — active research parent;
-- #418 — FULL vs Top-K vs progressive utility protocol, terminal;
-- #420 — B1 local downstream-agent A/B, terminal;
-- #423 — stronger-agent B2 replication, terminal success;
-- #431 — active execution-state-aware corrective retrieval;
-- #432 — gated 780-task held-out generalization benchmark;
-- #424 — gated final-answer factual-quality benchmark.
+현재 관련 작업:
 
-Phase A already establishes the retrieval-side premise on the corrected frozen benchmark:
-- Recall@1 68.97%;
-- Recall@3 96.55%;
-- Recall@5 / Recall@10 **100% / 100%**;
-- at 250 endpoints, Top-5 exposes only 2.38% of FULL serialized schema context on average.
+- 이슈 #417 — 진행 중인 0.14 연구의 상위 이슈
+- 이슈 #418 — FULL·Top-K·점진적 검색을 비교한 효용성 프로토콜, 종료
+- 이슈 #420 — B1 로컬 후속 에이전트 A/B 평가, 종료
+- 이슈 #423 — 강한 에이전트의 B2 재현 실험, 최종 성공
+- 이슈 #431 — 실행 상태 기반 교정 검색, 정식 게이트 종료 및 조건 미승격
+- 이슈 #432 — 과제 780개의 홀드아웃 일반화 평가, 실행 `38012340016` 진행 중
+- 이슈 #424 — #432의 정식 성공 이후 실행하는 최종 답변 사실 정확도 평가
 
-The corresponding evaluation hierarchy is:
-1. **Recall@K / required-tool-set coverage** — did retrieval preserve what the agent needs?
-2. **downstream deterministic task success** — can the same agent complete the task?
-3. **context/token/latency/cost** — is the candidate reduction operationally useful?
-4. **recovery** — can progressive expansion repair an initial miss without hidden ground truth?
-5. **execution safety** — can policy prevent unauthorized destructive actions regardless of rank?
-6. **final-answer quality** — does context reduction preserve factual completeness, units and provenance?
+Phase A의 corrected frozen benchmark는 Recall@1 68.97%, Recall@3 96.55%, Recall@5/10 **100%/100%**이며 250 endpoints에서 Top-5는 평균 FULL serialized schema context의 2.38%만 노출합니다.
 
-Top-1 exact is diagnostic. It is not treated as a proxy for all six outcomes.
+평가 계층은 다음과 같습니다.
 
-Independent literature supporting this framing includes:
-- ToolRet, Findings ACL 2025;
-- ToolReAGt, KnowLLM 2025;
-- GRETEL, arXiv 2025, for execution-grounded retrieval/selection feedback.
+1. **Recall@K / required-tool-set coverage** — agent가 필요한 capability를 retrieval이 보존했는가?
+2. **downstream deterministic task success** — 동일 agent가 task를 완료하는가?
+3. **context/token/latency/cost** — candidate reduction이 운영상 유용한가?
+4. **recovery** — hidden ground truth 없이 progressive expansion이 initial miss를 복구하는가?
+5. **execution safety** — rank와 무관하게 policy가 unauthorized destructive action을 막는가?
+6. **final-answer quality** — context reduction이 factual completeness, unit, provenance를 보존하는가?
+
+Top-1 exact는 diagnostic이며 이 여섯 outcome 전체의 proxy로 취급하지 않습니다. 이 framing을 지지하는 독립 문헌은 ToolRet(Findings ACL 2025), ToolReAGt(KnowLLM 2025), execution-grounded feedback 관점의 GRETEL(arXiv 2025)입니다.
 
 ## 1. Adaptive Decision Boundary
 
-Primary reference:
+Primary reference는 Hanlei Zhang, Hua Xu, Ting-En Lin의 *Deep Open Intent Classification with Adaptive Decision Boundary* (AAAI 2021)입니다. [논문](https://ojs.aaai.org/index.php/AAAI/article/view/17690)과 [공개 코드](https://github.com/thuiar/Adaptive-Decision-Boundary)를 원문 근거로 참조합니다.
 
-- Hanlei Zhang, Hua Xu, Ting-En Lin, *Deep Open Intent Classification with Adaptive Decision
-  Boundary*, AAAI 2021.
-- paper: https://ojs.aaai.org/index.php/AAAI/article/view/17690
-- code: https://github.com/thuiar/Adaptive-Decision-Boundary
+전이 가능한 아이디어:
 
-Transferable idea:
+- known class를 learned feature region으로 표현
+- unknown/open input이 class-specific boundary 밖이면 거부
+- labeled open example 없이 decision boundary 학습 가능
 
-- known classes can be represented by learned feature regions;
-- unknown/open inputs are rejected when they fall outside class-specific boundaries;
-- the decision boundary can be learned without requiring labeled open examples.
+SchemaRouter의 차이:
 
-SchemaRouter difference:
+- intent가 fixed human-labeled taxonomy가 아님
+- capability가 OpenAPI/MCP/ToolSpec registration에서 동적으로 나타남
+- positive evidence는 registration 시 schema에서 compile되어야 함
+- route authority는 registry-backed 상태를 유지하며 boundary model이 만들 수 없음
 
-- intents are not a fixed human-labeled taxonomy;
-- capabilities appear dynamically from OpenAPI/MCP/ToolSpec registration;
-- so positive evidence must be compiled from schema at registration time;
-- route authority must remain registry-backed and must not be invented by the boundary model.
+Terminal canonical experiment #384 / branch `research/0.13-schema-adb-baseline` / V6A 결과는 raw BGE supported exact 91.67%, ADB supported exact 0%, near-domain/OOD rejection 100%/100%였습니다. Raw-correct supported winner 209개 전부 veto됐고 DEV query 552개 전부 spherical boundary 밖에 있었습니다. Confirmation은 열지 않았습니다.
 
-Terminal canonical experiment:
-
-- #384
-- branch: `research/0.13-schema-adb-baseline`
-- protocol: V6A
-- raw BGE supported exact: 91.67%
-- ADB supported exact: 0%
-- near-domain / OOD rejection: **100% / 100%**
-- all 209 raw-correct supported winners were vetoed;
-- all 552 DEV queries fell outside every spherical boundary;
-- confirmation remains unopened.
-
-The positive-only spherical formulation is terminal. It must not be repaired by rescaling the radius or rewriting the positive views from failed DEV evidence.
-
-Duplicate/superseded research artifacts are recorded in the machine-readable registry.
+Positive-only spherical formulation은 terminal이며 failed DEV evidence로 radius를 rescale하거나 positive view를 다시 써서 수리해서는 안 됩니다. Duplicate/superseded artifact는 machine-readable registry에 기록합니다.
 
 ## 2. Hard-negative OOS
 
-Primary references:
+주요 참고문헌은 LREC-COLING 2024의 [*Generating Hard-Negative Out-of-Scope Data with ChatGPT for Intent Classification*](https://aclanthology.org/2024.lrec-main.674/)과 [*Improved Out-of-Scope Intent Classification with Dual Encoding and Threshold-based Re-Classification*](https://aclanthology.org/2024.lrec-main.763/)입니다.
 
-- Zhijian Li, Stefan Larson, Kevin Leach, *Generating Hard-Negative Out-of-Scope Data with
-  ChatGPT for Intent Classification*, LREC-COLING 2024:
-  https://aclanthology.org/2024.lrec-main.674/
-- Hossam Zawbaa et al., *Improved Out-of-Scope Intent Classification with Dual Encoding and
-  Threshold-based Re-Classification*, LREC-COLING 2024:
-  https://aclanthology.org/2024.lrec-main.763/
-
-The relevant result is not merely “use synthetic data.” It is that **near-domain OOS inputs are the
-hard case**, because they share vocabulary and domain features with supported classes while asking
-for unsupported behavior.
+핵심은 단순히 synthetic data를 쓰는 것이 아니라, supported class와 vocabulary/domain feature를 공유하면서 unsupported behavior를 요구하는 **near-domain OOS가 어려운 경우**라는 점입니다.
 
 SchemaRouter adaptation:
 
@@ -152,30 +111,17 @@ schema-derived resource anchor
 hard-negative OOS examples
 ```
 
-The generator must remain registry-independent. It must not use benchmark route names or failed DEV
-rows to write special negatives.
+Generator는 registry-independent 상태를 유지하며 benchmark route name이나 failed DEV row를 사용해 특수 negative를 만들 수 없습니다.
 
-Work item: #389. The concrete experiment **#395 / V6B** is terminal. It combined registry-derived same-resource hard negatives with a low-rank anisotropic ellipsoid boundary while keeping raw BGE-M3 as the only positive route authority.
+이슈 #389의 concrete experiment #395/V6B는 terminal입니다. Registry-derived same-resource hard negative와 low-rank anisotropic ellipsoid boundary를 결합하고 raw BGE-M3만 positive route authority로 유지했습니다. DEV에서 unsupported rejection은 완벽했지만 모든 natural query가 learned ellipsoid 밖에 있어 supported request를 전부 거부했습니다. Raw BGE supported exact는 97.37%였고 confirmation은 열지 않았습니다. Hard-negative evidence bank는 재사용할 수 있지만 exact ellipsoid formulation은 재사용하지 않습니다.
 
-V6B DEV preserved perfect unsupported rejection but rejected **all supported requests** after every natural query fell outside the learned ellipsoids. Raw BGE supported exact remained 97.37%. Its confirmation remains unopened. The hard-negative evidence bank remains reusable as schema-derived supervision; the exact ellipsoid formulation does not.
+## 3. Energy, density, open-space scoring
 
-## 3. Energy, density, and open-space scoring
+Work item #390은 membership을 semantic `OUTSIDE` class 대신 registered capability space의 scalar/density-like property로 표현할 수 있는지 묻습니다.
 
-Work item: #390.
+비교 family는 energy-style OOD score, prototype/centroid distance, class-conditional density, Gaussian-mixture membership, open-space risk, spherical/ellipsoidal class region을 포함합니다.
 
-The question is whether membership can be represented as a scalar or density-like property of the
-registered capability space instead of a semantic `OUTSIDE` class.
-
-This family includes comparisons such as:
-
-- energy-style OOD scores;
-- prototype/centroid distances;
-- class-conditional density;
-- Gaussian-mixture style membership;
-- open-space risk;
-- spherical or ellipsoidal class regions.
-
-It is separated from positive route selection:
+Positive route selection과는 분리합니다.
 
 ```text
 BGE registered-route retrieval
@@ -187,67 +133,38 @@ open-space membership score
         └─ outside -> NO_ROUTE
 ```
 
-Earlier threshold/embedding families remain terminal in the experiment ledger and must not be
-silently recycled.
+현재 0.13 sequence:
 
-Current 0.13 sequence:
+- **#397/V6C** 공유 가우시안 밀도비: 지원 경로 정확도 93.86%, 유사 도메인 거부율 39.29%, OOD 거부율 56.94%, 잘못된 경로율 56.79%, 원래 정답인 경로 거부 0건
+- **#399/V6D** 성분별 가우시안 혼합 밀도비: 지원 경로 정확도 89.91%, 유사 도메인 거부율 39.68%, OOD 거부율 5.56%, 잘못된 경로율 67.90%, 원래 정답인 경로 거부 0건, p95 250.49ms
+- **#401/V6E** non-parametric local membership: k=3 cosine-neighborhood에서 supported exact 83.33%, near reject 60.71%, OOD 54.17%, false-route 40.74%, p95 176.50ms
 
-- **#397 / V6C — terminal tied-Gaussian density ratio.** Supported exact 93.86%, near rejection 39.29%, OOD rejection 56.94%, false-route 56.79%, zero raw-correct vetoes.
-- **#399 / V6D — terminal component Gaussian-mixture ratio.** Supported exact 89.91%, near rejection 39.68%, OOD rejection 5.56%, false-route 67.90%, zero raw-correct vetoes, p95 250.49 ms.
-- **#401 / V6E — terminal non-parametric local membership.** Fixed k=3 cosine-neighborhood comparison reached supported exact 83.33%, near rejection 60.71%, OOD rejection 54.17%, false-route 40.74%, and p95 176.50 ms. Complement neighborhoods were informative but positive/complement manifolds still overlapped; confirmation remains unopened.
+V6C는 relative evidence가 supported route를 보존할 수 있지만 class당 Gaussian 하나가 multimodal structure를 무너뜨림을 보였습니다. V6D는 endpoint-level Gaussian mode를 보존해도 synthetic-to-natural membership gap이 해결되지 않음을 보였습니다. V6E는 Gaussian assumption을 제거하고 unsupported recall을 개선했지만 rejection target에 크게 못 미쳤고 supported routing도 손상했습니다. 다음 실험은 consumed DEV에서 또 다른 distance threshold, neighborhood size, Gaussian parameter를 tuning하는 대신 semantic signal/representation 자체를 바꿔야 합니다.
 
-V6C showed that relative evidence can preserve supported routes but one Gaussian per class collapses multimodal structure. V6D showed that preserving endpoint-level Gaussian modes still does not solve the synthetic-to-natural membership gap. V6E removed the Gaussian assumption and improved unsupported recall, but remained far below the rejection targets and slightly damaged supported routing. The next experiment must change the semantic signal or representation itself rather than tuning another distance threshold, neighborhood size, or Gaussian parameter from consumed DEV.
+## 4. Selective prediction과 conformal abstention
 
-## 4. Selective prediction and conformal abstention
+Work item #391입니다. 추적 reference는 [*Conformal Predictive Systems Under Covariate Shift*](https://proceedings.mlr.press/v230/jonkers24a.html)와 [*Not all distributional shifts are equal: Fine-grained robust conformal inference*](https://proceedings.mlr.press/v235/ai24a.html)입니다.
 
-Work item: #391.
+SchemaRouter에서 conformal/selective prediction은 semantic detector 자체가 아니라 **safety layer**입니다. Membership score가 신뢰할 수 있는 precision/recall profile을 가진 뒤에만 시험해야 하며, 약한 detector를 구하기 위해 protected #198 calibration/blind surface를 소비해서는 안 됩니다.
 
-References currently tracked:
+## 5. Tool retrieval과 executable-schema retrieval
 
-- *Conformal Predictive Systems Under Covariate Shift*:
-  https://proceedings.mlr.press/v230/jonkers24a.html
-- *Not all distributional shifts are equal: Fine-grained robust conformal inference*:
-  https://proceedings.mlr.press/v235/ai24a.html
-
-For SchemaRouter, conformal/selective prediction is a **safety layer**, not the semantic detector
-itself.
-
-It should be tested only after a membership score already has a credible precision/recall profile.
-The protected #198 calibration/blind surfaces must not be consumed merely to rescue a weak detector.
-
-## 5. Tool retrieval and executable-schema retrieval
-
-Work item: #392.
-
-Primary references:
-
-- *Retrieval Models Aren't Tool-Savvy: Benchmarking Tool Retrieval for Large Language Models
-  (ToolRet)*, Findings ACL 2025:
-  https://aclanthology.org/2025.findings-acl.1258/
-- *ToolReAGt: Tool Retrieval for LLM-based Complex Task Solution via Retrieval Augmented
-  Generation*, KnowLLM 2025:
-  https://aclanthology.org/2025.knowllm-1.7/
-
-SchemaRouter's closest RAG analogy is:
+Work item #392입니다. 주요 reference는 [ToolRet(Findings ACL 2025)](https://aclanthology.org/2025.findings-acl.1258/)과 [ToolReAGt(KnowLLM 2025)](https://aclanthology.org/2025.knowllm-1.7/)입니다.
 
 | RAG | SchemaRouter |
 | --- | --- |
 | PDF / HTML | OpenAPI / MCP / Python Tool |
 | parser | source adapter |
 | chunk | Tool / Endpoint / Field |
-| metadata | schemas, datatype, unit, qualifiers, read/write/destructive |
+| metadata | schema, datatype, unit, qualifier, read/write/destructive |
 | index | registry + capability representation |
 | retriever | registered-route retrieval |
 | relevant text chunk | executable endpoint |
-| generator / agent | downstream application, outside SchemaRouter |
+| generator / agent | downstream application, SchemaRouter 외부 |
 
-This literature informs retrieval architecture and benchmarks. It does **not** justify moving task
-decomposition, ReAct loops, or autonomous agent behavior into SchemaRouter.
-
+이 문헌은 retrieval architecture와 benchmark에 영향을 주지만 task decomposition, ReAct loop, autonomous agent behavior를 SchemaRouter 안으로 옮길 근거는 아닙니다.
 
 ## Post-V6E terminal sequence
-
-The next preregistered screens changed the semantic evidence source rather than tuning V6E geometry.
 
 | Experiment | Role | Supported exact | Near reject | OOD | False-route | p95 | Decision |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
@@ -257,110 +174,77 @@ The next preregistered screens changed the semantic evidence source rather than 
 | #409 GTE multilingual | positive selector | 71.49% | — | — | — | 100.14 ms | terminal; same-surface BGE 88.16% |
 | #412 E5 split conformal | veto-only membership | 10.09% | 99.21% | 100% | 0.62% | 244.24 ms | terminal |
 
-All associated confirmation surfaces remain unopened.
+관련 confirmation surface는 모두 열지 않았습니다.
 
-The aggregate result is more informative than any one failure:
+종합 결과:
 
-- BGE-M3 remains the strongest tested positive-route reference, but its fresh supported exact rate is surface-sensitive.
-- Replacing BGE with a tool-specialized or general multilingual retriever did not generalize.
-- Naturalistic generic-operation learning improves broad OOD recognition but does not establish same-domain capability membership.
-- Joint relevance cross-encoding does not make counterfactual capability documents a reliable open-set boundary and is too slow on CPU.
-- Conservative conformal calibration can satisfy the <=1% false-route target, but not when the underlying scalar membership score overlaps heavily between supported and unsupported requests.
+- BGE-M3가 여전히 가장 강한 tested positive-route reference지만 fresh supported exact는 surface-sensitive
+- tool-specialized/general multilingual retriever로 교체해도 generalize하지 않음
+- naturalistic generic-operation learning은 broad OOD recognition을 개선하지만 same-domain capability membership을 확립하지 못함
+- joint relevance cross-encoding은 counterfactual capability document를 신뢰할 수 있는 open-set boundary로 만들지 못하며 CPU에서 너무 느림
+- conservative conformal calibration은 <=1% false-route target을 만족할 수 있지만 supported/unsupported request의 scalar membership score가 크게 겹치면 supported recall을 유지할 수 없음
 
-**There is currently no active frozen 0.13 child experiment.** The next experiment must introduce a materially new membership representation or decision structure. It must not be a post-hoc change to V6A-E geometry, #404 training bank/probes, #408 candidate texts/thresholds, #409 GTE weights/fusion, or #412 alpha/E0/model.
+현재 active frozen 0.13 child experiment는 없습니다. 다음 실험은 materially new membership representation/decision structure여야 하며 V6A-E geometry, #404 training bank/probe, #408 candidate text/threshold, #409 GTE weight/fusion, #412 alpha/E0/model의 post-hoc 변경이어서는 안 됩니다.
 
-## Research invariants
+## Research invariant
 
-The following rules apply across all workstreams:
-
-- only registered schema-backed endpoints have positive execution authority;
-- open-set evidence may preserve a route or abstain, never create a route;
-- no rank-2 fallback or pseudo-route;
-- no per-route retraining for newly registered APIs;
-- datatype, `semantic_id`, optional units, normalization, dimension and qualifiers remain first-class
-  capability/data-contract facts;
-- failed experiments remain terminal unless a new experiment materially changes the method;
-- no consumed DEV/fresh/confirmation row may be used to patch a terminal method;
-- new experiments must identify the prior-art work item they instantiate.
+- registered schema-backed endpoint만 positive execution authority를 가짐
+- open-set evidence는 route를 보존하거나 abstain할 수 있을 뿐 route를 만들 수 없음
+- rank-2 fallback/pseudo-route 금지
+- 새 API 등록마다 per-route retraining 금지
+- datatype, `semantic_id`, optional unit, normalization, dimension, qualifier는 first-class capability/data-contract fact
+- failed experiment는 method가 실질적으로 바뀐 새 experiment가 아니면 terminal 유지
+- consumed DEV/fresh/confirmation row를 terminal method patch에 사용 금지
+- 새 experiment는 어떤 prior-art work item을 구현하는지 명시
 
 ## Execution order
 
-The current order is now governed by #417/#500:
+현재 순서는 #417/#500이 통제합니다.
 
-1. B1 and B2 are terminal and preserved as frozen evidence;
-2. complete #431 without changing its frozen task/state/model/scoring semantics;
-3. freeze the #432 held-out condition manifest from the preregistered boolean gates;
-4. execute #432, then #424 only through the gated conveyor.
+1. B1/B2 terminal evidence 보존
+2. frozen task/state/model/scoring semantics를 바꾸지 않고 #431 완료
+3. preregistered boolean gate에서 #432 held-out condition manifest 동결
+4. gated conveyor를 통해 #432 실행 후 #424 실행
 
-The older pre-terminal 0.14 launch plan is superseded by this gated conveyor. Historical
-run/protocol provenance remains in Git history, the experiment ledger, and terminal issue comments.
+이전 pre-terminal 0.14 launch plan은 이 gated conveyor로 대체됐습니다. Historical run/protocol provenance는 Git history, experiment ledger, terminal issue comment에 남습니다.
 
-Maintain #392 as the prior-art bridge between executable-schema retrieval and the active 0.14
-agent-utility work. Revisit open-set/conformal methods only for a newly preregistered question, never
-as a post-hoc repair of consumed DEV.
+이슈 #392는 executable-schema retrieval과 active 0.14 agent-utility work 사이 prior-art bridge로 유지합니다. Open-set/conformal method는 consumed DEV의 post-hoc repair가 아니라 새로 preregistered question에 대해서만 다시 검토합니다.
 
-Historical 0.13 order was:
+Historical 0.13 order는 V6A, V6B, V6C/V6D, V6E, #404/#406/#408/#409/#412를 terminal reference로 유지하고 모든 confirmation을 unopened로 두며, successor 전 prior art/repository history에서 materially different representation을 찾고, 더 discriminative한 semantic membership score가 생긴 뒤에만 #391 selective/conformal safety를 재검토하는 순서였습니다.
 
-1. retain **#384 / V6A** as the terminal positive-only spherical ADB reference; its confirmation stays unopened;
-2. retain **#395 / V6B** as the terminal hard-negative ellipsoid reference; its confirmation stays unopened;
-3. retain **#397 / V6C** and **#399 / V6D** as terminal relative-density controls; both confirmations stay unopened;
-4. retain **#401 / V6E** as the terminal non-parametric local-neighborhood reference; its confirmation stays unopened;
-5. retain #404, #406, #408, #409, and #412 as terminal post-V6E controls; all confirmations stay unopened;
-6. before opening a successor, search prior art and repository history for a materially different membership representation or decision structure;
-7. revisit selective/conformal safety from #391 only after a substantially more discriminative semantic membership score exists;
-8. continuously maintain tool-retrieval architectural alignment in #392 without giving retrieval models execution authority.
+## 0.14 fixed-K baseline 이후 staged successor
 
-This order is not a claim that later methods are superior. It is the governance sequence that avoids
-mixing hypotheses and reusing evidence.
+B1 aggregate 이전에 staging되며 B1 row-level failure에서 파생되어서는 안 됩니다.
 
+- **#428** public typed Top-K API — final agent choice/execution authority를 retriever 밖에 둔 first-class retrieval surface
+- **#430** adaptive shortlist depth — fixed K=3/5/10 evidence 이후 preregistered per-query K 시험. Repantis 등의 연구(arXiv:2605.24660)는 후보 목록 깊이를 독립적으로 조절할 중요한 변수로 다뤄야 한다는 근거를 제공합니다.
+- **#431** execution-state-aware corrective re-retrieval — bounded typed observation/current state 기반 retrieval과 static widening 비교
+- **#432** large independent held-out surface — B1이 23 unique semantic task만 catalog size별 반복하므로 필수
 
-## 0.14 staged successors after the fixed-K baseline
+### B1 aggregate 전 statistical scope correction
 
-These are staged before any accepted B1 aggregate and must not be derived from B1 row-level failures.
-
-- **#428 — public typed Top-K API:** expose retrieval as a first-class composition surface while
-  leaving final agent choice and execution authority outside the retriever.
-- **#430 — adaptive shortlist depth:** test preregistered per-query K after fixed K=3/5/10 evidence.
-  Repantis et al. (arXiv:2605.24660) independently motivates shortlist depth as a first-class
-  variable.
-- **#431 — execution-state-aware corrective re-retrieval:** compare static widening with retrieval
-  conditioned on bounded typed observations/current state. DTDR (Findings ACL 2026) is the main
-  external reference.
-- **#432 — large independent held-out surface:** required because B1 has only 23 unique semantic
-  tasks repeated across catalog sizes.
-
-### Statistical scope correction before B1 aggregate
-
-B1's four catalog-size rows per semantic task are repeated measures, not independent samples.
-So the canonical paired bootstrap resamples **task_id clusters**, keeping the four
-catalog-size deltas together. The -2pp gate remains a descriptive engineering threshold in B1.
-A population-level non-inferiority/generalization claim requires #432 with an independently frozen,
-materially larger task population and preregistered precision/sample-size analysis.
-
+B1의 semantic task당 네 catalog-size row는 독립 sample이 아니라 repeated measure입니다. Canonical paired bootstrap은 **task_id cluster**를 resample하며 네 catalog-size delta를 함께 유지합니다. -2pp gate는 B1에서 descriptive engineering threshold입니다. Population-level non-inferiority/generalization claim은 독립 동결된 훨씬 큰 population과 preregistered precision/sample-size analysis를 갖는 #432가 필요합니다.
 
 ### B1 v2 canonical execution status
 
-The accepted B1 path is now v2:
-- frozen task SHA: `bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`;
-- canonical workflow: `36529108855`;
-- canonical source: `b9eadefd3cd076f026a54bbc55a949f0424f5dab`;
-- exact runtime pins: Python 3.12.14, torch 2.14.0+cpu, transformers 4.57.6,
-  tokenizers 0.22.2, safetensors 0.8.0;
-- 30 frozen inference jobs aggregate into exactly 552 unique episodes.
+Accepted B1 path는 v2입니다.
 
-Before any accepted aggregate, B1 v2 corrected hidden user-argument requirements and enforces a
-tool-observation causality barrier: only one tool call may execute per assistant turn and dependent
-calls require the previous observation.
+- frozen task SHA: `bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`
+- canonical workflow: `36529108855`
+- canonical source: `b9eadefd3cd076f026a54bbc55a949f0424f5dab`
+- 실행 환경: Python 3.12.14, torch 2.14.0+cpu, transformers 4.57.6, tokenizers 0.22.2, safetensors 0.8.0
+- 30 frozen inference job이 정확히 552 unique episode로 aggregate
 
-The v2 preflight re-ran Phase A and retained Recall@3 96.55%, Recall@5/@10 100%, and
-mean Top-5 schema context **2.383% of FULL** at 250 endpoints.
+Accepted aggregate 전 B1 v2는 hidden user-argument requirement를 수정하고 tool-observation causality barrier를 강제했습니다. Assistant turn당 tool call 하나만 실행하며 dependent call은 이전 observation이 필요합니다.
 
-Paired uncertainty uses task-cluster bootstrap because catalog sizes are repeated measures of the
-same 23 semantic tasks. This prevents pseudoreplication but does not make B1 a population-level
-non-inferiority study; #432 remains mandatory for that claim.
+v2 preflight는 Phase A를 재실행해 Recall@3 96.55%, Recall@5/10 100%, 250 endpoints에서 mean Top-5 schema context **FULL의 2.383%**를 유지했습니다.
+
+Paired uncertainty는 동일 23 task의 catalog size가 repeated measure이므로 task-cluster bootstrap을 사용합니다. 이는 pseudoreplication을 막지만 B1을 population-level non-inferiority study로 만들지는 않습니다. 그 주장은 #432가 담당합니다.
 
 ## Evidence-to-Action / SafeActBench
 
-Issue #1203과 PR #1204는 Lin et al., *From Evidence to Action: How Tool-Using Agents Fail* (arXiv:2610.07753)에서 직접 동기를 얻은 별도 execution-boundary 연구 track입니다. SafeActBench는 6개 operational domain, 656개 case, 5개 protocol을 provenance-bound Evidence Ledger와 deterministic trajectory evaluator로 평가합니다. SchemaRouter의 현재 8-case corpus는 deterministic contract regression일 뿐 SafeActBench 재현으로 계산하지 않습니다. 자세한 내용은 [Evidence-to-Action 경계](evidence-to-action.md)를 참고합니다.
+Issue #1203과 PR #1204는 Lin et al., *From Evidence to Action: How Tool-Using Agents Fail* (arXiv:2610.07753)에서 동기를 얻은 별도의 execution-boundary research track입니다. SafeActBench는 provenance-bound Evidence Ledger와 deterministic trajectory evaluator를 사용해 6개 operational domain, 5개 protocol의 656 case를 평가합니다.
 
-다음 연구 단계는 공개 benchmark/evaluator를 사용한 외부 평가입니다. Multi-action dependency 평가를 이유로 SchemaRouter core에 일반 DAG orchestration을 넣지 않습니다.
+SchemaRouter의 현재 8-case corpus는 deterministic contract regression일 뿐 SafeActBench reproduction으로 계산하지 않습니다. [Evidence-to-Action boundary](evidence-to-action.md)를 참고하십시오.
+
+다음 과학적으로 의미 있는 단계는 published benchmark/evaluator에 대한 external evaluation입니다. Multi-action dependency evaluation을 이유로 SchemaRouter core에 general DAG orchestration을 추가해서는 안 됩니다.

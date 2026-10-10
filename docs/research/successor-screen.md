@@ -118,7 +118,7 @@ stay comparable. Only the **runtime** and the **surface** differ.
 
 Enforced at generation, not left to a test. `build_corpus` raises before writing
 anything if the surface shares a normalised query with any prior surface. The
-#506 projection corpus is checked directly, built locally inside the
+Issue #506 projection corpus is checked directly, built locally inside the
 generator rather than registered in `scripts/agent_utility_prior_query_guard.py`.
 Registering it there would change `known_prior_query_manifest()["union_sha256"]`,
 which is stamped into generated v3/v4/v6 corpora and hard-checked by their

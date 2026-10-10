@@ -142,8 +142,8 @@ Protocol compatibility와 routing quality는 서로 다른 근거 범주입니�
 - COD OPTIMADE
 - Rick and Morty GraphQL
 - OData.org V4
-- pinned OpenRPC / JSON-RPC reference implementation
-- pinned MCP Streamable HTTP reference implementation
+- 버전을 고정한 OpenRPC / JSON-RPC 참조 구현
+- 버전을 고정한 MCP Streamable HTTP 참조 구현
 
 이 검사는 기계 판독 가능한 compatibility evidence를 생성하지만, 제3자 provider uptime은 릴리스 차단 dependency가 아닙니다.
 

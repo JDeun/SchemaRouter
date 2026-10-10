@@ -1,39 +1,32 @@
 # Jev / TypeSafe System One
 
-SchemaRouter는 Jev와 같은 TypeSafe System One model을 위한 optional bounded-decision adapter를 제공합니다. Adapter는 core dependency graph 밖에 있으며 **기본적으로 비활성화**됩니다.
+SchemaRouter는 Jev 같은 TypeSafe System One model을 위한 optional bounded-decision adapter를 제공합니다. Adapter는 core dependency graph 밖에 있으며 기본적으로 **off**입니다.
 
-Jev는 SchemaRouter execution plan을 작성하지 않으며 agent/orchestrator 역할도 하지 않습니다. 유한한 option ID 집합을 받아 그중 하나를 반환할 뿐입니다. Tool execution, memory, agent loop를 소유하지 않으며 planner가 결과를 사용하기 전에 SchemaRouter가 이를 검증합니다.
+Jev는 SchemaRouter execution plan을 작성하거나 agent/orchestrator로 동작하지 않습니다. Finite option ID 집합을 받고 그중 하나를 반환합니다. Tool execution, memory, agent loop를 소유하지 않으며 SchemaRouter가 planner 사용 전에 결과를 검증합니다.
 
 ## 설치
-
-사용자는 배포된 optional extra를 설치합니다.
 
 ```bash
 pip install "schemarouter[jev]"
 ```
 
-Bridge는 현재 SchemaRouter distribution에 optional `jev` extra로 포함됩니다.
+Bridge는 optional `jev` extra로 배포되며 현재 `typesafe-sdk>=0.7,<1`을 지원합니다.
 
-현재 integration은 `typesafe-sdk>=0.7,<1`을 지원합니다.
-
-Set the API key through the official SDK environment variable:
+API 키는 코드나 모델의 질의·의사결정 context에 직접 삽입하지 말고, 공식 SDK가 읽는 `TYPESAFE_API_KEY` 환경 변수로 설정합니다.
 
 ```bash
 export TYPESAFE_API_KEY="..."
 ```
 
-SDK 기본 model은 `jev-latest`이며 명시적으로 override할 수 있습니다.
+SDK default model은 `jev-latest`이며 명시적으로 override할 수 있습니다.
 
-## Synchronous 사용
+## Sync 사용
 
 ```python
 from schemarouter import DecisionPolicy, SchemaPlanner
 from schemarouter.integrations import JevDecisionBackend
 
-backend = JevDecisionBackend(
-    min_confidence=0.65,
-)
-
+backend = JevDecisionBackend(min_confidence=0.65)
 planner = SchemaPlanner(
     registry,
     decision_backend=backend,
@@ -43,88 +36,54 @@ planner = SchemaPlanner(
         fallback="deterministic",
     ),
 )
-
 plan = planner.plan("find the band gap for silicon")
 ```
 
-If the Jev confidence is below `min_confidence`, the backend abstains. With the default
-`fallback="deterministic"`, SchemaRouter resumes its deterministic ranking and records a warning.
+Jev confidence가 `min_confidence`보다 낮으면 abstain합니다. Default `fallback="deterministic"`이면 SchemaRouter가 deterministic ranking을 재개하고 warning을 기록합니다.
 
-## Asynchronous 사용
+## Async 사용
 
 ```python
-backend = JevDecisionBackend(
-    async_mode=True,
-    min_confidence=0.65,
-)
-
+backend = JevDecisionBackend(async_mode=True, min_confidence=0.65)
 planner = SchemaPlanner(
     registry,
     decision_backend=backend,
-    decision_policy=DecisionPolicy(
-        enabled=True,
-        endpoint_selection=True,
-    ),
+    decision_policy=DecisionPolicy(enabled=True, endpoint_selection=True),
 )
-
 plan = await planner.aplan("find the band gap for silicon")
 ```
 
 ## Data boundary
 
-Provider는 다음을 받습니다.
+Provider가 받는 것은 user query, `include_context=True`일 때 `DecisionRequest.context`, locally generated option ID, option label/description입니다.
 
-- the user query;
-- `DecisionRequest.context` when `include_context=True`;
-- locally generated option IDs;
-- option labels and descriptions.
+Adapter는 `DecisionOption.metadata`를 전달하지 않습니다. Runtime/transport credential, invoker, execution policy는 model state에 추가하지 않습니다. Bounded request context도 local에 남겨야 하면 `include_context=False`를 사용합니다.
 
-The adapter does **not** forward `DecisionOption.metadata`. Runtime credentials,
-transport credentials, invokers, and execution policy are never added to the model state.
+User query/decision context에 secret을 넣지 마십시오. Context forwarding이 활성화되면 해당 값은 provider input입니다.
 
-Set `include_context=False` when even bounded request context should remain local.
+## Fail-closed behavior
 
-Do not put secrets in the user query or decision context. Those values are provider input when
-context forwarding is enabled.
+Adapter는 offered되지 않은 option ID, non-finite confidence, `[0,1]` 밖 confidence, malformed response, sync mode에 실수로 전달된 async client를 거부합니다. Unknown option은 confidence가 낮아도 먼저 거부합니다.
 
-## Fail-closed 동작
-
-Adapter는 다음을 거부합니다.
-
-- option IDs that were not offered, even when the returned confidence is below the abstention
-  threshold;
-- non-finite confidence values;
-- confidence outside `[0, 1]`;
-- malformed responses;
-- an asynchronous client accidentally supplied to synchronous mode.
-
-Provider errors are handled by the surrounding `DecisionPolicy`. Use
-`fallback="deterministic"` for graceful degradation or `fallback="error"` when decision-provider
-failure must stop planning.
+Provider error는 주변 `DecisionPolicy`가 처리합니다. Graceful degradation은 `fallback="deterministic"`, provider failure가 planning을 중단해야 하면 `fallback="error"`를 사용합니다.
 
 ## 현재 범위
 
-The Jev adapter currently asks one TypeSafe `choice` question, so it returns at most one
-candidate per decision call. `DecisionRequest.max_selections` remains an upper bound; the provider
-does not attempt multi-select ranking.
+Jev adapter는 TypeSafe `choice` 질문 하나를 사용하므로 decision call당 최대 candidate 하나를 반환합니다. `DecisionRequest.max_selections`는 upper bound로 남고 provider가 multi-select ranking을 시도하지 않습니다.
 
-Multi-selection should use a dedicated
-bounded contract rather than synthesizing additional choices from untrusted free-form output.
+Multi-selection은 untrusted free-form output에서 추가 choice를 합성하지 말고 전용 bounded contract를 사용해야 합니다.
 
 ## Benchmark
-
-The repository contains a provider-neutral benchmark harness:
 
 ```bash
 python scripts/benchmark_decision_routing.py
 ```
 
-Run Jev when an API key is available:
+API key가 있으면:
 
 ```bash
 TYPESAFE_API_KEY="..." \
 python scripts/benchmark_decision_routing.py --jev --min-confidence 0.65
 ```
 
-The report records routing accuracy, abstentions, latency, token usage, provider errors, and optional
-cost estimates. See [Decision routing benchmark](../guides/decision-benchmark.md).
+Report는 routing accuracy, abstention, latency, token usage, provider error, optional cost estimate를 기록합니다. [Decision routing benchmark](../guides/decision-benchmark.md)를 참고하십시오.

@@ -1,27 +1,25 @@
 # Operational inspection
 
-SchemaRouter can persist its registered capability catalog with `SQLiteRegistry` and execution
-event streams with `SQLiteRunTraceStore`. The `schemarouter inspect` command exposes those
-artifacts without executing any registered tool.
+SchemaRouter는 `SQLiteRegistry`로 registered capability catalog를, `SQLiteRunTraceStore`로 execution event stream을 persist할 수 있습니다. `schemarouter inspect`는 registered tool을 실행하지 않고 이 artifact를 노출합니다.
 
-This is the operational answer to questions such as:
+다음 질문에 답하기 위한 operational surface입니다.
 
-- Which APIs/tools are currently registered?
-- Which endpoints were constructed from them?
-- Which endpoints are read-only, mutating, destructive, or still unclassified?
-- What HTTP method/path, parameters, and output fields does SchemaRouter know?
-- Which source URL/adapter produced the registered capability?
-- Was an OpenAPI execution base URL bound, and were external references resolved?
-- What schema fingerprint is currently bound to each tool/endpoint?
-- Which persisted runs completed, failed, or touched a given endpoint?
+- 현재 어떤 API/tool이 등록됐는가?
+- 어떤 endpoint가 구성됐는가?
+- read-only/mutating/destructive/unclassified 상태는 무엇인가?
+- HTTP method/path, parameter, output field는 무엇인가?
+- 어떤 source URL/adapter가 capability를 만들었는가?
+- OpenAPI execution base URL이 bind됐고 external reference가 resolve됐는가?
+- 각 tool/endpoint의 schema fingerprint는 무엇인가?
+- 어떤 persisted run이 완료/실패했거나 endpoint를 사용했는가?
 
-## Registry 검사
+## Registry inspection
 
 ```bash
 schemarouter inspect registry --db ./schemarouter-registry.sqlite3
 ```
 
-Example shape:
+예시:
 
 ```text
 Registry v3: 2 tools, 5 endpoints (4 read-only, 1 mutating, 0 unclassified)
@@ -31,9 +29,9 @@ Registry v3: 2 tools, 5 endpoints (4 read-only, 1 mutating, 0 unclassified)
   - create: POST /experiments · mutating · 4 params/2 fields [ea179fd5cf2a]
 ```
 
-The abbreviated fingerprints are display aids. JSON output contains the full SHA-256 fingerprints.
+축약 fingerprint는 display aid이며 JSON output은 전체 SHA-256을 포함합니다.
 
-For one registered Python weather tool, the CLI looks like:
+Python weather tool 예시:
 
 ```text
 Registry v1: 1 tools, 1 endpoints (1 read-only, 0 mutating, 0 unclassified)
@@ -41,21 +39,17 @@ Registry v1: 1 tools, 1 endpoints (1 read-only, 0 mutating, 0 unclassified)
   - current_weather: - - · read-only · 1 params/3 fields [f1d90a4c6b2e]
 ```
 
-When available, the registry/tool view also exposes an allowlisted ingestion provenance set such as
-`adapter`, `source_url`, resolved/approved OpenAPI URLs, OPTIMADE versioned base URL, protocol/API
-version, execution-binding state, and external-reference resolution counts. Arbitrary metadata is
-not copied into the inspection view.
+가능한 경우 allowlisted ingestion provenance인 `adapter`, `source_url`, resolved/approved OpenAPI URL, OPTIMADE versioned base URL, protocol/API version, execution-binding state, external-reference resolution count도 보여줍니다. Arbitrary metadata는 inspection view로 복사하지 않습니다.
 
-## Inspect one tool in detail
+## Tool 하나 상세 검사
 
 ```bash
 schemarouter inspect tool materials --db ./schemarouter-registry.sqlite3
 ```
 
-This expands endpoint classification, method/path, parameters, required/optional status, output
-fields, projection paths, and full fingerprints.
+Endpoint classification, method/path, parameter, required/optional status, output field, projection path, full fingerprint를 확장해 보여줍니다.
 
-For automation or a future dashboard:
+Automation/dashboard용 JSON:
 
 ```bash
 schemarouter inspect tool materials \
@@ -63,49 +57,40 @@ schemarouter inspect tool materials \
   --json
 ```
 
-The JSON form includes the persisted ToolSpec document plus derived tool and endpoint fingerprints.
+JSON에는 persisted ToolSpec document와 derived tool/endpoint fingerprint가 포함됩니다.
 
-## Inspect run traces
-
-List all persisted runs:
+## Run trace 검사
 
 ```bash
 schemarouter inspect traces --db ./schemarouter-traces.sqlite3
 ```
 
-Filter by completion state:
+Machine-readable output은 `--json`을 사용합니다.
+
 
 ```bash
 schemarouter inspect traces --db ./schemarouter-traces.sqlite3 --complete
 schemarouter inspect traces --db ./schemarouter-traces.sqlite3 --incomplete
 ```
 
-Inspect one event stream:
-
 ```bash
 schemarouter inspect trace <RUN_ID> --db ./schemarouter-traces.sqlite3
 ```
 
-Use `--json` on any inspection command for machine-readable output.
+## CLI가 하지 않는 것
 
-## What the CLI does not do
+Inspection은 execution과 분리됩니다.
 
-Inspection is separate from execution.
+- registered API 호출 안 함
+- proposal approve 안 함
+- invoker/credential bind 안 함
+- execution policy 변경 안 함
+- missing DB path에서 빈 DB를 만들지 않고 거부
+- trace payload visibility는 application이 원래 persist한 범위로 제한
 
-- it does not call a registered API;
-- it does not approve proposals;
-- it does not bind invokers or credentials;
-- it does not change execution policy;
-- it refuses a missing DB path rather than creating an empty database;
-- trace payload visibility is limited to what the application originally persisted.
-
-If traces were recorded with the default redacted `RunConfig`, inspection cannot recover hidden
-arguments or result payloads. If an application persisted traces with
-`include_payloads=True`, the resulting SQLite database must be protected accordingly.
+Default redacted `RunConfig`로 기록했다면 hidden argument/result payload를 복구할 수 없습니다. `include_payloads=True`로 persist한 SQLite DB는 그에 맞게 보호해야 합니다.
 
 ## Python inspection API
-
-The same derived views are available without the CLI:
 
 ```python
 from schemarouter import SQLiteRegistry, inspect_registry
@@ -117,13 +102,11 @@ print(snapshot.tool_count)
 print(snapshot.endpoint_count)
 ```
 
-Useful public helpers include `inspect_registry`, `inspect_tool`, `inspect_trace`, and
-`inspect_traces`.
+Public helper에는 `inspect_registry`, `inspect_tool`, `inspect_trace`, `inspect_traces`가 있습니다.
 
 ## Live router inspection
 
-Persistent SQLite inspection shows what was saved. A running process can additionally report the
-actual trusted invoker bindings and planner/policy configuration:
+Persistent SQLite는 저장된 상태를 보여줍니다. Running process는 실제 trusted invoker binding과 planner/policy configuration도 보고할 수 있습니다.
 
 ```python
 router = SchemaRouter()
@@ -133,20 +116,11 @@ snapshot = router.inspect()
 print(snapshot.model_dump_json(indent=2))
 ```
 
-The live view adds:
+Live view에는 analyzer class, configured decision-backend class, bounded decision policy, execution policy, actual bound tool key, availability cooldown 안의 access path, registered health-probe status/background monitor 상태가 추가됩니다.
 
-- analyzer class;
-- configured decision-backend class;
-- bounded decision policy;
-- execution policy;
-- actual bound tool keys from the current executor;
-- access paths currently inside an availability cooldown;
-- registered health-probe status and whether the background health monitor is running.
+Invoker object, credential, arbitrary metadata value, argument/result/payload value는 포함하지 않습니다.
 
-Invoker objects, credentials, arbitrary metadata values, arguments, results, and payload values are
-not included.
-
-Representative `router.inspect()` JSON:
+대표 JSON:
 
 ```json
 {
@@ -185,14 +159,11 @@ Representative `router.inspect()` JSON:
 }
 ```
 
-The full registry section also contains the safe tool/endpoint inspection records and fingerprints.
-Health probe callables themselves are never serialized into inspection output. Availability state
-is live process state and is not reconstructed from a persisted registry alone.
+Full registry section에는 safe tool/endpoint inspection record와 fingerprint도 있습니다. Health probe callable 자체는 serialize하지 않으며 availability는 live process state라 persisted registry만으로 재구성하지 않습니다.
 
-## Export a dashboard
+## Dashboard export
 
-The 0.6 development line can render the same read-only inspection models into one self-contained
-HTML file:
+0.6 개발 계열부터 동일한 읽기 전용 inspection model을 별도의 서버가 필요 없는 단일 HTML 문서로 렌더링할 수 있습니다.
 
 ```bash
 schemarouter dashboard \
@@ -201,7 +172,7 @@ schemarouter dashboard \
   --output ./artifacts/schemarouter-dashboard.html
 ```
 
-The trace database is optional:
+Trace DB는 optional입니다.
 
 ```bash
 schemarouter dashboard \
@@ -209,46 +180,31 @@ schemarouter dashboard \
   --output ./artifacts/schemarouter-dashboard.html
 ```
 
-The dashboard contains capability counts, adapter/source provenance, endpoint method/path and
-side-effect classification, schema fingerprints, persisted binding state, recent run summaries, and
-error counts. The capability table is filterable in the browser.
+Dashboard에는 capability count, adapter/source provenance, endpoint method/path와 side-effect classification, schema fingerprint, persisted binding state, recent run summary, error count가 있으며 capability table은 browser에서 filter할 수 있습니다.
 
-It is a static export:
+Static export이므로 server dependency/external JavaScript/analytics/tool execution button/credential editing/raw trace payload rendering이 없습니다. Application은 typed inspection model로 `render_dashboard(...)` 또는 `write_dashboard(...)`를 직접 호출할 수 있습니다.
 
-- no server dependency;
-- no external JavaScript;
-- no analytics;
-- no tool execution buttons;
-- no credential editing;
-- no raw trace payload rendering.
+### Dashboard preview
 
-Applications may also call `render_dashboard(...)` or `write_dashboard(...)` directly with the
-typed inspection models.
-
-### What the dashboard looks like
-
-The preview below is a checked-in representative output using the same layout and interaction model
-as the generated dashboard. It contains demo data only.
+Checked-in preview는 generated dashboard와 같은 layout/interaction model을 사용하며 demo data만 포함합니다.
 
 <iframe
-  src="../assets/inspection-dashboard-preview.html"
+  src="/SchemaRouter/assets/inspection-dashboard-preview.html"
   title="SchemaRouter inspection dashboard preview"
   style="width: 100%; height: 720px; border: 1px solid var(--md-default-fg-color--lightest); border-radius: 12px;"
 ></iframe>
 
-[Open the dashboard preview in a separate page](../assets/inspection-dashboard-preview.html)
+[별도 페이지에서 dashboard preview 열기](/SchemaRouter/assets/inspection-dashboard-preview.html)
 
-### Run the end-to-end example
+### End-to-end example
 
-The repository includes a runnable example that creates a persistent registry, executes one real
-SchemaRouter run into a trace store, prints the live `router.inspect()` snapshot, and writes the
-HTML dashboard:
+저장되는 registry를 생성하고, SchemaRouter 실제 실행 결과를 trace 저장소에 기록한 다음, 살아 있는 라우터의 `router.inspect()` snapshot을 출력하고 읽기 전용 HTML dashboard까지 생성하는 예제입니다.
 
 ```bash
 python examples/inspection_dashboard.py
 ```
 
-Default outputs:
+Default output:
 
 ```text
 artifacts/inspection-demo/registry.sqlite3
@@ -256,7 +212,7 @@ artifacts/inspection-demo/traces.sqlite3
 artifacts/inspection-demo/dashboard.html
 ```
 
-Override paths when needed:
+Path override:
 
 ```bash
 python examples/inspection_dashboard.py \
@@ -265,7 +221,7 @@ python examples/inspection_dashboard.py \
   --output /tmp/schemarouter-dashboard.html
 ```
 
-The architecture is:
+Architecture:
 
 ```text
 SQLiteRegistry / SQLiteRunTraceStore       live SchemaRouter
@@ -275,25 +231,23 @@ SQLiteRegistry / SQLiteRunTraceStore       live SchemaRouter
        CLI       static dashboard
 ```
 
-A future TUI or long-running web console should consume these same inspection contracts instead of
-querying SchemaRouter's SQLite tables directly.
+Future TUI/long-running web console도 SQLite table을 직접 query하지 말고 동일 inspection contract를 사용해야 합니다.
 
+## Capability decision trace 검사
 
-## Inspect capability decision traces
-
-Decision traces are explicit host-provided observability records. SchemaRouter does not persist them automatically.
+Decision trace는 explicit host-provided observability record이며 SchemaRouter가 자동 persist하지 않습니다.
 
 ```python
 inspection = router.inspect(decision_traces=[trace])
 ```
 
-The live inspection model exposes only compact candidate summaries: visible capability ID, final disposition, and normalized reason codes. Hidden capabilities, score/rank values, payloads, credentials, private headers, and execution bindings are not reconstructed.
+Live inspection model은 visible capability ID, final disposition, normalized reason code의 compact candidate summary만 노출합니다. Hidden capability, score/rank, payload, credential, private header, execution binding은 재구성하지 않습니다.
 
-A serialized trace can be inspected directly:
+Serialized trace:
 
 ```bash
 schemarouter inspect decision-trace decision-trace.json --json
 schemarouter inspect decision-trace decision-trace.json --detailed --json
 ```
 
-When decision traces are supplied to a live `RouterInspection`, the HTML dashboard adds a compact decision-trace table. See [Capability decision traces](capability-decision-traces.md) for the full contract and privacy boundary.
+Live `RouterInspection`에 decision trace를 제공하면 HTML dashboard가 compact decision-trace table을 추가합니다. 전체 contract/privacy boundary는 [Capability decision traces](capability-decision-traces.md)를 참고하십시오.

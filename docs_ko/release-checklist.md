@@ -1,101 +1,83 @@
 # Release checklist
 
-SchemaRouter alpha, beta, release candidate 또는 stable tag를 승격하기 전에 이 checklist를 사용합니다.
+SchemaRouter alpha, beta, release candidate 또는 stable tag를 promote하기 전에 사용합니다.
 
-## Blocking gate
+## Blocking gates
 
-- [ ] Core CI passes on every supported Python version.
-- [ ] Warnings are treated as failures.
-- [ ] Static type checking passes for the typed package surface.
-- [ ] The 84% branch-coverage floor passes.
-- [ ] Minimum declared runtime dependencies pass the core suite.
-- [ ] Optional integration CI passes, including LangChain, LlamaIndex, Jev, Laya, MCP, and OpenTelemetry.
-- [ ] Linux core CI passes on Python 3.10 through 3.14.
-- [ ] The Windows + Python 3.14 smoke job passes.
-- [ ] The separate Python 3.15 preview workflow is reviewed for forward-compatibility signals,
-  but is not treated as a release blocker.
-- [ ] Quickstart examples execute successfully.
-- [ ] Package wheel and sdist build successfully.
-- [ ] Wheel and sdist both install and run the quickstart in clean environments.
-- [ ] Package metadata can be inspected without errors.
-- [ ] The public trust/evidence page names the intended stable release and documents any changed
-  verification limitations; per-release digests come from the generated release manifest rather
-  than being copied into documentation by hand.
-- [ ] README, PyPI summary/keywords, docs home, and release notes use consistent positioning and
-  stable-version language.
-- [ ] The [discoverability checklist](project/discoverability.md#release-discoverability-checklist)
-  is reviewed; GitHub description/topics/homepage still match supported capabilities.
-- [ ] Public API changes are reflected in README and architecture docs.
-- [ ] CHANGELOG contains the release entry and migration notes for breaking changes.
-- [ ] Security invariants have regression tests.
-- [ ] Every external GitHub Action reference is pinned to an immutable 40-character commit SHA.
-- [ ] SECURITY.md still matches URL, credential, retry, and observability behavior.
-- [ ] No credentials, tokens, fixtures containing secrets, or generated local state are committed.
-- [ ] MIT license metadata and the root LICENSE file are present in the release artifact.
-- [ ] README, documentation header, favicon, and brand guide use the approved SchemaRouter mark.
-- [ ] The GitHub repository social preview is exported from the approved 1280×640 brand source and set in repository settings.
+- [ ] 모든 supported Python version에서 Core CI 통과
+- [ ] Warning을 failure로 처리
+- [ ] typed package surface static type check 통과
+- [ ] 84% branch-coverage floor 통과
+- [ ] minimum declared runtime dependency로 core suite 통과
+- [ ] LangChain, LlamaIndex, Jev, Laya, MCP, OpenTelemetry 포함 optional integration CI 통과
+- [ ] Linux Python 3.10–3.14 core CI 통과
+- [ ] Windows + Python 3.14 smoke 통과
+- [ ] 별도 Python 3.15 preview는 forward-compatibility signal로 검토하되 blocker는 아님
+- [ ] Quickstart example 성공
+- [ ] wheel/sdist build 성공
+- [ ] clean environment에서 wheel/sdist 설치 및 quickstart 성공
+- [ ] package metadata inspect 가능
+- [ ] public trust/evidence page가 intended stable release와 changed verification limitation을 명시; per-release digest는 generated release manifest에서 가져오고 수동 복사 금지
+- [ ] README/PyPI summary·keywords/docs home/release notes positioning과 stable-version language 일치
+- [ ] 공개 전 [발견 가능성 체크리스트](project/discoverability.md#release-discoverability-checklist)를 검토하고 GitHub description/topics/homepage 확인
+- [ ] public API change를 README/architecture docs에 반영
+- [ ] CHANGELOG release entry 및 breaking migration note
+- [ ] security invariant regression test
+- [ ] 모든 external GitHub Action reference를 immutable 40-char SHA에 pin
+- [ ] SECURITY.md가 URL/credential/retry/observability behavior와 일치
+- [ ] credential/token/secret fixture/generated local state 미커밋
+- [ ] MIT license metadata와 root LICENSE가 artifact에 존재
+- [ ] README/docs header/favicon/brand guide가 approved SchemaRouter mark 사용
+- [ ] GitHub social preview를 approved 1280×640 brand source에서 export하여 repository setting에 적용
 
 ## Compatibility gates
 
-- [ ] A recent public OpenAPI live smoke is green.
-- [ ] A recent public OPTIMADE live smoke is green.
-- [ ] For releases that change native database adapters, a recent current-`main` Compatibility Smoke is green for the affected representative Tier A native-database runtimes.
-- [ ] The real MCP Streamable HTTP integration job is green when the MCP extra is part of the release.
-- [ ] Optional framework/provider integration jobs are green for every extra included in the release.
-- [ ] The merge-blocking CI dependency audit passes; the latest independent audit, PR/main CodeQL analysis, and OpenSSF Scorecard findings are green or explicitly triaged.
-- [ ] Property-based OpenAPI serialization tests pass on supported Python versions.
-- [ ] Cross-origin OpenAPI behavior is tested with explicit local approval.
-- [ ] Schema drift and stale binding tests pass.
-- [ ] Input/output JSON Schema validation tests pass.
-- [ ] Mutation/destructive policy tests pass.
-- [ ] Retry tests prove that non-read-only operations are not retried by default.
-- [ ] Event tests prove payload redaction is the default.
-- [ ] OpenTelemetry tests prove payload values and exception messages are not exported.
-- [ ] Approval tests prove missing/denied/error decisions fail closed.
-- [ ] Budget tests prove retries consume attempt/remote/cost limits before invocation.
-- [ ] Adapter plugin tests prove discovery does not import code and loading requires an allowlist.
-- [ ] MCP auth tests prove trusted credentials remain transport-local and protected headers cannot be overridden.
-- [ ] OpenAPI compatibility tests make unsupported semantics visible.
+- [ ] 최근 공개 OpenAPI 실제 연동 스모크 테스트 통과
+- [ ] 최근 공개 OPTIMADE 실제 연동 스모크 테스트 통과
+- [ ] native DB adapter 변경 release는 affected representative Tier A runtime의 recent current-`main` Compatibility Smoke green
+- [ ] MCP extra 포함 시 real MCP Streamable HTTP integration green
+- [ ] release에 포함된 모든 extra의 optional framework/provider integration green
+- [ ] merge-blocking dependency audit 통과; latest independent audit, PR/main CodeQL, OpenSSF Scorecard green 또는 triaged
+- [ ] property-based OpenAPI serialization test 통과
+- [ ] 교차 출처 OpenAPI 동작에 대한 명시적 로컬 승인 테스트 통과
+- [ ] schema drift/stale binding test 통과
+- [ ] input/output JSON Schema validation test 통과
+- [ ] mutation/destructive policy test 통과
+- [ ] non-read-only operation default no-retry 증명
+- [ ] event payload redaction default 증명
+- [ ] OpenTelemetry가 payload value/exception message를 export하지 않음 증명
+- [ ] missing/denied/error approval fail closed 증명
+- [ ] retry가 invocation 전 attempt/remote/cost limit 소비 증명
+- [ ] adapter plugin discovery no-import 및 loading allowlist 요구 증명
+- [ ] MCP credential transport-local/protected header no-override 증명
+- [ ] unsupported OpenAPI semantics가 compatibility test에서 visible
 
 ## Release mechanics
 
-- [ ] Replace the development version in `pyproject.toml` with the intended release version.
-- [ ] Add `docs/releases/<version>.md`; release metadata is derived from this version automatically.
-- [ ] The release commit is merged to `main` and the normal CI workflow is green.
-- [ ] The top-level `Release` workflow consumes that successful `main` CI event and verifies that
-  the tested SHA is still the current `main` head.
-- [ ] The release workflow rejects `.dev` versions and requires matching release notes and a dated
-  changelog heading.
-- [ ] If `v<version>` does not already exist, the release workflow creates an annotated tag at the
-  exact green `main` SHA.
-- [ ] If the tag already exists but the GitHub release does not, the workflow may resume from that
-  tagged SHA only when it is an ancestor of the green current `main` and carries the same version.
-- [ ] Build wheel and sdist from the resolved release SHA in an unprivileged job.
-- [ ] Clean-install and smoke-test both built artifacts before publication.
-- [ ] Generate GitHub artifact provenance attestations for the wheel and sdist from the build job before upload.
-- [ ] Generate an SPDX JSON SBOM, attach it to the GitHub release, and create an SBOM attestation for the wheel and sdist.
-- [ ] Generate `SHA256SUMS.txt` and `release-manifest.json` from the exact built artifacts and
-  attach both to the GitHub release.
-- [ ] Publish GitHub release assets and PyPI artifacts from separate jobs; only the PyPI job receives
-  OIDC `id-token: write` permission.
-- [ ] Confirm the PyPI Trusted Publisher is configured for the `pypi` GitHub environment.
-- [ ] Publish to the package index only after all blocking gates are green.
-- [ ] Let the release workflow download the exact published wheel and sdist from public PyPI and
-  verify their SHA-256 digests match the trusted build artifacts byte-for-byte.
-- [ ] Let the release workflow re-install the exact published version from PyPI as wheel, sdist,
-  isolated lightweight extras (MCP, Jev, OpenTelemetry), and the combined
-  MCP/LangChain/LangGraph/LlamaIndex/Jev/OpenTelemetry extras after both GitHub Release and PyPI
-  publication succeed.
-- [ ] Verify install/import in a clean environment.
-- [ ] Verify the release provenance and SPDX SBOM attestations with GitHub CLI for at least one published artifact.
+- [ ] `pyproject.toml` development version을 intended release version으로 교체
+- [ ] `docs/releases/<version>.md` 추가; release metadata 자동 derivation
+- [ ] release commit main merge 및 normal CI green
+- [ ] top-level `Release` workflow가 successful main CI event를 소비하고 tested SHA가 current main head인지 확인
+- [ ] workflow는 `.dev` reject, matching release note와 dated changelog heading 요구
+- [ ] `v<version>` 없으면 exact green main SHA에 annotated tag 생성
+- [ ] tag는 있지만 GitHub release가 없으면 green current main의 ancestor이고 same version일 때만 resume
+- [ ] resolved release SHA에서 unprivileged job으로 wheel/sdist build
+- [ ] publication 전 두 artifact clean-install/smoke-test
+- [ ] upload 전 build job에서 wheel/sdist GitHub artifact provenance attestation 생성
+- [ ] SPDX JSON SBOM 생성, GitHub release attach, wheel/sdist SBOM attestation 생성
+- [ ] exact built artifact에서 `SHA256SUMS.txt`, `release-manifest.json` 생성 및 attach
+- [ ] GitHub release asset/PyPI artifact는 separate job publish; PyPI job만 OIDC `id-token: write`
+- [ ] PyPI Trusted Publisher가 `pypi` GitHub environment로 구성됨 확인
+- [ ] 모든 blocking gate green 후 package index publish
+- [ ] public PyPI exact wheel/sdist download 후 trusted build와 SHA-256 byte-for-byte 검증
+- [ ] GitHub Release/PyPI 성공 후 exact public version을 wheel/sdist/isolated lightweight extras(MCP,Jev,OpenTelemetry)/combined extras로 checkout 밖에서 재설치
+- [ ] clean environment install/import 검증
+- [ ] published artifact 최소 하나의 provenance/SPDX SBOM attestation을 GitHub CLI로 검증
 
-## Release 이후
+## Post-release
 
-- [ ] Confirm the exact-version post-publish PyPI verification job is green for wheel, sdist,
-  isolated MCP/Jev/OpenTelemetry extras, and the combined
-  MCP/LangChain/LangGraph/LlamaIndex/Jev/OpenTelemetry extras.
-- [ ] Confirm `SHA256SUMS.txt` and `release-manifest.json` are attached to the GitHub Release and
-  identify the exact release source SHA.
-- [ ] Confirm documentation examples match the released package.
-- [ ] Record any compatibility regressions as release blockers for the next patch.
-- [ ] Keep security/correctness fixes separate from convenience refactors where practical.
+- [ ] 게시 후 정확히 해당 버전의 PyPI 검증 작업이 wheel 및 sdist 설치, MCP/Jev/OpenTelemetry 각각의 독립 extra 설치, MCP/LangChain/LangGraph/LlamaIndex/Jev/OpenTelemetry 결합 extra 설치 조건을 모두 통과했는지 확인
+- [ ] `SHA256SUMS.txt`/`release-manifest.json` GitHub Release attach 및 exact source SHA 확인
+- [ ] docs example이 released package와 일치
+- [ ] compatibility regression을 next patch blocker로 기록
+- [ ] 가능하면 security/correctness fix를 convenience refactor와 분리

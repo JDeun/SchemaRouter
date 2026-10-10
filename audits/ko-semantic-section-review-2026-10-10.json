@@ -1,0 +1,243 @@
+{
+  "schema_version": 1,
+  "source_revision": "989039511c2f0c519c35f832a52d4b6278b07d1a",
+  "review_date": "2026-10-10",
+  "method": "Risk-based editorial review of all rule-flagged sections after full 147-pair, 1524-section machine triage; not a claim of formal proof for every sentence.",
+  "reviewed_sections": 27,
+  "confirmed_semantic_omission_fixed": [
+    {
+      "path": "integrations/jev.md",
+      "section": 2,
+      "details": "SDK API-key environment ownership explicitly stated; source code already contained export TYPESAFE_API_KEY."
+    }
+  ],
+  "limitations": "Checks and human review can miss subtle translation errors in unflagged prose; independent bilingual editorial proof for each of 1524 sections is not asserted.",
+  "reviews": [
+    {
+      "path": "assets/brand/README.md",
+      "section": 4,
+      "en_blob": "cce56415b5e1d1df7937971ccadaf0e5cd328cc8",
+      "ko_blob": "153d48eb165ef549490a58c10b6ad156549503be",
+      "decision": "meaning-preserved",
+      "evidence": "Korean imperative prohibits distortion, independent recoloring and visual effects"
+    },
+    {
+      "path": "concepts/protocol-ingestion-decisions.md",
+      "section": 3,
+      "en_blob": "ac984acc00827d3af8b529b7b53af5d88950f512",
+      "ko_blob": "4f84b59437a7b3c98045406b405c5abf2ed43f95",
+      "decision": "meaning-preserved",
+      "evidence": "Korean explicitly disallows automatic mutation authorization and defers subscriptions"
+    },
+    {
+      "path": "guides/decision-benchmark.md",
+      "section": 10,
+      "en_blob": "bd1fe26cee4c3ca90944bc701d065d66f93404a4",
+      "ko_blob": "ca65ff1339e8e8689153e5085fdf99a251c8e2de",
+      "decision": "meaning-preserved",
+      "evidence": "Korean excludes optional embedding package from SchemaRouter core requirements"
+    },
+    {
+      "path": "guides/enterprise-data-onboarding.md",
+      "section": 1,
+      "en_blob": "28a31836cd100eb1d8477d951bf6d1ac452114ba",
+      "ko_blob": "15e37dc7c1a7869e33db2d1e1627ec50db8751eb",
+      "decision": "meaning-preserved",
+      "evidence": "Korean states SchemaRouter is not an identity provider, credential store or query proxy"
+    },
+    {
+      "path": "guides/execution-policy.md",
+      "section": 1,
+      "en_blob": "567a6719ad780c82d82076be4d8ad2c226cf3914",
+      "ko_blob": "b70764fd18c4d9f164d80d01f8e7b1a38fd96044",
+      "decision": "meaning-preserved",
+      "evidence": "Korean says a proposed mutation is not thereby authorized"
+    },
+    {
+      "path": "guides/universal-ingestion.md",
+      "section": 6,
+      "en_blob": "30f0d2b160bc26ebaa95d5e7434f8eb040070ac6",
+      "ko_blob": "be8ed2b4a8e30c9d3a39305f3eaecf4ddc69b0ef",
+      "decision": "meaning-preserved",
+      "evidence": "Korean states same-provider paths are not automatically equivalent"
+    },
+    {
+      "path": "guides/vector-store-onboarding.md",
+      "section": 11,
+      "en_blob": "11f9b83691bab0edc1db89e50745d1d9fa7e45d5",
+      "ko_blob": "f2763d921c7eaf8756175ffa426aa151c6b71793",
+      "decision": "meaning-preserved",
+      "evidence": "Korean requires dimension for empty Chroma collections and explicit metadata fields"
+    },
+    {
+      "path": "integrations/decision-backend-plugins.md",
+      "section": 8,
+      "en_blob": "a5e49217d01e79aa64e5ac5ca5e751677423f249",
+      "ko_blob": "fdc5743f6537d2829e803686adadccfa1cbbf146",
+      "decision": "meaning-preserved",
+      "evidence": "Korean says installed plugin does not imply production recommendation"
+    },
+    {
+      "path": "integrations/decision-model-ecosystem.md",
+      "section": 4,
+      "en_blob": "ee36387d25b37fdeb5e31fdb50dbea767b7e8f5f",
+      "ko_blob": "d8b8218a4885f33afb30fca46ca335df49fd411d",
+      "decision": "meaning-preserved",
+      "evidence": "Korean limits credentialed Jev comparison and rejects unwarranted generalization from Laya trials"
+    },
+    {
+      "path": "integrations/decision-model-ecosystem.md",
+      "section": 5,
+      "en_blob": "ee36387d25b37fdeb5e31fdb50dbea767b7e8f5f",
+      "ko_blob": "d8b8218a4885f33afb30fca46ca335df49fd411d",
+      "decision": "meaning-preserved",
+      "evidence": "Korean limits credentialed Jev comparison and rejects unwarranted generalization from Laya trials"
+    },
+    {
+      "path": "integrations/langgraph.md",
+      "section": 5,
+      "en_blob": "93080d5b5e271f93cb47b601d98057bd72e3e419",
+      "ko_blob": "b692851b81d983407a6687b60d405b708014f9cf",
+      "decision": "meaning-preserved",
+      "evidence": "Korean states arbitrary graph state can be mapped without changing default keys"
+    },
+    {
+      "path": "project/adoption-scorecard.md",
+      "section": 2,
+      "en_blob": "487f3fd5148cbe6c52ac7cb6ede502a049ab7287",
+      "ko_blob": "917f51151c7dbe9d2f11a0633eb32fcaaea9bafa",
+      "decision": "meaning-preserved",
+      "evidence": "Korean prohibits invented PyPI and time-window traffic baselines"
+    },
+    {
+      "path": "project/external-adoption.md",
+      "section": 1,
+      "en_blob": "86b7ea47f77c9d6610ea23c88d57840c86fba918",
+      "ko_blob": "ea7d659fbc5a60eb552dfa5c1a73e8727067d60f",
+      "decision": "meaning-preserved",
+      "evidence": "Korean distinguishes external evidence, not endorsements or GitHub stars, from adoption"
+    },
+    {
+      "path": "project/external-adoption.md",
+      "section": 17,
+      "en_blob": "86b7ea47f77c9d6610ea23c88d57840c86fba918",
+      "ko_blob": "ea7d659fbc5a60eb552dfa5c1a73e8727067d60f",
+      "decision": "meaning-preserved",
+      "evidence": "Korean distinguishes external evidence, not endorsements or GitHub stars, from adoption"
+    },
+    {
+      "path": "project/launch-playbook.md",
+      "section": 33,
+      "en_blob": "0f24d3a9a5a32f73a333fa5936e433534360d810",
+      "ko_blob": "0d3e3ed0d9dae2dc1307354f8dafb0c3616fa7f5",
+      "decision": "meaning-preserved",
+      "evidence": "Korean preserves presentation title distinguishing retrieval from authority"
+    },
+    {
+      "path": "recipes/many-tools.md",
+      "section": 6,
+      "en_blob": "f98821bd60080d28bfb3eddf25862b3d03c5f18a",
+      "ko_blob": "4f76e91d1fe2f6b4b7a49731f29f6d6cf6741bea",
+      "decision": "meaning-preserved",
+      "evidence": "Korean explicitly prohibits sacrificing recall for schema token savings"
+    },
+    {
+      "path": "releases/0.12.0.md",
+      "section": 2,
+      "en_blob": "2b1f22affe73ea0962697a03f172d1b7669d11ae",
+      "ko_blob": "b274c11d2d6668eeb1a83cbb65f2142d45467ccf",
+      "decision": "meaning-preserved",
+      "evidence": "Korean says benchmark improvement alone does not reopen stable-core facade"
+    },
+    {
+      "path": "releases/0.13.0.md",
+      "section": 1,
+      "en_blob": "94beeed4c5eb3c2ca788d36699eb8c0040f97804",
+      "ko_blob": "2e6cf67c945f2ff05e05c1b30fb27b23e01c3a92",
+      "decision": "meaning-preserved",
+      "evidence": "Korean says this release does not reopen the architecture"
+    },
+    {
+      "path": "releases/0.14.0.md",
+      "section": 5,
+      "en_blob": "474a2b2be67309a5220fb9014bfbeda9ad5ea894",
+      "ko_blob": "fe5c2738f5ca26ec5d8bbf726c0f6bf0f417259e",
+      "decision": "meaning-preserved",
+      "evidence": "Korean disclaims replacement of third-party frameworks and all-version compatibility"
+    },
+    {
+      "path": "releases/0.16.0.md",
+      "section": 9,
+      "en_blob": "03e99f7303b53ef8a9f33c2456c63e23c3db0dcc",
+      "ko_blob": "5dd6c30530109e12c03b916174370800a198b14b",
+      "decision": "meaning-preserved",
+      "evidence": "Korean disclaims blanket live vendor acceptance"
+    },
+    {
+      "path": "releases/0.6.0.md",
+      "section": 8,
+      "en_blob": "e126cbefbaa65fe6708bb95929d41d861c370334",
+      "ko_blob": "dd2841e9fb5b7274b0f441ebc535b0f171dd5f84",
+      "decision": "meaning-preserved",
+      "evidence": "Korean states deferred research is not a release blocker"
+    },
+    {
+      "path": "research/agent-utility-b1-result.md",
+      "section": 4,
+      "en_blob": "072af371170bc265baf5afff3793605a8aa439ab",
+      "ko_blob": "3ab636a8dd4175920238f54af4b5c0635464bfea",
+      "decision": "meaning-preserved",
+      "evidence": "Korean preserves all tabulated measurements and disclaims population/general-agent inference"
+    },
+    {
+      "path": "research/design-and-experiment-history.md",
+      "section": 34,
+      "en_blob": "27bdc35c44010cfd1c15d4a5702ed2b9ad6f9c5c",
+      "ko_blob": "7209d91638d859ab08137e6f1b31ff8d3c9c8804",
+      "decision": "meaning-preserved",
+      "evidence": "Korean preserves prior freeze/no-retuning and same-corpus non-generalization limits"
+    },
+    {
+      "path": "research/design-and-experiment-history.md",
+      "section": 82,
+      "en_blob": "27bdc35c44010cfd1c15d4a5702ed2b9ad6f9c5c",
+      "ko_blob": "7209d91638d859ab08137e6f1b31ff8d3c9c8804",
+      "decision": "meaning-preserved",
+      "evidence": "Korean preserves prior freeze/no-retuning and same-corpus non-generalization limits"
+    },
+    {
+      "path": "research/experiment-index.md",
+      "section": 3,
+      "en_blob": "6f152dc76cbdf072cf411da261ca521f666d8bf1",
+      "ko_blob": "f782809b861976f01947a0e8cce6eec77623f24a",
+      "decision": "meaning-preserved",
+      "evidence": "Korean distinguishes Git commits from experimental decision records"
+    },
+    {
+      "path": "research/routing-status.md",
+      "section": 12,
+      "en_blob": "13c37940df75f028b74c41c798a6cfa7432e7636",
+      "ko_blob": "906a4daea4a58ac662702320ffb57f039f62b15f",
+      "decision": "meaning-preserved",
+      "evidence": "Korean clearly states sub-85% supported exact rate is not production pass"
+    },
+    {
+      "path": "research/typed-capability-retrieval-ablation.md",
+      "section": 5,
+      "en_blob": "1cc0b4609eb3f26d7cf9d7249758ec60548d028a",
+      "ko_blob": "5a90cc88acdec6a12fd31845e59ed4ab8e405f6e",
+      "decision": "meaning-preserved",
+      "evidence": "Korean distinguishes fixed tokenizer cost proxy from the retrieval model"
+    }
+  ],
+  "followup_translation_review": {
+    "date": "2026-10-10",
+    "reason": "Explicit English prose remnants in research stop rules, frozen unscored confirmation and architecture-negative conclusions corrected; previous review waivers rechecked for unchanged underlying logic at the pinned whole-document blobs.",
+    "reviewed_modified_documents": [
+      "research/design-and-experiment-history.md",
+      "research/routing-status.md"
+    ],
+    "boundary": "This re-pinning does not establish independent sentence-level equivalence for 147 pages."
+  },
+  "translation_leakage_followup_2026_10_10": "Additional full paragraphs corrected: BGE ColBERT no posthoc thresholds; closed-set ranker agreement not capability membership; no tuning on failed rows; fixed unopened confirmation. Human independent 147-pair attestation remains outstanding."
+}

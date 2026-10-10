@@ -1,124 +1,112 @@
 # 0.14 execution-state-aware corrective re-retrieval
 
-추적 issue: #431
+Tracking issue: #431
 
-이 experiment는 multi-step agent가 original query에서 생성된 candidate list를 단순히 넓히는 대신 **observable typed execution state**를 이용해 re-retrieval함으로써 누락된 next-step capability를 복구할 수 있는지 검증합니다.
+이 실험은 multi-step agent가 original query에서 생성된 candidate list를 단순히 넓히는 대신 **observable typed execution state**로 다시 retrieval하여 누락된 next-step capability를 복구할 수 있는지 묻습니다.
 
-#423 B2가 terminal 상태이므로 이 experiment는 automated #500 conveyor를 통해 실행할 수 있습니다.
+이슈 #423 B2는 terminal이므로 automated #500 conveyor를 통해 실험이 허용됐습니다.
 
-As of 2026-10-02, recovery run `36897645512` is executing the unchanged frozen scientific source
-`30663de8f618bc88a893d9bf6214035a70e8e894`. Earlier wrapper/cache failures are infrastructure
-evidence only. No partial shard outcome may be interpreted, tuned against, or promoted before the
-terminal aggregate and preregistered gate are available.
+2026-10-02 기준 recovery run `36897645512`는 변경되지 않은 frozen scientific source `30663de8f618bc88a893d9bf6214035a70e8e894`를 실행 중입니다. 이전 wrapper/cache failure는 infrastructure evidence일 뿐입니다. Terminal aggregate와 preregistered gate가 나오기 전에 partial shard outcome을 해석·tuning·promotion해서는 안 됩니다.
 
-## 선행 연구
+## Prior art
 
-This protocol is independently motivated by two 2026 results:
+Protocol은 두 2026 연구에서 독립적으로 동기를 얻습니다.
 
-- Patel et al., *Dynamic Tool Dependency Retrieval for Lightweight Function Calling*
-  (Findings ACL 2026), which conditions retrieval on the initial query plus evolving tool-calling
-  state/dependencies.
-- Fang and Glass, *Beyond Single-Shot: Multi-step Tool Retrieval via Query Planning*
-  (Findings ACL 2026), which replaces one-shot matching with iterative retrieval queries for
-  compositional tool use.
+- Patel et al., *Dynamic Tool Dependency Retrieval for Lightweight Function Calling* (Findings ACL 2026): initial query와 evolving tool-calling state/dependency를 함께 사용해 retrieval
+- Fang and Glass, *Beyond Single-Shot: Multi-step Tool Retrieval via Query Planning* (Findings ACL 2026): compositional tool use를 위해 one-shot matching을 iterative retrieval query로 대체
 
-SchemaRouter's experiment is narrower: it permits only observable typed execution
-state, never hidden future routes, oracle task graphs, or retrieval-derived execution authority.
+SchemaRouter 실험은 더 좁습니다. Observable typed execution state만 허용하며 hidden future route, oracle task graph, retrieval-derived execution authority는 허용하지 않습니다.
 
 ## Frozen state contract
 
-Research retriever는 다음 정보를 조건으로 사용할 수 있습니다:
+Research retriever는 다음을 condition으로 사용할 수 있습니다.
 
-- the original user query;
-- already executed registered route IDs;
-- observed field names;
-- observed semantic IDs;
-- observed value types;
-- units, dimensions, and qualifiers;
-- stable identifiers produced by completed tools;
-- the last execution status;
-- the last error class;
-- a deterministic task-incomplete boolean.
+- original user query
+- 이미 실행된 registered route ID
+- observed field name
+- observed semantic ID
+- observed value type
+- unit, dimension, qualifier
+- completed tool이 생성한 stable identifier
+- last execution status
+- last error class
+- deterministic task-incomplete boolean
 
-The state is serialized as canonical sorted-key JSON and appended to the original query only for the
-research retrieval call.
+State는 canonical sorted-key JSON으로 serialize되어 research retrieval call에서만 original query에 추가됩니다.
 
-다음 정보는 사용할 수 없습니다:
+금지 항목:
 
-- future required route IDs;
-- gold next-route IDs;
-- oracle task graphs;
-- hidden expected answers;
-- hidden reference facts;
-- condition names;
-- SchemaRouter rank scores or rank positions.
+- future required route ID
+- gold next-route ID
+- oracle task graph
+- hidden expected answer
+- hidden reference fact
+- condition name
+- SchemaRouter rank score 또는 rank position
 
-Free-text tool output is not injected into retrieval context.
+Free-text tool output은 retrieval context에 주입하지 않습니다.
 
-## Frozen condition
+## Frozen conditions
 
-Compare:
+다음을 비교합니다.
 
-1. SR-5-STATIC;
-2. SR-PROGRESSIVE-STATIC;
-3. SR-5-STATE-AWARE;
-4. FULL;
-5. ORACLE.
+1. SR-5-STATIC
+2. SR-PROGRESSIVE-STATIC
+3. SR-5-STATE-AWARE
+4. FULL
+5. ORACLE
 
-The state-aware condition starts with Top-5 and may refresh at most once after each completed or
-failed tool turn, with at most five retrieval refreshes per episode. Each refresh exposes at most
-five capabilities.
+State-aware condition은 Top-5에서 시작하며 completed/failed tool turn 뒤 최대 한 번 refresh할 수 있고 episode당 최대 5회의 retrieval refresh를 허용합니다. 각 refresh는 최대 5개 capability를 노출합니다.
 
-## 평가 surface
+## Surface
 
-The frozen evaluation surface contains **180 independent semantic tasks**:
+Frozen evaluation surface는 **180개의 독립 semantic task**를 포함합니다.
 
-- 5 multi-step/state strata;
-- 6 languages;
-- 6 tasks per stratum × language cell.
+- 5 multi-step/state strata
+- 6 languages
+- stratum × language cell당 6 tasks
 
 Strata:
 
-1. two-step state dependency;
-2. three-step state dependency;
-3. recoverable execution failure;
-4. identifier/provenance propagation;
-5. typed unit state transition.
+1. two-step state dependency
+2. three-step state dependency
+3. recoverable execution failure
+4. identifier/provenance propagation
+5. typed unit state transition
 
-Catalog sizes are 100, 250, and 500 endpoints.
+Catalog size는 100, 250, 500 endpoints입니다.
 
-## 주요 metric
+## Primary metrics
 
-Report separately:
+다음을 각각 보고합니다.
 
-- deterministic task pass;
-- next-required-tool Recall@5 after each observable state transition;
-- recovery rate after an initial miss;
-- multi-step state completion;
-- total unique candidates exposed;
-- tool-schema and total input tokens;
-- retrieval calls;
-- model turns and tool calls;
-- wall latency;
-- failed executions;
-- unauthorized destructive executions.
+- deterministic task pass
+- 각 observable state transition 이후 next-required-tool Recall@5
+- initial miss 이후 recovery rate
+- multi-step state completion
+- total unique candidates exposed
+- tool-schema 및 total input tokens
+- retrieval calls
+- model turns와 tool calls
+- wall latency
+- failed executions
+- unauthorized destructive executions
 
-## 성공 gate
+## Success gate
 
-State-aware corrective retrieval is useful only if:
+State-aware corrective retrieval이 유용하려면:
 
-- task pass is no worse than static progressive by more than 2pp;
-- next-required-tool Recall@5 is at least 97%;
-- initial-miss recovery is better than static progressive;
-- mean tool-schema tokens are lower than static progressive;
-- unauthorized destructive executions remain zero;
-- execution-policy integrity remains 100%.
+- task pass가 static progressive보다 2pp를 초과해 나쁘지 않아야 함
+- next-required-tool Recall@5 최소 97%
+- initial-miss recovery가 static progressive보다 좋아야 함
+- mean tool-schema token이 static progressive보다 낮아야 함
+- unauthorized destructive execution 0
+- execution-policy integrity 100%
 
-The primary interval is a stratified task-cluster bootstrap over task-stratum × language with
-10,000 iterations and seed 20260929.
+Primary interval은 task-stratum × language에 대한 stratified task-cluster bootstrap이며 10,000 iterations, seed 20260929를 사용합니다.
 
 ## Boundary
 
-Dynamic retrieval은 candidate exposure만 변경합니다. Execution을 승인할 수 없습니다.
+Dynamic retrieval은 candidate exposure만 변경합니다. Execution을 authorize할 수 없습니다.
 
-어떤 rule도 B2 failure를 이용해 tuning할 수 없으며 scoring 시작 후에는 state field를 추가할 수 없습니다.
+B2 failure에서 rule을 tune할 수 없으며 scoring 시작 이후 state field를 추가할 수 없습니다.

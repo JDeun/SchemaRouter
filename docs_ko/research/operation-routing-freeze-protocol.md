@@ -1,58 +1,53 @@
 # Operation-routing freeze protocol
 
-SchemaRouter는 routing candidate가 independent confirmation, calibration 또는 blind evaluation에 들어가기 전에 이를 freeze합니다.
+SchemaRouter는 routing candidate가 independent confirmation, calibration 또는 blind evaluation에 들어가기 전에 freeze합니다.
 
-Freeze의 목적은 평가 대상 system을 계속 변하는 research configuration이 아니라 reproducible object로 만드는 것입니다.
+목적은 evaluated system을 움직이는 research configuration이 아니라 reproducible object로 만드는 것입니다.
 
-## 정본 production target
+## Canonical production target
 
-Machine-readable source of truth는 다음 파일입니다:
+Machine-readable source of truth:
 
 `benchmarks/operation-routing-production-targets.json`
 
-The freeze manifest copies that exact target block, and the validator rejects any drift between the
-manifest and the canonical target file.
+Freeze manifest는 이 target block을 정확히 복사하며 validator는 canonical target file과의 drift를 거부합니다.
 
 ## Freeze 시점
 
-Candidate가 모든 canonical development target을 통과한 뒤에만 freeze합니다:
+모든 canonical development target 통과 후에만 freeze합니다.
 
-- supported exact-route accuracy >= 85%;
-- near-domain unsupported rejection >= 97%;
-- OOD rejection = 100%;
-- false-route rate <= 1%;
-- authority violations = 0;
-- execution errors = 0;
-- target combined p95 <= 250 ms.
+- supported exact-route accuracy >= 85%
+- near-domain unsupported rejection >= 97%
+- OOD rejection = 100%
+- false-route rate <= 1%
+- authority violations = 0
+- execution errors = 0
+- target combined p95 <= 250 ms
 
-A quality pass with a latency miss may enter a separately preregistered runtime-only optimization,
-but semantic behavior must remain unchanged.
+Quality pass + latency miss는 별도 preregistered runtime-only optimization에 들어갈 수 있지만 semantic behavior는 변하지 않아야 합니다.
 
-## Freeze에 포함할 항목
+## Freeze에 포함할 것
 
-다음 template에서 시작합니다:
+`benchmarks/operation-routing-freeze-manifest.template.json`에서 시작합니다.
 
-`benchmarks/operation-routing-freeze-manifest.template.json`
+Template을 candidate-specific JSON으로 복사합니다. DEV candidate freeze 뒤 status는 `frozen-dev`, independent fresh confirmation 통과 뒤에만 `fresh-confirmed`를 사용합니다.
 
-Copy the template to a candidate-specific JSON file. Use status `frozen-dev` after the DEV candidate
-is frozen and `fresh-confirmed` only after the independent fresh confirmation passes.
+정확히 기록:
 
-다음 항목을 정확히 기록합니다:
+- SchemaRouter source revision
+- architecture identifier
+- route-authority와 verifier/veto role
+- model/checkpoint/provider/runtime revision; model revision은 immutable Git/Hugging Face commit 또는 immutable provider model/version ID
+- Python/dependency/hardware identity
+- query/capability/prompt representation digest
+- option ordering rule
+- decision rule과 threshold
+- development corpus/workflow/artifact provenance
+- development metrics
+- 독립적인 신규 확인용 코퍼스·워크플로·산출물의 출처 기록
+- fresh-confirmation metrics
 
-- SchemaRouter source revision;
-- architecture identifier;
-- route-authority and verifier/veto roles;
-- model, checkpoint, provider, and runtime revisions; model revision may be an immutable Git/Hugging Face commit or an immutable provider model/version ID;
-- Python/dependency/hardware identity;
-- query/capability/prompt representation digests;
-- option ordering rule;
-- decision rule and threshold;
-- development corpus/workflow/artifact provenance;
-- development metrics;
-- independent fresh-confirmation corpus/workflow/artifact provenance;
-- fresh-confirmation metrics.
-
-Validate a DEV freeze before confirmation:
+DEV freeze validation:
 
 ```bash
 python scripts/validate_operation_routing_freeze_manifest.py \
@@ -60,57 +55,51 @@ python scripts/validate_operation_routing_freeze_manifest.py \
   --phase dev
 ```
 
-After the independent fresh confirmation is recorded, change the status to `fresh-confirmed` and
-validate again with `--phase fresh`. The validator fails on missing provenance, target drift,
-authority drift, invalid digests, or evidence that misses the standing gate.
+Independent fresh confirmation을 기록한 뒤 status를 `fresh-confirmed`로 바꾸고 `--phase fresh`로 다시 validate합니다. Missing provenance, target drift, authority drift, invalid digest 또는 standing gate 미달 evidence에서 fail합니다.
 
-The manifest also records the authority invariants:
+Manifest authority invariants:
 
-- only finite locally registered IDs may be selected;
-- no rank-2 fallthrough after a winner is rejected;
-- no pseudo-route;
-- an external model cannot create execution authority.
+- finite locally registered ID만 선택 가능
+- winner reject 후 rank-2 fallthrough 없음
+- pseudo-route 없음
+- external model은 execution authority를 만들 수 없음
 
 ## Confirmation boundary
 
-A development pass is not enough.
+Development pass만으로 충분하지 않습니다.
 
-After freezing the exact candidate, generate a **new zero-overlap fresh confirmation surface** that is
-distinct from the failed #270 and #287 surfaces. Run the frozen candidate once without semantic
-retuning.
+Exact candidate를 freeze한 뒤 failed #270/#287 surface와 다른 **new zero-overlap fresh confirmation surface**를 생성합니다. Frozen candidate를 semantic retuning 없이 한 번 실행합니다.
 
-Failed confirmation corpora are permanently confirmation-only. They must never be reused to:
+Failed confirmation corpus는 영구 confirmation-only입니다. 다음에 재사용 금지:
 
-- choose a threshold;
-- change a prompt;
-- add aliases;
-- create route/language/family exceptions;
-- select a model;
-- train or calibrate a verifier.
+- threshold 선택
+- prompt 변경
+- alias 추가
+- route/language/family exception 생성
+- model 선택
+- verifier train/calibrate
 
-Only a candidate that survives this independent confirmation may enter #198.
+Independent confirmation을 생존한 candidate만 #198에 들어갈 수 있습니다.
 
-Ownership is explicit:
-- **#197 owns DEV → exact freeze → independent fresh confirmation**;
-- **#198 owns calibration → one-shot blind-final** after a validated `fresh-confirmed` manifest exists.
+Ownership:
 
-## Calibration and blind-final
+- **#197: 개발 데이터 평가 → 정확한 동결 → 독립적인 신규 확인 평가**
+- validated `fresh-confirmed` manifest 이후 **#198: calibration → one-shot blind-final**
 
-After #197 has produced a validated `fresh-confirmed` manifest, #198 owns the remaining evidence sequence:
+## Calibration과 blind-final
 
-1. generate a new 900-case calibration corpus;
-2. evaluate calibration exactly once with the unchanged frozen candidate;
-3. only after a calibration pass, generate a new 1,800-case blind-final corpus;
-4. evaluate blind-final exactly once.
+이슈 #197이 validated `fresh-confirmed` manifest를 만들면 #198이 나머지 evidence sequence를 소유합니다.
 
-Calibration and blind evidence become consumed after use and cannot be recycled into tuning.
+1. 새로운 900-case calibration corpus 생성
+2. unchanged frozen candidate로 calibration 정확히 한 번 평가
+3. calibration pass 후에만 새로운 1,800-case blind-final corpus 생성
+4. blind-final 정확히 한 번 평가
+
+Calibration/blind evidence는 사용 후 consumed 상태이며 tuning으로 재활용할 수 없습니다.
 
 ## Runtime-only optimization
 
-If quality passes but latency fails, runtime optimization may change implementation details such as
-quantization or execution backend only when the exact semantic decision function is preserved.
-
-Before accepting an optimized runtime, compare its complete analysis rows with the frozen reference:
+Quality가 pass하고 latency가 fail하면 exact semantic decision function을 보존하는 경우에만 quantization/execution backend 같은 implementation detail을 바꿀 수 있습니다.
 
 ```bash
 python scripts/validate_routing_runtime_parity.py \
@@ -122,35 +111,29 @@ python scripts/validate_routing_runtime_parity.py \
   --out artifacts/runtime-parity.json
 ```
 
-Use the actual frozen route/score field and threshold. For a BGE+external-gate composition,
-`raw_top_route` can be the route field. The validator requires:
+실제 frozen route/score field와 threshold를 사용합니다. BGE+external-gate composition에서는 `raw_top_route`가 route field가 될 수 있습니다. Validator 요구:
 
-- identical case IDs;
-- zero execution and authority errors;
-- identical selected route for every case;
-- identical execute/abstain decision for every case;
-- a recorded probability-drift distribution and reference decision-boundary margin.
+- identical case IDs
+- zero execution/authority errors
+- 모든 case의 selected route 동일
+- 모든 case의 execute/abstain decision 동일
+- probability-drift distribution과 reference decision-boundary margin 기록
 
-Any route change or threshold crossing means the runtime is semantically different and must not be
-treated as a runtime-only optimization. When parity fails, the validator writes the requested JSON
-report first and then exits non-zero, so the mismatch cases and probability drift remain available as
-terminal research evidence.
+Route change 또는 threshold crossing은 semantic difference이므로 runtime-only optimization으로 취급할 수 없습니다. Parity failure에서도 validator는 requested JSON report를 먼저 쓰고 non-zero exit하여 mismatch case와 probability drift를 terminal research evidence로 보존합니다.
 
-The optimized runtime needs its own recorded identity and confirmation before calibration.
+Optimized runtime은 calibration 전에 자체 recorded identity와 confirmation이 필요합니다.
 
 ## Evidence recording
 
-For every terminal phase, preserve:
+모든 terminal phase에서 보존:
 
-- source SHA;
-- corpus seed/hash;
-- workflow run ID;
-- artifact ID and digest (raw SHA-256 or GitHub's `sha256:`-prefixed form);
-- exact model/runtime identity;
-- aggregate and required slice metrics;
-- authority/error counts;
-- terminal decision and interpretation.
+- source SHA
+- corpus seed/hash
+- workflow run ID
+- artifact ID와 digest(원시 SHA-256 또는 GitHub의 `sha256:` 접두사를 붙인 형태)
+- exact model/runtime identity
+- aggregate 및 required slice metrics
+- authority/error counts
+- terminal decision/interpretation
 
-Update #200, #197, the research ledger, design/experiment history, and #199 whenever the frozen
-candidate or evidence phase changes. Once fresh confirmation passes, update #198 and transfer
-ownership of the unchanged frozen candidate to calibration/blind evaluation.
+Frozen candidate/evidence phase가 변할 때 #200, #197, research ledger, design/experiment history, #199를 업데이트합니다. Fresh confirmation 통과 후 #198도 업데이트하고 unchanged frozen candidate의 ownership을 calibration/blind evaluation으로 이전합니다.

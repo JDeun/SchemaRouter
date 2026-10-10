@@ -94,7 +94,7 @@ router = SchemaRouter(registry=MyPersistentRegistry(...))
 
 Custom persistent implementation은 atomic write, snapshot semantic, write-time contract revalidation, concurrency control을 책임져야 합니다.
 
-## 신뢰된 local code가 수정할 수 있는 범위
+## 신뢰된 local code가 수정할 수 있는 범위 {#what-trusted-local-code-may-amend}
 
 Application이 execution authority이므로 result가 무엇을 *의미하는지* 선언하고 annotation할 수 있습니다. 하지만 무엇을 실행하는지 또는 response를 어떻게
 validated.

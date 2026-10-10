@@ -28,13 +28,15 @@ OData.org V4 reference service. Missing credentials or optional SDKs are reporte
 
 [Provider-first registration details →](../guides/provider-first-registration.md)
 
-## 3. Resolve and execute a real provider capability
+## 3. Resolve and execute a real provider capability {#real-provider-capability}
 
 The example below starts from the built-in `apis-guru` provider profile. SchemaRouter resolves that
 identity to the same public OpenAPI source used by the compatibility smoke, then sends it through the
 normal OpenAPI adapter. The provider owns the schema and returned data.
 
+```python
 --8<-- "examples/live_openapi_quickstart.py"
+```
 
 Run it from a checkout with:
 
@@ -66,7 +68,9 @@ quickstart path with a deterministic OpenAPI fixture in `tests/test_live_quickst
 
 The older local callable example remains deliberately boring and deterministic:
 
+```python
 --8<-- "examples/quickstart.py"
+```
 
 That file is executed from source, wheel, and sdist acceptance jobs. It proves packaging and local
 execution without pretending that a fixed weather value is real provider data.
@@ -129,7 +133,7 @@ owns a concrete protocol endpoint.
 | You already have | Install | Minimal tested path |
 | --- | --- | --- |
 | Provider name | `pip install schemarouter` | `await router.add_provider("materials-project")` and [provider-first registration](../guides/provider-first-registration.md) |
-| OpenAPI URL | `pip install schemarouter` | [live OpenAPI quickstart](#3-resolve-and-execute-a-real-provider-capability) |
+| OpenAPI URL | `pip install schemarouter` | [live OpenAPI quickstart](#real-provider-capability) |
 | Typed Python function | core install | [Python tools](../guides/python-tools.md) and `examples/quickstart.py` |
 | MCP server | `pip install "schemarouter[mcp]"` | [MCP HTTP / stdio guide](../guides/mcp.md) |
 | LangChain tools | `pip install "schemarouter[langchain]"` | `examples/langchain_quickstart.py` |

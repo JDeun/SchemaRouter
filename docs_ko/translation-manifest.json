@@ -33,7 +33,7 @@
     },
     {
       "path": "concepts/decision-backends.md",
-      "source_blob": "02e33c77d141113df65abc1e33bf0a9ae780f801"
+      "source_blob": "d8af579c3b868c1675ad6d88ed4f4d63c27bc8e2"
     },
     {
       "path": "concepts/design-principles.md",
@@ -89,7 +89,7 @@
     },
     {
       "path": "getting-started/quickstart.md",
-      "source_blob": "dd97b9ccbff9b5a3465fc37e84a75291fc18a721"
+      "source_blob": "29d0739003fb83cbd91e95db15b3fce623f5d9f3"
     },
     {
       "path": "getting-started/runtime-lifecycle.md",
@@ -205,7 +205,7 @@
     },
     {
       "path": "guides/inspection.md",
-      "source_blob": "7ee4e108b67245d08fb350b822473fcac06cebb2"
+      "source_blob": "e1bdb8d9afb5c7d5ec8e7bde6f2acc384a4cb92c"
     },
     {
       "path": "guides/live-compatibility-matrix.md",
@@ -381,7 +381,7 @@
     },
     {
       "path": "project/roadmap.md",
-      "source_blob": "2a65b2809c07854b6f96dd4a68a360185f99e828"
+      "source_blob": "d7f9c40df8f03ea69e9d5aabb888789c83eadb80"
     },
     {
       "path": "project/trust-and-evidence.md",
@@ -493,7 +493,7 @@
     },
     {
       "path": "research/0.14-paper-evidence-checkpoint.md",
-      "source_blob": "08c22e5d28f3fd831ad89ac041180168461ad805"
+      "source_blob": "6c5915d879db3a59bfd960cd6c2a4c116b01c72b"
     },
     {
       "path": "research/adaptive-shortlist-depth.md",
@@ -505,11 +505,11 @@
     },
     {
       "path": "research/corrective-reretrieval.md",
-      "source_blob": "92bd4c19d2b72519111c297394505ff365958c7f"
+      "source_blob": "b9bfcfb62181bd93cc3dd1be14cf72dffd7cd5fe"
     },
     {
       "path": "research/design-and-experiment-history.md",
-      "source_blob": "37c24c4109568c8107a1259cdf58eda75f66d100"
+      "source_blob": "27bdc35c44010cfd1c15d4a5702ed2b9ad6f9c5c"
     },
     {
       "path": "research/evidence-to-action.md",
@@ -521,15 +521,15 @@
     },
     {
       "path": "research/external-validation-freeze.md",
-      "source_blob": "e02cd98208f749ccd2fe6cfd33e31b9099429611"
+      "source_blob": "5d1daf2f0c6190ee47c18291ef44af9a1f7c467e"
     },
     {
       "path": "research/field-projection-answer-quality.md",
-      "source_blob": "d51da188c660890c508115cb376741813f94d762"
+      "source_blob": "fbf90b1bfb68bd697591cfe7563f1bd7ba85c8ef"
     },
     {
       "path": "research/final-answer-quality.md",
-      "source_blob": "a5bf04fe8cd645b9c4ce2e8fbf77eda990f44fd0"
+      "source_blob": "4c381ad8f834b38af0b0fe896c2c90150d221dd1"
     },
     {
       "path": "research/governance.md",
@@ -541,11 +541,11 @@
     },
     {
       "path": "research/intent-manual-dev-result.md",
-      "source_blob": "0c7c1a8331d751256be567e033d51c6f6779d508"
+      "source_blob": "390e3b55f407827f8ae21d448b8ab579624118af"
     },
     {
       "path": "research/large-heldout-agent-utility.md",
-      "source_blob": "4784627f0972783c45e29ef49aed0d6174176bfd"
+      "source_blob": "31213184bb15fb40d52752131ed07a140a616431"
     },
     {
       "path": "research/operation-routing-freeze-protocol.md",
@@ -557,11 +557,11 @@
     },
     {
       "path": "research/paper-evidence-package.md",
-      "source_blob": "eefd68d687e7879f5369b53984b602bb81f9af3a"
+      "source_blob": "d8e341a4ae01b53022fa1e85efdb650990995122"
     },
     {
       "path": "research/prior-art-roadmap.md",
-      "source_blob": "18210120bd0a5ba548c167023476241746608a1e"
+      "source_blob": "010e7b42529f641e626706663c0dc3bc4afde181"
     },
     {
       "path": "research/realistic-break-even-result.md",
@@ -569,7 +569,7 @@
     },
     {
       "path": "research/routing-status.md",
-      "source_blob": "6b70840a0250be6585fa22c319af6ee2c924c483"
+      "source_blob": "13c37940df75f028b74c41c798a6cfa7432e7636"
     },
     {
       "path": "research/safeact-v1-evidence-gate.md",
@@ -577,11 +577,11 @@
     },
     {
       "path": "research/successor-screen.md",
-      "source_blob": "80e7597e85ccd2550892f1b04f5c9e4984b03932"
+      "source_blob": "2fbfb4ba68a41c0ebd03cc96eb72864bfe4bb606"
     },
     {
       "path": "research/typed-capability-retrieval-ablation.md",
-      "source_blob": "6fdd48f06546ad6aeda224cb8b59e77a80e02808"
+      "source_blob": "1cc0b4609eb3f26d7cf9d7249758ec60548d028a"
     },
     {
       "path": "security/threat-model.md",

@@ -6,12 +6,12 @@ from __future__ import annotations
 import argparse
 import re
 from collections import Counter
+from html.parser import HTMLParser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EN = ROOT / "docs"
 KO = ROOT / "docs_ko"
-EXCLUDED = {"assets/brand/README.md"}
 FENCE = re.compile(r"^\s*(```|~~~)([^\s`]*)")
 HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 MOJIBAKE = ("\ufffd", "Ã", "Â", "â€™", "â€œ", "â€", "â€“", "â€”", "ðŸ")
@@ -22,7 +22,6 @@ def markdown_files(root: Path) -> dict[str, Path]:
     return {
         p.relative_to(root).as_posix(): p
         for p in root.rglob("*.md")
-        if p.relative_to(root).as_posix() not in EXCLUDED
     }
 
 
@@ -66,6 +65,26 @@ def unfenced_python_snippets(path: Path) -> list[int]:
     return lines
 
 
+def unescaped_numeric_issue_references(path: Path) -> list[int]:
+    """Reject issue IDs mistakenly interpreted as Markdown ATX headings.
+
+    Python-Markdown can interpret a paragraph or list item beginning with '#123' as an
+    H1 even without a separating space. Real headings are explicitly spaced;
+    preserve issue IDs by writing 'Issue #123' (or '이슈 #123') instead.
+    """
+    violations: list[int] = []
+    in_fence = False
+    for line_number, line in enumerate(
+        path.read_text(encoding="utf-8").splitlines(), 1
+    ):
+        if FENCE.match(line):
+            in_fence = not in_fence
+            continue
+        if not in_fence and re.match(r"^\s*(?:>\s*)*(?:(?:[-*+]|\d+[.)])\s+)?#\d+", line):
+            violations.append(line_number)
+    return violations
+
+
 def suspicious_unicode(path: Path) -> list[str]:
     text = path.read_text(encoding="utf-8")
     return [token for token in MOJIBAKE if token in text]
@@ -84,6 +103,12 @@ def check_sources() -> list[str]:
             if unsafe:
                 errors.append(
                     f"{rel}: {label} Python snippet include outside code fence at lines {unsafe}"
+                )
+            numeric_issues = unescaped_numeric_issue_references(path)
+            if numeric_issues:
+                errors.append(
+                    f"{rel}: {label} unescaped leading numeric issue refs "
+                    f"render as headings at lines {numeric_issues}"
                 )
         en_text = en[rel].read_text(encoding="utf-8")
         ko_text = ko[rel].read_text(encoding="utf-8")
@@ -108,6 +133,67 @@ def check_sources() -> list[str]:
     return errors
 
 
+class RenderedArticleLayout(HTMLParser):
+    """Extract article-only layout structure from built Material HTML.
+
+    Ignore the navigation, language picker and shared page chrome, which
+    legitimately differ by locale. Do not compare translated text or slugs.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.article_depth = 0
+        self.articles = 0
+        self.headings: list[int] = []
+        self.tables = 0
+        self.pre_blocks = 0
+        self.images = 0
+        self.h1_titles: list[str] = []
+        self._in_h1 = False
+        self._h1_text: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == "article":
+            if self.article_depth == 0:
+                self.articles += 1
+            self.article_depth += 1
+            return
+        if not self.article_depth:
+            return
+        if re.fullmatch(r"h[1-6]", tag):
+            self.headings.append(int(tag[1]))
+            if tag == "h1":
+                self._in_h1 = True
+                self._h1_text = []
+        elif tag == "table":
+            self.tables += 1
+        elif tag == "pre":
+            self.pre_blocks += 1
+        elif tag == "img":
+            self.images += 1
+
+    def handle_data(self, data: str) -> None:
+        if self._in_h1:
+            self._h1_text.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "h1" and self._in_h1:
+            self.h1_titles.append(" ".join(" ".join(self._h1_text).split())[:100])
+            self._in_h1 = False
+        if tag == "article" and self.article_depth:
+            self.article_depth -= 1
+
+    def signature(self) -> tuple[tuple[int, ...], int, int, int]:
+        return (tuple(self.headings), self.tables, self.pre_blocks, self.images)
+
+
+def rendered_article_layout(html: str) -> RenderedArticleLayout:
+    parser = RenderedArticleLayout()
+    parser.feed(html)
+    parser.close()
+    return parser
+
+
 def check_rendered(site: Path) -> list[str]:
     errors: list[str] = []
     en_pages = {
@@ -130,6 +216,19 @@ def check_rendered(site: Path) -> list[str]:
             errors.append(f"{rel}: Korean page lacks en alternate")
         if "bilingual-switch.js" not in en_html or "bilingual-switch.js" not in ko_html:
             errors.append(f"{rel}: bilingual route-preserving switch script missing")
+        en_layout = rendered_article_layout(en_html)
+        ko_layout = rendered_article_layout(ko_html)
+        if en_layout.articles != 1 or ko_layout.articles != 1:
+            errors.append(
+                f"{rel}: expected one rendered content article per language; "
+                f"EN={en_layout.articles} KO={ko_layout.articles}"
+            )
+        if en_layout.signature() != ko_layout.signature():
+            errors.append(
+                f"{rel}: rendered article layout differs "
+                f"EN={en_layout.signature()} KO={ko_layout.signature()}; "
+                f"EN H1={en_layout.h1_titles[:14]} KO H1={ko_layout.h1_titles[:14]}"
+            )
     return errors
 
 

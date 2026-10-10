@@ -27,7 +27,7 @@ Before creating a new routing experiment:
 | Hard-negative OOS generation | #389 / #395 | terminal | V6B separated synthetic evidence but rejected every natural DEV query |
 | Energy/density/open-space scoring | #390 / #397 / #399 / #401 | terminal / no active successor | V6C/V6D/V6E terminal; do not retune consumed geometry |
 | Selective/conformal abstention | #391 / #412 | terminal tested formulation | E5 conformal safety passed open-set gates but destroyed supported recall |
-| Tool/executable-schema retrieval / agent utility | #392 / #417 / #418 / #420 | active primary direction | Phase A/B1 are terminal; B2 strong-agent replication is terminal success; #431 is the active gate before #432/#424 |
+| Tool/executable-schema retrieval / agent utility | #392 / #417 / #418 / #420 | active primary direction | Phase A/B1 and B2 are terminal; #431 gate resolved without promotion; #432 held-out running; #424 pending |
 
 Active research parent: #417. Historical 0.13 prior-art parent: #388.
 
@@ -39,30 +39,24 @@ route selection and executor-grade abstention creates a severe safety/coverage t
 
 The active 0.14 architecture is:
 
-```text
-registered executable schemas
-        ↓
-typed capability index
-        ↓
-high-recall Top-K retrieval
-        ↓
-downstream LLM agent
-        ↓
-execution validation / policy
-        ↓
-tool execution
-        ↓
-result evaluation and optional candidate expansion
+```mermaid
+flowchart TD
+    A["Registered executable schemas"] --> B["Typed capability index"]
+    B --> C["High-recall Top-K retrieval"]
+    C --> D["Downstream LLM agent"]
+    D --> E["Execution validation and policy"]
+    E --> F["Tool execution"]
+    F --> G["Result evaluation / optional candidate expansion"]
 ```
 
 Relevant current work:
-- #417 — active research parent;
-- #418 — FULL vs Top-K vs progressive utility protocol, terminal;
-- #420 — B1 local downstream-agent A/B, terminal;
-- #423 — stronger-agent B2 replication, terminal success;
-- #431 — active execution-state-aware corrective retrieval;
-- #432 — gated 780-task held-out generalization benchmark;
-- #424 — gated final-answer factual-quality benchmark.
+- Issue #417 — active research parent;
+- Issue #418 — FULL vs Top-K vs progressive utility protocol, terminal;
+- Issue #420 — B1 local downstream-agent A/B, terminal;
+- Issue #423 — stronger-agent B2 replication, terminal success;
+- Issue #431 — canonical corrective gate terminal, optional condition not promoted;
+- Issue #432 — 780-task held-out generalization, evaluation run `38012340016` active;
+- Issue #424 — final-answer factual-quality benchmark gated on #432 canonical success.
 
 Phase A already establishes the retrieval-side premise on the corrected frozen benchmark:
 - Recall@1 68.97%;
@@ -109,7 +103,7 @@ SchemaRouter difference:
 
 Terminal canonical experiment:
 
-- #384
+- Issue #384
 - branch: `research/0.13-schema-adb-baseline`
 - protocol: V6A
 - raw BGE supported exact: 91.67%

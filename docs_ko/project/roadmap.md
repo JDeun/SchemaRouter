@@ -12,12 +12,12 @@
 
 현재 `main`의 최근 제품 후속 작업:
 
-- #743 — explicit state-conditioned corrective re-retrieval
-- #744 — scalable indexed/incremental capability dependency graphs
-- #745 — atomic validated snapshot rebuild/publication
-- #746 — versioned capability artifact/snapshot migration and semantic integrity
-- #747 — unified privacy-safe capability decision traces
-- #748 — Materials Project, Crossref, Tavily acceptance를 포함한 provider-first registration
+- 이슈 #743 — 실행 상태를 명시적으로 반영한 교정 재검색
+- 이슈 #744 — 확장 가능한 인덱스 기반·증분 갱신형 기능 의존성 그래프
+- 이슈 #745 — 검증된 스냅샷의 원자적 재구축 및 공개
+- 이슈 #746 — 버전별 기능 아티팩트·스냅샷 마이그레이션 및 의미 무결성
+- 이슈 #747 — 개인정보를 보호하는 통합 기능 의사결정 추적
+- 이슈 #748 — Materials Project, Crossref, Tavily acceptance를 포함한 provider-first registration
 
 현재 조정 항목:
 
@@ -34,10 +34,10 @@
 
 현재 공개 근거 및 작업:
 
-- [#15 — live decision-routing benchmark evidence](https://github.com/JDeun/SchemaRouter/issues/15)
-- [0.14 evidence checkpoint](../research/0.14-paper-evidence-checkpoint.md)
-- [Research evidence package](../research/paper-evidence-package.md)
-- [Research governance](../research/governance.md)
+- [#15 — 실제 결정 라우팅 벤치마크 근거](https://github.com/JDeun/SchemaRouter/issues/15)
+- [0.14 실증 근거 점검](../research/0.14-paper-evidence-checkpoint.md)
+- [연구 근거 패키지](../research/paper-evidence-package.md)
+- [연구 거버넌스](../research/governance.md)
 
 제품 변경에 맞추기 위해 frozen workload, split, promotion gate, negative result, historical evidence를 다시 작성해서는 안 됩니다. 새로운 hypothesis에는 새로운 versioned experiment가 필요합니다.
 
@@ -50,8 +50,8 @@
 - [#10 — LangChain/LlamaIndex ecosystem distribution](https://github.com/JDeun/SchemaRouter/issues/10)
 - LangChain / LangGraph bridge
 - LlamaIndex bridge
-- MCP, OpenAPI, OPTIMADE, GraphQL, OData, OpenRPC, HTTP/JSON ingestion
-- System One / Jev / Laya / Ollama bounded decision backend
+- MCP·OpenAPI·OPTIMADE·GraphQL·OData·OpenRPC·HTTP/JSON 수집
+- System One·Jev·Laya·Ollama의 제한된 결정 백엔드
 - OpenTelemetry integration
 - third-party SourceAdapter 및 decision-backend entry point
 
@@ -63,16 +63,16 @@ Integration은 선택 사항으로 유지되어야 하며 SchemaRouter execution
 
 현재 조정 항목:
 
-- [#576 — growth parent](https://github.com/JDeun/SchemaRouter/issues/576)
-- [#581 — contributor/community experience](https://github.com/JDeun/SchemaRouter/issues/581)
-- [#582 — developer-focused launch/content](https://github.com/JDeun/SchemaRouter/issues/582)
-- [#584 — external adopters/case studies/independent validation](https://github.com/JDeun/SchemaRouter/issues/584)
-- [Adoption scorecard](adoption-scorecard.md)
-- [Discoverability and positioning](discoverability.md)
-- [Developer launch playbook](launch-playbook.md)
-- [Launch and outreach log](launch-log.md)
-- [External adoption and validation](external-adoption.md)
-- [External case-study template](case-study-template.md)
+- [#576 — 성장 작업 총괄](https://github.com/JDeun/SchemaRouter/issues/576)
+- [#581 — 기여자·커뮤니티 경험](https://github.com/JDeun/SchemaRouter/issues/581)
+- [#582 — 개발자 중심 출시·콘텐츠](https://github.com/JDeun/SchemaRouter/issues/582)
+- [#584 — 외부 채택·사례 연구·독립 검증](https://github.com/JDeun/SchemaRouter/issues/584)
+- [채택 현황 점수표](adoption-scorecard.md)
+- [발견 가능성과 포지셔닝](discoverability.md)
+- [개발자 출시 안내서](launch-playbook.md)
+- [출시 및 외부 연락 기록](launch-log.md)
+- [외부 채택 및 검증](external-adoption.md)
+- [외부 사례 연구 양식](case-study-template.md)
 
 Stars는 후행 신호입니다. 허영성 홍보보다 재현 가능한 example, downstream integration, external reproduction, 반복 사용을 우선합니다.
 

@@ -206,7 +206,7 @@ The final 780 tasks may not use:
 - B1 task wording or paraphrases;
 - B1 row-level failures;
 - B2 task outcomes or failures;
-- #434 DEV queries;
+- Issue #434 DEV queries;
 - post-scoring task deletion;
 - post-scoring prompt/K/representation tuning.
 

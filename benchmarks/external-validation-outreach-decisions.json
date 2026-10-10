@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "kind": "external-validation-outreach-decisions",
+  "as_of": "2026-10-10",
+  "evidence_level": "outreach_feedback_only",
+  "not_product_performance_evidence": true,
+  "entries": [
+    {
+      "project": "stacklok/toolhive",
+      "tracking_issue": 1229,
+      "maintainer_reply": "https://github.com/stacklok/toolhive/issues/6742#issuecomment-6065169010",
+      "reply_date_utc": "2026-10-08",
+      "decision": "declined_upstream_hosting",
+      "active_joint_benchmark": false,
+      "external_endorsement": false,
+      "no_further_solicitation": true,
+      "comparison_policy": "Only independent SchemaRouter-owned comparison, no upstream hosted benchmark or docs."
+    },
+    {
+      "project": "Knuckles-Team/agent-utilities",
+      "tracking_issue": 1229,
+      "maintainer_reply": "https://github.com/Knuckles-Team/agent-utilities/issues/20#issuecomment-6084040055",
+      "reply_date_utc": "2026-10-09",
+      "decision": "declined_deprecated_comparator",
+      "active_joint_benchmark": false,
+      "external_endorsement": false,
+      "no_further_solicitation": true,
+      "obsolete_comparator": "DynamicToolOrchestrator",
+      "replacement_boundary": "Graph OS operation registry / epistemic-graph typed capability catalog + Decide",
+      "native_evaluation": "specs/retrieval-evaluation (AU-RETRIEVAL)",
+      "comparison_policy": "Retiring DynamicToolOrchestrator is excluded; potential new proposal would require consent and shipped replacement scope."
+    },
+    {
+      "project": "Consiliency/pmcp",
+      "tracking_issue": 1229,
+      "maintainer_reply": "https://github.com/Consiliency/pmcp/issues/236#issuecomment-5996966650",
+      "reply_date_utc": "2026-10-05",
+      "decision": "declined_joint_benchmark",
+      "active_joint_benchmark": false,
+      "external_endorsement": false,
+      "no_further_solicitation": true,
+      "comparison_policy": "Wait for maintainer's public native discovery benchmark before independent comparison; no endorsement."
+    }
+  ]
+}

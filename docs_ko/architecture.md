@@ -164,9 +164,7 @@ Protocol이 transport 시점에 selected field를 필요로 하면 call-aware in
 
 `DecisionBackend`는 local에서 생성된 유한한 option ID 집합만 받습니다. 알 수 없는 ID, 중복 선택, 범위를 벗어나거나 finite하지 않은 score, malformed result는 fail-closed됩니다. Jev / TypeSafe System One은 optional provider adapter이며 낮은 confidence의 유효한 선택은 abstain할 수 있고 deterministic fallback은 local control에 남습니다.
 
-Decision provider는 `ToolCall` object를 생성하지 않으며 execution credential이나 authority를 받지 않습니다. Bounded field selection에서 provider는 declared non-identifier output field만 받습니다. Identifier field는 local에서 보존되며 provider가 제거할 수 없습니다. For evidence
-Evidence sufficiency에서는 provider를 호출하기 전에 local schema metadata가 요청된 provenance/license/unit/source-type requirement를 이미 충족해야 합니다. Provider는 call을 preserve 또는 veto만 할 수 있으며 missing evidence를 upgrade할 수 없습니다. Jev additionally does not receive
-`DecisionOption.metadata`.
+의사결정 제공자는 `ToolCall` 객체를 생성하지 않으며 실행 자격 증명이나 실행 권한을 받지 않습니다. 출력 필드 선택 시 제공자에게는 선언된 비식별자 출력 필드만 노출됩니다. 식별자 필드는 로컬에서 보존되며 제공자가 제거할 수 없습니다. 증거 충분성을 판단할 때는 제공자를 호출하기 전에 로컬 스키마 메타데이터가 요청된 출처·라이선스·단위·소스 유형 요건을 이미 충족해야 합니다. 이후 제공자는 해당 호출을 유지하거나 거부할 수만 있으며, 누락된 증거를 충족한 것으로 바꿀 수 없습니다. Jev에는 `DecisionOption.metadata`도 전달하지 않습니다.
 
 ### 15. Remote runtime response에는 memory bound가 필요하다
 
@@ -198,7 +196,7 @@ Plugin metadata는 import 없이 발견할 수 있습니다. Entry-point loading
 
 ### 22. 신뢰된 middleware가 transformation authority가 되어서는 안 된다
 
-Execution hook은 schema/policy/approval validation 이후에만 실행되며 detached snapshot을 받습니다. Before hook은 실패하여 veto할 수 있지만 executable call을 변경할 수 없습니다. After hook은 검증·projection된 result만 받고 caller에게 반환되는 result를 변경할 수 없습니다. Non-None return은 거부되고 hook error는 fail-closed되며 after-hook failure를 tool failure로 retry하지 않습니다.
+실행 훅은 스키마·정책·승인 검증 이후에만 실행되며 원본에서 분리된 스냅샷을 받습니다. 실행 전 훅은 실패를 통해 호출을 거부할 수 있지만 실제 실행할 호출을 수정할 수 없습니다. 실행 후 훅은 검증하고 투영한 결과만 받으며 호출자에게 반환하는 결과를 변경할 수 없습니다. `None`이 아닌 반환값은 거부되고 훅 오류가 발생하면 안전하게 중단합니다. 특히 실행 후 훅의 오류를 도구 자체의 오류로 간주해 재시도하지 않습니다.
 
 Sync/async before hook이 local state가 변하는 동안 대기할 수 있으므로 SchemaRouter는 hook 완료 후 invocation 전에 현재 schema와 binding state를 다시 확인합니다.
 
@@ -206,8 +204,7 @@ Sync/async before hook이 local state가 변하는 동안 대기할 수 있으�
 
 Persistent trace는 검증된 `RunEvent` envelope를 저장합니다. Replay는 detached historical event만 반환하며 planner, executor, network, tool binding을 절대 호출하지 않습니다. Sequence gap, identity mismatch, timestamp regression, 손상된 stored JSON, terminal event 이후 추가된 event는 fail-closed됩니다.
 
-Trace database는 source event의 privacy level을 보존합니다 stream: default redacted events
-기본 trace는 structural 상태로 유지되며 명시적인 `include_payloads=True` 선택은 payload-bearing data를 저장하여 application-managed sensitive-data store를 만듭니다.
+추적 데이터베이스는 원본 이벤트 스트림의 개인정보 보호 수준을 그대로 보존합니다. 기본값으로 민감한 값이 가려진 이벤트는 구조 정보만 저장하지만, `include_payloads=True`를 명시적으로 활성화하면 실제 데이터를 포함한 이벤트도 저장됩니다. 이 경우 추적 데이터베이스는 애플리케이션이 접근 제어·보존 등 보호 조치를 직접 관리해야 하는 민감정보 저장소가 됩니다.
 
 ### 24. Schema drift 설명이 compatibility gate를 우회하면 안 된다
 
@@ -239,15 +236,10 @@ SchemaRouter는 다음을 분리합니다:
 - `ToolSpec.execution_metadata`: fingerprint 대상 transport/binding identity;
 - `ToolSpec.remote`: fingerprint 대상 local/remote authority classification.
 
-Built-in adapters mirror some values into ordinary metadata for backward-compatible inspection, but
-runtime code reads the fingerprinted contract fields. Legacy persisted built-in metadata is migrated
-into those fields during model validation. Schema/discovery provenance URLs remain descriptive when
-they do not determine invocation; only actual runtime targets belong in the execution contract.
+내장 어댑터는 이전 버전과 호환되는 조회를 위해 일부 값을 일반 `metadata`에도 복사하지만, 런타임 코드는 지문에 포함된 계약 필드를 읽습니다. 저장된 이전 형식의 내장 메타데이터는 모델 검증 시 해당 계약 필드로 이전됩니다. 호출 대상을 결정하지 않는 스키마·검색 출처 URL은 설명용 데이터로 유지하며, 실제 런타임 호출 대상만 실행 계약에 포함합니다.
 Credential이 포함된 runtime URL은 persist하지 않고 거부합니다.
 
-Planner-generated `ToolCall` values also pin the current tool fingerprint, so changing transport
-origin or local/remote classification invalidates an already-compiled plan even after a trusted
-rebind.
+계획기가 만든 `ToolCall`도 현재 도구 지문을 고정합니다. 따라서 전송 대상의 출처(origin)나 로컬·원격 분류가 변경되면, 신뢰된 재바인딩이 수행됐더라도 이미 컴파일된 계획은 무효화됩니다.
 
 ### 28. Parallel execution이 orchestration이 되어서는 안 된다
 
@@ -268,8 +260,7 @@ SchemaRouter는 provider redundancy를 bounded execution contract로 취급합�
 - 모든 alternative는 자체 schema/tool fingerprint, argument, field projection, evidence를 가집니다;
 - automatic fallback은 명시적인 read-only call로 제한;
 - runtime fallback은 일반 same-route retry 후 `InvocationUnavailableError`가 발생한 경우에만 수행됩니다;
-- validation, policy, approval, stale-state and deterministic 4xx/application failures never cause
-  fallback;
+- 검증·정책·승인·오래된 상태 관련 실패와 결정론적인 HTTP 4xx 또는 애플리케이션 오류는 폴백을 유발하지 않음;
 - primary invocation 전에 전체 fallback chain을 preflight.
 
 Access path가 서로 다른 name을 노출할 때 field alias가 local semantic bridge 역할을 합니다. Local contract로 semantic compatibility를 증명할 수 없다면 model에게 추측시키지 않고 fallback을 제외합니다.
@@ -319,8 +310,7 @@ Trusted adapter는 planned logical field를 `fields=...` 또는 OPTIMADE `respon
 29. Hook failure는 fail-closed하며 추가 tool invocation attempt를 만들지 않습니다.
 30. Schema compatibility analysis는 exact plan/binding fingerprint validation을 절대 우회하지 않습니다.
 31. Fine-grained policy rule은 trusted local configuration에만 존재하며 model이나 remote capability metadata가 제공할 수 없습니다.
-32. Structured planning explanations contain deterministic/runtime-visible signals only, not model
-    chain-of-thought.
+32. 구조화된 계획 설명에는 결정론적이거나 런타임에서 관측 가능한 신호만 포함하며 모델의 비공개 사고 과정은 포함하지 않습니다.
 33. Parallel execution은 모든 call이 명시적인 read-only로 preflight되어야 하며 concurrent call 전체가 하나의 run budget을 공유합니다.
 34. 일반 descriptive metadata는 policy authority를 부여하거나 built-in transport semantic을 변경할 수 없습니다. Execution-affecting value는 fingerprinted contract field에 존재합니다.
 35. Planner-generated call은 endpoint와 tool fingerprint를 모두 pin하며 tool fingerprint가 없는 remote/runtime-sensitive legacy call은 fail-closed합니다.
@@ -340,14 +330,14 @@ Trusted adapter는 planned logical field를 `fields=...` 또는 OPTIMADE `respon
 
 ## 현재 extension backlog
 
-- trusted local classification for individual MCP tool side effects and richer MCP retry semantics;
-- OpenAPI `$id`/anchor-aware resolution and richer composition-aware planning/execution;
-- non-object request-body ergonomics and typed array-element projection if justified;
-- organization-specific policy/approval and license/provenance extensions;
-- compensation, transactions, and distributed execution;
-- distributed/remote registry implementations beyond the built-in SQLite persistence;
-- multi-page and client-rendered documentation crawling;
-- additional trusted trace/export sinks;
-- dated live-provider benchmark evidence and compatibility dashboards.
+- 개별 MCP 도구의 부작용에 대한 신뢰할 수 있는 로컬 분류와 개선된 MCP 재시도 의미론;
+- OpenAPI `$id`·앵커를 인식하는 참조 처리와 복합 구성을 인식하는 계획·실행;
+- 타당성이 확인되는 경우 객체가 아닌 요청 본문의 사용 편의성과 타입 기반 배열 원소 투영;
+- 조직별 정책·승인 및 라이선스·출처 추적 확장;
+- 보상 작업, 트랜잭션 및 분산 실행;
+- 내장 SQLite 지속성 저장소를 넘어서는 분산·원격 레지스트리 구현;
+- 여러 페이지 및 클라이언트 렌더링 문서 크롤링;
+- 신뢰할 수 있는 추가 실행 추적·내보내기 저장 대상;
+- 날짜가 명시된 실제 제공자 벤치마크 근거와 호환성 대시보드.
 
 이들은 extension layer이며 위 core fail-closed contract를 약화해서는 안 됩니다.

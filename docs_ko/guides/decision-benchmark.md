@@ -1,43 +1,43 @@
-# Decision routing benchmark
+# 의사결정 라우팅 벤치마크
 
-SchemaRouter에는 재현 가능한 routing benchmark harness와 repository에 포함된 v1 corpus가 있습니다.
+SchemaRouter는 재현 가능한 라우팅 벤치마크 실행 도구와 저장소에 포함된 v1 코퍼스를 제공합니다.
 
-이 benchmark는 측정 도구이며 특정 provider가 보편적으로 더 우수하다는 주장이 아닙니다.
+이 벤치마크는 성능을 측정하기 위한 도구이며, 특정 제공자가 모든 상황에서 우수하다는 주장은 아닙니다.
 
-## Smoke 실행
+## 간단 검증 실행
 
 ```bash
 python scripts/benchmark_decision_routing.py
 ```
 
-이는 packaging과 CI를 위한 기존 3-case deterministic smoke test를 유지합니다.
+이 명령은 패키징과 CI를 검증하는 기존의 결정론적 3개 사례 테스트를 그대로 실행합니다.
 
-## 전체 checked-in corpus
+## 저장소에 포함된 전체 코퍼스
 
 ```bash
 python scripts/benchmark_decision_routing.py \
   --corpus benchmarks/decision-routing-v1.json
 ```
 
-v1 corpus는 다음 범주의 144개 case로 구성됩니다:
+v1 코퍼스는 다음 범주의 144개 사례로 구성됩니다:
 
-- normal routing;
-- near-duplicate tools/endpoints;
-- Korean/English multilingual queries;
-- long-tail phrasings;
-- prompt-injection-style requests;
-- out-of-domain requests where a bounded backend may abstain.
+- 일반적인 라우팅 요청;
+- 이름이나 기능이 매우 유사한 도구·엔드포인트;
+- 한국어·영어 다국어 질의;
+- 드물게 사용되는 표현;
+- 프롬프트 인젝션을 시도하는 요청;
+- 제한된 선택지만 처리하는 백엔드가 경로 선택을 보류할 수 있는 도메인 외 요청.
 
-corpus는 script에 내장된 stable benchmark registry만 참조하며, 알 수 없는 expected route가 dataset에 조용히 들어가지 못하도록 test에서 검증합니다.
+이 코퍼스는 스크립트에 내장된 안정적인 벤치마크 레지스트리만 참조합니다. 테스트는 등록되지 않은 예상 경로가 데이터셋에 유입되지 않도록 검증합니다.
 
-### v2 stress corpus와 held-out split
+### v2 부하 테스트 코퍼스와 홀드아웃 데이터 분할
 
 `benchmarks/decision-routing-v2.json`은 deterministic한 **1,200-case** multilingual stress corpus입니다:
 
-- 16 registered routes × 60 cases = 960 in-domain cases;
-- 240 explicit no-route / out-of-domain cases;
-- languages: English, Korean, Spanish, Japanese, German, and mixed Korean/English;
-- fixed splits: 720 `dev`, 240 `calibration`, 240 `test`.
+- 등록된 경로 16개 × 경로당 60개 사례 = **in-domain 960개**
+- 명시적인 경로 없음(no-route) / 도메인 밖(OOD) 사례 **240개**
+- 언어: 영어, 한국어, 스페인어, 일본어, 독일어, 한국어·영어 혼합
+- 고정 데이터 분할: `dev` 720개, `calibration` 240개, `test` 240개
 
 corpus는 `scripts/generate_decision_routing_v2.py`로 재생성하며 test는 생성 결과가 checked-in JSON과 정확히 일치하도록 요구합니다. 이는 template-derived stress corpus이며 독립적으로 수집한 실제 human traffic을 대체하지 않습니다.
 
@@ -49,15 +49,15 @@ python scripts/benchmark_decision_routing.py \
 
 recall width와 confidence threshold는 `dev` / `calibration`에서만 조정합니다. configuration이 고정될 때까지 `test`는 held-out으로 취급합니다. v2 test split은 semantic-recall checkpoint에서 이미 한 번 사용됐으므로 이제 tuning set이 아니라 frozen regression set입니다.
 
-### v3 untouched capability-fit holdout
+### v3 평가 전까지 미사용한 기능 적합성 홀드아웃
 
 `benchmarks/decision-routing-v3.json`은 capability-fit 실험을 위한 별도의 deterministic **600-case** multilingual holdout입니다:
 
-- 16 registered routes × 30 = 480 in-domain cases;
-- 120 explicit no-route / out-of-domain cases;
-- English, Korean, Spanish, Japanese, German, and mixed Korean/English, 100 cases each;
-- every case is marked `test`;
-- no exact normalized query overlaps v2.
+- 등록된 경로 16개 × 경로당 30개 = **in-domain 480개**
+- 명시적 경로 없음 / OOD 사례 **120개**
+- 영어, 한국어, 스페인어, 일본어, 독일어, 한국어·영어 혼합 언어를 각각 **100개 사례**씩 포함
+- 모든 사례를 `test`로 표시
+- v2와 정규화된 질의가 정확하게 겹치는 사례 없음
 
 corpus는 `scripts/generate_decision_routing_v3.py`로 재현 가능하게 생성됩니다. capability-fit threshold는 v2 `dev` / `calibration`에서만 조정하고 선택한 threshold를 고정한 뒤 v3를 정확히 한 번 평가합니다. 첫 평가 이후 v3 역시 frozen regression set이 됩니다.
 
@@ -75,11 +75,11 @@ python scripts/benchmark_decision_routing.py \
 
 주요 control:
 
-- `--max-cases N` for a bounded local sample;
-- `--repeat N` for repeated latency measurements;
-- JSON output for aggregate/report automation;
-- CSV output for row-level analysis;
-- self-contained HTML output for a portable backend/latency/abstention summary.
+- `--max-cases N`: 제한된 로컬 샘플에 대한 실행
+- `--repeat N`: 지연 시간을 반복 측정
+- JSON 출력: 집계 및 보고 자동화
+- CSV 출력: 행 수준 분석
+- 자체 포함 HTML 출력: 이식 가능한 백엔드·지연·기권 현황 요약
 
 HTML 파일은 remote asset/script를 포함하지 않고 rendering 전에 report metadata를 escape합니다. 재현 가능한 단일 run summary 공유를 위한 형식입니다.
 
@@ -187,12 +187,12 @@ python scripts/benchmark_decision_routing.py \
 
 사용 가능한 control:
 
-- `--system-one-base-url URL` enables the generic compatible backend;
-- `--system-one-model MODEL` pins the provider model/checkpoint alias;
-- `--system-one-provider NAME` records a stable provider label in rows and reports;
-- `--system-one-timeout SECONDS`;
-- `--system-one-min-confidence FLOAT`;
-- `--system-one-api-key-env NAME` selects the environment variable containing credentials.
+- `--system-one-base-url URL`: 범용 호환 백엔드 활성화
+- `--system-one-model MODEL`: 공급자 모델·체크포인트 별칭 고정
+- `--system-one-provider NAME`: 데이터 행 및 보고서에 안정적인 공급자 라벨 기록
+- `--system-one-timeout SECONDS`: 요청 시간 초과 설정
+- `--system-one-min-confidence FLOAT`: 최소 신뢰도 설정
+- `--system-one-api-key-env NAME`: 자격 증명을 담은 환경 변수 지정
 
 credential 값은 benchmark output에 기록하지 않습니다. report에는 key 설정 여부와 reproducibility에 필요한 non-secret provider/model/base-URL/runtime configuration만 기록합니다.
 
@@ -232,17 +232,15 @@ python scripts/benchmark_decision_routing.py \
 
 기본적으로 Laya는 local router를 사용해 bounded request state에서 English 또는 multilingual checkpoint를 선택합니다. optional control은 다음과 같습니다:
 
-- `--laya-model english|multilingual|typed-decisions` to pin a checkpoint;
-- `--laya-device cpu|cuda|mps` to pin the trusted local device;
-- `--laya-preload` to preload checkpoints before measurement;
-- `--laya-max-loaded N` to control resident checkpoint count;
-- `--laya-min-confidence FLOAT` to measure confidence-gated abstention;
-- `--hardware-label TEXT` to attach the concrete machine/GPU description to the report;
-- `--source-revision TEXT` to record the exact code revision when not supplied by CI;
-- `--decision-recall-on-empty` to explicitly let an enabled bounded decision backend inspect the
-  registered endpoint catalog when lexical candidate recall is empty;
-- `--candidate-abstention inherit|deterministic|no_route|error` to separate explicit backend
-  abstention from provider-error fallback behavior.
+- `--laya-model english|multilingual|typed-decisions`: 체크포인트 고정
+- `--laya-device cpu|cuda|mps`: 신뢰된 로컬 장치 고정
+- `--laya-preload`: 측정 전에 체크포인트 미리 로드
+- `--laya-max-loaded N`: 상주하는 체크포인트 수 제한
+- `--laya-min-confidence FLOAT`: 신뢰도 게이트에 따른 기권 측정
+- `--hardware-label TEXT`: 실제 기기·GPU 설명을 보고서에 기록
+- `--source-revision TEXT`: CI가 제공하지 않을 때 정확한 코드 리비전 기록
+- `--decision-recall-on-empty`: 어휘 기반 후보 검색이 비었을 때 활성화된 제한형 의사결정 백엔드가 등록된 엔드포인트 카탈로그를 검사하도록 명시적으로 허용
+- `--candidate-abstention inherit|deterministic|no_route|error`: 백엔드의 명시적인 기권을 공급자 오류 시 폴백과 구분
 
 Laya row는 routed checkpoint와 `requested_device`, decision confidence를 기록하고 Laya가 loaded agent device를 노출하면 `actual_device`도 기록합니다. 사용할 수 없는 CUDA/MPS target이 CPU로 fallback될 수 있으므로 이를 accelerator result로 계산해서는 안 됩니다.
 
@@ -296,7 +294,7 @@ operator가 local cost model을 명시적으로 부여하지 않는 한 순수 l
 
 각 row에는 다음을 기록합니다:
 
-- case ID, category, fixed split, language label
+- 사례 ID, 분류, 고정된 데이터 분할, 언어 레이블
 - 보고된 경우 provider/model identifier
 - backend가 보고할 수 있는 경우 requested/actual local device
 - expected/predicted `tool.endpoint`
@@ -347,7 +345,7 @@ protected GitHub Actions holdout job은 현재 v9를 대상으로 하며 manual-
 
 - semantic candidate recall top-k = 2;
 - broad capability-fit min similarity = 0.25;
-- same-tool endpoint disambiguation min margin = 0.03.
+- 동일 도구 내 엔드포인트 구분 최소 마진 = 0.03.
 
 v5 calibration에서는 operation-fit threshold만 변경합니다. label-cleaned operation-fit surface에서는 v7 평가 전에 threshold를 고정하고 v7 result로 재조정하지 않습니다.
 
@@ -364,7 +362,7 @@ v9 one-shot 결과 이후 stage-attributed v5 dev/calibration profiling에서 op
 
 - concise endpoint name + trusted alias + endpoint description: endpoint disambiguation 이후 dev/calibration 모두 balanced operation score 69.792%
 - 반복 natural-language `Supported operation:` phrase: dev 64.062% / calibration 63.542%
-- independent max-over-alias variant: dev 59.635% / calibration 60.417%
+- 별칭별 최대값을 독립적으로 취하는 변형: 개발 집합 59.635% / 보정 집합 60.417%
 
 concise representation은 v10을 확인하기 전에 선택했습니다. 이후 0.05~0.70의 새 threshold sweep 역시 v5 dev/calibration만 사용했습니다. robustness score는 dev와 calibration balanced operation score 중 더 낮은 값입니다. 선택 threshold는 `operation_fit_min_similarity = 0.40`으로 유지되었습니다. 0.35는 67.188%, 0.40은 69.792%, 0.45는 67.708% robustness를 기록했습니다.
 

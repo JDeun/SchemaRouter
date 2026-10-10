@@ -76,6 +76,39 @@ jobs:
         run: |
           python - <<'PY'
           import os
+          import urllib.parse
+          import urllib.request
+
+          # This stage checks out the exact frozen scientific source_sha. That
+          # historical GitHubAPI predates the artifact redirect transport fix.
+          # Patch only the transport in this workflow's preflight process:
+          # never alter the pinned scientific source, corpora, or scoring.
+          class _SafeArtifactRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  redirected = super().redirect_request(
+                      req, fp, code, msg, headers, newurl
+                  )
+                  if redirected is None:
+                      return None
+                  origin = urllib.parse.urlsplit(req.full_url)
+                  target = urllib.parse.urlsplit(redirected.full_url)
+                  if target.scheme.lower() != "https":
+                      raise RuntimeError("refusing non-HTTPS artifact redirect")
+                  if (origin.scheme.lower(), origin.netloc.lower()) != (
+                      target.scheme.lower(), target.netloc.lower()
+                  ):
+                      secret_headers = {"authorization", "x-github-api-version"}
+                      for header in (
+                          *redirected.headers,
+                          *redirected.unredirected_hdrs,
+                      ):
+                          if header.lower() in secret_headers:
+                              redirected.remove_header(header)
+                  return redirected
+
+          urllib.request.install_opener(
+              urllib.request.build_opener(_SafeArtifactRedirect())
+          )
           from scripts.research_014_conveyor import GitHubAPI, combine_digests
 
           api = GitHubAPI(os.environ["GH_REPOSITORY"], os.environ["GH_TOKEN"])

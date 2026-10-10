@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-10",
+  "scope": "Revision-pinned triage of all 8 advisory natural-language English candidate lines from 147 Korean docs after confirmed research/security repairs. This verifies triage only; not all-sentence semantic equivalence.",
+  "reviewer_status": "assistant source/translation inspection; independent bilingual editorial sign-off not established",
+  "reviews": [
+    {
+      "path": "project/external-adoption.md",
+      "ko_blob": "ea7d659fbc5a60eb552dfa5c1a73e8727067d60f",
+      "lines": [
+        129,
+        131,
+        133,
+        135
+      ],
+      "decision": "intentional-english-outreach-template",
+      "evidence": "Quoted English correspondence example is deliberately reusable for external English-speaking maintainers; Korean narrative around it is separate."
+    },
+    {
+      "path": "project/launch-playbook.md",
+      "ko_blob": "0d3e3ed0d9dae2dc1307354f8dafb0c3616fa7f5",
+      "lines": [
+        247,
+        280
+      ],
+      "decision": "intentional-english-promotion-copy",
+      "evidence": "Published-form Show HN headline and social draft are intended to be copied in English."
+    },
+    {
+      "path": "research/evidence-to-action.md",
+      "ko_blob": "c919e68fb82127c9fa3950084cbd7bdc6665f3f2",
+      "lines": [
+        37
+      ],
+      "decision": "technical-terminology-and-paper-title",
+      "evidence": "Scholarly English paper title plus exact public protocol category names and contract identifiers, embedded in Korean contextual explanation."
+    },
+    {
+      "path": "research/prior-art-roadmap.md",
+      "ko_blob": "c347c8e5f800b153ea28c9ed94231d6d1991ea08",
+      "lines": [
+        246
+      ],
+      "decision": "technical-terminology-and-paper-title",
+      "evidence": "Scholarly English paper title and exact Evidence Ledger / trajectory-evaluator names embedded in translated research status."
+    }
+  ],
+  "claim_boundary": "The scanner catches some English-prose leakage but cannot certify paragraph-to-paragraph meaning. All new candidate lines require fresh editorial inspection and revision-pinned explicit disposition."
+}

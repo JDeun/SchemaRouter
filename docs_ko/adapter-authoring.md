@@ -103,8 +103,7 @@ Schema adapter는 다음을 반환해야 합니다:
 - source가 제공하는 경우 input/output JSON Schema;
 - remote에서 온 경우 untrusted로 표시한 descriptive metadata;
 - invoker가 remote trust boundary를 넘는 capability에는 `tool.remote=True`;
-- `ToolSpec.execution_metadata` / `EndpointSpec.execution_metadata` for JSON-safe values that
-  alter transport/runtime behavior and therefore must participate in fingerprints.
+- 전송 또는 실행 동작에 영향을 미쳐 스키마 지문에 포함해야 하는 JSON 호환 값을 위한 `ToolSpec.execution_metadata` / `EndpointSpec.execution_metadata`
 
 일반 transport adapter는 다음 signature와 호환되는 invoker를 제공할 수 있습니다:
 
@@ -133,9 +132,7 @@ Adapter는 다음 동작을 해서는 안 됩니다:
 - SchemaRouter input/output validation 생략;
 - planning에서 remote service를 직접 호출.
 
-Remote adapter는 `tool.remote = True`를 설정하여 unclassified side effect가 계속 policy-gated되도록 해야 합니다. Ordinary `metadata` is descriptive only and must
-not be read by an invoker to decide execution origin, transport target, request encoding, or other
-runtime semantics.
+원격 어댑터는 `tool.remote = True`를 설정하거나 `ToolSpec(remote=True, ...)`로 생성하여 분류되지 않은 부작용에도 정책 검사가 적용되도록 해야 합니다. 일반 `metadata`는 설명 목적으로만 사용하며, 호출기가 실행 출처·전송 대상·요청 인코딩 또는 다른 실행 의미를 결정하는 데 읽어서는 안 됩니다.
 
 Invoker에 adapter-specific runtime value가 필요하면 fingerprint 대상인 `execution_metadata`에 넣습니다. 예:
 
@@ -157,9 +154,7 @@ tool = ToolSpec(
 )
 ```
 
-어느 metadata에도 credential을 넣지 마십시오. Secret은 신뢰된 invoker object에만 유지합니다.
-Discovery/schema URL은 provenance이며 자동으로 runtime identity가 되지 않습니다. Invoker가 실제로 그 URL을 호출하지 않는다면 descriptive 상태로 유지하십시오. If a URL is part of `execution_metadata`, require a stable,
-credential-free form and keep query/fragment authentication in trusted transport configuration.
+어떤 메타데이터에도 인증 정보를 넣지 마세요. 비밀 정보는 신뢰된 호출기 객체에만 유지합니다. 탐색·스키마 URL은 출처 정보이며 자동으로 실행 대상 식별자가 되지 않습니다. 호출기가 실제로 사용하지 않는 URL이라면 설명 정보로만 유지하세요. URL이 `execution_metadata`에 포함된다면 인증 정보가 없는 안정적인 주소를 사용하고, 쿼리·프래그먼트를 이용한 인증은 신뢰된 전송 설정에서 관리해야 합니다.
 
 ## Schema fidelity
 
@@ -183,11 +178,11 @@ Planner-visible field를 노출하는 모든 adapter는 wire protocol이 달라�
 
 Nested object field는 adapter가 record alignment를 깨뜨리지 않고 project할 수 있을 때만 추가 planner-visible field로 노출할 수 있습니다. Parent field도 동시에 유지될 수 있으므로 nested field는 서로 겹치지 않는 `result_path`를 사용해야 합니다.
 
-Array-item traversal uses an explicit `"*"` path segment only when the authoritative source schema
-declares an array item schema. For example, `["results", "*", "title"]` is exposed as
-`results[].title`. The same wildcard should normally appear in `result_path` so several selected
-item fields merge back into the original record structure by array index. Root arrays are traversed
-implicitly and do not start with `"*"`.
+배열 항목을 탐색할 때는 신뢰할 수 있는 원본 스키마에 배열 항목 스키마가 선언된 경우에만
+명시적인 `"*"` 경로 세그먼트를 사용합니다. 예를 들어 `["results", "*", "title"]`은
+`results[].title`로 노출됩니다. 여러 항목 필드를 선택했을 때 원래 레코드의 배열
+인덱스에 맞춰 합쳐지도록, 일반적으로 `result_path`에도 동일한 와일드카드를
+지정해야 합니다. 최상위 배열은 암묵적으로 탐색하므로 `"*"`로 시작하지 않습니다.
 
 Example payload만 inspect해서 wildcard field를 추가하지 마십시오. Array/item contract는 structured schema metadata 또는 trusted local adapter code에서 와야 합니다.
 
@@ -212,24 +207,24 @@ Registry는 monotonic version과 current tool/endpoint lookup semantic을 제공
 
 새 adapter는 다음 항목을 테스트해야 합니다:
 
-- explicit-kind and auto-discovery behavior;
-- registration collisions and namespaces;
-- schema fingerprint changes;
-- required and undeclared parameters;
-- invalid input values;
-- invalid raw output values;
-- stale invoker bindings;
-- stale plans after tool-level origin/transport changes;
-- ordinary metadata changes not altering execution semantics;
-- credential separation;
-- mutation/destructive policy;
-- selected-field propagation when the protocol supports server-side projection;
-- nested object path/result-path fidelity when nested fields are exposed;
-- source-unit preservation without inferred conversion factors;
-- parent-field queries not implicitly selecting every nested descendant;
-- array-item wildcard paths preserving source record alignment and never being inferred from payload examples;
-- trusted enrichment of semantic IDs, normalization/dimension, qualifiers, source type and licence;
-- transport-specific origin/redirect behavior where relevant.
+- 명시적인 도구 종류 지정과 자동 검색의 동작;
+- 등록 충돌 및 네임스페이스;
+- 스키마 지문의 변경;
+- 필수 매개변수와 선언되지 않은 매개변수;
+- 잘못된 입력값;
+- 잘못된 원시 출력값;
+- 오래된 호출기 바인딩;
+- 도구 수준의 출처·전송 방식이 변경된 뒤 무효화되지 않은 계획;
+- 실행 의미를 변경하지 않는 일반 메타데이터 수정;
+- 인증정보 분리;
+- 데이터 변경 및 파괴적 작업 정책;
+- 프로토콜이 서버 측 프로젝션을 지원하는 경우 선택된 필드의 전파;
+- 중첩 필드가 노출된 경우 객체의 원본 경로와 결과 경로의 충실도;
+- 변환 계수를 추론하지 않고 원본 단위를 유지하는지 여부;
+- 부모 필드 질의가 모든 중첩 하위 필드를 암묵적으로 선택하지 않는지 여부;
+- 배열 항목 와일드카드 경로가 원본 레코드의 인덱스 정렬을 유지하며 응답 예시에서 추론되지 않는지 여부;
+- 의미 식별자, 정규화·차원, 한정자, 원본 유형 및 라이선스 정보를 신뢰할 수 있는 경로에서 보강하는지 여부;
+- 관련된 전송 방식별 출처·리디렉션 동작.
 
 
 ## Canonical result path
@@ -245,10 +240,10 @@ FieldSpec(
 )
 ```
 
-`path` describes where SchemaRouter reads the value from the validated provider response.
-`result_path` describes where the projected value is written in `ToolResult.data`. If
-`result_path` is omitted, existing behavior is preserved and the source projection path is also
-used as the output shape.
+`path`는 검증된 제공자 응답에서 SchemaRouter가 값을 읽을 위치를 나타냅니다.
+`result_path`는 투영된 값을 `ToolResult.data`의 어느 위치에 기록할지 나타냅니다.
+`result_path`를 생략하면 기존 동작이 유지되며, 원본에서 값을 읽는 경로를
+출력 데이터의 형태에도 그대로 사용합니다.
 
 이를 통해 여러 provider/access contract가 서로 다른 wire schema를 노출하면서 downstream context는 provider-neutral하게 유지할 수 있습니다.
 
@@ -271,33 +266,33 @@ FieldSpec(
 )
 ```
 
-`FieldSpec.unit` is the provider/source unit. `unit_normalization` is optional and must only be
-populated when trusted local code has an exact affine conversion contract:
+`FieldSpec.unit`은 제공자나 데이터 출처가 선언한 단위입니다. 선택적 `unit_normalization`은 신뢰된 로컬 코드가 정확한 아핀 변환 계약을 가진 경우에만 지정할 수 있습니다:
 
 ```text
 canonical_value = source_value * scale + offset
 ```
 
-SchemaRouter는 unit label, SI prefix, spelling, model output에서 conversion factor를 추론하지 않습니다. Unit symbol은 대소문자와 punctuation을 구분합니다. A remote label such as `nm`, `GPa`,
-or `degC` is descriptive until a trusted adapter/application declares the conversion.
+SchemaRouter는 단위 레이블, SI 접두사, 표기 또는 모델 출력에서 단위 변환 계수를 추론하지 않습니다. 단위 기호는 대소문자와 문장부호를 구분합니다. `nm`, `GPa`, `degC` 같은 원격 레이블은 신뢰된 어댑터나 애플리케이션이 변환 규칙을 선언하기 전까지 설명 정보일 뿐입니다.
 
-The built-in OpenAPI and MCP adapters preserve recognized schema annotations
-`x-ucum-unit`, `x-unit`, and `unit` as the source-unit label. They do **not** create a
-`UnitNormalizationSpec` from those strings. OPTIMADE continues to preserve provider-declared
-units through its schema adapter.
+내장 OpenAPI 및 MCP 어댑터는 인식된 스키마 주석인 `x-ucum-unit`, `x-unit`,
+`unit`을 원본 단위 레이블로 보존합니다. 이 문자열만으로
+`UnitNormalizationSpec`을 생성하지는 **않습니다**. OPTIMADE는 기존과
+마찬가지로 제공자가 선언한 단위를 스키마 어댑터를 통해 보존합니다.
 
-Unit normalization requires a numeric scalar or recursively numeric-array schema, supplied either
-by `FieldSpec.json_schema` or by the endpoint raw `output_schema`. If both field-level and raw
-endpoint schemas describe the value, their datatype shapes must be compatible. Field-level schemas
-are enforced at execution time, so a loose provider response schema cannot bypass a stronger local
-field contract.
+단위 정규화에는 숫자 스칼라 또는 재귀적으로 숫자 배열을 나타내는 스키마가
+필요합니다. 이는 `FieldSpec.json_schema` 또는 엔드포인트의 원시
+`output_schema`에서 제공할 수 있습니다. 필드 수준 스키마와 엔드포인트
+원시 스키마가 모두 동일한 값을 기술한다면 데이터 타입의 형태가 호환되어야 합니다.
+실행 시에는 필드 수준 스키마를 강제하므로, 제공자의 느슨한 응답 스키마를 이용해
+더 엄격한 로컬 필드 계약을 우회할 수 없습니다.
 
-For automatic cross-provider fallback, unit-bearing fields require an explicit datatype contract on
-both routes. Unknown datatype + known unit is insufficient evidence for automatic substitution.
-Fallback requires semantic compatibility plus compatible result datatype and either:
+제공자 간 자동 폴백에서 단위가 있는 필드는 두 경로 모두에 명시적인 데이터 타입
+계약이 있어야 합니다. 단위를 알지만 데이터 타입을 모르는 경우에는 자동 대체에
+충분한 근거가 되지 않습니다. 폴백에는 의미적 호환성, 결과 데이터 타입 호환성,
+그리고 다음 조건 중 하나가 필요합니다.
 
-- the same exact source unit; or
-- explicit matching physical `dimension` and `canonical_unit` normalization contracts.
+- 정확히 같은 출처 단위 또는
+- 물리 차원 `dimension`과 기준 단위 `canonical_unit`에 대해 명시적으로 일치하는 정규화 계약
 
 Unit은 optional입니다. Text/document/search field는 일반적으로 `unit=None`을 사용하며 abstract, snippet, title, prose 같은 string에는 unit metadata가 필요하지 않습니다.
 
@@ -308,11 +303,11 @@ Field가 scientific source에서 왔다는 이유만으로 unit을 붙이지 마
 
 대표적인 unitless field는 다음과 같습니다:
 
-- paper titles, abstracts, and full text;
-- web-search snippets and URLs;
-- material names and identifiers;
-- categorical labels, symmetry symbols, and free-form notes;
-- provenance/license/source strings.
+- 논문 제목·초록·본문
+- 웹 검색 요약과 URL
+- 재료 이름과 식별자
+- 범주형 레이블, 대칭 기호 및 자유 형식 메모
+- 출처·라이선스·소스 문자열
 
 예:
 
@@ -325,21 +320,20 @@ FieldSpec(
 )
 ```
 
-A unit should be declared only when the field represents a physical/numeric quantity and the source
-contract actually defines that unit. If the unit is unknown, leave it unset rather than guessing.
+필드가 물리량 또는 수치를 나타내고 출처 계약에서 해당 단위를 실제로 정의한 경우에만 단위를 선언해야 합니다. 단위를 모르면 추측하지 말고 설정하지 않은 상태로 두세요.
 
 
 ### Record별 동적 unit
 
-The current field contract assumes one declared source unit for a `FieldSpec`. If a provider can
-return different unit labels for the same field on different records, do not let SchemaRouter infer
-conversion behavior from those runtime strings.
+현재 필드 계약은 하나의 `FieldSpec`에 선언된 원본 단위가 하나라고 가정합니다.
+제공자가 레코드마다 같은 필드에 서로 다른 단위 레이블을 반환할 수 있다면
+SchemaRouter가 실행 시 수신한 문자열만으로 변환 방식을 추론하게 해서는 안 됩니다.
 
 Prefer one of these approaches:
 
-- normalize the provider response inside a trusted adapter into one stable source/canonical unit
-  before it reaches SchemaRouter; or
-- expose separate locally declared field/access contracts whose unit semantics are stable.
+- 제공자의 응답이 SchemaRouter에 전달되기 전에 신뢰할 수 있는 어댑터에서
+  하나의 고정 원본 단위 또는 기준 단위로 정규화합니다. 또는
+- 단위 의미가 안정적으로 보장되는 별도의 로컬 필드·접근 계약을 노출합니다.
 
 For example, a payload shaped like:
 
@@ -347,15 +341,15 @@ For example, a payload shaped like:
 {"value": 130, "unit": "GPa"}
 ```
 
-must not be converted merely because the runtime string says `GPa`. The conversion relationship
-remains trusted local configuration. Until an explicit dynamic-unit contract exists, row-dependent
-unit interpretation should remain outside the generic SchemaRouter execution core.
+실행 시 수신한 문자열에 `GPa`가 적혀 있다는 이유만으로 변환해서는 안 됩니다.
+변환 관계는 신뢰할 수 있는 로컬 설정에서 정의해야 합니다. 동적 단위 계약이
+명시적으로 지원되기 전까지는 레코드별로 달라지는 단위의 해석을 범용
+SchemaRouter 실행 코어 밖에서 처리해야 합니다.
 
 
 ### 무차원 numeric quantity
 
-Numeric scientific data can also be unitless. Do not invent a unit for dimensionless quantities
-such as a Poisson ratio, probability, normalized score, or other dimensionless coefficient.
+수치형 과학 데이터에도 단위가 없을 수 있습니다. 푸아송비, 확률, 정규화 점수 및 기타 무차원 계수에 임의의 단위를 만들어서는 안 됩니다.
 
 ```python
 FieldSpec(
@@ -366,15 +360,14 @@ FieldSpec(
 )
 ```
 
-This remains a typed numeric contract even though the unit is absent. Cross-provider fallback may
-match another compatible unitless numeric field, but it will not silently substitute a unit-bearing
-quantity for a unitless one (or vice versa).
+단위가 없더라도 이는 타입이 지정된 숫자 계약에 해당합니다. 제공자 간 폴백은
+호환되는 다른 무단위 숫자 필드를 찾을 수 있지만, 단위가 있는 물리량을
+무단위 값으로(또는 그 반대로) 조용히 대체하지는 않습니다.
 
 
 ## 신뢰된 parameter alias
 
-Different provider/access contracts can accept the same logical input under different local
-parameter names. Use `ParameterSpec.aliases` only for trusted key equivalence:
+서로 다른 제공자·접근 계약은 같은 논리적 입력을 다른 로컬 인수 이름으로 받을 수 있습니다. `ParameterSpec.aliases`는 신뢰된 키 동등성에만 사용하세요:
 
 ```python
 ParameterSpec(
@@ -389,37 +382,34 @@ A request argument `{"formula": "Si"}` may then compile to
 
 Alias routing은 제한적으로 동작합니다:
 
-- exact parameter names always win;
-- aliases only rename keys and copy values unchanged;
-- if one supplied alias can target multiple parameters, SchemaRouter does not guess;
-- if multiple supplied aliases compete for one parameter, SchemaRouter does not guess;
-- fallback candidates compile arguments independently against their own parameter contracts.
+- 매개변수 이름이 정확히 일치하면 항상 이를 우선합니다;
+- 별칭은 키의 이름만 바꾸며 값 자체는 변경하지 않고 복사합니다;
+- 하나의 별칭이 여러 매개변수를 가리킬 수 있으면 임의로 선택하지 않습니다;
+- 여러 별칭이 한 매개변수에 경쟁적으로 매핑되더라도 임의로 선택하지 않습니다;
+- 폴백 후보는 각자 자신의 매개변수 계약에 따라 인수를 독립적으로 구성합니다.
 
-`aliases` are not a value transformation language. For example, this is valid:
+`aliases`는 값을 변환하는 언어가 아닙니다. 다음과 같은 키 별칭은 유효합니다:
 
 ```text
 formula="Si" -> chemical_formula="Si"
 ```
 
-but SchemaRouter does not generically synthesize:
+하지만 SchemaRouter는 다음과 같은 값 변환을 일반적으로 자동 생성하지 않습니다:
 
 ```text
 formula="Si" -> filter='chemical_formula_reduced="Si"'
 ```
 
-Protocol expressions, coercions, and provider-specific query-language construction belong in
-trusted adapter/application code. `wire_name` remains the serialization boundary for a declared
-parameter and is distinct from semantic aliases.
+프로토콜별 표현식, 타입 강제 변환, 제공자 전용 질의 언어 구성은 신뢰할 수 있는
+어댑터 또는 애플리케이션 코드에서 처리해야 합니다. `wire_name`은 선언된
+매개변수의 직렬화 경계를 나타내며 의미적 별칭과 구별됩니다.
 
-Adapters must not infer trusted aliases from arbitrary remote descriptions or model output. Remote
-schemas may describe names, but local code decides whether two argument keys are semantically
-equivalent.
+어댑터는 임의의 원격 설명이나 모델 출력으로부터 신뢰된 별칭을 추론해서는 안 됩니다. 원격 스키마는 이름을 설명할 수 있지만 두 인수 키의 의미적 동등성은 로컬 코드가 결정합니다.
 
 
 ## Scientific qualifier는 정확한 local contract
 
-When a provider field has a fixed contextual meaning that affects scientific comparability, adapters
-may preserve that context with `FieldSpec.qualifiers`.
+제공자 필드에 과학적 비교 가능성에 영향을 미치는 고정된 문맥적 의미가 있다면 어댑터는 `FieldSpec.qualifiers`로 이를 보존할 수 있습니다.
 
 ```python
 FieldSpec(
@@ -434,13 +424,13 @@ FieldSpec(
 )
 ```
 
-Only declare qualifiers that are fixed and trusted for the field contract. Do not copy arbitrary
-per-record metadata into this map. If a condition varies per record, keep it as an ordinary returned
-field or normalize the provider data in trusted application/adapter code first.
+필드 계약 전체에 고정되어 있고 출처를 신뢰할 수 있는 한정자만 선언합니다.
+레코드마다 달라지는 임의 메타데이터를 이 맵에 복사해서는 안 됩니다.
+조건이 레코드별로 달라진다면 일반 반환 필드로 유지하거나 먼저 신뢰할 수 있는
+애플리케이션·어댑터 코드에서 제공자 데이터를 정규화해야 합니다.
 
-Qualifier keys and values must be non-empty and have no surrounding whitespace. Their values are
-exact opaque tags; SchemaRouter does not perform unit conversion, synonym expansion, or natural
-language inference inside qualifier strings.
+한정자의 키와 값은 비어 있으면 안 되며 앞뒤 공백이 없어야 합니다.
+값은 정확하게 비교되는 불투명한 태그입니다. SchemaRouter는 한정자 문자열에서
+단위 변환, 동의어 확장 또는 자연어 추론을 수행하지 않습니다.
 
-This makes qualifiers suitable for conservative fallback safety without turning SchemaRouter into a
-scientific ontology or query-language engine.
+이렇게 하면 SchemaRouter를 과학 온톨로지나 질의 언어 엔진으로 확장하지 않고도 한정자가 보수적인 폴백 안전성 검증에 도움이 됩니다.

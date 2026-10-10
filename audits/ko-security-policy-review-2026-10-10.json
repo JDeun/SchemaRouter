@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-10",
+  "scope": "docs/security/threat-model.md ⇄ docs_ko/security/threat-model.md only",
+  "source_en_blob": "1e1446c4e2e38f033495fd2d20728dff57084a15",
+  "reviewed_ko_blob": "4a70087b977b4efe24a4eae556fc92825467c54e",
+  "review_type": "targeted full-page bilingual editorial pass; reviewer-independent attestation not established",
+  "findings": [
+    {
+      "category": "literal untranslated paragraph",
+      "section": "Human-readable documentation",
+      "fix": "Replaced English-only paragraph about untrusted documentation and pre-analysis script/style removal with complete Korean translation."
+    },
+    {
+      "category": "security boundary clarity",
+      "section": "Remote schema and model output",
+      "fix": "Localized core authority boundary and refusal rules while retaining trusted-local-policy obligation."
+    },
+    {
+      "category": "security terminology",
+      "section": "credentials, audit delivery, SSRF and plugins",
+      "fix": "Localized security prose and headings without changing executable symbols, URLs or measured values."
+    }
+  ],
+  "checked_contracts": [
+    "remote schema and model output are not execution authority",
+    "audit delivery is separate from authorization and strict mode fails closed",
+    "credentials stay outside model-selected arguments",
+    "same-key source substitution invalidates schema watchers",
+    "initial URL admission remains the application's responsibility",
+    "payload trace and plugin loading are trust decisions",
+    "documentation proposals require grounding and explicit approval"
+  ],
+  "conclusion": "targeted page reviewed and repaired; other 146 pairs remain unverified at sentence level and issue #1202 stays open",
+  "followup_2026_10_10": {
+    "scope": "Source and translation reread of the retry/budget, pre/post execution-hook, telemetry/redaction and third-party adapter plugin passages; 8 additional Korean prose repairs.",
+    "checks": [
+      "Automatic retry remains read-only by default unless trusted-local opt-in",
+      "Non-retryable invocation failures fail fast; schema-contract failures not retried",
+      "Before/after execution hooks see actual validated argument and projected result values, not redacted telemetry",
+      "RunConfig(include_payloads=True) can expose protected data, unlike stricter OpenTelemetry structural export",
+      "Approval/budget denials fail closed; attempts/backoff count against budgets",
+      "Third-party plugin code requires a nonempty trusted allowlist"
+    ],
+    "review_limitation": "Targeted source/prose check by assistant; not independent human sentence-by-sentence certification for all 147 bilingual pages."
+  }
+}

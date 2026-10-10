@@ -29,13 +29,15 @@ OData.org V4 reference service입니다. Credential이나 optional SDK가 없으
 
 [Provider 중심 등록 자세히 보기 →](../guides/provider-first-registration.md)
 
-## 3. 실제 provider capability 해석 및 실행
+## 3. 실제 provider capability 해석 및 실행 {#real-provider-capability}
 
 아래 예제는 내장 `apis-guru` provider profile에서 시작합니다. SchemaRouter가 provider identity를
 compatibility smoke와 같은 공개 OpenAPI source로 해석한 뒤 기존 OpenAPI adapter에 전달합니다.
 예제용으로 꾸며 낸 스키마나 고정 응답이 아니라 외부 provider의 실제 계약과 데이터를 사용합니다.
 
+```python
 --8<-- "examples/live_openapi_quickstart.py"
+```
 
 체크아웃한 저장소에서:
 
@@ -43,7 +45,7 @@ compatibility smoke와 같은 공개 OpenAPI source로 해석한 뒤 기존 Open
 python examples/live_openapi_quickstart.py
 ```
 
-성공 출력은 대략 다음 형태입니다.
+호출 결과의 정확한 숫자는 provider의 현재 데이터에 따라 달라집니다. 성공 출력은 대략 다음 형태입니다.
 
 ```text
 provider: apis-guru
@@ -68,9 +70,11 @@ current numAPIs: <current positive integer>
 
 로컬 callable 예제도 별도로 유지합니다.
 
+```python
 --8<-- "examples/quickstart.py"
+```
 
-이 파일은 source/wheel/sdist acceptance에서 실행됩니다.
+이 파일은 source/wheel/sdist acceptance에서 실행됩니다. 패키징과 로컬 실행을 검증하지만, 고정된 예시 날씨 값을 실제 provider 데이터인 것처럼 주장하지 않습니다.
 
 ## 5. 일반 웹사이트는 조용히 tool로 변환되지 않습니다
 
@@ -123,13 +127,15 @@ async for event in router.astream_events(request):
 | 이미 가지고 있는 것 | 설치 | 권장 시작점 |
 | --- | --- | --- |
 | Provider 이름 | `pip install schemarouter` | `await router.add_provider("materials-project")` 및 [Provider 중심 등록](../guides/provider-first-registration.md) |
-| OpenAPI URL | `pip install schemarouter` | [live OpenAPI quickstart](#3-실제-provider-capability-해석-및-실행) |
+| OpenAPI URL | `pip install schemarouter` | [live OpenAPI quickstart](#real-provider-capability) |
 | typed Python function | core install | [Python tools](../guides/python-tools.md) 및 `examples/quickstart.py` |
 | MCP server | `pip install "schemarouter[mcp]"` | [MCP HTTP / stdio guide](../guides/mcp.md) |
 | LangChain tools | `pip install "schemarouter[langchain]"` | `examples/langchain_quickstart.py` |
 | LangGraph app | `pip install "schemarouter[langgraph]"` | `examples/langgraph_quickstart.py` |
 | LlamaIndex tools | `pip install "schemarouter[llamaindex]"` | `examples/llamaindex_quickstart.py` |
 | 사람이 읽는 API 문서 | core install | [inspect → proposal → approval](../guides/html-documentation.md) |
+
+Framework별 예제는 전용 CI 작업에서 실제로 실행됩니다. Provider-first APIs.guru/OpenAPI 경로는 별도의 compatibility workflow와 오프라인에서 계약상 동등한 quickstart smoke에서도 검증합니다.
 
 ## 문제 해결
 
@@ -162,10 +168,10 @@ policy, approval callback, binding fingerprint 상태를 확인하십시오.
 
 더 자세한 protocol 설명:
 
-- [OpenAPI](../guides/openapi.md)
-- [MCP](../guides/mcp.md)
-- [GraphQL](../guides/graphql.md)
-- [OData](../guides/odata.md)
-- [OpenRPC / JSON-RPC](../guides/openrpc.md)
-- [OPTIMADE](../guides/optimade.md)
-- [Universal ingestion matrix](../guides/universal-ingestion.md)
+- [OpenAPI 안내](../guides/openapi.md)
+- [MCP 안내](../guides/mcp.md)
+- [GraphQL 안내](../guides/graphql.md)
+- [OData 안내](../guides/odata.md)
+- [OpenRPC / JSON-RPC 안내](../guides/openrpc.md)
+- [OPTIMADE 안내](../guides/optimade.md)
+- [범용 수집 지원 현황표](../guides/universal-ingestion.md)

@@ -22,6 +22,19 @@ The default output directory is `docs/research/generated/` and contains:
 Generated files are build artifacts rather than a replacement for the canonical ledger. CI
 runs the exporter so schema drift is caught before paper preparation.
 
+## 0.14 terminal report preparation
+
+The [0.14 terminal evidence report template](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/agent-utility-0.14-terminal-report-prep.md)
+records the frozen provenance fields, held-out paired-estimand and final-answer
+tables, claim-eligibility gates, invalid-run separation, and terminal checklist.
+All open measurements are intentionally marked **Pending**, not estimated.
+
+The controller tracks the frozen [0.14 experiment conveyor](https://github.com/JDeun/SchemaRouter/issues/500).
+A green controller run can still mean `waiting_heldout`; a research result only
+exists when the complete canonical stage artifact passes provenance and
+aggregation checks. A partial model shard, running workflow or infrastructure
+retry must never be described as an evaluated held-out outcome.
+
 ## Evidence roles
 
 The exporter preserves the ledger's evidence-role distinctions. In particular, tuning DEV,
@@ -48,16 +61,14 @@ narrative.
 
 SchemaRouter separates execution authority from semantic evidence:
 
-```text
-user request
-    |
-registered schema + local authority
-    |
-bounded ranking / evidence / veto
-    |
-accept registered route OR abstain
-    |
-local validation / policy / execution
+```mermaid
+flowchart TD
+    A["User request"] --> B["Registered schema and local authority"]
+    B --> C["Bounded rank / evidence / veto"]
+    C --> D{"Registered route accepted?"}
+    D -->|Yes| E["Local validation and policy checks"]
+    E --> F["Authorized execution"]
+    D -->|No| G["Abstain"]
 ```
 
 A semantic model may rank, veto, or abstain over finite registered authority according to the
@@ -85,13 +96,13 @@ The evidence package should be read with these limits:
 ## Final-paper closure
 
 The package can be regenerated throughout the active 0.14 cycle, but final paper tables must not
-treat an active or infrastructure-invalid run as scientific evidence. The current closure path is:
+treat an active or infrastructure-invalid run as scientific evidence. As of 2026-10-10 the remaining
+closure path and already-resolved gates are distinct:
 
-- terminal #431 corrective aggregate and preregistered gate;
-- terminal #432 large held-out generalization result;
-- terminal #424 final-answer factual/value/unit/provenance result;
-- terminal #510 runtime qualification and the successor projection result if that field-level line
-  is included in the paper.
+- **#431 resolved:** the frozen corrective condition did **not** qualify for held-out promotion; report this negative gate unchanged rather than listing it as an active experiment.
+- **#432 active:** the frozen 780-task large held-out evaluation was dispatched in run [`38012340016`](https://github.com/JDeun/SchemaRouter/actions/runs/38012340016). No canonical aggregate or generalization result is accepted yet.
+- **#424 pending:** final-answer fact/value/unit/provenance scoring starts only after canonical #432 success and artifact-digest verification.
+- **#510 terminal negative:** none of the preregistered stronger-agent candidates qualified as a grounded-output measurement instrument. The separate #506 output-field projection successor is **not authorized** by that qualification; neither a projection benefit nor equivalence can be claimed from it.
 
 Historical calibration/blind work from the earlier operation-routing lineage remains part of the
 ledger, but it is not a substitute for the frozen 0.14 held-out and final-answer evidence above.

@@ -59,6 +59,92 @@ latency directly with CPU SchemaRouter latency without retaining the hardware la
 
 ## Current external queues
 
+The canonical tracking parent is [#584](https://github.com/JDeun/SchemaRouter/issues/584).
+The external evaluation is **not** part of the frozen #431/#432/#424 science DAG.
+A positive maintainer reply establishes willingness to discuss a protocol, **not**
+an independently reproduced result or product endorsement. Keep any declined
+comparison in the evidence register without further unsolicited outreach.
+
+### Identity-conditioned gateway comparison boundary
+
+The original shared-scoreboard proposal to mcp-gateway [#2641](https://github.com/MikkoParkkola/mcp-gateway/issues/2641#issuecomment-5956919228) was
+**declined** and [closed as not planned](https://github.com/MikkoParkkola/mcp-gateway/issues/2641#issuecomment-6053555230); this is outreach feedback,
+**not negative product-performance evidence**. Do not repeat the original solicitation.
+A materially different, opt-in protocol must address every boundary below before scoring:
+
+1. **Caller-conditioned candidate universe:** freeze the caller identity, grants and
+   permissions for each case. Score against the tools eligible under each system's
+   native permission enforcement; do not count forbidden tools as retrieval positives.
+2. **Native input evidence:** mcp-gateway consumes server-published tool descriptions,
+   while SchemaRouter may consume separately declared typed field contracts. Do not
+   inject SchemaRouter annotations into the gateway's native baseline. Field recall is
+   **not comparable** unless independently published labels and native field evidence
+   support both arms; mark missing capabilities as not applicable, never inferred.
+3. **Measurement boundaries:** publish library-internal retrieval cost separately from
+   gateway end-to-end authentication, policy enforcement, identity propagation, audit,
+   network transport and retrieval. Compare latency and exposed bytes only at equivalent
+   boundaries, or explicitly mark them non-comparable.
+4. **Native ranking concerns:** record gateway health, grant fit, trust, cost, latency,
+   freshness and feedback eligibility without rewriting its released ranking. Keep the
+   upstream 4.0.0 release priority and request review only for a genuinely new protocol.
+
+No combined winner score, independent reproduction, or upstream endorsement is established.
+Declined outreach must not enter the frozen 0.14 scientific result table.
+
+### ClicShopping 4.33 pinned endpoint/action source audit
+
+[#1208](https://github.com/JDeun/SchemaRouter/issues/1208) uses the upstream
+`version4.33` commit `3bac851759234a4babb49d3f351e472cd9e0f31f` and
+a [machine-readable source inventory](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/external-validation-clicshopping-v433/source-inventory.json).
+This is a **public-source contract audit, not a scored benchmark**. Reproduce its offline checks with:
+
+```bash
+python scripts/validate_clicshopping_v433_inventory.py
+pytest -q tests/test_clicshopping_v433_inventory.py
+```
+
+The native interface is a **REST endpoint/action matrix**, not MCP JSON-RPC
+`tools/list` / `inputSchema`. The pinned tree verifies the
+`AnthropicEcommerce`, `CustomersProducts`, and `ChatRagBI` endpoint pages
+and their permission whitelists. The `CustomerOrdersPermissions.php` class
+declares three read and two write actions, **but the corresponding
+`CustomerOrders` endpoint page is absent from that exact pinned tree**.
+Its actions therefore remain *permissions-only, not proven callable* and
+cannot enter a scored executable-route denominator without fresh upstream
+source evidence and a new prospective freeze.
+
+The overlap between `AnthropicEcommerce` product actions and
+`CustomersProducts` is six names: `products`, `product`, `search`,
+`categories`, `stats`, and `recommendations`. These must be
+disambiguated by endpoint identity, not by action string alone.
+`CustomersProducts` has **zero write actions**; `DISPLAY_BROWSER_JSON`
+restricts browser GET reachability without removing declared actions.
+`customerOrders` requires authenticated `customers_id` and the source's
+per-action read/write grants. `ChatRagBI` is read-only, requires a
+select-only principal, and has 4.33-specific `RATE_LIMITED` and
+`ai_disclaimer` response behavior.
+
+No live endpoint, credentials, writes, model scoring, field-recall score, or
+product-performance conclusion is represented by this source snapshot. The
+next benchmark step must independently preregister case labels and scoring
+on the *verified* source surface; a later upstream revision is not silently
+substituted for the frozen commit.
+
+| Evaluation or feedback | Tracking issue | Evidence boundary |
+| --- | --- | --- |
+| SafeActBench V1 (external research) | [#1211](https://github.com/JDeun/SchemaRouter/issues/1211), [#1224](https://github.com/JDeun/SchemaRouter/issues/1224) | 131 V1 cases × three arms are *not scored*; independent, no-hidden-gold contracts and protected runner required |
+| Xerrion ServiceNow | [#1228](https://github.com/JDeun/SchemaRouter/issues/1228) | Same static authorized package vs that same package with query-dependent preselection, offline only |
+| ClicShopping 4.33 | [#1208](https://github.com/JDeun/SchemaRouter/issues/1208) | REST endpoint/action baseline, not MCP `tools/list`; permission and customer scope remain authoritative |
+| SmartMCP | [#1114](https://github.com/JDeun/SchemaRouter/issues/1114) | Frozen common retrieval/catalog budget required; upstream interest alone is not reproduction |
+| Clear Your Tools | [#839](https://github.com/JDeun/SchemaRouter/issues/839) | Hold native tier/BM25 behavior fixed; distinguish development smoke from held-out |
+| HYSET / pi-jev / hope-agent | [#795](https://github.com/JDeun/SchemaRouter/issues/795), [#796](https://github.com/JDeun/SchemaRouter/issues/796), [#799](https://github.com/JDeun/SchemaRouter/issues/799) | Public fresh retraining must not be called a paper-checkpoint reproduction; tool and field recall remain separate |
+| mcp-gateway | [#1209](https://github.com/JDeun/SchemaRouter/issues/1209) | Joint benchmark declined; identity/permission and transport boundaries are non-comparable unless redesigned |
+| ToolHive VirtualMCPServer | [#1229](https://github.com/JDeun/SchemaRouter/issues/1229), [maintainer reply](https://github.com/stacklok/toolhive/issues/6742#issuecomment-6065169010) | Upstream declined to host a third-party benchmark or docs; independent SchemaRouter-owned comparisons only, without endorsement or repeated solicitation |
+| Knuckles agent-utilities | [#1229](https://github.com/JDeun/SchemaRouter/issues/1229), [maintainer reply](https://github.com/Knuckles-Team/agent-utilities/issues/20#issuecomment-6084040055) | Joint comparison declined; `DynamicToolOrchestrator` is being retired and excluded as an active comparator. Only a shipped Graph OS replacement and its AU-RETRIEVAL protocol could warrant a new opt-in proposal |
+| Consiliency pmcp | [#1229](https://github.com/JDeun/SchemaRouter/issues/1229), [maintainer reply](https://github.com/Consiliency/pmcp/issues/236#issuecomment-5996966650) | Joint benchmarking and endorsement declined; await the native public pmcp discovery benchmark before considering independent reproduction |
+
+
+
 - HYSET (#795): upstream commit `93808cb8d633b6b685f0f9353923b27c2ad7ad81`; upstream source is MIT, while `data/hyset_corpus.json` remains subject to ToolBench terms. Use a compatible released ToolBench subset and do not redistribute data beyond its license.
 - pi-jev (#796): upstream commit `c5b5847aa189fe5ffec52893b7051fe8f9e7a548`; MIT. Freeze a small shared catalog first and report Jev tool activation separately from SchemaRouter field narrowing.
 - hope-agent (#799): upstream commit `2784abba5823922dba06a3c722eba0ca91f69fd6`; MIT. The upstream maintainer explicitly requested this frozen decision package before deciding whether to participate.

@@ -109,3 +109,32 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
+
+  verify-published:
+    needs: [build, deploy]
+    if: needs.deploy.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            .github/workflows/docs.yml
+      - run: python -m pip install "playwright==1.55.0"
+      - run: python -m playwright install --with-deps chromium
+      - name: Verify live GitHub Pages navigation and locale fallback
+        run: python scripts/qa_docs_browser.py --base-url https://jdeun.github.io/SchemaRouter/ --smoke-only --screenshots .build/docs-published-screenshots
+      - name: Save live-site screenshots
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: docs-published-screenshots
+          path: .build/docs-published-screenshots/
+          retention-days: 14
+          if-no-files-found: warn

@@ -1,0 +1,335 @@
+{
+  "schema_version": 1,
+  "kind": "clicshopping-4.33-offline-development-cases",
+  "status": "preregistered_development_only_no_heldout_claim",
+  "pinned_upstream_commit": "3bac851759234a4babb49d3f351e472cd9e0f31f",
+  "source_inventory": "source-inventory.json",
+  "source_inventory_scoring_boundary": "Only three verified endpoints. customerOrders permission-only source excluded.",
+  "protocol": {
+    "model_calls": 0,
+    "upstream_execution": false,
+    "network_calls": false,
+    "field_recall": "not_applicable",
+    "comparison": "same eligible endpoint/action contracts: full exposure vs typed preselection",
+    "top_k": 3,
+    "hot_repeats": 5,
+    "queries_not_tuned_from_results": true,
+    "exposure_measure": "normalized local UTF-8 JSON endpoint/action metadata, not native REST wire bytes",
+    "native_authority": "upstream permission and endpoint dispatch retained; retrieval grants no authorization"
+  },
+  "roles": {
+    "reader": {
+      "select_data": true,
+      "create_data": false,
+      "update_data": false,
+      "delete_data": false,
+      "create_db": false
+    },
+    "manager": {
+      "select_data": true,
+      "create_data": true,
+      "update_data": true,
+      "delete_data": false,
+      "create_db": false
+    },
+    "no_read": {
+      "select_data": false,
+      "create_data": false,
+      "update_data": false,
+      "delete_data": false,
+      "create_db": false
+    }
+  },
+  "counts": {
+    "total": 32,
+    "supported": 21,
+    "forbidden": 4,
+    "unsupported": 3,
+    "ambiguous": 4
+  },
+  "cases": [
+    {
+      "id": "clic433-001",
+      "role": "reader",
+      "label": "supported",
+      "query": "In AnthropicEcommerce list available products",
+      "required_routes": [
+        "AnthropicEcommerce.products"
+      ]
+    },
+    {
+      "id": "clic433-002",
+      "role": "reader",
+      "label": "supported",
+      "query": "From CustomersProducts list available products",
+      "required_routes": [
+        "CustomersProducts.products"
+      ]
+    },
+    {
+      "id": "clic433-003",
+      "role": "reader",
+      "label": "supported",
+      "query": "Search the catalog via AnthropicEcommerce",
+      "required_routes": [
+        "AnthropicEcommerce.search"
+      ]
+    },
+    {
+      "id": "clic433-004",
+      "role": "reader",
+      "label": "supported",
+      "query": "Search products via CustomersProducts",
+      "required_routes": [
+        "CustomersProducts.search"
+      ]
+    },
+    {
+      "id": "clic433-005",
+      "role": "reader",
+      "label": "supported",
+      "query": "Show CustomersProducts product recommendations",
+      "required_routes": [
+        "CustomersProducts.recommendations"
+      ]
+    },
+    {
+      "id": "clic433-006",
+      "role": "reader",
+      "label": "supported",
+      "query": "Get AnthropicEcommerce product statistics",
+      "required_routes": [
+        "AnthropicEcommerce.stats"
+      ]
+    },
+    {
+      "id": "clic433-007",
+      "role": "reader",
+      "label": "supported",
+      "query": "List categories with CustomersProducts",
+      "required_routes": [
+        "CustomersProducts.categories"
+      ]
+    },
+    {
+      "id": "clic433-008",
+      "role": "reader",
+      "label": "supported",
+      "query": "Get one product detail with CustomersProducts",
+      "required_routes": [
+        "CustomersProducts.product"
+      ]
+    },
+    {
+      "id": "clic433-009",
+      "role": "reader",
+      "label": "supported",
+      "query": "Get the account order history from AnthropicEcommerce",
+      "required_routes": [
+        "AnthropicEcommerce.order_history"
+      ]
+    },
+    {
+      "id": "clic433-010",
+      "role": "reader",
+      "label": "supported",
+      "query": "List customer addresses in AnthropicEcommerce",
+      "required_routes": [
+        "AnthropicEcommerce.addresses"
+      ]
+    },
+    {
+      "id": "clic433-011",
+      "role": "reader",
+      "label": "supported",
+      "query": "Get the security report from AnthropicEcommerce",
+      "required_routes": [
+        "AnthropicEcommerce.security_report"
+      ]
+    },
+    {
+      "id": "clic433-012",
+      "role": "reader",
+      "label": "supported",
+      "query": "Use ChatRagBI to analyze sales",
+      "required_routes": [
+        "ChatRagBI.analyze_sales"
+      ]
+    },
+    {
+      "id": "clic433-013",
+      "role": "reader",
+      "label": "supported",
+      "query": "Use ChatRagBI for inventory reporting",
+      "required_routes": [
+        "ChatRagBI.inventory_report"
+      ]
+    },
+    {
+      "id": "clic433-014",
+      "role": "reader",
+      "label": "supported",
+      "query": "Use ChatRagBI to analyze revenue",
+      "required_routes": [
+        "ChatRagBI.revenue_analysis"
+      ]
+    },
+    {
+      "id": "clic433-015",
+      "role": "reader",
+      "label": "supported",
+      "query": "Use ChatRagBI to export a report",
+      "required_routes": [
+        "ChatRagBI.export_report"
+      ]
+    },
+    {
+      "id": "clic433-016",
+      "role": "manager",
+      "label": "supported",
+      "query": "Use AnthropicEcommerce to create a customer",
+      "required_routes": [
+        "AnthropicEcommerce.customer_create"
+      ]
+    },
+    {
+      "id": "clic433-017",
+      "role": "manager",
+      "label": "supported",
+      "query": "Cancel an order using AnthropicEcommerce",
+      "required_routes": [
+        "AnthropicEcommerce.order_cancel"
+      ]
+    },
+    {
+      "id": "clic433-018",
+      "role": "manager",
+      "label": "supported",
+      "query": "Send an order message through AnthropicEcommerce",
+      "required_routes": [
+        "AnthropicEcommerce.order_message"
+      ]
+    },
+    {
+      "id": "clic433-019",
+      "role": "manager",
+      "label": "supported",
+      "query": "Create a new AnthropicEcommerce session",
+      "required_routes": [
+        "AnthropicEcommerce.session_create"
+      ]
+    },
+    {
+      "id": "clic433-020",
+      "role": "manager",
+      "label": "supported",
+      "query": "Update an existing session using AnthropicEcommerce",
+      "required_routes": [
+        "AnthropicEcommerce.session_update"
+      ]
+    },
+    {
+      "id": "clic433-021",
+      "role": "manager",
+      "label": "supported",
+      "query": "Search products using CustomersProducts",
+      "required_routes": [
+        "CustomersProducts.search"
+      ]
+    },
+    {
+      "id": "clic433-022",
+      "role": "reader",
+      "label": "forbidden",
+      "query": "Cancel a customer order using AnthropicEcommerce",
+      "forbidden_routes": [
+        "AnthropicEcommerce.order_cancel"
+      ]
+    },
+    {
+      "id": "clic433-023",
+      "role": "reader",
+      "label": "forbidden",
+      "query": "Create an AnthropicEcommerce session",
+      "forbidden_routes": [
+        "AnthropicEcommerce.session_create"
+      ]
+    },
+    {
+      "id": "clic433-024",
+      "role": "manager",
+      "label": "forbidden",
+      "query": "Use ChatRagBI to analyze sales",
+      "forbidden_routes": [
+        "ChatRagBI.analyze_sales"
+      ]
+    },
+    {
+      "id": "clic433-025",
+      "role": "no_read",
+      "label": "forbidden",
+      "query": "List products from CustomersProducts",
+      "forbidden_routes": [
+        "CustomersProducts.products"
+      ]
+    },
+    {
+      "id": "clic433-026",
+      "role": "reader",
+      "label": "unsupported",
+      "query": "Delete all products from the catalog"
+    },
+    {
+      "id": "clic433-027",
+      "role": "manager",
+      "label": "unsupported",
+      "query": "Change the price of every product"
+    },
+    {
+      "id": "clic433-028",
+      "role": "reader",
+      "label": "unsupported",
+      "query": "Refund an external card payment"
+    },
+    {
+      "id": "clic433-029",
+      "role": "reader",
+      "label": "ambiguous",
+      "query": "Search products",
+      "ambiguous_routes": [
+        "AnthropicEcommerce.search",
+        "CustomersProducts.search"
+      ]
+    },
+    {
+      "id": "clic433-030",
+      "role": "reader",
+      "label": "ambiguous",
+      "query": "List product categories",
+      "ambiguous_routes": [
+        "AnthropicEcommerce.categories",
+        "CustomersProducts.categories"
+      ]
+    },
+    {
+      "id": "clic433-031",
+      "role": "reader",
+      "label": "ambiguous",
+      "query": "Get product stats",
+      "ambiguous_routes": [
+        "AnthropicEcommerce.stats",
+        "CustomersProducts.stats"
+      ]
+    },
+    {
+      "id": "clic433-032",
+      "role": "reader",
+      "label": "ambiguous",
+      "query": "Find product recommendations",
+      "ambiguous_routes": [
+        "AnthropicEcommerce.recommendations",
+        "CustomersProducts.recommendations"
+      ]
+    }
+  ]
+}

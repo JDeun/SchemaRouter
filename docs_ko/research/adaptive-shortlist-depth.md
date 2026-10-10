@@ -1,182 +1,135 @@
 # 0.14 adaptive capability shortlist depth
 
-## Terminal research 상태 — 2026-09-30
+## Terminal research status — 2026-09-30
 
-기존 **score-gap adaptive-depth** hypothesis는 선택된 adaptive policy 없이 종료되었습니다.
-현재 evidence는 다른 결론을 지지합니다. 먼저 large-catalog structural retrieval을 보정한 뒤 작은 **fixed** shortlist를 사용합니다.
+원래 **score-gap adaptive-depth** 가설은 selected adaptive policy 없이 종료됐습니다. 현재 evidence는 다른 결론을 지지합니다. 먼저 large-catalog structural retrieval을 고치고 작은 **fixed** shortlist를 사용합니다.
 
-### 근거 흐름
+### Evidence sequence
 
-1. Fresh 240-task adaptive DEV surface에서 baseline fixed Top-10 retriever는 registry가 커질수록 성능이 저하됐습니다. Required-route Recall@10 was **97.62% / 96.67% / 87.14%** at
-   100 / 250 / 500 endpoints.
-2. Miss diagnosis 결과 500-endpoint failure는 equal-score collision과 실제 below-cutoff ranking error 모두에서 발생했습니다. This motivated a structural retrieval successor rather than
-   post-hoc adaptive-K threshold changes.
-3. The fixed structural candidate `STRUCT-4.5-1.5` was frozen before confirmation and passed an
-   independent 240-task surface with **100% Recall@10 and 100% FullCoverage@10** at
-   100 / 250 / 500 endpoints, including every supported stratum/language and typed-unit queries.
-4. The unchanged preregistered score-gap adaptive family was then rerun over that confirmed
-   retriever. **No adaptive policy met the frozen efficiency gates**, so adaptive v3 was closed
-   without threshold retuning.
-5. Fixed K=3, which had been a control rather than an adaptive candidate, motivated a separate
-   preregistered successor. On a second fresh 240-task confirmation surface, `STRUCT-FIXED-3`
-   achieved:
-   - required-route Recall: **100.00% / 99.05% / 99.05%**;
-   - all-required FullCoverage: **100.00% / 98.89% / 98.89%**;
-   - typed numeric/unit Recall: 100%;
-   - mean exact SmolLM3 tool-schema tokens: 364.27, versus 563.08 for fixed K=5;
-   - mean schema-token reduction versus fixed K=5: 35.31%.
-6. The remaining gate is downstream agent utility. The paired
-   `STRUCT-FIXED-3` vs `STRUCT-FIXED-5` SmolLM3 experiment is already preregistered on the exact
-   canonical B2 surface and may launch only after canonical B2 run `36642658406` completes
-   **successfully**.
+1. Fresh 240-task adaptive DEV surface에서 baseline fixed Top-10 retriever는 registry가 커질수록 저하됐습니다. 100/250/500 endpoints의 Required-route Recall@10은 **97.62% / 96.67% / 87.14%**였습니다.
+2. 500-endpoint miss는 equal-score collision과 true below-cutoff ranking error 모두에 집중됐습니다. Post-hoc adaptive-K threshold 변경 대신 structural retrieval successor의 근거가 됐습니다.
+3. Fixed structural candidate `STRUCT-4.5-1.5`는 confirmation 전에 freeze했고 independent 240-task surface에서 100/250/500 endpoints 모두 **100% Recall@10 및 100% FullCoverage@10**을 달성했습니다. 모든 supported stratum/language와 typed-unit query를 포함합니다.
+4. Unchanged preregistered score-gap adaptive family를 confirmed retriever 위에서 다시 실행했지만 **frozen efficiency gate를 만족한 adaptive policy가 없었고**, threshold retuning 없이 adaptive v3를 종료했습니다.
+5. Adaptive candidate가 아니라 control이었던 fixed K=3이 별도 preregistered successor의 근거가 됐습니다. 두 번째 fresh 240-task confirmation에서 `STRUCT-FIXED-3`:
+   - required-route Recall: **100.00% / 99.05% / 99.05%**
+   - all-required FullCoverage: **100.00% / 98.89% / 98.89%**
+   - typed numeric/unit Recall: 100%
+   - mean exact SmolLM3 tool-schema tokens: 364.27, fixed K=5는 563.08
+   - fixed K=5 대비 mean schema-token reduction: 35.31%
+6. 남은 gate는 downstream agent utility입니다. Paired `STRUCT-FIXED-3` vs `STRUCT-FIXED-5` SmolLM3 experiment는 exact canonical B2 surface에 preregistered되어 있으며 canonical B2 run `36642658406`이 **성공적으로** 끝난 뒤에만 launch할 수 있습니다.
 
-Product default는 변경하지 않습니다. `structural_retrieval` is opt-in, fixed K=3 is not a product
-default, and broad #432 held-out/final-answer claims remain separate gates.
+Product default는 변하지 않습니다. `structural_retrieval`은 opt-in이고 fixed K=3은 product default가 아니며 broad #432 held-out/final-answer claim은 별도 gate입니다.
 
 Canonical result files:
 
-- `benchmarks/agent-utility-v5-structural-confirmation-result.json`
-- `benchmarks/agent-utility-v5-structural-adaptive-v3-result.json`
-- `benchmarks/agent-utility-v5-structural-fixed3-v4-result.json`
-- `benchmarks/agent-utility-v5-structural-fixed3-agent-preregistration.json`
+- 구조 확인 결과 파일: `benchmarks/agent-utility-v5-structural-confirmation-result.json`
+- 적응형 v3 결과 파일: `benchmarks/agent-utility-v5-structural-adaptive-v3-result.json`
+- 고정 K3 v4 결과 파일: `benchmarks/agent-utility-v5-structural-fixed3-v4-result.json`
+- 고정 K3 에이전트 사전등록 파일: `benchmarks/agent-utility-v5-structural-fixed3-agent-preregistration.json`
 
 ## Historical protocol
 
-The sections below preserve the original adaptive-depth preregistration rationale and selection
-rules. They should be read as the protocol that produced the terminal negative adaptive result,
-not as the current recommended candidate.
+아래는 original adaptive-depth preregistration rationale/selection rule을 보존합니다. Current recommended candidate가 아니라 terminal negative adaptive result를 만든 protocol로 읽어야 합니다.
 
 Tracking issue: #430
 
-This experiment asks whether SchemaRouter can expose fewer than five candidate capabilities on
-average without sacrificing the retrieval coverage and downstream utility established by the
-fixed-K baselines.
+질문은 SchemaRouter가 fixed-K baseline의 retrieval coverage/downstream utility를 희생하지 않고 평균 5개 미만 capability를 노출할 수 있는가입니다.
 
-## Why this is separate from B1/B2
+## B1/B2와 분리하는 이유
 
-B1/B2 evaluate fixed shortlist depths. They are not tuning data for adaptive depth.
+B1/B2는 fixed shortlist depth를 평가하며 adaptive depth의 tuning data가 아닙니다.
 
-No B1/B2 task rows, failures, scores, or per-task outcomes may be used to select an adaptive rule.
-
-The adaptive experiment uses its own development and confirmation surfaces.
+B1/B2 task row, failure, score, per-task outcome은 adaptive rule 선택에 사용할 수 없습니다. Adaptive experiment는 자체 development/confirmation surface를 사용합니다.
 
 ## Score semantics
 
-`CapabilityCandidate.score` is a deterministic ranking score, not a calibrated probability that is
-guaranteed to have the same scale across backends or catalogs.
+`CapabilityCandidate.score`는 deterministic ranking score이지 backend/catalog 사이 동일 scale이 보장되는 calibrated probability가 아닙니다.
 
-For that reason this protocol forbids absolute score thresholds.
+따라서 absolute score threshold를 금지합니다.
 
-The only adaptive signal is an adjacent gap normalized by the score range of the already ranked
-Top-10 list:
+유일한 adaptive signal은 ranked Top-10 score range로 normalize한 adjacent gap입니다.
 
 ```text
 gap_i = (score_i - score_{i+1}) /
         max(score_1 - score_10, 1e-9)
 ```
 
-This quantity is invariant to any positive affine score transform
-`score' = a * score + b` where `a > 0`. That matters because a ranking backend may preserve the
-same ordering while changing score scale or offset. If the Top-10 score range is effectively zero,
-the rule fails closed to `max_k`.
+이는 `a > 0`인 positive affine transform `score' = a * score + b`에 invariant합니다. Ranking backend가 ordering을 유지하면서 scale/offset을 바꿀 수 있기 때문에 중요합니다. Top-10 score range가 사실상 0이면 rule은 `max_k`로 fail closed합니다.
 
-Evaluated cut positions are ranks 3 through 9.
+Evaluated cut position은 rank 3~9입니다.
 
 ## Prior-art boundary
 
-Repantis et al., *How Many Tools Should an LLM Agent See? A Chance-Corrected Answer*
-(arXiv:2605.24660), treats shortlist depth itself as an evaluation target and introduces
-Bits-over-Random (BoR) to correct success for the random chance introduced by larger K.
+Repantis et al., *How Many Tools Should an LLM Agent See? A Chance-Corrected Answer* (arXiv:2605.24660)은 shortlist depth 자체를 evaluation target으로 보고 larger K가 만드는 random chance를 교정하는 Bits-over-Random(BoR)을 도입합니다.
 
-This cycle reports fixed-K BoR as a diagnostic, but **does not** use BoR as an inference signal,
-selection criterion, or learned depth-policy reward. The frozen adaptive candidates remain
-deterministic score-geometry rules. This keeps the current experiment training-free while making
-the fixed-depth comparison easier to interpret.
+이 cycle은 fixed-K BoR을 diagnostic으로 보고하지만 inference signal, selection criterion, learned depth-policy reward로 사용하지 않습니다. Frozen adaptive candidate는 deterministic score-geometry rule을 유지합니다.
 
 ## Frozen candidate policies
 
-Controls:
+Controls: fixed K=3, K=5, K=10.
 
-- fixed K=3;
-- fixed K=5;
-- fixed K=10.
+적응형 후보: REL-GAP-005, REL-GAP-010, REL-GAP-020, MAX-GAP-010.
 
-Adaptive candidates:
-
-- REL-GAP-005;
-- REL-GAP-010;
-- REL-GAP-020;
-- MAX-GAP-010.
-
-No learned depth policy is allowed in this cycle.
+Learned depth policy는 허용하지 않습니다.
 
 ## Development surface
 
-The tuning-eligible development surface contains **240 independent semantic tasks**:
+**240 independent semantic tasks**:
 
-- 8 task strata;
-- 6 languages;
-- 5 tasks per stratum × language cell.
+- 8 task strata
+- 6 languages
+- stratum × language cell당 5 tasks
 
-Language rendering policy:
+Language policy:
 
-- each semantic task appears in exactly one language cell;
-- surrounding request grammar is written in the assigned language;
-- canonical scientific/tooling terms such as `Raman peak`, units, and registered
-  operation nouns may remain in English where that is normal technical usage;
-- so this surface tests adaptive shortlist depth under multilingual request
-  framing, not standalone translation quality;
-- no cross-language translations of the same DEV task are used as repeated rows.
+- semantic task마다 정확히 하나의 language cell
+- surrounding request grammar는 assigned language
+- `Raman peak`, unit, registered operation noun 같은 canonical technical term은 정상 usage면 English 유지 가능
+- multilingual request framing의 adaptive shortlist depth를 시험하며 standalone translation quality가 아님
+- 같은 DEV task의 cross-language translation을 repeated row로 사용하지 않음
 
-Task strata cover:
+Strata:
 
-1. clear single-tool requests;
-2. sibling-operation ambiguity;
-3. semantically adjacent distractors;
-4. multi-step first-hop selection;
-5. typed numeric/unit queries;
-6. read/write siblings;
-7. near-domain unsupported requests;
-8. genuine OOD requests.
+1. clear single-tool requests
+2. sibling-operation ambiguity
+3. semantically adjacent distractors
+4. multi-step first-hop selection
+5. typed numeric/unit queries
+6. read/write siblings
+7. near-domain unsupported requests
+8. genuine OOD requests
 
-A separate **240-task confirmation surface** has the same balance but remains sealed until exactly one
-adaptive policy is selected.
+별도 **240-task confirmation surface**는 같은 balance지만 adaptive policy 하나가 선택될 때까지 sealed입니다.
 
 ## Development selection
 
-An adaptive policy is eligible only if it satisfies all of:
+Eligible adaptive policy 조건:
 
-- required-tool-set Recall >= 97% at each of 100/250/500 endpoints;
-- all-required FullCoverage >= 97% at each of 100/250/500 endpoints;
-- mean exposed candidate count < 5;
-- p95 exposed candidate count <= 10;
-- mean tool-schema tokens < fixed K=5.
+- 100/250/500 각각 required-tool-set Recall >=97%
+- 각각 all-required FullCoverage >=97%
+- mean exposed candidate count <5
+- p95 candidate count <=10
+- mean tool-schema tokens < fixed K=5
 
-Among eligible policies, select exactly one by the frozen lexicographic rule:
+Eligible 중 frozen lexicographic rule로 정확히 하나 선택:
 
-1. lowest mean candidate count;
-2. highest required-tool-set Recall;
-3. highest FullCoverage;
-4. lowest tool-schema tokens;
-5. lowest p95 retrieval latency;
-6. lexicographically smallest policy ID.
+1. lowest mean candidate count
+2. highest required-tool-set Recall
+3. highest FullCoverage
+4. lowest tool-schema tokens
+5. lowest p95 retrieval latency
+6. lexicographically smallest policy ID
 
-There is no post-selection threshold retuning.
+Post-selection threshold retuning 없음.
 
-## Confirmation and held-out promotion
+## Confirmation과 held-out promotion
 
-The confirmation surface is not tuning eligible.
+Confirmation surface는 tuning eligible이 아닙니다.
 
-For promotion, the selected adaptive policy must retain >=97% required-tool coverage and
-FullCoverage independently at each catalog size, average no more than 4.5 candidates,
-reduce tool-schema tokens relative to fixed K=5,
-and — after B2 is terminal — preserve downstream task pass within 2 percentage points of fixed K=5
-with zero unauthorized destructive execution.
+Promotion하려면 selected policy가 각 catalog size에서 independently >=97% required-tool coverage/FullCoverage, 평균 <=4.5 candidates, fixed K=5 대비 tool-schema token reduction을 유지하고 B2 terminal 뒤 downstream task pass를 fixed K=5의 2pp 이내로 보존하며 unauthorized destructive execution 0이어야 합니다.
 
-An adaptive condition may enter #432 only if this confirmation gate passes **before any #432 task
-content is generated**. It may never be added after held-out content or scores are opened.
+Adaptive condition은 **#432 task content 생성 전에** confirmation gate를 통과한 경우에만 #432에 들어갈 수 있습니다. Held-out content/score가 열린 뒤 추가할 수 없습니다.
 
 ## Boundary
 
-Adaptive depth changes candidate exposure only. It never changes execution authority, validation,
-approval, policy, or tool bindings.
+Adaptive depth는 candidate exposure만 바꿉니다. Execution authority, validation, approval, policy, tool binding은 바꾸지 않습니다.

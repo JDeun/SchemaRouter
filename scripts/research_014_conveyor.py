@@ -74,11 +74,49 @@ class StageRun:
     head_sha: str
 
 
+class _CrossOriginSafeRedirect(urllib.request.HTTPRedirectHandler):
+    """Avoid sending the GitHub token to signed artifact-storage URLs.
+
+    GitHub's artifact ZIP API replies with a 302 to storage outside api.github.com.
+    urllib's default redirect handler copies Authorization across origins, which
+    makes Azure Blob Storage reject the signed URL with a 401. Refuse downgrades
+    and strip GitHub-specific headers on cross-origin redirects.
+    """
+
+    def redirect_request(
+        self,
+        req: urllib.request.Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+        newurl: str,
+    ) -> urllib.request.Request | None:
+        redirected = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if redirected is None:
+            return None
+
+        original = urllib.parse.urlsplit(req.full_url)
+        target = urllib.parse.urlsplit(redirected.full_url)
+        if target.scheme.lower() != "https":
+            raise RuntimeError("refusing non-HTTPS GitHub API redirect")
+
+        if (original.scheme.lower(), original.netloc.lower()) != (
+            target.scheme.lower(), target.netloc.lower()
+        ):
+            secret_headers = {"authorization", "x-github-api-version"}
+            for header in (*redirected.headers, *redirected.unredirected_hdrs):
+                if header.lower() in secret_headers:
+                    redirected.remove_header(header)
+        return redirected
+
+
 class GitHubAPI:
     def __init__(self, repository: str, token: str) -> None:
         self.repository = repository
         self.base = f"https://api.github.com/repos/{repository}"
         self.token = token
+        self._opener = urllib.request.build_opener(_CrossOriginSafeRedirect())
 
     def _request(
         self,
@@ -103,7 +141,7 @@ class GitHubAPI:
             },
         )
         try:
-            with urllib.request.urlopen(request) as response:
+            with self._opener.open(request) as response:
                 return response.status, response.read()
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
@@ -434,6 +472,34 @@ def retry_infrastructure_failure(
     return True
 
 
+def retry_materialized_downstream_failure(
+    api: GitHubAPI,
+    run: StageRun,
+    *,
+    execute: bool,
+    actions: list[str],
+    label: str,
+) -> bool:
+    """Rerun failed jobs on the same frozen held-out/final run.
+
+    These large workflows create at least prepare, model-cache and evaluation
+    jobs. Once the matrix exists, a fresh dispatch would needlessly recompute
+    previously successful scientific shards, and could consume the last fresh-
+    wrapper recovery slot. A *pre-matrix* failure still needs the existing
+    fresh-wrapper dispatch to pick up infrastructure fixes on main.
+
+    Do not retry cancelled/unknown outcomes, or alter frozen benchmark inputs.
+    Each workflow run is capped by GitHub's run_attempt counter.
+    """
+    if run.conclusion not in {"failure", "timed_out"}:
+        return False
+    if api.workflow_run_job_count(run.id) < 3:
+        return False
+    return retry_infrastructure_failure(
+        api, run, execute=execute, actions=actions, label=label
+    )
+
+
 def _artifact_digest(artifact: dict[str, Any]) -> str:
     digest = artifact.get("digest")
     if not isinstance(digest, str) or not digest.startswith("sha256:"):
@@ -491,6 +557,23 @@ def active_run_with_jobs(
         if api.workflow_run_job_count(run.id) > 0:
             return run
     return None
+
+
+def prefer_materialized_corrective_run(
+    api: GitHubAPI,
+    runs: list[StageRun],
+) -> StageRun | None:
+    """Prefer a run with scientific jobs over newer empty cancelled wrappers.
+
+    A zero-job duplicate cannot provide any canonical shards.  Selecting it
+    discards reusable artifacts from the earlier terminal scientific run and
+    makes the recovery matrix unnecessarily replay all 180 shards.
+    """
+
+    for run in runs:
+        if api.workflow_run_job_count(run.id) > 0:
+            return run
+    return runs[0] if runs else None
 
 
 def stale_pending_wrapper(
@@ -752,7 +835,7 @@ def run_controller(
         )
         corrective = active_corrective
     else:
-        corrective = corrective_runs[0] if corrective_runs else None
+        corrective = prefer_materialized_corrective_run(api, corrective_runs)
 
     corrective_job_count = (
         api.workflow_run_job_count(corrective.id)
@@ -1060,6 +1143,29 @@ def run_controller(
             },
         }
     if terminal_failure(heldout):
+        if heldout.conclusion not in {"failure", "timed_out"}:
+            return {
+                "state": "stopped_heldout_nonretryable_conclusion",
+                "actions": actions,
+                "status": [_status_line("heldout", heldout)],
+            }
+        if retry_materialized_downstream_failure(
+            api, heldout, execute=execute, actions=actions, label="heldout"
+        ):
+            return {
+                "state": "retrying_heldout_failed_jobs",
+                "actions": actions,
+                "status": [_status_line("heldout", heldout)],
+            }
+        if (
+            heldout.conclusion in {"failure", "timed_out"}
+            and api.workflow_run_job_count(heldout.id) >= 3
+        ):
+            return {
+                "state": "stopped_heldout_failed_job_retries_exhausted",
+                "actions": actions,
+                "status": [_status_line("heldout", heldout)],
+            }
         failed_heldout_runs = [
             run for run in heldout_runs if terminal_failure(run)
         ]
@@ -1121,6 +1227,29 @@ def run_controller(
             "actions": actions,
         }
     if terminal_failure(final):
+        if final.conclusion not in {"failure", "timed_out"}:
+            return {
+                "state": "stopped_final_nonretryable_conclusion",
+                "actions": actions,
+                "status": [_status_line("final", final)],
+            }
+        if retry_materialized_downstream_failure(
+            api, final, execute=execute, actions=actions, label="final_answer"
+        ):
+            return {
+                "state": "retrying_final_failed_jobs",
+                "actions": actions,
+                "status": [_status_line("final", final)],
+            }
+        if (
+            final.conclusion in {"failure", "timed_out"}
+            and api.workflow_run_job_count(final.id) >= 3
+        ):
+            return {
+                "state": "stopped_final_failed_job_retries_exhausted",
+                "actions": actions,
+                "status": [_status_line("final", final)],
+            }
         failed_final_runs = [
             run for run in final_runs if terminal_failure(run)
         ]
