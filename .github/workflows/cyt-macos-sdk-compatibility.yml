@@ -31,7 +31,7 @@ jobs:
         run: |
           python -m pip install .
           python -m pip install "cyt-indexer-sdk==${CYT_VERSION}"
-          python -m pip install pytest
+          python -m pip install pytest pytest-asyncio
       - name: Record macOS and exact runtime
         run: |
           mkdir -p "${ARTIFACT}"
