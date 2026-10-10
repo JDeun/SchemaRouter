@@ -1,36 +1,36 @@
-# Decision routing benchmark
+# 의사결정 라우팅 벤치마크
 
-SchemaRouter에는 재현 가능한 routing benchmark harness와 repository에 포함된 v1 corpus가 있습니다.
+SchemaRouter는 재현 가능한 라우팅 벤치마크 실행 도구와 저장소에 포함된 v1 코퍼스를 제공합니다.
 
-이 benchmark는 측정 도구이며 특정 provider가 보편적으로 더 우수하다는 주장이 아닙니다.
+이 벤치마크는 성능을 측정하기 위한 도구이며, 특정 제공자가 모든 상황에서 우수하다는 주장은 아닙니다.
 
-## Smoke 실행
+## 간단 검증 실행
 
 ```bash
 python scripts/benchmark_decision_routing.py
 ```
 
-이는 packaging과 CI를 위한 기존 3-case deterministic smoke test를 유지합니다.
+이 명령은 패키징과 CI를 검증하는 기존의 결정론적 3개 사례 테스트를 그대로 실행합니다.
 
-## 전체 checked-in corpus
+## 저장소에 포함된 전체 코퍼스
 
 ```bash
 python scripts/benchmark_decision_routing.py \
   --corpus benchmarks/decision-routing-v1.json
 ```
 
-v1 corpus는 다음 범주의 144개 case로 구성됩니다:
+v1 코퍼스는 다음 범주의 144개 사례로 구성됩니다:
 
-- normal routing;
-- near-duplicate tools/endpoints;
-- Korean/English multilingual queries;
-- long-tail phrasings;
-- prompt-injection-style requests;
-- out-of-domain requests where a bounded backend may abstain.
+- 일반적인 라우팅 요청;
+- 이름이나 기능이 매우 유사한 도구·엔드포인트;
+- 한국어·영어 다국어 질의;
+- 드물게 사용되는 표현;
+- 프롬프트 인젝션을 시도하는 요청;
+- 제한된 선택지만 처리하는 백엔드가 경로 선택을 보류할 수 있는 도메인 외 요청.
 
-corpus는 script에 내장된 stable benchmark registry만 참조하며, 알 수 없는 expected route가 dataset에 조용히 들어가지 못하도록 test에서 검증합니다.
+이 코퍼스는 스크립트에 내장된 안정적인 벤치마크 레지스트리만 참조합니다. 테스트는 등록되지 않은 예상 경로가 데이터셋에 유입되지 않도록 검증합니다.
 
-### v2 stress corpus와 held-out split
+### v2 부하 테스트 코퍼스와 홀드아웃 데이터 분할
 
 `benchmarks/decision-routing-v2.json`은 deterministic한 **1,200-case** multilingual stress corpus입니다:
 
@@ -49,7 +49,7 @@ python scripts/benchmark_decision_routing.py \
 
 recall width와 confidence threshold는 `dev` / `calibration`에서만 조정합니다. configuration이 고정될 때까지 `test`는 held-out으로 취급합니다. v2 test split은 semantic-recall checkpoint에서 이미 한 번 사용됐으므로 이제 tuning set이 아니라 frozen regression set입니다.
 
-### v3 untouched capability-fit holdout
+### v3 평가 전까지 미사용한 기능 적합성 홀드아웃
 
 `benchmarks/decision-routing-v3.json`은 capability-fit 실험을 위한 별도의 deterministic **600-case** multilingual holdout입니다:
 

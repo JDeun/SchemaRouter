@@ -1,10 +1,10 @@
-# 전체 experiment index
+# 전체 실험 색인
 
-이 페이지는 최신 또는 가장 강한 결과만이 아니라 SchemaRouter routing research의 전체 experiment ledger를 공개합니다.
+이 페이지는 최신 결과나 가장 높은 성능만 선별하지 않고, SchemaRouter 라우팅 연구의 전체 실험 기록을 공개합니다.
 
-Public summary page가 "현재 연구가 어디까지 왔는가"에 답한다면, 이 페이지는 "실제로 무엇을 시도했는가"에 답합니다.
+공개 연구 요약 페이지가 "현재 연구가 어디까지 왔는가"에 답한다면, 이 페이지는 "실제로 무엇을 시도했는가"를 보여줍니다.
 
-현재 machine-readable ledger:
+현재 기계 판독형 실험 기록:
 
 - 별도의 실험으로 등록된 기록: 92건;
 - 기존 라우팅 코퍼스 계보: 버전이 명시된 코퍼스 13개;
@@ -12,7 +12,7 @@ Public summary page가 "현재 연구가 어디까지 왔는가"에 답한다면
   주장에 영향을 준 경우가 아니면 독립 실험으로 집계하지 않습니다;
 - 실패·대체·무효화·종료된 실험도 숨기지 않고 기록에 유지합니다.
 
-92개 record에는 terminal 0.13 V6A–V6H/open-set control과 active 0.14 agent-utility lineage가 포함됩니다. Terminal 0.13 confirmation surfaces remain unopened unless explicitly recorded otherwise.
+92건의 기록에는 종료된 0.13 V6A–V6H 및 오픈셋 대조 실험과 진행 중인 0.14 에이전트 작업 효용성 연구가 포함됩니다. 종료된 0.13 확인 실험의 평가 데이터는 별도의 명시적 기록이 없는 한 개봉되지 않은 상태로 유지됩니다.
 
 기계적으로 읽을 수 있는 정본은
 [`benchmarks/research-experiment-ledger.json`](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json)입니다.
@@ -25,29 +25,27 @@ Public summary page가 "현재 연구가 어디까지 왔는가"에 답한다면
 선행연구를 정식 작업 항목에 연결하고 진행 중·다음·대기·보류 상태를 기록하므로,
 새 작업 세션에서 이미 종료된 실험을 다시 시작하지 않도록 돕습니다.
 
-## 적절한 evidence surface 선택
+## 목적에 맞는 근거 자료 선택
 
-특정 experimental decision의 provenance가 필요할 때 이 ledger를 사용합니다. 일반적인 탐색은 아래의 더 작은 문서부터 시작하십시오:
+특정 실험 결정의 출처와 이력을 확인하려면 이 원장을 사용하세요. 일반적인 탐색은 아래의 간략한 문서부터 시작하는 것이 좋습니다:
 
-| Question | Start here |
+| 확인할 질문 | 참고 문서 |
 | --- | --- |
-| What is the current defensible research claim? | [Research status](routing-status.md) |
-| What evidence is paper-ready? | [Paper evidence package](paper-evidence-package.md) |
-| What is still active or blocked? | [Prior-art roadmap](prior-art-roadmap.md) and the active research issues |
-| What exactly was tried, including failures? | This complete ledger |
-| How did the architecture evolve? | [Design and experiment history](design-and-experiment-history.md) |
+| 현재 근거로 뒷받침할 수 있는 연구 주장은? | [연구 현황](routing-status.md) |
+| 논문에 사용할 수 있는 실험 근거는? | [논문 근거 패키지](paper-evidence-package.md) |
+| 진행 중이거나 막힌 과제는? | [선행연구 로드맵](prior-art-roadmap.md)과 진행 중인 연구 이슈 |
+| 실패 사례를 포함해 실제로 수행한 실험은? | 이 전체 실험 원장 |
+| 아키텍처는 어떻게 발전했는가? | [설계 및 실험 이력](design-and-experiment-history.md) |
 
-아래 section은 의도적으로 archival 성격을 가집니다. Historical failure는 reproducibility를 위해 보존하지만 권장 product configuration은 아닙니다.
+아래 내용은 의도적으로 기록 보존을 위한 것입니다. 과거의 실패도 재현성을 위해 남기지만, 이를 현재 권장하는 제품 설정으로 해석해서는 안 됩니다.
 
-## Evidence 읽는 법
+## 실험 근거를 읽는 방법
 
-Git commit 하나가 experiment 하나와 동일한 것은 아닙니다. 하나의 squashed PR에 implementation, test, preregistration, corpus freeze, calibration, final evidence가 함께 들어갈 수 있고, 반대로 하나의 experiment가 여러 commit이나 workflow run을 필요로 할 수도 있습니다. The ledger therefore treats the **experimental
-decision** as the unit of record and links it back to issues, PRs, revisions, workflows, artifacts,
-and source files when available.
+Git commit 하나가 experiment 하나와 동일한 것은 아닙니다. 하나의 squashed PR에 implementation, test, preregistration, corpus freeze, calibration, final evidence가 함께 들어갈 수 있고, 반대로 하나의 experiment가 여러 commit이나 workflow run을 필요로 할 수도 있습니다. 따라서 이 원장은 **실험적 의사결정**을 기록 단위로 삼고, 가능한 경우 관련 이슈·PR·리비전·워크플로·아티팩트·소스 파일을 연결합니다.
 
 Repository Git history는 계속 exhaustive engineering record 역할을 합니다.
 
-## Legacy corpus lineage
+## 기존 코퍼스 계보
 
 | Corpus | Role |
 | --- | --- |
