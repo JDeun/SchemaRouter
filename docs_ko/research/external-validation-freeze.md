@@ -90,6 +90,43 @@ mcp-gateway [#2641에 제안한 공동 순위표](https://github.com/MikkoParkko
 공통 승자 점수, 독립 재현 성공, 상대 프로젝트의 보증은 입증되지 않았습니다.
 거절된 교류를 동결된 0.14 연구 결과에 포함하지 않습니다.
 
+### ClicShopping 4.33 엔드포인트·작업 고정 소스 감사
+
+[#1208](https://github.com/JDeun/SchemaRouter/issues/1208)는 상대 저장소
+`version4.33`의 커밋 `3bac851759234a4babb49d3f351e472cd9e0f31f`과
+[기계 판독형 소스 인벤토리](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/external-validation-clicshopping-v433/source-inventory.json)를
+기준으로 합니다. 이는 **공개 소스 계약 감사이며, 성능 벤치마크 점수는 아닙니다**.
+오프라인 검사 명령은 다음과 같습니다.
+
+```bash
+python scripts/validate_clicshopping_v433_inventory.py
+pytest -q tests/test_clicshopping_v433_inventory.py
+```
+
+기본 인터페이스는 MCP JSON-RPC `tools/list`나 `inputSchema`가 아닌
+**REST 엔드포인트·작업 표**입니다. 고정 트리에서
+`AnthropicEcommerce`, `CustomersProducts`, `ChatRagBI` 페이지 및
+각 권한 화이트리스트를 확인했습니다. `CustomerOrdersPermissions.php`에는
+읽기 작업 3개와 쓰기 작업 2개가 선언됐지만 **정확히 이 고정 트리에
+`CustomerOrders` 엔드포인트 페이지 구현은 없습니다**.
+따라서 이 작업들은 *권한 선언만 확인됨, 실제 호출 가능성 미확인*으로 분류하며,
+새로운 상위 프로젝트 구현 증거와 사전 동결 없이는 실행 경로의 점수 분모에 포함하지 않습니다.
+
+`AnthropicEcommerce`의 제품 작업과 `CustomersProducts`에는
+`products`, `product`, `search`, `categories`, `stats`,
+`recommendations`의 **중복 이름 6개**가 존재합니다. 작업 이름만으로
+동일한 엔드포인트라고 판단하지 않고 엔드포인트 정체성으로 구분합니다.
+`CustomersProducts`의 쓰기 작업은 **0개**이며, `DISPLAY_BROWSER_JSON`은
+브라우저 GET 접근을 제한하는 설정이지 선언된 작업을 삭제하는 기능이 아닙니다.
+`customerOrders`는 인증된 `customers_id`와 작업별 읽기·쓰기 권한이 필요합니다.
+`ChatRagBI`는 읽기 전용 및 읽기 권한만 있는 사용자 조건을 요구하며,
+4.33의 `RATE_LIMITED` 오류와 `ai_disclaimer` 응답 계약도 유지합니다.
+
+이 스냅샷은 라이브 엔드포인트 호출, 자격 증명, 쓰기, 모델 평가,
+필드 재현율 점수, 제품 성능 결론을 포함하지 않습니다. 다음 단계에서는
+**검증된 소스 범위**만 대상으로 사례·채점 규칙을 독립적으로 사전 동결해야 하며,
+이후 상위 프로젝트의 변경 커밋을 기존 동결 입력으로 몰래 대체하지 않습니다.
+
 | 평가·회신 대상 | 관리 이슈 | 해석 및 비교 범위 |
 | --- | --- | --- |
 | SafeActBench V1(별도 외부 연구) | [#1211](https://github.com/JDeun/SchemaRouter/issues/1211), [#1224](https://github.com/JDeun/SchemaRouter/issues/1224) | V1 131개 사례 × 3개 조건의 실제 평가는 미완료. 정답 정보 비노출 계약과 격리 실행 환경 필요 |
