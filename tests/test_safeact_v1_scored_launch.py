@@ -27,7 +27,7 @@ def _inputs(tmp_path: Path) -> dict:
         "model": "same-model",
         "commands": commands,
         "contracts": {
-            "contracts": [{"action": "act", "sources": []}],
+            "contracts": [{"domain": "customer_policy_qa", "action": "act", "sources": []}],
             "case_coverage": {
                 f"SAB-V1-{i:03d}": None
                 for i in range(1, launch.EXPECTED_CASES + 1)
