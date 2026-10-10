@@ -103,8 +103,7 @@ Schema adapter는 다음을 반환해야 합니다:
 - source가 제공하는 경우 input/output JSON Schema;
 - remote에서 온 경우 untrusted로 표시한 descriptive metadata;
 - invoker가 remote trust boundary를 넘는 capability에는 `tool.remote=True`;
-- `ToolSpec.execution_metadata` / `EndpointSpec.execution_metadata` for JSON-safe values that
-  alter transport/runtime behavior and therefore must participate in fingerprints.
+- 전송 또는 실행 동작에 영향을 미쳐 스키마 지문에 포함해야 하는 JSON 호환 값을 위한 `ToolSpec.execution_metadata` / `EndpointSpec.execution_metadata`
 
 일반 transport adapter는 다음 signature와 호환되는 invoker를 제공할 수 있습니다:
 
@@ -133,9 +132,7 @@ Adapter는 다음 동작을 해서는 안 됩니다:
 - SchemaRouter input/output validation 생략;
 - planning에서 remote service를 직접 호출.
 
-Remote adapter는 `tool.remote = True`를 설정하여 unclassified side effect가 계속 policy-gated되도록 해야 합니다. Ordinary `metadata` is descriptive only and must
-not be read by an invoker to decide execution origin, transport target, request encoding, or other
-runtime semantics.
+원격 어댑터는 `tool.remote = True`를 설정하여 분류되지 않은 부작용에도 정책 검사가 적용되도록 해야 합니다. 일반 `metadata`는 설명 목적으로만 사용하며, 호출기가 실행 출처·전송 대상·요청 인코딩 또는 다른 실행 의미를 결정하는 데 읽어서는 안 됩니다.
 
 Invoker에 adapter-specific runtime value가 필요하면 fingerprint 대상인 `execution_metadata`에 넣습니다. 예:
 
@@ -157,9 +154,7 @@ tool = ToolSpec(
 )
 ```
 
-어느 metadata에도 credential을 넣지 마십시오. Secret은 신뢰된 invoker object에만 유지합니다.
-Discovery/schema URL은 provenance이며 자동으로 runtime identity가 되지 않습니다. Invoker가 실제로 그 URL을 호출하지 않는다면 descriptive 상태로 유지하십시오. If a URL is part of `execution_metadata`, require a stable,
-credential-free form and keep query/fragment authentication in trusted transport configuration.
+어떤 메타데이터에도 인증 정보를 넣지 마세요. 비밀 정보는 신뢰된 호출기 객체에만 유지합니다. 탐색·스키마 URL은 출처 정보이며 자동으로 실행 대상 식별자가 되지 않습니다. 호출기가 실제로 사용하지 않는 URL이라면 설명 정보로만 유지하세요. URL이 `execution_metadata`에 포함된다면 인증 정보가 없는 안정적인 주소를 사용하고, 쿼리·프래그먼트를 이용한 인증은 신뢰된 전송 설정에서 관리해야 합니다.
 
 ## Schema fidelity
 
@@ -271,15 +266,13 @@ FieldSpec(
 )
 ```
 
-`FieldSpec.unit` is the provider/source unit. `unit_normalization` is optional and must only be
-populated when trusted local code has an exact affine conversion contract:
+`FieldSpec.unit`은 제공자나 데이터 출처가 선언한 단위입니다. 선택적 `unit_normalization`은 신뢰된 로컬 코드가 정확한 아핀 변환 계약을 가진 경우에만 지정할 수 있습니다:
 
 ```text
 canonical_value = source_value * scale + offset
 ```
 
-SchemaRouter는 unit label, SI prefix, spelling, model output에서 conversion factor를 추론하지 않습니다. Unit symbol은 대소문자와 punctuation을 구분합니다. A remote label such as `nm`, `GPa`,
-or `degC` is descriptive until a trusted adapter/application declares the conversion.
+SchemaRouter는 단위 레이블, SI 접두사, 표기 또는 모델 출력에서 단위 변환 계수를 추론하지 않습니다. 단위 기호는 대소문자와 문장부호를 구분합니다. `nm`, `GPa`, `degC` 같은 원격 레이블은 신뢰된 어댑터나 애플리케이션이 변환 규칙을 선언하기 전까지 설명 정보일 뿐입니다.
 
 내장 OpenAPI 및 MCP 어댑터는 인식된 스키마 주석인 `x-ucum-unit`, `x-unit`,
 `unit`을 원본 단위 레이블로 보존합니다. 이 문자열만으로
@@ -298,8 +291,8 @@ or `degC` is descriptive until a trusted adapter/application declares the conver
 충분한 근거가 되지 않습니다. 폴백에는 의미적 호환성, 결과 데이터 타입 호환성,
 그리고 다음 조건 중 하나가 필요합니다.
 
-- the same exact source unit; or
-- explicit matching physical `dimension` and `canonical_unit` normalization contracts.
+- 정확히 같은 출처 단위 또는
+- 물리 차원 `dimension`과 기준 단위 `canonical_unit`에 대해 명시적으로 일치하는 정규화 계약
 
 Unit은 optional입니다. Text/document/search field는 일반적으로 `unit=None`을 사용하며 abstract, snippet, title, prose 같은 string에는 unit metadata가 필요하지 않습니다.
 
@@ -310,11 +303,11 @@ Field가 scientific source에서 왔다는 이유만으로 unit을 붙이지 마
 
 대표적인 unitless field는 다음과 같습니다:
 
-- paper titles, abstracts, and full text;
-- web-search snippets and URLs;
-- material names and identifiers;
-- categorical labels, symmetry symbols, and free-form notes;
-- provenance/license/source strings.
+- 논문 제목·초록·본문
+- 웹 검색 요약과 URL
+- 재료 이름과 식별자
+- 범주형 레이블, 대칭 기호 및 자유 형식 메모
+- 출처·라이선스·소스 문자열
 
 예:
 
@@ -327,8 +320,7 @@ FieldSpec(
 )
 ```
 
-A unit should be declared only when the field represents a physical/numeric quantity and the source
-contract actually defines that unit. If the unit is unknown, leave it unset rather than guessing.
+필드가 물리량 또는 수치를 나타내고 출처 계약에서 해당 단위를 실제로 정의한 경우에만 단위를 선언해야 합니다. 단위를 모르면 추측하지 말고 설정하지 않은 상태로 두세요.
 
 
 ### Record별 동적 unit
@@ -357,8 +349,7 @@ SchemaRouter 실행 코어 밖에서 처리해야 합니다.
 
 ### 무차원 numeric quantity
 
-Numeric scientific data can also be unitless. Do not invent a unit for dimensionless quantities
-such as a Poisson ratio, probability, normalized score, or other dimensionless coefficient.
+수치형 과학 데이터에도 단위가 없을 수 있습니다. 푸아송비, 확률, 정규화 점수 및 기타 무차원 계수에 임의의 단위를 만들어서는 안 됩니다.
 
 ```python
 FieldSpec(
@@ -376,8 +367,7 @@ FieldSpec(
 
 ## 신뢰된 parameter alias
 
-Different provider/access contracts can accept the same logical input under different local
-parameter names. Use `ParameterSpec.aliases` only for trusted key equivalence:
+서로 다른 제공자·접근 계약은 같은 논리적 입력을 다른 로컬 인수 이름으로 받을 수 있습니다. `ParameterSpec.aliases`는 신뢰된 키 동등성에만 사용하세요:
 
 ```python
 ParameterSpec(
@@ -398,13 +388,13 @@ Alias routing은 제한적으로 동작합니다:
 - 여러 별칭이 한 매개변수에 경쟁적으로 매핑되더라도 임의로 선택하지 않습니다;
 - 폴백 후보는 각자 자신의 매개변수 계약에 따라 인수를 독립적으로 구성합니다.
 
-`aliases` are not a value transformation language. For example, this is valid:
+`aliases`는 값을 변환하는 언어가 아닙니다. 다음과 같은 키 별칭은 유효합니다:
 
 ```text
 formula="Si" -> chemical_formula="Si"
 ```
 
-but SchemaRouter does not generically synthesize:
+하지만 SchemaRouter는 다음과 같은 값 변환을 일반적으로 자동 생성하지 않습니다:
 
 ```text
 formula="Si" -> filter='chemical_formula_reduced="Si"'
@@ -414,15 +404,12 @@ formula="Si" -> filter='chemical_formula_reduced="Si"'
 어댑터 또는 애플리케이션 코드에서 처리해야 합니다. `wire_name`은 선언된
 매개변수의 직렬화 경계를 나타내며 의미적 별칭과 구별됩니다.
 
-Adapters must not infer trusted aliases from arbitrary remote descriptions or model output. Remote
-schemas may describe names, but local code decides whether two argument keys are semantically
-equivalent.
+어댑터는 임의의 원격 설명이나 모델 출력으로부터 신뢰된 별칭을 추론해서는 안 됩니다. 원격 스키마는 이름을 설명할 수 있지만 두 인수 키의 의미적 동등성은 로컬 코드가 결정합니다.
 
 
 ## Scientific qualifier는 정확한 local contract
 
-When a provider field has a fixed contextual meaning that affects scientific comparability, adapters
-may preserve that context with `FieldSpec.qualifiers`.
+제공자 필드에 과학적 비교 가능성에 영향을 미치는 고정된 문맥적 의미가 있다면 어댑터는 `FieldSpec.qualifiers`로 이를 보존할 수 있습니다.
 
 ```python
 FieldSpec(
@@ -446,5 +433,4 @@ FieldSpec(
 값은 정확하게 비교되는 불투명한 태그입니다. SchemaRouter는 한정자 문자열에서
 단위 변환, 동의어 확장 또는 자연어 추론을 수행하지 않습니다.
 
-This makes qualifiers suitable for conservative fallback safety without turning SchemaRouter into a
-scientific ontology or query-language engine.
+이렇게 하면 SchemaRouter를 과학 온톨로지나 질의 언어 엔진으로 확장하지 않고도 한정자가 보수적인 폴백 안전성 검증에 도움이 됩니다.
