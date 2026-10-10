@@ -124,11 +124,21 @@ class StubAPI:
         return [artifact(shard) for shard in frozen_shards(corpus())]
 
 
-def test_plan_refuses_active_parent_and_recovers_only_cancelled_shard():
+def test_plan_refuses_active_parent_and_recovers_only_cancelled_shard(monkeypatch):
+    import scripts.research_014_heldout_recovery as module
+
+    data = corpus()
+    shards = frozen_shards(data)
+
+    def read_valid_parent(_api, _artifact, filename):
+        catalog, task_ids = shards[filename[:-5]]
+        return payload(data, catalog, task_ids)
+
+    monkeypatch.setattr(module, "_artifact_payload", read_valid_parent)
     args = dict(parent=123, wave=0, source=FROZEN_SOURCE, digest="sha256:test")
     with pytest.raises(ValueError, match="preserve"):
-        plan(StubAPI(False), corpus(), **args)
-    p = plan(StubAPI(True), corpus(), **args)
+        plan(StubAPI(False), data, **args)
+    p = plan(StubAPI(True), data, **args)
     assert len(p["successful_parent_shards"]) == 233
     assert p["missing_parent_shards"] == ["c100-g00"]
     assert len(p["matrix"]) == 5
@@ -150,11 +160,17 @@ def test_complete_heldout_salvage_reuses_successes_and_rejects_missing_part(
     import scripts.research_014_heldout_recovery as module
 
     data = corpus()
+    shards = frozen_shards(data)
+
+    def read_valid_parent(_api, _artifact, filename):
+        catalog, task_ids = shards[filename[:-5]]
+        return payload(data, catalog, task_ids)
+
+    monkeypatch.setattr(module, "_artifact_payload", read_valid_parent)
     parent_plan = plan(
         StubAPI(True), data, parent=123, wave=0,
         source=FROZEN_SOURCE, digest="sha256:test",
     )
-    shards = frozen_shards(data)
     selected = parent_plan["matrix"]
 
     class CollectAPI(StubAPI):
