@@ -84,3 +84,15 @@ def test_report_includes_advisory_english_prose_lines(tmp_path: Path) -> None:
     assert summary["english_prose_candidate_lines"] == 1
     assert report["pages"][0]["untranslated_english_prose_lines"] == [3]
     assert "English prose lines" in markdown_summary(report)
+
+
+def test_brand_readme_is_included_in_whole_corpus_report(tmp_path: Path) -> None:
+    en = tmp_path / "docs"
+    ko = tmp_path / "docs_ko"
+    _write(en, "assets/brand/README.md", "# Brand assets\n\nBrand guidelines.\n")
+    _write(ko, "assets/brand/README.md", "# 브랜드 에셋\n\n브랜드 지침.\n")
+    report = build_report(en, ko)
+    assert report["summary"]["english_pages"] == 1
+    assert report["summary"]["korean_pages"] == 1
+    assert report["summary"]["paired_pages"] == 1
+    assert report["pages"][0]["path"] == "assets/brand/README.md"
