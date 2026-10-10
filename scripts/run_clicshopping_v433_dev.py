@@ -254,7 +254,10 @@ def run(package: Path = PACKAGE) -> dict[str, Any]:
         "schema_version": 1,
         "status": "development_fixture_only_not_independent_confirmation",
         "upstream_commit": inventory["upstream"]["commit"],
-        "native_baseline": "fully eligible source-declared endpoint/action matrix; no native ranking",
+        "native_baseline": (
+            "fully eligible source-declared endpoint/action matrix; "
+            "no native ranking"
+        ),
         "preselection": "SchemaRouter.retrieve over same permission-filtered normalized catalog",
         "field_recall": None,
         "measured_native_wire_bytes": None,
@@ -278,10 +281,22 @@ def run(package: Path = PACKAGE) -> dict[str, Any]:
         },
         "limitations": [
             "Only authored development cases; no held-out or independent confirmation.",
-            "No native ClicShopping ranking algorithm was executed; full eligible matrix is the comparison baseline.",
-            "SchemaRouter contract descriptors are compiled from publicly available endpoint/action identifiers, not live MCP tool schemas.",
-            "customerOrders endpoint page is absent at pinned SHA; permissions-only actions excluded.",
-            "No action output-field labels, transport measurements, authorization execution or application correctness scores.",
+            (
+                "No native ClicShopping ranking algorithm was executed; "
+                "full eligible matrix is the comparison baseline."
+            ),
+            (
+                "SchemaRouter contract descriptors are compiled from publicly available "
+                "endpoint/action identifiers, not live MCP tool schemas."
+            ),
+            (
+                "customerOrders endpoint page is absent at pinned SHA; "
+                "permissions-only actions excluded."
+            ),
+            (
+                "No action output-field labels, transport measurements, "
+                "authorization execution or application correctness scores."
+            ),
             "Do not tune queries, labels, thresholds or descriptions from evaluated rows.",
         ],
         "per_case": results,
