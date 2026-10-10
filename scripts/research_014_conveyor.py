@@ -74,11 +74,48 @@ class StageRun:
     head_sha: str
 
 
+class _CrossOriginSafeRedirect(urllib.request.HTTPRedirectHandler):
+    """Avoid sending the GitHub token to signed artifact-storage URLs.
+
+    GitHub's artifact ZIP API replies with a 302 to storage outside api.github.com.
+    urllib's default redirect handler copies Authorization across origins, which
+    makes Azure Blob Storage reject the signed URL with a 401. Refuse downgrades
+    and strip GitHub-specific headers on cross-origin redirects.
+    """
+
+    def redirect_request(
+        self,
+        req: urllib.request.Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+        newurl: str,
+    ) -> urllib.request.Request | None:
+        redirected = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if redirected is None:
+            return None
+
+        original = urllib.parse.urlsplit(req.full_url)
+        target = urllib.parse.urlsplit(redirected.full_url)
+        if target.scheme.lower() != "https":
+            raise RuntimeError("refusing non-HTTPS GitHub API redirect")
+
+        if (original.scheme.lower(), original.netloc.lower()) != (
+            target.scheme.lower(), target.netloc.lower()
+        ):
+            for header in ("Authorization", "X-GitHub-Api-Version"):
+                redirected.remove_header(header)
+                redirected.remove_unredirected_header(header)
+        return redirected
+
+
 class GitHubAPI:
     def __init__(self, repository: str, token: str) -> None:
         self.repository = repository
         self.base = f"https://api.github.com/repos/{repository}"
         self.token = token
+        self._opener = urllib.request.build_opener(_CrossOriginSafeRedirect())
 
     def _request(
         self,
@@ -103,7 +140,7 @@ class GitHubAPI:
             },
         )
         try:
-            with urllib.request.urlopen(request) as response:
+            with self._opener.open(request) as response:
                 return response.status, response.read()
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
