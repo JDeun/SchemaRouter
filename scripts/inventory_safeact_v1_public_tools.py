@@ -2,8 +2,9 @@
 
 This is an *unreviewed* aid to independent contract authorship, NOT an
 Evidence Contract and NOT a scored SafeActBench run.  Only file identity and
-SHA-256 of public tool implementations are recorded. Never open env/data,
-world state, case manifests, labels, scenarios or evaluator sources.
+SHA-256 of public tool implementations and fixed template/world/policies
+candidate files are recorded. Never open env/data, other world state,
+case manifests, labels, scenarios or evaluator sources.
 """
 
 from __future__ import annotations
@@ -22,12 +23,15 @@ PUBLIC_DOMAINS = (
     "ops_code_agent",
     "research_assistant",
 )
+PUBLIC_POLICY_SUFFIXES = frozenset({".json", ".md", ".txt", ".yaml", ".yml"})
 
 
 def build_inventory(root: Path) -> dict[str, Any]:
     """Inspect only templates/<fixed-domain>/tools/*.py, without code parsing."""
     root = root.resolve(strict=True)
     records: list[dict[str, str]] = []
+    policy_candidates: list[dict[str, str]] = []
+    domains_without_policy_directory: list[str] = []
     for domain in PUBLIC_DOMAINS:
         folder = root / "templates" / domain / "tools"
         if folder.is_symlink() or not folder.is_dir():
@@ -50,6 +54,32 @@ def build_inventory(root: Path) -> dict[str, Any]:
                 "source_path": path.relative_to(root).as_posix(),
                 "source_sha256": digest,
             })
+        # Only the fixed, public template policy directory is admissible.
+        # Never enumerate env/, case manifests, other world-state folders,
+        # hidden scenario requirements or evaluator artifacts.
+        policy_dir = root / "templates" / domain / "world" / "policies"
+        if policy_dir.is_symlink():
+            raise ValueError(f"symlinked public policy directory: {domain}")
+        if not policy_dir.exists():
+            domains_without_policy_directory.append(domain)
+            continue
+        if not policy_dir.is_dir():
+            raise ValueError(f"invalid public policy directory: {domain}")
+        for path in sorted(policy_dir.iterdir()):
+            if (
+                path.is_symlink()
+                or not path.is_file()
+                or path.suffix.lower() not in PUBLIC_POLICY_SUFFIXES
+                or not path.resolve().is_relative_to(root)
+            ):
+                raise ValueError(
+                    f"unsafe public policy candidate: {domain}/{path.name}"
+                )
+            policy_candidates.append({
+                "domain": domain,
+                "source_path": path.relative_to(root).as_posix(),
+                "source_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            })
     if not records:
         raise ValueError("public V1 tool interface inventory is empty")
     return {
@@ -62,6 +92,10 @@ def build_inventory(root: Path) -> dict[str, Any]:
         "case_coverage": None,
         "forbidden_sources_read": False,
         "tools": records,
+        "public_policy_candidates": policy_candidates,
+        "domains_without_policy_directory": domains_without_policy_directory,
+        "policy_candidates_are_contracts": False,
+        "policy_candidates_are_runtime_observations": False,
     }
 
 
@@ -84,8 +118,9 @@ def main() -> int:
         encoding="utf-8",
     )
     print(
-        f"Unreviewed public tool interface inventory: {len(data['tools'])} entries; "
-        "NO contracts approved or model scores produced"
+        f"Unreviewed public tool interfaces: {len(data['tools'])}; "
+        f"public-policy source candidates: {len(data['public_policy_candidates'])}; "
+        "NO contract semantics, approvals or model scores produced"
     )
     return 0
 
