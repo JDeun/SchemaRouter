@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from scripts.research_014_heldout_recovery import (
-    FROZEN_SOURCE, frozen_shards, plan, successful_parent_shards,
+    FROZEN_SOURCE, collect, frozen_shards, plan, successful_parent_shards,
     validate_shard, wave_parts,
 )
 
@@ -138,3 +138,63 @@ def test_workflow_keeps_exact_frozen_scientific_source():
     assert "scientific/scripts/aggregate_agent_utility_v3_heldout.py" in workflow
     assert "max-parallel: 16" in workflow
     assert "heldout-generalization-canonical-${{ github.run_id }}" in workflow
+
+
+def test_complete_heldout_salvage_reuses_successes_and_rejects_missing_part(
+    tmp_path, monkeypatch,
+):
+    import scripts.research_014_heldout_recovery as module
+
+    data = corpus()
+    parent_plan = plan(
+        StubAPI(True), data, parent=123, wave=0,
+        source=FROZEN_SOURCE, digest="sha256:test",
+    )
+    shards = frozen_shards(data)
+    selected = parent_plan["matrix"]
+
+    class CollectAPI(StubAPI):
+        def __init__(self):
+            super().__init__(True)
+            self.recovered = [
+                {"name": f"heldout-recovery-part-{part['job_id']}-456",
+                 "id": 1000 + i, "digest": "sha256:" + "b" * 64,
+                 "expired": False}
+                for i, part in enumerate(selected)
+            ]
+        def artifacts(self, run_id):
+            if run_id == 456:
+                return self.recovered
+            return super().artifacts(run_id)
+        def workflow_runs(self, filename):
+            assert filename == module.RECOVERY_WORKFLOW
+            return [{
+                "id": 456, "status": "in_progress",
+                "display_title": (
+                    f"Held-out recovery parent=123 wave=0 source={FROZEN_SOURCE}"
+                ),
+            }]
+
+    def load_artifact(_api, _artifact, filename):
+        ident = filename[:-5]
+        if "-p" in ident:
+            shard, part = ident.rsplit("-p", 1)
+            catalog, tasks = shards[shard]
+            tasks = tasks[int(part) * 2:int(part) * 2 + 2]
+        else:
+            catalog, tasks = shards[ident]
+        return payload(data, catalog, tasks)
+
+    monkeypatch.setattr(module, "_artifact_payload", load_artifact)
+    api = CollectAPI()
+    result = collect(api, data, parent_plan, current_recovery_run=456,
+                     out=tmp_path / "full")
+    assert result["episode_count"] == 780 * 3 * 3
+    assert result["parent_success_count"] == 233
+    assert result["recovered_parent_count"] == 1
+    assert len(result["artifacts"]) == 233 + 5
+    assert "c100-g00" not in result["artifacts"]
+    api.recovered.pop()
+    with pytest.raises(ValueError, match="incomplete recovery wave"):
+        collect(api, data, parent_plan, current_recovery_run=456,
+                out=tmp_path / "missing")
