@@ -11,7 +11,7 @@ python scripts/export_research_evidence.py
 Default output `docs/research/generated/`:
 
 - `research-evidence-package.json` — target, governance, current conclusion, flattened experiment, invalidated run을 포함한 machine-readable aggregate
-- `research-experiments.csv` — table-ready experiment/provenance/metric rows
+- `research-experiments.csv` — 논문 표 작성에 사용할 수 있는 실험·출처·지표 행
 - `invalidated-runs.csv` — model-quality evidence로 인용하면 안 되는 invalid/pre-result technical run
 - `research-evidence-table.md` — compact human-readable experiment table
 
@@ -74,9 +74,9 @@ Evidence package의 한계:
 
 Active 0.14 cycle 동안 package를 재생성할 수 있지만 final paper table은 active 또는 infrastructure-invalid run을 scientific evidence로 취급해서는 안 됩니다. 현재 closure path:
 
-- terminal #431 corrective aggregate와 preregistered gate
-- terminal #432 large held-out generalization result
-- terminal #424 final-answer factual/value/unit/provenance result
+- #431 교정 검색의 최종 집계와 사전 등록 게이트 판정
+- #432 대규모 홀드아웃 일반화 평가의 최종 결과
+- #424 최종 답변의 사실·수치·단위·출처 정확도 평가 결과
 - field-level line을 paper에 포함한다면 terminal #510 runtime qualification과 successor projection result
 
 이전 operation-routing lineage의 historical calibration/blind work는 ledger 일부지만 위 frozen 0.14 held-out/final-answer evidence를 대체하지 않습니다. 모든 final table은 consumed/invalid run에서 semantic retuning 없이 canonical ledger와 immutable workflow/artifact provenance로 재구성 가능해야 합니다.
