@@ -15,6 +15,7 @@ import math
 import os
 import re
 import sys
+import zipfile
 from pathlib import Path
 from typing import Any
 
@@ -240,7 +241,7 @@ def plan(
         try:
             payload = _artifact_payload(api, artifact, f"{shard_id}.json")
             validate_shard(payload, corpus=corpus, catalog=catalog, task_ids=task_ids)
-        except (ValueError, KeyError, TypeError, IndexError, OSError) as exc:
+        except (ValueError, KeyError, TypeError, IndexError, OSError, zipfile.BadZipFile) as exc:
             invalid[shard_id] = type(exc).__name__
             continue
         successful.add(shard_id)
