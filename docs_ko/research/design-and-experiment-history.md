@@ -591,10 +591,10 @@ Canonical tracker: #200
 
 Related work items:
 
-- #196 — historical design/experiment backfill;
-- #197 — active 0.11 composite candidate;
-- #198 — freeze/calibration/blind confirmation;
-- #199 — follow-up paper evidence package.
+- 이슈 #196 — historical design/experiment backfill;
+- 이슈 #197 — active 0.11 composite candidate;
+- 이슈 #198 — freeze/calibration/blind confirmation;
+- 이슈 #199 — follow-up paper evidence package.
 
 At the start of a new session:
 
@@ -1020,7 +1020,7 @@ Motivation:
 
 - BGE-M3 리비전 `5617a9f...`
 - 스키마/행동 융합 가중치 **0.55 / 0.45**
-- #246의 엄격한 예산 6에 따른 route-local 임계값
+- 이슈 #246의 엄격한 예산 6에 따른 route-local 임계값
 - 승자 전용 rank-then-gate
 - rank-2 후순위 대체(fallthrough) 금지
 - 비교 허용오차(epsilon) **1e-6**:
@@ -1285,7 +1285,7 @@ false route 1% 이하 및 OOD 거부율 100%를 동시에 보존하면서 가장
 
 ### Near-domain channel
 
-- #275의 경로 조건별 명시적 미지원 작업 원형
+- 이슈 #275의 경로 조건별 명시적 미지원 작업 원형
 - maximum negative score;
 - 부정 사례와 원래 최상위 작업 간 부호 있는 상대 우위
 
@@ -1769,10 +1769,10 @@ Decision: direct generic reranker yes/no gating을 reject합니다. Quality가 �
 전송 규약이 호환되는 모델은 `SystemOneDecisionBackend`를 사용합니다. 그 외 타입 기반 모델은 먼저 `CallableDecisionBackend` / `--decision-callable`로 연결합니다. 새로운 모델을 시험한다는 이유만으로 코어에 모델 전용 연동을 영구적으로 추가할 필요는 없습니다.
 
 이 정책을 지원하는 인프라는 다음과 같이 병합됐습니다.
-- #291 / PR #292 — 범용 System One 백엔드;
-- #297 / PR #298 — 범용 System One 벤치마크 CLI;
-- #304 / PR #305 — 임의의 제한 결정 호출 함수를 벤치마크하는 경로. `c9678b95a6dc592a1c3b850a6aea8b1675ff94a4`로 병합;
-- #306 / PR #308 — 재사용 가능한 타사 `schemarouter.decision_backends` 진입점의 검색·로드, 벤치마크 플러그인 선택, 보안 문서 및 후보 레지스트리 검증. `e782ebb87f80cdb2cefe5a716f77f546cd6309b1`로 스쿼시 병합.
+- 이슈 #291 / PR #292 — 범용 System One 백엔드;
+- 이슈 #297 / PR #298 — 범용 System One 벤치마크 CLI;
+- 이슈 #304 / PR #305 — 임의의 제한 결정 호출 함수를 벤치마크하는 경로. `c9678b95a6dc592a1c3b850a6aea8b1675ff94a4`로 병합;
+- 이슈 #306 / PR #308 — 재사용 가능한 타사 `schemarouter.decision_backends` 진입점의 검색·로드, 벤치마크 플러그인 선택, 보안 문서 및 후보 레지스트리 검증. `e782ebb87f80cdb2cefe5a716f77f546cd6309b1`로 스쿼시 병합.
 
 최종 확장 계층 구조는 다음과 같습니다.
 1. System One 전송 규약 호환 제공자 → `SystemOneDecisionBackend`;
@@ -1845,7 +1845,7 @@ The numeric 0.11 target remains:
 
 근거:
 - 그룹별 OOF 및 동결된 학습 검증기는 DEV·동일 코퍼스에서 목표에 도달;
-- #287의 새로운 확인에서는 정확도 82.64% / 유사 도메인 거부율 93.23% / 잘못된 경로 6.02%로 하락;
+- 이슈 #287의 새로운 확인에서는 정확도 82.64% / 유사 도메인 거부율 93.23% / 잘못된 경로 6.02%로 하락;
 - 범용 Qwen3 기능 게이트(#289)와 고정된 Laya 네이티브 noul(#301) 모두 데이터 표면에 견고한 안전 경계를 제공하지 못함;
 - Laya의 직접 경로 선택(#293)은 지원 사례 Top-1 60.07%로 능력의 한계가 드러남.
 
@@ -1873,7 +1873,7 @@ permitted.
 
 - BGE-M3 원시 등록 Top-1만 경로 선택 권한을 유지;
 - 동결된 #299의 정확한 `supported_probability`를 거부 전용 근거로 재사용;
-- #299의 행별 Kev 요청 지연시간을 결합 지연시간 계산에 재사용;
+- 이슈 #299의 행별 Kev 요청 지연시간을 결합 지연시간 계산에 재사용;
 - Kev의 경로 선택과 선택 신뢰도는 무시;
 - 새로운 Kev 모델 호출은 금지;
 - 고정 전역 임계값 8개 유지;
@@ -1973,8 +1973,8 @@ validated fresh-confirmed manifest
 
 준비된 대체 워크플로는 더 이상 사용자가 UI에서 직접 클릭해야만 실행되는 구조가 아닙니다.
 
-- #314 / PR #315는 #299의 최종 산출물이 나올 때까지 비활성 상태로 유지합니다. 소스 워크플로 실행 `36366508183`과 정확한 산출물 ID를 지정한 `benchmarks/operation-routing-v4-bge-kev-noul-compose.activation.json`에 `activate=true`를 커밋하면 활성화할 수 있습니다. 워크플로는 행을 읽기 전에 출처 실행과 산출물 식별 정보를 다시 검증합니다.
-- #311 / PR #313은 Kev 계열이 승격 불가능해질 때까지 비활성 상태입니다. 활성화 표식에는 `activate=true`, `after_issue=299`, `reason="kev_family_non_promotable"`를 선언해야 합니다.
+- 이슈 #314 / PR #315는 #299의 최종 산출물이 나올 때까지 비활성 상태로 유지합니다. 소스 워크플로 실행 `36366508183`과 정확한 산출물 ID를 지정한 `benchmarks/operation-routing-v4-bge-kev-noul-compose.activation.json`에 `activate=true`를 커밋하면 활성화할 수 있습니다. 워크플로는 행을 읽기 전에 출처 실행과 산출물 식별 정보를 다시 검증합니다.
+- 이슈 #311 / PR #313은 Kev 계열이 승격 불가능해질 때까지 비활성 상태입니다. 활성화 표식에는 `activate=true`, `after_issue=299`, `reason="kev_family_non_promotable"`를 선언해야 합니다.
 
 워크플로 정의 자체를 커밋하더라도 push 필터가 활성화 표식 경로에만 반응하므로 모델 평가는 시작되지 않습니다. 이를 통해 준비 단계와 실증 근거의 사용을 분리하면서도 수동 Actions UI 없이 세션 재개 자동화를 이어갈 수 있습니다.
 
@@ -1990,8 +1990,8 @@ PR #316 was squash-merged as `fad004cdfce8e40c2119d3758ab47332d52e6253`.
 - `docs/research/operation-routing-freeze-protocol.md`.
 
 Canonical ownership boundary는 이제 documentation과 machine-readable governance에서 강제됩니다:
-- #197은 개발 적격성 평가 → 정확한 동결 → 새로운 중복 없는 확인 실험을 관리
-- #198은 검증된 `fresh-confirmed` 매니페스트가 있을 때만 시작하며 보정 → 일회성 블라인드 최종 평가를 관리
+- 이슈 #197은 개발 적격성 평가 → 정확한 동결 → 새로운 중복 없는 확인 실험을 관리
+- 이슈 #198은 검증된 `fresh-confirmed` 매니페스트가 있을 때만 시작하며 보정 → 일회성 블라인드 최종 평가를 관리
 
 
 ### Runtime parity infrastructure merged — #320
@@ -2021,9 +2021,9 @@ PR #320 was merged as `acaca1e14b2f387094100dde3e1186aa4520d01d`.
 The server log shows correct-but-slow reference PyTorch fallbacks for causal convolution and gated-delta kernels. 이 CPU/fp32 runtime은 impractical execution path로서 terminal이지만 negative model-quality evidence는 아닙니다.
 
 후속 조치:
-- #317의 6시간 제한 재시도는 실행하지 않은 채 종료;
-- #314/#315의 동결된 BGE+Kev 합성은 필수 행별 분석 자료가 없으므로 종료;
-- #313의 AnyJev CPU 실행은 추론 전에 종료;
+- 이슈 #317의 6시간 제한 재시도는 실행하지 않은 채 종료;
+- 이슈 #314/#315의 동결된 BGE+Kev 합성은 필수 행별 분석 자료가 없으므로 종료;
+- 이슈 #313의 AnyJev CPU 실행은 추론 전에 종료;
 - 향후 타입 기반 결정 연구는 250 ms 이하의 신뢰할 만한 운영 경로가 포함된 사전등록 런타임이 필요.
 
 다음 연구 방향은 지연시간을 처음부터 아키텍처 제약으로 설정한 경량 BGE 기본 기능과 오픈셋 근거로 돌아갔습니다.
@@ -2041,13 +2041,13 @@ CPU 제품 목표에 비해 계산 비용이 큰 자기회귀 타입 기반 결�
 ### #322 / PR #323 — offline composition PASS
 
 변경할 수 없는 출처 산출물:
-- #262 GTE 전용 복구: 워크플로 `36326745694`, 산출물 `10934337695`,
+- 이슈 #262 GTE 전용 복구: 워크플로 `36326745694`, 산출물 `10934337695`,
   다이제스트 `sha256:7881a3594ecdab6a242a946a60cfde14d64e3c452ec9d0956c9cfa75a1e0c748`;
-- #275 부정 기능 진단: 워크플로 `36352558325`, 산출물 `10942243493`,
+- 이슈 #275 부정 기능 진단: 워크플로 `36352558325`, 산출물 `10942243493`,
   다이제스트 `sha256:a831a35098b546c8003435ea04927fb8767aab1435320823ba4763e0b6608ae1`.
 
 동결된 합성 규칙:
-- #259의 엄격한 BGE 기준;
+- 이슈 #259의 엄격한 BGE 기준;
 - 원래 기준이 승인한 사례 중 최대 음성 점수 >=0.55, 우위 >=0.05인 경우에만 음성 거부권 적용;
 - 거부된 기준 승인 사례는 복구 대상으로 넘기지 않음;
 - 복구 시 잘못된 경로 예산 4를 가진 정확한 #262 GTE 전용 경로 규칙 사용;
@@ -2264,7 +2264,7 @@ ColBERT 실패 후 #332는 다른 질의 모델이나 레이블이 있는 개발
 - 별칭 뱅크에는 정규화된 엔드포인트 이름과 신뢰할 수 있는 `operation_aliases`만 포함;
 - 경로 마진·응집도 하한은 별칭의 leave-one-out 자체 응집도와 동일 도구 형제 엔드포인트 간 거리만으로 도출;
 - 고정 규칙군 A/B/C/D 네 가지를 정확히 평가;
-- #270/#287/#326의 새로운 표면은 제외.
+- 이슈 #270/#287/#326의 새로운 표면은 제외.
 
 정식 근거:
 - 워크플로 `36388641609`;
@@ -2997,8 +2997,8 @@ The canonical B1 evaluation contains 552 episodes:
 
 B1만으로는 일반적인 에이전트 작업 효용성을 입증할 수 없습니다.
 
-- #423은 작은 로컬 기준선을 넘어서 일반화하려면 같은 동결 벤치마크를 실질적으로 더 강한 도구 호출 에이전트에서 복제하도록 요구합니다.
-- #424는 최종 답변의 사실적 품질을 도구 호출 성공률에서 분리해 FULL과 압축 기능 문맥에서 필수 사실의 재현율, 환각, 숫자·단위 정확도 및 출처를 측정합니다.
+- 이슈 #423은 작은 로컬 기준선을 넘어서 일반화하려면 같은 동결 벤치마크를 실질적으로 더 강한 도구 호출 에이전트에서 복제하도록 요구합니다.
+- 이슈 #424는 최종 답변의 사실적 품질을 도구 호출 성공률에서 분리해 FULL과 압축 기능 문맥에서 필수 사실의 재현율, 환각, 숫자·단위 정확도 및 출처를 측정합니다.
 
 연구의 최종 목표는 더 나은 개방 집합 임계값을 찾는 것이 아닙니다. 타입 기반 기능 검색 기반 계층이 통제된 환경과 이후 현실적인 조건에서 후속 에이전트의 효용, 효율성, 안전성을 개선하는지 확인하는 것입니다.
 
@@ -3012,10 +3012,10 @@ B1만으로는 일반적인 에이전트 작업 효용성을 입증할 수 없�
 두 번째 설계 수준 수정도 승인된 집계 전에 동결했습니다. 동일한 23개 의미 작업을 네 가지 카탈로그 크기로 반복하므로, 대응 쌍의 불확실성을 92개 작업×카탈로그 행이 각각 독립적이라고 가정하지 않고 `task_id` 클러스터 단위로 부트스트랩합니다. 이는 의사 반복을 방지합니다. 따라서 B1의 비열등성 허용치 -2%p는 기술적인 상태 점검용 설명 지표로만 해석하고, 모집단 수준 추론에 필요한 더 큰 독립 홀드아웃 작업 모집단은 #432에서 준비합니다.
 
 The staged 0.14 successors are:
-- #428 public typed Top-K retrieval API;
-- #430 adaptive shortlist depth;
-- #431 execution-state-aware corrective re-retrieval;
-- #432 independent held-out generalization surface.
+- 이슈 #428 public typed Top-K retrieval API;
+- 이슈 #430 adaptive shortlist depth;
+- 이슈 #431 execution-state-aware corrective re-retrieval;
+- 이슈 #432 independent held-out generalization surface.
 
 어느 실험도 B1의 개별 실패 행을 근거로 동결된 B1 과제 표면을 다시 작성할 수 없습니다.
 
