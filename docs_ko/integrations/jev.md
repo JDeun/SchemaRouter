@@ -12,6 +12,8 @@ pip install "schemarouter[jev]"
 
 Bridge는 optional `jev` extra로 배포되며 현재 `typesafe-sdk>=0.7,<1`을 지원합니다.
 
+API 키는 코드나 모델의 질의·의사결정 context에 직접 삽입하지 말고, 공식 SDK가 읽는 `TYPESAFE_API_KEY` 환경 변수로 설정합니다.
+
 ```bash
 export TYPESAFE_API_KEY="..."
 ```

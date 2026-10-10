@@ -10,6 +10,8 @@ on:
       - 'scripts/audit_korean_translation_coverage.py'
       - 'scripts/report_bilingual_coverage.py'
       - 'scripts/report_translation_semantic_risks.py'
+      - 'scripts/audit_translation_semantic_sections.py'
+      - 'audits/ko-semantic-section-review-2026-10-10.json'
       - '.github/workflows/korean-translation-coverage.yml'
   schedule:
     - cron: '43 4 * * 1'
@@ -20,9 +22,12 @@ on:
       - 'scripts/audit_korean_translation_coverage.py'
       - 'scripts/report_bilingual_coverage.py'
       - 'scripts/report_translation_semantic_risks.py'
+      - 'scripts/audit_translation_semantic_sections.py'
+      - 'audits/ko-semantic-section-review-2026-10-10.json'
       - 'tests/test_bilingual_coverage_report.py'
       - 'tests/test_bilingual_docs_integrity.py'
       - 'tests/test_translation_semantic_risks.py'
+      - 'tests/test_translation_semantic_sections.py'
       - '.github/workflows/korean-translation-coverage.yml'
   workflow_dispatch:
 
@@ -41,7 +46,7 @@ jobs:
       - name: Check full-corpus audit regression tests
         run: |
           python -m pip install "pytest>=8,<10" "pytest-asyncio>=0.24,<2"
-          python -m pytest -q tests/test_bilingual_docs_integrity.py tests/test_bilingual_coverage_report.py tests/test_translation_semantic_risks.py
+          python -m pytest -q tests/test_bilingual_docs_integrity.py tests/test_bilingual_coverage_report.py tests/test_translation_semantic_risks.py tests/test_translation_semantic_sections.py
       - name: Generate all-document EN/KO coverage evidence
         run: |
           python -m scripts.report_bilingual_coverage \
@@ -52,6 +57,15 @@ jobs:
         run: |
           python -m scripts.report_translation_semantic_risks --json-out translation-semantic-risks.json --max-show 90
           echo 'Literal-risk scan is advisory, not a semantic certification.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Check per-section translation omission and negation risk
+        run: |
+          python -m scripts.audit_translation_semantic_sections --json-out translation-section-risks.json
+          echo "Per-section triage is not a semantic certificate." >> "$GITHUB_STEP_SUMMARY"
+      - name: Gate new or stale semantic risk findings on editorial review
+        run: |
+          python -m scripts.audit_translation_semantic_sections \
+            --review-ledger audits/ko-semantic-section-review-2026-10-10.json \
+            --strict --max-show 0
       - name: Publish audit evidence; findings do not falsely imply translation completion
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -60,6 +74,7 @@ jobs:
             korean-translation-coverage.json
             korean-translation-coverage.md
             translation-semantic-risks.json
+            translation-section-risks.json
           retention-days: 90
       - name: Strict gate on explicit manual verification only
         if: github.event_name == 'workflow_dispatch'
