@@ -110,7 +110,7 @@ Proposed adopter가 research history를 읽을 필요가 없도록 다음을 제
 - Python/runtime/hardware
 - original model-visible tool 수
 - shortlisted tool 수
-- full vs bounded serialized schema/context size
+- 전체 도구 노출 대비 제한된 도구 노출에서의 직렬화된 스키마·컨텍스트 크기
 - test request의 required-tool/capability recall
 - task completion 또는 explicit failure
 - added routing latency
