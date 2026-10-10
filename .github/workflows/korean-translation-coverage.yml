@@ -10,9 +10,12 @@ on:
       - 'scripts/audit_korean_translation_coverage.py'
       - 'scripts/report_bilingual_coverage.py'
       - 'scripts/report_translation_semantic_risks.py'
+      - 'scripts/report_korean_english_prose.py'
       - 'scripts/audit_translation_semantic_sections.py'
       - 'audits/ko-semantic-section-review-2026-10-10.json'
       - 'audits/ko-security-policy-review-2026-10-10.json'
+      - 'audits/ko-targeted-contract-review-2026-10-10.json'
+      - 'audits/ko-english-prose-review-2026-10-10.json'
       - 'audits/ko-research-translation-followup-2026-10-10.json'
       - '.github/workflows/korean-translation-coverage.yml'
   schedule:
@@ -24,9 +27,12 @@ on:
       - 'scripts/audit_korean_translation_coverage.py'
       - 'scripts/report_bilingual_coverage.py'
       - 'scripts/report_translation_semantic_risks.py'
+      - 'scripts/report_korean_english_prose.py'
       - 'scripts/audit_translation_semantic_sections.py'
       - 'audits/ko-semantic-section-review-2026-10-10.json'
       - 'audits/ko-security-policy-review-2026-10-10.json'
+      - 'audits/ko-targeted-contract-review-2026-10-10.json'
+      - 'audits/ko-english-prose-review-2026-10-10.json'
       - 'audits/ko-research-translation-followup-2026-10-10.json'
       - 'tests/test_bilingual_coverage_report.py'
       - 'tests/test_bilingual_docs_integrity.py'
@@ -34,6 +40,8 @@ on:
       - 'tests/test_translation_semantic_sections.py'
       - 'tests/test_korean_security_policy_review.py'
       - 'tests/test_korean_research_translation_followup.py'
+      - 'tests/test_korean_english_prose.py'
+      - 'tests/test_korean_targeted_contracts.py'
       - '.github/workflows/korean-translation-coverage.yml'
   workflow_dispatch:
 
@@ -52,7 +60,7 @@ jobs:
       - name: Check full-corpus audit regression tests
         run: |
           python -m pip install "pytest>=8,<10" "pytest-asyncio>=0.24,<2"
-          python -m pytest -q tests/test_bilingual_docs_integrity.py tests/test_bilingual_coverage_report.py tests/test_translation_semantic_risks.py tests/test_translation_semantic_sections.py tests/test_korean_security_policy_review.py tests/test_korean_research_translation_followup.py
+          python -m pytest -q tests/test_bilingual_docs_integrity.py tests/test_bilingual_coverage_report.py tests/test_translation_semantic_risks.py tests/test_translation_semantic_sections.py tests/test_korean_security_policy_review.py tests/test_korean_research_translation_followup.py tests/test_korean_english_prose.py tests/test_korean_targeted_contracts.py
       - name: Generate all-document EN/KO coverage evidence
         run: |
           python -m scripts.report_bilingual_coverage \
@@ -63,6 +71,17 @@ jobs:
         run: |
           python -m scripts.report_translation_semantic_risks --json-out translation-semantic-risks.json --max-show 90
           echo 'Literal-risk scan is advisory, not a semantic certification.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Report suspicious English prose outside code and citations
+        run: |
+          python -m scripts.report_korean_english_prose --json-out korean-prose-leakage.json --max-show 50
+          echo 'English prose detections are advisory, not a translation certificate.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Gate unreviewed English prose on exact Korean blob and source line
+        run: |
+          python -m scripts.report_korean_english_prose \
+            --json-out korean-prose-leakage.json \
+            --review-ledger audits/ko-english-prose-review-2026-10-10.json \
+            --strict --max-show 0
+          echo 'Passing this gate is NOT a 147-page semantic translation certificate.' >> "$GITHUB_STEP_SUMMARY"
       - name: Check per-section translation omission and negation risk
         run: |
           python -m scripts.audit_translation_semantic_sections --json-out translation-section-risks.json
@@ -80,6 +99,7 @@ jobs:
             korean-translation-coverage.json
             korean-translation-coverage.md
             translation-semantic-risks.json
+            korean-prose-leakage.json
             translation-section-risks.json
           retention-days: 90
       - name: Strict gate on explicit manual verification only

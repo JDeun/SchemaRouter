@@ -2249,7 +2249,7 @@ Preregistered rule 중 standing 85 / 97 / 100 / 1 quality gate를 통과한 것�
 
 사후적인 희소 벡터 전용 진단도 승격 근거가 아니라는 조건으로 검토했습니다. 잘못된 경로 1% 이하 예산에서 지원 사례의 정확한 경로는 12.6736%만 유지됐습니다. 동일한 BGE-M3 희소 표현을 새로운 승격 시도로 반복하지 않도록 이 결과를 보존합니다.
 
-Decision: 이 cycle의 BGE-M3 native ColBERT/sparse operation-contract representation을 reject하고 종료합니다. Do not add a post-hoc second threshold, route-local exception, margin search, rank-2 fallback, or pseudo-route to repair it.
+판정: 이번 연구 주기의 BGE-M3 네이티브 ColBERT·희소 작업 계약 표현은 기각하고 종료합니다. 이 실패를 사후적으로 보정하기 위해 두 번째 임계값, 경로별 예외, 마진 탐색, 2순위 폴백 또는 가상 경로를 추가해서는 안 됩니다.
 
 이슈 #198은 계속 차단됩니다. 동작을 변경하는 후속 아키텍처가 있다면 튜닝이 허용된 개발 데이터와 레지스트리 정의 작업 의미만 사용해 별도로 사전 등록해야 합니다. 실패한 신규 확인 표면 #270/#287/#326은 영구적으로 튜닝에 사용할 수 없습니다.
 
@@ -2325,10 +2325,9 @@ Raw ranking capacity remained high:
 GTE 질의 및 채점 p95는 83.3360ms였고, 동결된 #259 BGE 직접 실행의 p95는
 132.1553ms였지만 품질 기준이 먼저 실패했기 때문에 결합 실행 지연시간에 대한 주장은 하지 않았습니다.
 
-Interpretation:
+해석:
 
-> 두 strong closed-set ranker의 agreement는 capability membership보다 selection confidence를 더 강하게 측정합니다. When an unsupported request is topically close to a registered operation,
-> 두 순위 모델 모두 동일한 잘못된 실행 경로를 높은 확신으로 선택할 수 있습니다.
+> 두 개의 강한 폐집합 순위기가 합의한다는 사실은 기능 지원 여부보다 선택에 대한 확신을 더 잘 반영합니다. 미지원 요청이 등록된 작업과 주제상 가까우면 두 순위 모델 모두 같은 잘못된 실행 경로를 높은 확신으로 선택할 수 있습니다.
 
 해당 합의 규칙은 종료됐으며 결과 확인 후 점수·마진 임계값을 추가하지 않습니다.
 
@@ -2336,7 +2335,7 @@ Interpretation:
 
 0.11 cycle은 promoted production-target candidate 없이 종료됩니다.
 
-The standing target was:
+기존 승인 목표는 다음과 같았습니다.
 - supported exact >=85%;
 - near-domain unsupported rejection >=97%;
 - OOD rejection =100%;
@@ -2602,13 +2601,9 @@ digest `sha256:6b25f94698650175475a4c7339526298e7582b1be43366a8c695cfeecdcf9aaa`
 
 Interpretation:
 
-Authority design 자체는 동작했습니다. Ontology evidence를 negative-only signal로 안전하게 제한할 수 있었고 이 exact rule은 raw-correct supported winner를 하나도 veto하지 않았습니다. 실패 원인은 precision이 아니라 recall입니다. Requiring
-독립된 근거들이 정확히 같은 미지원 최하위 기능에 동의하도록 요구하는 조건은 오픈셋
-membership.
+권한 경계 설계 자체는 유효했습니다. 온톨로지 근거를 거부 전용 신호로 안전하게 제한할 수 있었고, 이 정확한 규칙은 원래 경로를 올바르게 찾은 지원 요청을 한 건도 거부하지 않았습니다. 실패한 지표는 정밀도가 아니라 재현율입니다. 독립된 근거가 정확히 동일한 미지원 하위 기능을 가리켜야 한다는 조건은 오픈셋 소속성 판단에 지나치게 엄격합니다.
 
-Decision: exact agreement rule을 terminal reject합니다. No failed row is used to add phrases,
-원형을 다시 작성하거나 임계값을 조정하거나 경로별 예외를 만들 수 없습니다. 이미 생성된
-confirmation corpus remains unopened.
+판정: 정확한 일치 규칙을 최종 기각합니다. 실패한 사례의 개별 행을 이용해 문구를 추가하거나, 프로토타입을 다시 작성하거나, 임계값을 조정하거나, 경로별 예외를 만들지 않습니다. 이미 생성된 확인용 데이터셋은 개봉하지 않습니다.
 
 
 ## 58. #363 / PR #364 — 기능 집합 소속성 합의는 재현율을 개선했지만 여전히 불충분
@@ -2656,14 +2651,12 @@ DEV evaluation:
 
 이슈 #358과 비교하면 set membership이 veto recall을 크게 높였지만 같은 projection family는 충분한 open-set coverage를 제공하지 못했고 correct supported winner를 해치기 시작했습니다.
 
-Decision: terminal reject합니다. No membership-combination diagnostic or failed row is used to tune
-이 개발 집합에서 다른 규칙을 더 시험하지 않으며, 동결된 확인 데이터는 개봉하지 않습니다. 다음 후보는 실질적으로 다른 의미적 기능 소속성 근거를 사용해야 합니다.
+판정: 최종 기각합니다. 기능 소속성 결합에 대한 진단 결과나 실패한 사례의 개별 행을 사용해 이 개발 집합에서 다른 규칙을 조정하지 않습니다. 동결된 확인 데이터는 개봉하지 않습니다. 다음 후보는 실질적으로 다른 의미적 기능 소속성 근거를 사용해야 합니다.
 
 
 ## 59. #371 / PR #372 — 외부 다국어 제로샷 OUTSIDE 레이블 소속성 기각
 
-이슈 #371은 BGE/MiniLM 온톨로지 투표 계열을 종료한 뒤 실질적으로 다른 의미 근거를 도입했습니다. 동결된 BGE-M3가 유일한 긍정 경로 선택기로 남았고 독립적으로 사전 학습한 다국어 제로샷 분류기는 그 경로를 보존하거나 거부하는 것만 가능했습니다.
-`NO_ROUTE`.
+이슈 #371은 BGE/MiniLM 온톨로지 투표 계열을 종료한 뒤 실질적으로 다른 의미 근거를 도입했습니다. 동결된 BGE-M3가 유일한 긍정 경로 선택기로 남았고 독립적으로 사전 학습한 다국어 제로샷 분류기는 해당 경로를 유지하거나 `NO_ROUTE`로 거부하는 것만 가능했습니다.
 
 기준 도구마다 후보 레이블 집합은 다음으로 구성됐습니다.
 - 등록된 각 작업 세부 기능에 대한 고정 설명 레이블 하나;

@@ -73,26 +73,26 @@ Cross-document OpenAPI `$ref` fetching은 기본적으로 비활성화됩니다.
 
 ### Observability
 
-Run-event argument와 result payload는 기본적으로 redaction됩니다.
+실행 이벤트의 인수와 결과 본문은 기본적으로 민감값을 가립니다.
 
-`RunConfig(include_payloads=True)`는 user data, API response, identifier 또는 기타 sensitive information을 direct event consumer에 노출할 수 있습니다. Destination이 신뢰되고 적절한 retention control이 있을 때만 payload tracing을 활성화하십시오.
+`RunConfig(include_payloads=True)`를 사용하면 사용자 데이터, API 응답, 식별자 또는 기타 민감정보가 이벤트를 직접 받는 소비자에게 노출될 수 있습니다. 수신 대상을 신뢰할 수 있고 적절한 보존 정책이 마련된 경우에만 본문 기록을 활성화하십시오.
 
-Optional OpenTelemetry exporter는 더 엄격합니다. Structural attribute는 export하지만 underlying event stream이 payload를 허용했더라도 argument value, result payload, RunConfig metadata, tag, exception message는 export하지 않습니다.
+선택적 OpenTelemetry 내보내기 기능은 더 엄격합니다. 구조적 속성만 내보내며, 원본 이벤트 스트림에서 본문 기록을 허용했더라도 인수 값, 결과 본문, RunConfig 메타데이터, 태그 및 예외 메시지는 내보내지 않습니다.
 
 영구 실행 추적은 전달받은 `RunEvent` 메시지를 그대로 저장합니다. 기본 런타임 설정에서는 인수 값과 결과 본문이 가려진 상태로 유지됩니다. `RunConfig(include_payloads=True)`를 사용하면 해당 값이 디스크에 기록될 수 있으므로 애플리케이션의 접근 제어, 저장 시 암호화, 백업 및 보존 정책을 적용해야 합니다. SchemaRouter 자체는 SQLite 추적 데이터베이스를 암호화하지 않습니다.
 
 ### 승인, 예산 및 재시도
 
-Local execution policy는 첫 번째 side-effect gate입니다. Application은 non-read-only 또는 모든 call에 대해 trusted sync/async approval callback을 추가로 요구할 수 있습니다. Callback 누락, negative decision, callback failure는 execution을 거부합니다.
+로컬 실행 정책은 부작용이 있는 작업의 첫 번째 승인 관문입니다. 애플리케이션은 읽기 전용이 아닌 호출이나 모든 호출에 신뢰된 동기·비동기 승인 콜백을 추가로 요구할 수 있습니다. 필요한 콜백이 없거나 콜백이 거부하거나 실패하면 실행을 거부합니다.
 
-Per-run budget은 logical call, total attempt, remote attempt, elapsed time, per-tool call, application-defined cost unit을 제한합니다. Retry attempt는 invoker 실행 전에 attempt/remote/cost budget을 소비하며 retry backoff는 남은 elapsed-time budget으로 제한됩니다. Async approval callback과 execution hook도 남은 시간으로 제한되고 synchronous trusted callback은 반환 직후 검사됩니다. Budget refusal과 schema contract violation은 retry하지 않습니다.
+실행 단위 예산은 논리적 호출 수, 전체 시도 수, 원격 시도 수, 경과 시간, 도구별 호출 수, 애플리케이션이 정의한 비용 단위를 제한합니다. 재시도는 실행기를 호출하기 전에 시도·원격·비용 예산을 소모하며, 재시도 대기 시간도 남은 경과 시간 예산을 넘길 수 없습니다. 비동기 승인 콜백과 실행 훅에도 남은 시간 제한을 적용하고, 신뢰된 동기 콜백은 반환 직후 경과 시간을 확인합니다. 예산 초과로 거부된 호출과 스키마 계약 위반은 재시도하지 않습니다.
 
-Automatic retry는 trusted local code가 non-read-only operation retry를 명시적으로 opt-in하지 않는 한 read-only로 분류된 endpoint로 제한됩니다. Built-in OpenAPI/OPTIMADE HTTP invoker는 보수적인 transient status만 retry하고 다른 HTTP error와 deterministic response-contract failure에는 즉시 실패합니다. Trusted custom invoker는 `NonRetryableInvocationError`를 발생시켜 안전하게 복구할 수 없는 failure의 retry를 막을 수 있습니다.
+자동 재시도는 신뢰된 로컬 코드가 읽기 전용이 아닌 작업의 재시도를 명시적으로 허용하지 않는 한, 읽기 전용으로 분류된 엔드포인트로 제한됩니다. 기본 제공 OpenAPI/OPTIMADE HTTP 실행기는 보수적으로 선정한 일시적 장애 상태 코드에서만 재시도하며, 그 밖의 HTTP 오류나 결정적인 응답 계약 위반에서는 즉시 실패합니다. 신뢰된 사용자 지정 실행기는 안전하게 복구할 수 없는 오류에서 `NonRetryableInvocationError`를 발생시켜 재시도를 막을 수 있습니다.
 
 ### 신뢰된 실행 훅
 
-Before/after execution hook은 trusted local executable code이며 redacted telemetry가 아닙니다.
-Before hook은 validated argument value를, after hook은 final projected result payload를 볼 수 있습니다. 해당 data를 신뢰할 수 없는 remote/third-party callback에는 연결하지 마십시오.
+실행 전후 훅은 신뢰된 로컬 실행 코드이며, 민감값을 제거한 원격 측정 데이터가 아닙니다.
+실행 전 훅은 검증된 인수 값을, 실행 후 훅은 최종 투영된 결과 본문을 볼 수 있습니다. 이러한 데이터를 신뢰할 수 없는 원격 또는 제3자 콜백에 전달하지 마십시오.
 
 훅은 분리된 모델 스냅샷을 받으며 실행할 호출이나 반환 결과를 변경할 수 없습니다. `None`이 아닌 훅 반환값은 거부됩니다. 훅에서 예외가 발생하면 안전하게 중단합니다. 특히 **실행 후 훅의 실패는 재시도 가능한 도구 실행 실패로 분류하지 않으므로**, 관측·미들웨어 장애 때문에 이미 성공한 호출을 반복 실행하지 않습니다.
 
@@ -108,7 +108,7 @@ Amendment에서도 fingerprint는 변경되므로 stale-binding 및 stale-plan p
 
 ### 타사 어댑터 플러그인
 
-Installed entry point는 local executable code입니다. SchemaRouter는 import 없이 plugin metadata를 inspect할 수 있지만 발견된 plugin을 auto-load하지 않습니다. 실제 import에는 trusted application code가 제공한 명시적인 non-empty allowlist가 필요합니다. Remote content와 model output은 import할 installed plugin을 선택할 수 없습니다.
+설치된 진입점(entry point)은 로컬에서 실행할 수 있는 코드입니다. SchemaRouter는 플러그인을 가져오지 않고 메타데이터만 확인할 수 있지만, 발견한 플러그인을 자동으로 불러오지는 않습니다. 실제 코드 가져오기에는 신뢰된 애플리케이션 코드가 제공한 비어 있지 않은 명시적 허용 목록이 필요합니다. 외부 콘텐츠나 모델 출력은 불러올 플러그인을 선택할 수 없습니다.
 
 ### 타사 의사결정 백엔드 플러그인
 

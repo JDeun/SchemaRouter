@@ -37,6 +37,20 @@ def test_frozen_stop_rules_and_negative_results_are_not_lost() -> None:
     assert "모델 품질이 나쁘다는 실험 증거는 아닙니다" in history
     assert "실패한 신규 확인 데이터" in history
     assert "모든 지원 사례에서 올바른 도구" in history
+    assert "두 번째 임계값, 경로별 예외, 마진 탐색" in history
+    assert "두 개의 강한 폐집합 순위기가 합의" in history
+    assert "실패한 사례의 개별 행을 이용해 문구를 추가" in history
+    assert "기능 소속성 결합에 대한 진단 결과나 실패한 사례" in history
+    assert "확인용 데이터셋은 개봉하지 않습니다" in history
+    assert "유지하거나 `NO_ROUTE`로 거부" in history
+    for untranslated_clause in (
+        "Do not add a post-hoc second threshold",
+        "When an unsupported request is topically close",
+        "No failed row is used to add phrases",
+        "No membership-combination diagnostic or failed row",
+    ):
+        assert untranslated_clause not in history
+
     for untranslated in (
         "Do not continue with finer scalar thresholds",
         "The server log shows correct-but-slow",

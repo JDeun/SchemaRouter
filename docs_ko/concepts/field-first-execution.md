@@ -35,7 +35,7 @@ Local `FieldSpec`이 known semantic equivalence를 선언합니다. Canonical lo
 
 ## Unit metadata는 field semantics에 따라 optional
 
-`FieldSpec.unit`은 general optional contract입니다.
+`FieldSpec.unit`은 특정 arXiv·웹 소스만을 위한 예외가 아니라, 모든 제공자에 적용하는 선택적 필드 계약입니다. 물리량이나 그 밖에 명시적으로 단위를 갖는 값에만 단위를 선언해야 하며, 단위가 없는 필드는 출처나 접근 방식에 관계없이 허용됩니다.
 
 ```text
 paper abstract / title / snippet   -> string, unit=None
@@ -47,7 +47,7 @@ dimensionless score or ratio      -> number, unit=None
 physical quantity                 -> number/array, unit="..." when declared
 ```
 
-OpenAPI/MCP/OPTIMADE/Python/documentation adapter/plugin 모두 unitless field를 노출할 수 있습니다. Source type이 unit 존재 여부를 결정하지 않습니다.
+OpenAPI/MCP/OPTIMADE/Python/문서 기반 어댑터 및 승인된 플러그인 모두 단위가 없는 필드를 제공할 수 있습니다. 단위의 유무는 제공자의 유형이 아니라 해당 필드의 계약으로 결정합니다.
 
 Global `EvidenceRequirements(units=True)`를 명시하면 selected answer field 모두 unit evidence를 만족해야 합니다. Mixed request는 semantic field별 evidence를 지정할 수 있습니다.
 
@@ -61,7 +61,7 @@ PlanRequest(
 )
 ```
 
-Materials route의 `band_gap`에는 unit metadata가 필요하지만 arXiv `abstract`는 unitless여도 됩니다. Field-specific evidence는 trusted `FieldSpec.semantic_id`로 매칭하며 선언이 없으면 field name을 사용합니다. Execution 시 evidence를 다시 검사하고 compiled call은 **required** evidence와 **available** route evidence를 분리하므로 forged/edited `ToolCall`이 flag 하나로 authority를 얻을 수 없습니다.
+Materials route의 `band_gap`에는 unit metadata가 필요하지만 arXiv `abstract`는 unitless여도 됩니다. 필드별 증거 요건은 신뢰된 `FieldSpec.semantic_id`를 기준으로 매칭하며, 의미 식별자가 없을 때만 필드 이름을 사용합니다. 제공자마다 필드 이름이 달라도 동일한 의미적 요건을 충족할 수 있지만 모델이 임의로 매핑을 작성하도록 맡기지 않습니다. Execution 시 evidence를 다시 검사하고 compiled call은 **required** evidence와 **available** route evidence를 분리하므로 forged/edited `ToolCall`이 flag 하나로 authority를 얻을 수 없습니다.
 
 ## Heterogeneous multi-source field requirement
 

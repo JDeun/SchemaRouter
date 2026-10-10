@@ -76,7 +76,7 @@ SchemaRouter alpha, beta, release candidate 또는 stable tag를 promote하기 �
 
 ## Post-release
 
-- [ ] 게시 후 해당 정확한 버전의 PyPI 검증 통과
+- [ ] 게시 후 정확히 해당 버전의 PyPI 검증 작업이 wheel 및 sdist 설치, MCP/Jev/OpenTelemetry 각각의 독립 extra 설치, MCP/LangChain/LangGraph/LlamaIndex/Jev/OpenTelemetry 결합 extra 설치 조건을 모두 통과했는지 확인
 - [ ] `SHA256SUMS.txt`/`release-manifest.json` GitHub Release attach 및 exact source SHA 확인
 - [ ] docs example이 released package와 일치
 - [ ] compatibility regression을 next patch blocker로 기록
