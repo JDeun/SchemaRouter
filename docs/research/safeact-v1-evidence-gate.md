@@ -154,3 +154,16 @@ authored V1 contracts remain mandatory before scored execution.
 
 The existing eight-case Evidence-to-Action seed remains deterministic mechanism/regression evidence
 only and is not a SafeActBench result.
+
+## Prospective case-blind contract-selection amendment (#1268; unscored)
+
+The original draft's `case_coverage[case_id] -> expected action` field would
+require a case-specific target label not established by the pinned official
+public-ID-only listing. Such a label must **never** be backfilled from hidden
+gold or evaluator case manifests. The revised draft keeps **all 131 IDs** for
+pairing/cohort checks, with every `case_coverage` value set to `null`.
+The evidence gate now chooses a contract using the model's *actual proposed
+consequential tool identity* and independently pinned tool/policy requirements.
+Unknown actions are denied before record commit. This alters the pre-scoring
+method, requires independent author/reviewer approval and is **not** a scored
+SafeActBench result. See [issue #1268](https://github.com/JDeun/SchemaRouter/issues/1268).
