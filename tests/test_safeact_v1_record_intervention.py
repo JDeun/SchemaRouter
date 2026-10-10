@@ -169,3 +169,29 @@ def test_absent_action_has_zero_attempts_and_no_case_target(tmp_path: Path) -> N
     assert diag["denied_action_attempts"] == 0
     assert diag["authorized_action_dispatches"] == 0
 
+
+def test_known_alternative_tool_uses_its_own_evidence_requirements(
+    tmp_path: Path
+) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    # A second independently sourced tool needs different observed evidence.
+    second = {
+        **doc["contracts"][0],
+        "action": "credit_issue",
+        "required_observations": [
+            {"tool": "credit_read", "record_id": "$action.charge_id",
+             "fields": ["owner"]}
+        ],
+    }
+    doc["contracts"].append(second)
+    record["events"][-1]["tool"] = "credit_issue"
+    got = gate_official_v1_record(
+        record, case_id="SAB-V1-001", contract_document=doc,
+        public_source_root=tmp_path, actual_gateway_calls=calls,
+        verify_result=verifier,
+    )
+    diag = got["metadata"]["schemarouter_intervention"]
+    assert diag["model_action_attempts"] == 1
+    assert diag["authorized_action_dispatches"] == 0
+    assert diag["denied_action_attempts"] == 1
+    assert not any(e.get("type") == "CONSEQUENTIAL_CALL" for e in got["events"])
