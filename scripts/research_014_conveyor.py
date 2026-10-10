@@ -1186,11 +1186,25 @@ def run_controller(
                 "actions": actions,
                 "status": [_status_line("heldout", heldout)],
             }
-        elif any(terminal_failure(run) for run in recovery_runs):
+        elif terminal_failure(recovery_runs[0]):
+            failed_recovery = recovery_runs[0]
+            if failed_recovery.conclusion in {"failure", "timed_out"}:
+                if retry_infrastructure_failure(
+                    api,
+                    failed_recovery,
+                    execute=execute,
+                    actions=actions,
+                    label="heldout_microshard_recovery",
+                ):
+                    return {
+                        "state": "retrying_heldout_microshard_recovery",
+                        "actions": actions,
+                        "status": [_status_line("heldout-recovery", failed_recovery)],
+                    }
             return {
                 "state": "stopped_heldout_microshard_recovery_failure",
                 "actions": actions,
-                "status": [_status_line("heldout-recovery", recovery_runs[0])],
+                "status": [_status_line("heldout-recovery", failed_recovery)],
             }
         else:
             return {
