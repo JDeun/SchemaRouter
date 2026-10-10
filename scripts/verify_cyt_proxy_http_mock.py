@@ -17,7 +17,6 @@ from typing import Any
 
 async def probe() -> dict[str, Any]:
     import httpx
-
     from cyt.proxy.reverse import create_app
 
     captured: list[dict[str, Any]] = []
