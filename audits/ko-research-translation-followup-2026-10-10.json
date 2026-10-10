@@ -1,8 +1,19 @@
 {
   "schema_version": 1,
   "review_date": "2026-10-10",
-  "scope": "Targeted missing-English prose and operational-safety semantics in two research pages and two release pages; not 147-pair translation certification.",
+  "scope": "Targeted missing-English prose and trust-boundary semantics in architecture, two research pages and two release pages; not 147-pair translation certification.",
   "reviewed": [
+    {
+      "path": "architecture.md",
+      "en_blob": "e13e284e91f02d9b63eac07146a65afefc032248",
+      "ko_blob": "8914c0df53e5cc2a874cba81cc769b8169bd3cb9",
+      "reviewed_contracts": [
+        "Decision backend never owns ToolCall or credentials; Jev sees no DecisionOption.metadata",
+        "Provenance/license/unit/source-type evidence must pass local prechecks before a provider can preserve/veto",
+        "Execution hooks observe detached state but cannot transform calls/results or make retriable after-hook failures",
+        "RunEvent trace data preserves redacted defaults; include_payloads=True requires host-managed sensitive data protection"
+      ]
+    },
     {
       "path": "research/design-and-experiment-history.md",
       "en_blob": "27bdc35c44010cfd1c15d4a5702ed2b9ad6f9c5c",
