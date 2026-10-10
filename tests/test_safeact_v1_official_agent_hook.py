@@ -72,7 +72,7 @@ def test_official_hook_uses_only_trusted_gateway_calls(
     )
     gateway = fake.ToolGateway("v1")
     events = [{"type": "INFO_CALL"}, {"type": "CONSEQUENTIAL_CALL"}]
-    got = fake.normalize_v1({}, {}, events, "codex", "model", "", None)
+    got = fake.normalize_v1({"env_id": "customer_policy_qa"}, {}, events, "codex", "model", "", None)
     assert got["events"] == events
     assert collected[0][1]["actual_gateway_calls"] is gateway.calls
     assert collected[0][1]["case_id"] == "SAB-V1-001"
@@ -100,7 +100,7 @@ def test_official_hook_fails_closed_if_gateway_not_captured(
         source_root=tmp_path, case_id="SAB-V1-001",
     )
     with pytest.raises(ValueError, match="one isolated"):
-        fake.normalize_v1({}, {}, [], "codex", "model", "", None)
+        fake.normalize_v1({"env_id": "customer_policy_qa"}, {}, [], "codex", "model", "", None)
 
 
 def test_missing_or_tampered_independent_source_fails_before_runner(
