@@ -239,15 +239,10 @@ SchemaRouter는 다음을 분리합니다:
 - `ToolSpec.execution_metadata`: fingerprint 대상 transport/binding identity;
 - `ToolSpec.remote`: fingerprint 대상 local/remote authority classification.
 
-Built-in adapters mirror some values into ordinary metadata for backward-compatible inspection, but
-runtime code reads the fingerprinted contract fields. Legacy persisted built-in metadata is migrated
-into those fields during model validation. Schema/discovery provenance URLs remain descriptive when
-they do not determine invocation; only actual runtime targets belong in the execution contract.
+내장 어댑터는 이전 버전과 호환되는 조회를 위해 일부 값을 일반 `metadata`에도 복사하지만, 런타임 코드는 지문에 포함된 계약 필드를 읽습니다. 저장된 이전 형식의 내장 메타데이터는 모델 검증 시 해당 계약 필드로 이전됩니다. 호출 대상을 결정하지 않는 스키마·검색 출처 URL은 설명용 데이터로 유지하며, 실제 런타임 호출 대상만 실행 계약에 포함합니다.
 Credential이 포함된 runtime URL은 persist하지 않고 거부합니다.
 
-Planner-generated `ToolCall` values also pin the current tool fingerprint, so changing transport
-origin or local/remote classification invalidates an already-compiled plan even after a trusted
-rebind.
+계획기가 만든 `ToolCall`도 현재 도구 지문을 고정합니다. 따라서 전송 대상의 출처(origin)나 로컬·원격 분류가 변경되면, 신뢰된 재바인딩이 수행됐더라도 이미 컴파일된 계획은 무효화됩니다.
 
 ### 28. Parallel execution이 orchestration이 되어서는 안 된다
 
@@ -268,8 +263,7 @@ SchemaRouter는 provider redundancy를 bounded execution contract로 취급합�
 - 모든 alternative는 자체 schema/tool fingerprint, argument, field projection, evidence를 가집니다;
 - automatic fallback은 명시적인 read-only call로 제한;
 - runtime fallback은 일반 same-route retry 후 `InvocationUnavailableError`가 발생한 경우에만 수행됩니다;
-- validation, policy, approval, stale-state and deterministic 4xx/application failures never cause
-  fallback;
+- 검증·정책·승인·오래된 상태 관련 실패와 결정론적인 HTTP 4xx 또는 애플리케이션 오류는 폴백을 유발하지 않음;
 - primary invocation 전에 전체 fallback chain을 preflight.
 
 Access path가 서로 다른 name을 노출할 때 field alias가 local semantic bridge 역할을 합니다. Local contract로 semantic compatibility를 증명할 수 없다면 model에게 추측시키지 않고 fallback을 제외합니다.
@@ -319,8 +313,7 @@ Trusted adapter는 planned logical field를 `fields=...` 또는 OPTIMADE `respon
 29. Hook failure는 fail-closed하며 추가 tool invocation attempt를 만들지 않습니다.
 30. Schema compatibility analysis는 exact plan/binding fingerprint validation을 절대 우회하지 않습니다.
 31. Fine-grained policy rule은 trusted local configuration에만 존재하며 model이나 remote capability metadata가 제공할 수 없습니다.
-32. Structured planning explanations contain deterministic/runtime-visible signals only, not model
-    chain-of-thought.
+32. 구조화된 계획 설명에는 결정론적이거나 런타임에서 관측 가능한 신호만 포함하며 모델의 비공개 사고 과정은 포함하지 않습니다.
 33. Parallel execution은 모든 call이 명시적인 read-only로 preflight되어야 하며 concurrent call 전체가 하나의 run budget을 공유합니다.
 34. 일반 descriptive metadata는 policy authority를 부여하거나 built-in transport semantic을 변경할 수 없습니다. Execution-affecting value는 fingerprinted contract field에 존재합니다.
 35. Planner-generated call은 endpoint와 tool fingerprint를 모두 pin하며 tool fingerprint가 없는 remote/runtime-sensitive legacy call은 fail-closed합니다.

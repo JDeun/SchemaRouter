@@ -1,8 +1,8 @@
-# Compatibility testing
+# 호환성 검증
 
 SchemaRouter는 deterministic release gate와 external-service smoke test를 분리합니다.
 
-## Supported compatibility matrix
+## 지원 호환성 매트릭스
 
 Declared dependency range와 PR마다 CI가 증명하는 범위를 구분합니다. CI는 각 declared range 안에서 현재 resolve된 version을 설치하며 range 내 모든 historical version을 exhaustive test했다고 주장하지 않습니다.
 
@@ -29,7 +29,7 @@ Declared dependency range와 PR마다 CI가 증명하는 범위를 구분합니�
 
 Upper bound 확대/minimum 하향 전 relevant integration test를 target에 대해 통과시키고 release note에 문서화합니다.
 
-## Required CI
+## 필수 CI 검사
 
 모든 PR의 blocking CI:
 
@@ -44,21 +44,21 @@ Upper bound 확대/minimum 하향 전 relevant integration test를 target에 대
 - clean wheel/sdist install+quickstart
 - downstream venv에서 built wheel + separate adapter distribution discovery/load/schema/policy 검증
 - LangChain/LangGraph/LlamaIndex contract+examples
-- bounded candidate/field selection adversarial tests
-- Jev/Laya adapter tests without external/model download
-- Ollama mock HTTP adversarial
-- real MCP HTTP + stdio + client-factory
-- deterministic GraphQL/OData/OpenRPC
-- Materials Project/Crossref/Tavily provider-first tests
-- state retrieval, graph, snapshot, migration, decision-trace privacy
-- OTel in-memory exporter
+- 제한된 후보·필드 선택에 대한 적대적 입력 테스트
+- 외부 모델을 다운로드하지 않는 Jev/Laya 어댑터 테스트
+- Ollama 모의 HTTP 전송 적대적 테스트
+- 실제 MCP HTTP·stdio·클라이언트 팩토리 경계 테스트
+- 결정론적 GraphQL·OData·OpenRPC 테스트
+- Materials Project·Crossref·Tavily의 공급자 우선 등록 테스트
+- 상태 기반 검색·그래프·스냅샷·마이그레이션·결정 추적 개인정보 보호 테스트
+- 메모리 내 OpenTelemetry 내보내기 테스트
 - strict MkDocs
 
 Separate `Python Preview`는 3.15 RC를 bounded runtime으로 실행하며 visible signal이지만 release blocker가 아닙니다.
 
 Release workflow는 successful current-main CI를 소비한 뒤 tag/artifact를 resolve합니다. GitHub Release+PyPI 뒤 exact version을 wheel, forced sdist, isolated mcp/jev/otel, combined extras로 checkout 밖에서 재설치합니다. PyPI propagation은 bounded retry로 처리하며 다른 version을 허용하지 않습니다.
 
-## Integration maintenance policy
+## 통합 기능 유지보수 정책
 
 Core는 optional ecosystem 없이 import/run되어야 합니다. Integration은 lazy import+bounded range를 사용하고 metadata translation은 가능하지만 execution은 schema identity/policy/binding/validation을 통과해야 합니다. Declared range 내 upstream break가 생기면 temporary narrowing 가능하되 문서화합니다. New major는 dedicated CI 전 unsupported입니다. Public example/security invariant는 compatibility contract입니다.
 
@@ -66,7 +66,7 @@ Core는 optional ecosystem 없이 import/run되어야 합니다. Integration은 
 
 LangChain/LangGraph/LlamaIndex는 현재 main distribution optional extra로 유지합니다. Separate package는 independent cadence, material dependency pressure, upstream dedicated distribution requirement, thin translation layer를 넘어선 growth 중 하나가 발생할 때만 도입합니다. Jev/Laya/OTel도 같은 optional-extra 원칙입니다.
 
-## Native database live-acceptance tiers
+## 네이티브 데이터베이스 실사용 검증 등급
 
 두 evidence level:
 
