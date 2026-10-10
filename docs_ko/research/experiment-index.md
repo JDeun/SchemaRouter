@@ -67,56 +67,56 @@ Repository Git history는 계속 exhaustive engineering record 역할을 합니�
 
 | # | 실험 | 판정 | 가설 / 목적 | 근거 |
 | ---: | --- | --- | --- | --- |
-| 1 | `pre-0.8-no-route-sentinel-ablation` | **sentinel_removed** | An explicit none_of_the_above pseudo-option could improve empty-recall no-route discrimination. | [issue #87](https://github.com/JDeun/SchemaRouter/issues/87) · [`e41f57a044`](https://github.com/JDeun/SchemaRouter/commit/e41f57a044182deb374980c28d66863d637a691b) |
+| 1 | `pre-0.8-no-route-sentinel-ablation` | **sentinel_removed** | 명시적인 `none_of_the_above` 가상 선택지가 검색 후보가 비었을 때 경로 없음 판별을 개선하는지 평가 | [issue #87](https://github.com/JDeun/SchemaRouter/issues/87) · [`e41f57a044`](https://github.com/JDeun/SchemaRouter/commit/e41f57a044182deb374980c28d66863d637a691b) |
 
 ## 0.10-operation-contrastive-v1
 
 | # | 실험 | 판정 | 가설 / 목적 | 근거 |
 | ---: | --- | --- | --- | --- |
-| 1 | `0.10-contrastive-bge-v1` | **blind_final_passed_for_optional_profile** | Sibling-contrastive BGE operation-fit can improve supported operation routing while retaining near-domain unsupported rejection. | ledger / Git history |
+| 1 | `0.10-contrastive-bge-v1` | **blind_final_passed_for_optional_profile** | 형제 작업 간 대조를 활용하는 BGE 작업 적합도 평가가 유사 도메인의 미지원 요청 거부율을 보존하면서 지원 요청 라우팅을 개선할 수 있는지 평가 | ledger / Git history |
 
 ## 0.10-operation-cascade-v2
 
 | # | 실험 | 판정 | 가설 / 목적 | 근거 |
 | ---: | --- | --- | --- | --- |
-| 1 | `0.10-cheap-first-cascade-v2` | **rejected_on_calibration** | A MiniLM fast-path plus selective BGE reranking can reduce CPU latency while preserving preregistered quality floors. | ledger / Git history |
+| 1 | `0.10-cheap-first-cascade-v2` | **rejected_on_calibration** | MiniLM 우선 고속 경로와 선택적 BGE 재순위화로 사전 등록한 품질 하한을 유지하면서 CPU 지연시간을 줄일 수 있는지 평가 | ledger / Git history |
 
 ## 0.10-operation-graph-projection-v3
 
 | # | 실험 | 판정 | 가설 / 목적 | 근거 |
 | ---: | --- | --- | --- | --- |
-| 1 | `0.10-graph-projection-v3` | **rejected_on_fresh_calibration** | A typed schema graph can own routing authority while semantic signals provide bounded soft evidence, reducing latency without sacrificing quality/safety. | [PR #181](https://github.com/JDeun/SchemaRouter/pull/181) |
+| 1 | `0.10-graph-projection-v3` | **rejected_on_fresh_calibration** | 타입 기반 스키마 그래프가 경로 선택 권한을 유지하고 의미 신호는 제한된 보조 근거만 제공할 때 품질과 안전성을 해치지 않으면서 지연시간을 줄일 수 있는지 평가 | [PR #181](https://github.com/JDeun/SchemaRouter/pull/181) |
 
 ## 0.11-operation-routing-quality-v4
 
 | # | 실험 | 판정 | 가설 / 목적 | 근거 |
 | ---: | --- | --- | --- | --- |
-| 1 | `0.11-v4-fresh-baseline` | baseline_only | Fresh natural-language development data can expose the post-0.10 routing bottleneck without reusing consumed calibration/blind evidence. | [PR #187](https://github.com/JDeun/SchemaRouter/pull/187) |
-| 2 | `0.11-hierarchical-tool-operation` | rejected_on_development | Separating tool-domain selection from within-tool operation selection will improve exact-route accuracy while preserving rejection. | [PR #189](https://github.com/JDeun/SchemaRouter/pull/189) |
-| 3 | `0.11-accepted-operation-selector` | standalone_candidate_rejected_primitive_retained | If operation-fit already identifies a registered route, allowing that accepted route to control the single-call candidate will recover endpoint accuracy without changing the abste… | [PR #190](https://github.com/JDeun/SchemaRouter/pull/190) |
-| 4 | `0.11-stage-signal-diagnostics` | diagnostic_supports_multi_signal_boundary_design | Candidate-fit score geometry can reveal which supported misses are recoverable and whether a global similarity threshold can separate supported from near-domain unsupported reques… | [`1cf7efc261`](https://github.com/JDeun/SchemaRouter/commit/1cf7efc261b5bcb16b50a8794c8abbf84ed9265c) |
+| 1 | `0.11-v4-fresh-baseline` | baseline_only | 이미 소비한 보정·블라인드 근거를 재사용하지 않고 새 자연어 개발 데이터에서 0.10 이후의 라우팅 병목을 확인 | [PR #187](https://github.com/JDeun/SchemaRouter/pull/187) |
+| 2 | `0.11-hierarchical-tool-operation` | rejected_on_development | 도구 도메인 선택과 해당 도구 내 작업 선택을 분리해 미지원 요청 거부를 유지하면서 정확한 경로 선택률을 개선하는지 평가 | [PR #189](https://github.com/JDeun/SchemaRouter/pull/189) |
+| 3 | `0.11-accepted-operation-selector` | standalone_candidate_rejected_primitive_retained | 작업 적합성 검사로 이미 등록 경로를 확인한 경우 그 경로가 단일 호출 후보를 결정하도록 하여 선택 보류 규칙을 변경하지 않고 엔드포인트 정확도를 회복할 수 있는지 검토… | [PR #190](https://github.com/JDeun/SchemaRouter/pull/190) |
+| 4 | `0.11-stage-signal-diagnostics` | diagnostic_supports_multi_signal_boundary_design | 후보 적합성 점수의 분포를 분석해 회복 가능한 지원 요청 누락을 찾고 전역 유사도 임계값으로 지원 요청과 근접 도메인의 미지원 요청을 구분할 수 있는지 진단… | [`1cf7efc261`](https://github.com/JDeun/SchemaRouter/commit/1cf7efc261b5bcb16b50a8794c8abbf84ed9265c) |
 | 5 | `0.11-typed-evidence-infrastructure` | infrastructure_retained_for_next_candidate | 설계 및 평가 과정의 기록 | ledger / Git history |
-| 6 | `0.11-route-local-threshold-ablation` | rejected_on_development | Per-route pairwise minimum-score thresholds can recover open-set safety while preserving the operation-narrow supported-routing gain. | [PR #191](https://github.com/JDeun/SchemaRouter/pull/191) |
+| 6 | `0.11-route-local-threshold-ablation` | rejected_on_development | 경로별 쌍대 최소 점수 임계값이 작업 범위 제한으로 얻은 정확도 향상을 유지하면서 오픈셋 안전성을 회복할 수 있는지 평가 | [PR #191](https://github.com/JDeun/SchemaRouter/pull/191) |
 | 7 | `0.11-nli-boundary-superseded` | superseded_before_result_interpretation | 설계 및 평가 과정의 기록 | [PR #192](https://github.com/JDeun/SchemaRouter/pull/192) |
-| 8 | `0.11-pairwise-tool-hierarchy` | rejected_on_development | Pairwise tool ranking crossed the 70% supported gate but did not provide an open-set capability boundary and badly missed rejection/false-route gates. | [PR #193](https://github.com/JDeun/SchemaRouter/pull/193) |
-| 9 | `0.11-direct-multilingual-nli-boundary` | rejected_on_development | Conservative entailment thresholds improved unsupported rejection but collapsed supported recall; direct NLI is unsuitable as the operation selector/gate tested here. | [PR #194](https://github.com/JDeun/SchemaRouter/pull/194) |
+| 8 | `0.11-pairwise-tool-hierarchy` | rejected_on_development | 도구 쌍대 순위화가 지원 요청의 70% 기준은 넘겼지만 오픈셋 기능 경계를 제공하지 못했고 거부율·잘못된 경로 기준에서 크게 미달함 | [PR #193](https://github.com/JDeun/SchemaRouter/pull/193) |
+| 9 | `0.11-direct-multilingual-nli-boundary` | rejected_on_development | 보수적인 함의 판정 임계값은 미지원 요청 거부를 개선했지만 지원 요청 재현율을 크게 낮췄으므로 시험한 직접 NLI 방식을 작업 선택기·게이트로 사용하기 어려움 | [PR #194](https://github.com/JDeun/SchemaRouter/pull/194) |
 | 10 | `0.11-bounded-retrieve-rerank-architecture` | architecture_implemented_diagnostic_pending | 설계 및 평가 과정의 기록 | [PR #195](https://github.com/JDeun/SchemaRouter/pull/195) · [`90af3e1fce`](https://github.com/JDeun/SchemaRouter/commit/90af3e1fce3bf29f45fd3347c14afc2603b37d5e) |
 | 11 | `0.11-bounded-rerank-score-diagnostic` | ranking_headroom_validated_latency_optimization_required | 설계 및 평가 과정의 기록 | [PR #205](https://github.com/JDeun/SchemaRouter/pull/205) · [`f43535b6ef`](https://github.com/JDeun/SchemaRouter/commit/f43535b6ef0acbc5492b9791e6757e28a343d9fa) |
 | 12 | `0.11-winner-only-threshold-semantics` | mechanism_merged_into_active_research_stack | 설계 및 평가 과정의 기록 | [PR #208](https://github.com/JDeun/SchemaRouter/pull/208) |
 | 13 | `0.11-evidence-projector-active-stack` | infrastructure_merged_into_active_research_stack | 설계 및 평가 과정의 기록 | ledger / Git history |
 | 14 | `0.11-bounded-rerank-width-ablation` | selected_width_2_by_preregistered_smallest_passing_width_rule | 설계 및 평가 과정의 기록 | [PR #216](https://github.com/JDeun/SchemaRouter/pull/216) · [`9f4dbff423`](https://github.com/JDeun/SchemaRouter/commit/9f4dbff423cdcb9151d00d1b15586f9b3d766235) |
-| 15 | `0.11-joint-score-margin-boundary` | not_selected | Joint score+margin gating adds only ~0.35 percentage points at the same false-route budget, insufficient to justify a larger route-local tuning surface before width/latency optimi… | ledger / Git history |
-| 16 | `0.11-width2-winner-gate-executable` | rejected_on_development_latency_gate | A width-2 bounded semantic recall plus score-only BGE rank-then-gate boundary can satisfy the 0.11 development quality gates without material latency regression. | [PR #228](https://github.com/JDeun/SchemaRouter/pull/228) · [`fdaf3f77e9`](https://github.com/JDeun/SchemaRouter/commit/fdaf3f77e95b504e81739c69cd1d9889d36afabb) |
-| 17 | `0.11-cheap-action-only-evidence-diagnostic` | retain_as_cheap_bounded_selector_or_auxiliary_evidence_not_global_direct_fast_path | A cheap multilingual embedding over endpoint action names and trusted operation aliases can provide independent routing evidence at materially lower latency than BGE. | [PR #230](https://github.com/JDeun/SchemaRouter/pull/230) · [`521dcc65e0`](https://github.com/JDeun/SchemaRouter/commit/521dcc65e0269d68c76a372606f8d22b2ac57aa1) |
-| 18 | `0.11-action-guided-single-pair-bge-diagnostic` | rejected_on_supported_recall | Use cheap action-only evidence to choose one already-authorized width-2 candidate, then score only one BGE pair to remove CPU tail latency. | [issue #231](https://github.com/JDeun/SchemaRouter/issues/231) · [PR #232](https://github.com/JDeun/SchemaRouter/pull/232) |
-| 19 | `0.11-bounded-action-embedding-diagnostic` | rejected_on_open_set_supported_recall | Replace BGE inside width-2 authorized recall with cached action-only MiniLM embedding evidence. | [issue #233](https://github.com/JDeun/SchemaRouter/issues/233) · [PR #236](https://github.com/JDeun/SchemaRouter/pull/236) |
-| 20 | `0.11-minilm-dual-view-diagnostic` | rejected_backbone_capacity_insufficient | Use one MiniLM query embedding against cached schema/domain and action-only route views to separate ranking evidence from open-set confidence. | [issue #240](https://github.com/JDeun/SchemaRouter/issues/240) · [PR #241](https://github.com/JDeun/SchemaRouter/pull/241) |
-| 21 | `0.11-multilingual-embedding-backbone-screen` | bge_m3_selected_for_strict_open_set_optimization | Keep the dual-view routing architecture fixed and change only multilingual embedding backbone capacity. | [issue #242](https://github.com/JDeun/SchemaRouter/issues/242) · [PR #243](https://github.com/JDeun/SchemaRouter/pull/243) |
-| 22 | `0.11-gte-winner-bge-rejector` | rejected_on_supported_recall | Let high-capacity GTE choose one winner and use one BGE cross-encoder pair only as the unsupported-operation rejector. | [issue #244](https://github.com/JDeun/SchemaRouter/issues/244) · [PR #249](https://github.com/JDeun/SchemaRouter/pull/249) |
-| 23 | `0.11-bge-m3-budget6-executable-confirmation` | not_promoted_literal_freeze_missed_by_one_case | One supported papers.citations case scored ~1.35e-7 below its frozen threshold; all planner/direct parity and safety gates passed, but the literal 960-correct frozen projection re… | [issue #245](https://github.com/JDeun/SchemaRouter/issues/245) · [PR #247](https://github.com/JDeun/SchemaRouter/pull/247) |
-| 24 | `0.11-bge-m3-fine-fusion-strict` | no_fusion_weight_reached_85_percent_strict_target | Best preregistered strict point was 83.77% exact at 98.96% near-domain rejection and 0.93% false-route. No interpolation or out-of-grid retuning was permitted. | [issue #246](https://github.com/JDeun/SchemaRouter/issues/246) · [PR #248](https://github.com/JDeun/SchemaRouter/pull/248) · [`9d6f5bdc18`](https://github.com/JDeun/SchemaRouter/commit/9d6f5bdc18c933a35d4f8f9983c12c850ab9b0fb) |
+| 15 | `0.11-joint-score-margin-boundary` | not_selected | 동일한 잘못된 경로 허용량에서 점수·마진 결합 게이트의 이득은 약 0.35%포인트에 불과해 후보 폭·지연시간 최적화 전에 더 큰 경로별 조정 공간을 정당화하기 어려움… | ledger / Git history |
+| 16 | `0.11-width2-winner-gate-executable` | rejected_on_development_latency_gate | 후보 폭 2의 제한된 의미 검색과 점수 기반 BGE 순위 결정·게이트가 지연시간의 실질적인 악화 없이 0.11 개발 품질 기준을 충족할 수 있는지 평가 | [PR #228](https://github.com/JDeun/SchemaRouter/pull/228) · [`fdaf3f77e9`](https://github.com/JDeun/SchemaRouter/commit/fdaf3f77e95b504e81739c69cd1d9889d36afabb) |
+| 17 | `0.11-cheap-action-only-evidence-diagnostic` | retain_as_cheap_bounded_selector_or_auxiliary_evidence_not_global_direct_fast_path | 엔드포인트 작업명과 신뢰된 별칭만 사용하는 저비용 다국어 임베딩이 BGE보다 낮은 지연시간으로 독립적인 라우팅 근거를 제공할 수 있는지 진단 | [PR #230](https://github.com/JDeun/SchemaRouter/pull/230) · [`521dcc65e0`](https://github.com/JDeun/SchemaRouter/commit/521dcc65e0269d68c76a372606f8d22b2ac57aa1) |
+| 18 | `0.11-action-guided-single-pair-bge-diagnostic` | rejected_on_supported_recall | 저비용 작업명 근거로 이미 허용된 폭 2의 후보 하나를 고른 후 BGE 쌍 하나만 채점해 CPU 지연시간의 긴 꼬리를 줄이는지 평가 | [issue #231](https://github.com/JDeun/SchemaRouter/issues/231) · [PR #232](https://github.com/JDeun/SchemaRouter/pull/232) |
+| 19 | `0.11-bounded-action-embedding-diagnostic` | rejected_on_open_set_supported_recall | 후보 폭 2의 허용된 검색 단계에서 BGE를 캐시된 작업명 전용 MiniLM 임베딩 근거로 교체 | [issue #233](https://github.com/JDeun/SchemaRouter/issues/233) · [PR #236](https://github.com/JDeun/SchemaRouter/pull/236) |
+| 20 | `0.11-minilm-dual-view-diagnostic` | rejected_backbone_capacity_insufficient | 하나의 MiniLM 질의 임베딩을 캐시된 스키마·도메인 표현과 작업명 전용 경로 표현에 비교해 순위 근거와 오픈셋 신뢰도를 분리하는지 진단 | [issue #240](https://github.com/JDeun/SchemaRouter/issues/240) · [PR #241](https://github.com/JDeun/SchemaRouter/pull/241) |
+| 21 | `0.11-multilingual-embedding-backbone-screen` | bge_m3_selected_for_strict_open_set_optimization | 두 관점의 라우팅 아키텍처는 고정하고 다국어 임베딩 모델의 용량만 변경하여 비교 | [issue #242](https://github.com/JDeun/SchemaRouter/issues/242) · [PR #243](https://github.com/JDeun/SchemaRouter/pull/243) |
+| 22 | `0.11-gte-winner-bge-rejector` | rejected_on_supported_recall | 대용량 GTE로 최상위 경로 하나를 선택하고 BGE 크로스 인코더 쌍 하나를 미지원 작업 거부 판단에만 사용 | [issue #244](https://github.com/JDeun/SchemaRouter/issues/244) · [PR #249](https://github.com/JDeun/SchemaRouter/pull/249) |
+| 23 | `0.11-bge-m3-budget6-executable-confirmation` | not_promoted_literal_freeze_missed_by_one_case | 지원되는 `papers.citations` 사례 하나의 점수가 동결 임계값보다 약 1.35e-7 낮았음. 계획기·직접 호출 일치성과 안전성 기준은 통과했으나 정해진 960개 정답 기준은… | [issue #245](https://github.com/JDeun/SchemaRouter/issues/245) · [PR #247](https://github.com/JDeun/SchemaRouter/pull/247) |
+| 24 | `0.11-bge-m3-fine-fusion-strict` | no_fusion_weight_reached_85_percent_strict_target | 사전 등록된 최선의 엄격한 설정은 정확 경로율 83.77%, 근접 도메인 거부율 98.96%, 잘못된 경로 비율 0.93%였음. 범위 외 보간이나 사후 가중치 조정은 허용하지 않음 | [issue #246](https://github.com/JDeun/SchemaRouter/issues/246) · [PR #248](https://github.com/JDeun/SchemaRouter/pull/248) · [`9d6f5bdc18`](https://github.com/JDeun/SchemaRouter/commit/9d6f5bdc18c933a35d4f8f9983c12c850ab9b0fb) |
 | 25 | `0.11-conditional-zero-false-rejected-winner-rescue` | rejected_zero_false_rescue_recovers_only_5_of_required_15 | 설계 및 평가 과정의 기록 | [issue #255](https://github.com/JDeun/SchemaRouter/issues/255) · [PR #258](https://github.com/JDeun/SchemaRouter/pull/258) |
-| 26 | `0.11-route-local-stable-bge-m3-fusion` | rejected_strict_boundary_below_85_percent_despite_90_54_raw_ceiling | Route-local fusion weights selected from the already-preregistered #246 grid may recover the remaining exact-route gap while midpoint/canonicalized thresholds remove observed-scor… | [issue #256](https://github.com/JDeun/SchemaRouter/issues/256) · [PR #257](https://github.com/JDeun/SchemaRouter/pull/257) |
+| 26 | `0.11-route-local-stable-bge-m3-fusion` | rejected_strict_boundary_below_85_percent_despite_90_54_raw_ceiling | 사전에 등록한 #246 탐색 공간에서 경로별 융합 가중치를 선택하고 중간값·정규화 임계값으로 점수 경계 문제를 줄여 남은 정확 경로율 차이를 회복할 수 있는지 검토… | [issue #256](https://github.com/JDeun/SchemaRouter/issues/256) · [PR #257](https://github.com/JDeun/SchemaRouter/pull/257) |
 | 27 | `0.11-numerically-robust-threshold-freeze-policy` | required_for_future_frozen_candidates | 설계 및 평가 과정의 기록 | [issue #253](https://github.com/JDeun/SchemaRouter/issues/253) |
 | 28 | `0.11-bge-m3-robust-budget6-executable-confirmation` | confirmed_as_numerically_robust_strict_base_for_conditional_rescue | 설계 및 평가 과정의 기록 | [issue #259](https://github.com/JDeun/SchemaRouter/issues/259) · [`9e9b1049ea`](https://github.com/JDeun/SchemaRouter/commit/9e9b1049eac779adbc5781bfc45a447966ae32e8) |
 | 29 | `0.11-cross-model-zero-false-abstention-rescue` | gte_agreement_bge_selected_for_frozen_confirmation | 설계 및 평가 과정의 기록 | [issue #262](https://github.com/JDeun/SchemaRouter/issues/262) · [PR #263](https://github.com/JDeun/SchemaRouter/pull/263) |
@@ -144,63 +144,63 @@ Repository Git history는 계속 exhaustive engineering record 역할을 합니�
 | 51 | `0.11-lightweight-negative-gte-executable` | pass_dev_promote_fresh | 설계 및 평가 과정의 기록 | [issue #324](https://github.com/JDeun/SchemaRouter/issues/324) · [PR #325](https://github.com/JDeun/SchemaRouter/pull/325) |
 | 52 | `0.11-lightweight-bge-gte-frozen-fresh-confirmation` | reject_after_fresh_failure | 설계 및 평가 과정의 기록 | [issue #326](https://github.com/JDeun/SchemaRouter/issues/326) · [PR #327](https://github.com/JDeun/SchemaRouter/pull/327) · [`b19d7b0255`](https://github.com/JDeun/SchemaRouter/commit/b19d7b0255ee9717464b6fa65ce1ebdeaf58a1bd) |
 | 53 | `0.11-bge-m3-colbert-operation-contract` | reject | 설계 및 평가 과정의 기록 | [issue #328](https://github.com/JDeun/SchemaRouter/issues/328) · [PR #329](https://github.com/JDeun/SchemaRouter/pull/329) · [`4c72f2dd19`](https://github.com/JDeun/SchemaRouter/commit/4c72f2dd1939edb6ecf8415d620dbb5d58683fa0) |
-| 54 | `0.11-bge-registry-alias-envelope` | reject | Registry-derived sibling contrast preserves recall but accepts unsupported requests; registry cohesion rejects unsupported requests only by collapsing supported exact to ~24% and … | [issue #332](https://github.com/JDeun/SchemaRouter/issues/332) · [PR #333](https://github.com/JDeun/SchemaRouter/pull/333) · [`fa091f4329`](https://github.com/JDeun/SchemaRouter/commit/fa091f43296eb1ca680f39921010482275bb4cda) |
-| 55 | `0.11-bge-gte-threshold-free-consensus` | reject | Cross-backbone top-1 agreement behaves as route-selection confidence rather than unsupported-capability evidence: two strong rankers frequently agree on the same plausible registe… | [issue #336](https://github.com/JDeun/SchemaRouter/issues/336) · [PR #337](https://github.com/JDeun/SchemaRouter/pull/337) · [`d25f427569`](https://github.com/JDeun/SchemaRouter/commit/d25f427569fc4419a72963c6f31994fa170805f6) |
-| 56 | `0.11-registry-compiled-capability-verifier` | terminal_rejected_overconservative_veto | A provider-neutral capability IR plus generic synthetic counterfactual supervision can veto unsupported operations for arbitrary newly registered native/OpenAPI/MCP tools without … | [issue #338](https://github.com/JDeun/SchemaRouter/issues/338) · [PR #341](https://github.com/JDeun/SchemaRouter/pull/341) · [`ef75100abc`](https://github.com/JDeun/SchemaRouter/commit/ef75100abc1bb03a80ef2d7cfbd9d463accfb623) |
+| 54 | `0.11-bge-registry-alias-envelope` | reject | 레지스트리에서 도출한 형제 작업 대조는 재현율을 유지하지만 미지원 요청을 수용함. 레지스트리 응집도를 이용한 거부는 지원 요청 정확도를 약 24%로 낮추는 방식으로만 작동하며… | [issue #332](https://github.com/JDeun/SchemaRouter/issues/332) · [PR #333](https://github.com/JDeun/SchemaRouter/pull/333) · [`fa091f4329`](https://github.com/JDeun/SchemaRouter/commit/fa091f43296eb1ca680f39921010482275bb4cda) |
+| 55 | `0.11-bge-gte-threshold-free-consensus` | reject | 서로 다른 모델의 Top-1 일치는 미지원 기능 판정 근거보다 경로 선택 신뢰도에 가까움. 강한 순위화기 두 개가 그럴듯한 등록 경로 하나에 함께 동의하는 사례가 자주 나타남… | [issue #336](https://github.com/JDeun/SchemaRouter/issues/336) · [PR #337](https://github.com/JDeun/SchemaRouter/pull/337) · [`d25f427569`](https://github.com/JDeun/SchemaRouter/commit/d25f427569fc4419a72963c6f31994fa170805f6) |
+| 56 | `0.11-registry-compiled-capability-verifier` | terminal_rejected_overconservative_veto | 제공자 중립적인 기능 중간 표현과 범용 합성 반사실 근거를 이용해 새로 등록된 네이티브·OpenAPI·MCP 도구의 미지원 작업을 거부할 수 있는지 평가… | [issue #338](https://github.com/JDeun/SchemaRouter/issues/338) · [PR #341](https://github.com/JDeun/SchemaRouter/pull/341) · [`ef75100abc`](https://github.com/JDeun/SchemaRouter/commit/ef75100abc1bb03a80ef2d7cfbd9d463accfb623) |
 
 ## 0.12-query-first-typed-capability
 
 | # | 실험 | 판정 | 가설 / 목적 | 근거 |
 | ---: | --- | --- | --- | --- |
-| 1 | `0.12-query-first-typed-frame-v1` | **terminal_rejected_insufficient_open_set_rejection** | A registry-independent explicit request frame plus deterministic within-tool contract filtering can turn same-domain unsupported operations into empty capability sets without lear… | [issue #347](https://github.com/JDeun/SchemaRouter/issues/347) · [PR #348](https://github.com/JDeun/SchemaRouter/pull/348) · [`ef0e0a567f`](https://github.com/JDeun/SchemaRouter/commit/ef0e0a567f12129bf9f4b003d13f9f6e9679a216) |
+| 1 | `0.12-query-first-typed-frame-v1` | **terminal_rejected_insufficient_open_set_rejection** | 레지스트리와 독립적인 명시적 요청 프레임과 도구 내부의 결정론적 계약 필터링으로 별도 학습 없이 동일 도메인의 미지원 작업을 빈 기능 집합으로 분류할 수 있는지 평가… | [issue #347](https://github.com/JDeun/SchemaRouter/issues/347) · [PR #348](https://github.com/JDeun/SchemaRouter/pull/348) · [`ef0e0a567f`](https://github.com/JDeun/SchemaRouter/commit/ef0e0a567f12129bf9f4b003d13f9f6e9679a216) |
 
 ## 0.12-semantic-action-ontology
 
 | # | 실험 | 판정 | 가설 / 목적 | 근거 |
 | ---: | --- | --- | --- | --- |
-| 1 | `0.12-semantic-action-ontology-v1` | **terminal_rejected_flat_semantic_argmax** | A frozen registry-independent multilingual semantic action ontology can classify request operation semantics before deterministic tool-local capability matching without learned th… | [issue #349](https://github.com/JDeun/SchemaRouter/issues/349) · [PR #352](https://github.com/JDeun/SchemaRouter/pull/352) · [`38ee755756`](https://github.com/JDeun/SchemaRouter/commit/38ee7557565983746e33741897e6168bf4f35643) |
+| 1 | `0.12-semantic-action-ontology-v1` | **terminal_rejected_flat_semantic_argmax** | 동결된 레지스트리 독립 다국어 작업 온톨로지가 도구 내부의 결정론적 기능 대응에 앞서 요청의 작업 의미를 분류할 수 있는지 평가… | [issue #349](https://github.com/JDeun/SchemaRouter/issues/349) · [PR #352](https://github.com/JDeun/SchemaRouter/pull/352) · [`38ee755756`](https://github.com/JDeun/SchemaRouter/commit/38ee7557565983746e33741897e6168bf4f35643) |
 
 ## 0.12-hierarchical-capability-ontology
 
 | # | 실험 | 판정 | 가설 / 목적 | 근거 |
 | ---: | --- | --- | --- | --- |
-| 1 | `0.12-hierarchical-capability-ontology-v1` | **terminal_rejected_hard_ontology_filter** | A hierarchical executable-capability ontology with root/leaf constraints and contrastive multilingual prototypes can improve open-set membership while preserving registered execut… | [issue #354](https://github.com/JDeun/SchemaRouter/issues/354) · [PR #357](https://github.com/JDeun/SchemaRouter/pull/357) · [`250845bba0`](https://github.com/JDeun/SchemaRouter/commit/250845bba058a704ab50cdde43326cc1e5c26d62) |
+| 1 | `0.12-hierarchical-capability-ontology-v1` | **terminal_rejected_hard_ontology_filter** | 루트·리프 제약과 대조적인 다국어 원형을 갖춘 계층적 실행 가능 기능 온톨로지가 등록된 실행 경계를 유지하면서 오픈셋 집합 소속 판단을 개선할 수 있는지 평가… | [issue #354](https://github.com/JDeun/SchemaRouter/issues/354) · [PR #357](https://github.com/JDeun/SchemaRouter/pull/357) · [`250845bba0`](https://github.com/JDeun/SchemaRouter/commit/250845bba058a704ab50cdde43326cc1e5c26d62) |
 
 ## 0.12-asymmetric-ontology-veto
 
 | # | 실험 | 판정 | 가설 / 목적 | 근거 |
 | ---: | --- | --- | --- | --- |
-| 1 | `0.12-asymmetric-ontology-veto-v1` | **terminal_rejected_high_precision_low_recall_asymmetric_veto** | Preserve the frozen BGE-M3 raw top-1 as the sole positive route selector and use ontology evidence only as an asymmetric unsupported-membership veto under a fixed independent-agre… | [issue #358](https://github.com/JDeun/SchemaRouter/issues/358) · [PR #360](https://github.com/JDeun/SchemaRouter/pull/360) · [`759359882c`](https://github.com/JDeun/SchemaRouter/commit/759359882c3deb1be310fc540bbb1780b1543885) |
+| 1 | `0.12-asymmetric-ontology-veto-v1` | **terminal_rejected_high_precision_low_recall_asymmetric_veto** | 동결된 BGE-M3 원시 Top-1을 유일한 긍정 경로 선택자로 유지하고 온톨로지 근거는 고정된 독립 동의 규칙에 따른 비대칭 미지원 기능 거부 판단에만 사용하는지 평가… | [issue #358](https://github.com/JDeun/SchemaRouter/issues/358) · [PR #360](https://github.com/JDeun/SchemaRouter/pull/360) · [`759359882c`](https://github.com/JDeun/SchemaRouter/commit/759359882c3deb1be310fc540bbb1780b1543885) |
 
 ## 0.12-capability-set-membership-veto
 
 | # | 실험 | 판정 | 가설 / 목적 | 근거 |
 | ---: | --- | --- | --- | --- |
-| 1 | `0.12-capability-set-membership-consensus-v1` | **terminal_rejected_membership_consensus_insufficient** | Replace exact unsupported-leaf agreement with anchored-tool capability-set membership consensus while preserving frozen BGE-M3 as the sole positive route selector. | [issue #363](https://github.com/JDeun/SchemaRouter/issues/363) · [PR #364](https://github.com/JDeun/SchemaRouter/pull/364) · [`f198f896c4`](https://github.com/JDeun/SchemaRouter/commit/f198f896c44860c27ce14b4c88200096ef0b754f) |
+| 1 | `0.12-capability-set-membership-consensus-v1` | **terminal_rejected_membership_consensus_insufficient** | 정확히 같은 미지원 리프의 일치를 요구하는 대신 기준 도구의 기능 집합 소속에 대한 합의를 사용하되 긍정 경로 선택 권한은 동결된 BGE-M3에만 유지 | [issue #363](https://github.com/JDeun/SchemaRouter/issues/363) · [PR #364](https://github.com/JDeun/SchemaRouter/pull/364) · [`f198f896c4`](https://github.com/JDeun/SchemaRouter/commit/f198f896c44860c27ce14b4c88200096ef0b754f) |
 
 ## 0.12-external-zeroshot-membership
 
 | # | 실험 | 판정 | 가설 / 목적 | 근거 |
 | ---: | --- | --- | --- | --- |
-| 1 | `0.12-external-multilingual-zeroshot-membership-v1` | **terminal_rejected_multiclass_outside_label_no_open_set_boundary** | A small externally pretrained multilingual zero-shot classifier can judge whether a request belongs to the finite capability set registered for the BGE-anchored tool, while remain… | [issue #371](https://github.com/JDeun/SchemaRouter/issues/371) · [PR #372](https://github.com/JDeun/SchemaRouter/pull/372) · [`5e6dde0c38`](https://github.com/JDeun/SchemaRouter/commit/5e6dde0c3860ff46f0961c74233d7196e6c86f59) |
+| 1 | `0.12-external-multilingual-zeroshot-membership-v1` | **terminal_rejected_multiclass_outside_label_no_open_set_boundary** | 외부에서 사전 학습한 소형 다국어 제로샷 분류기로 질의가 BGE 기준 도구에 등록된 유한한 기능 집합에 속하는지 평가… | [issue #371](https://github.com/JDeun/SchemaRouter/issues/371) · [PR #372](https://github.com/JDeun/SchemaRouter/pull/372) · [`5e6dde0c38`](https://github.com/JDeun/SchemaRouter/commit/5e6dde0c3860ff46f0961c74233d7196e6c86f59) |
 
 ## 0.12-set-conditioned-binary-entailment
 
 | # | 실험 | 판정 | 가설 / 목적 | 근거 |
 | ---: | --- | --- | --- | --- |
-| 1 | `0.12-set-conditioned-binary-entailment-v1` | **terminal_rejected_all_not_entailment** | Use one direct NLI sequence-pair judgment over the anchored tool's full registered capability set; preserve the frozen BGE-M3 winner on entailment and veto to NO_ROUTE on not-enta… | [issue #374](https://github.com/JDeun/SchemaRouter/issues/374) · [PR #375](https://github.com/JDeun/SchemaRouter/pull/375) · [`e61058d0aa`](https://github.com/JDeun/SchemaRouter/commit/e61058d0aa31819bf99b182f4bd5947dd0d11fab) |
+| 1 | `0.12-set-conditioned-binary-entailment-v1` | **terminal_rejected_all_not_entailment** | 기준 도구의 전체 등록 기능 집합을 대상으로 NLI 문장 쌍 하나를 판정해 함의되면 동결된 BGE-M3 경로를 유지하고 함의되지 않으면 `NO_ROUTE`로 거부… | [issue #374](https://github.com/JDeun/SchemaRouter/issues/374) · [PR #375](https://github.com/JDeun/SchemaRouter/pull/375) · [`e61058d0aa`](https://github.com/JDeun/SchemaRouter/commit/e61058d0aa31819bf99b182f4bd5947dd0d11fab) |
 
 ## 0.12-independent-capability-entailment
 
 | # | 실험 | 판정 | 가설 / 목적 | 근거 |
 | ---: | --- | --- | --- | --- |
-| 1 | `0.12-independent-per-capability-entailment-v1` | **terminal_rejected_independent_entailment_over_veto** | Judge every registered capability leaf independently with a pinned multilingual NLI model; preserve frozen BGE-M3 raw top-1 if any registered leaf is entailed, otherwise veto to N… | [issue #377](https://github.com/JDeun/SchemaRouter/issues/377) · [PR #379](https://github.com/JDeun/SchemaRouter/pull/379) · [`a872c9602d`](https://github.com/JDeun/SchemaRouter/commit/a872c9602dcad959ea1bf10f16a052592754d4ae) |
+| 1 | `0.12-independent-per-capability-entailment-v1` | **terminal_rejected_independent_entailment_over_veto** | 버전을 고정한 다국어 NLI 모델로 등록된 기능 리프 각각을 독립 평가해 하나라도 함의되면 동결된 BGE-M3 원시 Top-1을 유지하고 그렇지 않으면 거부… | [issue #377](https://github.com/JDeun/SchemaRouter/issues/377) · [PR #379](https://github.com/JDeun/SchemaRouter/pull/379) · [`a872c9602d`](https://github.com/JDeun/SchemaRouter/commit/a872c9602dcad959ea1bf10f16a052592754d4ae) |
 
 ## 0.12-pairwise-nli-membership
 
 | # | 실험 | 판정 | 가설 / 목적 | 근거 |
 | ---: | --- | --- | --- | --- |
-| 1 | `0.12-pairwise-supported-counterfactual-nli-v1` | **terminal_rejected_pairwise_nli_membership_and_latency** | Compare maximum independent NLI entailment over the anchored tool's registered capability leaves against maximum entailment over counterfactual tool/non-tool leaves; veto only whe… | [issue #378](https://github.com/JDeun/SchemaRouter/issues/378) · [PR #380](https://github.com/JDeun/SchemaRouter/pull/380) · [`02aeefd465`](https://github.com/JDeun/SchemaRouter/commit/02aeefd4656f5b61a948142dfba74f51207bd979) |
+| 1 | `0.12-pairwise-supported-counterfactual-nli-v1` | **terminal_rejected_pairwise_nli_membership_and_latency** | 기준 도구의 등록된 기능 리프와 반사실 도구·비도구 리프에서 각각 가장 높은 NLI 함의 점수를 비교해 사전 규칙에 따라 거부 여부만 결정… | [issue #378](https://github.com/JDeun/SchemaRouter/issues/378) · [PR #380](https://github.com/JDeun/SchemaRouter/pull/380) · [`02aeefd465`](https://github.com/JDeun/SchemaRouter/commit/02aeefd4656f5b61a948142dfba74f51207bd979) |
 
 ## 요약 페이지에 표시된 결과가 적은 이유
 
