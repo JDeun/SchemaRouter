@@ -81,3 +81,37 @@ def test_security_critical_bilingual_datascope_contracts_remain_explicit() -> No
     assert "I/O 이전에 fail-closed" in vector
     assert "`router.inspect()` snapshot" in inspection
     assert "trace 저장소" in inspection
+
+
+def test_korean_research_negative_evidence_and_stopping_rule_stay_explicit() -> None:
+    root = Path(__file__).resolve().parents[1] / "docs_ko"
+    history = (root / "research" / "design-and-experiment-history.md").read_text(
+        encoding="utf-8"
+    )
+    routing = (root / "research" / "routing-status.md").read_text(
+        encoding="utf-8"
+    )
+    release_04 = (root / "releases" / "0.4.0.md").read_text(encoding="utf-8")
+    release_05 = (root / "releases" / "0.5.0.md").read_text(encoding="utf-8")
+
+    # The diagnostic +27 is not an accepted scientific improvement.
+    assert "1,019건" in history
+    assert "**1,046건**" in history
+    assert "진단용 상한일 뿐 확정된 개선 결과가 아닙니다" in history
+
+    # Preserve preregistered stop decisions and veto-only execution authority.
+    assert "사전 등록한 중단 규칙을 적용합니다" in history
+    assert "결과 확인 후 추가하는 수작업 규칙" in history
+    assert "**거부(veto) 전용**" in history
+    assert "사후 수정하지 않습니다" in history
+    assert "모델 품질이 낮다는 부정적 증거는 아닙니다" in history
+    assert "계층형 온톨로지의 강제 필터링" in history
+
+    # Do not promote an unscored confirmatory corpus into a result.
+    assert "`not_entailment`" in routing
+    assert "별도로 동결한 확인용 데이터셋은 아직 **채점하지 않았습니다**" in routing
+    assert "The exact formulation is terminal" not in routing
+
+    # Release notes must keep trusted hook and wall-clock safety semantics.
+    assert "훅에서 발생한 실패는 재시도 대상이 아니며" in release_04
+    assert "실제 경과 시간 한도를 초과해 계속 동작할 수 있었던 허점을" in release_05
