@@ -46,16 +46,14 @@ Invalidated-run table은 contract failure, cancelled pre-result run, leakage inc
 
 SchemaRouter는 execution authority와 semantic evidence를 분리합니다.
 
-```text
-user request
-    |
-registered schema + local authority
-    |
-bounded ranking / evidence / veto
-    |
-accept registered route OR abstain
-    |
-local validation / policy / execution
+```mermaid
+flowchart TD
+    A["사용자 요청"] --> B["등록된 스키마와 로컬 권한"]
+    B --> C["제한된 순위·근거·거부 판단"]
+    C --> D{"등록된 경로 수락?"}
+    D -->|예| E["로컬 검증과 정책 검사"]
+    E --> F["허가된 실행"]
+    D -->|아니요| G["선택 보류"]
 ```
 
 Semantic model은 preregistered experiment에 따라 finite registered authority 위에서 rank/veto/abstain할 수 있습니다. 새로운 executable tool, endpoint, field, argument, pseudo-route를 만들 수 없습니다.
