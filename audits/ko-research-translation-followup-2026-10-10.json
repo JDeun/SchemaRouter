@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-10",
+  "scope": "Targeted missing-English prose and operational-safety semantics in two research pages and two release pages; not 147-pair translation certification.",
+  "reviewed": [
+    {
+      "path": "research/design-and-experiment-history.md",
+      "en_blob": "27bdc35c44010cfd1c15d4a5702ed2b9ad6f9c5c",
+      "ko_blob": "2a3ffebc02fc9e0c577d61bbeb72f9976c721d70",
+      "reviewed_contracts": [
+        "Route-local weights 0.55: 1019 cases vs diagnostic ceiling 1046, +27 is not promoted score",
+        "Issue 281 excludes post-hoc scalar thresholds/Top-k/route exceptions; successor is veto-only learned/external open-set model",
+        "Kev PyTorch CPU/fp32 slowness is runtime-negative, not model-quality-negative",
+        "Alias geometry result is terminal and failed fresh confirmation is not tuning input",
+        "Raw BGE supported 100% tool detection must not be generalized to ontology filter performance"
+      ]
+    },
+    {
+      "path": "research/routing-status.md",
+      "en_blob": "13c37940df75f028b74c41c798a6cfa7432e7636",
+      "ko_blob": "906a4daea4a58ac662702320ffb57f039f62b15f",
+      "reviewed_contracts": [
+        "The exact NLI disjunctive formulation is terminal; separately frozen confirmation corpus remains unscored"
+      ]
+    },
+    {
+      "path": "releases/0.4.0.md",
+      "en_blob": "31ad37c6c8ff832062092d10aa1582eb90771896",
+      "ko_blob": "3a320d4d2cc613877df69d2c1bc0d70a9f4a90ac",
+      "reviewed_contracts": [
+        "Trusted before/after hooks cannot mutate calls or results; return values invalid, failures non-retryable, binding checked around awaits"
+      ]
+    },
+    {
+      "path": "releases/0.5.0.md",
+      "en_blob": "1d08b793fd48a1e4c0f882cb24004fffcd5a3595",
+      "ko_blob": "cf72fbba86f2592461f7870410ec9b925d0240a5",
+      "reviewed_contracts": [
+        "Elapsed-time budget includes awaited approval callbacks and before/after hooks, not only invoker attempts"
+      ]
+    }
+  ],
+  "limitations": [
+    "This is an editorial correction of identified risky paragraphs, not proof of all sentences or independent review of all 147 pages.",
+    "Metrics, frozen experiment inputs and English canonical research text were not edited."
+  ]
+}
