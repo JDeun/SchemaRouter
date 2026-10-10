@@ -5,7 +5,6 @@ from scripts.audit_translation_semantic_sections import audit, sections, verify_
 from scripts.prepare_korean_docs import git_blob_sha
 
 
-
 def test_section_fence_and_heading() -> None:
     data = (
         "# Main\n\nExplaining the topic.\n\n~~~python\n"
