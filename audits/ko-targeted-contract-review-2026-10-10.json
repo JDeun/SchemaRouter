@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-10",
+  "reviewer_status": "assistant targeted bilingual clause comparison, not independent human sign-off",
+  "scope": "Two additional contract clauses manually checked against exact English source; all 147 page pairs still lack independent sentence-level acceptance",
+  "reviews": [
+    {
+      "path": "release-checklist.md",
+      "en_blob": "855308419408998f721f925d88d74718f845688b",
+      "ko_blob": "bc5a64270a585c09c140dcec5254139edec7c38f",
+      "section": "Post-release",
+      "defect": "Korean checklist compressed required exact-PyPI-version wheel, sdist, isolated extras and combined extras matrix to an unspecified generic verification pass.",
+      "disposition": "Restored the explicit test matrix and retained the exact-version post-publication requirement."
+    },
+    {
+      "path": "concepts/field-first-execution.md",
+      "en_blob": "ed612ae41668e6ae76d5981fd932f78ac65b8e56",
+      "ko_blob": "20800a14a891a2923a381bcc0751e892c35bb3b0",
+      "section": "Unit metadata is optional by field semantics",
+      "defect": "Korean summary omitted the condition that only physical or otherwise unit-bearing values should declare a unit; did not explicitly prohibit model-authored semantic mapping.",
+      "disposition": "Restored unit-eligibility and trusted FieldSpec.semantic_id-based matching with field-name fallback."
+    }
+  ],
+  "claim_boundary": "These two known clauses were repaired. Automated evidence and assistant-side targeted review do not establish comprehensive independent EN/KO sentence fidelity."
+}
