@@ -18,6 +18,7 @@ from pathlib import Path
 
 from examples.external_validation.safeact_v1.contract_loader import (
     SAFEACT_PUBLIC_DOMAINS,
+    build_gate,
 )
 from examples.external_validation.safeact_v1.run_plan import (
     CONDITIONS,
@@ -265,6 +266,12 @@ def validate_launch(
                 )
             ):
                 raise ValueError("missing or invalid domain-scoped observation mapping")
+    # Parse each reviewed policy before authorizing ANY expensive model call.
+    # Provenance and source byte digests were checked above; build_gate also
+    # rejects malformed/misaligned declarative value predicates, duplicate
+    # policy identities and unsupported expressions at this preflight stage.
+    for entry in contracts["contracts"]:
+        build_gate(contracts, entry["action"], domain=entry["domain"])
     # Public V1 IDs are an opaque cohort, never a per-case expected-action oracle.
     # Each actual model-proposed tool must select its own reviewed contract.
     if any(value is not None for value in coverage.values()):

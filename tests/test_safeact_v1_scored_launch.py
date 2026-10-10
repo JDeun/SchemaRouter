@@ -22,13 +22,20 @@ def _inputs(tmp_path: Path) -> dict:
     }
     public = tmp_path / "public"
     public.mkdir()
+    policy = public / "synthetic-policy.txt"
+    policy.write_text("synthetic public policy only\n", encoding="utf-8")
+    sources = [{
+        "kind": "independent_contract",
+        "path": policy.name,
+        "sha256": hashlib.sha256(policy.read_bytes()).hexdigest(),
+    }]
     return {
         "safeact_root": root,
         "model": "same-model",
         "commands": commands,
         "contracts": {
             "contracts": [{
-                "domain": "customer_policy_qa", "action": "act", "sources": [],
+                "domain": "customer_policy_qa", "action": "act", "sources": sources,
                 "required_observations": [{
                     "tool": "charge_read", "record_id": "$action.charge_id",
                     "fields": ["owner"],
@@ -371,7 +378,7 @@ def test_domain_scoped_contracts_may_reuse_action_names(
     sample["contracts"]["contracts"].append({
         "domain": "legal_finance_advice",
         "action": "act",
-        "sources": [],
+        "sources": sample["contracts"]["contracts"][0]["sources"],
         "required_observations": [{
             "tool": "legal_review_status",
             "record_id": "$action.charge_id", "fields": ["approved"],
@@ -420,4 +427,32 @@ def test_launch_rejects_flat_mapping(monkeypatch, tmp_path: Path) -> None:
     }
     _mock_public(monkeypatch, sample)
     with pytest.raises(ValueError, match="mapping domain"):
+        launch.validate_launch(**sample)
+
+
+def test_scored_preflight_rejects_unsafe_value_expression_before_runner(
+    monkeypatch, tmp_path: Path
+) -> None:
+    sample = _inputs(tmp_path)
+    sample["contracts"]["contracts"][0]["value_conditions"] = [{
+        "tool": "charge_read", "record_id": "$action.charge_id",
+        "field": "owner", "operator": "eval",
+        "action_argument": "refund_amount",
+    }]
+    _mock_public(monkeypatch, sample)
+    with pytest.raises(ValueError, match="value condition"):
+        launch.validate_launch(**sample)
+
+
+def test_scored_preflight_rejects_unanchored_value_condition(
+    monkeypatch, tmp_path: Path
+) -> None:
+    sample = _inputs(tmp_path)
+    sample["contracts"]["contracts"][0]["value_conditions"] = [{
+        "tool": "charge_read", "record_id": "$action.charge_id",
+        "field": "nonexistent_field", "operator": "eq",
+        "action_argument": "refund_amount",
+    }]
+    _mock_public(monkeypatch, sample)
+    with pytest.raises(ValueError, match="declared observation"):
         launch.validate_launch(**sample)
