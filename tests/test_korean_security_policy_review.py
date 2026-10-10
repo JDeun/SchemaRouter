@@ -24,7 +24,7 @@ def test_security_policy_review_is_tied_to_exact_source_and_translation() -> Non
 
 
 def test_security_policy_translation_retains_full_section_structure() -> None:
-    headings = re.compile(r"^(#{1,6})\\s+", re.MULTILINE)
+    headings = re.compile(r"^(#{1,6})\s+", re.MULTILINE)
     source = EN_PATH.read_text(encoding="utf-8")
     translated = KO_PATH.read_text(encoding="utf-8")
     assert [len(m.group(1)) for m in headings.finditer(source)] == [
