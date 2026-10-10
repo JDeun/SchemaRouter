@@ -43,7 +43,7 @@ MICRO_RE = re.compile(
     r"^heldout-recovery-part-(c(?:100|250|500)-g\d{2}-p\d{2})-(\d+)$"
 )
 RECOVERY_JOB_RE = re.compile(
-    r"^recover \\(c(?:100|250|500)-g\\d{2}-p\\d{2})(?:,|\\))"
+    r"^recover \((c(?:100|250|500)-g\d{2}-p\d{2})(?:,|\))"
 )
 
 
