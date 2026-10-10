@@ -27,7 +27,17 @@ Declared dependency range와 PR마다 CI가 증명하는 범위를 구분합니�
 | Lightweight extras | mcp+jev+otel | scheduled/manual | framework transitive dependency 없이 검증 |
 | Integration extras | mcp+langchain+langgraph+llamaindex+jev+otel | scheduled/manual | installed package bridge 검증 |
 
-Upper bound 확대/minimum 하향 전 relevant integration test를 target에 대해 통과시키고 release note에 문서화합니다.
+각 통합 기능의 선언된 의존성 범위와 실제 선택 설치 패키지는 다음과 같습니다. Python 3.10 이상이 필수이며, CI는 현재 해결된 의존성 버전을 시험하는 것이지 범위에 포함된 모든 과거 버전을 전수 시험하는 것이 아닙니다.
+
+- LangChain: `langchain-core>=1.6,<2`, `schemarouter[langchain]`
+- LangGraph: `langgraph>=1.2,<2`, `schemarouter[langgraph]`; 실제 `StateGraph` 동기·비동기 계약을 검증
+- LlamaIndex: `llama-index-core>=0.14,<1`, `schemarouter[llamaindex]`
+- Jev/TypeSafe: `typesafe-sdk>=0.7,<1`, `schemarouter[jev]`; 필수 CI에서는 외부 API를 호출하지 않음
+- Laya: `laya>=0.3.6,<1`, `schemarouter[laya]`; 필수 CI는 모델 가중치를 다운로드하지 않음
+- MCP: `mcp>=2,<3`, `schemarouter[mcp]`; 실제 로컬 stdio subprocess 및 Streamable HTTP 계약을 검증
+- OpenTelemetry: `opentelemetry-api/sdk>=1.44,<2`, `schemarouter[otel]`; 코어의 필수 의존성은 아님
+
+상한 버전을 확대하거나 최소 지원 버전을 낮추기 전에는 해당 대상으로 통합 테스트를 통과해야 하며, 변경 사항을 릴리스 노트에 문서화해야 합니다.
 
 ## 필수 CI 검사
 
@@ -54,17 +64,28 @@ Upper bound 확대/minimum 하향 전 relevant integration test를 target에 대
 - 메모리 내 OpenTelemetry 내보내기 테스트
 - strict MkDocs
 
-Separate `Python Preview`는 3.15 RC를 bounded runtime으로 실행하며 visible signal이지만 release blocker가 아닙니다.
+필수 CI에는 다음 세부 검증도 포함됩니다. Pyright는 배포 패키지의 정적 타입을 검사합니다. 전체 테스트의 분기 커버리지는 차단 기준 84%와 XML 산출물로 확인합니다. 최소 런타임 의존성 검사에서는 선언된 하한 버전을 확인합니다. Wheel 및 sdist 각각을 별도의 깨끗한 환경에 설치하고 quickstart를 실행하며, 별도 `schemarouter.adapters` 배포 패키지의 메타데이터만을 이용한 탐색·명시적 로드·스키마 검증·로컬 실행 정책 강제를 확인합니다. 플래너는 식별자 보존, 잘못된·알 수 없는 ID, abstention, 동기·비동기 경로 및 결정론적 fallback을 검사합니다. 상태 인식 검색, 인덱싱된 증분 capability graph, 원자적 snapshot publication, 포맷 마이그레이션과 결정 trace의 privacy도 검사합니다.
+
+별도 `Python Preview` 워크플로는 Python 3.15 RC를 제한된 실행시간 안에서 시험합니다. 실패는 전방 호환성 신호로 표시하지만 릴리스의 차단 조건은 아닙니다.
 
 Release workflow는 successful current-main CI를 소비한 뒤 tag/artifact를 resolve합니다. GitHub Release+PyPI 뒤 exact version을 wheel, forced sdist, isolated mcp/jev/otel, combined extras로 checkout 밖에서 재설치합니다. PyPI propagation은 bounded retry로 처리하며 다른 version을 허용하지 않습니다.
 
 ## 통합 기능 유지보수 정책
 
-Core는 optional ecosystem 없이 import/run되어야 합니다. Integration은 lazy import+bounded range를 사용하고 metadata translation은 가능하지만 execution은 schema identity/policy/binding/validation을 통과해야 합니다. Declared range 내 upstream break가 생기면 temporary narrowing 가능하되 문서화합니다. New major는 dedicated CI 전 unsupported입니다. Public example/security invariant는 compatibility contract입니다.
+SchemaRouter 코어는 LangChain, LangGraph, LlamaIndex, Jev/TypeSafe, Laya, MCP, OpenTelemetry를 설치하지 않아도 import와 실행이 가능해야 합니다. 통합 모듈은 지연 import와 한정된 의존성 버전 범위를 사용합니다. 외부 프레임워크·제공자의 메타데이터는 변환할 수 있지만, 실행은 반드시 SchemaRouter의 스키마 식별성, 정책, 바인딩 검사, 검증 경계를 통과해야 합니다.
+
+이미 선언된 범위 내에서 새로운 upstream 버전이 호환성을 깨면 브리지를 수정하는 동안 지원 범위를 임시로 좁힐 수 있습니다. 이 변경은 문서화해야 합니다. 전용 CI를 추가하기 전에는 새로운 upstream 주요 버전을 지원한다고 주장하지 않습니다. 공개 예제와 문서화된 보안 불변조건도 호환성 계약에 포함됩니다.
 
 ### Package layout decision
 
-LangChain/LangGraph/LlamaIndex는 현재 main distribution optional extra로 유지합니다. Separate package는 independent cadence, material dependency pressure, upstream dedicated distribution requirement, thin translation layer를 넘어선 growth 중 하나가 발생할 때만 도입합니다. Jev/Laya/OTel도 같은 optional-extra 원칙입니다.
+현재 LangChain·LangGraph·LlamaIndex 브리지는 `schemarouter[langchain]`, `schemarouter[langgraph]`, `schemarouter[llamaindex]`처럼 주 배포 패키지의 선택적 extras로 유지합니다. `langchain-schemarouter` 같은 독립 패키지는 다음 중 하나 이상이 성립할 때만 검토합니다.
+
+1. 통합 기능에 독립적인 릴리스 주기가 필요할 때
+2. 의존성의 압박으로 인해 코어 패키지의 유지보수 범위가 실질적으로 확대될 때
+3. 업스트림 유지관리자가 검색 가능성이나 인증을 위해 독립 배포를 요구할 때
+4. 통합 기능이 얇은 변환 계층을 넘어 크게 확장될 때
+
+Jev와 Laya도 각각 `schemarouter[jev]`, `schemarouter[laya]` 선택적 extras이며 제공자 런타임을 코어의 필수 의존성으로 만들지 않습니다. OpenTelemetry 역시 `schemarouter[otel]` 선택적 exporter 통합으로 유지합니다.
 
 ## 네이티브 데이터베이스 실사용 검증 등급
 
@@ -73,7 +94,7 @@ LangChain/LangGraph/LlamaIndex는 현재 main distribution optional extra로 유
 - **Contract/SDK-shape**: deterministic, required CI에서 release-blocking
 - **Live acceptance**: real local/container client/service로 discovery, bounded read/search/traversal, projection, trusted principal/DataScope filter, no-raw-query boundary 검증
 
-Tier A는 deterministic local container/in-process이며 adapter 변경 release에서 evidence로 review합니다.
+Tier A는 결정론적 로컬 컨테이너 또는 프로세스 내 런타임을 사용하며, 네이티브 DB 어댑터가 변경된 릴리스에서 검증 근거로 검토합니다. 호환성 워크플로는 **정확한 서비스 이미지 태그와 해결된 클라이언트 버전**을 JSON 산출물로 기록합니다.
 
 | Tier A runtime | Evidence |
 | --- | --- |
@@ -86,7 +107,7 @@ Tier A는 deterministic local container/in-process이며 adapter 변경 release�
 
 Green Tier A가 모든 adapter blanket claim은 아닙니다. Elasticsearch/OpenSearch/Neo4j/ArangoDB/InfluxDB/Milvus/Couchbase는 dedicated live acceptance 전 deterministic contract coverage입니다.
 
-Tier B는 Pinecone/DynamoDB/Azure Cosmos/Neptune 같은 hosted/credential-gated vendor이며 manual/scheduled secret environment에서만 실행합니다. Artifact는 exact client version, safe target identity, bounded outcomes를 기록합니다. Missing hosted credential은 ordinary CI non-goal입니다.
+Tier B는 Pinecone, DynamoDB, Azure Cosmos DB, Amazon Neptune처럼 호스팅 서비스나 인증정보가 필요한 제공자를 다룹니다. 검사 실행은 저장소 또는 환경의 비밀정보를 사용하는 수동·예약 실행에 한정하며, 일반 PR의 필수 CI에 추가해서는 안 됩니다. 산출물에는 정확한 클라이언트 버전, 공개해도 안전한 대상·서비스 식별성, Tier A와 동일한 범위가 제한된 계약 검증 결과를 기록해야 합니다. 호스팅 인증정보가 없다는 사실은 일반 CI의 명시적 비목표이지, 해당 제공자의 실사용 검증 성공 근거가 아닙니다.
 
 Native DB adapter 변경 release는 affected representative family의 recent green current-main Tier A run을 요구합니다. Public Internet provider smoke는 non-blocking입니다.
 
