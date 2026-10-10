@@ -97,10 +97,10 @@ Issue #198은 다음 candidate를 요구합니다.
 
 ## Reproducibility
 
-Machine-readable closure: `benchmarks/operation-routing-v4-terminal-decision.json`
+기계 판독형 최종 판정: `benchmarks/operation-routing-v4-terminal-decision.json`
 
-Canonical evidence ledger: `benchmarks/research-experiment-ledger.json`
+정식 근거 원장: `benchmarks/research-experiment-ledger.json`
 
-Full design and experiment history: `docs/research/design-and-experiment-history.md`
+전체 설계 및 실험 이력: `docs/research/design-and-experiment-history.md`
 
-Paper-ready exports: `python scripts/export_research_evidence.py`
+논문용 근거 내보내기 명령어: `python scripts/export_research_evidence.py`
