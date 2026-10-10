@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "status": "methodology_amendment_unscored",
+  "source": "Damien CYT maintainer reply, supplied 2026-10-10",
+  "issue": 839,
+  "performance_evidence": false,
+  "selected_primary_platform": null,
+  "selected_primary_agent": null,
+  "selected_primary_interception_mode": null,
+  "agent_support": {
+    "tested_families": [
+      "cursor",
+      "codex",
+      "claude"
+    ],
+    "other_agents": "not tested; compatibility hypothesis only",
+    "cursor_composer_proxy": "unsupported due to unavailable reverse-proxy interception"
+  },
+  "platform_support": {
+    "linux": "not thoroughly tested; compatibility-only exploratory runner, not an established primary host",
+    "macos": "candidate primary host; actual local integration must be verified",
+    "windows": "candidate primary host; actual local integration must be verified"
+  },
+  "modes": {
+    "proxy": {
+      "intercepts": "HTTP traffic via reverse proxy while preserving original MCP servers",
+      "requires_cyt_mcp_aggregator": false,
+      "can_block_tool_calls": false,
+      "can_mutate_agent_builtin_system_tools": true,
+      "cursor_composer_supported": false
+    },
+    "hook": {
+      "intercepts": "agent hook with CYT-MCP aggregator",
+      "requires_cyt_mcp_aggregator": true,
+      "can_block_tool_calls": true,
+      "can_mutate_agent_builtin_system_tools": false,
+      "cursor_composer_supported": "not established"
+    }
+  },
+  "comparability": {
+    "same_mode_within_primary_comparison": true,
+    "cross_mode_results": "separate strata, never combine",
+    "blocking_outcome": "do not compare across proxy and hook; proxy has no tool-call blocking",
+    "system_tool_outcome": "do not compare across modes; hook cannot mutate built-in system tools",
+    "cache_prefix_stability": "measure separately, not automatically equivalent to saved billed tokens",
+    "native_bm25_sdk_smoke": "retrieval microbenchmark only; does not demonstrate proxy/hook integration",
+    "linux_github_actions": "compatibility investigation only, not validated E2E CYT performance"
+  },
+  "freeze_required": [
+    "agent/version/model/revision",
+    "host OS/architecture",
+    "mode and CYT revision",
+    "MCP server / aggregator and proxy config",
+    "model invocation interception feasibility",
+    "prompts and prompt-prefix digests",
+    "candidate catalog and cases SHA-256",
+    "baseline and matched allowed tools",
+    "session state cold/persistent/adaptive",
+    "timing/usage/cost and agent step semantics",
+    "capability-equivalent measurement boundary",
+    "runtime logs without secrets",
+    "explicit upstream mode verification"
+  ],
+  "authorization": {
+    "heldout_scoring_allowed": false,
+    "e2e_runner_ready": false,
+    "manual_review_required": true
+  }
+}
