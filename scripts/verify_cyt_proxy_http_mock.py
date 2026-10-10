@@ -45,7 +45,7 @@ async def probe() -> dict[str, Any]:
             self.end_headers()
             self.wfile.write(response)
 
-        def log_message(self, format: str, *args: object) -> None:
+        def log_message(self, format: str, *args: object) -> None:  # noqa: A002
             del format, args
 
     server = ThreadingHTTPServer(("127.0.0.1", 0), LocalModel)
