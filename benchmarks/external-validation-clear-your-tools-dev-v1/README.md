@@ -62,3 +62,48 @@ regimes. Supported/ambiguous cases generally prune aggressively (median candidat
 entire catalog, so they must be reported separately rather than averaged into supported-query
 retrieval quality. This is a development diagnostic, not external evidence and not a tuning target.
 Tail latency is therefore also stratified by supported vs unsupported/OOD cases in later reports.
+
+## CYT maintainer clarification (2026-10-10) — mode and platform boundaries
+
+The CYT maintainer reports that CYT was designed cross-platform but **has not
+been thoroughly tested on Linux**. Its tested agent integrations are **Cursor,
+Codex and Claude**; other agents have not been validated. It has two modes,
+which **must not** be silently combined as one interchangeable treatment:
+
+| Boundary | Native Proxy | Native Hook |
+|---|---|---|
+| Integration | Intercept HTTP/reverse-proxy traffic while preserving original MCP servers | Agent hook through CYT-MCP aggregator |
+| Can block an actual tool call | **No** | **Yes** (depending on installed hook capability) |
+| Can modify built-in agent/system tools | **Yes** | **No** |
+| Needs CYT-MCP aggregator | No | **Yes** |
+| Cursor Composer models | Cannot reverse-proxy-intercept | Compatibility not established |
+
+Freeze one primary agent/model/OS/interception path after its actual
+integration is reproduced. The existing Linux GitHub Actions native
+`cyt-indexer-sdk` BM25 microbenchmark validates **only retrieval SDK
+behavior**, not full Proxy/Hook integration and not agent success, tool
+blocking, prompt prefix caching or E2E latency. Linux can be tested as a
+**separately labeled exploratory compatibility stratum**; a macOS/Windows
+primary host also requires observed end-to-end integration success and
+hardware/runtime provenance, not assumption.
+
+Do not claim Proxy prevents a prohibited tool call. If blocking/authorization
+is a required outcome, use a verified Hook path and explicitly record the
+CYT-MCP aggregator and agent hook configuration; keep execution authority
+and access-control tests separate from routing/context selection. Built-in
+system-tool measurements and Cursor Composer belong to separate supported
+capability strata, not a shared all-mode aggregate.
+
+CYT also aims to preserve prompt prefixes to improve provider cache economics
+and inject relevant examples. Freeze prompt-prefix bytes/identity and report
+cache hits, billed input tokens and cost **only when actual provider usage
+records are available**; do not infer savings from schema-byte reduction.
+Persistent-session suppression, context-compaction reinjection and
+successful-tool-call TierManager learning remain three distinct measurement
+effects. The planned performance comparison must not use mode-specific
+features as if both implementations offered them.
+
+The new `interception-modes.json` declares these as **unscored methodology
+constraints**, checked without models by
+`python -m scripts.validate_cyt_interception_boundary`. Passing this
+preflight never freezes a held-out experiment or authorizes scoring.

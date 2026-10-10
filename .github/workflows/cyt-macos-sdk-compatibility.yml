@@ -1,0 +1,72 @@
+name: CYT macOS Native SDK Compatibility (Unscored)
+
+on:
+  pull_request:
+    paths:
+      - "benchmarks/external-validation-clear-your-tools-dev-v1/**"
+      - "scripts/run_clear_your_tools_external_validation.py"
+      - "scripts/validate_cyt_interception_boundary.py"
+      - "tests/test_cyt_interception_boundary.py"
+      - ".github/workflows/cyt-macos-sdk-compatibility.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macos-sdk-only:
+    runs-on: macos-15
+    timeout-minutes: 25
+    env:
+      CYT_REVISION: 9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4
+      CYT_VERSION: "2.17.6"
+      ARTIFACT: artifacts/cyt-macos-compatibility
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13"
+      - name: Install fixed public SDK (no model providers)
+        run: |
+          python -m pip install .
+          python -m pip install "cyt-indexer-sdk==${CYT_VERSION}"
+          python -m pip install pytest pytest-asyncio
+      - name: Record macOS and exact runtime
+        run: |
+          mkdir -p "${ARTIFACT}"
+          sw_vers > "${ARTIFACT}/macos.txt"
+          uname -a > "${ARTIFACT}/kernel.txt"
+          python --version > "${ARTIFACT}/python.txt"
+          python -m pip freeze > "${ARTIFACT}/pip-freeze.txt"
+          git rev-parse HEAD > "${ARTIFACT}/schemarouter-sha.txt"
+          printf '%s\n' "${CYT_REVISION}" > "${ARTIFACT}/cyt-source-revision.txt"
+      - name: Assert mode/platform evidence boundary is unscored
+        run: |
+          python -m scripts.validate_cyt_interception_boundary
+          python -m pytest -q tests/test_cyt_interception_boundary.py
+      - name: Execute native CYT SDK integration smoke on visible fixture
+        run: |
+          python scripts/run_clear_your_tools_external_validation.py \
+            --catalog benchmarks/external-validation-smart-mcp-dev-v1/catalog.json \
+            --cases benchmarks/external-validation-smart-mcp-dev-v1/cases.json \
+            --implementation-revision "${CYT_REVISION}" \
+            --repeats 3 --out "${ARTIFACT}/cyt-macos-sdk.json"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/cyt-macos-compatibility/cyt-macos-sdk.json").read_text())
+          assert report["status"] == "development_unfrozen"
+          assert report["performance_evidence"] is False
+          assert report["catalog_size"] == 21
+          assert len(report["results"]) == 33
+          assert all("candidate_tools" in item for item in report["results"])
+          print("macOS SDK-only compatibility smoke passed; no Proxy/Hook E2E proof.")
+          PY
+      - name: Publish SDK compatibility artifacts (NOT Proxy or Hook results)
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cyt-macos-native-sdk-compatibility-${{ github.run_id }}
+          path: artifacts/cyt-macos-compatibility/
+          retention-days: 30
+          if-no-files-found: error
