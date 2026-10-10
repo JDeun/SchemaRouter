@@ -112,7 +112,7 @@ def run_bridge_compatibility(root: Path) -> dict[str, Any]:
             encoding="utf-8",
         )
         contract = {
-            "case_coverage": {"SAB-V1-001": "refund_issue"},
+            "case_coverage": {"SAB-V1-001": None},
             "contracts": [{
                 "action": "refund_issue",
                 "sources": [{
