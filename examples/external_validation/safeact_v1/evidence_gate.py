@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
 from typing import Any
 
 
@@ -16,6 +17,20 @@ class Observation:
     record_id: str
     fields: frozenset[str]
     successful: bool = True
+    # Immutable scalar values produced by the trusted host, not agent prose.
+    values: tuple[tuple[str, object], ...] = ()
+
+
+@dataclass(frozen=True)
+class ValueCondition:
+    """Compare an action argument or reviewed literal against observed value."""
+
+    tool: str
+    record_id: str
+    field: str
+    operator: str
+    reference_kind: str
+    reference: object
 
 
 @dataclass(frozen=True)
@@ -23,6 +38,7 @@ class ActionContract:
     action: str
     required_observations: tuple[tuple[str, str, frozenset[str]], ...]
     argument_bindings: tuple[tuple[str, str], ...] = ()
+    value_conditions: tuple[ValueCondition, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -46,6 +62,36 @@ class EvidenceGate:
             if argument in bound_names:
                 raise ValueError("duplicate argument binding")
             bound_names.add(argument)
+        for condition in contract.value_conditions:
+            if (
+                condition.operator not in {"eq", "lte", "gte"}
+                or condition.reference_kind not in {"action_argument", "literal"}
+                or (
+                    condition.reference_kind == "action_argument"
+                    and (
+                        not isinstance(condition.reference, str)
+                        or not condition.reference.isidentifier()
+                    )
+                )
+                or (
+                    condition.reference_kind == "literal"
+                    and (
+                        type(condition.reference) not in {str, bool, int, float}
+                        or (
+                            type(condition.reference) is float
+                            and not Decimal(str(condition.reference)).is_finite()
+                        )
+                    )
+                )
+            ):
+                raise ValueError("malformed independent value condition")
+            if not any(
+                tool == condition.tool
+                and record == condition.record_id
+                and condition.field in fields
+                for tool, record, fields in contract.required_observations
+            ):
+                raise ValueError("value condition must cite a declared observation")
         self.contract = contract
         self._observations: list[Observation] = []
 
@@ -54,6 +100,23 @@ class EvidenceGate:
             raise ValueError("observation must identify source tool and record")
         if observation.successful:
             self._observations.append(observation)
+
+    @staticmethod
+    def _comparison(left: object, right: object, operator: str) -> bool:
+        if operator == "eq":
+            return type(left) is type(right) and left == right
+        if (
+            type(left) not in {int, float, str}
+            or type(right) not in {int, float, str}
+        ):
+            return False
+        try:
+            a, b = Decimal(str(left)), Decimal(str(right))
+        except (InvalidOperation, ValueError):
+            return False
+        if not a.is_finite() or not b.is_finite():
+            return False
+        return a <= b if operator == "lte" else a >= b
 
     def check(self, action: str, args: Mapping[str, Any] | None = None) -> GateDecision:
         if action != self.contract.action:
@@ -78,6 +141,40 @@ class EvidenceGate:
             )
             if not matched:
                 missing.append(f"{tool}:{record_id}:{','.join(sorted(fields))}")
+        # Every reviewed predicate must hold on an unambiguous real
+        # observation for this action target. No model-authored conclusions,
+        # evaluator labels or runtime expression evaluation is permitted.
+        for condition in self.contract.value_conditions:
+            record_id = condition.record_id
+            if record_id.startswith("$action."):
+                field_name = record_id[8:]
+                record_id = args.get(field_name) if args is not None else None
+            expected = (
+                args.get(str(condition.reference)) if args is not None else None
+            ) if condition.reference_kind == "action_argument" else condition.reference
+            if not isinstance(record_id, str) or not record_id or expected is None:
+                missing.append("semantic_predicate_missing_reference")
+                continue
+            observed_values = [
+                value
+                for observation in self._observations
+                if observation.tool == condition.tool
+                and observation.record_id == record_id
+                for field, value in observation.values
+                if field == condition.field
+            ]
+            if (
+                not observed_values
+                or any(
+                    type(value) is not type(observed_values[0])
+                    or value != observed_values[0]
+                    for value in observed_values[1:]
+                )
+                or not self._comparison(
+                    expected, observed_values[0], condition.operator
+                )
+            ):
+                missing.append("semantic_predicate_failed")
         return GateDecision(not missing, tuple(missing))
 
     def dispatch(self, action: str, args: Mapping[str, Any], execute: Any) -> Any:

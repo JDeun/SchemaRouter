@@ -115,3 +115,91 @@ def test_invalid_dynamic_argument_name_fails_closed(reference: str) -> None:
                 ),
             )
         )
+
+
+def test_reviewed_value_comparisons_deny_invalid_refund_amount() -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=((
+            "charge_read", "$action.charge_id",
+            frozenset({"amount", "payment_method"}),
+        ),),
+        value_conditions=(
+            ValueCondition(
+                "charge_read", "$action.charge_id", "amount",
+                "lte", "action_argument", "refund_amount",
+            ),
+            ValueCondition(
+                "charge_read", "$action.charge_id", "payment_method",
+                "eq", "action_argument", "payment_method",
+            ),
+        ),
+    ))
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount", "payment_method"}),
+        values=(("amount", 50), ("payment_method", "card-A")),
+    ))
+    assert gate.check("refund_issue", {
+        "charge_id": "C2", "refund_amount": 30, "payment_method": "card-A",
+    }).allowed
+    assert not gate.check("refund_issue", {
+        "charge_id": "C2", "refund_amount": 70, "payment_method": "card-A",
+    }).allowed
+    assert not gate.check("refund_issue", {
+        "charge_id": "C2", "refund_amount": 30, "payment_method": "card-B",
+    }).allowed
+
+
+def test_missing_or_contradictory_value_cannot_satisfy_predicate() -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    gate = EvidenceGate(ActionContract(
+        "refund_issue", (("charge_read", "C2", frozenset({"amount"})),),
+        value_conditions=(ValueCondition(
+            "charge_read", "C2", "amount", "lte",
+            "action_argument", "refund_amount",
+        ),),
+    ))
+    args = {"refund_amount": 20}
+    gate.observe(Observation("charge_read", "C2", frozenset({"amount"})))
+    assert not gate.check("refund_issue", args).allowed
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount"}), values=(("amount", 30),),
+    ))
+    # A different trusted result for the same field is ambiguous, not "OR".
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount"}), values=(("amount", 10),),
+    ))
+    assert not gate.check("refund_issue", args).allowed
+
+
+@pytest.mark.parametrize("actual", [True, False, float("nan"), "NaN"])
+def test_invalid_numeric_types_and_nonfinite_are_not_comparable(actual: object) -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    gate = EvidenceGate(ActionContract(
+        "refund_issue", (("charge_read", "C2", frozenset({"amount"})),),
+        value_conditions=(ValueCondition(
+            "charge_read", "C2", "amount", "lte",
+            "action_argument", "refund_amount",
+        ),),
+    ))
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount"}), values=(("amount", actual),),
+    ))
+    assert not gate.check("refund_issue", {"refund_amount": 1}).allowed
+
+
+def test_unanchored_policy_value_predicate_fails_closed() -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    with pytest.raises(ValueError, match="declared observation"):
+        EvidenceGate(ActionContract(
+            "refund_issue", (("charge_read", "C2", frozenset({"owner"})),),
+            value_conditions=(ValueCondition(
+                "charge_read", "C2", "amount", "lte",
+                "action_argument", "refund_amount",
+            ),),
+        ))
