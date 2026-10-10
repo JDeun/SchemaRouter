@@ -27,7 +27,7 @@ Before creating a new routing experiment:
 | Hard-negative OOS generation | #389 / #395 | terminal | V6B separated synthetic evidence but rejected every natural DEV query |
 | Energy/density/open-space scoring | #390 / #397 / #399 / #401 | terminal / no active successor | V6C/V6D/V6E terminal; do not retune consumed geometry |
 | Selective/conformal abstention | #391 / #412 | terminal tested formulation | E5 conformal safety passed open-set gates but destroyed supported recall |
-| Tool/executable-schema retrieval / agent utility | #392 / #417 / #418 / #420 | active primary direction | Phase A/B1 are terminal; B2 strong-agent replication is terminal success; #431 is the active gate before #432/#424 |
+| Tool/executable-schema retrieval / agent utility | #392 / #417 / #418 / #420 | active primary direction | Phase A/B1 and B2 are terminal; #431 gate resolved without promotion; #432 held-out running; #424 pending |
 
 Active research parent: #417. Historical 0.13 prior-art parent: #388.
 
@@ -39,20 +39,14 @@ route selection and executor-grade abstention creates a severe safety/coverage t
 
 The active 0.14 architecture is:
 
-```text
-registered executable schemas
-        ↓
-typed capability index
-        ↓
-high-recall Top-K retrieval
-        ↓
-downstream LLM agent
-        ↓
-execution validation / policy
-        ↓
-tool execution
-        ↓
-result evaluation and optional candidate expansion
+```mermaid
+flowchart TD
+    A["Registered executable schemas"] --> B["Typed capability index"]
+    B --> C["High-recall Top-K retrieval"]
+    C --> D["Downstream LLM agent"]
+    D --> E["Execution validation and policy"]
+    E --> F["Tool execution"]
+    F --> G["Result evaluation / optional candidate expansion"]
 ```
 
 Relevant current work:
