@@ -57,7 +57,7 @@ Raw record가 declared plan 이외의 내용을 전혀 포함하지 않으면 co
 
 ## Metrics
 
-#424의 규칙에 따라 각각 별도로 보고하며 하나의 score로 합치지 않습니다.
+이슈 #424의 규칙에 따라 각각 별도로 보고하며 하나의 score로 합치지 않습니다.
 
 - required-fact recall
 - numeric value accuracy
@@ -107,7 +107,7 @@ Quality *gain*은 보고할 수 있지만 필수는 아닙니다. Context reduct
 
 ### Source freeze
 
-#506은 **자체 frozen implementation revision**을 갖습니다. 첫 dispatch에서 resolve하고 실제 experiment script가 포함돼 있는지 확인한 뒤 두 arm이 동일 revision을 재사용합니다.
+이슈 #506은 **자체 frozen implementation revision**을 갖습니다. 첫 dispatch에서 resolve하고 실제 experiment script가 포함돼 있는지 확인한 뒤 두 arm이 동일 revision을 재사용합니다.
 
 이는 절대 `DOWNSTREAM_IMPLEMENTATION_SHA`가 아닙니다. 해당 SHA는 이미 frozen된 #431/#432/#424 chain에 속하며 모든 projection script보다 오래됐습니다. 따라서 그 revision으로 dispatch하면 experiment를 실행할 파일이 없는 tree를 checkout하게 됩니다. Unit test는 실제 checkout이 아닌 stub을 사용하므로 이 문제가 green 상태에서도 숨어 있었습니다. 현재 두 workflow는 preflight에서 이런 checkout을 거부하고 controller도 필요한 file이 없는 revision dispatch를 거부합니다.
 
