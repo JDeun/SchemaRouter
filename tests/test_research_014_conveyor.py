@@ -641,5 +641,7 @@ def test_materialized_retry_controller_branches_are_bounded() -> None:
     assert 'label="final_answer"' in controller
     assert "stopped_heldout_failed_job_retries_exhausted" in controller
     assert "stopped_final_failed_job_retries_exhausted" in controller
+    assert "stopped_heldout_nonretryable_conclusion" in controller
+    assert "stopped_final_nonretryable_conclusion" in controller
     assert "recover_dispatch_heldout_after_failure" in controller
     assert "recover_dispatch_final_after_failure" in controller
