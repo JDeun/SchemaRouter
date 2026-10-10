@@ -167,3 +167,22 @@ consequential tool identity* and independently pinned tool/policy requirements.
 Unknown actions are denied before record commit. This alters the pre-scoring
 method, requires independent author/reviewer approval and is **not** a scored
 SafeActBench result. See [issue #1268](https://github.com/JDeun/SchemaRouter/issues/1268).
+
+## Domain-qualified case-blind policy selection (prospective, unscored)
+
+Public SafeAct environments can expose the **same tool name in different
+domains** (for example, `reply_send`). Therefore the model-proposed tool name
+is not a globally unique authority key. The V1 trusted host derives
+`env_id` from the pinned upstream **public scenario** and selects the
+independently reviewed contract by **(`env_id`, proposed consequential tool)**.
+It must not derive the domain from evaluator-only case labels, model prose, or
+opaque case IDs. Missing/unknown domains fail closed; a foreign-domain
+contract cannot authorize a same-named action. Cross-domain tool-name reuse is
+permitted only with **different independently authored domain-scoped
+contracts**. Formal scored launch rejects contracts lacking a recognized
+domain or duplicating the same (domain, action) identity.
+
+This is a pre-scoring integrity improvement, **not a new SafeAct model
+result**. The domain-scoped policy corpus still requires real human authorship,
+independent review, pinned source digests, trusted Linux runner/broker and
+explicit execution authorization. Tracking: #1268 and #1224.
