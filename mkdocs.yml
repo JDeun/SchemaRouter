@@ -15,6 +15,8 @@ edit_uri: edit/main/docs/
 validation:
   nav:
     omitted_files: warn
+  links:
+    anchors: warn
 
 not_in_nav: |
   assets/brand/README.md

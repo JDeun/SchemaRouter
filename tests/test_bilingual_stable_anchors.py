@@ -34,3 +34,8 @@ def test_known_links_target_stable_anchors() -> None:
     }
     for path, fragment in references.items():
         assert fragment in (ROOT / path).read_text(encoding="utf-8"), path
+
+
+def test_anchor_errors_fail_strict_mkdocs_build() -> None:
+    config = (ROOT / "mkdocs.yml").read_text(encoding="utf-8")
+    assert "  links:\n    anchors: warn\n" in config
