@@ -3,11 +3,38 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from copy import deepcopy
 from pathlib import Path
 
 from scripts.run_clicshopping_v433_dev import validate_cases
 from scripts.validate_clicshopping_v433_inventory import COMMIT, validate_inventory
+
+
+def _query_tokens(value: str) -> tuple[str, ...]:
+    """Conservatively normalize punctuation and Unicode for reuse screening."""
+    if not isinstance(value, str):
+        raise ValueError("confirmation query must be text")
+    return tuple(re.findall(r"\\w+", value.casefold(), flags=re.UNICODE))
+
+
+def _overlaps_dev(candidate: tuple[str, ...], prior: tuple[str, ...]) -> bool:
+    """Identify obvious dev copying; NEVER certify semantic independence."""
+    if not candidate or not prior:
+        return True
+    candidate_text, prior_text = " ".join(candidate), " ".join(prior)
+    if candidate_text == prior_text:
+        return True
+    # Append/prepend boilerplate and punctuation paraphrases are still copies.
+    if len(prior) >= 3 and prior_text in candidate_text:
+        return True
+    if len(candidate) >= 3 and candidate_text in prior_text:
+        return True
+    # Reordering a nearly intact visible dev query is also contamination.
+    old = set(prior)
+    if len(old) >= 4 and len(old & set(candidate)) / len(old) >= 0.90:
+        return True
+    return False
 
 
 def check_confirmation(plan: dict, candidate: dict, dev: dict, inventory: dict) -> dict:
@@ -29,14 +56,22 @@ def check_confirmation(plan: dict, candidate: dict, dev: dict, inventory: dict) 
     check["status"] = "preregistered_development_only_no_heldout_claim"
     validate_cases(check, inventory)
     existing_ids = {x["id"] for x in dev["cases"]}
-    existing_texts = {" ".join(x["query"].casefold().split()) for x in dev["cases"]}
+    dev_tokens = [_query_tokens(x["query"]) for x in dev["cases"]]
     new_ids = [x["id"] for x in candidate["cases"]]
-    new_texts = [" ".join(x["query"].casefold().split()) for x in candidate["cases"]]
+    new_tokens = [_query_tokens(x["query"]) for x in candidate["cases"]]
     if any(i in existing_ids or i.startswith("clic433-") for i in new_ids):
         raise ValueError("reuse of development case identifiers")
-    if any(q in existing_texts for q in new_texts) or len(set(new_texts)) != len(new_texts):
+    if len(set(new_tokens)) != len(new_tokens):
         raise ValueError("reuse of development queries")
-    # String disjointness alone cannot establish independent human authorship.
+    if any(
+        _overlaps_dev(query, original)
+        for query in new_tokens
+        for original in dev_tokens
+    ):
+        raise ValueError("reuse of development queries: contaminated wording")
+    # This is only an inexpensive warning barrier, not a semantic plagiarism
+    # detector. Case/label meanings need blinded independent human review.
+    # Structural non-reuse cannot establish independent human authorship.
     digest = hashlib.sha256(json.dumps(candidate, sort_keys=True).encode()).hexdigest()
     return {"digest": digest, "cases": len(new_ids), "scoring_authorized": False,
             "independent_human_review_pending": True, "model_calls": 0}
