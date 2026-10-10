@@ -194,6 +194,16 @@ def test_complete_heldout_salvage_reuses_successes_and_rejects_missing_part(
                  "expired": False}
                 for i, part in enumerate(selected)
             ]
+            self.recovery_jobs = [
+                {"name": f"recover ({part['job_id']}, {part['catalog_size']}, tasks...)",
+                 "conclusion": "success"}
+                for part in selected
+            ]
+        def get(self, path):
+            if "/actions/runs/456/jobs" in path:
+                page = int(path.rsplit("page=", 1)[-1])
+                return {"jobs": self.recovery_jobs[(page - 1) * 100:page * 100]}
+            return super().get(path)
         def artifacts(self, run_id):
             if run_id == 456:
                 return self.recovered
@@ -226,6 +236,11 @@ def test_complete_heldout_salvage_reuses_successes_and_rejects_missing_part(
     assert result["recovered_parent_count"] == 1
     assert len(result["artifacts"]) == 233 + 5
     assert "c100-g00" not in result["artifacts"]
+    api.recovery_jobs[0]["conclusion"] = "cancelled"
+    with pytest.raises(ValueError, match="unsuccessful recovery jobs"):
+        collect(api, data, parent_plan, current_recovery_run=456,
+                out=tmp_path / "cancelled")
+    api.recovery_jobs[0]["conclusion"] = "success"
     api.recovered.pop()
     with pytest.raises(ValueError, match="incomplete recovery wave"):
         collect(api, data, parent_plan, current_recovery_run=456,
