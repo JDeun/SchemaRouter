@@ -33,7 +33,7 @@ jobs:
           python -m pip freeze > artifacts/cyt-proxy-macos-mock/pip-freeze.txt
           git rev-parse HEAD > artifacts/cyt-proxy-macos-mock/schemarouter-commit.txt
           printf '%s\n' "9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4" > artifacts/cyt-proxy-macos-mock/frozen-cyt-commit.txt
-      - name: Run actual CYT OpenAI Proxy HTTP with in-memory mock upstream
+      - name: Run actual CYT OpenAI Proxy HTTP with isolated loopback mock upstream
         run: |
           python -m scripts.verify_cyt_proxy_http_mock \
             --out artifacts/cyt-proxy-macos-mock/result.json

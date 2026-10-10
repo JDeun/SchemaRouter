@@ -114,13 +114,12 @@ preflight never freezes a held-out experiment or authorizes scoring.
 The integration check in
 `scripts/verify_cyt_proxy_http_mock.py` uses the real
 `qdrddr/clear-your-tools@9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4`
-Proxy ASGI handler and a local in-memory `httpx.MockTransport` fake
-Responses API endpoint on macOS. It verifies the actual HTTP route,
+Proxy ASGI handler and a local loopback-only HTTP fake Responses API endpoint on macOS. It verifies the actual HTTP route,
 Codex-tagged proxy health response, forward of a synthetic tool-bearing
 OpenAI Responses request, absence of external provider calls, and return
 of the fake model's synthetic JSON response.
 
-The fake provider's URL ends in `.invalid`. **No real agent is launched,
+The fake provider listens only on `127.0.0.1` and is shut down after the probe. **No real agent is launched,
 no tool is executed, no model API key is needed, no CYT-MCP Hook runs,
 no task is scored and no prompt-cache economics are measured.**
 Passing the native macOS SDK test or this transport test does **not**
