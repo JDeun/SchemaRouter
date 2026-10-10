@@ -213,7 +213,7 @@ HTTP or stdio server
  -> structured output validation
 ```
 
-## 서버가 공개하지 않는 result contract 선언
+## 서버가 공개하지 않는 result contract 선언 {#declare-a-result-contract-the-server-does-not-publish}
 
 MCP에서 `outputSchema`는 필수가 아닙니다. 서버가 결과를 text block으로만 돌려주면
 SchemaRouter가 field 구조를 안전하게 알아낼 근거가 없습니다.
