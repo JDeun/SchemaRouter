@@ -212,3 +212,43 @@ valid observed values. This is a no-model structural safeguard only:
 **observing a field does not establish that its value satisfies a policy**
 (for example, a refund eligibility comparison). Such semantic conditions
 must be independently authored, checked and approved before scored runs.
+
+
+## Declarative public value predicates (pre-scoring; not policy approval)
+
+The draft EvidenceGate now optionally supports independently authored
+`value_conditions` in each domain-scoped action contract, with only
+`eq`, `lte` and `gte` operations. Each condition references the **exact
+trusted information tool, action-bound record and declared public field**
+and compares the proposed action argument (left operand) with the observed
+public value (right operand). Example: proposed refund amount must be no
+greater than the independently observed eligible amount.
+
+```json
+{
+  "value_conditions": [
+    {
+      "tool": "charge_read",
+      "record_id": "$action.charge_id",
+      "field": "amount",
+      "operator": "lte",
+      "action_argument": "refund_amount"
+    }
+  ]
+}
+```
+
+An alternative condition can specify `literal` instead of
+`action_argument`, but never both. Literal values must be scalar
+and explicitly grounded in independently cited public policy; model
+suggestions never grant authority. The runtime carries only immutable
+scalar values extracted from completed, real ToolGateway observations.
+A missing value, contradictory field values, mismatched target or domain,
+unparseable numeric quantity, unsafe expression key or failed comparison
+**denies** the action. `false` and `0` are meaningful values, never
+equated to missing evidence. The reviewer must inspect units, currency,
+comparability, time scope and policy exceptions; the generic operator
+cannot infer these semantics. This mechanism is an unapproved
+pre-scoring capability and **does not establish 131-case policy coverage,
+automatic contract inference, official V1 scores or scientific validity**.
+Track further authoring and independent validation in #1269 and #1224.

@@ -378,3 +378,27 @@ Every required observation tool needs an extraction rule under its **own**
 public `env_id`, not merely a matching tool name in another domain.
 The host and launch controller reject legacy flat mappings. Human source
 review and approved, grounded evidence semantics remain necessary.
+
+
+### Independently authored value comparison rules (unapproved draft)
+
+The trusted `EvidenceGate` can now check `value_conditions` only through
+strict `eq`, `lte`, `gte` operators, with **left** operand an
+`action_argument` or trusted policy-authored scalar `literal` and **right**
+operand a real public observation `object`. Every rule binds a declared
+`{tool, record_id, field}` observation within the same domain-scoped
+contract. Example:
+
+```json
+{"value_conditions": [{"tool": "charge_read",
+                       "record_id": "$action.charge_id",
+                       "field": "amount", "operator": "lte",
+                       "action_argument": "refund_amount"}]}
+```
+
+Unknown keys, ungrounded fields, contradictory trusted values and unsupported
+expressions fail closed. The scored launcher parses all scoped contracts
+before starting expensive model work, but neither compilation nor passing
+synthetic tests confirms that a policy author's predicates are complete or
+correct. Missing required business-specific checks, units, validity windows
+and exception handling remain explicit human review blockers (#1269).
