@@ -22,7 +22,7 @@ workflow는 timestamp, SchemaRouter version, source, discovery/execution success
 
 ## 매트릭스 실행
 
-GitHub Actions **Compatibility Smoke** workflow는 매주 실행되며 수동 실행도 가능합니다. 각 adapter JSON, 통합 JSON/Markdown과 workflow step summary를 생성합니다.
+GitHub Actions **Compatibility Smoke** workflow는 매주 실행되며 수동 실행도 가능합니다. `adapter-compatibility-matrix` 작업은 adapter별 `*-compatibility.json` 보고서, 종합 `adapter-compatibility-matrix.json`과 `adapter-compatibility-matrix.md`, 그리고 workflow step summary에 동일한 Markdown 표를 생성합니다.
 
 public-provider job은 의도적으로 non-blocking입니다. pinned-reference failure는 repository가 통제하는 compatibility evidence이므로 aggregator에서 다르게 취급합니다.
 

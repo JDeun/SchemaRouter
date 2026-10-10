@@ -76,7 +76,7 @@ body: array[string]
 Strictly tagged `oneOf`의 discriminator contract는 각 branch가 자체적으로 unique tag를 증명할
 때만 인식합니다. Mapping 문자열만 믿어서 local schema contract를 약화시키지 않습니다.
 
-임의의 `oneOf`·`anyOf`를 평탄화하면 서로 다른 변형의 필드가 합쳐져 잘못된 본문이 될 수 있습니다. 엄격한 discriminator를 인정하려면 `discriminator.propertyName`이 선언되고, 모든 분기가 객체여야 하며, 각 분기는 해당 필드를 필수로 요구하고 고유한 `const` 또는 단일 값 `enum`을 증명해야 합니다. 모델이 제안한 변형도 로컬에서 전체 검증합니다.
+임의의 `oneOf`·`anyOf`를 평탄화하면 서로 다른 변형의 필드가 합쳐져 잘못된 본문이 될 수 있습니다. 엄격한 discriminator를 인정하려면 `discriminator.propertyName`이 선언되고, 모든 분기가 객체여야 하며, 각 분기는 해당 필드를 필수로 요구하고 고유한 `const` 또는 단일 값 `enum`을 증명해야 합니다. 모델이 제안한 변형도 로컬에서 전체 검증합니다. 임의의 `oneOf`/`anyOf` 본문은 서로 다른 branch의 필드를 합치지 않고 하나의 타입이 지정된 루트 `body` 파라미터로 보존합니다. 플래너에도 원래의 composed `oneOf` 스키마와 discriminator metadata를 전달하고 전체 객체를 원래 JSON Schema로 검증한 뒤, OpenAPI invoker가 객체를 그대로 JSON 요청의 최상위 값으로 전송합니다. `{"body": ...}` 같은 wrapper를 새로 만들지 않습니다. 호출자가 소유한 `ModelQueryAnalyzer`에 연결된 GPT·Gemini·Claude 등 structured-output 모델이 완전한 `body`를 제안할 수 있지만 알 수 없는 인자와 스키마에 맞지 않는 변형은 실행 전에 로컬에서 거부합니다.
 
 ```yaml
 schema:
@@ -89,9 +89,7 @@ schema:
 
 ## OpenAPI 3.0 nullable
 
-OpenAPI 3.0의:
-
-는 내부에서 다음 JSON Schema 의미로 정규화합니다.
+OpenAPI 3.0에서는 `type`과 `nullable: true`가 같은 Schema Object에 선언됐을 때 일반 JSON Schema의 `null` 타입을 포함하는 union으로 정규화합니다. 아래 첫 번째 YAML 선언은 두 번째 JSON Schema와 동일한 의미입니다.
 
 OpenAPI 3.1은 원래 JSON Schema 표현을 그대로 사용합니다.
 
@@ -162,7 +160,11 @@ body:id   -> body__id
 이 경우에도 same-origin, depth, document count, byte budget, redirect limit을 적용합니다.
 Cross-origin reference나 unsupported dynamic reference는 fail-closed입니다.
 
-URL이 현재 읽은 문서와 같은 대상을 가리키면 `./openapi.json#/components/schemas/User` 같은 참조를 로컬 JSON Pointer로 정규화합니다. 다른 문서를 가리키는 참조는 명시적 허용 후에만 동일 출처에서 가져옵니다. 참조 문서의 깊이·개수·총 바이트·개별 문서 크기·리디렉션 수를 각각 제한하며, 가져온 자료는 로컬 검증 묶음으로 다시 작성합니다. 정적 `$id`·`$anchor`는 제한적으로 해석하지만 교차 출처, 동적 참조, 중복 anchor, 제한 초과는 거부합니다.
+URL이 현재 읽은 문서와 같은 대상을 가리키면 `./openapi.json#/components/schemas/User` 같은 참조를 로컬 JSON Pointer로 정규화합니다. 다른 문서를 가리키는 참조는 명시적 허용 후에만 동일 출처에서 가져옵니다. 참조 문서의 깊이·개수·총 바이트·개별 문서 크기·리디렉션 수를 각각 제한합니다. 해당 한도는 신뢰하는 애플리케이션 코드에서 `SchemaRouter.from_url()` 또는 `add_url()`의 키워드 인자로 더 낮출 수 있습니다. 명시적으로 외부 참조를 허용한 경우에만 `schema_headers`를 같은 출처의 참조에 재사용합니다. JSON/YAML 참조 문서는 완전히 가져와 JSON Schema resource로 인덱싱하고, 원래 위치의 `$ref`를 로컬 JSON Pointer로 다시 작성해 in-memory bundle로 만듭니다.
+
+같은 출처의 절대·상대 `$id`는 하위 `$ref`의 기준 위치를 바꾸고, 중첩된 `$id`는 이미 가져온 문서 안의 가상 resource로 인덱싱됩니다. `schema.json#User` 같은 정적 `$anchor`도 대상 subschema로 해석됩니다. 최종 runtime bundle에서는 `$id`·`$anchor`를 제거해 외부 참조를 다시 시도하지 않게 합니다.
+
+교차 출처 참조 문서나 `$id` 기준 URI, fragment가 붙은 `$id`, 누락·중복·잘못된 정적 anchor, `$dynamicRef`, `$dynamicAnchor`, `$recursiveRef`, `$recursiveAnchor`, 제한 초과 또는 구조화되지 않은 참조 내용은 **fail-closed**합니다. 동적 JSON Schema scope를 정적 anchor로 잘못 치환하면 검증 의미가 달라질 수 있기 때문에 이 기능은 현재 범위에서 제외합니다.
 
 ```python
 router = await SchemaRouter.from_url(
@@ -187,7 +189,11 @@ Response object 안의 nested declared field도 deterministic dotted identity로
 Array-of-object도 record alignment를 보존하는 `*` path를 사용합니다. Payload sample을 보고
 임의 wildcard field를 추론하지 않습니다.
 
-중첩 출력 필드에는 원본 JSON Schema, 설명, 단위, 원천 경로를 보존합니다. `data[].band_gap`의 `*` 경로는 선언된 배열의 각 레코드를 뜻하며, 선택된 여러 필드가 하나의 레코드에 속한다는 관계를 보존합니다. 페이로드 사례만 보고 wildcard를 추론하지 않습니다. 의미 ID와 단위 정규화 같은 신뢰 메타데이터는 `amend_capability()`로만 추가합니다.
+중첩 객체를 발견하면 상위 `data`뿐 아니라 `data.band_gap`, `data.density`처럼 결정적인 점 표기 field ID를 노출합니다. 각각 원본 JSON Schema, 설명, 단위, 원천 경로를 보존합니다. 선택한 중첩 필드의 projected result key도 점 표기 이름을 사용하므로 상위 객체와 충돌하지 않습니다. 재귀 local ref는 순환을 안전하게 차단하며 제한된 범위에서 탐색합니다.
+
+`data[].band_gap`의 원본/결과 경로는 `["data", "*", "band_gap"]`입니다. 선언된 배열의 각 항목을 의미하는 `"*"`는 `data[].band_gap`과 `data[].density`를 서로 대응하는 **동일 레코드**로 묶어 보존합니다. 근거가 없는 응답 예시에서 wildcard field를 추론하지 않습니다. 루트 자체가 `[{id, score}, ...]` 형태의 배열이면 합성 `[].id` 필드가 아니라 `id`, `score` 필드가 제공됩니다.
+
+중첩 출력 필드에는 원본 JSON Schema, 설명, 단위, 원천 경로를 보존합니다. `data[].band_gap`의 `*` 경로는 선언된 배열의 각 레코드를 뜻하며, 선택된 여러 필드가 하나의 레코드에 속한다는 관계를 보존합니다. 페이로드 사례만 보고 wildcard를 추론하지 않습니다. Provider가 선언한 스키마·설명·원본 단위는 그대로 가져옵니다. `semantic_id`, qualifier, canonical unit normalization, source type, license는 신뢰하는 `amend_capability()`를 통해 나중에 붙일 수 있지만 원격 문서의 단위 문자열에서 변환 계수나 의미적 provenance를 추론하지 않습니다.
 
 ```text
 data

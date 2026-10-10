@@ -30,7 +30,7 @@ write operation/action은 자동 허용되지 않습니다.
 
 OData의 `$select`를 server-side projection으로 사용합니다. plan이 `ID`, `Address.City`를 요청하면 transport는 `$select=ID,Address/City`를 전송하고, SchemaRouter는 반환된 `value[]` collection의 각 object를 projection하면서 record alignment를 유지합니다.
 
-complex property는 planner에서 dotted identity를 사용하고 provider selector에서는 OData slash notation을 사용합니다. complex value collection도 다른 adapter와 동일한 record-preserving array-item contract를 사용하므로 여러 child field를 서로 무관한 parallel array로 평탄화하지 않습니다.
+complex property는 planner에서 dotted identity를 사용하고 provider selector에서는 OData slash notation을 사용합니다. complex value collection도 다른 adapter와 동일한 record-preserving array-item contract를 사용합니다. 예를 들어 `Measurements[].Value`의 trusted path는 `["Measurements", "*", "Value"]`이고 provider에는 `$select=Measurements/Value`를 전송합니다. 여러 child field를 선택해도 `Measurements[]`의 **동일 인덱스 레코드**에 묶어 유지하며 서로 무관한 parallel array로 평탄화하지 않습니다.
 
 
 ```text
@@ -44,7 +44,7 @@ $select=ID,Address/City
 
 ## Type과 unit contract
 
-일반적인 `Edm.*` primitive를 JSON Schema로 매핑합니다. entity key는 identifier field, complex type은 nested object schema가 됩니다.
+일반적인 `Edm.*` primitive(문자열·UUID, boolean, 여러 정수 유형, decimal/부동소수점, 날짜·날짜시간, collection)를 JSON Schema로 매핑합니다. entity key는 identifier field, complex type은 nested object schema가 됩니다.
 
 선언된 structured CSDL measure annotation도 보존합니다. 특히 `Org.OData.Measures.V1.Unit`, `Org.OData.Measures.V1.ISOCurrency` 값은 `FieldSpec.unit`이 됩니다.
 

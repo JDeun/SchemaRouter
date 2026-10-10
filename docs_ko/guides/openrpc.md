@@ -48,7 +48,7 @@ OpenRPC `by-name`, `either` method는 JSON object param으로 전송합니다. `
 
 ## Response validation
 
-transport는 HTTP status, response-size bound, JSON decoding, `jsonrpc == "2.0"`, request/response ID 일치, application-level `error` 부재, `result` 존재를 확인합니다. 이후 일반 SchemaRouter output JSON Schema validation과 field projection을 수행합니다.
+transport는 HTTP status, response-size bound, JSON decoding, `jsonrpc == "2.0"`, request/response ID 일치, application-level `error` 부재, `result` 존재를 확인합니다. 이후 일반 SchemaRouter output JSON Schema validation과 field projection을 수행합니다. 서버가 공개한 중첩 객체 및 배열 item의 결과 필드는 `results: [{title, score}, ...]` 같은 선언에서 `results[].title`, `results[].score` 형태로 식별하며 예시 응답만으로 임의 필드를 추론하지 않습니다.
 
 ## 범위
 
