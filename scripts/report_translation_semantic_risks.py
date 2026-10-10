@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 FENCE = re.compile(r"^\s*(\x60{3,}|~{3,})")
 INLINE = re.compile(r"(?<!\x60)\x60([^\x60\n]{1,180})\x60(?!\x60)")
-NUMBER = re.compile(r"(?<![A-Za-z0-9_/.#])\d+(?:[.,]\d+)*(?:%|pp|ms|GiB|MiB)?(?![A-Za-z0-9_])")
+NUMBER = re.compile(\n    r"(?<![A-Za-z0-9_/.#])(\d+(?:[.,]\d+)*)"\n    r"(?:\s*(%포인트|%p|pp|percentage points|%|ms|GiB|MiB))?"\n    r"(?![A-Za-z0-9_])"\n)
 PROVENANCE = re.compile(r"(?<![A-Za-z0-9_])(?:#[1-9]\d{1,5}|\d{10,12}|[a-f0-9]{40})(?![A-Za-z0-9_])")
 
 
@@ -31,7 +31,7 @@ def prose(source: str) -> str:
     return "\n".join(lines)
 
 
-def tokens(text: str) -> dict[str, set[str]]:
+def normalize_number(match: re.Match[str]) -> str:\n    magnitude = match.group(1).replace(\",\", \"\")\n    unit = (match.group(2) or \"\").strip()\n    if unit in {\"%p\", \"%포인트\", \"percentage points\"}:\n        unit = \"pp\"\n    return magnitude + unit\n\n\ndef tokens(text: str) -> dict[str, set[str]]:
     visible = prose(text)
     return {
         "technical": {
@@ -39,7 +39,7 @@ def tokens(text: str) -> dict[str, set[str]]:
             for match in INLINE.finditer(visible)
             if re.search(r"[._/()\[\]<>=-]", match.group(1))
         },
-        "numbers": {match.group(0).replace(",", "") for match in NUMBER.finditer(visible)},
+        "numbers": {normalize_number(match) for match in NUMBER.finditer(visible)},
         "provenance": {match.group(0) for match in PROVENANCE.finditer(visible)},
     }
 

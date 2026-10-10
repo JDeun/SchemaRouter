@@ -39,3 +39,14 @@ def test_korean_particles_and_number_separator_do_not_look_missing() -> None:
     english = tokens("# Results\n\n158 of 181 instances and 1,200 queries.")
     korean = tokens("# 결과\n\n181개 중 158개와 1200개 질의.")
     assert english["numbers"] <= korean["numbers"]
+
+
+def test_percent_point_notations_are_semantically_equal() -> None:
+    english = tokens("# Difference\n\nK3 delta: -3.26pp; gate: -2pp; CI 95%.")
+    korean = tokens("# 차이\n\nK3 차이 -3.26%p, 게이트 -2%포인트, CI 95%.")
+    assert english["numbers"] <= korean["numbers"]
+
+
+def test_numeric_magnitude_keeps_a_unit_difference_visible() -> None:
+    assert "100ms" in tokens("# Test\n\n100 ms")["numbers"]
+    assert "100ms" not in tokens("# 검증\n\n100초")["numbers"]
