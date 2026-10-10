@@ -8,6 +8,8 @@ import json
 import re
 from pathlib import Path
 
+from scripts.prepare_korean_docs import git_blob_sha
+
 ROOT = Path(__file__).resolve().parents[1]
 FENCE = re.compile(r"^\s*(\x60{3,}|~{3,})")
 INLINE_CODE = re.compile(r"\x60[^\x60\n]*\x60")
@@ -69,6 +71,54 @@ def scan(korean_root: Path) -> dict[str, object]:
     }
 
 
+
+def verify_reviewed(
+    report: dict[str, object], ledger_path: Path, korean_root: Path
+) -> list[str]:
+    """Fail only on unreviewed/stale English-clause risks, never certify meaning."""
+    evidence = json.loads(ledger_path.read_text(encoding="utf-8"))
+    if evidence.get("schema_version") != 1 or not isinstance(
+        evidence.get("reviews"), list
+    ):
+        return ["invalid English-prose review ledger"]
+
+    approved: set[tuple[str, int]] = set()
+    errors: list[str] = []
+    for row in evidence["reviews"]:
+        path = row.get("path")
+        lines = row.get("lines")
+        decision = row.get("decision")
+        if not isinstance(path, str) or not isinstance(lines, list):
+            errors.append("invalid review path or lines")
+            continue
+        if not decision or len(lines) == 0:
+            errors.append(f"{path}: missing review rationale or line references")
+            continue
+        file = korean_root / path
+        if not file.is_file() or row.get("ko_blob") != git_blob_sha(
+            file.read_bytes()
+        ):
+            errors.append(f"{path}: translation file changed since review")
+        for line in lines:
+            if not isinstance(line, int) or line <= 0:
+                errors.append(f"{path}: invalid reviewed line")
+                continue
+            key = (path, line)
+            if key in approved:
+                errors.append(f"{path}:{line}: duplicate reviewed clause")
+            approved.add(key)
+
+    findings = report.get("findings")
+    if not isinstance(findings, list):
+        return errors + ["invalid English-prose scan report"]
+    actual = {(str(row["path"]), int(row["line"])) for row in findings}
+    for path, line in sorted(actual - approved):
+        errors.append(f"{path}:{line}: unreviewed English-prose candidate")
+    for path, line in sorted(approved - actual):
+        errors.append(f"{path}:{line}: obsolete review disposition")
+    return errors
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--korean-root", type=Path, default=ROOT / "docs_ko")
@@ -76,6 +126,8 @@ def main() -> None:
         "--json-out", type=Path, default=Path("korean-prose-leakage.json")
     )
     parser.add_argument("--max-show", type=int, default=40)
+    parser.add_argument("--review-ledger", type=Path)
+    parser.add_argument("--strict", action="store_true")
     args = parser.parse_args()
     report = scan(args.korean_root)
     args.json_out.write_text(
@@ -87,6 +139,14 @@ def main() -> None:
         f"English prose advisory candidates: {report['candidate_lines']}"
     )
     print("Human review is required; this is NOT a translation certificate.")
+    if args.strict:
+        if args.review_ledger is None:
+            raise SystemExit("--strict requires --review-ledger")
+        problems = verify_reviewed(report, args.review_ledger, args.korean_root)
+        if problems:
+            raise SystemExit("unreviewed English prose:\n- " + "\n- ".join(problems))
+        print("All heuristic candidates have revision-pinned dispositions; "
+              "semantic fidelity remains unverified.")
     for item in report["findings"][: args.max_show]:
         print(f"{item['path']}:{item['line']}: {item['excerpt']}")
 
