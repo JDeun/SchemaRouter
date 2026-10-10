@@ -98,9 +98,9 @@ Canonical provenance:
 
 이전 중복 실행 `36641753066`은 정본이 아니며, 해당 실행의 부분 결과는 최종 분석에서 제외합니다.
 
-### Structural shortlist-depth result — K3 not promoted
+### 구조적 후보 목록 깊이 평가 — K3 미승격
 
-A separately preregistered strong-agent K3-vs-K5 gate completed in run `36670280971`:
+사전에 별도로 등록한 강한 모델의 K3 대 K5 비교 게이트는 실행 `36670280971`에서 종료됐습니다:
 
 - STRUCT-FIXED-3 작업 통과율: 82.61%;
 - STRUCT-FIXED-5 작업 통과율: 85.87%;
@@ -110,8 +110,7 @@ A separately preregistered strong-agent K3-vs-K5 gate completed in run `36670280
 - K3는 도구 스키마 토큰 사용량이 더 적었음;
 - 실행 정책의 무결성 검증을 통과했으며 승인되지 않은 파괴적 실행은 0건이었음.
 
-The task-pass gate failed, so K3 is **not** promoted into #432. No K/weight/threshold retuning is
-permitted from those evaluated rows.
+과제 통과율 게이트를 충족하지 못했으므로 K3는 #432 조건으로 **승격되지 않았습니다**. 평가에 사용한 결과 행을 근거로 K, 가중치 또는 임계값을 다시 조정할 수 없습니다.
 
 ## External validation 상태
 
@@ -124,7 +123,7 @@ External comparison은 maintainer-owned product validation과 분리해 추적�
 | Jev (#796) | frozen 82-tool / 16-query package delivered upstream | waiting for upstream execution/review; no post-freeze tuning |
 | HYSET (#795) | public-code fresh-retraining protocol prepared | must be labeled independently retrained HYSET; no paper-checkpoint reproduction claim |
 
-The canonical freeze rules live in [External validation freeze](external-validation-freeze.md). Negative or null external results remain publishable evidence and must not be repaired from held-out rows.
+정식 동결 규칙은 [외부 검증 동결](external-validation-freeze.md)에 설명돼 있습니다. 부정적 결과와 효과가 확인되지 않은 결과도 그대로 공개할 수 있는 근거이며, 홀드아웃 결과를 보고 수정해서는 안 됩니다.
 
 ### Active conveyor
 
@@ -154,7 +153,7 @@ flowchart TD
 
 ## Historical 0.11–0.13 operation-routing target
 
-The current research target for the multilingual open-set operation-routing work is:
+다국어 오픈셋 작업 라우팅 연구의 목표는 다음과 같습니다:
 
 | Metric | Target |
 | --- | ---: |
@@ -165,8 +164,7 @@ The current research target for the multilingual open-set operation-routing work
 | Authority / execution errors | 0 |
 | Executable p95 | <= 250 ms |
 
-The canonical v4 development corpus contains 1,800 cases. Its SHA-256 is
-`fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`.
+정식 v4 개발 코퍼스는 1,800개 사례로 구성되며 SHA-256은 `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`입니다.
 
 ## 실제로 입증된 내용
 
@@ -179,13 +177,11 @@ The canonical v4 development corpus contains 1,800 cases. Its SHA-256 is
 
 두 번째 row가 결정적입니다. 변경하지 않은 candidate가 independent request-surface shift에 실패했으므로 **promote하지 않았습니다**. Calibration과 blind-final evidence는 소비하지 않았습니다.
 
-So the closed cycle does **not** claim that SchemaRouter has validated the 85/97/100/1 +
-250 ms production target under independent surface shift.
+따라서 종료된 연구 주기는 독립적인 요청 표면 변화 조건에서 SchemaRouter가 85/97/100/1 및 250ms 운영 목표를 검증했다고 **주장하지 않습니다**.
 
 ## Experiment가 시사하는 점
 
-The frozen BGE-M3 registered-route ranker reaches about **88.45% raw top-1** on canonical DEV. Late
-experiments suggest that closed-set ranking is no longer the main blocker.
+동결된 BGE-M3 등록 경로 순위 모델은 정식 개발 집합에서 원시 Top-1 정확도 **약 88.45%**를 기록했습니다. 후반 실험은 닫힌 후보 집합 내 순위 결정이 더 이상 주된 병목이 아님을 시사합니다.
 
 더 어려운 문제는 open-set **capability membership**입니다:
 
@@ -197,7 +193,7 @@ experiments suggest that closed-set ranking is no longer the main blocker.
 
 ## Conservative reference
 
-The #259 BGE-M3 reference profile remains useful for safety-oriented comparison:
+#259 BGE-M3 기준 프로필은 안전성 중심의 비교에 계속 유용합니다:
 
 - supported exact: 83.77%;
 - near-domain unsupported rejection: 98.96%;
@@ -208,25 +204,22 @@ Supported exact routing이 85% 미만이므로 production-target pass는 아닙�
 
 ## 최초 registry-compiled capability prototype
 
-Experiment #338 tested a provider-neutral registry-compiled capability verifier after the closed
-architecture-search cycle.
+실험 #338은 아키텍처 탐색 주기가 종료된 뒤 제공자에 종속되지 않는 레지스트리 컴파일형 기능 검증기를 평가했습니다.
 
 인프라 측면의 목표는 달성했습니다. 동일한 컴파일러가 네이티브 `ToolSpec`, OpenAPI 및
 MCP 등록을 처리했고, 타입이 지정된 필드·단위 메타데이터를 보존했으며,
 원래 BGE의 경로 선택 권한을 변경하지 않았습니다. 권한 부여나 실행 오류도 추가하지 않았습니다.
 
-The learned synthetic veto, however, was far too conservative:
+그러나 합성 데이터로 학습한 거부 판단기는 지나치게 보수적이었습니다:
 
 | Surface | Exact | Near reject | OOD | False-route | Correct raw-winner retention | p95 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Canonical DEV (1,800) | 5.03% | 100% | 100% | 0% | 5.69% | 196.93 ms |
 | Registration holdout (228) | 2.08% | 100% | 100% | 0% | 2.46% | 192.85 ms |
 
-The registration holdout contained previously unseen native/OpenAPI/MCP tool identities, opaque
-endpoint names, empty operation aliases and variable endpoint counts.
+등록 홀드아웃에는 학습 때 보지 못한 네이티브·OpenAPI·MCP 도구 식별자, 불투명한 엔드포인트 이름, 비어 있는 작업 별칭 및 서로 다른 엔드포인트 수가 포함됐습니다.
 
-This candidate is **terminally rejected** under its preregistered stopping rule. It may not
-be repaired using canonical/holdout labels.
+이 후보는 사전 등록한 중단 규칙에 따라 **최종 기각**됐습니다. 정식 데이터나 홀드아웃 정답 레이블을 사용해 수정해서는 안 됩니다.
 
 유용한 결과는 promoted quality method가 아니라 architecture 측면에 있습니다. Provider-neutral typed capability/data-contract compilation은 SchemaRouter의 product model과 계속 정렬되지만, 이 synthetic learned veto는 그렇지 않습니다.
 
@@ -259,24 +252,20 @@ DEV 결과:
 
 ## 0.12 semantic ontology screens
 
-Two follow-up experiments tested whether a generic operation ontology could provide that broader
-signal without route-specific retraining.
+두 후속 실험에서는 경로별 재학습 없이 범용 작업 온톨로지가 더 폭넓은 의미 신호를 제공할 수 있는지 시험했습니다.
 
 | Experiment | Supported exact | Near reject | OOD | False-route | Raw exact | Raw tool | p95 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | #349 flat semantic action ontology | 44.91% | 56.48% | 100% | 32.64% | 77.31% | 94.44% | 197.55 ms |
 | #354 hierarchical capability ontology | 30.42% | 68.65% | 88.89% | 26.85% | 85.42% | 100% | 164.33 ms |
 
-Both candidates were terminally rejected on their newly frozen DEV surfaces; neither confirmation
-corpus was opened.
+두 후보 모두 새로 동결한 개발 표면에서 최종 기각됐으며 확인 코퍼스는 어느 쪽도 개봉하지 않았습니다.
 
 #354에서 얻은 가장 중요한 architectural lesson은 raw BGE ranker가 이미 supported exact target을 충족하고 모든 supported DEV request에서 올바른 tool을 선택했지만 hard semantic ontology filtering이 그 좋은 signal을 훼손했다는 점입니다. Ontology는 registered capability semantics의 structured representation으로는 유용하지만 **endpoint removal authority를 가진 noisy positive selector로 사용해서는 안 됩니다**.
 
 ## 0.12 asymmetric ontology veto
 
-Experiment #358 preserved the raw BGE-M3 top-1 as the sole positive selector and allowed ontology
-evidence only to veto to `NO_ROUTE`. It never filtered to another endpoint and never reranked a
-positive route.
+실험 #358은 BGE-M3 원시 Top-1을 유일한 긍정 경로 선택기로 유지하고, 온톨로지 근거는 `NO_ROUTE` 거부에만 사용했습니다. 다른 엔드포인트로 선택을 바꾸거나 긍정 경로의 순위를 재조정하지 않았습니다.
 
 DEV result:
 
@@ -294,9 +283,7 @@ DEV result:
 | p95 | 236.02 ms |
 | Authority / execution errors | 0 / 0 |
 
-이는 유용한 authority result이지만 quality pass는 아닙니다. Negative-only ontology evidence can preserve
-supported routing when it is not allowed to choose another endpoint, but requiring exact same-leaf
-agreement across independent signals is far too conservative to provide enough unsupported recall.
+이는 실행 권한 경계 측면에서는 유용하지만 품질 기준을 통과한 결과는 아닙니다. 온톨로지 근거가 다른 엔드포인트를 고를 수 없도록 하면 지원되는 경로를 보존할 수 있지만, 독립 신호 간에 정확히 동일한 최하위 범주 일치를 요구하면 미지원 요청을 충분히 탐지하기 어려울 만큼 보수적입니다.
 
 정확한 #358 rule은 terminal이며 frozen confirmation corpus는 **unscored** 상태로 유지합니다.
 
@@ -324,8 +311,7 @@ DEV result:
 | p95 | 249.73 ms |
 | Positive route switches / authority / execution errors | 0 / 0 / 0 |
 
-Set-level consensus는 #358 대비 recall을 39.51%에서 64.20%로 크게 개선했지만 97% near-domain target에는 여전히 미달했고 올바른 supported winner를 reject하기 시작했습니다. This closes further rule
-tuning over the same BGE/MiniLM ontology-projection evidence family on consumed DEV.
+집합 수준 합의는 #358 대비 재현율을 39.51%에서 64.20%로 높였지만, 여전히 유사 도메인 거부율 목표인 97%에는 미달했고 올바른 지원 경로도 거부하기 시작했습니다. 이미 사용한 개발 집합에서 동일한 BGE/MiniLM 온톨로지 투영 근거 계열의 규칙을 추가 조정하지 않기로 했습니다.
 
 #363의 해당 규칙에 관한 실험은 종료됐습니다. 별도로 동결한 552개 사례의 확인 코퍼스는
 여전히 **채점되지 않았습니다**. 후속 연구는 같은 투영 결과를 대상으로 임계값이나
@@ -340,8 +326,7 @@ BGE가 기준으로 선택한 도구에는 등록된 작업 세부 기능들과 
 `outside registered capabilities` 레이블 하나를 유한한 다중 분류 집합으로 제시했습니다.
 외부 분류기는 원래 선택된 경로를 유지하거나 `NO_ROUTE`로 거부할 수만 있었습니다.
 
-The model was resolved before scoring to immutable revision
-`d8c48cf2e7c7640ad5bbb379bdb2f72f5ebde7c4`.
+모델은 점수 계산 전에 변경 불가능한 리비전 `d8c48cf2e7c7640ad5bbb379bdb2f72f5ebde7c4`로 고정했습니다.
 
 DEV result:
 
@@ -360,11 +345,9 @@ DEV result:
 | End-to-end p95 | 274.52 ms |
 | Positive route switches / authority / execution errors | 0 / 0 / 0 |
 
-Architecture는 authority-safe 상태를 유지했지만 generic OUTSIDE catch-all은 concrete supported capability label과의 multiclass normalization에서 거의 선택되지 않았습니다. The exact formulation is
-terminal and its separately frozen confirmation corpus remains **unscored**.
+아키텍처는 실행 권한을 안전하게 유지했지만, 일반적인 OUTSIDE 포괄 레이블은 구체적인 지원 기능 레이블과의 다중분류 정규화에서 거의 선택되지 않았습니다. 이 구성은 종료됐으며 별도로 동결한 확인 코퍼스는 **평가하지 않은 상태**로 남아 있습니다.
 
-The next candidate must condition the actual registered capability set directly in the membership
-question instead of asking one generic OUTSIDE label to compete with concrete positive labels.
+다음 후보는 일반적인 OUTSIDE 레이블 하나를 구체적인 긍정 레이블과 경쟁시키는 대신, 실제 등록된 기능 집합을 소속 여부 질문에 직접 반영해야 합니다.
 
 
 ## 0.12 set-conditioned binary entailment
@@ -422,11 +405,9 @@ DEV result:
 | End-to-end p95 | 278.09 ms |
 | Positive route switches / authority / execution errors | 0 / 0 / 0 |
 
-Per-capability decomposition은 하나의 aggregate set hypothesis보다 더 informative했지만 binary argmax는 여전히 supported request를 과도하게 veto하여 raw-correct winner의 절반 이상을 reject했습니다.
-The exact #377 formulation is terminal and its frozen confirmation corpus remains **unscored**.
+기능별 분해는 하나의 집합 가설보다 많은 정보를 제공했지만, 이진 최대값 선택은 여전히 지원 요청을 과도하게 거부하여 원래 정답이었던 경로의 절반 이상을 제거했습니다. 실험 #377의 해당 구성은 종료됐고 동결된 확인 코퍼스는 **평가하지 않았습니다**.
 
-The next preregistered experiment (#378) compares the strongest supported-leaf entailment with the
-strongest counterfactual-leaf entailment, without adding thresholds or positive reranking.
+사전 등록된 다음 실험 #378은 임계값 추가나 긍정 경로 재순위화 없이 지원 기능의 최강 함의 점수와 반사실적 기능의 최강 함의 점수를 비교합니다.
 
 
 ## 0.12 pairwise supported-vs-counterfactual NLI
