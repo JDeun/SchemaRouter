@@ -43,8 +43,9 @@ class TrustedEvidenceSession:
         information_call: InfoCaller,
         verify_result: EvidenceVerifier,
         execute_action: ActionCaller,
+        domain: str | None = None,
     ) -> None:
-        self._gate = build_gate(contract, action)
+        self._gate = build_gate(contract, action, domain=domain)
         self._information_call = information_call
         self._verify_result = verify_result
         self._execute_action = execute_action
@@ -65,6 +66,7 @@ class TrustedEvidenceSession:
         information_call: InfoCaller,
         verify_result: EvidenceVerifier,
         execute_action: ActionCaller,
+        domain: str | None = None,
     ) -> TrustedEvidenceSession:
         """Fail closed on actual pinned source files before any case session.
 
@@ -81,6 +83,7 @@ class TrustedEvidenceSession:
             information_call=information_call,
             verify_result=verify_result,
             execute_action=execute_action,
+            domain=domain,
         )
 
     def information_call(
