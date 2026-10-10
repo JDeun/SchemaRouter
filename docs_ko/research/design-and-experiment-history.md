@@ -905,7 +905,7 @@ Provenance:
 
 The largest examples include:
 
-- `inventory.search`: 50.00% raw exact at global 0.55 versus 69.44% at route-local 0.35;
+- `inventory.search`: 전역 가중치 0.55에서 원시 정확도 50.00%, 경로별 가중치 0.35에서 69.44%
 - `papers.search`: 81.94% versus 90.28% at route-local 0.30.
 
 ### #256 route-local stable fusion
@@ -1086,7 +1086,7 @@ The architectural invariant remains:
 > Semantic model은 locally registered authority 안에서만 rank, reject 또는 rescue할 수 있으며 execution authority를 만들지 않습니다.
 
 
-## 30. Cross-model rescue, fresh-surface failure, and typed open-set evidence
+## 30. 모델 간 복구·새로운 평가 표면에서의 실패·타입 기반 오픈셋 근거
 
 ### #262 — cross-model zero-false abstention rescue
 
@@ -1109,7 +1109,7 @@ GTE + 승자 전용 리랭커 조건은 올바른 지원 사례 **17개**를 복
 **결정:** 교차 모델 조건은 튜닝 DEV의 모든 목표를 넘었으며, 별도로 동결하여 실제 실행 환경에서 확인할 후보로 선정했습니다.
 
 
-### #265 / PR #270 — frozen candidate and fresh-surface confirmation
+### #265 / PR #270 — 후보 동결과 새로운 평가 표면 확인
 
 #262에서 선택된 후보는 확인 평가 전에 다음 조건으로 동결했습니다.
 
@@ -1161,7 +1161,7 @@ Runtime remained practical:
 - NLI single-pair mean/p95: 14.13 / 15.29 ms;
 - sequential mean/p95: 165.28 / 192.02 ms.
 
-However, both supported and unsupported pairs were overwhelmingly classified as neutral, not contradiction.
+하지만 지원 요청과 미지원 요청 쌍 모두 모순이 아닌 중립으로 분류되는 경우가 압도적으로 많았습니다.
 
 Correct-supported winners:
 
@@ -1173,7 +1173,7 @@ Near-domain unsupported:
 - contradiction median: 0.0876;
 - neutral median: 0.8627.
 
-No preregistered contradiction threshold reached the 85/97/1 target.
+사전 등록한 모순 판정 임계값 중 85/97/1 목표를 충족한 것은 없었습니다.
 
 Decision: rejected.
 
@@ -1214,9 +1214,9 @@ Decision: rejected.
 
 ## 33. #266 and #271 — rejected rescue ablations
 
-Two additional abstention-rescue ablations confirmed that the remaining gap was not easily recoverable from the existing strict base.
+선택 보류 복구에 관한 두 가지 추가 절제 실험은 기존 엄격한 기준선만으로 남은 성능 격차를 쉽게 회복할 수 없음을 확인했습니다.
 
-### #266 — robust-base same-winner cross-encoder rescue
+### #266 — 견고한 기준선에서 동일 후보를 복구하는 크로스 인코더
 
 - base abstentions: 767;
 - correct-winner headroom: 54;
@@ -1228,7 +1228,7 @@ Decision: rejected.
 
 ### #271 — native BGE-M3 abstention geometry
 
-Using only existing BGE-M3 score/margin/agreement geometry:
+기존 BGE-M3의 점수·마진·합의의 기하학적 특성만 사용한 결과:
 
 - zero-additional-false rescues: 4;
 - composed exact: 84.11%;
@@ -1279,15 +1279,15 @@ false route 1% 이하 및 OOD 거부율 100%를 동시에 보존하면서 가장
 - 아티팩트 SHA-256: `00eb49f680d7b1bdfa8c341c2f091c641e4912ca94c9f0bc81815db3e70b3643`
 
 
-## 35. #279 — dual signed negative open-world detector
+## 35. #279 — 부호가 있는 이중 부정 근거 기반 오픈월드 탐지기
 
-Work item #279 / PR #280 separated near-domain and OOD veto evidence while keeping BGE-M3 raw top-1 as the only route authority.
+작업 #279 / PR #280에서는 BGE-M3 원시 Top-1을 유일한 경로 선택 권한으로 유지하면서 유사 도메인 및 도메인 밖 요청의 거부 근거를 분리했습니다.
 
 ### Near-domain channel
 
-- route-conditioned explicit unsupported-action prototypes from #275;
+- #275의 경로 조건별 명시적 미지원 작업 원형
 - maximum negative score;
-- negative-over-raw-winner-action signed advantage.
+- 부정 사례와 원래 최상위 작업 간 부호 있는 상대 우위
 
 ### OOD channel
 
@@ -1337,9 +1337,9 @@ Work item #279 / PR #280 separated near-domain and OOD veto evidence while keepi
 - 아티팩트 SHA-256: `f04242ac79d22b35f29486b9f3b94b3ce1603400bfc87382ec73a412905cea83`
 
 
-## 36. #281 — rank-based capability-set open-world veto
+## 36. #281 — 순위 기반 기능 집합 오픈월드 거부
 
-Work item #281 / PR #283 tested the final preregistered fixed-prototype heuristic family using only relative prototype ordering, with no scalar similarity threshold.
+작업 #281 / PR #283은 스칼라 유사도 임계값 없이 원형 간 상대 순서만 사용하는 마지막 사전 등록 고정 원형 휴리스틱 계열을 시험했습니다.
 
 The route authority remained unchanged:
 
@@ -1351,23 +1351,23 @@ The route authority remained unchanged:
 
 ### Near-domain local set
 
-Within the raw winner domain, the experiment ranked:
+원래 최상위 경로의 도메인 안에서 다음 항목의 순위를 비교했습니다:
 
 - registered positive endpoint capability prototypes;
-- four frozen explicit unsupported-action prototypes.
+- 동결된 명시적 미지원 작업 원형 4개
 
-Five fixed near-domain veto modes covered local top-1/top-k negative composition and whether the best negative outranked the raw-route positive prototype.
+고정된 유사 도메인 거부 방식 5종은 로컬 Top-1/Top-K 부정 사례의 구성과 최상의 부정 사례가 원래 경로의 긍정 원형보다 높은 순위를 차지하는지 평가했습니다.
 
 ### OOD global membership set
 
 The experiment ranked:
 
 - eight registered domain anchors;
-- sixteen frozen broad background-domain prototypes.
+- 동결된 광범위한 배경 도메인 원형 16개
 
-Four fixed OOD modes covered background composition in top-1, top-2, top-3 and top-5.
+고정된 도메인 밖 요청 판단 방식 4종은 Top-1·Top-2·Top-3·Top-5의 배경 원형 구성을 평가했습니다.
 
-The Cartesian product contained 20 fixed rules.
+데카르트 곱으로 구성한 고정 규칙은 총 20개였습니다.
 
 ### Result
 
@@ -1394,7 +1394,7 @@ Closest high-rejection rule:
 - OOD rejection: 100%;
 - false-route: 10/648 = 1.5432%.
 
-The rank geometry still contains useful semantic signal:
+순위의 기하학적 구조에는 여전히 유용한 의미 신호가 포함돼 있었습니다:
 
 - 정답인 지원 사례의 로컬 Top-1 음성 판정률: 21.20%;
 - 유사 도메인 미지원 사례의 로컬 Top-1 음성 판정률: 96.88%;
@@ -1430,23 +1430,23 @@ Provenance:
 
 The architectural invariant remains:
 
-> Semantic models may rank or veto only among locally registered authority. They do not create execution authority.
+> 의미 모델은 로컬에 등록된 권한 범위 안에서만 순위를 결정하거나 거부할 수 있으며 실행 권한을 새로 만들지는 않습니다.
 
 ## 38. #285 — grouped-OOF learned winner verifier
 
-Work item #285 / PR #286 tested the first learned open-set boundary after the fixed-prototype stopping rule.
+작업 #285 / PR #286에서는 고정 원형 실험의 중단 규칙 이후 처음으로 학습 기반 오픈셋 경계를 평가했습니다.
 
-The learned component was not a router. BGE-M3 raw registered global top-1 remained the sole route authority. The verifier could only output:
+학습된 구성 요소는 라우터가 아니었습니다. 등록된 경로에 대한 BGE-M3 원시 전역 Top-1이 유일한 경로 선택 권한을 유지했고, 검증기는 다음 결과만 반환할 수 있었습니다:
 
-- `match` — permit the already-selected raw winner;
+- `match` — 이미 선택된 원시 최상위 경로 허용
 - `no_match` — abstain;
 - `unknown` — abstain.
 
-No rank-2 fallback, route switching, pseudo-route, or semantic authority creation was allowed.
+2순위 폴백, 경로 변경, 가상 경로 생성 또는 의미 모델에 의한 권한 신설은 허용하지 않았습니다.
 
 ### Evaluation protocol
 
-To reduce surface memorization, the experiment used six-fold leave-one-language-out OOF over:
+평가 표면 암기를 줄이기 위해 6겹 언어 하나 제외 교차 검증(OOF)을 다음 데이터에 적용했습니다:
 
 - de;
 - en;
@@ -1455,16 +1455,16 @@ To reduce surface memorization, the experiment used six-fold leave-one-language-
 - ko;
 - mixed.
 
-Language was a grouping variable only and was forbidden as a model feature.
+언어는 그룹을 나누는 변수로만 사용했으며 모델 입력 특징으로는 금지했습니다.
 
 The fixed feature schema contained:
 
-- 19 runtime-observable BGE/prototype geometry values;
+- 실행 시 관측 가능한 BGE·원형의 기하학적 값 19개
 - one-hot raw winner route ID.
 
-Forbidden classifier features included query text, benchmark IDs, expected route, category, language and unsupported-family labels.
+분류기에는 질의 원문, 벤치마크 ID, 예상 경로, 범주, 언어 및 미지원 계열 레이블을 특징으로 사용하는 것을 금지했습니다.
 
-Exactly two classifier families and twelve thresholds were preregistered, for 24 fixed rules:
+분류기 계열 2종과 임계값 12개를 사전 등록해 고정 규칙 총 24개를 구성했습니다:
 
 - regularized logistic regression;
 - shallow regularized histogram gradient boosting;
@@ -1472,7 +1472,7 @@ Exactly two classifier families and twelve thresholds were preregistered, for 24
 
 ### Result
 
-Three preregistered rules passed the full 85/97/1/100 DEV target under grouped OOF.
+사전 등록한 규칙 3개는 그룹별 OOF에서 전체 개발 목표 85/97/1/100을 통과했습니다.
 
 Selected rule by preregistered ordering:
 
@@ -1491,14 +1491,14 @@ Verifier discrimination:
 - HGB ROC-AUC: 0.98797;
 - HGB average precision: 0.98902.
 
-Per-language supported exact for the selected held-out predictions ranged from:
+선택된 홀드아웃 예측의 언어별 지원 경로 정확도 범위는 다음과 같았습니다:
 
 - 81.77% on de;
 - to 91.15% on mixed.
 
-Per-language unsupported rejection remained approximately 99.07–100%.
+언어별 미지원 요청 거부율은 약 99.07~100%를 유지했습니다.
 
-Decision: promote HGB p=0.50 to a separate frozen candidate.
+결정: HGB p=0.50을 별도로 동결할 후보로 승격했습니다.
 
 이는 query-text feature나 benchmark label 없이 grouped OOF protocol에서 long-term target을 통과한 최초의 0.11 open-set design입니다.
 
@@ -1511,7 +1511,7 @@ Provenance:
 
 ## 39. #287 — frozen HGB winner verifier
 
-Work item #287 / PR #288 froze the #285-selected HGB verifier without changing classifier, features or threshold after OOF results were known.
+작업 #287 / PR #288은 OOF 결과를 확인한 뒤에도 분류기·특징·임계값을 변경하지 않고 #285에서 선택된 HGB 검증기를 동결했습니다.
 
 ### Freeze contract
 
@@ -1540,7 +1540,7 @@ Frozen model SHA-256:
 
 이는 frozen implementation을 confirm한 것이며 independent generalization evidence는 아닙니다.
 
-### New zero-overlap fresh-surface DEV — FAIL
+### 중복 없는 새로운 평가 표면 개발 실험 — 실패
 
 Fresh corpus:
 
@@ -1585,7 +1585,7 @@ Provenance:
 
 ## 40. Resume checkpoint after #287
 
-The 0.11 architecture-search evidence now supports a stronger conclusion:
+0.11 아키텍처 탐색 결과는 이제 다음과 같은 더 분명한 결론을 뒷받침합니다:
 
 1. BGE-M3의 원시 경로 순위 능력은 충분함;
 2. 긍정 점수 게이트는 데이터 표면 변화에 취약함;
@@ -1601,7 +1601,7 @@ Authority invariant는 변하지 않습니다:
 > External semantic evidence는 locally registered raw winner를 veto할 수 있지만 다른 route를 선택하거나 execution authority를 만들 수는 없습니다.
 
 
-## 41. System One provider abstraction and direct Laya routing
+## 41. System One 제공자 추상화 및 Laya 직접 라우팅
 
 After #287 closed learned development-geometry refinement, the research line moved to externally
 pretrained typed decision models rather than training another classifier on the same 1,800-row DEV
@@ -1609,8 +1609,8 @@ surface.
 
 ### Provider infrastructure — #291 / PR #292
 
-SchemaRouter already had direct `JevDecisionBackend` and `LayaDecisionBackend` integrations.
-#291 generalized the Jev-compatible wire boundary instead of adding one class per new model family.
+SchemaRouter에는 이미 `JevDecisionBackend`와 `LayaDecisionBackend`의 직접 통합 기능이 있었습니다.
+#291에서는 모델 계열마다 클래스를 추가하는 대신 Jev 호환 전송 계약을 일반화했습니다.
 
 PR #292 merged a generic `SystemOneDecisionBackend` to main:
 
@@ -1661,7 +1661,7 @@ Raw supported top-1 by language:
 Confidence did not solve the open-set boundary. Mean confidence was 0.8881 for correct supported
 choices, 0.7087 for wrong supported choices, and 0.7132 for near-domain unsupported requests.
 
-Decision: reject direct full-catalog Laya route authority. PR #294 was closed unmerged.
+결정: 전체 카탈로그에 대한 Laya의 직접 경로 선택 권한을 기각했습니다. PR #294는 병합하지 않고 닫았습니다.
 
 Provenance:
 
@@ -1672,7 +1672,7 @@ Provenance:
 
 이 negative result가 Laya를 veto signal로서 reject하는 것은 아닙니다. Laya의 native `noul` primitive는 16-way route choice와 다른 semantic question입니다.
 
-## 42. Current resume point — external typed capability boundaries
+## 42. 당시의 후속 작업 기준점 — 외부 타입 기반 기능 경계
 
 Calibration/blind는 blocked 및 untouched 상태를 유지합니다.
 
@@ -1707,7 +1707,7 @@ requires the same frozen v4 gate and, if promoted, a new zero-overlap fresh-surf
 
 ## 43. #289 / PR #290 — external Qwen3 capability verifier
 
-The first externally pretrained reranker-as-capability-verifier experiment is terminal and rejected.
+외부 사전 학습 재순위화 모델을 기능 검증기로 사용한 최초 실험은 최종 기각됐습니다.
 
 동결된 프로토콜:
 - BGE-M3 원시 등록 Top-1만 경로 선택 권한을 보유;
@@ -1782,12 +1782,12 @@ Bespoke Nimble, and System One Open.
 2. 일회성 제한 연구 어댑터 → `CallableDecisionBackend`;
 3. 재사용 가능한 비호환 연동 → 명시적인 타사 진입점 플러그인.
 
-Discovery is metadata-only. Plugin code is imported only by exact trusted name; plugin execution is
+탐색에서는 메타데이터만 조회합니다. 플러그인 코드는 정확히 신뢰된 이름으로만 임포트하며 플러그인 실행은
 not sandboxed, and local finite-option validation remains authoritative.
 
 ## 45. #301 / PR #302 — pinned Laya native noul veto
 
-The winner-only Laya capability-boundary experiment is terminal and rejected.
+최상위 경로에만 적용하는 Laya 기능 경계 실험은 최종 기각됐습니다.
 
 동결된 프로토콜:
 - BGE-M3 원시 등록 Top-1만 경로 선택 권한을 보유;
@@ -1832,7 +1832,7 @@ Provenance:
 model/checkpoint. The only active model-quality experiment at this checkpoint is pinned Kev-0.8B
 #299 / PR #300.
 
-## 46. Current target-distance checkpoint — Kev active, AnyJev staged
+## 46. 당시의 목표 대비 격차 — Kev 진행, AnyJev 준비
 
 The numeric 0.11 target remains:
 
