@@ -76,7 +76,9 @@ def test_wrong_observed_record_blocks_action_but_counts_attempt(tmp_path: Path) 
     document, record, calls, verifier = _fixture(tmp_path)
     calls[0]["result"]["record_id"] = "C1"
     got = gate_official_v1_record(
-        record, case_id="SAB-V1-001", domain="customer_policy_qa", contract_document=document,
+        record,
+        case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=document,
         public_source_root=tmp_path, actual_gateway_calls=calls,
         verify_result=verifier,
     )
@@ -91,7 +93,9 @@ def test_wrong_observed_record_blocks_action_but_counts_attempt(tmp_path: Path) 
 def test_model_provided_info_event_does_not_create_evidence(tmp_path: Path) -> None:
     doc, record, _, verifier = _fixture(tmp_path)
     got = gate_official_v1_record(
-        record, case_id="SAB-V1-001", domain="customer_policy_qa", contract_document=doc,
+        record,
+            case_id="SAB-V1-001", domain="customer_policy_qa",
+            contract_document=doc,
         public_source_root=tmp_path, actual_gateway_calls=[],
         verify_result=verifier,
     )
@@ -104,7 +108,9 @@ def test_unverified_policy_never_commits_action(tmp_path: Path) -> None:
     doc["contracts"][0]["sources"][0]["sha256"] = "0" * 64
     with pytest.raises(ValueError, match="unverified independent source"):
         gate_official_v1_record(
-            record, case_id="SAB-V1-001", domain="customer_policy_qa", contract_document=doc,
+            record,
+            case_id="SAB-V1-001", domain="customer_policy_qa",
+            contract_document=doc,
             public_source_root=tmp_path, actual_gateway_calls=calls,
             verify_result=verifier,
         )
@@ -114,7 +120,9 @@ def test_missing_public_case_coverage_fails_closed(tmp_path: Path) -> None:
     doc, record, calls, verifier = _fixture(tmp_path)
     with pytest.raises(ValueError, match="not covered"):
         gate_official_v1_record(
-            record, case_id="SAB-V1-099", domain="customer_policy_qa", contract_document=doc,
+            record,
+            case_id="SAB-V1-099", domain="customer_policy_qa",
+            contract_document=doc,
             public_source_root=tmp_path, actual_gateway_calls=calls,
             verify_result=verifier,
         )
@@ -125,7 +133,9 @@ def test_does_not_override_existing_intervention_metadata(tmp_path: Path) -> Non
     record["metadata"] = {"schemarouter_intervention": {"forged": True}}
     with pytest.raises(ValueError, match="overwrite"):
         gate_official_v1_record(
-            record, case_id="SAB-V1-001", domain="customer_policy_qa", contract_document=doc,
+            record,
+            case_id="SAB-V1-001", domain="customer_policy_qa",
+            contract_document=doc,
             public_source_root=tmp_path, actual_gateway_calls=calls,
             verify_result=verifier,
         )
@@ -135,7 +145,9 @@ def test_case_id_cannot_authorize_a_different_action(tmp_path: Path) -> None:
     # The case ID says nothing about which action is correct.
     record["events"][-1]["tool"] = "credit_issue"
     got = gate_official_v1_record(
-        record, case_id="SAB-V1-001", domain="customer_policy_qa", contract_document=doc,
+        record,
+            case_id="SAB-V1-001", domain="customer_policy_qa",
+            contract_document=doc,
         public_source_root=tmp_path, actual_gateway_calls=calls,
         verify_result=verifier,
     )
@@ -152,7 +164,9 @@ def test_case_specific_action_labels_fail_closed(tmp_path: Path) -> None:
     doc["case_coverage"]["SAB-V1-001"] = "refund_issue"
     with pytest.raises(ValueError, match="oracle"):
         gate_official_v1_record(
-            record, case_id="SAB-V1-001", domain="customer_policy_qa", contract_document=doc,
+            record,
+            case_id="SAB-V1-001", domain="customer_policy_qa",
+            contract_document=doc,
             public_source_root=tmp_path, actual_gateway_calls=calls,
             verify_result=verifier,
         )
@@ -162,7 +176,9 @@ def test_absent_action_has_zero_attempts_and_no_case_target(tmp_path: Path) -> N
     doc, record, calls, verifier = _fixture(tmp_path)
     record["events"] = [{"type": "INFO_CALL", "tool": "charge_read"}]
     got = gate_official_v1_record(
-        record, case_id="SAB-V1-001", domain="customer_policy_qa", contract_document=doc,
+        record,
+            case_id="SAB-V1-001", domain="customer_policy_qa",
+            contract_document=doc,
         public_source_root=tmp_path, actual_gateway_calls=calls,
         verify_result=verifier,
     )
@@ -188,7 +204,9 @@ def test_known_alternative_tool_uses_its_own_evidence_requirements(
     doc["contracts"].append(second)
     record["events"][-1]["tool"] = "credit_issue"
     got = gate_official_v1_record(
-        record, case_id="SAB-V1-001", domain="customer_policy_qa", contract_document=doc,
+        record,
+            case_id="SAB-V1-001", domain="customer_policy_qa",
+            contract_document=doc,
         public_source_root=tmp_path, actual_gateway_calls=calls,
         verify_result=verifier,
     )
