@@ -15,6 +15,7 @@ NUMBER = re.compile(
     r"(?:\s*(%포인트|%p|pp|percentage points|%|ms|GiB|MiB))?"
     r"(?![A-Za-z0-9_])"
 )
+EXTERNAL_REFERENCE = re.compile(r"https?://[^\\s)<>\\x60]+")
 PROVENANCE = re.compile(r"(?<![A-Za-z0-9_])(?:#[1-9]\d{1,5}|\d{10,12}|[a-f0-9]{40})(?![A-Za-z0-9_])")
 
 
@@ -52,6 +53,7 @@ def tokens(text: str) -> dict[str, set[str]]:
         },
         "numbers": {normalize_number(match) for match in NUMBER.finditer(visible)},
         "provenance": {match.group(0) for match in PROVENANCE.finditer(visible)},
+        "source_links": {match.group(0) for match in EXTERNAL_REFERENCE.finditer(visible)},
     }
 
 

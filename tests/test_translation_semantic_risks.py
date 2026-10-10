@@ -50,3 +50,11 @@ def test_percent_point_notations_are_semantically_equal() -> None:
 def test_numeric_magnitude_keeps_a_unit_difference_visible() -> None:
     assert "100ms" in tokens("# Test\n\n100 ms")["numbers"]
     assert "100ms" not in tokens("# 검증\n\n100초")["numbers"]
+
+
+def test_source_only_scholarly_references_are_flagged() -> None:
+    english = tokens("# Reference\n\n[Paper](https://aclanthology.org/2025.findings-acl.1258/)")
+    korean = tokens("# 출처\n\n참고 문헌을 확인하십시오.")
+    assert english["source_links"] - korean["source_links"] == {
+        "https://aclanthology.org/2025.findings-acl.1258/"
+    }
