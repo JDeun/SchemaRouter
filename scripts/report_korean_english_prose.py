@@ -64,7 +64,10 @@ def scan(korean_root: Path) -> dict[str, object]:
         for hit in candidates(path.read_text(encoding="utf-8")):
             findings.append({"path": path.relative_to(korean_root).as_posix(), **hit})
     return {
-        "scope": "English-prose advisory only; NOT semantic equivalence or translation certification",
+        "scope": (
+            "English-prose advisory only; "
+            "NOT semantic equivalence or translation certification"
+        ),
         "scanned_pages": len(paths),
         "candidate_lines": len(findings),
         "findings": findings,
