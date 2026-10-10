@@ -130,7 +130,7 @@ Optimized runtime은 calibration 전에 자체 recorded identity와 confirmation
 - source SHA
 - corpus seed/hash
 - workflow run ID
-- artifact ID/digest
+- artifact ID와 digest(원시 SHA-256 또는 GitHub의 `sha256:` 접두사를 붙인 형태)
 - exact model/runtime identity
 - aggregate 및 required slice metrics
 - authority/error counts

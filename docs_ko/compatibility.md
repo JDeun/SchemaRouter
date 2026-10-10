@@ -70,6 +70,8 @@ Declared dependency range와 PR마다 CI가 증명하는 범위를 구분합니�
 
 별도 `Python Preview` 워크플로는 Python 3.15 RC를 제한된 실행시간 안에서 시험합니다. 실패는 전방 호환성 신호로 표시하지만 릴리스의 차단 조건은 아닙니다.
 
+PyPI 공개 패키지의 경량 통합은 정확히 `schemarouter[mcp,jev,otel]`로, 통합 프레임워크까지 포함한 전체 조합은 `schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]`로 검증합니다. 선택적 extra는 실제 설치된 wheel에서 확인해야 하며 소스 체크아웃의 우연한 전이 의존성에 기대서는 안 됩니다.
+
 Release workflow는 successful current-main CI를 소비한 뒤 tag/artifact를 resolve합니다. GitHub Release+PyPI 뒤 exact version을 wheel, forced sdist, isolated mcp/jev/otel, combined extras로 checkout 밖에서 재설치합니다. PyPI propagation은 bounded retry로 처리하며 다른 version을 허용하지 않습니다.
 
 ## 통합 기능 유지보수 정책
