@@ -119,8 +119,20 @@ def wave_parts(
     total_waves = math.ceil(len(missing) / PARENTS_PER_WAVE)
     if not 0 <= wave < total_waves:
         raise ValueError(f"wave {wave} outside 0..{total_waves - 1}")
+    # Scatter heavy catalog-500 shards across every wave. Otherwise the
+    # lexically sorted frozen shard IDs make the final serial wave all c500.
+    # The schedule is deterministic and does not inspect score/pass outcomes.
+    capacities = [PARENTS_PER_WAVE] * total_waves
+    capacities[-1] = len(missing) - PARENTS_PER_WAVE * (total_waves - 1)
+    slots: list[list[str]] = [[] for _ in range(total_waves)]
+    slot = 0
+    for shard_id in sorted(missing, key=lambda key: (-shards[key][0], key)):
+        while len(slots[slot % total_waves]) >= capacities[slot % total_waves]:
+            slot += 1
+        slots[slot % total_waves].append(shard_id)
+        slot += 1
     matrix: list[dict[str, Any]] = []
-    for shard_id in missing[wave * PARENTS_PER_WAVE:(wave + 1) * PARENTS_PER_WAVE]:
+    for shard_id in slots[wave]:
         catalog, tasks = shards[shard_id]
         for i in range(0, TASKS_PER_PARENT, TASKS_PER_MICRO):
             matrix.append({
