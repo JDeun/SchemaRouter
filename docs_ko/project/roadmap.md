@@ -12,11 +12,11 @@
 
 현재 `main`의 최근 제품 후속 작업:
 
-- #743 — explicit state-conditioned corrective re-retrieval
-- #744 — scalable indexed/incremental capability dependency graphs
-- #745 — atomic validated snapshot rebuild/publication
-- #746 — versioned capability artifact/snapshot migration and semantic integrity
-- #747 — unified privacy-safe capability decision traces
+- #743 — 실행 상태를 명시적으로 반영한 교정 재검색
+- #744 — 확장 가능한 인덱스 기반·증분 갱신형 기능 의존성 그래프
+- #745 — 검증된 스냅샷의 원자적 재구축 및 공개
+- #746 — 버전별 기능 아티팩트·스냅샷 마이그레이션 및 의미 무결성
+- #747 — 개인정보를 보호하는 통합 기능 의사결정 추적
 - #748 — Materials Project, Crossref, Tavily acceptance를 포함한 provider-first registration
 
 현재 조정 항목:
@@ -50,8 +50,8 @@
 - [#10 — LangChain/LlamaIndex ecosystem distribution](https://github.com/JDeun/SchemaRouter/issues/10)
 - LangChain / LangGraph bridge
 - LlamaIndex bridge
-- MCP, OpenAPI, OPTIMADE, GraphQL, OData, OpenRPC, HTTP/JSON ingestion
-- System One / Jev / Laya / Ollama bounded decision backend
+- MCP·OpenAPI·OPTIMADE·GraphQL·OData·OpenRPC·HTTP/JSON 수집
+- System One·Jev·Laya·Ollama의 제한된 결정 백엔드
 - OpenTelemetry integration
 - third-party SourceAdapter 및 decision-backend entry point
 
