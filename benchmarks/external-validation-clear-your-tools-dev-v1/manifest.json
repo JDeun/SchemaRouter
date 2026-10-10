@@ -51,7 +51,11 @@
     "cases_sha256": null,
     "prompt_sha256": null,
     "timeout_retry_policy": null,
-    "hardware_runtime": null
+    "hardware_runtime": null,
+    "interception_mode": null,
+    "interception_layer_revision": null,
+    "tool_call_authority_trace": null,
+    "prompt_prefix_cache_measurement": null
   },
   "metrics": {
     "task_success": true,
@@ -70,7 +74,8 @@
     "post_freeze_semantic_tuning_allowed": false,
     "negative_results_publishable_unchanged": true,
     "development_artifacts_are_evidence": false,
-    "confirmed_cyt_identity_may_not_be_changed_from_development_results": true
+    "confirmed_cyt_identity_may_not_be_changed_from_development_results": true,
+    "linux_ci_e2e_may_be_claimed_verified": false
   },
   "development_smoke": {
     "catalog_tools": 21,
@@ -90,5 +95,25 @@
     "primary_cyt_mode": "native_bm25",
     "same_catalog_and_queries_across_conditions": true,
     "visible_development_before_freeze": true
+  },
+  "interception_mode_protocol": {
+    "source": "CYT maintainer reply provided 2026-10-10",
+    "matrix_path": "interception-modes.json",
+    "primary_mode": null,
+    "primary_agent": null,
+    "primary_platform": null,
+    "requires_upstream_mode_confirmation": true,
+    "linux_is_not_validated_primary_runner": true,
+    "proxy_does_not_block_tool_calls": true,
+    "hook_requires_cyt_mcp_aggregator": true,
+    "hook_does_not_mutate_builtin_system_tools": true,
+    "cursor_composer_proxy_incompatible": true,
+    "proxy_and_hook_separate_strata": true,
+    "agent_families_previously_tested": [
+      "cursor",
+      "codex",
+      "claude"
+    ],
+    "other_agent_support_unverified": true
   }
 }
