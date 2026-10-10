@@ -234,7 +234,7 @@ Accepted B1 path는 v2입니다.
 - frozen task SHA: `bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`
 - canonical workflow: `36529108855`
 - canonical source: `b9eadefd3cd076f026a54bbc55a949f0424f5dab`
-- runtime: Python 3.12.14, torch 2.14.0+cpu, transformers 4.57.6, tokenizers 0.22.2, safetensors 0.8.0
+- 실행 환경: Python 3.12.14, torch 2.14.0+cpu, transformers 4.57.6, tokenizers 0.22.2, safetensors 0.8.0
 - 30 frozen inference job이 정확히 552 unique episode로 aggregate
 
 Accepted aggregate 전 B1 v2는 hidden user-argument requirement를 수정하고 tool-observation causality barrier를 강제했습니다. Assistant turn당 tool call 하나만 실행하며 dependent call은 이전 observation이 필요합니다.
