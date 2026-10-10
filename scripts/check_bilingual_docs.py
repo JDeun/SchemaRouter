@@ -66,6 +66,26 @@ def unfenced_python_snippets(path: Path) -> list[int]:
     return lines
 
 
+def unescaped_numeric_issue_references(path: Path) -> list[int]:
+    """Reject issue IDs mistakenly interpreted as Markdown ATX headings.
+
+    Python-Markdown can interpret a paragraph beginning with '#123' as an
+    H1 even without a separating space. Real headings are explicitly spaced;
+    preserve issue IDs by writing 'Issue #123' (or '이슈 #123') instead.
+    """
+    violations: list[int] = []
+    in_fence = False
+    for line_number, line in enumerate(
+        path.read_text(encoding="utf-8").splitlines(), 1
+    ):
+        if FENCE.match(line):
+            in_fence = not in_fence
+            continue
+        if not in_fence and re.match(r"^#\\d+", line):
+            violations.append(line_number)
+    return violations
+
+
 def suspicious_unicode(path: Path) -> list[str]:
     text = path.read_text(encoding="utf-8")
     return [token for token in MOJIBAKE if token in text]
@@ -84,6 +104,12 @@ def check_sources() -> list[str]:
             if unsafe:
                 errors.append(
                     f"{rel}: {label} Python snippet include outside code fence at lines {unsafe}"
+                )
+            numeric_issues = unescaped_numeric_issue_references(path)
+            if numeric_issues:
+                errors.append(
+                    f"{rel}: {label} unescaped leading numeric issue refs "
+                    f"render as headings at lines {numeric_issues}"
                 )
         en_text = en[rel].read_text(encoding="utf-8")
         ko_text = ko[rel].read_text(encoding="utf-8")
