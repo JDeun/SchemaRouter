@@ -39,7 +39,9 @@ def sections(source: str) -> list[dict[str, object]]:
             continue
         heading = HEADING.match(line)
         if heading:
-            result.append({"level": len(heading.group(1)), "heading": heading.group(2), "lines": []})
+            result.append(
+                {"level": len(heading.group(1)), "heading": heading.group(2), "lines": []}
+            )
             continue
         if result and line.strip() and not re.match(r"^\s*\|", line):
             cast = result[-1]["lines"]
@@ -107,8 +109,11 @@ def main() -> None:
     report = audit(ROOT / "docs", ROOT / "docs_ko")
     args.json_out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
     print("Advisory semantic-risk triage, NOT proof of per-sentence equivalence.")
-    print(f"Paired: {report['paired_pages']}; sections: {report['sections_compared']}; "
-          f"flagged pages: {report['flagged_pages']}; flagged sections: {report['flagged_sections']}")
+    print(
+        f"Paired: {report['paired_pages']}; sections: {report['sections_compared']}; "
+        f"flagged pages: {report['flagged_pages']}; "
+        f"flagged sections: {report['flagged_sections']}"
+    )
     for item in report["findings"][:args.max_show]:
         print(f"{item['path']} :: {item.get('section', '?')} "
               f"{item.get('en_heading', '')} {item.get('signals', [item.get('error', '')])} "
