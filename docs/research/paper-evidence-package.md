@@ -61,16 +61,14 @@ narrative.
 
 SchemaRouter separates execution authority from semantic evidence:
 
-```text
-user request
-    |
-registered schema + local authority
-    |
-bounded ranking / evidence / veto
-    |
-accept registered route OR abstain
-    |
-local validation / policy / execution
+```mermaid
+flowchart TD
+    A["User request"] --> B["Registered schema and local authority"]
+    B --> C["Bounded rank / evidence / veto"]
+    C --> D{"Registered route accepted?"}
+    D -->|Yes| E["Local validation and policy checks"]
+    E --> F["Authorized execution"]
+    D -->|No| G["Abstain"]
 ```
 
 A semantic model may rank, veto, or abstain over finite registered authority according to the
