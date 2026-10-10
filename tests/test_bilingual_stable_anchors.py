@@ -14,7 +14,10 @@ def test_stable_cross_locale_anchor_definitions() -> None:
         "docs_ko/project/discoverability.md": "release-discoverability-checklist",
     }
     for path, anchor in anchors.items():
-        headings = [line for line in (ROOT / path).read_text(encoding="utf-8").splitlines() if line.startswith("#")]
+        headings = [
+            line for line in (ROOT / path).read_text(encoding="utf-8").splitlines()
+            if line.startswith("#")
+        ]
         assert any(line.endswith("{#" + anchor + "}") for line in headings), path
 
 
@@ -25,7 +28,9 @@ def test_known_links_target_stable_anchors() -> None:
         "docs_ko/index.md": "guides/mcp.md#declare-a-result-contract-the-server-does-not-publish",
         "docs_ko/guides/openapi.md": "mcp.md#declare-a-result-contract-the-server-does-not-publish",
         "docs_ko/architecture.md": "concepts/registry.md#what-trusted-local-code-may-amend",
-        "docs_ko/release-checklist.md": "project/discoverability.md#release-discoverability-checklist",
+        "docs_ko/release-checklist.md": (
+            "project/discoverability.md#release-discoverability-checklist"
+        ),
     }
     for path, fragment in references.items():
         assert fragment in (ROOT / path).read_text(encoding="utf-8"), path
