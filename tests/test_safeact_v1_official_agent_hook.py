@@ -20,7 +20,9 @@ def test_public_observation_requires_unique_actual_record() -> None:
     }
     assert hook.strict_public_evidence(
         "charge_read", {}, result, mapping=config
-    ) == VerifiedToolEvidence("C2", frozenset({"owner"}))
+    ) == VerifiedToolEvidence(
+        "C2", frozenset({"owner"}), values=(("owner", "Alice"),)
+    )
     wrong = copy.deepcopy(result)
     wrong["observations"].append(
         {"subject": "C1", "predicate": "owner", "object": "Bob"}
@@ -316,4 +318,20 @@ def test_empty_public_call_id_is_not_valid_evidence() -> None:
     }
     assert hook.strict_public_evidence(
         "charge_read", {}, payload, mapping=config
+    ) is None
+
+
+def test_contradictory_public_values_fail_closed() -> None:
+    mapping = {"charge_read": {
+        "record_id_key": "subject", "field_name_key": "predicate",
+    }}
+    payload = {
+        "status": "ok", "tool": "charge_read", "call_id": "call_01",
+        "observations": [
+            {"subject": "C2", "predicate": "amount", "object": 10},
+            {"subject": "C2", "predicate": "amount", "object": 100},
+        ],
+    }
+    assert hook.strict_public_evidence(
+        "charge_read", {}, payload, mapping=mapping
     ) is None

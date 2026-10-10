@@ -70,6 +70,7 @@ def strict_public_evidence(
         return None
     ids: set[str] = set()
     fields: set[str] = set()
+    values: dict[str, object] = {}
     for fact in observed:
         if not isinstance(fact, dict):
             return None
@@ -89,11 +90,25 @@ def strict_public_evidence(
             or (isinstance(value, str) and not value.strip())
         ):
             return None
+        if type(value) not in {str, bool, int, float}:
+            return None
+        if field in values and (
+            type(values[field]) is not type(value)
+            or values[field] != value
+        ):
+            # Two contradictory public facts cannot be interpreted as one
+            # verified value or used to choose whichever authorizes execution.
+            return None
         ids.add(record)
         fields.add(field)
+        values[field] = value
     if len(ids) != 1:
         return None
-    return VerifiedToolEvidence(record_id=next(iter(ids)), fields=frozenset(fields))
+    return VerifiedToolEvidence(
+        record_id=next(iter(ids)),
+        fields=frozenset(fields),
+        values=tuple(sorted(values.items())),
+    )
 
 
 def install_v1_gate(

@@ -254,3 +254,43 @@ def test_missing_domain_cannot_fallback_to_scoped_policy(
     marker = got["metadata"]["schemarouter_intervention"]
     assert marker["authorized_action_dispatches"] == 0
     assert marker["gate_reason_counts"] == {"unknown_action_contract": 1}
+
+
+def test_policy_value_condition_blocks_excess_amount_after_verified_tool(
+    tmp_path: Path
+) -> None:
+    doc, record, calls, _ = _fixture(tmp_path)
+    doc["contracts"][0]["required_observations"][0]["fields"].append("amount")
+    doc["contracts"][0]["value_conditions"] = [{
+        "tool": "charge_read", "record_id": "$action.charge_id",
+        "field": "amount", "operator": "lte",
+        "action_argument": "refund_amount",
+    }]
+    record["events"][-1]["arguments"]["refund_amount"] = 70
+    calls[0]["result"]["amount"] = 50
+
+    def verified(tool, args, result):
+        return VerifiedToolEvidence(
+            "C2", frozenset({"owner", "amount"}),
+            values=(("owner", result["owner"]), ("amount", result["amount"])),
+        )
+
+    rejected = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=doc, public_source_root=tmp_path,
+        actual_gateway_calls=calls, verify_result=verified,
+    )
+    diag = rejected["metadata"]["schemarouter_intervention"]
+    assert diag["authorized_action_dispatches"] == 0
+    assert diag["denied_action_attempts"] == 1
+    assert diag["gate_reason_counts"] == {"semantic_predicate_failed": 1}
+
+    record["events"][-1]["arguments"]["refund_amount"] = 30
+    accepted = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=doc, public_source_root=tmp_path,
+        actual_gateway_calls=calls, verify_result=verified,
+    )
+    assert accepted["metadata"]["schemarouter_intervention"][
+        "authorized_action_dispatches"
+    ] == 1

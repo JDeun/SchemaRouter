@@ -4,7 +4,7 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
-from .evidence_gate import ActionContract, EvidenceGate
+from .evidence_gate import ActionContract, EvidenceGate, ValueCondition
 
 SAFEACT_PUBLIC_DOMAINS = frozenset({
     "customer_policy_qa", "legal_finance_advice",
@@ -83,10 +83,49 @@ def build_gate(
         if not isinstance(record, str) or not record:
             raise ValueError("argument binding needs an observed record ID")
         bindings.append((argument, record))
+    # Only declarative comparisons on actual public facts and reviewed
+    # literals or proposed action arguments. No eval, Python expressions,
+    # gold labels or natural-language model verdicts are authorization data.
+    raw_conditions = matching[0].get("value_conditions", [])
+    if not isinstance(raw_conditions, list):
+        raise ValueError("value_conditions must be an explicit list")
+    conditions: list[ValueCondition] = []
+    for item in raw_conditions:
+        if not isinstance(item, dict):
+            raise ValueError("value condition must be an object")
+        allowed = {
+            "tool", "record_id", "field", "operator",
+            "action_argument", "literal",
+        }
+        if set(item) - allowed:
+            raise ValueError("unknown value condition expression field")
+        tool = item.get("tool")
+        record = item.get("record_id")
+        field = item.get("field")
+        operation = item.get("operator")
+        has_argument = "action_argument" in item
+        has_literal = "literal" in item
+        if (
+            not isinstance(tool, str) or not tool
+            or not isinstance(record, str) or not record
+            or not isinstance(field, str) or not field
+            or operation not in {"eq", "lte", "gte"}
+            or has_argument == has_literal
+        ):
+            raise ValueError("value condition must select one safe comparison")
+        conditions.append(ValueCondition(
+            tool=tool, record_id=record, field=field,
+            operator=operation,
+            reference_kind="action_argument" if has_argument else "literal",
+            reference=(
+                item["action_argument"] if has_argument else item["literal"]
+            ),
+        ))
     return EvidenceGate(
         ActionContract(
             action=action,
             required_observations=tuple(observations),
             argument_bindings=tuple(bindings),
+            value_conditions=tuple(conditions),
         )
     )

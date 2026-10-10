@@ -115,3 +115,36 @@ def test_duplicate_action_names_across_domains_are_isolated() -> None:
     assert not second.check("refund_issue").allowed
     with pytest.raises(ValueError, match="exactly once"):
         build_gate(doc, "refund_issue")
+
+
+def test_loader_supports_only_source_bound_literal_or_argument_checks() -> None:
+    doc = _document()
+    contract = doc["contracts"][0]
+    contract["value_conditions"] = [{
+        "tool": "charge_read", "record_id": "C2", "field": "amount",
+        "operator": "lte", "action_argument": "refund_amount",
+    }]
+    gate = build_gate(doc, "refund_issue")
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount", "owner"}),
+        values=(("amount", 50), ("owner", "Alice")),
+    ))
+    assert gate.check("refund_issue", {"refund_amount": 30}).allowed
+    assert not gate.check("refund_issue", {"refund_amount": 60}).allowed
+
+
+@pytest.mark.parametrize("bad", [
+    {"expression": "__import__('os').system('echo bad')"},
+    {"operator": "eval", "action_argument": "amount"},
+    {"operator": "eq", "action_argument": "amount", "literal": 20},
+])
+def test_loader_rejects_unsafe_or_ambiguous_value_conditions(bad: dict) -> None:
+    doc = _document()
+    predicate = {
+        "tool": "charge_read", "record_id": "C2", "field": "amount",
+        "operator": "eq", "action_argument": "amount",
+    }
+    predicate.update(bad)
+    doc["contracts"][0]["value_conditions"] = [predicate]
+    with pytest.raises(ValueError, match="value condition"):
+        build_gate(doc, "refund_issue")

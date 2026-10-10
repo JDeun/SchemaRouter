@@ -18,6 +18,7 @@ class VerifiedToolEvidence:
 
     record_id: str
     fields: frozenset[str]
+    values: tuple[tuple[str, object], ...] = ()
 
 
 InfoCaller = Callable[[str, dict[str, Any]], Mapping[str, Any]]
@@ -129,12 +130,27 @@ class TrustedEvidenceSession:
                 )
             ):
                 raise ValueError("trusted verifier returned malformed observed evidence")
+            if (
+                not isinstance(verified.values, tuple)
+                or any(
+                    not isinstance(pair, tuple)
+                    or len(pair) != 2
+                    or not isinstance(pair[0], str)
+                    or pair[0] not in verified.fields
+                    or type(pair[1]) not in {str, bool, int, float}
+                    for pair in verified.values
+                )
+                or len({name for name, _ in verified.values})
+                != len(verified.values)
+            ):
+                raise ValueError("trusted verifier returned malformed typed values")
             self._verified_observations += 1
             self._gate.observe(
                 Observation(
                     tool=tool,
                     record_id=verified.record_id,
                     fields=verified.fields,
+                    values=verified.values,
                 )
             )
 
@@ -153,7 +169,12 @@ class TrustedEvidenceSession:
                         item.startswith("argument_binding_mismatch:")
                         for item in decision.missing
                     )
-                    else "missing_required_observation"
+                    else (
+                        "semantic_predicate_failed"
+                        if any(item.startswith("semantic_predicate_")
+                               for item in decision.missing)
+                        else "missing_required_observation"
+                    )
                 )
             )
             self._gate_reason_counts[reason] = self._gate_reason_counts.get(reason, 0) + 1
