@@ -65,6 +65,32 @@ A positive maintainer reply establishes willingness to discuss a protocol, **not
 an independently reproduced result or product endorsement. Keep any declined
 comparison in the evidence register without further unsolicited outreach.
 
+### Identity-conditioned gateway comparison boundary
+
+The original shared-scoreboard proposal to mcp-gateway [#2641](https://github.com/MikkoParkkola/mcp-gateway/issues/2641#issuecomment-5956919228) was
+**declined** and [closed as not planned](https://github.com/MikkoParkkola/mcp-gateway/issues/2641#issuecomment-6053555230); this is outreach feedback,
+**not negative product-performance evidence**. Do not repeat the original solicitation.
+A materially different, opt-in protocol must address every boundary below before scoring:
+
+1. **Caller-conditioned candidate universe:** freeze the caller identity, grants and
+   permissions for each case. Score against the tools eligible under each system's
+   native permission enforcement; do not count forbidden tools as retrieval positives.
+2. **Native input evidence:** mcp-gateway consumes server-published tool descriptions,
+   while SchemaRouter may consume separately declared typed field contracts. Do not
+   inject SchemaRouter annotations into the gateway's native baseline. Field recall is
+   **not comparable** unless independently published labels and native field evidence
+   support both arms; mark missing capabilities as not applicable, never inferred.
+3. **Measurement boundaries:** publish library-internal retrieval cost separately from
+   gateway end-to-end authentication, policy enforcement, identity propagation, audit,
+   network transport and retrieval. Compare latency and exposed bytes only at equivalent
+   boundaries, or explicitly mark them non-comparable.
+4. **Native ranking concerns:** record gateway health, grant fit, trust, cost, latency,
+   freshness and feedback eligibility without rewriting its released ranking. Keep the
+   upstream 4.0.0 release priority and request review only for a genuinely new protocol.
+
+No combined winner score, independent reproduction, or upstream endorsement is established.
+Declined outreach must not enter the frozen 0.14 scientific result table.
+
 | Evaluation or feedback | Tracking issue | Evidence boundary |
 | --- | --- | --- |
 | SafeActBench V1 (external research) | [#1211](https://github.com/JDeun/SchemaRouter/issues/1211), [#1224](https://github.com/JDeun/SchemaRouter/issues/1224) | 131 V1 cases × three arms are *not scored*; independent, no-hidden-gold contracts and protected runner required |
