@@ -32,14 +32,14 @@ SchemaRouter alpha, beta, release candidate 또는 stable tag를 promote하기 �
 
 ## Compatibility gates
 
-- [ ] recent public OpenAPI live smoke green
-- [ ] recent public OPTIMADE live smoke green
+- [ ] 최근 공개 OpenAPI 서버를 대상으로 한 실사용 스모크 테스트 통과
+- [ ] 최근 공개 OPTIMADE 서버를 대상으로 한 실사용 스모크 테스트 통과
 - [ ] native DB adapter 변경 release는 affected representative Tier A runtime의 recent current-`main` Compatibility Smoke green
 - [ ] MCP extra 포함 시 real MCP Streamable HTTP integration green
 - [ ] release에 포함된 모든 extra의 optional framework/provider integration green
 - [ ] merge-blocking dependency audit 통과; latest independent audit, PR/main CodeQL, OpenSSF Scorecard green 또는 triaged
 - [ ] property-based OpenAPI serialization test 통과
-- [ ] cross-origin OpenAPI behavior explicit local approval test
+- [ ] 다른 출처(origin)의 OpenAPI 접근에 대해 명시적인 로컬 승인 검증 통과
 - [ ] schema drift/stale binding test 통과
 - [ ] input/output JSON Schema validation test 통과
 - [ ] mutation/destructive policy test 통과
@@ -76,7 +76,7 @@ SchemaRouter alpha, beta, release candidate 또는 stable tag를 promote하기 �
 
 ## Post-release
 
-- [ ] exact-version post-publish PyPI verification green
+- [ ] 배포 후 공개 PyPI에 게시된 정확한 버전 검증 통과
 - [ ] `SHA256SUMS.txt`/`release-manifest.json` GitHub Release attach 및 exact source SHA 확인
 - [ ] docs example이 released package와 일치
 - [ ] compatibility regression을 next patch blocker로 기록
