@@ -68,16 +68,36 @@ def test_partition_preserves_all_780_tasks_and_234_scientific_shards():
     missing = sorted(shards)[:81]
     wave0, n = wave_parts(shards, missing, 0)
     wave1, _ = wave_parts(shards, missing, 1)
-    wave2, _ = wave_parts(shards, missing, 2)
-    assert n == 3
-    assert tuple(map(len, (wave0, wave1, wave2))) == (200, 200, 5)
-    assert all(len(m["task_ids"].split(",")) == 2 for m in wave0 + wave1 + wave2)
-    assert len({m["job_id"] for m in wave0 + wave1 + wave2}) == 405
-    for invalid in (3, -1):
+    assert n == 2
+    assert tuple(map(len, (wave0, wave1))) == (250, 155)
+    assert all(len(m["task_ids"].split(",")) == 2 for m in wave0 + wave1)
+    assert len({m["job_id"] for m in wave0 + wave1}) == 405
+    for invalid in (2, -1):
         with pytest.raises(ValueError):
             wave_parts(shards, missing, invalid)
     with pytest.raises(ValueError):
         wave_parts(shards, [missing[0], missing[0]], 0)
+
+
+def test_heavy_catalog_work_is_balanced_across_serial_recovery_waves():
+    shards = frozen_shards(corpus())
+    missing = sorted(
+        shard for shard, (catalog, _) in shards.items()
+        if catalog == 500 or (catalog == 250 and shard >= "c250-g13")
+    )
+    assert len(missing) == 143
+    waves = [wave_parts(shards, missing, i)[0] for i in range(3)]
+    assert tuple(map(len, waves)) == (250, 250, 215)
+    heavy_counts = [
+        sum(part["catalog_size"] == 500 for part in wave)
+        for wave in waves
+    ]
+    assert heavy_counts == [130, 130, 130]
+    parts = [part["job_id"] for wave in waves for part in wave]
+    assert len(parts) == 715 and len(set(parts)) == 715
+    assert all(len(part["task_ids"].split(",")) == 2 for wave in waves for part in wave)
+    with pytest.raises(ValueError):
+        wave_parts(shards, missing, 3)
 
 
 def test_timed_out_job_artifact_is_not_a_success():
@@ -147,6 +167,36 @@ def test_plan_refuses_active_parent_and_recovers_only_cancelled_shard(monkeypatc
     assert len(p["successful_parent_shards"]) == 233
     assert p["missing_parent_shards"] == ["c100-g00"]
     assert len(p["matrix"]) == 5
+
+
+def test_cancelled_original_run_is_recoverable_without_scoring_rows(monkeypatch):
+    import scripts.research_014_heldout_recovery as module
+
+    data = corpus()
+    shards = frozen_shards(data)
+
+    def read_complete_payload(_api, _artifact, filename):
+        catalog, task_ids = shards[filename[:-5]]
+        return payload(data, catalog, task_ids)
+
+    class CancelledOriginal(StubAPI):
+        def run(self, run_id):
+            report = super().run(run_id)
+            report["conclusion"] = "cancelled"
+            return report
+
+    monkeypatch.setattr(module, "_artifact_payload", read_complete_payload)
+    result = plan(
+        CancelledOriginal(True),
+        data,
+        parent=123,
+        wave=0,
+        source=FROZEN_SOURCE,
+        digest="sha256:test",
+    )
+    assert result["successful_parent_shards"] == sorted(set(shards) - {"c100-g00"})
+    assert result["missing_parent_shards"] == ["c100-g00"]
+    assert len(result["matrix"]) == 5
 
 
 def test_workflow_keeps_exact_frozen_scientific_source():
