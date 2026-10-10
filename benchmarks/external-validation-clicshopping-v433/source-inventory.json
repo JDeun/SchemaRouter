@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "kind": "clicshopping-4.33-public-endpoint-action-inventory",
+  "upstream": {
+    "repository": "ClicShopping/ClicShopping",
+    "ref": "version4.33",
+    "commit": "3bac851759234a4babb49d3f351e472cd9e0f31f",
+    "tree_verified_at": "2026-10-10",
+    "source": "public_git_blobs_only"
+  },
+  "comparison": {
+    "native_interface": "REST endpoint/action matrix (not MCP tools/list or JSON-RPC inputSchema)",
+    "status": "source_audit_not_scored",
+    "model_calls": 0,
+    "live_requests": 0,
+    "credential_use": false,
+    "product_adoption_claim": false,
+    "unsupported_claims": "No route on permission-only endpoint unless dispatch proven",
+    "field_recall_comparable": false
+  },
+  "endpoints": {
+    "AnthropicEcommerce": {
+      "page_source": {
+        "path": "Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/AnthropicEcommerce/AnthropicEcommerce.php",
+        "present": true,
+        "git_blob_sha": "1827a3a3e6d46b7028bff143d60f2db3d2f2e301"
+      },
+      "permission_source": {
+        "path": "Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/AnthropicEcommerce/AnthropicEcommercePermissions.php",
+        "git_blob_sha": "4625f11fdda81fca740aff36365155fe79b3964c"
+      },
+      "read_actions": [
+        "products",
+        "product",
+        "search",
+        "categories",
+        "recommendations",
+        "stats",
+        "orders",
+        "order",
+        "order_history",
+        "session_get",
+        "session_list",
+        "customer",
+        "addresses",
+        "countries",
+        "security_report"
+      ],
+      "write_actions": [
+        "session_create",
+        "session_update",
+        "session_complete",
+        "session_cancel",
+        "order_cancel",
+        "order_message",
+        "customer_create"
+      ],
+      "permission_owner": "upstream_endpoint",
+      "authorization_model": "select_data required; write actions require upstream-granted write flags",
+      "status": "page_and_permissions_verified",
+      "dispatch_actions": [
+        "products",
+        "product",
+        "search",
+        "categories",
+        "recommendations",
+        "stats",
+        "session_create",
+        "session_get",
+        "session_update",
+        "session_complete",
+        "session_cancel",
+        "session_list",
+        "orders",
+        "order",
+        "order_history",
+        "order_cancel",
+        "order_message",
+        "customer",
+        "customer_create",
+        "addresses",
+        "countries",
+        "security_report"
+      ]
+    },
+    "CustomersProducts": {
+      "page_source": {
+        "path": "Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/CustomersProducts/CustomersProducts.php",
+        "present": true,
+        "git_blob_sha": "d063c2c4b7e924ec213b2fe4cdf2129eec7f7193"
+      },
+      "permission_source": {
+        "path": "Core/ClicShopping/Apps/Tools/MCP/Classes/Shop/EndPoint/CustomersProductsPermissions.php",
+        "git_blob_sha": "4170c045b5a81a28e6584508fde10ac1564812e4"
+      },
+      "read_actions": [
+        "products",
+        "product",
+        "categories",
+        "search",
+        "stats",
+        "recommendations"
+      ],
+      "write_actions": [
+        "table",
+        "username",
+        "security_level",
+        "allowed_actions",
+        "read_actions",
+        "write_actions",
+        "allowed_tables",
+        "forbidden_tables",
+        "restrictions",
+        "table_whitelist_enforced",
+        "forbidden_table_access_blocked",
+        "write_requires_explicit_permission",
+        "delete_never_allowed"
+      ],
+      "permission_owner": "upstream_endpoint",
+      "authorization_model": "select_data required; write actions require upstream-granted write flags",
+      "status": "page_and_permissions_verified",
+      "configuration_boundary": "DISPLAY_BROWSER_JSON restricts direct GET to search when enabled; five other declared actions are configuration-gated, not absent",
+      "dispatch_actions": [
+        "categories",
+        "product",
+        "products",
+        "recommendations",
+        "search",
+        "stats"
+      ]
+    },
+    "customerOrders": {
+      "page_source": {
+        "path": "Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/CustomerOrders/CustomerOrders.php",
+        "present": false,
+        "status": "not_in_pinned_tree"
+      },
+      "permission_source": {
+        "path": "Core/ClicShopping/Apps/Tools/MCP/Classes/Shop/EndPoint/CustomerOrdersPermissions.php",
+        "git_blob_sha": "e090b49def4aafd8c383cb03bdc590f966a7e3ac"
+      },
+      "read_actions": [
+        "list_orders",
+        "read_order",
+        "history"
+      ],
+      "write_actions": [
+        "cancel_order",
+        "send_message"
+      ],
+      "permission_owner": "upstream_endpoint",
+      "authorization_model": "select_data required; write actions require upstream-granted write flags",
+      "status": "permissions_only_unverified_endpoint",
+      "authentication_scope": "Every action requires authenticated customers_id; no endpoint source exists at this pinned SHA; do not score callability."
+    },
+    "ChatRagBI": {
+      "page_source": {
+        "path": "Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/ChatRagBI/ChatRagBI.php",
+        "present": true,
+        "git_blob_sha": "36072633d111b7160a5951b0384a2daca49b4beb"
+      },
+      "permission_source": {
+        "path": "Core/ClicShopping/Apps/Tools/MCP/Classes/Shop/EndPoint/RagBIPermissions.php",
+        "git_blob_sha": "4525eaa92e1c0f45c4bb659fd1bbb5ce0cbb433e"
+      },
+      "read_actions": [
+        "analyze_sales",
+        "product_analytics",
+        "customer_insights",
+        "inventory_report",
+        "performance_metrics",
+        "trend_analysis",
+        "category_analysis",
+        "revenue_analysis",
+        "search_analytics",
+        "export_report"
+      ],
+      "write_actions": [],
+      "permission_owner": "upstream_endpoint",
+      "authorization_model": "select_data required; write actions require upstream-granted write flags",
+      "status": "page_and_permissions_verified",
+      "response_contract": "4.33 RATE_LIMITED JSON error, ai_disclaimer; read-only-only principal with no write/admin flags."
+    }
+  },
+  "overlap_actions": {
+    "endpoints": [
+      "AnthropicEcommerce",
+      "CustomersProducts"
+    ],
+    "shared": [
+      "categories",
+      "product",
+      "products",
+      "recommendations",
+      "search",
+      "stats"
+    ],
+    "count": 6
+  },
+  "governance": {
+    "frozen_experiment_014_untouched": true,
+    "score_only_page_verified_actions": true,
+    "no_live_endpoint_or_credentials": true,
+    "no_semantic_tuning_from_scored_rows": true
+  }
+}
