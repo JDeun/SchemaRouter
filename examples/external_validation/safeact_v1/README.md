@@ -341,3 +341,29 @@ across domains. Production launch validates recognized public domains and
 uniqueness of every `(domain, action)` contract, while missing/unknown
 domain scope fails closed. Isolated unscoped synthetic tests are not proof
 of a scored-run-ready domain-scoped contract catalogue.
+
+## Unreviewed domain-scoped public action review queue (no models)
+
+The SafeAct preflight also builds a deterministic
+`safeact-v1-unreviewed-domain-action-queue` artifact from **only** the
+pinned public 131-case ID listing and the template tool/policy filename +
+SHA-256 inventory. It retains null-valued case cohort entries, enumerates
+each unique `(domain, tool)` source identity, and leaves consequential-action
+classification, required evidence, record-field bindings, authorship and
+review **unset**. Cross-domain name collisions are distinct entries.
+
+For an equivalent local no-gold preparation:
+
+```bash
+python -m scripts.prepare_safeact_v1_review_queue \
+  --public-listing safeact-v1-list.json \
+  --inventory safeact-v1-public-tool-inventory.json \
+  --out safeact-v1-review-queue.json
+```
+
+This is an authoring **work queue**, not generated policy semantics,
+approved `contracts.json`, validated 131-case action coverage, or an
+official model benchmark. A human must independently decide which public
+tools are consequential, cite their actual public policy interfaces and
+grounded observations, write scoped evidence requirements and obtain
+independent second-person approval before the protected scored run.
