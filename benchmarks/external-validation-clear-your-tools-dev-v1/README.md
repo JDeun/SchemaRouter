@@ -107,3 +107,25 @@ The new `interception-modes.json` declares these as **unscored methodology
 constraints**, checked without models by
 `python -m scripts.validate_cyt_interception_boundary`. Passing this
 preflight never freezes a held-out experiment or authorizes scoring.
+
+
+## Frozen macOS HTTP Proxy transport mock (separate from SDK smoke)
+
+The integration check in
+`scripts/verify_cyt_proxy_http_mock.py` uses the real
+`qdrddr/clear-your-tools@9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4`
+Proxy ASGI handler and a local loopback-only HTTP fake Responses API endpoint on macOS. It verifies the actual HTTP route,
+Codex-tagged proxy health response, forward of a synthetic tool-bearing
+OpenAI Responses request, absence of external provider calls, and return
+of the fake model's synthetic JSON response.
+
+The fake provider listens only on `127.0.0.1` and is shut down after the probe. **No real agent is launched,
+no tool is executed, no model API key is needed, no CYT-MCP Hook runs,
+no task is scored and no prompt-cache economics are measured.**
+Passing the native macOS SDK test or this transport test does **not**
+establish native Codex CLI interception or correct pruning/call blocking,
+which still need an explicitly authorized real-agent run with pinned
+external provider/model and audited tool/catalog setup. These experiments
+form separate layers of the CYT compatibility ladder:
+indexer SDK, proxy HTTP transport, actual Codex/agent transport, then
+independently frozen task-level end-to-end outcomes.
