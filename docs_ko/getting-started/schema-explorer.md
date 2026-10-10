@@ -14,7 +14,7 @@ schemarouter explorer \
 
 Explorer에는 다음 정보가 포함됩니다.
 
-- tool/provider/adapter/source provenance
+- 도구·제공자·어댑터·데이터 소스의 출처 정보
 - schema와 endpoint fingerprint
 - read-only / mutating / destructive 분류
 - credential 값이 제외된 authentication requirement
