@@ -1069,10 +1069,10 @@ The active workflow is `36326745694`. Calibration/blind evidence remains untouch
 
 The canonical current state is:
 
-1. #259 is the confirmed robust strict base;
-2. #255 and #256 are terminal negative results;
-3. #262 is the only active quality-improvement experiment;
-4. #198 calibration/blind confirmation remains blocked;
+1. Issue #259 is the confirmed robust strict base;
+2. Issue #255 and #256 are terminal negative results;
+3. Issue #262 is the only active quality-improvement experiment;
+4. Issue #198 calibration/blind confirmation remains blocked;
 5. if #262 passes, freeze the exact rescue profile in a separate executable candidate before any fresh confirmation;
 6. if #262 fails, do not weaken the <=1% false-route boundary merely to hit the 85% exact target.
 
@@ -1417,7 +1417,7 @@ The current 0.11 research state is now:
 3. generic contradiction NLI does not encode missing capability;
 4. fixed positive/negative/background prototype banks contain signal but scalar and relative-rank heuristics cannot jointly satisfy >=85% exact / >=97% near rejection / 100% OOD / <=1% false-route;
 5. fixed-prototype heuristic refinement is closed;
-6. #198 calibration/blind remains blocked;
+6. Issue #198 calibration/blind remains blocked;
 7. the next behavior-changing experiment must test a learned or externally pretrained match / no_match / unknown verifier that can veto the raw registered winner but can never reroute or create execution authority.
 
 The architectural invariant remains:
@@ -1585,7 +1585,7 @@ The 0.11 architecture-search evidence now supports a stronger conclusion:
 4. fixed semantic prototype thresholds and relative ranks do not provide a safe open-set boundary;
 5. a shallow learned verifier can pass grouped OOF but still fails zero-overlap fresh-surface confirmation;
 6. further supervised complexity on the same DEV geometry is prohibited by the preregistered stopping rule;
-7. #198 calibration/blind remains blocked and untouched;
+7. Issue #198 calibration/blind remains blocked and untouched;
 8. the next architecture must use an externally pretrained semantic capability verifier whose capability judgment is learned independently of this benchmark.
 
 The authority invariant remains unchanged:
@@ -1673,19 +1673,19 @@ Calibration/blind remains blocked and untouched.
 
 Active experiments:
 
-1. #289 / PR #290 — Qwen3 external semantic capability verifier
+1. Issue #289 / PR #290 — Qwen3 external semantic capability verifier
    - immutable BGE-M3 raw top-1 route authority;
    - Qwen3-Reranker-0.6B veto only;
    - no SchemaRouter verifier training;
    - eight fixed yes-probability thresholds.
 
-2. #299 / PR #300 — pinned Kev-0.8B choice + noul
+2. Issue #299 / PR #300 — pinned Kev-0.8B choice + noul
    - pinned Kev source and Hub model revisions;
    - 16 registered routes only;
    - native System One `choice` and `noul` in one request;
    - separate fixed choice-confidence and noul-capability rule families.
 
-3. #301 / PR #302 — pinned Laya noul veto
+3. Issue #301 / PR #302 — pinned Laya noul veto
    - BGE-M3 raw registered top-1 remains sole route authority;
    - Laya may only return native `P(true)` capability evidence for that winner;
    - `laya==0.3.11`;
@@ -2436,7 +2436,7 @@ The 0.11 research conclusion is:
    surfaces, and the strongest current executable candidate failed the formal fresh gate.
 4. The safe stopping action is to close the architecture-search cycle, not tune against consumed
    evidence.
-5. #198 calibration/blind-final stays unexecuted because its entry requirements were never met.
+5. Issue #198 calibration/blind-final stays unexecuted because its entry requirements were never met.
 
 The robust #259 profile remains a useful conservative reference:
 - exact 83.7674%;
@@ -2995,19 +2995,19 @@ rather than retuning geometry.
 
 Five preregistered controls were consumed:
 
-1. #404 naturalistic generic-operation probes trained fixed MiniLM linear probes on a frozen
+1. Issue #404 naturalistic generic-operation probes trained fixed MiniLM linear probes on a frozen
    multilingual utterance bank. Broad OOD improved, but supported exact fell to 75.44%, near-domain
    rejection reached only 59.52%, and p95 was 297.36 ms.
-2. #406 Tool-Embed positive retrieval tested an external tool-specialized embedding model as the
+2. Issue #406 Tool-Embed positive retrieval tested an external tool-specialized embedding model as the
    positive selector. It reached 78.07% exact versus 86.84% for same-surface BGE-M3 and missed the
    latency target.
-3. #408 relative multilingual cross-encoding jointly scored requests against registered,
+3. Issue #408 relative multilingual cross-encoding jointly scored requests against registered,
    same-resource counterfactual, and background documents. It reached 79.39% supported exact,
    19.84% near rejection, 59.72% OOD rejection, 71.30% false-route, and ~2.99 s p95.
-4. #409 frozen GTE multilingual positive retrieval revisited a historically strong pre-V6F
+4. Issue #409 frozen GTE multilingual positive retrieval revisited a historically strong pre-V6F
    representation on a new supported-only registry. GTE reached 71.49% exact versus 88.16% for
    same-surface BGE, despite a viable 100.14 ms p95.
-5. #412 multilingual-E5 split-conformal membership separated route selection from abstention and
+5. Issue #412 multilingual-E5 split-conformal membership separated route selection from abstention and
    calibrated a one-sided unsupported null at fixed alpha=0.01. It achieved 99.21% near rejection,
    100% OOD rejection, 0.62% false-route and 244.24 ms p95, but supported exact collapsed to 10.09%
    because 87.29% of raw-correct BGE winners were vetoed.

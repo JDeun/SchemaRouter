@@ -41,3 +41,15 @@ def test_brand_assets_participate_in_whole_corpus_integrity(tmp_path: Path) -> N
     asset.parent.mkdir(parents=True)
     asset.write_text("# Brand assets\\n", encoding="utf-8")
     assert "assets/brand/README.md" in markdown_files(tmp_path)
+
+
+def test_numeric_issue_in_ordered_list_or_quote_is_rejected(tmp_path: Path) -> None:
+    page = tmp_path / "ordered.md"
+    page.write_text(
+        "1. #255 issue reference\\n"
+        "2) #256 issue reference\\n"
+        "> #262 quoted reference\\n"
+        "> 1. #198 nested reference\\n",
+        encoding="utf-8",
+    )
+    assert unescaped_numeric_issue_references(page) == [1, 2, 3, 4]
