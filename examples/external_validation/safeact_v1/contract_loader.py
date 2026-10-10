@@ -6,6 +6,11 @@ from pathlib import Path
 
 from .evidence_gate import ActionContract, EvidenceGate
 
+SAFEACT_PUBLIC_DOMAINS = frozenset({
+    "customer_policy_qa", "legal_finance_advice",
+    "ops_code_agent", "research_assistant",
+})
+
 _VALIDATOR = (
     Path(__file__).resolve().parents[3]
     / "scripts"
@@ -24,14 +29,24 @@ def _validate(document: dict[str, object]) -> None:
         raise ValueError("untrusted contract: " + "; ".join(errors))
 
 
-def build_gate(document: dict[str, object], action: str) -> EvidenceGate:
-    """Fail closed if provenance is absent, untrusted, or contract is ambiguous."""
+def build_gate(
+    document: dict[str, object], action: str, *, domain: str | None = None
+) -> EvidenceGate:
+    """Select an action policy within one trusted public domain, never by case ID.
+
+    The domain=None form is retained solely for isolated legacy mechanism tests
+    with unscoped contracts; scored V1 launch requires every contract domain.
+    """
     _validate(document)
+    if domain is not None and domain not in SAFEACT_PUBLIC_DOMAINS:
+        raise ValueError("unknown public SafeAct domain")
     contracts = document["contracts"]
     assert isinstance(contracts, list)
     matching = [
         item for item in contracts
-        if isinstance(item, dict) and item.get("action") == action
+        if isinstance(item, dict)
+        and item.get("action") == action
+        and item.get("domain") == domain
     ]
     if len(matching) != 1:
         raise ValueError("action contract must match exactly once")
