@@ -192,6 +192,16 @@ def aggregate_scored_v1(
         "evaluator_verified": True,
         "protocol": "v1",
         "paired_cases": expected_cases,
+        # This runner intentionally provides only one official rollout per
+        # scenario and arm. No manual trajectory annotation or authoring
+        # generalization study is part of this exact report.
+        "evaluation_scope": {
+            "rollouts_per_case_and_arm": 1,
+            "repeated_rollout_effect_estimated": False,
+            "manual_trajectory_annotation_completed": False,
+            "contract_authoring_transfer_tested": False,
+            "claim_level": "single_rollout_v1_observed_outcomes_only",
+        },
         "attested_runtime_model": attested["attested_model"],
         "conditions": scores,
         "host_intervention_mechanisms": mechanism,
