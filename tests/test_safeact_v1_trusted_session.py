@@ -299,3 +299,96 @@ def test_trusted_gateway_rejects_nonfinite_typed_evidence_before_authorization(
     with pytest.raises(PermissionError, match="evidence incomplete"):
         session.execute_action("refund_issue", {"charge_id": "C2"})
     assert session.diagnostics()["action_dispatches"] == 0
+
+
+def test_unverified_retry_clears_previously_authorizing_evidence() -> None:
+    calls: list[str] = []
+    session = _session(
+        verify=lambda tool, args, result: (
+            VerifiedToolEvidence("C2", frozenset({"amount", "owner"}))
+            if result.get("status") == "ok" else None
+        ),
+        execute=lambda action, args: calls.append(action),
+    )
+    session.record_trusted_result(
+        "charge_read", {"charge_id": "C2"}, {"status": "ok"},
+    )
+    assert session._gate.check("refund_issue").allowed
+    session.record_trusted_result(
+        "charge_read", {"charge_id": "C2"}, {"status": "unverified"},
+    )
+    with pytest.raises(PermissionError, match="evidence incomplete"):
+        session.execute_action("refund_issue", {"charge_id": "C2"})
+    assert calls == []
+    assert session.diagnostics()["verified_observations"] == 1
+    assert session.diagnostics()["action_dispatches"] == 0
+
+
+def test_failed_repeat_transport_revokes_old_tool_evidence() -> None:
+    seen = 0
+
+    def flaky_read(tool, args):
+        nonlocal seen
+        seen += 1
+        if seen == 2:
+            raise RuntimeError("transport failed on repeat")
+        return {"charge_id": "C2", "amount": 15, "owner": "Alice"}
+
+    dispatched: list[str] = []
+    session = _session(
+        read=flaky_read, execute=lambda action, args: dispatched.append(action),
+    )
+    session.information_call("charge_read", {"charge_id": "C2"})
+    assert session._gate.check("refund_issue").allowed
+    with pytest.raises(RuntimeError, match="transport failed on repeat"):
+        session.information_call("charge_read", {"charge_id": "C2"})
+    with pytest.raises(PermissionError, match="evidence incomplete"):
+        session.execute_action("refund_issue", {"charge_id": "C2"})
+    assert dispatched == []
+    assert session.diagnostics()["information_attempts"] == 2
+
+
+def test_malformed_repeat_evidence_revokes_prior_verified_value() -> None:
+    session = _session(
+        verify=lambda tool, args, result: VerifiedToolEvidence(
+            record_id="C2",
+            fields=frozenset({"amount", "owner"}),
+            values=(("amount", result["amount"]),),
+        ),
+    )
+    session.record_trusted_result(
+        "charge_read", {}, {"amount": 15},
+    )
+    assert session._gate.check("refund_issue").allowed
+    with pytest.raises(ValueError, match="malformed typed values"):
+        session.record_trusted_result("charge_read", {}, {"amount": float("inf")})
+    with pytest.raises(PermissionError, match="evidence incomplete"):
+        session.execute_action("refund_issue", {})
+    assert session.diagnostics()["action_dispatches"] == 0
+
+
+def test_failed_one_tool_preserves_independent_other_tool_evidence() -> None:
+    contract = _contract()
+    contract["contracts"][0]["required_observations"].append({
+        "tool": "owner_read",
+        "record_id": "C2",
+        "fields": ["owner"],
+    })
+    session = TrustedEvidenceSession(
+        contract,
+        "refund_issue",
+        information_call=lambda tool, args: {},
+        verify_result=lambda tool, args, result: VerifiedToolEvidence(
+            "C2", frozenset({"owner"} if tool == "owner_read" else {"amount", "owner"})
+        ) if result.get("status") == "ok" else None,
+        execute_action=lambda action, args: (action, args),
+    )
+    session.record_trusted_result("owner_read", {}, {"status": "ok"})
+    session.record_trusted_result("charge_read", {}, {"status": "ok"})
+    assert session._gate.check("refund_issue").allowed
+    session.record_trusted_result("charge_read", {}, {"status": "failed"})
+    assert not session._gate.check("refund_issue").allowed
+    # Owner observation survives the unrelated charge-read failure.
+    assert any(obs.tool == "owner_read" for obs in session._gate._observations)
+    session.record_trusted_result("charge_read", {}, {"status": "ok"})
+    assert session._gate.check("refund_issue").allowed
