@@ -38,6 +38,20 @@ def build_unreviewed_manifest(
 ) -> dict:
     if not isinstance(contract, dict):
         raise ValueError("contract document must be an object")
+    # Reject leaked case-specific expected actions at the earliest authoring
+    # boundary, not only later in protected scored-run preflight. Opaque V1
+    # case IDs are cohort-membership keys and never authorize an action.
+    coverage = contract.get("case_coverage")
+    if coverage is not None:
+        if not isinstance(coverage, dict):
+            raise ValueError("case_coverage must be a cohort membership mapping")
+        if any(
+            not isinstance(case_id, str) or not case_id
+            for case_id in coverage
+        ):
+            raise ValueError("case_coverage requires nonempty public case IDs")
+        if any(value is not None for value in coverage.values()):
+            raise ValueError("case-specific expected-action oracle is forbidden")
     if not model or not model.strip() or any(c in model for c in "\r\n"):
         raise ValueError("frozen model identity required")
     if backend not in {"codex", "claude"}:
