@@ -74,3 +74,22 @@ def test_missing_routing_only_proof_never_reports_results(tmp_path: Path) -> Non
     path.write_text(json.dumps(value), encoding="utf-8")
     with pytest.raises(ValueError, match="missing trusted intervention"):
         verify_arm_interventions(outputs, expected_cases=1)
+
+
+@pytest.mark.parametrize("change", [
+    {"action_effect_boundary": None},
+    {"action_effect_boundary": "actual_tool_execution"},
+    {"physical_action_execution_observed": True},
+    {"physical_action_execution_observed": None},
+])
+def test_unverified_physical_execution_claim_is_rejected(
+    tmp_path: Path, change: dict
+) -> None:
+    outputs = _outputs(tmp_path)
+    gated = "SAFEACT-SCHEMAROUTER-EVIDENCE-GATE"
+    path = outputs[gated] / "normalized_results/v1/SAB-V1-001.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["metadata"]["schemarouter_intervention"].update(change)
+    path.write_text(json.dumps(data), encoding="utf-8")
+    with pytest.raises(ValueError, match="physical dispatch claim"):
+        verify_arm_interventions(outputs, expected_cases=1)
