@@ -132,6 +132,8 @@ def test_untrusted_rank_order_and_duplicates_fail_closed() -> None:
         {"min_margin": float("nan")},
         {"min_margin": float("inf")},
         {"min_margin": -0.01},
+        {"min_score": True},
+        {"min_margin": "1.0"},
     ],
 )
 def test_unconfigured_or_unsafe_thresholds_rejected(kwargs: dict) -> None:
