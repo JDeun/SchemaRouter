@@ -1,0 +1,43 @@
+name: ClicShopping 4.33 Pinned Source Audit
+
+on:
+  pull_request:
+    paths:
+      - "scripts/verify_clicshopping_v433_upstream.py"
+      - "tests/test_verify_clicshopping_v433_upstream.py"
+      - "benchmarks/external-validation-clicshopping-v433/source-inventory.json"
+      - ".github/workflows/external-validation-clicshopping-v433-source-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: schemarouter
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ClicShopping/ClicShopping
+          ref: 3bac851759234a4babb49d3f351e472cd9e0f31f
+          path: clicshopping-pinned
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - name: Validate original source inventory and Git blob identities
+        working-directory: schemarouter
+        run: |
+          python scripts/validate_clicshopping_v433_inventory.py
+          python scripts/verify_clicshopping_v433_upstream.py \
+            --upstream-root ../clicshopping-pinned
+      - name: Execute offline no-model parser regression tests
+        working-directory: schemarouter
+        run: |
+          python -m pip install "pytest>=8,<10" "pytest-asyncio>=0.23,<2"
+          python -m pytest -q tests/test_verify_clicshopping_v433_upstream.py
