@@ -78,6 +78,10 @@ class EvidenceGate:
                     and (
                         type(condition.reference) not in {str, bool, int, float}
                         or (
+                            condition.operator in {"lte", "gte"}
+                            and type(condition.reference) not in {int, float}
+                        )
+                        or (
                             type(condition.reference) is float
                             and not Decimal(str(condition.reference)).is_finite()
                         )
