@@ -16,8 +16,8 @@ from pathlib import Path
 from typing import Any
 
 from scripts.run_clicshopping_v433_dev import (
-    PACKAGE, build_router, canonical_bytes, eligible_catalog, load_json,
-    validate_cases,
+    PACKAGE, build_router, canonical_bytes,
+    eligible_catalog as historical_eligible_catalog, load_json, validate_cases,
 )
 from scripts.validate_clicshopping_v433_inventory import validate_inventory
 
@@ -26,6 +26,32 @@ PIN_OLD = "3bac851759234a4babb49d3f351e472cd9e0f31f"
 NEW_CASES = "visible-dev-repin-cases-8ada7f1.json"
 MANIFEST = "maintainer-repin-8ada7f1.json"
 OLD_CASES = "dev-cases.json"
+
+
+
+# Upstream CustomerOrdersPermissions.php requires update_data for cancellation,
+# but create_data for messaging. The historical DEV benchmark used a single
+# (create OR update) gate across all write actions. That is observationally
+# equivalent on its frozen 3 roles, but unsafe for role-split test scenarios.
+CUSTOMER_ORDERS_WRITE_GRANTS = {
+    "customerOrders.cancel_order": "update_data",
+    "customerOrders.send_message": "create_data",
+}
+
+
+def eligible_catalog(
+    inventory: dict, role: dict[str, bool]
+) -> list[dict[str, Any]]:
+    """Conservatively retain source-specific CustomerOrders write grants."""
+    original = historical_eligible_catalog(inventory, role)
+    return [
+        route
+        for route in original
+        if (
+            (grant := CUSTOMER_ORDERS_WRITE_GRANTS.get(route["route"])) is None
+            or role.get(grant, False)
+        )
+    ]
 
 
 def pin_new_inventory(old: dict, transition: dict) -> dict:
