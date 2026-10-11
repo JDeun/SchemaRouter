@@ -7,7 +7,7 @@ import pytest
 
 from scripts.run_clicshopping_v433_dev import PACKAGE, load_json
 from scripts.run_clicshopping_v433_repin_dev import (
-    pin_new_inventory, run, validate_repin_cases,
+    eligible_catalog, pin_new_inventory, run, validate_repin_cases,
 )
 
 
@@ -61,6 +61,42 @@ def test_unapproved_protocol_or_case_changes_fail_closed(change) -> None:
         )
 
 
+
+def test_separate_customer_order_write_permissions_are_not_merged() -> None:
+    old, transition, _, _ = inputs()
+    new = pin_new_inventory(old, transition)
+    grants = {
+        "select_data": True,
+        "create_data": False,
+        "update_data": False,
+        "delete_data": False,
+        "create_db": False,
+    }
+    def exposed() -> set[str]:
+        return {x["route"] for x in eligible_catalog(new, grants)}
+
+    assert "customerOrders.cancel_order" not in exposed()
+    assert "customerOrders.send_message" not in exposed()
+
+    grants["create_data"] = True
+    assert "customerOrders.send_message" in exposed()
+    assert "customerOrders.cancel_order" not in exposed()
+
+    grants["create_data"] = False
+    grants["update_data"] = True
+    assert "customerOrders.cancel_order" in exposed()
+    assert "customerOrders.send_message" not in exposed()
+
+    grants["create_data"] = True
+    assert {
+        "customerOrders.cancel_order", "customerOrders.send_message"
+    } <= exposed()
+
+    grants["select_data"] = False
+    assert not exposed()
+
+
+
 def test_real_offline_dev_comparison_runs_without_native_execution() -> None:
     result = run()
     assert result["status"] == "development_only_not_independent_heldout"
@@ -78,12 +114,10 @@ def test_real_offline_dev_comparison_runs_without_native_execution() -> None:
             len(x["selected_routes"]) <= result["top_k"]
             for x in cohort["per_case"]
         )
-    assert "customerOrders.list_orders" in {
-        route
-        for row in cohorts[1]["per_case"]
-        if row["label"] == "supported"
-        for route in (
-            ["customerOrders.list_orders"]
-            if row["id"] == "clic433r-001" else []
-        )
-    }
+    # Verify actual observed candidates, never manufacture an apparent hit.
+    first = next(x for x in cohorts[1]["per_case"] if x["id"] == "clic433r-001")
+    assert first["eligible_full_routes"] > 0
+    assert isinstance(first["selected_routes"], list)
+    assert first["required_present"] == (
+        "customerOrders.list_orders" in first["selected_routes"]
+    )
