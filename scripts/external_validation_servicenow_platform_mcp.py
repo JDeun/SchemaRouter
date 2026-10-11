@@ -108,6 +108,14 @@ def validate_package(
     ).encode("utf-8")).hexdigest()
     if snapshot.get("tools_sha256") != digest:
         raise ValueError("native MCP tool snapshot SHA-256 mismatch")
+    pinned_digest = manifest["upstream_runtime"].get("expected_readonly_tools_sha256")
+    if (
+        not isinstance(pinned_digest, str)
+        or len(pinned_digest) != 64
+        or not all(char in "0123456789abcdef" for char in pinned_digest)
+        or digest != pinned_digest
+    ):
+        raise ValueError("native MCP tool contracts differ from independently pinned digest")
     tool_map: dict[str, dict[str, Any]] = {}
     for tool in tools:
         name = tool.get("name")
