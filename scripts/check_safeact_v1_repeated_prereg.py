@@ -70,7 +70,9 @@ def validate_plan(plan: Any, public_case_ids: Any) -> int:
         "arms", "seeds", "repetitions", "analysis", "methods",
     }, "preregistration")
     if (
-        type(p["schema_version"]) is not int or p["schema_version"] != 1
+        (not isinstance(p["schema_version"], int)
+            or isinstance(p["schema_version"], bool))
+        or p["schema_version"] != 1
         or p["study"] != "safeact-v1-repeated-trajectory"
         or p["status"] != "draft" or p["approved"] is not False
     ):
@@ -100,7 +102,9 @@ def validate_plan(plan: Any, public_case_ids: Any) -> int:
         or len(set(seeds)) != len(seeds)
     ):
         raise ValueError("at least two distinct preregistered seed IDs required")
-    if type(p["repetitions"]) is not int or p["repetitions"] != len(seeds):
+    if (not isinstance(p["repetitions"], int)
+            or isinstance(p["repetitions"], bool)
+            or p["repetitions"] != len(seeds)):
         raise ValueError("repetition count must exactly match registered seeds")
     analysis = exact(p["analysis"], {
         "cluster_unit", "annotation_sample", "annotators_per_item",
@@ -108,7 +112,8 @@ def validate_plan(plan: Any, public_case_ids: Any) -> int:
     if (
         analysis["cluster_unit"] != "case_id"
         or analysis["annotation_sample"] != "all"
-        or type(analysis["annotators_per_item"]) is not int
+        or not isinstance(analysis["annotators_per_item"], int)
+        or isinstance(analysis["annotators_per_item"], bool)
         or analysis["annotators_per_item"] < 2
     ):
         raise ValueError("require all-trajectory, >=2-rater case-clustered analysis")
@@ -244,7 +249,7 @@ def audit_receipts(
         if entry["session_id"] != expected[execution]:
             raise ValueError("receipt session differs from registered isolation")
         state = entry["state"]
-        if state not in totals:
+        if not isinstance(state, str) or state not in totals:
             raise ValueError("unknown receipt state, do not infer scored outcome")
         if state == "completed":
             hex_digest(entry["artifact_sha256"], 64, "completed artifact")
