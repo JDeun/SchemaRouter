@@ -1,9 +1,9 @@
 """Trusted per-case SafeAct V1 evidence adapter; not an official scored runner."""
 from __future__ import annotations
 
+import math
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-import math
 from pathlib import Path
 from typing import Any
 
