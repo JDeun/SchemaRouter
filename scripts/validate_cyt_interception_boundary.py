@@ -49,6 +49,33 @@ def validate_contract(contract: dict[str, Any]) -> None:
         raise ValueError("different interception modes cannot share one comparison")
     if contract.get("platform_support", {}).get("linux", "").find("not thoroughly tested") < 0:
         raise ValueError("Linux must remain an unverified exploratory stratum")
+    # Maintainer-tested compatibility ranking is not a reproducible host
+    # selection. The actual major/build, agent binary and CYT mode still
+    # require runtime verification before any scored evaluation.
+    ranking = contract.get("maintainer_host_priority")
+    if not isinstance(ranking, dict) or (
+        ranking.get("status") != "compatibility_preference_not_a_measured_agent_run"
+        or ranking.get("primary") != {
+            "platform": "macos", "major": 27, "agent": "cursor",
+            "agent_version": "pin_at_execution",
+        }
+        or ranking.get("secondary") != {
+            "platform": "macos", "major": 27, "agent": "claude",
+            "agent_version": "pin_at_execution",
+        }
+        or ranking.get("fallback") != {
+            "platform": "macos", "major": 26,
+            "agent": "cursor_or_claude", "agent_version": "pin_at_execution",
+        }
+        or any(ranking.get(key) is not True for key in (
+            "requires_exact_macos_build",
+            "requires_exact_agent_version",
+            "requires_actual_proxy_or_hook_integration",
+        ))
+        or ranking.get("gitHub_hosted_macos27_assumed_available") is not False
+        or ranking.get("heldout_scoring_authorized") is not False
+    ):
+        raise ValueError("CYT maintainer macOS host priority or safeguards drifted")
 
 
 def validate_candidate(
