@@ -145,3 +145,26 @@ def test_unsupported_candidate_exposure_is_reported_not_hidden():
     report = score(manifest, cases, snapshot, result)
     assert report["summary"]["unsupported_nonempty_candidate_rate"] == 1.0
     assert report["per_case"][1]["nonempty_candidate"] is True
+
+
+
+def test_reviewer_worksheet_lists_all_cases_and_marks_known_dev_misses():
+    from scripts.build_servicenow_maintainer_review_packet import build
+
+    manifest, cases, snapshot = _fixture()
+    text = build(manifest, cases, snapshot)
+    assert "NOT HELD-OUT" in text
+    assert "supported-read" in text and "ood" in text
+    assert "Native MCP input-schema parameter reference" in text
+    assert snapshot["tools_sha256"] in text
+    assert "No task execution" in text
+    assert "development errors" in text.lower()
+
+
+def test_reviewer_worksheet_rejects_mutated_native_snapshot():
+    from scripts.build_servicenow_maintainer_review_packet import build
+
+    manifest, cases, snapshot = _fixture()
+    snapshot["tools"][0]["description"] = "modified after capture"
+    with pytest.raises(ValueError, match="SHA-256"):
+        build(manifest, cases, snapshot)
