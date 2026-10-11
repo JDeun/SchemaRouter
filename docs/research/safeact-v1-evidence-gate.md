@@ -252,3 +252,29 @@ cannot infer these semantics. This mechanism is an unapproved
 pre-scoring capability and **does not establish 131-case policy coverage,
 automatic contract inference, official V1 scores or scientific validity**.
 Track further authoring and independent validation in #1269 and #1224.
+
+## Repeat-read evidence invalidation (pre-scoring; no model outcomes)
+
+A successful verified information read is not an irrevocable permission
+token. The **same tool and record** returning a failed observation now
+invalidates earlier facts for that pair. If a later trusted gateway call
+fails, returns unverified/malformed values, or raises during verification,
+its record identity cannot be trusted; the parent adapter revokes **all
+prior evidence from that information tool** for this case. Evidence from
+other tools is preserved. A later genuinely verified result may restore
+eligibility, subject to every required observation and value predicate.
+
+Value conditions also require the observed field to be present in the
+verifier-declared field set; a value tuple alone cannot authorize a
+predicate. The no-model regression tests cover failed retries, malformed
+and nonfinite responses, unaffected tool evidence and valid recovery.
+Host observations never come from agent-authored event text or evaluator
+gold, and diagnostic denial categories do not reveal observed values.
+
+This intentionally conservative freshness policy can increase false
+refusals after a transient tool failure. Repeated-read order, failure
+rates, retry/reset policy and that trade-off must be specified and
+independently reviewed before a scored V1 run. This mechanism does
+**not** establish a time-based TTL, host-side physical side-effect
+prevention, independently approved public policy semantics, or 393
+real model trajectories. #1269 and #1224 remain open.
