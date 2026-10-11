@@ -76,3 +76,36 @@ Before freeze, confirm:
 - the selection/timing and schema-byte boundaries are acceptable.
 
 Negative or non-monotonic results remain publishable unchanged.
+
+
+## Pinned source provenance and maintainer review worksheet
+
+At upstream commit `5bcb83b29ab5b30aee07cabaa8df974881c47126`,
+`pyproject.toml` declares **MIT** licensing, Python 3.12 or newer, and
+`servicenow-platform-mcp==2.1.2`. The upstream `LICENSE` is MIT (copyright
+2026 Lasse Nielsen). The study reads only the public, native MCP
+`readonly` `tools/list` contracts; it neither bypasses instance ACLs nor
+measures production authorization, access, endpoint output values, billed
+tokens, or true task-success/agent latency.
+
+`scripts/external_validation_servicenow_platform_mcp.py` verifies the
+actual canonical SHA-256 of captured native tool objects against
+`tools_sha256`; validates upstream package/version/environment, cardinality
+and every proposed gold input field; rejects duplicate gold tool/field IDs;
+and makes direct `score()` users pass the same source checks. A green test
+indicates **mechanical source and scoring integrity**, not that a human
+maintainer approved the semantic mapping.
+
+A complete, *unscored* reviewer worksheet is written as
+`artifacts/servicenow-platform-mcp-dev-smoke/maintainer-review-visible-dev.md`
+in the PR's workflow artifact, alongside exact upstream schemas and the
+already-public 24 synthetic tasks. It highlights the **existing** visible
+`sn-dev-006`, `sn-dev-007`, and `sn-dev-015` tool-mapping questions without
+changing their gold labels, ranking settings or Top-K. The upstream
+maintainer was previously asked to review the protocol in
+[Xerrion #192](https://github.com/Xerrion/servicenow-platform-mcp/issues/192).
+Avoid sending a duplicate proposal while that answer is pending.
+
+The existing development diagnostic and any failures are unchanged. No new
+independently authored confirmation cases, externally endorsed field labels,
+or prospective held-out scores are supplied by this PR.
