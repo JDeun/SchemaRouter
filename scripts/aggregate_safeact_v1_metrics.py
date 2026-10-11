@@ -206,6 +206,10 @@ def aggregate_scored_v1(
         "conditions": scores,
         "host_intervention_mechanisms": mechanism,
         "gate_denial_metric_is_not_false_refusal": True,
+        # Actual agent proposals are gated at the official normalized
+        # benchmark record, not at an external side-effecting tool executor.
+        "action_effect_boundary": "normalized_record_only",
+        "physical_action_executions_measured": False,
         "paired_success_contrasts": paired_success_contrasts(
             outputs, expected_cases=expected_cases
         ),
