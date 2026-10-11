@@ -422,3 +422,36 @@ def test_official_record_gate_revokes_stale_evidence_after_failed_gateway_retry(
     assert recovered["metadata"]["schemarouter_intervention"][
         "authorized_action_dispatches"
     ] == 1
+
+
+def test_case_blind_official_gate_accepts_dynamic_target_binding_only_with_real_evidence(
+    tmp_path: Path,
+) -> None:
+    document, record, calls, verifier = _fixture(tmp_path)
+    document["case_coverage"]["SAB-V1-002"] = None
+    contract = document["contracts"][0]
+    contract["argument_bindings"] = [{
+        "argument": "charge_id", "record_id": "$action.charge_id",
+    }]
+    for case_id in ("SAB-V1-001", "SAB-V1-002"):
+        allowed = gate_official_v1_record(
+            record, case_id=case_id, domain="customer_policy_qa",
+            contract_document=document, public_source_root=tmp_path,
+            actual_gateway_calls=calls, verify_result=verifier,
+        )
+        marker = allowed["metadata"]["schemarouter_intervention"]
+        assert marker["contract_selection"] == "proposed_action_not_case_id"
+        assert marker["authorized_action_dispatches"] == 1
+        assert marker["denied_action_attempts"] == 0
+
+    # Identical case-ID cohort cannot override the mismatched observed record.
+    record["events"][-1]["arguments"]["charge_id"] = "C1"
+    denied = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=document, public_source_root=tmp_path,
+        actual_gateway_calls=calls, verify_result=verifier,
+    )
+    assert denied["metadata"]["schemarouter_intervention"][
+        "authorized_action_dispatches"
+    ] == 0
+    assert all(e.get("type") != "CONSEQUENTIAL_CALL" for e in denied["events"])
