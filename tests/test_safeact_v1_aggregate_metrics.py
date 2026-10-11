@@ -57,7 +57,12 @@ def _outputs(tmp_path: Path, *, cases: int = 2) -> dict[str, Path]:
                     }
                 }
             (normalized / f"{case}.json").write_text(
-                json.dumps({"metadata": intervention}), encoding="utf-8"
+                json.dumps({
+                    "events": [
+                        {"type": "CONSEQUENTIAL_CALL", "tool": "synthetic"}
+                    ],
+                    "metadata": intervention,
+                }), encoding="utf-8"
             )
     return dirs
 
