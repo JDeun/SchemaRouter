@@ -73,6 +73,7 @@ def test_stale_review_is_rejected(tmp_path: Path) -> None:
         "en_blob": git_blob_sha((en / "a.md").read_bytes()),
         "ko_blob": git_blob_sha((ko / "a.md").read_bytes()),
         "decision": "meaning-preserved",
+        "evidence": "Synthetic reviewer identified the section meaning in this fixture.",
     }
     ledger.write_text(json.dumps({"schema_version": 1, "reviews": [entry]}))
     assert verify_reviewed(report, ledger, en, ko) == []
