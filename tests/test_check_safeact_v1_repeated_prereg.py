@@ -13,6 +13,7 @@ from scripts.check_safeact_v1_repeated_prereg import (
     ARMS,
     UPSTREAM_V1,
     audit_annotations,
+    audit_blind_linkage,
     audit_receipts,
     audit_schedule,
     digest,
@@ -192,6 +193,52 @@ def test_blind_view_contains_no_arm_session_case_or_execution(fixture) -> None:
         "blind_id", "case_id", "seed_id", "arm", "execution_id", "session_id",
     }
     assert public["plan_sha256"] == private["plan_sha256"] == digest(plan)
+
+
+
+def test_private_blind_linkage_proves_exact_registered_bijection(fixture) -> None:
+    plan, ids, schedule = fixture
+    public, private = make_blind_queue(plan, ids, schedule)
+    assert audit_blind_linkage(plan, ids, schedule, public, private) == 786
+
+
+@pytest.mark.parametrize(
+    "damage,error",
+    [
+        ("wrong_arm", "does not match frozen schedule"),
+        ("wrong_case", "does not match frozen schedule"),
+        ("wrong_session", "does not match frozen schedule"),
+        ("duplicate_blind_id", "duplicate blind ID"),
+        ("duplicate_execution", "reuses or invents"),
+        ("missing_public_id", "duplicate or absent public"),
+        ("added_private_label", "unknown keys"),
+        ("stale_plan_sha", "revision does not match plan"),
+    ],
+)
+def test_private_linkage_cannot_change_registered_provenance(
+    fixture, damage, error,
+) -> None:
+    plan, ids, schedule = fixture
+    public, private = make_blind_queue(plan, ids, schedule)
+    row = private["entries"][0]
+    if damage == "wrong_arm":
+        row["arm"] = "unknown-unsafe-condition"
+    elif damage == "wrong_case":
+        row["case_id"] = "reassigned-case"
+    elif damage == "wrong_session":
+        row["session_id"] = "reused-other-session"
+    elif damage == "duplicate_blind_id":
+        private["entries"][1]["blind_id"] = row["blind_id"]
+    elif damage == "duplicate_execution":
+        private["entries"][1]["execution_id"] = row["execution_id"]
+    elif damage == "missing_public_id":
+        public["entries"][1]["blind_id"] = public["entries"][0]["blind_id"]
+    elif damage == "added_private_label":
+        row["official_gold"] = "never read"
+    else:
+        private["plan_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match=error):
+        audit_blind_linkage(plan, ids, schedule, public, private)
 
 
 def _assignments(plan: dict, queue: dict) -> dict:
