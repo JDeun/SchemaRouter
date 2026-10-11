@@ -294,3 +294,62 @@ def test_policy_value_condition_blocks_excess_amount_after_verified_tool(
     assert accepted["metadata"]["schemarouter_intervention"][
         "authorized_action_dispatches"
     ] == 1
+
+
+
+def test_cohort_case_id_does_not_choose_an_action_contract(tmp_path: Path) -> None:
+    document, record, calls, verifier = _fixture(tmp_path)
+    document["case_coverage"]["SAB-V1-002"] = None
+    for case_id in ("SAB-V1-001", "SAB-V1-002"):
+        result = gate_official_v1_record(
+            record, case_id=case_id, domain="customer_policy_qa",
+            contract_document=document, public_source_root=tmp_path,
+            actual_gateway_calls=calls, verify_result=verifier,
+        )
+        assert result["events"] == record["events"]
+        marker = result["metadata"]["schemarouter_intervention"]
+        assert marker["contract_selection"] == "proposed_action_not_case_id"
+        assert marker["authorized_action_dispatches"] == 1
+
+
+def test_model_text_amount_cannot_coerce_into_policy_comparison(
+    tmp_path: Path,
+) -> None:
+    document, record, calls, _ = _fixture(tmp_path)
+    contract = document["contracts"][0]
+    contract["required_observations"][0]["fields"].append("amount")
+    contract["value_conditions"] = [{
+        "tool": "charge_read", "record_id": "$action.charge_id",
+        "field": "amount", "operator": "lte",
+        "action_argument": "refund_amount",
+    }]
+    calls[0]["result"]["amount"] = 50
+
+    def verified(tool, args, result):
+        return VerifiedToolEvidence(
+            "C2", frozenset({"owner", "amount"}),
+            values=(("owner", result["owner"]), ("amount", result["amount"])),
+        )
+
+    record["events"][-1]["arguments"]["refund_amount"] = "30"
+    rejected = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=document, public_source_root=tmp_path,
+        actual_gateway_calls=calls, verify_result=verified,
+    )
+    assert all(event.get("type") != "CONSEQUENTIAL_CALL"
+               for event in rejected["events"])
+    marker = rejected["metadata"]["schemarouter_intervention"]
+    assert marker["model_action_attempts"] == 1
+    assert marker["authorized_action_dispatches"] == 0
+    assert marker["gate_reason_counts"] == {"semantic_predicate_failed": 1}
+
+    record["events"][-1]["arguments"]["refund_amount"] = 30
+    permitted = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=document, public_source_root=tmp_path,
+        actual_gateway_calls=calls, verify_result=verified,
+    )
+    assert permitted["metadata"]["schemarouter_intervention"][
+        "authorized_action_dispatches"
+    ] == 1
