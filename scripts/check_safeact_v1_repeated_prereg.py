@@ -201,7 +201,8 @@ def audit_blind_linkage(
     for row in public["entries"]:
         value = exact(row, {"blind_id"}, "public blind entry")
         public_ids.append(text(value["blind_id"], "blind ID"))
-    if len(set(public_ids)) != size:
+    public_ids_set = set(public_ids)
+    if len(public_ids_set) != size:
         raise ValueError("duplicate or absent public blind IDs")
     expected = {row["execution_id"]: row for row in schedule["runs"]}
     bound: set[str] = set()
@@ -213,7 +214,7 @@ def audit_blind_linkage(
         }, "private blind link")
         blind_id = text(info["blind_id"], "private blind ID")
         execution = text(info["execution_id"], "private execution ID")
-        if blind_id not in public_ids or blind_id in bound:
+        if blind_id not in public_ids_set or blind_id in bound:
             raise ValueError("private linkage has unknown or duplicate blind ID")
         if execution not in expected or execution in executions:
             raise ValueError("private linkage reuses or invents an execution")
@@ -221,7 +222,7 @@ def audit_blind_linkage(
             raise ValueError("private linkage does not match frozen schedule")
         bound.add(blind_id)
         executions.add(execution)
-    if bound != set(public_ids) or executions != set(expected):
+    if bound != public_ids_set or executions != set(expected):
         raise ValueError("private linkage is not a one-to-one schedule mapping")
     return size
 
