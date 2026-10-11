@@ -1,0 +1,60 @@
+name: Research 0.14 Controlled Original Cutover
+run-name: Controlled frozen held-out cutover parent=38012340016 (not scored)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/research-0.14-controlled-cutover.yml"
+  pull_request:
+    paths:
+      - "scripts/research_014_controlled_cutover.py"
+      - "tests/test_research_014_controlled_cutover.py"
+      - ".github/workflows/research-0.14-controlled-cutover.yml"
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: research-0.14-controlled-cutover-original-38012340016
+  cancel-in-progress: false
+
+jobs:
+  cutover:
+    # The user explicitly requested the controlled 0.14 completion path.
+    # Pull requests NEVER cancel an original run or start a scientific stage.
+    if: "${{ github.repository == 'JDeun/SchemaRouter' && github.event_name == 'push' }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+        with:
+          name: heldout-corpus-38012340016
+          run-id: "38012340016"
+          repository: "${{ github.repository }}"
+          github-token: "${{ github.token }}"
+          path: artifacts/cutover-original
+      - name: Fresh integrity audit of every completed original ZIP and all four live pilot ZIPs
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          GITHUB_REPOSITORY: "${{ github.repository }}"
+        run: |
+          python -m scripts.research_014_controlled_cutover \
+            --corpus artifacts/cutover-original/heldout-corpus.json \
+            --report artifacts/cutover-original/controlled-cutover-report.json \
+            --execute
+      - name: Preserve outcome-blind cutover proof
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "research-014-controlled-cutover-${{ github.run_id }}"
+          path: artifacts/cutover-original/controlled-cutover-report.json
+          if-no-files-found: warn
+          retention-days: 30
