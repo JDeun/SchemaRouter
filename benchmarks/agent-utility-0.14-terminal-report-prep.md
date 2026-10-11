@@ -33,7 +33,7 @@ Does typed bounded capability retrieval preserve end-to-end agent utility, factu
 | Exact source SHA | `30663de8f618bc88a893d9bf6214035a70e8e894` | Verify from run input |
 | Corpus task count | 780 independent semantic tasks | 144 independent answer-bearing tasks |
 | Catalog sizes | 100 / 250 / 500 downstream; retrieval includes 1000 | 100 / 250 |
-| Matrix | 234 parent-equivalent shards; 97 verified original parents + 685 two-task recovery microshards (250/250/185 planned waves) covering 137 incomplete parents | 72 evaluation shards in the original preparation record; check final deployed two-task wrapper/144-task coverage before acceptance |
+| Matrix | 234 parent-equivalent shards; 97 verified original parents + 685 two-task recovery microshards (250/250/185 planned waves) covering 137 incomplete parents | **144 two-task evaluation microshards** across two catalog sizes, as deployed on `main` |
 | Canonical artifact ID / name | Pending | Pending |
 | Canonical artifact SHA-256 digest | Pending | Pending |
 | Corpus/content SHA-256 | Frozen held-out corpus `452482a8fd1682b1473202f04585ae551df322c9bdc41141fa10abb689f2d01b`; independently recheck at aggregate | Pending; use validated artifact |
@@ -95,7 +95,7 @@ Report non-inferiority, false facts, tool/evidence coverage and total/schema inp
 - [ ] Canonical run IDs all terminal and green; no duplicate competing run adopted.
 - [ ] Artifact ZIPs, names, SHA-256s, frozen source and **all** required shard IDs verified, including all 685 recovery microshards and 97 original successes (no duplicate/partial/pilot rows).
 - [ ] #432 corpus independence, 780 semantic-task identities, repeated-measure clustering, confidence intervals and safety checked.
-- [ ] #424 fresh 144-task corpus disjointness, exact evidence/facts/units/provenance scorer checked.
+- [ ] #424 fresh 144-task corpus disjointness, **144/144 two-task evaluation jobs** across the two frozen catalogs, exact evidence/facts/units/provenance scorer checked.
 - [ ] Conditional promotion gates recorded exactly from preregistration; negative ablations reported unchanged.
 - [ ] Raw metrics and slice tables imported **from canonical artifacts only**; invalid technical runs excluded but retained.
 - [ ] Machine-readable experiment ledger updated by explicit provenance-verified change, then `python scripts/export_research_evidence.py` rerun.
