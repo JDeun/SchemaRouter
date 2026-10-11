@@ -54,7 +54,10 @@ def test_all_existing_candidates_have_exact_revision_pinned_reviews() -> None:
     root = ROOT / "docs_ko"
     report = scan(root)
     ledger = ROOT / "audits" / "ko-english-prose-review-2026-10-10.json"
-    assert report["scanned_pages"] == 147
+    # New bilingual pages are allowed only if they remain covered by the
+    # exact-blob English-prose review gate below.
+    expected_pages = sum(1 for _ in root.rglob("*.md"))
+    assert report["scanned_pages"] == expected_pages
     assert report["candidate_lines"] == 8
     assert verify_reviewed(report, ledger, root) == []
 

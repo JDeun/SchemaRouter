@@ -151,6 +151,7 @@ nav:
           - Successor screen: research/successor-screen.md
       - 근거와 프로토콜:
           - Evidence-to-Action 경계: research/evidence-to-action.md
+          - SafeActBench V1 증거 게이트: research/safeact-v1-evidence-gate.md
           - 0.14 논문 근거 체크포인트: research/0.14-paper-evidence-checkpoint.md
           - 논문 근거 패키지: research/paper-evidence-package.md
           - 연구 거버넌스: research/governance.md

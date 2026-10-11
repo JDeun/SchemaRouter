@@ -1,0 +1,160 @@
+name: SafeAct V1 Protocol Preflight
+
+on:
+  pull_request:
+    paths:
+      - 'examples/external_validation/safeact_v1/**'
+      - 'benchmarks/safeact-v1-evidence-gate-preregistration.json'
+      - 'scripts/preflight_safeact_v1.py'
+      - 'scripts/*safeact_v1*.py'
+      - 'scripts/validate_safeact_v1_contract_provenance.py'
+      - 'tests/test_safeact_v1_*.py'
+      - 'scripts/launch_safeact_v1_scored_workflow.py'
+      - '.github/workflows/safeact-v1-scored.yml'
+      - 'tests/test_evidence_gate_mechanism_experiment.py'
+      - 'scripts/run_evidence_gate_mechanism_experiment.py'
+      - 'scripts/verify_safeact_v1_host_bridge.py'
+      - '.github/workflows/safeact-v1-preflight.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * 1' # weekly official 131-case gold reference simulator; no model
+
+permissions:
+  contents: read
+
+jobs:
+  official-v1-list-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.12'
+      - name: Verify scored-controller and no-leakage regression contracts
+        run: |
+          python -m pip install -e . "pytest>=8,<10" "pytest-asyncio>=0.24,<2"
+          python -m pytest -q \
+            tests/test_safeact_v1_aggregate_metrics.py \
+            tests/test_safeact_v1_scored_launch.py \
+            tests/test_safeact_v1_evidence_gate.py \
+            tests/test_safeact_v1_contract_loader.py \
+            tests/test_safeact_v1_completion_audit.py \
+            tests/test_safeact_v1_record_intervention.py \
+            tests/test_safeact_v1_trusted_session.py \
+            tests/test_safeact_v1_official_agent_hook.py \
+            tests/test_safeact_v1_routing_hook.py \
+            tests/test_safeact_v1_interventions.py \
+            tests/test_safeact_v1_contract_review.py \
+            tests/test_safeact_v1_public_tool_inventory.py \
+            tests/test_safeact_v1_review_queue.py \
+            tests/test_safeact_v1_scored_workflow.py
+      - name: Run actual eight-case EvidenceGate mechanism experiment
+        run: |
+          python -m pytest -q tests/test_evidence_gate_mechanism_experiment.py
+          python -m scripts.run_evidence_gate_mechanism_experiment \
+            --cases benchmarks/evidence-to-action-v1/cases.json \
+            --baseline benchmarks/evidence-to-action-v1/baseline-results.json \
+            --json-out evidence-gate-mechanism-result.json
+      - name: Upload controlled mechanism experiment (not SafeAct agent score)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: evidence-gate-eight-case-mechanism
+          path: evidence-gate-mechanism-result.json
+          retention-days: 90
+      - name: Fetch the pinned public SafeAct source
+        run: |
+          git init safeact-upstream
+          git -C safeact-upstream remote add origin https://github.com/caoshidong66/safeact.git
+          git -C safeact-upstream fetch --depth=1 origin 841816cf1e376e6fbf8600cffac5df1736e1d369
+          git -C safeact-upstream checkout --detach FETCH_HEAD
+      - name: Verify pinned revision and V1 case set
+        run: python scripts/preflight_safeact_v1.py safeact-upstream
+      - name: Validate public policy source snapshots against exact frozen upstream bytes
+        run: |
+          python -m pytest -q tests/test_safeact_v1_public_snapshot.py
+          python -m scripts.verify_safeact_v1_public_snapshot \
+            --manifest research/safeact-v1/public-policy-source-candidates.json \
+            --source-root research/safeact-v1/public-sources \
+            --upstream-root safeact-upstream
+      - name: Exercise the pinned official V1 normalization hook with real registry
+        run: |
+          python -m scripts.verify_safeact_v1_host_bridge \
+            safeact-upstream --json-out safeact-v1-host-bridge.json
+      - name: Upload official host-bridge compatibility report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: safeact-v1-host-bridge-no-model
+          path: safeact-v1-host-bridge.json
+          retention-days: 90
+      - name: Exercise official V1 listing without running an agent
+        run: |
+          python safeact-upstream/run_benchmark.py --list-only --protocol v1 > safeact-v1-list.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          listing = json.loads(Path("safeact-v1-list.json").read_text(encoding="utf-8"))
+          tasks = listing.get("tasks")
+          assert isinstance(tasks, list), "official V1 listing must contain tasks"
+          assert listing.get("case_count") == len(tasks) == 131, "V1 count mismatch"
+          assert all(t.get("protocol") == "v1" for t in tasks), "non-V1 case in listing"
+          ids = [t.get("case_id") for t in tasks]
+          assert len(set(ids)) == 131, "duplicate case ids"
+          print("Official SafeAct V1 listing validated: 131 cases (no scored execution)")
+          PY
+      - name: Produce public-ID-only contract authoring worksheet
+        run: |
+          python -m scripts.prepare_safeact_v1_contract_review \
+            safeact-v1-list.json --out safeact-v1-contract-review.json
+      - name: Upload unreviewed public contract worksheet
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: safeact-v1-contract-authoring-worksheet
+          path: safeact-v1-contract-review.json
+          retention-days: 30
+      - name: Inventory pinned public tool interfaces without reading evaluator data
+        run: python -m scripts.inventory_safeact_v1_public_tools safeact-upstream --out safeact-v1-public-tool-inventory.json
+      - name: Upload unreviewed public tool interface identities (not contracts)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: safeact-v1-unreviewed-public-tool-inventory
+          path: safeact-v1-public-tool-inventory.json
+          retention-days: 30
+      - name: Assemble case-blind, unapproved public contract author review queue
+        run: |
+          python -m scripts.prepare_safeact_v1_review_queue \
+            --public-listing safeact-v1-list.json \
+            --inventory safeact-v1-public-tool-inventory.json \
+            --out safeact-v1-review-queue.json
+      - name: Upload public-domain action review queue (no contracts approved)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: safeact-v1-unreviewed-domain-action-queue
+          path: safeact-v1-review-queue.json
+          retention-days: 30
+      - name: Validate all 131 V1 evaluator paths (official gold simulator, never agent score)
+        if: github.event_name != 'pull_request'
+        run: |
+          python safeact-upstream/run_benchmark.py \
+            --protocol v1 --simulate \
+            --output-dir "$RUNNER_TEMP/safeact-v1-simulator" \
+            > "$RUNNER_TEMP/safeact-v1-simulator-stdout.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(
+              (Path(os.environ["RUNNER_TEMP"]) / "safeact-v1-simulator"
+               / "summary.json").read_text(encoding="utf-8")
+          )
+          assert result["mode"] == "simulate"
+          assert result["selected_protocols"] == ["v1"]
+          assert result["new_cases_run"] == 131
+          assert result["metrics"]["selected_cases"] == 131
+          assert result["metrics"]["evaluated_cases"] == 131
+          assert result["metrics"]["scored_cases"] == 131
+          assert result["failures"] == []
+          print("Official V1 reference evaluator validated 131/131; not an agent benchmark")
+          PY
