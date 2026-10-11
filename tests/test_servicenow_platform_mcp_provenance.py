@@ -40,6 +40,7 @@ def _fixture():
         "upstream_runtime": {
             "tool_package": "readonly",
             "expected_public_tool_count": 2,
+            "expected_readonly_tools_sha256": digest,
             "servicenow_platform_mcp_version": "test-pinned-2.1.2",
             "servicenow_environment": "prod",
         },
@@ -173,3 +174,22 @@ def test_reviewer_worksheet_rejects_mutated_native_snapshot():
     snapshot["tools"][0]["description"] = "modified after capture"
     with pytest.raises(ValueError, match="SHA-256"):
         build(manifest, cases, snapshot)
+
+
+
+def test_recomputed_mutated_snapshot_digest_cannot_bypass_pinned_manifest():
+    manifest, cases, snapshot = _fixture()
+    snapshot["tools"][0]["description"] = "new yet self-consistent counterfeit schema"
+    snapshot["tools_sha256"] = hashlib.sha256(json.dumps(
+        snapshot["tools"], ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+    ).encode("utf-8")).hexdigest()
+    with pytest.raises(ValueError, match="independently pinned digest"):
+        validate_package(manifest, cases, snapshot)
+
+
+def test_missing_or_malformed_manifest_pinned_digest_fails_closed():
+    for digest in (None, "0" * 63, "g" * 64, 42):
+        manifest, cases, snapshot = _fixture()
+        manifest["upstream_runtime"]["expected_readonly_tools_sha256"] = digest
+        with pytest.raises(ValueError, match="independently pinned digest"):
+            validate_package(manifest, cases, snapshot)
