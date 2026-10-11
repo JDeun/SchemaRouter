@@ -15,7 +15,8 @@
     "servicenow_environment": "prod",
     "expected_public_tool_count": 12,
     "live_credentials_required": false,
-    "tool_execution": "disabled"
+    "tool_execution": "disabled",
+    "expected_readonly_tools_sha256": "006045422791939ff603420080e2f759de38a19329eeb0c1b80e264ab4897940"
   },
   "files": {
     "cases": "cases.json",
