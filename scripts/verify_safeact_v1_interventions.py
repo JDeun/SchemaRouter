@@ -80,6 +80,21 @@ def verify_arm_interventions(
                     raise ValueError(f"{condition}: invalid attempt audit counters")
                 if values[0] != values[1] + values[2] or values[0] > 1:
                     raise ValueError(f"{condition}: V1 intervention accounting drift")
+                events = data.get("events")
+                if not isinstance(events, list) or any(
+                    not isinstance(event, dict) for event in events
+                ):
+                    raise ValueError(f"{condition}: normalized event list is missing")
+                recorded_actions = sum(
+                    event.get("type") == "CONSEQUENTIAL_CALL" for event in events
+                )
+                # Counters are for benchmark RECORD retention, not live
+                # external-tool dispatches. A forged counter must not invent
+                # a consequential event that the scorer cannot observe.
+                if recorded_actions != values[1]:
+                    raise ValueError(
+                        f"{condition}: recorded action / intervention counter mismatch"
+                    )
                 attempted += values[0]
                 dispatched += values[1]
                 denied += values[2]
