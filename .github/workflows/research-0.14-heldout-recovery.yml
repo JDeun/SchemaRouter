@@ -177,7 +177,7 @@ jobs:
           folder = Path("artifacts/recovered")
           folder.mkdir(parents=True, exist_ok=True)
           (folder / (os.environ["MICROSHARD_ID"] + ".runner.json")).write_text(
-              json.dumps(data, sort_keys=True, indent=2) + "\\n", encoding="utf-8"
+              json.dumps(data, sort_keys=True, indent=2) + "\n", encoding="utf-8"
           )
           PY
       - name: Upload recovery output (not proof of evaluator success)
