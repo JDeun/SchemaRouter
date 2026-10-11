@@ -182,6 +182,50 @@ def make_blind_queue(
     )
 
 
+
+def audit_blind_linkage(
+    plan: dict, public_case_ids: list[str], schedule: dict,
+    reviewer_queue: Any, private_linkage: Any,
+) -> int:
+    """Prove reviewer IDs are a bijective reindexing of frozen executions."""
+    size = audit_schedule(plan, public_case_ids, schedule)
+    required = {"schema_version", "plan_sha256", "entries"}
+    public = exact(reviewer_queue, required, "reviewer queue")
+    private = exact(private_linkage, required, "private linkage")
+    for doc in (public, private):
+        if doc["schema_version"] != 1 or doc["plan_sha256"] != digest(plan):
+            raise ValueError("blinded metadata revision does not match plan")
+        if not isinstance(doc["entries"], list) or len(doc["entries"]) != size:
+            raise ValueError("incomplete blind-index coverage")
+    public_ids = []
+    for row in public["entries"]:
+        value = exact(row, {"blind_id"}, "public blind entry")
+        public_ids.append(text(value["blind_id"], "blind ID"))
+    if len(set(public_ids)) != size:
+        raise ValueError("duplicate or absent public blind IDs")
+    expected = {row["execution_id"]: row for row in schedule["runs"]}
+    bound: set[str] = set()
+    executions: set[str] = set()
+    for row in private["entries"]:
+        info = exact(row, {
+            "blind_id", "execution_id", "session_id",
+            "case_id", "seed_id", "arm",
+        }, "private blind link")
+        blind_id = text(info["blind_id"], "private blind ID")
+        execution = text(info["execution_id"], "private execution ID")
+        if blind_id not in public_ids or blind_id in bound:
+            raise ValueError("private linkage has unknown or duplicate blind ID")
+        if execution not in expected or execution in executions:
+            raise ValueError("private linkage reuses or invents an execution")
+        if {k: v for k, v in info.items() if k != "blind_id"} != expected[execution]:
+            raise ValueError("private linkage does not match frozen schedule")
+        bound.add(blind_id)
+        executions.add(execution)
+    if bound != set(public_ids) or executions != set(expected):
+        raise ValueError("private linkage is not a one-to-one schedule mapping")
+    return size
+
+
 def audit_annotations(plan: dict, queue: Any, annotations: Any) -> int:
     """Validate independent assignment coverage without reading annotations."""
     q = exact(queue, {"schema_version", "plan_sha256", "entries"}, "blind queue")
@@ -286,12 +330,13 @@ def main() -> int:
     parser.add_argument("--private-linkage-out", type=Path)
     parser.add_argument("--blind-queue-in", type=Path)
     parser.add_argument("--annotations", type=Path)
+    parser.add_argument("--private-linkage-in", type=Path)
     parser.add_argument("--receipts", type=Path)
     args = parser.parse_args()
     if bool(args.blind_queue_out) != bool(args.private_linkage_out):
         parser.error("blind queue and private linkage outputs must be supplied together")
-    if bool(args.blind_queue_in) != bool(args.annotations):
-        parser.error("annotation audit requires both blind queue and annotations")
+    if bool(args.blind_queue_in) != bool(args.annotations or args.private_linkage_in):
+        parser.error("annotation/linkage audit requires a blind queue input")
     plan = json.loads(args.plan.read_text(encoding="utf-8"))
     public_ids = json.loads(args.public_case_ids.read_text(encoding="utf-8"))
     schedule = json.loads(args.schedule.read_text(encoding="utf-8"))
@@ -309,10 +354,14 @@ def main() -> int:
         public, private = make_blind_queue(plan, public_ids, schedule)
         write_new_private_file(args.private_linkage_out, private)
         write_new_private_file(args.blind_queue_out, public)
-    if args.annotations:
+    if args.blind_queue_in:
         queue = json.loads(args.blind_queue_in.read_text(encoding="utf-8"))
-        items = json.loads(args.annotations.read_text(encoding="utf-8"))
-        audit_annotations(plan, queue, items)
+        if args.private_linkage_in:
+            link = json.loads(args.private_linkage_in.read_text(encoding="utf-8"))
+            audit_blind_linkage(plan, public_ids, schedule, queue, link)
+        if args.annotations:
+            items = json.loads(args.annotations.read_text(encoding="utf-8"))
+            audit_annotations(plan, queue, items)
     print(f"UNSCORED V1 repetition integrity OK: {size} planned trajectories; "
           "no model launch or review approval")
     return 0
