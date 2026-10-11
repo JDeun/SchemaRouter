@@ -15,10 +15,10 @@ A developer should understand this in under two minutes:
 The primary call to action is:
 
 ```bash
-pip install "schemarouter==0.14.0"
+pip install "schemarouter==0.17.0"
 ```
 
-For normal installs, `pip install schemarouter` resolves the latest stable release. The launch demo pins `0.14.0` so the public walkthrough remains reproducible.
+For normal installs, `pip install schemarouter` resolves the latest stable release. The launch demo pins the public `0.17.0` release so the walkthrough remains reproducible.
 
 Repository: <https://github.com/JDeun/SchemaRouter>
 
@@ -32,7 +32,7 @@ Safe public claims should map to a reproducible artifact.
 
 ### Stable product
 
-- stable release: `0.14.0`, Beta / pre-1.0;
+- stable release: `0.17.0`, Beta / pre-1.0;
 - Python 3.10-3.14 are release-blocking CI targets;
 - supports typed ingestion/execution paths across MCP, OpenAPI, OPTIMADE, GraphQL, OData,
   OpenRPC/JSON-RPC, Python/SDK bindings, LangChain/LangGraph, and LlamaIndex;
@@ -256,6 +256,51 @@ python examples/llamaindex_quickstart.py
 
 ## Channel playbooks
 
+### GeekNews / Show GN (primary release announcement)
+
+As of 2026-10-11, GeekNews is the first publication channel (#662); Hacker News is deferred.
+The maintainer account was created on 2026-10-07, and GeekNews requires at least
+**one week** before a new account can submit links. **2026-10-14 is only the earliest
+possible eligibility date**, not evidence that account access has been confirmed.
+The maintainer must review and submit the final post, not an automated bot.
+
+Official rules:
+- <https://news.hada.io/guidelines>
+- <https://news.hada.io/blog/show>
+
+**Proposed title** (select the `Show` type; the site adds `Show GN:` automatically):
+
+> SchemaRouter - LLM 에이전트를 위한 타입 기반 도구 검색 및 실행 경계
+
+**Proposed Korean description for maintainer review**:
+
+> 여러 MCP 서버, OpenAPI와 Python 도구를 에이전트에 연결하다 보면
+> 필요한 도구를 검색하는 문제와 실제 실행 권한을 확인하는 문제가 혼동되기 쉽습니다.
+> 이 문제를 분리하려고 SchemaRouter라는 Python 오픈소스를 만들었습니다.
+>
+> SchemaRouter는 등록된 기능의 입력·출력 스키마를 기반으로 필요한 후보와 필드를
+> 제한적으로 검색하고, 실제 도구 호출은 로컬 정책·스키마 검증·신뢰된 바인딩을 통해
+> 실행합니다. LangChain/LangGraph/LlamaIndex를 대체하는 에이전트 프레임워크가
+> 아니라 그 아래에서 조합할 수 있는 계층입니다.
+>
+> `pip install schemarouter==0.17.0`으로 설치할 수 있고,
+> 저장소의 `examples/context_reduction_demo.py`에서 API 키 없이
+> 40개 도구 카탈로그의 전체 노출과 Top-3 검색을 비교해 볼 수 있습니다.
+> 현재 공개된 벤치마크는 제한된 통제 실험이며, 광범위한 일반화 검증은 진행 중입니다.
+>
+> 실제 에이전트 시스템에 연결할 때 가장 불편한 부분, 지원이 부족한 프로토콜,
+> 도구 검색과 실행 권한의 분리에 대한 의견을 듣고 싶습니다.
+
+**Submission URL:** <https://github.com/JDeun/SchemaRouter> (runnable repository,
+not a promotional landing page). Include the stable release link and quickstart
+only as supplementary references, not as replacement for a working project link.
+
+**Before posting:** confirm account eligibility, current Show rules, pinned install
+and no-signup demo, final maintainer ownership/approval, pre-launch adoption scorecard
+artifact, and that this project has not already been submitted. Do not request votes,
+cross-post identical copy, claim independent validation from visible DEV numbers,
+or mark #662 published without its real canonical Show GN URL and UTC timestamp.
+
 ### Hacker News / Show HN
 
 > **2026 posting note:** Hacker News currently asks submitters to write HN submission text and comments themselves rather than posting LLM-generated or LLM-edited prose. Show HN is also temporarily restricted for accounts that have not yet established normal participation in the community. Before submitting, re-read the current official Show HN and site guidelines and confirm that the maintainer account is eligible. Treat the draft below as an internal coverage checklist only; do not paste it into Hacker News.
@@ -367,7 +412,7 @@ Draft:
 > showed a strong result for the bounded SchemaRouter condition, while another structural K3-vs-K5
 > promotion test failed and remains published as a negative result.
 >
-> Stable release: 0.14.0
+> Stable release: 0.17.0
 > GitHub: https://github.com/JDeun/SchemaRouter
 > Verification/evidence: https://jdeun.github.io/SchemaRouter/project/trust-and-evidence/
 >
@@ -431,7 +476,7 @@ Do not publish everywhere at once.
 Already available:
 
 - public adoption scorecard;
-- stable 0.13.0 release;
+- stable v0.17.0 release;
 - runnable examples;
 - trust/evidence page;
 - contributor roadmap and issue templates.
@@ -441,10 +486,12 @@ weekly snapshot is stale.
 
 ### Phase 1 — high-signal technical feedback
 
-1. Show HN;
-2. respond to technical feedback;
-3. convert valid friction into issues/docs fixes;
-4. record post URL/date and the next scorecard snapshot.
+1. After account eligibility and maintainer review, publish once to GeekNews Show GN (#662);
+2. respond to substantive technical feedback;
+3. convert verified onboarding/integration issues into issues or docs changes;
+4. record the real Show GN URL, timestamp and pre/24h/7d scorecard snapshots.
+
+Hacker News is deferred; Reddit/community follow-ups (#663) follow review of the first GeekNews feedback.
 
 Do not proceed to broad reposting merely because the post is quiet.
 
