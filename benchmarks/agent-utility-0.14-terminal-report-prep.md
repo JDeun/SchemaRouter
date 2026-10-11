@@ -1,6 +1,6 @@
 # Research 0.14 — terminal evidence report preparation
 
-> Preparation only (2026-10-10). **Not a terminal research result.** Do not publish this file as a completed paper table or derive a claim from unfinished shard rows.
+> Preparation only (2026-10-10; recovery checkpoint updated 2026-10-11). **Not a terminal research result.** Do not publish this file as a completed paper table or derive a claim from unfinished shard rows.
 >
 > Authority: `benchmarks/research-experiment-ledger.json`, frozen preregistrations and *terminal canonical* workflow artifacts, not this template. All placeholders below intentionally remain unscored.
 
@@ -28,20 +28,28 @@ Does typed bounded capability retrieval preserve end-to-end agent utility, factu
 | Required field | #432 large held-out | #424 final answer |
 | --- | --- | --- |
 | Issue | [#432](https://github.com/JDeun/SchemaRouter/issues/432) | [#424](https://github.com/JDeun/SchemaRouter/issues/424) |
-| Status | **ACTIVE — no canonical aggregate yet** | **NOT YET DISPATCHED** |
-| Canonical run ID | Pending (current candidate `38012340016`) | Pending |
+| Status | **RECOVERY WAVE 0 ACTIVE — no canonical aggregate yet** | **NOT YET DISPATCHED** |
+| Canonical run ID | Pending; original `38012340016` was intentionally cancelled after verified cutover; recovery wave 0 `38107675261` is not itself a final aggregate | Pending |
 | Exact source SHA | `30663de8f618bc88a893d9bf6214035a70e8e894` | Verify from run input |
 | Corpus task count | 780 independent semantic tasks | 144 independent answer-bearing tasks |
 | Catalog sizes | 100 / 250 / 500 downstream; retrieval includes 1000 | 100 / 250 |
-| Matrix | 234 evaluation shards | 72 evaluation shards |
+| Matrix | 234 parent-equivalent shards; 97 verified original parents + 685 two-task recovery microshards (250/250/185 planned waves) covering 137 incomplete parents | 72 evaluation shards in the original preparation record; check final deployed two-task wrapper/144-task coverage before acceptance |
 | Canonical artifact ID / name | Pending | Pending |
 | Canonical artifact SHA-256 digest | Pending | Pending |
-| Corpus/content SHA-256 | Pending; use validated artifact | Pending; use validated artifact |
+| Corpus/content SHA-256 | Frozen held-out corpus `452482a8fd1682b1473202f04585ae551df322c9bdc41141fa10abb689f2d01b`; independently recheck at aggregate | Pending; use validated artifact |
 | Model/runtime/checkpoint proof | Pending shard aggregation | Pending shard aggregation |
-| Completeness / identity validation | Pending 234/234 + aggregate | Pending 72/72 + aggregate |
+| Completeness / identity validation | Pending 97 original + 685 recovered complete, exactly 234 parent-equivalent shards / 11,700 paired episodes + canonical aggregate | Pending full 144-task/five-condition coverage and aggregate |
 | Preregistered primary gate | Pending | Pending |
 | Invalid/pre-result attempts | Record separately; see #500 | Record separately |
 | Provenance-verified disposition | **Do not assert yet** | **Do not assert yet** |
+
+## 2026-10-11 controlled recovery checkpoint (infrastructure evidence only)
+
+The original held-out workflow [#38012340016](https://github.com/JDeun/SchemaRouter/actions/runs/38012340016) is `completed/cancelled` **by authorized, provenance-verified infrastructure cutover**, not because the scientific hypothesis failed. [Cutover proof #38107474258](https://github.com/JDeun/SchemaRouter/actions/runs/38107474258) completed successfully after checking actual original artifact ZIP SHA-256, full shard identities, pinned runtime/source and 4/4 genuine but *unscored* two-task speed pilots. Exactly **97/234 original successful parent shards = 4,850/11,700 intended condition episodes** were authenticated and retained; no cancelled/partial parent or pilot result is eligible for canonical scoring.
+
+[Conveyor #38107656376](https://github.com/JDeun/SchemaRouter/actions/runs/38107656376) successfully dispatched [held-out recovery Wave 0 #38107675261](https://github.com/JDeun/SchemaRouter/actions/runs/38107675261). The frozen 137 missing parent identities map to **685 two-task recovery jobs** in three planned waves: **250 + 250 + 185**. All five preregistered conditions, 780 semantic tasks, catalog sizes (100/250/500), original model/revision/runtime and frozen scientific SHA remain unchanged. The only difference is execution-only partitioning to fit the hosted runner's six-hour job limit.
+
+The recoverable evidence is **not yet a complete experiment**: Wave 0 was actively evaluating at the checkpoint, later waves and final aggregate were not complete, and #424's gated official scoring had not launched. GitHub may report the whole matrix run as `queued` while actual evaluation jobs are running or succeeding. Inspect the full paginated job inventory and **only** count individually successful, provenance-verified artifacts. The frozen recovery collector must reject missing/duplicate identities, mismatched ZIP digests, unsupported runtime changes and incomplete task×catalog×condition pairs *before* emitting the canonical #432 artifact. Afterwards, the existing gated conveyor may launch #424. This section records a dated infrastructure snapshot, **not** held-out performance or paper-ready scores.
 
 ## Analysis tables — no row values until accepted aggregates
 
@@ -85,7 +93,7 @@ Report non-inferiority, false facts, tool/evidence coverage and total/schema inp
 ## Terminal acceptance checklist
 
 - [ ] Canonical run IDs all terminal and green; no duplicate competing run adopted.
-- [ ] Artifact ZIPs, names, SHA-256s, frozen source and **all** required shard IDs verified.
+- [ ] Artifact ZIPs, names, SHA-256s, frozen source and **all** required shard IDs verified, including all 685 recovery microshards and 97 original successes (no duplicate/partial/pilot rows).
 - [ ] #432 corpus independence, 780 semantic-task identities, repeated-measure clustering, confidence intervals and safety checked.
 - [ ] #424 fresh 144-task corpus disjointness, exact evidence/facts/units/provenance scorer checked.
 - [ ] Conditional promotion gates recorded exactly from preregistration; negative ablations reported unchanged.
@@ -99,7 +107,9 @@ Report non-inferiority, false facts, tool/evidence coverage and total/schema inp
 
 - Conveyor: `.github/workflows/research-0.14-conveyor.yml` runs on stage completions and the hourly recovery scan.
 - Before an evaluation matrix exists, workflow-wrapper failures may need a new pinned-source dispatch to obtain a fixed wrapper.
-- Once held-out/final evaluator jobs exist, retry only failed jobs **of that same workflow run**, bounded by `MAX_INFRA_ATTEMPTS=3`; preserve completed shards and original frozen experiment inputs.
+- The #432 original six-hour 10-task shards required a separately audited one-time cutover, **not** a blind rerun: its 97 successful authenticated parent ZIPs remain reusable and 137 missing parents are partitioned into 685 two-task jobs in three deterministic waves (250/250/185). No partial parent or pilot rows may be promoted.
+- The held-out recovery workflow advances to the next wave only after all jobs in the current wave succeed. If an evaluation job fails or times out, investigate its exact job/log/artifact identity before any bounded infrastructure-only retry; do not duplicate active waves or relax completeness.
+- Other materialized frozen evaluator workflows, including #424 when it launches, retain their explicitly implemented bounded retry policy (`MAX_INFRA_ATTEMPTS=3`) where applicable; verify actual behavior against terminal job statuses instead of assuming queued means idle.
 - If retries exhaust, **stop and report**; do not loop indefinitely or mislabel an execution exception as a scientific negative.
 - GitHub Actions' `queued` status does not imply zero scientific work: inspect job counts and active matrix jobs.
 - Final authoritative measurements require successfully aggregated, digest-checked artifacts, regardless of whether the controller or underlying Action job appeared green.
