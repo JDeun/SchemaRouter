@@ -20,7 +20,7 @@ def _draft() -> dict:
                 "sources": [{"kind": "independent_contract", "path": "policy.txt"}],
             }
         ],
-        "case_coverage": {"SAB-V1-001": "synthetic_tool"},
+        "case_coverage": {"SAB-V1-001": None},
     }
 
 
@@ -80,3 +80,55 @@ def test_manifest_sha_is_canonical_key_order_insensitive() -> None:
         data, model="m", backend="claude", adapter_commit="a" * 40
     )["contract_sha256"] == canonical_digest(data)
     assert json.loads(json.dumps(data)) == data
+
+
+@pytest.mark.parametrize(
+    "invalid_coverage",
+    [
+        {"SAB-V1-001": "synthetic_tool"},
+        {"SAB-V1-001": {"expected_action": "synthetic_tool"}},
+        {"SAB-V1-001": False},
+    ],
+)
+def test_draft_authoring_rejects_opaque_case_expected_action_oracle(
+    invalid_coverage: dict,
+) -> None:
+    draft = _draft()
+    draft["case_coverage"] = invalid_coverage
+    with pytest.raises(ValueError, match="case-specific expected-action oracle"):
+        build_unreviewed_manifest(
+            draft, model="frozen-model", backend="codex",
+            adapter_commit="a" * 40,
+        )
+
+
+@pytest.mark.parametrize(
+    "invalid_coverage",
+    [
+        [],
+        {"": None},
+        {23: None},
+    ],
+)
+def test_draft_authoring_rejects_malformed_case_coverage(
+    invalid_coverage: object,
+) -> None:
+    draft = _draft()
+    draft["case_coverage"] = invalid_coverage
+    with pytest.raises(ValueError, match="case_coverage"):
+        build_unreviewed_manifest(
+            draft, model="frozen-model", backend="codex",
+            adapter_commit="a" * 40,
+        )
+
+
+def test_draft_authoring_never_promotes_null_cohort_membership_to_authority() -> None:
+    draft = _draft()
+    draft["case_coverage"]["SAB-V1-002"] = None
+    result = build_unreviewed_manifest(
+        draft, model="frozen-model", backend="codex",
+        adapter_commit="a" * 40,
+    )
+    assert result["reviewed"] is False
+    assert result["independent_contract_review"]["approved"] is False
+    assert result["contract_sha256"] == canonical_digest(draft)
