@@ -98,7 +98,7 @@ def test_upstream_normalizer_remains_the_source_of_all_info_events() -> None:
 
 
 def test_routing_ablation_does_not_claim_real_action_execution() -> None:
-    result = route_public_v1_record(
+    result = hook.route_public_v1_record(
         {
             "events": [{
                 "type": "CONSEQUENTIAL_CALL", "tool": "refund_issue",
