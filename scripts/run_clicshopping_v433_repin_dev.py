@@ -245,7 +245,6 @@ def run(package: Path = PACKAGE) -> dict:
     new_inventory = pin_new_inventory(old, transition)
     validate_repin_cases(new_cases, historic_cases, new_inventory)
     old_enriched = deepcopy(historic_cases)
-    old_enriched["roles"] = deepcopy(historic_cases["roles"])
     fresh_enriched = deepcopy(new_cases)
     fresh_enriched["roles"] = deepcopy(historic_cases["roles"])
     top_k = new_cases["top_k"]
@@ -289,8 +288,8 @@ def run(package: Path = PACKAGE) -> dict:
             "Original 32 DEV labels/queries unchanged; new 10 cases are not held out.",
             "Top-3 route-level recall is measured, not agent task completion.",
             "Full catalog exposure is not an upstream native routing model.",
-            "Measured context bytes are normalized local JSON metadata, not REST bytes.",
-            "No actual authentication/tenant isolation, ClicShopping calls or PHP execution.",
+            "Context is normalized JSON metadata, not native REST wire bytes.",
+            "No live authentication, tenant enforcement, ClicShopping HTTP or PHP.",
             "No comparable output-field labels; do not report field recall.",
             "Observed results must not be used to retune query labels or Top-K.",
         ],
