@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -79,12 +80,42 @@ def validate_package(
         raise ValueError("captured ServiceNow revision does not match the manifest")
     if snapshot.get("mcp_tool_package") != manifest["upstream_runtime"]["tool_package"]:
         raise ValueError("captured MCP tool package does not match the manifest")
-    if snapshot.get("tool_count") != manifest["upstream_runtime"]["expected_public_tool_count"]:
-        raise ValueError("captured public tool count does not match the manifest")
+    if snapshot.get("source", {}).get("repository") != "Xerrion/servicenow-platform-mcp":
+        raise ValueError("upstream repository provenance mismatch")
+    if (
+        snapshot.get("source", {}).get("package_version")
+        != manifest["upstream_runtime"]["servicenow_platform_mcp_version"]
+    ):
+        raise ValueError("upstream package version mismatch")
+    if (
+        snapshot.get("servicenow_environment")
+        != manifest["upstream_runtime"]["servicenow_environment"]
+    ):
+        raise ValueError("captured ServiceNow environment mismatch")
+    if snapshot.get("schema_version") != 1:
+        raise ValueError("unknown upstream snapshot schema version")
 
     tools = snapshot.get("tools")
     if not isinstance(tools, list) or not all(isinstance(tool, dict) for tool in tools):
         raise ValueError("snapshot.tools must be an object list")
+    if (len(tools) != manifest["upstream_runtime"]["expected_public_tool_count"]
+            or snapshot.get("tool_count") != len(tools)):
+        raise ValueError("upstream tool count disagrees with captured tools")
+    # The capture script commits to the exact canonical native tool objects,
+    # not merely their names/count. Mutations must fail before any scoring.
+    digest = hashlib.sha256(json.dumps(
+        tools, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+    ).encode("utf-8")).hexdigest()
+    if snapshot.get("tools_sha256") != digest:
+        raise ValueError("native MCP tool snapshot SHA-256 mismatch")
+    pinned_digest = manifest["upstream_runtime"].get("expected_readonly_tools_sha256")
+    if (
+        not isinstance(pinned_digest, str)
+        or len(pinned_digest) != 64
+        or not all(char in "0123456789abcdef" for char in pinned_digest)
+        or digest != pinned_digest
+    ):
+        raise ValueError("native MCP tool contracts differ from independently pinned digest")
     tool_map: dict[str, dict[str, Any]] = {}
     for tool in tools:
         name = tool.get("name")
@@ -92,6 +123,9 @@ def validate_package(
             raise ValueError("captured tool name must be a non-empty string")
         if name in tool_map:
             raise ValueError(f"duplicate captured tool name: {name}")
+        schema = tool.get("inputSchema", tool.get("input_schema"))
+        if not isinstance(schema, dict) or not isinstance(schema.get("properties", {}), dict):
+            raise ValueError(f"invalid native inputSchema for {name}")
         tool_map[name] = tool
 
     seen: set[str] = set()
@@ -109,9 +143,11 @@ def validate_package(
         required_tools = case.get("required_tools", [])
         required_fields = case.get("required_fields", {})
         if not isinstance(required_tools, list) or not all(
-            isinstance(x, str) for x in required_tools
+            isinstance(x, str) and x for x in required_tools
         ):
             raise ValueError(f"{case_id}: required_tools must be a string list")
+        if len(required_tools) != len(set(required_tools)):
+            raise ValueError(f"{case_id}: duplicate required tool identities")
         if not isinstance(required_fields, dict):
             raise ValueError(f"{case_id}: required_fields must be an object")
         if label == "supported" and not required_tools:
@@ -123,16 +159,18 @@ def validate_package(
             if tool_name not in tool_map:
                 raise ValueError(f"{case_id}: unknown required tool {tool_name!r}")
             fields = required_fields.get(tool_name, [])
-            if not isinstance(fields, list) or not all(isinstance(x, str) for x in fields):
+            if not isinstance(fields, list) or not all(isinstance(x, str) and x for x in fields):
                 raise ValueError(f"{case_id}: required fields for {tool_name} must be strings")
+            if len(fields) != len(set(fields)):
+                raise ValueError(f"{case_id}: duplicate required input fields for {tool_name}")
             unknown_fields = set(fields) - _input_fields(tool_map[tool_name])
             if unknown_fields:
                 raise ValueError(
                     f"{case_id}: required fields absent from native {tool_name} inputSchema: "
                     f"{sorted(unknown_fields)}"
                 )
-        if set(required_fields) - set(required_tools):
-            raise ValueError(f"{case_id}: required_fields references a non-required tool")
+        if set(required_fields) != set(required_tools):
+            raise ValueError(f"{case_id}: required_fields must cover exactly the required tools")
 
     expected = manifest["counts"]
     actual = {
@@ -175,6 +213,9 @@ def score(
     snapshot: dict[str, Any],
     submitted: dict[str, Any],
 ) -> dict[str, Any]:
+    # Enforce immutable upstream native tool contract provenance even for
+    # direct Python callers (the CLI also validates before invoking us).
+    validate_package(manifest, cases, snapshot)
     if submitted.get("package_id") != manifest["package_id"]:
         raise ValueError("result package id mismatch")
 
