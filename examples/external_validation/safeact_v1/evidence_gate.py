@@ -103,12 +103,20 @@ class EvidenceGate:
 
     @staticmethod
     def _comparison(left: object, right: object, operator: str) -> bool:
+        # Host-bound policy checks accept only typed JSON scalar facts.
+        # Python's permissive Decimal("12") conversion must not authorize a
+        # model-proposed string amount against an observed numeric amount.
+        # Never compare lists, dicts, arbitrary objects, NaN or infinities.
         if operator == "eq":
-            return type(left) is type(right) and left == right
-        if (
-            type(left) not in {int, float, str}
-            or type(right) not in {int, float, str}
-        ):
+            if type(left) not in {str, bool, int, float} or type(left) is not type(right):
+                return False
+            if type(left) is float and (
+                not Decimal(str(left)).is_finite()
+                or not Decimal(str(right)).is_finite()
+            ):
+                return False
+            return left == right
+        if type(left) not in {int, float} or type(right) not in {int, float}:
             return False
         try:
             a, b = Decimal(str(left)), Decimal(str(right))
