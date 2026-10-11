@@ -143,6 +143,10 @@ def gate_official_v1_record(
         "case_id": case_id,
         "contract_domain": domain,
         "contract_selection": "proposed_action_not_case_id",
+        # Official V1 normalizer commits an evaluable record; it does NOT
+        # physically execute a consequential external-system action.
+        "action_effect_boundary": "normalized_record_only",
+        "physical_action_execution_observed": False,
         "model_action_attempts": len(actions),
         "authorized_action_dispatches": dispatches,
         "denied_action_attempts": denials,
