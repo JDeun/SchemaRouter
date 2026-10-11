@@ -82,7 +82,12 @@ def test_failed_job_cause_unproven_and_rerun_blocked_while_active() -> None:
     )
     assert fail["eligible_for_bounded_retry_after_run_ends"] is False
     assert fail["artifact_uploaded_not_proof_of_success"] is False
-    assert api.details_called == ["/actions/jobs/40000"]
+    assert api.details_called == [
+        "/actions/runs/38107675261/jobs?filter=latest&per_page=100&page=1",
+        "/actions/runs/38107675261/jobs?filter=latest&per_page=100&page=2",
+        "/actions/runs/38107675261/jobs?filter=latest&per_page=100&page=3",
+        "/actions/jobs/40000",
+    ]
 
 
 def test_terminal_failure_marks_only_incomplete_microshard_retryable() -> None:
