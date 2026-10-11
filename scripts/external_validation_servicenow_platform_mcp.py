@@ -82,9 +82,15 @@ def validate_package(
         raise ValueError("captured MCP tool package does not match the manifest")
     if snapshot.get("source", {}).get("repository") != "Xerrion/servicenow-platform-mcp":
         raise ValueError("upstream repository provenance mismatch")
-    if snapshot.get("source", {}).get("package_version") != manifest["upstream_runtime"]["servicenow_platform_mcp_version"]:
+    if (
+        snapshot.get("source", {}).get("package_version")
+        != manifest["upstream_runtime"]["servicenow_platform_mcp_version"]
+    ):
         raise ValueError("upstream package version mismatch")
-    if snapshot.get("servicenow_environment") != manifest["upstream_runtime"]["servicenow_environment"]:
+    if (
+        snapshot.get("servicenow_environment")
+        != manifest["upstream_runtime"]["servicenow_environment"]
+    ):
         raise ValueError("captured ServiceNow environment mismatch")
     if snapshot.get("schema_version") != 1:
         raise ValueError("unknown upstream snapshot schema version")
