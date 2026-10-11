@@ -139,13 +139,50 @@ jobs:
           PY
       - name: Evaluate only two frozen task identities per microshard
         run: |
-          mkdir -p artifacts/recovered
+          # Infrastructure diagnostics only. No changes to model, scientific
+          # inputs, evaluator, K, condition set or score parsing.
+          mkdir -p artifacts/recovered artifacts/recovery-diagnostics
+          diagnostic="artifacts/recovery-diagnostics/${{ matrix.job_id }}.txt"
+          {
+            printf 'job_id=%s\n' "${{ matrix.job_id }}"
+            printf 'source_sha=%s\n' "${{ inputs.source_sha }}"
+            printf 'started_utc=%s\n' "$(date -u +%FT%TZ)"
+            printf 'pre_cgroup_memory_events:\n'
+            cat /sys/fs/cgroup/memory.events 2>/dev/null || true
+            printf 'pre_cgroup_memory_peak:\n'
+            cat /sys/fs/cgroup/memory.peak 2>/dev/null || true
+          } > "$diagnostic"
+
+          # Record the real evaluator exit code even on a nonzero return.
+          # If the hosted runner is lost, absence of this postamble is itself
+          # a diagnostic limitation, never evidence of scientific success.
+          set +e
           python -u scripts/evaluate_agent_utility_v3_heldout.py \
             --corpus artifacts/heldout/heldout-corpus.json \
             --catalog-size "${{ matrix.catalog_size }}" \
             --task-ids "${{ matrix.task_ids }}" \
             --conditions "${{ needs.prepare.outputs.conditions }}" \
             --out "artifacts/recovered/${{ matrix.job_id }}.json"
+          evaluator_exit=$?
+          set -e
+
+          {
+            printf 'finished_utc=%s\n' "$(date -u +%FT%TZ)"
+            printf 'evaluator_exit_code=%s\n' "$evaluator_exit"
+            printf 'post_cgroup_memory_events:\n'
+            cat /sys/fs/cgroup/memory.events 2>/dev/null || true
+            printf 'post_cgroup_memory_peak:\n'
+            cat /sys/fs/cgroup/memory.peak 2>/dev/null || true
+          } >> "$diagnostic"
+          exit "$evaluator_exit"
+      - name: Upload recovery failure diagnostics (never scored evidence)
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "heldout-recovery-diagnostics-${{ matrix.job_id }}-${{ github.run_id }}"
+          path: artifacts/recovery-diagnostics/
+          if-no-files-found: warn
+          retention-days: 30
       - name: Upload recovery output (not proof of evaluator success)
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
