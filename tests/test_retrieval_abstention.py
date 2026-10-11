@@ -7,6 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from schemarouter import (
+    CapabilityRetrieval,
     EndpointSpec,
     RetrievalAbstentionPolicy,
     SchemaRouter,
@@ -83,7 +84,10 @@ def test_margin_rejects_missing_runner_up_and_narrow_margin() -> None:
 
 
 def test_empty_catalog_abstains_without_exception() -> None:
-    retrieval = SchemaRouter().retrieve("nonexistent capability", k=3)
+    retrieval = CapabilityRetrieval(
+        query="nonexistent capability", registry_version=0,
+        requested_k=3, total_ranked=0, candidates=[],
+    )
     result = apply_retrieval_abstention(
         retrieval, policy=RetrievalAbstentionPolicy(min_score=0)
     )
