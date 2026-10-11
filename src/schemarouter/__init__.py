@@ -430,6 +430,11 @@ from .provider_profiles import (
     discover_provider_profile_plugins,
     load_provider_profile_plugins,
 )
+from .retrieval_abstention import (
+    RetrievalAbstentionPolicy,
+    SelectiveCapabilityRetrieval,
+    apply_retrieval_abstention,
+)
 from .registry import InMemoryRegistry, MutableToolRegistry, SQLiteRegistry, ToolRegistry
 from .runs import ExecutionBudget, ExecutionMode, RetryPolicy, RunConfig, RunEvent
 from .runtime import ConfiguredSchemaRouter, SchemaRouter
@@ -790,6 +795,9 @@ __all__ = [
     "SchemaDiffReport",
     "SchemaPlanner",
     "SchemaProposal",
+    "RetrievalAbstentionPolicy",
+    "SelectiveCapabilityRetrieval",
+    "apply_retrieval_abstention",
     "SchemaRouter",
     "SchemaRouterError",
     "SchemaSourceError",
