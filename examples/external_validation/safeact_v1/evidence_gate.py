@@ -104,6 +104,27 @@ class EvidenceGate:
             raise ValueError("observation must identify source tool and record")
         if observation.successful:
             self._observations.append(observation)
+        else:
+            # A later failed read invalidates evidence from the same source
+            # and record. Historical success cannot authorize a later action.
+            self._observations = [
+                item for item in self._observations
+                if not (
+                    item.tool == observation.tool
+                    and item.record_id == observation.record_id
+                )
+            ]
+
+    def invalidate_tool(self, tool: str) -> None:
+        """Drop prior facts from a tool after a failed/unverifiable host call.
+
+        The failed call may not provide a trustworthy record ID, so all
+        observations from this tool become stale. Unrelated tools survive.
+        """
+        self._observations = [
+            observation for observation in self._observations
+            if observation.tool != tool
+        ]
 
     @staticmethod
     def _comparison(left: object, right: object, operator: str) -> bool:
@@ -172,6 +193,7 @@ class EvidenceGate:
                 for observation in self._observations
                 if observation.tool == condition.tool
                 and observation.record_id == record_id
+                and condition.field in observation.fields
                 for field, value in observation.values
                 if field == condition.field
             ]
