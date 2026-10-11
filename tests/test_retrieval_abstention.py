@@ -23,7 +23,9 @@ def build_router() -> SchemaRouter:
             name="paper",
             description="Published paper retrieval",
             endpoints=[
-                EndpointSpec(name="search", description="Search papers", read_only=True),
+                EndpointSpec(
+                    name="search", description="Search papers", read_only=True
+                ),
                 EndpointSpec(name="get", description="Read paper", read_only=True),
             ],
         )
@@ -54,9 +56,8 @@ def test_explicit_min_score_does_not_mutate_default_retrieval() -> None:
     assert not accepted.abstained
     assert accepted.reason == "selected"
     assert [x.route_id for x in accepted.candidates] == original_routes
-    assert [x.route_id for x in router.retrieve("search published papers", k=2).candidates] == (
-        original_routes
-    )
+    again = router.retrieve("search published papers", k=2)
+    assert [x.route_id for x in again.candidates] == original_routes
 
 
 def test_margin_rejects_missing_runner_up_and_narrow_margin() -> None:
