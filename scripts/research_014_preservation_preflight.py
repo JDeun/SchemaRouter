@@ -11,12 +11,17 @@ import argparse
 import json
 import os
 import re
+import sys
 import zipfile
 from pathlib import Path
 from typing import Any
 
-from scripts.research_014_conveyor import GitHubAPI
-from scripts.research_014_heldout_recovery import (
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts.research_014_conveyor import GitHubAPI  # noqa: E402
+from scripts.research_014_heldout_recovery import (  # noqa: E402
     ARTIFACT_RE,
     FROZEN_SOURCE,
     JOB_RE,
