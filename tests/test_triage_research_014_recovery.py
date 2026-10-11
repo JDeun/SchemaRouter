@@ -159,3 +159,22 @@ def test_failed_evaluator_artifact_is_not_completion_evidence() -> None:
     report = triage(api, 38107675261)
     assert report["failed_jobs"] == 1
     assert report["failures"][0]["artifact_uploaded_not_proof_of_success"]
+
+
+def test_future_wave_records_runner_memory_and_overwrites_only_own_artifact() -> None:
+    from pathlib import Path
+
+    workflow = (
+        Path(__file__).resolve().parents[1]
+        / ".github/workflows/research-0.14-heldout-recovery.yml"
+    ).read_text(encoding="utf-8")
+    assert "Record runner memory diagnostics (no scientific outputs)" in workflow
+    assert "/sys/fs/cgroup/memory.events" in workflow
+    assert "/sys/fs/cgroup/memory.peak" in workflow
+    assert "overwrite: true" in workflow
+    assert "artifacts/recovered/" in workflow
+    assert 'ref: "${{ inputs.source_sha }}"' in workflow
+    assert 'timeout-minutes: 360' in workflow
+    assert "max-parallel: 32" in workflow
+    assert "scripts/evaluate_agent_utility_v3_heldout.py" in workflow
+    assert "if: always()" in workflow
