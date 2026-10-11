@@ -95,3 +95,22 @@ def test_upstream_normalizer_remains_the_source_of_all_info_events() -> None:
     assert rec["metadata"]["schemarouter_intervention"]["kind"] == (
         "schemarouter_typed_route"
     )
+
+
+def test_routing_ablation_does_not_claim_real_action_execution() -> None:
+    result = route_public_v1_record(
+        {
+            "events": [{
+                "type": "CONSEQUENTIAL_CALL", "tool": "refund_issue",
+                "arguments": {"charge_id": "C2"},
+            }],
+            "metadata": {},
+        },
+        scenario={
+            "candidate_action": {"tool": "refund_issue", "args": {"charge_id": "C2"}}
+        },
+        case_id="SAB-V1-001",
+    )
+    marker = result["metadata"]["schemarouter_intervention"]
+    assert marker["action_effect_boundary"] == "normalized_record_only"
+    assert marker["physical_action_execution_observed"] is False
