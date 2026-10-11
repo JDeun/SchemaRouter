@@ -113,7 +113,9 @@ def triage(api: GitHubAPI, run_id: int) -> dict[str, Any]:
                 "job_conclusion": conclusion,
                 "stage_evidence": diagnosis,
                 "artifact_uploaded_not_proof_of_success": uploaded,
-                "eligible_for_bounded_retry_after_run_ends": state == "completed",
+                "eligible_for_bounded_retry_after_run_ends": (
+                    state == "completed"
+                ),
             })
         elif job_status == "in_progress":
             active += 1
