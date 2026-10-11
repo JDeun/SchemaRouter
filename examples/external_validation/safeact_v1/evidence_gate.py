@@ -189,8 +189,24 @@ class EvidenceGate:
                 missing.append("semantic_predicate_failed")
         return GateDecision(not missing, tuple(missing))
 
+    @staticmethod
+    def _safe_denial_label(reason: str) -> str:
+        """Never copy record IDs, field names or tool output into agent errors."""
+        if reason == "action_mismatch":
+            return reason
+        if reason.startswith("argument_binding_mismatch:"):
+            return "argument_binding_mismatch"
+        if reason.startswith("action_record_argument_missing:"):
+            return "action_record_argument_missing"
+        if reason.startswith("semantic_predicate_"):
+            return reason
+        return "missing_required_observation"
+
     def dispatch(self, action: str, args: Mapping[str, Any], execute: Any) -> Any:
         decision = self.check(action, args)
         if not decision.allowed:
-            raise PermissionError("evidence incomplete: " + "; ".join(decision.missing))
+            # GateDecision.missing remains detailed for trusted host diagnostics.
+            # The untrusted agent-facing exception must expose only categories.
+            labels = sorted({self._safe_denial_label(x) for x in decision.missing})
+            raise PermissionError("evidence incomplete: " + "; ".join(labels))
         return execute(action, dict(args))
