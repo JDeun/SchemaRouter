@@ -424,7 +424,10 @@ To prevent claim inflation, both intervention arms must attest
 missing or contradictory side-effect assertions. Aggregate reports explicitly
 set `physical_action_executions_measured=false` and must not use retained
 record counts to calculate an unsupported-execution or physical
-call-blocking rate.
+call-blocking rate. The post-run intervention verifier also reads each
+normalized record's actual `CONSEQUENTIAL_CALL` events and **rejects**
+any event count that disagrees with the claimed allowed recorded-action
+counter, including a missing/malformed event list.
 
 This is still a meaningful benchmark-level interception of the **official
 evaluation record** with trace provenance. It is **not** production tool-call
