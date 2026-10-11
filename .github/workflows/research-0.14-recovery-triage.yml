@@ -32,7 +32,7 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12.14"
-      - run: python -m pip install pytest
+      - run: python -m pip install pytest pytest-asyncio
       - run: python -m pytest -q tests/test_triage_research_014_recovery.py
 
   snapshot:
