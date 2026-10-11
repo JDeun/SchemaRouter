@@ -401,3 +401,42 @@ def test_semantic_fact_must_belong_to_verifier_declared_fields() -> None:
         "charge_read", "C2", frozenset({"amount"}), values=(("amount", 30),),
     ))
     assert gate.check("refund_issue", {"refund_amount": 20}).allowed
+
+
+def test_dynamic_argument_binding_uses_proposed_record_not_literal_template() -> None:
+    # Same source contract can be reused across public cases and observed
+    # records; no case-ID -> expected-action lookup is involved.
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=(
+            ("charge_read", "$action.charge_id", frozenset({"owner"})),
+        ),
+        argument_bindings=(("charge_id", "$action.charge_id"),),
+    ))
+    gate.observe(Observation("charge_read", "C2", frozenset({"owner"})))
+    assert gate.check("refund_issue", {"charge_id": "C2"}).allowed
+    assert not gate.check("refund_issue", {"charge_id": "C1"}).allowed
+    assert not gate.check("refund_issue", {"charge_id": "$action.charge_id"}).allowed
+    assert not gate.check("refund_issue", {}).allowed
+    assert not gate.check("refund_issue", {"charge_id": 22}).allowed
+    assert not gate.check("refund_issue", {"charge_id": ""}).allowed
+
+
+def test_dynamic_cross_argument_binding_denies_mismatched_action_target() -> None:
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=(
+            ("charge_read", "$action.charge_id", frozenset({"owner"})),
+        ),
+        argument_bindings=(("target_id", "$action.charge_id"),),
+    ))
+    gate.observe(Observation("charge_read", "C2", frozenset({"owner"})))
+    assert gate.check(
+        "refund_issue", {"charge_id": "C2", "target_id": "C2"}
+    ).allowed
+    assert not gate.check(
+        "refund_issue", {"charge_id": "C2", "target_id": "C1"}
+    ).allowed
+    assert not gate.check(
+        "refund_issue", {"charge_id": "", "target_id": ""}
+    ).allowed
