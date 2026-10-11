@@ -11,6 +11,7 @@ import argparse
 import json
 import os
 import re
+import zipfile
 from pathlib import Path
 from typing import Any
 
@@ -84,7 +85,7 @@ def inspect_parent(
         try:
             payload = _artifact_payload(api, artifact, f"{shard}.json")
             validate_shard(payload, corpus=corpus, catalog=catalog, task_ids=tasks)
-        except (ValueError, KeyError, TypeError, IndexError, OSError) as exc:
+        except (ValueError, KeyError, TypeError, IndexError, OSError, zipfile.BadZipFile) as exc:
             invalid[shard] = type(exc).__name__
             continue
         verified[shard] = {
