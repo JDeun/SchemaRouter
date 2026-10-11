@@ -1,0 +1,161 @@
+name: Research 0.14 c500-g27-p04 Unscored Failure Reproduction
+
+on:
+  push:
+    branches:
+      - diagnostics/1275-c500-g27-p04-one-shot-20261011
+    paths:
+      - .github/workflows/research-014-c500-g27-p04-unscored-repro.yml
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: research-014-c500-g27-p04-unscored-once
+  cancel-in-progress: false
+
+env:
+  HF_HUB_DISABLE_TELEMETRY: "1"
+  TOKENIZERS_PARALLELISM: "false"
+  HF_HOME: "${{ github.workspace }}/.hf-cache"
+  B2_MODEL: "HuggingFaceTB/SmolLM3-3B"
+  B2_REVISION: "a07cc9a04f16550a088caea529712d1d335b0ac1"
+  B2_CACHE_KEY: "b2-smollm3-arm64-a07cc9a04f16550a088caea529712d1d335b0ac1-torch2.14-transformers4.57.6"
+  B2_ATTN_IMPLEMENTATION: "sdpa"
+
+jobs:
+  reproduce-unscored:
+    if: github.repository == 'JDeun/SchemaRouter'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 360
+    env:
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+    steps:
+      - name: Gate on exactly one known failed microshard in the still-running original wave
+        id: preflight
+        env:
+          GH_TOKEN: "${{ github.token }}"
+        run: |
+          set -euo pipefail
+          original=$(gh api /repos/JDeun/SchemaRouter/actions/runs/38107675261 --jq '.status')
+          failed=$(gh api /repos/JDeun/SchemaRouter/actions/jobs/114376765084 --jq '.conclusion')
+          if [[ "${original}" == "completed" || "${failed}" != "failure" ]]; then
+            echo "run_probe=false" >> "${GITHUB_OUTPUT}"
+            echo "Original recovery run is terminal or job no longer failed; skip duplicate reproduction."
+          else
+            echo "run_probe=true" >> "${GITHUB_OUTPUT}"
+            echo "Original wave remains active and microshard c500-g27-p04 is failed; run unscored reproduction."
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.preflight.outputs.run_probe == 'true'
+        with:
+          ref: "30663de8f618bc88a893d9bf6214035a70e8e894"
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        if: steps.preflight.outputs.run_probe == 'true'
+        with:
+          python-version: "3.12.14"
+          cache: pip
+      - name: Install original pinned CPU runtime
+        if: steps.preflight.outputs.run_probe == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install "torch==2.14.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+          pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
+          pip install -e .
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: steps.preflight.outputs.run_probe == 'true'
+        id: hf-cache
+        with:
+          path: .hf-cache
+          key: "${{ env.B2_CACHE_KEY }}"
+      - name: Restore exact model revision after cache eviction
+        if: steps.preflight.outputs.run_probe == 'true' && steps.hf-cache.outputs.cache-hit != 'true'
+        env:
+          HF_HUB_OFFLINE: "0"
+          TRANSFORMERS_OFFLINE: "0"
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import snapshot_download
+          snapshot_download(repo_id=os.environ["B2_MODEL"], revision=os.environ["B2_REVISION"])
+          PY
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+        if: steps.preflight.outputs.run_probe == 'true'
+        with:
+          name: "heldout-corpus-38012340016"
+          path: artifacts/heldout
+          run-id: "38012340016"
+          github-token: "${{ github.token }}"
+          repository: "${{ github.repository }}"
+      - name: Check frozen source, runtime, exact two-task identity and condition manifest
+        if: steps.preflight.outputs.run_probe == 'true'
+        id: protocol
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import platform
+          from pathlib import Path
+          import torch
+          import transformers
+          import hashlib
+          frozen = "30663de8f618bc88a893d9bf6214035a70e8e894"
+          tasks_sha = "452482a8fd1682b1473202f04585ae551df322c9bdc41141fa10abb689f2d01b"
+          p = Path("artifacts/heldout/heldout-corpus.json")
+          corpus = json.loads(p.read_text(encoding="utf-8"))
+          assert corpus["generator_source_revision"] == frozen
+          assert corpus["tasks_sha256"] == tasks_sha
+          task_ids = [str(row["semantic_task_id"]) for row in corpus["tasks"]]
+          assert len(task_ids) == 780 and len(set(task_ids)) == 780
+          assert task_ids[27 * 10 + 8:27 * 10 + 10] == [
+              "v3-typed_numeric_units-ja-09", "v3-typed_numeric_units-ja-10"
+          ]
+          conditions = corpus["condition_manifest"]["conditions"]
+          assert isinstance(conditions, list) and len(conditions) == 5
+          assert platform.python_version() == "3.12.14"
+          assert platform.machine() in {"aarch64", "arm64"}
+          assert torch.__version__ == "2.14.0+cpu"
+          assert transformers.__version__ == "4.57.6"
+          assert os.environ["B2_ATTN_IMPLEMENTATION"] == "sdpa"
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
+              f.write("conditions=" + ",".join(conditions) + "\n")
+          print("Frozen identity, 2 task IDs, 5 conditions, CPU runtime verified; no scoring read.")
+          PY
+      - name: Run original frozen evaluator on ONLY failed pair (diagnosis, never canonical output)
+        if: steps.preflight.outputs.run_probe == 'true'
+        run: |
+          mkdir -p artifacts/one-shot/diagnostics
+          diagnostic="artifacts/one-shot/diagnostics/c500-g27-p04.txt"
+          {
+            printf 'evidence_role=unscored_diagnostic_not_canonical\n'
+            printf 'source_sha=30663de8f618bc88a893d9bf6214035a70e8e894\n'
+            printf 'original_failed_job=114376765084\nstarted_utc=%s\n' "$(date -u +%FT%TZ)"
+            cat /sys/fs/cgroup/memory.events 2>/dev/null || true
+            cat /sys/fs/cgroup/memory.peak 2>/dev/null || true
+          } > "$diagnostic"
+          set +e
+          python -u scripts/evaluate_agent_utility_v3_heldout.py \
+            --corpus artifacts/heldout/heldout-corpus.json \
+            --catalog-size 500 \
+            --task-ids "v3-typed_numeric_units-ja-09,v3-typed_numeric_units-ja-10" \
+            --conditions "${{ steps.protocol.outputs.conditions }}" \
+            --out artifacts/one-shot/private-result.json
+          evaluator_exit=$?
+          set -e
+          {
+            printf 'finished_utc=%s\nevaluator_exit_code=%s\n' "$(date -u +%FT%TZ)" "$evaluator_exit"
+            cat /sys/fs/cgroup/memory.events 2>/dev/null || true
+            cat /sys/fs/cgroup/memory.peak 2>/dev/null || true
+          } >> "$diagnostic"
+          exit "$evaluator_exit"
+      - name: Preserve ONLY runner diagnostics, never model results
+        if: always() && steps.preflight.outputs.run_probe == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "unscored-c500-g27-p04-runner-diagnostics-${{ github.run_id }}"
+          path: artifacts/one-shot/diagnostics/
+          if-no-files-found: warn
+          retention-days: 14
