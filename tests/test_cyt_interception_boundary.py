@@ -92,3 +92,31 @@ def test_no_freeze_without_actual_external_mode_approval(boundary: dict) -> None
     boundary["selected_primary_interception_mode"] = "hook"
     with pytest.raises(ValueError, match="external agreement"):
         validate_contract(boundary)
+
+
+
+def test_damien_macos_host_priority_is_a_preference_not_a_freeze(boundary: dict) -> None:
+    priority = boundary["maintainer_host_priority"]
+    assert (priority["primary"]["major"], priority["primary"]["agent"]) == (27, "cursor")
+    assert (priority["secondary"]["major"], priority["secondary"]["agent"]) == (27, "claude")
+    assert priority["fallback"]["major"] == 26
+    assert priority["heldout_scoring_authorized"] is False
+    assert priority["gitHub_hosted_macos27_assumed_available"] is False
+    assert boundary["selected_primary_agent"] is None
+    assert boundary["selected_primary_interception_mode"] is None
+    validate_contract(boundary)
+
+
+@pytest.mark.parametrize("mutation", [
+    lambda ranking: ranking["primary"].update(major=26),
+    lambda ranking: ranking["primary"].update(agent="codex"),
+    lambda ranking: ranking.update(heldout_scoring_authorized=True),
+    lambda ranking: ranking.update(gitHub_hosted_macos27_assumed_available=True),
+    lambda ranking: ranking.update(requires_actual_proxy_or_hook_integration=False),
+])
+def test_unsupported_primary_or_unverified_host_claim_fails_closed(
+    boundary: dict, mutation
+) -> None:
+    mutation(boundary["maintainer_host_priority"])
+    with pytest.raises(ValueError, match="macOS host priority"):
+        validate_contract(boundary)

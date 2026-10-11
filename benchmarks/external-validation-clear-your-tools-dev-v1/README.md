@@ -154,3 +154,33 @@ Damien's key distinction remains: Hook can block certain tool calls
 under appropriate supported agent integration, whereas Proxy cannot.
 Only a real, explicitly authorized agent-side interception test can verify
 whether Hook blocking is effective in the selected agent/environment.
+
+
+## CYT maintainer's preferred real-agent host (2026-10-11)
+
+Damien's follow-up, supplied by the repository maintainer:
+
+> Latest macOS 27 + latest Cursor is the best tested.
+> Second my choice would be latest macOS + latest Claude.
+> macOS 26 is also okay.
+
+**Compatibility preference, not a benchmark result or execution freeze.**
+Use macOS 27 + a version-pinned Cursor build as the **first real-agent
+qualification lane**. Use macOS 27 + a version-pinned Claude build as the
+**second lane**; macOS 26 is an acceptable **fallback** and its results
+must be kept in a separately labeled replication stratum. A macOS SDK
+smoke under a different major release cannot be relabeled a validated
+Cursor/Claude integration.
+
+Record the exact `sw_vers` build, executable and version output, selected
+model/provider/revision, CYT binary/source SHA, Proxy or Hook mode, and
+aggregator/agent installation before considering an actual scored run.
+Do not assume a hosted `macos-27` GitHub runner label is available:
+verify hosted images or explicitly provision a suitable runner. Proxy
+cannot claim actual tool-call blocking, and Cursor Composer remains
+unverified for interception. The selected primary interception mode stays
+**unfrozen** until its live runtime is observed and independently reviewed.
+
+The compatibility ordering is captured and guarded in
+[`interception-modes.json`](interception-modes.json). No actual
+macOS 27/Cursor agent run or held-out scoring is claimed by this update.
