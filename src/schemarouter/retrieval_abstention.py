@@ -10,7 +10,7 @@ from __future__ import annotations
 import math
 from typing import Literal
 
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 
 from .models import CapabilityRetrieval, StrictModel
 
@@ -20,6 +20,13 @@ class RetrievalAbstentionPolicy(StrictModel):
 
     min_score: float | None = None
     min_margin: float | None = None
+
+    @field_validator("min_score", "min_margin", mode="before")
+    @classmethod
+    def reject_non_numeric_thresholds(cls, value: object) -> object:
+        if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float))):
+            raise ValueError("thresholds must be numeric, not bool or strings")
+        return value
 
     @model_validator(mode="after")
     def validate_explicit_gates(self) -> RetrievalAbstentionPolicy:
