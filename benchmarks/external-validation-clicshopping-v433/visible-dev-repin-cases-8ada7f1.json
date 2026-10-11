@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "kind": "clicshopping-4.33-maintainer-repin-8ada7f1-visible-dev",
+  "evidence_role": "new_visible_development_cases_not_independent_confirmation",
+  "pinned_upstream_commit": "8ada7f1f392f3dd2800e825dac8d245dfd53944a",
+  "historical_dev_pin": "3bac851759234a4babb49d3f351e472cd9e0f31f",
+  "source_inventory": "maintainer-repin-8ada7f1.json",
+  "comparison": "same permission-eligible REST endpoint/action matrix full exposure vs SchemaRouter Top-3",
+  "top_k": 3,
+  "hot_repeats": 5,
+  "model_calls": 0,
+  "live_requests": 0,
+  "independent_cases": false,
+  "dataset_freeze": "written before running new 8ada7f1 compare; no posthoc edits permitted",
+  "cases": [
+    {
+      "id": "clic433r-001",
+      "role": "reader",
+      "label": "supported",
+      "query": "Use customerOrders to list my customer orders",
+      "required_routes": [
+        "customerOrders.list_orders"
+      ]
+    },
+    {
+      "id": "clic433r-002",
+      "role": "reader",
+      "label": "supported",
+      "query": "Use customerOrders to read one order by its order ID",
+      "required_routes": [
+        "customerOrders.read_order"
+      ]
+    },
+    {
+      "id": "clic433r-003",
+      "role": "reader",
+      "label": "supported",
+      "query": "Use customerOrders to fetch an order's status history",
+      "required_routes": [
+        "customerOrders.history"
+      ]
+    },
+    {
+      "id": "clic433r-004",
+      "role": "manager",
+      "label": "supported",
+      "query": "Use customerOrders to cancel a customer order",
+      "required_routes": [
+        "customerOrders.cancel_order"
+      ]
+    },
+    {
+      "id": "clic433r-005",
+      "role": "manager",
+      "label": "supported",
+      "query": "Use customerOrders to send a message about a customer order",
+      "required_routes": [
+        "customerOrders.send_message"
+      ]
+    },
+    {
+      "id": "clic433r-006",
+      "role": "reader",
+      "label": "forbidden",
+      "query": "Cancel an order using customerOrders",
+      "forbidden_routes": [
+        "customerOrders.cancel_order"
+      ]
+    },
+    {
+      "id": "clic433r-007",
+      "role": "no_read",
+      "label": "forbidden",
+      "query": "List orders using customerOrders",
+      "forbidden_routes": [
+        "customerOrders.list_orders"
+      ]
+    },
+    {
+      "id": "clic433r-008",
+      "role": "manager",
+      "label": "forbidden",
+      "query": "Use ChatRagBI to analyze sales",
+      "forbidden_routes": [
+        "ChatRagBI.analyze_sales"
+      ]
+    },
+    {
+      "id": "clic433r-009",
+      "role": "reader",
+      "label": "ambiguous",
+      "query": "Show this customer's order history",
+      "ambiguous_routes": [
+        "customerOrders.history",
+        "AnthropicEcommerce.order_history"
+      ]
+    },
+    {
+      "id": "clic433r-010",
+      "role": "reader",
+      "label": "unsupported",
+      "query": "Permanently delete all historical customer orders"
+    }
+  ],
+  "counts": {
+    "total": 10,
+    "supported": 5,
+    "forbidden": 3,
+    "unsupported": 1,
+    "ambiguous": 1
+  }
+}
