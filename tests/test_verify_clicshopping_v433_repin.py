@@ -97,7 +97,9 @@ def test_source_transition_rejects_fake_permission_sha(tmp_path: Path) -> None:
     historic["endpoints"]["customerOrders"]["permission_source"][
         "git_blob_sha"
     ] = "0" * 40
-    with pytest.raises(ValueError, match="historical permission/page source identity drift"):
+    with pytest.raises(
+        ValueError, match="historical permission/page source identity drift"
+    ):
         verify(tmp_path, manifest, historic)
 
 
