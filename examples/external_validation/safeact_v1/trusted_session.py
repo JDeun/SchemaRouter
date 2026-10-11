@@ -96,7 +96,12 @@ class TrustedEvidenceSession:
             raise ValueError("information tool name required")
         self._information_attempts += 1
         safe_args = dict(arguments)
-        result = self._information_call(tool, safe_args)
+        try:
+            result = self._information_call(tool, safe_args)
+        except Exception:
+            # A failed retry cannot leave an earlier verified read authoritative.
+            self._gate.invalidate_tool(tool)
+            raise
         self.record_trusted_result(tool, safe_args, result, already_counted=True)
         return result
 
@@ -114,11 +119,21 @@ class TrustedEvidenceSession:
         This does not invoke the underlying tool a second time.
         """
         if not tool or not isinstance(result, Mapping):
+            if isinstance(tool, str) and tool:
+                self._gate.invalidate_tool(tool)
             raise ValueError("trusted tool response required")
         if not already_counted:
             self._information_attempts += 1
-        verified = self._verify_result(tool, dict(arguments), result)
-        if verified is not None:
+        try:
+            verified = self._verify_result(tool, dict(arguments), result)
+        except Exception:
+            self._gate.invalidate_tool(tool)
+            raise
+        if verified is None:
+            # Failed, ambiguous or untrusted later observations make this
+            # tool's previous observations stale for the current case.
+            self._gate.invalidate_tool(tool)
+        else:
             if (
                 not isinstance(verified, VerifiedToolEvidence)
                 or not isinstance(verified.record_id, str)
@@ -130,6 +145,7 @@ class TrustedEvidenceSession:
                     for field in verified.fields
                 )
             ):
+                self._gate.invalidate_tool(tool)
                 raise ValueError("trusted verifier returned malformed observed evidence")
             if (
                 not isinstance(verified.values, tuple)
@@ -145,6 +161,7 @@ class TrustedEvidenceSession:
                 or len({name for name, _ in verified.values})
                 != len(verified.values)
             ):
+                self._gate.invalidate_tool(tool)
                 raise ValueError("trusted verifier returned malformed typed values")
             self._verified_observations += 1
             self._gate.observe(
