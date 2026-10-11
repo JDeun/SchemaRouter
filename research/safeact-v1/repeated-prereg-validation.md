@@ -92,6 +92,24 @@ existing files and symlinks cannot be overwritten. The two output
 directories must differ. Do not publish the private linkage or combine it
 with reviewers' files in CI artifacts.
 
+Before any annotation, a trusted parent should verify the reviewer list and
+private linkage together against the exact frozen schedule (do **not** give
+reviewers access to this command's linkage inputs):
+
+```bash
+python scripts/check_safeact_v1_repeated_prereg.py \
+  --plan path/to/plan.json \
+  --public-case-ids path/to/public-v1-ids.json \
+  --schedule path/to/schedule.json \
+  --blind-queue-in reviewer-only/queue.json \
+  --private-linkage-in trusted-parent-only/linkage.json
+```
+
+This rejects stale plan hashes, missing/duplicated reviewer IDs, fabricated
+executions, altered case/seed/arm/session assignments and linkage tables that
+are not a one-to-one mapping to all preregistered runs. It validates
+metadata identity only, not actual trajectory content or human blindness.
+
 A **separately built trajectory renderer** must present sanitized records
 using blind IDs and strip intervention-specific markers, tool/event
 annotations, gold results and condition-identifying content. This tool does
