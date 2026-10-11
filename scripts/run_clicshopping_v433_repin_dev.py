@@ -16,8 +16,12 @@ from pathlib import Path
 from typing import Any
 
 from scripts.run_clicshopping_v433_dev import (
-    PACKAGE, build_router, canonical_bytes,
-    eligible_catalog as historical_eligible_catalog, load_json, validate_cases,
+    PACKAGE,
+    build_router,
+    canonical_bytes,
+    eligible_catalog as historical_eligible_catalog,
+    load_json,
+    validate_cases,
 )
 from scripts.validate_clicshopping_v433_inventory import validate_inventory
 
