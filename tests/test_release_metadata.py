@@ -74,7 +74,7 @@ def test_release_workflow_keeps_trusted_publishing_top_level_and_isolates_build(
     )
     assert "subject-path: dist/*" in workflow
     assert (
-        "anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26"
+        "anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c"
         in workflow
     )
     assert "format: spdx-json" in workflow
@@ -334,11 +334,11 @@ def test_security_workflows_cover_dependency_and_code_scanning() -> None:
     assert "permissions:\n  contents: read" in codeql
     assert "security-events: write" in codeql
     assert (
-        "github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2"
+        "github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d"
         in codeql
     )
     assert (
-        "github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2"
+        "github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d"
         in codeql
     )
     assert "languages: python" in codeql
@@ -360,7 +360,7 @@ def test_openssf_scorecard_workflow_is_pinned_and_least_privilege() -> None:
     )
     assert "publish_results: true" in workflow
     assert (
-        "github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2"
+        "github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d"
         in workflow
     )
 
