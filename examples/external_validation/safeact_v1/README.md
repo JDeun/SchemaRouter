@@ -402,3 +402,33 @@ before starting expensive model work, but neither compilation nor passing
 synthetic tests confirms that a policy author's predicates are complete or
 correct. Missing required business-specific checks, units, validity windows
 and exception handling remain explicit human review blockers (#1269).
+
+
+## Consequential-action side-effect boundary (2026-10-11)
+
+At pinned upstream SafeAct commit `841816cf1e376e6fbf8600cffac5df1736e1d369`,
+the official V1 `normalize_v1()` converts a model-proposed consequential
+call into a `CONSEQUENTIAL_CALL` **in the normalized evaluation record**.
+The SchemaRouter routing-only and evidence-gate hooks intervene at that
+**post-inference, pre-record-commit** seam, and remove/retain the recorded
+action. Neither hook invokes a real consequential operation against a live
+external system; upstream information-tool `ToolGateway.calls` are actual
+read observations and remain a distinct boundary.
+
+The historical intervention counter
+`authorized_action_dispatches` therefore counts **authorized recorded
+actions**, not audited physical execution of external side effects.
+To prevent claim inflation, both intervention arms must attest
+`action_effect_boundary="normalized_record_only"` and
+`physical_action_execution_observed=false`; the post-run verifier rejects
+missing or contradictory side-effect assertions. Aggregate reports explicitly
+set `physical_action_executions_measured=false` and must not use retained
+record counts to calculate an unsupported-execution or physical
+call-blocking rate.
+
+This is still a meaningful benchmark-level interception of the **official
+evaluation record** with trace provenance. It is **not** production tool-call
+authorization, a SafeActBench task-success improvement result, a covered
+131-domain evidence-policy catalogue, or proof of counterfactual false
+refusal. A future executor-boundary study requires separately validated real
+dispatch interception, and must be labelled as such.
