@@ -42,7 +42,11 @@ def sections(source: str) -> list[dict[str, object]]:
         heading = HEADING.match(line)
         if heading:
             result.append(
-                {"level": len(heading.group(1)), "heading": heading.group(2), "lines": []}
+                {
+                    "level": len(heading.group(1)),
+                    "heading": heading.group(2),
+                    "lines": [],
+                }
             )
             continue
         if result and line.strip() and not re.match(r"^\s*\|", line):
@@ -143,12 +147,15 @@ def verify_reviewed(
         if entry.get("decision") != "meaning-preserved":
             continue
         if not isinstance(entry.get("evidence"), str) or not entry["evidence"].strip():
-            errors.append(f"{path} section {section}: missing concrete review rationale")
+            errors.append(
+                f"{path} section {section}: missing concrete review rationale"
+            )
             continue
         valid = True
         for prefix, root in (("en", en_root), ("ko", ko_root)):
             expected = entry.get(f"{prefix}_blob")
-            if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{40}", expected):
+            if (not isinstance(expected, str)
+                    or not re.fullmatch(r"[0-9a-f]{40}", expected)):
                 errors.append(f"{path} section {section}: invalid {prefix} Git blob")
                 valid = False
                 continue
@@ -174,7 +181,9 @@ def verify_reviewed(
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--json-out", type=Path, default=Path("translation-section-risks.json"))
+    p.add_argument(
+        "--json-out", type=Path, default=Path("translation-section-risks.json")
+    )
     p.add_argument("--max-show", type=int, default=70)
     p.add_argument("--review-ledger", type=Path)
     p.add_argument("--strict", action="store_true")
@@ -197,9 +206,12 @@ def main() -> None:
             raise SystemExit("unreviewed semantic risk:\n- " + "\n- ".join(problems))
         print("All rule-flagged sections have revision-pinned editorial dispositions.")
     for item in report["findings"][:args.max_show]:
-        print(f"{item['path']} :: {item.get('section', '?')} "
-              f"{item.get('en_heading', '')} {item.get('signals', [item.get('error', '')])} "
-              f"ratio={item.get('ratio', 'n/a')}")
+        print(
+            f"{item['path']} :: {item.get('section', '?')} "
+            f"{item.get('en_heading', '')} "
+            f"{item.get('signals', [item.get('error', '')])} "
+            f"ratio={item.get('ratio', 'n/a')}"
+        )
 
 
 if __name__ == "__main__":
