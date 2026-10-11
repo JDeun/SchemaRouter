@@ -65,5 +65,32 @@
     "heldout_scoring_allowed": false,
     "e2e_runner_ready": false,
     "manual_review_required": true
+  },
+  "maintainer_host_priority": {
+    "source": "Damien Berezenko reply supplied 2026-10-11",
+    "status": "compatibility_preference_not_a_measured_agent_run",
+    "primary": {
+      "platform": "macos",
+      "major": 27,
+      "agent": "cursor",
+      "agent_version": "pin_at_execution"
+    },
+    "secondary": {
+      "platform": "macos",
+      "major": 27,
+      "agent": "claude",
+      "agent_version": "pin_at_execution"
+    },
+    "fallback": {
+      "platform": "macos",
+      "major": 26,
+      "agent": "cursor_or_claude",
+      "agent_version": "pin_at_execution"
+    },
+    "requires_exact_macos_build": true,
+    "requires_exact_agent_version": true,
+    "requires_actual_proxy_or_hook_integration": true,
+    "gitHub_hosted_macos27_assumed_available": false,
+    "heldout_scoring_authorized": false
   }
 }
