@@ -1,0 +1,217 @@
+name: Research 0.14 Frozen Two-task Speed Pilot
+run-name: Frozen two-task speed pilot (not canonical held-out evidence)
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/research-0.14-heldout-speed-pilot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: research-0.14-frozen-speed-pilot
+  cancel-in-progress: false
+
+env:
+  PYTHONPATH: "${{ github.workspace }}:${{ github.workspace }}/src"
+  HF_HOME: "${{ github.workspace }}/.hf-cache"
+  HF_HUB_DISABLE_TELEMETRY: "1"
+  TOKENIZERS_PARALLELISM: "false"
+  B2_MODEL: "HuggingFaceTB/SmolLM3-3B"
+  B2_REVISION: "a07cc9a04f16550a088caea529712d1d335b0ac1"
+  B2_CACHE_KEY: "b2-smollm3-arm64-a07cc9a04f16550a088caea529712d1d335b0ac1-torch2.14-transformers4.57.6"
+  B2_ATTN_IMPLEMENTATION: "sdpa"
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      matrix: "${{ steps.plan.outputs.matrix }}"
+      conditions: "${{ steps.plan.outputs.conditions }}"
+      tasks_sha256: "${{ steps.plan.outputs.tasks_sha256 }}"
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+        with:
+          name: heldout-corpus-38012340016
+          run-id: "38012340016"
+          repository: "${{ github.repository }}"
+          github-token: "${{ github.token }}"
+          path: artifacts/pilot-corpus
+      - id: plan
+        name: Select two frozen task identities from two preregistered strata
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          corpus = json.loads(Path("artifacts/pilot-corpus/heldout-corpus.json").read_text())
+          assert corpus["generator_source_revision"] == "30663de8f618bc88a893d9bf6214035a70e8e894"
+          ids = [str(task["semantic_task_id"]) for task in corpus["tasks"]]
+          assert len(ids) == 780 and len(set(ids)) == 780
+          # Fixed parent indexes 01 and 12. The choice is based on original
+          # frozen task positions, NOT on evaluated task outcomes.
+          sample_indexes = (1, 12)
+          matrix = []
+          for catalog in (250, 500):
+              for group in sample_indexes:
+                  task_ids = ids[group * 10:group * 10 + 2]
+                  assert len(task_ids) == 2
+                  matrix.append({
+                      "job_id": f"pilot-c{catalog}-g{group:02d}",
+                      "catalog_size": catalog,
+                      "task_ids": ",".join(task_ids),
+                  })
+          assert len(matrix) == 4
+          conditions = list(corpus["condition_manifest"]["conditions"])
+          assert "FULL" in conditions and "ORACLE" in conditions
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              out.write("matrix=" + json.dumps({"include": matrix}, separators=(",", ":")) + "\n")
+              out.write("conditions=" + ",".join(conditions) + "\n")
+              out.write("tasks_sha256=" + str(corpus["tasks_sha256"]) + "\n")
+          print("Pilot frozen task identities:", json.dumps(matrix, sort_keys=True))
+          print("Frozen conditions:", conditions)
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "frozen-speed-pilot-corpus-${{ github.run_id }}"
+          path: artifacts/pilot-corpus/
+          if-no-files-found: error
+          retention-days: 14
+
+  measure:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: "${{ fromJSON(needs.prepare.outputs.matrix) }}"
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 300
+    env:
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "30663de8f618bc88a893d9bf6214035a70e8e894"
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch==2.14.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
+      - run: pip install -e .
+      - id: hf-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .hf-cache
+          key: "${{ env.B2_CACHE_KEY }}"
+      - name: Restore exact revision if original model cache was evicted
+        if: steps.hf-cache.outputs.cache-hit != 'true'
+        env:
+          HF_HUB_OFFLINE: "0"
+          TRANSFORMERS_OFFLINE: "0"
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import snapshot_download
+          snapshot_download(repo_id=os.environ["B2_MODEL"], revision=os.environ["B2_REVISION"])
+          PY
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+        with:
+          name: "frozen-speed-pilot-corpus-${{ github.run_id }}"
+          path: artifacts/pilot-corpus
+      - name: Verify frozen CPU/runtime identity
+        run: |
+          python - <<'PY'
+          import os
+          import platform
+          import torch
+          import transformers
+          assert platform.python_version() == "3.12.14"
+          assert platform.machine() in {"aarch64", "arm64"}
+          assert os.environ["B2_ATTN_IMPLEMENTATION"] == "sdpa"
+          assert torch.__version__ == "2.14.0+cpu"
+          assert transformers.__version__ == "4.57.6"
+          PY
+      - name: Execute exact frozen evaluator (two tasks, all conditions)
+        run: |
+          mkdir -p artifacts/pilot-measurement
+          date +%s > artifacts/pilot-measurement/start-epoch.txt
+          python -u scripts/evaluate_agent_utility_v3_heldout.py \
+            --corpus artifacts/pilot-corpus/heldout-corpus.json \
+            --catalog-size "${{ matrix.catalog_size }}" \
+            --task-ids "${{ matrix.task_ids }}" \
+            --conditions "${{ needs.prepare.outputs.conditions }}" \
+            --out "artifacts/pilot-measurement/${{ matrix.job_id }}.json"
+          date +%s > artifacts/pilot-measurement/end-epoch.txt
+      - name: Validate complete frozen identities; report timings only
+        env:
+          PILOT_JOB_ID: "${{ matrix.job_id }}"
+          PILOT_CATALOG: "${{ matrix.catalog_size }}"
+          PILOT_TASK_IDS: "${{ matrix.task_ids }}"
+          PILOT_TASK_SHA: "${{ needs.prepare.outputs.tasks_sha256 }}"
+          PILOT_CONDITIONS: "${{ needs.prepare.outputs.conditions }}"
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import platform
+          from pathlib import Path
+
+          work = Path("artifacts/pilot-measurement")
+          job = os.environ["PILOT_JOB_ID"]
+          raw = json.loads((work / f"{job}.json").read_text())
+          source = json.loads(Path("artifacts/pilot-corpus/heldout-corpus.json").read_text())
+          tasks = set(os.environ["PILOT_TASK_IDS"].split(","))
+          conditions = set(os.environ["PILOT_CONDITIONS"].split(","))
+          catalog = int(os.environ["PILOT_CATALOG"])
+          assert len(tasks) == 2
+          assert raw["generator_source_revision"] == source["generator_source_revision"] == "30663de8f618bc88a893d9bf6214035a70e8e894"
+          assert raw["tasks_sha256"] == source["tasks_sha256"] == os.environ["PILOT_TASK_SHA"]
+          assert raw["catalog_size"] == catalog
+          assert set(raw["task_ids"]) == tasks
+          assert set(raw["conditions"]) == conditions
+          assert len(raw["rows"]) == 2 * len(conditions)
+          seen = {(row["task_id"], int(row["catalog_size"]), row["condition"]) for row in raw["rows"]}
+          assert seen == {(task, catalog, cond) for task in tasks for cond in conditions}
+          assert raw["model"]["name"] == "HuggingFaceTB/SmolLM3-3B"
+          assert raw["model"]["revision"] == "a07cc9a04f16550a088caea529712d1d335b0ac1"
+          assert raw["model"]["attention_implementation"] == "sdpa"
+          assert raw["model"]["max_new_tokens"] == 256
+          assert raw["model"]["threads"] == 4
+          assert raw["runtime"]["python"] == platform.python_version() == "3.12.14"
+          assert raw["runtime"]["torch"] == "2.14.0+cpu"
+          assert raw["runtime"]["transformers"] == "4.57.6"
+          seconds = int((work / "end-epoch.txt").read_text()) - int((work / "start-epoch.txt").read_text())
+          assert 0 < seconds < 5 * 3600
+          report = {
+              "identity_only_pilot": True,
+              "eligible_for_scientific_aggregation": False,
+              "parent_run_id": 38012340016,
+              "source_revision": raw["generator_source_revision"],
+              "tasks_sha256": raw["tasks_sha256"],
+              "job_id": job,
+              "catalog_size": catalog,
+              "tasks": sorted(tasks),
+              "conditions": sorted(conditions),
+              "verified_episode_count": len(seen),
+              "model_load_ms": raw["model_load_ms"],
+              "evaluation_wall_seconds": seconds,
+              "runtime": raw["runtime"],
+          }
+          (work / "pilot-report.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+          print("Frozen pilot verified (no outcome metrics):", json.dumps(report, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: "frozen-two-task-speed-pilot-${{ matrix.job_id }}-${{ github.run_id }}"
+          path: artifacts/pilot-measurement/
+          if-no-files-found: warn
+          retention-days: 14
