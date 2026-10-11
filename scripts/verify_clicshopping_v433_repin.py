@@ -128,11 +128,15 @@ def verify(
     php = source_bytes(upstream_root, NEW_PAGE, NEW_PAGE_SHA).decode("utf-8-sig")
     docs = source_bytes(upstream_root, NEW_README, NEW_README_SHA).decode("utf-8")
     if dispatch_actions(php) != ORDER_READ | ORDER_WRITE:
-        raise ValueError("new customerOrders dispatch does not match permission actions")
+        raise ValueError(
+            "new customerOrders dispatch does not match permission actions"
+        )
     if ("canPerformAction" not in php
             or "CustomerOrdersPermissions" not in php
             or "customer_id" not in docs):
-        raise ValueError("customerOrders public authentication/permission contract absent")
+        raise ValueError(
+            "customerOrders public authentication/permission contract absent"
+        )
     original = historic["endpoints"]["customerOrders"]
     if (set(original["read_actions"]) != ORDER_READ
             or set(original["write_actions"]) != ORDER_WRITE
@@ -162,7 +166,9 @@ def verify(
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--upstream-root", type=Path, required=True)
-    p.add_argument("--plan", type=Path, default=PACKAGE / "maintainer-repin-8ada7f1.json")
+    p.add_argument(
+        "--plan", type=Path, default=PACKAGE / "maintainer-repin-8ada7f1.json"
+    )
     p.add_argument("--historical", type=Path, default=PACKAGE / "source-inventory.json")
     args = p.parse_args()
     plan = json.loads(args.plan.read_text(encoding="utf-8"))
