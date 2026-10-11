@@ -286,3 +286,59 @@ def test_nonnumeric_order_policy_literal_rejected_during_authoring(
                 "lte", "literal", literal,
             ),),
         ))
+
+
+def test_denied_dispatch_does_not_expose_private_host_identifiers() -> None:
+    private_id = "customer-private-991177"
+    private_field = "protected_payment_token"
+    private_tool = "private_customer_finance_query"
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=((
+            private_tool, private_id, frozenset({private_field}),
+        ),),
+        argument_bindings=(("customer_id", private_id),),
+    ))
+    calls: list[object] = []
+    with pytest.raises(PermissionError) as info:
+        gate.dispatch(
+            "refund_issue", {"customer_id": "wrong-private-record"},
+            lambda *args: calls.append(args),
+        )
+    msg = str(info.value)
+    assert "argument_binding_mismatch" in msg
+    assert "missing_required_observation" in msg
+    assert private_id not in msg
+    assert private_tool not in msg
+    assert private_field not in msg
+    assert "wrong-private-record" not in msg
+    assert calls == []
+
+
+def test_semantic_denial_does_not_expose_observed_private_values() -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=((
+            "charge_read", "private-charge-77", frozenset({"payment_method"}),
+        ),),
+        value_conditions=(ValueCondition(
+            "charge_read", "private-charge-77", "payment_method",
+            "eq", "action_argument", "destination_payment_method",
+        ),),
+    ))
+    gate.observe(Observation(
+        "charge_read", "private-charge-77", frozenset({"payment_method"}),
+        values=(("payment_method", "card-private-source"),),
+    ))
+    with pytest.raises(PermissionError) as info:
+        gate.dispatch(
+            "refund_issue",
+            {"destination_payment_method": "card-different"},
+            lambda *_: (_ for _ in ()).throw(AssertionError("unsafe dispatch")),
+        )
+    assert "semantic_predicate_failed" in str(info.value)
+    assert "private-charge-77" not in str(info.value)
+    assert "card-private-source" not in str(info.value)
+    assert "card-different" not in str(info.value)
