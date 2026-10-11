@@ -47,9 +47,10 @@ def _fixture():
         "counts": {"cases": 2, "supported": 1, "unsupported": 1},
     }
     cases = {"case_set_id": manifest["package_id"], "cases": [
-        {"id": "supported-read", "label": "supported", "required_tools": ["query"],
-         "required_fields": {"query": ["table", "limit"]}},
-        {"id": "ood", "label": "unsupported", "required_tools": [], "required_fields": {}},
+        {"id": "supported-read", "query": "Read three incident records", "label": "supported",
+         "required_tools": ["query"], "required_fields": {"query": ["table", "limit"]}},
+        {"id": "ood", "query": "Make a sandwich", "label": "unsupported",
+         "required_tools": [], "required_fields": {}},
     ]}
     snapshot = {
         "schema_version": 1,
