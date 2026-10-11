@@ -57,7 +57,10 @@ class RecoveryAPI:
     def artifacts(self, run_id: int) -> list[dict]:
         return [
             {
-                "name": f"heldout-recovery-part-c500-g{j // 5:02d}-p{j % 5:02d}-{run_id}",
+                "name": (
+                    f"heldout-recovery-part-c500-g{j // 5:02d}"
+                    f"-p{j % 5:02d}-{run_id}"
+                ),
                 "expired": False,
             }
             for j in range(250)
