@@ -23,6 +23,8 @@ def _outputs(tmp_path: Path) -> dict[str, Path]:
                 "kind": kind,
                 "case_id": case,
                 "evaluator_data_used": False,
+                "action_effect_boundary": "normalized_record_only",
+                "physical_action_execution_observed": False,
                 "model_action_attempts": 1,
                 "authorized_action_dispatches": 1,
                 "denied_action_attempts": 0,
