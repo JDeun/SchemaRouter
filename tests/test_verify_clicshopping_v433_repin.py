@@ -7,11 +7,10 @@ from pathlib import Path
 import pytest
 
 from scripts.verify_clicshopping_v433_repin import (
-    APP,
     HISTORICAL,
     NEW_PAGE,
     NEW_PAGE_SHA,
-    REPinned,
+    REPINNED,
     dispatch_actions,
     git_blob_sha,
     source_bytes,
@@ -29,7 +28,7 @@ def test_repin_metadata_preserves_historical_dev_freeze() -> None:
     historical = json.loads((PACKAGE / "source-inventory.json").read_text())
     assert manifest["historical_dev_pin"] == HISTORICAL
     assert historical["upstream"]["commit"] == HISTORICAL
-    assert manifest["new_source_pin"] == REPinned
+    assert manifest["new_source_pin"] == REPINNED
     assert manifest["new_customer_orders_page"]["git_blob_sha"] == NEW_PAGE_SHA
     assert historical["endpoints"]["customerOrders"]["page_source"]["present"] is False
     assert not manifest["source_verification"]["heldout_approved"]
@@ -98,7 +97,7 @@ def test_source_transition_rejects_fake_permission_sha(tmp_path: Path) -> None:
     historic["endpoints"]["customerOrders"]["permission_source"][
         "git_blob_sha"
     ] = "0" * 40
-    with pytest.raises(ValueError, match="historical source matrix"):
+    with pytest.raises(ValueError, match="historical permission/page source identity drift"):
         verify(tmp_path, manifest, historic)
 
 
