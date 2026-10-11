@@ -13,10 +13,10 @@ Developer가 2분 안에 다음 내용을 이해할 수 있어야 합니다:
 The primary call to action is:
 
 ```bash
-pip install "schemarouter==0.14.0"
+pip install "schemarouter==0.17.0"
 ```
 
-일반 설치에서는 `pip install schemarouter`가 최신 안정 버전을 설치합니다. 공개 데모의 재현성을 위해 출시 안내 예제는 `0.14.0`으로 버전을 고정합니다.
+일반 설치에서는 `pip install schemarouter`가 최신 안정 버전을 설치합니다. 공개 데모의 재현성을 위해 출시 안내 예제는 현재 공개 안정 버전인 `0.17.0`으로 고정해 재현 가능성을 유지합니다.
 
 Repository: <https://github.com/JDeun/SchemaRouter>
 
@@ -30,7 +30,7 @@ Runnable examples: <https://github.com/JDeun/SchemaRouter/tree/main/examples>
 
 ### Stable product
 
-- 안정화된 릴리스: `0.14.0`, 베타 / 1.0 이전 버전;
+- 안정화된 릴리스: `0.17.0`, 베타 / 1.0 이전 버전;
 - Python 3.10~3.14는 릴리스 차단 조건에 해당하는 CI 검증 대상;
 - MCP, OpenAPI, OPTIMADE, GraphQL, OData, OpenRPC/JSON-RPC, Python/SDK 바인딩,
   LangChain/LangGraph, LlamaIndex에서 타입 기반 수집·실행 경로를 지원;
@@ -236,6 +236,49 @@ python examples/llamaindex_quickstart.py
 
 ## Channel playbooks
 
+### GeekNews / Show GN (첫 게시 채널)
+
+2026-10-11 기준 첫 공개 채널은 GeekNews Show GN(#662)입니다. Hacker News는 보류합니다.
+계정은 2026-10-07에 생성됐고, GeekNews는 가입한 지 **일주일이 지나야 링크를
+등록**할 수 있습니다. 따라서 **2026-10-14는 등록 가능 여부를 확인할 최초 시점**이지,
+계정 권한을 이미 확인했다는 뜻은 아닙니다. 실제 최종 문안 검토와 게시는 관리자가
+직접 수행하며 자동으로 홍보 글을 등록하지 않습니다.
+
+공식 규칙:
+- <https://news.hada.io/guidelines>
+- <https://news.hada.io/blog/show>
+
+**게시 제목 초안** (게시 타입으로 `Show`를 선택하면 `Show GN:` 접두사가 자동 표시됩니다):
+
+> SchemaRouter - LLM 에이전트를 위한 타입 기반 도구 검색 및 실행 경계
+
+**Show GN 설명문 초안 — 관리자 검토 필요**:
+
+> 여러 MCP 서버, OpenAPI와 Python 도구를 에이전트에 연결하다 보면
+> 필요한 도구를 검색하는 문제와 실제 실행 권한을 확인하는 문제가 혼동되기 쉽습니다.
+> 이 문제를 분리하려고 SchemaRouter라는 Python 오픈소스를 만들었습니다.
+>
+> SchemaRouter는 등록된 기능의 입력·출력 스키마를 기반으로 필요한 후보와 필드를
+> 제한적으로 검색하고, 실제 도구 호출은 로컬 정책·스키마 검증·신뢰된 바인딩을 통해
+> 실행합니다. LangChain/LangGraph/LlamaIndex를 대체하는 에이전트 프레임워크가
+> 아니라 그 아래에서 조합할 수 있는 계층입니다.
+>
+> `pip install schemarouter==0.17.0`으로 설치할 수 있고,
+> 저장소의 `examples/context_reduction_demo.py`에서 API 키 없이
+> 40개 도구 카탈로그의 전체 노출과 Top-3 검색을 비교해 볼 수 있습니다.
+> 현재 공개된 벤치마크는 제한된 통제 실험이며, 광범위한 일반화 검증은 진행 중입니다.
+>
+> 실제 에이전트 시스템에 연결할 때 가장 불편한 부분, 지원이 부족한 프로토콜,
+> 도구 검색과 실행 권한의 분리에 대한 의견을 듣고 싶습니다.
+
+**게시 링크:** <https://github.com/JDeun/SchemaRouter> — 소개용 랜딩페이지가 아닌
+실행 가능한 저장소를 직접 연결합니다. 안정 릴리스와 빠른 시작은 보조 링크로 안내합니다.
+
+**게시 전 확인:** 계정 등록 권한, 당일 Show 규칙, 고정 버전 설치/무가입 데모,
+관리자 최종 승인, 사전 채택 지표 스냅샷, 동일 프로젝트 기존 게시 여부를
+확인합니다. Upvote 요청·문구 복제 게시·DEV 결과의 독립 검증 오인은 금지합니다.
+실제 게시 URL과 UTC 시각 없이 이슈 #662를 완료로 처리하지 않습니다.
+
 ### Hacker News / Show HN
 
 > **2026년 게시 유의 사항:** Hacker News는 제출자가 HN 게시글과 댓글을 직접 작성하도록 요구하며 LLM이 생성하거나 수정한 문구를 그대로 게시하지 않도록 안내하고 있습니다. 일반적인 커뮤니티 참여 이력이 부족한 계정에는 Show HN 게시가 일시적으로 제한될 수도 있습니다. 제출 전 공식 Show HN 및 사이트 지침을 다시 읽고 관리자의 계정이 게시 가능한지 확인하세요. 아래 초안은 내부 검토용 항목으로만 취급하고 Hacker News에 복사해 게시하지 마세요.
@@ -323,7 +366,7 @@ Draft:
 >
 > 연구 주장은 의도적으로 제한했습니다. 23개 작업을 대상으로 한 Qwen3-0.6B 통제 실험에서는 제한된 SchemaRouter 조건이 강한 결과를 보였지만, 별도의 구조적 K3 대 K5 승격 검증은 실패했으며 부정적인 결과도 공개하고 있습니다.
 >
-> 안정화된 릴리스: 0.14.0
+> 안정화된 릴리스: 0.17.0
 > GitHub: https://github.com/JDeun/SchemaRouter
 > 검증·근거: https://jdeun.github.io/SchemaRouter/project/trust-and-evidence/
 >
@@ -382,7 +425,7 @@ Suggested format:
 이미 준비한 자료:
 
 - 공개 도입 현황 점검표
-- 안정화된 0.13.0 릴리스
+- 안정화된 0.17.0 릴리스
 - 실행 가능한 예제
 - 신뢰성·검증 근거 안내 페이지
 - 기여자 로드맵과 이슈 템플릿
@@ -391,10 +434,12 @@ Suggested format:
 
 ### 1단계 — 구체적인 기술 피드백 확보
 
-1. Show HN 게시
-2. 기술적 피드백에 응답
-3. 실제 문제를 이슈·문서 수정으로 전환
-4. 게시 URL·날짜 및 다음 점검표 기록
+1. 계정 등록 자격과 최종 문안을 확인한 뒤 GeekNews Show GN에 1회 게시(#662)
+2. 실질적인 기술적 질문과 피드백에 응답
+3. 확인된 연동 문제를 이슈·문서 수정으로 전환
+4. 실제 Show GN URL·UTC 시각과 게시 전/24시간/7일 점검표 기록
+
+Hacker News는 보류하며, Reddit·커뮤니티 후속 게시(#663)는 첫 GeekNews 피드백 검토 이후 진행합니다.
 
 반응이 적다는 이유만으로 여러 곳에 재게시하지 않습니다.
 
