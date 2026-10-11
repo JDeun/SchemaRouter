@@ -39,5 +39,5 @@ jobs:
       - name: Execute offline no-model parser regression tests
         working-directory: schemarouter
         run: |
-          python -m pip install "pytest>=8,<10"
+          python -m pip install "pytest>=8,<10" "pytest-asyncio>=0.23,<2"
           python -m pytest -q tests/test_verify_clicshopping_v433_upstream.py
