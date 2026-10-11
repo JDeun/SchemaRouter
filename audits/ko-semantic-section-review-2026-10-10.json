@@ -41,9 +41,9 @@
       "path": "guides/enterprise-data-onboarding.md",
       "section": 1,
       "en_blob": "28a31836cd100eb1d8477d951bf6d1ac452114ba",
-      "ko_blob": "15e37dc7c1a7869e33db2d1e1627ec50db8751eb",
+      "ko_blob": "a84181befd9f35a723cbb817e131a982539f4f87",
       "decision": "meaning-preserved",
-      "evidence": "Korean states SchemaRouter is not an identity provider, credential store or query proxy"
+      "evidence": "Korean expressly preserves local-host identity/credential/query-proxy boundaries and now describes registration of internal data systems only, matching English scope."
     },
     {
       "path": "guides/execution-policy.md",
@@ -239,5 +239,11 @@
     ],
     "boundary": "This re-pinning does not establish independent sentence-level equivalence for 147 pages."
   },
-  "translation_leakage_followup_2026_10_10": "Additional full paragraphs corrected: BGE ColBERT no posthoc thresholds; closed-set ranker agreement not capability membership; no tuning on failed rows; fixed unopened confirmation. Human independent 147-pair attestation remains outstanding."
+  "translation_leakage_followup_2026_10_10": "Additional full paragraphs corrected: BGE ColBERT no posthoc thresholds; closed-set ranker agreement not capability membership; no tuning on failed rows; fixed unopened confirmation. Human independent 147-pair attestation remains outstanding.",
+  "amendment_2026_10_11": {
+    "scope": "Only guides/enterprise-data-onboarding.md section 1 Korean source-blob repinned after correcting overbroad internal/external-system claim.",
+    "en_blob_unchanged": "28a31836cd100eb1d8477d951bf6d1ac452114ba",
+    "ko_blob": "a84181befd9f35a723cbb817e131a982539f4f87",
+    "limitation": "This targeted correction is not an independent review of all 147 bilingual pages."
+  }
 }
