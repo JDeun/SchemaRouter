@@ -1,0 +1,66 @@
+name: Research 0.14 Recovery Failure Triage (Unscored)
+
+on:
+  pull_request:
+    paths:
+      - "scripts/triage_research_014_recovery.py"
+      - "tests/test_triage_research_014_recovery.py"
+      - ".github/workflows/research-0.14-recovery-triage.yml"
+  workflow_run:
+    workflows:
+      - Research 0.14 Held-out Shard Recovery
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        type: string
+        required: true
+        description: Pinned recovery workflow run to audit (read-only)
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  tests:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - run: python -m pip install pytest
+      - run: python -m pytest -q tests/test_triage_research_014_recovery.py
+
+  snapshot:
+    if: >-
+      github.repository == 'JDeun/SchemaRouter' &&
+      (github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - name: Classify GitHub runner/evaluator stage evidence; no scored data
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          RECOVERY_RUN: ${{ github.event.workflow_run.id || inputs.run_id }}
+        run: |
+          python scripts/triage_research_014_recovery.py \
+            --run-id "$RECOVERY_RUN" \
+            --out artifacts/research-014-recovery-failure-triage.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "research-014-recovery-triage-${{ github.run_id }}"
+          path: artifacts/research-014-recovery-failure-triage.json
+          if-no-files-found: error
+          retention-days: 30
