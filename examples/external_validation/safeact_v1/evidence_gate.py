@@ -155,9 +155,21 @@ class EvidenceGate:
         if action != self.contract.action:
             return GateDecision(False, ("action_mismatch",))
         missing: list[str] = []
-        for argument, expected_record in self.contract.argument_bindings:
+        for argument, declared_record in self.contract.argument_bindings:
+            expected_record = declared_record
+            if declared_record.startswith("$action."):
+                # Resolve only from actual proposed action arguments. Compare
+                # IDs, not the literal "$action.field" expression string.
+                action_field = declared_record[8:]
+                bound = args.get(action_field) if args is not None else None
+                if not isinstance(bound, str) or not bound:
+                    missing.append(f"action_record_argument_missing:{action_field}")
+                    continue
+                expected_record = bound
             if args is None or args.get(argument) != expected_record:
-                missing.append(f"argument_binding_mismatch:{argument}:{expected_record}")
+                missing.append(
+                    f"argument_binding_mismatch:{argument}:{declared_record}"
+                )
         for tool, record_id, fields in self.contract.required_observations:
             if record_id.startswith("$action."):
                 action_field = record_id[8:]
