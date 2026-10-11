@@ -87,6 +87,8 @@ def test_postrun_counts_never_conflate_attempts_with_executions(
     assert audit["authorized_action_dispatches"] == 2
     assert audit["gate_denial_rate_per_model_attempt"] == 0
     assert result["gate_denial_metric_is_not_false_refusal"] is True
+    assert result["action_effect_boundary"] == "normalized_record_only"
+    assert result["physical_action_executions_measured"] is False
 
 
 def test_rejects_inconsistent_official_score(tmp_path: Path, monkeypatch) -> None:
