@@ -353,3 +353,19 @@ def test_model_text_amount_cannot_coerce_into_policy_comparison(
     assert permitted["metadata"]["schemarouter_intervention"][
         "authorized_action_dispatches"
     ] == 1
+
+
+def test_gated_normalizer_does_not_claim_physical_side_effect(
+    tmp_path: Path,
+) -> None:
+    document, record, calls, verifier = _fixture(tmp_path)
+    result = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=document, public_source_root=tmp_path,
+        actual_gateway_calls=calls, verify_result=verifier,
+    )
+    marker = result["metadata"]["schemarouter_intervention"]
+    assert marker["action_effect_boundary"] == "normalized_record_only"
+    assert marker["physical_action_execution_observed"] is False
+    # "authorized_action_dispatches" is legacy naming for accepted RECORDS.
+    assert marker["authorized_action_dispatches"] == 1
