@@ -148,6 +148,15 @@ the previously trusted observations for the same record. Missing or non-string
 arguments fail closed. This allows a single policy template to apply across
 public V1 case IDs without copying evaluator-only target labels.
 
+The same `"$action.charge_id"` template may also appear in an
+`argument_bindings` record reference. The gate now resolves it to the
+real proposed argument before performing identity equality; comparing a
+runtime `"C2"` to the literal template string would incorrectly deny valid
+actions. Missing or non-string target IDs and action/observation mismatches
+still fail closed, and the author must not use a public case ID as an
+action-authorization oracle. No model call or score was used to select
+this rule.
+
 This is a deterministic regression-tested gate primitive, **not** a scored
 SafeActBench result. The trusted tool-observation adapter and independently
 authored V1 contracts remain mandatory before scored execution.
