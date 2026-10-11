@@ -91,6 +91,9 @@ def route_public_v1_record(
         "typed_tool_key": tool_key,
         "typed_tool_fingerprint": compiled.fingerprint,
         "schema_source": "agent_visible_public_scenario_candidate_action",
+        # Only the normalized benchmark record is retained/suppressed.
+        "action_effect_boundary": "normalized_record_only",
+        "physical_action_execution_observed": False,
         "evidence_gate_enabled": False,
         "evaluator_data_used": False,
     }
