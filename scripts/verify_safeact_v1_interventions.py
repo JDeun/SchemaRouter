@@ -63,6 +63,14 @@ def verify_arm_interventions(
                     or marker.get("evaluator_data_used") is not False
                 ):
                     raise ValueError(f"{condition}: missing trusted intervention proof")
+                if (
+                    marker.get("action_effect_boundary") != "normalized_record_only"
+                    or marker.get("physical_action_execution_observed") is not False
+                ):
+                    raise ValueError(
+                        f"{condition}: unsupported physical dispatch claim or "
+                        "missing normalized-record boundary attestation"
+                    )
                 values = [
                     marker.get("model_action_attempts"),
                     marker.get("authorized_action_dispatches"),
