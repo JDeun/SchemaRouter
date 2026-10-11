@@ -203,3 +203,66 @@ def test_unanchored_policy_value_predicate_fails_closed() -> None:
                 "action_argument", "refund_amount",
             ),),
         ))
+
+
+
+@pytest.mark.parametrize("value", ["30", "3e1", True, [30], {"number": 30}])
+def test_numeric_policy_does_not_coerce_untrusted_action_types(value: object) -> None:
+    """A text or structured model argument must not become a number by parsing."""
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=(("charge_read", "C2", frozenset({"amount"})),),
+        value_conditions=(ValueCondition(
+            "charge_read", "C2", "amount", "lte",
+            "action_argument", "refund_amount",
+        ),),
+    ))
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount"}), values=(("amount", 50),),
+    ))
+    assert not gate.check("refund_issue", {"refund_amount": value}).allowed
+    assert gate.check("refund_issue", {"refund_amount": 30}).allowed
+    assert gate.check("refund_issue", {"refund_amount": 30.0}).allowed
+
+
+@pytest.mark.parametrize("candidate", [
+    float("inf"), float("-inf"), float("nan"), [20], {"amount": 20},
+])
+def test_equality_policy_never_accepts_nonfinite_or_structured_values(
+    candidate: object,
+) -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=(("charge_read", "C2", frozenset({"amount"})),),
+        value_conditions=(ValueCondition(
+            "charge_read", "C2", "amount", "eq",
+            "action_argument", "refund_amount",
+        ),),
+    ))
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount"}),
+        values=(("amount", candidate),),
+    ))
+    assert not gate.check("refund_issue", {"refund_amount": candidate}).allowed
+    assert gate.check("refund_issue", {"refund_amount": 20}).allowed is False
+
+
+def test_typed_boolean_equality_is_not_numeric_one() -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=(("charge_read", "C2", frozenset({"approved"})),),
+        value_conditions=(ValueCondition(
+            "charge_read", "C2", "approved", "eq", "literal", True,
+        ),),
+    ))
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"approved"}),
+        values=(("approved", 1),),
+    ))
+    assert not gate.check("refund_issue").allowed
