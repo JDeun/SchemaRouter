@@ -189,7 +189,7 @@ def test_blind_view_contains_no_arm_session_case_or_execution(fixture) -> None:
     assert set(private_items) == {
         entry["blind_id"] for entry in public["entries"]
     }
-    assert set(private_items.values().__iter__().__next__()) == {
+    assert set(next(iter(private_items.values()))) == {
         "blind_id", "case_id", "seed_id", "arm", "execution_id", "session_id",
     }
     assert public["plan_sha256"] == private["plan_sha256"] == digest(plan)
