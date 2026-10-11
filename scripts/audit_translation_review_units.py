@@ -136,7 +136,9 @@ def audit(en_root: Path, ko_root: Path) -> dict[str, object]:
         "paired_pages": len(pages),
         "missing_korean_pages": sorted(p.as_posix() for p in en_paths - ko_paths),
         "orphan_korean_pages": sorted(p.as_posix() for p in ko_paths - en_paths),
-        "structurally_aligned_pages": sum(bool(p["aligned_by_structure"]) for p in pages),
+        "structurally_aligned_pages": sum(
+            bool(page["aligned_by_structure"]) for page in pages
+        ),
         "total_en_units": sum(len(p["en_units"]) for p in pages),
         "total_ko_units": sum(len(p["ko_units"]) for p in pages),
         "advisory_prohibition_risks": risks,
@@ -148,7 +150,9 @@ def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--en-root", type=Path, default=ROOT / "docs")
     p.add_argument("--ko-root", type=Path, default=ROOT / "docs_ko")
-    p.add_argument("--json-out", type=Path, default=Path("translation-review-units.json"))
+    p.add_argument(
+        "--json-out", type=Path, default=Path("translation-review-units.json")
+    )
     args = p.parse_args()
     report = audit(args.en_root, args.ko_root)
     args.json_out.write_text(
