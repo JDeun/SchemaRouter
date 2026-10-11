@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+import math
 from pathlib import Path
 from typing import Any
 
@@ -138,6 +139,7 @@ class TrustedEvidenceSession:
                     or not isinstance(pair[0], str)
                     or pair[0] not in verified.fields
                     or type(pair[1]) not in {str, bool, int, float}
+                    or (type(pair[1]) is float and not math.isfinite(pair[1]))
                     for pair in verified.values
                 )
                 or len({name for name, _ in verified.values})
