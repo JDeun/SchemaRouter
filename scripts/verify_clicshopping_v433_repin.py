@@ -18,7 +18,7 @@ from scripts.validate_clicshopping_v433_inventory import validate_inventory
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "benchmarks/external-validation-clicshopping-v433"
 HISTORICAL = "3bac851759234a4babb49d3f351e472cd9e0f31f"
-REPinned = "8ada7f1f392f3dd2800e825dac8d245dfd53944a"
+REPINNED = "8ada7f1f392f3dd2800e825dac8d245dfd53944a"
 APP = "Core/ClicShopping/Apps/Tools/MCP/"
 NEW_PAGE = APP + "Sites/Shop/Pages/CustomerOrders/CustomerOrders.php"
 NEW_README = APP + "Sites/Shop/Pages/CustomerOrders/readme.md"
@@ -68,7 +68,7 @@ def verify(
         raise ValueError("historical source matrix changed")
     if (plan.get("schema_version") != 1
             or plan.get("historical_dev_pin") != HISTORICAL
-            or plan.get("new_source_pin") != REPinned
+            or plan.get("new_source_pin") != REPINNED
             or plan.get("upstream_repository") != "ClicShopping/ClicShopping"
             or plan.get("upstream_ref") != "version4.33"
             or historic["upstream"]["commit"] != HISTORICAL):
@@ -85,11 +85,6 @@ def verify(
     }
     if boundary != expected_boundary:
         raise ValueError("source-only evaluation boundary changed")
-    head = subprocess.check_output(
-        ["git", "-C", str(upstream_root), "rev-parse", "HEAD"], text=True
-    ).strip()
-    if head != REPinned:
-        raise ValueError("source checkout is not the maintainer-pinned commit")
     expected_unchanged: dict[str, str] = {}
     for endpoint in historic["endpoints"].values():
         permission = endpoint["permission_source"]
@@ -99,6 +94,11 @@ def verify(
             expected_unchanged[page["path"]] = page["git_blob_sha"]
     if plan.get("unchanged_git_blobs") != expected_unchanged:
         raise ValueError("historical permission/page source identity drift")
+    head = subprocess.check_output(
+        ["git", "-C", str(upstream_root), "rev-parse", "HEAD"], text=True
+    ).strip()
+    if head != REPINNED:
+        raise ValueError("source checkout is not the maintainer-pinned commit")
     for path, sha in expected_unchanged.items():
         source_bytes(upstream_root, path, sha)
 
