@@ -342,3 +342,62 @@ def test_semantic_denial_does_not_expose_observed_private_values() -> None:
     assert "private-charge-77" not in str(info.value)
     assert "card-private-source" not in str(info.value)
     assert "card-different" not in str(info.value)
+
+
+def test_failed_repeat_read_revokes_only_matching_record_evidence() -> None:
+    gate = _gate()
+    gate.observe(Observation("charge_read", "C2", frozenset({"amount", "owner"})))
+    gate.observe(Observation("charge_read", "C3", frozenset({"amount", "owner"})))
+    assert gate.check("refund_issue").allowed
+
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount", "owner"}), successful=False,
+    ))
+    assert not gate.check("refund_issue").allowed
+    # A failure for record C2 must not invalidate a different record.
+    assert any(item.record_id == "C3" for item in gate._observations)
+    gate.observe(Observation("charge_read", "C2", frozenset({"amount", "owner"})))
+    assert gate.check("refund_issue").allowed
+
+
+def test_failed_tool_revocation_preserves_unrelated_verified_tool() -> None:
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=(
+            ("charge_read", "C2", frozenset({"amount"})),
+            ("owner_read", "C2", frozenset({"owner"})),
+        ),
+    ))
+    gate.observe(Observation("charge_read", "C2", frozenset({"amount"})))
+    gate.observe(Observation("owner_read", "C2", frozenset({"owner"})))
+    assert gate.check("refund_issue").allowed
+
+    gate.invalidate_tool("charge_read")
+    assert not gate.check("refund_issue").allowed
+    assert any(item.tool == "owner_read" for item in gate._observations)
+    gate.observe(Observation("charge_read", "C2", frozenset({"amount"})))
+    assert gate.check("refund_issue").allowed
+
+
+def test_semantic_fact_must_belong_to_verifier_declared_fields() -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=(("charge_read", "C2", frozenset({"amount"})),),
+        value_conditions=(ValueCondition(
+            "charge_read", "C2", "amount", "lte",
+            "action_argument", "refund_amount",
+        ),),
+    ))
+    # A complete but value-free observation satisfies only field presence.
+    gate.observe(Observation("charge_read", "C2", frozenset({"amount"})))
+    # An unrelated field declaration cannot smuggle a numeric value.
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"owner"}), values=(("amount", 30),),
+    ))
+    assert not gate.check("refund_issue", {"refund_amount": 20}).allowed
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount"}), values=(("amount", 30),),
+    ))
+    assert gate.check("refund_issue", {"refund_amount": 20}).allowed
