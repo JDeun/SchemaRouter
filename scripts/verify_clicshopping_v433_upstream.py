@@ -72,7 +72,11 @@ def audit(upstream_root: Path, inventory: dict) -> dict:
         nonlocal read_count
         path = str(entry["path"])
         candidate = Path(path)
-        if candidate.is_absolute() or ".." in candidate.parts or not path.startswith(str(APP_ROOT) + "/"):
+        if (
+            candidate.is_absolute()
+            or ".." in candidate.parts
+            or not path.startswith(str(APP_ROOT) + "/")
+        ):
             raise ValueError(f"unsafe upstream path: {path}")
         target = upstream_root / candidate
         if missing_allowed:
@@ -125,7 +129,10 @@ def audit(upstream_root: Path, inventory: dict) -> dict:
         "files_checked": checked,
         "verified_source_count": read_count,
         "historical_noncallable_endpoint": "customerOrders",
-        "note": "This does not establish runtime URL reachability or independent benchmark validity.",
+        "note": (
+            "This does not establish runtime URL reachability "
+            "or independent benchmark validity."
+        ),
     }
 
 
