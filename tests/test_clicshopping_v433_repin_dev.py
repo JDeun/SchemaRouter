@@ -7,7 +7,10 @@ import pytest
 
 from scripts.run_clicshopping_v433_dev import PACKAGE, load_json
 from scripts.run_clicshopping_v433_repin_dev import (
-    eligible_catalog, pin_new_inventory, run, validate_repin_cases,
+    eligible_catalog,
+    pin_new_inventory,
+    run,
+    validate_repin_cases,
 )
 
 
@@ -43,14 +46,19 @@ def test_all_new_queries_are_valid_visible_development_not_heldout() -> None:
     }
 
 
-@pytest.mark.parametrize("change", [
-    lambda d: d.update(independent_cases=True),
-    lambda d: d.update(top_k=100),
-    lambda d: d.update(live_requests=1),
-    lambda d: d["cases"][0].update(id="clic433-001"),
-    lambda d: d["cases"][0].update(required_routes=["customerOrders.erase_all"]),
-    lambda d: d["counts"].update(total=9),
-])
+@pytest.mark.parametrize(
+    "change",
+    [
+        lambda d: d.update(independent_cases=True),
+        lambda d: d.update(top_k=100),
+        lambda d: d.update(live_requests=1),
+        lambda d: d["cases"][0].update(id="clic433-001"),
+        lambda d: d["cases"][0].update(
+            required_routes=["customerOrders.erase_all"]
+        ),
+        lambda d: d["counts"].update(total=9),
+    ],
+)
 def test_unapproved_protocol_or_case_changes_fail_closed(change) -> None:
     old, transition, prior, fresh = inputs()
     modified = deepcopy(fresh)
