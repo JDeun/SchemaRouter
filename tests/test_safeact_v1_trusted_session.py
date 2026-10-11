@@ -277,3 +277,25 @@ def test_verified_source_factory_rejects_unpinned_or_replaced_policy(
             execute_action=lambda action, args: invoked.append("action"),
         )
     assert invoked == []
+
+
+
+@pytest.mark.parametrize("bad_value", [float("nan"), float("inf"), float("-inf")])
+def test_trusted_gateway_rejects_nonfinite_typed_evidence_before_authorization(
+    bad_value: float,
+) -> None:
+    session = _session(
+        verify=lambda tool, args, result: VerifiedToolEvidence(
+            record_id="C2",
+            fields=frozenset({"amount", "owner"}),
+            values=(("amount", bad_value),),
+        ),
+    )
+    with pytest.raises(ValueError, match="malformed typed values"):
+        session.record_trusted_result(
+            "charge_read", {"charge_id": "C2"}, {"amount": bad_value},
+        )
+    assert session.diagnostics()["verified_observations"] == 0
+    with pytest.raises(PermissionError, match="evidence incomplete"):
+        session.execute_action("refund_issue", {"charge_id": "C2"})
+    assert session.diagnostics()["action_dispatches"] == 0
