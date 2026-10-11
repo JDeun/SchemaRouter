@@ -148,3 +148,41 @@ def test_loader_rejects_unsafe_or_ambiguous_value_conditions(bad: dict) -> None:
     doc["contracts"][0]["value_conditions"] = [predicate]
     with pytest.raises(ValueError, match="value condition"):
         build_gate(doc, "refund_issue")
+
+
+def test_loader_resolves_dynamic_action_argument_binding_consistently() -> None:
+    document = _document()
+    contract = document["contracts"][0]
+    contract["required_observations"][0]["record_id"] = "$action.charge_id"
+    contract["argument_bindings"] = [{
+        "argument": "customer_id", "record_id": "$action.charge_id",
+    }]
+    gate = build_gate(document, "refund_issue")
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount", "owner"}),
+    ))
+    assert gate.check(
+        "refund_issue", {"charge_id": "C2", "customer_id": "C2"}
+    ).allowed
+    assert not gate.check(
+        "refund_issue", {"charge_id": "C2", "customer_id": "C1"}
+    ).allowed
+    assert not gate.check(
+        "refund_issue", {"charge_id": "C3", "customer_id": "C3"}
+    ).allowed
+
+
+@pytest.mark.parametrize("invalid", [
+    "$action.", "$action.invalid-name", "$action.other.field",
+])
+def test_loader_rejects_malformed_dynamic_action_record_binding(
+    invalid: str,
+) -> None:
+    document = _document()
+    contract = document["contracts"][0]
+    contract["required_observations"][0]["record_id"] = invalid
+    contract["argument_bindings"] = [
+        {"argument": "charge_id", "record_id": invalid},
+    ]
+    with pytest.raises(ValueError, match="malformed action-bound"):
+        build_gate(document, "refund_issue")
