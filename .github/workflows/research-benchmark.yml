@@ -60,7 +60,7 @@ jobs:
           python scripts/render_benchmark_history.py \
             artifacts/deterministic/report.json \
             --output artifacts/deterministic/history.html
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: benchmark-deterministic-full-${{ github.run_id }}
           path: artifacts/deterministic/
@@ -144,7 +144,7 @@ jobs:
             --json-out artifacts/laya/calibration-no-route.json \
             --csv-out artifacts/laya/calibration-no-route.csv \
             --html-out artifacts/laya/calibration-no-route.html
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: benchmark-laya-full-cpu-${{ github.run_id }}
@@ -198,7 +198,7 @@ jobs:
             --json-out "artifacts/semantic-recall/top-${K}/calibration.json" \
             --csv-out "artifacts/semantic-recall/top-${K}/calibration.csv" \
             --html-out "artifacts/semantic-recall/top-${K}/calibration.html"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: benchmark-semantic-recall-calibration-k${{ matrix.candidate_recall_limit }}-${{ github.run_id }}
@@ -242,7 +242,7 @@ jobs:
             --json-out artifacts/semantic-recall/heldout/report.json \
             --csv-out artifacts/semantic-recall/heldout/rows.csv \
             --html-out artifacts/semantic-recall/heldout/report.html
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: benchmark-semantic-recall-heldout-${{ github.run_id }}
@@ -287,7 +287,7 @@ jobs:
             --json-out "artifacts/capability-fit/sim-${T}/report.json" \
             --csv-out "artifacts/capability-fit/sim-${T}/rows.csv" \
             --html-out "artifacts/capability-fit/sim-${T}/report.html"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: benchmark-capability-fit-sim-${{ matrix.fit_similarity }}-${{ github.run_id }}
@@ -325,7 +325,7 @@ jobs:
             --json-out artifacts/capability-fit/heldout-v3/report.json \
             --csv-out artifacts/capability-fit/heldout-v3/rows.csv \
             --html-out artifacts/capability-fit/heldout-v3/report.html
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: benchmark-capability-fit-v3-heldout-${{ github.run_id }}
@@ -372,7 +372,7 @@ jobs:
             --json-out "${OUT}/report.json" \
             --csv-out "${OUT}/rows.csv" \
             --html-out "${OUT}/report.html"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: endpoint-disambiguation-calibration-margin-${{ matrix.endpoint_margin }}-${{ github.run_id }}
@@ -412,7 +412,7 @@ jobs:
             --json-out artifacts/endpoint-disambiguation/heldout-v4/report.json \
             --csv-out artifacts/endpoint-disambiguation/heldout-v4/rows.csv \
             --html-out artifacts/endpoint-disambiguation/heldout-v4/report.html
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: endpoint-disambiguation-v4-heldout-${{ github.run_id }}
@@ -483,7 +483,7 @@ jobs:
             --json-out "${OUT}/report.json" \
             --csv-out "${OUT}/rows.csv" \
             --html-out "${OUT}/report.html"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: benchmark-operation-fit-sim-${{ matrix.operation_similarity }}-${{ github.run_id }}

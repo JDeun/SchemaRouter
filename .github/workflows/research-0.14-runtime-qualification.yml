@@ -125,7 +125,7 @@ jobs:
                   + "\n"
               )
           PY
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: "qualification-corpus-${{ github.run_id }}"
           path: |
@@ -233,7 +233,7 @@ jobs:
               revision=os.environ["QUAL_REV"],
           )
           PY
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
           path: .
@@ -241,7 +241,7 @@ jobs:
         run: |
           mkdir -p artifacts/qualification-shard
           python -u scripts/evaluate_agent_utility_v8_qualification.py             --corpus artifacts/qualification/qualification-corpus.json             --candidate "HuggingFaceTB/SmolLM3-3B"             --task-ids "${{ matrix.task_ids }}"             --out "artifacts/qualification-shard/smollm3-${{ matrix.job_id }}.json"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: "qualification-smollm3-${{ matrix.job_id }}-${{ github.run_id }}"
@@ -264,11 +264,11 @@ jobs:
         with:
           python-version: "3.12.14"
       - run: pip install -e .
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
           path: .
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
         with:
           pattern: "qualification-smollm3-*-${{ github.run_id }}"
           path: artifacts/smollm3-shards
@@ -285,7 +285,7 @@ jobs:
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
               handle.write("qualified=" + str(bool(data["qualified"])).lower() + "\n")
           PY
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: "qualification-evidence-smollm3-${{ github.run_id }}"
           path: artifacts/smollm3-evidence.json
@@ -390,14 +390,14 @@ jobs:
               revision=os.environ["QUAL_REV"],
           )
           PY
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
           path: .
       - run: |
           mkdir -p artifacts/qualification-shard
           python -u scripts/evaluate_agent_utility_v8_qualification.py             --corpus artifacts/qualification/qualification-corpus.json             --candidate "Qwen/Qwen3-4B"             --task-ids "${{ matrix.task_ids }}"             --out "artifacts/qualification-shard/qwen4-${{ matrix.job_id }}.json"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: "qualification-qwen4-${{ matrix.job_id }}-${{ github.run_id }}"
@@ -420,11 +420,11 @@ jobs:
         with:
           python-version: "3.12.14"
       - run: pip install -e .
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
           path: .
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
         with:
           pattern: "qualification-qwen4-*-${{ github.run_id }}"
           path: artifacts/qwen4-shards
@@ -440,7 +440,7 @@ jobs:
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
               handle.write("qualified=" + str(bool(data["qualified"])).lower() + "\n")
           PY
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: "qualification-evidence-qwen4-${{ github.run_id }}"
           path: artifacts/qwen4-evidence.json
@@ -545,14 +545,14 @@ jobs:
               revision=os.environ["QUAL_REV"],
           )
           PY
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
           path: .
       - run: |
           mkdir -p artifacts/qualification-shard
           python -u scripts/evaluate_agent_utility_v8_qualification.py             --corpus artifacts/qualification/qualification-corpus.json             --candidate "Qwen/Qwen3-8B"             --task-ids "${{ matrix.task_ids }}"             --out "artifacts/qualification-shard/qwen8-${{ matrix.job_id }}.json"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: "qualification-qwen8-${{ matrix.job_id }}-${{ github.run_id }}"
@@ -575,11 +575,11 @@ jobs:
         with:
           python-version: "3.12.14"
       - run: pip install -e .
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
           path: .
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
         with:
           pattern: "qualification-qwen8-*-${{ github.run_id }}"
           path: artifacts/qwen8-shards
@@ -595,7 +595,7 @@ jobs:
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
               handle.write("qualified=" + str(bool(data["qualified"])).lower() + "\n")
           PY
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: "qualification-evidence-qwen8-${{ github.run_id }}"
           path: artifacts/qwen8-evidence.json
@@ -615,18 +615,18 @@ jobs:
         with:
           python-version: "3.12.14"
       - run: pip install -e .
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
           path: .
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
         with:
           pattern: "qualification-evidence-*-${{ github.run_id }}"
           path: artifacts/evidence
       - name: Apply frozen ordered selector
         run: |
           python scripts/select_agent_utility_v8_runtime.py             --corpus artifacts/qualification/qualification-corpus.json             --evidence-dir artifacts/evidence             --out artifacts/qualification-selection.json
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: "qualification-selection-${{ github.run_id }}"
           path: |
