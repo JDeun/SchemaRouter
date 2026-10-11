@@ -20,7 +20,11 @@ from scripts.external_validation_servicenow_platform_mcp import (
 def _fixture():
     tools = [
         {"name": "query", "description": "Read ServiceNow rows", "inputSchema": {
-            "type": "object", "properties": {"table": {"type": "string"}, "limit": {"type": "integer"}}
+            "type": "object",
+            "properties": {
+                "table": {"type": "string"},
+                "limit": {"type": "integer"},
+            },
         }},
         {"name": "describe", "description": "Describe metadata", "inputSchema": {
             "type": "object", "properties": {"table": {"type": "string"}}
