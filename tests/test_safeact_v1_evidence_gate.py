@@ -266,3 +266,23 @@ def test_typed_boolean_equality_is_not_numeric_one() -> None:
         values=(("approved", 1),),
     ))
     assert not gate.check("refund_issue").allowed
+
+
+
+@pytest.mark.parametrize("literal", ["30", True, False])
+def test_nonnumeric_order_policy_literal_rejected_during_authoring(
+    literal: object,
+) -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    with pytest.raises(ValueError, match="malformed independent value condition"):
+        EvidenceGate(ActionContract(
+            action="refund_issue",
+            required_observations=(
+                ("charge_read", "C2", frozenset({"amount"})),
+            ),
+            value_conditions=(ValueCondition(
+                "charge_read", "C2", "amount",
+                "lte", "literal", literal,
+            ),),
+        ))
