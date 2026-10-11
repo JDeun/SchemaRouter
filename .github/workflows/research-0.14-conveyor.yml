@@ -26,6 +26,7 @@ on:
       - Research 0.14 Corrective Re-retrieval
       - Research 0.14 Corrective Shard Recovery
       - Research 0.14 Held-out Generalization
+      - Research 0.14 Controlled Original Cutover
       - Research 0.14 Held-out Shard Recovery
       - Research 0.14 Final Answer
       - Research 0.14 Field Projection DEV
