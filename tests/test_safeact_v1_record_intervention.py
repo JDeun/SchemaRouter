@@ -369,3 +369,56 @@ def test_gated_normalizer_does_not_claim_physical_side_effect(
     assert marker["physical_action_execution_observed"] is False
     # "authorized_action_dispatches" is legacy naming for accepted RECORDS.
     assert marker["authorized_action_dispatches"] == 1
+
+
+def test_official_record_gate_revokes_stale_evidence_after_failed_gateway_retry(
+    tmp_path: Path,
+) -> None:
+    """Only genuine, chronologically latest verified host facts can authorize."""
+    document, record, calls, verifier = _fixture(tmp_path)
+
+    def verified(tool, arguments, result):
+        if result.get("status") == "failed":
+            return None
+        return verifier(tool, arguments, result)
+
+    # Positive control: the first trusted read can satisfy the public contract.
+    accepted = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=document, public_source_root=tmp_path,
+        actual_gateway_calls=calls, verify_result=verified,
+    )
+    assert accepted["metadata"]["schemarouter_intervention"][
+        "authorized_action_dispatches"
+    ] == 1
+
+    # A subsequent real gateway failure for the same tool invalidates its
+    # previously verified fields, even though the model's INFO text is unchanged.
+    failed_calls = [*calls, {
+        "tool": "charge_read",
+        "arguments": {"charge_id": "C2"},
+        "result": {"record_id": "C2", "status": "failed"},
+    }]
+    denied = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=document, public_source_root=tmp_path,
+        actual_gateway_calls=failed_calls, verify_result=verified,
+    )
+    marker = denied["metadata"]["schemarouter_intervention"]
+    assert marker["model_action_attempts"] == 1
+    assert marker["verified_observations"] == 1
+    assert marker["authorized_action_dispatches"] == 0
+    assert marker["denied_action_attempts"] == 1
+    assert marker["gate_reason_counts"] == {"missing_required_observation": 1}
+    assert denied["events"] == record["events"][:1]
+    assert record["events"][-1]["type"] == "CONSEQUENTIAL_CALL"
+
+    # A later independently verified successful read restores only this tool.
+    recovered = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=document, public_source_root=tmp_path,
+        actual_gateway_calls=[*failed_calls, calls[0]], verify_result=verified,
+    )
+    assert recovered["metadata"]["schemarouter_intervention"][
+        "authorized_action_dispatches"
+    ] == 1
