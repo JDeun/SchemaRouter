@@ -59,7 +59,9 @@ def triage(api: GitHubAPI, run_id: int) -> dict[str, Any]:
     if marker is None:
         raise ValueError("unfrozen or unknown recovery-run provenance")
     state = str(run.get("status") or "")
-    if state not in {"queued", "in_progress", "pending", "completed", "requested", "waiting"}:
+    if state not in {
+        "queued", "in_progress", "pending", "completed", "requested", "waiting"
+    }:
         raise ValueError("unrecognized GitHub Actions status")
     jobs = latest_jobs(api, run_id)
     if not jobs:
