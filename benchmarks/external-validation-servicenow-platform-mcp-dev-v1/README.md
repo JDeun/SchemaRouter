@@ -90,7 +90,12 @@ tokens, or true task-success/agent latency.
 
 `scripts/external_validation_servicenow_platform_mcp.py` verifies the
 actual canonical SHA-256 of captured native tool objects against
-`tools_sha256`; validates upstream package/version/environment, cardinality
+`tools_sha256` **and separately against the manifest-pinned reference**
+`006045422791939ff603420080e2f759de38a19329eeb0c1b80e264ab4897940`
+(reproduced across two actual pinned-source CI captures). Consequently
+simultaneously altering the captured contracts and their internal hash also
+fails verification. This checks a known source snapshot, not independent
+policy correctness. The scorer validates upstream package/version/environment, cardinality
 and every proposed gold input field; rejects duplicate gold tool/field IDs;
 and makes direct `score()` users pass the same source checks. A green test
 indicates **mechanical source and scoring integrity**, not that a human
