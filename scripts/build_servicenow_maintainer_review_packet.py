@@ -34,10 +34,13 @@ def build(manifest: dict, cases: dict, snapshot: dict) -> str:
         "",
         "**NOT HELD-OUT. No task execution, model, credentials or gold-label changes.**",
         "",
-        f"- Upstream revision: {tick}{manifest['source_revisions']['servicenow_platform_mcp']}{tick}",
+        "- Upstream revision: "
+        + tick + manifest["source_revisions"]["servicenow_platform_mcp"] + tick,
         f"- Captured tool-schema SHA-256: {tick}{snapshot['tools_sha256']}{tick}",
-        f"- MCP package: {tick}{snapshot['mcp_tool_package']}{tick}; actual tools/list count: {len(native)}",
-        f"- Visible development tasks: {len(cases['cases'])}; do NOT reuse as hidden confirmation cases",
+        f"- MCP package: {tick}{snapshot['mcp_tool_package']}{tick}; "
+        f"actual tools/list count: {len(native)}",
+        f"- Visible development tasks: {len(cases['cases'])}; "
+        "do NOT reuse as hidden confirmation cases",
         "- Both conditions use the same original readonly MCP contracts; selection differs only",
         "- The required fields are top-level MCP inputSchema parameters, NOT domain output fields",
         "- No static package baseline ranking quality or end-to-end agent quality is claimed",
