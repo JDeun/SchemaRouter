@@ -116,7 +116,7 @@ def test_stale_review_fails_even_when_heuristic_no_longer_flags(tmp_path: Path) 
     }
     ledger = tmp_path / "ledger.json"
     ledger.write_text(json.dumps({"schema_version": 1, "reviews": [entry]}))
-    (ko / "a.md").write_text("# 규칙\n\n변경해서는 안 됩니다.")
+    (ko / "a.md").write_text("# 규칙\n\n" + "변경해서는 안 됩니다. " * 18)
     report = audit(en, ko)
     assert report["flagged_sections"] == 0
     errors = verify_reviewed(report, ledger, en, ko)
