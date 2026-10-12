@@ -57,7 +57,7 @@ def test_direct_semantic_spotcheck_provenance_is_bounded_and_live() -> None:
             encoding="utf-8"
         )
     )
-    assert ledger["reviewed_page_pairs"] == len(ledger["reviews"]) == 14
+    assert ledger["reviewed_page_pairs"] == len(ledger["reviews"]) == 16
     assert ledger["total_page_pairs"] == 147
     assert ledger["independent_sentence_review_complete"] is False
     assert "not independent human" in ledger["reviewer_status"]
@@ -91,3 +91,12 @@ def test_korean_060_openapi_schema_variants_remain_distinct() -> None:
         encoding="utf-8"
     )
     assert "서로 호환되지 않는 스키마 variant를 임의로 평탄화하지 않음" in translated
+
+
+def test_korean_successor_screen_protects_public_selector_provenance() -> None:
+    translated = (ROOT / "docs_ko/research/successor-screen.md").read_text(
+        encoding="utf-8"
+    )
+    assert "비공개(private)" in translated
+    assert "순서 규칙을 단위 테스트하는 데에만 사용" in translated
+    assert "검증 가능한 provenance" in translated
