@@ -3,13 +3,13 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 135,
+  "reviewed_page_pairs": 136,
   "total_page_pairs": 147,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 12 pairs are not attested by this targeted record"
+    "Other 11 pairs are not attested by this targeted record"
   ],
   "reviews": [
     {
@@ -821,6 +821,12 @@
       "en_blob": "9541abb9de15d1c3073fa1ab755de57ca397e064",
       "ko_blob": "f8e8c5abc2313d4b1587a3083e6d75ca20e90cbc",
       "notes": "Direct English/Korean side-by-side check of input body variant isolation, nullable semantics, origin/ref confinement, id/anchor resolving, 16MiB streamed cap, 5MiB docs and YAML parser limits, record-preserving arrays and trusted-only enrichment."
+    },
+    {
+      "path": "concepts/field-first-execution.md",
+      "en_blob": "ed612ae41668e6ae76d5981fd932f78ac65b8e56",
+      "ko_blob": "20800a14a891a2923a381bcc0751e892c35bb3b0",
+      "notes": "Read both EN and KO: provider-neutral field identity/mapping, caller-scoped evidence, default max_calls=1, two-stage projection, fail-closed unit datatype and affine conversion, exact qualifier matching/token-boundary limits."
     }
   ]
 }
