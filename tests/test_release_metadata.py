@@ -120,7 +120,7 @@ def test_release_workflow_keeps_trusted_publishing_top_level_and_isolates_build(
     )
     assert "--lightweight-extras" in workflow
     assert "Verify published artifact digest matches release build" in workflow
-    assert "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c" in workflow
+    assert "actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333" in workflow
     assert "--index-url https://pypi.org/simple" in workflow
     assert (
         'python -m pip download "${download_args[@]}" '
