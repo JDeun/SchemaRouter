@@ -1604,7 +1604,6 @@ Authority invariant는 변하지 않습니다:
 ## 41. System One 제공자 추상화 및 Laya 직접 라우팅
 
 학습된 개발 집합의 기하학적 특성 개선을 #287에서 마친 뒤에는 동일한 1,800개 개발 사례에서 분류기를 다시 학습하기보다 외부 사전 학습 타입 기반 결정 모델을 연구하기로 했습니다.
-surface.
 
 ### Provider infrastructure — #291 / PR #292
 
@@ -1625,8 +1624,7 @@ PR #292 merged a generic `SystemOneDecisionBackend` to main:
 
 ### Direct full-catalog Laya — #293 / PR #294
 
-이어서 사전 등록된 직접 라우팅 진단에서는 Laya가 BGE의 경로 선택을 대체할 수 있는지 평가했습니다.
-authority over all 16 registered endpoints.
+이어서 사전 등록된 직접 라우팅 진단에서는 전체 16개 등록 엔드포인트에 대해 Laya가 BGE의 경로 선택 역할을 대체할 수 있는지 평가했습니다.
 
 Protocol:
 
@@ -2173,8 +2171,7 @@ Terminal fresh result:
 
 ## 48. #328 / PR #329 — BGE-M3 다중 표현 작업 게이트
 
-유효한 #326의 신규 평가 실패 이후 다음 연구 주기는 개발 집합에 맞춰 조정한 밀집 표현의 개선을 중단하고
-acceptance geometry.
+유효한 #326의 신규 평가 실패 이후 다음 연구 주기는 개발 집합에 맞춰 조정한 밀집 점수 기반 승인 영역을 더 이상 수정하지 않기로 했습니다.
 
 저장소에는 이미 다음 접근들의 부정적 결과가 기록돼 있습니다.
 - 경로별 스칼라 작업 적합성 임계값;
@@ -2414,14 +2411,12 @@ Results:
 | Canonical DEV (1,800) | 5.0347% | 100% | 100% | 0% | 5.6919% | 196.93 ms |
 | Registration holdout (228) | 2.0833% | 100% | 100% | 0% | 2.4590% | 192.85 ms |
 
-권한 위반과 실행 오류는 모두 0건이었으며 정식 원시 BGE 결과와의 일치에서도
-mismatches.
+권한 위반과 실행 오류는 모두 0건이었고, 정식 원시 BGE 결과와 비교한 불일치도 **0건**이었습니다.
 
 Interpretation:
 
 Provider-neutral typed capability/data-contract compiler는 arbitrary native/OpenAPI/MCP registration과 datatype/unit/qualifier metadata 보존을 포함해 infrastructure로서는 정상 동작했습니다.
-하지만 범용 합성 학습 거부 판단기는 그렇지 못했습니다. 거의 모든
-valid supported request.
+하지만 범용 합성 데이터로 학습한 거부 판단기는 유효한 지원 요청을 거의 모두 거부해 품질 목표를 충족하지 못했습니다.
 
 Decision: preregistration대로 label-driven repair 없이 terminal reject합니다.
 
@@ -2430,8 +2425,7 @@ PR #341은 병합하지 않고 종료했습니다. 인프라 설계의 교훈은
 
 ## 54. #347 / PR #348 — 질의 우선 타입 프레임은 지원 경로를 보존했지만 미지원 요청을 충분히 거부하지 못함
 
-첫 번째 0.12 후속 실험은 다음 목적을 위해 질의·엔드포인트 유사도 비교를 중단했습니다:
-capability membership.
+첫 번째 0.12 후속 실험은 **등록된 기능 집합에 요청이 실제로 속하는지 판단할 때** 질의와 엔드포인트의 유사도 점수에 의존하는 접근을 중단했습니다.
 
 Preregistered architecture:
 
@@ -2472,8 +2466,7 @@ DEV evidence:
 이는 #338과 거의 정반대의 결과입니다. The query-first structural filter preserves valid
 지원 요청은 매우 정확하게 보존하고 일부 엔드포인트 선택도 바로잡을 수 있지만, 정밀도 중심의 어휘 요청 프레임은 너무 많은 미지원 요청을 구조적으로 알 수 없는 상태로 남깁니다. 이 요청들은 원래 BGE 도메인 기준선으로 되돌아가 실행 가능한 경로를 부여받습니다.
 
-결정: 개발 집합에서 최종 기각. 결과 행을 바탕으로 어휘를 확장하거나 언어별 보정·경로별 예외를 추가해서는 안 됩니다. 동결된 1,008개 확인 코퍼스는 완전히
-unscored.
+결정: 개발 집합에서 최종 기각. 결과 행을 바탕으로 어휘를 확장하거나 언어별 보정·경로별 예외를 추가해서는 안 됩니다. 동결된 1,008개 확인 코퍼스는 **전혀 채점하지 않은 상태**로 유지합니다.
 
 Architectural lesson은 명확합니다. 다음 materially new signal은 endpoint-similarity membership threshold로 돌아가지 않으면서 여기서 입증한 높은 supported-route retention을 희생하지 않고 **query-side operation-frame coverage**를 개선해야 합니다.
 
@@ -2744,9 +2737,7 @@ DEV evaluation:
 - 종단 간 p95 254.5495 ms;
 - 긍정 경로 변경 / 권한 위반 / 실행 오류 0 / 0 / 0.
 
-이는 #371의 semantic mirror image입니다. The multiclass OUTSIDE formulation almost never rejected;
-집합 전체의 함의 판단 방식은 모든 요청을 거부했습니다. 외부 모델 자체는 충분히 빨라 기술적 연구 가치가 있지만 두 극단적인 구성 모두 유용한
-open-set capability-membership boundary.
+이는 #371의 의미적 대칭 사례입니다. 다중분류의 OUTSIDE 레이블 방식은 요청을 거의 거부하지 못했지만, 집합 전체의 함의 판단 방식은 모든 요청을 거부했습니다. 외부 모델 자체의 속도는 기술적 연구 가치가 있을 만큼 빨랐지만, **어느 구성도 유용한 오픈셋 기능 소속 판단 경계를 제공하지 못했습니다.**
 
 결정: 최종 기각. 결과 행을 이용한 가설 문구 변경, 임계값·언어별 규칙 보정 또는 다른 수리는 허용되지 않습니다. 동결된 확인 표면은 개봉하지 않았습니다.
 
@@ -2795,8 +2786,7 @@ DEV evaluation:
 - 종단 간 p95 278.0917 ms;
 - 긍정 경로 변경 / 권한 위반 / 실행 오류 0 / 0 / 0.
 
-이 experiment는 finite capability set을 independent leaf judgment로 분해하는 것이 하나의 aggregate set-membership sentence보다 유의미하게 낫지만 independent binary argmax는 hard membership veto로 쓰기에는 여전히 너무 brittle하다는 점을 보여줍니다. Supported queries frequently receive zero entailment,
-그 결과 원래 올바른 경로의 절반 이상이 거부됐습니다.
+이 실험은 유한한 기능 집합을 각 기능별 독립 함의 판단으로 분해하는 방법이 긴 집합 소속 문장 하나보다 유용하지만, 독립 이진 최대값 선택은 강제적인 소속 여부 거부 판단에 여전히 불안정하다는 점을 보여줍니다. 지원 요청에서도 함의 판정이 전혀 나오지 않는 사례가 많아 원래 올바른 경로의 절반 이상이 거부됐습니다.
 
 판정: 최종 거부. 실패한 행의 문구, 언어별 부분집합, 혼동 쌍, 점수 분포, 가설 문구 수정, 임계값, 마진 또는 투표 규칙을 #377 수리에 사용해서는 안 됩니다. 확인 코퍼스는 계속 열지 않은 상태로 유지합니다.
 
@@ -2839,8 +2829,7 @@ DEV:
 결정: 최종 기각. 해당 쌍대 비교는 오픈셋 품질과 실행시간 목표 모두 충족하지 못했습니다. 임계값·엡실론·동점 규칙·가설 문구·언어별 규칙을 바꾸거나 실패 행을 이용해 수정하는 것은 **허용되지 않습니다.**
 
 이로써 Horizon zero-shot/NLI 의미 분해 계열(#371/#374/#377/#378)은 종료됐습니다. 후속 연구 주기(#382)는 오픈 인텐트·지원 범위 밖 요청(OOS) 연구에 근거한 실질적으로 다른 계열로 전환합니다:
-스키마에서 도출한 적응형 결정 경계, 이어서 스키마 기반 어려운 부정 사례와 에너지 기반
-open-set evidence.
+스키마에서 도출한 적응형 결정 경계, 이어서 스키마 기반 어려운 부정 사례와 에너지 기반 오픈셋 근거를 검증합니다.
 
 
 ## 2026-09-28/29 — 0.13 post-V6E semantic-evidence sequence
