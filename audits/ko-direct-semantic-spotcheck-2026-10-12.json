@@ -886,7 +886,7 @@
       "path": "research/design-and-experiment-history.md",
       "en_blob": "27bdc35c44010cfd1c15d4a5702ed2b9ad6f9c5c",
       "ko_blob": "4892377fe2b6b27e529644a401bc2e65c0c3ed57",
-      "notes": "Direct paired inspection of 136 aligned sections covering 0.1–0.14 experimental chronology. Verified all historical quantitative tokens/holdout provenance, no unmatched experiment heading or omitted version/issue reference; restored malformed/truncated post-V6E gates, B1 causal separation, local-model baseline and Phase A explanation. All 98 distinct source numeric/issue/long-ID tokens seen in target. This remains AI-assisted source reading and risk-aided crosscheck, not external human certification."
+      "notes": "Direct EN/KO archival contract inspection over 64 numbered sections, parallel source/translation subsection chronology and semantic number/commit evidence. Repaired 16+ corrupted/dangling Korean clauses obscuring never-tuned holdouts, all-reject NLI, false execution evidence, reference SHA/latency and negative result interpretation. Source contains repeated historic section number 47 in BOTH languages; not a missing translation. This is AI-assisted page-level and structural risk review, not independent every-sentence human sign-off."
     }
   ]
 }
