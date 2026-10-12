@@ -3,13 +3,13 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 138,
+  "reviewed_page_pairs": 139,
   "total_page_pairs": 147,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 9 pairs are not attested by this targeted record"
+    "Other 8 pairs are not attested by this targeted record"
   ],
   "reviews": [
     {
@@ -839,6 +839,12 @@
       "en_blob": "5cd569971e0722b633951814876e851fafb790b2",
       "ko_blob": "429b3e9df69c6ef684573563adc157cec454dfe4",
       "notes": "Directly compared source adapters, passive/active discovery, refresh credential provenance, named contract fields, exact unit conversion, array record fidelity, aliases and scientific qualifiers. Localized three untranslated Korean instructional clauses without altering contract."
+    },
+    {
+      "path": "architecture.md",
+      "en_blob": "e13e284e91f02d9b63eac07146a65afefc032248",
+      "ko_blob": "30b794315e985d1984f8899cf6055cd3d3f05bf0",
+      "notes": "Direct full document review: role/authority first principles, all 31 adversarial findings, 47 numbered core invariants, provider/index/field/type and security/fallback contracts. Fixed Korean invariant #45 orphan 'identity.' that broke the immutable snapshot identity assertion."
     }
   ]
 }
