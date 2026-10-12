@@ -29,7 +29,9 @@ report에는 전체/importable operation 수와 issue 수도 포함됩니다.
 
 ## 명시적으로 보고하는 construct
 
-unresolved cross-document `$ref`, `allOf`/`oneOf`/`anyOf`, recursive local component reference, OpenAPI 3.0 `nullable`, discriminator, cookie parameter, multiple content type, non-JSON body, non-object JSON request body, callback/webhook, server variable, operation security requirement 등을 보고합니다.
+미해결된 별도 문서의 `$ref`, `allOf`/`oneOf`/`anyOf`, 재귀적 로컬 컴포넌트 참조, OpenAPI 3.0 `nullable`, discriminator, cookie parameter, 다중 요청·응답 content type, non-JSON 요청·응답 본문, non-object JSON 요청 본문, callback/webhook, server variable, operation security requirement 등을 보고합니다.
+
+별도 문서의 `$ref`를 동일 출처(same-origin) 안에서 제한적으로 해석하려면 URL 수집 단계에서 신뢰된 애플리케이션이 명시적으로 활성화해야 합니다. 반면 **동일한 문서를 가리키는 URI 참조**는 자동으로 로컬 JSON Pointer 참조로 정규화합니다.
 
 일부 construct는 전체 JSON Schema를 runtime validation에 보존하지만 planner-side 해석은 제한적이므로 `partial`입니다. `allOf`는 안전하게 도출할 수 있는 object property와 required field를 평탄화하지만 모든 JSON Schema composition 상호작용을 완전히 지원한다고 주장하지 않습니다.
 
