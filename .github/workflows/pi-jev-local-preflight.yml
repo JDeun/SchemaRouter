@@ -1,0 +1,52 @@
+name: pi-jev Local Laya Preflight Guards
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/pi-jev-local-preflight.yml"
+      - "scripts/run_pi_jev_local_laya.mjs"
+      - "tests/test_pi_jev_local_laya_runner.mjs"
+      - "scripts/external_validation_jev_contract.py"
+      - "scripts/external_validation_shared_catalog.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pi-jev-local-preflight-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  no-paid-api-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install SchemaRouter without any Laya or Jev models
+        run: python -m pip install -e .
+      - name: Run zero-model native output guard regressions
+        run: |
+          node --version
+          node --test tests/test_pi_jev_local_laya_runner.mjs
+      - name: Regenerate exact frozen pi-jev 82-tool and 16-case handoff
+        run: python -m scripts.external_validation_jev_contract --input-out /tmp/pi-jev-frozen.json
+      - name: Verify native runner matches the complete canonical handoff
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          import {frozenInput,sameFrozenHandoff} from './scripts/run_pi_jev_local_laya.mjs';
+          const data=JSON.parse(readFileSync('/tmp/pi-jev-frozen.json','utf8'));
+          frozenInput(data);
+          sameFrozenHandoff(data,structuredClone(data));
+          const poisoned=structuredClone(data);
+          poisoned.cases[0].query += ' injected';
+          assert.throws(()=>sameFrozenHandoff(poisoned,data),/canonical/);
+          const altered=structuredClone(data);
+          altered.catalog[0].description += ' substituted';
+          assert.throws(()=>sameFrozenHandoff(altered,data),/canonical/);
+          JS
