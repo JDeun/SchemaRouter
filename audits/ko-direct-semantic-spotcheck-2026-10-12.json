@@ -3,13 +3,13 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 125,
+  "reviewed_page_pairs": 127,
   "total_page_pairs": 147,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 22 pairs are not attested by this targeted record"
+    "Other 20 pairs are not attested by this targeted record"
   ],
   "reviews": [
     {
@@ -761,6 +761,18 @@
       "en_blob": "0cdd06d08876c8f0f5565700a5468e7a829e5bdb",
       "ko_blob": "d861a028bd4093470cdc490d43ddf3e21709eacd",
       "notes": "Compared full field coverage required/covered/uncovered, global/per-field evidence, alias and fallback authority, model explanation privacy, no workflow ownership."
+    },
+    {
+      "path": "guides/schema-drift.md",
+      "en_blob": "47265812acb55a45a8c45c60470c077e2bf2359b",
+      "ko_blob": "8e757f807b3f133a68360d95e08c929f5dd2aae1",
+      "notes": "Directly compared full conservative compatibility matrix, exact fingerprint safety, accepted-schema conditional GET validators, CAS replacement, process-local MCP/native watchers and no old-plan execution."
+    },
+    {
+      "path": "guides/runtime.md",
+      "en_blob": "f39520598b7ab7c3af4e5f66c348141f844d90bc",
+      "ko_blob": "7ce2a26a21f98841e65724518c3295a431d72316",
+      "notes": "Directly compared execution/result order, read-only parallel preflight, atomic bound registrations, bounded sync offload and IndeterminateInvocationError nonretry semantics, health and tracing, planning-vs-executable binding rules."
     }
   ]
 }
