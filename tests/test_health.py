@@ -502,7 +502,10 @@ async def test_sync_health_probe_timeout_does_not_block_event_loop() -> None:
     release = threading.Event()
 
     def probe() -> bool:
-        release.wait(timeout=0.25)
+        # Deliberately much longer than the async deadline. A blocking
+        # implementation would stall this loop for ~1 second, whereas a
+        # correct executor-backed timeout completes without waiting for us.
+        release.wait(timeout=1.0)
         return True
 
     router.register_health_probe("provider_api", "read", probe)
@@ -516,7 +519,10 @@ async def test_sync_health_probe_timeout_does_not_block_event_loop() -> None:
         release.set()
 
     elapsed = time.monotonic() - started
-    assert elapsed < 0.15
+    # GitHub-hosted runners can add >150 ms of scheduler jitter during
+    # full-suite fan-out. Keep a measurable margin below the 1.0 s blocking
+    # control instead of equating runner latency with event-loop blocking.
+    assert elapsed < 0.5
     assert snapshots[0].status == "unhealthy"
     assert snapshots[0].last_error_type == "TimeoutError"
     assert router.unavailable_access_paths() == (("provider_api", "read"),)
