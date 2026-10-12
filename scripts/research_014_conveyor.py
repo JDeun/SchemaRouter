@@ -150,7 +150,11 @@ class GitHubAPI:
                 with self._opener.open(request) as response:
                     return response.status, response.read()
             except urllib.error.HTTPError as exc:
-                detail = exc.read().decode("utf-8", errors="replace")
+                try:
+                    detail = exc.read().decode("utf-8", errors="replace")
+                finally:
+                    # HTTPError owns a response stream; close it even on retry.
+                    exc.close()
                 if (
                     method == "GET"
                     and exc.code in {500, 502, 503, 504}
