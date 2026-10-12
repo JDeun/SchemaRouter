@@ -3,13 +3,13 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 129,
+  "reviewed_page_pairs": 131,
   "total_page_pairs": 147,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 18 pairs are not attested by this targeted record"
+    "Other 16 pairs are not attested by this targeted record"
   ],
   "reviews": [
     {
@@ -785,6 +785,18 @@
       "en_blob": "cdc02abb82026528c0966e5308d28357cd262e08",
       "ko_blob": "c51761197890806581fc50882022ff99ba977c8b",
       "notes": "Compared 0.17 trust claims, release attestation and validation chain, B1/K3 exact negative outcomes, CodeQL and provenance limits and independent evidence not overclaimed."
+    },
+    {
+      "path": "security/threat-model.md",
+      "en_blob": "1e1446c4e2e38f033495fd2d20728dff57084a15",
+      "ko_blob": "4a70087b977b4efe24a4eae556fc92825467c54e",
+      "notes": "Compared exact trust/credential, local SSRF admission, same-origin docs, source-bound schema watch validators, trace/OTEL redaction, hooks/amendment restrictions and nontrusted plugin boundaries."
+    },
+    {
+      "path": "research/external-validation-freeze.md",
+      "en_blob": "5d1daf2f0c6190ee47c18291ef44af9a1f7c467e",
+      "ko_blob": "b12bbabc7dd941a116a85f2e04e2b28935741828",
+      "notes": "Compared preregistered commit/labels/corpus budget, no false tool/field recall equivalence, caller-auth gateway refusal, ClicShopping permissions-only actions and case-score abstention, third-party responses and licenses."
     }
   ]
 }
