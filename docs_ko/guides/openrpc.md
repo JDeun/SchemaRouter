@@ -11,7 +11,11 @@ router = await SchemaRouter.from_url(
 )
 ```
 
-OpenRPC method name은 endpoint name이 되고, 선언된 param은 typed argument, result JSON Schema는 output contract가 됩니다. `components` 아래 local `$ref`를 해석하며 nested object와 array-item field도 planner에 노출합니다. projection 과정에서도 record alignment를 유지합니다.
+OpenRPC method name은 endpoint name이 되고, 선언된 param은 typed argument, result JSON Schema는 output contract가 됩니다. `components` 아래 local `$ref`를 해석하며 nested object와 선언된 배열 항목 필드도 planner에 노출합니다.
+
+예를 들어 `results: [{title, score}, ...]` 응답은 `results[].title`과 `results[].score`를
+노출할 수 있으며, projection 중에도 원본 배열의 **레코드별 필드 대응 관계**를 유지합니다.
+루트 응답 자체가 배열이면 인위적인 루트 필드를 만들지 않고 배열 항목의 필드를 직접 노출합니다.
 
 ## 실행 권한은 로컬에 유지
 
