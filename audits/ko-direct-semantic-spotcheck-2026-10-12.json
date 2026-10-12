@@ -3,13 +3,13 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 98,
+  "reviewed_page_pairs": 113,
   "total_page_pairs": 147,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 49 pairs are not attested by this targeted record"
+    "Other 34 pairs are not attested by this targeted record"
   ],
   "reviews": [
     {
@@ -599,6 +599,96 @@
       "en_blob": "2b1f22affe73ea0962697a03f172d1b7669d11ae",
       "ko_blob": "b274c11d2d6668eeb1a83cbb65f2142d45467ccf",
       "notes": "Compared stable-core facade, separate execution permission, installed artifacts validation and full release provenance contract."
+    },
+    {
+      "path": "guides/enterprise-data-onboarding.md",
+      "en_blob": "28a31836cd100eb1d8477d951bf6d1ac452114ba",
+      "ko_blob": "a84181befd9f35a723cbb817e131a982539f4f87",
+      "notes": "Compared all DB family rows, host-owned auth, internal-only scope, DataScope limitations, Redis exclusion and native query no-authority."
+    },
+    {
+      "path": "research/operation-routing-freeze-protocol.md",
+      "en_blob": "a6a66039db4bf4ec250b3f21fed4956d3dfe15e0",
+      "ko_blob": "953fd2176ae6980cf56753979ba37c2f37c86cb1",
+      "notes": "Compared all immutable gates 85/97/100/1/p95, strict fresh/DEV separation, complete freeze provenance, rerun/consumption policy."
+    },
+    {
+      "path": "project/external-validation-pydanticai.md",
+      "en_blob": "06e8ead43df928a62f7b930f2bb964bc02f20624",
+      "ko_blob": "06adb98088dadd861f388b7a4dfbcfe1eb7d43d6",
+      "notes": "Compared SDK pin, no-route three-signal gate, exact 12/50/100/250 scaling metrics, E0 nonindependence, no tool invocation authority."
+    },
+    {
+      "path": "research/final-answer-quality.md",
+      "en_blob": "4c381ad8f834b38af0b0fe896c2c90150d221dd1",
+      "ko_blob": "548c1b641316fc8681a6fec3accc4a35595908b5",
+      "notes": "Compared frozen 144 tasks/36 cells, gated #432 prerequisite, all factual scoring thresholds, no LLM judge authority and 10k bootstrap."
+    },
+    {
+      "path": "project/why-not-all-tool-schemas.md",
+      "en_blob": "1f3187176dafd04be48d18672951c946a12bd715",
+      "ko_blob": "2f58f579ee3feca20cec562bf1c65ee987457566",
+      "notes": "Compared latest 0.17 argument, exact B1 5.42%/91.30 vs 68.48 caveat, no agent/authorization bypass and limited prior-art claims."
+    },
+    {
+      "path": "project/roadmap.md",
+      "en_blob": "d7f9c40df8f03ea69e9d5aabb888789c83eadb80",
+      "ko_blob": "f6e7de4ce3dcbb7696d09c9d21e6f4184cebed1b",
+      "notes": "Compared all four tracks and issue links, current stable release shown as 0.14.0 in both languages (stale across both; not a translation asymmetry), issue labels, no promised dates."
+    },
+    {
+      "path": "guides/execution-policy.md",
+      "en_blob": "567a6719ad780c82d82076be4d8ad2c226cf3914",
+      "ko_blob": "2b517c0059ab755e7515486bec7bafebe043790b",
+      "notes": "Compared allow/deny/requires approval precedence, only True authorizes, default remote-mutation deny, budget accounting and local fingerprint authority."
+    },
+    {
+      "path": "releases/0.14.0.md",
+      "en_blob": "474a2b2be67309a5220fb9014bfbeda9ad5ea894",
+      "ko_blob": "fe5c2738f5ca26ec5d8bbf726c0f6bf0f417259e",
+      "notes": "Compared source probing, lifecycle/schema drift, Explorer read-only, English/Korean site, release artifacts and no premature research claims."
+    },
+    {
+      "path": "concepts/design-principles.md",
+      "en_blob": "ee4174cb6f1f0788c19d6a83c0abd70e05a8670d",
+      "ko_blob": "b05aa61e646f3fa478851f241acb59cef576338a",
+      "notes": "Compared all 11 principles, safe field/unit semantics, local provider authority, explicit max_calls, conservative semantic fallback and redacted traces."
+    },
+    {
+      "path": "research/paper-evidence-package.md",
+      "en_blob": "36420cc18de100bf89665b4638c1576ec0dff486",
+      "ko_blob": "dbca943c41831773f39fb3d0b336aab87cb17693",
+      "notes": "Compared the snapshot of #432 held-out recovery 97/234 parent shards, #431 negative, #510 terminal result, independent role and no invalid partial claims."
+    },
+    {
+      "path": "guides/run-traces.md",
+      "en_blob": "0e13d584a86068a02a45ae6cbc32d3104e02b608",
+      "ko_blob": "e8c7acd344cd2a2f0eb8223ad6a34b2379e18fcd",
+      "notes": "Compared exact append-before-yield behavior, replay without execution, WAL deletion, per-run metadata and trace redaction/raw opt-in; original post-operation success preserved."
+    },
+    {
+      "path": "guides/protocol-plugin-recipes.md",
+      "en_blob": "ae3ea4070320c1c37c05f17ce2475aa10f058499",
+      "ko_blob": "57bb45e82cad5eb2ce42b71d8c72dacf8cc0fbc7",
+      "notes": "Compared all plugin-vs-core decision matrix and six promotion gates, deferred streaming lifecycles, same trust/credential boundaries."
+    },
+    {
+      "path": "guides/vector-store-onboarding.md",
+      "en_blob": "11f9b83691bab0edc1db89e50745d1d9fa7e45d5",
+      "ko_blob": "c86f491cbdb69570c7c23f47799e37b28683fcbd",
+      "notes": "Compared vector dimension validation, scoped trusted filters fail closed, Qdrant/Milvus/Pinecone/Weaviate/Chroma/pgvector adapter limitations and explicit no live guarantee."
+    },
+    {
+      "path": "releases/0.5.0.md",
+      "en_blob": "1d08b793fd48a1e4c0f882cb24004fffcd5a3595",
+      "ko_blob": "cf72fbba86f2592461f7870410ec9b925d0240a5",
+      "notes": "Compared HTTP retry codes 408/425/429/500/502/503/504, budget restrictions, OpenAPI path/header precedence, non-JSON no-content correctness and security."
+    },
+    {
+      "path": "guides/provider-first-registration.md",
+      "en_blob": "448ff3c9ebde165f0b849f38468527a40aeb613a",
+      "ko_blob": "1ac27dcec47a0dfcc36bf5af17336ad06ae14a31",
+      "notes": "Compared all-or-nothing CAS atomic registration, proposal digest approval, no auto package install, each provider access mode and normal execution policy."
     }
   ]
 }
