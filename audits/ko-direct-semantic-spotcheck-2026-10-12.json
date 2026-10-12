@@ -3,13 +3,13 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 127,
+  "reviewed_page_pairs": 129,
   "total_page_pairs": 147,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 20 pairs are not attested by this targeted record"
+    "Other 18 pairs are not attested by this targeted record"
   ],
   "reviews": [
     {
@@ -773,6 +773,18 @@
       "en_blob": "f39520598b7ab7c3af4e5f66c348141f844d90bc",
       "ko_blob": "7ce2a26a21f98841e65724518c3295a431d72316",
       "notes": "Directly compared execution/result order, read-only parallel preflight, atomic bound registrations, bounded sync offload and IndeterminateInvocationError nonretry semantics, health and tracing, planning-vs-executable binding rules."
+    },
+    {
+      "path": "guides/provider-fallback.md",
+      "en_blob": "769286c2e594afb5cc9a3b3935d83585bd0fa96a",
+      "ko_blob": "651ec36cc1ec6eec54c08502489374f73e3e070d",
+      "notes": "Compared complete precompiled fallback semantics, errors permitting only availability failover, same-provider-first, bounded read-only health probe, cooldown, binding-aware route readiness and shared budgets."
+    },
+    {
+      "path": "project/trust-and-evidence.md",
+      "en_blob": "cdc02abb82026528c0966e5308d28357cd262e08",
+      "ko_blob": "c51761197890806581fc50882022ff99ba977c8b",
+      "notes": "Compared 0.17 trust claims, release attestation and validation chain, B1/K3 exact negative outcomes, CodeQL and provenance limits and independent evidence not overclaimed."
     }
   ]
 }
