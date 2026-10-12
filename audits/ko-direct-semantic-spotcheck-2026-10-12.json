@@ -3,13 +3,13 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 136,
+  "reviewed_page_pairs": 137,
   "total_page_pairs": 147,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 11 pairs are not attested by this targeted record"
+    "Other 10 pairs are not attested by this targeted record"
   ],
   "reviews": [
     {
@@ -827,6 +827,12 @@
       "en_blob": "ed612ae41668e6ae76d5981fd932f78ac65b8e56",
       "ko_blob": "20800a14a891a2923a381bcc0751e892c35bb3b0",
       "notes": "Read both EN and KO: provider-neutral field identity/mapping, caller-scoped evidence, default max_calls=1, two-stage projection, fail-closed unit datatype and affine conversion, exact qualifier matching/token-boundary limits."
+    },
+    {
+      "path": "research/0.14-paper-evidence-checkpoint.md",
+      "en_blob": "6c5915d879db3a59bfd960cd6c2a4c116b01c72b",
+      "ko_blob": "a7fd015b0cce8d4ea7cdbfb784993064812b0965",
+      "notes": "Compared evidence-role matrices, complete terminal B1 552 and B2 460 episodes, exact failed K3 -3.2609pp, sealed 0.14 claims, invalid-vs-negative run definitions, model revisions/aggregates, publication limits. Both languages also retain a historically stale pending-list section; not a bilingual divergence."
     }
   ]
 }
