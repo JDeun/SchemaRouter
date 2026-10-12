@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-12",
+  "issue": 1202,
+  "scope": "Targeted bilingual review of decision-backend deployment tradeoffs and non-code English prose remnants; not a corpus semantic certificate.",
+  "reviewer_status": "AI-assisted targeted review; independent human sentence-level sign-off not established.",
+  "path": "concepts/decision-backends.md",
+  "en_blob": "d8af579c3b868c1675ad6d88ed4f4d63c27bc8e2",
+  "ko_blob": "8ab8e53996ca5d6687bf1e662a2615029a491ad2",
+  "findings": [
+    {
+      "section": "Bounded field selection",
+      "decision": "untranslated-prose-fixed",
+      "reason": "The English instruction enabling field selection remained untranslated outside code. Korean now explicitly states that the feature must be enabled."
+    },
+    {
+      "section": "Contract invariants",
+      "decision": "untranslated-prose-fixed",
+      "reason": "The provider invariants list was preceded by an untranslated English lead-in; revised Korean identifies these as mandatory decision-backend contract rules."
+    },
+    {
+      "section": "Choosing a decision backend",
+      "decision": "mixed-language-comparison-fixed",
+      "reason": "All six backend comparison rows preserve their EN best-fit/tradeoff information in Korean, including calibration ownership, hosted costs, Laya single-selection limitation and checkpoint dependence, Ollama overhead, and Jev external-service dependency."
+    },
+    {
+      "section": "Local Laya decision model",
+      "decision": "untranslated-install-note-fixed",
+      "reason": "The package-extra explanation is now Korean while preserving the literal schemarouter[laya] identifier."
+    }
+  ],
+  "reviewed_sections": 4,
+  "limits": "Not a complete review of every paragraph in this one page or independent review of 147 EN/KO pages.",
+  "independent_sentence_review_complete": false
+}
