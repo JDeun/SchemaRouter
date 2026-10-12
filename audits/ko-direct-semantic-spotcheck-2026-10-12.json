@@ -3,13 +3,13 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 8,
+  "reviewed_page_pairs": 14,
   "total_page_pairs": 147,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 139 pairs are not attested by this targeted record"
+    "Other 133 pairs are not attested by this targeted record"
   ],
   "reviews": [
     {
@@ -59,6 +59,42 @@
       "en_blob": "4afc6bcd95ae5283fb5dd35c6c519461bf47b4e1",
       "ko_blob": "fce19b798c06efbccaa7ac6d61b44038e3ca8206",
       "notes": "Matched ownership table, execution-plan field order, fail-closed revalidation, field-first retrieval and conservative ambiguous intent behavior."
+    },
+    {
+      "path": "integrations/decision-model-ecosystem.md",
+      "en_blob": "ee36387d25b37fdeb5e31fdb50dbea767b7e8f5f",
+      "ko_blob": "d8b8218a4885f33afb30fca46ca335df49fd411d",
+      "notes": "Verified model-only compatibility is not promotion, quality evidence limitations, candidate-specific and dormant research statuses, model/runtime licensing qualifications, and finite-choice authority boundary."
+    },
+    {
+      "path": "concepts/protocol-ingestion-decisions.md",
+      "en_blob": "ac984acc00827d3af8b529b7b53af5d88950f512",
+      "ko_blob": "4f84b59437a7b3c98045406b405c5abf2ed43f95",
+      "notes": "Verified the protocol/adapter priority matrix, no untrusted schema guessing, mutation authorization, stream-lifecycle exclusions and the complete six-item adapter promotion rule."
+    },
+    {
+      "path": "releases/0.6.0.md",
+      "en_blob": "e126cbefbaa65fe6708bb95929d41d861c370334",
+      "ko_blob": "a6e788541b04558db97914fa820dc33fa8a79072",
+      "notes": "Reinstated explicit guarantee that arbitrary JSON root body support does not flatten incompatible non-discriminated variants; checked fail-closed OpenAPI subset and release boundaries."
+    },
+    {
+      "path": "releases/0.8.0.md",
+      "en_blob": "a73da5c27a183a7a4711f08e2d3aa0e4b6b1c8fa",
+      "ko_blob": "9b017f061c885fa8fa169d68fd66ca0f6542719c",
+      "notes": "Checked zero authority escalation, exact 600-case v10 holdout and all values, failure taxonomy, split recall bottleneck and prohibition on reused consumed v10 tuning."
+    },
+    {
+      "path": "releases/0.10.0.md",
+      "en_blob": "af7c386fe4f70b6f7573c5dc957a5a3ecc9d928f",
+      "ko_blob": "98fcaea606e2a0dd181f4630eb102ef4069b6cac",
+      "notes": "Checked negative capability-verifier results (5.03%, 2.08%), rejected promotions, exact 85/97/100/1/250 ms gate, matched DEV/fresh benchmark outcomes and typed unit semantics."
+    },
+    {
+      "path": "releases/0.16.0.md",
+      "en_blob": "03e99f7303b53ef8a9f33c2456c63e23c3db0dcc",
+      "ko_blob": "5dd6c30530109e12c03b916174370800a198b14b",
+      "notes": "Matched pre-retrieval and execution-time authorization, explicit host ownership of authentication, bounded DB/vector/graph/record adapters, Redis exclusion, and live external acceptance caveat."
     }
   ]
 }
