@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "issue": 1202,
+  "date": "2026-10-12",
+  "review_status": "AI-assisted targeted editorial review; not independent human sign-off",
+  "independent_sentence_review_complete": false,
+  "scope": "Precisely two EN/KO protocol pages, with source/translation Git blob provenance; no attestation of remaining pages.",
+  "reviews": [
+    {
+      "path": "guides/openapi-compatibility.md",
+      "en_blob": "4cd65ac161c92d74ce122be98d9e390f1133873c",
+      "ko_blob": "582bdbed744821ec8a32a335b1419417329784cc",
+      "section": "Constructs reported explicitly",
+      "decision": "omitted-source-conditions-restored",
+      "evidence": "Korean now states that bounded same-origin external-ref resolution requires explicit trusted URL-ingestion opt-in, and that same-document URI refs are automatically normalized; distinguishes request and response content-type/body coverage."
+    },
+    {
+      "path": "guides/openrpc.md",
+      "en_blob": "0b55e7e4dcfa8286201dfc4fb379fd2d4b44fdca",
+      "ko_blob": "a157dcb1ba21f1841d039405b7fa0fa4159ebcad",
+      "section": "Register an OpenRPC service",
+      "decision": "omitted-response-projection-semantics-restored",
+      "evidence": "Korean now explains declared nested result fields, record alignment for results[].title/score and direct item-field exposure for root result arrays without synthetic root field names."
+    }
+  ],
+  "limitations": "Additional independent sentence-level editorial sign-off of all 147 bilingual pairs is still pending."
+}
