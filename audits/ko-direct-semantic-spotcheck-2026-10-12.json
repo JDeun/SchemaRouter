@@ -905,7 +905,7 @@
       "target_blob": "20f08e65f91e611486943af69443aef53f4b08c6",
       "pull_request": 1305,
       "reviewed_comparison_rows": 49,
-      "observation": "Directly compared each of the 49 EN/KO capability, current status, and future-direction rows against the repaired translation on PR #1305; preserved API qualifiers, failure-closed semantics, vendor lists and numerical targets. Both document-tail narrative maturity gates match in substantive content. This target blob is NOT in the current PR #1307 base or head and cannot be counted in main-branch-pinned 146-page audit until PR #1305 is merged."
+      "observation": "Directly compared each of the 49 EN/KO capability, current status, and future-direction rows against the repaired translation on PR #1305; preserved API qualifiers, failure-closed semantics, vendor lists and numerical targets. Both document-tail narrative maturity gates match in substantive content. The exact reviewed Korean blob is now present in PR #1307's head as well as PR #1305; the 147/147 records are pinned to the PR #1307 source tree. Neither PR is yet merged to main, so this is not a merged-main editorial sign-off."
     }
   ],
   "directly_examined_across_branches": 147
