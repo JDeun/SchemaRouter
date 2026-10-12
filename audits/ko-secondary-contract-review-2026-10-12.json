@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "issue": 1202,
+  "date": "2026-10-12",
+  "reviewer_status": "AI-assisted targeted bilingual technical-contract review; not independent human sign-off",
+  "independent_sentence_review_complete": false,
+  "pairs": [
+    {
+      "path": "guides/python-tools.md",
+      "en_blob": "ae00ccbd3ced7cf0513cebbfaa6bd79e59ad9f0e",
+      "ko_blob": "99534cc844d315b02905fc2683413c1d70e71c1d",
+      "reviewed_topic": "Invoker binding authority",
+      "evidence": "Model-visible ToolSpec remains complete, trusted SDK/CLI/client state stays local; both endpoint-style and call-aware invokers are supported; bound tool fingerprint and CAS replacement are explicit."
+    },
+    {
+      "path": "guides/openrpc.md",
+      "en_blob": "0b55e7e4dcfa8286201dfc4fb379fd2d4b44fdca",
+      "ko_blob": "ea9696c02eaece8f44f452f2c2ba1e11f900cda4",
+      "reviewed_topic": "OpenRPC result arrays",
+      "evidence": "Declared nested array fields (results[].title, results[].score) preserve each record; root result arrays have implicit item field exposure without synthetic root names."
+    },
+    {
+      "path": "guides/inspection.md",
+      "en_blob": "e1bdb8d9afb5c7d5ec8e7bde6f2acc384a4cb92c",
+      "ko_blob": "261900e61a04049ad4b108a07d0ea61ed1b0bc93",
+      "reviewed_topic": "Run trace CLI commands",
+      "evidence": "All-run listing, --complete/--incomplete filtering and a single run event stream each retain corresponding CLI examples and Korean intent captions."
+    }
+  ],
+  "limitations": "These three targeted pair repairs do not establish independent sentence-by-sentence editorial certification for the full 147-page bilingual corpus."
+}

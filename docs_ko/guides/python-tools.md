@@ -84,8 +84,12 @@ router.add_bound_tool(
 )
 ```
 
-`ToolSpec`은 model-visible contract이고 client object, API key, DB connection 같은 trusted
-runtime state는 schema로 복사되지 않습니다.
+`ToolSpec`은 모델에 노출되는 전체 계약입니다. Invoker가 사용하는 client object, API key, DB
+connection, CLI wrapper 등 신뢰된 전송 상태는 schema에 복사되지 않습니다.
+
+Endpoint-style `invoker(endpoint_name, arguments)`와 call-aware
+`invoker.invoke_call(tool_call)`를 모두 지원합니다. 바인딩은 **정확한 tool fingerprint**에
+고정되며, 도구를 교체할 때는 레지스트리의 일반적인 **compare-and-swap(CAS) 경계**를 사용합니다.
 
 일반 typed function이면 `add_callable()`, opaque SDK/protocol이면 `add_bound_tool()`을
 사용하는 것이 기본 원칙입니다.
