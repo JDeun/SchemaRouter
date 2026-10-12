@@ -57,7 +57,7 @@ def test_direct_semantic_spotcheck_provenance_is_bounded_and_live() -> None:
             encoding="utf-8"
         )
     )
-    assert ledger["reviewed_page_pairs"] == len(ledger["reviews"]) == 8
+    assert ledger["reviewed_page_pairs"] == len(ledger["reviews"]) == 14
     assert ledger["total_page_pairs"] == 147
     assert ledger["independent_sentence_review_complete"] is False
     assert "not independent human" in ledger["reviewer_status"]
@@ -84,3 +84,10 @@ def test_korean_laya_documentation_preserves_bounded_decision_semantics() -> Non
         "동일한 코퍼스",
     ):
         assert required in translated
+
+
+def test_korean_060_openapi_schema_variants_remain_distinct() -> None:
+    translated = (ROOT / "docs_ko/releases/0.6.0.md").read_text(
+        encoding="utf-8"
+    )
+    assert "서로 호환되지 않는 스키마 variant를 임의로 평탄화하지 않음" in translated
