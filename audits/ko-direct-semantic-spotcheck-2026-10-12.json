@@ -3,13 +3,13 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 142,
+  "reviewed_page_pairs": 143,
   "total_page_pairs": 147,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 5 pairs are not attested by this targeted record"
+    "Other 4 pairs are not attested by this targeted record"
   ],
   "reviews": [
     {
@@ -863,6 +863,12 @@
       "en_blob": "a16f4d049aef6e4c7a10e7e9660c5a758b0ba92e",
       "ko_blob": "4ad068df9a2f109d2b314ad3b1a3151ba428dec4",
       "notes": "Read EN/KO developer launch/provenance claims, stable 0.17 and B1 23-task controlled evidence, no-endorsement/no-false-token marketing rules, GeekNews/Hacker News submission/eligibility, example flows, adopter evidence levels, launch cadence and stop conditions. Corrected Korean 'destructive operations fail closed' from misleading 'only upon error' conditional wording."
+    },
+    {
+      "path": "research/prior-art-roadmap.md",
+      "en_blob": "010e7b42529f641e626706663c0dc3bc4afde181",
+      "ko_blob": "c347c8e5f800b153ea28c9ed94231d6d1991ea08",
+      "notes": "Directly cross-checked detailed V6A–E and post-V6E negative-result quantitative tables, 0.14 Phase A Recall@1/3/5/10, ToolRet/ToolReAGt/ADB/Energy sources, task-cluster bootstrap constraints, no post-hoc tuning and SafeActBench 8 vs 656 case boundaries."
     }
   ]
 }
