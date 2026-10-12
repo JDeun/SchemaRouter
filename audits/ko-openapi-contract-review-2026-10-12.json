@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-12",
+  "issue": 1202,
+  "scope": "Targeted OpenAPI EN/KO technical-contract editorial comparison, not independent all-sentence certification",
+  "reviewer_status": "AI-assisted, not independent human sign-off",
+  "paired_page": "guides/openapi.md",
+  "en_blob": "9541abb9de15d1c3073fa1ab755de57ca397e064",
+  "ko_blob": "f8e8c5abc2313d4b1587a3083e6d75ca20e90cbc",
+  "reviewed_claims": [
+    {
+      "section": "Import",
+      "decision": "repaired-omission",
+      "evidence": "English explicitly lists local component refs, local reference chains and local Path Item references. Korean now includes all three plus read/write classification from the HTTP method."
+    },
+    {
+      "section": "Parameter serialization",
+      "decision": "repaired-omission",
+      "evidence": "Korean now states default style/explode serialization is compiled into the endpoint contract and included in the schema fingerprint. Unsupported styles and allowReserved fail closed, and report findings are retained."
+    },
+    {
+      "section": "Runtime response bound",
+      "decision": "repaired-omission",
+      "evidence": "Korean now states response bytes are streamed and capped before JSON/text decoding even when Content-Length is omitted or misreported."
+    },
+    {
+      "section": "Other OpenAPI sections",
+      "decision": "targeted-review-no-additional-confirmed-omission",
+      "evidence": "Compared credential partitioning, same-origin policy, JSON root/null and oneOf bodies, reference-resolution bounds and fail-closed restrictions, nested fields, YAML resource limits, and amendment scope; existing Korean prose carries the observed critical qualifiers."
+    }
+  ],
+  "independent_sentence_review_complete": false,
+  "limitations": "Technical-contract risk review of one documentation pair only. No second-person attestation of all sentences or other 146 bilingual page pairs."
+}
