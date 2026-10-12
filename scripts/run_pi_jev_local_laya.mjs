@@ -2,7 +2,7 @@
 import {execFileSync} from 'node:child_process';
 import {existsSync, readFileSync, writeFileSync} from 'node:fs';
 import {homedir} from 'node:os';
-import {join, resolve} from 'node:path';
+import {dirname, join, resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 
 export const PI_JEV_SHA='c5b5847aa189fe5ffec52893b7051fe8f9e7a548';
@@ -31,6 +31,12 @@ export function frozenInput(input) {
     }
   }
   if(input.cases.some(c=>typeof c.query!=='string'||!c.query.trim())) throw Error('Missing query');
+}
+/** Never trust manifest hash strings without verifying the original checked-in source. */
+export function sameFrozenHandoff(input, generated) {
+  if(JSON.stringify(input)!==JSON.stringify(generated)) {
+    throw Error('Frozen catalog/case input differs from the canonical SchemaRouter handoff');
+  }
 }
 export function nativeResult(result, catalog) {
   if(result?.fallbackUsed!==false) throw Error('No native Jev/Laya result (fallback detected)');
@@ -67,6 +73,14 @@ export async function run(argv) {
   }
   const input=JSON.parse(readFileSync(resolve(o.input),'utf8'));
   frozenInput(input);
+  // The catalog/case digests refer to fuller source objects than this reduced JSON
+  // handoff. Compare against a newly generated trusted handoff rather than hashing
+  // the reduced rows and incorrectly claiming full-source digest verification.
+  const schemaRoot=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+  const expected=JSON.parse(execFileSync('python',
+    ['-m','scripts.external_validation_jev_contract'],
+    {cwd:schemaRoot,encoding:'utf8',timeout:20000,maxBuffer:5*1024*1024}));
+  sameFrozenHandoff(input,expected);
   process.env.PI_JEV_BASE_URL=url;
   const response=await fetch(url+'/health',{redirect:'error',signal:AbortSignal.timeout(8000)});
   if(!response.ok) throw Error('Local Laya health failed');

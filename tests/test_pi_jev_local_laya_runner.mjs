@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {localURL,noPaidProvider,frozenInput,nativeResult,PI_JEV_SHA} from '../scripts/run_pi_jev_local_laya.mjs';
+import {localURL,noPaidProvider,frozenInput,sameFrozenHandoff,nativeResult,PI_JEV_SHA} from '../scripts/run_pi_jev_local_laya.mjs';
 const catalog=Array.from({length:82},(_,i)=>({name:'t'+i,description:'d'}));
 const cases=Array.from({length:16},(_,i)=>({id:'q'+i,query:'query '+i}));
 const fixture={schema_version:1,pi_jev_commit:PI_JEV_SHA,top_k:3,external_execution:false,
@@ -19,6 +19,15 @@ test('frozen 82/16 fixture and Top-K3 are immutable',()=>{
   frozenInput(fixture);
   assert.throws(()=>frozenInput({...fixture,top_k:10}));
   assert.throws(()=>frozenInput({...fixture,catalog:[...catalog.slice(0,81),catalog[0]]}));
+});
+test('require entire canonical handoff; hex digests alone are not evidence',()=>{
+  sameFrozenHandoff(fixture,structuredClone(fixture));
+  for(const mutated of [
+    {...fixture,cases:cases.map((c,i)=>i===0?{...c,query:'TAMPERED QUERY'}:c)},
+    {...fixture,catalog:catalog.map((c,i)=>i===0?{...c,description:'TAMPERED'}:c)},
+    {...fixture,catalog_sha256:'c'.repeat(64)},
+    {...fixture,experiment:'different-study'},
+  ]) assert.throws(()=>sameFrozenHandoff(mutated,fixture),/canonical/);
 });
 test('no fallback or forged activation; numeric probability + latency only',()=>{
   const valid={fallbackUsed:false,candidates:['t0','t1'],activated:['t1'],
