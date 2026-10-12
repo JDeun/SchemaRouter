@@ -1,6 +1,9 @@
 """Bilingual table-prose regression tests, advisory not semantic certification."""
 
+import json
 from pathlib import Path
+
+from scripts.prepare_korean_docs import git_blob_sha
 
 from scripts.report_korean_table_prose import candidates, scan
 
@@ -55,3 +58,21 @@ def test_full_korean_corpus_has_no_new_long_english_table_clauses() -> None:
     report = scan(ROOT / "docs_ko")
     assert report["scanned_pages"] == 147
     assert report["findings"] == [], report["findings"][:30]
+
+
+def test_table_review_is_blob_pinned_not_a_corpus_certificate() -> None:
+    record = json.loads(
+        (ROOT / "audits/ko-maturity-table-review-2026-10-12.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert record["schema_version"] == 1
+    assert record["page"] == "framework-maturity.md"
+    assert record["independent_sentence_review_complete"] is False
+    assert record["reviewed_table_rows"] == 49
+    assert record["source_en_blob"] == git_blob_sha(
+        (ROOT / "docs/framework-maturity.md").read_bytes()
+    )
+    assert record["reviewed_ko_blob"] == git_blob_sha(
+        (ROOT / "docs_ko/framework-maturity.md").read_bytes()
+    )
