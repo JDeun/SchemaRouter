@@ -32,9 +32,15 @@ after every page and individual sentence has been examined. Include a top-level
 reviewer object with nonempty identity, date and independence_basis.
 
 Each page has path, en_blob, ko_blob, and a nonempty list of decisions.
-Each decision carries en_indices, ko_indices, en_hashes, ko_hashes, verdict
+Each decision carries en_indices, ko_indices, en_hashes, ko_hashes,
+en_sentence_hashes, ko_sentence_hashes, verdict
 (equivalent or corrected), and a substantive rationale. Obtain unit SHA-256
-hashes from the generated audit inventory. For merged/split translations
+hashes from the generated audit inventory. Sentence digests are
+SHA-256 of each nonempty trimmed sentence candidate, using the explicit
+punctuation-plus-whitespace splitting rule implemented in
+scripts.verify_independent_translation_review. These sentence candidates
+are review checkpoints, not proof of linguistic equivalence; the reviewer
+must also inspect abbreviations and segmentation ambiguities. For merged/split translations
 declare contiguous many-to-many groups. Every block on both sides must be
 covered exactly once, in order, including all sentences inside each block.
 
