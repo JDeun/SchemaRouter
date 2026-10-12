@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-12",
+  "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
+  "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
+  "reviewed_page_pairs": 8,
+  "total_page_pairs": 147,
+  "independent_sentence_review_complete": false,
+  "evidence_limitations": [
+    "Cannot authenticate independent reviewer identity or language correctness",
+    "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
+    "Other 139 pairs are not attested by this targeted record"
+  ],
+  "reviews": [
+    {
+      "path": "release-checklist.md",
+      "en_blob": "855308419408998f721f925d88d74718f845688b",
+      "ko_blob": "bc5a64270a585c09c140dcec5254139edec7c38f",
+      "notes": "Directly checked the release/compatibility/security/post-publish gate bullet pairs; no material contract reversal observed. Mixed-language copy remains editorial polish work."
+    },
+    {
+      "path": "integrations/laya.md",
+      "en_blob": "3526330c901cc32095fd3f46e6f4e293f3e21ac0",
+      "ko_blob": "eba6dfafb044d79f756ae128ea27e002f199836b",
+      "notes": "Corrected omitted development-install vs next packaged release timing, uncached checkpoint load latency, valid low-confidence abstention, bounded Jev/Ollama invariants, single-versus-multiselect fail-closed reasoning, and shared benchmark comparator scope."
+    },
+    {
+      "path": "integrations/decision-backend-plugins.md",
+      "en_blob": "a5e49217d01e79aa64e5ac5ca5e751677423f249",
+      "ko_blob": "fdc5743f6537d2829e803686adadccfa1cbbf146",
+      "notes": "Compared finite-option enforcement, plugin discovery/import boundary, secret-handling advice, explicit entry points, quality non-guarantee and benchmark output. No material contradiction found."
+    },
+    {
+      "path": "research/intent-manual-dev-result.md",
+      "en_blob": "390e3b55f407827f8ae21d448b8ab579624118af",
+      "ko_blob": "09ff2b5e622f280699c03053e3eeeb1b1ef5128c",
+      "notes": "Matched sealed held-out policy, failed promotion, all three quantitative result rows, guardrails, per-stratum gains/losses, generator provenance, and no post-hoc tuning."
+    },
+    {
+      "path": "releases/0.7.0.md",
+      "en_blob": "ad50d25b91c88635fd0000237134313ea8a506a8",
+      "ko_blob": "0c5d7330d5e6bf0ac1fc766d35f451a744f7cde4",
+      "notes": "Matched field-first access/fallback rules, scientific qualifiers/units, policy, package build/publish verification, platform matrix and compatibility limitations."
+    },
+    {
+      "path": "guides/candidate-indexing.md",
+      "en_blob": "3ed905d10b68702c8d5dff53b8a4d33fc3fcfdce",
+      "ko_blob": "e8dd1e38f5f16c5a854c4e9dcc1905477a5c7e3b",
+      "notes": "Matched exact-recall superset guarantee, cache version invalidation, opt-out behavior, and benchmark's same-plan requirement."
+    },
+    {
+      "path": "integrations/system-one.md",
+      "en_blob": "5649f792ce15ac469feb5fdba8416c1baa8f45f9",
+      "ko_blob": "6515a7d8d609fdb31083f2e91e77810def4dc179",
+      "notes": "Matched finite-option trust boundary, confidence validation/abstention, local execution authority, wire-vs-quality compatibility, and evidence requirements."
+    },
+    {
+      "path": "concepts/schema-router.md",
+      "en_blob": "4afc6bcd95ae5283fb5dd35c6c519461bf47b4e1",
+      "ko_blob": "fce19b798c06efbccaa7ac6d61b44038e3ca8206",
+      "notes": "Matched ownership table, execution-plan field order, fail-closed revalidation, field-first retrieval and conservative ambiguous intent behavior."
+    }
+  ]
+}
