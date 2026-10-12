@@ -73,8 +73,72 @@ def test_stale_review_is_rejected(tmp_path: Path) -> None:
         "en_blob": git_blob_sha((en / "a.md").read_bytes()),
         "ko_blob": git_blob_sha((ko / "a.md").read_bytes()),
         "decision": "meaning-preserved",
+        "evidence": "Synthetic reviewer identified the section meaning in this fixture.",
     }
     ledger.write_text(json.dumps({"schema_version": 1, "reviews": [entry]}))
     assert verify_reviewed(report, ledger, en, ko) == []
     (ko / "a.md").write_text("# 검증\n\n이제 달라졌습니다.", encoding="utf-8")
     assert verify_reviewed(audit(en, ko), ledger, en, ko)
+
+
+def test_duplicate_review_waiver_is_rejected(tmp_path: Path) -> None:
+    en, ko = tmp_path / "en", tmp_path / "ko"
+    en.mkdir()
+    ko.mkdir()
+    (en / "a.md").write_text("# Rule\n\n" + "Never mutate. " * 25)
+    (ko / "a.md").write_text("# 규칙\n\n허용합니다.")
+    entry = {
+        "path": "a.md",
+        "section": 1,
+        "en_blob": git_blob_sha((en / "a.md").read_bytes()),
+        "ko_blob": git_blob_sha((ko / "a.md").read_bytes()),
+        "decision": "meaning-preserved",
+        "evidence": "Synthetic record (intentionally duplicate)",
+    }
+    ledger = tmp_path / "ledger.json"
+    ledger.write_text(json.dumps({"schema_version": 1, "reviews": [entry, entry]}))
+    errors = verify_reviewed(audit(en, ko), ledger, en, ko)
+    assert any("duplicate editorial disposition" in error for error in errors)
+
+
+def test_stale_review_fails_even_when_heuristic_no_longer_flags(tmp_path: Path) -> None:
+    en, ko = tmp_path / "en", tmp_path / "ko"
+    en.mkdir()
+    ko.mkdir()
+    (en / "a.md").write_text("# Rule\n\n" + "Never mutate. " * 25)
+    (ko / "a.md").write_text("# 규칙\n\n허용합니다.")
+    entry = {
+        "path": "a.md",
+        "section": 1,
+        "en_blob": git_blob_sha((en / "a.md").read_bytes()),
+        "ko_blob": git_blob_sha((ko / "a.md").read_bytes()),
+        "decision": "meaning-preserved",
+        "evidence": "Synthetic old revision only",
+    }
+    ledger = tmp_path / "ledger.json"
+    ledger.write_text(json.dumps({"schema_version": 1, "reviews": [entry]}))
+    (ko / "a.md").write_text("# 규칙\n\n" + "변경해서는 안 됩니다. " * 18)
+    report = audit(en, ko)
+    assert report["flagged_sections"] == 0
+    errors = verify_reviewed(report, ledger, en, ko)
+    assert any("changed since review" in error for error in errors)
+
+
+def test_unsafe_editorial_review_path_is_rejected(tmp_path: Path) -> None:
+    en, ko = tmp_path / "en", tmp_path / "ko"
+    en.mkdir()
+    ko.mkdir()
+    ledger = tmp_path / "ledger.json"
+    ledger.write_text(json.dumps({
+        "schema_version": 1,
+        "reviews": [{
+            "path": "../secrets.md",
+            "section": 1,
+            "decision": "meaning-preserved",
+            "evidence": "Invalid traversal path",
+            "en_blob": "0" * 40,
+            "ko_blob": "0" * 40,
+        }],
+    }))
+    errors = verify_reviewed({"findings": []}, ledger, en, ko)
+    assert any("unsafe editorial review source path" in error for error in errors)
