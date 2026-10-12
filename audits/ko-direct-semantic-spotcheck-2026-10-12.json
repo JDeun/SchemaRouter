@@ -3,13 +3,13 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 86,
+  "reviewed_page_pairs": 98,
   "total_page_pairs": 147,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 61 pairs are not attested by this targeted record"
+    "Other 49 pairs are not attested by this targeted record"
   ],
   "reviews": [
     {
@@ -527,6 +527,78 @@
       "en_blob": "6b3ee8779f47606078027d3a2e7b1d5895cee67b",
       "ko_blob": "fc4225468c5ad4d281522ff483a661c0a1413296",
       "notes": "Repaired two broken Korean safety-critical sentences: immutable fingerprint includes explicit execution metadata, and amendments cannot change execution or response validation semantics."
+    },
+    {
+      "path": "reference/api.md",
+      "en_blob": "7718ac477ea53e3a42ecac8c38485a5fe7748893",
+      "ko_blob": "8943ac7b06e0c7a9cc315bba7d3392fb1514b2da",
+      "notes": "Compared entire API reference directive lists; matching 40+ public symbols and locale header, no semantic mismatch."
+    },
+    {
+      "path": "releases/0.4.0.md",
+      "en_blob": "31ad37c6c8ff832062092d10aa1582eb90771896",
+      "ko_blob": "3a320d4d2cc613877df69d2c1bc0d70a9f4a90ac",
+      "notes": "Compared bounded decision triad, 82% coverage floor, trust boundaries, OpenAPI refs and nonbreaking upgrade language."
+    },
+    {
+      "path": "releases/0.2.0a1.md",
+      "en_blob": "1cffd1e8d2c9f5d64310feff50042e70f1a6fbe4",
+      "ko_blob": "ca8b90a1043735a9b63505433bf11605e9d0793a",
+      "notes": "Compared first published packaged alpha claims, runtime/protocol support, CI versions and pre-1.0 compatibility."
+    },
+    {
+      "path": "concepts/execution.md",
+      "en_blob": "70d79f3ca4bf1cb28ac1c845ab1a432121932aa2",
+      "ko_blob": "cd2a1a5bc96f47c31757f7b414ef6e11ae620a3a",
+      "notes": "Compared all pre/post invocation validations, restricted redirect origins, credential separation, policy authority and error categories."
+    },
+    {
+      "path": "concepts/tool-endpoint.md",
+      "en_blob": "958a27c6fad5410a33a9646d38e4fcc1381f7f1a",
+      "ko_blob": "059e7db19a32884bc88b20b629a39a360d7262a5",
+      "notes": "Compared complete hierarchy of ToolSpec, EndpointSpec, ParameterSpec, FieldSpec with logical/wire distinction and stale hash protections."
+    },
+    {
+      "path": "reference/models.md",
+      "en_blob": "ad5c1662ed7b31d659ee181415ac1b6678446255",
+      "ko_blob": "8658447f652fd17557fb5d4eddd12558d66a9415",
+      "notes": "Compared model reference directive lists for full type surface; Python identifiers intact, no omitted directive."
+    },
+    {
+      "path": "project/brand.md",
+      "en_blob": "4c52157d1e76d01a7f401a3eaf3f4d1337edb7ff",
+      "ko_blob": "f8558a78f47cb7a05983b8b1a66029b58cbe4333",
+      "notes": "Compared logo meaning, six exact palette values, asset filenames, forbidden misuse and GitHub social-preview instructions."
+    },
+    {
+      "path": "project/case-study-template.md",
+      "en_blob": "faa2f05b31cfe0b37c6f2c6e68ee65750971dd27",
+      "ko_blob": "a99ab6094e9b9a002e23cafd1b43f884a18f9dbb",
+      "notes": "Compared external permission requirements, provenance, evaluation metrics/units, adoption evidence E1-E4 and limitations."
+    },
+    {
+      "path": "project/external-validation-openai-agents.md",
+      "en_blob": "ba8222257116a39dad6d15cea638e15e1743ca95",
+      "ko_blob": "aa7965e94ff37a6c90fff9a871e21ed2b69ce7cc",
+      "notes": "Compared SDK pin, approval and tool guardrail preservation, separate stdio server lifecycle, no unauthorized MCP execution and E0 evidence."
+    },
+    {
+      "path": "project/external-validation-mcp-agent.md",
+      "en_blob": "f421459c8ce02cb372a1dce822b381975d30893d",
+      "ko_blob": "dbd4471d533d5b20d114e6c138b539f6724cfe21",
+      "notes": "Compared SDK pins, native session/call ownership, schema typed gaps, no-route behavior, 12-tool fixture and E0 evidence."
+    },
+    {
+      "path": "guides/multi-provider-evidence.md",
+      "en_blob": "db32bf2b89bd0cee8aaf75437ac0227e70f4e877",
+      "ko_blob": "967f91e880af44926e4d04c01444e59b509df164",
+      "notes": "Compared coverage/corroborate provider independence, unit/qualifier agreement, canonical document IDs and no formula-only scientific merges."
+    },
+    {
+      "path": "releases/0.12.0.md",
+      "en_blob": "2b1f22affe73ea0962697a03f172d1b7669d11ae",
+      "ko_blob": "b274c11d2d6668eeb1a83cbb65f2142d45467ccf",
+      "notes": "Compared stable-core facade, separate execution permission, installed artifacts validation and full release provenance contract."
     }
   ]
 }
