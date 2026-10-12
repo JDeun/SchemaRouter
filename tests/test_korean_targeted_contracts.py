@@ -154,3 +154,24 @@ def test_korean_research_history_keeps_failed_frozen_evidence_explicit() -> None
         "\nopen-set capability-membership boundary.\n",
     ):
         assert truncated not in history
+
+
+def test_korean_security_policy_is_localized_without_weakened_boundaries() -> None:
+    policy = (ROOT / "docs_ko/security/threat-model.md").read_text(
+        encoding="utf-8"
+    )
+    for required in (
+        "스키마 갱신 요청이나 세션을 열기 전에",
+        "자격 증명을 교체하려면",
+        "최초 출처(origin)",
+        "기본 최대 16 MiB",
+        "동일한 출처",
+        "JSON Pointer가 아닌 앵커",
+        "출력 스키마",
+        "유한한 후보 집합",
+        "설정 값은 저장하지 않습니다",
+        "벤치마크 비밀 정보 처리",
+    ):
+        assert required in policy
+    assert "Schema watch는 process-local credential" not in policy
+    assert "Decision-backend entry point 역시" not in policy

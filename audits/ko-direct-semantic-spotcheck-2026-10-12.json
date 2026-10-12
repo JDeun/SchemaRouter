@@ -790,8 +790,8 @@
     {
       "path": "security/threat-model.md",
       "en_blob": "1e1446c4e2e38f033495fd2d20728dff57084a15",
-      "ko_blob": "4a70087b977b4efe24a4eae556fc92825467c54e",
-      "notes": "Compared exact trust/credential, local SSRF admission, same-origin docs, source-bound schema watch validators, trace/OTEL redaction, hooks/amendment restrictions and nontrusted plugin boundaries."
+      "ko_blob": "977f747981626c3e1df3f48d940c2baa605ec27c",
+      "notes": "Compared exact trust/credential, local SSRF admission, same-origin docs, source-bound schema watch validators, trace/OTEL redaction, hooks/amendment restrictions and nontrusted plugin boundaries. Corrected mixed English/Korean prose in schema-watch, redirect/ref, trusted amendment, decision-backend and security regression sections against the English canonical text. AI-assisted editorial check only; independent sentence review remains open."
     },
     {
       "path": "research/external-validation-freeze.md",

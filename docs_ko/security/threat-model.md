@@ -46,8 +46,8 @@ OpenAPI 스키마를 가져올 때 사용하는 헤더와 런타임 API 호출 �
 
 인증된 MCP에도 같은 원칙을 적용합니다. Bearer 토큰 및 사용자 지정 헤더는 신뢰된 전송 계층에서 관리하고, 사용자 정보(userinfo)에 자격 증명이 포함된 MCP URL은 거부합니다. 프로토콜이 제어하는 `Mcp-*` 헤더는 SchemaRouter의 신뢰된 헤더 채널을 통해 덮어쓸 수 없습니다. 사용자 지정 OAuth, mTLS, 프록시 및 게이트웨이 동작은 애플리케이션에서 제공하는 `MCPClientFactory` 뒤에 배치합니다.
 
-Schema watch는 process-local credential과 transport factory를 정확한 registered tool fingerprint 및 credential-free structured-source identity에 고정합니다. Application code가 같은 logical tool key를 다른 source, transport, contract로 교체하면 기존 watch는 **refresh request/session을 열기 전에** `stale_source` 또는 `stale_contract`가 됩니다.
-Watch 자체가 검증하고 적용한 compatible refresh는 fingerprint pin만 전진시킬 수 있으며 source/transport identity는 변경되지 않아야 합니다. 따라서 credential rotation에는 implicit carry-over가 아니라 명시적인 trusted-local watch re-registration이 필요합니다.
+스키마 감시 기능은 프로세스 내부의 자격 증명과 전송 팩토리를 등록된 도구의 정확한 지문 및 자격 증명이 제외된 구조화 소스 식별자에 고정합니다. 애플리케이션 코드가 동일한 논리적 도구 키를 다른 소스·전송 계층·계약으로 교체하면, 기존 감시는 **스키마 갱신 요청이나 세션을 열기 전에** `stale_source` 또는 `stale_contract` 상태가 됩니다.
+감시 기능이 자체 검증을 거쳐 적용한 호환 가능한 갱신은 지문 고정값만 갱신할 수 있으며, 소스·전송 계층 식별자는 변경할 수 없습니다. 따라서 자격 증명을 교체하려면 기존 감시에 자동 승계하지 말고 신뢰된 로컬 코드에서 해당 감시를 명시적으로 다시 등록해야 합니다.
 
 조건부 스키마 요청 검증자(ETag / Last-Modified)도 데이터 소스에 종속됩니다. SchemaRouter는 저장된 검증자 메타데이터와 함께 구조화된 소스 식별자의 불투명 다이제스트를 저장하고, 프로세스 내부 캐시는 논리적 도구 키와 소스 식별자를 함께 사용해 구분합니다. 같은 키를 유지한 도구 교체, 어댑터 변경 또는 소스 변경이 발생하면 캐시를 사용하지 않고 새로 요청합니다. 새 기능이 이전 레지스트리 키를 재사용했다는 이유만으로 기존 검증자를 전송하거나 신뢰하지 않습니다. 일치하는 소스 다이제스트가 없는 이전 형식 또는 잘못된 검증자 메타데이터는 무시하고 정상적인 전체 요청으로 복구합니다.
 
@@ -64,14 +64,13 @@ Watch 자체가 검증하고 적용한 compatible refresh는 fingerprint pin만 
 - 네트워크 계층에서 DNS 리바인딩 공격을 고려합니다.
 - 가능한 경우 외부 송신(egress) 제어를 적용합니다.
 
-SchemaRouter는 schema/document redirect를 original origin으로 제한하고 OpenAPI runtime call도 명시적으로 승인된 origin으로 제한합니다. OpenAPI runtime response는 기본 16 MiB limit의 bounded reader를 통해 stream되며 이는 OPTIMADE adapter의 bounded-response posture와 같습니다.
+SchemaRouter는 스키마·문서를 가져올 때의 리다이렉트를 최초 출처(origin)로 제한하고, OpenAPI 런타임 호출도 명시적으로 승인된 출처로 제한합니다. OpenAPI 런타임 응답은 기본 최대 16 MiB의 크기 제한을 적용하는 판독기로 스트리밍 처리하며, 이는 OPTIMADE 어댑터의 응답 크기 제한 정책과 같습니다.
 
-Cross-document OpenAPI `$ref` fetching은 기본적으로 비활성화됩니다. Trusted application code가 opt-in하면 referenced document는 entry document의 origin 안에 있어야 하고 schema header는 그 origin 안에서만 재사용되며 redirect는 same-origin으로 유지되고 depth/document/aggregate-byte limit이 적용됩니다.
-`$id` base-URI rebasing 또는 non-JSON-Pointer anchor를 사용하는 document는 현재 resolver가 추측하지 않고 fail-closed합니다.
+다른 문서로 이어지는 OpenAPI `$ref` 참조 가져오기는 기본적으로 비활성화됩니다. 신뢰된 애플리케이션 코드가 이를 명시적으로 활성화한 경우에도 참조 문서는 최초 문서와 동일한 출처에 있어야 합니다. 스키마 요청 헤더는 동일 출처 안에서만 재사용하고, 리다이렉트도 동일 출처로 제한하며, 참조 깊이·문서 수·총 바이트 수 제한을 적용합니다. 현재 해석기는 `$id`에 의한 기본 URI 재설정이나 JSON Pointer가 아닌 앵커를 사용하는 문서를 추측해 처리하지 않고 안전하게 거부합니다.
 
-이 검사들은 application의 initial URL admission policy를 대체하지 않습니다.
+이러한 제한은 애플리케이션이 최초 URL을 허용할지 결정하는 네트워크 정책을 대체하지 않습니다.
 
-### Observability
+### 관측성
 
 실행 이벤트의 인수와 결과 본문은 기본적으로 민감값을 가립니다.
 
@@ -98,13 +97,13 @@ Cross-document OpenAPI `$ref` fetching은 기본적으로 비활성화됩니다.
 
 ### 신뢰된 계약 수정
 
-`SchemaRouter.amend_capability()`는 invoker binding과 같은 등급의 trusted local code입니다. Remote content, model output, decision backend에서는 접근할 수 없습니다.
+`SchemaRouter.amend_capability()`는 실행기를 바인딩하는 행위와 동일한 수준의 신뢰가 필요한 로컬 코드입니다. 원격 콘텐츠, 모델 출력 또는 의사결정 백엔드에서 호출할 수 없습니다.
 
-계약 수정은 결과의 의미를 선언하거나 주석으로 추가하는 용도로만 허용됩니다. 실행 대상 식별자와 검증 스키마의 변경은 거부하므로 호출을 다른 대상으로 돌리거나, 입력 범위를 넓히거나, 파괴적 작업을 읽기 전용으로 재분류하거나, 원본 소스가 선언한 응답 검증을 완화할 수 없습니다. 거부된 수정 사항은 아무것도 등록하지 않으며 기존 바인딩에도 영향을 주지 않습니다.
+계약 수정은 결과의 의미를 선언하거나 주석을 덧붙이는 범위에서만 허용됩니다. 실행 대상의 식별자와 검증 스키마를 바꿀 수 없으므로, 호출을 다른 대상으로 전환하거나 입력 범위를 넓히거나 파괴적인 작업을 읽기 전용으로 재분류하거나 원래 소스가 선언한 응답 검증을 완화할 수 없습니다. 거부된 수정은 아무것도 등록하지 않으며 기존 바인딩에 영향을 주지 않습니다.
 
-도구와 엔드포인트의 `metadata` 수정도 거부됩니다. 자유 형식 주석처럼 보여도 검증 과정에서 필수 조건을 도출할 수 있기 때문입니다. 예를 들어 소스에 `output_schema`가 없을 때 `endpoint.metadata["output_required"]`는 자동 생성된 출력 스키마를 결정합니다. 따라서 메타데이터만 수정해도 명시된 계약 요소나 지문을 변경하지 않은 채 응답에 반드시 포함해야 할 필드를 바꿀 수 있습니다. 이를 방지하기 위해 해당 수정도 허용하지 않습니다.
+도구나 엔드포인트의 `metadata` 수정 역시 거부합니다. 자유 형식 주석처럼 보여도 검증 요건을 유도할 수 있기 때문입니다. 예를 들어 소스가 `output_schema`를 제공하지 않은 경우 `endpoint.metadata["output_required"]`가 합성 출력 스키마를 결정하므로, 메타데이터만 바꿔도 명시된 계약 요소나 지문을 건드리지 않고 필수 응답 필드를 변경할 수 있습니다.
 
-Amendment에서도 fingerprint는 변경되므로 stale-binding 및 stale-plan protection은 그대로 유지됩니다.
+계약을 수정하면 지문은 여전히 변경되므로, 오래된 실행기 바인딩과 실행 계획을 차단하는 보호도 그대로 유지됩니다.
 
 ### 타사 어댑터 플러그인
 
@@ -112,12 +111,11 @@ Amendment에서도 fingerprint는 변경되므로 stale-binding 및 stale-plan p
 
 ### 타사 의사결정 백엔드 플러그인
 
-Decision-backend entry point 역시 trusted local executable code입니다. Discovery는 package metadata만 읽으며 trusted application code가 정확한 plugin name 하나를 요청하기 전에는 plugin module을 import하지 않습니다. 이름이 중복되면 모듈을 불러오기 전에 실패 처리하므로 패키지 설치 순서에 따라 구현체가 조용히 선택되는 일을 막습니다.
+의사결정 백엔드의 진입점(entry point) 역시 신뢰된 로컬 실행 코드입니다. 플러그인 탐색은 패키지 메타데이터만 확인하며, 신뢰된 애플리케이션 코드가 특정 플러그인 이름 하나를 명시적으로 요청하기 전까지 해당 모듈을 가져오지 않습니다. 이름이 중복되면 가져오기 전에 실패 처리하므로 패키지 설치 순서가 구현체를 암묵적으로 선택하지 못합니다.
 
-Loaded decision backend는 여전히 SchemaRouter가 만든 finite option set만 받습니다.
-Unknown option ID, duplicate selection, malformed result, invalid score는 일반 `DecisionBackend` validation path에서 fail-closed합니다. Plugin code 자체는 trusted Python code이며 임의 local action을 수행할 수 있으므로 application은 plugin installation/loading을 model output이 아니라 code trust decision으로 취급해야 합니다.
+불러온 의사결정 백엔드는 SchemaRouter가 생성한 유한한 후보 집합만 전달받습니다. 알 수 없는 후보 ID, 중복 선택, 잘못된 결과 형식과 유효하지 않은 점수는 통상적인 `DecisionBackend` 검증 경로에서 안전하게 거부됩니다. 다만 플러그인 자체는 로컬에서 임의의 동작을 수행할 수 있는 신뢰된 Python 코드이므로, 애플리케이션은 플러그인 설치·불러오기를 모델 출력이 아닌 코드 신뢰에 관한 결정으로 다뤄야 합니다.
 
-Shared benchmark configuration은 선택된 environment variable에서 명시적으로 전달됩니다. Report는 plugin identity, distribution/version, configuration environment-variable name, configuration key만 기록하며 configuration value는 저장하지 않습니다.
+공유 벤치마크 설정은 선택한 환경 변수에서 명시적으로 전달합니다. 보고서에는 플러그인 식별자, 배포 패키지와 버전, 설정 환경 변수의 이름 및 설정 키만 기록하며 설정 값은 저장하지 않습니다.
 
 ### 사람이 읽는 문서
 
@@ -127,19 +125,19 @@ Shared benchmark configuration은 선택된 environment variable에서 명시적
 
 다음 항목에 영향을 주는 변경에는 적대적 상황을 가정한 회귀 테스트가 필요합니다.
 
-- authorization 또는 credential;
-- URL/redirect/origin 처리;
-- schema fingerprint 또는 registry mutation;
-- execution policy;
-- retry 또는 side effect;
-- input/output validation;
-- event payload redaction 및 telemetry export;
-- adapter plugin loading;
-- decision-backend plugin discovery/loading 및 benchmark secret 처리;
-- MCP authenticated/custom transport;
-- per-call approval 또는 execution budget;
-- trusted execution hook;
-- documentation grounding 또는 proposal approval.
+- 권한 관리 또는 자격 증명;
+- URL·리다이렉트·출처 처리;
+- 스키마 지문 또는 레지스트리 변경;
+- 실행 정책;
+- 재시도 또는 부작용이 있는 작업;
+- 입력·출력 검증;
+- 실행 이벤트 본문 민감값 제거 및 원격 측정 내보내기;
+- 어댑터 플러그인 불러오기;
+- 의사결정 백엔드 플러그인 탐색·불러오기 및 벤치마크 비밀 정보 처리;
+- 인증된 MCP 및 사용자 지정 전송 계층;
+- 개별 호출 승인 또는 실행 예산;
+- 신뢰된 실행 훅;
+- 문서 기반 근거 확인 또는 실행 제안 승인.
 
 함께 보기:
 
