@@ -9,7 +9,7 @@
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "One page (framework-maturity.md) was inspected against unmerged PR #1305 rather than this branch/main; therefore current-branch-pinned audits remain 146/147.",
+    "framework-maturity.md was directly checked against PR #1305's 49-row translated table; the exact same Korean blob now also exists in this PR branch, and all 147 source/translation blobs are current-branch pinned. Neither PR has merged to main.",
     "147 AI-assisted page-pair reviews are not independent human sentence-by-sentence certification; #1202 final checkbox remains pending external editorial sign-off."
   ],
   "reviews": [
