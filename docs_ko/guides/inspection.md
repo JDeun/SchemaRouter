@@ -61,21 +61,26 @@ JSON에는 persisted ToolSpec document와 derived tool/endpoint fingerprint가 �
 
 ## Run trace 검사
 
+저장된 전체 실행 기록을 조회합니다.
+
 ```bash
 schemarouter inspect traces --db ./schemarouter-traces.sqlite3
 ```
 
-Machine-readable output은 `--json`을 사용합니다.
-
+완료 여부에 따라 실행 기록을 필터링합니다.
 
 ```bash
 schemarouter inspect traces --db ./schemarouter-traces.sqlite3 --complete
 schemarouter inspect traces --db ./schemarouter-traces.sqlite3 --incomplete
 ```
 
+특정 run ID에 해당하는 이벤트 스트림을 검사합니다.
+
 ```bash
 schemarouter inspect trace <RUN_ID> --db ./schemarouter-traces.sqlite3
 ```
+
+모든 검사 명령에 `--json`을 추가하면 기계가 읽을 수 있는 출력을 얻습니다.
 
 ## CLI가 하지 않는 것
 
