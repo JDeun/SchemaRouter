@@ -128,22 +128,39 @@ def verify(en_root: Path, ko_root: Path, ledger: Path | None) -> dict[str, objec
         valid_ko = set(ko_positions) & set(range(1, len(expected_page["ko_units"]) + 1))
         covered_en += len(valid_en)
         covered_ko += len(valid_ko)
-        covered_en_sentences += sum(len(sentence_hashes(str(expected_page["en_units"][i - 1]["text"]))) for i in valid_en)
-        covered_ko_sentences += sum(len(sentence_hashes(str(expected_page["ko_units"][i - 1]["text"]))) for i in valid_ko)
+        covered_en_sentences += sum(
+            len(sentence_hashes(str(expected_page["en_units"][i - 1]["text"])))
+            for i in valid_en
+        )
+        covered_ko_sentences += sum(
+            len(sentence_hashes(str(expected_page["ko_units"][i - 1]["text"])))
+            for i in valid_ko
+        )
 
     missing = sorted(set(expected) - seen)
     if missing:
         errors.append(f"{len(missing)} unreviewed bilingual page(s)")
     return {
-        "scope": "Evidence completeness and hash validity only, not independent linguistic truth or verified human identity",
+        "scope": (
+            "Evidence completeness and hash validity only, not independent "
+            "linguistic truth or verified human identity"
+        ),
         "paired_pages": inventory["paired_pages"],
         "en_review_units": inventory["total_en_units"],
         "ko_review_units": inventory["total_ko_units"],
         "reviewed_pages": len(seen & set(expected)),
         "reviewed_en_units": covered_en,
         "reviewed_ko_units": covered_ko,
-        "en_sentences": sum(len(sentence_hashes(str(u["text"]))) for p in expected.values() for u in p["en_units"]),
-        "ko_sentences": sum(len(sentence_hashes(str(u["text"]))) for p in expected.values() for u in p["ko_units"]),
+        "en_sentences": sum(
+            len(sentence_hashes(str(u["text"])))
+            for p in expected.values()
+            for u in p["en_units"]
+        ),
+        "ko_sentences": sum(
+            len(sentence_hashes(str(u["text"])))
+            for p in expected.values()
+            for u in p["ko_units"]
+        ),
         "reviewed_en_sentences": covered_en_sentences,
         "reviewed_ko_sentences": covered_ko_sentences,
         "review_evidence_complete": not errors,
