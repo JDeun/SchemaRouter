@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "issue": 1202,
+  "review_date": "2026-10-12",
+  "page": "framework-maturity.md",
+  "review_type": "AI-assisted bilingual table editorial repair, not independent all-sentence semantic sign-off",
+  "source_en_blob": "5d949eaaa4d64dbdf5ac0464cb0dbbdb41e00350",
+  "reviewed_ko_blob": "20f08e65f91e611486943af69443aef53f4b08c6",
+  "reviewed_table_rows": 49,
+  "confirmed_issue": "49 capability-table rows in docs_ko/framework-maturity.md retained English status and direction text; English-prose leakage scanner previously skipped Markdown tables.",
+  "repair": "Translated all 49 current-main status and future-direction pairs while retaining each source capability row, identifier, quantitative bound, version and fail-closed policy qualifier.",
+  "regression": "scripts/report_korean_table_prose.py plus tests/test_korean_table_prose.py now scan Markdown table prose, with a full 147-page Korean corpus gate.",
+  "evidence_boundaries": "Current machine heuristic cannot catch all short English cells, Korean semantic mistranslations, or independently certify all 147 document pairs. This is a targeted risk repair; human independent sentence-level audit remains unfulfilled.",
+  "independent_sentence_review_complete": false,
+  "verbatim_research_hypothesis_exception": {
+    "path": "research/experiment-index.md",
+    "source_en_blob": "6f152dc76cbdf072cf411da261ca521f666d8bf1",
+    "annotated_ko_blob": "0b19378fdef860ccd709b0cafcf958c0ec2272e7",
+    "justification": "The column contains exact literal experiment hypotheses from the research evidence ledger. Only experiment-ID-matched EN-identical source strings are retained; other English table prose remains a blocking scan finding.",
+    "reviewer_status": "Source identity verification is machine-checkable; independent all-sentence semantic review is not established."
+  }
+}
