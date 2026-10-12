@@ -57,11 +57,16 @@ def test_direct_semantic_spotcheck_provenance_is_bounded_and_live() -> None:
             encoding="utf-8"
         )
     )
-    assert 16 <= ledger["reviewed_page_pairs"] == len(ledger["reviews"]) <= 147
+    assert ledger["reviewed_page_pairs"] == len(ledger["reviews"]) == 147
     assert ledger["total_page_pairs"] == 147
     assert ledger["independent_sentence_review_complete"] is False
     assert "not independent human" in ledger["reviewer_status"]
-    assert len({item["path"] for item in ledger["reviews"]}) == len(ledger["reviews"])
+    reviewed_paths = {item["path"] for item in ledger["reviews"]}
+    assert len(reviewed_paths) == len(ledger["reviews"])
+    expected_paths = {path.relative_to(ROOT / "docs").as_posix() for path in (ROOT / "docs").rglob("*.md")}
+    assert reviewed_paths == expected_paths
+    # A complete AI-assisted page audit is not a third-party sentence-level sign-off.
+    assert "not independent human" in ledger["reviewer_status"]
     for item in ledger["reviews"]:
         assert item["en_blob"] == git_blob_sha(
             (ROOT / "docs" / item["path"]).read_bytes()
