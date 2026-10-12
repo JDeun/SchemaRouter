@@ -3,13 +3,13 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 143,
+  "reviewed_page_pairs": 144,
   "total_page_pairs": 147,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 4 pairs are not attested by this targeted record"
+    "Other 3 pairs are not attested by this targeted record"
   ],
   "reviews": [
     {
@@ -869,6 +869,12 @@
       "en_blob": "010e7b42529f641e626706663c0dc3bc4afde181",
       "ko_blob": "c347c8e5f800b153ea28c9ed94231d6d1991ea08",
       "notes": "Directly cross-checked detailed V6A–E and post-V6E negative-result quantitative tables, 0.14 Phase A Recall@1/3/5/10, ToolRet/ToolReAGt/ADB/Energy sources, task-cluster bootstrap constraints, no post-hoc tuning and SafeActBench 8 vs 656 case boundaries."
+    },
+    {
+      "path": "research/routing-status.md",
+      "en_blob": "13c37940df75f028b74c41c798a6cfa7432e7636",
+      "ko_blob": "906a4daea4a58ac662702320ffb57f039f62b15f",
+      "notes": "Directly reviewed complete ~700-line EN/KO study-status text: 0.14 Phase A/B1/B2/K3 and pending #432/#424, external E0 validation, 0.11 DEV/fresh failure, all 0.12 #338/#347/#349/#354/#358/#363/#371/#374/#377/#378 metrics and no confirmation reuse, and V6A-E + post-V6E terminal negatives. No contradictory bilingual research promotion or fabricated positive-route authority found."
     }
   ]
 }
