@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "purpose": "prospective 8ada7f1 public-source repin only; original visible 3bac851 DEV and old audit remain unchanged",
+  "upstream_repository": "ClicShopping/ClicShopping",
+  "upstream_ref": "version4.33",
+  "historical_dev_pin": "3bac851759234a4babb49d3f351e472cd9e0f31f",
+  "new_source_pin": "8ada7f1f392f3dd2800e825dac8d245dfd53944a",
+  "discussion": "https://github.com/ClicShopping/ClicShopping/discussions/91",
+  "unchanged_git_blobs": {
+    "Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/AnthropicEcommerce/AnthropicEcommercePermissions.php": "4625f11fdda81fca740aff36365155fe79b3964c",
+    "Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/AnthropicEcommerce/AnthropicEcommerce.php": "1827a3a3e6d46b7028bff143d60f2db3d2f2e301",
+    "Core/ClicShopping/Apps/Tools/MCP/Classes/Shop/EndPoint/CustomersProductsPermissions.php": "4170c045b5a81a28e6584508fde10ac1564812e4",
+    "Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/CustomersProducts/CustomersProducts.php": "d063c2c4b7e924ec213b2fe4cdf2129eec7f7193",
+    "Core/ClicShopping/Apps/Tools/MCP/Classes/Shop/EndPoint/CustomerOrdersPermissions.php": "e090b49def4aafd8c383cb03bdc590f966a7e3ac",
+    "Core/ClicShopping/Apps/Tools/MCP/Classes/Shop/EndPoint/RagBIPermissions.php": "4525eaa92e1c0f45c4bb659fd1bbb5ce0cbb433e",
+    "Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/ChatRagBI/ChatRagBI.php": "36072633d111b7160a5951b0384a2daca49b4beb"
+  },
+  "route_before": {
+    "path": "Core/ClicShopping/Apps/Tools/MCP/clicshopping.json",
+    "git_blob_sha": "18ed3a59ca7b73a7c68653615baa86db076a45e6",
+    "customer_orders": "Sites\\Shop\\Pages\\customerOrders"
+  },
+  "route_after": {
+    "path": "Core/ClicShopping/Apps/Tools/MCP/clicshopping.json",
+    "git_blob_sha": "4762eaeecc5e672557da9280d6ebdcea8026c483",
+    "customer_orders": "Sites\\Shop\\Pages\\CustomerOrders"
+  },
+  "new_customer_orders_page": {
+    "path": "Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/CustomerOrders/CustomerOrders.php",
+    "git_blob_sha": "067d96233780bb52cbfd1eb9dee28e2c8697e099",
+    "read_actions": [
+      "list_orders",
+      "read_order",
+      "history"
+    ],
+    "write_actions": [
+      "cancel_order",
+      "send_message"
+    ]
+  },
+  "new_customer_orders_readme": {
+    "path": "Core/ClicShopping/Apps/Tools/MCP/Sites/Shop/Pages/CustomerOrders/readme.md",
+    "git_blob_sha": "545c092fe2d64e269390a37b9d9d9448bf5272e4"
+  },
+  "contract_notes": {
+    "permissions": "existing four public permission classes are byte-identical at both revisions",
+    "customer_scope": "customer_id supplied by authenticated trusted CRM/ERP client; runtime scope enforcement not demonstrated by this static audit",
+    "configuration": "CustomersProducts DISPLAY_BROWSER_JSON is a configuration gate, not a missing action",
+    "overlap": "separately analyze six shared Products/CustomersProducts read actions",
+    "native": "REST endpoint/action matrix, not JSON-RPC tools/list",
+    "scoring": "new author-blind independent cases and review must be frozen for new version; do not reuse visible DEV results as held-out"
+  },
+  "source_verification": {
+    "offline_only": true,
+    "credential_use": false,
+    "live_endpoint_calls": 0,
+    "php_execution": false,
+    "model_calls": 0,
+    "official_model_scored": false,
+    "heldout_approved": false
+  }
+}
