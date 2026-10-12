@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "source_revision": "989039511c2f0c519c35f832a52d4b6278b07d1a",
-  "review_date": "2026-10-11",
+  "review_date": "2026-10-12",
   "method": "Risk-based editorial review of all rule-flagged sections after full 147-pair, 1524-section machine triage; not a claim of formal proof for every sentence.",
   "reviewed_sections": 27,
   "confirmed_semantic_omission_fixed": [
@@ -49,9 +49,9 @@
       "path": "guides/execution-policy.md",
       "section": 1,
       "en_blob": "567a6719ad780c82d82076be4d8ad2c226cf3914",
-      "ko_blob": "b70764fd18c4d9f164d80d01f8e7b1a38fd96044",
+      "ko_blob": "2b517c0059ab755e7515486bec7bafebe043790b",
       "decision": "meaning-preserved",
-      "evidence": "Korean says a proposed mutation is not thereby authorized"
+      "evidence": "Compared the English execution-policy introduction and its Korean counterpart after title translation and budget/destructive-policy wording changes. The Korean introduction continues to treat policy as a trusted host-side execution gate: discovering or proposing a mutation does not confer authorization; approval and budgets remain distinct from tool visibility."
     },
     {
       "path": "guides/universal-ingestion.md",
@@ -65,9 +65,9 @@
       "path": "guides/vector-store-onboarding.md",
       "section": 11,
       "en_blob": "11f9b83691bab0edc1db89e50745d1d9fa7e45d5",
-      "ko_blob": "f2763d921c7eaf8756175ffa426aa151c6b71793",
+      "ko_blob": "c86f491cbdb69570c7c23f47799e37b28683fcbd",
       "decision": "meaning-preserved",
-      "evidence": "Korean requires dimension for empty Chroma collections and explicit metadata fields"
+      "evidence": "Reviewed the Pinecone subsection against its English source. The newly clarified Korean sentence states that trusted DataScope filters are passed through Pinecone's structured `filter` argument, not interpolated into query text; this is the same security contract as the English sentence. SDK-shape and live-acceptance scope remain separately qualified."
     },
     {
       "path": "integrations/decision-backend-plugins.md",
@@ -245,5 +245,21 @@
     "en_blob_unchanged": "28a31836cd100eb1d8477d951bf6d1ac452114ba",
     "ko_blob": "a84181befd9f35a723cbb817e131a982539f4f87",
     "limitation": "This targeted correction is not an independent review of all 147 bilingual pages."
+  },
+  "amendment_2026_10_12": {
+    "scope": "Targeted section-level meaning review after #1299 KO wording edits in execution policy section 1 and vector-store Pinecone section 11; only those exact KO document blobs are repinned.",
+    "reviewed_sections": [
+      {
+        "path": "guides/execution-policy.md",
+        "section": 1,
+        "ko_blob": "2b517c0059ab755e7515486bec7bafebe043790b"
+      },
+      {
+        "path": "guides/vector-store-onboarding.md",
+        "section": 11,
+        "ko_blob": "c86f491cbdb69570c7c23f47799e37b28683fcbd"
+      }
+    ],
+    "limitation": "No blanket attestation for all 147 EN/KO documents or 1527 sections; independent complete sentence-level review still outstanding."
   }
 }

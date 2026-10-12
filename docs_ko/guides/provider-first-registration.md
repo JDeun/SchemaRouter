@@ -27,11 +27,11 @@ result = await router.add_provider(
 assert result.status == "complete"
 ```
 
-`require_all=True`에서는 모든 요청 method를 먼저 실제 registry에 공개하지 않은 상태로 준비합니다. Credential 누락, 사용할 수 없는 dependency/source, manual-only method, collision 또는 준비 실패가 하나라도 있으면 요청한 provider topology는 변경되지 않습니다. 모든 준비가 성공한 뒤에만 contract를 하나의 version-guarded registry batch로 공개하고 trusted binding을 연결합니다. Binding 단계가 실패하면 이전 contract와 binding을 복구하며, 동시에 registry가 변경되었다면 다른 writer의 상태를 덮어쓰지 않고 fail-closed합니다.
+`require_all=True`에서는 모든 요청 method를 먼저 실제 registry에 공개하지 않은 상태로 준비합니다. Credential 누락, 사용할 수 없는 dependency/source, manual-only method, collision 또는 준비 실패가 하나라도 있으면 요청한 provider topology는 변경되지 않습니다. 모든 준비가 성공한 경우에만 버전 검사로 보호되는 단일 레지스트리 일괄 작업으로 계약을 공개하고 신뢰된 바인딩을 연결합니다. Binding 단계가 실패하면 이전 contract와 binding을 복구하며, 동시에 registry가 변경되었다면 다른 writer의 상태를 덮어쓰지 않고 fail-closed합니다.
 
 ## 알 수 없거나 모호한 provider 이름
 
-등록된 profile은 계속 로컬에서 결정론적으로 해석합니다. 모르는 이름을 입력했다고 해서 네트워크 검색 결과를 곧바로 실행 권한으로 바꾸지는 않습니다.
+등록된 profile은 계속 로컬에서 결정론적으로 해석합니다. 알 수 없는 이름을 입력해도 암묵적인 네트워크 탐색을 수행하거나 실행 권한을 부여하지 않습니다.
 
 먼저 `discover_provider()`로 검토 가능한 proposal을 얻습니다.
 
@@ -56,7 +56,7 @@ router.approve_provider_candidate(
 )
 ```
 
-Backend가 `ProviderProfile`을 제안하더라도 proposal 자체는 실행 권한이 없습니다. 정확한 profile digest를 사용한 명시적 approval 이후에만 profile이 등록되고, 그 뒤에도 기존 adapter/binding/credential 규칙을 그대로 적용합니다. 즉 흐름은 **discover → inspect → approve → register**이지 **search → execute**가 아닙니다.
+Backend가 `ProviderProfile`을 제안하더라도 proposal 자체는 실행 권한이 없습니다. 정확한 프로필 다이제스트를 사용한 명시적 승인 호출이 있어야 등록을 진행할 수 있으며, 승인 이후에도 기존 어댑터·바인딩·인증 정보 규칙을 적용합니다. 즉 흐름은 **discover → inspect → approve → register**이지 **search → execute**가 아닙니다.
 
 ## 등록 전 확인
 
@@ -101,7 +101,7 @@ result = await router.add_provider(
 )
 ```
 
-SchemaRouter는 SDK를 자동 설치하지 않습니다. SDK가 설치되어 있어도 provider plugin이 trusted binding을 제공하지 않는 한 명시적인 binding이 필요합니다.
+SchemaRouter는 SDK를 자동 설치하지 않습니다. SDK가 설치되어 있더라도 공급자 플러그인이 신뢰된 바인딩을 제공하지 않는다면 호출자가 명시적으로 바인딩해야 합니다.
 
 ## 여러 접근 방법은 계속 구분됩니다
 

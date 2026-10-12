@@ -1,7 +1,6 @@
 # Principal 기반 권한 관리
 
-SchemaRouter는 신뢰된 RBAC/ABAC claim을 capability 검색 전에 적용하고 실행 직전에 다시
-검증할 수 있습니다.
+SchemaRouter는 신뢰할 수 있도록 검증된 RBAC/ABAC 속성·권한 정보를 기능 검색 전에 적용하고, 실행 직전에 다시 검증할 수 있습니다.
 
 SchemaRouter 자체가 identity provider가 되는 것은 아닙니다. 로그인, SSO, token 검증,
 group membership, HR directory의 정본은 host application이 담당하고, 검증된 결과만
@@ -94,8 +93,7 @@ AuthorizationRule(
 )
 ```
 
-서로 다른 selector category는 AND, 같은 `*_any` 안의 값은 OR로 평가합니다. Rule은 선언
-순서대로 평가하며 첫 번째 match가 적용됩니다.
+서로 다른 선택 조건 범주는 AND(모두 충족), 동일한 `*_any` 선택 조건에 속한 값들은 OR(하나 이상 충족)로 평가합니다. 규칙은 선언 순서대로 평가하며 처음 일치한 규칙을 적용합니다.
 
 ## First-match 우선순위와 policy lint
 
@@ -120,8 +118,7 @@ first-match 결과는 바꾸지 않습니다.
 
 ## 기본 정책
 
-`AuthorizationPolicy`는 deny-by-default입니다. 어떤 rule에도 match하지 않으면 해당 route는
-보이지 않고 실행할 수도 없습니다.
+`AuthorizationPolicy`는 기본 거부(deny-by-default) 방식입니다. 어떤 규칙에도 일치하지 않으면 해당 경로는 검색 결과에 노출되지 않으며 실행할 수도 없습니다.
 
 `authorization_policy`를 설정하지 않은 기존 router는 principal 없이도 이전 동작을 그대로
 유지합니다.
@@ -213,8 +210,7 @@ policy = AuthorizationPolicy(
 | Document/search/KV/time-series | visible field + trusted exact-match predicate |
 | Graph / RDF | visible result field + 허용 relationship/predicate + 최대 hop depth |
 
-Vector backend가 trusted tenant filter를 실제로 강제하려면 명시적인 `filters` 인자를
-지원해야 합니다. 지원하지 못하면 unscoped search를 실행하지 않고 호출을 거부합니다.
+벡터 저장소 백엔드에서 신뢰된 테넌트 필터를 강제하려면 명시적인 `filters` 인자를 지원해야 합니다. 해당 필터를 실제로 강제할 수 없다면 필터 없는 검색으로 우회하지 않고 호출을 거부합니다.
 
 Graph/RDF에서 `relationship_types`를 생략해도 접근 범위가 넓어지지 않습니다. Invoker는
 principal에 허용된 relationship 집합을 기본값으로 사용하고, `max_hops`도 정책 상한으로
@@ -222,7 +218,7 @@ principal에 허용된 relationship 집합을 기본값으로 사용하고, `max
 
 ### 보안 경계
 
-Data-scope rule은 application-visible 범위를 더 좁힐 뿐 DB 권한을 부여하지 않습니다.
+데이터 범위 제한 규칙은 애플리케이션에서 볼 수 있는 범위를 더 좁힐 뿐, 데이터베이스 권한을 새로 부여하지 않습니다.
 DB-native role/grant/RLS/ACL, tenant credential, network boundary는 계속 최종 권한 경계이며
 별도로 구성해야 합니다.
 
