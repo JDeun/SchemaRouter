@@ -7,7 +7,7 @@ from pathlib import Path
 
 from scripts.audit_translation_review_units import review_units
 from scripts.prepare_korean_docs import git_blob_sha
-from scripts.verify_independent_translation_review import verify
+from scripts.verify_independent_translation_review import sentence_hashes, verify
 
 EN = "# Safety\n\nDo not grant execution authority.\n\nNever bypass local policy.\n"
 KO = "# 안전\n\n실행 권한을 부여하지 않습니다.\n\n로컬 정책을 우회하지 않습니다.\n"
@@ -42,6 +42,8 @@ def signed() -> dict:
                     "ko_indices": [i],
                     "en_hashes": [en_units[i - 1]["sha256"]],
                     "ko_hashes": [ko_units[i - 1]["sha256"]],
+                    "en_sentence_hashes": sentence_hashes(str(en_units[i - 1]["text"])),
+                    "ko_sentence_hashes": sentence_hashes(str(ko_units[i - 1]["text"])),
                     "verdict": "equivalent",
                     "rationale": "Full source and target clause compared, including negation.",
                 }
@@ -105,3 +107,23 @@ def test_changed_block_digest_rejected(tmp_path: Path) -> None:
     result = verify(en, ko, path)
     assert result["review_evidence_complete"] is False
     assert any("stale/incorrect ko block hashes" in e for e in result["errors"])
+
+def test_multi_sentence_paragraph_cannot_be_attested_with_just_block_hash(tmp_path: Path) -> None:
+    en, ko, path = inputs(tmp_path)
+    english = EN.replace("Do not grant execution authority.", "Do not grant authority. Never permit unapproved calls.")
+    korean = KO.replace("실행 권한을 부여하지 않습니다.", "권한을 부여하지 않습니다. 승인받지 않은 호출을 허용하지 않습니다.")
+    (en / "a.md").write_text(english, encoding="utf-8")
+    (ko / "a.md").write_text(korean, encoding="utf-8")
+    data = signed()
+    data["pages"][0]["en_blob"] = git_blob_sha(english.encode())
+    data["pages"][0]["ko_blob"] = git_blob_sha(korean.encode())
+    updated_en = review_units(english)
+    updated_ko = review_units(korean)
+    data["pages"][0]["decisions"][1]["en_hashes"] = [updated_en[1]["sha256"]]
+    data["pages"][0]["decisions"][1]["ko_hashes"] = [updated_ko[1]["sha256"]]
+    # A deliberately stale sentence digest must fail even if paragraph-level
+    # blobs and block hashes are accurate.
+    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    result = verify(en, ko, path)
+    assert result["review_evidence_complete"] is False
+    assert any("sentence review hashes" in e for e in result["errors"])
