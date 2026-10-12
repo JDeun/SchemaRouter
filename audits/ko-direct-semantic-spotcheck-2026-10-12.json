@@ -9,7 +9,7 @@
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 1 pairs are not attested by this targeted record"
+    "One page (framework-maturity.md) was inspected against unmerged PR #1305 rather than this branch/main; therefore current-branch-pinned audits remain 146/147."
   ],
   "reviews": [
     {
@@ -888,5 +888,18 @@
       "ko_blob": "4892377fe2b6b27e529644a401bc2e65c0c3ed57",
       "notes": "Direct EN/KO archival contract inspection over 64 numbered sections, parallel source/translation subsection chronology and semantic number/commit evidence. Repaired 16+ corrupted/dangling Korean clauses obscuring never-tuned holdouts, all-reject NLI, false execution evidence, reference SHA/latency and negative result interpretation. Source contains repeated historic section number 47 in BOTH languages; not a missing translation. This is AI-assisted page-level and structural risk review, not independent every-sentence human sign-off."
     }
-  ]
+  ],
+  "separately_inspected_pending_pr": [
+    {
+      "path": "framework-maturity.md",
+      "source_ref": "main",
+      "source_blob": "5d949eaaa4d64dbdf5ac0464cb0dbbdb41e00350",
+      "target_ref": "docs/1202-korean-maturity-table-20261012",
+      "target_blob": "20f08e65f91e611486943af69443aef53f4b08c6",
+      "pull_request": 1305,
+      "reviewed_comparison_rows": 49,
+      "observation": "Directly compared each of the 49 EN/KO capability, current status, and future-direction rows against the repaired translation on PR #1305; preserved API qualifiers, failure-closed semantics, vendor lists and numerical targets. Both document-tail narrative maturity gates match in substantive content. This target blob is NOT in the current PR #1307 base or head and cannot be counted in main-branch-pinned 146-page audit until PR #1305 is merged."
+    }
+  ],
+  "directly_examined_across_branches": 147
 }
