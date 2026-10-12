@@ -77,6 +77,14 @@ def test_direct_semantic_spotcheck_provenance_is_bounded_and_live() -> None:
         assert item["ko_blob"] == git_blob_sha(
             (ROOT / "docs_ko" / item["path"]).read_bytes()
         )
+    # Independent source records must also point to current PR branch blobs.
+    for item in ledger["separately_inspected_pending_pr"]:
+        assert item["source_blob"] == git_blob_sha(
+            (ROOT / "docs" / item["path"]).read_bytes()
+        )
+        assert item["target_blob"] == git_blob_sha(
+            (ROOT / "docs_ko" / item["path"]).read_bytes()
+        )
 
 
 def test_korean_laya_documentation_preserves_bounded_decision_semantics() -> None:
