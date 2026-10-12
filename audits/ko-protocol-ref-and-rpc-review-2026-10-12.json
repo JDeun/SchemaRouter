@@ -4,7 +4,7 @@
   "date": "2026-10-12",
   "review_status": "AI-assisted targeted editorial review; not independent human sign-off",
   "independent_sentence_review_complete": false,
-  "scope": "Precisely two EN/KO protocol pages, with source/translation Git blob provenance; no attestation of remaining pages.",
+  "scope": "Single EN/KO OpenAPI compatibility page, SHA-pinned; OpenRPC overlapping repair already merged independently via PR #1302 and is deliberately not duplicated here.",
   "reviews": [
     {
       "path": "guides/openapi-compatibility.md",
@@ -13,15 +13,13 @@
       "section": "Constructs reported explicitly",
       "decision": "omitted-source-conditions-restored",
       "evidence": "Korean now states that bounded same-origin external-ref resolution requires explicit trusted URL-ingestion opt-in, and that same-document URI refs are automatically normalized; distinguishes request and response content-type/body coverage."
-    },
-    {
-      "path": "guides/openrpc.md",
-      "en_blob": "0b55e7e4dcfa8286201dfc4fb379fd2d4b44fdca",
-      "ko_blob": "a157dcb1ba21f1841d039405b7fa0fa4159ebcad",
-      "section": "Register an OpenRPC service",
-      "decision": "omitted-response-projection-semantics-restored",
-      "evidence": "Korean now explains declared nested result fields, record alignment for results[].title/score and direct item-field exposure for root result arrays without synthetic root field names."
     }
   ],
-  "limitations": "Additional independent sentence-level editorial sign-off of all 147 bilingual pairs is still pending."
+  "limitations": "Additional independent sentence-level editorial sign-off of all 147 bilingual pairs is still pending.",
+  "overlap_reconciled": {
+    "pr": 1302,
+    "page": "guides/openrpc.md",
+    "status": "already-merged-independent-change",
+    "note": "Do not overwrite the #1302 translated OpenRPC record-preserving/root-array semantics; no additional OpenRPC source edit remains in this PR."
+  }
 }
