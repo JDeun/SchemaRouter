@@ -129,9 +129,9 @@
       "path": "project/launch-playbook.md",
       "section": 34,
       "en_blob": "a16f4d049aef6e4c7a10e7e9660c5a758b0ba92e",
-      "ko_blob": "a773701f857d9a30e514c7609051b8e8c1e68e9a",
+      "ko_blob": "4ad068df9a2f109d2b314ad3b1a3151ba428dec4",
       "decision": "meaning-preserved",
-      "evidence": "Risk signal is lexical, not a translation loss: English 'Tool retrieval is not execution authority' is retained as the exact English lightning-talk title, while the Korean presentation outline separately describes 기능 검색, 신뢰된 실행 경계 and does not claim retrieval alone authorizes execution. Section shifted 33->34 because a new fully Korean GeekNews/Show GN launch section was inserted before it. Human-assisted inspection of this specific source/translation section only; not all-sentence semantic certification."
+      "evidence": "Risk signal is lexical, not a translation loss: English 'Tool retrieval is not execution authority' is retained as the exact English lightning-talk title, while the Korean presentation outline separately describes 기능 검색, 신뢰된 실행 경계 and does not claim retrieval alone authorizes execution. Section shifted 33->34 because a new fully Korean GeekNews/Show GN launch section was inserted before it. Human-assisted inspection of this specific source/translation section only; not all-sentence semantic certification. Re-verified original flagged section against English after the 2026-10-12 Korean corrective editorial updates; exact revised KO blob is now pinned."
     },
     {
       "path": "recipes/many-tools.md",
@@ -193,17 +193,17 @@
       "path": "research/design-and-experiment-history.md",
       "section": 34,
       "en_blob": "27bdc35c44010cfd1c15d4a5702ed2b9ad6f9c5c",
-      "ko_blob": "7209d91638d859ab08137e6f1b31ff8d3c9c8804",
+      "ko_blob": "4892377fe2b6b27e529644a401bc2e65c0c3ed57",
       "decision": "meaning-preserved",
-      "evidence": "Korean preserves prior freeze/no-retuning and same-corpus non-generalization limits"
+      "evidence": "Korean preserves prior freeze/no-retuning and same-corpus non-generalization limits Re-verified original flagged section against English after the 2026-10-12 Korean corrective editorial updates; exact revised KO blob is now pinned."
     },
     {
       "path": "research/design-and-experiment-history.md",
       "section": 82,
       "en_blob": "27bdc35c44010cfd1c15d4a5702ed2b9ad6f9c5c",
-      "ko_blob": "7209d91638d859ab08137e6f1b31ff8d3c9c8804",
+      "ko_blob": "4892377fe2b6b27e529644a401bc2e65c0c3ed57",
       "decision": "meaning-preserved",
-      "evidence": "Korean preserves prior freeze/no-retuning and same-corpus non-generalization limits"
+      "evidence": "Korean preserves prior freeze/no-retuning and same-corpus non-generalization limits Re-verified original flagged section against English after the 2026-10-12 Korean corrective editorial updates; exact revised KO blob is now pinned."
     },
     {
       "path": "research/experiment-index.md",
