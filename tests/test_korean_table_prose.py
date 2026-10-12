@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 from scripts.prepare_korean_docs import git_blob_sha
-
 from scripts.report_korean_table_prose import candidates, scan
 
 ROOT = Path(__file__).resolve().parents[1]
