@@ -1,4 +1,4 @@
-# Execution policy
+# 실행 정책
 
 `ExecutionPolicy`는 신뢰된 로컬 side-effect gate입니다.
 
@@ -122,7 +122,7 @@ config = RunConfig(
 results = await router.ainvoke(request, config=config)
 ```
 
-semantic은 deterministic합니다:
+예산 계산 규칙은 결정적입니다:
 
 - logical tool call은 planned call마다 한 번 계산
 - retry를 포함한 모든 실제 invoker attempt를 계산
@@ -166,6 +166,6 @@ grounded proposal
 
 proposal approval은 추론된 contract가 registry에 들어갈 수 있는지를 결정합니다. runtime approval은 현재 이 특정 호출을 실행할 수 있는지를 결정합니다.
 
-## Destructive operation
+## 파괴적 작업
 
-adapter가 분류할 수 있는 DELETE 계열 operation은 destructive로 표시됩니다. 주변 application에 적절한 authorization, audit, confirmation, rollback semantic이 있을 때만 `allow_destructive=True`를 설정합니다.
+adapter가 분류할 수 있는 DELETE 계열 operation은 destructive로 표시됩니다. 호스트 애플리케이션에 적절한 권한 부여, 감사, 확인 및 롤백 절차가 갖춰져 있을 때만 `allow_destructive=True`를 설정합니다.
