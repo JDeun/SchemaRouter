@@ -48,7 +48,7 @@ def test_openapi_korean_preserves_execution_sensitive_contracts() -> None:
         assert translated_clause in ko
 
     # The repair must not alter the mirrored Markdown section hierarchy.
-    headings = re.compile(r"^(#{1,6})\\s+", re.MULTILINE)
+    headings = re.compile(r"^(#{1,6})\s+", re.MULTILINE)
     assert [len(m.group(1)) for m in headings.finditer(en)] == [
         len(m.group(1)) for m in headings.finditer(ko)
     ]
