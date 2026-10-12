@@ -156,3 +156,50 @@ def test_not_authorization_and_no_new_candidates() -> None:
         x.route_id for x in retrieval.candidates
     }
     assert accepted.registry_version == retrieval.registry_version
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("route_id", "paper.different"),
+        ("tool", "impostor"),
+        ("endpoint", "different"),
+        ("tool_fingerprint", ""),
+        ("endpoint_fingerprint", ""),
+        ("tool_fingerprint", None),
+    ],
+)
+def test_corrupted_provenance_fails_closed(field: str, value: object) -> None:
+    retrieval = build_router().retrieve("search papers", k=2)
+    forged = retrieval.candidates[0].model_copy(update={field: value})
+    poisoned = retrieval.model_copy(
+        update={"candidates": [forged, retrieval.candidates[1]]}
+    )
+    result = apply_retrieval_abstention(
+        poisoned, policy=RetrievalAbstentionPolicy(min_score=-1e8)
+    )
+    assert result.abstained
+    assert result.reason == "untrusted_ranking"
+    assert result.candidates == []
+    assert retrieval.candidates[0].route_id.startswith("paper.")
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("total_ranked", 1),
+        ("requested_k", 1),
+        ("registry_version", -1),
+    ],
+)
+def test_inconsistent_retrieval_envelope_fails_closed(
+    field: str, value: int
+) -> None:
+    retrieval = build_router().retrieve("search papers", k=2)
+    poisoned = retrieval.model_copy(update={field: value})
+    result = apply_retrieval_abstention(
+        poisoned, policy=RetrievalAbstentionPolicy(min_score=-1e8)
+    )
+    assert result.abstained
+    assert result.reason == "untrusted_ranking"
+    assert result.candidates == []

@@ -92,9 +92,31 @@ def apply_retrieval_abstention(
     if not retrieval.candidates:
         reason = "empty_catalog"
     elif (
-        not all(math.isfinite(score) for score in scores)
+        not all(
+            isinstance(score, (int, float))
+            and not isinstance(score, bool)
+            and math.isfinite(score)
+            for score in scores
+        )
+        or retrieval.registry_version < 0
+        or retrieval.requested_k < len(scores)
+        or retrieval.total_ranked < len(scores)
         or len(set(route_ids)) != len(route_ids)
         or ranks != list(range(1, len(ranks) + 1))
+        or any(
+            not all(
+                isinstance(value, str) and value.strip()
+                for value in (
+                    candidate.route_id,
+                    candidate.tool,
+                    candidate.endpoint,
+                    candidate.tool_fingerprint,
+                    candidate.endpoint_fingerprint,
+                )
+            )
+            or candidate.route_id != f"{candidate.tool}.{candidate.endpoint}"
+            for candidate in retrieval.candidates
+        )
         or any(scores[i] < scores[i + 1] for i in range(len(scores) - 1))
     ):
         reason = "untrusted_ranking"
