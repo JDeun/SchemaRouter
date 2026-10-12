@@ -33,6 +33,12 @@ on:
 permissions:
   contents: read
 
+# Superseded commits on a pull request must not hold runners in the queue.
+# Preserve scheduled/manual/main checks: only PR revisions are cancellable.
+concurrency:
+  group: repository-facts-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   check:
     runs-on: ubuntu-latest
