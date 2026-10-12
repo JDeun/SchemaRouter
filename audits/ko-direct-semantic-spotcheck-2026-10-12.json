@@ -3,13 +3,13 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 144,
+  "reviewed_page_pairs": 145,
   "total_page_pairs": 147,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 3 pairs are not attested by this targeted record"
+    "Other 2 pairs are not attested by this targeted record"
   ],
   "reviews": [
     {
@@ -875,6 +875,12 @@
       "en_blob": "13c37940df75f028b74c41c798a6cfa7432e7636",
       "ko_blob": "906a4daea4a58ac662702320ffb57f039f62b15f",
       "notes": "Directly reviewed complete ~700-line EN/KO study-status text: 0.14 Phase A/B1/B2/K3 and pending #432/#424, external E0 validation, 0.11 DEV/fresh failure, all 0.12 #338/#347/#349/#354/#358/#363/#371/#374/#377/#378 metrics and no confirmation reuse, and V6A-E + post-V6E terminal negatives. No contradictory bilingual research promotion or fabricated positive-route authority found."
+    },
+    {
+      "path": "research/experiment-index.md",
+      "en_blob": "6f152dc76cbdf072cf411da261ca521f666d8bf1",
+      "ko_blob": "f782809b861976f01947a0e8cce6eec77623f24a",
+      "notes": "Directly examined all 90 historical experiment table rows (92 machine ledger records total), each paired experiment ID and decision identical, archived English hypothesis rows exactly source-preserved and later 0.13/0.14 hypotheses manually checked for meaning; compared intro, status/provenance, negative-result archival rules and eight-case SafeActBench nonreproduction boundary. Historical archived hypotheses remain verbatim English in many Korean rows; not asserted as fully Korean-localized prose."
     }
   ]
 }
