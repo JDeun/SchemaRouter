@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "source_revision": "989039511c2f0c519c35f832a52d4b6278b07d1a",
-  "review_date": "2026-10-10",
+  "review_date": "2026-10-11",
   "method": "Risk-based editorial review of all rule-flagged sections after full 147-pair, 1524-section machine triage; not a claim of formal proof for every sentence.",
   "reviewed_sections": 27,
   "confirmed_semantic_omission_fixed": [
@@ -41,9 +41,9 @@
       "path": "guides/enterprise-data-onboarding.md",
       "section": 1,
       "en_blob": "28a31836cd100eb1d8477d951bf6d1ac452114ba",
-      "ko_blob": "15e37dc7c1a7869e33db2d1e1627ec50db8751eb",
+      "ko_blob": "a84181befd9f35a723cbb817e131a982539f4f87",
       "decision": "meaning-preserved",
-      "evidence": "Korean states SchemaRouter is not an identity provider, credential store or query proxy"
+      "evidence": "Korean expressly preserves local-host identity/credential/query-proxy boundaries and now describes registration of internal data systems only, matching English scope."
     },
     {
       "path": "guides/execution-policy.md",
@@ -127,11 +127,11 @@
     },
     {
       "path": "project/launch-playbook.md",
-      "section": 33,
-      "en_blob": "0f24d3a9a5a32f73a333fa5936e433534360d810",
-      "ko_blob": "0d3e3ed0d9dae2dc1307354f8dafb0c3616fa7f5",
+      "section": 34,
+      "en_blob": "a16f4d049aef6e4c7a10e7e9660c5a758b0ba92e",
+      "ko_blob": "a773701f857d9a30e514c7609051b8e8c1e68e9a",
       "decision": "meaning-preserved",
-      "evidence": "Korean preserves presentation title distinguishing retrieval from authority"
+      "evidence": "Risk signal is lexical, not a translation loss: English 'Tool retrieval is not execution authority' is retained as the exact English lightning-talk title, while the Korean presentation outline separately describes 기능 검색, 신뢰된 실행 경계 and does not claim retrieval alone authorizes execution. Section shifted 33->34 because a new fully Korean GeekNews/Show GN launch section was inserted before it. Human-assisted inspection of this specific source/translation section only; not all-sentence semantic certification."
     },
     {
       "path": "recipes/many-tools.md",
@@ -239,5 +239,11 @@
     ],
     "boundary": "This re-pinning does not establish independent sentence-level equivalence for 147 pages."
   },
-  "translation_leakage_followup_2026_10_10": "Additional full paragraphs corrected: BGE ColBERT no posthoc thresholds; closed-set ranker agreement not capability membership; no tuning on failed rows; fixed unopened confirmation. Human independent 147-pair attestation remains outstanding."
+  "translation_leakage_followup_2026_10_10": "Additional full paragraphs corrected: BGE ColBERT no posthoc thresholds; closed-set ranker agreement not capability membership; no tuning on failed rows; fixed unopened confirmation. Human independent 147-pair attestation remains outstanding.",
+  "amendment_2026_10_11": {
+    "scope": "Only guides/enterprise-data-onboarding.md section 1 Korean source-blob repinned after correcting overbroad internal/external-system claim.",
+    "en_blob_unchanged": "28a31836cd100eb1d8477d951bf6d1ac452114ba",
+    "ko_blob": "a84181befd9f35a723cbb817e131a982539f4f87",
+    "limitation": "This targeted correction is not an independent review of all 147 bilingual pages."
+  }
 }

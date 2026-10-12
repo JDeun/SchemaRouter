@@ -54,7 +54,7 @@ jobs:
         with:
           python-version: "3.12.14"
       - name: Download original corpus and retrieval evidence
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: "heldout-corpus-${{ inputs.parent_run_id }}"
           path: artifacts/recovery-plan
@@ -120,7 +120,7 @@ jobs:
           from huggingface_hub import snapshot_download
           snapshot_download(repo_id=os.environ["B2_MODEL"], revision=os.environ["B2_REVISION"])
           PY
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: "heldout-recovery-plan-${{ github.run_id }}"
           path: artifacts/heldout
@@ -139,13 +139,66 @@ jobs:
           PY
       - name: Evaluate only two frozen task identities per microshard
         run: |
-          mkdir -p artifacts/recovered
+          # Record only infrastructure diagnostics; frozen evaluator is unchanged.
+          mkdir -p artifacts/recovered artifacts/recovery-diagnostics
+          diagnostic="artifacts/recovery-diagnostics/${{ matrix.job_id }}.txt"
+          printf 'source_sha=%s\njob_id=%s\nstarted_utc=%s\n' \
+            "${{ inputs.source_sha }}" "${{ matrix.job_id }}" "$(date -u +%FT%TZ)" > "$diagnostic"
+          set +e
           python -u scripts/evaluate_agent_utility_v3_heldout.py \
             --corpus artifacts/heldout/heldout-corpus.json \
             --catalog-size "${{ matrix.catalog_size }}" \
             --task-ids "${{ matrix.task_ids }}" \
             --conditions "${{ needs.prepare.outputs.conditions }}" \
             --out "artifacts/recovered/${{ matrix.job_id }}.json"
+          evaluator_exit=$?
+          set -e
+          printf 'finished_utc=%s\nevaluator_exit_code=%s\n' \
+            "$(date -u +%FT%TZ)" "$evaluator_exit" >> "$diagnostic"
+          exit "$evaluator_exit"
+      - name: Record runner memory diagnostics (no scientific outputs)
+        if: always()
+        env:
+          MICROSHARD_ID: "${{ matrix.job_id }}"
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          source_paths = {
+              "memory_events": "/sys/fs/cgroup/memory.events",
+              "memory_peak": "/sys/fs/cgroup/memory.peak",
+              "memory_max": "/sys/fs/cgroup/memory.max",
+          }
+          data = {
+              "schema_version": 1,
+              "evidence_kind": "runner_cgroup_metadata_only",
+              "microshard": os.environ["MICROSHARD_ID"],
+              "attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "source_paths": {},
+          }
+          for key, path in source_paths.items():
+              file = Path(path)
+              try:
+                  data["source_paths"][key] = file.read_text()[:2048]
+              except OSError:
+                  data["source_paths"][key] = None
+          folder = Path("artifacts/recovered")
+          folder.mkdir(parents=True, exist_ok=True)
+          (folder / (os.environ["MICROSHARD_ID"] + ".runner.json")).write_text(
+              json.dumps(data, sort_keys=True, indent=2) + "\n", encoding="utf-8"
+          )
+          PY
+      - name: Upload evaluator exit diagnostics (never scored evidence)
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: "heldout-recovery-diagnostics-${{ matrix.job_id }}-${{ github.run_id }}"
+          path: artifacts/recovery-diagnostics/
+          if-no-files-found: warn
+          overwrite: true
+          retention-days: 30
       - name: Upload recovery output (not proof of evaluator success)
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -153,6 +206,9 @@ jobs:
           name: "heldout-recovery-part-${{ matrix.job_id }}-${{ github.run_id }}"
           path: artifacts/recovered/
           if-no-files-found: warn
+          # Only jobs that failed can be retried; replace their own partial
+          # attempt ZIP without touching artifacts from successful jobs.
+          overwrite: true
           retention-days: 30
 
   next-wave:
@@ -193,7 +249,7 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12.14"
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: "heldout-recovery-plan-${{ github.run_id }}"
           path: artifacts/recovery-plan

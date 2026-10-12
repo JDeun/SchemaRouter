@@ -12,6 +12,7 @@ on:
       - 'scripts/report_translation_semantic_risks.py'
       - 'scripts/report_korean_english_prose.py'
       - 'scripts/audit_translation_semantic_sections.py'
+      - 'scripts/audit_translation_review_units.py'
       - 'audits/ko-semantic-section-review-2026-10-10.json'
       - 'audits/ko-security-policy-review-2026-10-10.json'
       - 'audits/ko-targeted-contract-review-2026-10-10.json'
@@ -29,6 +30,7 @@ on:
       - 'scripts/report_translation_semantic_risks.py'
       - 'scripts/report_korean_english_prose.py'
       - 'scripts/audit_translation_semantic_sections.py'
+      - 'scripts/audit_translation_review_units.py'
       - 'audits/ko-semantic-section-review-2026-10-10.json'
       - 'audits/ko-security-policy-review-2026-10-10.json'
       - 'audits/ko-targeted-contract-review-2026-10-10.json'
@@ -38,6 +40,7 @@ on:
       - 'tests/test_bilingual_docs_integrity.py'
       - 'tests/test_translation_semantic_risks.py'
       - 'tests/test_translation_semantic_sections.py'
+      - 'tests/test_translation_review_units.py'
       - 'tests/test_korean_security_policy_review.py'
       - 'tests/test_korean_research_translation_followup.py'
       - 'tests/test_korean_english_prose.py'
@@ -60,7 +63,7 @@ jobs:
       - name: Check full-corpus audit regression tests
         run: |
           python -m pip install "pytest>=8,<10" "pytest-asyncio>=0.24,<2"
-          python -m pytest -q tests/test_bilingual_docs_integrity.py tests/test_bilingual_coverage_report.py tests/test_translation_semantic_risks.py tests/test_translation_semantic_sections.py tests/test_korean_security_policy_review.py tests/test_korean_research_translation_followup.py tests/test_korean_english_prose.py tests/test_korean_targeted_contracts.py
+          python -m pytest -q tests/test_bilingual_docs_integrity.py tests/test_bilingual_coverage_report.py tests/test_translation_semantic_risks.py tests/test_translation_semantic_sections.py tests/test_translation_review_units.py tests/test_korean_security_policy_review.py tests/test_korean_research_translation_followup.py tests/test_korean_english_prose.py tests/test_korean_targeted_contracts.py
       - name: Generate all-document EN/KO coverage evidence
         run: |
           python -m scripts.report_bilingual_coverage \
@@ -86,6 +89,11 @@ jobs:
         run: |
           python -m scripts.audit_translation_semantic_sections --json-out translation-section-risks.json
           echo "Per-section triage is not a semantic certificate." >> "$GITHUB_STEP_SUMMARY"
+      - name: Inventory every EN/KO Markdown review block (not a semantic certificate)
+        run: |
+          python -m scripts.audit_translation_review_units \
+            --json-out translation-review-units.json
+          echo 'Every prose/list/table/heading block is inventoried; sentence-by-sentence bilingual approval is still outstanding.' >> "$GITHUB_STEP_SUMMARY"
       - name: Gate new or stale semantic risk findings on editorial review
         run: |
           python -m scripts.audit_translation_semantic_sections \
@@ -101,6 +109,7 @@ jobs:
             translation-semantic-risks.json
             korean-prose-leakage.json
             translation-section-risks.json
+            translation-review-units.json
           retention-days: 90
       - name: Strict gate on explicit manual verification only
         if: github.event_name == 'workflow_dispatch'
