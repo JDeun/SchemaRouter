@@ -3,13 +3,13 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 137,
+  "reviewed_page_pairs": 138,
   "total_page_pairs": 147,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 10 pairs are not attested by this targeted record"
+    "Other 9 pairs are not attested by this targeted record"
   ],
   "reviews": [
     {
@@ -833,6 +833,12 @@
       "en_blob": "6c5915d879db3a59bfd960cd6c2a4c116b01c72b",
       "ko_blob": "a7fd015b0cce8d4ea7cdbfb784993064812b0965",
       "notes": "Compared evidence-role matrices, complete terminal B1 552 and B2 460 episodes, exact failed K3 -3.2609pp, sealed 0.14 claims, invalid-vs-negative run definitions, model revisions/aggregates, publication limits. Both languages also retain a historically stale pending-list section; not a bilingual divergence."
+    },
+    {
+      "path": "adapter-authoring.md",
+      "en_blob": "5cd569971e0722b633951814876e851fafb790b2",
+      "ko_blob": "a7b7826c52154fd47158143d2bf90e5a094d274f",
+      "notes": "Read both complete EN/KO sections for passive/active auto-discovery, opt-in refresh profiles and source identity, plugin load permissions, fingerprinted execution metadata, array-item record alignment, scientific units/canonical conversion, trusted parameter aliases and fixed qualifier contracts."
     }
   ]
 }
