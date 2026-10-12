@@ -837,8 +837,8 @@
     {
       "path": "adapter-authoring.md",
       "en_blob": "5cd569971e0722b633951814876e851fafb790b2",
-      "ko_blob": "a7b7826c52154fd47158143d2bf90e5a094d274f",
-      "notes": "Read both complete EN/KO sections for passive/active auto-discovery, opt-in refresh profiles and source identity, plugin load permissions, fingerprinted execution metadata, array-item record alignment, scientific units/canonical conversion, trusted parameter aliases and fixed qualifier contracts."
+      "ko_blob": "429b3e9df69c6ef684573563adc157cec454dfe4",
+      "notes": "Directly compared source adapters, passive/active discovery, refresh credential provenance, named contract fields, exact unit conversion, array record fidelity, aliases and scientific qualifiers. Localized three untranslated Korean instructional clauses without altering contract."
     }
   ]
 }
