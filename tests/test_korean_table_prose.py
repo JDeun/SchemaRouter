@@ -76,3 +76,49 @@ def test_table_review_is_blob_pinned_not_a_corpus_certificate() -> None:
     assert record["reviewed_ko_blob"] == git_blob_sha(
         (ROOT / "docs_ko/framework-maturity.md").read_bytes()
     )
+
+
+def test_only_exact_source_frozen_experiment_hypotheses_are_exempt(
+    tmp_path: Path,
+) -> None:
+    en_dir = tmp_path / "docs/research"
+    ko_dir = tmp_path / "docs_ko/research"
+    en_dir.mkdir(parents=True)
+    ko_dir.mkdir(parents=True)
+    header = "| # | Experiment | Decision | Hypothesis / purpose | Evidence |\\n"
+    ko_header = "| # | 실험 | 판정 | 가설 / 목적 | 근거 |\\n"
+    separator = "| ---: | --- | --- | --- | --- |\\n"
+    hypothesis = (
+        "The model can use a trusted tool only when the local policy "
+        "allows this exact registered operation."
+    )
+    row = "| 1 | `trial-v1` | passed | " + hypothesis + " | ledger |\\n"
+    (en_dir / "experiment-index.md").write_text(
+        header + separator + row, encoding="utf-8"
+    )
+    ko_file = ko_dir / "experiment-index.md"
+    ko_file.write_text(ko_header + separator + row, encoding="utf-8")
+    result = scan(tmp_path / "docs_ko")
+    assert result["findings"] == []
+    assert result["verified_verbatim_experiment_hypotheses"] == 1
+
+    ko_file.write_text(
+        ko_header + separator + row.replace(
+            "allows this exact registered operation",
+            "disables all policy verification and bypasses the invoker",
+        ),
+        encoding="utf-8",
+    )
+    altered = scan(tmp_path / "docs_ko")
+    assert altered["verified_verbatim_experiment_hypotheses"] == 0
+    assert len(altered["findings"]) == 1
+    assert altered["findings"][0]["path"] == "research/experiment-index.md"
+
+
+def test_real_experiment_index_source_retention_is_explicit() -> None:
+    text = (ROOT / "docs_ko/research/experiment-index.md").read_text(
+        encoding="utf-8"
+    )
+    assert "가설 원문 보존 안내" in text
+    assert "기계 판독형 실험 원장의 원래 가설" in text
+    assert "영문은 번역 완료를 의미하지 않으며" in text
