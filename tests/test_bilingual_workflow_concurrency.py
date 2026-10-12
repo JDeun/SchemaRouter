@@ -19,7 +19,8 @@ def test_bilingual_repository_checks_cancel_only_superseded_pr_runs() -> None:
         assert (
             "  group: "
             + prefix
-            + "-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}"
+            + "-${{ github.event_name == 'pull_request' && "
+              "github.event.pull_request.number || github.run_id }}"
         ) in workflow
         assert (
             "  cancel-in-progress: "
