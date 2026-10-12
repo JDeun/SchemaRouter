@@ -861,8 +861,8 @@
     {
       "path": "project/launch-playbook.md",
       "en_blob": "a16f4d049aef6e4c7a10e7e9660c5a758b0ba92e",
-      "ko_blob": "a773701f857d9a30e514c7609051b8e8c1e68e9a",
-      "notes": "Reviewed both publish-channel instructions, guarded 0.17 install, no E0-to-adoption claim, B1/K3 limits, 40-tool bytes-not-tokens demo, GeekNews account eligibility not guaranteed, HackerNews prohibition on AI-posted content, Reddit and external case permission, outreach baselines."
+      "ko_blob": "4ad068df9a2f109d2b314ad3b1a3151ba428dec4",
+      "notes": "Read EN/KO developer launch/provenance claims, stable 0.17 and B1 23-task controlled evidence, no-endorsement/no-false-token marketing rules, GeekNews/Hacker News submission/eligibility, example flows, adopter evidence levels, launch cadence and stop conditions. Corrected Korean 'destructive operations fail closed' from misleading 'only upon error' conditional wording."
     }
   ]
 }
