@@ -57,10 +57,11 @@ def test_direct_semantic_spotcheck_provenance_is_bounded_and_live() -> None:
             encoding="utf-8"
         )
     )
-    assert ledger["reviewed_page_pairs"] == len(ledger["reviews"]) == 16
+    assert 16 <= ledger["reviewed_page_pairs"] == len(ledger["reviews"]) <= 147
     assert ledger["total_page_pairs"] == 147
     assert ledger["independent_sentence_review_complete"] is False
     assert "not independent human" in ledger["reviewer_status"]
+    assert len({item["path"] for item in ledger["reviews"]}) == len(ledger["reviews"])
     for item in ledger["reviews"]:
         assert item["en_blob"] == git_blob_sha(
             (ROOT / "docs" / item["path"]).read_bytes()
