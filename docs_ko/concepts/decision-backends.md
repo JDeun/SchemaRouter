@@ -155,7 +155,7 @@ planner = SchemaPlanner(
 
 ## 제한된 field selection
 
-Enable field selection explicitly:
+필드 선택은 다음과 같이 명시적으로 활성화합니다:
 
 ```python
 policy = DecisionPolicy(
@@ -207,7 +207,7 @@ SchemaRouter는 백엔드에 연락하기 전에 결정적인 로컬 사전 검�
 
 ## 계약 불변 조건
 
-A decision provider:
+의사결정 백엔드는 다음 계약을 준수해야 합니다:
 
 - 유한하고 불투명한 선택지 ID만 전달받습니다;
 - `ToolCall`을 생성할 수 없습니다;
@@ -225,14 +225,14 @@ A decision provider:
 
 선택 가능한 백엔드는 배포 목적에 따라 적합한 조건이 다릅니다:
 
-| Backend | Best fit | Trade-off |
+| 백엔드 | 적합한 사용 사례 | 고려사항 |
 | --- | --- | --- |
-| Deterministic / embedding | Zero provider dependency and predictable local behavior | 모호한 표현에 대한 의미적 유연성이 제한됨 |
-| Pairwise scorer / reranker | Direct query-option relevance scoring with bounded local authority | Application owns model/runtime and score calibration |
-| Hosted general LLM via `CallableDecisionBackend` | Reuse an existing GPT, Gemini, Claude, or other cloud-model client | Provider latency/cost; application owns structured-output prompting and credentials |
-| Laya | Fast local finite decisions, including Apple Silicon through PyTorch MPS/Metal | Single-selection adapter today; quality is checkpoint/domain dependent |
-| Ollama | Reuse a general local LLM that is already deployed for other application tasks | Autoregressive generation is heavier and slower than a purpose-built decision model |
-| Jev / TypeSafe | Hosted purpose-built bounded decisions without local model operations | External service/network dependency |
+| Deterministic / embedding | 외부 제공자에 의존하지 않고 예측 가능한 로컬 동작 | 모호한 표현에 대한 의미적 유연성이 제한됨 |
+| Pairwise scorer / reranker | 제한된 로컬 권한 안에서 질의와 선택지 사이의 관련성을 직접 평가 | 모델·런타임 운영과 점수 보정은 애플리케이션의 책임 |
+| `CallableDecisionBackend`를 통한 호스팅 범용 LLM | 기존 GPT, Gemini, Claude 등 클라우드 모델 클라이언트를 재사용 | 제공자 지연 시간·비용 발생; 구조화 출력 프롬프트 및 인증정보를 애플리케이션에서 관리 |
+| Laya | PyTorch MPS/Metal을 통한 Apple Silicon 지원을 포함한 빠른 로컬 제한 선택 | 현재 단일 선택 어댑터만 지원하며 품질은 체크포인트·도메인에 따라 달라짐 |
+| Ollama | 다른 애플리케이션 작업을 위해 이미 배포된 범용 로컬 LLM 재사용 | 자기회귀 생성은 전용 결정 모델보다 연산이 무겁고 느림 |
+| Jev / TypeSafe | 로컬 모델 운영 없이 호스팅된 전용 제한 선택 | 외부 서비스·네트워크에 의존 |
 
 Laya 또는 결정적 백엔드로 작업 요구 사항을 충족한다면 Ollama는 **필수가 아닙니다**. 하지만 이미 로컬 지시 모델을 운영하는 팀의 폭넓은 호환성 경로로, 나란히 비교하는 벤치마크 근거로, 그리고 특화된 System-One 결정 모델보다 범용 언어 모델이 적합한 작업의 폴백으로 유용할 수 있습니다.
 
@@ -352,7 +352,7 @@ SchemaRouter는 로컬에서 자기회귀 생성을 사용하지 않고 제한�
 pip install -e ".[laya]"
 ```
 
-The packaged extra is `schemarouter[laya]`.
+배포된 패키지의 선택적 추가 의존성 이름은 `schemarouter[laya]`입니다.
 
 ```python
 from schemarouter.integrations import LayaDecisionBackend
