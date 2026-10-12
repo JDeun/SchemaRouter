@@ -1,0 +1,46 @@
+name: ClicShopping 4.33 Maintainer Repin Audit
+
+on:
+  pull_request:
+    paths:
+      - "benchmarks/external-validation-clicshopping-v433/maintainer-repin-8ada7f1.json"
+      - "scripts/verify_clicshopping_v433_repin.py"
+      - "tests/test_verify_clicshopping_v433_repin.py"
+      - ".github/workflows/external-validation-clicshopping-v433-repin.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: schemarouter
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ClicShopping/ClicShopping
+          ref: 8ada7f1f392f3dd2800e825dac8d245dfd53944a
+          path: clicshopping-repin
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - name: Verify original historical source remains pinned
+        working-directory: schemarouter
+        run: python scripts/validate_clicshopping_v433_inventory.py
+      - name: Verify new source, unchanged permissions and actual action dispatch
+        working-directory: schemarouter
+        run: |
+          python -m scripts.verify_clicshopping_v433_repin \
+            --upstream-root ../clicshopping-repin
+      - name: Test adversarial source-repin integrity controls without live calls
+        working-directory: schemarouter
+        run: |
+          python -m pip install "pytest>=8,<10" "pytest-asyncio>=0.23,<2"
+          python -m pytest -q tests/test_verify_clicshopping_v433_repin.py
+
