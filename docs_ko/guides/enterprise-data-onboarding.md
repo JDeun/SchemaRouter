@@ -1,6 +1,6 @@
 # Enterprise data onboarding
 
-SchemaRouter는 사내·외부 데이터 시스템을 typed capability로 등록하되, 사용자 인증,
+SchemaRouter는 내부 데이터 시스템을 typed capability로 등록하되, 사용자 인증,
 credential, network access, DB-native permission은 host application이 계속 소유하도록
 설계되어 있습니다.
 
