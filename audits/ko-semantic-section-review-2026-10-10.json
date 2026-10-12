@@ -177,9 +177,9 @@
       "path": "releases/0.6.0.md",
       "section": 8,
       "en_blob": "e126cbefbaa65fe6708bb95929d41d861c370334",
-      "ko_blob": "dd2841e9fb5b7274b0f441ebc535b0f171dd5f84",
+      "ko_blob": "a6e788541b04558db97914fa820dc33fa8a79072",
       "decision": "meaning-preserved",
-      "evidence": "Korean states deferred research is not a release blocker"
+      "evidence": "Korean states deferred research is not a release blocker Rechecked deferred 0.7 external-provider/method validation scope and non-blocking 0.6 release status on the revised Korean source."
     },
     {
       "path": "research/agent-utility-b1-result.md",
