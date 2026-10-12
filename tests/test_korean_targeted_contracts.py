@@ -101,3 +101,17 @@ def test_korean_successor_screen_protects_public_selector_provenance() -> None:
     assert "비공개(private)" in translated
     assert "순서 규칙을 단위 테스트하는 데에만 사용" in translated
     assert "검증 가능한 provenance" in translated
+
+
+def test_direct_review_fixes_release_graph_and_registry_claims() -> None:
+    install = (ROOT / "docs_ko/getting-started/installation.md").read_text(encoding="utf-8")
+    graph = (ROOT / "docs_ko/guides/graph-store-onboarding.md").read_text(encoding="utf-8")
+    registry = (ROOT / "docs_ko/concepts/registry.md").read_text(encoding="utf-8")
+    assert "현재 공개 릴리스인 **0.17.0**" in install
+    assert "설치 패키지 생태계에 대한 확장된 검증" in install
+    assert "숨겨야 하는 노드·간선·속성 조건" in graph
+    assert "자동으로 적용한다고 주장하지" in graph
+    assert "ScopedGraphStoreBackend" in graph
+    assert "계획과 실행에 영향을 주는 선언된 계약" in registry
+    assert "무엇이 실행되는지" in registry
+    assert "응답을 어떤 방식으로 검증하는지" in registry
