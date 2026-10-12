@@ -85,14 +85,14 @@ def test_only_exact_source_frozen_experiment_hypotheses_are_exempt(
     ko_dir = tmp_path / "docs_ko/research"
     en_dir.mkdir(parents=True)
     ko_dir.mkdir(parents=True)
-    header = "| # | Experiment | Decision | Hypothesis / purpose | Evidence |\\n"
-    ko_header = "| # | 실험 | 판정 | 가설 / 목적 | 근거 |\\n"
-    separator = "| ---: | --- | --- | --- | --- |\\n"
+    header = "| # | Experiment | Decision | Hypothesis / purpose | Evidence |\n"
+    ko_header = "| # | 실험 | 판정 | 가설 / 목적 | 근거 |\n"
+    separator = "| ---: | --- | --- | --- | --- |\n"
     hypothesis = (
         "The model can use a trusted tool only when the local policy "
         "allows this exact registered operation."
     )
-    row = "| 1 | `trial-v1` | passed | " + hypothesis + " | ledger |\\n"
+    row = "| 1 | `trial-v1` | passed | " + hypothesis + " | ledger |\n"
     (en_dir / "experiment-index.md").write_text(
         header + separator + row, encoding="utf-8"
     )
