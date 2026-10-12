@@ -38,6 +38,19 @@ export function sameFrozenHandoff(input, generated) {
     throw Error('Frozen catalog/case input differs from the canonical SchemaRouter handoff');
   }
 }
+/** Capture actual post-inference weight and device provenance (not startup preferences). */
+export function loadedLayaEvidence(health) {
+  const names=health?.loaded,revs=health?.revisions,devices=health?.checkpoint_devices;
+  if(health?.status!=='ok' || !Array.isArray(names) || names.length===0 ||
+     !revs || typeof revs!=='object' || Array.isArray(revs) ||
+     !devices || typeof devices!=='object' || Array.isArray(devices) ||
+     names.some(name=>typeof name!=='string'||!name ||
+       typeof revs[name]!=='string'||!revs[name] ||
+       typeof devices[name]!=='string'||!devices[name])) {
+    throw Error('Local Laya returned no measured loaded-checkpoint provenance');
+  }
+  return {checkpoint_revisions:revs,checkpoint_devices:devices};
+}
 export function nativeResult(result, catalog) {
   if(result?.fallbackUsed!==false) throw Error('No native Jev/Laya result (fallback detected)');
   const allowed=new Set(catalog.map(x=>x.name));
@@ -102,10 +115,16 @@ export async function run(argv) {
     rows.push({id:item.id,candidate_tools:r.candidates,activated_tools:r.activated,
       latency_ms:r.elapsedMs,probabilities:r.probabilities});
   }
+  const finalHealthResponse=await fetch(url+'/health',{
+    redirect:'error',signal:AbortSignal.timeout(8000)});
+  if(!finalHealthResponse.ok) throw Error('Post-inference Laya health failed');
+  // LAYA_PRELOAD=0 legitimately reports no loaded checkpoints before the first
+  // inference. The initial health probe therefore cannot attest actual weights.
+  const loadedEvidence=loadedLayaEvidence(await finalHealthResponse.json());
   const report={schema_version:1,provenance:{label:'UNSCORED pi-jev + local Laya, NOT hosted Jev',
     pi_jev_commit:PI_JEV_SHA,catalog_sha256:input.catalog_sha256,cases_sha256:input.cases_sha256,
     native_shortlist_width:10,schemarouter_reference_top_k:3,comparable_top_k:false,
-    checkpoint_revisions:health.revisions||null,checkpoint_devices:health.checkpoint_devices||null},cases:rows};
+    ...loadedEvidence},cases:rows};
   writeFileSync(resolve(o.output),JSON.stringify(report,null,2)+'\n',{flag:'wx'});
   process.stdout.write('Saved 16 unscored local-native pi-jev rows; widths are not comparable.\n');
 }

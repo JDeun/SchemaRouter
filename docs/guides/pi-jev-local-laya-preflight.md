@@ -30,7 +30,7 @@ python scripts/external_validation_jev_contract.py --validate-output /tmp/jev-un
 node --test tests/test_pi_jev_local_laya_runner.mjs
 ```
 
-An uncached checkpoint may download weights from Hugging Face; **pin/download and record weight digests before claiming offline reproducibility**. Keep local source, HF weight acquisition and run budgets separate. With `LAYA_PRELOAD=0`, a cold first request can be materially slower than warm requests.
+An uncached checkpoint may download weights from Hugging Face; **pin/download and record weight digests before claiming offline reproducibility**. Keep local source, HF weight acquisition and run budgets separate. With `LAYA_PRELOAD=0`, a cold first request can be materially slower than warm requests. The initial `/health` response does not yet prove any model is loaded; the runner must make a **post-inference** health request and rejects a report without actual loaded model revision and observed device data.
 
 The runner first regenerates the entire canonical 82/16 input locally using SchemaRouter's Python generator and rejects changes to any catalog description, query, digest or protocol field; digest-shaped strings alone do not establish provenance. This requires a working `python` executable with the SchemaRouter source checkout importable. The runner dynamically imports actual pinned pi-jev `JevClient` and `ToolRouter`; only the inert Pi tool registry is emulated. It rejects provider fallbacks (the zero-probability path is not a real result), bad activated sets, probabilities, latencies, source revision drift, and nonlocal servers. It never executes tools.
 
