@@ -145,7 +145,7 @@ keys = router.add_pinecone_vector_store(
 
 Caller-owned Pinecone client에서 index 이름, dimension, metric을 읽습니다. Pinecone은 완전한
 metadata schema를 제공하지 않으므로 필요한 model-visible metadata는
-`metadata_fields_by_index`로 보완할 수 있습니다.
+`metadata_fields_by_index`로 보완할 수 있습니다. 신뢰된 DataScope 필터는 쿼리 문자열에 값을 직접 삽입하지 않고 Pinecone의 구조화된 `filter` 인자로 전달합니다.
 
 ### Weaviate
 
@@ -188,7 +188,6 @@ Caller-owned SQLAlchemy/pgvector runtime에서 VECTOR column과 primary key를 r
 SQLAlchemy expression으로 bounded distance ordering과 trusted metadata filter를 적용합니다.
 VECTOR column이 여러 개면 `vector_field_by_table`로 명시합니다.
 
-현재 native adapter surface는 Qdrant, Milvus, Pinecone, Weaviate, Chroma, PostgreSQL/pgvector를 포함합니다. 이는 SDK-shape/contract 검증 범위이며 모든 hosted
-deployment의 live acceptance가 끝났다는 뜻은 아닙니다.
+현재 native adapter surface는 Qdrant, Milvus, Pinecone, Weaviate, Chroma, PostgreSQL/pgvector를 포함합니다. 이는 SDK-shape/contract 검증 범위이며 모든 배포 구성이나 호스팅 계정에서 실환경 검증을 완료했다는 뜻은 아닙니다.
 
 trusted DataScope filter를 적용하려는 커스텀 backend는 `ScopedVectorStoreBackend` 계약과 `supports_trusted_filters = True`를 명시해야 합니다. 이 capability가 없으면 SchemaRouter는 backend I/O 전에 fail-closed 처리합니다. scalar 값은 exact match, tuple 값은 동일 field의 any-of 의미입니다.

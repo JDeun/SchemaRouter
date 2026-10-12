@@ -1,7 +1,6 @@
 # 데이터베이스 등록과 스키마 자동 파악
 
-SchemaRouter는 connection object, credential, arbitrary query string을 모델에 노출하지 않고
-DB를 typed capability source로 다룰 수 있습니다.
+SchemaRouter는 연결 객체, 인증 정보, 임의의 쿼리 문자열을 모델에 노출하지 않으면서 데이터베이스를 타입이 명시된 기능의 공급원으로 사용할 수 있습니다.
 
 DB 계층도 provider-first와 같은 경계를 따릅니다.
 
@@ -19,8 +18,7 @@ bounded read-only invoker
 database-native authorization
 ```
 
-SchemaRouter가 DB proxy나 IAM 서버가 되는 것은 아닙니다. 인증, secret, connection pool,
-native database role은 host application이 소유합니다.
+SchemaRouter 자체가 데이터베이스 프록시나 IAM(신원 및 접근 관리) 시스템이 되는 것은 아닙니다. 인증, 비밀 정보, 연결 풀 및 데이터베이스 고유 역할의 관리는 호스트 애플리케이션이 담당합니다.
 
 ## SQLite reference 경로
 
@@ -84,8 +82,7 @@ driver state, pool, live connection은 ToolSpec metadata로 복사되지 않습�
 
 공통 SQLAlchemy 경로는 정상적인 dialect/driver가 있는 PostgreSQL, MySQL/MariaDB,
 Microsoft SQL Server, Oracle, SQLite와 주요 warehouse 계열을 같은 계약으로 연결하기 위한
-구조입니다. 이는 **dialect 지원 구조**를 뜻하며 모든 벤더의 live acceptance가 이미 끝났다는
-의미는 아닙니다.
+구조입니다. 이는 **해당 방언(dialect)을 지원할 수 있는 아키텍처**를 뜻할 뿐, 모든 벤더에서 실제 연결·동작 검증을 완료했다는 의미는 아닙니다.
 
 ## 권한관리
 
@@ -117,8 +114,7 @@ AuthorizationRule(
 권한 없는 relation은 모델에 전달되기 전 retrieval 단계에서 제거하고 실행 직전 다시
 검증합니다.
 
-DB 자체의 role, grant, RLS, ACL은 계속 최종 권한 경계입니다. SchemaRouter는 DB 계정이 가진
-권한을 더 좁힐 수는 있지만 넓혀서는 안 됩니다.
+데이터베이스 자체의 역할(role), 권한 부여(grant), 행 수준 보안(RLS), 접근 제어 목록(ACL)이 최종 권한 경계입니다. SchemaRouter 정책은 데이터베이스 계정에 원래 부여된 권한을 제한할 수는 있지만 확대할 수는 없습니다.
 
 ## 현재 query 경계
 
@@ -151,8 +147,7 @@ DB 자체의 role, grant, RLS, ACL은 계속 최종 권한 경계입니다. Sche
 계열 전체 구조는 [Enterprise data onboarding](enterprise-data-onboarding.md)을 참고하고,
 벤더별 동작은 vector/graph/record-store 가이드를 참고하세요.
 
-여기서 지원은 core adapter와 bounded contract가 존재한다는 뜻입니다. 실제 외부 환경의
-live acceptance 범위는 vendor/version/deployment별로 다르며 별도로 관리합니다.
+여기서 '지원'이란 핵심 패키지에 어댑터와 범위가 제한된 계약이 존재한다는 뜻입니다. 실제 외부 환경에서의 수용 시험 통과 여부는 벤더·버전·배포 환경마다 다르며 별도로 보고합니다.
 
 벤더별 credential과 client object는 SchemaRouter의 model-visible graph에 넣지 않고
 adapter/plugin 뒤의 trusted runtime state로 유지합니다.
