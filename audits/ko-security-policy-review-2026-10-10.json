@@ -3,7 +3,7 @@
   "review_date": "2026-10-10",
   "scope": "docs/security/threat-model.md ⇄ docs_ko/security/threat-model.md only",
   "source_en_blob": "1e1446c4e2e38f033495fd2d20728dff57084a15",
-  "reviewed_ko_blob": "4a70087b977b4efe24a4eae556fc92825467c54e",
+  "reviewed_ko_blob": "977f747981626c3e1df3f48d940c2baa605ec27c",
   "review_type": "targeted full-page bilingual editorial pass; reviewer-independent attestation not established",
   "findings": [
     {
@@ -43,5 +43,18 @@
       "Third-party plugin code requires a nonempty trusted allowlist"
     ],
     "review_limitation": "Targeted source/prose check by assistant; not independent human sentence-by-sentence certification for all 147 bilingual pages."
+  },
+  "followup_2026_10_12": {
+    "scope": "Post-review English/Korean comparison and correction of five mixed-language passages: source-bound schema watches and credential rotation, same-origin redirects/cross-document refs, trusted contract amendments, decision-backend plugin loading, and security-sensitive contribution checklist.",
+    "source_en_blob": "1e1446c4e2e38f033495fd2d20728dff57084a15",
+    "reviewed_ko_blob": "977f747981626c3e1df3f48d940c2baa605ec27c",
+    "checked_contracts": [
+      "schema watches become stale before any refresh/session opens on changed source/transport/contract; credential rotation requires explicit re-registration",
+      "cross-document references remain disabled by default; opt-in restricts referenced resources, reused headers and redirects to the original origin",
+      "runtime OpenAPI response remains bounded to 16 MiB; $id rebasing and non-JSON-Pointer anchors fail closed",
+      "contract amendment cannot change execution identity, validation shape or output_required metadata requirement; existing fingerprints still advance",
+      "loaded decision-backend plugins are trusted local Python; only finite router-provided options are accepted, invalid results fail closed; benchmark reports omit secret values"
+    ],
+    "review_limitation": "AI-assisted source-aligned review of targeted changed sections; not an authenticated independent bilingual sentence-by-sentence certification for the 147-page corpus."
   }
 }
