@@ -64,15 +64,53 @@ def candidates(source: str) -> list[dict[str, object]]:
     return findings
 
 
+def _frozen_hypotheses(en_file: Path) -> set[tuple[str, str]]:
+    """Retain *verbatim* archival hypotheses only when EN proves the exact row."""
+    if not en_file.is_file():
+        return set()
+    source_rows: set[tuple[str, str]] = set()
+    for line in en_file.read_text(encoding="utf-8").splitlines():
+        if not line.startswith("|"):
+            continue
+        cells = [value.strip() for value in
+                 re.split(r"(?<!\\\\)\\|", line.strip().strip("|"))]
+        if (len(cells) == 5 and cells[0].isdigit()
+                and cells[1].startswith("`") and cells[1].endswith("`")):
+            source_rows.add((cells[1], cells[3]))
+    return source_rows
+
+
 def scan(root: Path) -> dict[str, object]:
-    findings = [
-        {"path": path.relative_to(root).as_posix(), **entry}
-        for path in sorted(root.rglob("*.md"))
-        for entry in candidates(path.read_text(encoding="utf-8"))
-    ]
+    """Inspect all tables, except exact EN-pinned archival experiment hypotheses.
+
+    The exception applies only to column four of a row with a matching experiment
+    ID and an identical English hypothesis in the canonical source file. It does
+    not whitelist other English prose on the experiment-index page.
+    """
+    pages = sorted(root.rglob("*.md"))
+    source_rows = _frozen_hypotheses(
+        root.parent / "docs/research/experiment-index.md"
+    )
+    findings: list[dict[str, object]] = []
+    original_hypotheses = 0
+    for path in pages:
+        relative = path.relative_to(root).as_posix()
+        lines = path.read_text(encoding="utf-8").splitlines()
+        for entry in candidates("\\n".join(lines)):
+            if (relative == "research/experiment-index.md"
+                    and entry["cell"] == 4):
+                row = lines[int(entry["line"]) - 1]
+                cells = [item.strip() for item in
+                         re.split(r"(?<!\\\\)\\|", row.strip().strip("|"))]
+                if (len(cells) == 5 and cells[0].isdigit()
+                        and (cells[1], cells[3]) in source_rows):
+                    original_hypotheses += 1
+                    continue
+            findings.append({"path": relative, **entry})
     return {
         "scope": "Table English-prose risk triage only; no semantic certification.",
-        "scanned_pages": len(list(root.rglob("*.md"))),
+        "scanned_pages": len(pages),
+        "verified_verbatim_experiment_hypotheses": original_hypotheses,
         "findings": findings,
     }
 
