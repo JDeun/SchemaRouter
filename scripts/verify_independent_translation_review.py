@@ -7,13 +7,25 @@ A completed ledger must be supplied by a separate bilingual reviewer.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import re
 from pathlib import Path
 
 from scripts.audit_translation_review_units import audit
 from scripts.prepare_korean_docs import git_blob_sha
 
 ROOT = Path(__file__).resolve().parents[1]
+SENTENCE_END = re.compile(r"(?<=[.!?。？！])\s+(?=\S)")
+
+
+def sentence_hashes(text: str) -> list[str]:
+    """Deterministic sentence candidates; human reviewer resolves split ambiguity."""
+    return [
+        hashlib.sha256(part.strip().encode("utf-8")).hexdigest()
+        for part in SENTENCE_END.split(text)
+        if part.strip()
+    ]
 
 
 def verify(en_root: Path, ko_root: Path, ledger: Path | None) -> dict[str, object]:
@@ -50,6 +62,7 @@ def verify(en_root: Path, ko_root: Path, ledger: Path | None) -> dict[str, objec
         errors.append("page reviews must form an array")
     seen: set[str] = set()
     covered_en = covered_ko = 0
+    covered_en_sentences = covered_ko_sentences = 0
     for row in rows:
         if not isinstance(row, dict) or not isinstance(row.get("path"), str):
             errors.append("invalid page review")
@@ -98,14 +111,25 @@ def verify(en_root: Path, ko_root: Path, ledger: Path | None) -> dict[str, objec
                 if (len(actual) != len(indices)
                         or actual != decision.get(f"{lang}_hashes")):
                     errors.append(f"{name}: stale/incorrect {lang} block hashes")
+                # Block-level certification alone can conceal several sentences.
+                sentence_digests = [
+                    digest for i in indices if i <= len(units)
+                    for digest in sentence_hashes(str(units[i - 1]["text"]))
+                ]
+                if sentence_digests != decision.get(f"{lang}_sentence_hashes"):
+                    errors.append(f"{name}: missing/stale {lang} sentence review hashes")
         for lang, positions, units in (
             ("en", en_positions, expected_page["en_units"]),
             ("ko", ko_positions, expected_page["ko_units"]),
         ):
             if positions != list(range(1, len(units) + 1)):
                 errors.append(f"{name}: missing, repeated or out-of-order {lang} blocks")
-        covered_en += len(set(en_positions) & set(range(1, len(expected_page["en_units"])+1)))
-        covered_ko += len(set(ko_positions) & set(range(1, len(expected_page["ko_units"])+1)))
+        valid_en = set(en_positions) & set(range(1, len(expected_page["en_units"]) + 1))
+        valid_ko = set(ko_positions) & set(range(1, len(expected_page["ko_units"]) + 1))
+        covered_en += len(valid_en)
+        covered_ko += len(valid_ko)
+        covered_en_sentences += sum(len(sentence_hashes(str(expected_page["en_units"][i - 1]["text"]))) for i in valid_en)
+        covered_ko_sentences += sum(len(sentence_hashes(str(expected_page["ko_units"][i - 1]["text"]))) for i in valid_ko)
 
     missing = sorted(set(expected) - seen)
     if missing:
@@ -118,6 +142,10 @@ def verify(en_root: Path, ko_root: Path, ledger: Path | None) -> dict[str, objec
         "reviewed_pages": len(seen & set(expected)),
         "reviewed_en_units": covered_en,
         "reviewed_ko_units": covered_ko,
+        "en_sentences": sum(len(sentence_hashes(str(u["text"]))) for p in expected.values() for u in p["en_units"]),
+        "ko_sentences": sum(len(sentence_hashes(str(u["text"]))) for p in expected.values() for u in p["ko_units"]),
+        "reviewed_en_sentences": covered_en_sentences,
+        "reviewed_ko_sentences": covered_ko_sentences,
         "review_evidence_complete": not errors,
         "missing_page_examples": missing[:12],
         "errors": errors[:200],
@@ -139,7 +167,9 @@ def main() -> None:
         )
     print(f"Independent evidence: {result['reviewed_pages']}/{result['paired_pages']} pages; "
           f"{result['reviewed_en_units']}/{result['en_review_units']} EN blocks; "
-          f"{result['reviewed_ko_units']}/{result['ko_review_units']} KO blocks")
+          f"{result['reviewed_ko_units']}/{result['ko_review_units']} KO blocks; "
+          f"{result['reviewed_en_sentences']}/{result['en_sentences']} EN sentences; "
+          f"{result['reviewed_ko_sentences']}/{result['ko_sentences']} KO sentences")
     if result["errors"]:
         print("Outstanding review evidence:", *result["errors"][:12], sep="\n- ")
     if args.require_complete and not result["review_evidence_complete"]:
