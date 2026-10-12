@@ -1,0 +1,96 @@
+name: ClicShopping 4.33 Maintainer-Repin DEV Comparison
+
+on:
+  pull_request:
+    paths:
+      - "benchmarks/external-validation-clicshopping-v433/**"
+      - "scripts/run_clicshopping_v433_repin_dev.py"
+      - "scripts/verify_clicshopping_v433_repin.py"
+      - "tests/test_clicshopping_v433_repin_dev.py"
+      - ".github/workflows/external-validation-clicshopping-v433-repin-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-dev:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: schemarouter
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ClicShopping/ClicShopping
+          ref: 8ada7f1f392f3dd2800e825dac8d245dfd53944a
+          path: clicshopping-repin
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - name: Install local benchmark dependencies
+        working-directory: schemarouter
+        run: python -m pip install -e ".[dev]"
+      - name: Verify new pin against actual upstream checkout; no HTTP execution
+        working-directory: schemarouter
+        run: |
+          python -m scripts.verify_clicshopping_v433_repin \
+            --upstream-root ../clicshopping-repin
+      - name: Validate DEV and source-boundary regression cases
+        working-directory: schemarouter
+        run: |
+          python -m pytest -q \
+            tests/test_clicshopping_v433_repin_dev.py \
+            tests/test_clicshopping_v433_dev.py \
+            tests/test_clicshopping_v433_inventory.py
+      - name: Evaluate visible DEV cohorts; never score independent heldout
+        working-directory: schemarouter
+        run: |
+          mkdir -p artifacts/clicshopping-v433-repin
+          python -m scripts.run_clicshopping_v433_repin_dev \
+            --out artifacts/clicshopping-v433-repin/dev-comparison.json
+      - name: Record immutable per-run provenance
+        working-directory: schemarouter
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path("artifacts/clicshopping-v433-repin")
+          payload = path / "dev-comparison.json"
+          report = json.loads(payload.read_text(encoding="utf-8"))
+          assert report["status"] == "development_only_not_independent_heldout"
+          assert report["source_pin"] == "8ada7f1f392f3dd2800e825dac8d245dfd53944a"
+          assert len(report["cohorts"]) == 2
+          assert [x["case_count"] for x in report["cohorts"]] == [32, 10]
+          assert report["live_requests"] == report["model_calls"] == 0
+          evidence = {
+              "schema_version": 1,
+              "evidence_role": "visible_development_only_not_independent",
+              "github_run_id": os.environ["GITHUB_RUN_ID"],
+              "schema_router_head_sha": os.environ["GITHUB_SHA"],
+              "upstream_pin": report["source_pin"],
+              "dev_report_sha256": hashlib.sha256(payload.read_bytes()).hexdigest(),
+              "historical_dev_queries_sha256": report["original_dev_queries_sha256"],
+              "new_visible_dev_queries_sha256": report["new_visible_dev_queries_sha256"],
+              "no_live_calls": True,
+              "independent_confirmation": False,
+          }
+          (path / "provenance.json").write_text(
+              json.dumps(evidence, indent=2) + "\n", encoding="utf-8"
+          )
+          PY
+          sha256sum artifacts/clicshopping-v433-repin/*.json \
+            > artifacts/clicshopping-v433-repin/SHA256SUMS
+      - name: Publish raw DEV-only comparison and all per-case outcomes
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: clicshopping-433-repin-visible-dev
+          path: schemarouter/artifacts/clicshopping-v433-repin/
+          if-no-files-found: error
+          retention-days: 90

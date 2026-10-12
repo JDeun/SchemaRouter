@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from scripts.prepare_korean_docs import git_blob_sha
 
@@ -42,7 +42,11 @@ def sections(source: str) -> list[dict[str, object]]:
         heading = HEADING.match(line)
         if heading:
             result.append(
-                {"level": len(heading.group(1)), "heading": heading.group(2), "lines": []}
+                {
+                    "level": len(heading.group(1)),
+                    "heading": heading.group(2),
+                    "lines": [],
+                }
             )
             continue
         if result and line.strip() and not re.match(r"^\s*\|", line):
@@ -110,32 +114,76 @@ def verify_reviewed(
     en_root: Path,
     ko_root: Path,
 ) -> list[str]:
-    """Require fresh source/translation provenance for every editorial waiver."""
+    """Fail closed on duplicate, malformed, stale or unreviewed risk waivers.
+
+    Every existing waiver is source-pinned even when its previously flagged
+    section is no longer selected by the current advisory heuristic.
+    """
     review = json.loads(ledger_path.read_text(encoding="utf-8"))
     if review.get("schema_version") != 1 or not isinstance(review.get("reviews"), list):
         return ["invalid semantic editorial ledger schema"]
-    approved = {
-        (entry["path"], entry["section"]): entry
-        for entry in review["reviews"]
-        if entry.get("decision") == "meaning-preserved"
-    }
+    approved: dict[tuple[str, int], dict[str, object]] = {}
+    seen: set[tuple[str, int]] = set()
     errors: list[str] = []
-    for item in report["findings"]:
-        path = item["path"]
-        section = item.get("section")
-        entry = approved.get((path, section))
-        if entry is None:
-            errors.append(f"{path} section {section}: missing editorial disposition")
+    for entry in review["reviews"]:
+        if not isinstance(entry, dict):
+            errors.append("non-object editorial review entry")
             continue
+        path, section = entry.get("path"), entry.get("section")
+        if (not isinstance(path, str) or not path
+                or not isinstance(section, int) or isinstance(section, bool)
+                or section <= 0):
+            errors.append("invalid editorial path/section identity")
+            continue
+        pure = PurePosixPath(path)
+        if pure.is_absolute() or ".." in pure.parts or pure.suffix != ".md":
+            errors.append(f"unsafe editorial review source path: {path}")
+            continue
+        key = (path, section)
+        if key in seen:
+            errors.append(f"{path} section {section}: duplicate editorial disposition")
+            continue
+        seen.add(key)
+        if entry.get("decision") != "meaning-preserved":
+            continue
+        if not isinstance(entry.get("evidence"), str) or not entry["evidence"].strip():
+            errors.append(
+                f"{path} section {section}: missing concrete review rationale"
+            )
+            continue
+        valid = True
         for prefix, root in (("en", en_root), ("ko", ko_root)):
-            actual_sha = git_blob_sha((root / path).read_bytes())
-            if entry.get(f"{prefix}_blob") != actual_sha:
-                errors.append(f"{path} section {section}: {prefix} document changed since review")
+            expected = entry.get(f"{prefix}_blob")
+            if (not isinstance(expected, str)
+                    or not re.fullmatch(r"[0-9a-f]{40}", expected)):
+                errors.append(f"{path} section {section}: invalid {prefix} Git blob")
+                valid = False
+                continue
+            candidate = root / pure
+            if not candidate.is_file():
+                errors.append(f"{path} section {section}: missing {prefix} document")
+                valid = False
+                continue
+            actual = git_blob_sha(candidate.read_bytes())
+            if expected != actual:
+                errors.append(
+                    f"{path} section {section}: {prefix} document changed since review"
+                )
+                valid = False
+        if valid:
+            approved[key] = entry
+    for item in report["findings"]:
+        path, section = item["path"], item.get("section")
+        if (path, section) not in approved:
+            errors.append(f"{path} section {section}: missing editorial disposition")
     return errors
+
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--json-out", type=Path, default=Path("translation-section-risks.json"))
+    p.add_argument(
+        "--json-out", type=Path, default=Path("translation-section-risks.json")
+    )
     p.add_argument("--max-show", type=int, default=70)
     p.add_argument("--review-ledger", type=Path)
     p.add_argument("--strict", action="store_true")
@@ -158,9 +206,12 @@ def main() -> None:
             raise SystemExit("unreviewed semantic risk:\n- " + "\n- ".join(problems))
         print("All rule-flagged sections have revision-pinned editorial dispositions.")
     for item in report["findings"][:args.max_show]:
-        print(f"{item['path']} :: {item.get('section', '?')} "
-              f"{item.get('en_heading', '')} {item.get('signals', [item.get('error', '')])} "
-              f"ratio={item.get('ratio', 'n/a')}")
+        print(
+            f"{item['path']} :: {item.get('section', '?')} "
+            f"{item.get('en_heading', '')} "
+            f"{item.get('signals', [item.get('error', '')])} "
+            f"ratio={item.get('ratio', 'n/a')}"
+        )
 
 
 if __name__ == "__main__":
