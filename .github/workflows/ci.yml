@@ -91,7 +91,7 @@ jobs:
           --cov-report=
       - name: Upload Python 3.12 core coverage data
         if: matrix.python-version == '3.12'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-core-${{ github.run_id }}
           path: .coverage.core
@@ -198,7 +198,7 @@ jobs:
           coverage report --include="*/adapters/vector_native.py" --fail-under=64
           coverage xml --rcfile=.coveragerc-native -o coverage-native.xml
       - name: Upload native coverage report
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-native-${{ github.run_id }}
           path: coverage-native.xml
@@ -231,7 +231,7 @@ jobs:
           test "$TEST_RESULT" = "success"
           [ "$NATIVE_RESULT" = "success" ] || [ "$NATIVE_RESULT" = "skipped" ]
       - name: Download Python 3.12 core coverage data
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: coverage-core-${{ github.run_id }}
           path: coverage-data
@@ -240,7 +240,7 @@ jobs:
           coverage combine coverage-data
           coverage report --fail-under=83.5
           coverage xml -o coverage.xml
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-report
           path: coverage.xml
@@ -342,7 +342,7 @@ jobs:
       - run: /tmp/schemarouter-wheel/bin/python -c "from importlib.metadata import version; import schemarouter; assert schemarouter.__version__ == version('schemarouter')"
       - run: /tmp/schemarouter-wheel/bin/schemarouter --help
       - name: Publish immutable package artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: package-dist-${{ github.run_id }}
           path: dist/*
@@ -365,7 +365,7 @@ jobs:
             examples/external_validation/pydanticai-tool-search/requirements.txt
             examples/external_validation/openai_agents_mcp_filter/requirements.txt
             examples/external_validation/mcp_agent_catalog/requirements.txt
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: package-dist-${{ github.run_id }}
           path: dist
@@ -396,7 +396,7 @@ jobs:
             examples/external_validation/pydanticai-tool-search/requirements.txt
             examples/external_validation/openai_agents_mcp_filter/requirements.txt
             examples/external_validation/mcp_agent_catalog/requirements.txt
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: package-dist-${{ github.run_id }}
           path: dist
@@ -412,7 +412,7 @@ jobs:
         run: |
           /tmp/schemarouter-wheel-pydanticai/bin/python scripts/external_validation_pydanticai.py \
             --json-out artifacts/external-validation-pydanticai.json
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: external-validation-pydanticai-${{ github.run_id }}
           path: artifacts/external-validation-pydanticai.json
@@ -435,7 +435,7 @@ jobs:
             examples/external_validation/pydanticai-tool-search/requirements.txt
             examples/external_validation/openai_agents_mcp_filter/requirements.txt
             examples/external_validation/mcp_agent_catalog/requirements.txt
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: package-dist-${{ github.run_id }}
           path: dist
@@ -455,7 +455,7 @@ jobs:
         run: |
           /tmp/schemarouter-wheel-openai-agents/bin/python scripts/external_validation_openai_agents.py \
             --json-out artifacts/external-validation-openai-agents.json
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: external-validation-openai-agents-${{ github.run_id }}
           path: artifacts/external-validation-openai-agents.json
@@ -478,7 +478,7 @@ jobs:
             examples/external_validation/pydanticai-tool-search/requirements.txt
             examples/external_validation/openai_agents_mcp_filter/requirements.txt
             examples/external_validation/mcp_agent_catalog/requirements.txt
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: package-dist-${{ github.run_id }}
           path: dist
@@ -498,7 +498,7 @@ jobs:
         run: |
           /tmp/schemarouter-wheel-mcp-agent/bin/python scripts/external_validation_mcp_agent.py \
             --json-out artifacts/external-validation-mcp-agent.json
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: external-validation-mcp-agent-${{ github.run_id }}
           path: artifacts/external-validation-mcp-agent.json
@@ -521,7 +521,7 @@ jobs:
             examples/external_validation/pydanticai-tool-search/requirements.txt
             examples/external_validation/openai_agents_mcp_filter/requirements.txt
             examples/external_validation/mcp_agent_catalog/requirements.txt
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: package-dist-${{ github.run_id }}
           path: dist
@@ -565,7 +565,7 @@ jobs:
           PY
           /tmp/schemarouter-wheel/bin/schemarouter dashboard --registry /tmp/inspection-registry.sqlite3 --traces /tmp/inspection-traces.sqlite3 --output /tmp/inspection-cli-dashboard.html
           test -s /tmp/inspection-cli-dashboard.html
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: consumer-acceptance-wheel-${{ github.run_id }}
           path: artifacts/consumer-acceptance-wheel.json
@@ -588,7 +588,7 @@ jobs:
             examples/external_validation/pydanticai-tool-search/requirements.txt
             examples/external_validation/openai_agents_mcp_filter/requirements.txt
             examples/external_validation/mcp_agent_catalog/requirements.txt
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: package-dist-${{ github.run_id }}
           path: dist
@@ -617,7 +617,7 @@ jobs:
             examples/external_validation/pydanticai-tool-search/requirements.txt
             examples/external_validation/openai_agents_mcp_filter/requirements.txt
             examples/external_validation/mcp_agent_catalog/requirements.txt
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: package-dist-${{ github.run_id }}
           path: dist
@@ -650,7 +650,7 @@ jobs:
             examples/external_validation/pydanticai-tool-search/requirements.txt
             examples/external_validation/openai_agents_mcp_filter/requirements.txt
             examples/external_validation/mcp_agent_catalog/requirements.txt
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: package-dist-${{ github.run_id }}
           path: dist
@@ -671,7 +671,7 @@ jobs:
             --output /tmp/inspection-dashboard-sdist.html
       - run: /tmp/schemarouter-sdist/bin/schemarouter inspect registry --db /tmp/inspection-registry.sqlite3 --json > /tmp/inspection-registry-sdist.json
       - run: /tmp/schemarouter-sdist/bin/python -c "import json; data=json.load(open('/tmp/inspection-registry-sdist.json')); assert data['tool_count'] == 1"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: consumer-acceptance-sdist-${{ github.run_id }}
           path: artifacts/consumer-acceptance-sdist.json

@@ -54,7 +54,7 @@ jobs:
         with:
           python-version: "3.12.14"
       - name: Download original corpus and retrieval evidence
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: "heldout-corpus-${{ inputs.parent_run_id }}"
           path: artifacts/recovery-plan
@@ -74,7 +74,7 @@ jobs:
             --source-sha "${{ inputs.source_sha }}" \
             --evidence-digest "${{ inputs.evidence_digest }}" \
             --plan-out artifacts/recovery-plan/heldout-recovery-plan.json
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: "heldout-recovery-plan-${{ github.run_id }}"
           path: artifacts/recovery-plan/
@@ -120,7 +120,7 @@ jobs:
           from huggingface_hub import snapshot_download
           snapshot_download(repo_id=os.environ["B2_MODEL"], revision=os.environ["B2_REVISION"])
           PY
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: "heldout-recovery-plan-${{ github.run_id }}"
           path: artifacts/heldout
@@ -192,7 +192,7 @@ jobs:
           PY
       - name: Upload evaluator exit diagnostics (never scored evidence)
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: "heldout-recovery-diagnostics-${{ matrix.job_id }}-${{ github.run_id }}"
           path: artifacts/recovery-diagnostics/
@@ -201,7 +201,7 @@ jobs:
           retention-days: 30
       - name: Upload recovery output (not proof of evaluator success)
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: "heldout-recovery-part-${{ matrix.job_id }}-${{ github.run_id }}"
           path: artifacts/recovered/
@@ -249,7 +249,7 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12.14"
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: "heldout-recovery-plan-${{ github.run_id }}"
           path: artifacts/recovery-plan
@@ -273,7 +273,7 @@ jobs:
             --corpus artifacts/recovery-plan/heldout-corpus.json \
             --retrieval artifacts/recovery-plan/heldout-retrieval.json \
             --out artifacts/heldout-generalization-canonical.json
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: "heldout-generalization-canonical-${{ github.run_id }}"
           path: |

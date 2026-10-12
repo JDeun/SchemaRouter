@@ -195,7 +195,7 @@ jobs:
               )
               handle.write("conditions=" + conditions + "\n")
           PY
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: "heldout-corpus-${{ github.run_id }}"
           path: artifacts/heldout/
@@ -286,7 +286,7 @@ jobs:
               revision=os.environ["B2_REVISION"],
           )
           PY
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
         with:
           name: "heldout-corpus-${{ github.run_id }}"
           path: artifacts/heldout
@@ -308,7 +308,7 @@ jobs:
         run: |
           mkdir -p artifacts/heldout-shard
           python -u scripts/evaluate_agent_utility_v3_heldout.py             --corpus artifacts/heldout/heldout-corpus.json             --catalog-size "${{ matrix.catalog_size }}"             --task-ids "${{ matrix.task_ids }}"             --conditions "${{ needs.prepare.outputs.conditions }}"             --out "artifacts/heldout-shard/${{ matrix.job_id }}.json"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: "heldout-shard-${{ matrix.job_id }}-${{ github.run_id }}"
@@ -331,18 +331,18 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: pip install -e .
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
         with:
           name: "heldout-corpus-${{ github.run_id }}"
           path: artifacts/heldout
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
         with:
           pattern: "heldout-shard-*-${{ github.run_id }}"
           path: artifacts/heldout-shards
       - name: Aggregate frozen held-out evidence
         run: |
           python scripts/aggregate_agent_utility_v3_heldout.py             --input-dir artifacts/heldout-shards             --corpus artifacts/heldout/heldout-corpus.json             --retrieval artifacts/heldout/heldout-retrieval.json             --out artifacts/heldout-generalization-canonical.json
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: "heldout-generalization-canonical-${{ github.run_id }}"
           path: |
