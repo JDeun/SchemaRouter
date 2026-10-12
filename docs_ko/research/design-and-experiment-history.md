@@ -1849,9 +1849,7 @@ The numeric 0.11 target remains:
 - 범용 Qwen3 기능 게이트(#289)와 고정된 Laya 네이티브 noul(#301) 모두 데이터 표면에 견고한 안전 경계를 제공하지 못함;
 - Laya의 직접 경로 선택(#293)은 지원 사례 Top-1 60.07%로 능력의 한계가 드러남.
 
-따라서 research problem은 더 이상 일반적인 route-ranking accuracy가 아닙니다. BGE-M3 already exposes
-정식 개발 집합에서 원시 지원 요청 Top-1 성능은 88.4549%였습니다. 남은 병목은 정확히 선택한 경로 대부분을 보존하면서 미지원 요청을 거부할 수 있는 교체 가능한 오픈셋 기능 판단 모델이었습니다.
-unsupported requests with <=1% false routing.
+따라서 연구의 핵심 문제는 더 이상 일반적인 경로 순위 정확도가 아닙니다. BGE-M3는 정식 DEV에서 지원 요청의 원시 Top-1 정확도 **88.4549%**를 이미 보였습니다. 남은 병목은 올바른 경로 대부분을 보존하면서도 미지원 요청을 **잘못된 경로 선택률 1% 이하**로 거부할 수 있는 교체 가능한 오픈셋 기능 판단 모델입니다.
 
 ### Active — #299 / PR #300 pinned Kev-0.8B
 
@@ -1864,8 +1862,7 @@ Before inference:
 - 정식 개발 집합 1,800개 사례의 SHA 검증 완료
 - corpus audit passed.
 
-당시 타입 기반 결정 진단은 전체 1,800개 행을 실행 중이었으며, 결과를 보고 의미적 조건을 변경하는 것은
-permitted.
+당시 타입 기반 결정 진단은 전체 1,800개 행을 실행 중이었습니다. **결과를 확인한 뒤 실험의 의미적 조건을 변경하는 것은 허용되지 않았습니다.**
 
 ### Staged Kev composition — #314 / PR #315
 
@@ -2949,14 +2946,12 @@ FULL 대비 Top-5 직렬화 스키마 컨텍스트 평균 비율:
 - 250: 2.38%.
 
 이 결과는 변경된 제품 가설을 뒷받침하는 최초의 직접 근거입니다. 낮은 Top-1 점수와 완전한 Top-K 기능 보존은 공존할 수 있고, 카탈로그가 커질수록 후보 축소의 가치가 높아집니다.
-grows.
 
 PR #419 was merged to main as `1c0dc93e843f6f9bf8a628c80ca95e02efcf5088`.
 
 ### #420 / PR #421 — B1 end-to-end downstream-agent A/B
 
-B1은 실제 도구 호출 모델을 추가하면서도 SchemaRouter의 검색 역할과 에이전트의 역할을 엄격히
-separate.
+B1은 실제 도구 호출 모델을 추가하면서도 SchemaRouter의 검색 역할과 에이전트의 역할을 엄격히 분리합니다.
 
 Conditions:
 - FULL;
