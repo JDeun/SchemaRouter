@@ -4,8 +4,9 @@ SchemaRouter는 JSON이나 YAML로 작성된 **OpenAPI 3.x의 주요 기능**을
 
 ## Import
 
-Adapter는 operation, path/query/header parameter, JSON request body, response schema, local
-component reference를 읽고, HTTP method를 바탕으로 읽기/쓰기 성격까지 계약에 기록합니다.
+Adapter는 operation, path/query/header parameter, JSON request body 속성, response schema,
+로컬 component reference와 이어지는 reference chain, 로컬 Path Item reference를 읽습니다.
+HTTP method에서 추론한 읽기/쓰기 분류도 endpoint 계약에 기록합니다.
 
 `allOf`로 연결된 객체 속성과 필수 필드는 플래너용으로 평탄화하지만, 원래의 합성 스키마는 런타임 JSON Schema 검증에 남겨 둡니다. `oneOf`·`anyOf` 응답의 조건부 객체 필드는 검색 가능한 출력 필드가 되더라도 원본 스키마로 검증합니다.
 
@@ -106,7 +107,8 @@ nullable: true
 
 ## Parameter serialization
 
-기본 지원 범위:
+SchemaRouter는 OpenAPI의 기본 parameter 직렬화 방식을 endpoint 계약으로 컴파일하고
+해당 정보를 schema fingerprint에도 보존합니다. 기본 지원 범위:
 
 | 위치 | 지원 스타일 | 기본 explode | 지원 값 |
 | --- | --- | ---: | --- |
@@ -244,8 +246,8 @@ Dynamic JSON Schema reference/anchor와 automatic planner-side variant selection
 
 ## Runtime response bound
 
-OpenAPI runtime response는 기본 **16 MiB** 상한을 적용한 뒤 decode합니다. 서버가
-`Content-Length`를 생략하거나 잘못 보내도 이 상한을 우회하지 못합니다.
+OpenAPI runtime response는 스트리밍 방식으로 읽으며, JSON/text 디코딩 전에 기본 **16 MiB**
+상한을 강제합니다. 서버가 `Content-Length`를 생략하거나 잘못 보내도 이 상한을 우회하지 못합니다.
 
 `OpenAPIRemoteInvoker`를 직접 만들 때 신뢰할 수 있는 로컬 코드에서 양의 정수 `max_response_bytes`를 지정해 제한을 변경할 수 있습니다. 너무 큰 한도는 예상치 못한 원격 응답에 대한 보호를 약화합니다.
 
