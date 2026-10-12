@@ -3,13 +3,13 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 141,
+  "reviewed_page_pairs": 142,
   "total_page_pairs": 147,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 6 pairs are not attested by this targeted record"
+    "Other 5 pairs are not attested by this targeted record"
   ],
   "reviews": [
     {
@@ -857,6 +857,12 @@
       "en_blob": "d8af579c3b868c1675ad6d88ed4f4d63c27bc8e2",
       "ko_blob": "8ab8e53996ca5d6687bf1e662a2615029a491ad2",
       "notes": "Side-by-side review of candidate recall, no-route and operation-fit abstention/fallback, field and evidence-only veto, 6 backend comparison rows, credential locality and local embedder/pairwise scoring limits. Both languages still have older historical Jev unreleased-main wording; requires a separate source freshness check, not a translation discrepancy."
+    },
+    {
+      "path": "project/launch-playbook.md",
+      "en_blob": "a16f4d049aef6e4c7a10e7e9660c5a758b0ba92e",
+      "ko_blob": "a773701f857d9a30e514c7609051b8e8c1e68e9a",
+      "notes": "Reviewed both publish-channel instructions, guarded 0.17 install, no E0-to-adoption claim, B1/K3 limits, 40-tool bytes-not-tokens demo, GeekNews account eligibility not guaranteed, HackerNews prohibition on AI-posted content, Reddit and external case permission, outreach baselines."
     }
   ]
 }
