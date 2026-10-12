@@ -209,9 +209,9 @@
       "path": "research/experiment-index.md",
       "section": 3,
       "en_blob": "6f152dc76cbdf072cf411da261ca521f666d8bf1",
-      "ko_blob": "f782809b861976f01947a0e8cce6eec77623f24a",
+      "ko_blob": "0b19378fdef860ccd709b0cafcf958c0ec2272e7",
       "decision": "meaning-preserved",
-      "evidence": "Korean distinguishes Git commits from experimental decision records"
+      "evidence": "The Korean experiment index continues to distinguish ordinary Git commits from independent experiment decisions. The 2026-10-12 editorial note explicitly identifies English `Hypothesis / purpose` cells as verbatim source-ledger evidence rather than mistakenly claiming a completed Korean translation, preserving immutable experiment statements and references."
     },
     {
       "path": "research/routing-status.md",
@@ -261,5 +261,11 @@
       }
     ],
     "limitation": "No blanket attestation for all 147 EN/KO documents or 1527 sections; independent complete sentence-level review still outstanding."
+  },
+  "amendment_2026_10_12_experiment_index": {
+    "scope": "Targeted research/experiment-index.md provenance revalidation only",
+    "ko_blob": "0b19378fdef860ccd709b0cafcf958c0ec2272e7",
+    "meaning_preserved": "Existing experiment verdicts and machine-readable English hypothesis literals are unchanged. Added Korean explanation of source-preservation rather than silent untranslated prose.",
+    "independent_sentence_review_complete": false
   }
 }
