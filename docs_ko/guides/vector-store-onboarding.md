@@ -145,7 +145,7 @@ keys = router.add_pinecone_vector_store(
 
 Caller-owned Pinecone client에서 index 이름, dimension, metric을 읽습니다. Pinecone은 완전한
 metadata schema를 제공하지 않으므로 필요한 model-visible metadata는
-`metadata_fields_by_index`로 보완할 수 있습니다.
+`metadata_fields_by_index`로 보완할 수 있습니다. 신뢰된 DataScope 필터는 쿼리 문자열에 값을 직접 삽입하지 않고 Pinecone의 구조화된 `filter` 인자로 전달합니다.
 
 ### Weaviate
 
