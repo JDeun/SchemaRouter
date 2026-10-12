@@ -3,13 +3,13 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 113,
+  "reviewed_page_pairs": 125,
   "total_page_pairs": 147,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 34 pairs are not attested by this targeted record"
+    "Other 22 pairs are not attested by this targeted record"
   ],
   "reviews": [
     {
@@ -689,6 +689,78 @@
       "en_blob": "448ff3c9ebde165f0b849f38468527a40aeb613a",
       "ko_blob": "1ac27dcec47a0dfcc36bf5af17336ad06ae14a31",
       "notes": "Compared all-or-nothing CAS atomic registration, proposal digest approval, no auto package install, each provider access mode and normal execution policy."
+    },
+    {
+      "path": "getting-started/quickstart.md",
+      "en_blob": "29d0739003fb83cbd91e95db15b3fce623f5d9f3",
+      "ko_blob": "d7eb35e91adf91be6e08f4fb817d19f7e3f061b3",
+      "notes": "Compared APIs.guru no-auth, local deterministic CI fallback, four product boundary steps, install extras and no provider/outage release gate."
+    },
+    {
+      "path": "research/large-heldout-agent-utility.md",
+      "en_blob": "31213184bb15fb40d52752131ed07a140a616431",
+      "ko_blob": "cd1c71feed457b7781265b001ade37aaad94065f",
+      "notes": "Compared frozen 780 independent tasks, 13x6x10 design, 7.02pp precision, 9,604 sample caveat, 97%/40%/minus2pp and no pseudo-replication."
+    },
+    {
+      "path": "getting-started/ingestion-paths.md",
+      "en_blob": "88895ea7dd81425b97f85ae72201551d2d2cf11a",
+      "ko_blob": "afcf2bd60aa224724fed2c7e24b3b3ac429d0bf7",
+      "notes": "Compared full provider/protocol matrix, passive network GET/HEAD auto detection, explicit GraphQL/MCP active sessions, raw-doc proposal approval."
+    },
+    {
+      "path": "getting-started/examples.md",
+      "en_blob": "b1a6b63ece4c7eedbf4801dd8cf3073831d2975a",
+      "ko_blob": "1610b8936db01b724d95ce73d6667464e860353e",
+      "notes": "Compared example 17-row matrix, real APIs.guru/Materials/Crossref/Tavily evidence, 40-tool byte-count demonstration and no token inflation."
+    },
+    {
+      "path": "versioning.md",
+      "en_blob": "61f82f452188aec2f74fde20f09243a9dbbb1497",
+      "ko_blob": "6dfa7670aa7e779a4357e4f2c10ed8c7e5e395a5",
+      "notes": "Compared release tag freshness, SQLite v0->v1 integrity rules, artifact 1.1 and snapshot 1.0 migrations, first-party trust and deprecation priorities."
+    },
+    {
+      "path": "concepts/capability-catalog.md",
+      "en_blob": "266139f38718c3212bdaec199c889a93649ee9fe",
+      "ko_blob": "e9ae0fafe90795bfa04b165650878032fc83f781",
+      "notes": "Compared registered capability versus document retrieval, state-aware filtered/backfilled Top-K, optional units/qualifiers, no new execution rights and RAG ownership."
+    },
+    {
+      "path": "guides/universal-ingestion.md",
+      "en_blob": "30f0d2b160bc26ebaa95d5e7434f8eb040070ac6",
+      "ko_blob": "be8ed2b4a8e30c9d3a39305f3eaecf4ddc69b0ef",
+      "notes": "Compared all adapter methods, trusted versus public URL/DNS-rebinding warnings, safe explicit allowlisted internal hosts, preserved array fields, source authority."
+    },
+    {
+      "path": "index.md",
+      "en_blob": "5d64e8e420b233de5da0f128bd62755b7c505bdc",
+      "ko_blob": "2cd5a502abdec080568c14b5cd5829d1231e50c8",
+      "notes": "Compared visible 0.17.0 hero and site core guarantees, provider/source links, role division, live example and Python compatibility claims."
+    },
+    {
+      "path": "research/field-projection-answer-quality.md",
+      "en_blob": "fbf90b1bfb68bd697591cfe7563f1bd7ba85c8ef",
+      "ko_blob": "4495e408ef4c141dd7f6e155bba8e32ae675e37e",
+      "notes": "Compared #506/#510 terminal negatives, four frozen evidence-observation arms, fail-closed projection validation, 144 task statistic design and no fresh result claim."
+    },
+    {
+      "path": "guides/inspection.md",
+      "en_blob": "e1bdb8d9afb5c7d5ec8e7bde6f2acc384a4cb92c",
+      "ko_blob": "261900e61a04049ad4b108a07d0ea61ed1b0bc93",
+      "notes": "Compared all read-only CLI/UI semantics, separate immutable trace vs local bindings, no serialized payloads/credentials, safe decision trace, explicit no execution."
+    },
+    {
+      "path": "guides/authorization.md",
+      "en_blob": "470ae1804bb24eef3e206b23549acaaa8bac3354",
+      "ko_blob": "28a9b0a99a7d0a8324772abf166b5b560654e12c",
+      "notes": "Compared RBAC/ABAC first-match, linted shadowing, pre-retrieval non-disclosure, run-level audit redaction, DataScope filters and reauthorization at runtime."
+    },
+    {
+      "path": "concepts/planning.md",
+      "en_blob": "0cdd06d08876c8f0f5565700a5468e7a829e5bdb",
+      "ko_blob": "d861a028bd4093470cdc490d43ddf3e21709eacd",
+      "notes": "Compared full field coverage required/covered/uncovered, global/per-field evidence, alias and fallback authority, model explanation privacy, no workflow ownership."
     }
   ]
 }
