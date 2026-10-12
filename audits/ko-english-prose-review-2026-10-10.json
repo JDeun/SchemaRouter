@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "review_date": "2026-10-10",
+  "review_date": "2026-10-11",
   "scope": "Revision-pinned triage of all 8 advisory natural-language English candidate lines from 147 Korean docs after confirmed research/security repairs. This verifies triage only; not all-sentence semantic equivalence.",
   "reviewer_status": "assistant source/translation inspection; independent bilingual editorial sign-off not established",
   "reviews": [
@@ -18,13 +18,13 @@
     },
     {
       "path": "project/launch-playbook.md",
-      "ko_blob": "0d3e3ed0d9dae2dc1307354f8dafb0c3616fa7f5",
+      "ko_blob": "a773701f857d9a30e514c7609051b8e8c1e68e9a",
       "lines": [
-        247,
-        280
+        290,
+        323
       ],
       "decision": "intentional-english-promotion-copy",
-      "evidence": "Published-form Show HN headline and social draft are intended to be copied in English."
+      "evidence": "Both remaining English-prose candidates are quoted English outreach draft headlines: a deferred Hacker News Show HN example and a Reddit example. They are intentionally English because those target communities use English. The new primary GeekNews Show GN title and description are complete Korean source prose, with human review before publication. This is a narrow manual candidate disposition, not full-corpus translation certification."
     },
     {
       "path": "research/evidence-to-action.md",
