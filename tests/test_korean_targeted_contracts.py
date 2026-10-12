@@ -63,7 +63,10 @@ def test_direct_semantic_spotcheck_provenance_is_bounded_and_live() -> None:
     assert "not independent human" in ledger["reviewer_status"]
     reviewed_paths = {item["path"] for item in ledger["reviews"]}
     assert len(reviewed_paths) == len(ledger["reviews"])
-    expected_paths = {path.relative_to(ROOT / "docs").as_posix() for path in (ROOT / "docs").rglob("*.md")}
+    expected_paths = {
+        path.relative_to(ROOT / "docs").as_posix()
+        for path in (ROOT / "docs").rglob("*.md")
+    }
     assert reviewed_paths == expected_paths
     # A complete AI-assisted page audit is not a third-party sentence-level sign-off.
     assert "not independent human" in ledger["reviewer_status"]
