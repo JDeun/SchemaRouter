@@ -49,3 +49,38 @@ def test_korean_field_unit_contract_is_trusted_and_optional() -> None:
         "EvidenceRequirements(units=True)",
     ):
         assert required in translated
+
+
+def test_direct_semantic_spotcheck_provenance_is_bounded_and_live() -> None:
+    ledger = json.loads(
+        (ROOT / "audits/ko-direct-semantic-spotcheck-2026-10-12.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert ledger["reviewed_page_pairs"] == len(ledger["reviews"]) == 8
+    assert ledger["total_page_pairs"] == 147
+    assert ledger["independent_sentence_review_complete"] is False
+    assert "not independent human" in ledger["reviewer_status"]
+    for item in ledger["reviews"]:
+        assert item["en_blob"] == git_blob_sha(
+            (ROOT / "docs" / item["path"]).read_bytes()
+        )
+        assert item["ko_blob"] == git_blob_sha(
+            (ROOT / "docs_ko" / item["path"]).read_bytes()
+        )
+
+
+def test_korean_laya_documentation_preserves_bounded_decision_semantics() -> None:
+    translated = (ROOT / "docs_ko/integrations/laya.md").read_text(
+        encoding="utf-8"
+    )
+    for required in (
+        "개발 소스 체크아웃",
+        "다음 릴리스가 배포된 뒤",
+        "캐시되지 않은 체크포인트 사이를 전환",
+        "유효한 옵션 ID를 반환했더라도",
+        "신뢰도가 임계값보다 낮은 Laya 선택을 보류",
+        "단일 선택을 다중 선택으로 잘못 처리하지 않도록 fail-closed",
+        "동일한 코퍼스",
+    ):
+        assert required in translated
