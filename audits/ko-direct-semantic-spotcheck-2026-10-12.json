@@ -3,13 +3,13 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 131,
+  "reviewed_page_pairs": 133,
   "total_page_pairs": 147,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 16 pairs are not attested by this targeted record"
+    "Other 14 pairs are not attested by this targeted record"
   ],
   "reviews": [
     {
@@ -797,6 +797,18 @@
       "en_blob": "5d1daf2f0c6190ee47c18291ef44af9a1f7c467e",
       "ko_blob": "b12bbabc7dd941a116a85f2e04e2b28935741828",
       "notes": "Compared preregistered commit/labels/corpus budget, no false tool/field recall equivalence, caller-auth gateway refusal, ClicShopping permissions-only actions and case-score abstention, third-party responses and licenses."
+    },
+    {
+      "path": "project/external-adoption.md",
+      "en_blob": "86b7ea47f77c9d6610ea23c88d57840c86fba918",
+      "ko_blob": "ea7d659fbc5a60eb552dfa5c1a73e8727067d60f",
+      "notes": "Compared all target-specific evidence levels E0–E4, permission-only external claims, declared demo conditions, contact consent, limits, and no stars-as-endorsement."
+    },
+    {
+      "path": "guides/mcp.md",
+      "en_blob": "49c24fdc6454466acea399870c7b9fc6c2d44a33",
+      "ko_blob": "cecc2e6ddfe91d04e5230a62275e915dcb156c98",
+      "notes": "Compared SDK-vs-host selection authority, bounded 64/1024/5MiB/10MiB discovery, trusted local stdio, transport credentials/refresh, no annotation permission, result-array contracts, amendment redaction/availability risks."
     }
   ]
 }
