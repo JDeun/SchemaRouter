@@ -73,7 +73,7 @@ def _frozen_hypotheses(en_file: Path) -> set[tuple[str, str]]:
         if not line.startswith("|"):
             continue
         cells = [value.strip() for value in
-                 re.split(r"(?<!\\\\)\\|", line.strip().strip("|"))]
+                 re.split(r"(?<!\\)\|", line.strip().strip("|"))]
         if (len(cells) == 5 and cells[0].isdigit()
                 and cells[1].startswith("`") and cells[1].endswith("`")):
             source_rows.add((cells[1], cells[3]))
@@ -96,12 +96,12 @@ def scan(root: Path) -> dict[str, object]:
     for path in pages:
         relative = path.relative_to(root).as_posix()
         lines = path.read_text(encoding="utf-8").splitlines()
-        for entry in candidates("\\n".join(lines)):
+        for entry in candidates("\n".join(lines)):
             if (relative == "research/experiment-index.md"
                     and entry["cell"] == 4):
                 row = lines[int(entry["line"]) - 1]
                 cells = [item.strip() for item in
-                         re.split(r"(?<!\\\\)\\|", row.strip().strip("|"))]
+                         re.split(r"(?<!\\)\|", row.strip().strip("|"))]
                 if (len(cells) == 5 and cells[0].isdigit()
                         and (cells[1], cells[3]) in source_rows):
                     original_hypotheses += 1
