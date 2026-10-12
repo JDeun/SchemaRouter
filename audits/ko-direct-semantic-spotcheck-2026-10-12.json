@@ -880,8 +880,8 @@
     {
       "path": "research/experiment-index.md",
       "en_blob": "6f152dc76cbdf072cf411da261ca521f666d8bf1",
-      "ko_blob": "f782809b861976f01947a0e8cce6eec77623f24a",
-      "notes": "Directly examined all 90 historical experiment table rows (92 machine ledger records total), each paired experiment ID and decision identical, archived English hypothesis rows exactly source-preserved and later 0.13/0.14 hypotheses manually checked for meaning; compared intro, status/provenance, negative-result archival rules and eight-case SafeActBench nonreproduction boundary. Historical archived hypotheses remain verbatim English in many Korean rows; not asserted as fully Korean-localized prose."
+      "ko_blob": "0b19378fdef860ccd709b0cafcf958c0ec2272e7",
+      "notes": "Directly examined all 90 historical experiment table rows (92 machine ledger records total), each paired experiment ID and decision identical, archived English hypothesis rows exactly source-preserved and later 0.13/0.14 hypotheses manually checked for meaning; compared intro, status/provenance, negative-result archival rules and eight-case SafeActBench nonreproduction boundary. Historical archived hypotheses remain verbatim English in many Korean rows; not asserted as fully Korean-localized prose. The explicit Korean source-preservation disclosure added in PR #1305 was separately checked: it preserves all ledger hypothesis strings and verdicts, marks untranslated verbatim hypotheses as not localized, and leaves immutable scientific evidence unchanged. This is an AI-assisted editorial check, not independent human certification."
     },
     {
       "path": "research/design-and-experiment-history.md",
