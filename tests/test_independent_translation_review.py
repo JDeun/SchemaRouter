@@ -110,8 +110,14 @@ def test_changed_block_digest_rejected(tmp_path: Path) -> None:
 
 def test_multi_sentence_paragraph_cannot_be_attested_with_just_block_hash(tmp_path: Path) -> None:
     en, ko, path = inputs(tmp_path)
-    english = EN.replace("Do not grant execution authority.", "Do not grant authority. Never permit unapproved calls.")
-    korean = KO.replace("실행 권한을 부여하지 않습니다.", "권한을 부여하지 않습니다. 승인받지 않은 호출을 허용하지 않습니다.")
+    english = EN.replace(
+        "Do not grant execution authority.",
+        "Do not grant authority. Never permit unapproved calls.",
+    )
+    korean = KO.replace(
+        "실행 권한을 부여하지 않습니다.",
+        "권한을 부여하지 않습니다. 승인받지 않은 호출을 허용하지 않습니다.",
+    )
     (en / "a.md").write_text(english, encoding="utf-8")
     (ko / "a.md").write_text(korean, encoding="utf-8")
     data = signed()
