@@ -1,0 +1,57 @@
+"""Bilingual table-prose regression tests, advisory not semantic certification."""
+
+from pathlib import Path
+
+from scripts.report_korean_table_prose import candidates, scan
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_identifies_long_untranslated_english_inside_korean_table() -> None:
+    source = (
+        "# 기능 표\n\n| 기능 | 현재 상태 |\n| --- | --- |\n"
+        "| 검증 | The adapter can infer new permissions and the host must "
+        "review this behavior before running it |\n"
+    )
+    findings = candidates(source)
+    assert len(findings) == 1
+    assert findings[0]["cell"] == 2
+
+
+def test_ignores_code_blocks_inline_literals_and_korean_explanations() -> None:
+    source = (
+        "| 기능 | 조건 |\n| --- | --- |\n"
+        "| 옵션 | 신뢰된 호스트 코드만 실행 권한을 부여하며 `request.headers`는 그대로 유지 |\n"
+        "```md\n"
+        "| Demo | The remote model can claim to be a trusted local host |\n"
+        "```\n"
+    )
+    assert candidates(source) == []
+
+
+def test_maturity_matrix_localizes_all_49_capability_rows() -> None:
+    korean = (ROOT / "docs_ko/framework-maturity.md").read_text(
+        encoding="utf-8"
+    )
+    section = korean.split("| 기능 | 현재 메인 브랜치 상태 | 향후 방향 |", 1)[1]
+    section = section.split("\n\n## ", 1)[0]
+    rows = [
+        line for line in section.splitlines()
+        if line.startswith("|") and not line.startswith("| ---")
+    ]
+    assert len(rows) == 49
+    for line in rows:
+        fields = [field.strip() for field in line.strip("|").split("|")]
+        assert len(fields) == 3
+        assert any("\uac00" <= ch <= "\ud7a3" for ch in fields[1])
+        assert any("\uac00" <= ch <= "\ud7a3" for ch in fields[2])
+    for literal in ("85/97/100/1 + 250 ms", "50k", "SPDX SBOM",
+                    "`parallel_read_only`", "OpenTelemetry", "`ProviderProfile`"):
+        assert literal in section
+    assert candidates(korean) == []
+
+
+def test_full_korean_corpus_has_no_new_long_english_table_clauses() -> None:
+    report = scan(ROOT / "docs_ko")
+    assert report["scanned_pages"] == 147
+    assert report["findings"] == [], report["findings"][:30]
