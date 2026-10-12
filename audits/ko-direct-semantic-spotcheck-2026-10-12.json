@@ -3,13 +3,13 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 16,
+  "reviewed_page_pairs": 41,
   "total_page_pairs": 147,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 131 pairs are not attested by this targeted record"
+    "Other 106 pairs are not attested by this targeted record"
   ],
   "reviews": [
     {
@@ -107,6 +107,156 @@
       "en_blob": "3cd62d23eb18409f4cec46995c301c3a952427c6",
       "ko_blob": "fa569e214944412a76590ab43411afc46ec000fa",
       "notes": "Matched terminal negative adaptive conclusion, precise 100/250/500 results, strict evidence freeze, unchanged product default, score geometry, six-step candidate tie-break, 97% coverage and 2pp downstream gate."
+    },
+    {
+      "path": "guides/contract-aware-fallback.md",
+      "en_blob": "b15bf6ba51c20519ba89b770ea99619175d2b82a",
+      "ko_blob": "d4b9aa65d826c2dbec3896038216ebe85d7f5250",
+      "notes": "Matched exact host-denial precedence, preserved legacy auth/health semantics, and host ownership of execution and retries."
+    },
+    {
+      "path": "guides/capability-negotiation.md",
+      "en_blob": "890d8c32eef8f09e3f477686c0728fc224f1871a",
+      "ko_blob": "9b325483b59463c218256836681f0e0b5a9cec31",
+      "notes": "Matched the seven compatibility states, intersection-only authorization, explicit unit conversion intent and no planning/execution authority."
+    },
+    {
+      "path": "guides/capability-eligibility.md",
+      "en_blob": "4a995bc7fcf2736f10594d6f7f40812f8a9b365f",
+      "ko_blob": "8aca916eb1b02fd079c151016f1d6d85e6b7e27f",
+      "notes": "Matched visibility=false nondisclosure and structured typed reason classes without authority escalation."
+    },
+    {
+      "path": "guides/capability-constraints.md",
+      "en_blob": "a97a522420df659298fc7267e1dcc2749c9f4add",
+      "ko_blob": "4d219d69d111831e9122cbb2cf1a15bce03cf2d4",
+      "notes": "Matched fail-closed unknown required metadata and separation of hard constraints versus soft preference scoring."
+    },
+    {
+      "path": "guides/capability-lineage.md",
+      "en_blob": "6da047d5bc83c36aeddbd3756c9751b6bdc7ade6",
+      "ko_blob": "d7adfa37c54c4f9d21db249f7431dfecffe5c741",
+      "notes": "Matched canonical SHA identity, no secret/payload fields and suppression of hidden capability lineage."
+    },
+    {
+      "path": "guides/capability-graph-drift.md",
+      "en_blob": "71c5f1164fa703ab7056c2dbd52c2ecb58da1a95",
+      "ko_blob": "2e158901918606985a44bf3a0a0f3ff0f24c2c97",
+      "notes": "Matched changed/removed neighbor invalidation, additive new-node exception and separate runtime-health overlay."
+    },
+    {
+      "path": "recipes/mcp-agent.md",
+      "en_blob": "61a14b760573ec136a0d1d55dd595d35b5d08d08",
+      "ko_blob": "3a8b3d72e4d1cc9ea717019749cbc6136392921f",
+      "notes": "Matched broad unclassified remote exception warning and prohibition on trusting MCP annotations for mutation decisions."
+    },
+    {
+      "path": "recipes/openapi-agent.md",
+      "en_blob": "ba590adcb7eec9ad0ee276235a054258f8108dff",
+      "ko_blob": "35fd53aeb847e7455549b747a6498ab55f12b4ac",
+      "notes": "Matched top-level conversational-agent autonomy and retained local schema, caller argument, policy and input/output validation constraints."
+    },
+    {
+      "path": "contributing.md",
+      "en_blob": "ea38c9bff4bfe38a798e001e890b9b8f6ac8a146",
+      "ko_blob": "ea38c9bff4bfe38a798e001e890b9b8f6ac8a146",
+      "notes": "Exact same include snippet in both locale Markdown sources."
+    },
+    {
+      "path": "license.md",
+      "en_blob": "82db252c92a8be242a2eb4d087e854a68433a458",
+      "ko_blob": "4392b4a11182a9f258d87af9a3f3035fb9f076cc",
+      "notes": "Matched MIT licensing claim and embedded identical LICENSE content directive."
+    },
+    {
+      "path": "changelog.md",
+      "en_blob": "c82c6d7391f7780e4b54d22897796d7f56ffdac5",
+      "ko_blob": "f3aa39dfde127a818454f8e54daead470140940e",
+      "notes": "Matched canonical root changelog link and pre-1.0 compatibility reference."
+    },
+    {
+      "path": "assets/brand/README.md",
+      "en_blob": "cce56415b5e1d1df7937971ccadaf0e5cd328cc8",
+      "ko_blob": "153d48eb165ef549490a58c10b6ad156549503be",
+      "notes": "Matched mark geometry meaning, all palette hex literals, source asset filenames/sizes and explicit forbidden visual transformations."
+    },
+    {
+      "path": "project/launch-log.md",
+      "en_blob": "0c6f59ecf06dbab836957187e822e402f7eb15e8",
+      "ko_blob": "92ba4ec0879579e558719ec596102ab94cabb46c",
+      "notes": "Matched no false causal inference, private-data exclusions, event row status and outcome caveats."
+    },
+    {
+      "path": "reference/planning.md",
+      "en_blob": "76dfdfc8e5f1f2e86d095717c9f2041545e48349",
+      "ko_blob": "c7b023a02ae80d7e2f978a3ec8d9bde6bba2b13e",
+      "notes": "Matched every documented API-reference directive for planning/registry symbols and preserved English Python identifiers."
+    },
+    {
+      "path": "reference/runtime.md",
+      "en_blob": "b9b70c0425e16806ef2e2d52c783c8cc3a069015",
+      "ko_blob": "4472970ee5aecac09710dfc375650af9621161e9",
+      "notes": "Matched runtime API-reference directives including trace, hooks, snapshot and inspection symbols."
+    },
+    {
+      "path": "integrations/opentelemetry.md",
+      "en_blob": "bf66c62729f5a9c40a7f8612939064b1f7917aa4",
+      "ko_blob": "4b3172c6f2e1bf31e0118b238d6a4b184d63348c",
+      "notes": "Matched spans and ERROR handling, explicit excluded values/metadata/tags/exception messages, and host-owned export pipeline."
+    },
+    {
+      "path": "getting-started/installation.md",
+      "en_blob": "9870961d062b537dc7bb9f5f2d91e609755806c8",
+      "ko_blob": "5c05e7cddcaff971d8c0ef0a0103751b20b83b7d",
+      "notes": "Repaired false 0.14 subject in explanation of current 0.17.0 public release; preserved Python >=3.10, extras, verification and dev0 differentiation."
+    },
+    {
+      "path": "guides/html-documentation.md",
+      "en_blob": "7e348cb2080e494ac16a82f811436fac99f5c700",
+      "ko_blob": "2b569b29b558c394c6b23da24b3ab3644289d5b8",
+      "notes": "Matched proposal-only authority, quote grounding, independent mutation approval, same-origin redirect restriction and no JS-rendered pages guarantee."
+    },
+    {
+      "path": "guides/capability-graph-scalability.md",
+      "en_blob": "ae52774094b218c3da06418ae8d6321e95e4203d",
+      "ko_blob": "a380bc33f865c55fcad1225d2725309fee511a8f",
+      "notes": "Matched conservative semantic ID index, required full compatibility, incremental vs complete rebuild condition, bounded SCC cycle witnesses and scalability matrix."
+    },
+    {
+      "path": "guides/consumer-acceptance.md",
+      "en_blob": "da49405aea26d8b4e8116236ffe20c7933cea525",
+      "ko_blob": "63082d50821cca6545ebb8427575ead415d9ce10",
+      "notes": "Matched installed wheel/sdist consumer testing, production boundary list, optional extras, Laya CPU isolation and non-blocking external service smoke."
+    },
+    {
+      "path": "getting-started/schema-explorer.md",
+      "en_blob": "bc416dcf03345a5eca32ec0ce07150281041bf48",
+      "ko_blob": "8cb91c1e30fd63842209dd4dfcf63c3762275aff",
+      "notes": "Matched read-only schema view, no remote assets, schema defaults/examples secret suppression, live inspection redaction and absence of try-it-out execution."
+    },
+    {
+      "path": "guides/openapi-compatibility.md",
+      "en_blob": "4cd65ac161c92d74ce122be98d9e390f1133873c",
+      "ko_blob": "582bdbed744821ec8a32a335b1419417329784cc",
+      "notes": "Matched all analyzer status conditions, URL opt-in/same-document ref rules, partial composition semantics, and no automatic error on partial reports."
+    },
+    {
+      "path": "concepts/adapters.md",
+      "en_blob": "fd829025a5c7f70c571a61ac4904ab032267ef6b",
+      "ko_blob": "f35152ef3562638d4c0dd901648a6abbc6b02b50",
+      "notes": "Matched compiler ownership, no policy authorization in adapter registry, fingerprinted runtime metadata and exact protocol auto-discovery scope."
+    },
+    {
+      "path": "guides/capability-artifacts.md",
+      "en_blob": "18157d03f74805248443297235bc177b2d9fb447",
+      "ko_blob": "8cc7baf589d4b255bc802d502babc0b32d547cc8",
+      "notes": "Matched 1.0->1.1 external edge migration (no invented derived trust), artifact validation, idempotence, non-overwrite behavior and absent deployment authority."
+    },
+    {
+      "path": "guides/python-tools.md",
+      "en_blob": "ae00ccbd3ced7cf0513cebbfaa6bd79e59ad9f0e",
+      "ko_blob": "99534cc844d315b02905fc2683413c1d70e71c1d",
+      "notes": "Matched explicit trusted invoker boundary, no SDK reflection, read-only retry safety, exact tool fingerprint and compare-and-swap replacement."
     }
   ]
 }
