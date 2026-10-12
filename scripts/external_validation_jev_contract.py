@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -68,12 +69,35 @@ def validate_jev_output(payload: Any) -> None:
             unknown = set(tools) - catalog
             if unknown:
                 raise ValueError(f"{row.get('id')}: unknown {key}: {sorted(unknown)}")
+            if len(tools) != len(set(tools)):
+                raise ValueError(f"{row.get('id')}: duplicate {key}")
+        candidates = set(row["candidate_tools"])
+        if not set(row["activated_tools"]).issubset(candidates):
+            raise ValueError(f"{row.get('id')}: activated_tools must be shortlisted candidates")
         latency = row.get("latency_ms")
-        if not isinstance(latency, (int, float)) or isinstance(latency, bool) or latency < 0:
-            raise ValueError(f"{row.get('id')}: latency_ms must be non-negative")
+        if not isinstance(latency, (int, float)) or isinstance(latency, bool):
+            raise ValueError(f"{row.get('id')}: latency_ms must be finite and non-negative")
+        try:
+            latency_ok = math.isfinite(latency) and latency >= 0
+        except OverflowError:
+            latency_ok = False
+        if not latency_ok:
+            raise ValueError(f"{row.get('id')}: latency_ms must be finite and non-negative")
         probabilities = row.get("probabilities")
-        if probabilities is not None and not isinstance(probabilities, dict):
-            raise ValueError(f"{row.get('id')}: probabilities must be object or null")
+        if probabilities is not None:
+            if not isinstance(probabilities, dict):
+                raise ValueError(f"{row.get('id')}: probabilities must be object or null")
+            if not set(probabilities).issubset(candidates):
+                raise ValueError(f"{row.get('id')}: probabilities must reference shortlisted candidates")
+            for tool, probability in probabilities.items():
+                if not isinstance(probability, (int, float)) or isinstance(probability, bool):
+                    raise ValueError(f"{row.get('id')}: invalid probability for {tool}")
+                try:
+                    valid_probability = math.isfinite(probability) and 0 <= probability <= 1
+                except OverflowError:
+                    valid_probability = False
+                if not valid_probability:
+                    raise ValueError(f"{row.get('id')}: invalid probability for {tool}")
 
 
 def main() -> None:
