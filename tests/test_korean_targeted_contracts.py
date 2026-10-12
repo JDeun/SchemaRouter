@@ -115,3 +115,26 @@ def test_direct_review_fixes_release_graph_and_registry_claims() -> None:
     assert "계획과 실행에 영향을 주는 선언된 계약" in registry
     assert "무엇이 실행되는지" in registry
     assert "응답을 어떤 방식으로 검증하는지" in registry
+
+
+def test_korean_research_history_keeps_failed_frozen_evidence_explicit() -> None:
+    history = (
+        ROOT / "docs_ko/research/design-and-experiment-history.md"
+    ).read_text(encoding="utf-8")
+    for statement in (
+        "유효한 지원 요청을 거의 모두 거부",
+        "정식 원시 BGE 결과와 비교한 불일치도 **0건**",
+        "동결된 1,008개 확인 코퍼스는 **전혀 채점하지 않은 상태**",
+        "어느 구성도 유용한 오픈셋 기능 소속 판단 경계를 제공하지 못했습니다",
+        "임계값·엡실론·동점 규칙",
+        "실패 행을 이용해 수정하는 것은 **허용되지 않습니다**",
+        "사전 등록된 기준 중 하나 이상을 충족하지 못했으므로 **개봉하지 않았습니다**",
+    ):
+        assert statement in history
+    for truncated in (
+        "\nleaves.\n", "\npermitted.\n", "\nsurface.\n",
+        "\nmismatches.\n", "\nvalid supported request.\n",
+        "\ncapability membership.\n", "\nunscored.\n",
+        "\nopen-set capability-membership boundary.\n",
+    ):
+        assert truncated not in history
