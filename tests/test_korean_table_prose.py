@@ -76,6 +76,14 @@ def test_table_review_is_blob_pinned_not_a_corpus_certificate() -> None:
     assert record["reviewed_ko_blob"] == git_blob_sha(
         (ROOT / "docs_ko/framework-maturity.md").read_bytes()
     )
+    exception = record["verbatim_research_hypothesis_exception"]
+    assert exception["path"] == "research/experiment-index.md"
+    assert exception["source_en_blob"] == git_blob_sha(
+        (ROOT / "docs/research/experiment-index.md").read_bytes()
+    )
+    assert exception["annotated_ko_blob"] == git_blob_sha(
+        (ROOT / "docs_ko/research/experiment-index.md").read_bytes()
+    )
 
 
 def test_only_exact_source_frozen_experiment_hypotheses_are_exempt(
