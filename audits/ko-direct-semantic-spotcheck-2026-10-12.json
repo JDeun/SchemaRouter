@@ -3,13 +3,13 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 14,
+  "reviewed_page_pairs": 16,
   "total_page_pairs": 147,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "Other 133 pairs are not attested by this targeted record"
+    "Other 131 pairs are not attested by this targeted record"
   ],
   "reviews": [
     {
@@ -95,6 +95,18 @@
       "en_blob": "03e99f7303b53ef8a9f33c2456c63e23c3db0dcc",
       "ko_blob": "5dd6c30530109e12c03b916174370800a198b14b",
       "notes": "Matched pre-retrieval and execution-time authorization, explicit host ownership of authentication, bounded DB/vector/graph/record adapters, Redis exclusion, and live external acceptance caveat."
+    },
+    {
+      "path": "research/successor-screen.md",
+      "en_blob": "2fbfb4ba68a41c0ebd03cc96eb72864bfe4bb606",
+      "ko_blob": "27adfaedd2e759c1ffe1ceef7ac4f86b735e0fc0",
+      "notes": "Reinstated the rate-only selector's private unit-test-only role, distinct from the provenance-constrained public selector; reviewed 36-episode qualification, immutable roster/pinned models, three threshold conditions, holdout disjointness caveat and infrastructure-not-science failures."
+    },
+    {
+      "path": "research/adaptive-shortlist-depth.md",
+      "en_blob": "3cd62d23eb18409f4cec46995c301c3a952427c6",
+      "ko_blob": "fa569e214944412a76590ab43411afc46ec000fa",
+      "notes": "Matched terminal negative adaptive conclusion, precise 100/250/500 results, strict evidence freeze, unchanged product default, score geometry, six-step candidate tie-break, 97% coverage and 2pp downstream gate."
     }
   ]
 }
