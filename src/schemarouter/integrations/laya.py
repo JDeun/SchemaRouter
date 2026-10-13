@@ -33,11 +33,16 @@ class LayaDecisionBackend:
     ) -> None:
         if model is not None and (not isinstance(model, str) or not model.strip()):
             raise ValueError("model must be a non-empty Laya model name when provided")
-        if (
-            type(min_confidence) not in (int, float)
-            or not math.isfinite(min_confidence)
-            or not 0.0 <= min_confidence <= 1.0
-        ):
+        if type(min_confidence) not in (int, float):
+            raise ValueError("min_confidence must be finite and between 0 and 1")
+        try:
+            valid_confidence = (
+                math.isfinite(min_confidence)
+                and 0.0 <= min_confidence <= 1.0
+            )
+        except OverflowError:
+            valid_confidence = False
+        if not valid_confidence:
             raise ValueError("min_confidence must be finite and between 0 and 1")
         if not isinstance(max_loaded, int) or isinstance(max_loaded, bool) or max_loaded < 1:
             raise ValueError("max_loaded must be an integer >= 1")
@@ -151,7 +156,7 @@ class LayaDecisionBackend:
             if type(raw_confidence) not in (int, float):
                 raise ValueError("Laya confidence must be a numeric scalar")
             confidence = float(raw_confidence)
-        except (KeyError, TypeError, ValueError) as exc:
+        except (KeyError, TypeError, ValueError, OverflowError) as exc:
             raise PlanningError("Laya returned an invalid choice response") from exc
 
         allowed = {option.id for option in request.options}
