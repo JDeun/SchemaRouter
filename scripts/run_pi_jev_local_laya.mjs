@@ -41,12 +41,19 @@ export function sameFrozenHandoff(input, generated) {
 /** Capture actual post-inference weight and device provenance (not startup preferences). */
 export function loadedLayaEvidence(health) {
   const names=health?.loaded,revs=health?.revisions,devices=health?.checkpoint_devices;
-  if(health?.status!=='ok' || !Array.isArray(names) || names.length===0 ||
+  // Laya's device_is_preference=true means a requested device, NOT a measured
+  // loaded model. A healthy process alone is insufficient post-inference proof.
+  if(health?.status!=='ok' || health?.device_is_preference!==false ||
+     !Array.isArray(names) || names.length===0 || new Set(names).size!==names.length ||
      !revs || typeof revs!=='object' || Array.isArray(revs) ||
      !devices || typeof devices!=='object' || Array.isArray(devices) ||
+     Object.keys(revs).length!==names.length ||
+     Object.keys(devices).length!==names.length ||
      names.some(name=>typeof name!=='string'||!name ||
-       typeof revs[name]!=='string'||!revs[name] ||
-       typeof devices[name]!=='string'||!devices[name])) {
+       !Object.hasOwn(revs,name) || !Object.hasOwn(devices,name) ||
+       typeof revs[name]!=='string'||!revs[name].trim() ||
+       typeof devices[name]!=='string'||!devices[name].trim()) ||
+     health.device!==devices[names[0]]) {
     throw Error('Local Laya returned no measured loaded-checkpoint provenance');
   }
   return {checkpoint_revisions:revs,checkpoint_devices:devices};
