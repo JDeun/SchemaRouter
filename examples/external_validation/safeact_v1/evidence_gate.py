@@ -100,8 +100,19 @@ class EvidenceGate:
         self._observations: list[Observation] = []
 
     def observe(self, observation: Observation) -> None:
-        if not observation.tool or not observation.record_id:
+        if (
+            not isinstance(observation.tool, str)
+            or not observation.tool.strip()
+            or not isinstance(observation.record_id, str)
+            or not observation.record_id.strip()
+        ):
             raise ValueError("observation must identify source tool and record")
+        # Dataclass annotations do not validate at runtime. A supposed
+        # successful="false" (or 1) was truthy, allowing failed reads to
+        # masquerade as trusted evidence. Revoke prior claims from this tool.
+        if type(observation.successful) is not bool:
+            self.invalidate_tool(observation.tool)
+            raise ValueError("observation.successful must be a real boolean")
         if observation.successful:
             self._observations.append(observation)
         else:
