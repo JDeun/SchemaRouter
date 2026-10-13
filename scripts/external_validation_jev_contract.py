@@ -88,7 +88,9 @@ def validate_jev_output(payload: Any) -> None:
             if not isinstance(probabilities, dict):
                 raise ValueError(f"{row.get('id')}: probabilities must be object or null")
             if not set(probabilities).issubset(candidates):
-                raise ValueError(f"{row.get('id')}: probabilities must reference shortlisted candidates")
+                raise ValueError(
+                    f"{row.get('id')}: probabilities must reference shortlisted candidates"
+                )
             for tool, probability in probabilities.items():
                 if not isinstance(probability, (int, float)) or isinstance(probability, bool):
                     raise ValueError(f"{row.get('id')}: invalid probability for {tool}")
