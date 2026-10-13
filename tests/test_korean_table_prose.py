@@ -55,7 +55,12 @@ def test_maturity_matrix_localizes_all_49_capability_rows() -> None:
 
 def test_full_korean_corpus_has_no_new_long_english_table_clauses() -> None:
     report = scan(ROOT / "docs_ko")
-    assert report["scanned_pages"] == 147
+    # Scan the entire evolving bilingual tree, not only the original 147 pages.
+    en = {x.relative_to(ROOT / "docs").as_posix() for x in (ROOT / "docs").rglob("*.md")}
+    ko = {x.relative_to(ROOT / "docs_ko").as_posix() for x in (ROOT / "docs_ko").rglob("*.md")}
+    assert en == ko
+    assert len(en) >= 147
+    assert report["scanned_pages"] == len(ko)
     assert report["findings"] == [], report["findings"][:30]
 
 
