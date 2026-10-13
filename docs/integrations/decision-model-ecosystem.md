@@ -29,6 +29,15 @@ Choose the narrowest stable boundary that fits a new model/runtime:
 
 The ecosystem changes quickly. Pin exact repository/model/runtime revisions before any benchmark.
 
+### Microsoft-Decision-1 (2026-10-09 announcement)
+
+- Microsoft hosted Qwen3.5-9B-derived typed decision model (`choice`, `noul`, `score`);
+- Foundry endpoint `/providers/microsoft/v1/systemone`, with Azure deployment-name model and Entra/token or `api-key` authentication; OpenRouter ID `microsoft/microsoft-decision-1`;
+- **not automatically TypeSafe SDK-compatible**: existing `SystemOneDecisionBackend` expects the TypeSafe `response.choices` object; Foundry HTTP documents `answers` JSON and different credentials;
+- no publicly released Microsoft-modified weights, so it is a **hosted paid** candidate, not local Laya replacement;
+- no measured SchemaRouter quality or open-set refusal accuracy; keep out of production promotion until #1324 verifies transport and independent supported/no-fit heldout;
+- dedicated [Microsoft-Decision-1 intake](microsoft-decision-1.md) with official URLs, price and no-match safeguards.
+
 ### Jev / TypeSafe
 
 - hosted reference System One API;
