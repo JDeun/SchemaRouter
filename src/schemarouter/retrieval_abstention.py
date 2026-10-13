@@ -145,10 +145,23 @@ def apply_retrieval_abstention(
                 elif margin < policy.min_margin:
                     reason = "below_min_margin"
 
-    data = retrieval.model_dump(mode="python")
-    data["candidates"] = (
-        list(retrieval.candidates) if reason == "selected" else []
-    )
+    # Forged model_copy(update=...) values bypass Pydantic field validation.
+    # On rejection, serialize only the envelope and explicitly sanitize unsafe
+    # metadata. Never serialize or retain rejected candidate payloads.
+    data = retrieval.model_dump(mode="python", exclude={"candidates"}, warnings=False)
+    if type(retrieval.registry_version) is not int or retrieval.registry_version < 0:
+        data["registry_version"] = 0
+    if (
+        type(retrieval.requested_k) is not int
+        or retrieval.requested_k < max(1, len(scores))
+    ):
+        data["requested_k"] = max(1, len(scores))
+    if type(retrieval.total_ranked) is not int or retrieval.total_ranked < len(scores):
+        data["total_ranked"] = len(scores)
+    if type(retrieval.executable_only) is not bool:
+        # Do not launder forged integer 1 into the authorization-relevant True.
+        data["executable_only"] = False
+    data["candidates"] = list(retrieval.candidates) if reason == "selected" else []
     return SelectiveCapabilityRetrieval(
         **data,
         disposition="selected" if reason == "selected" else "abstained",
