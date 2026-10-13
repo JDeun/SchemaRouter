@@ -6,25 +6,27 @@
     {
       "path": "architecture.md",
       "en_blob": "e13e284e91f02d9b63eac07146a65afefc032248",
-      "ko_blob": "8914c0df53e5cc2a874cba81cc769b8169bd3cb9",
+      "ko_blob": "30b794315e985d1984f8899cf6055cd3d3f05bf0",
       "reviewed_contracts": [
         "Decision backend never owns ToolCall or credentials; Jev sees no DecisionOption.metadata",
         "Provenance/license/unit/source-type evidence must pass local prechecks before a provider can preserve/veto",
         "Execution hooks observe detached state but cannot transform calls/results or make retriable after-hook failures",
-        "RunEvent trace data preserves redacted defaults; include_payloads=True requires host-managed sensitive data protection"
+        "RunEvent trace data preserves redacted defaults; include_payloads=True requires host-managed sensitive data protection",
+        "2026-10-12: reviewed and repinned corrected Korean source; no new independent human sentence-level certification implied."
       ]
     },
     {
       "path": "research/design-and-experiment-history.md",
       "en_blob": "27bdc35c44010cfd1c15d4a5702ed2b9ad6f9c5c",
-      "ko_blob": "7209d91638d859ab08137e6f1b31ff8d3c9c8804",
+      "ko_blob": "4892377fe2b6b27e529644a401bc2e65c0c3ed57",
       "reviewed_contracts": [
         "Route-local weights 0.55: 1019 cases vs diagnostic ceiling 1046, +27 is not promoted score",
         "Issue 281 excludes post-hoc scalar thresholds/Top-k/route exceptions; successor is veto-only learned/external open-set model",
         "Kev PyTorch CPU/fp32 slowness is runtime-negative, not model-quality-negative",
         "Alias geometry result is terminal and failed fresh confirmation is not tuning input",
         "Raw BGE supported 100% tool detection must not be generalized to ontology filter performance",
-        "Additional unrendered English clauses converted: no post-hoc second threshold, wrong-path ranker agreement, no failed-row rules or confirmation-data opening"
+        "Additional unrendered English clauses converted: no post-hoc second threshold, wrong-path ranker agreement, no failed-row rules or confirmation-data opening",
+        "2026-10-12: reviewed and repinned corrected Korean source; no new independent human sentence-level certification implied."
       ]
     },
     {
