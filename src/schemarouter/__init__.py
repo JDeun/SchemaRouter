@@ -436,6 +436,10 @@ from .retrieval_abstention import (
     SelectiveCapabilityRetrieval,
     apply_retrieval_abstention,
 )
+from .retrieval_execution_gate import (
+    execute_selective_plan,
+    validate_selective_execution,
+)
 from .runs import ExecutionBudget, ExecutionMode, RetryPolicy, RunConfig, RunEvent
 from .runtime import ConfiguredSchemaRouter, SchemaRouter
 from .schema_diff import (
@@ -798,6 +802,8 @@ __all__ = [
     "RetrievalAbstentionPolicy",
     "SelectiveCapabilityRetrieval",
     "apply_retrieval_abstention",
+    "execute_selective_plan",
+    "validate_selective_execution",
     "SchemaRouter",
     "SchemaRouterError",
     "SchemaSourceError",
