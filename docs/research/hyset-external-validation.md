@@ -111,3 +111,21 @@ was trained, or authorize evaluation. A separate independent review,
 actual data verification, checkpoint/command logs and prospective study
 freeze are still required. Current committed manifest intentionally fails
 training/evaluation readiness.
+
+### Exact native training argv is part of the frozen condition
+
+The pinned public `train_hyset.sh` delegates to `src/train_hyset.py`,
+whose **default** `--eta` is **0.3**. Declaring annotation-only
+`eta=0` in the manifest **without passing `--eta 0` in the native
+command would not produce that ablation**. The preflight therefore parses
+a literal single `train_hyset.sh` argv and requires explicit, matching
+`--encoder_type`, `--d_z`, `--seed 42` and `--eta`. A reward branch
+must actually pass `--reward_cache`; an annotation-only branch must
+not pass it. Duplicated flags, alternate test-ID/corpus-directory
+overrides, shell chaining and mismatched option values are rejected.
+No shell or model command is executed by this validator.
+
+This proves only that the **declared argv** agrees with the manifest.
+It does not prove the supplied reward cache has the declared digest,
+that model/data bytes match their recorded revisions, or that the
+upstream training code produced a checkpoint.
