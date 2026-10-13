@@ -115,8 +115,12 @@ def pin_new_inventory(old: dict, transition: dict) -> dict:
         not isinstance(details, dict)
         or details.get("path") != NEW_PAGE
         or details.get("git_blob_sha") != NEW_PAGE_SHA
-        or details.get("read_actions") != sorted(ORDER_READ)
-        or details.get("write_actions") != sorted(ORDER_WRITE)
+        or not isinstance(details.get("read_actions"), list)
+        or not isinstance(details.get("write_actions"), list)
+        or len(details["read_actions"]) != len(ORDER_READ)
+        or len(details["write_actions"]) != len(ORDER_WRITE)
+        or set(details["read_actions"]) != ORDER_READ
+        or set(details["write_actions"]) != ORDER_WRITE
     ):
         # Do not allow a page or blob supplied by a modified development
         # manifest to be described as verified without re-auditing upstream.
