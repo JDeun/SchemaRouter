@@ -323,8 +323,7 @@ Trusted adapter는 planned logical field를 `fields=...` 또는 OPTIMADE `respon
 42. Provider-first registration은 알려진 access method를 resolve할 수 있지만 SDK auto-install, credential persistence, execution authority 부여는 할 수 없습니다.
 43. State-conditioned corrective re-retrieval은 동일한 host-visible/available capability surface에서만 동작하며 stable stateless retrieval facade를 보존합니다.
 44. Capability-graph indexing과 incremental rebuild는 search/update optimization일 뿐입니다. Canonical compatibility comparator가 계속 authoritative하며 compatibility-context 변경에는 full rebuild가 필요합니다.
-45. Capability snapshot publication은 atomic합니다. Reader는 complete predecessor 또는 complete successor만 보며 partially rebuilt graph는 보지 않습니다. Runtime health는 immutable snapshot의 일부가 아닙니다.
-    identity.
+45. Capability snapshot publication은 원자적입니다. 읽는 쪽에서는 완전히 구성된 이전 스냅샷이나 새 스냅샷만 관측하며 일부만 재구성된 그래프를 보지 않습니다. 실행 시점의 상태 정보(runtime health)는 불변 스냅샷의 식별성에 포함되지 않습니다.
 46. Capability artifact/snapshot migration은 explicit/versioned이며 corrupt 또는 unknown future format에서 fail-closed합니다. Migration은 secret, invoker, execution authority를 복원할 수 없습니다.
 47. Decision trace는 host-visible structured result만 aggregate할 수 있으며 hidden inventory, rank score, payload, credential, chain-of-thought를 노출하거나 policy/execution decision을 변경해서는 안 됩니다.
 
