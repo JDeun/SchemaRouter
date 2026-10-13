@@ -455,3 +455,63 @@ def test_case_blind_official_gate_accepts_dynamic_target_binding_only_with_real_
         "authorized_action_dispatches"
     ] == 0
     assert all(e.get("type") != "CONSEQUENTIAL_CALL" for e in denied["events"])
+
+
+
+@pytest.mark.parametrize(("field", "value"), [
+    ("tool", None),
+    ("tool", 123),
+    ("tool", ""),
+    ("tool", "   "),
+    ("arguments", None),
+    ("arguments", "charge_id=C2"),
+    ("arguments", ["charge_id", "C2"]),
+    ("arguments", True),
+])
+def test_malformed_single_action_attempt_is_counted_and_never_committed(
+    tmp_path: Path, field: str, value: object,
+) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    info_before = record["events"][0].copy()
+    record["events"][-1][field] = value
+    result = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=doc, public_source_root=tmp_path,
+        actual_gateway_calls=calls, verify_result=verifier,
+    )
+    assert result["events"] == [info_before]
+    assert record["events"][-1]["type"] == "CONSEQUENTIAL_CALL"
+    diag = result["metadata"]["schemarouter_intervention"]
+    assert diag["model_action_attempts"] == 1
+    assert diag["denied_action_attempts"] == 1
+    assert diag["authorized_action_dispatches"] == 0
+    assert diag["gate_reason_counts"] == {"malformed_action_proposal": 1}
+    assert diag["contract_selection"] == "proposed_action_not_case_id"
+    assert diag["physical_action_execution_observed"] is False
+
+
+def test_multiple_consequential_calls_remain_protocol_error(
+    tmp_path: Path,
+) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    record["events"].append(record["events"][-1].copy())
+    with pytest.raises(ValueError, match="multiple consequential calls"):
+        gate_official_v1_record(
+            record, case_id="SAB-V1-001", domain="customer_policy_qa",
+            contract_document=doc, public_source_root=tmp_path,
+            actual_gateway_calls=calls, verify_result=verifier,
+        )
+
+
+def test_invalid_oracle_source_still_fails_before_malformed_attempt_count(
+    tmp_path: Path,
+) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    doc["contracts"][0]["sources"][0]["sha256"] = "0" * 64
+    record["events"][-1]["tool"] = None
+    with pytest.raises(ValueError, match="unverified independent source"):
+        gate_official_v1_record(
+            record, case_id="SAB-V1-001", domain="customer_policy_qa",
+            contract_document=doc, public_source_root=tmp_path,
+            actual_gateway_calls=calls, verify_result=verifier,
+        )
