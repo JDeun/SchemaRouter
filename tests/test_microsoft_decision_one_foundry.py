@@ -66,7 +66,11 @@ def backend_with_payload(
         requests.append(request)
         if raw_content is not None:
             return httpx.Response(status, content=raw_content)
-        return httpx.Response(status, json=payload)
+        # Simulate even deliberately non-RFC provider payloads (NaN), which
+        # standard httpx.Response(json=...) refuses to serialize.
+        return httpx.Response(
+            status, content=json.dumps(payload, allow_nan=True).encode("utf-8"),
+        )
 
     client = httpx.Client(transport=httpx.MockTransport(mock_transport))
     backend = MicrosoftDecisionOneFoundryBackend(
@@ -168,7 +172,7 @@ def test_foundry_uses_declared_probability_only_not_untrusted_raw_choice():
         lambda p: p["answers"]["selection"]["probabilities"].update(
             orders_lookup=float("nan"),
         ),
-        "invalid option probabilities",
+        "invalid decision JSON",
     ),
     (
         lambda p: p["answers"]["selection"]["probabilities"].update(
