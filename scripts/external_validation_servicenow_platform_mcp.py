@@ -210,6 +210,12 @@ def validate_submitted_arm(
     condition = config.get("condition")
     if condition not in expected_arms:
         raise ValueError("unknown or missing ServiceNow comparison condition")
+    if condition == "static_readonly":
+        expected_reference = manifest["source_revisions"]["servicenow_platform_mcp"]
+    else:
+        expected_reference = manifest["source_revisions"]["schemarouter"]
+    if impl.get("fixture_reference_revision") != expected_reference:
+        raise ValueError("submitted runner fixture-reference revision mismatch")
     if config.get("execution") != "disabled":
         raise ValueError("ServiceNow DEV comparisons must never execute tools")
 
@@ -218,6 +224,7 @@ def validate_submitted_arm(
         if (
             impl.get("name") != "ServiceNow Platform MCP static readonly package"
             or impl.get("commit") != snapshot["source"]["commit"]
+            or impl.get("package_version") != snapshot["source"]["package_version"]
             or config.get("tool_package") != snapshot["mcp_tool_package"]
             or type(config.get("tool_count")) is not int
             or config["tool_count"] != len(names)
