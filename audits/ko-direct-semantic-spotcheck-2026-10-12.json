@@ -63,9 +63,9 @@
     },
     {
       "path": "integrations/decision-model-ecosystem.md",
-      "en_blob": "ee36387d25b37fdeb5e31fdb50dbea767b7e8f5f",
-      "ko_blob": "d8b8218a4885f33afb30fca46ca335df49fd411d",
-      "notes": "Verified model-only compatibility is not promotion, quality evidence limitations, candidate-specific and dormant research statuses, model/runtime licensing qualifications, and finite-choice authority boundary."
+      "en_blob": "510c73a7adce77a7971118e1076425c06e377d63",
+      "ko_blob": "24b0e32363bd6239e3e0c8df4c188bd6b4fad5f2",
+      "notes": "Verified model-only compatibility is not promotion, quality evidence limitations, candidate-specific and dormant research statuses, model/runtime licensing qualifications, and finite-choice authority boundary. 2026-10-14 amendment: checked added Microsoft hosted model caveats, request example structures and no-match refusal; not independent validation of the paid provider."
     },
     {
       "path": "concepts/protocol-ingestion-decisions.md",
@@ -898,8 +898,8 @@
     {
       "path": "integrations/microsoft-decision-1.md",
       "en_blob": "be983823a98e8c74c0ea7d5f3c8f3b7fe1b7ebad",
-      "ko_blob": "f14ae5f7f01b23dd758e6847c2ca421c86d88bdd",
-      "notes": "2026-10-13 AI-contributor paired EN/KO review of the new hosted-decision-model intake: discovery-only status, TypeSafe SDK versus Foundry transport and auth incompatibility, explicit none_of_above and execution authorization, absence of independent SchemaRouter quality evidence, no modification of frozen 0.14. Korean text provides a shortened scoped rendition, not identical examples; not independent human attestation."
+      "ko_blob": "394a66ca17f6f48b358c8eafc51055468d553ed8",
+      "notes": "2026-10-13 AI-contributor paired EN/KO review of the new hosted-decision-model intake: discovery-only status, TypeSafe SDK versus Foundry transport and auth incompatibility, explicit none_of_above and execution authorization, absence of independent SchemaRouter quality evidence, no modification of frozen 0.14. Korean text provides a shortened scoped rendition, not identical examples; not independent human attestation. 2026-10-14 amendment: checked added Microsoft hosted model caveats, request example structures and no-match refusal; not independent validation of the paid provider."
     }
   ],
   "separately_inspected_pending_pr": [
@@ -924,6 +924,38 @@
       "current_ko_blob": "f14ae5f7f01b23dd758e6847c2ca421c86d88bdd",
       "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
       "independent_sentence_review_complete": false
+    },
+    {
+      "review_date": "2026-10-14",
+      "scope": "Recheck additive Microsoft-Decision-1 candidate and ecosystem English/Korean documents; include matching JSON/HTTP example structure and separate evidence heading. No external provider call, no third-party sign-off.",
+      "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
+      "changed_entries": [
+        {
+          "path": "integrations/decision-model-ecosystem.md",
+          "prior": {
+            "en": "ee36387d25b37fdeb5e31fdb50dbea767b7e8f5f",
+            "ko": "d8b8218a4885f33afb30fca46ca335df49fd411d"
+          },
+          "current": {
+            "en": "510c73a7adce77a7971118e1076425c06e377d63",
+            "ko": "24b0e32363bd6239e3e0c8df4c188bd6b4fad5f2"
+          }
+        },
+        {
+          "path": "integrations/microsoft-decision-1.md",
+          "prior": {
+            "en": "be983823a98e8c74c0ea7d5f3c8f3b7fe1b7ebad",
+            "ko": "f14ae5f7f01b23dd758e6847c2ca421c86d88bdd"
+          },
+          "current": {
+            "en": "be983823a98e8c74c0ea7d5f3c8f3b7fe1b7ebad",
+            "ko": "394a66ca17f6f48b358c8eafc51055468d553ed8"
+          }
+        }
+      ],
+      "independent_sentence_review_complete": false,
+      "qualified_foundry_transport": false
     }
-  ]
+  ],
+  "last_amended": "2026-10-14"
 }
