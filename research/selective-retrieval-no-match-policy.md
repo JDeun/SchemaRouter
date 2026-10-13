@@ -135,3 +135,16 @@ principals, or invoking `router.ainvoke()` directly bypasses this optional
 bridge. This is a **mechanical no-call** guarantee for an abstaining result,
 not an execution-policy replacement, a safe default, or evidence that the
 score distinguishes absent features in real workloads.
+
+### Pre-planning no-match short circuit
+
+The recommended `ainvoke_selective()` now checks the explicitly
+calibrated policy and the retrieved shortlist **before invoking a
+potentially costly or remote planner**. An empty, below-score or
+below-margin retrieval, untrusted executable scope, stale registry,
+wrong original query, invalid K or forged threshold configuration
+terminates with **no planning or execution dispatch**. An admitted
+shortlist is still revalidated against the resulting plan and live
+registry immediately before ordinary execution. This guarantees neither
+semantic absence detection nor a calibrated threshold; normal
+`router.ainvoke()` is unchanged.
