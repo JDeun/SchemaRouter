@@ -76,6 +76,8 @@ HTTPS 리소스 주소만 받습니다. 실제 `decide()` 호출 시
 않습니다. `include_context=True`는 호스트가 정보 공개를
 승인한 때에만 사용해야 합니다.
 
+## 검증 범위
+
 회귀 테스트는 전부 `httpx.MockTransport`를 사용해
 HTTP 요청 형식과 거부 경계를 확인합니다.
 **실제 Microsoft API 응답 호환성, 모델 버전, 안전한
