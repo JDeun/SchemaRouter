@@ -898,8 +898,8 @@
     {
       "path": "integrations/microsoft-decision-1.md",
       "en_blob": "be983823a98e8c74c0ea7d5f3c8f3b7fe1b7ebad",
-      "ko_blob": "394a66ca17f6f48b358c8eafc51055468d553ed8",
-      "notes": "2026-10-13 AI-contributor paired EN/KO review of the new hosted-decision-model intake: discovery-only status, TypeSafe SDK versus Foundry transport and auth incompatibility, explicit none_of_above and execution authorization, absence of independent SchemaRouter quality evidence, no modification of frozen 0.14. Korean text provides a shortened scoped rendition, not identical examples; not independent human attestation. 2026-10-14 amendment: checked added Microsoft hosted model caveats, request example structures and no-match refusal; not independent validation of the paid provider."
+      "ko_blob": "cc25e28041825e072d7efba338e845bc6f658c46",
+      "notes": "2026-10-13 AI-contributor paired EN/KO review of the new hosted-decision-model intake: discovery-only status, TypeSafe SDK versus Foundry transport and auth incompatibility, explicit none_of_above and execution authorization, absence of independent SchemaRouter quality evidence, no modification of frozen 0.14. Korean text provides a shortened scoped rendition, not identical examples; not independent human attestation. 2026-10-14 amendment: checked added Microsoft hosted model caveats, request example structures and no-match refusal; not independent validation of the paid provider. 2026-10-14 follow-up: expanded Korean no-fit authorization and independent benchmark evidence qualifiers; source-constrained paired reread, not paid transport qualification."
     }
   ],
   "separately_inspected_pending_pr": [
@@ -955,6 +955,14 @@
       ],
       "independent_sentence_review_complete": false,
       "qualified_foundry_transport": false
+    },
+    {
+      "review_date": "2026-10-14",
+      "path": "integrations/microsoft-decision-1.md",
+      "scope": "Added Korean clauses for host execution denial, independent supported/no-fit evaluation and provider evidence limits to reduce omission risk; no external model run.",
+      "prior_ko_blob": "394a66ca17f6f48b358c8eafc51055468d553ed8",
+      "current_ko_blob": "cc25e28041825e072d7efba338e845bc6f658c46",
+      "independent_sentence_review_complete": false
     }
   ],
   "last_amended": "2026-10-14"
