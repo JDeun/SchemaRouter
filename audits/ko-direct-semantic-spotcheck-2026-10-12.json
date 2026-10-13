@@ -21,9 +21,9 @@
     },
     {
       "path": "integrations/laya.md",
-      "en_blob": "3526330c901cc32095fd3f46e6f4e293f3e21ac0",
-      "ko_blob": "eba6dfafb044d79f756ae128ea27e002f199836b",
-      "notes": "Corrected omitted development-install vs next packaged release timing, uncached checkpoint load latency, valid low-confidence abstention, bounded Jev/Ollama invariants, single-versus-multiselect fail-closed reasoning, and shared benchmark comparator scope."
+      "en_blob": "3db631b4c4be74244d86b7d39608913656ebf77a",
+      "ko_blob": "338e10c5189be38745ba4b628ded5925e1aaf7d3",
+      "notes": "Corrected omitted development-install vs next packaged release timing, uncached checkpoint load latency, valid low-confidence abstention, bounded Jev/Ollama invariants, single-versus-multiselect fail-closed reasoning, and shared benchmark comparator scope. Additive EN/KO changes checked on 2026-10-13: Additional EN/KO strict Laya choice wire response sections. Confirms string-only option IDs, finite non-Boolean confidence, fail-closed non-choice responses, usage and runtime-flag type rules; not a quality or independent-human certification."
     },
     {
       "path": "integrations/decision-backend-plugins.md",
@@ -908,5 +908,18 @@
       "observation": "Directly compared each of the 49 EN/KO capability, current status, and future-direction rows against the repaired translation on PR #1305; preserved API qualifiers, failure-closed semantics, vendor lists and numerical targets. Both document-tail narrative maturity gates match in substantive content. The exact reviewed Korean blob is now present in PR #1307's head as well as PR #1305; the 147/147 records are pinned to the PR #1307 source tree. Neither PR is yet merged to main, so this is not a merged-main editorial sign-off."
     }
   ],
-  "directly_examined_across_branches": 147
+  "directly_examined_across_branches": 147,
+  "review_amendments": [
+    {
+      "review_date": "2026-10-13",
+      "path": "integrations/laya.md",
+      "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
+      "review_scope": "Additional EN/KO strict Laya choice wire response sections. Confirms string-only option IDs, finite non-Boolean confidence, fail-closed non-choice responses, usage and runtime-flag type rules; not a quality or independent-human certification.",
+      "prior_en_blob": "3526330c901cc32095fd3f46e6f4e293f3e21ac0",
+      "prior_ko_blob": "eba6dfafb044d79f756ae128ea27e002f199836b",
+      "current_en_blob": "3db631b4c4be74244d86b7d39608913656ebf77a",
+      "current_ko_blob": "338e10c5189be38745ba4b628ded5925e1aaf7d3",
+      "independent_sentence_review_complete": false
+    }
+  ]
 }
