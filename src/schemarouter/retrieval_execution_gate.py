@@ -52,6 +52,17 @@ def validate_selective_execution(
         raise TypeError("plan must be a trusted ExecutionPlan")
     if type(registry_version) is not int or registry_version < 0:
         _deny("invalid active registry version")
+    if not isinstance(policy, RetrievalAbstentionPolicy):
+        _deny("invalid host-supplied no-match policy")
+    try:
+        # Pydantic model_copy(update=...) can skip policy validation, too.
+        policy = RetrievalAbstentionPolicy.model_validate(
+            policy.model_dump(mode="python")
+        )
+    except (ValueError, TypeError) as exc:
+        raise PolicyViolationError(
+            "selective retrieval execution denied: invalid calibrated policy"
+        ) from exc
 
     # Check identity before interpreting the score. model_copy(update=...)
     # may bypass Pydantic validation of the trusted host's plan envelope.
