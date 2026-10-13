@@ -199,8 +199,18 @@ async def ainvoke_selective(
     # Preflight before any potentially remote/costly planner call. The
     # execution gate below rechecks after planning in case the registry or
     # rankings changed. This does not modify plain router.ainvoke().
-    if retrieval.executable_only is not True:
-        _deny("non-executable retrieval scope")
+    expected_query = request if isinstance(request, str) else request.query
+    if (
+        retrieval.executable_only is not True
+        or type(retrieval.registry_version) is not int
+        or retrieval.registry_version != router.registry.version
+        or retrieval.query != expected_query
+        or not isinstance(expected_query, str)
+        or not expected_query.strip()
+    ):
+        _deny("non-executable retrieval, stale registry or mismatched query")
+    if type(retrieval.requested_k) is not int or retrieval.requested_k != k:
+        _deny("mismatched retrieval shortlist budget")
     preselection = apply_retrieval_abstention(retrieval, policy=policy)
     if preselection.abstained or not preselection.candidates:
         _deny("no-match: " + preselection.reason)
