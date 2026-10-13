@@ -64,8 +64,13 @@ python -m scripts.validate_hyset_retraining_manifest --stage development
 
 인코더의 정확한 40자리 리비전, ToolBench 원본 리비전과 SHA-256,
 seed 42 학습 명령 및 선행 동결 상태를 독립적으로 확정했다면
-`--stage training`을 사용합니다. Qwen은 `d_z=1536`, BERT는
-`d_z=768`을 검사합니다. `eta=0.3` 설정은 독립적으로 재현 가능한
+다음 명령으로 학습 단계의 입력 준비 상태를 검사합니다.
+
+```bash
+python -m scripts.validate_hyset_retraining_manifest --stage training
+```
+
+Qwen은 `d_z=1536`, BERT는 `d_z=768`을 검사합니다. `eta=0.3` 설정은 독립적으로 재현 가능한
 reward cache SHA-256과 `execution_reward_eta03` 라벨이 필요합니다.
 `eta=0`은 reward cache 없이 `annotation_only_eta0`라고 명시해야 합니다.
 실제 재학습 이후에만 생성 가능한 `training.checkpoint_sha256`이
