@@ -29,6 +29,28 @@ results = await router.ainvoke(
 
 ## 선택적 No-match 실행 차단
 
+일반적인 애플리케이션에는 **`ainvoke_selective()`**를 우선 사용합니다.
+하나의 요청과 동일한 `RunConfig.principal`로 검색과 실행 계획을
+직접 만들기 때문에, 호출자가 서로 다른 사용자 권한의 계획을
+실수로 조합하지 않도록 설계했습니다.
+
+```python
+from schemarouter import RetrievalAbstentionPolicy, ainvoke_selective
+
+# 별도의 독립된 데이터로 보정한 임계값을 호스트가 제공합니다.
+policy = RetrievalAbstentionPolicy(min_score=host_config.calibrated_min_score)
+results = await ainvoke_selective(
+    router, user_request, k=3, policy=policy, config=trusted_run_config,
+)
+```
+
+No-match 판정은 `PolicyViolationError`를 발생시키며 실행 전에
+중단됩니다. 다만 잘못된 임계값이 존재하지 않는 기능까지 통과시킬
+수 있으므로 검증된 전역 거부 정책이나 기본 동작은 아닙니다.
+일반 `ainvoke()`는 선택적 게이트를 우회합니다.
+
+
+
 위의 `router.ainvoke(...)`는 등록된 기능에 없는 요청을 자동으로
 거부하지 않습니다. 가장 비슷한 도구가 실제로는 잘못된 도구일 수 있습니다.
 독립적으로 보정한 임계값을 사용할 수 있을 때, 동일한 호스트 권한 범위에서
