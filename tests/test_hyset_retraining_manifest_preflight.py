@@ -138,7 +138,7 @@ def test_stage_gates_consistent_annonly_or_cache_backed_retraining(eta):
         lambda m: m["training"]["primary_configuration"].update(
             eta=0.3
         ),
-        "execution-reward",
+        "native --eta does not match",
     ),
     (
         lambda m: m["training"]["primary_configuration"].update(
@@ -178,7 +178,7 @@ def test_stage_gates_consistent_annonly_or_cache_backed_retraining(eta):
         lambda m: m["training"]["primary_configuration"].update(
             command="python fake_trainer.py"
         ),
-        "public train_hyset.sh",
+        "invoke the pinned train_hyset.sh",
     ),
 ])
 def test_annotation_ablation_does_not_silently_change_training_recipe(
