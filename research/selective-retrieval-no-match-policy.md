@@ -63,6 +63,32 @@ not modified or re-scored by this feature.
 
 ## Opt-in pre-execution enforcement — no-match means no tool call
 
+For the normal host workflow, prefer **`ainvoke_selective()`**. It retrieves
+executable capabilities and builds a plan internally from the same request,
+using the same validated `RunConfig.principal` for both steps and final
+execution. No application-supplied ranking or plan is accepted.
+
+```python
+from schemarouter import (
+    RetrievalAbstentionPolicy, ainvoke_selective,
+)
+
+# The host must provide a threshold calibrated on independent data.
+policy = RetrievalAbstentionPolicy(min_score=host_config.calibrated_min_score)
+results = await ainvoke_selective(
+    router, user_request, policy=policy, k=3,
+    config=trusted_run_config,  # includes principal if applicable
+)
+```
+
+An unsupported/no-match verdict raises `PolicyViolationError` before
+dispatching. The remaining `execute_selective_plan()` low-level bridge is
+for trusted hosts which already own both artifacts; such callers are
+responsible for ensuring identical principal/authorization provenance.
+Neither path introduces a built-in universal threshold.
+
+
+
 The separate `execute_selective_plan()` bridge enforces the selection verdict
 **before** handing a plan to the ordinary SchemaRouter executor. It is
 opt-in and leaves existing `invoke()`, `ainvoke()` and `execute()` unchanged.
