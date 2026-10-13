@@ -18,13 +18,13 @@
     },
     {
       "path": "project/launch-playbook.md",
-      "ko_blob": "a773701f857d9a30e514c7609051b8e8c1e68e9a",
+      "ko_blob": "4ad068df9a2f109d2b314ad3b1a3151ba428dec4",
       "lines": [
         290,
         323
       ],
       "decision": "intentional-english-promotion-copy",
-      "evidence": "Both remaining English-prose candidates are quoted English outreach draft headlines: a deferred Hacker News Show HN example and a Reddit example. They are intentionally English because those target communities use English. The new primary GeekNews Show GN title and description are complete Korean source prose, with human review before publication. This is a narrow manual candidate disposition, not full-corpus translation certification."
+      "evidence": "Both remaining English-prose candidates are quoted English outreach draft headlines: a deferred Hacker News Show HN example and a Reddit example. They are intentionally English because those target communities use English. The new primary GeekNews Show GN title and description are complete Korean source prose, with human review before publication. This is a narrow manual candidate disposition, not full-corpus translation certification. Rechecked unchanged English outreach quote exceptions and revised Korean launch narrative against the new pinned KO blob."
     },
     {
       "path": "research/evidence-to-action.md",
