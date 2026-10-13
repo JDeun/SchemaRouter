@@ -241,20 +241,41 @@ class MicrosoftDecisionOneFoundryBackend:
             ),
         )
 
+    def _send_bounded(self, client: httpx.Client, payload: bytes) -> bytes:
+        chunks: list[bytes] = []
+        size = 0
+        # Read decoded bytes incrementally. A post() followed by len(content)
+        # would already have buffered arbitrarily large provider responses.
+        with client.stream(
+            "POST", self.url, content=payload, headers=self._headers,
+            timeout=self.timeout,
+        ) as response:
+            response.raise_for_status()
+            for chunk in response.iter_bytes():
+                size += len(chunk)
+                if size > _MAX_RESPONSE_BYTES:
+                    raise PlanningError(
+                        "Foundry response exceeds maximum allowed size"
+                    )
+                chunks.append(chunk)
+        return b"".join(chunks)
+
     def decide(self, request: DecisionRequest) -> DecisionResult:
         body = self._request_body(request)
         try:
+            serialized = json.dumps(
+                body, ensure_ascii=False, allow_nan=False,
+            ).encode("utf-8")
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("Foundry request contains invalid JSON data") from exc
+        if len(serialized) > _MAX_RESPONSE_BYTES:
+            raise ValueError("Foundry request exceeds maximum allowed size")
+        try:
             if self.client is not None:
-                response = self.client.post(
-                    self.url, json=body, headers=self._headers, timeout=self.timeout,
-                )
+                data = self._send_bounded(self.client, serialized)
             else:
                 with httpx.Client(timeout=self.timeout) as client:
-                    response = client.post(
-                        self.url, json=body, headers=self._headers,
-                    )
-            response.raise_for_status()
-            data = response.content
+                    data = self._send_bounded(client, serialized)
         except httpx.HTTPError as exc:
             # Never embed remote response bodies or credential-bearing URLs in
             # public error messages.
