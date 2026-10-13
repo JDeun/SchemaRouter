@@ -57,8 +57,10 @@ def test_direct_semantic_spotcheck_provenance_is_bounded_and_live() -> None:
             encoding="utf-8"
         )
     )
-    assert ledger["reviewed_page_pairs"] == len(ledger["reviews"]) == 147
-    assert ledger["total_page_pairs"] == 147
+    # Every currently published bilingual pair must have a source-pinned
+    # review entry; adding new paired documentation must extend the ledger.
+    assert ledger["reviewed_page_pairs"] == len(ledger["reviews"])
+    assert ledger["total_page_pairs"] == len(ledger["reviews"])
     assert ledger["independent_sentence_review_complete"] is False
     assert "not independent human" in ledger["reviewer_status"]
     reviewed_paths = {item["path"] for item in ledger["reviews"]}
