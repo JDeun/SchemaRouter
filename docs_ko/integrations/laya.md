@@ -6,13 +6,15 @@ Laya는 general text-generation model이 아니라 non-autoregressive decision m
 
 ## 설치
 
-Current distribution에서는 optional `laya` extra로 제공합니다.
+현재 SchemaRouter 배포판은 선택적 `laya` extra를 통해 Laya를 지원합니다.
+
+개발 소스 체크아웃에서는 다음과 같이 설치합니다.
 
 ```bash
 pip install -e ".[laya]"
 ```
 
-해당 integration이 포함된 release의 packaged form:
+이 통합이 포함된 다음 릴리스가 배포된 뒤에는 아래와 같이 패키지 형태로 설치할 수 있습니다.
 
 ```bash
 pip install "schemarouter[laya]"
@@ -49,6 +51,8 @@ Laya가 다른 device로 fallback하면 SchemaRouter는 `requested_device`와 �
 
 ## Long-running process에서 preload
 
+Laya는 체크포인트를 필요할 때 지연 로드할 수 있습니다. 그러나 캐시되지 않은 체크포인트 사이를 전환하면 로드 시간이 전체 지연 시간을 지배할 수 있습니다. 메모리가 충분한 장시간 실행 서버에서는 첫 의사결정 전에 체크포인트를 미리 로드할 수 있습니다.
+
 ```python
 backend = LayaDecisionBackend(preload=True, max_loaded=2)
 ```
@@ -67,6 +71,8 @@ Single forward pass 자체를 asynchronous하게 만드는 것은 아니며 asyn
 
 ## Confidence와 abstention
 
+`min_confidence`를 지정하면 **유효한 옵션 ID를 반환했더라도** 신뢰도가 임계값보다 낮은 Laya 선택을 보류(abstain)할 수 있습니다.
+
 ```python
 backend = LayaDecisionBackend(min_confidence=0.70)
 ```
@@ -74,6 +80,8 @@ backend = LayaDecisionBackend(min_confidence=0.70)
 SchemaRouter는 confidence-based abstention 전에 returned option ID를 검사하므로 unknown option은 low confidence여도 fail-closed합니다. Confidence는 execution authority가 아니라 provider/model evidence이며 operational threshold로 사용하기 전에 실제 workload에서 calibration해야 합니다.
 
 ## Trust boundary
+
+이 어댑터는 Jev 및 Ollama 통합과 같은 범위 제한 의사결정 불변 조건을 유지합니다.
 
 - locally authorized finite option ID만 노출
 - unknown ID fail-closed
@@ -85,13 +93,15 @@ SchemaRouter는 confidence-based abstention 전에 returned option ID를 검사�
 
 ## 현재 범위와 제한
 
-Adapter는 Laya single-select `choice`만 generic `DecisionBackend`에 mapping합니다. `max_selections > 1` request는 fail-closed하여 planner가 configured deterministic/error fallback을 적용하게 합니다. Laya의 score/probability primitive를 추가하려면 finite selection semantics에 억지로 넣지 말고 별도 typed contract가 필요합니다.
+Adapter는 Laya single-select `choice`만 generic `DecisionBackend`에 mapping합니다. `max_selections > 1` 요청은 단일 선택을 다중 선택으로 잘못 처리하지 않도록 fail-closed하며, 플래너는 설정된 결정론적 폴백 또는 오류 폴백을 적용할 수 있습니다. Laya의 score/probability primitive를 추가하려면 finite selection semantics에 억지로 넣지 말고 별도 typed contract가 필요합니다.
 
 Laya quality는 checkpoint/language/option count/domain에 의존합니다. High-cardinality choice set은 더 큰 option/head budget 또는 shortlist strategy가 필요할 수 있습니다. Third-party/upstream benchmark 수치를 SchemaRouter workload 보장으로 취급하지 마십시오.
 
 Default backend/confidence threshold를 정하기 전에 shared SchemaRouter corpus에서 정확한 checkpoint/hardware를 측정하십시오.
 
 ## Benchmark
+
+결정론적 방식, 임베딩, Jev, Ollama의 의사결정 경로와 **동일한 코퍼스**에서 Laya를 측정합니다.
 
 ```bash
 python scripts/benchmark_decision_routing.py \
