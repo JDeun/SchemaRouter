@@ -33,6 +33,22 @@ def _deny(reason: str) -> None:
     raise PolicyViolationError("selective retrieval execution denied: " + reason)
 
 
+def _validated_abstention_policy(
+    policy: RetrievalAbstentionPolicy,
+) -> RetrievalAbstentionPolicy:
+    if not isinstance(policy, RetrievalAbstentionPolicy):
+        _deny("invalid host-supplied no-match policy")
+    try:
+        # Pydantic model_copy(update=...) bypasses field validation.
+        return RetrievalAbstentionPolicy.model_validate(
+            policy.model_dump(mode="python")
+        )
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise PolicyViolationError(
+            "selective retrieval execution denied: invalid calibrated policy"
+        ) from exc
+
+
 def validate_selective_execution(
     retrieval: CapabilityRetrieval,
     plan: ExecutionPlan,
@@ -52,17 +68,7 @@ def validate_selective_execution(
         raise TypeError("plan must be a trusted ExecutionPlan")
     if type(registry_version) is not int or registry_version < 0:
         _deny("invalid active registry version")
-    if not isinstance(policy, RetrievalAbstentionPolicy):
-        _deny("invalid host-supplied no-match policy")
-    try:
-        # Pydantic model_copy(update=...) can skip policy validation, too.
-        policy = RetrievalAbstentionPolicy.model_validate(
-            policy.model_dump(mode="python")
-        )
-    except (ValueError, TypeError) as exc:
-        raise PolicyViolationError(
-            "selective retrieval execution denied: invalid calibrated policy"
-        ) from exc
+    policy = _validated_abstention_policy(policy)
 
     # Check identity before interpreting the score. model_copy(update=...)
     # may bypass Pydantic validation of the trusted host's plan envelope.
@@ -183,13 +189,25 @@ async def ainvoke_selective(
     )
     if type(k) is not int or k < 1:
         raise ValueError("k must be a positive integer")
+    policy = _validated_abstention_policy(policy)
     if run_config.principal is None:
         retrieval = await router.aretrieve_executable(request, k=k)
-        plan = await router.aplan_executable(request)
     else:
         retrieval = await router.aretrieve_executable_authorized(
             request, principal=run_config.principal, k=k,
         )
+    # Preflight before any potentially remote/costly planner call. The
+    # execution gate below rechecks after planning in case the registry or
+    # rankings changed. This does not modify plain router.ainvoke().
+    if retrieval.executable_only is not True:
+        _deny("non-executable retrieval scope")
+    preselection = apply_retrieval_abstention(retrieval, policy=policy)
+    if preselection.abstained or not preselection.candidates:
+        _deny("no-match: " + preselection.reason)
+
+    if run_config.principal is None:
+        plan = await router.aplan_executable(request)
+    else:
         plan = await router.aplan_executable_authorized(
             request, principal=run_config.principal,
         )
