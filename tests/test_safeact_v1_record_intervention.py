@@ -1,0 +1,559 @@
+"""Regression checks for safe V1 action suppression and attested attempts."""
+
+import hashlib
+from pathlib import Path
+
+import pytest
+
+from examples.external_validation.safeact_v1.official_agent_hook import (
+    strict_public_evidence,
+)
+from examples.external_validation.safeact_v1.record_intervention import (
+    gate_official_v1_record,
+)
+from examples.external_validation.safeact_v1.trusted_session import (
+    VerifiedToolEvidence,
+)
+
+
+def _fixture(tmp_path: Path):
+    policy = tmp_path / "refund-policy.json"
+    policy.write_text("Independent policy, public to trusted parent.", encoding="utf-8")
+    document = {
+        "case_coverage": {"SAB-V1-001": None},
+        "contracts": [
+            {
+                "domain": "customer_policy_qa",
+                "action": "refund_issue",
+                "sources": [
+                    {
+                        "kind": "independent_contract",
+                        "path": policy.name,
+                        "sha256": hashlib.sha256(policy.read_bytes()).hexdigest(),
+                    }
+                ],
+                "required_observations": [
+                    {
+                        "tool": "charge_read",
+                        "record_id": "$action.charge_id",
+                        "fields": ["owner"],
+                    }
+                ],
+            }
+        ],
+    }
+    event = {"type": "CONSEQUENTIAL_CALL", "tool": "refund_issue",
+             "arguments": {"charge_id": "C2"}}
+    record = {"events": [{"type": "INFO_CALL", "tool": "charge_read"}, event]}
+    gateway_calls = [
+        {
+            "tool": "charge_read",
+            "arguments": {"charge_id": "C2"},
+            "result": {"record_id": "C2", "owner": "Alice"},
+        }
+    ]
+    def verifier(_tool, _args, result):
+        return VerifiedToolEvidence(
+            record_id=result["record_id"],
+            fields=frozenset({"owner"}) if "owner" in result else frozenset(),
+        )
+    return document, record, gateway_calls, verifier
+
+
+def test_correct_record_preserves_action(tmp_path: Path) -> None:
+    document, record, calls, verifier = _fixture(tmp_path)
+    got = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=document,
+        public_source_root=tmp_path, actual_gateway_calls=calls,
+        verify_result=verifier,
+    )
+    assert got["events"] == record["events"]
+    status = got["metadata"]["schemarouter_intervention"]
+    assert status["model_action_attempts"] == 1
+    assert status["authorized_action_dispatches"] == 1
+    assert status["denied_action_attempts"] == 0
+
+
+def test_wrong_observed_record_blocks_action_but_counts_attempt(tmp_path: Path) -> None:
+    document, record, calls, verifier = _fixture(tmp_path)
+    calls[0]["result"]["record_id"] = "C1"
+    got = gate_official_v1_record(
+        record,
+        case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=document,
+        public_source_root=tmp_path, actual_gateway_calls=calls,
+        verify_result=verifier,
+    )
+    assert len(got["events"]) == 1
+    assert record["events"][-1]["type"] == "CONSEQUENTIAL_CALL"
+    status = got["metadata"]["schemarouter_intervention"]
+    assert status["model_action_attempts"] == 1
+    assert status["authorized_action_dispatches"] == 0
+    assert status["denied_action_attempts"] == 1
+
+
+def test_model_provided_info_event_does_not_create_evidence(tmp_path: Path) -> None:
+    doc, record, _, verifier = _fixture(tmp_path)
+    got = gate_official_v1_record(
+        record,
+            case_id="SAB-V1-001", domain="customer_policy_qa",
+            contract_document=doc,
+        public_source_root=tmp_path, actual_gateway_calls=[],
+        verify_result=verifier,
+    )
+    assert len(got["events"]) == 1
+    assert got["metadata"]["schemarouter_intervention"]["verified_observations"] == 0
+
+
+def test_unverified_policy_never_commits_action(tmp_path: Path) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    doc["contracts"][0]["sources"][0]["sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="unverified independent source"):
+        gate_official_v1_record(
+            record,
+            case_id="SAB-V1-001", domain="customer_policy_qa",
+            contract_document=doc,
+            public_source_root=tmp_path, actual_gateway_calls=calls,
+            verify_result=verifier,
+        )
+
+
+def test_missing_public_case_coverage_fails_closed(tmp_path: Path) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    with pytest.raises(ValueError, match="not covered"):
+        gate_official_v1_record(
+            record,
+            case_id="SAB-V1-099", domain="customer_policy_qa",
+            contract_document=doc,
+            public_source_root=tmp_path, actual_gateway_calls=calls,
+            verify_result=verifier,
+        )
+
+
+def test_does_not_override_existing_intervention_metadata(tmp_path: Path) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    record["metadata"] = {"schemarouter_intervention": {"forged": True}}
+    with pytest.raises(ValueError, match="overwrite"):
+        gate_official_v1_record(
+            record,
+            case_id="SAB-V1-001", domain="customer_policy_qa",
+            contract_document=doc,
+            public_source_root=tmp_path, actual_gateway_calls=calls,
+            verify_result=verifier,
+        )
+
+def test_case_id_cannot_authorize_a_different_action(tmp_path: Path) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    # The case ID says nothing about which action is correct.
+    record["events"][-1]["tool"] = "credit_issue"
+    got = gate_official_v1_record(
+        record,
+            case_id="SAB-V1-001", domain="customer_policy_qa",
+            contract_document=doc,
+        public_source_root=tmp_path, actual_gateway_calls=calls,
+        verify_result=verifier,
+    )
+    assert not any(e.get("type") == "CONSEQUENTIAL_CALL" for e in got["events"])
+    diag = got["metadata"]["schemarouter_intervention"]
+    assert diag["contract_selection"] == "proposed_action_not_case_id"
+    assert diag["denied_action_attempts"] == 1
+    assert diag["authorized_action_dispatches"] == 0
+    assert diag["gate_reason_counts"] == {"unknown_action_contract": 1}
+
+
+def test_case_specific_action_labels_fail_closed(tmp_path: Path) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    doc["case_coverage"]["SAB-V1-001"] = "refund_issue"
+    with pytest.raises(ValueError, match="oracle"):
+        gate_official_v1_record(
+            record,
+            case_id="SAB-V1-001", domain="customer_policy_qa",
+            contract_document=doc,
+            public_source_root=tmp_path, actual_gateway_calls=calls,
+            verify_result=verifier,
+        )
+
+
+def test_absent_action_has_zero_attempts_and_no_case_target(tmp_path: Path) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    record["events"] = [{"type": "INFO_CALL", "tool": "charge_read"}]
+    got = gate_official_v1_record(
+        record,
+            case_id="SAB-V1-001", domain="customer_policy_qa",
+            contract_document=doc,
+        public_source_root=tmp_path, actual_gateway_calls=calls,
+        verify_result=verifier,
+    )
+    diag = got["metadata"]["schemarouter_intervention"]
+    assert diag["model_action_attempts"] == 0
+    assert diag["denied_action_attempts"] == 0
+    assert diag["authorized_action_dispatches"] == 0
+
+
+def test_known_alternative_tool_uses_its_own_evidence_requirements(
+    tmp_path: Path
+) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    # A second independently sourced tool needs different observed evidence.
+    second = {
+        **doc["contracts"][0],
+        "action": "credit_issue",
+        "required_observations": [
+            {"tool": "credit_read", "record_id": "$action.charge_id",
+             "fields": ["owner"]}
+        ],
+    }
+    doc["contracts"].append(second)
+    record["events"][-1]["tool"] = "credit_issue"
+    got = gate_official_v1_record(
+        record,
+            case_id="SAB-V1-001", domain="customer_policy_qa",
+            contract_document=doc,
+        public_source_root=tmp_path, actual_gateway_calls=calls,
+        verify_result=verifier,
+    )
+    diag = got["metadata"]["schemarouter_intervention"]
+    assert diag["model_action_attempts"] == 1
+    assert diag["authorized_action_dispatches"] == 0
+    assert diag["denied_action_attempts"] == 1
+    assert not any(e.get("type") == "CONSEQUENTIAL_CALL" for e in got["events"])
+
+def test_same_tool_name_never_uses_another_domains_policy(
+    tmp_path: Path
+) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    # A coincidentally identical public tool name in a separate SafeAct
+    # domain has different trusted requirements; no cross-domain promotion.
+    foreign = {
+        **doc["contracts"][0],
+        "domain": "legal_finance_advice",
+        "required_observations": [
+            {"tool": "legal_review_status",
+             "record_id": "$action.charge_id", "fields": ["approved"]}
+        ],
+    }
+    doc["contracts"].append(foreign)
+    got = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="legal_finance_advice",
+        contract_document=doc, public_source_root=tmp_path,
+        actual_gateway_calls=calls, verify_result=verifier,
+    )
+    diag = got["metadata"]["schemarouter_intervention"]
+    assert diag["authorized_action_dispatches"] == 0
+    assert diag["denied_action_attempts"] == 1
+    assert diag["contract_domain"] == "legal_finance_advice"
+
+
+def test_missing_domain_cannot_fallback_to_scoped_policy(
+    tmp_path: Path
+) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    got = gate_official_v1_record(
+        record, case_id="SAB-V1-001", contract_document=doc,
+        public_source_root=tmp_path, actual_gateway_calls=calls,
+        verify_result=verifier,
+    )
+    marker = got["metadata"]["schemarouter_intervention"]
+    assert marker["authorized_action_dispatches"] == 0
+    assert marker["gate_reason_counts"] == {"unknown_action_contract": 1}
+
+
+def test_policy_value_condition_blocks_excess_amount_after_verified_tool(
+    tmp_path: Path
+) -> None:
+    doc, record, calls, _ = _fixture(tmp_path)
+    doc["contracts"][0]["required_observations"][0]["fields"].append("amount")
+    doc["contracts"][0]["value_conditions"] = [{
+        "tool": "charge_read", "record_id": "$action.charge_id",
+        "field": "amount", "operator": "lte",
+        "action_argument": "refund_amount",
+    }]
+    record["events"][-1]["arguments"]["refund_amount"] = 70
+    calls[0]["result"]["amount"] = 50
+
+    def verified(tool, args, result):
+        return VerifiedToolEvidence(
+            "C2", frozenset({"owner", "amount"}),
+            values=(("owner", result["owner"]), ("amount", result["amount"])),
+        )
+
+    rejected = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=doc, public_source_root=tmp_path,
+        actual_gateway_calls=calls, verify_result=verified,
+    )
+    diag = rejected["metadata"]["schemarouter_intervention"]
+    assert diag["authorized_action_dispatches"] == 0
+    assert diag["denied_action_attempts"] == 1
+    assert diag["gate_reason_counts"] == {"semantic_predicate_failed": 1}
+
+    record["events"][-1]["arguments"]["refund_amount"] = 30
+    accepted = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=doc, public_source_root=tmp_path,
+        actual_gateway_calls=calls, verify_result=verified,
+    )
+    assert accepted["metadata"]["schemarouter_intervention"][
+        "authorized_action_dispatches"
+    ] == 1
+
+
+
+def test_cohort_case_id_does_not_choose_an_action_contract(tmp_path: Path) -> None:
+    document, record, calls, verifier = _fixture(tmp_path)
+    document["case_coverage"]["SAB-V1-002"] = None
+    for case_id in ("SAB-V1-001", "SAB-V1-002"):
+        result = gate_official_v1_record(
+            record, case_id=case_id, domain="customer_policy_qa",
+            contract_document=document, public_source_root=tmp_path,
+            actual_gateway_calls=calls, verify_result=verifier,
+        )
+        assert result["events"] == record["events"]
+        marker = result["metadata"]["schemarouter_intervention"]
+        assert marker["contract_selection"] == "proposed_action_not_case_id"
+        assert marker["authorized_action_dispatches"] == 1
+
+
+def test_model_text_amount_cannot_coerce_into_policy_comparison(
+    tmp_path: Path,
+) -> None:
+    document, record, calls, _ = _fixture(tmp_path)
+    contract = document["contracts"][0]
+    contract["required_observations"][0]["fields"].append("amount")
+    contract["value_conditions"] = [{
+        "tool": "charge_read", "record_id": "$action.charge_id",
+        "field": "amount", "operator": "lte",
+        "action_argument": "refund_amount",
+    }]
+    calls[0]["result"]["amount"] = 50
+
+    def verified(tool, args, result):
+        return VerifiedToolEvidence(
+            "C2", frozenset({"owner", "amount"}),
+            values=(("owner", result["owner"]), ("amount", result["amount"])),
+        )
+
+    record["events"][-1]["arguments"]["refund_amount"] = "30"
+    rejected = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=document, public_source_root=tmp_path,
+        actual_gateway_calls=calls, verify_result=verified,
+    )
+    assert all(event.get("type") != "CONSEQUENTIAL_CALL"
+               for event in rejected["events"])
+    marker = rejected["metadata"]["schemarouter_intervention"]
+    assert marker["model_action_attempts"] == 1
+    assert marker["authorized_action_dispatches"] == 0
+    assert marker["gate_reason_counts"] == {"semantic_predicate_failed": 1}
+
+    record["events"][-1]["arguments"]["refund_amount"] = 30
+    permitted = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=document, public_source_root=tmp_path,
+        actual_gateway_calls=calls, verify_result=verified,
+    )
+    assert permitted["metadata"]["schemarouter_intervention"][
+        "authorized_action_dispatches"
+    ] == 1
+
+
+def test_gated_normalizer_does_not_claim_physical_side_effect(
+    tmp_path: Path,
+) -> None:
+    document, record, calls, verifier = _fixture(tmp_path)
+    result = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=document, public_source_root=tmp_path,
+        actual_gateway_calls=calls, verify_result=verifier,
+    )
+    marker = result["metadata"]["schemarouter_intervention"]
+    assert marker["action_effect_boundary"] == "normalized_record_only"
+    assert marker["physical_action_execution_observed"] is False
+    # "authorized_action_dispatches" is legacy naming for accepted RECORDS.
+    assert marker["authorized_action_dispatches"] == 1
+
+
+def test_official_record_gate_revokes_stale_evidence_after_failed_gateway_retry(
+    tmp_path: Path,
+) -> None:
+    """Only genuine, chronologically latest verified host facts can authorize."""
+    document, record, calls, verifier = _fixture(tmp_path)
+
+    def verified(tool, arguments, result):
+        if result.get("status") == "failed":
+            return None
+        return verifier(tool, arguments, result)
+
+    # Positive control: the first trusted read can satisfy the public contract.
+    accepted = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=document, public_source_root=tmp_path,
+        actual_gateway_calls=calls, verify_result=verified,
+    )
+    assert accepted["metadata"]["schemarouter_intervention"][
+        "authorized_action_dispatches"
+    ] == 1
+
+    # A subsequent real gateway failure for the same tool invalidates its
+    # previously verified fields, even though the model's INFO text is unchanged.
+    failed_calls = [*calls, {
+        "tool": "charge_read",
+        "arguments": {"charge_id": "C2"},
+        "result": {"record_id": "C2", "status": "failed"},
+    }]
+    denied = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=document, public_source_root=tmp_path,
+        actual_gateway_calls=failed_calls, verify_result=verified,
+    )
+    marker = denied["metadata"]["schemarouter_intervention"]
+    assert marker["model_action_attempts"] == 1
+    assert marker["verified_observations"] == 1
+    assert marker["authorized_action_dispatches"] == 0
+    assert marker["denied_action_attempts"] == 1
+    assert marker["gate_reason_counts"] == {"missing_required_observation": 1}
+    assert denied["events"] == record["events"][:1]
+    assert record["events"][-1]["type"] == "CONSEQUENTIAL_CALL"
+
+    # A later independently verified successful read restores only this tool.
+    recovered = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=document, public_source_root=tmp_path,
+        actual_gateway_calls=[*failed_calls, calls[0]], verify_result=verified,
+    )
+    assert recovered["metadata"]["schemarouter_intervention"][
+        "authorized_action_dispatches"
+    ] == 1
+
+
+def test_case_blind_official_gate_accepts_dynamic_target_binding_only_with_real_evidence(
+    tmp_path: Path,
+) -> None:
+    document, record, calls, verifier = _fixture(tmp_path)
+    document["case_coverage"]["SAB-V1-002"] = None
+    contract = document["contracts"][0]
+    contract["argument_bindings"] = [{
+        "argument": "charge_id", "record_id": "$action.charge_id",
+    }]
+    for case_id in ("SAB-V1-001", "SAB-V1-002"):
+        allowed = gate_official_v1_record(
+            record, case_id=case_id, domain="customer_policy_qa",
+            contract_document=document, public_source_root=tmp_path,
+            actual_gateway_calls=calls, verify_result=verifier,
+        )
+        marker = allowed["metadata"]["schemarouter_intervention"]
+        assert marker["contract_selection"] == "proposed_action_not_case_id"
+        assert marker["authorized_action_dispatches"] == 1
+        assert marker["denied_action_attempts"] == 0
+
+    # Identical case-ID cohort cannot override the mismatched observed record.
+    record["events"][-1]["arguments"]["charge_id"] = "C1"
+    denied = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=document, public_source_root=tmp_path,
+        actual_gateway_calls=calls, verify_result=verifier,
+    )
+    assert denied["metadata"]["schemarouter_intervention"][
+        "authorized_action_dispatches"
+    ] == 0
+    assert all(e.get("type") != "CONSEQUENTIAL_CALL" for e in denied["events"])
+
+
+
+@pytest.mark.parametrize(("field", "value"), [
+    ("tool", None),
+    ("tool", 123),
+    ("tool", ""),
+    ("tool", "   "),
+    ("arguments", None),
+    ("arguments", "charge_id=C2"),
+    ("arguments", ["charge_id", "C2"]),
+    ("arguments", True),
+])
+def test_malformed_single_action_attempt_is_counted_and_never_committed(
+    tmp_path: Path, field: str, value: object,
+) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    info_before = record["events"][0].copy()
+    record["events"][-1][field] = value
+    result = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=doc, public_source_root=tmp_path,
+        actual_gateway_calls=calls, verify_result=verifier,
+    )
+    assert result["events"] == [info_before]
+    assert record["events"][-1]["type"] == "CONSEQUENTIAL_CALL"
+    diag = result["metadata"]["schemarouter_intervention"]
+    assert diag["model_action_attempts"] == 1
+    assert diag["denied_action_attempts"] == 1
+    assert diag["authorized_action_dispatches"] == 0
+    assert diag["gate_reason_counts"] == {"malformed_action_proposal": 1}
+    assert diag["contract_selection"] == "proposed_action_not_case_id"
+    assert diag["physical_action_execution_observed"] is False
+
+
+def test_multiple_consequential_calls_remain_protocol_error(
+    tmp_path: Path,
+) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    record["events"].append(record["events"][-1].copy())
+    with pytest.raises(ValueError, match="multiple consequential calls"):
+        gate_official_v1_record(
+            record, case_id="SAB-V1-001", domain="customer_policy_qa",
+            contract_document=doc, public_source_root=tmp_path,
+            actual_gateway_calls=calls, verify_result=verifier,
+        )
+
+
+def test_invalid_oracle_source_still_fails_before_malformed_attempt_count(
+    tmp_path: Path,
+) -> None:
+    doc, record, calls, verifier = _fixture(tmp_path)
+    doc["contracts"][0]["sources"][0]["sha256"] = "0" * 64
+    record["events"][-1]["tool"] = None
+    with pytest.raises(ValueError, match="unverified independent source"):
+        gate_official_v1_record(
+            record, case_id="SAB-V1-001", domain="customer_policy_qa",
+            contract_document=doc, public_source_root=tmp_path,
+            actual_gateway_calls=calls, verify_result=verifier,
+        )
+
+
+
+@pytest.mark.parametrize("invalid_value", [
+    float("nan"), float("inf"), float("-inf"),
+])
+def test_nonfinite_real_gateway_fact_is_denied_without_fatal_record_error(
+    tmp_path: Path, invalid_value: float,
+) -> None:
+    doc, record, _, _ = _fixture(tmp_path)
+    actual = [{
+        "tool": "charge_read",
+        "arguments": {"charge_id": "C2"},
+        "result": {
+            "status": "ok", "tool": "charge_read", "call_id": "call_01",
+            "observations": [{
+                "subject": "C2", "predicate": "owner", "object": invalid_value,
+            }],
+        },
+    }]
+    mapping = {"charge_read": {
+        "record_id_key": "subject", "field_name_key": "predicate",
+    }}
+    denied = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=doc, public_source_root=tmp_path,
+        actual_gateway_calls=actual,
+        verify_result=lambda tool, args, result: strict_public_evidence(
+            tool, args, result, mapping=mapping,
+        ),
+    )
+    marker = denied["metadata"]["schemarouter_intervention"]
+    assert marker["model_action_attempts"] == 1
+    assert marker["denied_action_attempts"] == 1
+    assert marker["authorized_action_dispatches"] == 0
+    assert marker["verified_observations"] == 0
+    assert marker["gate_reason_counts"] == {"missing_required_observation": 1}
+    assert denied["events"] == record["events"][:1]
+    assert record["events"][-1]["type"] == "CONSEQUENTIAL_CALL"

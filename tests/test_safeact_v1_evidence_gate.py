@@ -1,0 +1,480 @@
+from __future__ import annotations
+
+import pytest
+
+from examples.external_validation.safeact_v1.evidence_gate import (
+    ActionContract,
+    EvidenceGate,
+    Observation,
+)
+
+
+def _gate() -> EvidenceGate:
+    return EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=(("charge_read", "C2", frozenset({"amount", "owner"})),),
+    ))
+
+
+def test_missing_observation_blocks_without_invoking_executor() -> None:
+    gate = _gate()
+    calls = []
+    try:
+        gate.dispatch("refund_issue", {"charge_id": "C2"}, lambda *args: calls.append(args))
+    except PermissionError:
+        pass
+    else:
+        raise AssertionError("missing evidence was not blocked")
+    assert not calls
+
+
+def test_wrong_entity_cannot_satisfy_contract() -> None:
+    gate = _gate()
+    gate.observe(Observation("charge_read", "C1", frozenset({"amount", "owner"})))
+    assert not gate.check("refund_issue").allowed
+
+
+def test_partial_fields_cannot_satisfy_contract() -> None:
+    gate = _gate()
+    gate.observe(Observation("charge_read", "C2", frozenset({"amount"})))
+    assert not gate.check("refund_issue").allowed
+
+
+def test_successful_observation_enables_dispatch() -> None:
+    gate = _gate()
+    gate.observe(Observation("charge_read", "C2", frozenset({"amount", "owner"})))
+    assert gate.dispatch("refund_issue", {"charge_id": "C2"}, lambda name, args: (name, args)) == (
+        "refund_issue", {"charge_id": "C2"}
+    )
+
+
+def test_failed_observation_does_not_count() -> None:
+    gate = _gate()
+    gate.observe(Observation("charge_read", "C2", frozenset({"amount", "owner"}), successful=False))
+    assert not gate.check("refund_issue").allowed
+
+
+def test_wrong_action_blocks() -> None:
+    gate = _gate()
+    gate.observe(Observation("charge_read", "C2", frozenset({"amount", "owner"})))
+    assert gate.check("delete_charge").missing == ("action_mismatch",)
+
+def test_evidence_for_one_record_cannot_authorize_another_target() -> None:
+    gate = EvidenceGate(
+        ActionContract(
+            action="refund_issue",
+            required_observations=(("charge_read", "C2", frozenset({"owner"})),),
+            argument_bindings=(("charge_id", "C2"),),
+        )
+    )
+    gate.observe(Observation("charge_read", "C2", frozenset({"owner"})))
+    calls: list[object] = []
+    with pytest.raises(PermissionError, match="argument_binding_mismatch"):
+        gate.dispatch("refund_issue", {"charge_id": "C1"}, lambda *args: calls.append(args))
+    assert calls == []
+    assert not gate.check("refund_issue").allowed
+    assert not gate.check("refund_issue", {}).allowed
+    assert gate.check("refund_issue", {"charge_id": "C2"}).allowed
+
+
+def test_action_binding_must_name_a_declared_observation() -> None:
+    with pytest.raises(ValueError, match="argument binding"):
+        EvidenceGate(
+            ActionContract(
+                action="refund_issue",
+                required_observations=(("charge_read", "C2", frozenset({"owner"})),),
+                argument_bindings=(("charge_id", "C1"),),
+            )
+        )
+
+
+def test_dynamic_action_bound_record_only_accepts_observed_target() -> None:
+    gate = EvidenceGate(
+        ActionContract(
+            action="refund_issue",
+            required_observations=(
+                ("charge_read", "$action.charge_id", frozenset({"owner"})),
+            ),
+        )
+    )
+    gate.observe(Observation("charge_read", "C2", frozenset({"owner"})))
+    assert gate.check("refund_issue", {"charge_id": "C2"}).allowed
+    assert not gate.check("refund_issue", {"charge_id": "C1"}).allowed
+    assert not gate.check("refund_issue", {}).allowed
+    assert not gate.check("refund_issue", {"charge_id": 42}).allowed
+
+
+@pytest.mark.parametrize("reference", ["$action.", "$action.a-b", "$action.a.b"])
+def test_invalid_dynamic_argument_name_fails_closed(reference: str) -> None:
+    with pytest.raises(ValueError, match="malformed action-bound"):
+        EvidenceGate(
+            ActionContract(
+                action="refund_issue",
+                required_observations=(
+                    ("charge_read", reference, frozenset({"owner"})),
+                ),
+            )
+        )
+
+
+def test_reviewed_value_comparisons_deny_invalid_refund_amount() -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=((
+            "charge_read", "$action.charge_id",
+            frozenset({"amount", "payment_method"}),
+        ),),
+        value_conditions=(
+            ValueCondition(
+                "charge_read", "$action.charge_id", "amount",
+                "lte", "action_argument", "refund_amount",
+            ),
+            ValueCondition(
+                "charge_read", "$action.charge_id", "payment_method",
+                "eq", "action_argument", "payment_method",
+            ),
+        ),
+    ))
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount", "payment_method"}),
+        values=(("amount", 50), ("payment_method", "card-A")),
+    ))
+    assert gate.check("refund_issue", {
+        "charge_id": "C2", "refund_amount": 30, "payment_method": "card-A",
+    }).allowed
+    assert not gate.check("refund_issue", {
+        "charge_id": "C2", "refund_amount": 70, "payment_method": "card-A",
+    }).allowed
+    assert not gate.check("refund_issue", {
+        "charge_id": "C2", "refund_amount": 30, "payment_method": "card-B",
+    }).allowed
+
+
+def test_missing_or_contradictory_value_cannot_satisfy_predicate() -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    gate = EvidenceGate(ActionContract(
+        "refund_issue", (("charge_read", "C2", frozenset({"amount"})),),
+        value_conditions=(ValueCondition(
+            "charge_read", "C2", "amount", "lte",
+            "action_argument", "refund_amount",
+        ),),
+    ))
+    args = {"refund_amount": 20}
+    gate.observe(Observation("charge_read", "C2", frozenset({"amount"})))
+    assert not gate.check("refund_issue", args).allowed
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount"}), values=(("amount", 30),),
+    ))
+    # A different trusted result for the same field is ambiguous, not "OR".
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount"}), values=(("amount", 10),),
+    ))
+    assert not gate.check("refund_issue", args).allowed
+
+
+@pytest.mark.parametrize("actual", [True, False, float("nan"), "NaN"])
+def test_invalid_numeric_types_and_nonfinite_are_not_comparable(actual: object) -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    gate = EvidenceGate(ActionContract(
+        "refund_issue", (("charge_read", "C2", frozenset({"amount"})),),
+        value_conditions=(ValueCondition(
+            "charge_read", "C2", "amount", "lte",
+            "action_argument", "refund_amount",
+        ),),
+    ))
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount"}), values=(("amount", actual),),
+    ))
+    assert not gate.check("refund_issue", {"refund_amount": 1}).allowed
+
+
+def test_unanchored_policy_value_predicate_fails_closed() -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    with pytest.raises(ValueError, match="declared observation"):
+        EvidenceGate(ActionContract(
+            "refund_issue", (("charge_read", "C2", frozenset({"owner"})),),
+            value_conditions=(ValueCondition(
+                "charge_read", "C2", "amount", "lte",
+                "action_argument", "refund_amount",
+            ),),
+        ))
+
+
+
+@pytest.mark.parametrize("value", ["30", "3e1", True, [30], {"number": 30}])
+def test_numeric_policy_does_not_coerce_untrusted_action_types(value: object) -> None:
+    """A text or structured model argument must not become a number by parsing."""
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=(("charge_read", "C2", frozenset({"amount"})),),
+        value_conditions=(ValueCondition(
+            "charge_read", "C2", "amount", "lte",
+            "action_argument", "refund_amount",
+        ),),
+    ))
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount"}), values=(("amount", 50),),
+    ))
+    assert not gate.check("refund_issue", {"refund_amount": value}).allowed
+    assert gate.check("refund_issue", {"refund_amount": 30}).allowed
+    assert gate.check("refund_issue", {"refund_amount": 30.0}).allowed
+
+
+@pytest.mark.parametrize("candidate", [
+    float("inf"), float("-inf"), float("nan"), [20], {"amount": 20},
+])
+def test_equality_policy_never_accepts_nonfinite_or_structured_values(
+    candidate: object,
+) -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=(("charge_read", "C2", frozenset({"amount"})),),
+        value_conditions=(ValueCondition(
+            "charge_read", "C2", "amount", "eq",
+            "action_argument", "refund_amount",
+        ),),
+    ))
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount"}),
+        values=(("amount", candidate),),
+    ))
+    assert not gate.check("refund_issue", {"refund_amount": candidate}).allowed
+    assert gate.check("refund_issue", {"refund_amount": 20}).allowed is False
+
+
+def test_typed_boolean_equality_is_not_numeric_one() -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=(("charge_read", "C2", frozenset({"approved"})),),
+        value_conditions=(ValueCondition(
+            "charge_read", "C2", "approved", "eq", "literal", True,
+        ),),
+    ))
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"approved"}),
+        values=(("approved", 1),),
+    ))
+    assert not gate.check("refund_issue").allowed
+
+
+
+@pytest.mark.parametrize("literal", ["30", True, False])
+def test_nonnumeric_order_policy_literal_rejected_during_authoring(
+    literal: object,
+) -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    with pytest.raises(ValueError, match="malformed independent value condition"):
+        EvidenceGate(ActionContract(
+            action="refund_issue",
+            required_observations=(
+                ("charge_read", "C2", frozenset({"amount"})),
+            ),
+            value_conditions=(ValueCondition(
+                "charge_read", "C2", "amount",
+                "lte", "literal", literal,
+            ),),
+        ))
+
+
+def test_denied_dispatch_does_not_expose_private_host_identifiers() -> None:
+    private_id = "customer-private-991177"
+    private_field = "protected_payment_token"
+    private_tool = "private_customer_finance_query"
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=((
+            private_tool, private_id, frozenset({private_field}),
+        ),),
+        argument_bindings=(("customer_id", private_id),),
+    ))
+    calls: list[object] = []
+    with pytest.raises(PermissionError) as info:
+        gate.dispatch(
+            "refund_issue", {"customer_id": "wrong-private-record"},
+            lambda *args: calls.append(args),
+        )
+    msg = str(info.value)
+    assert "argument_binding_mismatch" in msg
+    assert "missing_required_observation" in msg
+    assert private_id not in msg
+    assert private_tool not in msg
+    assert private_field not in msg
+    assert "wrong-private-record" not in msg
+    assert calls == []
+
+
+def test_semantic_denial_does_not_expose_observed_private_values() -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=((
+            "charge_read", "private-charge-77", frozenset({"payment_method"}),
+        ),),
+        value_conditions=(ValueCondition(
+            "charge_read", "private-charge-77", "payment_method",
+            "eq", "action_argument", "destination_payment_method",
+        ),),
+    ))
+    gate.observe(Observation(
+        "charge_read", "private-charge-77", frozenset({"payment_method"}),
+        values=(("payment_method", "card-private-source"),),
+    ))
+    with pytest.raises(PermissionError) as info:
+        gate.dispatch(
+            "refund_issue",
+            {"destination_payment_method": "card-different"},
+            lambda *_: (_ for _ in ()).throw(AssertionError("unsafe dispatch")),
+        )
+    assert "semantic_predicate_failed" in str(info.value)
+    assert "private-charge-77" not in str(info.value)
+    assert "card-private-source" not in str(info.value)
+    assert "card-different" not in str(info.value)
+
+
+def test_failed_repeat_read_revokes_only_matching_record_evidence() -> None:
+    gate = _gate()
+    gate.observe(Observation("charge_read", "C2", frozenset({"amount", "owner"})))
+    gate.observe(Observation("charge_read", "C3", frozenset({"amount", "owner"})))
+    assert gate.check("refund_issue").allowed
+
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount", "owner"}), successful=False,
+    ))
+    assert not gate.check("refund_issue").allowed
+    # A failure for record C2 must not invalidate a different record.
+    assert any(item.record_id == "C3" for item in gate._observations)
+    gate.observe(Observation("charge_read", "C2", frozenset({"amount", "owner"})))
+    assert gate.check("refund_issue").allowed
+
+
+def test_failed_tool_revocation_preserves_unrelated_verified_tool() -> None:
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=(
+            ("charge_read", "C2", frozenset({"amount"})),
+            ("owner_read", "C2", frozenset({"owner"})),
+        ),
+    ))
+    gate.observe(Observation("charge_read", "C2", frozenset({"amount"})))
+    gate.observe(Observation("owner_read", "C2", frozenset({"owner"})))
+    assert gate.check("refund_issue").allowed
+
+    gate.invalidate_tool("charge_read")
+    assert not gate.check("refund_issue").allowed
+    assert any(item.tool == "owner_read" for item in gate._observations)
+    gate.observe(Observation("charge_read", "C2", frozenset({"amount"})))
+    assert gate.check("refund_issue").allowed
+
+
+def test_semantic_fact_must_belong_to_verifier_declared_fields() -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=(("charge_read", "C2", frozenset({"amount"})),),
+        value_conditions=(ValueCondition(
+            "charge_read", "C2", "amount", "lte",
+            "action_argument", "refund_amount",
+        ),),
+    ))
+    # A complete but value-free observation satisfies only field presence.
+    gate.observe(Observation("charge_read", "C2", frozenset({"amount"})))
+    # An unrelated field declaration cannot smuggle a numeric value.
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"owner"}), values=(("amount", 30),),
+    ))
+    assert not gate.check("refund_issue", {"refund_amount": 20}).allowed
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount"}), values=(("amount", 30),),
+    ))
+    assert gate.check("refund_issue", {"refund_amount": 20}).allowed
+
+
+def test_dynamic_argument_binding_uses_proposed_record_not_literal_template() -> None:
+    # Same source contract can be reused across public cases and observed
+    # records; no case-ID -> expected-action lookup is involved.
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=(
+            ("charge_read", "$action.charge_id", frozenset({"owner"})),
+        ),
+        argument_bindings=(("charge_id", "$action.charge_id"),),
+    ))
+    gate.observe(Observation("charge_read", "C2", frozenset({"owner"})))
+    assert gate.check("refund_issue", {"charge_id": "C2"}).allowed
+    assert not gate.check("refund_issue", {"charge_id": "C1"}).allowed
+    assert not gate.check("refund_issue", {"charge_id": "$action.charge_id"}).allowed
+    assert not gate.check("refund_issue", {}).allowed
+    assert not gate.check("refund_issue", {"charge_id": 22}).allowed
+    assert not gate.check("refund_issue", {"charge_id": ""}).allowed
+
+
+def test_dynamic_cross_argument_binding_denies_mismatched_action_target() -> None:
+    gate = EvidenceGate(ActionContract(
+        action="refund_issue",
+        required_observations=(
+            ("charge_read", "$action.charge_id", frozenset({"owner"})),
+        ),
+        argument_bindings=(("target_id", "$action.charge_id"),),
+    ))
+    gate.observe(Observation("charge_read", "C2", frozenset({"owner"})))
+    assert gate.check(
+        "refund_issue", {"charge_id": "C2", "target_id": "C2"}
+    ).allowed
+    assert not gate.check(
+        "refund_issue", {"charge_id": "C2", "target_id": "C1"}
+    ).allowed
+    assert not gate.check(
+        "refund_issue", {"charge_id": "", "target_id": ""}
+    ).allowed
+
+
+
+@pytest.mark.parametrize("forged_success", [
+    "false", "true", 1, 0, None, [], {},
+])
+def test_truthy_or_non_boolean_success_cannot_reauthorize_stale_evidence(
+    forged_success: object,
+) -> None:
+    # Dataclass annotations alone do not enforce runtime types.
+    gate = _gate()
+    fields = frozenset({"amount", "owner"})
+    gate.observe(Observation("charge_read", "C2", fields, successful=True))
+    assert gate.check("refund_issue").allowed
+
+    calls: list[object] = []
+    with pytest.raises(ValueError, match="real boolean"):
+        gate.observe(Observation(
+            "charge_read", "C2", fields, successful=forged_success,
+        ))
+    # A malformed later read must revoke the earlier successful credit,
+    # rather than silently keeping authorization after a forged status.
+    assert not gate.check("refund_issue").allowed
+    with pytest.raises(PermissionError, match="evidence incomplete"):
+        gate.dispatch(
+            "refund_issue", {"charge_id": "C2"},
+            lambda *_args: calls.append("unsafe-call"),
+        )
+    assert calls == []
+
+
+def test_explicit_failed_observation_remains_valid_and_revokes_record():
+    gate = _gate()
+    fields = frozenset({"amount", "owner"})
+    gate.observe(Observation("charge_read", "C2", fields, successful=True))
+    assert gate.check("refund_issue").allowed
+    gate.observe(Observation("charge_read", "C2", fields, successful=False))
+    assert not gate.check("refund_issue").allowed

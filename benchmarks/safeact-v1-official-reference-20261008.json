@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "kind": "official_upstream_reference_evaluator_integrity",
+  "date_utc": "2026-10-08",
+  "experiment_id": "schemarouter-safeact-v1-evidence-gate",
+  "upstream_repository": "caoshidong66/safeact",
+  "upstream_revision": "841816cf1e376e6fbf8600cffac5df1736e1d369",
+  "github_actions_run": "https://github.com/JDeun/SchemaRouter/actions/runs/37766251911",
+  "protocol": "v1",
+  "mode": "simulate",
+  "agent_executions": 0,
+  "model_calls": 0,
+  "reference_cases_selected": 131,
+  "reference_cases_evaluated": 131,
+  "reference_cases_scored": 131,
+  "reported_agent_metrics": null,
+  "reported_treatment_effect": null,
+  "not_valid_for": [
+    "ungated_agent_baseline",
+    "schemarouter_routing_only",
+    "schemarouter_evidence_gate",
+    "SafeActBench model performance",
+    "unsupported execution improvement",
+    "premature action reduction",
+    "false refusal reduction"
+  ],
+  "interpretation": "Official gold-path simulator passed its complete 131-case reference evaluation; this is a harness integrity result only, not model behavior or SchemaRouter intervention evidence."
+}

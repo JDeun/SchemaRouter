@@ -238,6 +238,7 @@ nav:
           - Successor screen: research/successor-screen.md
       - Evidence and protocol:
           - Evidence-to-Action boundary: research/evidence-to-action.md
+          - SafeActBench V1 evidence gate: research/safeact-v1-evidence-gate.md
           - 0.14 paper evidence checkpoint: research/0.14-paper-evidence-checkpoint.md
           - Paper evidence package: research/paper-evidence-package.md
           - Research governance: research/governance.md

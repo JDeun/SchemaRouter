@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "kind": "safeact_v1_unreviewed_public_policy_snapshot",
+  "upstream_repository": "caoshidong66/safeact",
+  "upstream_revision": "841816cf1e376e6fbf8600cffac5df1736e1d369",
+  "source_data_license": "CC-BY-4.0",
+  "contracts_authored": false,
+  "independently_approved": false,
+  "scored_run_authorized": false,
+  "warning": "Public policy candidate bytes only; not contract requirements, hidden evaluator labels, or authorized model execution",
+  "sources": [
+    {
+      "path": "templates/customer_policy_qa/world/policies/loyalty_benefits.md",
+      "source_git_blob_sha1": "800ed118439f401a279ee14159a3ccf4a374c9f3"
+    },
+    {
+      "path": "templates/customer_policy_qa/world/policies/policy_index.json",
+      "source_git_blob_sha1": "8ced22ba8dc9f971aba0b56408aed301e0e37987"
+    },
+    {
+      "path": "templates/customer_policy_qa/world/policies/refunds.md",
+      "source_git_blob_sha1": "f9ab744ad6c5d6332df26f9c5fe19795a03b0633"
+    },
+    {
+      "path": "templates/legal_finance_advice/world/policies/legal_boundaries.md",
+      "source_git_blob_sha1": "0cff8ec3127686a31c2c407c6cb341cbe1d2d353"
+    },
+    {
+      "path": "templates/legal_finance_advice/world/policies/policy_checks.json",
+      "source_git_blob_sha1": "242a187ecbc5210899ccb816e74d6b4e5928a2af"
+    },
+    {
+      "path": "templates/legal_finance_advice/world/policies/tax_boundaries.md",
+      "source_git_blob_sha1": "5d623c9a7c140c1234ad6c45399f83bc6d4f3f31"
+    },
+    {
+      "path": "templates/research_assistant/world/policies/lab_claims.md",
+      "source_git_blob_sha1": "f7445a53328dfd8d04a4b1ae9f6f697439a8cec5"
+    },
+    {
+      "path": "templates/research_assistant/world/policies/policy_index.json",
+      "source_git_blob_sha1": "c3423816c6cd1b7489e77ffa5633a3735196bb13"
+    }
+  ]
+}

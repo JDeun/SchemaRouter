@@ -1,0 +1,150 @@
+name: SafeAct V1 Scored Experiment (Gated)
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/safeact-v1-scored.yml'
+      - 'scripts/launch_safeact_v1_scored_workflow.py'
+      - 'scripts/prepare_safeact_v1_scored_manifest.py'
+      - 'tests/test_safeact_v1_scored_manifest.py'
+      - 'scripts/aggregate_safeact_v1_metrics.py'
+      - 'tests/test_safeact_v1_scored_scope.py'
+      - 'examples/external_validation/safeact_v1/**'
+      - 'scripts/check_safeact_v1_runner.py'
+      - 'tests/test_safeact_v1_runner_preflight.py'
+      - 'scripts/run_safeact_v1_scored.py'
+      - 'tests/test_safeact_v1_scored_workflow.py'
+      - 'research/safeact-v1/**'
+  workflow_dispatch:
+    inputs:
+      model:
+        description: 'Frozen model identifier matching reviewed intervention manifest'
+        required: true
+        type: string
+      execute:
+        description: 'Start paid official 131 x 3 model trajectories (requires approval, trusted runner)'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: safeact-v1-scored-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  readiness:
+    # No credentials or model calls on untrusted PRs.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      SAFEACT_V1_MODEL: ${{ inputs.model || 'UNCONFIGURED' }}
+      SAFEACT_V1_EXECUTE: ${{ inputs.execute }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.12'
+      - name: Install source and no-model regression dependencies
+        run: |
+          python -m pip install -e . "pytest>=8,<10" "pytest-asyncio>=0.24,<2"
+          python -m pytest -q \
+            tests/test_safeact_v1_scored_workflow.py \
+            tests/test_safeact_v1_scored_manifest.py \
+            tests/test_safeact_v1_runner_preflight.py \
+            tests/test_safeact_v1_scored_scope.py
+      - name: Fetch the exact frozen official V1 source
+        run: |
+          git init safeact-upstream
+          git -C safeact-upstream remote add origin https://github.com/caoshidong66/safeact.git
+          git -C safeact-upstream fetch --depth=1 origin 841816cf1e376e6fbf8600cffac5df1736e1d369
+          git -C safeact-upstream checkout --detach FETCH_HEAD
+      - name: Inspect independent review, 131-case contracts and trusted adapter readiness
+        run: |
+          flags=()
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "$SAFEACT_V1_EXECUTE" == "true" ]]; then
+            flags+=(--require-ready)
+          fi
+          python -m scripts.launch_safeact_v1_scored_workflow \
+            --safeact-root safeact-upstream \
+            --contracts research/safeact-v1/contracts.json \
+            --public-source-root research/safeact-v1/public-sources \
+            --manifest research/safeact-v1/intervention-manifest.json \
+            --model "$SAFEACT_V1_MODEL" \
+            --report safeact-v1-scored-readiness.json \
+            "${flags[@]}"
+        shell: bash
+      - name: Publish auditable readiness result (NEVER a model score)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: safeact-v1-scored-readiness
+          path: safeact-v1-scored-readiness.json
+          retention-days: 90
+          if-no-files-found: warn
+
+  scored:
+    needs: readiness
+    # Only explicit protected-main dispatch. No agent code from unreviewed PR
+    # ever runs on the model-authenticated self-hosted research machine.
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.execute == true
+    runs-on: [self-hosted, linux, safeact-v1]
+    environment: safeact-research
+    timeout-minutes: 2880
+    env:
+      SAFEACT_V1_MODEL: ${{ inputs.model }}
+      SAFEACT_V1_RUNTIME_VERIFIED: ${{ secrets.SAFEACT_V1_RUNTIME_VERIFIED }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.12'
+      - name: Install reviewed SchemaRouter runtime
+        run: python -m pip install -e .
+      - name: Check pinned public upstream
+        run: |
+          git init safeact-upstream
+          git -C safeact-upstream remote add origin https://github.com/caoshidong66/safeact.git
+          git -C safeact-upstream fetch --depth=1 origin 841816cf1e376e6fbf8600cffac5df1736e1d369
+          git -C safeact-upstream checkout --detach FETCH_HEAD
+      - name: Validate trusted Linux sandbox and broker before any model call
+        run: |
+          python -m scripts.check_safeact_v1_runner \
+            --manifest research/safeact-v1/intervention-manifest.json \
+            --report safeact-v1-protected-runner-preflight.json
+      - name: Upload non-secret protected-runner preflight
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: safeact-v1-protected-runner-preflight
+          path: safeact-v1-protected-runner-preflight.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Run official paired V1 external-agent benchmark (393 trajectories)
+        # The wrapper REVALIDATES contract review, source hashes, actual
+        # official entrypoint identities, frozen model and runtime flags.
+        # Secret-based authorization does not substitute for human review.
+        run: |
+          python -m scripts.launch_safeact_v1_scored_workflow \
+            --safeact-root safeact-upstream \
+            --contracts research/safeact-v1/contracts.json \
+            --public-source-root research/safeact-v1/public-sources \
+            --manifest research/safeact-v1/intervention-manifest.json \
+            --model "$SAFEACT_V1_MODEL" \
+            --report safeact-v1-scored-readiness.json \
+            --scored-report safeact-v1-scored-summary.json \
+            --execute
+      - name: Upload validated POST-RUN aggregate only; not credentials, gold or raw traces
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: safeact-v1-official-scored-393
+          path: |
+            safeact-v1-scored-summary.json
+            safeact-v1-scored-readiness.json
+          if-no-files-found: error
+          retention-days: 90

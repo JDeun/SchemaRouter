@@ -79,6 +79,9 @@ docs = [
   "mkdocs-material>=9.7,<10",
   "mkdocstrings>=1,<2",
   "mkdocstrings-python>=2,<3",
+  # PyMdown 12.2 requires Highlight(md), while mkdocstrings 1.0.6 still
+  # constructs the underlying highlighter without that argument.
+  "pymdown-extensions>=10.2,<12",
 ]
 dev = [
   "build>=1.2",
