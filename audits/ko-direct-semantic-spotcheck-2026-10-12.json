@@ -274,8 +274,8 @@
     {
       "path": "research/hyset-external-validation.md",
       "en_blob": "f99e46a0bfbe2652b553d393318e44afae797eb3",
-      "ko_blob": "618da5d771276639eebf3d9120231ac3b5e4f2b9",
-      "notes": "Matched independently retrained (not original authors') checkpoint boundary, data/pins and six-fold held-out reporting rules. Later addition checked 2026-10-13: paired offline manifest/argv preflight sections preserve six fixed test split IDs, Qwen/BERT dimensions, eta/reward-cache distinctions, strict scoring_authorized=false and absence of native training/evaluation or independent certification. Scoped AI-contributor review only."
+      "ko_blob": "f0779aaf93bcff2394a07122609805f3c6d5ffaf",
+      "notes": "Matched independently retrained (not original authors') checkpoint boundary, data/pins and six-fold held-out reporting rules. Later addition checked 2026-10-13: paired offline manifest/argv preflight sections preserve six fixed test split IDs, Qwen/BERT dimensions, eta/reward-cache distinctions, strict scoring_authorized=false and absence of native training/evaluation or independent certification. Scoped AI-contributor review only. 2026-10-14 amendment: restored the second bash fence displaying the declared training readiness command; meaning and no-scoring boundary unchanged."
     },
     {
       "path": "getting-started/runtime-lifecycle.md",
@@ -919,6 +919,16 @@
       "prior_ko_blob": "6188a36e5b8ba51414f1dad5ec99633205a025fd",
       "current_en_blob": "f99e46a0bfbe2652b553d393318e44afae797eb3",
       "current_ko_blob": "618da5d771276639eebf3d9120231ac3b5e4f2b9",
+      "independent_sentence_review_complete": false,
+      "native_hyset_training_or_evaluation_performed": false
+    },
+    {
+      "review_date": "2026-10-14",
+      "path": "research/hyset-external-validation.md",
+      "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
+      "review_scope": "KO presentation fix only: show the training-preflight command in a fenced bash block matching the EN source; no scoring or native execution.",
+      "prior_ko_blob": "618da5d771276639eebf3d9120231ac3b5e4f2b9",
+      "current_ko_blob": "f0779aaf93bcff2394a07122609805f3c6d5ffaf",
       "independent_sentence_review_complete": false,
       "native_hyset_training_or_evaluation_performed": false
     }
