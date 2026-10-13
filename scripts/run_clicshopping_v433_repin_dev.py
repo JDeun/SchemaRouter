@@ -117,6 +117,8 @@ def pin_new_inventory(old: dict, transition: dict) -> dict:
         or details.get("git_blob_sha") != NEW_PAGE_SHA
         or not isinstance(details.get("read_actions"), list)
         or not isinstance(details.get("write_actions"), list)
+        or any(type(name) is not str for name in details["read_actions"])
+        or any(type(name) is not str for name in details["write_actions"])
         or len(details["read_actions"]) != len(ORDER_READ)
         or len(details["write_actions"]) != len(ORDER_WRITE)
         or set(details["read_actions"]) != ORDER_READ
@@ -221,7 +223,17 @@ def validate_repin_cases(fixture: dict, original: dict, prospect: dict) -> None:
             raise ValueError("unexpected ambiguity targets")
         if not isinstance(case.get("query"), str) or not case["query"].strip():
             raise ValueError("empty development query")
-    if fixture["counts"] != {"total": len(ids), **counts}:
+    expected_counts = {"total": len(ids), **counts}
+    observed_counts = fixture.get("counts")
+    if (
+        not isinstance(observed_counts, dict)
+        or set(observed_counts) != set(expected_counts)
+        or any(
+            type(observed_counts[key]) is not int
+            or observed_counts[key] != value
+            for key, value in expected_counts.items()
+        )
+    ):
         raise ValueError("prospective case counts drift")
 
 
