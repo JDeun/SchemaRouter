@@ -439,3 +439,33 @@ async def test_invalid_policy_rejects_before_retrieval_or_plan(bad_threshold):
             router, retrieval.query, k=2, policy=forged,
         )
     assert router.events == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "poison",
+    [
+        {"principal": "forged-principal"},
+        {"max_concurrency": 0},
+        {"raw_trace_payloads": True},
+    ],
+)
+async def test_copied_run_config_is_revalidated_before_any_routing(poison):
+    # Pydantic's model_copy(update=...) bypasses both field and cross-field
+    # validation; no forged principal or invalid execution config may reach
+    # authorized retrieval, planning, or tool dispatch.
+    from schemarouter.runs import RunConfig
+
+    retrieval, plan, _ = fixture()
+    router = FakeScopedFlow(retrieval, plan)
+    forged = RunConfig().model_copy(update=poison)
+    with pytest.raises(PolicyViolationError, match="invalid run configuration"):
+        await ainvoke_selective(
+            router,
+            retrieval.query,
+            k=2,
+            config=forged,
+            policy=RetrievalAbstentionPolicy(min_score=-1e8),
+        )
+    assert router.events == []
+    assert router.dispatched == []
