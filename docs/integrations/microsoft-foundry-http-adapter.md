@@ -69,7 +69,11 @@ does **not invent a confidence** when `probabilities` is absent. If a
 per-option `probabilities` map is provided, it must contain only the
 original option IDs and finite 0–1 numbers. Malformed types, out-of-set
 IDs, duplicate JSON keys, nonfinite constants, invalid token counts,
-oversized responses or HTTP failures raise `PlanningError`. The
+oversized responses or HTTP failures raise `PlanningError`. If the
+provider supplies per-option probabilities, the returned choice must be
+their **unique highest-probability option**; a tie or contradictory
+`choice` is an error, **not** a license to use a lower-probability tool.
+This is a structural response consistency check, not model calibration. The
 `score=None` fallback is **not** a calibrated confidence and must
 not be promoted to 1.0 or used as a threshold.
 
