@@ -203,6 +203,18 @@ class MicrosoftDecisionOneFoundryBackend:
                 )
                 if not valid:
                     raise ValueError("nonfinite or out-of-range probability")
+                # A contradiction between the returned choice and its own
+                # probability map must not authorize a different tool. A tie
+                # is inconclusive and cannot become execution authority.
+                top = max(probabilities.values())
+                leaders = [
+                    name for name, value in probabilities.items()
+                    if value == top
+                ]
+                if len(leaders) != 1 or leaders[0] != choice:
+                    raise PlanningError(
+                        "Foundry choice contradicts the option probabilities"
+                    )
                 confidence = float(probabilities[choice])
             except (ValueError, OverflowError) as exc:
                 raise PlanningError("Foundry returned invalid option probabilities") from exc
