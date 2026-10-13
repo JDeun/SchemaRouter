@@ -121,7 +121,7 @@ class MicrosoftDecisionOneFoundryBackend:
         # even locally constructed envelopes as untrusted before paid I/O.
         try:
             request = DecisionRequest.model_validate(
-                request.model_dump(mode="python")
+                request.model_dump(mode="python"), strict=True
             )
         except (TypeError, ValueError) as exc:
             raise ValueError("Foundry request has invalid choice options") from exc
