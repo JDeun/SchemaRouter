@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import math
 import os
 import subprocess
 import sys
@@ -91,6 +92,11 @@ def strict_public_evidence(
         ):
             return None
         if type(value) not in {str, bool, int, float}:
+            return None
+        if type(value) is float and not math.isfinite(value):
+            # Nonfinite public facts cannot be trusted predicates. Returning
+            # no evidence triggers record invalidation and a counted denial
+            # instead of crashing the official normalized-record commit.
             return None
         if field in values and (
             type(values[field]) is not type(value)
