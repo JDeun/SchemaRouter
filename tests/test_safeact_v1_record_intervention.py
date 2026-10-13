@@ -5,6 +5,9 @@ from pathlib import Path
 
 import pytest
 
+from examples.external_validation.safeact_v1.official_agent_hook import (
+    strict_public_evidence,
+)
 from examples.external_validation.safeact_v1.record_intervention import (
     gate_official_v1_record,
 )
@@ -515,3 +518,42 @@ def test_invalid_oracle_source_still_fails_before_malformed_attempt_count(
             contract_document=doc, public_source_root=tmp_path,
             actual_gateway_calls=calls, verify_result=verifier,
         )
+
+
+
+@pytest.mark.parametrize("invalid_value", [
+    float("nan"), float("inf"), float("-inf"),
+])
+def test_nonfinite_real_gateway_fact_is_denied_without_fatal_record_error(
+    tmp_path: Path, invalid_value: float,
+) -> None:
+    doc, record, _, _ = _fixture(tmp_path)
+    actual = [{
+        "tool": "charge_read",
+        "arguments": {"charge_id": "C2"},
+        "result": {
+            "status": "ok", "tool": "charge_read", "call_id": "call_01",
+            "observations": [{
+                "subject": "C2", "predicate": "owner", "object": invalid_value,
+            }],
+        },
+    }]
+    mapping = {"charge_read": {
+        "record_id_key": "subject", "field_name_key": "predicate",
+    }}
+    denied = gate_official_v1_record(
+        record, case_id="SAB-V1-001", domain="customer_policy_qa",
+        contract_document=doc, public_source_root=tmp_path,
+        actual_gateway_calls=actual,
+        verify_result=lambda tool, args, result: strict_public_evidence(
+            tool, args, result, mapping=mapping,
+        ),
+    )
+    marker = denied["metadata"]["schemarouter_intervention"]
+    assert marker["model_action_attempts"] == 1
+    assert marker["denied_action_attempts"] == 1
+    assert marker["authorized_action_dispatches"] == 0
+    assert marker["verified_observations"] == 0
+    assert marker["gate_reason_counts"] == {"missing_required_observation": 1}
+    assert denied["events"] == record["events"][:1]
+    assert record["events"][-1]["type"] == "CONSEQUENTIAL_CALL"
