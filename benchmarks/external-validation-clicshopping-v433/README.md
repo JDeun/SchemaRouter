@@ -65,3 +65,33 @@ The already observed 32-case development errors/unsupported behavior
 entirely separate source/permission/authentication protocol; this original
 source freeze must not silently move. No customer credentials, native
 HTTP calls, writes, or claims of field recall are permitted here.
+
+
+## Repinned 8ada7f1 visible DEV preflight — source and protocol identity (#1208)
+
+The separate source-repinned, **visible DEV-only** script
+`scripts/run_clicshopping_v433_repin_dev.py` now fails closed before
+measuring either arm if the transition manifest changes the exact verified
+`CustomerOrders.php` path/Git blob SHA or the corrected public route
+declaration path/Git blob SHA/target. It draws the frozen public identities
+from the *same code constants* as the standalone pinned-upstream source
+auditor; it does **not** fetch or execute the upstream source at runtime.
+The independent Git checkout/source-byte audit remains a distinct
+prerequisite for actually verifying upstream files.
+
+The new cohort must also preserve literal integer `top_k=3` and
+`hot_repeats=5`, integer-zero model/HTTP activity, strictly disabled
+credential/PHP/model/held-out execution and all Boolean role grants.
+Python `True == 1` and `False == 0` must **not** pass these numeric
+checks. Duplicate, malformed or non-list required/forbidden/ambiguous
+route labels and forged count types are rejected before ranking.
+Regression tests mutate only synthetic in-memory copies of the original
+frozen fixture and verify the genuine 32+10 DEV control still runs.
+
+**No change to the 42 original DEV queries/labels, the original
+source SHA manifests, the 8ada7f1 independent-holdout #1311 intake,
+or the already disclosed DEV results.** The permission-filtered full
+baseline is still an offline REST endpoint/action exposure matrix, not
+ClicShopping's actual ranking algorithm. These checks neither prove
+runtime `customers_id` tenant safety nor grant independent human review,
+score new held-out cases, call PHP/HTTP or validate native REST latency.
