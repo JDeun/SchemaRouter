@@ -60,3 +60,52 @@ or overrides host authorization. Downstream planning or execution APIs are
 
 Scientific 0.14 #432/#424 source, labels, evaluator and frozen episodes are
 not modified or re-scored by this feature.
+
+## Opt-in pre-execution enforcement — no-match means no tool call
+
+The separate `execute_selective_plan()` bridge enforces the selection verdict
+**before** handing a plan to the ordinary SchemaRouter executor. It is
+opt-in and leaves existing `invoke()`, `ainvoke()` and `execute()` unchanged.
+It cannot discover unsupported intents without an independently calibrated
+policy; even an unsupported request can pass a too-permissive threshold.
+
+```python
+from schemarouter import (
+    PlanRequest,
+    PolicyViolationError,
+    RetrievalAbstentionPolicy,
+    execute_selective_plan,
+)
+
+request = PlanRequest(query=user_request)
+# Host-owned calibration: never select this value from disclosed OOD failures.
+policy = RetrievalAbstentionPolicy(min_score=host_config.calibrated_min_score)
+
+# Obtain both values locally from the same authorized registry and principal.
+retrieval = router.retrieve_executable(request, k=3)
+plan = router.plan_executable(request)
+try:
+    results = await execute_selective_plan(
+        router, retrieval, plan, policy=policy,
+    )
+except PolicyViolationError:
+    # No call was dispatched through this wrapper.
+    # Ask for clarification or return a no-capability response.
+    results = []
+```
+
+The bridge re-applies abstention to the original retrieval (rather than
+trusting externally supplied disposition metadata), rejects stale registry
+versions or different queries, and demands that **every** primary/fallback
+tool+endpoint and schema/tool fingerprint match the selected authorized
+shortlist. It rejects out-of-shortlist output-field projections and
+non-executable calls. Any rejection happens before the first call to
+`router.execute`; afterward the ordinary executor still enforces its policy.
+
+Important: applications must deliberately use this entrypoint and supply
+host-generated retrieval and plans under the *same* authorization scope.
+Passing in model-authored `CapabilityRetrieval`/`ExecutionPlan`, switching
+principals, or invoking `router.ainvoke()` directly bypasses this optional
+bridge. This is a **mechanical no-call** guarantee for an abstaining result,
+not an execution-policy replacement, a safe default, or evidence that the
+score distinguishes absent features in real workloads.
