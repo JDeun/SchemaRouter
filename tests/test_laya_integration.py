@@ -397,3 +397,16 @@ def test_laya_trusted_settings_require_explicit_scalar_types(
 ) -> None:
     with pytest.raises(ValueError, match=flag):
         LayaDecisionBackend(**{flag: invalid})
+
+
+
+def test_laya_huge_numeric_confidence_fails_closed_as_planning_error() -> None:
+    wire = response("candidate:0", 0.5)
+    wire["answers"]["selection"]["confidence"] = 10 ** 1000
+    with pytest.raises(PlanningError, match="invalid choice response"):
+        choose_sync(LayaDecisionBackend(router=FakeRouter(wire)), request())
+
+
+def test_laya_huge_configured_min_confidence_is_rejected() -> None:
+    with pytest.raises(ValueError, match="min_confidence"):
+        LayaDecisionBackend(min_confidence=10 ** 1000)
