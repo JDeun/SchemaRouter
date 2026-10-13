@@ -213,3 +213,129 @@ def test_missing_or_malformed_manifest_pinned_digest_fails_closed():
         manifest["upstream_runtime"]["expected_readonly_tools_sha256"] = digest
         with pytest.raises(ValueError, match="independently pinned digest"):
             validate_package(manifest, cases, snapshot)
+
+
+
+def _static_result(manifest, snapshot):
+    names = [tool["name"] for tool in snapshot["tools"]]
+    rows = [
+        {
+            "id": case_id,
+            "candidate_tools": list(names),
+            "visible_contracts": deepcopy(snapshot["tools"]),
+            "latency_ms": 0.25,
+        }
+        for case_id in ("supported-read", "ood")
+    ]
+    return {
+        "package_id": manifest["package_id"],
+        "index_build_ms": 0.0,
+        "implementation": {
+            "name": "ServiceNow Platform MCP static readonly package",
+            "commit": snapshot["source"]["commit"],
+            "configuration": {
+                "condition": "static_readonly",
+                "tool_package": "readonly",
+                "tool_count": len(names),
+                "repeats_per_query": 3,
+                "execution": "disabled",
+            },
+        },
+        "results": rows,
+    }
+
+
+def test_valid_full_native_static_baseline_succeeds_without_ranking_claim():
+    manifest, cases, snapshot = _fixture()
+    report = score(manifest, cases, snapshot, _static_result(manifest, snapshot))
+    assert report["summary"]["supported_required_tool_recall"] == 1.0
+    assert report["summary"]["unsupported_nonempty_candidate_rate"] == 1.0
+    assert report["summary"]["mean_active_tool_count"] == 2
+
+
+@pytest.mark.parametrize("mutation,reason", [
+    (
+        lambda submitted: submitted["implementation"]["configuration"].update(
+            condition="static_readonly"
+        ),
+        "static package",
+    ),
+    (
+        lambda submitted: submitted["implementation"]["configuration"].update(
+            top_k=True
+        ),
+        "Top-K",
+    ),
+    (
+        lambda submitted: submitted["implementation"]["configuration"].update(
+            top_k=500
+        ),
+        "Top-K",
+    ),
+    (
+        lambda submitted: submitted["implementation"]["configuration"].update(
+            execution="enabled"
+        ),
+        "never execute",
+    ),
+    (
+        lambda submitted: submitted["implementation"]["configuration"].update(
+            upstream_tool_package="core"
+        ),
+        "provenance",
+    ),
+    (
+        lambda submitted: submitted.update(implementation={}),
+        "configuration",
+    ),
+])
+def test_forged_preselection_identity_budget_or_execution_rejected(mutation, reason):
+    manifest, cases, snapshot = _fixture()
+    payload = _result(manifest, snapshot)
+    mutation(payload)
+    with pytest.raises(ValueError, match=reason):
+        score(manifest, cases, snapshot, payload)
+
+
+def test_preselection_cannot_expose_more_tools_than_declared_topk():
+    manifest, cases, snapshot = _fixture()
+    submitted = _result(manifest, snapshot)
+    submitted["implementation"]["configuration"]["top_k"] = 3
+    # Synthetic catalog contains 2 tools: repeat the bundle to simulate an
+    # oversized result, which is also invalid as duplicate identities.
+    submitted["results"][0]["candidate_tools"] = ["query", "describe", "other"]
+    submitted["results"][0]["visible_contracts"] = [*snapshot["tools"], {}]
+    with pytest.raises(ValueError, match="unknown upstream tool"):
+        score(manifest, cases, snapshot, submitted)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("tool_count", 1),
+    ("tool_count", True),
+    ("tool_package", "core_readonly"),
+    ("execution", "enabled"),
+])
+def test_static_package_identity_cannot_be_relabelled(field, value):
+    manifest, cases, snapshot = _fixture()
+    payload = _static_result(manifest, snapshot)
+    payload["implementation"]["configuration"][field] = value
+    with pytest.raises(ValueError):
+        score(manifest, cases, snapshot, payload)
+
+
+def test_static_must_show_entire_native_package_in_native_order():
+    manifest, cases, snapshot = _fixture()
+    payload = _static_result(manifest, snapshot)
+    payload["results"][1]["candidate_tools"] = ["query"]
+    payload["results"][1]["visible_contracts"] = [snapshot["tools"][0]]
+    with pytest.raises(ValueError, match="entire native package"):
+        score(manifest, cases, snapshot, payload)
+
+
+@pytest.mark.parametrize("governance", [{}, {"heldout_scoring_allowed": 0},
+                                         {"heldout_scoring_allowed": None}])
+def test_dev_governance_requires_explicit_false_not_absence_or_zero(governance):
+    manifest, cases, snapshot = _fixture()
+    manifest["governance"] = governance
+    with pytest.raises(ValueError, match="explicitly disable"):
+        score(manifest, cases, snapshot, _result(manifest, snapshot))
