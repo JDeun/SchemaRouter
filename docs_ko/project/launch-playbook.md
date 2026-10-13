@@ -171,7 +171,7 @@ Show the trust model:
 - 스키마 지문 및 바인딩
 - 입력·출력 JSON Schema 검증
 - 로컬 부작용 정책
-- 파괴적 작업 오류 시 안전하게 거부
+- 파괴적 작업은 실행 권한이 확인되지 않으면 안전하게 거부(fail-closed)
 - 스키마 변경 시 기존에 승인된 실행 권한이 조용히 대체되지 않음
 
 ### 4:20-5:00 — Evidence and invitation
