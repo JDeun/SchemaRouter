@@ -337,3 +337,34 @@ def test_contradictory_public_values_fail_closed() -> None:
     assert hook.strict_public_evidence(
         "charge_read", {}, payload, mapping=mapping
     ) is None
+
+
+
+@pytest.mark.parametrize("invalid_value", [
+    float("nan"),
+    float("inf"),
+    float("-inf"),
+])
+def test_nonfinite_public_fact_does_not_become_verified_evidence(
+    invalid_value: float,
+) -> None:
+    mapping = {"charge_read": {
+        "record_id_key": "subject", "field_name_key": "predicate",
+    }}
+    result = {
+        "status": "ok", "tool": "charge_read", "call_id": "call_01",
+        "observations": [{
+            "subject": "C2", "predicate": "amount", "object": invalid_value,
+        }],
+    }
+    assert hook.strict_public_evidence(
+        "charge_read", {"charge_id": "C2"}, result, mapping=mapping,
+    ) is None
+    # Legitimate numeric zero and negative finite values retain their type.
+    for finite in (0.0, -1.5):
+        result["observations"][0]["object"] = finite
+        assert hook.strict_public_evidence(
+            "charge_read", {"charge_id": "C2"}, result, mapping=mapping,
+        ) == VerifiedToolEvidence(
+            "C2", frozenset({"amount"}), values=(("amount", finite),),
+        )
