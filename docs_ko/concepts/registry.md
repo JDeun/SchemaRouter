@@ -40,8 +40,7 @@ Built-in registry는 모든 write boundary에서 전체 `ToolSpec`을 다시 검
 
 ## Schema fingerprint
 
-Fingerprinting에서는 임의의 descriptive `metadata`를 제외하지만 선언된 planner/execution contract, 즉 endpoint description, alias, parameter, field, side-effect classification, evidence metadata, JSON Schema, `ToolSpec.remote`, 명시적
-`execution_metadata`.
+스키마 지문은 임의의 설명용 `metadata`를 제외하지만, **계획과 실행에 영향을 주는 선언된 계약**은 포함합니다. 여기에는 엔드포인트 설명, 별칭, 매개변수, 필드, 부작용 분류, 증거 메타데이터, JSON Schema, `ToolSpec.remote` 및 명시적인 `execution_metadata`가 포함됩니다.
 
 `execution_metadata`는 승인된 OpenAPI base URL, 실제 MCP/OPTIMADE runtime target, request-body mode, built-in callable identity처럼 실제 실행 대상을 바꿀 수 있는 신뢰된 adapter/runtime value 전용입니다. OpenAPI source URL 같은 schema-document provenance는 그 URL 자체가 invocation target인 경우가 아니라면 descriptive metadata로 남습니다. Custom adapter는 execution-affecting value를 invocation 시 ordinary `metadata`에서 읽지 말고 `execution_metadata`에 넣어야 합니다. Ordinary `metadata`는 descriptive/observability data이며 authority를 부여하거나 transport semantic을 바꿔서는 안 됩니다.
 
@@ -96,8 +95,7 @@ Custom persistent implementation은 atomic write, snapshot semantic, write-time 
 
 ## 신뢰된 local code가 수정할 수 있는 범위 {#what-trusted-local-code-may-amend}
 
-Application이 execution authority이므로 result가 무엇을 *의미하는지* 선언하고 annotation할 수 있습니다. 하지만 무엇을 실행하는지 또는 response를 어떻게
-validated.
+애플리케이션은 실행 권한을 소유하므로 결과가 무엇을 *의미하는지* 선언하고 주석을 추가할 수 있습니다. 그러나 **무엇이 실행되는지** 또는 **응답을 어떤 방식으로 검증하는지**는 수정할 수 없습니다.
 
 | 항목 | 수정 가능 |
 | --- | :---: |

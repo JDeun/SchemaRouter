@@ -10,9 +10,10 @@ SchemaRouter는 **Python 3.10 이상**이 필요합니다.
 pip install schemarouter
 ```
 
-0.14.0은 0.12에서 정한 stable-core 경계를 유지하면서 운영 수명주기와 외부 생태계 검증을
-보강한 릴리스입니다. Source probe, startup rebinding, storage migration, schema-drift review,
-unified shutdown, Capability Explorer, 한·영 문서 전환이 포함됩니다.
+현재 공개 릴리스인 **0.17.0**은 0.12에서 정한 안정적인 검색·실행 경계를 유지하며,
+0.14에서 도입한 운영 기능을 포함합니다. 소스 상태 탐색(source probing), 시작 시 바인딩 복구,
+저장소 마이그레이션, **명시적인 스키마 변경 검토**, 통합 종료 처리, Capability Explorer,
+한·영 문서와 설치 패키지 생태계에 대한 확장된 검증이 포함됩니다.
 
 [0.14.0 릴리스 노트 보기](../releases/0.14.0.md)
 
