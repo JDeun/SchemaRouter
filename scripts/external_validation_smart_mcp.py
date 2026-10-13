@@ -23,7 +23,10 @@ def _finite_nonnegative(value: Any, *, field: str) -> float | None:
         return None
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{field} must be a number or null")
-    number = float(value)
+    try:
+        number = float(value)
+    except (OverflowError, ValueError) as exc:
+        raise ValueError(f"{field} must be finite and non-negative") from exc
     if not math.isfinite(number) or number < 0:
         raise ValueError(f"{field} must be finite and non-negative")
     return number
