@@ -317,3 +317,83 @@ def test_laya_validates_trusted_configuration(
 ) -> None:
     with pytest.raises(ValueError, match=message):
         LayaDecisionBackend(**kwargs)
+
+
+
+@pytest.mark.parametrize("choice", [
+    True, False, 42, 0, None, ["candidate:0"], {"id": "candidate:0"},
+])
+def test_laya_non_string_choice_does_not_coerce_to_finite_id(
+    choice: Any,
+) -> None:
+    # Both 'True' and '42' are legitimate finite STRING option IDs; a
+    # Boolean/number from a malformed native wire response must not select.
+    req = request().model_copy(update={
+        "options": [
+            DecisionOption(id="True", label="true string ID"),
+            DecisionOption(id="42", label="numeric string ID"),
+        ],
+    })
+    wire = response()
+    wire["answers"]["selection"]["choice"] = choice
+    with pytest.raises(PlanningError, match="invalid choice response"):
+        choose_sync(LayaDecisionBackend(router=FakeRouter(wire)), req)
+
+
+@pytest.mark.parametrize("primitive", [None, "noul", "score", "multiselect"])
+def test_laya_refuses_to_coerce_a_non_choice_primitive(
+    primitive: str | None,
+) -> None:
+    wire = response("candidate:0", 0.99)
+    if primitive is None:
+        del wire["answers"]["selection"]["type"]
+    else:
+        wire["answers"]["selection"]["type"] = primitive
+    with pytest.raises(PlanningError, match="invalid choice response"):
+        choose_sync(LayaDecisionBackend(router=FakeRouter(wire)), request())
+
+
+@pytest.mark.parametrize("value", [True, False, "0.99", None, [], {}])
+def test_laya_confidence_requires_numeric_non_boolean_scalar(value: Any) -> None:
+    wire = response("candidate:0", 0.99)
+    wire["answers"]["selection"]["confidence"] = value
+    with pytest.raises(PlanningError, match="invalid choice response"):
+        choose_sync(LayaDecisionBackend(router=FakeRouter(wire)), request())
+
+
+def test_laya_boolean_usage_counts_are_not_reported_as_tokens() -> None:
+    wire = response("candidate:0", 0.8)
+    wire["usage"] = {"input_tokens": True, "output_tokens": False}
+    result = choose_sync(LayaDecisionBackend(router=FakeRouter(wire)), request())
+    assert result.selections[0].option_id == "candidate:0"
+    assert "input_tokens" not in result.metadata
+    assert "output_tokens" not in result.metadata
+
+
+def test_laya_valid_numeric_confidence_and_usage_remain_compatible() -> None:
+    wire = response("candidate:0", 1)
+    wire["usage"] = {"input_tokens": 0, "output_tokens": 16}
+    result = choose_sync(LayaDecisionBackend(router=FakeRouter(wire)), request())
+    assert result.selections[0].score == 1.0
+    assert result.metadata["input_tokens"] == 0
+    assert result.metadata["output_tokens"] == 16
+
+
+@pytest.mark.parametrize(("flag", "invalid"), [
+    ("min_confidence", True),
+    ("min_confidence", False),
+    ("min_confidence", "0.6"),
+    ("min_confidence", None),
+    ("preload", "false"),
+    ("preload", 1),
+    ("async_mode", "false"),
+    ("async_mode", 1),
+    ("include_context", "false"),
+    ("include_context", 1),
+])
+def test_laya_trusted_settings_require_explicit_scalar_types(
+    flag: str,
+    invalid: Any,
+) -> None:
+    with pytest.raises(ValueError, match=flag):
+        LayaDecisionBackend(**{flag: invalid})
