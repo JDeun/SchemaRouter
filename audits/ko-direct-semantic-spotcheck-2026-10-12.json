@@ -273,9 +273,9 @@
     },
     {
       "path": "research/hyset-external-validation.md",
-      "en_blob": "395064d5150d8f6280778219d5c21f8e68494797",
-      "ko_blob": "6188a36e5b8ba51414f1dad5ec99633205a025fd",
-      "notes": "Matched independently retrained (not original authors') checkpoint boundary, data/pins and six-fold held-out reporting rules."
+      "en_blob": "f99e46a0bfbe2652b553d393318e44afae797eb3",
+      "ko_blob": "618da5d771276639eebf3d9120231ac3b5e4f2b9",
+      "notes": "Matched independently retrained (not original authors') checkpoint boundary, data/pins and six-fold held-out reporting rules. Later addition checked 2026-10-13: paired offline manifest/argv preflight sections preserve six fixed test split IDs, Qwen/BERT dimensions, eta/reward-cache distinctions, strict scoring_authorized=false and absence of native training/evaluation or independent certification. Scoped AI-contributor review only."
     },
     {
       "path": "getting-started/runtime-lifecycle.md",
@@ -908,5 +908,19 @@
       "observation": "Directly compared each of the 49 EN/KO capability, current status, and future-direction rows against the repaired translation on PR #1305; preserved API qualifiers, failure-closed semantics, vendor lists and numerical targets. Both document-tail narrative maturity gates match in substantive content. The exact reviewed Korean blob is now present in PR #1307's head as well as PR #1305; the 147/147 records are pinned to the PR #1307 source tree. Neither PR is yet merged to main, so this is not a merged-main editorial sign-off."
     }
   ],
-  "directly_examined_across_branches": 147
+  "directly_examined_across_branches": 147,
+  "review_amendments": [
+    {
+      "review_date": "2026-10-13",
+      "path": "research/hyset-external-validation.md",
+      "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
+      "review_scope": "Additive bilingual HYSET preflight text: source-pin and six split IDs; staged manifest validation, reward-cache and eta argv correspondence, strict unscored authority boundary. Earlier 2026-10-12 review remains dated and is not retroactively certified.",
+      "prior_en_blob": "395064d5150d8f6280778219d5c21f8e68494797",
+      "prior_ko_blob": "6188a36e5b8ba51414f1dad5ec99633205a025fd",
+      "current_en_blob": "f99e46a0bfbe2652b553d393318e44afae797eb3",
+      "current_ko_blob": "618da5d771276639eebf3d9120231ac3b5e4f2b9",
+      "independent_sentence_review_complete": false,
+      "native_hyset_training_or_evaluation_performed": false
+    }
+  ]
 }
