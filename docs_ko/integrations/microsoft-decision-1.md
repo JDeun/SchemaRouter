@@ -28,10 +28,40 @@ Microsoft가 추가 학습한 모델의 가중치는 공개되지 않았습니�
 Foundry의 공식 요청 주소는
 `<Azure 리소스 엔드포인트>/providers/microsoft/v1/systemone`이며
 Entra Bearer 토큰 또는 `api-key` 헤더로 인증합니다.
+요청 전송 형식은 다음과 같으며, 리소스 엔드포인트와 인증 값은 실제 배포에서만 설정합니다.
+
+```text
+POST <foundry-resource-endpoint>/providers/microsoft/v1/systemone
+Content-Type: application/json
+api-key: <foundry-key>
+# OR: Authorization: Bearer <Entra access token>
+```
+
 요청은 `state`, `questions`와
 `model`로 구성되며, **Foundry의 `model`은 배포 이름**입니다.
 OpenRouter에서 사용하는 ID는 별도로
 `microsoft/microsoft-decision-1`입니다.
+
+등록된 도구와 명시적인 미지원 요청 거부 옵션을 포함한 요청 예시입니다.
+
+```json
+{
+  "model": "<the-created-Foundry-deployment-name>",
+  "state": {
+    "query": "Cancel a customer's order."
+  },
+  "questions": {
+    "route": {
+      "type": "choice",
+      "instructions": "Select a supported route. Choose none_of_above if no registered route performs the requested action.",
+      "criteria": {
+        "orders_lookup": "Look up an order; cannot cancel it",
+        "none_of_above": "No offered route supports the requested operation"
+      }
+    }
+  }
+}
+```
 
 SchemaRouter의 `SystemOneDecisionBackend`는 현재
 **TypeSafe SDK의 `system_one()` 응답과 `response.choices`**
@@ -59,6 +89,8 @@ fail-closed 검증하는 것이 적절합니다.
 - 미지원·유사 미지원·금지 요청의 잘못된 도구 선택 및 올바른 거부
 - 확률 보정, 옵션 순서·문구 변화 민감도
 - 실제 왕복 지연시간, 오류율, 사용 토큰, 당시 가격·배포 버전
+
+## 근거와 도입 판정 기준
 
 Jev 측의 2026-10-11 OpenRouter 비교(한 차례)에서는 없는
 도구 거부율이 Microsoft 92.5%, Jev 88.8%였지만
