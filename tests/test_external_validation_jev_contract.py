@@ -107,3 +107,34 @@ def test_jev_output_accepts_bounded_native_candidates_and_probabilities() -> Non
         probabilities={names[0]: 0.2, names[1]: 0.9},
     )
     validate_jev_output(payload)
+
+@pytest.mark.parametrize("version", [True, False, "1", 1.0, None, [], {}])
+def test_jev_output_requires_exact_integer_schema_version(version: object) -> None:
+    payload = _valid_output()
+    payload["schema_version"] = version
+    with pytest.raises(ValueError, match="expected schema_version=1"):
+        validate_jev_output(payload)
+
+
+@pytest.mark.parametrize("invalid_id", [None, "", " ", [], {}, ["case-01"], {"id": "case-01"}, 1])
+def test_jev_output_rejects_unhashable_or_non_string_case_id(
+    invalid_id: object,
+) -> None:
+    payload = _valid_output()
+    payload["cases"][0]["id"] = invalid_id
+    with pytest.raises(ValueError, match="case IDs must be nonempty strings"):
+        validate_jev_output(payload)
+
+
+def test_jev_output_rejects_non_object_case_before_identity_matching() -> None:
+    payload = _valid_output()
+    payload["cases"][0] = ["case-01"]
+    with pytest.raises(ValueError, match="each case result must be an object"):
+        validate_jev_output(payload)
+
+
+def test_jev_output_rejects_duplicate_case_identity_explicitly() -> None:
+    payload = _valid_output()
+    payload["cases"][1]["id"] = payload["cases"][0]["id"]
+    with pytest.raises(ValueError, match="duplicate case id"):
+        validate_jev_output(payload)
