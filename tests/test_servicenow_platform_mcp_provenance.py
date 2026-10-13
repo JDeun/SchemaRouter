@@ -36,7 +36,10 @@ def _fixture():
     manifest = {
         "package_id": "test-servicenow-readonly",
         "status": "development_unfrozen",
-        "source_revisions": {"servicenow_platform_mcp": "a" * 40},
+        "source_revisions": {
+            "servicenow_platform_mcp": "a" * 40,
+            "schemarouter": "b" * 40,
+        },
         "upstream_runtime": {
             "tool_package": "readonly",
             "expected_public_tool_count": 2,
