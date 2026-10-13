@@ -350,6 +350,8 @@ def test_foundry_rejects_only_no_fit_without_spending_a_request() -> None:
         "invalid choice options",
     ),
     ({"max_selections": True}, "invalid choice options"),
+    ({"max_selections": "1"}, "invalid choice options"),
+    ({"max_selections": 1.0}, "invalid choice options"),
     ({"query": "   "}, "nonblank"),
 ])
 def test_foundry_forged_pydantic_copy_fails_before_paid_io(
