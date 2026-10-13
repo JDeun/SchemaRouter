@@ -287,3 +287,20 @@ independently reviewed before a scored V1 run. This mechanism does
 **not** establish a time-based TTL, host-side physical side-effect
 prevention, independently approved public policy semantics, or 393
 real model trajectories. #1269 and #1224 remain open.
+
+## Strict runtime observation success flags (synthetic-only #1269)
+
+The frozen dataclass's Python type annotation `Observation.successful: bool`
+does not perform runtime validation. Before this guard, the **truthy string**
+`"false"` (or integer `1`) could enter `EvidenceGate.observe()` and be
+credited as a successful trusted observation despite not being Boolean.
+Direct calls now require `type(successful) is bool`. Malformed status
+revokes previous facts for that **tool** and raises a controlled error,
+preventing a later action from inheriting stale successful credit.
+Literal `successful=False` still invalidates only the matching record.
+
+Synthetic dispatch tests prove forged truthy/falsey statuses cannot reach
+the consequential-action callback, and a valid explicit failed read still
+revokes earlier evidence. Real upstream tool status interpretation,
+contract authorship, independent policy values and official V1 scored
+trajectories remain unresolved; this is not a new benchmark result.
