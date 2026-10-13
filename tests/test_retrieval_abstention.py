@@ -203,3 +203,74 @@ def test_inconsistent_retrieval_envelope_fails_closed(
     assert result.abstained
     assert result.reason == "untrusted_ranking"
     assert result.candidates == []
+
+
+def test_finite_scores_with_overflowing_margin_fail_closed() -> None:
+    """A nonfinite computed margin is not evidence of separation."""
+    retrieval = build_router().retrieve("search papers", k=2)
+    forged = retrieval.model_copy(update={
+        "candidates": [
+            retrieval.candidates[0].model_copy(update={"score": 1e308}),
+            retrieval.candidates[1].model_copy(update={"score": -1e308}),
+        ],
+    })
+    decision = apply_retrieval_abstention(
+        forged,
+        policy=RetrievalAbstentionPolicy(min_score=0, min_margin=1),
+    )
+    assert decision.abstained
+    assert decision.reason == "untrusted_ranking"
+    assert decision.candidates == []
+    assert decision.observed_margin is None
+    assert retrieval.candidates[0].score != 1e308
+
+
+@pytest.mark.parametrize(("field", "value"), [
+    ("registry_version", True),
+    ("registry_version", False),
+    ("requested_k", True),
+    ("total_ranked", True),
+    ("executable_only", 1),
+])
+def test_boolean_or_forged_retrieval_metadata_fail_closed(
+    field: str, value: object,
+) -> None:
+    retrieval = build_router().retrieve("search papers", k=1)
+    poisoned = retrieval.model_copy(update={field: value})
+    decision = apply_retrieval_abstention(
+        poisoned, policy=RetrievalAbstentionPolicy(min_score=-1e8)
+    )
+    assert decision.abstained
+    assert decision.reason == "untrusted_ranking"
+    assert decision.candidates == []
+
+
+def test_boolean_rank_does_not_pass_numeric_rank_identity() -> None:
+    retrieval = build_router().retrieve("search papers", k=2)
+    poisoned = retrieval.model_copy(update={
+        "candidates": [
+            retrieval.candidates[0].model_copy(update={"rank": True}),
+            retrieval.candidates[1],
+        ],
+    })
+    decision = apply_retrieval_abstention(
+        poisoned, policy=RetrievalAbstentionPolicy(min_score=-1e8)
+    )
+    assert decision.abstained
+    assert decision.reason == "untrusted_ranking"
+    assert decision.candidates == []
+
+
+def test_ordinary_finite_rankings_unchanged_after_overflow_guard() -> None:
+    retrieval = build_router().retrieve("search papers", k=2)
+    decision = apply_retrieval_abstention(
+        retrieval,
+        policy=RetrievalAbstentionPolicy(min_score=-1e8, min_margin=0),
+    )
+    assert not decision.abstained
+    assert decision.reason == "selected"
+    assert decision.observed_margin is not None
+    assert math.isfinite(decision.observed_margin)
+    assert [c.route_id for c in decision.candidates] == [
+        c.route_id for c in retrieval.candidates
+    ]
