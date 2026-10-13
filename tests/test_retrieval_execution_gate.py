@@ -14,10 +14,12 @@ from schemarouter import (
     ExecutionPlan,
     FallbackRoute,
     PolicyViolationError,
+    PrincipalContext,
     RetrievalAbstentionPolicy,
     SchemaRouter,
     ToolCall,
     ToolSpec,
+    ainvoke_selective,
     execute_selective_plan,
     validate_selective_execution,
 )
@@ -229,3 +231,114 @@ async def test_low_margin_blocks_dispatch_not_just_shortlist_display():
             policy=RetrievalAbstentionPolicy(min_margin=requested_margin),
         )
     assert sink.dispatched == []
+
+
+class FakeScopedFlow(FakeDispatchRouter):
+    def __init__(self, retrieval, plan) -> None:
+        super().__init__(retrieval.registry_version)
+        self.retrieval = retrieval
+        self.plan = plan
+        self.events: list[tuple] = []
+
+    async def aretrieve_executable(self, request, *, k=5):
+        self.events.append(("retrieve", request, k))
+        return self.retrieval
+
+    async def aplan_executable(self, request):
+        self.events.append(("plan", request))
+        return self.plan
+
+    async def aretrieve_executable_authorized(
+        self, request, *, principal, k=5,
+    ):
+        self.events.append(("retrieve_authorized", request, principal, k))
+        return self.retrieval
+
+    async def aplan_executable_authorized(self, request, *, principal):
+        self.events.append(("plan_authorized", request, principal))
+        return self.plan
+
+    async def execute(self, plan, *, config=None):
+        self.events.append(("execute", config.principal))
+        return await super().execute(plan, config=config)
+
+
+@pytest.mark.asyncio
+async def test_atomic_selective_workflow_dispatches_only_after_both_bound_stages():
+    retrieval, plan, _ = fixture()
+    router = FakeScopedFlow(retrieval, plan)
+    out = await ainvoke_selective(
+        router,
+        retrieval.query,
+        k=2,
+        policy=RetrievalAbstentionPolicy(min_score=-1e8),
+    )
+    assert out == []
+    assert [x[0] for x in router.events] == ["retrieve", "plan", "execute"]
+    assert router.events[0][1] == router.events[1][1] == retrieval.query
+    assert router.dispatched == [plan]
+
+
+@pytest.mark.asyncio
+async def test_atomic_selective_workflow_uses_one_trusted_principal():
+    retrieval, plan, _ = fixture()
+    router = FakeScopedFlow(retrieval, plan)
+    principal = PrincipalContext(subject="test-user", roles=("reader",))
+    result = await ainvoke_selective(
+        router,
+        retrieval.query,
+        k=2,
+        config={"principal": principal},
+        policy=RetrievalAbstentionPolicy(min_score=-1e8),
+    )
+    assert result == []
+    assert [x[0] for x in router.events] == [
+        "retrieve_authorized", "plan_authorized", "execute",
+    ]
+    assert router.events[0][2] is principal
+    assert router.events[1][2] is principal
+    assert router.events[2][1] is principal
+
+
+@pytest.mark.asyncio
+async def test_atomic_selective_workflow_does_not_dispatch_on_no_match():
+    retrieval, plan, _ = fixture()
+    router = FakeScopedFlow(retrieval, plan)
+    with pytest.raises(PolicyViolationError, match="no-match: below_min_score"):
+        await ainvoke_selective(
+            router,
+            retrieval.query,
+            k=2,
+            policy=RetrievalAbstentionPolicy(
+                min_score=retrieval.candidates[0].score + 1,
+            ),
+        )
+    assert [x[0] for x in router.events] == ["retrieve", "plan"]
+    assert router.dispatched == []
+
+
+@pytest.mark.asyncio
+async def test_atomic_selective_workflow_rejects_cross_request_retrieval():
+    retrieval, plan, _ = fixture()
+    router = FakeScopedFlow(
+        retrieval.model_copy(update={"query": "different query"}), plan,
+    )
+    with pytest.raises(PolicyViolationError, match="mismatched query"):
+        await ainvoke_selective(
+            router, retrieval.query, k=2,
+            policy=RetrievalAbstentionPolicy(min_score=-1e8),
+        )
+    assert router.dispatched == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("k", [0, -1, True, 2.5, "2"])
+async def test_atomic_selective_workflow_rejects_invalid_k_before_any_call(k):
+    retrieval, plan, _ = fixture()
+    router = FakeScopedFlow(retrieval, plan)
+    with pytest.raises(ValueError, match="positive integer"):
+        await ainvoke_selective(
+            router, retrieval.query, k=k,
+            policy=RetrievalAbstentionPolicy(min_score=-1e8),
+        )
+    assert router.events == []
