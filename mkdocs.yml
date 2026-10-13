@@ -207,6 +207,7 @@ nav:
       - Decision backend plugins: integrations/decision-backend-plugins.md
       - Decision-model ecosystem: integrations/decision-model-ecosystem.md
       - Jev / TypeSafe: integrations/jev.md
+      - pi-jev local Laya preflight (unscored): guides/pi-jev-local-laya-preflight.md
       - Laya decisions: integrations/laya.md
       - Ollama decisions: integrations/ollama.md
       - OpenTelemetry: integrations/opentelemetry.md
