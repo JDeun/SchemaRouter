@@ -10,7 +10,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from .errors import PolicyViolationError
-from .models import CapabilityRetrieval, ExecutionPlan, ToolCall, ToolResult
+from .models import (
+    CapabilityRetrieval,
+    ExecutionPlan,
+    FallbackRoute,
+    ToolCall,
+    ToolResult,
+)
 from .retrieval_abstention import (
     RetrievalAbstentionPolicy,
     SelectiveCapabilityRetrieval,
@@ -97,6 +103,10 @@ def validate_selective_execution(
         check_call(call)
     seen_fallback_indices: set[int] = set()
     for route in plan.fallback_routes:
+        if not isinstance(route, FallbackRoute):
+            _deny("invalid fallback route envelope")
+        if not isinstance(route.alternatives, list):
+            _deny("invalid fallback alternatives")
         index = route.primary_call_index
         if (
             type(index) is not int
