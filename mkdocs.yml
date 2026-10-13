@@ -206,6 +206,7 @@ nav:
       - System One compatible: integrations/system-one.md
       - Decision backend plugins: integrations/decision-backend-plugins.md
       - Decision-model ecosystem: integrations/decision-model-ecosystem.md
+      - Microsoft Decision-1 (hosted candidate): integrations/microsoft-decision-1.md
       - Jev / TypeSafe: integrations/jev.md
       - Laya decisions: integrations/laya.md
       - Ollama decisions: integrations/ollama.md
