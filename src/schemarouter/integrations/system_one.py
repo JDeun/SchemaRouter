@@ -43,10 +43,26 @@ class SystemOneDecisionBackend:
         client: Any | None = None,
         include_context: bool = True,
     ) -> None:
-        if not math.isfinite(min_confidence) or not 0.0 <= min_confidence <= 1.0:
+        if type(min_confidence) not in (int, float):
             raise ValueError("min_confidence must be finite and between 0 and 1")
-        if timeout is not None and (not math.isfinite(timeout) or timeout <= 0):
-            raise ValueError("timeout must be a positive finite number")
+        try:
+            valid_confidence = (
+                math.isfinite(min_confidence)
+                and 0.0 <= min_confidence <= 1.0
+            )
+        except OverflowError:
+            valid_confidence = False
+        if not valid_confidence:
+            raise ValueError("min_confidence must be finite and between 0 and 1")
+        if timeout is not None:
+            if type(timeout) not in (int, float):
+                raise ValueError("timeout must be a positive finite number")
+            try:
+                valid_timeout = math.isfinite(timeout) and timeout > 0
+            except OverflowError:
+                valid_timeout = False
+            if not valid_timeout:
+                raise ValueError("timeout must be a positive finite number")
         if model is not None and (not isinstance(model, str) or not model.strip()):
             raise ValueError("model must be a non-empty string when provided")
         if provider_name is not None and (
@@ -57,6 +73,13 @@ class SystemOneDecisionBackend:
             not isinstance(base_url, str) or not base_url.strip()
         ):
             raise ValueError("base_url must be a non-empty string when provided")
+
+        for flag_name, flag_value in (
+            ("async_mode", async_mode),
+            ("include_context", include_context),
+        ):
+            if type(flag_value) is not bool:
+                raise ValueError(f"{flag_name} must be a boolean")
 
         self.api_key = api_key
         self.model = model.strip() if isinstance(model, str) else None
@@ -140,9 +163,14 @@ class SystemOneDecisionBackend:
     ) -> DecisionResult:
         try:
             answer = response.choices["selection"]
-            option_id = str(answer.choice)
-            confidence = float(answer.confidence)
-        except (AttributeError, KeyError, TypeError, ValueError) as exc:
+            option_id = answer.choice
+            raw_confidence = answer.confidence
+            if not isinstance(option_id, str):
+                raise ValueError("provider option ID must be a string")
+            if type(raw_confidence) not in (int, float):
+                raise ValueError("provider confidence must be a non-Boolean number")
+            confidence = float(raw_confidence)
+        except (AttributeError, KeyError, TypeError, ValueError, OverflowError) as exc:
             raise PlanningError(
                 f"{self.provider_display_name} returned an invalid choice response"
             ) from exc
@@ -172,9 +200,9 @@ class SystemOneDecisionBackend:
         if usage is not None:
             input_tokens = getattr(usage, "input_tokens", None)
             output_tokens = getattr(usage, "output_tokens", None)
-            if isinstance(input_tokens, int):
+            if type(input_tokens) is int and input_tokens >= 0:
                 metadata["input_tokens"] = input_tokens
-            if isinstance(output_tokens, int):
+            if type(output_tokens) is int and output_tokens >= 0:
                 metadata["output_tokens"] = output_tokens
 
         if confidence < self.min_confidence:
