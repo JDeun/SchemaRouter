@@ -41,7 +41,7 @@ def _validated_abstention_policy(
     try:
         # Pydantic model_copy(update=...) bypasses field validation.
         return RetrievalAbstentionPolicy.model_validate(
-            policy.model_dump(mode="python")
+            policy.model_dump(mode="python", warnings=False)
         )
     except (TypeError, ValueError, OverflowError) as exc:
         raise PolicyViolationError(
