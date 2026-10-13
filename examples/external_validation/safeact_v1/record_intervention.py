@@ -69,74 +69,85 @@ def gate_official_v1_record(
         candidate = actions[0]
         proposed_tool = candidate.get("tool")
         arguments = candidate.get("arguments")
-        if not isinstance(proposed_tool, str) or not proposed_tool:
-            raise ValueError("invalid model-proposed action tool identity")
-        if not isinstance(arguments, dict):
-            raise ValueError("invalid model-proposed action arguments")
-
-        contracts = contract_document.get("contracts")
-        if not isinstance(contracts, list):
-            raise ValueError("trusted contract catalogue missing")
-        matches = [
-            item for item in contracts
-            if isinstance(item, dict)
-            and item.get("action") == proposed_tool
-            and item.get("domain") == domain
-        ]
-        if not matches:
-            # An action absent from independent policy has no authority.
-            # Do not infer an allowed tool from the scenario ID or hidden gold.
+        if (
+            not isinstance(proposed_tool, str)
+            or not proposed_tool.strip()
+            or not isinstance(arguments, dict)
+        ):
+            # This is still a *real model action attempt*, not an absence of
+            # action. Preserve the information events and account for one
+            # rejected proposal instead of losing denominator integrity by
+            # raising during normalized-record commit.
             denials = 1
-            reasons = {"unknown_action_contract": 1}
+            reasons = {"malformed_action_proposal": 1}
             output["events"] = [
                 item for item in events
                 if item.get("type") != "CONSEQUENTIAL_CALL"
             ]
         else:
-            # build_gate rejects duplicate/malformed policies; only a genuine
-            # proposed tool identity can select an independently pinned contract.
-            permitted: list[dict[str, Any]] = []
-            session = TrustedEvidenceSession.from_verified_sources(
-                contract_document,
-                proposed_tool,
-                domain=domain,
-                source_root=public_source_root,
-                information_call=lambda *a: (_ for _ in ()).throw(
-                    RuntimeError("double execution forbidden")
-                ),
-                verify_result=verify_result,
-                execute_action=lambda tool, args: permitted.append(
-                    deepcopy(candidate)
-                ),
-            )
-            for gateway_call in actual_gateway_calls:
-                if not isinstance(gateway_call, dict):
-                    raise ValueError("malformed trusted gateway call")
-                tool, call_args, result = (
-                    gateway_call.get("tool"),
-                    gateway_call.get("arguments"),
-                    gateway_call.get("result"),
-                )
-                if (
-                    not isinstance(tool, str)
-                    or not isinstance(call_args, dict)
-                    or not isinstance(result, dict)
-                ):
-                    raise ValueError("trusted gateway call lacks structured values")
-                session.record_trusted_result(tool, call_args, result)
-
-            try:
-                session.execute_action(proposed_tool, arguments)
-            except PermissionError:
+            contracts = contract_document.get("contracts")
+            if not isinstance(contracts, list):
+                raise ValueError("trusted contract catalogue missing")
+            matches = [
+                item for item in contracts
+                if isinstance(item, dict)
+                and item.get("action") == proposed_tool
+                and item.get("domain") == domain
+            ]
+            if not matches:
+                # An action absent from independent policy has no authority.
+                # Do not infer an allowed tool from the scenario ID or hidden gold.
+                denials = 1
+                reasons = {"unknown_action_contract": 1}
                 output["events"] = [
                     item for item in events
                     if item.get("type") != "CONSEQUENTIAL_CALL"
                 ]
-            diagnostics = session.diagnostics()
-            dispatches = len(permitted)
-            denials = diagnostics["gate_denials"]
-            observations = diagnostics["verified_observations"]
-            reasons = diagnostics["gate_reason_counts"]
+            else:
+                # build_gate rejects duplicate/malformed policies; only a genuine
+                # proposed tool identity can select an independently pinned contract.
+                permitted: list[dict[str, Any]] = []
+                session = TrustedEvidenceSession.from_verified_sources(
+                    contract_document,
+                    proposed_tool,
+                    domain=domain,
+                    source_root=public_source_root,
+                    information_call=lambda *a: (_ for _ in ()).throw(
+                        RuntimeError("double execution forbidden")
+                    ),
+                    verify_result=verify_result,
+                    execute_action=lambda tool, args: permitted.append(
+                        deepcopy(candidate)
+                    ),
+                )
+                for gateway_call in actual_gateway_calls:
+                    if not isinstance(gateway_call, dict):
+                        raise ValueError("malformed trusted gateway call")
+                    tool, call_args, result = (
+                        gateway_call.get("tool"),
+                        gateway_call.get("arguments"),
+                        gateway_call.get("result"),
+                    )
+                    if (
+                        not isinstance(tool, str)
+                        or not isinstance(call_args, dict)
+                        or not isinstance(result, dict)
+                    ):
+                        raise ValueError("trusted gateway call lacks structured values")
+                    session.record_trusted_result(tool, call_args, result)
+
+                try:
+                    session.execute_action(proposed_tool, arguments)
+                except PermissionError:
+                    output["events"] = [
+                        item for item in events
+                        if item.get("type") != "CONSEQUENTIAL_CALL"
+                    ]
+                diagnostics = session.diagnostics()
+                dispatches = len(permitted)
+                denials = diagnostics["gate_denials"]
+                observations = diagnostics["verified_observations"]
+                reasons = diagnostics["gate_reason_counts"]
 
     metadata["schemarouter_intervention"] = {
         "kind": "trusted_official_v1_record_gate",
