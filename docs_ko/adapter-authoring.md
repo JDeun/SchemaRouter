@@ -329,13 +329,13 @@ FieldSpec(
 제공자가 레코드마다 같은 필드에 서로 다른 단위 레이블을 반환할 수 있다면
 SchemaRouter가 실행 시 수신한 문자열만으로 변환 방식을 추론하게 해서는 안 됩니다.
 
-Prefer one of these approaches:
+다음 두 방법 중 하나를 권장합니다:
 
 - 제공자의 응답이 SchemaRouter에 전달되기 전에 신뢰할 수 있는 어댑터에서
   하나의 고정 원본 단위 또는 기준 단위로 정규화합니다. 또는
 - 단위 의미가 안정적으로 보장되는 별도의 로컬 필드·접근 계약을 노출합니다.
 
-For example, a payload shaped like:
+예를 들어 다음과 같은 응답 본문은:
 
 ```json
 {"value": 130, "unit": "GPa"}
@@ -377,8 +377,8 @@ ParameterSpec(
 )
 ```
 
-A request argument `{"formula": "Si"}` may then compile to
-`{"chemical_formula": "Si"}` for that endpoint.
+이때 요청 인자 `{"formula": "Si"}`는 해당 엔드포인트에서
+`{"chemical_formula": "Si"}`로 컴파일될 수 있습니다.
 
 Alias routing은 제한적으로 동작합니다:
 
