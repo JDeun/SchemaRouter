@@ -6,6 +6,7 @@ on:
       - ".github/workflows/pi-jev-local-preflight.yml"
       - "scripts/run_pi_jev_local_laya.mjs"
       - "tests/test_pi_jev_local_laya_runner.mjs"
+      - "tests/test_pi_jev_native_wire_preflight.mjs"
       - "scripts/external_validation_jev_contract.py"
       - "scripts/external_validation_shared_catalog.py"
   workflow_dispatch:
@@ -32,6 +33,16 @@ jobs:
         run: |
           node --version
           node --test tests/test_pi_jev_local_laya_runner.mjs
+      - name: Exercise pinned native pi-jev SDK over loopback mock wire (unscored)
+        env:
+          TYPESAFE_API_KEY: ""
+          TYPESAFE_BASE_URL: ""
+          PI_JEV_BASE_URL: ""
+        run: |
+          git clone --quiet https://github.com/TheoOliveira/pi-jev.git "$RUNNER_TEMP/pi-jev-native"
+          git -C "$RUNNER_TEMP/pi-jev-native" checkout --quiet --detach c5b5847aa189fe5ffec52893b7051fe8f9e7a548
+          (cd "$RUNNER_TEMP/pi-jev-native" && npm ci --ignore-scripts --no-audit --no-fund)
+          (cd "$RUNNER_TEMP/pi-jev-native" && node --import tsx "$GITHUB_WORKSPACE/tests/test_pi_jev_native_wire_preflight.mjs" "$RUNNER_TEMP/pi-jev-native")
       - name: Regenerate exact frozen pi-jev 82-tool and 16-case handoff
         run: python -m scripts.external_validation_jev_contract --input-out /tmp/pi-jev-frozen.json
       - name: Verify native runner matches the complete canonical handoff
