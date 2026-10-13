@@ -71,8 +71,9 @@ AuthorizationRule(
 권한 없는 graph capability는 model selection 전에 non-disclosure 처리하고 실행 전 다시
 검증합니다.
 
-Node/property/relationship visibility, 허용 relationship 집합, 최대 traversal depth는 principal
-DataScope rule로 적용하고 실행 시점에 다시 검증합니다.
+허용되는 관계(relationship) 집합과 최대 탐색 깊이는 principal의 DataScope 규칙으로 제한하고
+실행 시점에도 재검증합니다. **숨겨야 하는 노드·간선·속성 조건을 자동으로 적용한다고 주장하지
+않습니다.** 이런 조건에는 아래의 별도 trusted-filter 백엔드 계약이 필요합니다.
 
 숨겨야 하는 노드·간선·속성을 위한 추가 predicate는 `supports_trusted_filters = True`를 명시한 `ScopedGraphStoreBackend` 구현이 필요합니다. DataScope가 trusted filter를 요구하는데 백엔드가 해당 계약을 선언하고 실제로 구현하지 않았다면 **그래프 탐색 I/O 이전에 fail-closed**합니다. 현재 내장 native graph/RDF 어댑터는 이러한 predicate 기능을 지원한다고 주장하지 않습니다.
 
