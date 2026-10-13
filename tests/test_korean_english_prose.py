@@ -54,7 +54,18 @@ def test_all_existing_candidates_have_exact_revision_pinned_reviews() -> None:
     root = ROOT / "docs_ko"
     report = scan(root)
     ledger = ROOT / "audits" / "ko-english-prose-review-2026-10-10.json"
-    assert report["scanned_pages"] == 147
+    # A new bilingual page must be counted, not silently excluded. Compare exact
+    # source/translation page sets rather than freezing yesterday's page count.
+    english_pages = {
+        path.relative_to(ROOT / "docs").as_posix()
+        for path in (ROOT / "docs").rglob("*.md")
+    }
+    korean_pages = {
+        path.relative_to(root).as_posix()
+        for path in root.rglob("*.md")
+    }
+    assert korean_pages == english_pages
+    assert report["scanned_pages"] == len(korean_pages)
     assert report["candidate_lines"] == 8
     assert verify_reviewed(report, ledger, root) == []
 
