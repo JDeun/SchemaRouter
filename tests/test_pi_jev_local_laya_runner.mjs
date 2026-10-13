@@ -29,15 +29,23 @@ test('require entire canonical handoff; hex digests alone are not evidence',()=>
     {...fixture,experiment:'different-study'},
   ]) assert.throws(()=>sameFrozenHandoff(mutated,fixture),/canonical/);
 });
-test('require actual loaded model SHA and device after lazy inference',()=>{
-  assert.deepEqual(loadedLayaEvidence({status:'ok',loaded:['english'],
-    revisions:{english:'sha-123'},checkpoint_devices:{english:'cpu'}}),{
+test('require observed post-inference Laya model and device evidence',()=>{
+  const valid={status:'ok',loaded:['english'],revisions:{english:'sha-123'},
+    checkpoint_devices:{english:'cpu'},device:'cpu',device_is_preference:false};
+  assert.deepEqual(loadedLayaEvidence(valid),{
     checkpoint_revisions:{english:'sha-123'},checkpoint_devices:{english:'cpu'},
   });
   for(const bad of [
-    {status:'ok',loaded:[],revisions:{},checkpoint_devices:{}},
-    {status:'ok',loaded:['english'],revisions:{},checkpoint_devices:{english:'cpu'}},
-    {status:'ok',loaded:['english'],revisions:{english:'abc'},checkpoint_devices:{}},
+    {...valid,loaded:[]},
+    {...valid,device_is_preference:true},
+    {...valid,device_is_preference:undefined},
+    {...valid,device:'cuda'},
+    {...valid,loaded:['english','english']},
+    {...valid,revisions:{}},
+    {...valid,revisions:{english:'sha-123',unloaded:'sha-999'}},
+    {...valid,checkpoint_devices:{}},
+    {...valid,checkpoint_devices:{english:'cpu',unloaded:'cuda'}},
+    {...valid,revisions:{english:'  '}},
     {status:'ok'},
   ]) assert.throws(()=>loadedLayaEvidence(bad),/checkpoint provenance/);
 });
