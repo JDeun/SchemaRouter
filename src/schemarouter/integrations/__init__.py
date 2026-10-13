@@ -7,6 +7,7 @@ from .langchain import (
 )
 from .langgraph import LangGraphRequestFactory, LangGraphState, to_langgraph_node
 from .laya import LayaDecisionBackend
+from .microsoft_decision import MicrosoftDecisionOneFoundryBackend
 from .llamaindex import (
     LlamaIndexToolInvoker,
     to_llamaindex_tool,
@@ -20,6 +21,7 @@ from .system_one import SystemOneDecisionBackend
 __all__ = [
     "JevDecisionBackend",
     "LayaDecisionBackend",
+    "MicrosoftDecisionOneFoundryBackend",
     "SystemOneDecisionBackend",
     "OllamaDecisionBackend",
     "OpenTelemetryRunExporter",
