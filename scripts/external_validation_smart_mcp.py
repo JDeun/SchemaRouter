@@ -71,30 +71,58 @@ def validate_package(
     package_id = manifest["package_id"]
     if catalog["catalog_id"] != package_id or cases["case_set_id"] != package_id:
         raise ValueError("package/catalog/case identifiers do not match")
-    if (
-        manifest.get("status") == "development_unfrozen"
-        and manifest["governance"]["heldout_scoring_allowed"]
-    ):
-        raise ValueError("development fixture must not enable held-out scoring")
+    governance = manifest.get("governance")
+    if not isinstance(governance, dict):
+        raise ValueError("missing benchmark governance")
+    if manifest.get("status") == "development_unfrozen":
+        if governance.get("heldout_scoring_allowed") is not False:
+            raise ValueError("development fixture must explicitly disable held-out scoring")
 
-    tools = {tool["name"]: tool for tool in catalog["tools"]}
-    if len(tools) != len(catalog["tools"]):
+    raw_tools = catalog.get("tools")
+    if not isinstance(raw_tools, list) or not raw_tools or any(
+        not isinstance(tool, dict) for tool in raw_tools
+    ):
+        raise ValueError("catalog.tools must be a nonempty object list")
+    tool_names = [tool.get("name") for tool in raw_tools]
+    if any(not isinstance(name, str) or not name.strip() for name in tool_names):
+        raise ValueError("tool names must be nonblank strings")
+    tools = {tool["name"]: tool for tool in raw_tools}
+    if len(tools) != len(raw_tools):
         raise ValueError("duplicate tool names")
+    if any(
+        not isinstance(tool.get("description"), str)
+        or not isinstance(tool.get("input_schema"), dict)
+        for tool in raw_tools
+    ):
+        raise ValueError("missing or invalid shared tool contract")
+    entries = cases.get("cases")
+    if not isinstance(entries, list) or not entries or any(
+        not isinstance(case, dict) for case in entries
+    ):
+        raise ValueError("case cohort must be a nonempty object list")
 
     seen_ids: set[str] = set()
     observed = {"supported": 0, "ambiguous": 0, "unsupported": 0, "multi_tool": 0}
-    for case in cases["cases"]:
-        case_id = case["id"]
+    for case in entries:
+        case_id = case.get("id")
+        if not isinstance(case_id, str) or not case_id.strip():
+            raise ValueError("case IDs must be nonblank strings")
         if case_id in seen_ids:
             raise ValueError(f"duplicate case id: {case_id}")
         seen_ids.add(case_id)
+        if not isinstance(case.get("query"), str) or not case["query"].strip():
+            raise ValueError(f"{case_id} query must be nonblank text")
         label = case["label"]
         if label not in {"supported", "ambiguous", "unsupported"}:
             raise ValueError(f"unknown case label: {label}")
         observed[label] += 1
         required = case.get("required_tools", [])
-        if not isinstance(required, list) or not all(isinstance(x, str) for x in required):
+        if not isinstance(required, list) or not all(
+            isinstance(x, str) and x.strip() for x in required
+        ):
             raise ValueError(f"{case_id} required_tools must be a string list")
+        if len(set(required)) != len(required):
+            raise ValueError(f"{case_id} duplicate required tool identity")
         unknown = set(required) - set(tools)
         if unknown:
             raise ValueError(f"{case_id} references unknown required tools: {sorted(unknown)}")
@@ -105,8 +133,14 @@ def validate_package(
         if len(required) > 1:
             observed["multi_tool"] += 1
         acceptable = case.get("acceptable_candidate_tools", [])
-        if not isinstance(acceptable, list) or not all(isinstance(x, str) for x in acceptable):
+        if not isinstance(acceptable, list) or not all(
+            isinstance(x, str) and x.strip() for x in acceptable
+        ):
             raise ValueError(f"{case_id} acceptable_candidate_tools must be a string list")
+        if len(set(acceptable)) != len(acceptable):
+            raise ValueError(f"{case_id} duplicate acceptable candidate identity")
+        if label != "ambiguous" and acceptable:
+            raise ValueError(f"{case_id} non-ambiguous case cannot specify acceptable tools")
         if set(acceptable) - set(tools):
             raise ValueError(f"{case_id} references unknown acceptable candidates")
         if label == "ambiguous" and not acceptable:
@@ -122,9 +156,17 @@ def validate_package(
         raise ValueError(f"package counts drifted: expected={expected} actual={actual}")
 
     top_k_values = manifest["comparison"]["top_k_values"]
-    if top_k_values != sorted(set(top_k_values)) or not top_k_values or top_k_values[0] < 1:
+    if (
+        not isinstance(top_k_values, list)
+        or not top_k_values
+        or any(type(k) is not int or k < 1 for k in top_k_values)
+        or top_k_values != sorted(set(top_k_values))
+    ):
         raise ValueError("top_k_values must be a sorted unique positive list")
-    if manifest["comparison"]["max_candidates"] != max(top_k_values):
+    if (
+        type(manifest["comparison"]["max_candidates"]) is not int
+        or manifest["comparison"]["max_candidates"] != max(top_k_values)
+    ):
         raise ValueError("max_candidates must equal the largest Top-K")
     latency_repeats = manifest["comparison"].get("latency_repeats")
     if (
@@ -166,6 +208,9 @@ def score(
     cases: dict[str, Any],
     submitted: dict[str, Any],
 ) -> dict[str, Any]:
+    # CLI validates before scoring, but Python callers previously bypassed it.
+    # Never compute outcome metrics on a structurally contaminated gold cohort.
+    validate_package(manifest, catalog, cases)
     if submitted.get("package_id") != manifest["package_id"]:
         raise ValueError("result package id mismatch")
 
