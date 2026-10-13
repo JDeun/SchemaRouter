@@ -193,3 +193,102 @@ def test_explicit_revision_must_match_detected_git_revision(
             explicit_revision="claimed-sha",
             source_path=Path(__file__),
         )
+
+
+
+@pytest.mark.parametrize(("mutation", "expected_error"), [
+    (
+        lambda c: c["cases"][0].update(
+            required_tools=c["cases"][0]["required_tools"] * 2
+        ),
+        "duplicate required tool identity",
+    ),
+    (
+        lambda c: c["cases"][27].update(
+            acceptable_candidate_tools=(
+                c["cases"][27]["acceptable_candidate_tools"]
+                + c["cases"][27]["acceptable_candidate_tools"][:1]
+            )
+        ),
+        "duplicate acceptable candidate identity",
+    ),
+    (
+        lambda c: c["cases"][0].update(
+            acceptable_candidate_tools=["materials__elastic_modulus"]
+        ),
+        "non-ambiguous case cannot specify acceptable tools",
+    ),
+    (
+        lambda c: c["cases"][0].update(query=" "),
+        "query must be nonblank text",
+    ),
+    (
+        lambda c: c["cases"][0].update(id=""),
+        "case IDs must be nonblank strings",
+    ),
+])
+def test_direct_scoring_rejects_mutated_gold_before_metric_aggregation(
+    mutation, expected_error,
+) -> None:
+    manifest, catalog, cases = load_package(PACKAGE)
+    contaminated = deepcopy(cases)
+    mutation(contaminated)
+    # A caller entering score() directly previously bypassed validate_package.
+    # Keep the original expected manifest counts (same case IDs/strata).
+    submitted = build_template(manifest, contaminated)
+    with pytest.raises(ValueError, match=expected_error):
+        score(manifest, catalog, contaminated, submitted)
+
+
+@pytest.mark.parametrize("governance", [
+    {},
+    {"heldout_scoring_allowed": None},
+    {"heldout_scoring_allowed": 0},
+    {"heldout_scoring_allowed": True},
+])
+def test_unfrozen_dev_scoring_requires_explicit_false_governance(
+    governance,
+) -> None:
+    manifest, catalog, cases = load_package(PACKAGE)
+    altered = deepcopy(manifest)
+    altered["governance"] = governance
+    with pytest.raises(ValueError, match="explicitly disable held-out"):
+        score(altered, catalog, cases, build_template(altered, cases))
+
+
+@pytest.mark.parametrize(("values", "error"), [
+    ([1, True, 5], "sorted unique positive list"),
+    ([1, 3, 3], "sorted unique positive list"),
+    ([0, 3, 5], "sorted unique positive list"),
+    (["1", 3, 5], "sorted unique positive list"),
+])
+def test_dev_topk_protocol_integers_are_not_implicitly_coerced(values, error) -> None:
+    manifest, catalog, cases = load_package(PACKAGE)
+    changed = deepcopy(manifest)
+    changed["comparison"]["top_k_values"] = values
+    with pytest.raises(ValueError, match=error):
+        score(changed, catalog, cases, build_template(changed, cases))
+
+
+def test_dev_result_timing_does_not_accept_float_overflow() -> None:
+    manifest, catalog, cases = load_package(PACKAGE)
+    submitted = build_template(manifest, cases)
+    submitted["results"][0]["latency_ms"] = 10 ** 1000
+    with pytest.raises(ValueError, match="latency_ms must be finite"):
+        score(manifest, catalog, cases, submitted)
+
+
+def test_nonfinite_index_build_time_rejected_before_aggregating() -> None:
+    manifest, catalog, cases = load_package(PACKAGE)
+    submitted = build_template(manifest, cases)
+    submitted["index_build_ms"] = float("inf")
+    with pytest.raises(ValueError, match="index_build_ms must be finite"):
+        score(manifest, catalog, cases, submitted)
+
+
+def test_direct_score_rejects_swapped_shared_tool_schema() -> None:
+    manifest, catalog, cases = load_package(PACKAGE)
+    tampered = deepcopy(catalog)
+    tampered["tools"][0]["input_schema"] = "NOT AN MCP INPUT SCHEMA"
+    with pytest.raises(ValueError, match="invalid shared tool contract"):
+        score(manifest, tampered, cases, build_template(manifest, cases))
