@@ -16,7 +16,7 @@ from typing import Any
 
 PINNED_CYT_REVISION = "9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4"
 SDK_BOUNDARY = "cyt-indexer-sdk prune_catalog_bm25_and_retrieve"
-SDK_NAME = "Clear Your Tools native composite BM25"
+SDK_NAME = "CYT indexer SDK native BM25 composite"
 CYT_OPTIONS = {
     "score_tool": 0.4,
     "score_tool_enum": 0.1,
