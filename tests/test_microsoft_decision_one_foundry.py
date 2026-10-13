@@ -44,8 +44,8 @@ def valid_payload(choice: str = "none_of_above") -> dict[str, Any]:
             "selection": {
                 "type": "choice", "choice": choice,
                 "probabilities": {
-                    "orders_lookup": 0.15,
-                    "none_of_above": 0.85,
+                    "orders_lookup": 0.85 if choice == "orders_lookup" else 0.15,
+                    "none_of_above": 0.15 if choice == "orders_lookup" else 0.85,
                 },
             },
         },
@@ -129,7 +129,7 @@ def test_foundry_uses_declared_probability_only_not_untrusted_raw_choice():
     backend, client, _ = backend_with_payload(valid_payload("orders_lookup"))
     try:
         result = choose_sync(backend, decision_request())
-        assert result.selections[0].score == 0.15
+        assert result.selections[0].score == 0.85
     finally:
         client.close()
 
@@ -431,5 +431,41 @@ def test_foundry_oversized_request_is_rejected_before_network():
         with pytest.raises(ValueError, match="request exceeds maximum"):
             choose_sync(backend, payload)
         assert requests == []
+    finally:
+        client.close()
+
+
+@pytest.mark.parametrize(("contradiction", "reason"), [
+    (
+        {"orders_lookup": 0.1, "none_of_above": 0.9},
+        "choice contradicts",
+    ),
+    (
+        {"orders_lookup": 0.5, "none_of_above": 0.5},
+        "choice contradicts",
+    ),
+])
+def test_foundry_never_promotes_a_route_against_no_fit_probability(
+    contradiction: dict[str, float], reason: str,
+):
+    payload = valid_payload("orders_lookup")
+    payload["answers"]["selection"]["probabilities"] = contradiction
+    backend, client, _ = backend_with_payload(payload)
+    try:
+        with pytest.raises(PlanningError, match=reason):
+            choose_sync(backend, decision_request())
+    finally:
+        client.close()
+
+
+def test_foundry_no_fit_choice_rejected_when_route_probability_is_higher():
+    payload = valid_payload("none_of_above")
+    payload["answers"]["selection"]["probabilities"] = {
+        "orders_lookup": 0.7, "none_of_above": 0.3,
+    }
+    backend, client, _ = backend_with_payload(payload)
+    try:
+        with pytest.raises(PlanningError, match="choice contradicts"):
+            choose_sync(backend, decision_request())
     finally:
         client.close()
