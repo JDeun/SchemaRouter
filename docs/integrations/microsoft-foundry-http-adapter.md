@@ -87,3 +87,17 @@ published unit pricing at run time, downstream no-call enforcement (#1291),
 and a *new* independently reviewed, disjoint supported/near-domain
 unsupported/forbidden evaluation cohort. No historical ClicShopping DEV
 tuning, Laya negative-run reuse or frozen 0.14 alteration.
+
+### Bounded transport and no-request guarantees
+
+Before making any HTTP request, the adapter checks the complete option
+envelope (including bypassed Pydantic `model_copy(update=...)` fields),
+requires at least **one real route as well as the no-fit alternative**,
+serializes outbound JSON with `allow_nan=False`, and rejects oversized
+requests. A no-fit-only catalog therefore **never incurs a model call**.
+
+The HTTP body is read **incrementally** via `httpx.Client.stream` with a
+hard 1 MiB decoded-response limit. It stops reading and closes the stream
+when the limit is exceeded, rather than buffering an unbounded response
+before checking `len(content)`. Mock-stream and oversized/invalid-context
+tests exercise these safeguards. They do not prove actual provider behavior.
