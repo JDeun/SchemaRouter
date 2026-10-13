@@ -49,16 +49,24 @@ def validate_jev_output(payload: Any) -> None:
     package = build_package()
     expected = {case["id"] for case in package["cases"]}
     catalog = {tool["name"] for tool in package["catalog"]}
-    if not isinstance(payload, dict) or payload.get("schema_version") != 1:
+    if not isinstance(payload, dict) or type(payload.get("schema_version")) is not int:
+        raise ValueError("expected schema_version=1 object")
+    if payload["schema_version"] != 1:
         raise ValueError("expected schema_version=1 object")
     rows = payload.get("cases")
     if not isinstance(rows, list):
         raise ValueError("cases must be a list")
-    ids = [row.get("id") for row in rows if isinstance(row, dict)]
-    if len(ids) != len(expected) or set(ids) != expected:
-        raise ValueError("output must contain each frozen case exactly once")
+    if any(not isinstance(row, dict) for row in rows):
+        raise ValueError("each case result must be an object")
+    # Validate ID types *before* building sets. Native JSON may contain
+    # nested objects/arrays, which otherwise raise an uncontrolled TypeError.
+    ids = [row.get("id") for row in rows]
+    if any(not isinstance(case_id, str) or not case_id.strip() for case_id in ids):
+        raise ValueError("case IDs must be nonempty strings")
     if len(ids) != len(set(ids)):
         raise ValueError("duplicate case id")
+    if len(ids) != len(expected) or set(ids) != expected:
+        raise ValueError("output must contain each frozen case exactly once")
     for row in rows:
         if not isinstance(row, dict):
             raise ValueError("each case result must be an object")
