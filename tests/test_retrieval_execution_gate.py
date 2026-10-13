@@ -299,9 +299,9 @@ async def test_atomic_selective_workflow_uses_one_trusted_principal():
     assert [x[0] for x in router.events] == [
         "retrieve_authorized", "plan_authorized", "execute",
     ]
-    assert router.events[0][2] is principal
-    assert router.events[1][2] is principal
-    assert router.events[2][1] is principal
+    assert router.events[0][2] == principal
+    assert router.events[1][2] == principal
+    assert router.events[2][1] == principal
 
 
 @pytest.mark.asyncio
@@ -357,5 +357,25 @@ async def test_non_executable_or_forged_scope_never_dispatches(scope_flag):
         await execute_selective_plan(
             sink, retrieval, plan,
             policy=RetrievalAbstentionPolicy(min_score=-1e8),
+        )
+    assert sink.dispatched == []
+
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("poison", [
+    {"min_score": None, "min_margin": None},
+    {"min_score": float("inf")},
+    {"min_score": True},
+    {"min_score": "0.3"},
+    {"min_margin": -1},
+])
+async def test_forged_policy_model_copy_never_dispatches(poison):
+    retrieval, plan, sink = fixture()
+    calibrated = RetrievalAbstentionPolicy(min_score=-1e8)
+    unvalidated = calibrated.model_copy(update=poison)
+    with pytest.raises(PolicyViolationError, match="invalid calibrated policy"):
+        await execute_selective_plan(
+            sink, retrieval, plan, policy=unvalidated,
         )
     assert sink.dispatched == []
