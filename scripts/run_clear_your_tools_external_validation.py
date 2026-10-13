@@ -8,6 +8,21 @@ from pathlib import Path
 from statistics import median
 from typing import Any
 
+try:
+    from scripts.validate_cyt_sdk_development_result import (
+        PINNED_CYT_REVISION,
+        sha256_file,
+        validate_inputs,
+        validate_sdk_output,
+    )
+except ModuleNotFoundError:  # direct script invocation
+    from validate_cyt_sdk_development_result import (
+        PINNED_CYT_REVISION,
+        sha256_file,
+        validate_inputs,
+        validate_sdk_output,
+    )
+
 from cyt_indexer import (
     PolicyContext,
     apply_tool_kind,
@@ -33,8 +48,14 @@ def run(
     repeats: int,
     revision: str,
 ) -> dict[str, Any]:
+    if type(repeats) is not int or repeats < 1:
+        raise ValueError("repeats must be a positive integer")
+    if revision != PINNED_CYT_REVISION:
+        raise ValueError("CYT development SDK revision is not pinned")
     catalog = _load(catalog_path)
-    cases = _load(cases_path)["cases"]
+    case_package = _load(cases_path)
+    validate_inputs(catalog, case_package)
+    cases = case_package["cases"]
     tools = [
         {
             "name": tool["name"],
@@ -77,13 +98,20 @@ def run(
             }
         )
 
-    return {
+    report = {
         "schema_version": 1,
         "status": "development_unfrozen",
         "performance_evidence": False,
+        "sdk_only": True,
+        "full_cyt_e2e_verified": False,
+        "scoring_authorized": False,
+        "inputs": {
+            "catalog_sha256": sha256_file(catalog_path),
+            "cases_sha256": sha256_file(cases_path),
+        },
         "catalog_size": len(tools),
         "implementation": {
-            "name": "Clear Your Tools native composite BM25",
+            "name": "CYT indexer SDK native BM25 composite",
             "revision": revision,
             "boundary": "cyt-indexer-sdk prune_catalog_bm25_and_retrieve",
             "options": CYT_OPTIONS,
@@ -91,6 +119,13 @@ def run(
         },
         "results": rows,
     }
+    validate_sdk_output(
+        report, catalog, case_package,
+        catalog_sha256=sha256_file(catalog_path),
+        cases_sha256=sha256_file(cases_path),
+        expected_revision=revision,
+    )
+    return report
 
 
 def main() -> None:
