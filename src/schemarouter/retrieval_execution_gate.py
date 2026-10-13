@@ -14,6 +14,7 @@ from .models import (
     CapabilityRetrieval,
     ExecutionPlan,
     FallbackRoute,
+    PlanRequest,
     ToolCall,
     ToolResult,
 )
@@ -144,3 +145,42 @@ async def execute_selective_plan(
     )
     # All guards run before this first/only execution entrypoint.
     return await router.execute(plan, config=config)
+
+
+async def ainvoke_selective(
+    router: SchemaRouter,
+    request: PlanRequest | str,
+    *,
+    policy: RetrievalAbstentionPolicy,
+    k: int = 5,
+    config: RunConfig | dict[str, Any] | None = None,
+) -> list[ToolResult]:
+    """Opt-in atomic host workflow: same-principal retrieval, plan, execution.
+
+    Unlike the lower-level bridge, this function obtains both the scored
+    shortlist and the executable plan itself using the *same trusted request*
+    and one validated RunConfig principal. No caller-supplied ranking, plan
+    or candidate permission is accepted. Ordinary `ainvoke` is unchanged.
+    """
+    from .runs import RunConfig
+
+    run_config = (
+        RunConfig()
+        if config is None
+        else RunConfig.model_validate(config)
+    )
+    if type(k) is not int or k < 1:
+        raise ValueError("k must be a positive integer")
+    if run_config.principal is None:
+        retrieval = await router.aretrieve_executable(request, k=k)
+        plan = await router.aplan_executable(request)
+    else:
+        retrieval = await router.aretrieve_executable_authorized(
+            request, principal=run_config.principal, k=k,
+        )
+        plan = await router.aplan_executable_authorized(
+            request, principal=run_config.principal,
+        )
+    return await execute_selective_plan(
+        router, retrieval, plan, policy=policy, config=run_config,
+    )
