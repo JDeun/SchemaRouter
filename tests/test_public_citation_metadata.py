@@ -10,8 +10,6 @@ import re
 from pathlib import Path
 from urllib.parse import urlparse
 
-import yaml
-
 ROOT = Path(__file__).resolve().parents[1]
 DOCS_ORIGIN = "https://jdeun.github.io"
 SITE_PREFIX = "/SchemaRouter/"
@@ -27,7 +25,10 @@ def _project_version() -> str:
 
 
 def test_software_citation_is_valid_yaml_and_matches_package() -> None:
-    citation = yaml.safe_load((ROOT / "CITATION.cff").read_text(encoding="utf-8"))
+    # Keep the optional YAML parser scoped to citation metadata validation.
+    from yaml import safe_load
+
+    citation = safe_load((ROOT / "CITATION.cff").read_text(encoding="utf-8"))
 
     assert citation["cff-version"] == "1.2.0"
     assert citation["type"] == "software"
