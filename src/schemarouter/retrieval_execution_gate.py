@@ -182,11 +182,22 @@ async def ainvoke_selective(
     """
     from .runs import RunConfig
 
-    run_config = (
-        RunConfig()
-        if config is None
-        else RunConfig.model_validate(config)
-    )
+    # Pydantic model_copy(update=...) bypasses validators. Validate the
+    # *contents* of an already-instantiated RunConfig before allowing its
+    # principal to influence authorized retrieval or planning.
+    try:
+        if config is None:
+            run_config = RunConfig()
+        elif isinstance(config, RunConfig):
+            run_config = RunConfig.model_validate(
+                config.model_dump(mode="python", warnings=False)
+            )
+        else:
+            run_config = RunConfig.model_validate(config)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise PolicyViolationError(
+            "selective retrieval execution denied: invalid run configuration"
+        ) from exc
     if type(k) is not int or k < 1:
         raise ValueError("k must be a positive integer")
     policy = _validated_abstention_policy(policy)
