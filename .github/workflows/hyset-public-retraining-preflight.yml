@@ -26,8 +26,10 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: "3.12"
-      - name: Install pytest and Ruff only (no model or HYSET packages)
-        run: python -m pip install "pytest>=8.2,<9" "ruff>=0.6,<1"
+      - name: Install lightweight test tooling (no model or HYSET packages)
+        # pyproject.toml has asyncio_mode with strict config warnings. Installing
+        # bare pytest without its asyncio plugin fails during collection.
+        run: python -m pip install "pytest>=8.2,<9" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
       - name: Check no-model source and negative cases
         run: |
           ruff check scripts/validate_hyset_retraining_manifest.py tests/test_hyset_retraining_manifest_preflight.py
