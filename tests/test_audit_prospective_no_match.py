@@ -204,7 +204,7 @@ def test_no_match_audit_records_consistent_retrieval_scope_without_auth_claim():
         endpoint_fingerprint=""
     ),
     lambda row: row["candidates"][0].update(
-        score=float("nan")
+        route_id="other.unregistered"
     ),
 ])
 def test_untrusted_scored_rankings_cannot_be_counted_as_abstentions(mutation):
