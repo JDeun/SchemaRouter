@@ -41,7 +41,7 @@ def inspect_raw_holdout(
     declared_sha256: str = DECLARED_SHA256,
 ) -> dict[str, Any]:
     """Check source bytes and syntactic IDs; never certify labels or scoring."""
-    if not raw or len(raw) > MAX_SOURCE_BYTES or raw.startswith(b"\\xef\\xbb\\xbf"):
+    if not raw or len(raw) > MAX_SOURCE_BYTES or raw.startswith(bytes.fromhex("efbbbf")):
         raise ValueError("empty, oversized or BOM-prefixed source bytes")
     try:
         payload = json.loads(
@@ -134,7 +134,7 @@ def main() -> None:
                         help="Optional unscored provenance report path")
     args = parser.parse_args()
     report = inspect_raw_holdout(args.raw.read_bytes())
-    rendered = json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\\n"
+    rendered = json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + chr(10)
     if args.json_out:
         args.json_out.write_text(rendered, encoding="utf-8")
     else:
