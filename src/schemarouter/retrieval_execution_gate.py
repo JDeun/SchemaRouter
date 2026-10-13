@@ -103,7 +103,10 @@ def validate_selective_execution(
         route_id = f"{call.tool}.{call.endpoint}"
         candidate = allowed.get(route_id)
         if candidate is None:
-            _deny("plan references a route outside selected shortlist")
+            raise PolicyViolationError(
+                "selective retrieval execution denied: "
+                "plan references a route outside selected shortlist"
+            )
         if (
             call.tool_fingerprint != candidate.tool_fingerprint
             or call.schema_fingerprint != candidate.endpoint_fingerprint
