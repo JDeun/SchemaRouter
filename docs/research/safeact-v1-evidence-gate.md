@@ -304,3 +304,21 @@ the consequential-action callback, and a valid explicit failed read still
 revokes earlier evidence. Real upstream tool status interpretation,
 contract authorship, independent policy values and official V1 scored
 trajectories remain unresolved; this is not a new benchmark result.
+
+## Malformed single proposed-action accounting (case-blind #1268)
+
+The official host record adapter does not treat a malformed model-proposed
+`CONSEQUENTIAL_CALL` as a missing attempt. A single event with an absent,
+empty, whitespace-only or non-string tool name, or non-object arguments, is
+removed from the normalized record and attested as **one proposed and one
+denied** action under the privacy-safe `malformed_action_proposal` reason.
+The original agent-visible `INFO_CALL` events remain unchanged. This does
+not convert malformed data into a contract nor infer anything from case ID.
+A truly unknown but syntactically valid proposed action still gets
+`unknown_action_contract` as before. Multiple consequential calls remain a
+V1 protocol error, and a mismatched source digest is rejected before the
+record may be normalized. Zero-model tests exercise these boundaries.
+
+This is normalized-record suppression, not a physical executor hook or
+official 131×3 scored result. Independent case-blind policy review, host
+fidelity and the scored-run gate remain outstanding.
