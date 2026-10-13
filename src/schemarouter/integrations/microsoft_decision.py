@@ -115,12 +115,26 @@ class MicrosoftDecisionOneFoundryBackend:
         self.client = client
 
     def _request_body(self, request: DecisionRequest) -> dict[str, Any]:
-        if request.max_selections != 1:
+        if not isinstance(request, DecisionRequest):
+            raise ValueError("request must be a validated DecisionRequest")
+        # model_copy(update=...) does not validate option/ID fields. Treat
+        # even locally constructed envelopes as untrusted before paid I/O.
+        try:
+            request = DecisionRequest.model_validate(
+                request.model_dump(mode="python")
+            )
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Foundry request has invalid choice options") from exc
+        if type(request.max_selections) is not int or request.max_selections != 1:
             raise ValueError("Foundry choice adapter requires one selection")
         ids = {option.id for option in request.options}
         if self.require_no_fit and NO_FIT_ID not in ids:
             raise ValueError("include explicit none_of_above for unsupported requests")
-        if not request.query.strip():
+        if len(request.options) < 2 or (
+            self.require_no_fit and ids == {NO_FIT_ID}
+        ):
+            raise ValueError("Foundry choice requires at least one actionable option")
+        if not isinstance(request.query, str) or not request.query.strip():
             raise ValueError("decision query must be nonblank")
         state: dict[str, Any] = {"query": request.query}
         if self.include_context and request.context:
