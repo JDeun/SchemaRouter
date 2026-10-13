@@ -214,6 +214,12 @@ def score(
     # CLI validates before scoring, but Python callers previously bypassed it.
     # Never compute outcome metrics on a structurally contaminated gold cohort.
     validate_package(manifest, catalog, cases)
+    if not isinstance(submitted, dict):
+        raise ValueError("submitted results must be an object")
+    # JSON booleans compare equal to integers in Python. An absent, Boolean,
+    # or unsupported schema version cannot be scored as this protocol.
+    if type(submitted.get("schema_version")) is not int or submitted["schema_version"] != 1:
+        raise ValueError("submitted schema_version must be integer 1")
     if submitted.get("package_id") != manifest["package_id"]:
         raise ValueError("result package id mismatch")
 
@@ -234,6 +240,10 @@ def score(
     if not all(isinstance(row, dict) for row in rows):
         raise ValueError("every result row must be an object")
     result_ids = [row.get("id") for row in rows]
+    # A forged array/object id must fail as malformed input, not raise
+    # TypeError inside set(...) or accidentally be reinterpreted.
+    if any(not isinstance(case_id, str) or not case_id.strip() for case_id in result_ids):
+        raise ValueError("result ids must be nonempty strings")
     if len(result_ids) != len(set(result_ids)):
         raise ValueError("result ids must not contain duplicates")
     result_map = {row["id"]: row for row in rows}
