@@ -297,15 +297,28 @@ def test_forged_preselection_identity_budget_or_execution_rejected(mutation, rea
         score(manifest, cases, snapshot, payload)
 
 
-def test_preselection_cannot_expose_more_tools_than_declared_topk():
+def test_preselection_cannot_expose_more_native_tools_than_declared_topk():
     manifest, cases, snapshot = _fixture()
+    # Four genuinely distinct synthetic native contracts, all inside the
+    # independently pinned snapshot. This tests K, not unknown-tool rejection.
+    for i in range(2):
+        tool = deepcopy(snapshot["tools"][0])
+        tool["name"] = f"extra_read_{i}"
+        snapshot["tools"].append(tool)
+    digest = hashlib.sha256(json.dumps(
+        snapshot["tools"], ensure_ascii=False, sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")).hexdigest()
+    snapshot["tools_sha256"] = digest
+    snapshot["tool_count"] = 4
+    manifest["upstream_runtime"]["expected_public_tool_count"] = 4
+    manifest["upstream_runtime"]["expected_readonly_tools_sha256"] = digest
     submitted = _result(manifest, snapshot)
-    submitted["implementation"]["configuration"]["top_k"] = 3
-    # Synthetic catalog contains 2 tools: repeat the bundle to simulate an
-    # oversized result, which is also invalid as duplicate identities.
-    submitted["results"][0]["candidate_tools"] = ["query", "describe", "other"]
-    submitted["results"][0]["visible_contracts"] = [*snapshot["tools"], {}]
-    with pytest.raises(ValueError, match="unknown upstream tool"):
+    submitted["results"][0]["candidate_tools"] = [
+        tool["name"] for tool in snapshot["tools"]
+    ]
+    submitted["results"][0]["visible_contracts"] = deepcopy(snapshot["tools"])
+    with pytest.raises(ValueError, match="exceeds frozen Top-K"):
         score(manifest, cases, snapshot, submitted)
 
 
@@ -339,3 +352,43 @@ def test_dev_governance_requires_explicit_false_not_absence_or_zero(governance):
     manifest["governance"] = governance
     with pytest.raises(ValueError, match="explicitly disable"):
         score(manifest, cases, snapshot, _result(manifest, snapshot))
+
+
+def test_runners_validate_native_digest_before_any_dev_execution(tmp_path):
+    from scripts import run_servicenow_schemarouter_external_validation as routing
+    from scripts import run_servicenow_static_external_validation as static
+
+    manifest, cases, snapshot = _fixture()
+    manifest["files"] = {"cases": "cases.json"}
+    manifest["comparison"]["latency_repeats"] = 3
+    manifest["comparison"]["schemarouter_top_k"] = 3
+    path = tmp_path / "snapshot.json"
+    (tmp_path / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    (tmp_path / "cases.json").write_text(json.dumps(cases), encoding="utf-8")
+    # A substituted tool has the correct count but a mismatching frozen digest.
+    snapshot["tools"][0]["description"] = "counterfeit native MCP contract"
+    path.write_text(json.dumps(snapshot), encoding="utf-8")
+    with pytest.raises(ValueError, match="SHA-256"):
+        static.run(package_dir=tmp_path, snapshot_path=path, repeats=1)
+    with pytest.raises(ValueError, match="SHA-256"):
+        routing.run(
+            package_dir=tmp_path, snapshot_path=path, repeats=1,
+            implementation_revision="0" * 40, top_k=3,
+        )
+
+
+@pytest.mark.parametrize("repeats", [True, 0, -1, 0.5, "2"])
+def test_static_runner_rejects_noninteger_repeats_before_measurement(
+    tmp_path, repeats,
+):
+    from scripts import run_servicenow_static_external_validation as static
+
+    manifest, cases, snapshot = _fixture()
+    manifest["files"] = {"cases": "cases.json"}
+    manifest["comparison"]["latency_repeats"] = 2
+    (tmp_path / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    (tmp_path / "cases.json").write_text(json.dumps(cases), encoding="utf-8")
+    path = tmp_path / "snapshot.json"
+    path.write_text(json.dumps(snapshot), encoding="utf-8")
+    with pytest.raises(ValueError, match="repeats"):
+        static.run(package_dir=tmp_path, snapshot_path=path, repeats=repeats)
