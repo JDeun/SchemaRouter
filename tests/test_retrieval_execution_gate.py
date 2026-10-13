@@ -317,7 +317,7 @@ async def test_atomic_selective_workflow_does_not_dispatch_on_no_match():
                 min_score=retrieval.candidates[0].score + 1,
             ),
         )
-    assert [x[0] for x in router.events] == ["retrieve", "plan"]
+    assert [x[0] for x in router.events] == ["retrieve"]
     assert router.dispatched == []
 
 
@@ -379,3 +379,63 @@ async def test_forged_policy_model_copy_never_dispatches(poison):
             sink, retrieval, plan, policy=unvalidated,
         )
     assert sink.dispatched == []
+
+
+
+@pytest.mark.asyncio
+async def test_no_match_margin_rejects_before_costly_planning():
+    retrieval, plan, _ = fixture()
+    router = FakeScopedFlow(retrieval, plan)
+    scores = [item.score for item in retrieval.candidates]
+    with pytest.raises(PolicyViolationError, match="below_min_margin"):
+        await ainvoke_selective(
+            router, retrieval.query, k=2,
+            policy=RetrievalAbstentionPolicy(
+                min_margin=scores[0] - scores[1] + 1,
+            ),
+        )
+    assert [event[0] for event in router.events] == ["retrieve"]
+
+
+@pytest.mark.asyncio
+async def test_stale_registry_short_circuits_before_any_plan():
+    retrieval, plan, _ = fixture()
+    router = FakeScopedFlow(retrieval, plan)
+    router.registry.version += 1
+    with pytest.raises(PolicyViolationError, match="stale registry"):
+        await ainvoke_selective(
+            router, retrieval.query, k=2,
+            policy=RetrievalAbstentionPolicy(min_score=-1e8),
+        )
+    assert [event[0] for event in router.events] == ["retrieve"]
+
+
+@pytest.mark.asyncio
+async def test_mismatched_retrieval_budget_short_circuits_before_plan():
+    retrieval, plan, _ = fixture()
+    router = FakeScopedFlow(
+        retrieval.model_copy(update={"requested_k": 100}), plan,
+    )
+    with pytest.raises(PolicyViolationError, match="shortlist budget"):
+        await ainvoke_selective(
+            router, retrieval.query, k=2,
+            policy=RetrievalAbstentionPolicy(min_score=-1e8),
+        )
+    assert [event[0] for event in router.events] == ["retrieve"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("bad_threshold", [
+    True, "0.3", float("inf"), 10 ** 1000,
+])
+async def test_invalid_policy_rejects_before_retrieval_or_plan(bad_threshold):
+    retrieval, plan, _ = fixture()
+    router = FakeScopedFlow(retrieval, plan)
+    forged = RetrievalAbstentionPolicy(min_score=-1e8).model_copy(
+        update={"min_score": bad_threshold},
+    )
+    with pytest.raises(PolicyViolationError, match="invalid calibrated policy"):
+        await ainvoke_selective(
+            router, retrieval.query, k=2, policy=forged,
+        )
+    assert router.events == []
