@@ -184,3 +184,36 @@ unverified for interception. The selected primary interception mode stays
 The compatibility ordering is captured and guarded in
 [`interception-modes.json`](interception-modes.json). No actual
 macOS 27/Cursor agent run or held-out scoring is claimed by this update.
+
+
+## SDK development evidence integrity gate (#839)
+
+The component-only development runner now records the literal SHA-256 of the
+input catalog and cases files, and emits `sdk_only=true`,
+`full_cyt_e2e_verified=false`, `scoring_authorized=false`, and
+`performance_evidence=false`. It pins the declared CYT source commit
+`9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4` and retains the native
+`cyt-indexer-sdk` BM25 composite boundary. The source commit declaration
+is separate from the Python package resolution; the CI install pins
+`cyt-indexer-sdk==2.17.6` and records the actual pip environment.
+
+The independent, pure-Python result checker rejects missing/duplicate query
+IDs, unknown or duplicate candidate tool identities, nonfinite/negative
+latencies, inconsistent candidate counts, source digests, altered native
+options/repeats, and attempts to claim frozen/scored/full-CYT evidence.
+
+```bash
+python -m scripts.validate_cyt_sdk_development_result \
+  --catalog /path/to/unchanged/catalog.json \
+  --cases /path/to/unchanged/cases.json \
+  --result /path/to/sdk-development-output.json \
+  --expected-revision 9327aeb1199d15a67aee61bbd7c0d8fb4e64e8b4
+python -m pytest -q tests/test_cyt_sdk_development_integrity.py
+```
+
+The CI invokes this checker after native SDK execution for the 21-tool
+integration smoke and every 100/250/500/1000-tool **visible DEV** scaling
+arm. Passing checks prove structural and provenance integrity, **not**
+independent performance, actual full CYT Tiering/memory or proxy/hook
+interception, agent task success, or a preregistered held-out result. No
+new external run or model-provider credential is authorized by this change.
