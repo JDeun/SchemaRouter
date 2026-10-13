@@ -365,3 +365,71 @@ def test_foundry_forged_pydantic_copy_fails_before_paid_io(
         assert requests == []
     finally:
         client.close()
+
+
+
+def test_foundry_oversized_response_stops_streaming_early():
+    class CountingStream(httpx.SyncByteStream):
+        def __init__(self) -> None:
+            self.yielded = 0
+            self.closed = False
+
+        def __iter__(self):
+            for _ in range(100):
+                self.yielded += 1
+                yield b"X" * 65536
+
+        def close(self) -> None:
+            self.closed = True
+
+    stream = CountingStream()
+
+    def transport(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, stream=stream)
+
+    with httpx.Client(transport=httpx.MockTransport(transport)) as client:
+        backend = MicrosoftDecisionOneFoundryBackend(
+            resource_endpoint=ENDPOINT, deployment=DEPLOYMENT,
+            api_key="fake-unit-test-only", client=client,
+        )
+        with pytest.raises(PlanningError, match="maximum allowed size"):
+            choose_sync(backend, decision_request())
+    assert stream.yielded <= 17
+    assert stream.closed is True
+
+
+@pytest.mark.parametrize("context", [
+    {"unbounded": float("nan")},
+    {"unbounded": float("inf")},
+    {"invalid": set(["secret"])},
+])
+def test_foundry_non_json_context_never_initiates_network(context):
+    backend, client, requests = backend_with_payload(
+        valid_payload(), include_context=True,
+    )
+    payload = decision_request().model_copy(update={"context": context})
+    try:
+        with pytest.raises(ValueError, match="invalid JSON data"):
+            choose_sync(backend, payload)
+        assert requests == []
+    finally:
+        client.close()
+
+
+def test_foundry_oversized_request_is_rejected_before_network():
+    backend, client, requests = backend_with_payload(valid_payload())
+    huge_option = DecisionOption(
+        id="orders_lookup", description="x" * (1_048_576 + 1),
+    )
+    payload = decision_request().model_copy(update={
+        "options": [
+            huge_option,
+            DecisionOption(id="none_of_above", description="No suitable tool"),
+        ],
+    })
+    try:
+        with pytest.raises(ValueError, match="request exceeds maximum"):
+            choose_sync(backend, payload)
+        assert requests == []
+    finally:
+        client.close()
