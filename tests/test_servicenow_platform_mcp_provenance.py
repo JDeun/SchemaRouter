@@ -45,6 +45,13 @@ def _fixture():
             "servicenow_environment": "prod",
         },
         "governance": {"heldout_scoring_allowed": False},
+        "comparison": {
+            "primary_conditions": [
+                "static_readonly",
+                "readonly_plus_schemarouter_preselection",
+            ],
+            "development_top_k_sensitivity": [3, 5],
+        },
         "counts": {"cases": 2, "supported": 1, "unsupported": 1},
     }
     cases = {"case_set_id": manifest["package_id"], "cases": [
@@ -70,8 +77,21 @@ def _fixture():
 
 
 def _result(manifest, snapshot):
-    return {"package_id": manifest["package_id"], "index_build_ms": 0,
-            "results": [
+    return {
+        "package_id": manifest["package_id"],
+        "index_build_ms": 0,
+        "implementation": {
+            "name": "SchemaRouter over ServiceNow readonly MCP tools/list",
+            "configuration": {
+                "condition": "readonly_plus_schemarouter_preselection",
+                "top_k": 3,
+                "upstream_tool_package": "readonly",
+                "mcp_ingestion": "schemarouter.adapters.mcp.tool_from_mcp",
+                "api": "SchemaRouter.retrieve",
+                "execution": "disabled",
+            },
+        },
+        "results": [
                 {"id": "supported-read", "candidate_tools": ["query"],
                  "visible_contracts": [snapshot["tools"][0]], "latency_ms": 0.5},
                 {"id": "ood", "candidate_tools": [], "visible_contracts": [],
