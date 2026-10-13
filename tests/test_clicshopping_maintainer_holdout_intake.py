@@ -65,6 +65,7 @@ def test_matching_declared_digest_still_does_not_certify_source() -> None:
     b'{"cases":null}',
     b'{"a":1,"a":2}',
     b'{"cases":[],"invalid":NaN}',
+    b'{"cases":[],"invalid":1e999}',
 ])
 def test_invalid_bytes_or_duplicate_keys_fail_closed(invalid: bytes) -> None:
     with pytest.raises(ValueError):
