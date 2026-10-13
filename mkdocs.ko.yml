@@ -1,7 +1,7 @@
 INHERIT: mkdocs.yml
 
-site_name: SchemaRouter 문서
-site_description: API·도구·데이터 시스템 전반에서 AI 에이전트를 위한 타입 기반 capability routing과 governed execution
+site_name: SchemaRouter — AI 에이전트 도구 라우팅
+site_description: SchemaRouter는 MCP·OpenAPI·Python 도구를 연결하는 AI 에이전트용 오픈소스 Python 라이브러리로, 타입 기반 기능 라우팅과 스키마 검증 실행을 제공합니다.
 site_url: https://jdeun.github.io/SchemaRouter/ko/
 docs_dir: .build/docs-ko
 site_dir: site/ko
