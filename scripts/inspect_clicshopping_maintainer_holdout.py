@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +32,13 @@ def _reject_nonfinite(value: str) -> Any:
     raise ValueError(f"nonfinite JSON constant is forbidden: {value}")
 
 
+def _finite_float(token: str) -> float:
+    value = float(token)
+    if not math.isfinite(value):
+        raise ValueError("out-of-range JSON numeric token")
+    return value
+
+
 def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
@@ -49,6 +57,7 @@ def inspect_raw_holdout(
             raw.decode("utf-8", errors="strict"),
             object_pairs_hook=_unique_object,
             parse_constant=_reject_nonfinite,
+            parse_float=_finite_float,
         )
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ValueError(f"invalid UTF-8 JSON source: {exc}") from exc
