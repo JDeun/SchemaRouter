@@ -82,6 +82,7 @@ def _result(manifest, snapshot):
         "index_build_ms": 0,
         "implementation": {
             "name": "SchemaRouter over ServiceNow readonly MCP tools/list",
+            "fixture_reference_revision": manifest["source_revisions"]["schemarouter"],
             "configuration": {
                 "condition": "readonly_plus_schemarouter_preselection",
                 "top_k": 3,
@@ -233,6 +234,8 @@ def _static_result(manifest, snapshot):
         "implementation": {
             "name": "ServiceNow Platform MCP static readonly package",
             "commit": snapshot["source"]["commit"],
+            "fixture_reference_revision": manifest["source_revisions"]["servicenow_platform_mcp"],
+            "package_version": snapshot["source"]["package_version"],
             "configuration": {
                 "condition": "static_readonly",
                 "tool_package": "readonly",
@@ -392,3 +395,23 @@ def test_static_runner_rejects_noninteger_repeats_before_measurement(
     path.write_text(json.dumps(snapshot), encoding="utf-8")
     with pytest.raises(ValueError, match="repeats"):
         static.run(package_dir=tmp_path, snapshot_path=path, repeats=repeats)
+
+
+@pytest.mark.parametrize("mutation", [
+    lambda record: record.pop("fixture_reference_revision"),
+    lambda record: record.update(fixture_reference_revision="0" * 40),
+])
+def test_result_cannot_claim_wrong_source_fixture_revision(mutation):
+    manifest, cases, snapshot = _fixture()
+    submitted = _result(manifest, snapshot)
+    mutation(submitted["implementation"])
+    with pytest.raises(ValueError, match="fixture-reference revision mismatch"):
+        score(manifest, cases, snapshot, submitted)
+
+
+def test_static_runner_version_cannot_disagree_with_native_package():
+    manifest, cases, snapshot = _fixture()
+    submitted = _static_result(manifest, snapshot)
+    submitted["implementation"]["package_version"] = "unrelated-package"
+    with pytest.raises(ValueError, match="static package"):
+        score(manifest, cases, snapshot, submitted)
