@@ -12,7 +12,6 @@ from urllib.parse import urlparse
 
 import yaml
 
-
 ROOT = Path(__file__).resolve().parents[1]
 DOCS_ORIGIN = "https://jdeun.github.io"
 SITE_PREFIX = "/SchemaRouter/"
