@@ -11,57 +11,57 @@ SchemaRouter는 의도적으로 LangChain보다 좁은 범위를 가집니다. �
 > 반환하며 **실행 권한을 부여하지 않습니다.** 연구 근거는 안정 제품의 보장 사항과
 > 별도로 관리합니다. [연구 현황](research/routing-status.md)을 참고하십시오.
 
-| Capability | Current main | Direction |
+| 기능 | 현재 메인 브랜치 상태 | 향후 방향 |
 | --- | --- | --- |
-| Typed tool / endpoint / parameter / field contracts | Implemented | Core invariant |
-| Capability retrieval | First-class deterministic `retrieve` / `aretrieve` + executable-ready variants over registered routes | Add alternate indexes/representations only behind explicit contracts and evidence |
-| Provider-first onboarding | Built-in/local/plugin `ProviderProfile` registry with explicit method/credential/dependency status; Materials Project, Crossref, and Tavily acceptance coverage | Expand provider catalog without adding provider branches to planner |
-| State-aware capability retrieval | Explicit fixed-Top-K filtering plus separate eligible-Top-K corrective backfill over the same visible surface | Keep host state explicit and orchestration authority outside core |
-| Capability dependency graph | Semantic-indexed construction, incremental rebuild, deterministic SCCs, bounded cycle witnesses, sparse 1k/10k/50k benchmark | Add distributed storage only if real registry scale requires it |
-| Capability snapshots / artifacts | Content-addressed snapshots, atomic CAS publication, versioned portable artifacts/snapshot documents, deterministic legacy migration | Add external artifact stores/signing only behind host-owned infrastructure |
-| Unified decision traces | Privacy-safe aggregation of retrieval/eligibility/state/health/drift/policy/constraint/negotiation/fallback/lineage results with CLI/dashboard inspection | Add trusted export sinks without hidden-inventory or payload leakage |
-| Natural-language planning | Deterministic scoring + exact-recall candidate index cached by registry version | Keep planning/execution authority separate from external agent selection |
-| Sync / async invocation | Implemented | Stable public surface |
-| Batch execution | Implemented, including completion-order APIs | Stable public surface |
-| Result streaming | Sequential by default + explicit read-only parallel completion streaming | Keep dependency/DAG semantics out of core |
-| Typed event streaming | Implemented | Extend exporter ecosystem without exposing payloads |
-| Input / output / config schema introspection | Implemented | Keep machine-readable |
-| Retry policy | Read-only gate + explicit non-retryable invocation marker + built-in OpenAPI/OPTIMADE HTTP classification | Extend protocol-specific classifiers only where recovery semantics are well-defined |
-| Python callable tools | Implemented | Improve docstring parameter descriptions |
-| Structured-source adapter registry | Implemented with explicit entry-point plugins | Expand certified third-party adapters |
-| OpenAPI ingestion | Common subset + operation-over-path parameter overrides + default path/query/header serialization + flattened object bodies + generic typed JSON root bodies + discriminator-aware tagged oneOf bodies + schema-less body reporting + spec-ignored header filtering + collision-safe generated operation names + multi-2xx JSON/no-content response validation + local refs + opt-in bounded same-origin cross-document refs + static same-origin $id/$anchor resolution + OpenAPI 3.0 nullable normalization + allOf object flattening + oneOf/anyOf response-field discovery + compatibility report | Keep dynamic refs, non-default parameter styles, and automatic variant selection fail-closed; expand only behind typed contracts |
-| OPTIMADE ingestion and execution | Implemented in v0.2 | Add provider federation / index meta-database traversal |
-| MCP ingestion and execution | Implemented with Streamable HTTP, trusted stdio subprocesses, and caller-owned transport-neutral client factories | Expand OAuth/gateway examples |
-| GraphQL / OData / OpenRPC ingestion | Implemented on current main with native selection/projection or RPC semantics | Extend only where protocol semantics are deterministic |
-| Human-readable API documentation | Grounded proposal flow | Add multi-page/browser discovery |
-| Runtime policy | Category defaults + ordered operation-scoped allow/deny/approval rules + execution budgets | Add external organization policy adapters only behind the trusted local boundary |
-| Runtime JSON Schema validation / projection | Full raw validation + explicit nested object projection paths + trusted server-side field selectors | Add typed array-element projection only if needed |
-| Schema drift analysis | Conservative endpoint/tool compatibility reports; exact fingerprints still gate execution | Add CI/reporting integrations without weakening drift rejection |
-| Planning explanations | Structured score components, field-selection reasons, ignored-argument records, and decision-selection source | Keep explanations structural; never expose model chain-of-thought |
-| In-plan concurrency | Explicit flat `parallel_read_only` fan-out with preflight validation, completion streaming, and shared budgets | Keep DAG/dependency/write orchestration out of core |
-| Provider/access fallback | Precompiled read-only same-provider/cross-provider routes with semantic field compatibility and typed fallback events | Expand provider federation only through explicit contracts |
-| Multi-provider corroboration / aggregation | Explicit cross-provider corroboration plus strict trusted-identifier identity resolution and provenance-preserving scientific observations | Keep fuzzy identity and truth adjudication outside core |
-| Scientific field contracts | Explicit JSON value shape, optional exact units, affine canonical normalization, exact trusted qualifiers, qualifier-aware routing, and fail-closed fallback compatibility | Keep ontology/unit inference outside core; add richer scientific semantics only through explicit trusted contracts |
-| Provider parameter aliases | Trusted exact/alias binding with ambiguity fail-closed behavior and independent fallback compilation | Keep model-generated parameter remapping out of the execution boundary |
-| Access health | Finite passive cooldown + optional trusted background probes with early reopen | Integrate external health sources without model authority |
-| LangChain / LangGraph / LlamaIndex integrations | Implemented optional adapters and native graph node | Expand ecosystem listings |
-| Bounded decision backends | Semantic candidate recall, broad capability-fit, operation-fit, same-tool endpoint disambiguation, candidate/field selection, and conservative evidence-sufficiency surfaces; provider-neutral callable/embedding + optional Jev/Laya/Ollama, all opt-in | Gather live decision evidence and keep model authority bounded |
-| Jev / TypeSafe decision provider | Implemented optional adapter | Gather live workload evidence before claiming quality gains |
-| Local Laya decision provider | Optional local choice adapter with auto language routing, confidence abstention, lazy/preloaded checkpoints, and shared benchmark support | Gather checkpoint/hardware-specific evidence before choosing defaults |
-| Local Ollama decision provider | Implemented over structured-output HTTP API | Benchmark specific local models/hardware before quality claims |
-| Decision benchmark harness | Versioned multilingual stress/calibration/fresh-confirmation corpora, machine-readable freeze/terminal evidence, JSON/CSV/HTML reporting, and an explicit 85/97/100/1 + 250 ms standing target; latest closed cycle has no promoted target candidate | Continue only with preregistered materially new capability evidence and independent fresh confirmation |
-| Framework callbacks / exporters | Typed redacted events + optional OpenTelemetry exporter | Add additional trusted sinks as needed |
-| Middleware interception | Trusted ordered before/after execution hooks with detached snapshots | Add organization-specific hook libraries only when needed |
-| Composition / DAG runtime | Out of scope for core | Integrate with LangGraph rather than duplicate it |
-| Replayable run trace persistence | SQLite append-only event traces + non-executing replay | Add alternate trusted stores/export paths as needed |
-| Persistence / checkpoints | Workflow checkpoints remain out of scope | Delegate orchestration state to LangGraph or another runtime |
-| HTTP serving layer | Not implemented | Consider optional server package |
-| Pluggable registry boundary | `ToolRegistry` protocol + transactional `SQLiteRegistry` | Add distributed/remote implementations only when needed |
-| Release / compatibility policy | Implemented | Enforce during RC reviews |
-| Package artifact CI | Implemented with clean wheel/sdist smoke, public-surface consumer acceptance scenarios, built-wheel optional-extra resolution/import smoke, framework-example execution, provenance, and SPDX SBOM attestations | Keep artifact verification blocking |
-| Security automation | Weekly/PR dependency audit + push/PR/scheduled CodeQL + OpenSSF Scorecard + immutable Action pins | Triage findings without weakening fail-closed runtime policy |
-| Documentation site | Implemented with MkDocs Material | Keep strict docs build blocking |
-| Integration certification suite | Implemented baseline + retained machine-readable OpenAPI/OPTIMADE smoke artifacts | Extend the live compatibility matrix |
+| Typed tool / endpoint / parameter / field contracts | 구현 완료 | 핵심 불변 조건 |
+| Capability retrieval | 등록된 경로에 대한 결정적 `retrieve` / `aretrieve`와 실행 준비 상태 기반 변형을 일급 API로 지원 | 별도 인덱스·표현은 명시적 계약과 근거가 있을 때만 추가 |
+| Provider-first onboarding | 내장·로컬·플러그인 `ProviderProfile` 등록부에서 접근 방법·자격 증명·의존성 상태를 명시적으로 관리하며 Materials Project, Crossref, Tavily 인수 테스트를 지원 | 플래너에 공급자별 분기 코드를 추가하지 않고 공급자 카탈로그 확대 |
+| State-aware capability retrieval | 동일한 가시 후보 집합에서 고정 Top-K 필터링과 적격 Top-K 교정 보충 검색을 구분 | 호스트 상태는 명시적으로 유지하고 오케스트레이션 권한은 코어 밖에 둠 |
+| Capability dependency graph | 의미 인덱스 기반 구축, 증분 재구성, 결정적 SCC, 제한된 순환 증거 및 희소 그래프 1k/10k/50k 벤치마크 지원 | 실제 레지스트리 규모가 요구할 때만 분산 저장소 추가 |
+| Capability snapshots / artifacts | 내용 주소 기반 스냅샷, 원자적 CAS 게시, 버전별 이식 가능한 아티팩트·스냅샷 문서 및 결정적 이전 형식 마이그레이션 지원 | 외부 아티팩트 저장소와 서명은 호스트 소유 인프라가 준비된 경우에만 추가 |
+| Unified decision traces | 검색·적격성·상태·건강·변경·정책·제약·협상·대체·계보 결과를 개인정보 보호 방식으로 집계하고 CLI·대시보드 검사 지원 | 숨겨진 기능 목록이나 페이로드를 유출하지 않는 신뢰된 내보내기 대상 추가 |
+| Natural-language planning | 결정적 점수화와 레지스트리 버전별로 캐시된 정확 재현율 후보 인덱스 | 계획·실행 권한과 외부 에이전트의 선택 권한을 분리 |
+| Sync / async invocation | 구현 완료 | 안정적인 공개 API |
+| Batch execution | 완료 순서대로 결과를 반환하는 API를 포함해 구현 완료 | 안정적인 공개 API |
+| Result streaming | 기본은 순차 실행이며 읽기 전용 병렬 완료 스트리밍은 명시적으로 활성화 | 의존성·DAG 의미 체계는 코어 밖에 유지 |
+| Typed event streaming | 구현 완료 | 페이로드를 노출하지 않고 exporter 생태계 확대 |
+| Input / output / config schema introspection | 구현 완료 | 기계 판독 가능한 형식 유지 |
+| Retry policy | 읽기 전용 게이트, 명시적 재시도 불가 오류 표식 및 내장 OpenAPI/OPTIMADE HTTP 오류 분류 지원 | 복구 의미가 명확한 프로토콜에 한해 오류 분류 확장 |
+| Python callable tools | 구현 완료 | docstring 기반 매개변수 설명 개선 |
+| Structured-source adapter registry | 명시적인 진입점 플러그인을 포함해 구현 완료 | 검증된 타사 어댑터 확대 |
+| OpenAPI ingestion | 일반 지원 범위, 작업 수준 우선 매개변수, 기본 path/query/header 직렬화, 객체 본문 평탄화, 타입이 지정된 JSON 루트 본문, 엄격한 태그 기반 `oneOf` discriminator, 본문 스키마 누락 보고, 명세상 무시하는 헤더 필터링, 이름 충돌을 방지하는 작업 이름 생성, 여러 2xx JSON·본문 없음 응답 검증, 로컬 참조, 명시적 활성화가 필요한 동일 출처 문서 간 참조 제한 해석, 동일 출처 정적 `$id`/`$anchor`, OpenAPI 3.0 nullable 정규화, `allOf` 객체 평탄화, `oneOf`/`anyOf` 응답 필드 탐색 및 호환성 보고 | 동적 참조·기본값 외 매개변수 스타일·자동 변형 선택은 안전하게 거부하고 타입 계약이 마련된 경우에만 확장 |
+| OPTIMADE ingestion and execution | v0.2에서 구현 완료 | 공급자 연합 및 인덱스 메타 데이터베이스 순회 추가 |
+| MCP ingestion and execution | Streamable HTTP, 신뢰된 stdio 하위 프로세스, 호출자 소유 전송 중립 클라이언트 팩토리로 구현 완료 | OAuth·게이트웨이 예제 확대 |
+| GraphQL / OData / OpenRPC ingestion | 각 프로토콜의 고유 선택·투영 또는 RPC 의미를 유지하면서 현재 메인 브랜치에서 구현 완료 | 프로토콜 의미를 결정적으로 정의할 수 있는 범위에서만 확장 |
+| Human-readable API documentation | 근거 확인을 포함한 계약 제안 절차 제공 | 여러 페이지·브라우저 기반 탐색 추가 |
+| Runtime policy | 작업 종류별 기본값, 순서 있는 작업 범위 허용·거부·승인 규칙 및 실행 예산 | 신뢰된 로컬 경계 내에서만 외부 조직 정책 어댑터 추가 |
+| Runtime JSON Schema validation / projection | 원시 응답 전체 검증, 명시적 중첩 객체 투영 경로, 신뢰된 서버 측 필드 선택자 | 필요성이 확인될 때만 타입 기반 배열 요소 투영 추가 |
+| Schema drift analysis | 보수적인 엔드포인트·도구 계약 호환성 보고; 정확한 지문 검사는 계속 실행을 제한 | 변경 거부 경계를 약화하지 않는 CI·보고 연동 추가 |
+| Planning explanations | 구조화된 점수 구성, 필드 선택 사유, 무시한 인자 기록 및 의사결정 선택 출처 | 설명은 구조적으로 제공하되 모델의 숨겨진 추론 과정은 노출하지 않음 |
+| In-plan concurrency | 실행 전 검증, 완료 순서 스트리밍, 공통 예산을 갖춘 명시적 단층 `parallel_read_only` 병렬 호출 | DAG·의존성·쓰기 오케스트레이션은 코어 밖에 유지 |
+| Provider/access fallback | 필드의 의미적 호환성과 타입 기반 대체 이벤트를 갖춘 사전 컴파일된 읽기 전용 동일·교차 공급자 경로 | 공급자 연합은 명시적인 계약 아래에서만 확대 |
+| Multi-provider corroboration / aggregation | 명시적인 공급자 간 상호 검증, 신뢰된 식별자 엄격 일치와 과학적 관측의 출처 보존 | 유사 식별자 추정 및 진위 판단은 코어 밖에 유지 |
+| Scientific field contracts | 명시적 JSON 값 구조, 선택적인 정확한 단위, 아핀 정규 단위 변환, 신뢰된 정확한 한정 조건, 한정 조건 인식 라우팅 및 호환성 미확인 대체 거부 | 온톨로지·단위 추론은 코어 밖에 두고 신뢰된 명시적 계약으로만 과학적 의미 확장 |
+| Provider parameter aliases | 모호하면 거부하는 신뢰된 정확·별칭 바인딩과 독립적인 대체 경로 컴파일 | 모델이 생성한 매개변수 재매핑을 실행 경계에서 허용하지 않음 |
+| Access health | 한정된 수동 쿨다운과 조기 복구할 수 있는 선택적 신뢰 상태 프로브 | 모델에 권한을 주지 않고 외부 건강 상태 소스 연동 |
+| LangChain / LangGraph / LlamaIndex integrations | 선택적 어댑터와 네이티브 그래프 노드 구현 완료 | 생태계 목록 등재 확대 |
+| Bounded decision backends | 의미 기반 후보 재현율, 광범위 기능 적합성, 작업 적합성, 같은 도구의 엔드포인트 구분, 후보·필드 선택, 보수적 근거 충분성 판단을 지원하며 공급자 중립 callable·embedding 및 선택적 Jev/Laya/Ollama는 모두 명시적 활성화 방식 | 실제 의사결정 실험 근거를 수집하되 모델 권한은 제한 |
+| Jev / TypeSafe decision provider | 선택적 어댑터 구현 완료 | 품질 개선을 주장하기 전에 실제 작업 부하의 근거 수집 |
+| Local Laya decision provider | 언어별 체크포인트 자동 선택, 신뢰도 기준 선택 보류, 지연·사전 적재 및 공통 벤치마크를 갖춘 선택적 로컬 선택 어댑터 | 기본값 결정 전 체크포인트·하드웨어별 근거 수집 |
+| Local Ollama decision provider | 구조화 출력 HTTP API를 사용해 구현 완료 | 품질 주장 전 구체적인 로컬 모델·하드웨어 벤치마크 |
+| Decision benchmark harness | 버전별 다국어 스트레스·보정·신규 확인 코퍼스, 기계 판독형 동결·종결 근거, JSON/CSV/HTML 보고 및 명시적인 85/97/100/1 + 250 ms 상시 목표; 최근 종료된 실험 주기에서 승격된 목표 후보 없음 | 실질적으로 새로운 기능의 사전 등록된 근거와 독립적인 신규 확인에 한해 후속 연구 |
+| Framework callbacks / exporters | 민감 정보를 가린 타입 이벤트와 선택적 OpenTelemetry exporter | 필요한 경우 신뢰된 수신 대상 추가 |
+| Middleware interception | 분리된 스냅샷을 받는 순서 있는 신뢰된 실행 전·후 훅 | 필요한 경우에만 조직별 훅 라이브러리 추가 |
+| Composition / DAG runtime | 코어 범위 밖 | 중복 구현 대신 LangGraph와 연동 |
+| Replayable run trace persistence | SQLite 추가 전용 이벤트 추적 및 실행 없는 재생 | 신뢰된 대체 저장소·내보내기 경로 추가 |
+| Persistence / checkpoints | 워크플로 체크포인트는 범위 밖 | 오케스트레이션 상태를 LangGraph 등 외부 런타임에 위임 |
+| HTTP serving layer | 미구현 | 선택적 서버 패키지 검토 |
+| Pluggable registry boundary | `ToolRegistry` 프로토콜과 트랜잭션형 `SQLiteRegistry` | 필요한 경우에만 분산·원격 구현 추가 |
+| Release / compatibility policy | 구현 완료 | 출시 후보(RC) 검토 시 정책 강제 |
+| Package artifact CI | 깨끗한 wheel/sdist 스모크, 공개 API 관점의 소비자 인수 테스트, 빌드된 wheel의 선택적 의존성 해결·임포트 스모크, 프레임워크 예제 실행, 출처 증명 및 SPDX SBOM 증명 구현 | 아티팩트 검증을 필수 차단 검사로 유지 |
+| Security automation | 주간·PR 의존성 감사, push·PR·예약 CodeQL, OpenSSF Scorecard 및 변경 불가능한 Actions SHA 고정 | 런타임의 안전 거부 정책을 약화하지 않고 발견 사항 처리 |
+| Documentation site | MkDocs Material로 구현 완료 | 엄격한 문서 빌드를 필수 차단 검사로 유지 |
+| Integration certification suite | 공개 OpenAPI/OPTIMADE 스모크의 기계 판독형 아티팩트를 보존하는 기본 검증 구현 | 실제 호환성 매트릭스 확장 |
 
 ## 성숙한 framework에서 가져와야 할 것
 

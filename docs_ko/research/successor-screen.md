@@ -42,6 +42,8 @@ Exact revisions:
 
 `select_runtime` in `scripts/qualify_agent_utility_runtime.py`가 public selection boundary입니다. Bare rate dictionary를 받지 않습니다. 모든 candidate는 frozen qualification corpus에 연결된 provenance-bearing evidence를 제공해야 하며 evidence class, surface identity, exact corpus task hash, exact source/harness revision, pinned model revision, exact episode count, complete frozen task-ID set을 검증한 뒤 ordered-roster rule을 적용합니다.
 
+비율 수치만 입력받는 선택기는 **비공개(private)**이며, 동결된 후보 순서 규칙을 단위 테스트하는 데에만 사용합니다. 실제 런타임 선택은 검증 가능한 provenance를 갖춘 완전한 평가 증거를 통해서만 이뤄집니다.
+
 Qualification은 자체 frozen surface를 가집니다. `scripts/generate_agent_utility_v8_qualification_corpus.py`가 projection-stratum/language pair마다 한 task, 총 36 episodes를 생성하며 `SR-5`와 `RAW-FULL`로 고정합니다. #506/successor screen과 exact query string을 공유하지 않습니다. Artifact는 instrument evidence일 뿐 projection evidence가 아닙니다.
 
 Workflow는 `.github/workflows/research-0.14-runtime-qualification.yml`입니다. Candidate execution 전에 corpus를 generate/validate하고 exact candidate revision 및 frozen source/harness identity를 기록하며 complete provenance-bearing evidence를 `select_runtime`에 전달합니다. Ad-hoc row나 rate comparison 재구현은 invalid입니다.

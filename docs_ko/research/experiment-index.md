@@ -63,6 +63,11 @@ Repository Git history는 계속 exhaustive engineering record 역할을 합니�
 | [`decision-routing-v12-operation-contrastive-holdout.json`](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/decision-routing-v12-operation-contrastive-holdout.json) | 과거 라우팅·홀드아웃 실험 계보로서 Git 이력과 이후 연구 통제 기록에 보존 |
 | [`decision-routing-v13-operation-contrastive-holdout.json`](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/decision-routing-v13-operation-contrastive-holdout.json) | 과거 라우팅·홀드아웃 실험 계보로서 Git 이력과 이후 연구 통제 기록에 보존 |
 
+> **가설 원문 보존 안내:** 아래 실험 색인의 `가설 / 목적` 열에서 영어로 표시된 문장은
+> 기계 판독형 실험 원장의 원래 가설·목적 문구를 변경하지 않고 보존한 것입니다.
+> 해당 영문은 번역 완료를 의미하지 않으며, 연구 판정의 정확한 의미는 연결된 원장 및
+> 근거 커밋을 확인해야 합니다. 일반 설명의 번역 누락과는 별도로 관리합니다.
+
 ## Legacy / pre-cycle
 
 | # | 실험 | 판정 | 가설 / 목적 | 근거 |
