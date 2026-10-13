@@ -56,7 +56,8 @@ def validate_selective_execution(
     # Check identity before interpreting the score. model_copy(update=...)
     # may bypass Pydantic validation of the trusted host's plan envelope.
     if (
-        type(retrieval.registry_version) is not int
+        retrieval.executable_only is not True
+        or type(retrieval.registry_version) is not int
         or type(plan.registry_version) is not int
         or retrieval.registry_version != registry_version
         or plan.registry_version != registry_version
@@ -64,7 +65,7 @@ def validate_selective_execution(
         or not retrieval.query.strip()
         or plan.query != retrieval.query
     ):
-        _deny("stale registry or mismatched query/plan provenance")
+        _deny("non-executable retrieval, stale registry or mismatched query/plan provenance")
 
     decision = apply_retrieval_abstention(retrieval, policy=policy)
     if decision.abstained or not decision.candidates:
