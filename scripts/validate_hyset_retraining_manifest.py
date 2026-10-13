@@ -65,7 +65,13 @@ def _training_configuration(training: dict[str, Any]) -> None:
     ):
         raise ValueError("encoder type/d_z must match documented HYSET configurations")
     eta = configuration["eta"]
-    if type(eta) not in (int, float) or not math.isfinite(eta):
+    if type(eta) not in (int, float):
+        raise ValueError("eta must be numeric, finite and preregistered")
+    try:
+        eta_finite = math.isfinite(eta)
+    except OverflowError:
+        eta_finite = False
+    if not eta_finite:
         raise ValueError("eta must be numeric, finite and preregistered")
     if (
         type(configuration["command"]) is not str
@@ -195,6 +201,26 @@ def validate_manifest(manifest: Any, *, stage: str = "development") -> dict[str,
     }
 
 
+def load_manifest(path: Path) -> Any:
+    """Read untrusted JSON without silent duplicate-key or NaN acceptance."""
+    def reject_duplicate_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        output: dict[str, Any] = {}
+        for name, value in pairs:
+            if name in output:
+                raise ValueError(f"duplicate HYSET manifest key: {name}")
+            output[name] = value
+        return output
+
+    def reject_nonfinite_constant(value: str) -> None:
+        raise ValueError(f"invalid nonfinite HYSET manifest constant: {value}")
+
+    return json.loads(
+        path.read_text(encoding="utf-8"),
+        object_pairs_hook=reject_duplicate_pairs,
+        parse_constant=reject_nonfinite_constant,
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -206,7 +232,7 @@ def main() -> None:
         default="development",
     )
     args = parser.parse_args()
-    payload = json.loads(args.manifest.read_text(encoding="utf-8"))
+    payload = load_manifest(args.manifest)
     print(json.dumps(validate_manifest(payload, stage=args.stage), indent=2))
 
 
