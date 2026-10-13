@@ -8,6 +8,8 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import shlex
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
@@ -49,6 +51,52 @@ def _literal_true(value: Any, label: str) -> None:
         raise ValueError(f"{label}: must be literal true")
 
 
+def _training_command_options(command: str) -> dict[str, str]:
+    """Parse a public train_hyset.sh argv, not a shell program or prose."""
+    try:
+        argv = shlex.split(command)
+    except ValueError as exc:
+        raise ValueError("malformed native train_hyset.sh command") from exc
+    if not argv or argv[0] not in {"train_hyset.sh", "./train_hyset.sh"}:
+        raise ValueError("invoke the pinned train_hyset.sh script directly")
+    allowed = {
+        "--encoder", "--encoder_type", "--d_z", "--m_max",
+        "--val_fraction", "--val_limit", "--checkpoint_dir",
+        "--reward_cache", "--reward_subset", "--reward_refresh_steps",
+        "--reward_refreshes", "--k_neg", "--hard_neighbor_k",
+        "--k1", "--k_pool", "--eta", "--lambda_interaction",
+        "--lr", "--warmup_ratio", "--batch_size", "--encode_batch_size",
+        "--epochs", "--patience", "--seed", "--device",
+    }
+    options: dict[str, str] = {}
+    index = 1
+    while index < len(argv):
+        token = argv[index]
+        if not token.startswith("--"):
+            raise ValueError("HYSET command contains a shell operator or stray argument")
+        if "=" in token:
+            flag, value = token.split("=", 1)
+        else:
+            flag = token
+            index += 1
+            if index >= len(argv):
+                raise ValueError("HYSET command option has no value")
+            value = argv[index]
+        if (
+            flag not in allowed
+            or flag in options
+            or not value.strip()
+            or value.startswith("--")
+        ):
+            raise ValueError("unknown, duplicate or empty HYSET training option")
+        options[flag] = value
+        index += 1
+    for flag in ("--encoder_type", "--d_z", "--seed", "--eta"):
+        if flag not in options:
+            raise ValueError(f"explicit {flag} required in native training command")
+    return options
+
+
 def _training_configuration(training: dict[str, Any]) -> None:
     configuration = _object(
         training["primary_configuration"],
@@ -73,21 +121,34 @@ def _training_configuration(training: dict[str, Any]) -> None:
         eta_finite = False
     if not eta_finite:
         raise ValueError("eta must be numeric, finite and preregistered")
-    if (
-        type(configuration["command"]) is not str
-        or not configuration["command"].strip()
-        or "train_hyset.sh" not in configuration["command"]
-    ):
+    if type(configuration["command"]) is not str:
         raise ValueError("pinned public train_hyset.sh invocation is required")
+    options = _training_command_options(configuration["command"])
+    if (
+        options["--encoder_type"] != model
+        or options["--d_z"] != str(configuration["d_z"])
+        or options["--seed"] != str(training["seed"])
+    ):
+        raise ValueError("native training command must match encoder, d_z and seed")
+    try:
+        command_eta = Decimal(options["--eta"])
+    except InvalidOperation as exc:
+        raise ValueError("invalid explicit --eta in training command") from exc
+    if not command_eta.is_finite() or command_eta != Decimal(str(eta)):
+        raise ValueError("native --eta does not match declared training configuration")
     if eta == 0:
         if configuration["mode"] != "annotation_only_eta0":
             raise ValueError("eta=0 requires explicit annotation-only ablation label")
         if training["reward_cache_digest"] is not None:
             raise ValueError("eta=0 must not claim an execution reward cache")
+        if "--reward_cache" in options:
+            raise ValueError("eta=0 command must not load a reward cache")
     elif eta == 0.3:
         if configuration["mode"] != "execution_reward_eta03":
             raise ValueError("eta=0.3 must explicitly identify execution-reward training")
         _sha(training["reward_cache_digest"], 64, "reward cache")
+        if not options.get("--reward_cache"):
+            raise ValueError("eta=0.3 command must declare a reward cache")
     else:
         raise ValueError("eta must be the preregistered 0.3 or annotation-only 0")
 
