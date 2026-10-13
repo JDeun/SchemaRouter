@@ -898,8 +898,8 @@
     {
       "path": "integrations/microsoft-foundry-http-adapter.md",
       "en_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567",
-      "ko_blob": "419640d4fcc8667d82c15d223d0c4d747395219d",
-      "notes": "2026-10-13 AI-contributor full EN/KO source comparison for opt-in Microsoft Foundry HTTP adapter documentation. Preserves provider deployment-name and TypeSafe transport difference, HTTPS/key consent and billing, choice-only finite IDs with explicit none_of_above, uncalibrated score=None, bounded 1-MiB request/response handling, no live provider evidence, no change to frozen #432/#424 research. Korean examples are localized/summarized rather than literal line-by-line translations; not independent human certification. 2026-10-14: restored the missing Korean verification-scope heading to match EN document hierarchy; paired safety statements unchanged."
+      "ko_blob": "b1461fc32d412f4be8909e2fb98f794461f367d8",
+      "notes": "2026-10-13 AI-contributor full EN/KO source comparison for opt-in Microsoft Foundry HTTP adapter documentation. Preserves provider deployment-name and TypeSafe transport difference, HTTPS/key consent and billing, choice-only finite IDs with explicit none_of_above, uncalibrated score=None, bounded 1-MiB request/response handling, no live provider evidence, no change to frozen #432/#424 research. Korean examples are localized/summarized rather than literal line-by-line translations; not independent human certification. 2026-10-14: restored the missing Korean verification-scope heading to match EN document hierarchy; paired safety statements unchanged. 2026-10-14 paired addition: explicit mock header/criteria/privacy/error assertions, authentic-provider validation and independent cohort blockers, with 0.14 frozen boundary unchanged."
     }
   ],
   "separately_inspected_pending_pr": [
@@ -933,6 +933,14 @@
       "current_ko_blob": "419640d4fcc8667d82c15d223d0c4d747395219d",
       "independent_sentence_review_complete": false,
       "reviewer_status": "AI project contributor; not independent human or third-party sign-off"
+    },
+    {
+      "review_date": "2026-10-14",
+      "path": "integrations/microsoft-foundry-http-adapter.md",
+      "scope": "Korean verification-scope section expanded to match English provider-testing limitations, live wire uncertainty and execution/no-match boundaries; no API call or billing.",
+      "prior_ko_blob": "419640d4fcc8667d82c15d223d0c4d747395219d",
+      "current_ko_blob": "b1461fc32d412f4be8909e2fb98f794461f367d8",
+      "independent_sentence_review_complete": false
     }
   ]
 }
