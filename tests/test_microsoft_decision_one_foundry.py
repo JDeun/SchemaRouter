@@ -310,3 +310,56 @@ def test_foundry_supports_bearer_without_api_key_header():
     assert result.abstained
     assert requests[0].headers["authorization"] == "Bearer fake-entra-token"
     assert "api-key" not in requests[0].headers
+
+
+
+def test_foundry_rejects_only_no_fit_without_spending_a_request() -> None:
+    backend, client, requests = backend_with_payload(valid_payload())
+    only_no_fit = DecisionRequest(
+        query="Perform an operation",
+        options=[DecisionOption(
+            id="none_of_above", description="No supported operation",
+        )],
+    )
+    try:
+        with pytest.raises(ValueError, match="actionable option"):
+            choose_sync(backend, only_no_fit)
+        assert requests == []
+    finally:
+        client.close()
+
+
+@pytest.mark.parametrize(("mutation", "message"), [
+    (
+        {"options": [
+            DecisionOption(id="orders_lookup"),
+            DecisionOption(id="orders_lookup"),
+            DecisionOption(id="none_of_above"),
+        ]},
+        "invalid choice options",
+    ),
+    (
+        {"options": [
+            {"id": True, "description": "forged route"},
+            {"id": "none_of_above"},
+        ]},
+        "invalid choice options",
+    ),
+    (
+        {"options": ["orders_lookup", "none_of_above"]},
+        "invalid choice options",
+    ),
+    ({"max_selections": True}, "invalid choice options"),
+    ({"query": "   "}, "nonblank"),
+])
+def test_foundry_forged_pydantic_copy_fails_before_paid_io(
+    mutation: dict[str, Any], message: str,
+) -> None:
+    backend, client, requests = backend_with_payload(valid_payload())
+    unvalidated = decision_request().model_copy(update=mutation)
+    try:
+        with pytest.raises(ValueError, match=message):
+            choose_sync(backend, unvalidated)
+        assert requests == []
+    finally:
+        client.close()
