@@ -73,6 +73,15 @@ backend = LayaDecisionBackend(min_confidence=0.70)
 
 SchemaRouter는 confidence-based abstention 전에 returned option ID를 검사하므로 unknown option은 low confidence여도 fail-closed합니다. Confidence는 execution authority가 아니라 provider/model evidence이며 operational threshold로 사용하기 전에 실제 workload에서 calibration해야 합니다.
 
+Laya wire response는 `choice` primitive를 명시해야 하고, option ID는 실제 문자열,
+confidence는 0~1 범위의 유한한 숫자(Boolean 제외)여야 합니다.
+숫자·Boolean ID를 문자열로 강제 변환하거나 문자열 confidence를 숫자로 해석하지 않습니다.
+등록된 유한 option ID만 선택할 수 있고, `noul`·`score` 응답을
+`choice`처럼 취급하지 않으며 잘못된 응답은 fail-closed합니다.
+Boolean usage token count를 숫자 근거로 기록하지 않습니다.
+`preload`, `async_mode`, `include_context` 설정은 truthy 문자열이 아닌
+실제 Boolean 값이어야 합니다.
+
 ## Trust boundary
 
 - locally authorized finite option ID만 노출
