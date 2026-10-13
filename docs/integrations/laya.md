@@ -128,6 +128,15 @@ therefore fails closed even when Laya reports low confidence.
 Confidence is provider/model evidence, not execution authority. It should be calibrated on the
 actual workload before it is used as an operational threshold.
 
+Laya wire responses must explicitly identify the `choice` primitive, return an
+**actual string** option ID and a **finite numeric (non-Boolean)** confidence
+between 0 and 1. Stringifying a provider-supplied integer/Boolean ID or parsing
+a textual confidence is not accepted: only the previously authorized finite
+IDs may be selected. Non-`choice` responses fail closed; they are not silently
+treated as equivalent to `noul` or `score`. Boolean usage token counts are not
+recorded as numeric evidence. Configuration flags `preload`, `async_mode`
+and `include_context` must be real Booleans, not truthy strings.
+
 ## Trust boundary
 
 The adapter preserves the same bounded-decision invariants as the Jev and Ollama integrations:
