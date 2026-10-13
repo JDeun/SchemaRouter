@@ -65,3 +65,49 @@ output-field labels from ToolBench.
 4. Keep HYSET-native and SchemaRouter-native metrics separately named; only
    directly comparable tool-retrieval metrics may share a table.
 5. Pin all newly downloaded model/data revisions before the first scored run.
+
+## Offline preflight before any training or evaluation
+
+The pinned upstream commit was checked against the actual upstream tree.
+Its **six** immutable ID-file paths are explicitly listed in the development
+manifest (G1 category/instruction/tool; G2 category/instruction; G3
+instruction). The similarly named `external/stabletoolbench/` paths are
+not substitutes for the six source-pinned `data/test_query_ids/` paths.
+
+Use the standard-library-only validator to inspect the current draft:
+
+```bash
+python -m scripts.validate_hyset_retraining_manifest --stage development
+```
+
+It reports `DEVELOPMENT_UNSCORED` and `scoring_authorized=false` without
+loading HYSET/ToolGen weights, downloading ToolBench or executing evaluation.
+
+After **independently pinning** the exact encoder 40-hex revision, ToolBench
+source revision and SHA-256, registering the seed-42 original train command
+and making the manifest explicitly `frozen_pre_scoring`, use:
+
+```bash
+python -m scripts.validate_hyset_retraining_manifest --stage training
+```
+
+The script requires that Qwen `d_z=1536` or BERT `d_z=768` is declared.
+For `eta=0.3`, a reproducible execution reward-cache SHA-256 and explicit
+`execution_reward_eta03` label are mandatory. For an annotation-only
+`eta=0` ablation, the cache must be absent and label
+`annotation_only_eta0` is required. Mixed or implicit configurations fail.
+
+Once actual independent retraining has finished, a separate
+`training.checkpoint_sha256` is required for
+`--stage evaluation`. The validator also rejects wrong split paths,
+claims about the unavailable paper checkpoint, held-out tuning,
+duplicate JSON keys and nonfinite configuration inputs.
+
+**This is only an input-readiness checker.** Its output always has
+`scoring_authorized=false` and `independent_reviewer_approved=false`:
+neither an upstream code pin nor six file names authenticate downloaded
+dataset bytes, independently certify test/train exclusion, prove the model
+was trained, or authorize evaluation. A separate independent review,
+actual data verification, checkpoint/command logs and prospective study
+freeze are still required. Current committed manifest intentionally fails
+training/evaluation readiness.
