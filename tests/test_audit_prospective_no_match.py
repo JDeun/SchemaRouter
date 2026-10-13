@@ -154,3 +154,68 @@ def test_forbidden_exposure_and_supported_miss_are_reported_not_hidden():
     assert result["counts"]["forbidden_selected_exposure"] == 1
     assert result["counts"]["supported_selected_hit"] == 1
     assert result["counts"]["abstained"] == 0
+
+
+
+def test_prospective_audit_reports_all_required_tools_not_just_any_hit():
+    plan, cases, observations, old = fixture()
+    ranked = observations["rows"][0]["retrieval"]["candidates"]
+    assert len(ranked) == 2
+    cases["cases"][0]["expected_routes"] = [
+        candidate["route_id"] for candidate in ranked
+    ]
+    plan["case_sha256"] = canonical_sha(cases)
+    observations["case_sha256"] = plan["case_sha256"]
+    observations["plan_sha256"] = canonical_sha(plan)
+    report = audit(plan, cases, observations, old)
+    assert report["counts"]["supported_raw_hit"] == 1
+    assert report["counts"]["supported_raw_full_coverage"] == 1
+    assert report["counts"]["supported_selected_full_coverage"] == 0
+    assert report["counts"]["supported_full_coverage_lost"] == 1
+
+
+@pytest.mark.parametrize(("field", "replacement", "error"), [
+    ("registry_version", 99, "mixed registry version"),
+    ("executable_only", True, "mixed registry version"),
+])
+def test_no_match_audit_rejects_mixed_registry_or_authorization_scope(
+    field, replacement, error,
+):
+    plan, cases, observations, old = fixture()
+    observations["rows"][1]["retrieval"][field] = replacement
+    with pytest.raises(ValueError, match=error):
+        audit(plan, cases, observations, old)
+
+
+def test_no_match_audit_records_consistent_retrieval_scope_without_auth_claim():
+    plan, cases, observations, old = fixture()
+    for row in observations["rows"]:
+        row["retrieval"]["executable_only"] = True
+    report = audit(plan, cases, observations, old)
+    assert report["observed_executable_only"] is True
+    assert report["observed_registry_version"] == (
+        observations["rows"][0]["retrieval"]["registry_version"]
+    )
+    assert report["approved"] is False
+
+
+@pytest.mark.parametrize("mutation", [
+    lambda row: row["candidates"][0].update(
+        endpoint_fingerprint=""
+    ),
+    lambda row: row["candidates"][0].update(
+        score=float("nan")
+    ),
+])
+def test_untrusted_scored_rankings_cannot_be_counted_as_abstentions(mutation):
+    plan, cases, observations, old = fixture()
+    mutation(observations["rows"][0]["retrieval"])
+    with pytest.raises(ValueError, match="untrusted ranking evidence"):
+        audit(plan, cases, observations, old)
+
+
+def test_no_match_audit_large_latency_fails_without_uncaught_overflow():
+    plan, cases, observations, old = fixture()
+    observations["rows"][0]["retrieval_ms"] = 10 ** 1000
+    with pytest.raises(ValueError, match="observed latency"):
+        audit(plan, cases, observations, old)
