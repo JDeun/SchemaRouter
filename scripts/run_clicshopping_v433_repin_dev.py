@@ -26,6 +26,15 @@ from scripts.run_clicshopping_v433_dev import (
     eligible_catalog as historical_eligible_catalog,
 )
 from scripts.validate_clicshopping_v433_inventory import validate_inventory
+from scripts.verify_clicshopping_v433_repin import (
+    NEW_PAGE,
+    NEW_PAGE_SHA,
+    NEW_ROUTE_SHA,
+    OLD_ROUTE_SHA,
+    ORDER_READ,
+    ORDER_WRITE,
+    ROUTE_PATH,
+)
 
 PIN_NEW = "8ada7f1f392f3dd2800e825dac8d245dfd53944a"
 PIN_OLD = "3bac851759234a4babb49d3f351e472cd9e0f31f"
@@ -69,21 +78,53 @@ def pin_new_inventory(old: dict, transition: dict) -> dict:
             or transition.get("historical_dev_pin") != PIN_OLD
             or transition.get("new_source_pin") != PIN_NEW):
         raise ValueError("source revision transition mismatch")
-    safety = transition["source_verification"]
-    if (safety.get("heldout_approved") is not False
-            or safety.get("offline_only") is not True
-            or safety.get("live_endpoint_calls") != 0
-            or safety.get("model_calls") != 0):
+    safety = transition.get("source_verification")
+    if (
+        not isinstance(safety, dict)
+        or safety.get("heldout_approved") is not False
+        or safety.get("offline_only") is not True
+        or safety.get("credential_use") is not False
+        or safety.get("php_execution") is not False
+        or safety.get("official_model_scored") is not False
+        or type(safety.get("live_endpoint_calls")) is not int
+        or safety["live_endpoint_calls"] != 0
+        or type(safety.get("model_calls")) is not int
+        or safety["model_calls"] != 0
+    ):
         raise ValueError("unapproved evidence level or live data usage")
+    before, after = transition.get("route_before"), transition.get("route_after")
+    if (
+        not isinstance(before, dict)
+        or not isinstance(after, dict)
+        or before.get("path") != ROUTE_PATH
+        or after.get("path") != ROUTE_PATH
+        or before.get("git_blob_sha") != OLD_ROUTE_SHA
+        or after.get("git_blob_sha") != NEW_ROUTE_SHA
+        or before.get("customer_orders") != r"Sites\Shop\Pages\customerOrders"
+        or after.get("customer_orders") != r"Sites\Shop\Pages\CustomerOrders"
+    ):
+        raise ValueError("repinned customerOrders router identity mismatch")
     target = deepcopy(old)
     target["upstream"]["commit"] = PIN_NEW
     orders = target["endpoints"]["customerOrders"]
     if (orders["status"] != "permissions_only_unverified_endpoint"
             or orders["page_source"]["present"] is not False):
         raise ValueError("historical customerOrders absence cannot be rewritten")
-    details = transition["new_customer_orders_page"]
-    if (set(details["read_actions"]) != set(orders["read_actions"])
-            or set(details["write_actions"]) != set(orders["write_actions"])):
+    details = transition.get("new_customer_orders_page")
+    if (
+        not isinstance(details, dict)
+        or details.get("path") != NEW_PAGE
+        or details.get("git_blob_sha") != NEW_PAGE_SHA
+        or details.get("read_actions") != sorted(ORDER_READ)
+        or details.get("write_actions") != sorted(ORDER_WRITE)
+    ):
+        # Do not allow a page or blob supplied by a modified development
+        # manifest to be described as verified without re-auditing upstream.
+        raise ValueError("repinned customerOrders page source identity mismatch")
+    if (
+        set(details["read_actions"]) != set(orders["read_actions"])
+        or set(details["write_actions"]) != set(orders["write_actions"])
+    ):
         raise ValueError("new dispatch does not match historical permission actions")
     orders["page_source"] = {
         "path": details["path"],
@@ -112,9 +153,18 @@ def validate_repin_cases(fixture: dict, original: dict, prospect: dict) -> None:
             != "new_visible_development_cases_not_independent_confirmation"
             or fixture.get("independent_cases") is not False):
         raise ValueError("prospective cases lack accurate provenance")
-    if (fixture.get("top_k") != original["protocol"]["top_k"]
-            or fixture.get("hot_repeats") != original["protocol"]["hot_repeats"]
-            or fixture.get("model_calls") != 0 or fixture.get("live_requests") != 0):
+    if (
+        type(fixture.get("top_k")) is not int
+        or type(fixture.get("hot_repeats")) is not int
+        or fixture["top_k"] < 1
+        or fixture["hot_repeats"] < 1
+        or fixture["top_k"] != original["protocol"]["top_k"]
+        or fixture["hot_repeats"] != original["protocol"]["hot_repeats"]
+        or type(fixture.get("model_calls")) is not int
+        or fixture["model_calls"] != 0
+        or type(fixture.get("live_requests")) is not int
+        or fixture["live_requests"] != 0
+    ):
         raise ValueError("development measurement protocol changed")
     ids: set[str] = set()
     counts = {"supported": 0, "forbidden": 0, "unsupported": 0, "ambiguous": 0}
@@ -130,12 +180,26 @@ def validate_repin_cases(fixture: dict, original: dict, prospect: dict) -> None:
             raise ValueError("invalid prospective case label")
         counts[label] += 1
         role = original["roles"].get(case["role"])
-        if role is None:
-            raise ValueError("unknown frozen role")
+        if (
+            not isinstance(role, dict)
+            or any(type(grant) is not bool for grant in role.values())
+        ):
+            raise ValueError("unknown or malformed frozen role")
         catalog = {x["route"] for x in eligible_catalog(prospect, role)}
         required = case.get("required_routes", [])
         forbidden = case.get("forbidden_routes", [])
         ambiguous = case.get("ambiguous_routes", [])
+        for kind, entries in (
+            ("required", required),
+            ("forbidden", forbidden),
+            ("ambiguous", ambiguous),
+        ):
+            if (
+                not isinstance(entries, list)
+                or any(not isinstance(x, str) or not x.strip() for x in entries)
+                or len(set(entries)) != len(entries)
+            ):
+                raise ValueError(f"invalid or duplicated {kind} route labels")
         if label == "supported":
             if len(required) != 1 or required[0] not in catalog:
                 raise ValueError("supported route is not source-verified and eligible")
