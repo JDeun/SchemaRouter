@@ -440,3 +440,41 @@ def test_dynamic_cross_argument_binding_denies_mismatched_action_target() -> Non
     assert not gate.check(
         "refund_issue", {"charge_id": "", "target_id": ""}
     ).allowed
+
+
+
+@pytest.mark.parametrize("forged_success", [
+    "false", "true", 1, 0, None, [], {},
+])
+def test_truthy_or_non_boolean_success_cannot_reauthorize_stale_evidence(
+    forged_success: object,
+) -> None:
+    # Dataclass annotations alone do not enforce runtime types.
+    gate = _gate()
+    fields = frozenset({"amount", "owner"})
+    gate.observe(Observation("charge_read", "C2", fields, successful=True))
+    assert gate.check("refund_issue").allowed
+
+    calls: list[object] = []
+    with pytest.raises(ValueError, match="real boolean"):
+        gate.observe(Observation(
+            "charge_read", "C2", fields, successful=forged_success,
+        ))
+    # A malformed later read must revoke the earlier successful credit,
+    # rather than silently keeping authorization after a forged status.
+    assert not gate.check("refund_issue").allowed
+    with pytest.raises(PermissionError, match="evidence incomplete"):
+        gate.dispatch(
+            "refund_issue", {"charge_id": "C2"},
+            lambda *_args: calls.append("unsafe-call"),
+        )
+    assert calls == []
+
+
+def test_explicit_failed_observation_remains_valid_and_revokes_record():
+    gate = _gate()
+    fields = frozenset({"amount", "owner"})
+    gate.observe(Observation("charge_read", "C2", fields, successful=True))
+    assert gate.check("refund_issue").allowed
+    gate.observe(Observation("charge_read", "C2", fields, successful=False))
+    assert not gate.check("refund_issue").allowed
