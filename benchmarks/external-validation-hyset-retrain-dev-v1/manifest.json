@@ -17,13 +17,22 @@
   "data": {
     "toolbench_source_revision": null,
     "toolbench_digest": null,
-    "heldout_split_ids": "six data/test_query_ids/*_test_query_ids.json files at pinned HYSET commit"
+    "heldout_split_ids": "six data/test_query_ids/*_test_query_ids.json files at pinned HYSET commit",
+    "heldout_split_paths": [
+      "data/test_query_ids/G1_category_test_query_ids.json",
+      "data/test_query_ids/G1_instruction_test_query_ids.json",
+      "data/test_query_ids/G1_tool_test_query_ids.json",
+      "data/test_query_ids/G2_category_test_query_ids.json",
+      "data/test_query_ids/G2_instruction_test_query_ids.json",
+      "data/test_query_ids/G3_instruction_test_query_ids.json"
+    ]
   },
   "training": {
     "seed": 42,
     "primary_configuration": null,
     "reward_cache_digest": null,
-    "annotation_only_eta0_allowed_if_reward_cache_not_publicly_reproducible": true
+    "annotation_only_eta0_allowed_if_reward_cache_not_publicly_reproducible": true,
+    "checkpoint_sha256": null
   },
   "governance": {
     "paper_checkpoint_reproduction_claim_allowed": false,
