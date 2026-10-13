@@ -57,7 +57,11 @@ def fixture():
             ],
         )
     )
-    retrieval = router.retrieve("Search research papers", k=2)
+    # The runner fixture deliberately simulates the host's previously scoped
+    # executable-only result; no real endpoint binding or execution occurs.
+    retrieval = router.retrieve("Search research papers", k=2).model_copy(
+        update={"executable_only": True}
+    )
     assert len(retrieval.candidates) == 2
     candidate = retrieval.candidates[0]
     call = ToolCall(
@@ -342,3 +346,16 @@ async def test_atomic_selective_workflow_rejects_invalid_k_before_any_call(k):
             policy=RetrievalAbstentionPolicy(min_score=-1e8),
         )
     assert router.events == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("scope_flag", [False, 1, "true", None])
+async def test_non_executable_or_forged_scope_never_dispatches(scope_flag):
+    retrieval, plan, sink = fixture()
+    retrieval = retrieval.model_copy(update={"executable_only": scope_flag})
+    with pytest.raises(PolicyViolationError, match="non-executable retrieval"):
+        await execute_selective_plan(
+            sink, retrieval, plan,
+            policy=RetrievalAbstentionPolicy(min_score=-1e8),
+        )
+    assert sink.dispatched == []
