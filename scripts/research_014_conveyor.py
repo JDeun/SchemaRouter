@@ -141,14 +141,31 @@ class GitHubAPI:
                 **({"Content-Type": "application/json"} if body is not None else {}),
             },
         )
-        try:
-            with self._opener.open(request) as response:
-                return response.status, response.read()
-        except urllib.error.HTTPError as exc:
-            detail = exc.read().decode("utf-8", errors="replace")
-            raise RuntimeError(
-                f"GitHub API {method} {url} failed: {exc.code} {detail}"
-            ) from exc
+        # GitHub may transiently return 5xx while paginating large Actions
+        # job inventories. Retry only idempotent reads: replaying POSTs such as
+        # workflow dispatch or cancellation could duplicate scientific work.
+        attempts = 4 if method == "GET" else 1
+        for attempt in range(attempts):
+            try:
+                with self._opener.open(request) as response:
+                    return response.status, response.read()
+            except urllib.error.HTTPError as exc:
+                try:
+                    detail = exc.read().decode("utf-8", errors="replace")
+                finally:
+                    # HTTPError owns a response stream; close it even on retry.
+                    exc.close()
+                if (
+                    method == "GET"
+                    and exc.code in {500, 502, 503, 504}
+                    and attempt + 1 < attempts
+                ):
+                    time.sleep(2**attempt)
+                    continue
+                raise RuntimeError(
+                    f"GitHub API {method} {url} failed: {exc.code} {detail}"
+                ) from exc
+        raise RuntimeError("unreachable GitHub API retry state")
 
     def get(self, path: str) -> Any:
         _, content = self._request("GET", path)
