@@ -33,6 +33,26 @@ side-effect decision.
 
 ## Optional no-match execution guard
 
+For ordinary application calls, use the higher-level **`ainvoke_selective()`**
+entrypoint so the host need not coordinate two separately authorized artifacts:
+
+```python
+from schemarouter import RetrievalAbstentionPolicy, ainvoke_selective
+
+policy = RetrievalAbstentionPolicy(min_score=host_config.calibrated_min_score)
+results = await ainvoke_selective(
+    router, user_request, k=3, policy=policy, config=trusted_run_config,
+)
+```
+
+The host must independently calibrate `calibrated_min_score` and may catch
+`PolicyViolationError` to return a no-capability response without a call.
+Both retrieval and planning use the **same RunConfig principal**. No tool
+can execute through this API after abstention. Plain `ainvoke()` does not use
+this optional gate.
+
+
+
 `router.ainvoke(...)` above does **not** automatically reject an unsupported
 user request merely because the best-ranked capability is a poor match.
 To explicitly opt into an externally calibrated retrieval abstention check
