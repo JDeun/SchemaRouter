@@ -20,13 +20,13 @@ export LAYA_HOST=127.0.0.1 LAYA_PORT=8000 LAYA_DEVICE=cpu
 export LAYA_THREADS=2 LAYA_PRELOAD=0 LAYA_JEV_STRICT=1
 laya-serve
 # In pinned pi-jev source checkout: npm ci
-# In SchemaRouter: python scripts/external_validation_jev_contract.py --input-out /tmp/jev-input.json
+# In SchemaRouter: python -m scripts.external_validation_jev_contract --input-out /tmp/jev-input.json
 # From pi-jev source directory (node --import tsx requires its local npm package):
 node --import tsx /absolute/path/to/SchemaRouter/scripts/run_pi_jev_local_laya.mjs \
  --input /tmp/jev-input.json --pi-jev-root "$PWD" \
  --output /tmp/jev-unscored.json --local-url http://127.0.0.1:8000
 # Back in SchemaRouter:
-python scripts/external_validation_jev_contract.py --validate-output /tmp/jev-unscored.json
+python -m scripts.external_validation_jev_contract --validate-output /tmp/jev-unscored.json
 node --test tests/test_pi_jev_local_laya_runner.mjs
 ```
 
