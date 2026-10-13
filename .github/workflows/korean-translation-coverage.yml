@@ -51,6 +51,12 @@ on:
 permissions:
   contents: read
 
+# Superseded commits on a pull request must not hold runners in the queue.
+# Use unique run IDs outside PRs so pending push/scheduled/manual runs never supersede each other.
+concurrency:
+  group: korean-translation-coverage-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   report:
     runs-on: ubuntu-24.04
