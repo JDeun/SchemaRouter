@@ -243,6 +243,15 @@ def test_boolean_or_forged_retrieval_metadata_fail_closed(
     assert decision.abstained
     assert decision.reason == "untrusted_ranking"
     assert decision.candidates == []
+    # Forged Pydantic envelopes must not be silently re-authorized by
+    # bool/int coercion when constructing the fail-closed response.
+    assert type(decision.registry_version) is int
+    assert type(decision.requested_k) is int
+    assert type(decision.total_ranked) is int
+    assert type(decision.executable_only) is bool
+    if field == "executable_only":
+        assert decision.executable_only is False
+    assert getattr(poisoned, field) == value
 
 
 def test_boolean_rank_does_not_pass_numeric_rank_identity() -> None:
