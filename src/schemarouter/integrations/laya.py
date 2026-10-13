@@ -33,18 +33,29 @@ class LayaDecisionBackend:
     ) -> None:
         if model is not None and (not isinstance(model, str) or not model.strip()):
             raise ValueError("model must be a non-empty Laya model name when provided")
-        if not math.isfinite(min_confidence) or not 0.0 <= min_confidence <= 1.0:
+        if (
+            type(min_confidence) not in (int, float)
+            or not math.isfinite(min_confidence)
+            or not 0.0 <= min_confidence <= 1.0
+        ):
             raise ValueError("min_confidence must be finite and between 0 and 1")
         if not isinstance(max_loaded, int) or isinstance(max_loaded, bool) or max_loaded < 1:
             raise ValueError("max_loaded must be an integer >= 1")
         if device is not None and (not isinstance(device, str) or not device.strip()):
             raise ValueError("device must be a non-empty string when provided")
+        for flag_name, flag_value in (
+            ("preload", preload),
+            ("async_mode", async_mode),
+            ("include_context", include_context),
+        ):
+            if type(flag_value) is not bool:
+                raise ValueError(f"{flag_name} must be a boolean")
 
         self.model = model.strip() if isinstance(model, str) else None
         self.min_confidence = min_confidence
         self.device = device.strip() if isinstance(device, str) else None
         self.token = token
-        self.preload = bool(preload)
+        self.preload = preload
         self.max_loaded = max_loaded
         self.async_mode = async_mode
         self.router = router
@@ -129,8 +140,17 @@ class LayaDecisionBackend:
     ) -> DecisionResult:
         try:
             answer = response["answers"]["selection"]
-            option_id = str(answer["choice"])
-            confidence = float(answer["confidence"])
+            # A native Laya 'noul' or 'score' answer must never be coerced
+            # into the single-select 'choice' decision contract.
+            if not isinstance(answer, dict) or answer.get("type") != "choice":
+                raise ValueError("response is not a Laya choice")
+            option_id = answer["choice"]
+            raw_confidence = answer["confidence"]
+            if not isinstance(option_id, str):
+                raise ValueError("Laya option IDs must be strings")
+            if type(raw_confidence) not in (int, float):
+                raise ValueError("Laya confidence must be a numeric scalar")
+            confidence = float(raw_confidence)
         except (KeyError, TypeError, ValueError) as exc:
             raise PlanningError("Laya returned an invalid choice response") from exc
 
@@ -173,9 +193,9 @@ class LayaDecisionBackend:
         if isinstance(usage, dict):
             input_tokens = usage.get("input_tokens")
             output_tokens = usage.get("output_tokens")
-            if isinstance(input_tokens, int) and input_tokens >= 0:
+            if type(input_tokens) is int and input_tokens >= 0:
                 metadata["input_tokens"] = input_tokens
-            if isinstance(output_tokens, int) and output_tokens >= 0:
+            if type(output_tokens) is int and output_tokens >= 0:
                 metadata["output_tokens"] = output_tokens
 
         if confidence < self.min_confidence:
