@@ -322,3 +322,17 @@ record may be normalized. Zero-model tests exercise these boundaries.
 This is normalized-record suppression, not a physical executor hook or
 official 131×3 scored result. Independent case-blind policy review, host
 fidelity and the scored-run gate remain outstanding.
+
+## Nonfinite public fact must count as denial, not abort normalization (#1269)
+
+A trusted public ToolGateway record may contain a numeric-looking
+`object` that is nonfinite (`NaN`, `Infinity`, `-Infinity`).
+The public observation mapper now returns **no verified evidence**
+for these values before they reach the typed evidence ledger.
+Its existing failure path invalidates stale facts from the same tool
+and counts the proposed consequential action as **denied**, preserving
+the original agent-visible information events and case denominator.
+Finite values, including numeric zero and negative finite numbers,
+retain their original type. Synthetic normalized-record integration
+tests check all three nonfinite values. This is input safety, not an
+independently approved numeric policy or official evaluated result.
