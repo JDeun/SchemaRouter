@@ -36,7 +36,11 @@ def ready_inputs(*, eta=0, with_checkpoint=False):
         "d_z": 1536,
         "eta": eta,
         "mode": mode,
-        "command": "./train_hyset.sh --encoder_type qwen --d_z 1536 --seed 42",
+        "command": (
+            "./train_hyset.sh --encoder_type qwen --d_z 1536 "
+            f"--seed 42 --eta {eta}"
+            + (" --reward_cache pinned-public-cache.json" if eta == 0.3 else "")
+        ),
     }
     if eta == 0.3:
         m["training"]["reward_cache_digest"] = "d" * 64
@@ -237,3 +241,80 @@ def test_read_only_preflight_never_writes_artifact_or_runs_native_model(
     assert report["scoring_authorized"] is False
     assert file.read_bytes() == before
     assert sorted(x.name for x in tmp_path.iterdir()) == ["manifest.json"]
+
+
+
+@pytest.mark.parametrize(("command", "reason"), [
+    (
+        "./train_hyset.sh --encoder_type qwen --d_z 1536 --seed 42",
+        "explicit --eta required",
+    ),
+    (
+        "./train_hyset.sh --encoder_type bert --d_z 1536 --seed 42 --eta 0",
+        "must match encoder, d_z and seed",
+    ),
+    (
+        "./train_hyset.sh --encoder_type qwen --d_z 768 --seed 42 --eta 0",
+        "must match encoder, d_z and seed",
+    ),
+    (
+        "./train_hyset.sh --encoder_type qwen --d_z 1536 --seed 43 --eta 0",
+        "must match encoder, d_z and seed",
+    ),
+    (
+        "./train_hyset.sh --encoder_type qwen --d_z 1536 --seed 42 --eta 0.3",
+        "native --eta does not match",
+    ),
+    (
+        "./train_hyset.sh --encoder_type qwen --d_z 1536 --seed 42 --eta 0 "
+        "--reward_cache forbidden-cache.json",
+        "must not load a reward cache",
+    ),
+    (
+        "./train_hyset.sh --encoder_type qwen --d_z 1536 --seed 42 --eta 0 "
+        "--eta 0.3",
+        "duplicate",
+    ),
+    (
+        "./train_hyset.sh --encoder_type qwen --d_z 1536 --seed 42 --eta 0 "
+        "--test_id_dir a-different-test-directory",
+        "unknown",
+    ),
+    (
+        "./train_hyset.sh --encoder_type qwen --d_z 1536 --seed 42 --eta 0 "
+        "&& python3 fake_runner.py",
+        "shell operator",
+    ),
+    (
+        "python3 fake_train_hyset.sh --encoder_type qwen --d_z 1536 "
+        "--seed 42 --eta 0",
+        "invoke the pinned",
+    ),
+])
+def test_native_train_argv_must_match_declared_frozen_configuration(
+    command, reason,
+):
+    data = ready_inputs(eta=0)
+    data["training"]["primary_configuration"]["command"] = command
+    with pytest.raises(ValueError, match=reason):
+        validate_manifest(data, stage="training")
+
+
+def test_eta03_native_command_must_actually_supply_a_reward_cache():
+    data = ready_inputs(eta=0.3)
+    command = data["training"]["primary_configuration"]["command"]
+    data["training"]["primary_configuration"]["command"] = command.replace(
+        " --reward_cache pinned-public-cache.json", ""
+    )
+    with pytest.raises(ValueError, match="command must declare a reward cache"):
+        validate_manifest(data, stage="training")
+
+
+def test_native_train_command_accepts_explicit_equals_form_without_shell():
+    data = ready_inputs(eta=0)
+    data["training"]["primary_configuration"]["command"] = (
+        "./train_hyset.sh --encoder_type=qwen --d_z=1536 --seed=42 --eta=0"
+    )
+    result = validate_manifest(data, stage="training")
+    assert result["scoring_authorized"] is False
+    assert result["native_hyset_execution_performed"] is False
