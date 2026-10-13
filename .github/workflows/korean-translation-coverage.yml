@@ -13,6 +13,8 @@ on:
       - 'scripts/report_korean_english_prose.py'
       - 'scripts/audit_translation_semantic_sections.py'
       - 'scripts/audit_translation_review_units.py'
+      - 'scripts/verify_independent_translation_review.py'
+      - 'audits/ko-independent-review.json'
       - 'audits/ko-semantic-section-review-2026-10-10.json'
       - 'audits/ko-security-policy-review-2026-10-10.json'
       - 'audits/ko-targeted-contract-review-2026-10-10.json'
@@ -31,6 +33,8 @@ on:
       - 'scripts/report_korean_english_prose.py'
       - 'scripts/audit_translation_semantic_sections.py'
       - 'scripts/audit_translation_review_units.py'
+      - 'scripts/verify_independent_translation_review.py'
+      - 'audits/ko-independent-review.json'
       - 'audits/ko-semantic-section-review-2026-10-10.json'
       - 'audits/ko-security-policy-review-2026-10-10.json'
       - 'audits/ko-targeted-contract-review-2026-10-10.json'
@@ -41,12 +45,19 @@ on:
       - 'tests/test_translation_semantic_risks.py'
       - 'tests/test_translation_semantic_sections.py'
       - 'tests/test_translation_review_units.py'
+      - 'tests/test_independent_translation_review.py'
       - 'tests/test_korean_security_policy_review.py'
       - 'tests/test_korean_research_translation_followup.py'
       - 'tests/test_korean_english_prose.py'
       - 'tests/test_korean_targeted_contracts.py'
       - '.github/workflows/korean-translation-coverage.yml'
   workflow_dispatch:
+    inputs:
+      require_independent_review:
+        description: 'Require complete independently signed bilingual review evidence'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -69,7 +80,7 @@ jobs:
       - name: Check full-corpus audit regression tests
         run: |
           python -m pip install "pytest>=8,<10" "pytest-asyncio>=0.24,<2"
-          python -m pytest -q tests/test_bilingual_docs_integrity.py tests/test_bilingual_coverage_report.py tests/test_translation_semantic_risks.py tests/test_translation_semantic_sections.py tests/test_translation_review_units.py tests/test_korean_security_policy_review.py tests/test_korean_research_translation_followup.py tests/test_korean_english_prose.py tests/test_korean_targeted_contracts.py
+          python -m pytest -q tests/test_bilingual_docs_integrity.py tests/test_bilingual_coverage_report.py tests/test_translation_semantic_risks.py tests/test_translation_semantic_sections.py tests/test_translation_review_units.py tests/test_independent_translation_review.py tests/test_korean_security_policy_review.py tests/test_korean_research_translation_followup.py tests/test_korean_english_prose.py tests/test_korean_targeted_contracts.py
       - name: Generate all-document EN/KO coverage evidence
         run: |
           python -m scripts.report_bilingual_coverage \
@@ -100,6 +111,16 @@ jobs:
           python -m scripts.audit_translation_review_units \
             --json-out translation-review-units.json
           echo 'Every prose/list/table/heading block is inventoried; sentence-by-sentence bilingual approval is still outstanding.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Report complete independent editorial review readiness (not a semantic certificate)
+        run: |
+          python -m scripts.verify_independent_translation_review \
+            --json-out translation-independent-review-evidence.json
+          echo 'This report checks reviewer evidence coverage, NOT linguistic truth.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Enforce full-corpus sign-off when explicitly requested
+        if: github.event_name == 'workflow_dispatch' && inputs.require_independent_review == true
+        run: |
+          python -m scripts.verify_independent_translation_review --require-complete \
+            --json-out translation-independent-review-evidence.json
       - name: Gate new or stale semantic risk findings on editorial review
         run: |
           python -m scripts.audit_translation_semantic_sections \
@@ -116,6 +137,7 @@ jobs:
             korean-prose-leakage.json
             translation-section-risks.json
             translation-review-units.json
+            translation-independent-review-evidence.json
           retention-days: 90
       - name: Strict gate on explicit manual verification only
         if: github.event_name == 'workflow_dispatch'
