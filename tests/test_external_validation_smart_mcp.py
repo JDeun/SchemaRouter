@@ -292,3 +292,27 @@ def test_direct_score_rejects_swapped_shared_tool_schema() -> None:
     tampered["tools"][0]["input_schema"] = "NOT AN MCP INPUT SCHEMA"
     with pytest.raises(ValueError, match="invalid shared tool contract"):
         score(manifest, tampered, cases, build_template(manifest, cases))
+
+@pytest.mark.parametrize("version", [None, True, False, "1", 1.0, {}, []])
+def test_smartmcp_direct_score_rejects_forged_schema_version(version: object) -> None:
+    manifest, catalog, cases = load_package(PACKAGE)
+    submitted = build_template(manifest, cases)
+    submitted["schema_version"] = version
+    with pytest.raises(ValueError, match="submitted schema_version must be integer 1"):
+        score(manifest, catalog, cases, submitted)
+
+
+@pytest.mark.parametrize("bad_id", [None, "", " ", 5, {}, [], ["case-id"]])
+def test_smartmcp_direct_score_rejects_non_string_result_id(bad_id: object) -> None:
+    manifest, catalog, cases = load_package(PACKAGE)
+    submitted = build_template(manifest, cases)
+    submitted["results"][0]["id"] = bad_id
+    with pytest.raises(ValueError, match="result ids must be nonempty strings"):
+        score(manifest, catalog, cases, submitted)
+
+
+@pytest.mark.parametrize("wrong_payload", [None, [], "submitted", 1, True])
+def test_smartmcp_direct_score_requires_result_object(wrong_payload: object) -> None:
+    manifest, catalog, cases = load_package(PACKAGE)
+    with pytest.raises(ValueError, match="submitted results must be an object"):
+        score(manifest, catalog, cases, wrong_payload)
