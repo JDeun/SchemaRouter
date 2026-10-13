@@ -264,7 +264,7 @@ def test_valid_full_native_static_baseline_succeeds_without_ranking_claim():
         lambda submitted: submitted["implementation"]["configuration"].update(
             condition="static_readonly"
         ),
-        "static package",
+        "fixture-reference revision mismatch",
     ),
     (
         lambda submitted: submitted["implementation"]["configuration"].update(
