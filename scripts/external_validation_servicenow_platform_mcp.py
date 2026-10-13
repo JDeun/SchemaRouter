@@ -72,8 +72,8 @@ def validate_package(
         raise ValueError("manifest/case package ids do not match")
     if manifest.get("status") != "development_unfrozen":
         raise ValueError("this scorer currently expects a development_unfrozen fixture")
-    if manifest["governance"].get("heldout_scoring_allowed"):
-        raise ValueError("development fixture must not enable held-out scoring")
+    if manifest["governance"].get("heldout_scoring_allowed") is not False:
+        raise ValueError("development fixture must explicitly disable held-out scoring")
 
     expected_revision = manifest["source_revisions"]["servicenow_platform_mcp"]
     if snapshot.get("source", {}).get("commit") != expected_revision:
@@ -182,6 +182,69 @@ def validate_package(
         raise ValueError(f"case counts drifted: expected={expected} actual={actual}")
 
 
+def validate_submitted_arm(
+    manifest: dict[str, Any],
+    snapshot: dict[str, Any],
+    submitted: dict[str, Any],
+) -> tuple[str, int | None]:
+    """Reject mislabeled DEV conditions before reading any quality outcomes.
+
+    All tools must come from the same frozen native readonly package. A static
+    baseline must expose the ENTIRE package; preselection must honor the
+    prospectively listed DEV Top-K. Neither label authorizes held-out scoring.
+    """
+    impl = submitted.get("implementation")
+    if not isinstance(impl, dict):
+        raise ValueError("submitted implementation metadata must be an object")
+    config = impl.get("configuration")
+    if not isinstance(config, dict):
+        raise ValueError("submitted condition configuration must be an object")
+
+    comparison = manifest.get("comparison", {})
+    expected_arms = {
+        "static_readonly",
+        "readonly_plus_schemarouter_preselection",
+    }
+    if set(comparison.get("primary_conditions", [])) != expected_arms:
+        raise ValueError("development comparison arm identities drifted")
+    condition = config.get("condition")
+    if condition not in expected_arms:
+        raise ValueError("unknown or missing ServiceNow comparison condition")
+    if config.get("execution") != "disabled":
+        raise ValueError("ServiceNow DEV comparisons must never execute tools")
+
+    names = [tool["name"] for tool in snapshot["tools"]]
+    if condition == "static_readonly":
+        if (
+            impl.get("name") != "ServiceNow Platform MCP static readonly package"
+            or impl.get("commit") != snapshot["source"]["commit"]
+            or config.get("tool_package") != snapshot["mcp_tool_package"]
+            or type(config.get("tool_count")) is not int
+            or config["tool_count"] != len(names)
+            or "top_k" in config
+        ):
+            raise ValueError("static package condition/provenance mismatch")
+        return condition, None
+
+    allowed_k = comparison.get("development_top_k_sensitivity")
+    if not isinstance(allowed_k, list) or not allowed_k or any(
+        type(k) is not int or k < 1 for k in allowed_k
+    ):
+        raise ValueError("development Top-K comparison is not preregistered")
+    top_k = config.get("top_k")
+    if (
+        impl.get("name") != "SchemaRouter over ServiceNow readonly MCP tools/list"
+        or config.get("upstream_tool_package") != snapshot["mcp_tool_package"]
+        or config.get("mcp_ingestion")
+        != "schemarouter.adapters.mcp.tool_from_mcp"
+        or type(top_k) is not int
+        or top_k not in allowed_k
+        or config.get("api") != "SchemaRouter.retrieve"
+    ):
+        raise ValueError("preselection condition/Top-K/provenance mismatch")
+    return condition, top_k
+
+
 def build_template(manifest: dict[str, Any], cases: dict[str, Any]) -> dict[str, Any]:
     return {
         "schema_version": 1,
@@ -219,7 +282,9 @@ def score(
     if submitted.get("package_id") != manifest["package_id"]:
         raise ValueError("result package id mismatch")
 
+    condition, top_k = validate_submitted_arm(manifest, snapshot, submitted)
     native_tools = {tool["name"]: tool for tool in snapshot["tools"]}
+    native_order = [tool["name"] for tool in snapshot["tools"]]
     case_map = {case["id"]: case for case in cases["cases"]}
     rows = submitted.get("results")
     if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
@@ -249,6 +314,12 @@ def score(
             raise ValueError(f"{case_id}: duplicate candidate tools")
         if set(candidates) - set(native_tools):
             raise ValueError(f"{case_id}: candidate references an unknown upstream tool")
+        if condition == "static_readonly" and candidates != native_order:
+            raise ValueError(
+                f"{case_id}: static readonly baseline must expose entire native package"
+            )
+        if top_k is not None and len(candidates) > top_k:
+            raise ValueError(f"{case_id}: SchemaRouter candidate count exceeds frozen Top-K")
         if not isinstance(visible, list) or not all(isinstance(x, dict) for x in visible):
             raise ValueError(f"{case_id}: visible_contracts must be an object list")
         visible_names = [contract.get("name") for contract in visible]
