@@ -478,6 +478,31 @@ def terminal_failure(run: StageRun | None) -> bool:
     )
 
 
+
+def exclusively_failed_aggregate_only_wrapper(jobs: list[dict[str, Any]]) -> bool:
+    """Only a failed no-model aggregate can be retried with a new wrapper.
+
+    A repeated, unexpected, or still-running evaluator is a hard stop.
+    """
+    expected = {
+        "aggregate-only": "failure",
+        "prepare": "skipped",
+        "recover": "skipped",
+        "aggregate": "skipped",
+        "next-wave": "skipped",
+    }
+    names = [str(job.get("name")) for job in jobs]
+    return (
+        len(names) == len(expected)
+        and len(set(names)) == len(names)
+        and {
+            str(job.get("name")): str(job.get("conclusion"))
+            for job in jobs
+        } == expected
+    )
+
+
+
 MAX_INFRA_ATTEMPTS = 3
 
 
@@ -1242,18 +1267,9 @@ def run_controller(
             if ((first_rescue or corrected_wrapper_rescue)
                     and heldout.id == AGGREGATE_RESCUE_PARENT):
                 if corrected_wrapper_rescue:
-                    results = {
-                        str(job.get("name")): str(job.get("conclusion"))
-                        for job in latest_jobs(api, previous_aggregate_only_run)
-                    }
-                    expected = {
-                        "aggregate-only": "failure",
-                        "prepare": "skipped",
-                        "recover": "skipped",
-                        "aggregate": "skipped",
-                        "next-wave": "skipped",
-                    }
-                    if results != expected:
+                    if not exclusively_failed_aggregate_only_wrapper(
+                        latest_jobs(api, previous_aggregate_only_run)
+                    ):
                         raise RuntimeError(
                             "aggregate-only wrapper correction requires the "
                             "exact previous all-model-skipped failure"
