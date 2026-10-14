@@ -17,7 +17,9 @@
       "local_verdict": "PASS",
       "independent_verdict": "BLOCKED_EXTERNAL",
       "blocker": "Unverified maintainer-authored 20-case raw bytes, semantic gold/reviewer approval and native REST/auth boundary",
-      "permitted_claim": "42 visible offline DEV cases; unsupported requests yielded nonempty Top-K candidates; no tenant or held-out conclusion"
+      "permitted_claim": "42 visible offline DEV cases; unsupported requests yielded nonempty Top-K candidates; no tenant or held-out conclusion",
+      "artifact_id": 11936125969,
+      "artifact_sha256": "749222da1348f657bf43c9749c313951349c4e96a53496a169a817d815ffbdc0"
     },
     {
       "id": "servicenow",
@@ -29,19 +31,23 @@
       "local_verdict": "PASS",
       "independent_verdict": "BLOCKED_EXTERNAL",
       "blocker": "Independent upstream gold labels and protocol review; fresh heldout cases; actual E2 comparison",
-      "permitted_claim": "Pinned 24-case visible DEV: static 100% tool recall versus K3 75% and K5 85%; no-fit candidates nonempty"
+      "permitted_claim": "Pinned 24-case visible DEV: static 100% tool recall versus K3 75% and K5 85%; no-fit candidates nonempty",
+      "artifact_id": 11689142248,
+      "artifact_sha256": "a0eddd2c31da6ab51b6ef7110c49bb84a64aa06ff2dc5ef7dce3019031e564aa"
     },
     {
       "id": "smartmcp",
       "issue": 1114,
       "evidence_class": "NATIVE_DEV_ONLY",
       "source": "SmartMCP pinned development implementation with MCP v1 dependency compatibility",
-      "run_id": null,
-      "run_url": null,
+      "run_id": 38507161559,
+      "run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/38507161559",
       "local_verdict": "PASS",
       "independent_verdict": "BLOCKED_EXTERNAL",
       "blocker": "Maintainer agreement on MCP compatibility, native exposure, Top-K, semantic labels and independent authoring",
-      "permitted_claim": "Visible DEV recall only; not an independent native apples-to-apples score"
+      "permitted_claim": "Visible DEV recall only; not an independent native apples-to-apples score",
+      "artifact_id": 11870376552,
+      "artifact_sha256": "1e0d13a3b2410d6a0bc788e14f614ca55bbdf6798270d2317406c04eafd1bbbe"
     },
     {
       "id": "cyt",
@@ -53,7 +59,9 @@
       "local_verdict": "PASS",
       "independent_verdict": "BLOCKED_EXTERNAL",
       "blocker": "Real CYT main-app proxy/hook tool interception and maintainer-reviewed agent/model/OS and fresh heldout",
-      "permitted_claim": "Mac Hook Daemon loopback smoke and SDK development controls only, not full CYT E2E or Korean BM25"
+      "permitted_claim": "Mac Hook Daemon loopback smoke and SDK development controls only, not full CYT E2E or Korean BM25",
+      "artifact_id": 11672689710,
+      "artifact_sha256": "b1fcab320e3e7c86a438f123760a192ed592ceceb0c3c81c02f6ab087415a479"
     },
     {
       "id": "hyset",
