@@ -71,11 +71,14 @@ jobs:
           if [ "${EVENT_NAME}" = "schedule" ]; then
             RECOVERY+=(--recover-missing-k3)
           fi
+          # Release-0.18 integration freeze (#1345/#1346): dry-run only.
+          # Historical 0.14 artifacts stay immutable; do not dispatch another
+          # costly #506 confirmation/retry while protected CI is prioritized.
+          # Restore --execute only through a separately reviewed post-release PR.
           python scripts/research_014_conveyor.py \
             --repository "${GITHUB_REPOSITORY}" \
             --token "${GH_TOKEN}" \
             --ref main \
-            --execute \
             "${RECOVERY[@]}" \
             --state-out artifacts/research-0.14-conveyor-state.json
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

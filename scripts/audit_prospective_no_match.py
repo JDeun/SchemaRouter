@@ -43,12 +43,15 @@ def sha(value: Any, label: str) -> None:
 
 
 def usable_ms(value: Any) -> float:
-    if (
-        isinstance(value, bool) or not isinstance(value, (float, int))
-        or not math.isfinite(value) or value < 0
-    ):
+    if isinstance(value, bool) or not isinstance(value, (float, int)):
         raise ValueError("observed latency must be finite and nonnegative")
-    return float(value)
+    try:
+        measured = float(value)
+    except (OverflowError, ValueError) as exc:
+        raise ValueError("observed latency must be finite and nonnegative") from exc
+    if not math.isfinite(measured) or measured < 0:
+        raise ValueError("observed latency must be finite and nonnegative")
+    return measured
 
 
 def audit(plan: Any, cases: Any, observations: Any, known_dev: list[Any]) -> dict:
@@ -141,7 +144,9 @@ def audit(plan: Any, cases: Any, observations: Any, known_dev: list[Any]) -> dic
 
     metrics = {key: 0 for key in (
         "supported", "supported_raw_hit", "supported_selected_hit",
-        "supported_false_refusal", "unsupported", "unsupported_raw_nonempty",
+        "supported_raw_full_coverage", "supported_selected_full_coverage",
+        "supported_full_coverage_lost", "supported_false_refusal",
+        "unsupported", "unsupported_raw_nonempty",
         "unsupported_selected_nonempty", "ambiguous", "ambiguous_selected_hit",
         "forbidden", "forbidden_selected_exposure", "abstained",
     )}
@@ -150,6 +155,8 @@ def audit(plan: Any, cases: Any, observations: Any, known_dev: list[Any]) -> dic
     after_bytes: list[int] = []
     supplied_latencies: list[float] = []
     records = []
+    observed_registry_version: int | None = None
+    observed_executable_only: bool | None = None
     for row in obs["rows"]:
         r = exact(row, {"id", "retrieval", "retrieval_ms"}, "observed row")
         ident = r["id"]
@@ -158,14 +165,28 @@ def audit(plan: Any, cases: Any, observations: Any, known_dev: list[Any]) -> dic
         seen.add(ident)
         latency = usable_ms(r["retrieval_ms"])
         raw = CapabilityRetrieval.model_validate(r["retrieval"])
-        if raw.requested_k != p["top_k"]:
+        if type(raw.requested_k) is not int or raw.requested_k != p["top_k"]:
             raise ValueError("non-frozen requested Top-K")
+        if type(raw.registry_version) is not int or raw.registry_version < 0:
+            raise ValueError("invalid observed registry version")
+        if type(raw.executable_only) is not bool:
+            raise ValueError("invalid observed executable scope")
+        if observed_registry_version is None:
+            observed_registry_version = raw.registry_version
+            observed_executable_only = raw.executable_only
+        elif (
+            raw.registry_version != observed_registry_version
+            or raw.executable_only is not observed_executable_only
+        ):
+            raise ValueError("mixed registry version or executable scope in cohort")
         query_digest = hashlib.sha256(
             raw.query.strip().casefold().encode("utf-8")
         ).hexdigest()
         if query_digest != labels[ident]["query_sha256"]:
             raise ValueError("observed query not identical to prospective case")
         decision = apply_retrieval_abstention(raw, policy=policy)
+        if decision.reason == "untrusted_ranking":
+            raise ValueError("untrusted ranking evidence cannot enter audit metrics")
         old = {x.route_id for x in raw.candidates}
         new = {x.route_id for x in decision.candidates}
         assert new <= old
@@ -178,6 +199,13 @@ def audit(plan: Any, cases: Any, observations: Any, known_dev: list[Any]) -> dic
             was_hit = bool(old & targets)
             metrics["supported_raw_hit"] += int(was_hit)
             metrics["supported_selected_hit"] += int(bool(new & targets))
+            raw_full = targets <= old
+            selected_full = targets <= new
+            metrics["supported_raw_full_coverage"] += int(raw_full)
+            metrics["supported_selected_full_coverage"] += int(selected_full)
+            metrics["supported_full_coverage_lost"] += int(
+                raw_full and not selected_full
+            )
             metrics["supported_false_refusal"] += int(was_hit and decision.abstained)
         elif label == "unsupported":
             metrics["unsupported_raw_nonempty"] += int(bool(old))
@@ -211,6 +239,8 @@ def audit(plan: Any, cases: Any, observations: Any, known_dev: list[Any]) -> dic
         "plan_sha256": canonical_sha(p),
         "case_sha256": p["case_sha256"],
         "count": len(records),
+        "observed_registry_version": observed_registry_version,
+        "observed_executable_only": observed_executable_only,
         "counts": metrics,
         "mean_candidate_metadata_bytes_before": statistics.mean(before_bytes),
         "mean_candidate_metadata_bytes_after": statistics.mean(after_bytes),
@@ -224,6 +254,8 @@ def audit(plan: Any, cases: Any, observations: Any, known_dev: list[Any]) -> dic
             "Input timings are not authenticated; no abstention latency measured.",
             "Metadata bytes are JSON candidate objects, not REST/MCP wire bytes.",
             "Ranking abstention is not an execution permission/denial policy.",
+            "Registry versions and executable scope are internally consistent, "
+            "but their authenticity and source digest are not verified.",
             "Policy is externally supplied, never tuned by this checker.",
         ],
     }
