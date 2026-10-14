@@ -172,3 +172,27 @@ Before a real comparison, both maintainers should explicitly agree on at least:
 - exposure serialization;
 - treatment of unsupported/ambiguous cases;
 - publication of raw results, including negative results.
+
+
+## Direct scorer integrity and negative controls (#1114)
+
+Calling `scripts.external_validation_smart_mcp.score()` directly now performs
+the same shared fixture validation as the CLI `score` subcommand. This
+prevents Python callers from publishing derived metrics based on malformed
+catalog contracts, duplicate required-tool gold, duplicate ambiguous
+acceptable-tool lists, unexpected acceptable labels on non-ambiguous cases,
+empty queries, missing/forged DEV governance and invalid Top-K values.
+Nonfinite, negative or overflowing timing evidence is also rejected.
+
+Regression tests use synthetic malformed copies of the **visible development**
+fixture; they do not edit the committed catalog, existing cases, published
+results, or threshold/budget decisions. This is a mechanical guard against
+*structural* input corruption, **not** independent semantic gold review or
+byte-hash authentication of a future new cohort.
+
+Neither this preflight nor a green native SmartMCP CI run establishes
+upstream endorsement, an independently frozen held-out evaluation or a
+production retrieval gain. The SmartMCP maintainer must still review native
+representation fairness, MCP SDK compatibility, candidate exposed-contract
+measurement, gold semantics and the future prospective protocol. No 0.14
+research inputs or runs are touched.
