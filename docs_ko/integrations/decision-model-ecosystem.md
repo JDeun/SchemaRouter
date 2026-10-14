@@ -22,6 +22,15 @@ Machine-readable discovery/benchmark intake state는 `benchmarks/system-one-cand
 
 Ecosystem은 빠르게 바뀌므로 benchmark 전 exact repository/model/runtime revision을 pin합니다.
 
+### Microsoft-Decision-1 (2026-10-09 발표)
+
+- Qwen3.5-9B 기반으로 추가 학습한 Microsoft 호스팅 의사결정 모델(`choice`, `noul`, `score`);
+- Foundry `/providers/microsoft/v1/systemone`, 배포 이름·Azure 인증 사용; OpenRouter 모델 ID는 `microsoft/microsoft-decision-1`;
+- 기존 `SystemOneDecisionBackend`의 TypeSafe SDK 응답(`response.choices`)과 Foundry HTTP의 `answers` 응답은 **자동 호환이 검증되지 않음**;
+- Microsoft 추가 학습 가중치가 공개되지 않은 **유료 호스팅 모델**로, 무료 로컬 Laya를 대체하지 않음;
+- SchemaRouter 실측 검증과 미지원 기능 거부율은 아직 없음. #1324에서 프로토콜·새 독립 검증 전까지 기본 모델 승격 금지;
+- 공식 자료·가격·No-match 조건: [Microsoft-Decision-1 조사](microsoft-decision-1.md).
+
 ### Jev / TypeSafe
 
 Hosted reference System One API이며 기존 `JevDecisionBackend`, generic compatible `SystemOneDecisionBackend` path가 있습니다. Credentialed comparison 전용이며 CI requirement가 아닙니다.

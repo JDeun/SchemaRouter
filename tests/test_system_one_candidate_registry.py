@@ -107,3 +107,53 @@ def test_discovery_candidates_record_observed_upstream_revisions() -> None:
         revision = candidate["upstream_source_revision_seen"]
         assert len(revision) == 40
         assert all(character in "0123456789abcdef" for character in revision)
+
+
+
+def test_microsoft_decision_one_is_discovery_only_not_a_type_safe_sdk_claim() -> None:
+    candidates = {item["id"]: item for item in _load()["candidates"]}
+    microsoft = candidates["microsoft-decision-1"]
+    assert microsoft["lifecycle"] == "discovery"
+    assert microsoft["integration_path"] == "research_callable"
+    assert microsoft["repository"] is None
+    assert microsoft["announced_at"] == "2026-10-09"
+    assert microsoft["foundry_api_path"] == "/providers/microsoft/v1/systemone"
+    assert microsoft["foundry_model_parameter"] == "deployment_name_not_public_model_name"
+    assert microsoft["openrouter_model_id"] == "microsoft/microsoft-decision-1"
+    assert microsoft["supported_question_types"] == ["noul", "choice", "score"]
+    assert microsoft["exact_weight_revision_pin_available"] is False
+    assert microsoft["provider_input_price_usd_per_million_tokens_at_intake"] == 0.042
+    assert microsoft["provider_output_price_usd_per_million_tokens_at_intake"] == 0
+    assert "No SchemaRouter quality evidence" in microsoft["schemarouter_status"]
+    assert "not verified compatible" in microsoft["schemarouter_status"]
+
+
+def test_microsoft_decision_one_guide_is_dual_language_and_denies_promotion() -> None:
+    en = (ROOT / "docs" / "integrations" / "microsoft-decision-1.md").read_text(
+        encoding="utf-8"
+    )
+    ko = (ROOT / "docs_ko" / "integrations" / "microsoft-decision-1.md").read_text(
+        encoding="utf-8"
+    )
+    for content in (en, ko):
+        assert "2026-10-09" in content
+        assert "microsoft/microsoft-decision-1" in content
+        assert "/providers/microsoft/v1/systemone" in content
+        assert "none_of_above" in content
+        assert "0.042" in content
+        assert "#1291" in content
+        assert "#1324" in content
+    assert "not a free local model" in en
+    assert "유료 API" in ko
+
+
+def test_model_discovery_does_not_change_frozen_production_gates() -> None:
+    data = _load()
+    metrics = json.loads(TARGETS.read_text(encoding="utf-8"))["metrics"]
+    assert data["promotion_gate"]["near_domain_unsupported_rejection_min"] == (
+        metrics["near_domain_unsupported_rejection_min"]
+    )
+    assert data["promotion_gate"]["false_route_rate_max"] == (
+        metrics["false_route_rate_max"]
+    )
+    assert data["promotion_gate"]["authority_violations_max"] == 0

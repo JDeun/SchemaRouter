@@ -301,7 +301,7 @@
     },
     {
       "path": "integrations/decision-model-ecosystem.md",
-      "source_blob": "ee36387d25b37fdeb5e31fdb50dbea767b7e8f5f"
+      "source_blob": "510c73a7adce77a7971118e1076425c06e377d63"
     },
     {
       "path": "integrations/jev.md",
@@ -594,6 +594,10 @@
     {
       "path": "integrations/microsoft-foundry-http-adapter.md",
       "source_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567"
+    },
+    {
+      "path": "integrations/microsoft-decision-1.md",
+      "source_blob": "be983823a98e8c74c0ea7d5f3c8f3b7fe1b7ebad"
     }
   ]
 }

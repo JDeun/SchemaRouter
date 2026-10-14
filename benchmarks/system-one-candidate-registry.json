@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-28",
+  "updated_at": "2026-10-13",
   "purpose": "Discovery and benchmark intake registry for replaceable typed-decision/System One providers. Presence is not a recommendation or quality claim.",
   "promotion_gate": {
     "supported_exact_route_accuracy_min": 0.85,
@@ -35,6 +35,33 @@
       "lifecycle": "credentialed_optional_comparison",
       "license_status": "hosted_provider_terms_apply",
       "schemarouter_status": "JevDecisionBackend available; not a CI dependency"
+    },
+    {
+      "id": "microsoft-decision-1",
+      "project": "Microsoft-Decision-1",
+      "repository": null,
+      "integration_path": "research_callable",
+      "fallback_integration_path": "reusable_plugin",
+      "lifecycle": "discovery",
+      "license_status": "Microsoft fine-tuned weights not publicly released; hosted Microsoft Foundry/OpenRouter provider terms apply",
+      "schemarouter_status": "No SchemaRouter quality evidence yet. Foundry's System One-shaped JSON request is not verified compatible with the TypeSafe SDK-based SystemOneDecisionBackend; no provider call made. Do not promote or replace no-match execution safeguards.",
+      "announced_at": "2026-10-09",
+      "based_on": "Qwen3.5-9B post-trained decision model; no public Microsoft checkpoint",
+      "official_announcement": "https://commandline.microsoft.com/microsoft-decision-1-model-foundry/",
+      "official_api_documentation": "https://learn.microsoft.com/en-us/azure/foundry/foundry-models/how-to/use-foundry-models-microsoft-decision",
+      "foundry_api_path": "/providers/microsoft/v1/systemone",
+      "foundry_model_parameter": "deployment_name_not_public_model_name",
+      "openrouter_model_id": "microsoft/microsoft-decision-1",
+      "openrouter_model_url": "https://openrouter.ai/microsoft/microsoft-decision-1",
+      "provider_input_price_usd_per_million_tokens_at_intake": 0.042,
+      "provider_output_price_usd_per_million_tokens_at_intake": 0,
+      "exact_weight_revision_pin_available": false,
+      "supported_question_types": [
+        "noul",
+        "choice",
+        "score"
+      ],
+      "decision_authority": "finite_options_with_explicit_no_fit_and_execution_gate"
     },
     {
       "id": "laya",
