@@ -657,8 +657,8 @@
     },
     {
       "path": "research/paper-evidence-package.md",
-      "en_blob": "8a0ae98ff11e7e6f8af4a3bfeae922788bdfe634",
-      "ko_blob": "1fb40f4ee17bff0ab802b62c5f33f0e84f9a28f1",
+      "en_blob": "af316164642d6e86c2f423194b83194f7564a270",
+      "ko_blob": "113e84bb59ccbcc1a7cdc9e812c8d45b75bef5d3",
       "notes": "2026-10-14 updated EN/KO source comparison: #432 valid 11,700-episode canonical terminal negative result; #424 independently dispatched, unscored; #431/#510 negative gates retained; original AI-assisted review is not independent human sign-off."
     },
     {
@@ -831,8 +831,8 @@
     },
     {
       "path": "research/0.14-paper-evidence-checkpoint.md",
-      "en_blob": "95867761749b8ffb253c69905ef4c52ecbf15a8b",
-      "ko_blob": "1c1ffab5ae82db6fa13f40d1a7dee8ea12794490",
+      "en_blob": "d2213fe86a376ca72b794f0011a9310d7775bfcc",
+      "ko_blob": "d5d8faddfe42107323dd1a5537a7fc13eaa2828e",
       "notes": "2026-10-14 EN/KO checkpoint comparison: B1/B2 and K3 negative outcomes retained; #432 780-task held-out canonical 11,700 episodes terminal negative gate and #424 final-answer independently dispatched but unscored. Provenance is AI-assisted, not an independent human sign-off."
     },
     {
