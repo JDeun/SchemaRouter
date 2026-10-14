@@ -24,7 +24,10 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ClicShopping/ClicShopping
+          # Original owner no longer advertises the pinned Git object.
+          # This public fork retains EXACT commit/tree/blob identities; the
+          # verifier below still fails closed on HEAD or source-byte drift.
+          repository: retail-ecommerce/ClicShopping
           ref: 8ada7f1f392f3dd2800e825dac8d245dfd53944a
           path: clicshopping-repin
           persist-credentials: false
@@ -75,6 +78,8 @@ jobs:
               "github_run_id": os.environ["GITHUB_RUN_ID"],
               "schema_router_head_sha": os.environ["GITHUB_SHA"],
               "upstream_pin": report["source_pin"],
+              "source_checkout_repository": "retail-ecommerce/ClicShopping",
+              "source_checkout_role": "byte-identical-fork-mirror-not-original-upstream",
               "dev_report_sha256": hashlib.sha256(payload.read_bytes()).hexdigest(),
               "historical_dev_queries_sha256": report["original_dev_queries_sha256"],
               "new_visible_dev_queries_sha256": report["new_visible_dev_queries_sha256"],
