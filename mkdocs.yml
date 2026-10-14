@@ -1,5 +1,5 @@
-site_name: SchemaRouter
-site_description: Typed capability routing and governed execution for AI agents across APIs, tools, and data systems
+site_name: SchemaRouter for AI Agents
+site_description: SchemaRouter is an open-source Python library for typed AI agent tool routing across MCP, OpenAPI, and other APIs with schema-validated, governed execution.
 site_author: Yong-eun Cho
 site_url: https://jdeun.github.io/SchemaRouter/
 copyright: © 2026 Yong-eun Cho · MIT License
