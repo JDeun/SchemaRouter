@@ -252,7 +252,7 @@ def test_complete_heldout_salvage_reuses_successes_and_rejects_missing_part(
         def get(self, path):
             if "/actions/runs/456/jobs" in path:
                 page = int(path.rsplit("page=", 1)[-1])
-                return {"jobs": self.recovery_jobs[(page - 1) * 100:page * 100]}
+                return {"jobs": self.recovery_jobs[(page - 1) * module.JOBS_PAGE_SIZE:page * module.JOBS_PAGE_SIZE]}
             return super().get(path)
         def artifacts(self, run_id):
             if run_id == 456:
