@@ -1,0 +1,103 @@
+name: Research 0.14 Held-out Aggregate Rescue (No Inference)
+run-name: Held-out aggregate rescue parent=${{ inputs.parent_run_id }} recovery=${{ inputs.recovery_run_id }} source=${{ inputs.source_sha }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      parent_run_id:
+        description: Exact frozen original run
+        type: string
+        required: true
+      recovery_run_id:
+        description: Terminal failed-aggregate Wave-2 run
+        type: string
+        required: true
+      evidence_digest:
+        description: Frozen upstream evidence digest
+        type: string
+        required: true
+      source_sha:
+        description: Exact frozen scientific source
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: research-0.14-heldout-aggregate-rescue-${{ inputs.parent_run_id }}
+  cancel-in-progress: false
+
+jobs:
+  aggregate-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Verify immutable recovery pins before downloading data
+        env:
+          PARENT_RUN_ID: "${{ inputs.parent_run_id }}"
+          RECOVERY_RUN_ID: "${{ inputs.recovery_run_id }}"
+          SOURCE_SHA: "${{ inputs.source_sha }}"
+          EVIDENCE_DIGEST: "${{ inputs.evidence_digest }}"
+        run: |
+          python - <<'PY'
+          import os
+          assert os.environ["PARENT_RUN_ID"] == "38012340016"
+          assert os.environ["RECOVERY_RUN_ID"] == "38342986866"
+          assert os.environ["SOURCE_SHA"] == "30663de8f618bc88a893d9bf6214035a70e8e894"
+          assert os.environ["EVIDENCE_DIGEST"] == (
+              "sha256:a6dcd33ac9768f939d18e18a3edcf3de6a7e35a1804a7b5666433f2f6ebdcce7"
+          )
+          PY
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ inputs.source_sha }}"
+          path: scientific
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - name: Reuse the exact sealed corpus and recovery plan
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: "heldout-recovery-plan-${{ inputs.recovery_run_id }}"
+          path: artifacts/recovery-plan
+          run-id: "${{ inputs.recovery_run_id }}"
+          github-token: "${{ github.token }}"
+          repository: "${{ github.repository }}"
+      - name: Verify full ZIP hashes and identities without model execution
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          GITHUB_REPOSITORY: "${{ github.repository }}"
+        run: |
+          python scripts/research_014_heldout_recovery.py collect \
+            --corpus artifacts/recovery-plan/heldout-corpus.json \
+            --parent-run "${{ inputs.parent_run_id }}" \
+            --aggregate-only-from-run "${{ inputs.recovery_run_id }}" \
+            --source-sha "${{ inputs.source_sha }}" \
+            --evidence-digest "${{ inputs.evidence_digest }}" \
+            --plan-out artifacts/recovery-plan/heldout-recovery-plan.json \
+            --out-dir artifacts/heldout-verified \
+            --proof-out artifacts/heldout-recovery-proof.json
+      - name: Run exact preregistered historical scientific aggregator
+        run: |
+          python scientific/scripts/aggregate_agent_utility_v3_heldout.py \
+            --input-dir artifacts/heldout-verified \
+            --corpus artifacts/recovery-plan/heldout-corpus.json \
+            --retrieval artifacts/recovery-plan/heldout-retrieval.json \
+            --out artifacts/heldout-generalization-canonical.json
+      - name: Publish only if both provenance checks and aggregation succeed
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: "heldout-generalization-canonical-${{ github.run_id }}"
+          path: |
+            artifacts/heldout-generalization-canonical.json
+            artifacts/recovery-plan/heldout-corpus.json
+            artifacts/recovery-plan/heldout-retrieval.json
+            artifacts/heldout-recovery-proof.json
+            scientific/benchmarks/agent-utility-v3-heldout-preregistration.json
+          if-no-files-found: error
+          retention-days: 30
