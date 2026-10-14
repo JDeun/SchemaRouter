@@ -65,3 +65,17 @@ The already observed 32-case development errors/unsupported behavior
 entirely separate source/permission/authentication protocol; this original
 source freeze must not silently move. No customer credentials, native
 HTTP calls, writes, or claims of field recall are permitted here.
+
+
+## Maintainer-supplied 20-case holdout — distinct 8ada7f1 cohort
+
+The later ClicShopping maintainer source pin `8ada7f1f392f3dd2800e825dac8d245dfd53944a`
+and new `cs-h01`…`cs-h20` cohort belong to [issue #1311](https://github.com/JDeun/SchemaRouter/issues/1311),
+**not** the original `3bac851` DEV or the prospective confirmation input above.
+
+See [`MAINTAINER_HOLDOUT_INTAKE.md`](MAINTAINER_HOLDOUT_INTAKE.md)
+and `python -m scripts.inspect_clicshopping_maintainer_holdout --help`
+for the read-only verbatim-byte/ID validation gate. The original upstream JSON
+bytes, declared digest convention, permission/route gold labels, human signoff
+and any scored comparison remain unverified. A successful structural lint
+does not grant independent confirmation or scoring authority.
