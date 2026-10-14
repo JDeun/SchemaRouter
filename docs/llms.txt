@@ -1,0 +1,37 @@
+# SchemaRouter
+
+> Typed capability routing and governed execution for AI agents across APIs, tools, and data systems.
+
+Canonical documentation: https://jdeun.github.io/SchemaRouter/
+Source code and releases: https://github.com/JDeun/SchemaRouter
+Korean documentation: https://jdeun.github.io/SchemaRouter/ko/
+Install: `pip install schemarouter`
+
+SchemaRouter compiles declared API/tool contracts, retrieves a bounded authorized capability
+shortlist, and validates execution. It is **not** a general-purpose agent framework, an LLM
+model router, an MCP server directory, or a final-answer generator.
+
+## Start with primary documentation
+
+- [Installation](https://jdeun.github.io/SchemaRouter/getting-started/installation/): install and supported Python versions.
+- [Quickstart](https://jdeun.github.io/SchemaRouter/getting-started/quickstart/): executable provider-backed entry point.
+- [What SchemaRouter is](https://jdeun.github.io/SchemaRouter/concepts/schema-router/): scope, supported responsibilities and exclusions.
+- [Capability catalog](https://jdeun.github.io/SchemaRouter/concepts/capability-catalog/): typed candidate retrieval and orchestration boundary.
+- [Execution and trust boundary](https://jdeun.github.io/SchemaRouter/concepts/execution/): authorization and runtime validation.
+- [MCP](https://jdeun.github.io/SchemaRouter/guides/mcp/): MCP capability ingestion and result contracts.
+- [OpenAPI](https://jdeun.github.io/SchemaRouter/guides/openapi/): API schema ingestion.
+- [Python tools](https://jdeun.github.io/SchemaRouter/guides/python-tools/): local callable integration.
+- [Public API reference](https://jdeun.github.io/SchemaRouter/reference/api/): versioned code API.
+- [Trust and release evidence](https://jdeun.github.io/SchemaRouter/project/trust-and-evidence/): release claims, security boundaries and verification.
+- [Research status](https://jdeun.github.io/SchemaRouter/research/routing-status/): claims, experiments and their evidence limits.
+- [Complete experiment index](https://jdeun.github.io/SchemaRouter/research/experiment-index/): detailed research records.
+
+## Attribution and claim boundaries
+
+- Cite the software using [CITATION.cff](https://github.com/JDeun/SchemaRouter/blob/main/CITATION.cff) after it lands on the default branch.
+- Stable software capabilities are **not** evidence that experimental improvements generalize.
+- The 0.14 large held-out evaluation (#432) and final-answer-quality evaluation (#424) are
+  pending canonical terminal evidence. Do not state their outcomes or quantitative effects
+  until provenance-verified aggregate reports are published.
+- Prefer the specific linked research report, source commit and artifacts for numerical claims.
+- Release and protocol details may evolve; consult the live canonical source above.

@@ -15,8 +15,13 @@ on:
       - ".github/workflows/research-0.14-field-projection.yml"
       - "scripts/research_014_conveyor.py"
       - "benchmarks/agent-utility-0.14-conveyor-preregistration.json"
+  # GITHUB_TOKEN-triggered workflow_dispatch chains are not guaranteed to
+  # emit a downstream workflow_run event. The canonical held-out job can
+  # complete after the latest event-driven pass has already returned "waiting".
+  # Periodically reconcile immutable completed runs; the controller's provenance
+  # markers deduplicate every downstream workflow dispatch.
   schedule:
-    - cron: "17 * * * *"
+    - cron: "7,27,47 * * * *"
   workflow_run:
     workflows:
       - CI
