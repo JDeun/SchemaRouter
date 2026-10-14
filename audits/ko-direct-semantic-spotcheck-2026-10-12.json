@@ -273,9 +273,9 @@
     },
     {
       "path": "research/hyset-external-validation.md",
-      "en_blob": "395064d5150d8f6280778219d5c21f8e68494797",
-      "ko_blob": "6188a36e5b8ba51414f1dad5ec99633205a025fd",
-      "notes": "Matched independently retrained (not original authors') checkpoint boundary, data/pins and six-fold held-out reporting rules."
+      "en_blob": "f99e46a0bfbe2652b553d393318e44afae797eb3",
+      "ko_blob": "f0779aaf93bcff2394a07122609805f3c6d5ffaf",
+      "notes": "Matched independently retrained (not original authors') checkpoint boundary, data/pins and six-fold held-out reporting rules. Later addition checked 2026-10-13: paired offline manifest/argv preflight sections preserve six fixed test split IDs, Qwen/BERT dimensions, eta/reward-cache distinctions, strict scoring_authorized=false and absence of native training/evaluation or independent certification. Scoped AI-contributor review only. 2026-10-14 amendment: restored the second bash fence displaying the declared training readiness command; meaning and no-scoring boundary unchanged."
     },
     {
       "path": "getting-started/runtime-lifecycle.md",
