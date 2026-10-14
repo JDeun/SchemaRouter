@@ -406,12 +406,16 @@ class _CandidateIndex:
                     ref,
                 )
 
+                # Endpoint operation aliases are first-class declared
+                # retrieval text. Index and exhaustive scoring must agree;
+                # otherwise indexed mode silently discards alias-only hits.
                 tool_text = " ".join(
                     [
                         tool.name,
                         tool.description,
                         endpoint.name,
                         endpoint.description,
+                        *endpoint.operation_aliases,
                     ]
                 )
                 for token in _tokens(tool_text):
@@ -4137,7 +4141,18 @@ class SchemaPlanner:
                 )
             )
 
-        tool_text = " ".join([tool.name, tool.description, endpoint.name, endpoint.description])
+        # Score only provider-declared operation aliases: never synthesize
+        # translations or new capabilities from user text. This matches the
+        # lexical index construction above.
+        tool_text = " ".join(
+            [
+                tool.name,
+                tool.description,
+                endpoint.name,
+                endpoint.description,
+                *endpoint.operation_aliases,
+            ]
+        )
         for token in sorted(query_tokens & _tokens(tool_text)):
             score += 1.5
             components.append(
