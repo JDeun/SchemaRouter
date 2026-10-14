@@ -1,7 +1,6 @@
 """Only rescore zero tasks when recovering a failed held-out aggregate."""
 from __future__ import annotations
 
-from copy import deepcopy
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
