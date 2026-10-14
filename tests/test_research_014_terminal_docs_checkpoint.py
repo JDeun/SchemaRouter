@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CANONICAL_RUN = "38501112190"
 FINAL_RUN = "38506709595"
+FINAL_ZIP_SHA256 = "c0593143deb4a06a1433c8bbfdbeab28a23e45156ea6e0c2c5744386cddb83cb"
 ZIP_SHA256 = "ac6c4ff2f201ffbc1de4dfd8cfc0a524c79229ad260eb74cfa3a8d2df146f9e7"
 
 
@@ -19,6 +20,7 @@ def test_bilingual_paper_evidence_package_reports_frozen_negative_result():
         content = (ROOT / path).read_text(encoding="utf-8")
         assert CANONICAL_RUN in content
         assert FINAL_RUN in content
+        assert FINAL_ZIP_SHA256 in content
         assert ZIP_SHA256 in content
         for rate in ("49.62%", "29.19%", "31.03%", "25.09%", "70.98%"):
             assert rate in content
@@ -28,7 +30,7 @@ def test_bilingual_paper_evidence_package_reports_frozen_negative_result():
         assert "#424 pending" not in content
 
 
-def test_bilingual_experiment_checkpoint_marks_negative_and_final_pending():
+def test_bilingual_experiment_checkpoint_marks_both_terminal_negative_results():
     for path in (
         "docs/research/0.14-paper-evidence-checkpoint.md",
         "docs_ko/research/0.14-paper-evidence-checkpoint.md",
@@ -36,6 +38,7 @@ def test_bilingual_experiment_checkpoint_marks_negative_and_final_pending():
         content = (ROOT / path).read_text(encoding="utf-8")
         assert CANONICAL_RUN in content
         assert FINAL_RUN in content
+        assert FINAL_ZIP_SHA256 in content
         assert "#432" in content and "#424" in content
         assert "no canonical aggregate yet" not in content
         assert "정식 집계 없음" not in content
