@@ -898,8 +898,8 @@
     {
       "path": "integrations/microsoft-foundry-http-adapter.md",
       "en_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567",
-      "ko_blob": "b1461fc32d412f4be8909e2fb98f794461f367d8",
-      "notes": "2026-10-13 AI-contributor full EN/KO source comparison for opt-in Microsoft Foundry HTTP adapter documentation. Preserves provider deployment-name and TypeSafe transport difference, HTTPS/key consent and billing, choice-only finite IDs with explicit none_of_above, uncalibrated score=None, bounded 1-MiB request/response handling, no live provider evidence, no change to frozen #432/#424 research. Korean examples are localized/summarized rather than literal line-by-line translations; not independent human certification. 2026-10-14: restored the missing Korean verification-scope heading to match EN document hierarchy; paired safety statements unchanged. 2026-10-14 paired addition: explicit mock header/criteria/privacy/error assertions, authentic-provider validation and independent cohort blockers, with 0.14 frozen boundary unchanged."
+      "ko_blob": "921bb18cd7b190d57e6458f8bde86c1cf0e5a37b",
+      "notes": "2026-10-13 AI-contributor full EN/KO source comparison for opt-in Microsoft Foundry HTTP adapter documentation. Preserves provider deployment-name and TypeSafe transport difference, HTTPS/key consent and billing, choice-only finite IDs with explicit none_of_above, uncalibrated score=None, bounded 1-MiB request/response handling, no live provider evidence, no change to frozen #432/#424 research. Korean examples are localized/summarized rather than literal line-by-line translations; not independent human certification. 2026-10-14: restored the missing Korean verification-scope heading to match EN document hierarchy; paired safety statements unchanged. 2026-10-14 paired addition: explicit mock header/criteria/privacy/error assertions, authentic-provider validation and independent cohort blockers, with 0.14 frozen boundary unchanged. 2026-10-15: escaped leading numeric issue refs to satisfy bilingual Markdown safety lint; no factual claims changed."
     }
   ],
   "separately_inspected_pending_pr": [
