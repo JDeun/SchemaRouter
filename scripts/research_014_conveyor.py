@@ -1274,8 +1274,12 @@ def run_controller(
                             "aggregate-only wrapper correction requires the "
                             "exact previous all-model-skipped failure"
                         )
+                # The original successful Wave-2 `prepare` job archived the
+                # only frozen plan. The failed aggregate-only wrapper runs
+                # downloaded it but did NOT upload a copy as an artifact.
+                # Therefore always read it from the pinned original Wave 2.
                 plan_artifact = api.artifact(
-                    failed_recovery.id,
+                    AGGREGATE_RESCUE_RUN,
                     f"heldout-recovery-plan-{AGGREGATE_RESCUE_RUN}",
                 )
                 if plan_artifact is None:
