@@ -831,9 +831,9 @@
     },
     {
       "path": "research/0.14-paper-evidence-checkpoint.md",
-      "en_blob": "6c5915d879db3a59bfd960cd6c2a4c116b01c72b",
-      "ko_blob": "a7fd015b0cce8d4ea7cdbfb784993064812b0965",
-      "notes": "Compared evidence-role matrices, complete terminal B1 552 and B2 460 episodes, exact failed K3 -3.2609pp, sealed 0.14 claims, invalid-vs-negative run definitions, model revisions/aggregates, publication limits. Both languages also retain a historically stale pending-list section; not a bilingual divergence."
+      "en_blob": "95867761749b8ffb253c69905ef4c52ecbf15a8b",
+      "ko_blob": "1c1ffab5ae82db6fa13f40d1a7dee8ea12794490",
+      "notes": "2026-10-14 EN/KO checkpoint comparison: B1/B2 and K3 negative outcomes retained; #432 780-task held-out canonical 11,700 episodes terminal negative gate and #424 final-answer independently dispatched but unscored. Provenance is AI-assisted, not an independent human sign-off."
     },
     {
       "path": "adapter-authoring.md",
