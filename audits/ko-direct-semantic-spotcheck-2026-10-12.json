@@ -657,8 +657,8 @@
     },
     {
       "path": "research/paper-evidence-package.md",
-      "en_blob": "af316164642d6e86c2f423194b83194f7564a270",
-      "ko_blob": "113e84bb59ccbcc1a7cdc9e812c8d45b75bef5d3",
+      "en_blob": "661b0a4720746af855155cd452fda3e03ae17de3",
+      "ko_blob": "b44ea29e0bf81f6cefc48abb024fe97a58572b2f",
       "notes": "2026-10-14 updated EN/KO source comparison: #432 valid 11,700-episode canonical terminal negative result; #424 independently dispatched, unscored; #431/#510 negative gates retained; original AI-assisted review is not independent human sign-off."
     },
     {
@@ -741,9 +741,9 @@
     },
     {
       "path": "research/field-projection-answer-quality.md",
-      "en_blob": "fbf90b1bfb68bd697591cfe7563f1bd7ba85c8ef",
-      "ko_blob": "4495e408ef4c141dd7f6e155bba8e32ae675e37e",
-      "notes": "Compared #506/#510 terminal negatives, four frozen evidence-observation arms, fail-closed projection validation, 144 task statistic design and no fresh result claim."
+      "en_blob": "7d5893642c9fc48e8600e30860679fd9d41679be",
+      "ko_blob": "7075140517260574759d1777572b3ea26377c2fb",
+      "notes": "2026-10-15 AI-assisted EN/KO source comparison: #506 original confirmation 38564885951 produced 1,152 episodes, terminal negative promotion, +14.58pp PROJECTED unsupported-fact delta, unreliable absolute grounded-answer rates; #510 successor remains separate/unstarted. No claim of independent human review or changed frozen science."
     },
     {
       "path": "guides/inspection.md",
@@ -831,8 +831,8 @@
     },
     {
       "path": "research/0.14-paper-evidence-checkpoint.md",
-      "en_blob": "d2213fe86a376ca72b794f0011a9310d7775bfcc",
-      "ko_blob": "d5d8faddfe42107323dd1a5537a7fc13eaa2828e",
+      "en_blob": "10e49ea908dece928486c2480fa400e53cfb6ab6",
+      "ko_blob": "97b5135f3159b8074ea8443cd1816b79ec2465af",
       "notes": "2026-10-14 EN/KO checkpoint comparison: B1/B2 and K3 negative outcomes retained; #432 780-task held-out canonical 11,700 episodes terminal negative gate and #424 final-answer independently dispatched but unscored. Provenance is AI-assisted, not an independent human sign-off."
     },
     {
