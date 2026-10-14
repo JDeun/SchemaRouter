@@ -317,19 +317,11 @@
     },
     {
       "path": "integrations/laya.md",
-      "source_blob": "3526330c901cc32095fd3f46e6f4e293f3e21ac0"
+      "source_blob": "3db631b4c4be74244d86b7d39608913656ebf77a"
     },
     {
       "path": "integrations/llamaindex.md",
       "source_blob": "df85cf760bcdecedf91e692bc8e3bc267c4ed98f"
-    },
-    {
-      "path": "integrations/microsoft-decision-1.md",
-      "source_blob": "be983823a98e8c74c0ea7d5f3c8f3b7fe1b7ebad"
-    },
-    {
-      "path": "integrations/microsoft-foundry-http-adapter.md",
-      "source_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567"
     },
     {
       "path": "integrations/ollama.md",
@@ -598,6 +590,14 @@
     {
       "path": "versioning.md",
       "source_blob": "61f82f452188aec2f74fde20f09243a9dbbb1497"
+    },
+    {
+      "path": "integrations/microsoft-foundry-http-adapter.md",
+      "source_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567"
+    },
+    {
+      "path": "integrations/microsoft-decision-1.md",
+      "source_blob": "be983823a98e8c74c0ea7d5f3c8f3b7fe1b7ebad"
     }
   ]
 }
