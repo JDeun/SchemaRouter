@@ -14,6 +14,7 @@ import io
 import json
 import os
 import re
+import sys
 import time
 import urllib.error
 import urllib.parse
@@ -23,6 +24,15 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+# GitHub Actions runs this controller as 'python scripts/research_014_conveyor.py'.
+# In that execution mode sys.path[0] is scripts/, not the repository root.
+# Ensure delayed imports from the scripts package work both in Actions and
+# when the controller is imported as a package during pytest.
+if __package__ in {None, ""}:
+    project_root = str(Path(__file__).resolve().parents[1])
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
 
 CANONICAL_B2_RUN = 36642658406
 B2_ARTIFACT_PREFIX = "b2-smollm3-canonical-"
