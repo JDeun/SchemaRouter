@@ -52,7 +52,8 @@ class RecoveryAPI:
                 ]
             }
         page = int(path.rsplit("page=", 1)[-1])
-        return {"jobs": self.jobs[(page - 1) * 100:page * 100]}
+        size = int(path.split("per_page=", 1)[1].split("&", 1)[0])
+        return {"jobs": self.jobs[(page - 1) * size:page * size]}
 
     def artifacts(self, run_id: int) -> list[dict]:
         return [
@@ -83,9 +84,10 @@ def test_failed_job_cause_unproven_and_rerun_blocked_while_active() -> None:
     assert fail["eligible_for_bounded_retry_after_run_ends"] is False
     assert fail["artifact_uploaded_not_proof_of_success"] is False
     assert api.details_called == [
-        "/actions/runs/38107675261/jobs?filter=latest&per_page=100&page=1",
-        "/actions/runs/38107675261/jobs?filter=latest&per_page=100&page=2",
-        "/actions/runs/38107675261/jobs?filter=latest&per_page=100&page=3",
+        *(
+            f"/actions/runs/38107675261/jobs?filter=latest&per_page=25&page={page}"
+            for page in range(1, 12)
+        ),
         "/actions/jobs/40000",
     ]
 

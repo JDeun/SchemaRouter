@@ -55,12 +55,21 @@ def test_maturity_matrix_localizes_all_49_capability_rows() -> None:
 
 def test_full_korean_corpus_has_no_new_long_english_table_clauses() -> None:
     report = scan(ROOT / "docs_ko")
-    # Scan the entire evolving bilingual tree, not only the original 147 pages.
-    en = {x.relative_to(ROOT / "docs").as_posix() for x in (ROOT / "docs").rglob("*.md")}
-    ko = {x.relative_to(ROOT / "docs_ko").as_posix() for x in (ROOT / "docs_ko").rglob("*.md")}
-    assert en == ko
-    assert len(en) >= 147
-    assert report["scanned_pages"] == len(ko)
+    # Preserve a lower bound on the audited bilingual corpus, but do not
+    # hard-code the exact page count: new EN/KO pairs legitimately expand it.
+    english_root = ROOT / "docs"
+    korean_root = ROOT / "docs_ko"
+    english_pages = {
+        page.relative_to(english_root).as_posix()
+        for page in english_root.rglob("*.md")
+    }
+    korean_pages = {
+        page.relative_to(korean_root).as_posix()
+        for page in korean_root.rglob("*.md")
+    }
+    assert len(korean_pages) >= 147
+    assert korean_pages == english_pages, "EN/KO Markdown pages must be paired"
+    assert report["scanned_pages"] == len(korean_pages)
     assert report["findings"] == [], report["findings"][:30]
 
 

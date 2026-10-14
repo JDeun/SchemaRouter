@@ -125,3 +125,90 @@ def test_system_one_backend_rejects_empty_provider_configuration(
 ) -> None:
     with pytest.raises(ValueError):
         SystemOneDecisionBackend(**{field: value})
+
+
+
+@pytest.mark.parametrize("forged_id", [True, False, 42, 0, None, [], {}])
+def test_system_one_never_coerces_provider_choice_into_string_authority(
+    forged_id: Any,
+) -> None:
+    # An adapter must not let the Python coercion True -> "True" or
+    # 42 -> "42" select a genuinely registered string option.
+    req = DecisionRequest(
+        query="Which allowed route?",
+        options=[
+            DecisionOption(id="True", label="allowed literal True ID"),
+            DecisionOption(id="42", label="allowed literal numeric ID"),
+        ],
+    )
+    client = FakeCompatibleClient(
+        FakeResponse(choice=forged_id, confidence=0.95)
+    )
+    with pytest.raises(PlanningError, match="invalid choice response"):
+        choose_sync(SystemOneDecisionBackend(client=client), req)
+
+
+@pytest.mark.parametrize("forged_confidence", [
+    True, False, "0.99", "0.01", None, [], {}, 10 ** 1000,
+])
+def test_system_one_rejects_non_numeric_or_overflowed_confidence_before_choice(
+    forged_confidence: Any,
+) -> None:
+    client = FakeCompatibleClient(
+        FakeResponse(choice="candidate:0", confidence=forged_confidence)
+    )
+    with pytest.raises(PlanningError, match="invalid choice response"):
+        choose_sync(
+            SystemOneDecisionBackend(client=client), request(),
+        )
+
+
+@pytest.mark.parametrize(("field", "value"), [
+    ("min_confidence", True),
+    ("min_confidence", False),
+    ("min_confidence", "0.5"),
+    ("min_confidence", 10 ** 1000),
+    ("timeout", True),
+    ("timeout", "30"),
+    ("timeout", 10 ** 1000),
+    ("async_mode", 1),
+    ("async_mode", "false"),
+    ("include_context", 1),
+    ("include_context", "false"),
+])
+def test_system_one_configuration_rejects_truthy_string_or_forged_scalars(
+    field: str,
+    value: Any,
+) -> None:
+    with pytest.raises(ValueError, match=field):
+        SystemOneDecisionBackend(**{field: value})
+
+
+def test_system_one_does_not_treat_boolean_usage_as_token_count() -> None:
+    client = FakeCompatibleClient(FakeResponse())
+    payload = client.response
+    payload.usage = type("FakeUsageBool", (), {
+        "input_tokens": True,
+        "output_tokens": False,
+    })()
+    result = choose_sync(SystemOneDecisionBackend(client=client), request())
+    assert result.selections[0].option_id == "candidate:1"
+    assert "input_tokens" not in result.metadata
+    assert "output_tokens" not in result.metadata
+
+
+def test_system_one_preserves_valid_choice_and_zero_token_usage() -> None:
+    client = FakeCompatibleClient(
+        FakeResponse(choice="candidate:1", confidence=1)
+    )
+    client.response.usage = type("FakeUsageValid", (), {
+        "input_tokens": 0,
+        "output_tokens": 32,
+    })()
+    result = choose_sync(
+        SystemOneDecisionBackend(client=client, min_confidence=0), request(),
+    )
+    assert result.selections[0].option_id == "candidate:1"
+    assert result.selections[0].score == 1.0
+    assert result.metadata["input_tokens"] == 0
+    assert result.metadata["output_tokens"] == 32
