@@ -657,9 +657,9 @@
     },
     {
       "path": "research/paper-evidence-package.md",
-      "en_blob": "36420cc18de100bf89665b4638c1576ec0dff486",
-      "ko_blob": "dbca943c41831773f39fb3d0b336aab87cb17693",
-      "notes": "Compared the snapshot of #432 held-out recovery 97/234 parent shards, #431 negative, #510 terminal result, independent role and no invalid partial claims."
+      "en_blob": "af316164642d6e86c2f423194b83194f7564a270",
+      "ko_blob": "113e84bb59ccbcc1a7cdc9e812c8d45b75bef5d3",
+      "notes": "2026-10-14 updated EN/KO source comparison: #432 valid 11,700-episode canonical terminal negative result; #424 independently dispatched, unscored; #431/#510 negative gates retained; original AI-assisted review is not independent human sign-off."
     },
     {
       "path": "guides/run-traces.md",
@@ -831,9 +831,9 @@
     },
     {
       "path": "research/0.14-paper-evidence-checkpoint.md",
-      "en_blob": "6c5915d879db3a59bfd960cd6c2a4c116b01c72b",
-      "ko_blob": "a7fd015b0cce8d4ea7cdbfb784993064812b0965",
-      "notes": "Compared evidence-role matrices, complete terminal B1 552 and B2 460 episodes, exact failed K3 -3.2609pp, sealed 0.14 claims, invalid-vs-negative run definitions, model revisions/aggregates, publication limits. Both languages also retain a historically stale pending-list section; not a bilingual divergence."
+      "en_blob": "d2213fe86a376ca72b794f0011a9310d7775bfcc",
+      "ko_blob": "d5d8faddfe42107323dd1a5537a7fc13eaa2828e",
+      "notes": "2026-10-14 EN/KO checkpoint comparison: B1/B2 and K3 negative outcomes retained; #432 780-task held-out canonical 11,700 episodes terminal negative gate and #424 final-answer independently dispatched but unscored. Provenance is AI-assisted, not an independent human sign-off."
     },
     {
       "path": "adapter-authoring.md",
