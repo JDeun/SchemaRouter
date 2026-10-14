@@ -33,6 +33,10 @@ TASKS_PER_PARENT = 10
 TASKS_PER_MICRO = 2
 PARENTS_PER_WAVE = 50
 EXPECTED_SHARDS = 234
+# One-shot aggregation rescue: published failed Wave 2, NOT an evaluator retry.
+AGGREGATE_RESCUE_PARENT = 38012340016
+AGGREGATE_RESCUE_RUN = 38342986866
+JOB_PAGE_SIZE = 25
 RUNTIME_KEYS = (
     "machine", "python", "jinja2", "torch", "transformers",
     "tokenizers", "safetensors",
@@ -69,10 +73,12 @@ def latest_jobs(api: GitHubAPI, run_id: int) -> list[dict[str, Any]]:
     jobs: list[dict[str, Any]] = []
     page = 1
     while True:
-        data = api.get(f"/actions/runs/{run_id}/jobs?filter=latest&per_page=100&page={page}")
+        data = api.get(
+            f"/actions/runs/{run_id}/jobs?filter=latest&per_page={JOB_PAGE_SIZE}&page={page}"
+        )
         batch = data["jobs"]
         jobs.extend(batch)
-        if len(batch) < 100:
+        if len(batch) < JOB_PAGE_SIZE:
             break
         page += 1
     return jobs
@@ -280,6 +286,61 @@ def plan(
     }
 
 
+
+def validate_aggregate_only_rescue(
+    api: GitHubAPI, plan_data: dict[str, Any], *, source_run: int
+) -> None:
+    """Permit ONLY the identified failed-aggregate incident, never model reruns.
+
+    The source workflow exhausted the normal infrastructure retry budget.
+    A new workflow may reuse its successful evaluator jobs but must still pass
+    collect()'s full immutable ZIP, provenance and episode coverage gates.
+    """
+    if (source_run != AGGREGATE_RESCUE_RUN
+            or type(plan_data.get("parent_run_id")) is not int
+            or plan_data["parent_run_id"] != AGGREGATE_RESCUE_PARENT
+            or plan_data.get("source_sha") != FROZEN_SOURCE
+            or type(plan_data.get("wave")) is not int
+            or type(plan_data.get("total_waves")) is not int
+            or plan_data["wave"] != 2 or plan_data["total_waves"] != 3):
+        raise ValueError("unapproved aggregate-only recovery source or plan")
+
+    run = api.run(source_run)
+    expected_title = (
+        f"Held-out recovery parent={AGGREGATE_RESCUE_PARENT} "
+        f"wave=2 source={FROZEN_SOURCE}"
+    )
+    if (RECOVERY_WORKFLOW not in str(run.get("path") or "")
+            or run.get("display_title") != expected_title
+            or run.get("status") != "completed"
+            or run.get("conclusion") != "failure"):
+        raise ValueError("aggregate rescue requires the exact terminal failed wave")
+
+    jobs = latest_jobs(api, source_run)
+    by_name = {}
+    for job in jobs:
+        name = str(job.get("name") or "")
+        if name in ("prepare", "aggregate") or RECOVERY_JOB_RE.match(name):
+            if name in by_name:
+                raise ValueError("duplicate aggregate rescue source job")
+            by_name[name] = job
+    if (by_name.get("prepare", {}).get("conclusion") != "success"
+            or by_name.get("aggregate", {}).get("conclusion") != "failure"):
+        raise ValueError("only a failed aggregate with successful prepare is eligible")
+
+    planned = {part["job_id"] for part in plan_data["matrix"]}
+    completed = {}
+    for name, job in by_name.items():
+        matched = RECOVERY_JOB_RE.match(name)
+        if matched is not None:
+            part = matched.group(1)
+            if part in completed:
+                raise ValueError("duplicate aggregate rescue microshard")
+            completed[part] = job.get("conclusion")
+    if set(completed) != planned or any(v != "success" for v in completed.values()):
+        raise ValueError("aggregate rescue cannot repeat incomplete evaluator jobs")
+
+
 def collect(
     api: GitHubAPI, corpus: dict[str, Any], plan_data: dict[str, Any],
     *, current_recovery_run: int, out: Path,
@@ -415,6 +476,7 @@ def collect(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", choices=("plan", "collect"))
+    parser.add_argument("--aggregate-only-source-run", type=int)
     parser.add_argument("--corpus", required=True, type=Path)
     parser.add_argument("--parent-run", required=True, type=int)
     parser.add_argument("--wave", type=int, default=0)
@@ -453,8 +515,14 @@ def main() -> None:
                 or plan_data["source_sha"] != args.source_sha
                 or plan_data["evidence_digest"] != args.evidence_digest):
             raise ValueError("recovery plan identity drift")
+        source_run = int(os.environ["GITHUB_RUN_ID"])
+        if args.aggregate_only_source_run is not None:
+            validate_aggregate_only_rescue(
+                api, plan_data, source_run=args.aggregate_only_source_run
+            )
+            source_run = args.aggregate_only_source_run
         result = collect(api, corpus, plan_data,
-                         current_recovery_run=int(os.environ["GITHUB_RUN_ID"]),
+                         current_recovery_run=source_run,
                          out=args.out_dir)
         args.proof_out.parent.mkdir(parents=True, exist_ok=True)
         args.proof_out.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n",
