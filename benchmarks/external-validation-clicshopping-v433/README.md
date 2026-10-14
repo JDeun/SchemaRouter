@@ -79,3 +79,49 @@ for the read-only verbatim-byte/ID validation gate. The original upstream JSON
 bytes, declared digest convention, permission/route gold labels, human signoff
 and any scored comparison remain unverified. A successful structural lint
 does not grant independent confirmation or scoring authority.
+
+## Repinned 8ada7f1 visible DEV preflight — source and protocol identity (#1208)
+
+The separate source-repinned, **visible DEV-only** script
+`scripts/run_clicshopping_v433_repin_dev.py` now fails closed before
+measuring either arm if the transition manifest changes the exact verified
+`CustomerOrders.php` path/Git blob SHA or the corrected public route
+declaration path/Git blob SHA/target. It draws the frozen public identities
+from the *same code constants* as the standalone pinned-upstream source
+auditor; it does **not** fetch or execute the upstream source at runtime.
+The independent Git checkout/source-byte audit remains a distinct
+prerequisite for actually verifying upstream files.
+
+**Pinned-source transport recovery (2026-10-15):** GitHub no longer exposes
+`8ada7f1f392f3dd2800e825dac8d245dfd53944a` via the original
+`ClicShopping/ClicShopping` repository (`No commit found` / checkout
+`not our ref`). The public **fork mirror** `retail-ecommerce/ClicShopping`
+retains that **exact Git commit** (tree SHA
+`dbb202887185b41f37cdc8c133c549cbf70effcd`). GitHub's tree API
+confirms exact previously frozen blobs for `CustomerOrders.php`
+`067d96233780bb52cbfd1eb9dee28e2c8697e099`, its `readme.md`
+`545c092fe2d64e269390a37b9d9d9448bf5272e4`, and the route
+`clicshopping.json` `4762eaeecc5e672557da9280d6ebdcea8026c483`.
+The offline workflow uses this content-identical mirror **without changing
+any task/query, original source identity, parser, scorer or gate**. The
+mirror is not a substitute for original-maintainer attestation, and
+independent held-out scoring remains unauthorized. Checkout and byte
+verification remain required, and the actual checkout repository is
+recorded in the run provenance.
+
+The new cohort must also preserve literal integer `top_k=3` and
+`hot_repeats=5`, integer-zero model/HTTP activity, strictly disabled
+credential/PHP/model/held-out execution and all Boolean role grants.
+Python `True == 1` and `False == 0` must **not** pass these numeric
+checks. Duplicate, malformed or non-list required/forbidden/ambiguous
+route labels and forged count types are rejected before ranking.
+Regression tests mutate only synthetic in-memory copies of the original
+frozen fixture and verify the genuine 32+10 DEV control still runs.
+
+**No change to the 42 original DEV queries/labels, the original
+source SHA manifests, the 8ada7f1 independent-holdout #1311 intake,
+or the already disclosed DEV results.** The permission-filtered full
+baseline is still an offline REST endpoint/action exposure matrix, not
+ClicShopping's actual ranking algorithm. These checks neither prove
+runtime `customers_id` tenant safety nor grant independent human review,
+score new held-out cases, call PHP/HTTP or validate native REST latency.
