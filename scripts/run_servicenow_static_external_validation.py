@@ -8,6 +8,11 @@ from pathlib import Path
 from statistics import median
 from typing import Any
 
+try:
+    from scripts.external_validation_servicenow_platform_mcp import validate_package
+except ModuleNotFoundError:  # direct python scripts/... invocation
+    from external_validation_servicenow_platform_mcp import validate_package
+
 
 def _load(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
@@ -26,9 +31,13 @@ def run(*, package_dir: Path, snapshot_path: Path, repeats: int | None) -> dict[
     manifest = _load(package_dir / "manifest.json")
     cases = _load(package_dir / manifest["files"]["cases"])
     snapshot = _load(snapshot_path)
-    repeats = int(manifest["comparison"]["latency_repeats"]) if repeats is None else repeats
-    if repeats < 1:
-        raise ValueError("repeats must be positive")
+    # Validate the exact native source/labels BEFORE constructing a model index
+    # or materializing any simulated exposure; never work from drifted inputs.
+    validate_package(manifest, cases, snapshot)
+    if repeats is None:
+        repeats = manifest["comparison"]["latency_repeats"]
+    if type(repeats) is not int or repeats < 1:
+        raise ValueError("repeats must be a positive integer")
 
     tools = snapshot["tools"]
     names = [tool["name"] for tool in tools]
