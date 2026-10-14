@@ -1,0 +1,37 @@
+name: HYSET Public Retraining Preflight (Unscored)
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/hyset-public-retraining-preflight.yml"
+      - "scripts/validate_hyset_retraining_manifest.py"
+      - "tests/test_hyset_retraining_manifest_preflight.py"
+      - "tests/test_hyset_external_validation_protocol.py"
+      - "benchmarks/external-validation-hyset-retrain-dev-v1/manifest.json"
+      - "docs/research/hyset-external-validation.md"
+      - "docs_ko/research/hyset-external-validation.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preflight-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout frozen manifest
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Install Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+      - name: Install lightweight test tooling (no model or HYSET packages)
+        # pyproject.toml has asyncio_mode with strict config warnings. Installing
+        # bare pytest without its asyncio plugin fails during collection.
+        run: python -m pip install "pytest>=8.2,<9" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+      - name: Check no-model source and negative cases
+        run: |
+          ruff check scripts/validate_hyset_retraining_manifest.py tests/test_hyset_retraining_manifest_preflight.py
+          python -m pytest -q tests/test_hyset_retraining_manifest_preflight.py tests/test_hyset_external_validation_protocol.py
+          python -m scripts.validate_hyset_retraining_manifest --stage development

@@ -44,3 +44,62 @@ SchemaRouter 측에서는 표현 가능한 범위에서 동일한 query ID와 gr
 3. held-out test metric을 사용해 parameter를 선택하지 않습니다.
 4. HYSET-native와 SchemaRouter-native metric의 이름을 분리하며, 직접 비교 가능한 tool-retrieval metric만 같은 표에 둘 수 있습니다.
 5. 최초 scored run 전에 새로 다운로드한 모든 model/data revision을 고정합니다.
+
+## 학습·평가 전 오프라인 검증
+
+고정된 HYSET 커밋의 업스트림 트리에서 실제 평가 ID 파일 **6개**를
+확인하고 개발용 manifest에 정확한 경로를 명시했습니다.
+G1 category/instruction/tool, G2 category/instruction, G3 instruction의
+`data/test_query_ids/` 파일들이며, 비슷한 이름의
+`external/stabletoolbench/` 파일을 대신 사용하지 않습니다.
+
+현재 개발 초안을 검사하는 명령어입니다.
+
+```bash
+python -m scripts.validate_hyset_retraining_manifest --stage development
+```
+
+결과는 `DEVELOPMENT_UNSCORED`, `scoring_authorized=false`입니다.
+모델 로딩, ToolBench 다운로드, 학습 및 점수 계산은 수행하지 않습니다.
+
+인코더의 정확한 40자리 리비전, ToolBench 원본 리비전과 SHA-256,
+seed 42 학습 명령 및 선행 동결 상태를 독립적으로 확정했다면
+다음 명령으로 학습 단계의 입력 준비 상태를 검사합니다.
+
+```bash
+python -m scripts.validate_hyset_retraining_manifest --stage training
+```
+
+Qwen은 `d_z=1536`, BERT는 `d_z=768`을 검사합니다. `eta=0.3` 설정은 독립적으로 재현 가능한
+reward cache SHA-256과 `execution_reward_eta03` 라벨이 필요합니다.
+`eta=0`은 reward cache 없이 `annotation_only_eta0`라고 명시해야 합니다.
+실제 재학습 이후에만 생성 가능한 `training.checkpoint_sha256`이
+등록되어야 `--stage evaluation` 입력 검사를 통과합니다.
+
+틀린 split 경로, 공개되지 않은 논문 체크포인트 재현 주장,
+held-out 기반 튜닝, 중복 JSON 키, 비정상 숫자는 거부합니다.
+**사전검사 통과는 외부 검증·실험 승인이나 실제 학습 성공을 의미하지
+않습니다.** 검증기의 `scoring_authorized`는 항상 `false`입니다.
+데이터 원본 바이트·train/test 배제·실행 로그·체크포인트 출처 및
+제3자 검토는 별도로 확인해야 하며, 현재 manifest는
+학습·평가 준비에 필요한 리비전과 해시가 없어 의도적으로 실패합니다.
+
+### 실제 학습 명령과 선언된 실험 조건 일치 검사
+
+고정된 `train_hyset.sh`가 호출하는 `src/train_hyset.py`의
+`--eta` 기본값은 **0.3**입니다. manifest에서 annotation-only
+`eta=0`을 선언했어도 실제 명령에 `--eta 0`을 전달하지
+않으면 해당 소거 실험과 다른 설정이 실행됩니다.
+
+사전 검증기는 단일 `train_hyset.sh` 인수 목록을 분석하여
+`--encoder_type`, `--d_z`, `--seed 42`, `--eta`를
+명시하고 manifest 값과 일치하도록 강제합니다.
+`eta=0.3`은 실제 명령에 `--reward_cache`가 필요하고,
+`eta=0`은 해당 옵션이 없어야 합니다. 중복 옵션,
+held-out ID 디렉터리·corpus 경로 재지정, 쉘 명령 연결,
+인코더·차원·시드·eta 불일치를 거부합니다.
+
+이 검사는 **명령 문자열과 선언의 일치**만 확인합니다.
+reward cache 원본 바이트나 모델·데이터 체크포인트 해시의
+실제 일치 및 학습 성공을 증명하지 않으며, 명령을 실행하지도
+않습니다.
