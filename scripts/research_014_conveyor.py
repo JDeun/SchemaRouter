@@ -479,6 +479,22 @@ def terminal_failure(run: StageRun | None) -> bool:
 
 
 
+
+def pinned_heldout_rescue_plan(api: GitHubAPI, source_run: int) -> dict[str, Any]:
+    """Never resolve a frozen recovery plan from a later rescue wrapper run."""
+    frozen_source_run = 38342986866
+    if source_run != frozen_source_run:
+        raise ValueError("aggregate-only plan must be read from original Wave-2")
+    artifact = api.artifact(
+        frozen_source_run,
+        f"heldout-recovery-plan-{frozen_source_run}",
+    )
+    if artifact is None:
+        raise RuntimeError("missing exact aggregate-rescue source plan")
+    return api.artifact_json(artifact, "heldout-recovery-plan.json")
+
+
+
 def exclusively_failed_aggregate_only_wrapper(jobs: list[dict[str, Any]]) -> bool:
     """Only a failed no-model aggregate can be retried with a new wrapper.
 
@@ -1274,18 +1290,11 @@ def run_controller(
                             "aggregate-only wrapper correction requires the "
                             "exact previous all-model-skipped failure"
                         )
-                # The original successful Wave-2 `prepare` job archived the
-                # only frozen plan. The failed aggregate-only wrapper runs
-                # downloaded it but did NOT upload a copy as an artifact.
-                # Therefore always read it from the pinned original Wave 2.
-                plan_artifact = api.artifact(
-                    AGGREGATE_RESCUE_RUN,
-                    f"heldout-recovery-plan-{AGGREGATE_RESCUE_RUN}",
-                )
-                if plan_artifact is None:
-                    raise RuntimeError("missing exact aggregate-rescue source plan")
-                rescue_plan = api.artifact_json(
-                    plan_artifact, "heldout-recovery-plan.json"
+                # Failed aggregate-only wrappers download the original plan
+                # but do not reupload it. Always authenticate against the
+                # original frozen Wave-2 provenance, never the wrapper run.
+                rescue_plan = pinned_heldout_rescue_plan(
+                    api, AGGREGATE_RESCUE_RUN
                 )
                 validate_aggregate_only_rescue(
                     api, rescue_plan, source_run=AGGREGATE_RESCUE_RUN
