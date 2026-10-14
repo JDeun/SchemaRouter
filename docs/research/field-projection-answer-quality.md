@@ -2,13 +2,27 @@
 
 Tracking issue: #506
 
-> **Current status — 2026-10-10:** the original #506 DEV screen is consumed as an instrument
-> failure because the frozen small agent did not call tools. The preregistered #510 successor
-> runtime qualification ended with **no qualified agent** under its frozen eligibility criteria;
-> see terminal [#510](https://github.com/JDeun/SchemaRouter/issues/510), run `36922946442`.
-> Thus the projection successor was **not executed**, and neither the failed instrument screen
-> nor the qualification result establishes an output-field-projection quality effect. Invalid
-> infrastructure attempts remain excluded from model-quality conclusions.
+> **Terminal update — 2026-10-15:** #506's independent frozen 3B confirmation **completed** in [run 38564885951](https://github.com/JDeun/SchemaRouter/actions/runs/38564885951). The result **failed** the preregistered factuality promotion gate, despite lower context cost. Do not claim field projection preserved final-answer quality. The earlier #506 small-agent DEV screen had no tool calls, while the **separate** #510 successor runtime qualification ended without a qualified candidate; neither was silently promoted into this final result. Future corrections belong to [#1348](https://github.com/JDeun/SchemaRouter/issues/1348) and post-v0.18 [#1344](https://github.com/JDeun/SchemaRouter/issues/1344), not a revision of the frozen #506 corpus or thresholds.
+
+## Canonical confirmation result (terminal negative promotion)
+
+The original frozen source is `103ffbbdb68736da1833354b718071aa4c84f084`. On the pinned SmolLM3-3B confirmation runtime, **96/96 evaluator shards plus prepare, model cache and aggregation succeeded**. There were 144 independent tasks × two catalog sizes (100/250) × four observation arms = **1,152 scored episodes**, 288 per arm. The immutable [canonical artifact](https://github.com/JDeun/SchemaRouter/actions/runs/38564885951/artifacts/11922570109) is `projection-canonical-38564885951` (artifact ID `11922570109`, ZIP SHA-256 `c11912ed67a3c02e90c5963ccb462ab44fba3dbd28ced0fe9aacaa92d390eff7`). The task-identity SHA-256 is `c601e19934fd257af273d47c00eadc481a8f2e72ffa38b1f536cc46c90e3fb82`.
+
+| Aggregate metric | RAW-FULL | PROJECTED | PROJECTED+CONTRACT | ORACLE-MINIMAL |
+| --- | ---: | ---: | ---: | ---: |
+| Required-fact recall | 0.00% | 0.00% | 1.39% | 0.00% |
+| Valid structured final envelope | 7.99% | 21.53% | 13.19% | 21.53% |
+| Unsupported-fact rate | 6.94% | **21.53%** | **12.15%** | 21.53% |
+| Executor task-pass rate (not answer accuracy) | 30.56% | 30.56% | 30.56% | 30.56% |
+| Mean total input tokens | 1879.10 | 1700.20 | 1711.98 | 1700.20 |
+| Mean observation characters | 184.77 | 80.62 | 118.62 | 80.62 |
+| Unauthorized destructive executions | 0 | 0 | 0 | 0 |
+
+Relative to RAW-FULL, PROJECTED reduces mean total input tokens **9.52%** but increases unsupported-fact rate **+14.58 percentage points**, with preregistered paired task-cluster-bootstrap 95% CI **[+8.68, +20.83] pp**. PROJECTED+CONTRACT reduces mean total input tokens **8.89%** but increases unsupported-fact rate **+5.21 pp**, 95% CI **[+0.69, +10.07] pp**. Both fail the frozen **maximum +1 pp** unsupported-fact gate. A context reduction alone does not qualify for promotion.
+
+The shared harness computes `passed = executor.complete and not context_overflow`: tool-task completion, **not** grounded final-answer success. The low RAW-FULL absolute fact recall and structured-envelope rate indicate the answer instrument is not reliable enough to establish a broad causal advantage or disadvantage of field projection. The confirmed verdict is **negative promotion / quality preservation unproven**, not proof that all projection algorithms fail. Examination of the frozen task specification (not answer-outcome rows) also shows that **120/144 tasks** declare equal planned and gold field sets for all steps: PROJECTED and ORACLE-MINIMAL often hand the agent identical observations. This limits the separate diagnostic value of the ORACLE arm.
+
+Historical DEV/qualification failures below remain unchanged and must not be conflated with this **separate successfully completed confirmation**. The frozen source, corpus, scorer, thresholds and all observed outcomes remain immutable. No new costly confirmation will be dispatched until after v0.18 development, external benchmark review and release.
 
 ## The question
 
