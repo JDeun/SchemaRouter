@@ -61,7 +61,12 @@ from .validation import (
     json_schemas_compatible,
 )
 
-_TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[가-힣]+")
+# ASCII and Korean behavior is unchanged. Match Japanese kana/kanji as separate
+# lexical spans so explicitly declared multilingual field aliases can be
+# retrieved; this does NOT translate English-only capability descriptions.
+_TOKEN_RE = re.compile(
+    r"[A-Za-z0-9_]+|[가-힣]+|[ぁ-ゖ]+|[ァ-ヺー]+|[一-鿿々〆]+"
+)
 
 
 def _normalize(text: str) -> str:
