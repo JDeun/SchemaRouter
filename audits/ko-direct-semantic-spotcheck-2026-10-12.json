@@ -657,9 +657,9 @@
     },
     {
       "path": "research/paper-evidence-package.md",
-      "en_blob": "36420cc18de100bf89665b4638c1576ec0dff486",
-      "ko_blob": "dbca943c41831773f39fb3d0b336aab87cb17693",
-      "notes": "Compared the snapshot of #432 held-out recovery 97/234 parent shards, #431 negative, #510 terminal result, independent role and no invalid partial claims."
+      "en_blob": "8a0ae98ff11e7e6f8af4a3bfeae922788bdfe634",
+      "ko_blob": "1fb40f4ee17bff0ab802b62c5f33f0e84f9a28f1",
+      "notes": "2026-10-14 updated EN/KO source comparison: #432 valid 11,700-episode canonical terminal negative result; #424 independently dispatched, unscored; #431/#510 negative gates retained; original AI-assisted review is not independent human sign-off."
     },
     {
       "path": "guides/run-traces.md",
