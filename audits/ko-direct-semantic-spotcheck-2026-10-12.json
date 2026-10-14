@@ -147,9 +147,9 @@
     },
     {
       "path": "recipes/mcp-agent.md",
-      "en_blob": "61a14b760573ec136a0d1d55dd595d35b5d08d08",
-      "ko_blob": "3a8b3d72e4d1cc9ea717019749cbc6136392921f",
-      "notes": "Matched broad unclassified remote exception warning and prohibition on trusting MCP annotations for mutation decisions."
+      "en_blob": "13c101dd212b14c4f6b0ba8bb9fd41c3b849359b",
+      "ko_blob": "8a51a8aedc9e15c779abfdaddadbf04b8bd9641b",
+      "notes": "Matched broad unclassified remote exception warning and prohibition on trusting MCP annotations for mutation decisions. Additive EN/KO changes checked on 2026-10-13: Additional EN/KO opt-in no-match execution guard documentation. Confirms same principal, abstention no-execution, preexecution binding checks, and explicit lack of prospective cutoff calibration or default ainvoke protection; not a verified open-set quality claim."
     },
     {
       "path": "recipes/openapi-agent.md",
