@@ -657,9 +657,9 @@
     },
     {
       "path": "research/paper-evidence-package.md",
-      "en_blob": "36420cc18de100bf89665b4638c1576ec0dff486",
-      "ko_blob": "dbca943c41831773f39fb3d0b336aab87cb17693",
-      "notes": "Compared the snapshot of #432 held-out recovery 97/234 parent shards, #431 negative, #510 terminal result, independent role and no invalid partial claims."
+      "en_blob": "661b0a4720746af855155cd452fda3e03ae17de3",
+      "ko_blob": "b44ea29e0bf81f6cefc48abb024fe97a58572b2f",
+      "notes": "2026-10-14 updated EN/KO source comparison: #432 valid 11,700-episode canonical terminal negative result; #424 independently dispatched, unscored; #431/#510 negative gates retained; original AI-assisted review is not independent human sign-off."
     },
     {
       "path": "guides/run-traces.md",
@@ -741,9 +741,9 @@
     },
     {
       "path": "research/field-projection-answer-quality.md",
-      "en_blob": "fbf90b1bfb68bd697591cfe7563f1bd7ba85c8ef",
-      "ko_blob": "4495e408ef4c141dd7f6e155bba8e32ae675e37e",
-      "notes": "Compared #506/#510 terminal negatives, four frozen evidence-observation arms, fail-closed projection validation, 144 task statistic design and no fresh result claim."
+      "en_blob": "7d5893642c9fc48e8600e30860679fd9d41679be",
+      "ko_blob": "7075140517260574759d1777572b3ea26377c2fb",
+      "notes": "2026-10-15 AI-assisted EN/KO source comparison: #506 original confirmation 38564885951 produced 1,152 episodes, terminal negative promotion, +14.58pp PROJECTED unsupported-fact delta, unreliable absolute grounded-answer rates; #510 successor remains separate/unstarted. No claim of independent human review or changed frozen science."
     },
     {
       "path": "guides/inspection.md",
@@ -831,9 +831,9 @@
     },
     {
       "path": "research/0.14-paper-evidence-checkpoint.md",
-      "en_blob": "6c5915d879db3a59bfd960cd6c2a4c116b01c72b",
-      "ko_blob": "a7fd015b0cce8d4ea7cdbfb784993064812b0965",
-      "notes": "Compared evidence-role matrices, complete terminal B1 552 and B2 460 episodes, exact failed K3 -3.2609pp, sealed 0.14 claims, invalid-vs-negative run definitions, model revisions/aggregates, publication limits. Both languages also retain a historically stale pending-list section; not a bilingual divergence."
+      "en_blob": "10e49ea908dece928486c2480fa400e53cfb6ab6",
+      "ko_blob": "97b5135f3159b8074ea8443cd1816b79ec2465af",
+      "notes": "2026-10-14 EN/KO checkpoint comparison: B1/B2 and K3 negative outcomes retained; #432 780-task held-out canonical 11,700 episodes terminal negative gate and #424 final-answer independently dispatched but unscored. Provenance is AI-assisted, not an independent human sign-off."
     },
     {
       "path": "adapter-authoring.md",
@@ -908,29 +908,5 @@
       "observation": "Directly compared each of the 49 EN/KO capability, current status, and future-direction rows against the repaired translation on PR #1305; preserved API qualifiers, failure-closed semantics, vendor lists and numerical targets. Both document-tail narrative maturity gates match in substantive content. The exact reviewed Korean blob is now present in PR #1307's head as well as PR #1305; the 147/147 records are pinned to the PR #1307 source tree. Neither PR is yet merged to main, so this is not a merged-main editorial sign-off."
     }
   ],
-  "directly_examined_across_branches": 147,
-  "review_amendments": [
-    {
-      "review_date": "2026-10-13",
-      "path": "research/hyset-external-validation.md",
-      "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-      "review_scope": "Additive bilingual HYSET preflight text: source-pin and six split IDs; staged manifest validation, reward-cache and eta argv correspondence, strict unscored authority boundary. Earlier 2026-10-12 review remains dated and is not retroactively certified.",
-      "prior_en_blob": "395064d5150d8f6280778219d5c21f8e68494797",
-      "prior_ko_blob": "6188a36e5b8ba51414f1dad5ec99633205a025fd",
-      "current_en_blob": "f99e46a0bfbe2652b553d393318e44afae797eb3",
-      "current_ko_blob": "618da5d771276639eebf3d9120231ac3b5e4f2b9",
-      "independent_sentence_review_complete": false,
-      "native_hyset_training_or_evaluation_performed": false
-    },
-    {
-      "review_date": "2026-10-14",
-      "path": "research/hyset-external-validation.md",
-      "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-      "review_scope": "KO presentation fix only: show the training-preflight command in a fenced bash block matching the EN source; no scoring or native execution.",
-      "prior_ko_blob": "618da5d771276639eebf3d9120231ac3b5e4f2b9",
-      "current_ko_blob": "f0779aaf93bcff2394a07122609805f3c6d5ffaf",
-      "independent_sentence_review_complete": false,
-      "native_hyset_training_or_evaluation_performed": false
-    }
-  ]
+  "directly_examined_across_branches": 147
 }

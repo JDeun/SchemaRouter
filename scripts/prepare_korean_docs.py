@@ -150,7 +150,13 @@ def prepare(output: Path) -> tuple[int, int]:
 
         if source.suffix.lower() != ".md":
             destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source, destination)
+            # Keep non-Markdown assets shared except the optional localized AI
+            # navigation index. Do not bypass Markdown translation governance.
+            translated_asset = TRANSLATION_DIR / relative
+            if relative.as_posix() == "llms.txt" and translated_asset.is_file():
+                shutil.copy2(translated_asset, destination)
+            else:
+                shutil.copy2(source, destination)
             continue
 
         translation = TRANSLATION_DIR / relative

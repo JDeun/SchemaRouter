@@ -15,8 +15,13 @@ on:
       - ".github/workflows/research-0.14-field-projection.yml"
       - "scripts/research_014_conveyor.py"
       - "benchmarks/agent-utility-0.14-conveyor-preregistration.json"
+  # GITHUB_TOKEN-triggered workflow_dispatch chains are not guaranteed to
+  # emit a downstream workflow_run event. The canonical held-out job can
+  # complete after the latest event-driven pass has already returned "waiting".
+  # Periodically reconcile immutable completed runs; the controller's provenance
+  # markers deduplicate every downstream workflow dispatch.
   schedule:
-    - cron: "17 * * * *"
+    - cron: "7,27,47 * * * *"
   workflow_run:
     workflows:
       - CI
@@ -66,11 +71,14 @@ jobs:
           if [ "${EVENT_NAME}" = "schedule" ]; then
             RECOVERY+=(--recover-missing-k3)
           fi
+          # Release-0.18 integration freeze (#1345/#1346): dry-run only.
+          # Historical 0.14 artifacts stay immutable; do not dispatch another
+          # costly #506 confirmation/retry while protected CI is prioritized.
+          # Restore --execute only through a separately reviewed post-release PR.
           python scripts/research_014_conveyor.py \
             --repository "${GITHUB_REPOSITORY}" \
             --token "${GH_TOKEN}" \
             --ref main \
-            --execute \
             "${RECOVERY[@]}" \
             --state-out artifacts/research-0.14-conveyor-state.json
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
