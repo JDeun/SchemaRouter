@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from pathlib import Path
 
 import pytest
 
@@ -246,3 +247,17 @@ def test_original_42_visible_dev_cases_remain_unscored_heldout():
     assert results["model_calls"] == 0
     assert results["live_requests"] == 0
     assert [cohort["case_count"] for cohort in results["cohorts"]] == [32, 10]
+
+
+def test_offline_workflow_uses_only_exact_source_object_mirror() -> None:
+    """Fail if the repin workflow silently advances to a different source."""
+    workflow = (
+        Path(__file__).resolve().parents[1]
+        / ".github/workflows/external-validation-clicshopping-v433-repin-dev.yml"
+    ).read_text(encoding="utf-8")
+    assert "repository: retail-ecommerce/ClicShopping" in workflow
+    assert "ref: 8ada7f1f392f3dd2800e825dac8d245dfd53944a" in workflow
+    assert '"source_checkout_repository": "retail-ecommerce/ClicShopping"' in workflow
+    assert '"upstream_pin": report["source_pin"]' in workflow
+    assert "python -m scripts.verify_clicshopping_v433_repin" in workflow
+    assert "persist-credentials: false" in workflow
