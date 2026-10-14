@@ -90,6 +90,24 @@ jobs:
           assert 'hreflang="en"' in korean_html, "Korean site is missing English alternate"
           assert "/SchemaRouter/ko/" in english_html, "English selector is missing Korean site link"
           assert "/SchemaRouter/" in korean_html, "Korean selector is missing English site link"
+
+          # Explicit source navigation for human/agent documentation consumers.
+          en_ai = Path("site/llms.txt")
+          ko_ai = Path("site/ko/llms.txt")
+          assert en_ai.is_file(), "English llms.txt was not published"
+          assert ko_ai.is_file(), "Korean llms.txt was not published"
+          en_text = en_ai.read_text(encoding="utf-8")
+          ko_text = ko_ai.read_text(encoding="utf-8")
+          assert "https://jdeun.github.io/SchemaRouter/research/routing-status/" in en_text
+          assert "https://jdeun.github.io/SchemaRouter/ko/research/routing-status/" in ko_text
+          assert "최종 결과" in ko_text, "Korean page accidentally received English asset"
+          assert "#432" in en_text and "#424" in en_text
+          assert "#432" in ko_text and "#424" in ko_text
+
+          citation = Path("CITATION.cff").read_text(encoding="utf-8")
+          assert "cff-version: 1.2.0" in citation
+          assert "repository-code: \"https://github.com/JDeun/SchemaRouter\"" in citation
+          assert "doi:" not in citation.lower(), "No software DOI is currently verified"
           PY
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
