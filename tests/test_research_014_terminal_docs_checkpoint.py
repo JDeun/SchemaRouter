@@ -2,7 +2,6 @@
 
 This is documentation-status verification only, not a scientific evaluator.
 """
-from __future__ import annotations
 
 from pathlib import Path
 
