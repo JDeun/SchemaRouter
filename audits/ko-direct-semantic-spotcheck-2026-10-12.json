@@ -3,8 +3,8 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 147,
-  "total_page_pairs": 147,
+  "reviewed_page_pairs": 148,
+  "total_page_pairs": 148,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
@@ -14,472 +14,10 @@
   ],
   "reviews": [
     {
-      "path": "adapter-authoring.md",
-      "en_blob": "5cd569971e0722b633951814876e851fafb790b2",
-      "ko_blob": "429b3e9df69c6ef684573563adc157cec454dfe4",
-      "notes": "Directly compared source adapters, passive/active discovery, refresh credential provenance, named contract fields, exact unit conversion, array record fidelity, aliases and scientific qualifiers. Localized three untranslated Korean instructional clauses without altering contract."
-    },
-    {
-      "path": "architecture.md",
-      "en_blob": "e13e284e91f02d9b63eac07146a65afefc032248",
-      "ko_blob": "30b794315e985d1984f8899cf6055cd3d3f05bf0",
-      "notes": "Direct full document review: role/authority first principles, all 31 adversarial findings, 47 numbered core invariants, provider/index/field/type and security/fallback contracts. Fixed Korean invariant #45 orphan 'identity.' that broke the immutable snapshot identity assertion."
-    },
-    {
-      "path": "assets/brand/README.md",
-      "en_blob": "cce56415b5e1d1df7937971ccadaf0e5cd328cc8",
-      "ko_blob": "153d48eb165ef549490a58c10b6ad156549503be",
-      "notes": "Matched mark geometry meaning, all palette hex literals, source asset filenames/sizes and explicit forbidden visual transformations."
-    },
-    {
-      "path": "changelog.md",
-      "en_blob": "c82c6d7391f7780e4b54d22897796d7f56ffdac5",
-      "ko_blob": "f3aa39dfde127a818454f8e54daead470140940e",
-      "notes": "Matched canonical root changelog link and pre-1.0 compatibility reference."
-    },
-    {
-      "path": "compatibility.md",
-      "en_blob": "fe9599192126239aaf429eebeb8c6922ef998a50",
-      "ko_blob": "954dcf852e09076bf0d070739cef5f37757dfc20",
-      "notes": "Full source comparison: pinned Python and optional SDK range matrix, critical vs nonblocking Preview, Tier A/Tier B per-vendor live claims and 30-day external artifacts; no overclaim of exhaustive historical dependency versions."
-    },
-    {
-      "path": "concepts/adapters.md",
-      "en_blob": "fd829025a5c7f70c571a61ac4904ab032267ef6b",
-      "ko_blob": "f35152ef3562638d4c0dd901648a6abbc6b02b50",
-      "notes": "Matched compiler ownership, no policy authorization in adapter registry, fingerprinted runtime metadata and exact protocol auto-discovery scope."
-    },
-    {
-      "path": "concepts/capability-catalog.md",
-      "en_blob": "266139f38718c3212bdaec199c889a93649ee9fe",
-      "ko_blob": "e9ae0fafe90795bfa04b165650878032fc83f781",
-      "notes": "Compared registered capability versus document retrieval, state-aware filtered/backfilled Top-K, optional units/qualifiers, no new execution rights and RAG ownership."
-    },
-    {
-      "path": "concepts/decision-backends.md",
-      "en_blob": "d8af579c3b868c1675ad6d88ed4f4d63c27bc8e2",
-      "ko_blob": "8ab8e53996ca5d6687bf1e662a2615029a491ad2",
-      "notes": "Side-by-side review of candidate recall, no-route and operation-fit abstention/fallback, field and evidence-only veto, 6 backend comparison rows, credential locality and local embedder/pairwise scoring limits. Both languages still have older historical Jev unreleased-main wording; requires a separate source freshness check, not a translation discrepancy."
-    },
-    {
-      "path": "concepts/design-principles.md",
-      "en_blob": "ee4174cb6f1f0788c19d6a83c0abd70e05a8670d",
-      "ko_blob": "b05aa61e646f3fa478851f241acb59cef576338a",
-      "notes": "Compared all 11 principles, safe field/unit semantics, local provider authority, explicit max_calls, conservative semantic fallback and redacted traces."
-    },
-    {
-      "path": "concepts/execution.md",
-      "en_blob": "70d79f3ca4bf1cb28ac1c845ab1a432121932aa2",
-      "ko_blob": "cd2a1a5bc96f47c31757f7b414ef6e11ae620a3a",
-      "notes": "Compared all pre/post invocation validations, restricted redirect origins, credential separation, policy authority and error categories."
-    },
-    {
-      "path": "concepts/field-first-execution.md",
-      "en_blob": "ed612ae41668e6ae76d5981fd932f78ac65b8e56",
-      "ko_blob": "20800a14a891a2923a381bcc0751e892c35bb3b0",
-      "notes": "Read both EN and KO: provider-neutral field identity/mapping, caller-scoped evidence, default max_calls=1, two-stage projection, fail-closed unit datatype and affine conversion, exact qualifier matching/token-boundary limits."
-    },
-    {
-      "path": "concepts/planning.md",
-      "en_blob": "0cdd06d08876c8f0f5565700a5468e7a829e5bdb",
-      "ko_blob": "d861a028bd4093470cdc490d43ddf3e21709eacd",
-      "notes": "Compared full field coverage required/covered/uncovered, global/per-field evidence, alias and fallback authority, model explanation privacy, no workflow ownership."
-    },
-    {
-      "path": "concepts/protocol-ingestion-decisions.md",
-      "en_blob": "ac984acc00827d3af8b529b7b53af5d88950f512",
-      "ko_blob": "4f84b59437a7b3c98045406b405c5abf2ed43f95",
-      "notes": "Verified the protocol/adapter priority matrix, no untrusted schema guessing, mutation authorization, stream-lifecycle exclusions and the complete six-item adapter promotion rule."
-    },
-    {
-      "path": "concepts/registry.md",
-      "en_blob": "6b3ee8779f47606078027d3a2e7b1d5895cee67b",
-      "ko_blob": "fc4225468c5ad4d281522ff483a661c0a1413296",
-      "notes": "Repaired two broken Korean safety-critical sentences: immutable fingerprint includes explicit execution metadata, and amendments cannot change execution or response validation semantics."
-    },
-    {
-      "path": "concepts/schema-router.md",
-      "en_blob": "4afc6bcd95ae5283fb5dd35c6c519461bf47b4e1",
-      "ko_blob": "fce19b798c06efbccaa7ac6d61b44038e3ca8206",
-      "notes": "Matched ownership table, execution-plan field order, fail-closed revalidation, field-first retrieval and conservative ambiguous intent behavior."
-    },
-    {
-      "path": "concepts/tool-endpoint.md",
-      "en_blob": "958a27c6fad5410a33a9646d38e4fcc1381f7f1a",
-      "ko_blob": "059e7db19a32884bc88b20b629a39a360d7262a5",
-      "notes": "Compared complete hierarchy of ToolSpec, EndpointSpec, ParameterSpec, FieldSpec with logical/wire distinction and stale hash protections."
-    },
-    {
-      "path": "contributing.md",
-      "en_blob": "ea38c9bff4bfe38a798e001e890b9b8f6ac8a146",
-      "ko_blob": "ea38c9bff4bfe38a798e001e890b9b8f6ac8a146",
-      "notes": "Exact same include snippet in both locale Markdown sources."
-    },
-    {
-      "path": "framework-maturity.md",
-      "en_blob": "5d949eaaa4d64dbdf5ac0464cb0dbbdb41e00350",
-      "ko_blob": "20f08e65f91e611486943af69443aef53f4b08c6",
-      "notes": "Compared all 49 EN/Korean maturity matrix rows, preserving capability identifiers, implementation and future distinctions, no-execution/authorization boundaries, exact 85/97/100/1 + 250 ms target, 1k/10k/50k benchmark scales and CI, provider and evidence limitations. Identical translated Korean matrix taken from pending PR #1305. This is AI project contributor review, not independent human sentence-level certification."
-    },
-    {
-      "path": "getting-started/examples.md",
-      "en_blob": "b1a6b63ece4c7eedbf4801dd8cf3073831d2975a",
-      "ko_blob": "1610b8936db01b724d95ce73d6667464e860353e",
-      "notes": "Compared example 17-row matrix, real APIs.guru/Materials/Crossref/Tavily evidence, 40-tool byte-count demonstration and no token inflation."
-    },
-    {
-      "path": "getting-started/ingestion-paths.md",
-      "en_blob": "88895ea7dd81425b97f85ae72201551d2d2cf11a",
-      "ko_blob": "afcf2bd60aa224724fed2c7e24b3b3ac429d0bf7",
-      "notes": "Compared full provider/protocol matrix, passive network GET/HEAD auto detection, explicit GraphQL/MCP active sessions, raw-doc proposal approval."
-    },
-    {
-      "path": "getting-started/installation.md",
-      "en_blob": "9870961d062b537dc7bb9f5f2d91e609755806c8",
-      "ko_blob": "5c05e7cddcaff971d8c0ef0a0103751b20b83b7d",
-      "notes": "Repaired false 0.14 subject in explanation of current 0.17.0 public release; preserved Python >=3.10, extras, verification and dev0 differentiation."
-    },
-    {
-      "path": "getting-started/quickstart.md",
-      "en_blob": "29d0739003fb83cbd91e95db15b3fce623f5d9f3",
-      "ko_blob": "d7eb35e91adf91be6e08f4fb817d19f7e3f061b3",
-      "notes": "Compared APIs.guru no-auth, local deterministic CI fallback, four product boundary steps, install extras and no provider/outage release gate."
-    },
-    {
-      "path": "getting-started/runtime-lifecycle.md",
-      "en_blob": "d6c2ec32181a666182878cb13ad965dc0b61e791",
-      "ko_blob": "617c6b9f43ac1c11421206e9b2e7616c2916e75f",
-      "notes": "Matched router-owned cleanup, caller-owned objects never closed, safe sync offload and mixed event-loop ownership failure."
-    },
-    {
-      "path": "getting-started/schema-explorer.md",
-      "en_blob": "bc416dcf03345a5eca32ec0ce07150281041bf48",
-      "ko_blob": "8cb91c1e30fd63842209dd4dfcf63c3762275aff",
-      "notes": "Matched read-only schema view, no remote assets, schema defaults/examples secret suppression, live inspection redaction and absence of try-it-out execution."
-    },
-    {
-      "path": "getting-started/startup-rebinding.md",
-      "en_blob": "1e1d179274b513626258cd80e3591fbe0fd25dbb",
-      "ko_blob": "c009ff442f725f690af9ea16acd5750677393f49",
-      "notes": "Matched trusted host rebinding, never persisted credentials, strict failure states, local transport fingerprint and revalidation."
-    },
-    {
-      "path": "getting-started/storage-migrations.md",
-      "en_blob": "ec2bea7428f9266795a6d12ec04dcbe70a0ca8fa",
-      "ko_blob": "3fd84de33e952c8a4ab51c0ad0cc3e7bc148efa6",
-      "notes": "Matched transactional metadata-only v0->v1 migration, backup restrictions, schema integrity and fail-closed unsupported/corrupt cases."
-    },
-    {
-      "path": "guides/adapter-plugins.md",
-      "en_blob": "419f48e71d82a22a10b879b535f5123250904818",
-      "ko_blob": "30fae66961229168d4e845a70ae2f9e36eaf8993",
-      "notes": "Matched no plugin code import on discovery, allowlist-only loading, isolated-wheel demo evidence and no implied quality improvement."
-    },
-    {
-      "path": "guides/authorization.md",
-      "en_blob": "470ae1804bb24eef3e206b23549acaaa8bac3354",
-      "ko_blob": "28a9b0a99a7d0a8324772abf166b5b560654e12c",
-      "notes": "Compared RBAC/ABAC first-match, linted shadowing, pre-retrieval non-disclosure, run-level audit redaction, DataScope filters and reauthorization at runtime."
-    },
-    {
-      "path": "guides/candidate-indexing.md",
-      "en_blob": "3ed905d10b68702c8d5dff53b8a4d33fc3fcfdce",
-      "ko_blob": "e8dd1e38f5f16c5a854c4e9dcc1905477a5c7e3b",
-      "notes": "Matched exact-recall superset guarantee, cache version invalidation, opt-out behavior, and benchmark's same-plan requirement."
-    },
-    {
-      "path": "guides/capability-artifacts.md",
-      "en_blob": "18157d03f74805248443297235bc177b2d9fb447",
-      "ko_blob": "8cc7baf589d4b255bc802d502babc0b32d547cc8",
-      "notes": "Matched 1.0->1.1 external edge migration (no invented derived trust), artifact validation, idempotence, non-overwrite behavior and absent deployment authority."
-    },
-    {
-      "path": "guides/capability-constraints.md",
-      "en_blob": "a97a522420df659298fc7267e1dcc2749c9f4add",
-      "ko_blob": "4d219d69d111831e9122cbb2cf1a15bce03cf2d4",
-      "notes": "Matched fail-closed unknown required metadata and separation of hard constraints versus soft preference scoring."
-    },
-    {
-      "path": "guides/capability-decision-traces.md",
-      "en_blob": "f7bd9f5685ea123376c0335ab232dc1920004b52",
-      "ko_blob": "afb5a9a6ec1ba85e4e8e56c5c81c4354bfec948c",
-      "notes": "Matched non-disclosed invisible choices, non-authoritative precomputed traces, opt-in construction and no payload/rank/binding leakage."
-    },
-    {
-      "path": "guides/capability-eligibility.md",
-      "en_blob": "4a995bc7fcf2736f10594d6f7f40812f8a9b365f",
-      "ko_blob": "8aca916eb1b02fd079c151016f1d6d85e6b7e27f",
-      "notes": "Matched visibility=false nondisclosure and structured typed reason classes without authority escalation."
-    },
-    {
-      "path": "guides/capability-graph-drift.md",
-      "en_blob": "71c5f1164fa703ab7056c2dbd52c2ecb58da1a95",
-      "ko_blob": "2e158901918606985a44bf3a0a0f3ff0f24c2c97",
-      "notes": "Matched changed/removed neighbor invalidation, additive new-node exception and separate runtime-health overlay."
-    },
-    {
-      "path": "guides/capability-graph-scalability.md",
-      "en_blob": "ae52774094b218c3da06418ae8d6321e95e4203d",
-      "ko_blob": "a380bc33f865c55fcad1225d2725309fee511a8f",
-      "notes": "Matched conservative semantic ID index, required full compatibility, incremental vs complete rebuild condition, bounded SCC cycle witnesses and scalability matrix."
-    },
-    {
-      "path": "guides/capability-lineage.md",
-      "en_blob": "6da047d5bc83c36aeddbd3756c9751b6bdc7ade6",
-      "ko_blob": "d7adfa37c54c4f9d21db249f7431dfecffe5c741",
-      "notes": "Matched canonical SHA identity, no secret/payload fields and suppression of hidden capability lineage."
-    },
-    {
-      "path": "guides/capability-negotiation.md",
-      "en_blob": "890d8c32eef8f09e3f477686c0728fc224f1871a",
-      "ko_blob": "9b325483b59463c218256836681f0e0b5a9cec31",
-      "notes": "Matched the seven compatibility states, intersection-only authorization, explicit unit conversion intent and no planning/execution authority."
-    },
-    {
-      "path": "guides/capability-snapshots.md",
-      "en_blob": "33e0d0e36a97a01fd39b7624f28b296d8a58d034",
-      "ko_blob": "8940d358400db3758c7b71e536b688e3e73f3108",
-      "notes": "Matched deterministic snapshot identity, atomic CAS publication, fallback full rebuild, health overlay exclusion and v1/legacy migration."
-    },
-    {
-      "path": "guides/consumer-acceptance.md",
-      "en_blob": "da49405aea26d8b4e8116236ffe20c7933cea525",
-      "ko_blob": "63082d50821cca6545ebb8427575ead415d9ce10",
-      "notes": "Matched installed wheel/sdist consumer testing, production boundary list, optional extras, Laya CPU isolation and non-blocking external service smoke."
-    },
-    {
-      "path": "guides/contract-aware-fallback.md",
-      "en_blob": "b15bf6ba51c20519ba89b770ea99619175d2b82a",
-      "ko_blob": "d4b9aa65d826c2dbec3896038216ebe85d7f5250",
-      "notes": "Matched exact host-denial precedence, preserved legacy auth/health semantics, and host ownership of execution and retries."
-    },
-    {
-      "path": "guides/database-onboarding.md",
-      "en_blob": "dec80467f7c3889fa93f48da4e91503d8fa85ce5",
-      "ko_blob": "fdbe81b01c87d27c728984395549ecc3a70e6df8",
-      "notes": "Matched no raw SQL, SQLAlchemy dialect-not-vendor guarantees, database-native rights upper bound and 7 native families."
-    },
-    {
-      "path": "guides/decision-benchmark.md",
-      "en_blob": "bd1fe26cee4c3ca90944bc701d065d66f93404a4",
-      "ko_blob": "ca65ff1339e8e8689153e5085fdf99a251c8e2de",
-      "notes": "Compared all English/Korean benchmark protocol, 144/v2-v11 corpus sizes/splits, consumed-holdout restrictions and contamination, controls for Laya/Jev/Ollama, confidence/abstention and reproducibility. Checked v7 0.45, v9/v10 0.40 and v11 BGE negative-result numeric measures/intervals; preserved no-generalization and non-tuning boundaries."
-    },
-    {
-      "path": "guides/enterprise-data-onboarding.md",
-      "en_blob": "28a31836cd100eb1d8477d951bf6d1ac452114ba",
-      "ko_blob": "a84181befd9f35a723cbb817e131a982539f4f87",
-      "notes": "Compared all DB family rows, host-owned auth, internal-only scope, DataScope limitations, Redis exclusion and native query no-authority."
-    },
-    {
-      "path": "guides/execution-hooks.md",
-      "en_blob": "18b4892391736ec268c44f70131a2a3399635fa4",
-      "ko_blob": "9f8612e69887750d6a8c1f85c996ac03a890e9fe",
-      "notes": "Matched before/after authority boundaries, post-invocation failure nonretry semantics and privacy of trusted unredacted hooks."
-    },
-    {
-      "path": "guides/execution-policy.md",
-      "en_blob": "567a6719ad780c82d82076be4d8ad2c226cf3914",
-      "ko_blob": "2b517c0059ab755e7515486bec7bafebe043790b",
-      "notes": "Compared allow/deny/requires approval precedence, only True authorizes, default remote-mutation deny, budget accounting and local fingerprint authority."
-    },
-    {
-      "path": "guides/field-projection.md",
-      "en_blob": "0e873c2dd6132f6cd7ee8bdf24f22413ae0f8ce3",
-      "ko_blob": "3e24bca48c51bf160549eedab74a72c3fb6a459a",
-      "notes": "Matched validation-before-projection and record-preserving arrays, trusted path/wildcard constraints and no arbitrary model JSONPath."
-    },
-    {
-      "path": "guides/graph-store-onboarding.md",
-      "en_blob": "20b14f7bce7dc763609f7669864cd2ebc1355370",
-      "ko_blob": "9e09958f9d3f4aedf08051d13de6cb4851a0057f",
-      "notes": "Corrected broad claim implying hidden node/property predicates are automatically enforced; only relationships/hops are core DataScope, hidden predicates require explicit ScopedGraphStoreBackend and unsupported native filters fail closed."
-    },
-    {
-      "path": "guides/graphql.md",
-      "en_blob": "ff1995b17558248727f92d8e884babba4e3029c9",
-      "ko_blob": "06648c52c53d8b07008d697c0b0aabd42b586553",
-      "notes": "Matched bounded introspection, read/mutation classification, native field projection, required local authority and no automatic redirect."
-    },
-    {
-      "path": "guides/html-documentation.md",
-      "en_blob": "7e348cb2080e494ac16a82f811436fac99f5c700",
-      "ko_blob": "2b569b29b558c394c6b23da24b3ab3644289d5b8",
-      "notes": "Matched proposal-only authority, quote grounding, independent mutation approval, same-origin redirect restriction and no JS-rendered pages guarantee."
-    },
-    {
-      "path": "guides/http-json.md",
-      "en_blob": "9632b1db816f0b6ac0310dc3e9e7ebe6316c7c36",
-      "ko_blob": "3bb2640070e5c132e22a5eb86cd4d4ef95f304fa",
-      "notes": "Matched trusted local ToolSpec authority, sensitive trusted header no-overwrite and consistent same-provider method fallback constraints."
-    },
-    {
-      "path": "guides/inspection.md",
-      "en_blob": "e1bdb8d9afb5c7d5ec8e7bde6f2acc384a4cb92c",
-      "ko_blob": "261900e61a04049ad4b108a07d0ea61ed1b0bc93",
-      "notes": "Compared all read-only CLI/UI semantics, separate immutable trace vs local bindings, no serialized payloads/credentials, safe decision trace, explicit no execution."
-    },
-    {
-      "path": "guides/live-compatibility-matrix.md",
-      "en_blob": "071e7c10ed57b2cd1b29815dfb98a6e93b109674",
-      "ko_blob": "c6f658b6a347224df1f74c948961f6416b064c9a",
-      "notes": "Matched named provider smoke conditions, pinned vs public failure semantics and time-bound compatibility evidence."
-    },
-    {
-      "path": "guides/mcp.md",
-      "en_blob": "49c24fdc6454466acea399870c7b9fc6c2d44a33",
-      "ko_blob": "cecc2e6ddfe91d04e5230a62275e915dcb156c98",
-      "notes": "Compared SDK-vs-host selection authority, bounded 64/1024/5MiB/10MiB discovery, trusted local stdio, transport credentials/refresh, no annotation permission, result-array contracts, amendment redaction/availability risks."
-    },
-    {
-      "path": "guides/model-analyzer.md",
-      "en_blob": "3a16b6252074911ddb692e6d2b73eb64bb16ee0d",
-      "ko_blob": "5d235425ccdc11f52030bb9f490e74a6846c99d9",
-      "notes": "Matched model analyzer versus bounded decision backend, no model execution authority, prompt-injection data boundary and async misuse failure."
-    },
-    {
-      "path": "guides/multi-provider-evidence.md",
-      "en_blob": "db32bf2b89bd0cee8aaf75437ac0227e70f4e877",
-      "ko_blob": "967f91e880af44926e4d04c01444e59b509df164",
-      "notes": "Compared coverage/corroborate provider independence, unit/qualifier agreement, canonical document IDs and no formula-only scientific merges."
-    },
-    {
-      "path": "guides/odata.md",
-      "en_blob": "f44bf77e4e6d54211c239f2c4e85d6868f08da33",
-      "ko_blob": "d4878e2af29a051f2082dbe3c816025a5892d12c",
-      "notes": "Matched record-aligned projected OData child fields, trusted measure units, XML DTD rejection and no automatic write authority."
-    },
-    {
-      "path": "guides/openapi-compatibility.md",
-      "en_blob": "4cd65ac161c92d74ce122be98d9e390f1133873c",
-      "ko_blob": "582bdbed744821ec8a32a335b1419417329784cc",
-      "notes": "Matched all analyzer status conditions, URL opt-in/same-document ref rules, partial composition semantics, and no automatic error on partial reports."
-    },
-    {
-      "path": "guides/openapi.md",
-      "en_blob": "9541abb9de15d1c3073fa1ab755de57ca397e064",
-      "ko_blob": "f8e8c5abc2313d4b1587a3083e6d75ca20e90cbc",
-      "notes": "Direct English/Korean side-by-side check of input body variant isolation, nullable semantics, origin/ref confinement, id/anchor resolving, 16MiB streamed cap, 5MiB docs and YAML parser limits, record-preserving arrays and trusted-only enrichment."
-    },
-    {
-      "path": "guides/openrpc.md",
-      "en_blob": "0b55e7e4dcfa8286201dfc4fb379fd2d4b44fdca",
-      "ko_blob": "ea9696c02eaece8f44f452f2c2ba1e11f900cda4",
-      "notes": "Matched unclassified remote methods, positional argument preservation, same-origin binding and JSON-RPC response/error validation."
-    },
-    {
-      "path": "guides/optimade.md",
-      "en_blob": "b95d32b102fe33e9294f17d2c334879f96078388",
-      "ko_blob": "d1cda66517ac72732eb8a60e29e7706c4b1e37ee",
-      "notes": "Matched versioned/unversioned discovery, explicit read-only entry points, server projection, response normalization and provider-specific unit contracts."
-    },
-    {
-      "path": "guides/protocol-plugin-recipes.md",
-      "en_blob": "ae3ea4070320c1c37c05f17ce2475aa10f058499",
-      "ko_blob": "57bb45e82cad5eb2ce42b71d8c72dacf8cc0fbc7",
-      "notes": "Compared all plugin-vs-core decision matrix and six promotion gates, deferred streaming lifecycles, same trust/credential boundaries."
-    },
-    {
-      "path": "guides/provider-fallback.md",
-      "en_blob": "769286c2e594afb5cc9a3b3935d83585bd0fa96a",
-      "ko_blob": "651ec36cc1ec6eec54c08502489374f73e3e070d",
-      "notes": "Compared complete precompiled fallback semantics, errors permitting only availability failover, same-provider-first, bounded read-only health probe, cooldown, binding-aware route readiness and shared budgets."
-    },
-    {
-      "path": "guides/provider-first-registration.md",
-      "en_blob": "448ff3c9ebde165f0b849f38468527a40aeb613a",
-      "ko_blob": "1ac27dcec47a0dfcc36bf5af17336ad06ae14a31",
-      "notes": "Compared all-or-nothing CAS atomic registration, proposal digest approval, no auto package install, each provider access mode and normal execution policy."
-    },
-    {
-      "path": "guides/python-tools.md",
-      "en_blob": "ae00ccbd3ced7cf0513cebbfaa6bd79e59ad9f0e",
-      "ko_blob": "99534cc844d315b02905fc2683413c1d70e71c1d",
-      "notes": "Matched explicit trusted invoker boundary, no SDK reflection, read-only retry safety, exact tool fingerprint and compare-and-swap replacement."
-    },
-    {
-      "path": "guides/record-store-onboarding.md",
-      "en_blob": "d3b76c5f78fab0822cdea747681f6efb08e94646",
-      "ko_blob": "868abad584015ed03c981ad1ce606470edfc0ec8",
-      "notes": "Matched four NoSQL models, non-model raw DSL, bounded schema sampling 16/256KiB/5s and partial field-type authority."
-    },
-    {
-      "path": "guides/retry.md",
-      "en_blob": "7de6df28ae5200457a2280ddc2635ed6984841e5",
-      "ko_blob": "f544057d128debe2d926cdeaa1d89871b6a53701",
-      "notes": "Matched no automatic mutation retry, explicit transient status list, indeterminate execution no-retry rule and bounded backoff."
-    },
-    {
-      "path": "guides/run-traces.md",
-      "en_blob": "0e13d584a86068a02a45ae6cbc32d3104e02b608",
-      "ko_blob": "e8c7acd344cd2a2f0eb8223ad6a34b2379e18fcd",
-      "notes": "Compared exact append-before-yield behavior, replay without execution, WAL deletion, per-run metadata and trace redaction/raw opt-in; original post-operation success preserved."
-    },
-    {
-      "path": "guides/runtime.md",
-      "en_blob": "f39520598b7ab7c3af4e5f66c348141f844d90bc",
-      "ko_blob": "7ce2a26a21f98841e65724518c3295a431d72316",
-      "notes": "Directly compared execution/result order, read-only parallel preflight, atomic bound registrations, bounded sync offload and IndeterminateInvocationError nonretry semantics, health and tracing, planning-vs-executable binding rules."
-    },
-    {
-      "path": "guides/schema-drift.md",
-      "en_blob": "47265812acb55a45a8c45c60470c077e2bf2359b",
-      "ko_blob": "8e757f807b3f133a68360d95e08c929f5dd2aae1",
-      "notes": "Directly compared full conservative compatibility matrix, exact fingerprint safety, accepted-schema conditional GET validators, CAS replacement, process-local MCP/native watchers and no old-plan execution."
-    },
-    {
-      "path": "guides/state-aware-retrieval.md",
-      "en_blob": "cae7fc3cbed159c2af146bad7a187e99098fe35d",
-      "ko_blob": "71775c1cec83d6d000b6cd75de30589965e4a70a",
-      "notes": "Matched Top-K filtering versus backfill, visible-only surface, no workflow inference and bounded fingerprint history state."
-    },
-    {
-      "path": "guides/universal-ingestion.md",
-      "en_blob": "30f0d2b160bc26ebaa95d5e7434f8eb040070ac6",
-      "ko_blob": "be8ed2b4a8e30c9d3a39305f3eaecf4ddc69b0ef",
-      "notes": "Compared all adapter methods, trusted versus public URL/DNS-rebinding warnings, safe explicit allowlisted internal hosts, preserved array fields, source authority."
-    },
-    {
-      "path": "guides/vector-store-onboarding.md",
-      "en_blob": "11f9b83691bab0edc1db89e50745d1d9fa7e45d5",
-      "ko_blob": "c86f491cbdb69570c7c23f47799e37b28683fcbd",
-      "notes": "Compared vector dimension validation, scoped trusted filters fail closed, Qdrant/Milvus/Pinecone/Weaviate/Chroma/pgvector adapter limitations and explicit no live guarantee."
-    },
-    {
-      "path": "index.md",
-      "en_blob": "5d64e8e420b233de5da0f128bd62755b7c505bdc",
-      "ko_blob": "2cd5a502abdec080568c14b5cd5829d1231e50c8",
-      "notes": "Compared visible 0.17.0 hero and site core guarantees, provider/source links, role division, live example and Python compatibility claims."
-    },
-    {
-      "path": "integrations/decision-backend-plugins.md",
-      "en_blob": "a5e49217d01e79aa64e5ac5ca5e751677423f249",
-      "ko_blob": "fdc5743f6537d2829e803686adadccfa1cbbf146",
-      "notes": "Compared finite-option enforcement, plugin discovery/import boundary, secret-handling advice, explicit entry points, quality non-guarantee and benchmark output. No material contradiction found."
-    },
-    {
-      "path": "integrations/decision-model-ecosystem.md",
-      "en_blob": "ee36387d25b37fdeb5e31fdb50dbea767b7e8f5f",
-      "ko_blob": "d8b8218a4885f33afb30fca46ca335df49fd411d",
-      "notes": "Verified model-only compatibility is not promotion, quality evidence limitations, candidate-specific and dormant research statuses, model/runtime licensing qualifications, and finite-choice authority boundary."
-    },
-    {
-      "path": "integrations/jev.md",
-      "en_blob": "469d7712c7cecee68cb096be8ca5174a2622a948",
-      "ko_blob": "b45c958ca1959a7be773f33d912e0fb37bd31859",
-      "notes": "Matched TypeSafe choice bounded identity, SDK version, data privacy and no async client in sync mode, prior unknown-ID rejection and deterministic/error fallback."
-    },
-    {
-      "path": "integrations/langchain.md",
-      "en_blob": "9c1dcb68be40af3c4779e7cd78a6ec02379dfc9e",
-      "ko_blob": "6219382aef938b0398c109816656c7d4ccfcc0ad",
-      "notes": "Matched imported/output schemas, no description-derived permissions, principal/DataScope-filtered exports and stale contract detection."
-    },
-    {
-      "path": "integrations/langgraph.md",
-      "en_blob": "93080d5b5e271f93cb47b601d98057bd72e3e419",
-      "ko_blob": "b692851b81d983407a6687b60d405b708014f9cf",
-      "notes": "Matched StateGraph sync/async, state factory types, serialization default, distinct RunnableConfig and SchemaRouter RunConfig responsibilities."
+      "path": "release-checklist.md",
+      "en_blob": "855308419408998f721f925d88d74718f845688b",
+      "ko_blob": "bc5a64270a585c09c140dcec5254139edec7c38f",
+      "notes": "Directly checked the release/compatibility/security/post-publish gate bullet pairs; no material contract reversal observed. Mixed-language copy remains editorial polish work."
     },
     {
       "path": "integrations/laya.md",
@@ -488,28 +26,28 @@
       "notes": "Corrected omitted development-install vs next packaged release timing, uncached checkpoint load latency, valid low-confidence abstention, bounded Jev/Ollama invariants, single-versus-multiselect fail-closed reasoning, and shared benchmark comparator scope."
     },
     {
-      "path": "integrations/llamaindex.md",
-      "en_blob": "df85cf760bcdecedf91e692bc8e3bc267c4ed98f",
-      "ko_blob": "0ed49ea78c04490545b9078722c51b884343f8a4",
-      "notes": "Matched imported/exported scoped contracts, live reauthorization, StaleExportedToolError and host framework execution boundary."
+      "path": "integrations/decision-backend-plugins.md",
+      "en_blob": "a5e49217d01e79aa64e5ac5ca5e751677423f249",
+      "ko_blob": "fdc5743f6537d2829e803686adadccfa1cbbf146",
+      "notes": "Compared finite-option enforcement, plugin discovery/import boundary, secret-handling advice, explicit entry points, quality non-guarantee and benchmark output. No material contradiction found."
     },
     {
-      "path": "integrations/microsoft-foundry-http-adapter.md",
-      "en_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567",
-      "ko_blob": "921bb18cd7b190d57e6458f8bde86c1cf0e5a37b",
-      "notes": "2026-10-13 AI-contributor full EN/KO source comparison for opt-in Microsoft Foundry HTTP adapter documentation. Preserves provider deployment-name and TypeSafe transport difference, HTTPS/key consent and billing, choice-only finite IDs with explicit none_of_above, uncalibrated score=None, bounded 1-MiB request/response handling, no live provider evidence, no change to frozen #432/#424 research. Korean examples are localized/summarized rather than literal line-by-line translations; not independent human certification. 2026-10-14: restored the missing Korean verification-scope heading to match EN document hierarchy; paired safety statements unchanged. 2026-10-14 paired addition: explicit mock header/criteria/privacy/error assertions, authentic-provider validation and independent cohort blockers, with 0.14 frozen boundary unchanged. 2026-10-15: escaped leading numeric issue refs to satisfy bilingual Markdown safety lint; no factual claims changed."
+      "path": "research/intent-manual-dev-result.md",
+      "en_blob": "390e3b55f407827f8ae21d448b8ab579624118af",
+      "ko_blob": "09ff2b5e622f280699c03053e3eeeb1b1ef5128c",
+      "notes": "Matched sealed held-out policy, failed promotion, all three quantitative result rows, guardrails, per-stratum gains/losses, generator provenance, and no post-hoc tuning."
     },
     {
-      "path": "integrations/ollama.md",
-      "en_blob": "59efd519def797fb4ae2351697955881e7d7912d",
-      "ko_blob": "d35b2574639e0a391b569e37d7e47fed1b97887a",
-      "notes": "Matched finite enum IDs, local result revalidation, default loopback, token and self-score caveats, and optional context forwarding."
+      "path": "releases/0.7.0.md",
+      "en_blob": "ad50d25b91c88635fd0000237134313ea8a506a8",
+      "ko_blob": "0c5d7330d5e6bf0ac1fc766d35f451a744f7cde4",
+      "notes": "Matched field-first access/fallback rules, scientific qualifiers/units, policy, package build/publish verification, platform matrix and compatibility limitations."
     },
     {
-      "path": "integrations/opentelemetry.md",
-      "en_blob": "bf66c62729f5a9c40a7f8612939064b1f7917aa4",
-      "ko_blob": "4b3172c6f2e1bf31e0118b238d6a4b184d63348c",
-      "notes": "Matched spans and ERROR handling, explicit excluded values/metadata/tags/exception messages, and host-owned export pipeline."
+      "path": "guides/candidate-indexing.md",
+      "en_blob": "3ed905d10b68702c8d5dff53b8a4d33fc3fcfdce",
+      "ko_blob": "e8dd1e38f5f16c5a854c4e9dcc1905477a5c7e3b",
+      "notes": "Matched exact-recall superset guarantee, cache version invalidation, opt-out behavior, and benchmark's same-plan requirement."
     },
     {
       "path": "integrations/system-one.md",
@@ -518,94 +56,94 @@
       "notes": "Matched finite-option trust boundary, confidence validation/abstention, local execution authority, wire-vs-quality compatibility, and evidence requirements."
     },
     {
-      "path": "license.md",
-      "en_blob": "82db252c92a8be242a2eb4d087e854a68433a458",
-      "ko_blob": "4392b4a11182a9f258d87af9a3f3035fb9f076cc",
-      "notes": "Matched MIT licensing claim and embedded identical LICENSE content directive."
+      "path": "concepts/schema-router.md",
+      "en_blob": "4afc6bcd95ae5283fb5dd35c6c519461bf47b4e1",
+      "ko_blob": "fce19b798c06efbccaa7ac6d61b44038e3ca8206",
+      "notes": "Matched ownership table, execution-plan field order, fail-closed revalidation, field-first retrieval and conservative ambiguous intent behavior."
     },
     {
-      "path": "project/adoption-scorecard.md",
-      "en_blob": "487f3fd5148cbe6c52ac7cb6ede502a049ab7287",
-      "ko_blob": "917f51151c7dbe9d2f11a0633eb32fcaaea9bafa",
-      "notes": "Matched dated baseline, no invasive telemetry, downloads not unique users, traffic read-permission and no adoption claim from stars."
+      "path": "integrations/decision-model-ecosystem.md",
+      "en_blob": "ee36387d25b37fdeb5e31fdb50dbea767b7e8f5f",
+      "ko_blob": "d8b8218a4885f33afb30fca46ca335df49fd411d",
+      "notes": "Verified model-only compatibility is not promotion, quality evidence limitations, candidate-specific and dormant research statuses, model/runtime licensing qualifications, and finite-choice authority boundary."
     },
     {
-      "path": "project/brand.md",
-      "en_blob": "4c52157d1e76d01a7f401a3eaf3f4d1337edb7ff",
-      "ko_blob": "f8558a78f47cb7a05983b8b1a66029b58cbe4333",
-      "notes": "Compared logo meaning, six exact palette values, asset filenames, forbidden misuse and GitHub social-preview instructions."
+      "path": "concepts/protocol-ingestion-decisions.md",
+      "en_blob": "ac984acc00827d3af8b529b7b53af5d88950f512",
+      "ko_blob": "4f84b59437a7b3c98045406b405c5abf2ed43f95",
+      "notes": "Verified the protocol/adapter priority matrix, no untrusted schema guessing, mutation authorization, stream-lifecycle exclusions and the complete six-item adapter promotion rule."
     },
     {
-      "path": "project/case-study-template.md",
-      "en_blob": "faa2f05b31cfe0b37c6f2c6e68ee65750971dd27",
-      "ko_blob": "a99ab6094e9b9a002e23cafd1b43f884a18f9dbb",
-      "notes": "Compared external permission requirements, provenance, evaluation metrics/units, adoption evidence E1-E4 and limitations."
+      "path": "releases/0.6.0.md",
+      "en_blob": "e126cbefbaa65fe6708bb95929d41d861c370334",
+      "ko_blob": "a6e788541b04558db97914fa820dc33fa8a79072",
+      "notes": "Reinstated explicit guarantee that arbitrary JSON root body support does not flatten incompatible non-discriminated variants; checked fail-closed OpenAPI subset and release boundaries."
     },
     {
-      "path": "project/discoverability.md",
-      "en_blob": "5b6149edadeb505315c7979ac29f0316be8202ab",
-      "ko_blob": "a8e98cc6a5cff93d4ff74b1f59beb8d9edd88d6b",
-      "notes": "Matched exact canonical positioning, real tools not model router, listing rules and false marketing/adoption constraints."
+      "path": "releases/0.8.0.md",
+      "en_blob": "a73da5c27a183a7a4711f08e2d3aa0e4b6b1c8fa",
+      "ko_blob": "9b017f061c885fa8fa169d68fd66ca0f6542719c",
+      "notes": "Checked zero authority escalation, exact 600-case v10 holdout and all values, failure taxonomy, split recall bottleneck and prohibition on reused consumed v10 tuning."
     },
     {
-      "path": "project/external-adoption.md",
-      "en_blob": "86b7ea47f77c9d6610ea23c88d57840c86fba918",
-      "ko_blob": "ea7d659fbc5a60eb552dfa5c1a73e8727067d60f",
-      "notes": "Compared all target-specific evidence levels E0–E4, permission-only external claims, declared demo conditions, contact consent, limits, and no stars-as-endorsement."
+      "path": "releases/0.10.0.md",
+      "en_blob": "af7c386fe4f70b6f7573c5dc957a5a3ecc9d928f",
+      "ko_blob": "98fcaea606e2a0dd181f4630eb102ef4069b6cac",
+      "notes": "Checked negative capability-verifier results (5.03%, 2.08%), rejected promotions, exact 85/97/100/1/250 ms gate, matched DEV/fresh benchmark outcomes and typed unit semantics."
     },
     {
-      "path": "project/external-validation-mcp-agent.md",
-      "en_blob": "f421459c8ce02cb372a1dce822b381975d30893d",
-      "ko_blob": "dbd4471d533d5b20d114e6c138b539f6724cfe21",
-      "notes": "Compared SDK pins, native session/call ownership, schema typed gaps, no-route behavior, 12-tool fixture and E0 evidence."
+      "path": "releases/0.16.0.md",
+      "en_blob": "03e99f7303b53ef8a9f33c2456c63e23c3db0dcc",
+      "ko_blob": "5dd6c30530109e12c03b916174370800a198b14b",
+      "notes": "Matched pre-retrieval and execution-time authorization, explicit host ownership of authentication, bounded DB/vector/graph/record adapters, Redis exclusion, and live external acceptance caveat."
     },
     {
-      "path": "project/external-validation-openai-agents.md",
-      "en_blob": "ba8222257116a39dad6d15cea638e15e1743ca95",
-      "ko_blob": "aa7965e94ff37a6c90fff9a871e21ed2b69ce7cc",
-      "notes": "Compared SDK pin, approval and tool guardrail preservation, separate stdio server lifecycle, no unauthorized MCP execution and E0 evidence."
+      "path": "research/successor-screen.md",
+      "en_blob": "2fbfb4ba68a41c0ebd03cc96eb72864bfe4bb606",
+      "ko_blob": "27adfaedd2e759c1ffe1ceef7ac4f86b735e0fc0",
+      "notes": "Reinstated the rate-only selector's private unit-test-only role, distinct from the provenance-constrained public selector; reviewed 36-episode qualification, immutable roster/pinned models, three threshold conditions, holdout disjointness caveat and infrastructure-not-science failures."
     },
     {
-      "path": "project/external-validation-pydanticai.md",
-      "en_blob": "06e8ead43df928a62f7b930f2bb964bc02f20624",
-      "ko_blob": "06adb98088dadd861f388b7a4dfbcfe1eb7d43d6",
-      "notes": "Compared SDK pin, no-route three-signal gate, exact 12/50/100/250 scaling metrics, E0 nonindependence, no tool invocation authority."
+      "path": "research/adaptive-shortlist-depth.md",
+      "en_blob": "3cd62d23eb18409f4cec46995c301c3a952427c6",
+      "ko_blob": "fa569e214944412a76590ab43411afc46ec000fa",
+      "notes": "Matched terminal negative adaptive conclusion, precise 100/250/500 results, strict evidence freeze, unchanged product default, score geometry, six-step candidate tie-break, 97% coverage and 2pp downstream gate."
     },
     {
-      "path": "project/launch-log.md",
-      "en_blob": "0c6f59ecf06dbab836957187e822e402f7eb15e8",
-      "ko_blob": "92ba4ec0879579e558719ec596102ab94cabb46c",
-      "notes": "Matched no false causal inference, private-data exclusions, event row status and outcome caveats."
+      "path": "guides/contract-aware-fallback.md",
+      "en_blob": "b15bf6ba51c20519ba89b770ea99619175d2b82a",
+      "ko_blob": "d4b9aa65d826c2dbec3896038216ebe85d7f5250",
+      "notes": "Matched exact host-denial precedence, preserved legacy auth/health semantics, and host ownership of execution and retries."
     },
     {
-      "path": "project/launch-playbook.md",
-      "en_blob": "a16f4d049aef6e4c7a10e7e9660c5a758b0ba92e",
-      "ko_blob": "4ad068df9a2f109d2b314ad3b1a3151ba428dec4",
-      "notes": "Read EN/KO developer launch/provenance claims, stable 0.17 and B1 23-task controlled evidence, no-endorsement/no-false-token marketing rules, GeekNews/Hacker News submission/eligibility, example flows, adopter evidence levels, launch cadence and stop conditions. Corrected Korean 'destructive operations fail closed' from misleading 'only upon error' conditional wording."
+      "path": "guides/capability-negotiation.md",
+      "en_blob": "890d8c32eef8f09e3f477686c0728fc224f1871a",
+      "ko_blob": "9b325483b59463c218256836681f0e0b5a9cec31",
+      "notes": "Matched the seven compatibility states, intersection-only authorization, explicit unit conversion intent and no planning/execution authority."
     },
     {
-      "path": "project/roadmap.md",
-      "en_blob": "d7f9c40df8f03ea69e9d5aabb888789c83eadb80",
-      "ko_blob": "f6e7de4ce3dcbb7696d09c9d21e6f4184cebed1b",
-      "notes": "Compared all four tracks and issue links, current stable release shown as 0.14.0 in both languages (stale across both; not a translation asymmetry), issue labels, no promised dates."
+      "path": "guides/capability-eligibility.md",
+      "en_blob": "4a995bc7fcf2736f10594d6f7f40812f8a9b365f",
+      "ko_blob": "8aca916eb1b02fd079c151016f1d6d85e6b7e27f",
+      "notes": "Matched visibility=false nondisclosure and structured typed reason classes without authority escalation."
     },
     {
-      "path": "project/trust-and-evidence.md",
-      "en_blob": "cdc02abb82026528c0966e5308d28357cd262e08",
-      "ko_blob": "c51761197890806581fc50882022ff99ba977c8b",
-      "notes": "Compared 0.17 trust claims, release attestation and validation chain, B1/K3 exact negative outcomes, CodeQL and provenance limits and independent evidence not overclaimed."
+      "path": "guides/capability-constraints.md",
+      "en_blob": "a97a522420df659298fc7267e1dcc2749c9f4add",
+      "ko_blob": "4d219d69d111831e9122cbb2cf1a15bce03cf2d4",
+      "notes": "Matched fail-closed unknown required metadata and separation of hard constraints versus soft preference scoring."
     },
     {
-      "path": "project/why-not-all-tool-schemas.md",
-      "en_blob": "1f3187176dafd04be48d18672951c946a12bd715",
-      "ko_blob": "2f58f579ee3feca20cec562bf1c65ee987457566",
-      "notes": "Compared latest 0.17 argument, exact B1 5.42%/91.30 vs 68.48 caveat, no agent/authorization bypass and limited prior-art claims."
+      "path": "guides/capability-lineage.md",
+      "en_blob": "6da047d5bc83c36aeddbd3756c9751b6bdc7ade6",
+      "ko_blob": "d7adfa37c54c4f9d21db249f7431dfecffe5c741",
+      "notes": "Matched canonical SHA identity, no secret/payload fields and suppression of hidden capability lineage."
     },
     {
-      "path": "recipes/many-tools.md",
-      "en_blob": "f98821bd60080d28bfb3eddf25862b3d03c5f18a",
-      "ko_blob": "4f76e91d1fe2f6b4b7a49731f29f6d6cf6741bea",
-      "notes": "Matched recall-first bounded retrieval, execution readiness distinction, trusted preferences, and no invented route across registry scaling."
+      "path": "guides/capability-graph-drift.md",
+      "en_blob": "71c5f1164fa703ab7056c2dbd52c2ecb58da1a95",
+      "ko_blob": "2e158901918606985a44bf3a0a0f3ff0f24c2c97",
+      "notes": "Matched changed/removed neighbor invalidation, additive new-node exception and separate runtime-health overlay."
     },
     {
       "path": "recipes/mcp-agent.md",
@@ -620,16 +158,34 @@
       "notes": "Matched top-level conversational-agent autonomy and retained local schema, caller argument, policy and input/output validation constraints."
     },
     {
-      "path": "reference/api.md",
-      "en_blob": "7718ac477ea53e3a42ecac8c38485a5fe7748893",
-      "ko_blob": "8943ac7b06e0c7a9cc315bba7d3392fb1514b2da",
-      "notes": "Compared entire API reference directive lists; matching 40+ public symbols and locale header, no semantic mismatch."
+      "path": "contributing.md",
+      "en_blob": "ea38c9bff4bfe38a798e001e890b9b8f6ac8a146",
+      "ko_blob": "ea38c9bff4bfe38a798e001e890b9b8f6ac8a146",
+      "notes": "Exact same include snippet in both locale Markdown sources."
     },
     {
-      "path": "reference/models.md",
-      "en_blob": "ad5c1662ed7b31d659ee181415ac1b6678446255",
-      "ko_blob": "8658447f652fd17557fb5d4eddd12558d66a9415",
-      "notes": "Compared model reference directive lists for full type surface; Python identifiers intact, no omitted directive."
+      "path": "license.md",
+      "en_blob": "82db252c92a8be242a2eb4d087e854a68433a458",
+      "ko_blob": "4392b4a11182a9f258d87af9a3f3035fb9f076cc",
+      "notes": "Matched MIT licensing claim and embedded identical LICENSE content directive."
+    },
+    {
+      "path": "changelog.md",
+      "en_blob": "c82c6d7391f7780e4b54d22897796d7f56ffdac5",
+      "ko_blob": "f3aa39dfde127a818454f8e54daead470140940e",
+      "notes": "Matched canonical root changelog link and pre-1.0 compatibility reference."
+    },
+    {
+      "path": "assets/brand/README.md",
+      "en_blob": "cce56415b5e1d1df7937971ccadaf0e5cd328cc8",
+      "ko_blob": "153d48eb165ef549490a58c10b6ad156549503be",
+      "notes": "Matched mark geometry meaning, all palette hex literals, source asset filenames/sizes and explicit forbidden visual transformations."
+    },
+    {
+      "path": "project/launch-log.md",
+      "en_blob": "0c6f59ecf06dbab836957187e822e402f7eb15e8",
+      "ko_blob": "92ba4ec0879579e558719ec596102ab94cabb46c",
+      "notes": "Matched no false causal inference, private-data exclusions, event row status and outcome caveats."
     },
     {
       "path": "reference/planning.md",
@@ -644,178 +200,76 @@
       "notes": "Matched runtime API-reference directives including trace, hooks, snapshot and inspection symbols."
     },
     {
-      "path": "release-checklist.md",
-      "en_blob": "855308419408998f721f925d88d74718f845688b",
-      "ko_blob": "bc5a64270a585c09c140dcec5254139edec7c38f",
-      "notes": "Directly checked the release/compatibility/security/post-publish gate bullet pairs; no material contract reversal observed. Mixed-language copy remains editorial polish work."
+      "path": "integrations/opentelemetry.md",
+      "en_blob": "bf66c62729f5a9c40a7f8612939064b1f7917aa4",
+      "ko_blob": "4b3172c6f2e1bf31e0118b238d6a4b184d63348c",
+      "notes": "Matched spans and ERROR handling, explicit excluded values/metadata/tags/exception messages, and host-owned export pipeline."
     },
     {
-      "path": "releases/0.10.0.md",
-      "en_blob": "af7c386fe4f70b6f7573c5dc957a5a3ecc9d928f",
-      "ko_blob": "98fcaea606e2a0dd181f4630eb102ef4069b6cac",
-      "notes": "Checked negative capability-verifier results (5.03%, 2.08%), rejected promotions, exact 85/97/100/1/250 ms gate, matched DEV/fresh benchmark outcomes and typed unit semantics."
+      "path": "getting-started/installation.md",
+      "en_blob": "9870961d062b537dc7bb9f5f2d91e609755806c8",
+      "ko_blob": "5c05e7cddcaff971d8c0ef0a0103751b20b83b7d",
+      "notes": "Repaired false 0.14 subject in explanation of current 0.17.0 public release; preserved Python >=3.10, extras, verification and dev0 differentiation."
     },
     {
-      "path": "releases/0.11.0.md",
-      "en_blob": "f6576239b93c802c5f48e42f06828ffc480481e0",
-      "ko_blob": "c26a2992aade6d98f8a1681db59bae7c5f3a7f64",
-      "notes": "Matched product-first retrieval without executable authority, typed candidate snapshots, separate research gates and stable pre-1.0 boundary."
+      "path": "guides/html-documentation.md",
+      "en_blob": "7e348cb2080e494ac16a82f811436fac99f5c700",
+      "ko_blob": "2b569b29b558c394c6b23da24b3ab3644289d5b8",
+      "notes": "Matched proposal-only authority, quote grounding, independent mutation approval, same-origin redirect restriction and no JS-rendered pages guarantee."
     },
     {
-      "path": "releases/0.12.0.md",
-      "en_blob": "2b1f22affe73ea0962697a03f172d1b7669d11ae",
-      "ko_blob": "b274c11d2d6668eeb1a83cbb65f2142d45467ccf",
-      "notes": "Compared stable-core facade, separate execution permission, installed artifacts validation and full release provenance contract."
+      "path": "guides/capability-graph-scalability.md",
+      "en_blob": "ae52774094b218c3da06418ae8d6321e95e4203d",
+      "ko_blob": "a380bc33f865c55fcad1225d2725309fee511a8f",
+      "notes": "Matched conservative semantic ID index, required full compatibility, incremental vs complete rebuild condition, bounded SCC cycle witnesses and scalability matrix."
     },
     {
-      "path": "releases/0.13.0.md",
-      "en_blob": "94beeed4c5eb3c2ca788d36699eb8c0040f97804",
-      "ko_blob": "2e6cf67c945f2ff05e05c1b30fb27b23e01c3a92",
-      "notes": "Matched universal ingestion list, nested result record alignment, safe bounded amendments, schema watch semantics and 0.14 research separation."
+      "path": "guides/consumer-acceptance.md",
+      "en_blob": "da49405aea26d8b4e8116236ffe20c7933cea525",
+      "ko_blob": "63082d50821cca6545ebb8427575ead415d9ce10",
+      "notes": "Matched installed wheel/sdist consumer testing, production boundary list, optional extras, Laya CPU isolation and non-blocking external service smoke."
     },
     {
-      "path": "releases/0.14.0.md",
-      "en_blob": "474a2b2be67309a5220fb9014bfbeda9ad5ea894",
-      "ko_blob": "fe5c2738f5ca26ec5d8bbf726c0f6bf0f417259e",
-      "notes": "Compared source probing, lifecycle/schema drift, Explorer read-only, English/Korean site, release artifacts and no premature research claims."
+      "path": "getting-started/schema-explorer.md",
+      "en_blob": "bc416dcf03345a5eca32ec0ce07150281041bf48",
+      "ko_blob": "8cb91c1e30fd63842209dd4dfcf63c3762275aff",
+      "notes": "Matched read-only schema view, no remote assets, schema defaults/examples secret suppression, live inspection redaction and absence of try-it-out execution."
     },
     {
-      "path": "releases/0.15.0.md",
-      "en_blob": "19df112858c7206cc91bf1b482aa0d23d16dd545",
-      "ko_blob": "e4fe3f8c0cd7763027cb815d6e996259bece7a21",
-      "notes": "Matched provider-first onboarding, opt-in corrective retrieval, graph/snapshot invariants and nonproduct research scope."
+      "path": "guides/openapi-compatibility.md",
+      "en_blob": "4cd65ac161c92d74ce122be98d9e390f1133873c",
+      "ko_blob": "582bdbed744821ec8a32a335b1419417329784cc",
+      "notes": "Matched all analyzer status conditions, URL opt-in/same-document ref rules, partial composition semantics, and no automatic error on partial reports."
     },
     {
-      "path": "releases/0.16.0.md",
-      "en_blob": "03e99f7303b53ef8a9f33c2456c63e23c3db0dcc",
-      "ko_blob": "5dd6c30530109e12c03b916174370800a198b14b",
-      "notes": "Matched pre-retrieval and execution-time authorization, explicit host ownership of authentication, bounded DB/vector/graph/record adapters, Redis exclusion, and live external acceptance caveat."
+      "path": "concepts/adapters.md",
+      "en_blob": "fd829025a5c7f70c571a61ac4904ab032267ef6b",
+      "ko_blob": "f35152ef3562638d4c0dd901648a6abbc6b02b50",
+      "notes": "Matched compiler ownership, no policy authorization in adapter registry, fingerprinted runtime metadata and exact protocol auto-discovery scope."
     },
     {
-      "path": "releases/0.17.0.md",
-      "en_blob": "31d94d28287a2ca5e6b09922ac1c8c444938833c",
-      "ko_blob": "7c15eb5e54f6dba531f8200c62dcc1e3d186376a",
-      "notes": "Matched explicit concurrency failure-atomic policies, security narrowing, internal planner split, CI changes and nonpromotional 0.14 evidence."
+      "path": "guides/capability-artifacts.md",
+      "en_blob": "18157d03f74805248443297235bc177b2d9fb447",
+      "ko_blob": "8cc7baf589d4b255bc802d502babc0b32d547cc8",
+      "notes": "Matched 1.0->1.1 external edge migration (no invented derived trust), artifact validation, idempotence, non-overwrite behavior and absent deployment authority."
     },
     {
-      "path": "releases/0.2.0a1.md",
-      "en_blob": "1cffd1e8d2c9f5d64310feff50042e70f1a6fbe4",
-      "ko_blob": "ca8b90a1043735a9b63505433bf11605e9d0793a",
-      "notes": "Compared first published packaged alpha claims, runtime/protocol support, CI versions and pre-1.0 compatibility."
+      "path": "guides/python-tools.md",
+      "en_blob": "ae00ccbd3ced7cf0513cebbfaa6bd79e59ad9f0e",
+      "ko_blob": "99534cc844d315b02905fc2683413c1d70e71c1d",
+      "notes": "Matched explicit trusted invoker boundary, no SDK reflection, read-only retry safety, exact tool fingerprint and compare-and-swap replacement."
     },
     {
-      "path": "releases/0.3.0.md",
-      "en_blob": "f862f7f7ba2fd0ac3ea55ecfc9821a03bc58640b",
-      "ko_blob": "6cf252dc27c7140b5d1d9aeece82fe6ef09e478b",
-      "notes": "Matched first non-prerelease semantics, 82% branch gate, Python coverage, authority/secret restrictions and no public API removal."
+      "path": "guides/openrpc.md",
+      "en_blob": "0b55e7e4dcfa8286201dfc4fb379fd2d4b44fdca",
+      "ko_blob": "ea9696c02eaece8f44f452f2c2ba1e11f900cda4",
+      "notes": "Matched unclassified remote methods, positional argument preservation, same-origin binding and JSON-RPC response/error validation."
     },
     {
-      "path": "releases/0.3.0a1.md",
-      "en_blob": "282690883c29bbca91daef758b3c22857486fecc",
-      "ko_blob": "8f30c6b3027b37d0817a8fc328bce8206474a2f3",
-      "notes": "Matched alpha cut, exact 209 tests/84.57% coverage, 144-case benchmark and secure bounded decision claims."
-    },
-    {
-      "path": "releases/0.4.0.md",
-      "en_blob": "31ad37c6c8ff832062092d10aa1582eb90771896",
-      "ko_blob": "3a320d4d2cc613877df69d2c1bc0d70a9f4a90ac",
-      "notes": "Compared bounded decision triad, 82% coverage floor, trust boundaries, OpenAPI refs and nonbreaking upgrade language."
-    },
-    {
-      "path": "releases/0.5.0.md",
-      "en_blob": "1d08b793fd48a1e4c0f882cb24004fffcd5a3595",
-      "ko_blob": "cf72fbba86f2592461f7870410ec9b925d0240a5",
-      "notes": "Compared HTTP retry codes 408/425/429/500/502/503/504, budget restrictions, OpenAPI path/header precedence, non-JSON no-content correctness and security."
-    },
-    {
-      "path": "releases/0.6.0.md",
-      "en_blob": "e126cbefbaa65fe6708bb95929d41d861c370334",
-      "ko_blob": "a6e788541b04558db97914fa820dc33fa8a79072",
-      "notes": "Reinstated explicit guarantee that arbitrary JSON root body support does not flatten incompatible non-discriminated variants; checked fail-closed OpenAPI subset and release boundaries."
-    },
-    {
-      "path": "releases/0.7.0.md",
-      "en_blob": "ad50d25b91c88635fd0000237134313ea8a506a8",
-      "ko_blob": "0c5d7330d5e6bf0ac1fc766d35f451a744f7cde4",
-      "notes": "Matched field-first access/fallback rules, scientific qualifiers/units, policy, package build/publish verification, platform matrix and compatibility limitations."
-    },
-    {
-      "path": "releases/0.8.0.md",
-      "en_blob": "a73da5c27a183a7a4711f08e2d3aa0e4b6b1c8fa",
-      "ko_blob": "9b017f061c885fa8fa169d68fd66ca0f6542719c",
-      "notes": "Checked zero authority escalation, exact 600-case v10 holdout and all values, failure taxonomy, split recall bottleneck and prohibition on reused consumed v10 tuning."
-    },
-    {
-      "path": "releases/0.9.0.md",
-      "en_blob": "5753c10a90c807618dd434f4916e01ab0732ce13",
-      "ko_blob": "5b24accdbf298f03f956a1b509d2c73c4f021092",
-      "notes": "Matched pairwise scoring [0,1], late BGE-v11 negative quality trade-offs and nonpromotion, exact results/provenance and no reuse."
-    },
-    {
-      "path": "research/0.14-paper-evidence-checkpoint.md",
-      "en_blob": "10e49ea908dece928486c2480fa400e53cfb6ab6",
-      "ko_blob": "97b5135f3159b8074ea8443cd1816b79ec2465af",
-      "notes": "2026-10-14 EN/KO checkpoint comparison: B1/B2 and K3 negative outcomes retained; #432 780-task held-out canonical 11,700 episodes terminal negative gate and #424 final-answer independently dispatched but unscored. Provenance is AI-assisted, not an independent human sign-off."
-    },
-    {
-      "path": "research/adaptive-shortlist-depth.md",
-      "en_blob": "3cd62d23eb18409f4cec46995c301c3a952427c6",
-      "ko_blob": "fa569e214944412a76590ab43411afc46ec000fa",
-      "notes": "Matched terminal negative adaptive conclusion, precise 100/250/500 results, strict evidence freeze, unchanged product default, score geometry, six-step candidate tie-break, 97% coverage and 2pp downstream gate."
-    },
-    {
-      "path": "research/agent-utility-b1-result.md",
-      "en_blob": "072af371170bc265baf5afff3793605a8aa439ab",
-      "ko_blob": "3ab636a8dd4175920238f54af4b5c0635464bfea",
-      "notes": "Matched all 552-episode B1 results, 91.30% SR5 pass, 5.42% token exposure and strictly bounded generalization claims."
-    },
-    {
-      "path": "research/corrective-reretrieval.md",
-      "en_blob": "b9bfcfb62181bd93cc3dd1be14cf72dffd7cd5fe",
-      "ko_blob": "62ab3af149e61f971399ce3b3feb0b670487a537",
-      "notes": "Matched frozen 180-task/state-trace protocol, excluded oracle future hints, refresh limits and no partial shard interpretation."
-    },
-    {
-      "path": "research/design-and-experiment-history.md",
-      "en_blob": "27bdc35c44010cfd1c15d4a5702ed2b9ad6f9c5c",
-      "ko_blob": "4892377fe2b6b27e529644a401bc2e65c0c3ed57",
-      "notes": "Direct EN/KO archival contract inspection over 64 numbered sections, parallel source/translation subsection chronology and semantic number/commit evidence. Repaired 16+ corrupted/dangling Korean clauses obscuring never-tuned holdouts, all-reject NLI, false execution evidence, reference SHA/latency and negative result interpretation. Source contains repeated historic section number 47 in BOTH languages; not a missing translation. This is AI-assisted page-level and structural risk review, not independent every-sentence human sign-off."
-    },
-    {
-      "path": "research/evidence-to-action.md",
-      "en_blob": "3eb84e5894f96a230b3d781a0b3d625397c16857",
-      "ko_blob": "c919e68fb82127c9fa3950084cbd7bdc6665f3f2",
-      "notes": "Matched evidence contract fail-closed, 8-case seed vs 656-case SafeActBench distinction, and preregistered action metric boundaries."
-    },
-    {
-      "path": "research/experiment-index.md",
-      "en_blob": "6f152dc76cbdf072cf411da261ca521f666d8bf1",
-      "ko_blob": "0b19378fdef860ccd709b0cafcf958c0ec2272e7",
-      "notes": "Directly examined all 90 historical experiment table rows (92 machine ledger records total), each paired experiment ID and decision identical, archived English hypothesis rows exactly source-preserved and later 0.13/0.14 hypotheses manually checked for meaning; compared intro, status/provenance, negative-result archival rules and eight-case SafeActBench nonreproduction boundary. Historical archived hypotheses remain verbatim English in many Korean rows; not asserted as fully Korean-localized prose. The explicit Korean source-preservation disclosure added in PR #1305 was separately checked: it preserves all ledger hypothesis strings and verdicts, marks untranslated verbatim hypotheses as not localized, and leaves immutable scientific evidence unchanged. This is an AI-assisted editorial check, not independent human certification."
-    },
-    {
-      "path": "research/external-validation-freeze.md",
-      "en_blob": "5d1daf2f0c6190ee47c18291ef44af9a1f7c467e",
-      "ko_blob": "b12bbabc7dd941a116a85f2e04e2b28935741828",
-      "notes": "Compared preregistered commit/labels/corpus budget, no false tool/field recall equivalence, caller-auth gateway refusal, ClicShopping permissions-only actions and case-score abstention, third-party responses and licenses."
-    },
-    {
-      "path": "research/field-projection-answer-quality.md",
-      "en_blob": "7d5893642c9fc48e8600e30860679fd9d41679be",
-      "ko_blob": "7075140517260574759d1777572b3ea26377c2fb",
-      "notes": "2026-10-15 AI-assisted EN/KO source comparison: #506 original confirmation 38564885951 produced 1,152 episodes, terminal negative promotion, +14.58pp PROJECTED unsupported-fact delta, unreliable absolute grounded-answer rates; #510 successor remains separate/unstarted. No claim of independent human review or changed frozen science."
-    },
-    {
-      "path": "research/final-answer-quality.md",
-      "en_blob": "4c381ad8f834b38af0b0fe896c2c90150d221dd1",
-      "ko_blob": "548c1b641316fc8681a6fec3accc4a35595908b5",
-      "notes": "Compared frozen 144 tasks/36 cells, gated #432 prerequisite, all factual scoring thresholds, no LLM judge authority and 10k bootstrap."
-    },
-    {
-      "path": "research/governance.md",
-      "en_blob": "2e96519aefec562bef293cb724bfa0e051be38c4",
-      "ko_blob": "6180a58be598cbd77ebb3c6d1dd9c8916ba07ade",
-      "notes": "Matched all experiment lifecycle stages, calibration/blind consumption policy, invalid pre-result runs and provenance obligations."
+      "path": "guides/retry.md",
+      "en_blob": "7de6df28ae5200457a2280ddc2635ed6984841e5",
+      "ko_blob": "f544057d128debe2d926cdeaa1d89871b6a53701",
+      "notes": "Matched no automatic mutation retry, explicit transient status list, indeterminate execution no-retry rule and bounded backoff."
     },
     {
       "path": "research/hyset-external-validation.md",
@@ -824,40 +278,94 @@
       "notes": "Matched independently retrained (not original authors') checkpoint boundary, data/pins and six-fold held-out reporting rules."
     },
     {
-      "path": "research/intent-manual-dev-result.md",
-      "en_blob": "390e3b55f407827f8ae21d448b8ab579624118af",
-      "ko_blob": "09ff2b5e622f280699c03053e3eeeb1b1ef5128c",
-      "notes": "Matched sealed held-out policy, failed promotion, all three quantitative result rows, guardrails, per-stratum gains/losses, generator provenance, and no post-hoc tuning."
+      "path": "getting-started/runtime-lifecycle.md",
+      "en_blob": "d6c2ec32181a666182878cb13ad965dc0b61e791",
+      "ko_blob": "617c6b9f43ac1c11421206e9b2e7616c2916e75f",
+      "notes": "Matched router-owned cleanup, caller-owned objects never closed, safe sync offload and mixed event-loop ownership failure."
     },
     {
-      "path": "research/large-heldout-agent-utility.md",
-      "en_blob": "31213184bb15fb40d52752131ed07a140a616431",
-      "ko_blob": "cd1c71feed457b7781265b001ade37aaad94065f",
-      "notes": "Compared frozen 780 independent tasks, 13x6x10 design, 7.02pp precision, 9,604 sample caveat, 97%/40%/minus2pp and no pseudo-replication."
+      "path": "guides/graphql.md",
+      "en_blob": "ff1995b17558248727f92d8e884babba4e3029c9",
+      "ko_blob": "06648c52c53d8b07008d697c0b0aabd42b586553",
+      "notes": "Matched bounded introspection, read/mutation classification, native field projection, required local authority and no automatic redirect."
     },
     {
-      "path": "research/operation-routing-freeze-protocol.md",
-      "en_blob": "a6a66039db4bf4ec250b3f21fed4956d3dfe15e0",
-      "ko_blob": "953fd2176ae6980cf56753979ba37c2f37c86cb1",
-      "notes": "Compared all immutable gates 85/97/100/1/p95, strict fresh/DEV separation, complete freeze provenance, rerun/consumption policy."
+      "path": "getting-started/storage-migrations.md",
+      "en_blob": "ec2bea7428f9266795a6d12ec04dcbe70a0ca8fa",
+      "ko_blob": "3fd84de33e952c8a4ab51c0ad0cc3e7bc148efa6",
+      "notes": "Matched transactional metadata-only v0->v1 migration, backup restrictions, schema integrity and fail-closed unsupported/corrupt cases."
     },
     {
-      "path": "research/operation-routing-v4-terminal-report.md",
-      "en_blob": "729c05164a133d53d2b38341bd97f00c303577b0",
-      "ko_blob": "a32beb76de9647b5925338e04aff8b0fedde6b56",
-      "notes": "Matched 85/97/100/1 and p95 thresholds, all frozen DEV/fresh values, negative decision and sealed calibration/blind finals."
+      "path": "recipes/many-tools.md",
+      "en_blob": "f98821bd60080d28bfb3eddf25862b3d03c5f18a",
+      "ko_blob": "4f76e91d1fe2f6b4b7a49731f29f6d6cf6741bea",
+      "notes": "Matched recall-first bounded retrieval, execution readiness distinction, trusted preferences, and no invented route across registry scaling."
     },
     {
-      "path": "research/paper-evidence-package.md",
-      "en_blob": "661b0a4720746af855155cd452fda3e03ae17de3",
-      "ko_blob": "b44ea29e0bf81f6cefc48abb024fe97a58572b2f",
-      "notes": "2026-10-14 updated EN/KO source comparison: #432 valid 11,700-episode canonical terminal negative result; #424 independently dispatched, unscored; #431/#510 negative gates retained; original AI-assisted review is not independent human sign-off."
+      "path": "guides/capability-decision-traces.md",
+      "en_blob": "f7bd9f5685ea123376c0335ab232dc1920004b52",
+      "ko_blob": "afb5a9a6ec1ba85e4e8e56c5c81c4354bfec948c",
+      "notes": "Matched non-disclosed invisible choices, non-authoritative precomputed traces, opt-in construction and no payload/rank/binding leakage."
     },
     {
-      "path": "research/prior-art-roadmap.md",
-      "en_blob": "010e7b42529f641e626706663c0dc3bc4afde181",
-      "ko_blob": "c347c8e5f800b153ea28c9ed94231d6d1991ea08",
-      "notes": "Directly cross-checked detailed V6A–E and post-V6E negative-result quantitative tables, 0.14 Phase A Recall@1/3/5/10, ToolRet/ToolReAGt/ADB/Energy sources, task-cluster bootstrap constraints, no post-hoc tuning and SafeActBench 8 vs 656 case boundaries."
+      "path": "guides/odata.md",
+      "en_blob": "f44bf77e4e6d54211c239f2c4e85d6868f08da33",
+      "ko_blob": "d4878e2af29a051f2082dbe3c816025a5892d12c",
+      "notes": "Matched record-aligned projected OData child fields, trusted measure units, XML DTD rejection and no automatic write authority."
+    },
+    {
+      "path": "research/governance.md",
+      "en_blob": "2e96519aefec562bef293cb724bfa0e051be38c4",
+      "ko_blob": "6180a58be598cbd77ebb3c6d1dd9c8916ba07ade",
+      "notes": "Matched all experiment lifecycle stages, calibration/blind consumption policy, invalid pre-result runs and provenance obligations."
+    },
+    {
+      "path": "releases/0.3.0.md",
+      "en_blob": "f862f7f7ba2fd0ac3ea55ecfc9821a03bc58640b",
+      "ko_blob": "6cf252dc27c7140b5d1d9aeece82fe6ef09e478b",
+      "notes": "Matched first non-prerelease semantics, 82% branch gate, Python coverage, authority/secret restrictions and no public API removal."
+    },
+    {
+      "path": "integrations/langgraph.md",
+      "en_blob": "93080d5b5e271f93cb47b601d98057bd72e3e419",
+      "ko_blob": "b692851b81d983407a6687b60d405b708014f9cf",
+      "notes": "Matched StateGraph sync/async, state factory types, serialization default, distinct RunnableConfig and SchemaRouter RunConfig responsibilities."
+    },
+    {
+      "path": "integrations/ollama.md",
+      "en_blob": "59efd519def797fb4ae2351697955881e7d7912d",
+      "ko_blob": "d35b2574639e0a391b569e37d7e47fed1b97887a",
+      "notes": "Matched finite enum IDs, local result revalidation, default loopback, token and self-score caveats, and optional context forwarding."
+    },
+    {
+      "path": "guides/model-analyzer.md",
+      "en_blob": "3a16b6252074911ddb692e6d2b73eb64bb16ee0d",
+      "ko_blob": "5d235425ccdc11f52030bb9f490e74a6846c99d9",
+      "notes": "Matched model analyzer versus bounded decision backend, no model execution authority, prompt-injection data boundary and async misuse failure."
+    },
+    {
+      "path": "guides/capability-snapshots.md",
+      "en_blob": "33e0d0e36a97a01fd39b7624f28b296d8a58d034",
+      "ko_blob": "8940d358400db3758c7b71e536b688e3e73f3108",
+      "notes": "Matched deterministic snapshot identity, atomic CAS publication, fallback full rebuild, health overlay exclusion and v1/legacy migration."
+    },
+    {
+      "path": "guides/field-projection.md",
+      "en_blob": "0e873c2dd6132f6cd7ee8bdf24f22413ae0f8ce3",
+      "ko_blob": "3e24bca48c51bf160549eedab74a72c3fb6a459a",
+      "notes": "Matched validation-before-projection and record-preserving arrays, trusted path/wildcard constraints and no arbitrary model JSONPath."
+    },
+    {
+      "path": "getting-started/startup-rebinding.md",
+      "en_blob": "1e1d179274b513626258cd80e3591fbe0fd25dbb",
+      "ko_blob": "c009ff442f725f690af9ea16acd5750677393f49",
+      "notes": "Matched trusted host rebinding, never persisted credentials, strict failure states, local transport fingerprint and revalidation."
+    },
+    {
+      "path": "guides/optimade.md",
+      "en_blob": "b95d32b102fe33e9294f17d2c334879f96078388",
+      "ko_blob": "d1cda66517ac72732eb8a60e29e7706c4b1e37ee",
+      "notes": "Matched versioned/unversioned discovery, explicit read-only entry points, server projection, response normalization and provider-specific unit contracts."
     },
     {
       "path": "research/realistic-break-even-result.md",
@@ -866,16 +374,22 @@
       "notes": "Matched controlled synthetic break-even matrices, no false low/medium superiority, quantitative p95 tail costs and exploratory run invalidation."
     },
     {
-      "path": "research/routing-status.md",
-      "en_blob": "13c37940df75f028b74c41c798a6cfa7432e7636",
-      "ko_blob": "906a4daea4a58ac662702320ffb57f039f62b15f",
-      "notes": "Directly reviewed complete ~700-line EN/KO study-status text: 0.14 Phase A/B1/B2/K3 and pending #432/#424, external E0 validation, 0.11 DEV/fresh failure, all 0.12 #338/#347/#349/#354/#358/#363/#371/#374/#377/#378 metrics and no confirmation reuse, and V6A-E + post-V6E terminal negatives. No contradictory bilingual research promotion or fabricated positive-route authority found."
+      "path": "integrations/llamaindex.md",
+      "en_blob": "df85cf760bcdecedf91e692bc8e3bc267c4ed98f",
+      "ko_blob": "0ed49ea78c04490545b9078722c51b884343f8a4",
+      "notes": "Matched imported/exported scoped contracts, live reauthorization, StaleExportedToolError and host framework execution boundary."
     },
     {
-      "path": "research/successor-screen.md",
-      "en_blob": "2fbfb4ba68a41c0ebd03cc96eb72864bfe4bb606",
-      "ko_blob": "27adfaedd2e759c1ffe1ceef7ac4f86b735e0fc0",
-      "notes": "Reinstated the rate-only selector's private unit-test-only role, distinct from the provenance-constrained public selector; reviewed 36-episode qualification, immutable roster/pinned models, three threshold conditions, holdout disjointness caveat and infrastructure-not-science failures."
+      "path": "guides/graph-store-onboarding.md",
+      "en_blob": "20b14f7bce7dc763609f7669864cd2ebc1355370",
+      "ko_blob": "9e09958f9d3f4aedf08051d13de6cb4851a0057f",
+      "notes": "Corrected broad claim implying hidden node/property predicates are automatically enforced; only relationships/hops are core DataScope, hidden predicates require explicit ScopedGraphStoreBackend and unsupported native filters fail closed."
+    },
+    {
+      "path": "project/adoption-scorecard.md",
+      "en_blob": "487f3fd5148cbe6c52ac7cb6ede502a049ab7287",
+      "ko_blob": "917f51151c7dbe9d2f11a0633eb32fcaaea9bafa",
+      "notes": "Matched dated baseline, no invasive telemetry, downloads not unique users, traffic read-permission and no adoption claim from stars."
     },
     {
       "path": "research/typed-capability-retrieval-ablation.md",
@@ -884,10 +398,112 @@
       "notes": "Matched task-level statistical unit, 360/720 rows, frozen RRF k60, prohibited B1/held-out tuning and no end-to-end claim."
     },
     {
-      "path": "security/threat-model.md",
-      "en_blob": "1e1446c4e2e38f033495fd2d20728dff57084a15",
-      "ko_blob": "977f747981626c3e1df3f48d940c2baa605ec27c",
-      "notes": "Compared exact trust/credential, local SSRF admission, same-origin docs, source-bound schema watch validators, trace/OTEL redaction, hooks/amendment restrictions and nontrusted plugin boundaries. Corrected mixed English/Korean prose in schema-watch, redirect/ref, trusted amendment, decision-backend and security regression sections against the English canonical text. AI-assisted editorial check only; independent sentence review remains open."
+      "path": "integrations/jev.md",
+      "en_blob": "469d7712c7cecee68cb096be8ca5174a2622a948",
+      "ko_blob": "b45c958ca1959a7be773f33d912e0fb37bd31859",
+      "notes": "Matched TypeSafe choice bounded identity, SDK version, data privacy and no async client in sync mode, prior unknown-ID rejection and deterministic/error fallback."
+    },
+    {
+      "path": "research/corrective-reretrieval.md",
+      "en_blob": "b9bfcfb62181bd93cc3dd1be14cf72dffd7cd5fe",
+      "ko_blob": "62ab3af149e61f971399ce3b3feb0b670487a537",
+      "notes": "Matched frozen 180-task/state-trace protocol, excluded oracle future hints, refresh limits and no partial shard interpretation."
+    },
+    {
+      "path": "guides/http-json.md",
+      "en_blob": "9632b1db816f0b6ac0310dc3e9e7ebe6316c7c36",
+      "ko_blob": "3bb2640070e5c132e22a5eb86cd4d4ef95f304fa",
+      "notes": "Matched trusted local ToolSpec authority, sensitive trusted header no-overwrite and consistent same-provider method fallback constraints."
+    },
+    {
+      "path": "releases/0.11.0.md",
+      "en_blob": "f6576239b93c802c5f48e42f06828ffc480481e0",
+      "ko_blob": "c26a2992aade6d98f8a1681db59bae7c5f3a7f64",
+      "notes": "Matched product-first retrieval without executable authority, typed candidate snapshots, separate research gates and stable pre-1.0 boundary."
+    },
+    {
+      "path": "guides/state-aware-retrieval.md",
+      "en_blob": "cae7fc3cbed159c2af146bad7a187e99098fe35d",
+      "ko_blob": "71775c1cec83d6d000b6cd75de30589965e4a70a",
+      "notes": "Matched Top-K filtering versus backfill, visible-only surface, no workflow inference and bounded fingerprint history state."
+    },
+    {
+      "path": "research/evidence-to-action.md",
+      "en_blob": "3eb84e5894f96a230b3d781a0b3d625397c16857",
+      "ko_blob": "c919e68fb82127c9fa3950084cbd7bdc6665f3f2",
+      "notes": "Matched evidence contract fail-closed, 8-case seed vs 656-case SafeActBench distinction, and preregistered action metric boundaries."
+    },
+    {
+      "path": "releases/0.3.0a1.md",
+      "en_blob": "282690883c29bbca91daef758b3c22857486fecc",
+      "ko_blob": "8f30c6b3027b37d0817a8fc328bce8206474a2f3",
+      "notes": "Matched alpha cut, exact 209 tests/84.57% coverage, 144-case benchmark and secure bounded decision claims."
+    },
+    {
+      "path": "releases/0.9.0.md",
+      "en_blob": "5753c10a90c807618dd434f4916e01ab0732ce13",
+      "ko_blob": "5b24accdbf298f03f956a1b509d2c73c4f021092",
+      "notes": "Matched pairwise scoring [0,1], late BGE-v11 negative quality trade-offs and nonpromotion, exact results/provenance and no reuse."
+    },
+    {
+      "path": "guides/adapter-plugins.md",
+      "en_blob": "419f48e71d82a22a10b879b535f5123250904818",
+      "ko_blob": "30fae66961229168d4e845a70ae2f9e36eaf8993",
+      "notes": "Matched no plugin code import on discovery, allowlist-only loading, isolated-wheel demo evidence and no implied quality improvement."
+    },
+    {
+      "path": "guides/execution-hooks.md",
+      "en_blob": "18b4892391736ec268c44f70131a2a3399635fa4",
+      "ko_blob": "9f8612e69887750d6a8c1f85c996ac03a890e9fe",
+      "notes": "Matched before/after authority boundaries, post-invocation failure nonretry semantics and privacy of trusted unredacted hooks."
+    },
+    {
+      "path": "research/agent-utility-b1-result.md",
+      "en_blob": "072af371170bc265baf5afff3793605a8aa439ab",
+      "ko_blob": "3ab636a8dd4175920238f54af4b5c0635464bfea",
+      "notes": "Matched all 552-episode B1 results, 91.30% SR5 pass, 5.42% token exposure and strictly bounded generalization claims."
+    },
+    {
+      "path": "releases/0.15.0.md",
+      "en_blob": "19df112858c7206cc91bf1b482aa0d23d16dd545",
+      "ko_blob": "e4fe3f8c0cd7763027cb815d6e996259bece7a21",
+      "notes": "Matched provider-first onboarding, opt-in corrective retrieval, graph/snapshot invariants and nonproduct research scope."
+    },
+    {
+      "path": "research/operation-routing-v4-terminal-report.md",
+      "en_blob": "729c05164a133d53d2b38341bd97f00c303577b0",
+      "ko_blob": "a32beb76de9647b5925338e04aff8b0fedde6b56",
+      "notes": "Matched 85/97/100/1 and p95 thresholds, all frozen DEV/fresh values, negative decision and sealed calibration/blind finals."
+    },
+    {
+      "path": "guides/live-compatibility-matrix.md",
+      "en_blob": "071e7c10ed57b2cd1b29815dfb98a6e93b109674",
+      "ko_blob": "c6f658b6a347224df1f74c948961f6416b064c9a",
+      "notes": "Matched named provider smoke conditions, pinned vs public failure semantics and time-bound compatibility evidence."
+    },
+    {
+      "path": "integrations/langchain.md",
+      "en_blob": "9c1dcb68be40af3c4779e7cd78a6ec02379dfc9e",
+      "ko_blob": "6219382aef938b0398c109816656c7d4ccfcc0ad",
+      "notes": "Matched imported/output schemas, no description-derived permissions, principal/DataScope-filtered exports and stale contract detection."
+    },
+    {
+      "path": "releases/0.13.0.md",
+      "en_blob": "94beeed4c5eb3c2ca788d36699eb8c0040f97804",
+      "ko_blob": "2e6cf67c945f2ff05e05c1b30fb27b23e01c3a92",
+      "notes": "Matched universal ingestion list, nested result record alignment, safe bounded amendments, schema watch semantics and 0.14 research separation."
+    },
+    {
+      "path": "releases/0.17.0.md",
+      "en_blob": "31d94d28287a2ca5e6b09922ac1c8c444938833c",
+      "ko_blob": "7c15eb5e54f6dba531f8200c62dcc1e3d186376a",
+      "notes": "Matched explicit concurrency failure-atomic policies, security narrowing, internal planner split, CI changes and nonpromotional 0.14 evidence."
+    },
+    {
+      "path": "guides/database-onboarding.md",
+      "en_blob": "dec80467f7c3889fa93f48da4e91503d8fa85ce5",
+      "ko_blob": "fdbe81b01c87d27c728984395549ecc3a70e6df8",
+      "notes": "Matched no raw SQL, SQLAlchemy dialect-not-vendor guarantees, database-native rights upper bound and 7 native families."
     },
     {
       "path": "stable-core.md",
@@ -896,10 +512,394 @@
       "notes": "Matched durable execution boundary, additive state-aware retrieval and conditions for architecture changes without conflating 1.0 guarantee."
     },
     {
+      "path": "guides/record-store-onboarding.md",
+      "en_blob": "d3b76c5f78fab0822cdea747681f6efb08e94646",
+      "ko_blob": "868abad584015ed03c981ad1ce606470edfc0ec8",
+      "notes": "Matched four NoSQL models, non-model raw DSL, bounded schema sampling 16/256KiB/5s and partial field-type authority."
+    },
+    {
+      "path": "project/discoverability.md",
+      "en_blob": "5b6149edadeb505315c7979ac29f0316be8202ab",
+      "ko_blob": "a8e98cc6a5cff93d4ff74b1f59beb8d9edd88d6b",
+      "notes": "Matched exact canonical positioning, real tools not model router, listing rules and false marketing/adoption constraints."
+    },
+    {
+      "path": "concepts/registry.md",
+      "en_blob": "6b3ee8779f47606078027d3a2e7b1d5895cee67b",
+      "ko_blob": "fc4225468c5ad4d281522ff483a661c0a1413296",
+      "notes": "Repaired two broken Korean safety-critical sentences: immutable fingerprint includes explicit execution metadata, and amendments cannot change execution or response validation semantics."
+    },
+    {
+      "path": "reference/api.md",
+      "en_blob": "7718ac477ea53e3a42ecac8c38485a5fe7748893",
+      "ko_blob": "8943ac7b06e0c7a9cc315bba7d3392fb1514b2da",
+      "notes": "Compared entire API reference directive lists; matching 40+ public symbols and locale header, no semantic mismatch."
+    },
+    {
+      "path": "releases/0.4.0.md",
+      "en_blob": "31ad37c6c8ff832062092d10aa1582eb90771896",
+      "ko_blob": "3a320d4d2cc613877df69d2c1bc0d70a9f4a90ac",
+      "notes": "Compared bounded decision triad, 82% coverage floor, trust boundaries, OpenAPI refs and nonbreaking upgrade language."
+    },
+    {
+      "path": "releases/0.2.0a1.md",
+      "en_blob": "1cffd1e8d2c9f5d64310feff50042e70f1a6fbe4",
+      "ko_blob": "ca8b90a1043735a9b63505433bf11605e9d0793a",
+      "notes": "Compared first published packaged alpha claims, runtime/protocol support, CI versions and pre-1.0 compatibility."
+    },
+    {
+      "path": "concepts/execution.md",
+      "en_blob": "70d79f3ca4bf1cb28ac1c845ab1a432121932aa2",
+      "ko_blob": "cd2a1a5bc96f47c31757f7b414ef6e11ae620a3a",
+      "notes": "Compared all pre/post invocation validations, restricted redirect origins, credential separation, policy authority and error categories."
+    },
+    {
+      "path": "concepts/tool-endpoint.md",
+      "en_blob": "958a27c6fad5410a33a9646d38e4fcc1381f7f1a",
+      "ko_blob": "059e7db19a32884bc88b20b629a39a360d7262a5",
+      "notes": "Compared complete hierarchy of ToolSpec, EndpointSpec, ParameterSpec, FieldSpec with logical/wire distinction and stale hash protections."
+    },
+    {
+      "path": "reference/models.md",
+      "en_blob": "ad5c1662ed7b31d659ee181415ac1b6678446255",
+      "ko_blob": "8658447f652fd17557fb5d4eddd12558d66a9415",
+      "notes": "Compared model reference directive lists for full type surface; Python identifiers intact, no omitted directive."
+    },
+    {
+      "path": "project/brand.md",
+      "en_blob": "4c52157d1e76d01a7f401a3eaf3f4d1337edb7ff",
+      "ko_blob": "f8558a78f47cb7a05983b8b1a66029b58cbe4333",
+      "notes": "Compared logo meaning, six exact palette values, asset filenames, forbidden misuse and GitHub social-preview instructions."
+    },
+    {
+      "path": "project/case-study-template.md",
+      "en_blob": "faa2f05b31cfe0b37c6f2c6e68ee65750971dd27",
+      "ko_blob": "a99ab6094e9b9a002e23cafd1b43f884a18f9dbb",
+      "notes": "Compared external permission requirements, provenance, evaluation metrics/units, adoption evidence E1-E4 and limitations."
+    },
+    {
+      "path": "project/external-validation-openai-agents.md",
+      "en_blob": "ba8222257116a39dad6d15cea638e15e1743ca95",
+      "ko_blob": "aa7965e94ff37a6c90fff9a871e21ed2b69ce7cc",
+      "notes": "Compared SDK pin, approval and tool guardrail preservation, separate stdio server lifecycle, no unauthorized MCP execution and E0 evidence."
+    },
+    {
+      "path": "project/external-validation-mcp-agent.md",
+      "en_blob": "f421459c8ce02cb372a1dce822b381975d30893d",
+      "ko_blob": "dbd4471d533d5b20d114e6c138b539f6724cfe21",
+      "notes": "Compared SDK pins, native session/call ownership, schema typed gaps, no-route behavior, 12-tool fixture and E0 evidence."
+    },
+    {
+      "path": "guides/multi-provider-evidence.md",
+      "en_blob": "db32bf2b89bd0cee8aaf75437ac0227e70f4e877",
+      "ko_blob": "967f91e880af44926e4d04c01444e59b509df164",
+      "notes": "Compared coverage/corroborate provider independence, unit/qualifier agreement, canonical document IDs and no formula-only scientific merges."
+    },
+    {
+      "path": "releases/0.12.0.md",
+      "en_blob": "2b1f22affe73ea0962697a03f172d1b7669d11ae",
+      "ko_blob": "b274c11d2d6668eeb1a83cbb65f2142d45467ccf",
+      "notes": "Compared stable-core facade, separate execution permission, installed artifacts validation and full release provenance contract."
+    },
+    {
+      "path": "guides/enterprise-data-onboarding.md",
+      "en_blob": "28a31836cd100eb1d8477d951bf6d1ac452114ba",
+      "ko_blob": "a84181befd9f35a723cbb817e131a982539f4f87",
+      "notes": "Compared all DB family rows, host-owned auth, internal-only scope, DataScope limitations, Redis exclusion and native query no-authority."
+    },
+    {
+      "path": "research/operation-routing-freeze-protocol.md",
+      "en_blob": "a6a66039db4bf4ec250b3f21fed4956d3dfe15e0",
+      "ko_blob": "953fd2176ae6980cf56753979ba37c2f37c86cb1",
+      "notes": "Compared all immutable gates 85/97/100/1/p95, strict fresh/DEV separation, complete freeze provenance, rerun/consumption policy."
+    },
+    {
+      "path": "project/external-validation-pydanticai.md",
+      "en_blob": "06e8ead43df928a62f7b930f2bb964bc02f20624",
+      "ko_blob": "06adb98088dadd861f388b7a4dfbcfe1eb7d43d6",
+      "notes": "Compared SDK pin, no-route three-signal gate, exact 12/50/100/250 scaling metrics, E0 nonindependence, no tool invocation authority."
+    },
+    {
+      "path": "research/final-answer-quality.md",
+      "en_blob": "4c381ad8f834b38af0b0fe896c2c90150d221dd1",
+      "ko_blob": "548c1b641316fc8681a6fec3accc4a35595908b5",
+      "notes": "Compared frozen 144 tasks/36 cells, gated #432 prerequisite, all factual scoring thresholds, no LLM judge authority and 10k bootstrap."
+    },
+    {
+      "path": "project/why-not-all-tool-schemas.md",
+      "en_blob": "1f3187176dafd04be48d18672951c946a12bd715",
+      "ko_blob": "2f58f579ee3feca20cec562bf1c65ee987457566",
+      "notes": "Compared latest 0.17 argument, exact B1 5.42%/91.30 vs 68.48 caveat, no agent/authorization bypass and limited prior-art claims."
+    },
+    {
+      "path": "project/roadmap.md",
+      "en_blob": "d7f9c40df8f03ea69e9d5aabb888789c83eadb80",
+      "ko_blob": "f6e7de4ce3dcbb7696d09c9d21e6f4184cebed1b",
+      "notes": "Compared all four tracks and issue links, current stable release shown as 0.14.0 in both languages (stale across both; not a translation asymmetry), issue labels, no promised dates."
+    },
+    {
+      "path": "guides/execution-policy.md",
+      "en_blob": "567a6719ad780c82d82076be4d8ad2c226cf3914",
+      "ko_blob": "2b517c0059ab755e7515486bec7bafebe043790b",
+      "notes": "Compared allow/deny/requires approval precedence, only True authorizes, default remote-mutation deny, budget accounting and local fingerprint authority."
+    },
+    {
+      "path": "releases/0.14.0.md",
+      "en_blob": "474a2b2be67309a5220fb9014bfbeda9ad5ea894",
+      "ko_blob": "fe5c2738f5ca26ec5d8bbf726c0f6bf0f417259e",
+      "notes": "Compared source probing, lifecycle/schema drift, Explorer read-only, English/Korean site, release artifacts and no premature research claims."
+    },
+    {
+      "path": "concepts/design-principles.md",
+      "en_blob": "ee4174cb6f1f0788c19d6a83c0abd70e05a8670d",
+      "ko_blob": "b05aa61e646f3fa478851f241acb59cef576338a",
+      "notes": "Compared all 11 principles, safe field/unit semantics, local provider authority, explicit max_calls, conservative semantic fallback and redacted traces."
+    },
+    {
+      "path": "research/paper-evidence-package.md",
+      "en_blob": "661b0a4720746af855155cd452fda3e03ae17de3",
+      "ko_blob": "b44ea29e0bf81f6cefc48abb024fe97a58572b2f",
+      "notes": "2026-10-14 updated EN/KO source comparison: #432 valid 11,700-episode canonical terminal negative result; #424 independently dispatched, unscored; #431/#510 negative gates retained; original AI-assisted review is not independent human sign-off."
+    },
+    {
+      "path": "guides/run-traces.md",
+      "en_blob": "0e13d584a86068a02a45ae6cbc32d3104e02b608",
+      "ko_blob": "e8c7acd344cd2a2f0eb8223ad6a34b2379e18fcd",
+      "notes": "Compared exact append-before-yield behavior, replay without execution, WAL deletion, per-run metadata and trace redaction/raw opt-in; original post-operation success preserved."
+    },
+    {
+      "path": "guides/protocol-plugin-recipes.md",
+      "en_blob": "ae3ea4070320c1c37c05f17ce2475aa10f058499",
+      "ko_blob": "57bb45e82cad5eb2ce42b71d8c72dacf8cc0fbc7",
+      "notes": "Compared all plugin-vs-core decision matrix and six promotion gates, deferred streaming lifecycles, same trust/credential boundaries."
+    },
+    {
+      "path": "guides/vector-store-onboarding.md",
+      "en_blob": "11f9b83691bab0edc1db89e50745d1d9fa7e45d5",
+      "ko_blob": "c86f491cbdb69570c7c23f47799e37b28683fcbd",
+      "notes": "Compared vector dimension validation, scoped trusted filters fail closed, Qdrant/Milvus/Pinecone/Weaviate/Chroma/pgvector adapter limitations and explicit no live guarantee."
+    },
+    {
+      "path": "releases/0.5.0.md",
+      "en_blob": "1d08b793fd48a1e4c0f882cb24004fffcd5a3595",
+      "ko_blob": "cf72fbba86f2592461f7870410ec9b925d0240a5",
+      "notes": "Compared HTTP retry codes 408/425/429/500/502/503/504, budget restrictions, OpenAPI path/header precedence, non-JSON no-content correctness and security."
+    },
+    {
+      "path": "guides/provider-first-registration.md",
+      "en_blob": "448ff3c9ebde165f0b849f38468527a40aeb613a",
+      "ko_blob": "1ac27dcec47a0dfcc36bf5af17336ad06ae14a31",
+      "notes": "Compared all-or-nothing CAS atomic registration, proposal digest approval, no auto package install, each provider access mode and normal execution policy."
+    },
+    {
+      "path": "getting-started/quickstart.md",
+      "en_blob": "29d0739003fb83cbd91e95db15b3fce623f5d9f3",
+      "ko_blob": "d7eb35e91adf91be6e08f4fb817d19f7e3f061b3",
+      "notes": "Compared APIs.guru no-auth, local deterministic CI fallback, four product boundary steps, install extras and no provider/outage release gate."
+    },
+    {
+      "path": "research/large-heldout-agent-utility.md",
+      "en_blob": "31213184bb15fb40d52752131ed07a140a616431",
+      "ko_blob": "cd1c71feed457b7781265b001ade37aaad94065f",
+      "notes": "Compared frozen 780 independent tasks, 13x6x10 design, 7.02pp precision, 9,604 sample caveat, 97%/40%/minus2pp and no pseudo-replication."
+    },
+    {
+      "path": "getting-started/ingestion-paths.md",
+      "en_blob": "88895ea7dd81425b97f85ae72201551d2d2cf11a",
+      "ko_blob": "afcf2bd60aa224724fed2c7e24b3b3ac429d0bf7",
+      "notes": "Compared full provider/protocol matrix, passive network GET/HEAD auto detection, explicit GraphQL/MCP active sessions, raw-doc proposal approval."
+    },
+    {
+      "path": "getting-started/examples.md",
+      "en_blob": "b1a6b63ece4c7eedbf4801dd8cf3073831d2975a",
+      "ko_blob": "1610b8936db01b724d95ce73d6667464e860353e",
+      "notes": "Compared example 17-row matrix, real APIs.guru/Materials/Crossref/Tavily evidence, 40-tool byte-count demonstration and no token inflation."
+    },
+    {
       "path": "versioning.md",
       "en_blob": "61f82f452188aec2f74fde20f09243a9dbbb1497",
       "ko_blob": "6dfa7670aa7e779a4357e4f2c10ed8c7e5e395a5",
       "notes": "Compared release tag freshness, SQLite v0->v1 integrity rules, artifact 1.1 and snapshot 1.0 migrations, first-party trust and deprecation priorities."
+    },
+    {
+      "path": "concepts/capability-catalog.md",
+      "en_blob": "266139f38718c3212bdaec199c889a93649ee9fe",
+      "ko_blob": "e9ae0fafe90795bfa04b165650878032fc83f781",
+      "notes": "Compared registered capability versus document retrieval, state-aware filtered/backfilled Top-K, optional units/qualifiers, no new execution rights and RAG ownership."
+    },
+    {
+      "path": "guides/universal-ingestion.md",
+      "en_blob": "30f0d2b160bc26ebaa95d5e7434f8eb040070ac6",
+      "ko_blob": "be8ed2b4a8e30c9d3a39305f3eaecf4ddc69b0ef",
+      "notes": "Compared all adapter methods, trusted versus public URL/DNS-rebinding warnings, safe explicit allowlisted internal hosts, preserved array fields, source authority."
+    },
+    {
+      "path": "index.md",
+      "en_blob": "5d64e8e420b233de5da0f128bd62755b7c505bdc",
+      "ko_blob": "2cd5a502abdec080568c14b5cd5829d1231e50c8",
+      "notes": "Compared visible 0.17.0 hero and site core guarantees, provider/source links, role division, live example and Python compatibility claims."
+    },
+    {
+      "path": "research/field-projection-answer-quality.md",
+      "en_blob": "7d5893642c9fc48e8600e30860679fd9d41679be",
+      "ko_blob": "7075140517260574759d1777572b3ea26377c2fb",
+      "notes": "2026-10-15 AI-assisted EN/KO source comparison: #506 original confirmation 38564885951 produced 1,152 episodes, terminal negative promotion, +14.58pp PROJECTED unsupported-fact delta, unreliable absolute grounded-answer rates; #510 successor remains separate/unstarted. No claim of independent human review or changed frozen science."
+    },
+    {
+      "path": "guides/inspection.md",
+      "en_blob": "e1bdb8d9afb5c7d5ec8e7bde6f2acc384a4cb92c",
+      "ko_blob": "261900e61a04049ad4b108a07d0ea61ed1b0bc93",
+      "notes": "Compared all read-only CLI/UI semantics, separate immutable trace vs local bindings, no serialized payloads/credentials, safe decision trace, explicit no execution."
+    },
+    {
+      "path": "guides/authorization.md",
+      "en_blob": "470ae1804bb24eef3e206b23549acaaa8bac3354",
+      "ko_blob": "28a9b0a99a7d0a8324772abf166b5b560654e12c",
+      "notes": "Compared RBAC/ABAC first-match, linted shadowing, pre-retrieval non-disclosure, run-level audit redaction, DataScope filters and reauthorization at runtime."
+    },
+    {
+      "path": "concepts/planning.md",
+      "en_blob": "0cdd06d08876c8f0f5565700a5468e7a829e5bdb",
+      "ko_blob": "d861a028bd4093470cdc490d43ddf3e21709eacd",
+      "notes": "Compared full field coverage required/covered/uncovered, global/per-field evidence, alias and fallback authority, model explanation privacy, no workflow ownership."
+    },
+    {
+      "path": "guides/schema-drift.md",
+      "en_blob": "47265812acb55a45a8c45c60470c077e2bf2359b",
+      "ko_blob": "8e757f807b3f133a68360d95e08c929f5dd2aae1",
+      "notes": "Directly compared full conservative compatibility matrix, exact fingerprint safety, accepted-schema conditional GET validators, CAS replacement, process-local MCP/native watchers and no old-plan execution."
+    },
+    {
+      "path": "guides/runtime.md",
+      "en_blob": "f39520598b7ab7c3af4e5f66c348141f844d90bc",
+      "ko_blob": "7ce2a26a21f98841e65724518c3295a431d72316",
+      "notes": "Directly compared execution/result order, read-only parallel preflight, atomic bound registrations, bounded sync offload and IndeterminateInvocationError nonretry semantics, health and tracing, planning-vs-executable binding rules."
+    },
+    {
+      "path": "guides/provider-fallback.md",
+      "en_blob": "769286c2e594afb5cc9a3b3935d83585bd0fa96a",
+      "ko_blob": "651ec36cc1ec6eec54c08502489374f73e3e070d",
+      "notes": "Compared complete precompiled fallback semantics, errors permitting only availability failover, same-provider-first, bounded read-only health probe, cooldown, binding-aware route readiness and shared budgets."
+    },
+    {
+      "path": "project/trust-and-evidence.md",
+      "en_blob": "cdc02abb82026528c0966e5308d28357cd262e08",
+      "ko_blob": "c51761197890806581fc50882022ff99ba977c8b",
+      "notes": "Compared 0.17 trust claims, release attestation and validation chain, B1/K3 exact negative outcomes, CodeQL and provenance limits and independent evidence not overclaimed."
+    },
+    {
+      "path": "security/threat-model.md",
+      "en_blob": "1e1446c4e2e38f033495fd2d20728dff57084a15",
+      "ko_blob": "977f747981626c3e1df3f48d940c2baa605ec27c",
+      "notes": "Compared exact trust/credential, local SSRF admission, same-origin docs, source-bound schema watch validators, trace/OTEL redaction, hooks/amendment restrictions and nontrusted plugin boundaries. Corrected mixed English/Korean prose in schema-watch, redirect/ref, trusted amendment, decision-backend and security regression sections against the English canonical text. AI-assisted editorial check only; independent sentence review remains open."
+    },
+    {
+      "path": "research/external-validation-freeze.md",
+      "en_blob": "5d1daf2f0c6190ee47c18291ef44af9a1f7c467e",
+      "ko_blob": "b12bbabc7dd941a116a85f2e04e2b28935741828",
+      "notes": "Compared preregistered commit/labels/corpus budget, no false tool/field recall equivalence, caller-auth gateway refusal, ClicShopping permissions-only actions and case-score abstention, third-party responses and licenses."
+    },
+    {
+      "path": "project/external-adoption.md",
+      "en_blob": "86b7ea47f77c9d6610ea23c88d57840c86fba918",
+      "ko_blob": "ea7d659fbc5a60eb552dfa5c1a73e8727067d60f",
+      "notes": "Compared all target-specific evidence levels E0–E4, permission-only external claims, declared demo conditions, contact consent, limits, and no stars-as-endorsement."
+    },
+    {
+      "path": "guides/mcp.md",
+      "en_blob": "49c24fdc6454466acea399870c7b9fc6c2d44a33",
+      "ko_blob": "cecc2e6ddfe91d04e5230a62275e915dcb156c98",
+      "notes": "Compared SDK-vs-host selection authority, bounded 64/1024/5MiB/10MiB discovery, trusted local stdio, transport credentials/refresh, no annotation permission, result-array contracts, amendment redaction/availability risks."
+    },
+    {
+      "path": "compatibility.md",
+      "en_blob": "fe9599192126239aaf429eebeb8c6922ef998a50",
+      "ko_blob": "954dcf852e09076bf0d070739cef5f37757dfc20",
+      "notes": "Full source comparison: pinned Python and optional SDK range matrix, critical vs nonblocking Preview, Tier A/Tier B per-vendor live claims and 30-day external artifacts; no overclaim of exhaustive historical dependency versions."
+    },
+    {
+      "path": "guides/openapi.md",
+      "en_blob": "9541abb9de15d1c3073fa1ab755de57ca397e064",
+      "ko_blob": "f8e8c5abc2313d4b1587a3083e6d75ca20e90cbc",
+      "notes": "Direct English/Korean side-by-side check of input body variant isolation, nullable semantics, origin/ref confinement, id/anchor resolving, 16MiB streamed cap, 5MiB docs and YAML parser limits, record-preserving arrays and trusted-only enrichment."
+    },
+    {
+      "path": "concepts/field-first-execution.md",
+      "en_blob": "ed612ae41668e6ae76d5981fd932f78ac65b8e56",
+      "ko_blob": "20800a14a891a2923a381bcc0751e892c35bb3b0",
+      "notes": "Read both EN and KO: provider-neutral field identity/mapping, caller-scoped evidence, default max_calls=1, two-stage projection, fail-closed unit datatype and affine conversion, exact qualifier matching/token-boundary limits."
+    },
+    {
+      "path": "research/0.14-paper-evidence-checkpoint.md",
+      "en_blob": "10e49ea908dece928486c2480fa400e53cfb6ab6",
+      "ko_blob": "97b5135f3159b8074ea8443cd1816b79ec2465af",
+      "notes": "2026-10-14 EN/KO checkpoint comparison: B1/B2 and K3 negative outcomes retained; #432 780-task held-out canonical 11,700 episodes terminal negative gate and #424 final-answer independently dispatched but unscored. Provenance is AI-assisted, not an independent human sign-off."
+    },
+    {
+      "path": "adapter-authoring.md",
+      "en_blob": "5cd569971e0722b633951814876e851fafb790b2",
+      "ko_blob": "429b3e9df69c6ef684573563adc157cec454dfe4",
+      "notes": "Directly compared source adapters, passive/active discovery, refresh credential provenance, named contract fields, exact unit conversion, array record fidelity, aliases and scientific qualifiers. Localized three untranslated Korean instructional clauses without altering contract."
+    },
+    {
+      "path": "architecture.md",
+      "en_blob": "e13e284e91f02d9b63eac07146a65afefc032248",
+      "ko_blob": "30b794315e985d1984f8899cf6055cd3d3f05bf0",
+      "notes": "Direct full document review: role/authority first principles, all 31 adversarial findings, 47 numbered core invariants, provider/index/field/type and security/fallback contracts. Fixed Korean invariant #45 orphan 'identity.' that broke the immutable snapshot identity assertion."
+    },
+    {
+      "path": "guides/decision-benchmark.md",
+      "en_blob": "bd1fe26cee4c3ca90944bc701d065d66f93404a4",
+      "ko_blob": "ca65ff1339e8e8689153e5085fdf99a251c8e2de",
+      "notes": "Compared all English/Korean benchmark protocol, 144/v2-v11 corpus sizes/splits, consumed-holdout restrictions and contamination, controls for Laya/Jev/Ollama, confidence/abstention and reproducibility. Checked v7 0.45, v9/v10 0.40 and v11 BGE negative-result numeric measures/intervals; preserved no-generalization and non-tuning boundaries."
+    },
+    {
+      "path": "concepts/decision-backends.md",
+      "en_blob": "d8af579c3b868c1675ad6d88ed4f4d63c27bc8e2",
+      "ko_blob": "8ab8e53996ca5d6687bf1e662a2615029a491ad2",
+      "notes": "Side-by-side review of candidate recall, no-route and operation-fit abstention/fallback, field and evidence-only veto, 6 backend comparison rows, credential locality and local embedder/pairwise scoring limits. Both languages still have older historical Jev unreleased-main wording; requires a separate source freshness check, not a translation discrepancy."
+    },
+    {
+      "path": "project/launch-playbook.md",
+      "en_blob": "a16f4d049aef6e4c7a10e7e9660c5a758b0ba92e",
+      "ko_blob": "4ad068df9a2f109d2b314ad3b1a3151ba428dec4",
+      "notes": "Read EN/KO developer launch/provenance claims, stable 0.17 and B1 23-task controlled evidence, no-endorsement/no-false-token marketing rules, GeekNews/Hacker News submission/eligibility, example flows, adopter evidence levels, launch cadence and stop conditions. Corrected Korean 'destructive operations fail closed' from misleading 'only upon error' conditional wording."
+    },
+    {
+      "path": "research/prior-art-roadmap.md",
+      "en_blob": "010e7b42529f641e626706663c0dc3bc4afde181",
+      "ko_blob": "c347c8e5f800b153ea28c9ed94231d6d1991ea08",
+      "notes": "Directly cross-checked detailed V6A–E and post-V6E negative-result quantitative tables, 0.14 Phase A Recall@1/3/5/10, ToolRet/ToolReAGt/ADB/Energy sources, task-cluster bootstrap constraints, no post-hoc tuning and SafeActBench 8 vs 656 case boundaries."
+    },
+    {
+      "path": "research/routing-status.md",
+      "en_blob": "13c37940df75f028b74c41c798a6cfa7432e7636",
+      "ko_blob": "906a4daea4a58ac662702320ffb57f039f62b15f",
+      "notes": "Directly reviewed complete ~700-line EN/KO study-status text: 0.14 Phase A/B1/B2/K3 and pending #432/#424, external E0 validation, 0.11 DEV/fresh failure, all 0.12 #338/#347/#349/#354/#358/#363/#371/#374/#377/#378 metrics and no confirmation reuse, and V6A-E + post-V6E terminal negatives. No contradictory bilingual research promotion or fabricated positive-route authority found."
+    },
+    {
+      "path": "research/experiment-index.md",
+      "en_blob": "6f152dc76cbdf072cf411da261ca521f666d8bf1",
+      "ko_blob": "0b19378fdef860ccd709b0cafcf958c0ec2272e7",
+      "notes": "Directly examined all 90 historical experiment table rows (92 machine ledger records total), each paired experiment ID and decision identical, archived English hypothesis rows exactly source-preserved and later 0.13/0.14 hypotheses manually checked for meaning; compared intro, status/provenance, negative-result archival rules and eight-case SafeActBench nonreproduction boundary. Historical archived hypotheses remain verbatim English in many Korean rows; not asserted as fully Korean-localized prose. The explicit Korean source-preservation disclosure added in PR #1305 was separately checked: it preserves all ledger hypothesis strings and verdicts, marks untranslated verbatim hypotheses as not localized, and leaves immutable scientific evidence unchanged. This is an AI-assisted editorial check, not independent human certification."
+    },
+    {
+      "path": "research/design-and-experiment-history.md",
+      "en_blob": "27bdc35c44010cfd1c15d4a5702ed2b9ad6f9c5c",
+      "ko_blob": "4892377fe2b6b27e529644a401bc2e65c0c3ed57",
+      "notes": "Direct EN/KO archival contract inspection over 64 numbered sections, parallel source/translation subsection chronology and semantic number/commit evidence. Repaired 16+ corrupted/dangling Korean clauses obscuring never-tuned holdouts, all-reject NLI, false execution evidence, reference SHA/latency and negative result interpretation. Source contains repeated historic section number 47 in BOTH languages; not a missing translation. This is AI-assisted page-level and structural risk review, not independent every-sentence human sign-off."
+    },
+    {
+      "path": "framework-maturity.md",
+      "en_blob": "5d949eaaa4d64dbdf5ac0464cb0dbbdb41e00350",
+      "ko_blob": "20f08e65f91e611486943af69443aef53f4b08c6",
+      "notes": "Compared all 49 EN/Korean maturity matrix rows, preserving capability identifiers, implementation and future distinctions, no-execution/authorization boundaries, exact 85/97/100/1 + 250 ms target, 1k/10k/50k benchmark scales and CI, provider and evidence limitations. Identical translated Korean matrix taken from pending PR #1305. This is AI project contributor review, not independent human sentence-level certification."
+    },
+    {
+      "path": "integrations/microsoft-foundry-http-adapter.md",
+      "en_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567",
+      "ko_blob": "921bb18cd7b190d57e6458f8bde86c1cf0e5a37b",
+      "notes": "2026-10-13 AI-contributor full EN/KO source comparison for opt-in Microsoft Foundry HTTP adapter documentation. Preserves provider deployment-name and TypeSafe transport difference, HTTPS/key consent and billing, choice-only finite IDs with explicit none_of_above, uncalibrated score=None, bounded 1-MiB request/response handling, no live provider evidence, no change to frozen #432/#424 research. Korean examples are localized/summarized rather than literal line-by-line translations; not independent human certification. 2026-10-14: restored the missing Korean verification-scope heading to match EN document hierarchy; paired safety statements unchanged. 2026-10-14 paired addition: explicit mock header/criteria/privacy/error assertions, authentic-provider validation and independent cohort blockers, with 0.14 frozen boundary unchanged. 2026-10-15: escaped leading numeric issue refs to satisfy bilingual Markdown safety lint; no factual claims changed."
     }
   ],
   "separately_inspected_pending_pr": [
