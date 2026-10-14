@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
@@ -61,11 +60,9 @@ class FakeAPI:
 
     def get(self, path):
         self.calls.append(path)
-        params = parse_qs(urlsplit("https://example.invalid" + path).query)
-        size = int(params["per_page"][0])
-        page = int(params["page"][0])
-        assert params["filter"] == ["latest"]
-        assert size == JOBS_PAGE_SIZE
+        page = int(path.rsplit("page=", 1)[-1])
+        size = JOBS_PAGE_SIZE
+        assert f"filter=latest&per_page={size}&page=" in path
         return {"jobs": self.jobs[(page - 1) * size:page * size]}
 
 
