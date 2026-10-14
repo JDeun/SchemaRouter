@@ -31,6 +31,8 @@ RECOVERY_WORKFLOW = "research-0.14-heldout-recovery.yml"
 CATALOGS = (100, 250, 500)
 TASKS_PER_PARENT = 10
 TASKS_PER_MICRO = 2
+JOBS_PAGE_SIZE = 25  # GitHub's 100-item Actions job page intermittently returns 502.
+MAX_JOB_PAGES = 128
 PARENTS_PER_WAVE = 50
 EXPECTED_SHARDS = 234
 RUNTIME_KEYS = (
@@ -66,17 +68,73 @@ def frozen_shards(corpus: dict[str, Any]) -> dict[str, tuple[int, tuple[str, ...
 
 
 def latest_jobs(api: GitHubAPI, run_id: int) -> list[dict[str, Any]]:
-    jobs: list[dict[str, Any]] = []
-    page = 1
-    while True:
-        data = api.get(f"/actions/runs/{run_id}/jobs?filter=latest&per_page=100&page={page}")
-        batch = data["jobs"]
-        jobs.extend(batch)
-        if len(batch) < 100:
-            break
-        page += 1
-    return jobs
+    """Fetch the complete latest-attempt inventory via bounded small pages.
 
+    GitHub returned a persistent HTTP 502 for a 100-item job page during
+    #432's final collector, even after the shared GET retry budget. This
+    transport-only change never drops, reorders, or accepts missing jobs.
+    """
+    jobs: list[dict[str, Any]] = []
+    for page in range(1, MAX_JOB_PAGES + 1):
+        data = api.get(
+            f"/actions/runs/{run_id}/jobs?filter=latest"
+            f"&per_page={JOBS_PAGE_SIZE}&page={page}"
+        )
+        batch = data.get("jobs")
+        if not isinstance(batch, list) or len(batch) > JOBS_PAGE_SIZE:
+            raise ValueError("malformed paginated Actions job inventory")
+        jobs.extend(batch)
+        if len(batch) < JOBS_PAGE_SIZE:
+            return jobs
+    raise ValueError("Actions job inventory exceeded the bounded page limit")
+
+
+
+def verify_aggregate_only_source(
+    api: GitHubAPI, *, recovery_run: int, parent_run: int, wave: int,
+) -> None:
+    """Only reuse a terminal failed-aggregate run with successful evaluators.
+
+    No model evaluation is scheduled or invoked here. The ordinary collect()
+    then independently checks every expected job identity and real artifact.
+    """
+    if recovery_run <= 0 or parent_run <= 0 or wave < 0:
+        raise ValueError("invalid aggregate-only source identifiers")
+    run = api.run(recovery_run)
+    if RECOVERY_WORKFLOW not in str(run.get("path") or ""):
+        raise ValueError("aggregate-only source is not the recovery workflow")
+    expected_title = (
+        f"Held-out recovery parent={parent_run} wave={wave} source={FROZEN_SOURCE}"
+    )
+    if str(run.get("display_title") or "") != expected_title:
+        raise ValueError("aggregate-only source provenance marker mismatch")
+    if run.get("status") != "completed" or run.get("conclusion") != "failure":
+        raise ValueError("aggregate-only source must be terminal failure")
+    # The automated infrastructure retry budget has already been exhausted.
+    # Recovery must not silently replace it with an unbounded re-evaluation.
+    attempt = run.get("run_attempt")
+    if type(attempt) is not int or attempt < 3:
+        raise ValueError("aggregate-only replay requires exhausted retry budget")
+
+    control_jobs: dict[str, str] = {}
+    evaluator_count = 0
+    for job in latest_jobs(api, recovery_run):
+        name = str(job.get("name") or "")
+        conclusion = str(job.get("conclusion"))
+        if RECOVERY_JOB_RE.match(name):
+            if conclusion != "success":
+                raise ValueError("aggregate-only source has unsuccessful evaluator")
+            evaluator_count += 1
+        elif name in {"prepare", "aggregate", "next-wave"}:
+            if name in control_jobs:
+                raise ValueError("duplicate aggregate-only control job")
+            control_jobs[name] = conclusion
+        else:
+            raise ValueError("unknown aggregate-only source job")
+    if control_jobs != {
+        "prepare": "success", "aggregate": "failure", "next-wave": "skipped",
+    } or evaluator_count == 0:
+        raise ValueError("aggregate-only replay requires aggregate-only failure")
 
 def successful_parent_shards(
     jobs: list[dict[str, Any]], artifacts: list[dict[str, Any]], parent_run: int
@@ -418,6 +476,7 @@ def main() -> None:
     parser.add_argument("--corpus", required=True, type=Path)
     parser.add_argument("--parent-run", required=True, type=int)
     parser.add_argument("--wave", type=int, default=0)
+    parser.add_argument("--aggregate-only-from-run", type=int)
     parser.add_argument("--source-sha", default=FROZEN_SOURCE)
     parser.add_argument("--evidence-digest", required=True)
     parser.add_argument(
@@ -453,8 +512,18 @@ def main() -> None:
                 or plan_data["source_sha"] != args.source_sha
                 or plan_data["evidence_digest"] != args.evidence_digest):
             raise ValueError("recovery plan identity drift")
+        if args.aggregate_only_from_run is not None:
+            verify_aggregate_only_source(
+                api, recovery_run=args.aggregate_only_from_run,
+                parent_run=args.parent_run, wave=int(plan_data["wave"]),
+            )
+        recovery_run = (
+            args.aggregate_only_from_run
+            if args.aggregate_only_from_run is not None
+            else int(os.environ["GITHUB_RUN_ID"])
+        )
         result = collect(api, corpus, plan_data,
-                         current_recovery_run=int(os.environ["GITHUB_RUN_ID"]),
+                         current_recovery_run=recovery_run,
                          out=args.out_dir)
         args.proof_out.parent.mkdir(parents=True, exist_ok=True)
         args.proof_out.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n",
