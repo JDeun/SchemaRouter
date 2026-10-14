@@ -85,6 +85,7 @@ def test_each_missing_quality_or_safety_gate_denies_answer_success(change):
         {"required_fact_recall": -0.1},
         {"required_fact_recall": 1.1},
         {"required_fact_recall": True},
+        {"required_fact_recall": 10**400},
         {"source_list_valid": None},
     ],
 )
