@@ -86,3 +86,18 @@ def test_empty_source_or_duplicate_suite_fails_closed():
         mutate(m)
         with pytest.raises(ValueError):
             validate(m)
+
+
+def test_dev_pass_requires_authentic_run_reference():
+    m = _original()
+    m["suite"][2]["run_id"] = None
+    m["suite"][2]["run_url"] = None
+    with pytest.raises(ValueError, match="verified run"):
+        validate(m)
+
+
+def test_artifact_id_must_have_valid_sha256():
+    m = _original()
+    m["suite"][0]["artifact_sha256"] = "unverified"
+    with pytest.raises(ValueError, match="SHA-256"):
+        validate(m)
