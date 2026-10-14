@@ -57,6 +57,21 @@ jobs:
         env:
           NO_MKDOCS_2_WARNING: "1"
         run: mkdocs build --strict -f mkdocs.ko.yml
+      - name: Verify software citation and bilingual AI source navigation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          english = Path("site/llms.txt").read_text(encoding="utf-8")
+          korean = Path("site/ko/llms.txt").read_text(encoding="utf-8")
+          citation = Path("CITATION.cff").read_text(encoding="utf-8")
+          assert "https://jdeun.github.io/SchemaRouter/research/routing-status/" in english
+          assert "https://jdeun.github.io/SchemaRouter/ko/research/routing-status/" in korean
+          assert "최종 결과" in korean
+          assert "#432" in english and "#424" in english
+          assert "#432" in korean and "#424" in korean
+          assert "cff-version: 1.2.0" in citation
+          assert "repository-code: \"https://github.com/JDeun/SchemaRouter\"" in citation
+          PY
       - name: Check every rendered internal link and asset
         run: python scripts/qa_docs_links.py site
       - name: Check all rendered pages and language switching in Chromium

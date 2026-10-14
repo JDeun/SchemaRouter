@@ -113,7 +113,7 @@ def test_conveyor_workflows_encode_expected_stage_contracts() -> None:
         root / ".github" / "workflows" / "research-0.14-final-answer.yml"
     ).read_text(encoding="utf-8")
 
-    assert 'cron: "17 * * * *"' in conveyor
+    assert 'cron: "7,27,47 * * * *"' in conveyor
     assert "Research 0.14 B2 SmolLM3 Full" in conveyor
     assert "Research 0.14 Structural K3 Agent Utility" in conveyor
     assert "Research 0.14 Corrective Re-retrieval" in conveyor
