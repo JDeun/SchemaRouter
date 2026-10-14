@@ -114,3 +114,37 @@ Avoid sending a duplicate proposal while that answer is pending.
 The existing development diagnostic and any failures are unchanged. No new
 independently authored confirmation cases, externally endorsed field labels,
 or prospective held-out scores are supplied by this PR.
+
+
+## Per-arm identity gate before scoring (engineering-only, #1228)
+
+The **visible development** evaluator now distinguishes the two conditions
+using explicit runner metadata rather than accepting any otherwise valid
+native MCP shortlist as an interchangeable arm:
+
+- `static_readonly`: the declared native static-package runner must expose
+  **all** 12 captured readonly contracts, in the pinned native order, for
+  every case. A subset mislabeled as the static control is invalid evidence.
+- `readonly_plus_schemarouter_preselection`: the declared SchemaRouter
+  runner must use `SchemaRouter.retrieve`, the same native MCP ingestion,
+  and exactly a development-listed Top-K budget (currently K=3 or K=5).
+  Selection may not expose more tools than its declared K, and may not
+  add tools outside the captured upstream package.
+- Both conditions explicitly disable tool execution. The scorer refuses
+  missing or contradictory arm metadata, execution flags, unregistered
+  budgets and forged Boolean integer metadata. Neither score report can
+  approve held-out use: `heldout_scoring_allowed` must be literally
+  `false`.
+- Both offline runners validate the original pinned snapshot, package and
+  case labels **before** constructing an index or timing a run. Configuration
+  repeats must be positive actual integers.
+
+Synthetic negative tests include a forged static-package subset, mismatched
+condition labels, unauthorized K, four distinct native tools exposed under K=3,
+and a tampered native schema that is rejected before runner work.
+
+**No historical DEV labels, K3/K5 published measurements, downstream agent
+claims or 0.14 frozen research are changed by this integrity guard.**
+Independent semantic task/gold review by Xerrion and prospectively frozen new
+hold-out remain necessary. Do not send duplicate review requests to the
+maintainer or claim external reproduction based only on green CI.
