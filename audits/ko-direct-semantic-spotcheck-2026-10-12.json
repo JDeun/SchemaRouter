@@ -21,9 +21,9 @@
     },
     {
       "path": "integrations/laya.md",
-      "en_blob": "3526330c901cc32095fd3f46e6f4e293f3e21ac0",
-      "ko_blob": "eba6dfafb044d79f756ae128ea27e002f199836b",
-      "notes": "Corrected omitted development-install vs next packaged release timing, uncached checkpoint load latency, valid low-confidence abstention, bounded Jev/Ollama invariants, single-versus-multiselect fail-closed reasoning, and shared benchmark comparator scope."
+      "en_blob": "3db631b4c4be74244d86b7d39608913656ebf77a",
+      "ko_blob": "338e10c5189be38745ba4b628ded5925e1aaf7d3",
+      "notes": "Corrected omitted development-install vs next packaged release timing, uncached checkpoint load latency, valid low-confidence abstention, bounded Jev/Ollama invariants, single-versus-multiselect fail-closed reasoning, and shared benchmark comparator scope. Additive EN/KO changes checked on 2026-10-13: Additional EN/KO strict Laya choice wire response sections. Confirms string-only option IDs, finite non-Boolean confidence, fail-closed non-choice responses, usage and runtime-flag type rules; not a quality or independent-human certification."
     },
     {
       "path": "integrations/decision-backend-plugins.md",
