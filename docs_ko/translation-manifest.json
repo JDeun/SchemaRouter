@@ -590,6 +590,10 @@
     {
       "path": "versioning.md",
       "source_blob": "61f82f452188aec2f74fde20f09243a9dbbb1497"
+    },
+    {
+      "path": "integrations/microsoft-foundry-http-adapter.md",
+      "source_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567"
     }
   ]
 }
