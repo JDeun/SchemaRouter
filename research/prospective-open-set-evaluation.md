@@ -45,14 +45,24 @@ python scripts/audit_prospective_no_match.py \
   --out scratch/unscored-open-set-audit.json
 ```
 
-The output reports baseline vs opt-in selected supported route hits;
-**false refusal** when a supported route was found before abstention and
-discarded; raw vs selected nonempty unsupported replies; ambiguous route
+The output reports baseline vs opt-in selected supported route hits,
+**full coverage of every required tool** on multi-tool requests (separate
+from any-hit metrics), and lost full coverage. A supported **false refusal**
+is counted when the raw shortlist already contained a target route and the
+gate discarded it; raw vs selected nonempty unsupported replies; ambiguous route
 survival; forbidden route exposures; reasons by case; candidate object JSON
 metadata bytes and median/p95 **supplied** retrieval timings. Both raw and
 post-policy routes stay within the passed retrieval scope. No changes to
 frozen 0.14, published 42-case ClicShopping DEV reports, Tool permissions,
 live PHP/REST endpoints, model prompts or official benchmarks.
+
+All prospective retrieval rows must have one consistent numeric
+`registry_version` and Boolean `executable_only` scope. Different registries
+or executable-scoped vs unrestricted search must **not** be combined in one
+false-match/false-refusal denominator. Invalid rank/fingerprint evidence
+cannot enter outcome metrics as though it were a clean no-match refusal.
+Very large/nonfinite latencies fail closed. The report records the observed
+version and scope, but does **not** authenticate their true origin.
 
 The result is marked `UNSCORED_NOT_INDEPENDENTLY_VERIFIED` and `approved:
 false`. An externally fixed numerical threshold does not prove its author
