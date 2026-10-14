@@ -77,6 +77,21 @@ def validate(report: dict[str, Any]) -> None:
             )
             if run_url != expected_url:
                 raise ValueError(f"{ident}: run URL does not match run ID")
+        if row["local_verdict"] in {"PASS", "VALID_NEGATIVE"} and run_id is None:
+            raise ValueError(f"{ident}: local DEV result needs a verified run")
+        artifact_id = row.get("artifact_id")
+        artifact_sha = row.get("artifact_sha256")
+        if (artifact_id is None) != (artifact_sha is None):
+            raise ValueError(f"{ident}: artifact ID and digest must both be set")
+        if artifact_id is not None:
+            if type(artifact_id) is not int or artifact_id < 1 or run_id is None:
+                raise ValueError(f"{ident}: invalid artifact provenance")
+            if (
+                not isinstance(artifact_sha, str)
+                or len(artifact_sha) != 64
+                or any(c not in "0123456789abcdef" for c in artifact_sha)
+            ):
+                raise ValueError(f"{ident}: invalid artifact SHA-256")
         if decision in {"PASS", "VALID_NEGATIVE"}:
             # Explicitly do not accept a DEV/preflight SHA or run as independent.
             for field in (
