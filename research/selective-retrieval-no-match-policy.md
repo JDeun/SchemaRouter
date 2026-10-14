@@ -38,8 +38,15 @@ else:
 Optional `min_margin` requires **two visible ranked candidates** to measure
 top-versus-runner-up separation: `retrieve(k>=2)`. Missing runner-up is not a
 large margin. Invalid/nonfinite score evidence and duplicate/unordered
-candidate ranks are fail-closed. A numeric score and its margin are
-**ranker-specific signals**, never probabilities or universal constants.
+candidate ranks are fail-closed. Two individually finite candidate scores
+can still overflow when their margin is computed (e.g., `1e308 - -1e308`).
+An infinite computed margin is now rejected as untrusted evidence, **never**
+treated as an infinitely confident match. Integer ranking metadata and rank
+positions must use actual integers; Boolean `True == 1` is not trusted as a
+valid rank or registry identity. These safeguards also protect inputs created
+with Pydantic's `model_copy(update=...)`, which skips field validation.
+A numeric score and its margin are **ranker-specific signals**, never
+probabilities or universal constants.
 
 This helper operates strictly **after authorization-scoped retrieval** and
 only removes candidates from that scoped surface. It never invents a route,
