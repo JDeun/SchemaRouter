@@ -324,10 +324,6 @@
       "source_blob": "df85cf760bcdecedf91e692bc8e3bc267c4ed98f"
     },
     {
-      "path": "integrations/microsoft-decision-1.md",
-      "source_blob": "be983823a98e8c74c0ea7d5f3c8f3b7fe1b7ebad"
-    },
-    {
       "path": "integrations/ollama.md",
       "source_blob": "59efd519def797fb4ae2351697955881e7d7912d"
     },
@@ -497,7 +493,7 @@
     },
     {
       "path": "research/0.14-paper-evidence-checkpoint.md",
-      "source_blob": "6c5915d879db3a59bfd960cd6c2a4c116b01c72b"
+      "source_blob": "10e49ea908dece928486c2480fa400e53cfb6ab6"
     },
     {
       "path": "research/adaptive-shortlist-depth.md",
@@ -529,7 +525,7 @@
     },
     {
       "path": "research/field-projection-answer-quality.md",
-      "source_blob": "fbf90b1bfb68bd697591cfe7563f1bd7ba85c8ef"
+      "source_blob": "7d5893642c9fc48e8600e30860679fd9d41679be"
     },
     {
       "path": "research/final-answer-quality.md",
@@ -561,7 +557,7 @@
     },
     {
       "path": "research/paper-evidence-package.md",
-      "source_blob": "36420cc18de100bf89665b4638c1576ec0dff486"
+      "source_blob": "661b0a4720746af855155cd452fda3e03ae17de3"
     },
     {
       "path": "research/prior-art-roadmap.md",
@@ -594,6 +590,10 @@
     {
       "path": "versioning.md",
       "source_blob": "61f82f452188aec2f74fde20f09243a9dbbb1497"
+    },
+    {
+      "path": "integrations/microsoft-decision-1.md",
+      "source_blob": "be983823a98e8c74c0ea7d5f3c8f3b7fe1b7ebad"
     }
   ]
 }

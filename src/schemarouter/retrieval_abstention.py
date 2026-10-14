@@ -98,10 +98,18 @@ def apply_retrieval_abstention(
             and math.isfinite(score)
             for score in scores
         )
+        # Pydantic model_copy(update=...) skips field validation. Treat bool
+        # envelope values/ranks as untrusted rather than True == 1 metadata.
+        or type(retrieval.registry_version) is not int
+        or type(retrieval.requested_k) is not int
+        or type(retrieval.total_ranked) is not int
+        or type(retrieval.executable_only) is not bool
         or retrieval.registry_version < 0
+        or retrieval.requested_k < 1
         or retrieval.requested_k < len(scores)
         or retrieval.total_ranked < len(scores)
         or len(set(route_ids)) != len(route_ids)
+        or any(type(rank) is not int for rank in ranks)
         or ranks != list(range(1, len(ranks) + 1))
         or any(
             not all(
@@ -129,13 +137,31 @@ def apply_retrieval_abstention(
                 reason = "insufficient_margin_evidence"
             else:
                 margin = scores[0] - scores[1]
-                if margin < policy.min_margin:
+                # Two individually finite scores can overflow on subtraction
+                # (1e308 - -1e308 -> inf). Infinity must not pass any gate.
+                if not math.isfinite(margin):
+                    reason = "untrusted_ranking"
+                    margin = None
+                elif margin < policy.min_margin:
                     reason = "below_min_margin"
 
-    data = retrieval.model_dump(mode="python")
-    data["candidates"] = (
-        list(retrieval.candidates) if reason == "selected" else []
-    )
+    # Forged model_copy(update=...) values bypass Pydantic field validation.
+    # On rejection, serialize only the envelope and explicitly sanitize unsafe
+    # metadata. Never serialize or retain rejected candidate payloads.
+    data = retrieval.model_dump(mode="python", exclude={"candidates"}, warnings=False)
+    if type(retrieval.registry_version) is not int or retrieval.registry_version < 0:
+        data["registry_version"] = 0
+    if (
+        type(retrieval.requested_k) is not int
+        or retrieval.requested_k < max(1, len(scores))
+    ):
+        data["requested_k"] = max(1, len(scores))
+    if type(retrieval.total_ranked) is not int or retrieval.total_ranked < len(scores):
+        data["total_ranked"] = len(scores)
+    if type(retrieval.executable_only) is not bool:
+        # Do not launder forged integer 1 into the authorization-relevant True.
+        data["executable_only"] = False
+    data["candidates"] = list(retrieval.candidates) if reason == "selected" else []
     return SelectiveCapabilityRetrieval(
         **data,
         disposition="selected" if reason == "selected" else "abstained",
