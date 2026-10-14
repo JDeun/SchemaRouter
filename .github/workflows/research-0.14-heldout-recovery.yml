@@ -272,6 +272,14 @@ jobs:
             --plan-out artifacts/recovery-plan/heldout-recovery-plan.json \
             --out-dir artifacts/heldout-verified \
             --proof-out artifacts/heldout-recovery-proof.json
+      - name: Install precisely checked-out frozen scientific package for aggregation
+        run: |
+          python -m pip install -e ./scientific
+          python - <<'PY'
+          import schemarouter
+          from scripts.agent_utility_generated_common import summarize_rows
+          print("frozen scientific aggregation imports available")
+          PY
       - name: Aggregate via pinned historical scientific source
         run: |
           python scientific/scripts/aggregate_agent_utility_v3_heldout.py \
@@ -330,6 +338,13 @@ jobs:
             --plan-out artifacts/recovery-plan/heldout-recovery-plan.json \
             --out-dir artifacts/heldout-verified \
             --proof-out artifacts/heldout-recovery-proof.json
+      - name: Install precisely checked-out frozen scientific package for aggregation
+        run: |
+          python -m pip install -e ./scientific
+          python - <<'PY'
+          import schemarouter
+          print("frozen scientific aggregation imports available")
+          PY
       - name: Aggregate exclusively with the frozen historical scorer
         run: |
           python scientific/scripts/aggregate_agent_utility_v3_heldout.py \

@@ -478,6 +478,31 @@ def terminal_failure(run: StageRun | None) -> bool:
     )
 
 
+
+def exclusively_failed_aggregate_only_wrapper(jobs: list[dict[str, Any]]) -> bool:
+    """Only a failed no-model aggregate can be retried with a new wrapper.
+
+    A repeated, unexpected, or still-running evaluator is a hard stop.
+    """
+    expected = {
+        "aggregate-only": "failure",
+        "prepare": "skipped",
+        "recover": "skipped",
+        "aggregate": "skipped",
+        "next-wave": "skipped",
+    }
+    names = [str(job.get("name")) for job in jobs]
+    return (
+        len(names) == len(expected)
+        and len(set(names)) == len(names)
+        and {
+            str(job.get("name")): str(job.get("conclusion"))
+            for job in jobs
+        } == expected
+    )
+
+
+
 MAX_INFRA_ATTEMPTS = 3
 
 
@@ -1223,11 +1248,32 @@ def run_controller(
             from scripts.research_014_heldout_recovery import (
                 AGGREGATE_RESCUE_PARENT,
                 AGGREGATE_RESCUE_RUN,
+                latest_jobs,
                 validate_aggregate_only_rescue,
             )
-            if (failed_recovery.id == AGGREGATE_RESCUE_RUN
-                    and failed_recovery.run_attempt >= MAX_INFRA_ATTEMPTS
+            # The first zero-model rescue verified all 11,700 frozen episodes,
+            # but could not import the *frozen* schemarouter Python package in
+            # the scorer step. One corrected-wrapper dispatch is authorized.
+            # This is not a fourth replay of any original model evaluator.
+            previous_aggregate_only_run = 38494851010
+            first_rescue = (
+                failed_recovery.id == AGGREGATE_RESCUE_RUN
+                and failed_recovery.run_attempt >= MAX_INFRA_ATTEMPTS
+            )
+            corrected_wrapper_rescue = (
+                failed_recovery.id == previous_aggregate_only_run
+                and failed_recovery.run_attempt == 1
+            )
+            if ((first_rescue or corrected_wrapper_rescue)
                     and heldout.id == AGGREGATE_RESCUE_PARENT):
+                if corrected_wrapper_rescue:
+                    if not exclusively_failed_aggregate_only_wrapper(
+                        latest_jobs(api, previous_aggregate_only_run)
+                    ):
+                        raise RuntimeError(
+                            "aggregate-only wrapper correction requires the "
+                            "exact previous all-model-skipped failure"
+                        )
                 plan_artifact = api.artifact(
                     failed_recovery.id,
                     f"heldout-recovery-plan-{AGGREGATE_RESCUE_RUN}",
@@ -1258,6 +1304,7 @@ def run_controller(
                 actions.append(
                     "dispatch_verified_heldout_aggregate_only:"
                     f"source_run={AGGREGATE_RESCUE_RUN}:"
+                    f"previous_wrapper={failed_recovery.id}:"
                     "no_evaluator_jobs=true"
                 )
                 return {
@@ -1265,6 +1312,16 @@ def run_controller(
                     "actions": actions,
                     "status": [_status_line("heldout-recovery", failed_recovery)],
                 }
+            # A future aggregate-only run is never a reason to replay the
+            # original microshard recovery; fail closed for human triage.
+            if failed_recovery.id != AGGREGATE_RESCUE_RUN:
+                latest = latest_jobs(api, failed_recovery.id)
+                if any(job.get("name") == "aggregate-only" for job in latest):
+                    return {
+                        "state": "stopped_heldout_aggregate_only_failure",
+                        "actions": actions,
+                        "status": [_status_line("heldout-recovery", failed_recovery)],
+                    }
             if failed_recovery.conclusion in {"failure", "timed_out"}:
                 if retry_infrastructure_failure(
                     api,
