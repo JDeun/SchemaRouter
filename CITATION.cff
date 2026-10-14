@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use SchemaRouter, please cite the software using the metadata below; cite specific research findings with their primary evidence."
+type: software
+title: "SchemaRouter"
+abstract: >-
+  Typed capability routing and governed execution for AI agents across APIs,
+  tools, and data systems. SchemaRouter compiles heterogeneous capability
+  schemas into a bounded retrieval and validated execution boundary; it is
+  not a general-purpose agent framework or a model router.
+authors:
+  - family-names: "Cho"
+    given-names: "Yong-eun"
+version: "0.17.0"
+license: MIT
+repository-code: "https://github.com/JDeun/SchemaRouter"
+url: "https://jdeun.github.io/SchemaRouter/"

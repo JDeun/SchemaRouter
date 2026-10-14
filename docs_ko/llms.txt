@@ -1,0 +1,36 @@
+# SchemaRouter 문서
+
+> API·도구·데이터 시스템 전반에서 AI 에이전트를 위한 타입 기반 기능 라우팅 및 정책 통제형 실행 계층입니다.
+
+한국어 정본 문서: https://jdeun.github.io/SchemaRouter/ko/
+원본 코드 및 릴리스: https://github.com/JDeun/SchemaRouter
+영문 문서: https://jdeun.github.io/SchemaRouter/
+설치: `pip install schemarouter`
+
+SchemaRouter는 등록된 API·도구 계약을 타입 기반 기능 모델로 통합하고,
+허용된 기능 후보를 제한된 범위에서 검색하며 실행 시 스키마와 정책을 검증합니다.
+범용 에이전트 프레임워크, LLM 모델 라우터, MCP 서버 목록, 최종 답변 생성기는 아닙니다.
+
+## 일차 자료
+
+- [설치](https://jdeun.github.io/SchemaRouter/ko/getting-started/installation/): 설치와 Python 지원 범위.
+- [빠른 시작](https://jdeun.github.io/SchemaRouter/ko/getting-started/quickstart/): 실제 공급자 기반 실행 예제.
+- [SchemaRouter란?](https://jdeun.github.io/SchemaRouter/ko/concepts/schema-router/): 역할과 책임 경계.
+- [기능 카탈로그](https://jdeun.github.io/SchemaRouter/ko/concepts/capability-catalog/): 타입 기반 검색과 에이전트 연동 범위.
+- [실행 및 신뢰 경계](https://jdeun.github.io/SchemaRouter/ko/concepts/execution/): 실행 검증과 승인.
+- [MCP](https://jdeun.github.io/SchemaRouter/ko/guides/mcp/): MCP 기능 입력 및 결과 계약.
+- [OpenAPI](https://jdeun.github.io/SchemaRouter/ko/guides/openapi/): API 스키마 입력.
+- [Python 도구](https://jdeun.github.io/SchemaRouter/ko/guides/python-tools/): 로컬 함수 연동.
+- [공개 API 레퍼런스](https://jdeun.github.io/SchemaRouter/ko/reference/api/): API 명세.
+- [신뢰성 및 릴리스 근거](https://jdeun.github.io/SchemaRouter/ko/project/trust-and-evidence/): 검증 및 안전성 근거.
+- [연구 현황](https://jdeun.github.io/SchemaRouter/ko/research/routing-status/): 실험 결과와 주장 가능한 범위.
+- [전체 실험 인덱스](https://jdeun.github.io/SchemaRouter/ko/research/experiment-index/): 실험별 세부 기록.
+
+## 인용·근거 경계
+
+- 기본 브랜치에 반영된 이후에는 [CITATION.cff](https://github.com/JDeun/SchemaRouter/blob/main/CITATION.cff)를 사용하여 소프트웨어를 인용합니다.
+- 안정적인 제품 기능과 실험 결과의 일반화 가능성은 구분해야 합니다.
+- 0.14 대규모 독립 실험(#432) 및 최종 답변 정확도 실험(#424)의 검증된
+  최종 결과는 아직 공개되지 않았습니다. 부분 실행 결과로 최종 수치를 만들지 않습니다.
+- 수치·성능을 인용할 때에는 해당 실험의 일차 결과 문서, 커밋, 아티팩트를 확인합니다.
+- 최신 버전과 프로토콜 정보는 위의 정본 문서를 참조합니다.

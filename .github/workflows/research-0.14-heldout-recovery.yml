@@ -20,6 +20,11 @@ on:
         description: Zero-based missing-parent-shard recovery wave
         type: number
         required: true
+      aggregate_only:
+        description: Verify and aggregate the existing failed Wave-2 run without inference
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -40,6 +45,7 @@ env:
 
 jobs:
   prepare:
+    if: "${{ !inputs.aggregate_only }}"
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     outputs:
@@ -266,7 +272,80 @@ jobs:
             --plan-out artifacts/recovery-plan/heldout-recovery-plan.json \
             --out-dir artifacts/heldout-verified \
             --proof-out artifacts/heldout-recovery-proof.json
+      - name: Install precisely checked-out frozen scientific package for aggregation
+        run: |
+          python -m pip install -e ./scientific
+          python - <<'PY'
+          import schemarouter
+          from scripts.agent_utility_generated_common import summarize_rows
+          print("frozen scientific aggregation imports available")
+          PY
       - name: Aggregate via pinned historical scientific source
+        run: |
+          python scientific/scripts/aggregate_agent_utility_v3_heldout.py \
+            --input-dir artifacts/heldout-verified \
+            --corpus artifacts/recovery-plan/heldout-corpus.json \
+            --retrieval artifacts/recovery-plan/heldout-retrieval.json \
+            --out artifacts/heldout-generalization-canonical.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: "heldout-generalization-canonical-${{ github.run_id }}"
+          path: |
+            artifacts/heldout-generalization-canonical.json
+            artifacts/recovery-plan/heldout-corpus.json
+            artifacts/recovery-plan/heldout-retrieval.json
+            artifacts/heldout-recovery-proof.json
+            scientific/benchmarks/agent-utility-v3-heldout-preregistration.json
+          if-no-files-found: error
+          retention-days: 30
+
+  # Isolated one-shot infrastructure rescue after run 38342986866 exhausted
+  # the normal retry cap: NO prepare/recover matrix, model or scored replays.
+  aggregate-only:
+    if: "${{ inputs.aggregate_only }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ inputs.source_sha }}"
+          path: scientific
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - name: Retrieve exact previous failed Wave-2 recovery plan
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: heldout-recovery-plan-38342986866
+          run-id: "38342986866"
+          github-token: "${{ github.token }}"
+          repository: "${{ github.repository }}"
+          path: artifacts/recovery-plan
+      - name: Verify original evaluator jobs and all frozen ZIP identities
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          GITHUB_REPOSITORY: "${{ github.repository }}"
+        run: |
+          python scripts/research_014_heldout_recovery.py collect \
+            --aggregate-only-source-run 38342986866 \
+            --corpus artifacts/recovery-plan/heldout-corpus.json \
+            --parent-run "${{ inputs.parent_run_id }}" \
+            --source-sha "${{ inputs.source_sha }}" \
+            --evidence-digest "${{ inputs.evidence_digest }}" \
+            --plan-out artifacts/recovery-plan/heldout-recovery-plan.json \
+            --out-dir artifacts/heldout-verified \
+            --proof-out artifacts/heldout-recovery-proof.json
+      - name: Install precisely checked-out frozen scientific package for aggregation
+        run: |
+          python -m pip install -e ./scientific
+          python - <<'PY'
+          import schemarouter
+          print("frozen scientific aggregation imports available")
+          PY
+      - name: Aggregate exclusively with the frozen historical scorer
         run: |
           python scientific/scripts/aggregate_agent_utility_v3_heldout.py \
             --input-dir artifacts/heldout-verified \
