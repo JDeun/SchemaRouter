@@ -8,6 +8,11 @@ from pathlib import Path
 from statistics import median
 from typing import Any
 
+try:
+    from scripts.external_validation_servicenow_platform_mcp import validate_package
+except ModuleNotFoundError:  # direct python scripts/... invocation
+    from external_validation_servicenow_platform_mcp import validate_package
+
 import schemarouter as schemarouter_package
 from schemarouter import SchemaRouter
 from schemarouter.adapters.mcp import tool_from_mcp
@@ -42,12 +47,24 @@ def run(
     manifest = _load(package_dir / "manifest.json")
     cases = _load(package_dir / manifest["files"]["cases"])
     snapshot = _load(snapshot_path)
-    repeats = int(manifest["comparison"]["latency_repeats"]) if repeats is None else repeats
-    if repeats < 1:
-        raise ValueError("repeats must be positive")
-    top_k = int(manifest["comparison"]["schemarouter_top_k"]) if top_k is None else top_k
-    if top_k < 1:
-        raise ValueError("top_k must be positive")
+    # Validate the exact native source/labels BEFORE constructing a model index
+    # or materializing any simulated exposure; never work from drifted inputs.
+    validate_package(manifest, cases, snapshot)
+    if repeats is None:
+        repeats = manifest["comparison"]["latency_repeats"]
+    if type(repeats) is not int or repeats < 1:
+        raise ValueError("repeats must be a positive integer")
+    if top_k is None:
+        top_k = manifest["comparison"]["schemarouter_top_k"]
+    allowed_k = manifest["comparison"]["development_top_k_sensitivity"]
+    if (
+        type(top_k) is not int
+        or type(allowed_k) is not list
+        or not allowed_k
+        or any(type(k) is not int or k < 1 for k in allowed_k)
+        or top_k not in allowed_k
+    ):
+        raise ValueError("top_k must be a preregistered development budget")
 
     tools = snapshot["tools"]
     tool_map = {tool["name"]: tool for tool in tools}
