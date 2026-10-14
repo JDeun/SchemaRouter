@@ -92,6 +92,23 @@ auditor; it does **not** fetch or execute the upstream source at runtime.
 The independent Git checkout/source-byte audit remains a distinct
 prerequisite for actually verifying upstream files.
 
+**Pinned-source transport recovery (2026-10-15):** GitHub no longer exposes
+`8ada7f1f392f3dd2800e825dac8d245dfd53944a` via the original
+`ClicShopping/ClicShopping` repository (`No commit found` / checkout
+`not our ref`). The public **fork mirror** `retail-ecommerce/ClicShopping`
+retains that **exact Git commit** (tree SHA
+`dbb202887185b41f37cdc8c133c549cbf70effcd`). GitHub's tree API
+confirms exact previously frozen blobs for `CustomerOrders.php`
+`067d96233780bb52cbfd1eb9dee28e2c8697e099`, its `readme.md`
+`545c092fe2d64e269390a37b9d9d9448bf5272e4`, and the route
+`clicshopping.json` `4762eaeecc5e672557da9280d6ebdcea8026c483`.
+The offline workflow uses this content-identical mirror **without changing
+any task/query, original source identity, parser, scorer or gate**. The
+mirror is not a substitute for original-maintainer attestation, and
+independent held-out scoring remains unauthorized. Checkout and byte
+verification remain required, and the actual checkout repository is
+recorded in the run provenance.
+
 The new cohort must also preserve literal integer `top_k=3` and
 `hot_repeats=5`, integer-zero model/HTTP activity, strictly disabled
 credential/PHP/model/held-out execution and all Boolean role grants.
