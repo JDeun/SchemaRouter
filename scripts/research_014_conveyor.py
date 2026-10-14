@@ -1205,6 +1205,56 @@ def run_controller(
             }
         elif terminal_failure(recovery_runs[0]):
             failed_recovery = recovery_runs[0]
+            # The exact Wave-2 run exhausted the bounded three-attempt
+            # budget only after 185/185 evaluator successes. Its aggregator
+            # failed on a GitHub GET 502, NOT on a scored model trajectory.
+            # The only permitted successor is a SINGLE, pinned, zero-model
+            # aggregation-only dispatch under the same recovery workflow.
+            from scripts.research_014_heldout_recovery import (
+                AGGREGATE_RESCUE_PARENT,
+                AGGREGATE_RESCUE_RUN,
+                validate_aggregate_only_rescue,
+            )
+            if (failed_recovery.id == AGGREGATE_RESCUE_RUN
+                    and failed_recovery.run_attempt >= MAX_INFRA_ATTEMPTS
+                    and heldout.id == AGGREGATE_RESCUE_PARENT):
+                plan_artifact = api.artifact(
+                    failed_recovery.id,
+                    f"heldout-recovery-plan-{AGGREGATE_RESCUE_RUN}",
+                )
+                if plan_artifact is None:
+                    raise RuntimeError("missing exact aggregate-rescue source plan")
+                rescue_plan = api.artifact_json(
+                    plan_artifact, "heldout-recovery-plan.json"
+                )
+                validate_aggregate_only_rescue(
+                    api, rescue_plan, source_run=AGGREGATE_RESCUE_RUN
+                )
+                if (rescue_plan.get("evidence_digest") != parallel_digest
+                        or rescue_plan.get("source_sha") != frozen_source_sha):
+                    raise RuntimeError("aggregate-only research provenance drift")
+                if execute:
+                    api.dispatch(
+                        HELDOUT_RECOVERY_WORKFLOW,
+                        ref=ref,
+                        inputs={
+                            "parent_run_id": str(heldout.id),
+                            "evidence_digest": parallel_digest,
+                            "source_sha": frozen_source_sha,
+                            "wave": "2",
+                            "aggregate_only": "true",
+                        },
+                    )
+                actions.append(
+                    "dispatch_verified_heldout_aggregate_only:"
+                    f"source_run={AGGREGATE_RESCUE_RUN}:"
+                    "no_evaluator_jobs=true"
+                )
+                return {
+                    "state": "heldout_aggregate_only_dispatched",
+                    "actions": actions,
+                    "status": [_status_line("heldout-recovery", failed_recovery)],
+                }
             if failed_recovery.conclusion in {"failure", "timed_out"}:
                 if retry_infrastructure_failure(
                     api,
