@@ -49,7 +49,9 @@ def classify_grounded_answer_episode(
             raise ValueError(f"{key} must be a non-negative integer")
 
     recall = row.get("required_fact_recall")
-    if type(recall) not in (int, float) or not math.isfinite(recall):
+    if type(recall) not in (int, float) or (
+        type(recall) is float and not math.isfinite(recall)
+    ):
         raise ValueError("required_fact_recall must be a finite numeric rate")
     if recall < 0.0 or recall > 1.0:
         raise ValueError("required_fact_recall must lie in [0, 1]")
