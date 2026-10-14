@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-10-15",
+  "release_target": "0.18.0",
+  "scope": "evidence-backed pre-release external benchmark readiness, not independently measured post-release performance",
+  "historical_frozen_runs_unchanged": true,
+  "product_release_rule": "all runnable engineering and source/DEV guards pass; externally blocked E2 results remain blocked and cannot be claimed",
+  "suite": [
+    {
+      "id": "clicshopping",
+      "issue": 1208,
+      "confirmation_issue": 1311,
+      "evidence_class": "SOURCE_VERIFIED_DEV_ONLY",
+      "source": "ClicShopping/ClicShopping pinned source SHA 8ada7f1f392f3dd2800e825dac8d245dfd53944a available from exact-SHA public fork",
+      "run_id": 38653122386,
+      "run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/38653122386",
+      "local_verdict": "PASS",
+      "independent_verdict": "BLOCKED_EXTERNAL",
+      "blocker": "Unverified maintainer-authored 20-case raw bytes, semantic gold/reviewer approval and native REST/auth boundary",
+      "permitted_claim": "42 visible offline DEV cases; unsupported requests yielded nonempty Top-K candidates; no tenant or held-out conclusion"
+    },
+    {
+      "id": "servicenow",
+      "issue": 1228,
+      "evidence_class": "NATIVE_SCHEMA_DEV_ONLY",
+      "source": "Xerrion/servicenow-platform-mcp pinned readonly 12-tool schema",
+      "run_id": 38103862215,
+      "run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/38103862215",
+      "local_verdict": "PASS",
+      "independent_verdict": "BLOCKED_EXTERNAL",
+      "blocker": "Independent upstream gold labels and protocol review; fresh heldout cases; actual E2 comparison",
+      "permitted_claim": "Pinned 24-case visible DEV: static 100% tool recall versus K3 75% and K5 85%; no-fit candidates nonempty"
+    },
+    {
+      "id": "smartmcp",
+      "issue": 1114,
+      "evidence_class": "NATIVE_DEV_ONLY",
+      "source": "SmartMCP pinned development implementation with MCP v1 dependency compatibility",
+      "run_id": null,
+      "run_url": null,
+      "local_verdict": "PASS",
+      "independent_verdict": "BLOCKED_EXTERNAL",
+      "blocker": "Maintainer agreement on MCP compatibility, native exposure, Top-K, semantic labels and independent authoring",
+      "permitted_claim": "Visible DEV recall only; not an independent native apples-to-apples score"
+    },
+    {
+      "id": "cyt",
+      "issue": 839,
+      "evidence_class": "COMPONENT_OR_LOOPBACK_PREFLIGHT_ONLY",
+      "source": "cyt-indexer-sdk 2.17.6 SDK BM25 and separate macOS loopback integration",
+      "run_id": 38060969669,
+      "run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/38060969669",
+      "local_verdict": "PASS",
+      "independent_verdict": "BLOCKED_EXTERNAL",
+      "blocker": "Real CYT main-app proxy/hook tool interception and maintainer-reviewed agent/model/OS and fresh heldout",
+      "permitted_claim": "Mac Hook Daemon loopback smoke and SDK development controls only, not full CYT E2E or Korean BM25"
+    },
+    {
+      "id": "hyset",
+      "issue": 795,
+      "evidence_class": "UNSCORED_INPUT_PREFLIGHT_ONLY",
+      "source": "HYSET paper best.pt never released; public-source fresh retraining protocol only",
+      "run_id": 38655754756,
+      "run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/38655754756",
+      "local_verdict": "PASS",
+      "independent_verdict": "BLOCKED_EXTERNAL",
+      "blocker": "Public ToolBench source licensing/data access, actual fresh training/checkpoint and independent six-split scoring",
+      "permitted_claim": "Native-argument/source manifest preflight pass; no paper-checkpoint reproduction or scored quality"
+    },
+    {
+      "id": "pi_jev_laya",
+      "issue": 796,
+      "confirmation_issue": 1312,
+      "evidence_class": "UNSCORED_PREFLIGHT_ONLY",
+      "source": "pi-jev c5b5847; proposed laya[serve] local backend",
+      "run_id": null,
+      "run_url": null,
+      "local_verdict": "NOT_COMPARABLE",
+      "independent_verdict": "BLOCKED_EXTERNAL",
+      "blocker": "Real pinned Laya model load and pi-jev native activated-tool output, comparable Top-K/10 width protocol",
+      "permitted_claim": "82-tool/16-query handoff and no-model safety tests; no claimed real Jev/Laya benchmark"
+    },
+    {
+      "id": "safeact_v1",
+      "issue": 1211,
+      "evidence_class": "SYNTHETIC_CONTRACT_ONLY",
+      "source": "SafeActBench author-aligned V1 protocol; draft PR #1212",
+      "run_id": null,
+      "run_url": null,
+      "local_verdict": "NOT_COMPARABLE",
+      "independent_verdict": "BLOCKED_EXTERNAL",
+      "blocker": "Case-blind independently grounded predicate/action oracle, protected runner, author review for 393 trajectories",
+      "permitted_claim": "No valid scored V1 outcomes; synthetic contract tests do not count as independent results"
+    },
+    {
+      "id": "microsoft_decision_1",
+      "issue": 1324,
+      "evidence_class": "MOCKED_TRANSPORT_ONLY",
+      "source": "Microsoft Foundry hosted Decision-1 explicit opt-in HTTP adapter PR #1328 merged",
+      "run_id": null,
+      "run_url": null,
+      "local_verdict": "NOT_COMPARABLE",
+      "independent_verdict": "BLOCKED_EXTERNAL",
+      "blocker": "Paid credentials/provider-owned deployment, authentic contract and independent no-fit/quality cohort",
+      "permitted_claim": "Strict finite-choice/no-fit and request/response mock validation, not live Microsoft model quality"
+    }
+  ]
+}
