@@ -324,10 +324,6 @@
       "source_blob": "df85cf760bcdecedf91e692bc8e3bc267c4ed98f"
     },
     {
-      "path": "integrations/microsoft-foundry-http-adapter.md",
-      "source_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567"
-    },
-    {
       "path": "integrations/ollama.md",
       "source_blob": "59efd519def797fb4ae2351697955881e7d7912d"
     },
@@ -594,6 +590,10 @@
     {
       "path": "versioning.md",
       "source_blob": "61f82f452188aec2f74fde20f09243a9dbbb1497"
+    },
+    {
+      "path": "integrations/microsoft-foundry-http-adapter.md",
+      "source_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567"
     }
   ]
 }
