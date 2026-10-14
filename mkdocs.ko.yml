@@ -120,6 +120,7 @@ nav:
       - Decision backend plugin: integrations/decision-backend-plugins.md
       - Decision-model 생태계: integrations/decision-model-ecosystem.md
       - Microsoft Decision-1 (호스팅 후보): integrations/microsoft-decision-1.md
+      - Microsoft Decision-1 Foundry HTTP (선택): integrations/microsoft-foundry-http-adapter.md
       - Jev / TypeSafe: integrations/jev.md
       - Laya: integrations/laya.md
       - Ollama: integrations/ollama.md

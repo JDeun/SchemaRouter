@@ -592,6 +592,10 @@
       "source_blob": "61f82f452188aec2f74fde20f09243a9dbbb1497"
     },
     {
+      "path": "integrations/microsoft-foundry-http-adapter.md",
+      "source_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567"
+    },
+    {
       "path": "integrations/microsoft-decision-1.md",
       "source_blob": "be983823a98e8c74c0ea7d5f3c8f3b7fe1b7ebad"
     }

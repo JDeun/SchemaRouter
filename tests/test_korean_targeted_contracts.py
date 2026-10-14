@@ -57,8 +57,8 @@ def test_direct_semantic_spotcheck_provenance_is_bounded_and_live() -> None:
             encoding="utf-8"
         )
     )
-    # Every currently published bilingual pair must have a source-pinned
-    # review entry; adding new paired documentation must extend the ledger.
+    # Require one current-source review per bilingual page, not a permanently
+    # frozen document count. New pages must extend the exact-blob ledger.
     assert ledger["reviewed_page_pairs"] == len(ledger["reviews"])
     assert ledger["total_page_pairs"] == len(ledger["reviews"])
     assert ledger["independent_sentence_review_complete"] is False
