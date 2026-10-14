@@ -79,19 +79,19 @@
     },
     {
       "path": "integrations/decision-model-ecosystem.md",
-      "section": 4,
-      "en_blob": "ee36387d25b37fdeb5e31fdb50dbea767b7e8f5f",
-      "ko_blob": "d8b8218a4885f33afb30fca46ca335df49fd411d",
+      "section": 5,
+      "en_blob": "510c73a7adce77a7971118e1076425c06e377d63",
+      "ko_blob": "24b0e32363bd6239e3e0c8df4c188bd6b4fad5f2",
       "decision": "meaning-preserved",
-      "evidence": "Korean limits credentialed Jev comparison and rejects unwarranted generalization from Laya trials"
+      "evidence": "Korean limits credentialed Jev comparison and rejects unwarranted generalization from Laya trials 2026-10-14 paired review: model discovery section inserted above this entry; original trust and comparative evidence limitations preserved, section index advanced by one."
     },
     {
       "path": "integrations/decision-model-ecosystem.md",
-      "section": 5,
-      "en_blob": "ee36387d25b37fdeb5e31fdb50dbea767b7e8f5f",
-      "ko_blob": "d8b8218a4885f33afb30fca46ca335df49fd411d",
+      "section": 6,
+      "en_blob": "510c73a7adce77a7971118e1076425c06e377d63",
+      "ko_blob": "24b0e32363bd6239e3e0c8df4c188bd6b4fad5f2",
       "decision": "meaning-preserved",
-      "evidence": "Korean limits credentialed Jev comparison and rejects unwarranted generalization from Laya trials"
+      "evidence": "Korean limits credentialed Jev comparison and rejects unwarranted generalization from Laya trials 2026-10-14 paired review: model discovery section inserted above this entry; original trust and comparative evidence limitations preserved, section index advanced by one."
     },
     {
       "path": "integrations/langgraph.md",
@@ -266,6 +266,17 @@
     "scope": "Targeted research/experiment-index.md provenance revalidation only",
     "ko_blob": "0b19378fdef860ccd709b0cafcf958c0ec2272e7",
     "meaning_preserved": "Existing experiment verdicts and machine-readable English hypothesis literals are unchanged. Added Korean explanation of source-preservation rather than silent untranslated prose.",
+    "independent_sentence_review_complete": false
+  },
+  "amendment_2026_10_14_ms_decision_one": {
+    "review_date": "2026-10-14",
+    "reviewer_status": "AI project contributor; not independent third-party attestation",
+    "scope": "Section identity shifted +1 when new hosted Microsoft intake subsection was inserted in both languages; reaffirm preexisting Jev and Laya trust-boundary explanations against current blobs.",
+    "sections": [
+      5,
+      6
+    ],
+    "section_text_changed_by_provider_insertion": false,
     "independent_sentence_review_complete": false
   }
 }

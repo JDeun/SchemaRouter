@@ -3,8 +3,8 @@
   "review_date": "2026-10-12",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 148,
-  "total_page_pairs": 148,
+  "reviewed_page_pairs": 149,
+  "total_page_pairs": 149,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
@@ -63,9 +63,9 @@
     },
     {
       "path": "integrations/decision-model-ecosystem.md",
-      "en_blob": "ee36387d25b37fdeb5e31fdb50dbea767b7e8f5f",
-      "ko_blob": "d8b8218a4885f33afb30fca46ca335df49fd411d",
-      "notes": "Verified model-only compatibility is not promotion, quality evidence limitations, candidate-specific and dormant research statuses, model/runtime licensing qualifications, and finite-choice authority boundary."
+      "en_blob": "510c73a7adce77a7971118e1076425c06e377d63",
+      "ko_blob": "24b0e32363bd6239e3e0c8df4c188bd6b4fad5f2",
+      "notes": "Verified model-only compatibility is not promotion, quality evidence limitations, candidate-specific and dormant research statuses, model/runtime licensing qualifications, and finite-choice authority boundary. 2026-10-14 amendment: checked added Microsoft hosted model caveats, request example structures and no-match refusal; not independent validation of the paid provider."
     },
     {
       "path": "concepts/protocol-ingestion-decisions.md",
@@ -900,6 +900,12 @@
       "en_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567",
       "ko_blob": "921bb18cd7b190d57e6458f8bde86c1cf0e5a37b",
       "notes": "2026-10-13 AI-contributor full EN/KO source comparison for opt-in Microsoft Foundry HTTP adapter documentation. Preserves provider deployment-name and TypeSafe transport difference, HTTPS/key consent and billing, choice-only finite IDs with explicit none_of_above, uncalibrated score=None, bounded 1-MiB request/response handling, no live provider evidence, no change to frozen #432/#424 research. Korean examples are localized/summarized rather than literal line-by-line translations; not independent human certification. 2026-10-14: restored the missing Korean verification-scope heading to match EN document hierarchy; paired safety statements unchanged. 2026-10-14 paired addition: explicit mock header/criteria/privacy/error assertions, authentic-provider validation and independent cohort blockers, with 0.14 frozen boundary unchanged. 2026-10-15: escaped leading numeric issue refs to satisfy bilingual Markdown safety lint; no factual claims changed."
+    },
+    {
+      "path": "integrations/microsoft-decision-1.md",
+      "en_blob": "be983823a98e8c74c0ea7d5f3c8f3b7fe1b7ebad",
+      "ko_blob": "cc25e28041825e072d7efba338e845bc6f658c46",
+      "notes": "2026-10-13 AI-contributor paired EN/KO review of the new hosted-decision-model intake: discovery-only status, TypeSafe SDK versus Foundry transport and auth incompatibility, explicit none_of_above and execution authorization, absence of independent SchemaRouter quality evidence, no modification of frozen 0.14. Korean text provides a shortened scoped rendition, not identical examples; not independent human attestation. 2026-10-14 amendment: checked added Microsoft hosted model caveats, request example structures and no-match refusal; not independent validation of the paid provider. 2026-10-14 follow-up: expanded Korean no-fit authorization and independent benchmark evidence qualifiers; source-constrained paired reread, not paid transport qualification."
     }
   ],
   "separately_inspected_pending_pr": [
@@ -914,5 +920,6 @@
       "observation": "Directly compared each of the 49 EN/KO capability, current status, and future-direction rows against the repaired translation on PR #1305; preserved API qualifiers, failure-closed semantics, vendor lists and numerical targets. Both document-tail narrative maturity gates match in substantive content. The exact reviewed Korean blob is now present in PR #1307's head as well as PR #1305; the 147/147 records are pinned to the PR #1307 source tree. Neither PR is yet merged to main, so this is not a merged-main editorial sign-off."
     }
   ],
-  "directly_examined_across_branches": 147
+  "directly_examined_across_branches": 147,
+  "review_amendments": []
 }
