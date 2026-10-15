@@ -206,7 +206,6 @@ def test_projected_output_schema_narrows_nested_array_items() -> None:
     [
         "PRIVATE_VALUE",
         123,
-        None,
         [{"title": "Visible"}, "PRIVATE_VALUE"],
         [{"title": "Visible"}, 0],
         [{"title": "Visible"}, None],
@@ -241,3 +240,11 @@ def test_unselected_projection_preserves_legacy_raw_payloads() -> None:
     endpoint = _endpoint()
     payload = ["raw", {"unknown": "visible"}]
     assert RegistryExecutor._project(payload, [], endpoint) is payload
+
+
+
+def test_selected_projection_preserves_http_no_content_semantics() -> None:
+    endpoint = _endpoint()
+    assert RegistryExecutor._project(
+        None, ["results[].title"], endpoint,
+    ) is None
