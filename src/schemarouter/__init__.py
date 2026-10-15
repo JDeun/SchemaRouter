@@ -277,6 +277,7 @@ from .decisions import (
     choose_async,
     choose_sync,
 )
+from .embedding_e5 import E5CachedEmbedder
 from .errors import (
     ApprovalDeniedError,
     AuthorizationAuditDeliveryError,
@@ -655,6 +656,7 @@ __all__ = [
     "DiscoveryProfile",
     "EmbeddingCallable",
     "EmbeddingDecisionBackend",
+    "E5CachedEmbedder",
     "DefaultMCPClientFactory",
     "EffectKind",
     "EligibilityStatus",
