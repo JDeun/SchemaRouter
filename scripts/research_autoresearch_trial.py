@@ -8,7 +8,6 @@ HEAD, never change product files, create GitHub PRs or promote releases.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import subprocess
