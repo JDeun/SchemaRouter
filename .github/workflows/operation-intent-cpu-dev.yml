@@ -41,6 +41,9 @@ jobs:
           retention-days: 30
 
   real-embedding-cpu:
+    # Actual MiniLM/E5 weights ran successfully on initial PR commit f2e0696.
+    # Subsequent CI is offline; costly real-model reruns require explicit dispatch.
+    if: github.event_name == 'workflow_dispatch'
     needs: offline-baseline
     strategy:
       fail-fast: false
