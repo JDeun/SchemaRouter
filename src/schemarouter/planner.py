@@ -4,7 +4,7 @@ import inspect
 import math
 import re
 import unicodedata
-from collections.abc import Awaitable, Callable, Set
+from collections.abc import Awaitable, Callable, Mapping, Set
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from typing import Any, Protocol
@@ -361,6 +361,58 @@ class KeywordAnalyzer:
         )
 
 
+class GlossaryKeywordAnalyzer(KeywordAnalyzer):
+    """Opt-in host-reviewed, exact-token multilingual query expansion.
+
+    Glossary keys must each represent one actual lexical token. Values are
+    host-authorized lexical search phrases, never tool identities, permission
+    grants, translations inferred from model output, or new registry entries.
+    Default KeywordAnalyzer routing is unchanged without this opt-in.
+    """
+
+    def __init__(self, glossary: Mapping[str, str]) -> None:
+        if not isinstance(glossary, Mapping) or len(glossary) > 1024:
+            raise ValueError("glossary must be a mapping with at most 1024 entries")
+        trusted: dict[str, str] = {}
+        for source, target in glossary.items():
+            if (
+                type(source) is not str
+                or len(source) > 128
+                or len(_tokens(source)) != 1
+                or type(target) is not str
+                or not target.strip()
+                or len(target) > 256
+                or not 1 <= len(_tokens(target)) <= 8
+            ):
+                raise ValueError("glossary entries require one source token and a bounded target phrase")
+            source_token = next(iter(_tokens(source)))
+            if source_token in trusted and trusted[source_token] != target:
+                raise ValueError("conflicting normalized glossary source")
+            trusted[source_token] = target
+        self._glossary = trusted
+
+    def _expansions(self, query: str) -> tuple[str, ...]:
+        return tuple(
+            self._glossary[token]
+            for token in sorted(_tokens(query) & self._glossary.keys())
+        )
+
+    def expansion_tokens(self, query: str) -> frozenset[str]:
+        return frozenset(
+            token
+            for phrase in self._expansions(query)
+            for token in _tokens(phrase)
+        )
+
+    def analyze(self, request: PlanRequest, registry: ToolRegistry) -> QueryIntent:
+        intent = super().analyze(request, registry)
+        return intent.model_copy(update={
+            "concepts": list(dict.fromkeys([
+                *intent.concepts, *self._expansions(request.query),
+            ])),
+        })
+
+
 @dataclass(frozen=True)
 class _FieldSemantic:
     names: frozenset[str]
@@ -512,6 +564,8 @@ class _CandidateIndex:
         self,
         request: PlanRequest,
         intent: QueryIntent,
+        *,
+        extra_tokens: frozenset[str] = frozenset(),
     ) -> tuple[tuple[ToolSpec, EndpointSpec], ...]:
         refs: set[_EndpointRef] = set()
 
@@ -520,7 +574,7 @@ class _CandidateIndex:
         for preferred in intent.preferred_endpoints:
             refs.update(self._endpoint_refs.get(preferred, ()))
 
-        for token in _tokens(request.query):
+        for token in _tokens(request.query) | extra_tokens:
             refs.update(self._token_refs.get(token, ()))
         for parameter_name in intent.arguments:
             refs.update(self._parameter_refs.get(parameter_name, ()))
@@ -1498,7 +1552,10 @@ class SchemaPlanner:
             and not self.structural_retrieval
             and scoring_endpoint_transform is None
         ):
-            endpoint_pairs = snapshot.index.endpoint_pairs(request, intent)
+            endpoint_pairs = snapshot.index.endpoint_pairs(
+                request, intent,
+                extra_tokens=self._glossary_tokens(request.query),
+            )
         else:
             endpoint_pairs = snapshot.all_endpoint_pairs()
 
@@ -1818,7 +1875,10 @@ class SchemaPlanner:
 
         positive_refs = {
             (tool.key, endpoint.name)
-            for tool, endpoint in index.endpoint_pairs(request, intent)
+            for tool, endpoint in index.endpoint_pairs(
+                request, intent,
+                extra_tokens=self._glossary_tokens(request.query),
+            )
         }
         result: list[_Candidate] = []
         for tool, endpoint, visible_endpoint in scoped_pairs:
@@ -4123,10 +4183,14 @@ class SchemaPlanner:
             ignored_arguments=list(ignored_arguments),
         )
 
-    @staticmethod
-    def _scoring_context(query: str, intent: QueryIntent) -> _ScoringContext:
+    def _glossary_tokens(self, query: str) -> frozenset[str]:
+        if isinstance(self.analyzer, GlossaryKeywordAnalyzer):
+            return self.analyzer.expansion_tokens(query)
+        return frozenset()
+
+    def _scoring_context(self, query: str, intent: QueryIntent) -> _ScoringContext:
         return _ScoringContext(
-            query_tokens=frozenset(_tokens(query)),
+            query_tokens=frozenset(_tokens(query)) | self._glossary_tokens(query),
             concept_norms=frozenset(
                 _normalize(concept)
                 for concept in intent.concepts
