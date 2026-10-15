@@ -93,8 +93,15 @@ class MicrosoftDecisionOneFoundryBackend:
         if (api_key is None) == (bearer_token is None):
             raise ValueError("provide exactly one Foundry credential method")
         credential = api_key if api_key is not None else bearer_token
-        if not isinstance(credential, str) or not credential.strip():
-            raise ValueError("Foundry credential must be a nonempty string")
+        if (
+            not isinstance(credential, str)
+            or not credential.strip()
+            or any(ord(char) < 32 or ord(char) == 127 for char in credential)
+        ):
+            # Header values are opaque secrets, not HTTP syntax. A literal
+            # CR/LF/NUL/DEL must fail during configuration rather than being
+            # handed to the HTTP client (or reused in an error message).
+            raise ValueError("Foundry credential must be a valid nonempty header value")
         if type(timeout) not in (int, float):
             raise ValueError("timeout must be a positive finite number")
         try:
