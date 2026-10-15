@@ -135,7 +135,7 @@ def test_halfwidth_katakana_matches_only_declared_fullwidth_alias(
     intent = planner.analyzer.analyze(request, registry)
     scores = {
         f"{c.tool.key}.{c.endpoint.name}": c.score
-        for c in planner._score_candidates(request, intent)
+        for c in planner._semantic_recall_catalog(request, intent)
     }
     assert scores["sample_records.read"] > 0
 
@@ -148,6 +148,6 @@ def test_halfwidth_katakana_is_not_an_invented_translation(indexed: bool) -> Non
     intent = planner.analyzer.analyze(request, registry)
     scores = {
         f"{c.tool.key}.{c.endpoint.name}": c.score
-        for c in planner._score_candidates(request, intent)
+        for c in planner._semantic_recall_catalog(request, intent)
     }
     assert all(score == 0 for score in scores.values())
