@@ -86,3 +86,7 @@ def test_no_cron_and_no_write_token_on_compute_job() -> None:
     assert "actions: write" not in research
     assert "actions: write" in dispatcher
     assert "needs: adaptive-research" in dispatcher
+    # Both the restore and decision steps run for initial push, where
+    # workflow_dispatch inputs are not populated.
+    assert research.count("REMAINING: ${{ inputs.remaining_batches || 12 }}") == 2
+    assert "if: always() && steps.score.outcome == 'success'" in research

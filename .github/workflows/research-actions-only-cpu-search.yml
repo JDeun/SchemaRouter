@@ -137,6 +137,7 @@ jobs:
             echo "Starting initial finite research chain with 12 batches"
           fi
       - name: Score the next 24 reviewed CPU configurations
+        id: score
         shell: bash
         run: |
           set -euo pipefail
@@ -151,13 +152,14 @@ jobs:
       - name: Validate result and calculate continuation budget
         id: chain
         env:
-          REMAINING: ${{ inputs.remaining_batches }}
+          REMAINING: ${{ inputs.remaining_batches || 12 }}
         run: |
           python -m scripts.research_actions_continuation \
             --report artifacts/actions-only-search/report.json \
             --state artifacts/actions-only-search/state.json \
             --remaining "$REMAINING" >> "$GITHUB_OUTPUT"
       - name: Persist all candidate evidence and exact next state first
+        if: always() && steps.score.outcome == 'success'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: actions-only-cpu-search-${{ github.run_id }}
