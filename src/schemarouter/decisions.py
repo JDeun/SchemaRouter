@@ -269,12 +269,21 @@ class EmbeddingDecisionBackend:
 
     @staticmethod
     def _cosine(left: list[float], right: list[float]) -> float:
-        left_norm = math.sqrt(sum(value * value for value in left))
-        right_norm = math.sqrt(sum(value * value for value in right))
-        if left_norm == 0.0 or right_norm == 0.0:
+        # Squaring an otherwise finite embedding can overflow (or underflow)
+        # and make opposite vectors appear maximally similar: min(1, nan)
+        # evaluates to 1. Scale each vector before computing either its norm
+        # or the dot product, so no unbounded intermediate is constructed.
+        left_scale = max(abs(value) for value in left)
+        right_scale = max(abs(value) for value in right)
+        if left_scale == 0.0 or right_scale == 0.0:
             raise PlanningError("embedding backend returned a zero-norm vector")
-        value = sum(a * b for a, b in zip(left, right, strict=True)) / (
-            left_norm * right_norm
+        left_scaled = [value / left_scale for value in left]
+        right_scaled = [value / right_scale for value in right]
+        left_norm = math.sqrt(math.fsum(value * value for value in left_scaled))
+        right_norm = math.sqrt(math.fsum(value * value for value in right_scaled))
+        value = math.fsum(
+            (a / left_norm) * (b / right_norm)
+            for a, b in zip(left_scaled, right_scaled, strict=True)
         )
         return max(-1.0, min(1.0, value))
 

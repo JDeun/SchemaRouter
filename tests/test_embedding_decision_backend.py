@@ -220,3 +220,33 @@ def test_embedding_backend_accepts_generator_batches() -> None:
     result = choose_sync(EmbeddingDecisionBackend(embed), request())
 
     assert result.selections[0].option_id == "candidate:0"
+
+
+@pytest.mark.parametrize("magnitude", [1e308, 1e-300])
+def test_embedding_cosine_preserves_opposite_direction_at_extreme_scales(
+    magnitude: float,
+) -> None:
+    forward = [magnitude, magnitude]
+    opposite = [-magnitude, -magnitude]
+    assert EmbeddingDecisionBackend._cosine(forward, opposite) == pytest.approx(-1.0)
+    assert EmbeddingDecisionBackend._cosine(forward, forward) == pytest.approx(1.0)
+
+
+def test_extreme_finite_embeddings_do_not_promote_opposite_tool() -> None:
+    huge = 1e308
+
+    def embed(_: list[str]) -> list[list[float]]:
+        return [
+            [huge, huge],    # Query
+            [-huge, -huge],  # Candidate 0: opposite / unsupported
+            [huge, huge],    # Candidate 1: exact match
+            [huge, -huge],   # Candidate 2: orthogonal
+        ]
+
+    result = choose_sync(
+        EmbeddingDecisionBackend(embed, min_similarity=0.5),
+        request(),
+    )
+    assert result.selections[0].option_id == "candidate:1"
+    assert result.metadata["top_similarity"] == pytest.approx(1.0)
+    assert math.isfinite(result.metadata["top_similarity"])
