@@ -2212,6 +2212,10 @@ class RegistryExecutor:
     def _project(value: Any, fields: list[str], endpoint: EndpointSpec) -> Any:
         if not fields:
             return value
+        # HTTP 204 / explicit no-body responses have no source content to
+        # disclose and must retain their existing None result semantics.
+        if value is None:
+            return None
         # A selected-field allowlist applies to every result item. Passing
         # through primitive values from a mixed array (or a primitive root)
         # exposes undeclared provider data to the calling agent. Reject the
