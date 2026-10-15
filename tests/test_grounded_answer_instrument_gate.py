@@ -151,3 +151,38 @@ def test_missing_sufficient_independent_cohorts_denies_qualification():
         policy=policy(min_supported=3, min_unsupported=2),
     )
     assert outcome["qualified"] is False
+
+
+@pytest.mark.parametrize(
+    "missing_observation", ["planner", "tool", "abstain_with_calls"]
+)
+def test_claimed_grounded_success_requires_host_observed_supported_route(
+    missing_observation,
+):
+    cases, rows = samples()
+    if missing_observation == "planner":
+        rows[0]["no_fit"]["planner_call_count"] = 0
+    elif missing_observation == "tool":
+        rows[0]["no_fit"]["tool_call_count"] = 0
+    else:
+        rows[0]["no_fit"]["abstained"] = True
+
+    # A supplied success score must not count as grounded completion when
+    # the physical routed-call evidence is missing or contradictory.
+    outcome = evaluate_instrument_readiness(
+        frozen_cases=cases,
+        observed_rows=rows,
+        policy=policy(min_grounded_rate=1.0),
+    )
+    assert outcome["qualified"] is False
+    assert outcome["grounded_success_rate"] == 0.5
+    assert outcome["supported_route_observed_cases"] == 1
+    assert outcome["supported_false_refusal_rate"] == 0.0
+
+
+def test_complete_instrument_reports_real_supported_route_observations():
+    cases, rows = samples()
+    outcome = require_instrument_ready(
+        frozen_cases=cases, observed_rows=rows, policy=policy()
+    )
+    assert outcome["supported_route_observed_cases"] == 2
