@@ -235,7 +235,9 @@ def evaluate(
         "model_key": model_key,
         "encoder_dim": model.get_sentence_embedding_dimension(),
         "model_load_ms": round(load_ms, 2),
-        "peak_process_rss_mb_linux": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 2),
+        "peak_process_rss_mb_linux": round(
+            resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 2,
+        ),
         "cpu_count": os.cpu_count(),
         "python": platform.python_version(),
         "torch": torch.__version__,
@@ -243,7 +245,9 @@ def evaluate(
         "corpus_sha256": corpus_sha256,
         "catalog_size": len(option_objects),
         "query_count": len(cases),
-        "scoring": "cosine; top-k bounded option IDs; uncategorized similarity is not no-match probability",
+        "scoring": (
+            "cosine; top-k bounded option IDs; similarity is not a no-match probability"
+        ),
         "embedding": "E5 query/pass prefixes, other models unprefixed library defaults",
         "summary": totals,
         "rows": rows,
@@ -254,16 +258,30 @@ def evaluate(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", choices=[*MODEL_CHOICES, "validate"], required=True)
-    parser.add_argument("--corpus", type=Path, default=_ROOT / "benchmarks/multilingual-embedding-cpu-dev-20261015.json")
-    parser.add_argument("--output", type=Path, default=Path("artifacts/multilingual-embedding-dev/report.json"))
+    parser.add_argument(
+        "--corpus", type=Path,
+        default=_ROOT / "benchmarks/multilingual-embedding-cpu-dev-20261015.json",
+    )
+    parser.add_argument(
+        "--output", type=Path,
+        default=Path("artifacts/multilingual-embedding-dev/report.json"),
+    )
     args = parser.parse_args()
     corpus, digest = load_development_corpus(args.corpus)
     if args.model == "validate":
-        print(json.dumps({"corpus_sha256": digest, "cases": len(corpus["cases"]), "routes": len(corpus["catalog"]), "surface": corpus["surface"]}))
+        print(json.dumps({
+            "corpus_sha256": digest,
+            "cases": len(corpus["cases"]),
+            "routes": len(corpus["catalog"]),
+            "surface": corpus["surface"],
+        }))
         return 0
     result = evaluate(args.model, corpus, digest, device="cpu")
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    args.output.write_text(
+        json.dumps(result, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
     s = result["summary"]["overall"]
     print(json.dumps({
         "model": result["model_id"],
