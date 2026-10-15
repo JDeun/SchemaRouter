@@ -298,3 +298,42 @@ def test_revalidated_readiness_policy_keeps_ordinary_qualification() -> None:
     )
     assert result["qualified"] is True
     assert result["supported_cases"] == 2
+
+
+def test_grounded_readiness_reports_supported_missing_dispatch_separately() -> None:
+    cases, rows = samples()
+    rows[0]["no_fit"]["tool_call_count"] = 0
+    result = evaluate_instrument_readiness(
+        frozen_cases=cases, observed_rows=rows,
+        policy=policy(min_grounded_rate=0.5),
+    )
+    assert result["supported_missing_dispatch_cases"] == 1
+    assert result["supported_route_observed_cases"] == 1
+    assert result["supported_tool_task_complete_cases"] == 1
+    assert result["unsupported_tool_call_cases"] == 0
+
+
+@pytest.mark.parametrize("physical_call", [0, 1])
+def test_grounded_readiness_reports_unsupported_actual_call_vs_no_call(
+    physical_call: int,
+) -> None:
+    cases, rows = samples()
+    rows[2]["no_fit"]["abstained"] = False
+    rows[2]["no_fit"]["tool_call_count"] = physical_call
+    result = evaluate_instrument_readiness(
+        frozen_cases=cases, observed_rows=rows,
+        policy=policy(max_false_match_rate=1.0),
+    )
+    assert result["unsupported_false_match_rate"] == 1.0
+    assert result["unsupported_tool_call_cases"] == physical_call
+    assert result["supported_missing_dispatch_cases"] == 0
+    # This is diagnostic decomposition, not a new secret promotion threshold.
+
+
+def test_clean_instrument_has_no_physical_no_fit_or_missing_dispatch() -> None:
+    cases, rows = samples()
+    result = require_instrument_ready(
+        frozen_cases=cases, observed_rows=rows, policy=policy(),
+    )
+    assert result["unsupported_tool_call_cases"] == 0
+    assert result["supported_missing_dispatch_cases"] == 0
