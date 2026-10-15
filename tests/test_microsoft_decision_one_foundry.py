@@ -370,7 +370,9 @@ def test_foundry_forged_pydantic_copy_fails_before_paid_io(
     backend, client, requests = backend_with_payload(valid_payload())
     unvalidated = decision_request().model_copy(update=mutation)
     try:
-        with pytest.raises(ValueError, match=message):
+        # Generic choice preflight now rejects these before the
+        # adapter-specific input gate. Both preserve zero paid HTTP requests.
+        with pytest.raises((ValueError, PlanningError), match=f"{message}|decision request"):
             choose_sync(backend, unvalidated)
         assert requests == []
     finally:
