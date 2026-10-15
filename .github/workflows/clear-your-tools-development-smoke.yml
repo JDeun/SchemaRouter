@@ -9,6 +9,12 @@ on:
       - "tests/test_cyt_sdk_development_integrity.py"
       - "scripts/build_cyt_development_scaling_catalogs.py"
       - ".github/workflows/clear-your-tools-development-smoke.yml"
+# This is a visible DEV-only comparison, never independent confirmation.
+# Cancel obsolete runs of the same PR; do not starve protected CI.
+concurrency:
+  group: external-dev-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 env:
