@@ -101,3 +101,64 @@ def test_artifact_id_must_have_valid_sha256():
     m["suite"][0]["artifact_sha256"] = "unverified"
     with pytest.raises(ValueError, match="SHA-256"):
         validate(m)
+
+
+def test_independent_verdict_rejects_missing_review_or_dev_evidence_reuse():
+    original = _original()
+    row = original["suite"][0]
+    assert row["run_id"] is not None
+    independent = {
+        "independent_verdict": "VALID_NEGATIVE",
+        "independent_run_id": row["run_id"] + 42,
+        "independent_artifact_sha256": "a" * 64,
+        "independent_case_sha256": "b" * 64,
+        "independent_gold_review": True,
+    }
+
+    m = copy.deepcopy(original)
+    m["suite"][0].update(independent)
+    # This is a *syntactically acceptable* provenance claim, not evidence
+    # that a third party has genuinely authored, signed or scored the cases.
+    validate(m)
+
+    m = copy.deepcopy(original)
+    m["suite"][0].update(independent, independent_gold_review=False)
+    with pytest.raises(ValueError, match="independent_gold_review"):
+        validate(m)
+
+    m = copy.deepcopy(original)
+    m["suite"][0].update(independent, independent_run_id=row["run_id"])
+    with pytest.raises(ValueError, match="reuses DEV run"):
+        validate(m)
+
+    m = copy.deepcopy(original)
+    m["suite"][0].update(
+        independent, independent_artifact_sha256=row["artifact_sha256"]
+    )
+    with pytest.raises(ValueError, match="reuses DEV digest"):
+        validate(m)
+
+
+def test_independent_review_must_be_literal_true_and_run_not_boolean():
+    for value in (1, "true", None):
+        m = _original()
+        m["suite"][0].update(
+            independent_verdict="PASS",
+            independent_run_id=99999999,
+            independent_artifact_sha256="a" * 64,
+            independent_case_sha256="b" * 64,
+            independent_gold_review=value,
+        )
+        with pytest.raises(ValueError, match="independent_gold_review"):
+            validate(m)
+
+    m = _original()
+    m["suite"][0].update(
+        independent_verdict="PASS",
+        independent_run_id=True,
+        independent_artifact_sha256="a" * 64,
+        independent_case_sha256="b" * 64,
+        independent_gold_review=True,
+    )
+    with pytest.raises(ValueError, match="independent run"):
+        validate(m)
