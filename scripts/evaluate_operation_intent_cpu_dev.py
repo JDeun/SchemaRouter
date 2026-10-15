@@ -181,7 +181,7 @@ def summarize(
         "overall": aggregate(rows),
         "by_language": {
             lang: aggregate([r for r in rows if r["language"] == lang])
-            for lang in ("en", "ko", "ja")
+            for lang in sorted({row["language"] for row in rows})
         },
     }
 
