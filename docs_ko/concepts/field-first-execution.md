@@ -202,7 +202,7 @@ provider raw value
 
 Numeric GPa field에 provider가 `"130"` string을 반환하면 conversion 전에 실패합니다.
 
-`ToolResult.field_contracts`는 selected field contract만 노출합니다.
+`ToolResult.field_contracts`는 결과에 실제 포함된 선택 필드의 스키마와 단위 정보를 제공합니다. 요청했지만 응답에 없는 필드는 계약에 포함하지 않습니다.
 
 ```python
 result.field_contracts["elastic_modulus"]
@@ -212,8 +212,11 @@ result.field_contracts["elastic_modulus"]
 #     source_unit="GPa",
 #     unit="Pa",
 #     dimension="pressure",
+#     has_observed_value=True,
 # )
 ```
+
+`has_observed_value`는 실제 값 존재 여부를 나타냅니다. `True`는 하나 이상의 null이 아닌 값이 관측됐다는 뜻이고, `False`는 값이 null뿐이라는 뜻입니다. 값이 null이어도 선언된 단위와 스키마 정보는 유지됩니다. `None`은 값 존재 여부가 검증되지 않았다는 의미입니다. 이는 데이터의 정확성이나 출처의 신뢰성을 증명하지 않습니다.
 
 Affine conversion은 `canonical_value = source_value * scale + offset`으로 명시적으로 지원합니다. SI prefix와 offset unit을 포함하며 예를 들어 degC→K는 `scale=1.0, offset=273.15`를 사용할 수 있습니다. Source/canonical unit이 같으면 identity transform이어야 하며 contradictory same-unit conversion은 거부/제외합니다.
 
