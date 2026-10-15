@@ -1,0 +1,127 @@
+name: Operation-Fit V1 Conveyor DEV
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/research-operation-fit-conveyor-dev.yml"
+      - "benchmarks/operation-fit-conveyor-v1-plan.json"
+      - "scripts/research_operation_fit_conveyor.py"
+      - "scripts/evaluate_operation_fit_nli_dev.py"
+      - "tests/test_research_operation_fit_conveyor.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: operation-fit-v1-dev-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Check authorization boundaries, corpus identity and negative denominators
+        run: |
+          python -m pytest -q tests/test_research_operation_fit_conveyor.py
+          python scripts/research_operation_fit_conveyor.py \
+            --stage preflight --output artifacts/conveyor/preflight.json
+          python scripts/evaluate_operation_fit_nli_dev.py \
+            --preflight --output artifacts/conveyor/ignored.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: operation-fit-v1-preflight-${{ github.run_id }}
+          path: artifacts/conveyor/preflight.json
+          if-no-files-found: error
+          retention-days: 30
+
+  lexical_baseline:
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e .
+      - name: Re-evaluate fixed offline baseline on the 72 DEV examples
+        run: |
+          python scripts/evaluate_operation_intent_cpu_dev.py \
+            --model baseline --output artifacts/conveyor/baseline.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: operation-fit-v1-baseline-${{ github.run_id }}
+          path: artifacts/conveyor/baseline.json
+          if-no-files-found: error
+          retention-days: 30
+
+  multilingual_nli_cpu:
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      CUDA_VISIBLE_DEVICES: ""
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: CPU-only torch
+        run: python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+      - name: Install NLI runtime (fixed model ID and Hub revision in source)
+        run: python -m pip install -e . "transformers>=4.51,<5" "safetensors>=0.4"
+      - name: Actual CPU NLI inference; no tool execution
+        run: |
+          python scripts/evaluate_operation_fit_nli_dev.py \
+            --output artifacts/conveyor/nli.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: operation-fit-v1-nli-${{ github.run_id }}
+          path: artifacts/conveyor/nli.json
+          if-no-files-found: error
+          retention-days: 30
+
+  development_gate:
+    needs: [lexical_baseline, multilingual_nli_cpu]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
+        with:
+          name: operation-fit-v1-baseline-${{ github.run_id }}
+          path: artifacts/conveyor/baseline
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v7
+        with:
+          name: operation-fit-v1-nli-${{ github.run_id }}
+          path: artifacts/conveyor/nli
+      - name: Audit exact identity, both cohort denominators and DEV-only screens
+        run: |
+          python scripts/research_operation_fit_conveyor.py --stage aggregate \
+            --baseline artifacts/conveyor/baseline/baseline.json \
+            --nli artifacts/conveyor/nli/nli.json \
+            --output artifacts/conveyor/development-gate.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: operation-fit-v1-dev-gate-${{ github.run_id }}
+          path: artifacts/conveyor/development-gate.json
+          if-no-files-found: error
+          retention-days: 60
+
+# No independent-validation or release-deploy jobs exist by design.
+# Training and external confirmation remain BLOCKED in the frozen plan.
+# Unlike research-0.14-conveyor, no schedule, API dispatch or issue mutation.
