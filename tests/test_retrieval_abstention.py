@@ -386,3 +386,49 @@ def test_forged_candidate_field_contracts_are_untrusted_ranking(
     assert result.reason == "untrusted_ranking"
     assert result.candidates == []
     assert [candidate.route_id for candidate in retrieval.candidates] == original
+
+
+@pytest.mark.parametrize(
+    "forgery",
+    [
+        {"input_schema": ["injected"]},
+        {"parameters": {"required": "secret"}},
+        {"score_components": [None]},
+        {"matched_fields": "string-not-list"},
+        {"selection_source": "unreviewed_external"},
+        {"read_only": "yes"},
+        {"destructive": "no"},
+        {"output_fields": [
+            FieldSpec(name="count").model_copy(
+                update={"json_schema": ["bad-schema"]}
+            )
+        ]},
+    ],
+)
+def test_nested_candidate_forgery_cannot_be_reauthorized(
+    forgery: dict[str, object],
+) -> None:
+    retrieval = build_router().retrieve("search papers", k=2)
+    original = [candidate.route_id for candidate in retrieval.candidates]
+    forged = retrieval.candidates[0].model_copy(update=forgery)
+    compromised = retrieval.model_copy(update={
+        "candidates": [forged, *retrieval.candidates[1:]]
+    })
+    result = apply_retrieval_abstention(
+        compromised, policy=RetrievalAbstentionPolicy(min_score=-1e8)
+    )
+    assert result.abstained
+    assert result.reason == "untrusted_ranking"
+    assert result.candidates == []
+    assert [candidate.route_id for candidate in retrieval.candidates] == original
+
+
+def test_valid_nested_candidate_metadata_remains_selectable() -> None:
+    retrieval = build_router().retrieve("search papers", k=2)
+    selected = apply_retrieval_abstention(
+        retrieval, policy=RetrievalAbstentionPolicy(min_score=-1e8)
+    )
+    assert not selected.abstained
+    assert [x.route_id for x in selected.candidates] == [
+        x.route_id for x in retrieval.candidates
+    ]

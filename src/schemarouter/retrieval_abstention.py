@@ -91,22 +91,33 @@ def apply_retrieval_abstention(
     # into this public boundary. Reject it before attribute access, and avoid
     # serializing the untrusted shortlist back to the caller.
     raw_candidates = retrieval.candidates
-    malformed_candidates = (
-        not isinstance(raw_candidates, list)
-        or any(
-            not isinstance(candidate, CapabilityCandidate)
-            for candidate in raw_candidates
-        )
-        or any(
-            not isinstance(candidate.output_fields, list)
-            or any(
-                not isinstance(field, FieldSpec)
-                or type(field.name) is not str
-                or not field.name.strip()
+    def _trusted_candidate(candidate: object) -> bool:
+        if not isinstance(candidate, CapabilityCandidate):
+            return False
+        # A shallow model_copy(update=...) bypasses validation not only of
+        # output_fields but also nested parameters, score components, read-only
+        # authority markers and selection source. Reject the entire forged
+        # envelope, rather than accidentally coercing it on response output.
+        try:
+            CapabilityCandidate.model_validate(
+                candidate.model_dump(mode="python", warnings=False),
+                strict=True,
+            )
+        except (TypeError, ValueError, OverflowError):
+            return False
+        return (
+            isinstance(candidate.output_fields, list)
+            and all(
+                isinstance(field, FieldSpec)
+                and type(field.name) is str
+                and bool(field.name.strip())
                 for field in candidate.output_fields
             )
-            for candidate in raw_candidates
         )
+
+    malformed_candidates = (
+        not isinstance(raw_candidates, list)
+        or any(not _trusted_candidate(candidate) for candidate in raw_candidates)
     )
     candidates = [] if malformed_candidates else raw_candidates
     scores = [candidate.score for candidate in candidates]
