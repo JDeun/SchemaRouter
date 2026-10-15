@@ -1481,6 +1481,7 @@ class RegistryExecutor:
                     field_contracts=self._result_field_contracts(
                         call.fields,
                         endpoint,
+                        projected,
                     ),
                 )
                 await self._run_after_hooks(tool, endpoint, call, result, tracker)
@@ -2106,12 +2107,31 @@ class RegistryExecutor:
     def _result_field_contracts(
         fields: list[str],
         endpoint: EndpointSpec,
+        projected: Any,
     ) -> dict[str, ResultFieldContract]:
         field_map = {field.name: field for field in endpoint.output_fields}
         contracts: dict[str, ResultFieldContract] = {}
         for field_name in fields:
             field = field_map.get(field_name)
             if field is None:
+                continue
+            # A requested field is not evidence that its source value
+            # existed. Preserve projection intent in ToolResult.projected_fields,
+            # but attach answer-facing unit/schema metadata only to fields
+            # actually present in the locally projected response. Handle
+            # top-level arrays and wildcard paths without fabricating facts.
+            if isinstance(projected, list):
+                extracted: Any = [
+                    RegistryExecutor._extract_projection_path(
+                        item, field.result_projection_path,
+                    )
+                    for item in projected
+                ]
+            else:
+                extracted = RegistryExecutor._extract_projection_path(
+                    projected, field.result_projection_path,
+                )
+            if not RegistryExecutor._flatten_projection_values(extracted):
                 continue
             canonical_schema = canonical_field_value_schema(
                 endpoint,
