@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "operation-fit-recurring-dev-loop-v1",
+  "status": "development_iteration_only",
+  "source_sha256": "18fce09092e24ebb44d2df14d3224daa47fec9a2df9134d4a0c708b9935dc7d7",
+  "corpus": "benchmarks/operation-intent-trilingual-dev-20261015.json",
+  "model_id": "MoritzLaurer/multilingual-MiniLMv2-L6-mnli-xnli",
+  "model_revision": "0a71e92a985b6e1ad1828cf67ce9c459639c1dca",
+  "variants": [
+    {
+      "id": "language_aligned_entailment",
+      "trigger": "dominant_operation_collapse",
+      "execution": "language_matched_nli",
+      "diagnostic_cutoff": 0.7
+    },
+    {
+      "id": "signed_entailment_minus_contradiction",
+      "trigger": "unsupported_false_accept",
+      "execution": "signed_nli",
+      "diagnostic_cutoff": 0.25
+    },
+    {
+      "id": "signed_plus_lexical_negative_veto",
+      "trigger": "near_domain_negative",
+      "execution": "signed_with_lexical_veto",
+      "diagnostic_cutoff": 0.25
+    }
+  ],
+  "per_run_budget": 2,
+  "maximum_total_variants": 3,
+  "schedule_policy": "weekly_main_only_and_manual",
+  "bootstrap_evidence": "GitHub Actions 38755177614 NLI directions dominance 50/72",
+  "issue_tracker": 1405,
+  "issues_policy": "only newly generated scoped AutoLab measurement issues may be auto-closed",
+  "release_policy": "no_release_or_product_promotion",
+  "independent_evaluation_approved": false,
+  "model_training_enabled": false,
+  "automatic_source_code_changes": false,
+  "automatic_pr_merges": false,
+  "developer_claims_not_independent": true
+}
