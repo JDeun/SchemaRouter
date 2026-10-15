@@ -81,6 +81,8 @@ def evaluate_instrument_readiness(
     supported = grounded = unsupported = bad_match = bad_refusal = 0
     supported_route_observed = 0
     supported_tool_task_complete = 0
+    supported_missing_dispatch = 0
+    unsupported_tool_calls = 0
     violations = 0
     for row in observed_rows:
         if not isinstance(row, Mapping):
@@ -106,12 +108,14 @@ def evaluate_instrument_readiness(
         if expected_no_fit:
             unsupported += 1
             bad_match += int(result["unsupported_false_match"])
+            unsupported_tool_calls += int(result["unsupported_tool_call"])
             if "grounded" in row:
                 raise ValueError("no-fit tasks may not receive factual scores")
         else:
             fact_count = label.get("expected_fact_count")
             supported += 1
             bad_refusal += int(result["supported_false_refusal"])
+            supported_missing_dispatch += int(result["supported_missing_dispatch"])
             truth = classify_grounded_answer_episode(
                 row.get("grounded"), expected_fact_count=fact_count
             )
@@ -168,9 +172,11 @@ def evaluate_instrument_readiness(
         "qualified": bool(qualifies),
         "supported_cases": supported,
         "supported_route_observed_cases": supported_route_observed,
+        "supported_missing_dispatch_cases": supported_missing_dispatch,
         "supported_tool_task_complete_cases": supported_tool_task_complete,
         "supported_tool_task_complete_rate": tool_task_complete_rate,
         "unsupported_cases": unsupported,
+        "unsupported_tool_call_cases": unsupported_tool_calls,
         "grounded_success_rate": grounded_rate,
         "unsupported_false_match_rate": false_match_rate,
         "supported_false_refusal_rate": false_refusal_rate,
