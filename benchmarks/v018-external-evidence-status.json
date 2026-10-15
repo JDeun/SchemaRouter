@@ -40,28 +40,30 @@
       "issue": 1114,
       "evidence_class": "NATIVE_DEV_ONLY",
       "source": "SmartMCP pinned development implementation with MCP v1 dependency compatibility",
-      "run_id": 38507161559,
-      "run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/38507161559",
+      "run_id": 38660183514,
+      "run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/38660183514",
       "local_verdict": "PASS",
       "independent_verdict": "BLOCKED_EXTERNAL",
       "blocker": "Maintainer agreement on MCP compatibility, native exposure, Top-K, semantic labels and independent authoring",
       "permitted_claim": "Visible DEV recall only; not an independent native apples-to-apples score",
-      "artifact_id": 11870376552,
-      "artifact_sha256": "1e0d13a3b2410d6a0bc788e14f614ca55bbdf6798270d2317406c04eafd1bbbe"
+      "artifact_id": 11937954501,
+      "artifact_sha256": "442ef8b2bedbfa1217a54b40045f412670a23e3289899f940860845a62f0fd81",
+      "development_run_source_sha": "68caad9c3ba2f8b1608bbad8107b4818039e6034"
     },
     {
       "id": "cyt",
       "issue": 839,
       "evidence_class": "COMPONENT_OR_LOOPBACK_PREFLIGHT_ONLY",
       "source": "cyt-indexer-sdk 2.17.6 SDK BM25 and separate macOS loopback integration",
-      "run_id": 38060969669,
-      "run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/38060969669",
+      "run_id": 38660183119,
+      "run_url": "https://github.com/JDeun/SchemaRouter/actions/runs/38660183119",
       "local_verdict": "PASS",
       "independent_verdict": "BLOCKED_EXTERNAL",
       "blocker": "Real CYT main-app proxy/hook tool interception and maintainer-reviewed agent/model/OS and fresh heldout",
       "permitted_claim": "Mac Hook Daemon loopback smoke and SDK development controls only, not full CYT E2E or Korean BM25",
-      "artifact_id": 11672689710,
-      "artifact_sha256": "b1fcab320e3e7c86a438f123760a192ed592ceceb0c3c81c02f6ab087415a479"
+      "artifact_id": 11938802095,
+      "artifact_sha256": "82a5f04509842418bdd79bb777d4ffc17b793b495a078eafad4ba32bb872a72e",
+      "development_run_source_sha": "68caad9c3ba2f8b1608bbad8107b4818039e6034"
     },
     {
       "id": "hyset",
