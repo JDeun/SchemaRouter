@@ -104,6 +104,14 @@ def evaluate_instrument_readiness(
             truth = classify_grounded_answer_episode(
                 row.get("grounded"), expected_fact_count=fact_count
             )
+            # Both envelopes describe the same host-observed destructive
+            # executions. If a supplied grounded result hides them from the
+            # no-fit safety ledger, the readiness gate must not qualify it.
+            if (
+                row["grounded"]["unauthorized_destructive_executions"]
+                != row["no_fit"]["unauthorized_destructive_executions"]
+            ):
+                raise ValueError("inconsistent host authority execution counters")
             # An answer-quality score is not proof that the routed capability
             # was actually used. Require host-observed planner/tool dispatch;
             # abstention plus a tool call is contradictory, not valid routing.
