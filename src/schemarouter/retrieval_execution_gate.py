@@ -10,11 +10,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from .errors import PolicyViolationError
-from .operation_fit import (
-    DeclaredOperationFitPolicy,
-    validate_declared_operation_fit,
-    validated_declared_operation_policy,
-)
 from .models import (
     CapabilityRetrieval,
     ExecutionPlan,
@@ -22,6 +17,11 @@ from .models import (
     PlanRequest,
     ToolCall,
     ToolResult,
+)
+from .operation_fit import (
+    DeclaredOperationFitPolicy,
+    validate_declared_operation_fit,
+    validated_declared_operation_policy,
 )
 from .retrieval_abstention import (
     RetrievalAbstentionPolicy,
