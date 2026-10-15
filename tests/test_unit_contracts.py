@@ -1539,3 +1539,55 @@ def test_omitted_nested_json_field_has_no_presence_contract() -> None:
     assert RegistryExecutor._result_field_contracts(
         ["measurement"], endpoint, {},
     ) == {}
+
+
+@pytest.mark.parametrize(
+    ("payload", "expect_contract"),
+    [
+        ({"values": []}, True),
+        ({"values": [None]}, True),
+        ({"values": [0]}, True),
+        ({}, False),
+        ({"other": []}, False),
+    ],
+)
+def test_explicit_empty_array_keeps_declared_schema_without_observed_values(
+    payload: dict[str, object], expect_contract: bool,
+) -> None:
+    field = FieldSpec(
+        name="values",
+        semantic_id="results.values",
+        json_schema={"type": "array", "items": {"type": ["number", "null"]}},
+        unit="K",
+    )
+    endpoint = EndpointSpec(name="read", read_only=True, output_fields=[field])
+    contracts = RegistryExecutor._result_field_contracts(
+        ["values"], endpoint, payload,
+    )
+    assert ("values" in contracts) is expect_contract
+    if expect_contract:
+        assert contracts["values"].unit == "K"
+        assert contracts["values"].has_observed_value is (
+            payload["values"] == [0]
+        )
+
+
+def test_missing_wildcard_fields_do_not_gain_empty_array_contract() -> None:
+    field = FieldSpec(
+        name="metrics",
+        path=["rows", "*", "value"],
+        result_path=["measurements", "*", "value"],
+        semantic_id="results.metrics",
+        json_schema={"type": "array", "items": {"type": "number"}},
+    )
+    endpoint = EndpointSpec(name="read", read_only=True, output_fields=[field])
+    assert RegistryExecutor._result_field_contracts(
+        ["metrics"], endpoint, {"measurements": [{"unrelated": 1}]},
+    ) == {}
+    empty = RegistryExecutor._result_field_contracts(
+        ["metrics"], endpoint, {"measurements": []},
+    )
+    assert empty["metrics"].has_observed_value is False
+    assert RegistryExecutor._result_field_contracts(
+        ["metrics"], endpoint, [],
+    ) == {}
