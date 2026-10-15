@@ -68,7 +68,7 @@ def evaluate_instrument_readiness(
         raise ValueError("observed rows must be a sequence")
 
     known: set[str] = set()
-    supported = grounded = unsupported = bad_match = bad_refusal = 0
+    supported = grounded = supported_route_observed = unsupported = bad_match = bad_refusal = 0
     violations = 0
     for row in observed_rows:
         if not isinstance(row, Mapping):
@@ -103,7 +103,16 @@ def evaluate_instrument_readiness(
             truth = classify_grounded_answer_episode(
                 row.get("grounded"), expected_fact_count=fact_count
             )
-            grounded += int(truth["answer_grounded_complete"])
+            # An answer-quality score is not proof that the routed capability
+            # was actually used. Require host-observed planner/tool dispatch;
+            # abstention plus a tool call is contradictory, not valid routing.
+            route_observed = (
+                not row["no_fit"]["abstained"]
+                and row["no_fit"]["planner_call_count"] > 0
+                and row["no_fit"]["tool_call_count"] > 0
+            )
+            supported_route_observed += int(route_observed)
+            grounded += int(truth["answer_grounded_complete"] and route_observed)
 
     if known != set(frozen_cases):
         raise ValueError("missing observed rows from frozen case manifest")
@@ -129,6 +138,7 @@ def evaluate_instrument_readiness(
         "status": "instrument_qualified" if qualifies else "instrument_unqualified",
         "qualified": bool(qualifies),
         "supported_cases": supported,
+        "supported_route_observed_cases": supported_route_observed,
         "unsupported_cases": unsupported,
         "grounded_success_rate": grounded_rate,
         "unsupported_false_match_rate": false_match_rate,
