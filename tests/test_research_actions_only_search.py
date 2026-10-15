@@ -8,6 +8,7 @@ import random
 
 import pytest
 
+from benchmarks.agent_utility_v5_catalog import build_tasks
 from research.autoresearch.actions_ranker import (
     BASE,
     FEATURES,
@@ -23,7 +24,6 @@ from scripts.research_actions_only_search import (
     split_tasks,
     utility,
 )
-from benchmarks.agent_utility_v5_catalog import build_tasks
 
 
 def test_control_exactly_preserves_current_candidate_order() -> None:
