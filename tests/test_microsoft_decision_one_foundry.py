@@ -257,10 +257,10 @@ def test_foundry_http_error_does_not_repeat_provider_body_or_secret(status):
     ({"require_no_fit": "false"}, "require_no_fit"),
     ({"api_key": None}, "credential"),
     ({"bearer_token": "both-credential-types"}, "exactly one"),
-    ({"api_key": "prefix\\r\\nInjected: foo"}, "credential"),
-    ({"api_key": "prefix\\x00suffix"}, "credential"),
-    ({"api_key": "prefix\\x7fsuffix"}, "credential"),
-    ({"api_key": "prefix\\tsuffix"}, "credential"),
+    ({"api_key": "prefix\r\nInjected: foo"}, "credential"),
+    ({"api_key": "prefix\x00suffix"}, "credential"),
+    ({"api_key": "prefix\x7fsuffix"}, "credential"),
+    ({"api_key": "prefix\tsuffix"}, "credential"),
 ])
 def test_foundry_configuration_requires_explicit_secure_transport(
     change: dict[str, Any], reason: str,
@@ -506,7 +506,7 @@ def test_valid_https_origin_may_use_an_explicit_port() -> None:
 
 @pytest.mark.parametrize(
     "credential",
-    ["token\\r\\nInjected: bad", "token\\x00payload", "token\\x7fpart"],
+    ["token\r\nInjected: bad", "token\x00payload", "token\x7fpart"],
 )
 def test_foundry_bearer_control_characters_rejected_before_http_client(
     credential: str,
