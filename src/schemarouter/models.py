@@ -290,6 +290,11 @@ class ResultFieldContract(StrictModel):
     unit: str | None = None
     dimension: str | None = None
     qualifiers: dict[str, str] = Field(default_factory=dict)
+    # None means the producer did not independently establish presence.
+    # False retains the schema/unit of an explicit null-only observation;
+    # True means at least one non-null projected value was present.
+    # This is *not* a proof of factual correctness or source authorization.
+    has_observed_value: bool | None = None
 
 
 class FieldSpec(StrictModel):
