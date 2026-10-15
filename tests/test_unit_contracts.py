@@ -1471,12 +1471,14 @@ async def test_null_projected_value_does_not_advertise_factual_contract() -> Non
     null_result = await executor.execute_call(call)
     assert null_result.data == {"confidence": None}
     assert null_result.projected_fields == ["confidence"]
-    assert null_result.field_contracts == {}
+    assert set(null_result.field_contracts) == {"confidence"}
+    assert null_result.field_contracts["confidence"].has_observed_value is False
 
     executor.bind(tool.name, lambda name, args: {"confidence": 0.75})
     measured = await executor.execute_call(call)
     assert measured.data == {"confidence": 0.75}
     assert measured.field_contracts["confidence"].semantic_id == "results.confidence"
+    assert measured.field_contracts["confidence"].has_observed_value is True
 
 
 def test_all_null_array_is_not_a_factual_field_contract() -> None:
@@ -1488,9 +1490,11 @@ def test_all_null_array_is_not_a_factual_field_contract() -> None:
     endpoint = EndpointSpec(
         name="read", read_only=True, output_fields=[field],
     )
-    assert RegistryExecutor._result_field_contracts(
+    null_contracts = RegistryExecutor._result_field_contracts(
         ["values"], endpoint, {"values": [None, None]}
-    ) == {}
-    assert set(RegistryExecutor._result_field_contracts(
+    )
+    assert null_contracts["values"].has_observed_value is False
+    mixed_contracts = RegistryExecutor._result_field_contracts(
         ["values"], endpoint, {"values": [None, 1.2]}
-    )) == {"values"}
+    )
+    assert mixed_contracts["values"].has_observed_value is True
