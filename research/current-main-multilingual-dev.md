@@ -4,7 +4,7 @@
 only. Source checkout is recorded in each report; frozen 0.14 independent
 historical results are neither regenerated nor used to tune candidate
 selection. This is a diagnostic for the **current** product's public
-\`SchemaPlanner.retrieve()\`, **not** a new independent test.
+`SchemaPlanner.retrieve()`, **not** a new independent test.
 
 ## Why this second development gate exists
 
@@ -12,7 +12,7 @@ The first current-main [baseline](current-main-baseline.md) runs synthetic
 20/50/100/250/500 catalog break-even cells and Gearlynx E1. All 15 cells
 yielded 100% Top-3 recall on their exposed development gold, so they are
 insufficient to locate important language/set-coverage failures. This next
-gate reuses the already-existing \`benchmarks/agent_utility_v5_catalog.py\`
+gate reuses the already-existing `benchmarks/agent_utility_v5_catalog.py`
 asset without changing it:
 
 - 100/250/500 registered **synthetic typed** capability catalogs, each
@@ -26,7 +26,7 @@ asset without changing it:
   The historical gold contains **required route sets only**, not
   verified required output-field sets or final agent task completions.
 
-The runner calls the current \`SchemaPlanner.retrieve(PlanRequest(...), k=10)\`
+The runner calls the current `SchemaPlanner.retrieve(PlanRequest(...), k=10)`
 once per task, then evaluates Top-3/5/10 slices of the **same** ranked
 candidate list. This is an economical ranking-equivalent extraction, but
 timings at K3 and K5 are **measured K10 latency**, not independently timed
@@ -51,15 +51,15 @@ not schema-only bytes, tokenizer-exact token counts or FULL agent context.
 
 Neither the scorer nor candidate list grants tool execution. The runner
 does **not** instantiate native vector/graph/record provider clients, apply
-\`PrincipalContext\` policy, execute endpoints, make model calls, evaluate
+`PrincipalContext` policy, execute endpoints, make model calls, evaluate
 final answers or use immutable blinded confirmation. Thus it cannot
 establish end-to-end v0.18 correctness, security qualification or production
-readiness. The \`ToolSpec\` schemas are representative synthetic typed
+readiness. The `ToolSpec` schemas are representative synthetic typed
 objects, **not verified live heterogeneous-provider schemas**.
 
 ## Reproduce at a fixed source checkout
 
-\`\`\`bash
+```bash
 python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
 python -m pytest -q tests/test_research_current_main_multilingual_dev.py
 
@@ -72,11 +72,11 @@ python -m scripts.research_current_main_multilingual_dev \
 python -m scripts.research_current_main_multilingual_dev \
     --sizes 100 250 500 --cases-per-group 5 \
     --output artifacts/current-main-multilingual-dev/full-report.json
-\`\`\`
+```
 
-The workflow's pull request path runs only the balanced low-cost smoke to
-protect shared GitHub Actions Linux runners while v0.18 release qualification
-continues. The manual workflow input can run all 240/size. Each report
+The workflow's pull request path runs the full previously exposed DEV cohort
+(240 per catalog, 720 actual retrievals). A manual workflow input can request
+a cheaper 48-per-catalog smoke if shared GitHub Actions capacity is constrained. Each report
 includes the checked-out Git SHA, file digests, stable case-list digest,
 all case-level misses and cohort summaries.
 
