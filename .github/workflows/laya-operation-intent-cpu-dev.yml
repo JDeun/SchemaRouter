@@ -33,6 +33,9 @@ jobs:
           python scripts/evaluate_laya_operation_intent_cpu_dev.py --preflight
 
   real-laya-cpu:
+    # The first real native-model study completed on run 38745998518.
+    # Later downloads and re-runs require explicit workflow_dispatch.
+    if: github.event_name == 'workflow_dispatch'
     needs: offline-native-contract
     runs-on: ubuntu-latest
     timeout-minutes: 75
