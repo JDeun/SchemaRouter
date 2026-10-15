@@ -408,6 +408,7 @@ from .operation_fit import (
     DeclaredOperationFitPolicy,
     validate_declared_operation_fit,
 )
+from .operation_intent import OperationIntentHypothesis, infer_operation_intent
 from .pairwise import PairwiseDecisionBackend, PairwiseScoreCallable
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
 from .policy import (
@@ -662,6 +663,8 @@ __all__ = [
     "EmbeddingDecisionBackend",
     "E5CachedEmbedder",
     "DeclaredOperationFitPolicy",
+    "OperationIntentHypothesis",
+    "infer_operation_intent",
     "validate_declared_operation_fit",
     "DefaultMCPClientFactory",
     "EffectKind",
