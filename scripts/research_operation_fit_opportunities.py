@@ -20,7 +20,6 @@ if str(ROOT) not in sys.path:
 from scripts.research_operation_fit_class_collapse import (  # noqa: E402
     class_collapse_diagnostics,
 )
-
 from scripts.research_operation_fit_conveyor import (  # noqa: E402
     CORPUS_SHA,
     KINDS,
@@ -331,7 +330,10 @@ def main() -> int:
     )
     print(json.dumps({
         key: value for key, value in result.items()
-        if key not in {"contrast", "class_collapse_diagnostics", "improvement_hypotheses", "non_comparable_or_blocked"}
+        if key not in {
+            "contrast", "class_collapse_diagnostics",
+            "improvement_hypotheses", "non_comparable_or_blocked",
+        }
     }, ensure_ascii=False))
     return 0
 
