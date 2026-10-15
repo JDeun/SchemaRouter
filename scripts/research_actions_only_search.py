@@ -39,6 +39,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCES = (
     "research/autoresearch/actions_ranker.py",
     "scripts/research_actions_only_search.py",
+    "scripts/research_actions_continuation.py",
+    ".github/workflows/research-actions-only-cpu-search.yml",
     "scripts/research_autoresearch_sandbox.py",
     "scripts/research_current_main_multilingual_dev.py",
     "benchmarks/agent_utility_v5_catalog.py",
