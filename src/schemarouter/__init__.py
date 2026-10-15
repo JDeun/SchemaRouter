@@ -404,6 +404,10 @@ from .openapi_compatibility import (
     OpenAPICompatibilityReport,
     analyze_openapi_compatibility,
 )
+from .operation_fit import (
+    DeclaredOperationFitPolicy,
+    validate_declared_operation_fit,
+)
 from .pairwise import PairwiseDecisionBackend, PairwiseScoreCallable
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
 from .policy import (
@@ -430,10 +434,6 @@ from .provider_profiles import (
     built_in_provider_profile_registry,
     discover_provider_profile_plugins,
     load_provider_profile_plugins,
-)
-from .operation_fit import (
-    DeclaredOperationFitPolicy,
-    validate_declared_operation_fit,
 )
 from .registry import InMemoryRegistry, MutableToolRegistry, SQLiteRegistry, ToolRegistry
 from .retrieval_abstention import (
