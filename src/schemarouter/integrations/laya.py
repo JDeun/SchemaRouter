@@ -6,7 +6,13 @@ import threading
 from importlib import import_module
 from typing import Any
 
-from ..decisions import DecisionRequest, DecisionResult, DecisionSelection, validate_decision
+from ..decisions import (
+    DecisionOption,
+    DecisionRequest,
+    DecisionResult,
+    DecisionSelection,
+    validate_decision,
+)
 from ..errors import PlanningError
 
 
@@ -48,6 +54,15 @@ class LayaDecisionBackend:
             raise ValueError("max_loaded must be an integer >= 1")
         if device is not None and (not isinstance(device, str) or not device.strip()):
             raise ValueError("device must be a non-empty string when provided")
+        if token is not None and (
+            type(token) is not str
+            or not token.strip()
+            or any(ord(char) < 32 or ord(char) == 127 for char in token)
+        ):
+            # A local Laya access credential must never carry HTTP header
+            # delimiters or be implicitly coerced into a token by the SDK.
+            # Never echo secret values in the exception.
+            raise ValueError("token must be a valid nonempty credential")
         for flag_name, flag_value in (
             ("preload", preload),
             ("async_mode", async_mode),
@@ -251,6 +266,24 @@ class LayaDecisionBackend:
         return str(device) if device is not None else None
 
     def _decide_sync(self, request: DecisionRequest) -> DecisionResult:
+        # A caller may have bypassed model validation through model_copy.
+        # Validate the entire request before importing/loading local weights,
+        # invoking the SDK or constructing user-visible choice criteria.
+        if (
+            not isinstance(request, DecisionRequest)
+            or not isinstance(request.options, list)
+            or any(not isinstance(option, DecisionOption) for option in request.options)
+        ):
+            raise PlanningError("Laya received an invalid decision request")
+        try:
+            request = DecisionRequest.model_validate(
+                request.model_dump(mode="python", warnings=False),
+                strict=True,
+            )
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise PlanningError("Laya received an invalid decision request") from exc
+        if not request.query.strip():
+            raise PlanningError("Laya received an empty decision query")
         if request.max_selections != 1:
             raise PlanningError(
                 "LayaDecisionBackend supports only single-selection decision requests"
