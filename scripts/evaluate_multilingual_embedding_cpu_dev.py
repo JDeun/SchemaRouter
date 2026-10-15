@@ -11,7 +11,6 @@ import json
 import math
 import os
 import platform
-import resource
 import statistics
 import sys
 import time
@@ -146,6 +145,7 @@ def evaluate(
     device: str,
 ) -> dict[str, Any]:
     # Imported only when explicitly conducting a real-model run.
+    import resource  # Linux CPU Actions only; avoid importing on other platforms.
     import torch
     from sentence_transformers import SentenceTransformer
 
