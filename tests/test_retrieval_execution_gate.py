@@ -13,6 +13,7 @@ from schemarouter import (
     EndpointSpec,
     ExecutionPlan,
     FallbackRoute,
+    PlanRequest,
     PolicyViolationError,
     PrincipalContext,
     RetrievalAbstentionPolicy,
@@ -469,3 +470,48 @@ async def test_copied_run_config_is_revalidated_before_any_routing(poison):
         )
     assert router.events == []
     assert router.dispatched == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "candidate_request",
+    [
+        None,
+        [],
+        {},
+        123,
+        "",
+        "   ",
+        PlanRequest(query="search papers").model_copy(update={"query": 123}),
+        PlanRequest(query="search papers").model_copy(update={"max_calls": 0}),
+        PlanRequest(query="search papers").model_copy(
+            update={"preferred_tools": "fake.tool"}
+        ),
+    ],
+)
+async def test_atomic_selective_request_is_validated_before_any_retrieval(
+    candidate_request,
+):
+    retrieval, plan, _ = fixture()
+    router = FakeScopedFlow(retrieval, plan)
+    with pytest.raises(PolicyViolationError, match="invalid request|empty or invalid"):
+        await ainvoke_selective(
+            router, candidate_request, k=2,
+            policy=RetrievalAbstentionPolicy(min_score=-1e8),
+        )
+    assert router.events == []
+    assert router.dispatched == []
+
+
+@pytest.mark.asyncio
+async def test_valid_structured_request_uses_same_validated_query_scope():
+    retrieval, plan, _ = fixture()
+    router = FakeScopedFlow(retrieval, plan)
+    request = PlanRequest(query=retrieval.query, max_calls=2)
+    result = await ainvoke_selective(
+        router, request, k=2,
+        policy=RetrievalAbstentionPolicy(min_score=-1e8),
+    )
+    assert result == []
+    assert [event[0] for event in router.events] == ["retrieve", "plan", "execute"]
+    assert router.events[0][1].query == router.events[1][1].query == request.query
