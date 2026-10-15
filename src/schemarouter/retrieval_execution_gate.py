@@ -170,14 +170,37 @@ async def execute_selective_plan(
     an authorization source. The underlying runtime retains the final policy
     and execution checks; callers must opt into this method deliberately.
     """
+    # The caller owns both mutable model graphs. Validate and dispatch the
+    # same detached plan snapshot so later mutations of the original object
+    # cannot change a route or its arguments after the no-match gate passes.
+    # Deep-copy the retrieval too: its candidate list/metadata must not be
+    # replaced by the caller while the selected plan is being checked.
+    if not isinstance(retrieval, CapabilityRetrieval):
+        raise TypeError("retrieval must be a trusted CapabilityRetrieval")
+    if not isinstance(plan, ExecutionPlan):
+        raise TypeError("plan must be a trusted ExecutionPlan")
+    # Preserve the pre-existing provenance denial for a forged boolean,
+    # non-integer or stale registry identity before strict deep validation.
+    if type(plan.registry_version) is not int:
+        _deny("non-executable retrieval, stale registry or mismatched query/plan provenance")
+    try:
+        dispatch_plan = ExecutionPlan.model_validate(
+            plan.model_dump(mode="python", warnings=False),
+            strict=True,
+        )
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise PolicyViolationError(
+            "selective retrieval execution denied: invalid plan envelope"
+        ) from exc
+    scoped_retrieval = retrieval.model_copy(deep=True)
     validate_selective_execution(
-        retrieval,
-        plan,
+        scoped_retrieval,
+        dispatch_plan,
         policy=policy,
         registry_version=router.registry.version,
     )
-    # All guards run before this first/only execution entrypoint.
-    return await router.execute(plan, config=config)
+    # Route the validated snapshot, never the mutable caller-supplied plan.
+    return await router.execute(dispatch_plan, config=config)
 
 
 async def ainvoke_selective(
