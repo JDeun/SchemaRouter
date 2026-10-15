@@ -200,3 +200,37 @@ def test_unicode_normalization_never_rewrites_original_request() -> None:
     original = PlanRequest(query=query)
     _scores(query, indexed=True, aliases=True)
     assert original.query == query
+
+
+@pytest.mark.parametrize(
+    ("query", "alias"),
+    [
+        ("カﾞ", "ガ"),
+        ("キﾞ", "ギ"),
+        ("はﾟ", "ぱ"),
+    ],
+)
+@pytest.mark.parametrize("indexed", [False, True])
+def test_mixed_width_kana_mark_matches_canonically_equivalent_alias(
+    query: str, alias: str, indexed: bool,
+) -> None:
+    registry = InMemoryRegistry()
+    registry.register(ToolSpec(
+        name="kana_records",
+        description="Unrelated English metadata",
+        endpoints=[EndpointSpec(
+            name="search", description="Read one record", read_only=True,
+            operation_aliases=[alias],
+        )],
+    ))
+    planner = SchemaPlanner(registry, candidate_index=indexed)
+    request = PlanRequest(query=query)
+    intent = planner.analyzer.analyze(request, registry)
+    ranked = planner._semantic_recall_catalog(request, intent)
+    assert {x.tool.key: x.score for x in ranked}["kana_records"] > 0
+
+    # The lexical fold never mutates the original user request nor
+    # invents an alias for an English-only metadata surface.
+    assert request.query == query
+    english = _scores(query, indexed=indexed, aliases=False)
+    assert all(score == 0 for score in english.values())
