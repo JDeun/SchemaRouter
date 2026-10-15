@@ -1780,6 +1780,28 @@ class RegistryExecutor:
         return [value]
 
     @staticmethod
+    def _has_non_null_projection_leaf(value: Any) -> bool:
+        """Whether a projected JSON value contains a real non-null leaf.
+
+        The projection can be an object or array. Container presence alone
+        (e.g. {"metric": None}, [{"metric": None}] or {}) does not mean that a
+        factual measurement was observed. Preserve False/0/"" as real values.
+        """
+        if value is _MISSING or value is None:
+            return False
+        if isinstance(value, dict):
+            return any(
+                RegistryExecutor._has_non_null_projection_leaf(item)
+                for item in value.values()
+            )
+        if isinstance(value, list):
+            return any(
+                RegistryExecutor._has_non_null_projection_leaf(item)
+                for item in value
+            )
+        return True
+
+    @staticmethod
     def _insert_projection_value(
         target: Any,
         path: tuple[str, ...],
@@ -2158,7 +2180,9 @@ class RegistryExecutor:
                     else None
                 ),
                 qualifiers=dict(field.qualifiers),
-                has_observed_value=any(value is not None for value in observed_values),
+                has_observed_value=RegistryExecutor._has_non_null_projection_leaf(
+                    extracted
+                ),
             )
         return contracts
 
