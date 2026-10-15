@@ -32,6 +32,9 @@ jobs:
           python scripts/evaluate_multilingual_embedding_scale_dev.py --model validate
 
   mini-cpu-stress:
+    # Real model downloads are expensive; the initial PR evaluation is recorded
+    # on Actions run 38729631022. Later runs require explicit dispatch.
+    if: github.event_name == 'workflow_dispatch'
     needs: catalog-integrity
     runs-on: ubuntu-latest
     timeout-minutes: 40
