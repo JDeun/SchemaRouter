@@ -127,7 +127,31 @@ def apply_retrieval_abstention(
     top: float | None = None
     margin: float | None = None
 
-    if malformed_candidates:
+    # Empty-catalog is a legitimate *trusted* no-match result, not a way for
+    # an attacker to conceal forged host metadata. Check it independently of
+    # whether any candidate happened to be retrieved.
+    if type(retrieval.query) is not str:
+        raise ValueError("retrieval query must be a typed string")
+    untrusted_envelope = (
+        not retrieval.query.strip()
+        or type(retrieval.registry_version) is not int
+        or type(retrieval.requested_k) is not int
+        or type(retrieval.total_ranked) is not int
+        or type(retrieval.executable_only) is not bool
+        or (
+            type(retrieval.registry_version) is int
+            and retrieval.registry_version < 0
+        )
+        or (
+            type(retrieval.requested_k) is int
+            and retrieval.requested_k < max(1, len(scores))
+        )
+        or (
+            type(retrieval.total_ranked) is int
+            and retrieval.total_ranked < len(scores)
+        )
+    )
+    if malformed_candidates or untrusted_envelope:
         reason = "untrusted_ranking"
     elif not candidates:
         reason = "empty_catalog"
@@ -138,16 +162,6 @@ def apply_retrieval_abstention(
             and math.isfinite(score)
             for score in scores
         )
-        # Pydantic model_copy(update=...) skips field validation. Treat bool
-        # envelope values/ranks as untrusted rather than True == 1 metadata.
-        or type(retrieval.registry_version) is not int
-        or type(retrieval.requested_k) is not int
-        or type(retrieval.total_ranked) is not int
-        or type(retrieval.executable_only) is not bool
-        or retrieval.registry_version < 0
-        or retrieval.requested_k < 1
-        or retrieval.requested_k < len(scores)
-        or retrieval.total_ranked < len(scores)
         or any(type(rank) is not int for rank in ranks)
         or ranks != list(range(1, len(ranks) + 1))
         or any(
