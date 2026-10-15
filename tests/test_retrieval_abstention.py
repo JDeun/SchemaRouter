@@ -432,3 +432,49 @@ def test_valid_nested_candidate_metadata_remains_selectable() -> None:
     assert [x.route_id for x in selected.candidates] == [
         x.route_id for x in retrieval.candidates
     ]
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("registry_version", True),
+        ("requested_k", False),
+        ("total_ranked", True),
+        ("executable_only", 1),
+        ("query", "  "),
+        ("registry_version", -1),
+        ("requested_k", 0),
+        ("total_ranked", -1),
+    ],
+)
+def test_forged_empty_retrieval_cannot_masquerade_as_trusted_empty_catalog(
+    field: str, value: object,
+) -> None:
+    original = CapabilityRetrieval(
+        query="something unsupported",
+        registry_version=0,
+        requested_k=2,
+        total_ranked=0,
+        executable_only=True,
+        candidates=[],
+    )
+    corrupt = original.model_copy(update={field: value})
+    decision = apply_retrieval_abstention(
+        corrupt, policy=RetrievalAbstentionPolicy(min_score=0)
+    )
+    assert decision.abstained
+    assert decision.reason == "untrusted_ranking"
+    assert decision.candidates == []
+    assert original.query == "something unsupported"
+
+
+def test_non_string_forged_empty_retrieval_query_fails_before_serialization() -> None:
+    valid = CapabilityRetrieval(
+        query="no match", registry_version=0, requested_k=2,
+        total_ranked=0, candidates=[],
+    )
+    corrupt = valid.model_copy(update={"query": ["untrusted"]})
+    with pytest.raises(ValueError, match="retrieval query"):
+        apply_retrieval_abstention(
+            corrupt, policy=RetrievalAbstentionPolicy(min_score=0)
+        )
