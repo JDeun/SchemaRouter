@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from schemarouter import (
     CapabilityRetrieval,
     EndpointSpec,
+    FieldSpec,
     RetrievalAbstentionPolicy,
     SchemaRouter,
     ToolSpec,
@@ -354,3 +355,34 @@ def test_unhashable_candidate_identity_fails_closed(field: str) -> None:
     assert decision.abstained
     assert decision.reason == "untrusted_ranking"
     assert decision.candidates == []
+
+
+@pytest.mark.parametrize(
+    "corrupt_fields",
+    [
+        None,
+        "counterfeit_fields",
+        [None],
+        [{"name": "secrets"}],
+        [FieldSpec(name="published").model_copy(update={"name": ["bad"]})],
+    ],
+)
+def test_forged_candidate_field_contracts_are_untrusted_ranking(
+    corrupt_fields: object,
+) -> None:
+    retrieval = build_router().retrieve("search papers", k=2)
+    original = [candidate.route_id for candidate in retrieval.candidates]
+    candidate = retrieval.candidates[0].model_copy(
+        update={"output_fields": corrupt_fields}
+    )
+    poisoned = retrieval.model_copy(
+        update={"candidates": [candidate, *retrieval.candidates[1:]]}
+    )
+    result = apply_retrieval_abstention(
+        poisoned,
+        policy=RetrievalAbstentionPolicy(min_score=-1e8),
+    )
+    assert result.abstained
+    assert result.reason == "untrusted_ranking"
+    assert result.candidates == []
+    assert [candidate.route_id for candidate in retrieval.candidates] == original
