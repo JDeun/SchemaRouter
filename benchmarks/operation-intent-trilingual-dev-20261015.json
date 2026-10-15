@@ -1,0 +1,533 @@
+{
+  "schema_version": 1,
+  "surface": "prospective_operation_intent_development_only",
+  "authored_on": "2026-10-15",
+  "independent_holdout": false,
+  "calibrated_no_match": false,
+  "execution_safety": false,
+  "operation_kinds": [
+    "search",
+    "lookup",
+    "list",
+    "history",
+    "convert",
+    "directions",
+    "create",
+    "update",
+    "delete"
+  ],
+  "languages": [
+    "en",
+    "ko",
+    "ja"
+  ],
+  "support_count": 54,
+  "unsupported_count": 18,
+  "notes": "Newly authored easy illustrative text prompts; not frozen v0.14, not true provider schema data. Negative cohort includes negation, metalinguistic, compound actions, and out-of-domain intents. No threshold selection permitted.",
+  "cases": [
+    {
+      "id": "supported-en-search-1",
+      "language": "en",
+      "kind": "supported",
+      "expected_operation": "search",
+      "query": "Locate academic studies on perovskite batteries"
+    },
+    {
+      "id": "supported-en-search-2",
+      "language": "en",
+      "kind": "supported",
+      "expected_operation": "search",
+      "query": "Search through papers about soil fungi"
+    },
+    {
+      "id": "supported-ko-search-1",
+      "language": "ko",
+      "kind": "supported",
+      "expected_operation": "search",
+      "query": "토양 미생물 관련 논문을 찾아 주세요"
+    },
+    {
+      "id": "supported-ko-search-2",
+      "language": "ko",
+      "kind": "supported",
+      "expected_operation": "search",
+      "query": "전고체 배터리 자료를 검색해 주세요"
+    },
+    {
+      "id": "supported-ja-search-1",
+      "language": "ja",
+      "kind": "supported",
+      "expected_operation": "search",
+      "query": "土壌微生物の論文を探してください"
+    },
+    {
+      "id": "supported-ja-search-2",
+      "language": "ja",
+      "kind": "supported",
+      "expected_operation": "search",
+      "query": "全固体電池の文献を検索して"
+    },
+    {
+      "id": "supported-en-lookup-1",
+      "language": "en",
+      "kind": "supported",
+      "expected_operation": "lookup",
+      "query": "Retrieve the recorded balance of account 42"
+    },
+    {
+      "id": "supported-en-lookup-2",
+      "language": "en",
+      "kind": "supported",
+      "expected_operation": "lookup",
+      "query": "Fetch the existing record for item T-55"
+    },
+    {
+      "id": "supported-ko-lookup-1",
+      "language": "ko",
+      "kind": "supported",
+      "expected_operation": "lookup",
+      "query": "자산 ID 42의 기존 기록을 조회해 주세요"
+    },
+    {
+      "id": "supported-ko-lookup-2",
+      "language": "ko",
+      "kind": "supported",
+      "expected_operation": "lookup",
+      "query": "계약서 원본을 열람하고 싶어요"
+    },
+    {
+      "id": "supported-ja-lookup-1",
+      "language": "ja",
+      "kind": "supported",
+      "expected_operation": "lookup",
+      "query": "顧客番号42の登録情報を参照してください"
+    },
+    {
+      "id": "supported-ja-lookup-2",
+      "language": "ja",
+      "kind": "supported",
+      "expected_operation": "lookup",
+      "query": "注文情報を照会してください"
+    },
+    {
+      "id": "supported-en-list-1",
+      "language": "en",
+      "kind": "supported",
+      "expected_operation": "list",
+      "query": "Enumerate all library loans"
+    },
+    {
+      "id": "supported-en-list-2",
+      "language": "en",
+      "kind": "supported",
+      "expected_operation": "list",
+      "query": "List the available conference rooms"
+    },
+    {
+      "id": "supported-ko-list-1",
+      "language": "ko",
+      "kind": "supported",
+      "expected_operation": "list",
+      "query": "등록된 센서의 목록을 보고 싶어요"
+    },
+    {
+      "id": "supported-ko-list-2",
+      "language": "ko",
+      "kind": "supported",
+      "expected_operation": "list",
+      "query": "모든 상영관을 나열해 주세요"
+    },
+    {
+      "id": "supported-ja-list-1",
+      "language": "ja",
+      "kind": "supported",
+      "expected_operation": "list",
+      "query": "登録済みセンサーを一覧表示してください"
+    },
+    {
+      "id": "supported-ja-list-2",
+      "language": "ja",
+      "kind": "supported",
+      "expected_operation": "list",
+      "query": "利用可能な部屋を列挙してください"
+    },
+    {
+      "id": "supported-en-history-1",
+      "language": "en",
+      "kind": "supported",
+      "expected_operation": "history",
+      "query": "Provide historical measurements for Oslo"
+    },
+    {
+      "id": "supported-en-history-2",
+      "language": "en",
+      "kind": "supported",
+      "expected_operation": "history",
+      "query": "Show a history of equipment inspections"
+    },
+    {
+      "id": "supported-ko-history-1",
+      "language": "ko",
+      "kind": "supported",
+      "expected_operation": "history",
+      "query": "장비 점검 이력을 보여줘"
+    },
+    {
+      "id": "supported-ko-history-2",
+      "language": "ko",
+      "kind": "supported",
+      "expected_operation": "history",
+      "query": "거래 내역을 정리해줘"
+    },
+    {
+      "id": "supported-ja-history-1",
+      "language": "ja",
+      "kind": "supported",
+      "expected_operation": "history",
+      "query": "装置点検の履歴を見せてください"
+    },
+    {
+      "id": "supported-ja-history-2",
+      "language": "ja",
+      "kind": "supported",
+      "expected_operation": "history",
+      "query": "取引履歴を確認したい"
+    },
+    {
+      "id": "supported-en-convert-1",
+      "language": "en",
+      "kind": "supported",
+      "expected_operation": "convert",
+      "query": "Convert 85 Fahrenheit to Celsius"
+    },
+    {
+      "id": "supported-en-convert-2",
+      "language": "en",
+      "kind": "supported",
+      "expected_operation": "convert",
+      "query": "Perform a conversion from GBP to KRW"
+    },
+    {
+      "id": "supported-ko-convert-1",
+      "language": "ko",
+      "kind": "supported",
+      "expected_operation": "convert",
+      "query": "85화씨를 섭씨로 변환해주세요"
+    },
+    {
+      "id": "supported-ko-convert-2",
+      "language": "ko",
+      "kind": "supported",
+      "expected_operation": "convert",
+      "query": "영국 파운드를 원화로 환산해줘"
+    },
+    {
+      "id": "supported-ja-convert-1",
+      "language": "ja",
+      "kind": "supported",
+      "expected_operation": "convert",
+      "query": "華氏85度を摂氏に変換してください"
+    },
+    {
+      "id": "supported-ja-convert-2",
+      "language": "ja",
+      "kind": "supported",
+      "expected_operation": "convert",
+      "query": "英ポンドをウォンに換算して"
+    },
+    {
+      "id": "supported-en-directions-1",
+      "language": "en",
+      "kind": "supported",
+      "expected_operation": "directions",
+      "query": "Give walking directions to the art gallery"
+    },
+    {
+      "id": "supported-en-directions-2",
+      "language": "en",
+      "kind": "supported",
+      "expected_operation": "directions",
+      "query": "Show driving route from the station to the hotel"
+    },
+    {
+      "id": "supported-ko-directions-1",
+      "language": "ko",
+      "kind": "supported",
+      "expected_operation": "directions",
+      "query": "기차역까지 가는 길을 알려줘"
+    },
+    {
+      "id": "supported-ko-directions-2",
+      "language": "ko",
+      "kind": "supported",
+      "expected_operation": "directions",
+      "query": "공항으로 가는 도보 경로를 안내해줘"
+    },
+    {
+      "id": "supported-ja-directions-1",
+      "language": "ja",
+      "kind": "supported",
+      "expected_operation": "directions",
+      "query": "美術館までの道順を案内して"
+    },
+    {
+      "id": "supported-ja-directions-2",
+      "language": "ja",
+      "kind": "supported",
+      "expected_operation": "directions",
+      "query": "空港までの徒歩ルートを見せてください"
+    },
+    {
+      "id": "supported-en-create-1",
+      "language": "en",
+      "kind": "supported",
+      "expected_operation": "create",
+      "query": "Register a new vehicle record"
+    },
+    {
+      "id": "supported-en-create-2",
+      "language": "en",
+      "kind": "supported",
+      "expected_operation": "create",
+      "query": "Create a monthly check-in event"
+    },
+    {
+      "id": "supported-ko-create-1",
+      "language": "ko",
+      "kind": "supported",
+      "expected_operation": "create",
+      "query": "새 직원 계정을 생성해 주세요"
+    },
+    {
+      "id": "supported-ko-create-2",
+      "language": "ko",
+      "kind": "supported",
+      "expected_operation": "create",
+      "query": "공지사항을 등록해 줘"
+    },
+    {
+      "id": "supported-ja-create-1",
+      "language": "ja",
+      "kind": "supported",
+      "expected_operation": "create",
+      "query": "新しい顧客レコードを作成してください"
+    },
+    {
+      "id": "supported-ja-create-2",
+      "language": "ja",
+      "kind": "supported",
+      "expected_operation": "create",
+      "query": "新規登録の申請をお願いします"
+    },
+    {
+      "id": "supported-en-update-1",
+      "language": "en",
+      "kind": "supported",
+      "expected_operation": "update",
+      "query": "Modify the contract expiration date"
+    },
+    {
+      "id": "supported-en-update-2",
+      "language": "en",
+      "kind": "supported",
+      "expected_operation": "update",
+      "query": "Update the warehouse count"
+    },
+    {
+      "id": "supported-ko-update-1",
+      "language": "ko",
+      "kind": "supported",
+      "expected_operation": "update",
+      "query": "주문 상태를 변경해줘"
+    },
+    {
+      "id": "supported-ko-update-2",
+      "language": "ko",
+      "kind": "supported",
+      "expected_operation": "update",
+      "query": "전화번호를 수정해주세요"
+    },
+    {
+      "id": "supported-ja-update-1",
+      "language": "ja",
+      "kind": "supported",
+      "expected_operation": "update",
+      "query": "契約期限を変更してください"
+    },
+    {
+      "id": "supported-ja-update-2",
+      "language": "ja",
+      "kind": "supported",
+      "expected_operation": "update",
+      "query": "在庫数量を更新して"
+    },
+    {
+      "id": "supported-en-delete-1",
+      "language": "en",
+      "kind": "supported",
+      "expected_operation": "delete",
+      "query": "Erase archived event 55"
+    },
+    {
+      "id": "supported-en-delete-2",
+      "language": "en",
+      "kind": "supported",
+      "expected_operation": "delete",
+      "query": "Remove obsolete user account"
+    },
+    {
+      "id": "supported-ko-delete-1",
+      "language": "ko",
+      "kind": "supported",
+      "expected_operation": "delete",
+      "query": "오래된 메모를 지워 주세요"
+    },
+    {
+      "id": "supported-ko-delete-2",
+      "language": "ko",
+      "kind": "supported",
+      "expected_operation": "delete",
+      "query": "기록 55를 삭제해주세요"
+    },
+    {
+      "id": "supported-ja-delete-1",
+      "language": "ja",
+      "kind": "supported",
+      "expected_operation": "delete",
+      "query": "古いメモを消してください"
+    },
+    {
+      "id": "supported-ja-delete-2",
+      "language": "ja",
+      "kind": "supported",
+      "expected_operation": "delete",
+      "query": "古いアカウントを削除して"
+    },
+    {
+      "id": "unsupported-en-1",
+      "language": "en",
+      "kind": "unsupported",
+      "expected_operation": null,
+      "query": "Please don't erase any transactions"
+    },
+    {
+      "id": "unsupported-en-2",
+      "language": "en",
+      "kind": "unsupported",
+      "expected_operation": null,
+      "query": "How to modify accounts safely"
+    },
+    {
+      "id": "unsupported-en-3",
+      "language": "en",
+      "kind": "unsupported",
+      "expected_operation": null,
+      "query": "Search papers and delete duplicates"
+    },
+    {
+      "id": "unsupported-en-4",
+      "language": "en",
+      "kind": "unsupported",
+      "expected_operation": null,
+      "query": "Transfer funds to my bank"
+    },
+    {
+      "id": "unsupported-en-5",
+      "language": "en",
+      "kind": "unsupported",
+      "expected_operation": null,
+      "query": "Tell me a joke about routers"
+    },
+    {
+      "id": "unsupported-en-6",
+      "language": "en",
+      "kind": "unsupported",
+      "expected_operation": null,
+      "query": "Could you show the conversion history"
+    },
+    {
+      "id": "unsupported-ko-1",
+      "language": "ko",
+      "kind": "unsupported",
+      "expected_operation": null,
+      "query": "계정을 삭제하지 마세요"
+    },
+    {
+      "id": "unsupported-ko-2",
+      "language": "ko",
+      "kind": "unsupported",
+      "expected_operation": null,
+      "query": "재고 수정 방법이 궁금해요"
+    },
+    {
+      "id": "unsupported-ko-3",
+      "language": "ko",
+      "kind": "unsupported",
+      "expected_operation": null,
+      "query": "계약 조회하고 삭제해줘"
+    },
+    {
+      "id": "unsupported-ko-4",
+      "language": "ko",
+      "kind": "unsupported",
+      "expected_operation": null,
+      "query": "돈을 다른 계좌로 송금해주세요"
+    },
+    {
+      "id": "unsupported-ko-5",
+      "language": "ko",
+      "kind": "unsupported",
+      "expected_operation": null,
+      "query": "재즈 음악을 틀어줘"
+    },
+    {
+      "id": "unsupported-ko-6",
+      "language": "ko",
+      "kind": "unsupported",
+      "expected_operation": null,
+      "query": "환산한 내역을 조회해줘"
+    },
+    {
+      "id": "unsupported-ja-1",
+      "language": "ja",
+      "kind": "unsupported",
+      "expected_operation": null,
+      "query": "アカウントを削除しないでください"
+    },
+    {
+      "id": "unsupported-ja-2",
+      "language": "ja",
+      "kind": "unsupported",
+      "expected_operation": null,
+      "query": "更新方法を説明してください"
+    },
+    {
+      "id": "unsupported-ja-3",
+      "language": "ja",
+      "kind": "unsupported",
+      "expected_operation": null,
+      "query": "検索してから削除してください"
+    },
+    {
+      "id": "unsupported-ja-4",
+      "language": "ja",
+      "kind": "unsupported",
+      "expected_operation": null,
+      "query": "送金を実行してください"
+    },
+    {
+      "id": "unsupported-ja-5",
+      "language": "ja",
+      "kind": "unsupported",
+      "expected_operation": null,
+      "query": "音楽を再生して"
+    },
+    {
+      "id": "unsupported-ja-6",
+      "language": "ja",
+      "kind": "unsupported",
+      "expected_operation": null,
+      "query": "為替変換の履歴を見たい"
+    }
+  ]
+}
