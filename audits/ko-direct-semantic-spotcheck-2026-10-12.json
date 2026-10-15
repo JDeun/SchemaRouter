@@ -135,9 +135,9 @@
     },
     {
       "path": "getting-started/installation.md",
-      "en_blob": "9870961d062b537dc7bb9f5f2d91e609755806c8",
-      "ko_blob": "5c05e7cddcaff971d8c0ef0a0103751b20b83b7d",
-      "notes": "Repaired false 0.14 subject in explanation of current 0.17.0 public release; preserved Python >=3.10, extras, verification and dev0 differentiation."
+      "en_blob": "8849b8e76e3909141d9f6daa8dab3c040a388298",
+      "ko_blob": "6b61736ab9d19d2b29f45547d7ee0640903291c7",
+      "notes": "Repaired false 0.14 subject in explanation of current 0.17.0 public release; preserved Python >=3.10, extras, verification and dev0 differentiation. 2026-10-15 candidate v0.18 release status and source identity checked in paired EN/KO Markdown; not a post-publish verification or human signoff."
     },
     {
       "path": "getting-started/quickstart.md",
@@ -447,9 +447,9 @@
     },
     {
       "path": "index.md",
-      "en_blob": "5d64e8e420b233de5da0f128bd62755b7c505bdc",
-      "ko_blob": "2cd5a502abdec080568c14b5cd5829d1231e50c8",
-      "notes": "Compared visible 0.17.0 hero and site core guarantees, provider/source links, role division, live example and Python compatibility claims."
+      "en_blob": "ef44fb692f946ce676c7bbbd83bd2199d5856407",
+      "ko_blob": "fa8f0a44923320755a0adf62fca8a9e69babca08",
+      "notes": "Compared visible 0.17.0 hero and site core guarantees, provider/source links, role division, live example and Python compatibility claims. 2026-10-15 candidate v0.18 release status and source identity checked in paired EN/KO Markdown; not a post-publish verification or human signoff."
     },
     {
       "path": "integrations/decision-backend-plugins.md",
@@ -597,9 +597,9 @@
     },
     {
       "path": "project/trust-and-evidence.md",
-      "en_blob": "cdc02abb82026528c0966e5308d28357cd262e08",
-      "ko_blob": "c51761197890806581fc50882022ff99ba977c8b",
-      "notes": "Compared 0.17 trust claims, release attestation and validation chain, B1/K3 exact negative outcomes, CodeQL and provenance limits and independent evidence not overclaimed."
+      "en_blob": "c0615805b71b430ab15c3a7fb49e115ec4e8f1e0",
+      "ko_blob": "062f54affdf92ae96dc2915eaff2a9d74b774210",
+      "notes": "Compared 0.17 trust claims, release attestation and validation chain, B1/K3 exact negative outcomes, CodeQL and provenance limits and independent evidence not overclaimed. 2026-10-15 candidate v0.18 release status and source identity checked in paired EN/KO Markdown; not a post-publish verification or human signoff."
     },
     {
       "path": "project/why-not-all-tool-schemas.md",

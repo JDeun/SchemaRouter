@@ -5,7 +5,7 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.17.0</span>
+<span class="sr-kicker">SchemaRouter 0.18.0</span>
 
 # 에이전트와 도구 사이에 타입 기반 실행 경계를 두세요
 
@@ -170,7 +170,7 @@ asyncio.run(main())
 
 ## 현재 릴리스
 
-현재 안정판은 **0.17.0 (Beta / pre-1.0)** 입니다. Python 3.10–3.14는 릴리스 차단 검증 대상이며 Python 3.15는 미리보기 대상입니다.
+현재 안정판은 **0.18.0 (Beta / pre-1.0)** 입니다. Python 3.10–3.14는 릴리스 차단 검증 대상이며 Python 3.15는 미리보기 대상입니다.
 
 0.17은 provider-first 라우팅, 정책 통제형 실행, 기업용 권한 관리, 관계형·벡터·그래프·문서 데이터 시스템의 스키마 자동 파악을 통한 등록, 강화된 런타임 격리, 외부 검증 인프라를 통합합니다. 자격 증명, 데이터 시스템 고유 권한, 원시 쿼리 권한은 모델에 노출되는 경계 밖에 유지합니다.
 
