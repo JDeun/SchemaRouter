@@ -21,8 +21,6 @@ from typing import Any
 
 from benchmarks.agent_utility_v5_catalog import (
     CATALOG_SIZES,
-    LANGUAGES,
-    STRATA,
     TASKS_PER_CELL,
     build_registry,
     build_tasks,
