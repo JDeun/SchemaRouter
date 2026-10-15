@@ -505,6 +505,19 @@ def test_malformed_direct_observation_cannot_satisfy_field_evidence(
     assert not gate.check("refund_issue").allowed
 
 
+def test_forged_string_cannot_satisfy_single_letter_required_field() -> None:
+    # Without strict field-container typing, frozenset({"x"}).issubset("x")
+    # evaluates True and could incorrectly authorize a direct observation.
+    gate = EvidenceGate(ActionContract(
+        "refund_issue", (("charge_read", "C2", frozenset({"x"})),),
+    ))
+    with pytest.raises(ValueError, match="observation fields"):
+        gate.observe(Observation("charge_read", "C2", "x"))
+    assert not gate.check("refund_issue").allowed
+    gate.observe(Observation("charge_read", "C2", frozenset({"x"})))
+    assert gate.check("refund_issue").allowed
+
+
 def test_malformed_repeat_observation_revokes_previous_authority() -> None:
     gate = EvidenceGate(ActionContract(
         "refund_issue", (("charge_read", "C2", frozenset({"owner"})),),
