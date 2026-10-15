@@ -224,3 +224,42 @@ def test_consistent_host_authority_violation_blocks_confirmation() -> None:
             frozen_cases=cases, observed_rows=rows,
             policy=policy(min_grounded_rate=0.5),
         )
+
+
+def test_report_separates_tool_task_completion_from_grounded_facts() -> None:
+    cases, rows = samples()
+    # The host finished both routed tasks, but the final answer on s2 was
+    # malformed. This must not be collapsed into one apparent success score.
+    rows[1]["grounded"]["source_list_valid"] = False
+    result = evaluate_instrument_readiness(
+        frozen_cases=cases, observed_rows=rows,
+        policy=policy(min_grounded_rate=0.5),
+    )
+    assert result["supported_route_observed_cases"] == 2
+    assert result["supported_tool_task_complete_cases"] == 2
+    assert result["supported_tool_task_complete_rate"] == 1.0
+    assert result["grounded_success_rate"] == 0.5
+
+
+def test_claimed_tool_task_completion_without_host_calls_is_not_counted() -> None:
+    cases, rows = samples()
+    rows[0]["no_fit"]["tool_call_count"] = 0
+    result = evaluate_instrument_readiness(
+        frozen_cases=cases, observed_rows=rows,
+        policy=policy(min_grounded_rate=0.5),
+    )
+    assert result["supported_route_observed_cases"] == 1
+    assert result["supported_tool_task_complete_cases"] == 1
+    assert result["supported_tool_task_complete_rate"] == 0.5
+    assert result["grounded_success_rate"] == 0.5
+
+
+def test_report_distinguishes_incomplete_tool_task_from_valid_answer_envelope() -> None:
+    cases, rows = samples()
+    rows[1]["grounded"]["passed"] = False
+    result = evaluate_instrument_readiness(
+        frozen_cases=cases, observed_rows=rows,
+        policy=policy(min_grounded_rate=0.5),
+    )
+    assert result["supported_tool_task_complete_rate"] == 0.5
+    assert result["grounded_success_rate"] == 0.5
