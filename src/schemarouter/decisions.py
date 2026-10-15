@@ -87,10 +87,24 @@ DecisionOptionTextCallable = Callable[[DecisionOption], str]
 
 
 def validate_decision(request: DecisionRequest, result: DecisionResult) -> DecisionResult:
-    """Fail closed if a backend returns anything outside the offered choice set."""
+    """Fail closed on forged result envelopes and unoffered option IDs.
+
+    Pydantic model_copy(update=...) bypasses nested field and model validators.
+    A backend is an untrusted authority for both its chosen IDs and the shape
+    of its returned result, even if it hands back a DecisionResult instance.
+    """
+    if not isinstance(result, DecisionResult):
+        raise PlanningError("decision backend returned an invalid typed result")
+    try:
+        verified = DecisionResult.model_validate(
+            result.model_dump(mode="python", warnings=False),
+            strict=True,
+        )
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise PlanningError("decision backend returned an invalid typed result") from exc
 
     allowed = {option.id for option in request.options}
-    selected = [selection.option_id for selection in result.selections]
+    selected = [selection.option_id for selection in verified.selections]
 
     if len(selected) != len(set(selected)):
         raise PlanningError("decision backend returned duplicate option IDs")
@@ -101,7 +115,7 @@ def validate_decision(request: DecisionRequest, result: DecisionResult) -> Decis
         )
     if len(selected) > request.max_selections:
         raise PlanningError("decision backend exceeded max_selections")
-    return result
+    return verified
 
 
 class _ValidatedAwaitable:
