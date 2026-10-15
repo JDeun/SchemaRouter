@@ -107,3 +107,47 @@ def test_unrelated_query_has_zero_positive_lexical_evidence(query: str) -> None:
         scored = _scores(query, indexed=indexed, aliases=True)
         assert scored["z_measurement.fetch"] == 0
         assert scored["a_warehouse.count"] == 0
+
+
+@pytest.mark.parametrize("query", ["ﾃﾞｰﾀ", "ｶﾀｶﾅ"])
+@pytest.mark.parametrize("indexed", [False, True])
+def test_halfwidth_katakana_matches_only_declared_fullwidth_alias(
+    query: str, indexed: bool
+) -> None:
+    aliases = {"ﾃﾞｰﾀ": "データ", "ｶﾀｶﾅ": "カタカナ"}
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="sample_records",
+            description="Unrelated English labels",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    description="Read signed records",
+                    read_only=True,
+                    operation_aliases=[aliases[query]],
+                )
+            ],
+        )
+    )
+    planner = SchemaPlanner(registry, candidate_index=indexed)
+    request = PlanRequest(query=query)
+    intent = planner.analyzer.analyze(request, registry)
+    scores = {
+        f"{c.tool.key}.{c.endpoint.name}": c.score
+        for c in planner._score_candidates(request, intent)
+    }
+    assert scores["sample_records.read"] > 0
+
+
+@pytest.mark.parametrize("indexed", [False, True])
+def test_halfwidth_katakana_is_not_an_invented_translation(indexed: bool) -> None:
+    registry = _registry(aliases=False)
+    planner = SchemaPlanner(registry, candidate_index=indexed)
+    request = PlanRequest(query="ﾃﾞｰﾀ")
+    intent = planner.analyzer.analyze(request, registry)
+    scores = {
+        f"{c.tool.key}.{c.endpoint.name}": c.score
+        for c in planner._score_candidates(request, intent)
+    }
+    assert all(score == 0 for score in scores.values())
