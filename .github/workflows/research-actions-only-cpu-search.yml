@@ -1,0 +1,104 @@
+name: Actions Only Adaptive CPU Search DEV
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/research-actions-only-cpu-search.yml"
+      - "research/autoresearch/actions_ranker.py"
+      - "scripts/research_actions_only_search.py"
+      - "tests/test_research_actions_only_search.py"
+      - "scripts/research_autoresearch_sandbox.py"
+      - "scripts/research_current_main_multilingual_dev.py"
+      - "benchmarks/agent_utility_v5_catalog.py"
+      - "research/autoresearch/program.md"
+  workflow_dispatch:
+  schedule:
+    # Scheduled runs occur on main; compute and evidence remain on Actions.
+    - cron: "11 3 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: actions-only-cpu-search-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  research-contract:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install checked-out current SchemaRouter, no external models
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Verify fixed safe search and one real planner CPU experiment
+        run: python -m pytest -q tests/test_research_actions_only_search.py
+
+  adaptive-research:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install only current registered package and tests
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Fixed research contract and seed trial
+        run: python -m pytest -q tests/test_research_actions_only_search.py
+      - name: Recover previous state from successful Actions artifact only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/actions-search-previous
+          PREVIOUS_RUN=$(gh run list --repo "${{ github.repository }}" \
+            --workflow research-actions-only-cpu-search.yml --branch main \
+            --status success --limit 1 --json databaseId \
+            --jq '.[0].databaseId // empty')
+          if test -n "$PREVIOUS_RUN"; then
+            gh run download "$PREVIOUS_RUN" --repo "${{ github.repository }}" \
+              --pattern 'actions-only-cpu-search-*' \
+              --dir /tmp/actions-search-previous || true
+          fi
+          STATE=$(find /tmp/actions-search-previous -type f -name state.json \
+            -print -quit)
+          if test -n "$STATE"; then
+            cp "$STATE" /tmp/actions-search-previous.json
+            echo "Previous Actions research state recovered"
+          else
+            echo "No previous successful retained research state: starting epoch zero"
+          fi
+      - name: Generate, measure, and select 24 bounded research variants
+        run: |
+          PREVIOUS=()
+          if test -f /tmp/actions-search-previous.json; then
+            PREVIOUS=(--previous-state /tmp/actions-search-previous.json)
+          fi
+          python -m scripts.research_actions_only_search \
+            --trials 24 --seconds 900 --seed 1412 \
+            --output-dir artifacts/actions-only-search \
+            "${PREVIOUS[@]}"
+      - name: Preserve next run state and every observed experiment
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: actions-only-cpu-search-${{ github.run_id }}
+          path: artifacts/actions-only-search/
+          retention-days: 90
+          if-no-files-found: error
+# No coding agent, external inference, arbitrary source edits, secrets,
+# repository write permission, heldout scoring, production merge or release.
