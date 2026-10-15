@@ -54,6 +54,15 @@ class LayaDecisionBackend:
             raise ValueError("max_loaded must be an integer >= 1")
         if device is not None and (not isinstance(device, str) or not device.strip()):
             raise ValueError("device must be a non-empty string when provided")
+        if token is not None and (
+            type(token) is not str
+            or not token.strip()
+            or any(ord(char) < 32 or ord(char) == 127 for char in token)
+        ):
+            # A local Laya access credential must never carry HTTP header
+            # delimiters or be implicitly coerced into a token by the SDK.
+            # Never echo secret values in the exception.
+            raise ValueError("token must be a valid nonempty credential")
         for flag_name, flag_value in (
             ("preload", preload),
             ("async_mode", async_mode),
