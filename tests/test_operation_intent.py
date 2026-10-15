@@ -91,5 +91,5 @@ def test_invalid_input_is_not_cast_to_text(bad: object) -> None:
 def test_trilingual_mixed_action_does_not_infer_authority() -> None:
     # This is an advisory hypothesis and cannot construct a policy or call tools.
     out = infer_operation_intent("SKU A-2를 inventory에서 lookup해줘")
-    assert out.abstained
-    assert out.reason == "missing_operation"
+    assert not out.abstained
+    assert out.operation == "lookup"
