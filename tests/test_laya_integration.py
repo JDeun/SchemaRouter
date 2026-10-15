@@ -410,3 +410,42 @@ def test_laya_huge_numeric_confidence_fails_closed_as_planning_error() -> None:
 def test_laya_huge_configured_min_confidence_is_rejected() -> None:
     with pytest.raises(ValueError, match="min_confidence"):
         LayaDecisionBackend(min_confidence=10 ** 1000)
+
+
+@pytest.mark.parametrize(
+    "forgery",
+    [
+        {"query": ["injected"]},
+        {"query": ""},
+        {"query": "    "},
+        {"options": [None]},
+        {"options": [{"id": "candidate:0"}]},
+        {"options": [DecisionOption(id="candidate:0").model_copy(
+            update={"id": ["invalid"]}
+        )]},
+        {"options": [DecisionOption(id="candidate:0"), DecisionOption(
+            id="candidate:0"
+        )]},
+        {"max_selections": True},
+        {"context": ["private", "untrusted"]},
+    ],
+)
+def test_laya_rejects_unvalidated_choice_requests_before_local_inference(
+    forgery: dict[str, Any],
+) -> None:
+    router = FakeRouter(response())
+    unsafe = request().model_copy(update=forgery)
+    with pytest.raises(PlanningError, match="invalid decision request|empty decision query"):
+        choose_sync(LayaDecisionBackend(router=router), unsafe)
+    assert router.calls == []
+
+
+def test_laya_validated_request_roundtrip_preserves_original_options() -> None:
+    req = request()
+    router = FakeRouter(response())
+    chosen = choose_sync(LayaDecisionBackend(router=router), req)
+    assert chosen.selections[0].option_id == "candidate:1"
+    assert list(router.calls[0]["questions"]["selection"]["criteria"]) == [
+        "candidate:0", "candidate:1",
+    ]
+    assert len(req.options) == 2
