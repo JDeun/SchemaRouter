@@ -305,7 +305,7 @@ provider raw value
 
 This means a provider returning `"130"` for a numeric GPa field fails before conversion.
 
-`ToolResult.field_contracts` exposes metadata for selected fields **actually present** in the locally projected response. A requested but omitted field has no contract:
+`ToolResult.field_contracts` exposes only the selected field contracts needed downstream:
 
 ```python
 result.field_contracts["elastic_modulus"]
@@ -315,19 +315,11 @@ result.field_contracts["elastic_modulus"]
 #     source_unit="GPa",
 #     unit="Pa",
 #     dimension="pressure",
-#     has_observed_value=True,
 # )
 ```
 
 So answer-generation code can consume a compact canonical value plus the unit/type contract without
 pulling unrelated provider metadata into context.
-
-`ResultFieldContract.has_observed_value` explicitly separates **value presence** from schema/unit
-metadata: `True` means at least one non-null projected value is present; `False` means the source
-explicitly returned a null-only value (the declared unit and schema still remain available);
-`None` means an alternate producer has not established presence. This flag does **not** verify
-scientific correctness, authorize the source, or validate the final answer. `projected_fields`
-continues to describe requested projection intent, not observed facts.
 
 Affine conversions are supported explicitly:
 
