@@ -432,6 +432,10 @@ from .provider_profiles import (
     load_provider_profile_plugins,
 )
 from .registry import InMemoryRegistry, MutableToolRegistry, SQLiteRegistry, ToolRegistry
+from .operation_fit import (
+    DeclaredOperationFitPolicy,
+    validate_declared_operation_fit,
+)
 from .retrieval_abstention import (
     RetrievalAbstentionPolicy,
     SelectiveCapabilityRetrieval,
@@ -657,6 +661,8 @@ __all__ = [
     "EmbeddingCallable",
     "EmbeddingDecisionBackend",
     "E5CachedEmbedder",
+    "DeclaredOperationFitPolicy",
+    "validate_declared_operation_fit",
     "DefaultMCPClientFactory",
     "EffectKind",
     "EligibilityStatus",
