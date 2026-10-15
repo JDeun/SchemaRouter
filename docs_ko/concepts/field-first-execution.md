@@ -216,7 +216,7 @@ result.field_contracts["elastic_modulus"]
 # )
 ```
 
-`has_observed_value`는 실제 값 존재 여부를 나타냅니다. `True`는 하나 이상의 null이 아닌 값이 관측됐다는 뜻이고, `False`는 값이 null뿐이라는 뜻입니다. 값이 null이어도 선언된 단위와 스키마 정보는 유지됩니다. `None`은 값 존재 여부가 검증되지 않았다는 의미입니다. 이는 데이터의 정확성이나 출처의 신뢰성을 증명하지 않습니다.
+`has_observed_value`는 투영된 실제 값의 존재 여부를 나타냅니다. `True`는 하나 이상의 null이 아닌 최종 값이 관측됐다는 뜻입니다. `False`는 선택한 필드가 응답에 명시적으로 존재하지만 null이 아닌 값이 없다는 뜻으로, `null`, null만 포함하는 객체·배열, 명시적인 빈 배열 `[]`도 포함됩니다. 이 경우에도 선언된 단위와 스키마 정보는 유지되지만, **필드 자체가 누락된 경우**에는 필드 계약을 생성하지 않습니다. `None`은 다른 결과 생성자가 값의 존재 여부를 검증하지 않았다는 의미입니다. 이 플래그는 데이터의 정확성이나 출처의 신뢰성을 증명하지 않습니다.
 
 Affine conversion은 `canonical_value = source_value * scale + offset`으로 명시적으로 지원합니다. SI prefix와 offset unit을 포함하며 예를 들어 degC→K는 `scale=1.0, offset=273.15`를 사용할 수 있습니다. Source/canonical unit이 같으면 identity transform이어야 하며 contradictory same-unit conversion은 거부/제외합니다.
 
