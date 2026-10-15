@@ -123,8 +123,13 @@ def verified_result(
     if len(matches_artifact) != 1:
         raise ValueError("exact nonexpired output artifact not verified")
     artifact = matches_artifact[0]
+    marker_payload = {
+        "experiment": experiment, "run_id": run_id, "sha": sha,
+    }
     marker = (
-        f'{CONFIRMED}{json.dumps({"experiment": experiment, "run_id": run_id, "sha": sha}, sort_keys=True, separators=(",", ":"))}{END}'
+        f"{CONFIRMED}"
+        f"{json.dumps(marker_payload, sort_keys=True, separators=(',', ':'))}"
+        f"{END}"
     )
     if any(
         item.get("user", {}).get("login") == "github-actions[bot]"
