@@ -8,12 +8,10 @@ Issue comments carry a validated resume cursor, NEVER a trusted authorization.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import math
 import os
 import platform
-import re
 import sys
 import time
 from collections import Counter
