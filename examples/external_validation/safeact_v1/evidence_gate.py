@@ -107,7 +107,33 @@ class EvidenceGate:
                 for tool, record, fields in contract.required_observations
             ):
                 raise ValueError("value condition must cite a declared observation")
-        self.contract = contract
+        # Frozen dataclasses are not a security boundary: object.__setattr__
+        # can mutate a caller-retained ActionContract/ValueCondition later.
+        # Snapshot the validated policy before any evidence can be recorded.
+        # A post-approval edit of the original object cannot silently expand
+        # the proposed action, shrink required reads or remove predicates.
+        self.contract = ActionContract(
+            action=contract.action,
+            required_observations=tuple(
+                (tool, record_id, frozenset(fields))
+                for tool, record_id, fields in contract.required_observations
+            ),
+            argument_bindings=tuple(
+                (argument, record_id)
+                for argument, record_id in contract.argument_bindings
+            ),
+            value_conditions=tuple(
+                ValueCondition(
+                    tool=condition.tool,
+                    record_id=condition.record_id,
+                    field=condition.field,
+                    operator=condition.operator,
+                    reference_kind=condition.reference_kind,
+                    reference=condition.reference,
+                )
+                for condition in contract.value_conditions
+            ),
+        )
         self._observations: list[Observation] = []
 
     def observe(self, observation: Observation) -> None:
