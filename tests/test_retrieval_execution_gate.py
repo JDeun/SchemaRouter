@@ -474,7 +474,7 @@ async def test_copied_run_config_is_revalidated_before_any_routing(poison):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "request",
+    "candidate_request",
     [
         None,
         [],
@@ -490,13 +490,13 @@ async def test_copied_run_config_is_revalidated_before_any_routing(poison):
     ],
 )
 async def test_atomic_selective_request_is_validated_before_any_retrieval(
-    request,
+    candidate_request,
 ):
     retrieval, plan, _ = fixture()
     router = FakeScopedFlow(retrieval, plan)
     with pytest.raises(PolicyViolationError, match="invalid request|empty or invalid"):
         await ainvoke_selective(
-            router, request, k=2,
+            router, candidate_request, k=2,
             policy=RetrievalAbstentionPolicy(min_score=-1e8),
         )
     assert router.events == []
