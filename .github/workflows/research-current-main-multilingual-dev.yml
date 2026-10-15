@@ -14,7 +14,7 @@ on:
         description: "Run all 240 historical DEV tasks per catalog (vs 48-case balanced smoke)"
         required: false
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: read
@@ -40,11 +40,11 @@ jobs:
         run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
       - name: Verify data/provenance/scorer invariants and current code path
         run: python -m pytest -q tests/test_research_current_main_multilingual_dev.py
-      - name: Run balanced development-only multilingual retrieval assessment
+      - name: Run full exposed development multilingual retrieval assessment
         env:
           FULL_COHORT: ${{ inputs.full_cohort == true && 'true' || 'false' }}
         run: |
-          if test "$FULL_COHORT" = "true"; then
+          if test "$GITHUB_EVENT_NAME" = "pull_request" || test "$FULL_COHORT" = "true"; then
             GROUP_COUNT=5
           else
             GROUP_COUNT=1
