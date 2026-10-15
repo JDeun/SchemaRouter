@@ -478,3 +478,43 @@ def test_explicit_failed_observation_remains_valid_and_revokes_record():
     assert gate.check("refund_issue").allowed
     gate.observe(Observation("charge_read", "C2", fields, successful=False))
     assert not gate.check("refund_issue").allowed
+
+
+@pytest.mark.parametrize(
+    "bad_fields",
+    [
+        "owner",
+        ["owner"],
+        {"owner"},
+        {"owner": True},
+        frozenset(),
+        frozenset({""}),
+        frozenset({1}),
+    ],
+)
+def test_malformed_direct_observation_cannot_satisfy_field_evidence(
+    bad_fields: object,
+) -> None:
+    # The low-level EvidenceGate is also a public mechanism primitive:
+    # direct dataclass construction must not bypass host field typing.
+    gate = EvidenceGate(ActionContract(
+        "refund_issue", (("charge_read", "C2", frozenset({"owner"})),),
+    ))
+    with pytest.raises(ValueError, match="observation fields"):
+        gate.observe(Observation("charge_read", "C2", bad_fields))
+    assert not gate.check("refund_issue").allowed
+
+
+def test_malformed_repeat_observation_revokes_previous_authority() -> None:
+    gate = EvidenceGate(ActionContract(
+        "refund_issue", (("charge_read", "C2", frozenset({"owner"})),),
+    ))
+    gate.observe(Observation("charge_read", "C2", frozenset({"owner"})))
+    assert gate.check("refund_issue").allowed
+    with pytest.raises(ValueError, match="observation fields"):
+        gate.observe(Observation("charge_read", "C2", "owner"))
+    assert not gate.check("refund_issue").allowed
+    calls: list[str] = []
+    with pytest.raises(PermissionError, match="evidence incomplete"):
+        gate.dispatch("refund_issue", {}, lambda *_: calls.append("unsafe"))
+    assert calls == []
