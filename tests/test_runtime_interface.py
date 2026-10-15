@@ -73,6 +73,59 @@ def request(city: str = "Seoul") -> PlanRequest:
     )
 
 
+@pytest.mark.parametrize(
+    "forged_update",
+    [
+        {"principal": "forged-administrator"},
+        {"max_concurrency": 0},
+        {"max_batch_size": 0},
+        {"max_parallel_calls": 0},
+        {"execution_mode": "unbounded"},
+        {"raw_trace_payloads": True},
+        {"retry": RetryPolicy().model_copy(update={"max_attempts": 0})},
+        {"budget": ExecutionBudget().model_copy(update={"max_cost_units": -1})},
+        {"tags": "one-not-a-list"},
+    ],
+)
+@pytest.mark.asyncio
+async def test_runtime_rejects_forged_run_config_before_dispatch(
+    forged_update: dict[str, object],
+) -> None:
+    router = make_router()
+    dispatched: list[dict] = []
+
+    def invoker(endpoint: str, arguments: dict) -> dict:
+        dispatched.append(arguments)
+        return {"city": arguments["city"], "temperature": 20}
+
+    router.executor.bind("weather", invoker)
+    forged = RunConfig().model_copy(update=forged_update)
+
+    with pytest.raises(ValueError):
+        await router.ainvoke(request(), config=forged)
+    assert dispatched == []
+
+    with pytest.raises(ValueError):
+        await router.abatch([request()], config=forged)
+    assert dispatched == []
+
+
+def test_runtime_config_snapshot_is_detached_from_caller_data() -> None:
+    original = RunConfig(
+        metadata={"tenant": {"labels": ["alpha"]}},
+        budget=ExecutionBudget(per_tool_calls={"weather": 2}),
+    )
+    validated = runtime_module._coerce_config(original)
+    assert validated == original
+    assert validated is not original
+    assert validated.budget is not original.budget
+
+    original.metadata["tenant"]["labels"].append("injected")
+    original.budget.per_tool_calls["weather"] = 100
+    assert validated.metadata["tenant"]["labels"] == ["alpha"]
+    assert validated.budget.per_tool_calls == {"weather": 2}
+
+
 def test_invoke_exposes_sync_framework_surface() -> None:
     router = make_router()
     result = router.invoke(request())

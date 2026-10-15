@@ -205,7 +205,13 @@ def _coerce_config(config: RunConfig | dict[str, Any] | None) -> RunConfig:
     if config is None:
         return RunConfig()
     if isinstance(config, RunConfig):
-        return config
+        # model_copy(update=...) bypasses validators even for nested budgets,
+        # principals and retry policies. Do not trust the instance type at
+        # the public execution boundary, or retain caller-owned mutable data.
+        return RunConfig.model_validate(
+            config.model_dump(mode="python", warnings=False),
+            strict=True,
+        )
     return RunConfig.model_validate(config)
 
 
