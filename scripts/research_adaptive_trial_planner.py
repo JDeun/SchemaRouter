@@ -31,11 +31,16 @@ ALLOWED = {
 FAILURES = ("supported_route_miss", "unsupported_false_accept",
             "wrong_operation", "supported_false_refusal")
 TARGET = {
+    # Prospective product engineering goals, NEVER observed DEV measurements.
+    "agent_success_gap_vs_full_max": 0.02,
     "supported_tool_recall_min": 0.97,
+    "required_field_recall_min": 0.97,
     "unsupported_rejection_min": 0.99,
     "wrong_operation_rate_max": 0.01,
     "unauthorized_dispatch_max": 0,
+    "schema_bytes_ratio_to_full_max": 0.50,
     "selection_p95_ms_max": 250,
+    "end_to_end_p95_ratio_to_full_max": 1.05,
 }
 
 
@@ -62,6 +67,8 @@ def load_policy(path: Path = POLICY) -> dict[str, Any]:
         or doc["purpose"] != "research_proposal_only"
         or doc["experiment_issue"] != 1412
         or doc["targets"] != TARGET
+        or any(type(doc["targets"][key]) is not type(TARGET[key])
+               for key in TARGET)
         or doc["langs"] != ["en", "ko", "ja"]
         or doc["catalog_sizes"] != [100, 250, 500]
         or doc["max_new_proposals_per_wave"] != 1
