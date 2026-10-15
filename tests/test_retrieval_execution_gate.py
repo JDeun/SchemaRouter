@@ -10,6 +10,7 @@ from types import SimpleNamespace
 import pytest
 
 from schemarouter import (
+    DeclaredOperationFitPolicy,
     EndpointSpec,
     ExecutionPlan,
     FallbackRoute,
@@ -602,3 +603,151 @@ async def test_forged_fallback_envelope_denied_before_dispatch():
             policy=RetrievalAbstentionPolicy(min_score=-1e8),
         )
     assert sink.dispatched == []
+
+
+@pytest.mark.asyncio
+async def test_declared_operation_fit_accepts_only_exact_final_route() -> None:
+    retrieval, plan, sink = fixture()
+    fit = DeclaredOperationFitPolicy(
+        requested_operation="search",
+        route_operations={"paper.search": "search"},
+    )
+    await execute_selective_plan(
+        sink, retrieval, plan, policy=RetrievalAbstentionPolicy(min_score=-1e8),
+        operation_fit=fit,
+    )
+    assert len(sink.dispatched) == 1
+    assert sink.dispatched[0].calls[0].endpoint == "search"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("operation", "manifest", "denial"),
+    [
+        ("delete", {"paper.search": "search"}, "operation mismatch"),
+        ("create", {"paper.search": "search"}, "operation mismatch"),
+        ("update", {"paper.search": "search"}, "operation mismatch"),
+        ("history", {"paper.search": "search"}, "operation mismatch"),
+        ("convert", {"paper.search": "search"}, "operation mismatch"),
+        ("search", {"paper.get": "lookup"}, "undeclared operation route"),
+    ],
+)
+async def test_declared_operation_mismatch_never_dispatches(
+    operation, manifest, denial,
+) -> None:
+    retrieval, plan, sink = fixture()
+    fit = DeclaredOperationFitPolicy(
+        requested_operation=operation, route_operations=manifest,
+    )
+    with pytest.raises(PolicyViolationError, match=denial):
+        await execute_selective_plan(
+            sink, retrieval, plan,
+            policy=RetrievalAbstentionPolicy(min_score=-1e8),
+            operation_fit=fit,
+        )
+    assert sink.dispatched == []
+
+
+@pytest.mark.asyncio
+async def test_operation_fit_rejects_unmatched_fallback_before_execution() -> None:
+    retrieval, plan, sink = fixture()
+    lookup = next(
+        candidate for candidate in retrieval.candidates
+        if candidate.endpoint == "get"
+    )
+    fallback = ToolCall(
+        tool=lookup.tool, endpoint=lookup.endpoint,
+        schema_fingerprint=lookup.endpoint_fingerprint,
+        tool_fingerprint=lookup.tool_fingerprint,
+    )
+    plan.fallback_routes = [
+        FallbackRoute(primary_call_index=0, alternatives=[fallback]),
+    ]
+    fit = DeclaredOperationFitPolicy(
+        requested_operation="search",
+        route_operations={"paper.search": "search", "paper.get": "lookup"},
+    )
+    with pytest.raises(PolicyViolationError, match="operation mismatch"):
+        await execute_selective_plan(
+            sink, retrieval, plan,
+            policy=RetrievalAbstentionPolicy(min_score=-1e8),
+            operation_fit=fit,
+        )
+    assert sink.dispatched == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "corruption",
+    [
+        {"requested_operation": "transfer"},
+        {"requested_operation": False},
+        {"route_operations": {"paper.search": True}},
+        {"route_operations": ["paper.search"]},
+        {"route_operations": {}},
+    ],
+)
+async def test_forged_operation_fit_policy_never_dispatches(corruption) -> None:
+    retrieval, plan, sink = fixture()
+    fit = DeclaredOperationFitPolicy(
+        requested_operation="search",
+        route_operations={"paper.search": "search"},
+    ).model_copy(update=corruption)
+    with pytest.raises(PolicyViolationError, match="invalid operation-fit policy"):
+        await execute_selective_plan(
+            sink, retrieval, plan,
+            policy=RetrievalAbstentionPolicy(min_score=-1e8),
+            operation_fit=fit,
+        )
+    assert sink.dispatched == []
+
+
+@pytest.mark.asyncio
+async def test_atomic_operation_fit_rejects_forgery_before_retrieval() -> None:
+    retrieval, plan, _ = fixture()
+    router = FakeScopedFlow(retrieval, plan)
+    forged = DeclaredOperationFitPolicy(
+        requested_operation="search",
+        route_operations={"paper.search": "search"},
+    ).model_copy(update={"requested_operation": "execute_code"})
+    with pytest.raises(PolicyViolationError, match="invalid operation-fit policy"):
+        await ainvoke_selective(
+            router, retrieval.query, k=2,
+            policy=RetrievalAbstentionPolicy(min_score=-1e8),
+            operation_fit=forged,
+        )
+    assert router.events == []
+    assert router.dispatched == []
+
+
+@pytest.mark.asyncio
+async def test_atomic_operation_fit_is_enforced_after_planning() -> None:
+    retrieval, plan, _ = fixture()
+    router = FakeScopedFlow(retrieval, plan)
+    fit = DeclaredOperationFitPolicy(
+        requested_operation="delete",
+        route_operations={"paper.search": "search"},
+    )
+    with pytest.raises(PolicyViolationError, match="operation mismatch"):
+        await ainvoke_selective(
+            router, retrieval.query, k=2,
+            policy=RetrievalAbstentionPolicy(min_score=-1e8),
+            operation_fit=fit,
+        )
+    assert [event[0] for event in router.events] == [
+        "retrieve", "plan",
+    ]
+    assert router.dispatched == []
+
+
+def test_declared_operation_policy_rejects_invalid_manifest_entries() -> None:
+    with pytest.raises(ValueError, match="dotted identities"):
+        DeclaredOperationFitPolicy(
+            requested_operation="search",
+            route_operations={" paper.search": "search"},
+        )
+    with pytest.raises(ValueError):
+        DeclaredOperationFitPolicy(
+            requested_operation="read",  # type: ignore[arg-type]
+            route_operations={"paper.search": "search"},
+        )

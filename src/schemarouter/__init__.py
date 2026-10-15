@@ -404,6 +404,10 @@ from .openapi_compatibility import (
     OpenAPICompatibilityReport,
     analyze_openapi_compatibility,
 )
+from .operation_fit import (
+    DeclaredOperationFitPolicy,
+    validate_declared_operation_fit,
+)
 from .pairwise import PairwiseDecisionBackend, PairwiseScoreCallable
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
 from .policy import (
@@ -657,6 +661,8 @@ __all__ = [
     "EmbeddingCallable",
     "EmbeddingDecisionBackend",
     "E5CachedEmbedder",
+    "DeclaredOperationFitPolicy",
+    "validate_declared_operation_fit",
     "DefaultMCPClientFactory",
     "EffectKind",
     "EligibilityStatus",

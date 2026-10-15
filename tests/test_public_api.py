@@ -41,6 +41,8 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "CapabilityRetrieval",
         "RetrievalAbstentionPolicy",
         "SelectiveCapabilityRetrieval",
+        "DeclaredOperationFitPolicy",
+        "validate_declared_operation_fit",
         "apply_retrieval_abstention",
         "validate_selective_execution",
         "execute_selective_plan",
