@@ -79,10 +79,14 @@ def _locale_lexical_text(text: str) -> str:
     not interchangeable capability names or numerical evidence.
     """
     canonical = unicodedata.normalize("NFC", text)
-    return _HALFWIDTH_KATAKANA_RE.sub(
+    kana_folded = _HALFWIDTH_KATAKANA_RE.sub(
         lambda match: unicodedata.normalize("NFKC", match.group()),
         canonical,
     )
+    # Mixed-width input such as "カﾞ" is fullwidth KA followed by a
+    # halfwidth dakuten. Folding the mark leaves a combining mark; compose
+    # again to recover the same declared "ガ" lexical identity.
+    return unicodedata.normalize("NFC", kana_folded)
 
 
 def _normalize(text: str) -> str:
