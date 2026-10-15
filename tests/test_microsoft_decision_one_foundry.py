@@ -242,6 +242,12 @@ def test_foundry_http_error_does_not_repeat_provider_body_or_secret(status):
     ({"resource_endpoint": "https://user:secret@example.com"}, "HTTPS origin"),
     ({"resource_endpoint": "https://example.com/other"}, "HTTPS origin"),
     ({"resource_endpoint": "https://example.com?key=value"}, "HTTPS origin"),
+    ({"resource_endpoint": "https://example.com:invalid"}, "HTTPS origin"),
+    ({"resource_endpoint": "https://example.com:99999"}, "HTTPS origin"),
+    ({"resource_endpoint": "https://example.com:0"}, "HTTPS origin"),
+    ({"resource_endpoint": "https://exa\\nmple.com"}, "HTTPS origin"),
+    ({"resource_endpoint": "https://exa mple.com"}, "HTTPS origin"),
+    ({"resource_endpoint": "https://[::1"}, "HTTPS origin"),
     ({"deployment": ""}, "deployment"),
     ({"deployment": "deployment with spaces"}, "deployment"),
     ({"timeout": True}, "timeout"),
@@ -469,3 +475,25 @@ def test_foundry_no_fit_choice_rejected_when_route_probability_is_higher():
             choose_sync(backend, decision_request())
     finally:
         client.close()
+
+
+
+def test_valid_https_origin_may_use_an_explicit_port() -> None:
+    captured: list[httpx.Request] = []
+
+    def response(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return httpx.Response(200, json=valid_payload())
+
+    with httpx.Client(transport=httpx.MockTransport(response)) as client:
+        backend = MicrosoftDecisionOneFoundryBackend(
+            resource_endpoint="https://example.services.ai.azure.com:8443",
+            deployment=DEPLOYMENT,
+            api_key="fake-unit-test-only",
+            client=client,
+        )
+        result = choose_sync(backend, decision_request())
+    assert result.abstained
+    assert str(captured[0].url).startswith(
+        "https://example.services.ai.azure.com:8443"
+    )
