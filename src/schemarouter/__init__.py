@@ -431,11 +431,11 @@ from .provider_profiles import (
     discover_provider_profile_plugins,
     load_provider_profile_plugins,
 )
-from .registry import InMemoryRegistry, MutableToolRegistry, SQLiteRegistry, ToolRegistry
 from .operation_fit import (
     DeclaredOperationFitPolicy,
     validate_declared_operation_fit,
 )
+from .registry import InMemoryRegistry, MutableToolRegistry, SQLiteRegistry, ToolRegistry
 from .retrieval_abstention import (
     RetrievalAbstentionPolicy,
     SelectiveCapabilityRetrieval,
