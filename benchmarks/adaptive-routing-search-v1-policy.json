@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "id": "adaptive-routing-search-v1",
+  "purpose": "research_proposal_only",
+  "experiment_issue": 1412,
+  "search_space": {
+    "retriever": [
+      "dense",
+      "hybrid_lexical_dense"
+    ],
+    "encoder": [
+      "multilingual_minilm",
+      "multilingual_e5"
+    ],
+    "candidate_k": [
+      3,
+      5,
+      10
+    ],
+    "operation_filter": [
+      "host_only",
+      "advisory_contrastive"
+    ],
+    "no_fit": [
+      "explicit_negative_veto",
+      "calibrated_selective"
+    ]
+  },
+  "targets": {
+    "supported_tool_recall_min": 0.97,
+    "unsupported_rejection_min": 0.99,
+    "wrong_operation_rate_max": 0.01,
+    "unauthorized_dispatch_max": 0,
+    "selection_p95_ms_max": 250
+  },
+  "langs": [
+    "en",
+    "ko",
+    "ja"
+  ],
+  "catalog_sizes": [
+    100,
+    250,
+    500
+  ],
+  "max_new_proposals_per_wave": 1,
+  "max_pending_proposals": 2,
+  "qualification": "independent_disjoint_required",
+  "execution": "no_model_or_tools_or_release"
+}
