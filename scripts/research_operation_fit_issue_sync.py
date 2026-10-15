@@ -25,6 +25,10 @@ from scripts.research_operation_fit_auto_loop import (  # noqa: E402
     VARIANTS,
     validate_state,
 )
+from scripts.research_operation_fit_conveyor import (  # noqa: E402
+    _metric_rows,
+    load_inputs,
+)
 
 MARKER = "schemarouter-autolab-owned-v1"
 REPO = "JDeun/SchemaRouter"
@@ -67,6 +71,11 @@ def sync_issues(
     if not isinstance(results, list) or len(results) > 2 or not results:
         raise ValueError("no complete registered experiment to synchronize")
     allowed = {entry["variant"] for entry in state["results"]}
+    source_state = {entry["variant"]: entry for entry in state["results"]}
+    _, corpus, digest = load_inputs()
+    if digest != CORPUS_SHA:
+        raise ValueError("experiment source corpus has changed")
+    run_id = int(run_url.rsplit("/", 1)[-1])
     seen: set[str] = set()
     for trial in results:
         if not isinstance(trial, dict) or trial.get("variant") not in VARIANTS:
@@ -79,19 +88,28 @@ def sync_issues(
         rows = trial.get("rows")
         if not isinstance(metric, dict) or not isinstance(rows, list):
             raise ValueError("incomplete trial evidence")
+        audited = _metric_rows({
+            "corpus_sha256": digest,
+            "independent_validation": False,
+            "grants_execution_authority": False,
+            "rows": rows,
+        }, corpus, digest, arm=variant)
         if (
-            len(rows) != 72
-            or sum(x.get("kind") == "supported" for x in rows) != 54
-            or sum(x.get("kind") == "unsupported" for x in rows) != 18
-            or (
-                metric.get("supported_correct", -1)
-                + metric.get("supported_wrong", -1)
-                + metric.get("supported_refused", -1)
-            ) != 54
-            or type(metric.get("unsupported_false_accepted")) is not int
-            or not 0 <= metric["unsupported_false_accepted"] <= 18
+            trial.get("run_id") != run_id
+            or source_state[variant]["run_id"] != run_id
+            or any(
+                type(metric.get(display)) is not int
+                or metric[display] != audited[audit_key]
+                or metric[display] != source_state[variant][display]
+                for display, audit_key in (
+                    ("supported_correct", "supported_correct"),
+                    ("supported_wrong", "supported_wrong"),
+                    ("supported_refused", "supported_refused"),
+                    ("unsupported_false_accepted", "unsupported_false_accepted"),
+                )
+            )
         ):
-            raise ValueError("incomplete supported/unsupported measurement")
+            raise ValueError("per-case evidence does not match issue metrics")
     # Validate every trial first: no partial issue changes on invalid input.
     numbers = []
     for trial in results:
