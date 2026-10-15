@@ -58,6 +58,9 @@ in an AutoResearch trial.
     python -m pytest -q tests/test_research_autoresearch_sandbox.py
     python -m scripts.research_autoresearch_sandbox --sizes 100 250 500 \
       --cases-per-group 1 --output artifacts/autoresearch-sandbox/report.json
+    python -m scripts.research_autoresearch_trial \
+      --description "one bounded research hypothesis" \
+      --output-dir artifacts/autoresearch-trials
 
 The shipped candidate is an **identity ranking control**. Expected result
 is zero retrieval quality gain and DISCARD_OR_REVISE; this is evidence of
@@ -78,9 +81,14 @@ a working genuine test harness, not a new research breakthrough.
   with secrets, a writable GitHub token, production data or hidden holdouts.
   Use ephemeral read-only runners; harden with container/OS network and
   filesystem restrictions before running potentially hostile generated code.
-- Hypothesis generation, LLM-based source edits, trial persistence across
-  GitHub Actions runs and git revert/continue orchestration are **future
-  implementation**, not provided by this first stage.
+- A one-trial local controller is included: it runs the registered
+  guarded test and scorer, appends research status/history, and restores
+  only the allowed candidate file from committed HEAD on DISCARD/CRASH.
+  Run it in a disposable branch/worktree, not a working tree with valuable
+  uncommitted candidate changes. It does not push or merge.
+- Hypothesis generation, LLM-based source edits and persistent continuation
+  across GitHub Actions jobs are **future implementation**. A per-run JSONL
+  artifact is not a durable cross-run database or automatic ongoing agent.
 - Build genuine fresh current-adapter query-disjoint train/DEV cases with
   principal allow sets, required-field gold, multi-route chains and an
   independently authored protected confirmation suite. Compare true
