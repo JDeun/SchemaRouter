@@ -1358,3 +1358,89 @@ def test_dimensionless_numeric_field_does_not_fallback_to_unit_bearing_quantity(
 
     assert plan.calls[0].tool == "dimensionless"
     assert plan.fallback_route(0) is None
+
+
+@pytest.mark.asyncio
+async def test_field_contracts_only_describe_actually_observed_optional_values() -> None:
+    fields = [
+        FieldSpec(
+            name="temperature",
+            json_schema={"type": "number"},
+            unit="K",
+        ),
+        FieldSpec(
+            name="optional_density",
+            json_schema={"type": "number"},
+            unit="g/cm^3",
+        ),
+        FieldSpec(
+            name="nested_metric",
+            path=["record", "metric"],
+            result_path=["measurement", "value"],
+            json_schema={"type": "number"},
+            unit="Pa",
+        ),
+    ]
+    endpoint = EndpointSpec(name="read", read_only=True, output_fields=fields)
+    tool = ToolSpec(name="observed_values", endpoints=[endpoint])
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    call = ToolCall(
+        tool=tool.name,
+        endpoint=endpoint.name,
+        fields=[field.name for field in fields],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        tool.name,
+        lambda name, args: {"temperature": 300.0},
+    )
+    result = await executor.execute_call(call)
+    assert result.data == {"temperature": 300.0}
+    # Requested-field intent is backward-compatible, not proof of observation.
+    assert result.projected_fields == [
+        "temperature", "optional_density", "nested_metric",
+    ]
+    assert set(result.field_contracts) == {"temperature"}
+    assert result.field_contracts["temperature"].unit == "K"
+
+    executor.bind(
+        tool.name,
+        lambda name, args: {
+            "temperature": 300.0,
+            "optional_density": 8.1,
+            "record": {"metric": 22.0},
+        },
+    )
+    observed = await executor.execute_call(call)
+    assert observed.data == {
+        "temperature": 300.0,
+        "optional_density": 8.1,
+        "measurement": {"value": 22.0},
+    }
+    assert set(observed.field_contracts) == {
+        "temperature", "optional_density", "nested_metric",
+    }
+    assert observed.field_contracts["nested_metric"].unit == "Pa"
+
+
+@pytest.mark.asyncio
+async def test_field_contracts_do_not_invent_metadata_on_empty_result() -> None:
+    field = FieldSpec(name="optional_density", json_schema={"type": "number"}, unit="g/cm^3")
+    endpoint = EndpointSpec(name="read", read_only=True, output_fields=[field])
+    tool = ToolSpec(name="empty_source", endpoints=[endpoint])
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    executor = RegistryExecutor(registry)
+    executor.bind(tool.name, lambda name, args: {})
+    result = await executor.execute_call(ToolCall(
+        tool=tool.name, endpoint=endpoint.name,
+        fields=["optional_density"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    ))
+    assert result.data == {}
+    assert result.projected_fields == ["optional_density"]
+    assert result.field_contracts == {}
