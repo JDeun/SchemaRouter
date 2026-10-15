@@ -323,9 +323,11 @@ So answer-generation code can consume a compact canonical value plus the unit/ty
 pulling unrelated provider metadata into context.
 
 `ResultFieldContract.has_observed_value` explicitly separates **value presence** from schema/unit
-metadata: `True` means at least one non-null projected value is present; `False` means the source
-explicitly returned a null-only value (the declared unit and schema still remain available);
-`None` means an alternate producer has not established presence. This flag does **not** verify
+metadata: `True` means at least one non-null projected leaf is present; `False` means a
+selected field was explicitly present but has no non-null leaf (for example, `null`,
+a null-only object/array, or an explicit empty array `[]`). Its declared unit and schema
+remain available; an entirely **missing field** has no field contract. `None` means an
+alternate producer has not established presence. This flag does **not** verify
 scientific correctness, authorize the source, or validate the final answer. `projected_fields`
 continues to describe requested projection intent, not observed facts.
 

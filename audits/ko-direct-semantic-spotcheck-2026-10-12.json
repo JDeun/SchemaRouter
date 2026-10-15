@@ -75,10 +75,10 @@
     },
     {
       "path": "concepts/field-first-execution.md",
-      "en_blob": "f905a3063932e8a6fa1920a65e1f5f943b6a89b0",
-      "ko_blob": "7b51313682d0c630556eae7b1355d3a28e4f0a1e",
+      "en_blob": "fdcd804497d469dd15001734f3cb51d031df188e",
+      "ko_blob": "07afaee53d8812877f6b34b72f39200b7adfea4d",
       "notes": "Read both EN and KO: provider-neutral field identity/mapping, caller-scoped evidence, default max_calls=1, two-stage projection, fail-closed unit datatype and affine conversion, exact qualifier matching/token-boundary limits.",
-      "revision_checkpoint_2026_10_15": "AI-assisted direct EN/KO pair reread after null-presence field contract documentation changes. Both now distinguish explicit null-only value from non-null observation; preserve canonical unit/schema on null, and state presence does not certify correctness or source authorization. Not independent human sign-off."
+      "revision_checkpoint_2026_10_15": "AI-assisted direct EN/KO pair reread including 2026-10-15 #1386 empty-array contract behavior: field missing means no metadata, explicit []/null-only values retain schema and unit with has_observed_value=False, actual non-null leaf True, and none of this certifies factual correctness or source authorization. Not independent human sign-off."
     },
     {
       "path": "concepts/planning.md",
