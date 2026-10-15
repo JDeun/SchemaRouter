@@ -8,11 +8,20 @@ from types import SimpleNamespace
 import pytest
 
 from benchmarks.agent_utility_v5_catalog import (
-    CATALOG_SIZES, LANGUAGES, STRATA, build_tasks,
+    CATALOG_SIZES,
+    LANGUAGES,
+    STRATA,
+    build_tasks,
 )
 from scripts.research_current_main_multilingual_dev import (
-    KS, REPORT_SCOPE, evaluate, percentile, score_case, select_cases,
-    summarize, validate_tasks,
+    KS,
+    REPORT_SCOPE,
+    evaluate,
+    percentile,
+    score_case,
+    select_cases,
+    summarize,
+    validate_tasks,
 )
 
 
