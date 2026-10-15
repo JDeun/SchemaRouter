@@ -2126,6 +2126,23 @@ class RegistryExecutor:
         return result
 
     @staticmethod
+    def _has_present_projection_value(value: Any) -> bool:
+        """Distinguish a present empty collection from a missing path.
+
+        A present [] is a real source value with no factual members, whereas
+        _MISSING or a list of missing wildcard paths is not evidence that
+        the field was present at all.
+        """
+        if value is _MISSING:
+            return False
+        if isinstance(value, list):
+            return not value or any(
+                RegistryExecutor._has_present_projection_value(item)
+                for item in value
+            )
+        return True
+
+    @staticmethod
     def _result_field_contracts(
         fields: list[str],
         endpoint: EndpointSpec,
@@ -2156,8 +2173,13 @@ class RegistryExecutor:
             # Omitted fields have no contract (see #1368), but explicit
             # null values still retain their declared unit/type metadata.
             # Record non-null presence separately from schema provenance.
-            observed_values = RegistryExecutor._flatten_projection_values(extracted)
-            if not observed_values:
+            # A top-level empty batch has no observed field instances.
+            # Within an object, however, an explicitly present [] still
+            # carries declared schema/unit metadata, just no factual value.
+            if (
+                (isinstance(projected, list) and not projected)
+                or not RegistryExecutor._has_present_projection_value(extracted)
+            ):
                 continue
             canonical_schema = canonical_field_value_schema(
                 endpoint,
