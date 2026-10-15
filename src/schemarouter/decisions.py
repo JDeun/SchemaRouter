@@ -374,7 +374,11 @@ def choose_sync(
     request: DecisionRequest,
 ) -> DecisionResult:
     verified = _validated_choice_request(request)
-    result = backend.decide(verified)
+    # The backend is not the authority for the offered option set. Hand it
+    # an independent snapshot, then authorize against the host-owned copy.
+    # A callable provider may mutate even a Pydantic model's nested objects.
+    provider_request = _validated_choice_request(verified)
+    result = backend.decide(provider_request)
     if inspect.isawaitable(result):
         close = getattr(result, "close", None)
         if callable(close):
@@ -388,7 +392,8 @@ async def choose_async(
     request: DecisionRequest,
 ) -> DecisionResult:
     verified = _validated_choice_request(request)
-    result = backend.decide(verified)
+    provider_request = _validated_choice_request(verified)
+    result = backend.decide(provider_request)
     if inspect.isawaitable(result):
         result = await result
     return validate_decision(verified, result)
