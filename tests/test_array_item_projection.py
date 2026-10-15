@@ -8,7 +8,7 @@ from schemarouter import (
     ServerProjectionSpec,
     UnitNormalizationSpec,
 )
-from schemarouter.errors import SchemaValidationError
+from schemarouter.errors import PlanValidationError, SchemaValidationError
 from schemarouter.executor import RegistryExecutor
 from schemarouter.validation import projected_output_schema
 
@@ -198,3 +198,46 @@ def test_projected_output_schema_narrows_nested_array_items() -> None:
     assert set(results["items"]["properties"]) == {"title", "url"}
     assert results["items"]["required"] == ["title"]
     assert schema["required"] == ["results"]
+
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "PRIVATE_VALUE",
+        123,
+        None,
+        [{"title": "Visible"}, "PRIVATE_VALUE"],
+        [{"title": "Visible"}, 0],
+        [{"title": "Visible"}, None],
+        ["PRIVATE_VALUE"],
+    ],
+)
+def test_selected_projection_rejects_non_object_source_shapes(
+    payload: object,
+) -> None:
+    endpoint = _endpoint()
+    with pytest.raises(
+        PlanValidationError,
+        match="selected output projection requires",
+    ):
+        RegistryExecutor._project(payload, ["results[].title"], endpoint)
+
+
+def test_selected_projection_preserves_object_batches_and_empty_batches() -> None:
+    endpoint = EndpointSpec(
+        name="read",
+        read_only=True,
+        output_fields=[FieldSpec(name="title", json_schema={"type": "string"})],
+    )
+    data = [{"title": "Public", "secret": "PRIVATE"}, {"secret": "PRIVATE_2"}]
+    projected = RegistryExecutor._project(data, ["title"], endpoint)
+    assert projected == [{"title": "Public"}, {}]
+    assert data[0]["secret"] == "PRIVATE"
+    assert RegistryExecutor._project([], ["title"], endpoint) == []
+
+
+def test_unselected_projection_preserves_legacy_raw_payloads() -> None:
+    endpoint = _endpoint()
+    payload = ["raw", {"unknown": "visible"}]
+    assert RegistryExecutor._project(payload, [], endpoint) is payload
