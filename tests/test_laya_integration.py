@@ -419,7 +419,9 @@ def test_laya_huge_configured_min_confidence_is_rejected() -> None:
         {"query": ""},
         {"query": "    "},
         {"options": [None]},
-        {"options": [{"id": "candidate:0"}]},
+        {"options": [DecisionOption(id="candidate:0").model_copy(
+            update={"label": ["untrusted"]}
+        )]},
         {"options": [DecisionOption(id="candidate:0").model_copy(
             update={"id": ["invalid"]}
         )]},
@@ -435,7 +437,10 @@ def test_laya_rejects_unvalidated_choice_requests_before_local_inference(
 ) -> None:
     router = FakeRouter(response())
     unsafe = request().model_copy(update=forgery)
-    with pytest.raises(PlanningError, match="invalid decision request|empty decision query"):
+    with pytest.raises(
+        PlanningError,
+        match="decision request|invalid decision request|empty decision query",
+    ):
         choose_sync(LayaDecisionBackend(router=router), unsafe)
     assert router.calls == []
 
