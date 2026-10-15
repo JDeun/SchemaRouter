@@ -324,6 +324,14 @@
       "source_blob": "df85cf760bcdecedf91e692bc8e3bc267c4ed98f"
     },
     {
+      "path": "integrations/microsoft-decision-1.md",
+      "source_blob": "be983823a98e8c74c0ea7d5f3c8f3b7fe1b7ebad"
+    },
+    {
+      "path": "integrations/microsoft-foundry-http-adapter.md",
+      "source_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567"
+    },
+    {
       "path": "integrations/ollama.md",
       "source_blob": "59efd519def797fb4ae2351697955881e7d7912d"
     },
@@ -454,6 +462,10 @@
     {
       "path": "releases/0.17.0.md",
       "source_blob": "31d94d28287a2ca5e6b09922ac1c8c444938833c"
+    },
+    {
+      "path": "releases/0.18.0.md",
+      "source_blob": "e5769a62a6fb1f9c7088552051225b4d69325feb"
     },
     {
       "path": "releases/0.2.0a1.md",
@@ -590,14 +602,6 @@
     {
       "path": "versioning.md",
       "source_blob": "61f82f452188aec2f74fde20f09243a9dbbb1497"
-    },
-    {
-      "path": "integrations/microsoft-foundry-http-adapter.md",
-      "source_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567"
-    },
-    {
-      "path": "integrations/microsoft-decision-1.md",
-      "source_blob": "be983823a98e8c74c0ea7d5f3c8f3b7fe1b7ebad"
     }
   ]
 }

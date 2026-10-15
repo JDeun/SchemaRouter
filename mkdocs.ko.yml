@@ -181,6 +181,7 @@ nav:
           - 브랜드: project/brand.md
           - 검색/포지셔닝: project/discoverability.md
       - 릴리스 노트:
+          - 0.18.0: releases/0.18.0.md
           - 0.17.0: releases/0.17.0.md
           - 0.16.0: releases/0.16.0.md
           - 0.15.0: releases/0.15.0.md
