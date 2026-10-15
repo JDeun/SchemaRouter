@@ -60,6 +60,16 @@ def evaluate_instrument_readiness(
     """
     if not isinstance(policy, InstrumentReadinessPolicy):
         raise ValueError("an explicit preregistered readiness policy is required")
+    # frozen=True is not a trust boundary: object.__setattr__ can still change
+    # a caller-held dataclass after preregistration and bypass __post_init__.
+    # Verify a fresh typed snapshot before reading any threshold.
+    policy = InstrumentReadinessPolicy(
+        min_supported=policy.min_supported,
+        min_unsupported=policy.min_unsupported,
+        min_grounded_rate=policy.min_grounded_rate,
+        max_false_match_rate=policy.max_false_match_rate,
+        max_false_refusal_rate=policy.max_false_refusal_rate,
+    )
     if not isinstance(frozen_cases, Mapping) or not frozen_cases:
         raise ValueError("nonempty frozen case manifest required")
     if isinstance(observed_rows, (str, bytes)) or not isinstance(

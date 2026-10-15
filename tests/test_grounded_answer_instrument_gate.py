@@ -263,3 +263,38 @@ def test_report_distinguishes_incomplete_tool_task_from_valid_answer_envelope() 
     )
     assert result["supported_tool_task_complete_rate"] == 0.5
     assert result["grounded_success_rate"] == 0.5
+
+
+@pytest.mark.parametrize(
+    ("attribute", "forged"),
+    [
+        ("min_supported", 0),
+        ("min_unsupported", True),
+        ("min_grounded_rate", -1.0),
+        ("max_false_match_rate", float("inf")),
+        ("max_false_refusal_rate", float("nan")),
+        ("max_false_refusal_rate", "1"),
+    ],
+)
+def test_caller_modified_frozen_policy_cannot_bypass_preregistration(
+    attribute: str, forged: object,
+) -> None:
+    cases, rows = samples()
+    supplied_policy = policy()
+    # Dataclass freezing is for normal clients, not a security boundary.
+    object.__setattr__(supplied_policy, attribute, forged)
+    with pytest.raises(ValueError, match="must be"):
+        evaluate_instrument_readiness(
+            frozen_cases=cases,
+            observed_rows=rows,
+            policy=supplied_policy,
+        )
+
+
+def test_revalidated_readiness_policy_keeps_ordinary_qualification() -> None:
+    cases, rows = samples()
+    result = require_instrument_ready(
+        frozen_cases=cases, observed_rows=rows, policy=policy(),
+    )
+    assert result["qualified"] is True
+    assert result["supported_cases"] == 2
