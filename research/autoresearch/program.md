@@ -14,7 +14,9 @@ historical control, **not** an autonomous agent or a required code writer.
 
 Workflow: .github/workflows/research-actions-only-cpu-search.yml
 
-1. Start once via GitHub Actions `workflow_dispatch` on `main` with
+1. When this workflow file first lands on `main`, its **filtered
+   push event** starts a bounded research chain automatically. Later runs
+   can be started explicitly by GitHub Actions `workflow_dispatch` with
    `remaining_batches=12` and no previous run ID. There is **no cron**.
    Successive runs explicitly pass the predecessor's run ID. Download its
    uploaded artifact even if its final dispatch job is finishing, and reject
