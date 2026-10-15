@@ -232,67 +232,6 @@ route when the bounded backend explicitly abstains, which is useful for confiden
 out-of-domain handling. Provider exceptions and malformed output are still governed by `fallback`,
 so choosing `"no_route"` does not silently convert provider outages into no-route results.
 
-### CPU-local multilingual E5 candidate recall (opt-in, #1339)
-
-The existing `candidate_recall_backend` supports a multilingual embedding ranker
-without changing default lexical routing. For a CPU-oriented first candidate,
-`intfloat/multilingual-e5-small` produces 384-dimensional embeddings. E5
-**requires different prefixes** for retrieval queries (`query: `) and candidate
-passages (`passage: `). SchemaRouter's `E5CachedEmbedder` adds those prefixes
-and caches only previously encoded passages in a bounded, process-local LRU.
-The host still loads and owns the model; there are no new required dependencies.
-
-```bash
-pip install sentence-transformers
-```
-
-```python
-from sentence_transformers import SentenceTransformer
-from schemarouter import E5CachedEmbedder, EmbeddingDecisionBackend, SchemaPlanner
-
-# An explicitly chosen local model; the first use may download weights.
-model = SentenceTransformer("intfloat/multilingual-e5-small", device="cpu")
-
-def local_encode(texts: list[str]) -> list[list[float]]:
-    return model.encode(
-        texts, batch_size=32, normalize_embeddings=True,
-    ).tolist()
-
-cached_e5 = E5CachedEmbedder(local_encode, max_cached_passages=2048)
-recall = EmbeddingDecisionBackend(cached_e5)
-
-planner = SchemaPlanner(
-    registry,
-    candidate_recall_backend=recall,
-    candidate_recall_limit=4,
-)
-```
-
-For an asynchronous application, do not block its event loop with CPU inference:
-wrap this same encoder using `async def embed_async(texts): return await
-asyncio.to_thread(cached_e5, texts)`, then pass `embed_async` to
-`EmbeddingDecisionBackend` and use SchemaRouter's async retrieval methods.
-
-**Safety and evidence limitations:** This is *candidate discovery only*, not
-proof of fit, a trusted authorization decision, an auto-execute command, or
-a calibrated open-set/no-match classifier. Do not choose a universal cosine
-threshold: E5 documents that cosine scores often cluster at high values.
-Establish distinct supported-miss/unsupported-false-match, downstream
-success, p50/p95 latency, and peak CPU/RAM measurements on new, disjoint
-development/validation cohorts before configuring `min_similarity` or
-using a strict no-match policy. The independent frozen 0.14 negative results
-are unchanged. No model weights or additional packages are downloaded by
-the core tests.
-
-Catalog option text is delivered to the chosen embedding provider. Use a
-local encoder for sensitive metadata and do not include secrets in tool
-descriptions. Cache entries are keyed by SHA-256 of the complete passage text
-and are invalidated when descriptions change; create a new adapter after
-switching model checkpoints. For quality comparisons, also evaluate a small
-multilingual MiniLM baseline and stronger BGE-M3/Qwen3 embedding models
-with identical supported/unsupported test cases and hardware.
-
-
 ## Bounded field selection
 
 Enable field selection explicitly:
