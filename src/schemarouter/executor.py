@@ -2131,11 +2131,11 @@ class RegistryExecutor:
                 extracted = RegistryExecutor._extract_projection_path(
                     projected, field.result_projection_path,
                 )
-            # A projected null (or all-null array) is not evidence of a
-            # factual measurement. Do not attach semantic/unit contracts to
-            # absent values merely because a provider emitted their keys.
+            # Omitted fields have no contract (see #1368), but explicit
+            # null values still retain their declared unit/type metadata.
+            # Record non-null presence separately from schema provenance.
             observed_values = RegistryExecutor._flatten_projection_values(extracted)
-            if not any(value is not None for value in observed_values):
+            if not observed_values:
                 continue
             canonical_schema = canonical_field_value_schema(
                 endpoint,
@@ -2158,6 +2158,7 @@ class RegistryExecutor:
                     else None
                 ),
                 qualifiers=dict(field.qualifiers),
+                has_observed_value=any(value is not None for value in observed_values),
             )
         return contracts
 
