@@ -1498,3 +1498,44 @@ def test_all_null_array_is_not_a_factual_field_contract() -> None:
         ["values"], endpoint, {"values": [None, 1.2]}
     )
     assert mixed_contracts["values"].has_observed_value is True
+
+
+@pytest.mark.parametrize(
+    ("payload", "observed"),
+    [
+        ({"measurement": {"value": None}}, False),
+        ({"measurement": {"value": {"subvalue": None}}}, False),
+        ({"measurement": {}}, False),
+        ({"measurement": {"values": [None, {"value": None}]}}, False),
+        ({"measurement": [{"value": None}, {"value": None}]}, False),
+        ({"measurement": [{"value": None}, {"value": 0}]}, True),
+        ({"measurement": {"value": 0}}, True),
+        ({"measurement": {"value": False}}, True),
+        ({"measurement": {"value": ""}}, True),
+    ],
+)
+def test_nested_json_presence_requires_a_non_null_leaf(
+    payload: dict[str, object], observed: bool,
+) -> None:
+    field = FieldSpec(
+        name="measurement",
+        semantic_id="results.measurement",
+        json_schema={"type": "object"},
+    )
+    endpoint = EndpointSpec(
+        name="read", read_only=True, output_fields=[field],
+    )
+    contracts = RegistryExecutor._result_field_contracts(
+        ["measurement"], endpoint, payload,
+    )
+    assert contracts["measurement"].has_observed_value is observed
+
+
+def test_omitted_nested_json_field_has_no_presence_contract() -> None:
+    field = FieldSpec(
+        name="measurement", json_schema={"type": "object"},
+    )
+    endpoint = EndpointSpec(name="read", read_only=True, output_fields=[field])
+    assert RegistryExecutor._result_field_contracts(
+        ["measurement"], endpoint, {},
+    ) == {}
