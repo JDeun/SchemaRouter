@@ -17,6 +17,10 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from scripts.research_operation_fit_class_collapse import (  # noqa: E402
+    class_collapse_diagnostics,
+)
+
 from scripts.research_operation_fit_conveyor import (  # noqa: E402
     CORPUS_SHA,
     KINDS,
@@ -281,6 +285,7 @@ def compile_opportunities(
             if x["status"] in {"incomparable_frozen_reference", "blocked"}
         ],
         "contrast": contrast,
+        "class_collapse_diagnostics": class_collapse_diagnostics(arms, corpus),
         "improvement_hypotheses": hypotheses,
         "no_automatic_experiment_dispatch": True,
         "no_independent_qualification": True,
@@ -326,7 +331,7 @@ def main() -> int:
     )
     print(json.dumps({
         key: value for key, value in result.items()
-        if key not in {"contrast", "improvement_hypotheses", "non_comparable_or_blocked"}
+        if key not in {"contrast", "class_collapse_diagnostics", "improvement_hypotheses", "non_comparable_or_blocked"}
     }, ensure_ascii=False))
     return 0
 
