@@ -1,0 +1,71 @@
+name: v0.17 Wheel vs Candidate Lexical Regression (No Model)
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/planner.py"
+      - "src/schemarouter/retrieval_execution_gate.py"
+      - "scripts/verify_v018_installed_wheel_alias_regression.py"
+      - ".github/workflows/v018-candidate-wheel-lexical-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Download true released baseline wheel and build candidate wheel
+        run: |
+          mkdir -p artifacts/wheels/baseline artifacts/wheels/candidate
+          python -m pip download --no-deps --only-binary=:all: \
+            --dest artifacts/wheels/baseline "schemarouter==0.17.0"
+          python -m pip wheel --no-deps --wheel-dir artifacts/wheels/candidate .
+          python - <<'PY'
+          from pathlib import Path
+          for role in ("baseline", "candidate"):
+              items = list(Path("artifacts/wheels", role).glob("*.whl"))
+              assert len(items) == 1, f"{role}: expected exactly one wheel"
+          PY
+      - name: Install each wheel in separate clean environments
+        run: |
+          python -m venv /tmp/sr017-wheel-venv
+          python -m venv /tmp/sr018-candidate-wheel-venv
+          /tmp/sr017-wheel-venv/bin/python -m pip install \
+            artifacts/wheels/baseline/*.whl
+          /tmp/sr018-candidate-wheel-venv/bin/python -m pip install \
+            artifacts/wheels/candidate/*.whl
+      - name: Run identical synthetic lexical controls against actual installed wheels
+        run: |
+          mkdir -p artifacts/wheel-lexical-regression
+          /tmp/sr017-wheel-venv/bin/python \
+            scripts/verify_v018_installed_wheel_alias_regression.py \
+            --capture artifacts/wheel-lexical-regression/baseline.json
+          /tmp/sr018-candidate-wheel-venv/bin/python \
+            scripts/verify_v018_installed_wheel_alias_regression.py \
+            --capture artifacts/wheel-lexical-regression/candidate.json
+          python scripts/verify_v018_installed_wheel_alias_regression.py \
+            --baseline artifacts/wheel-lexical-regression/baseline.json \
+            --candidate artifacts/wheel-lexical-regression/candidate.json
+      - name: Archive exact package bytes and source commit for engineering-only proof
+        run: |
+          sha256sum artifacts/wheels/baseline/*.whl \
+            artifacts/wheels/candidate/*.whl \
+            > artifacts/wheel-lexical-regression/WHEEL_SHA256SUMS.txt
+          printf 'source_commit=%s\n' "$GITHUB_SHA" \
+            > artifacts/wheel-lexical-regression/SOURCE.txt
+      - name: Publish unscored wheel-regression evidence
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: wheel-lexical-regression-${{ github.run_id }}
+          path: artifacts/wheel-lexical-regression/
+          if-no-files-found: error
+          retention-days: 90
