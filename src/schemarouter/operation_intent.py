@@ -29,7 +29,7 @@ IntentReason = Literal[
 _EXPLICIT_ACTIONS: dict[OperationKind, tuple[str, ...]] = {
     "search": (
         r"\bsearch\b|\bfind\b|\blook\s+for\b",
-        r"검색|찾아|찾기",
+        r"검색|찾아",
         r"検索|探して|探す",
     ),
     "lookup": (
