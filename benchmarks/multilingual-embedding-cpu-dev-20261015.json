@@ -1,0 +1,674 @@
+{
+  "schema_version": 1,
+  "surface": "prospective_development_only",
+  "evaluation_date": "2026-10-15",
+  "corpus_origin": "newly authored human-readable synthetic phrases, not frozen 0.14 task texts",
+  "model_selection_allowed": true,
+  "validation_or_holdout_claim_allowed": false,
+  "languages": [
+    "en",
+    "ko",
+    "ja",
+    "es",
+    "de",
+    "mixed"
+  ],
+  "metrics": [
+    "supported_recall_at_1",
+    "supported_recall_at_5",
+    "unsupported_top1_similarity",
+    "descriptive_threshold_false_match_and_false_refusal",
+    "single_query_cpu_latency_ms",
+    "peak_rss_mb"
+  ],
+  "thresholds_diagnostic_only": [
+    0.6,
+    0.7,
+    0.8,
+    0.9
+  ],
+  "catalog": [
+    {
+      "id": "materials.search",
+      "description": "Read-only search of measured materials properties such as band gap, density, and formation energy."
+    },
+    {
+      "id": "materials.units",
+      "description": "Read-only lookup of reported units and unit metadata for material measurements; does not fetch property records."
+    },
+    {
+      "id": "papers.search",
+      "description": "Read-only search of scientific publications by subject and keyword."
+    },
+    {
+      "id": "papers.citations",
+      "description": "Read-only lookup of bibliographic citation metadata for a supplied DOI."
+    },
+    {
+      "id": "weather.current",
+      "description": "Read-only live observations of outdoor weather, temperature and humidity by city."
+    },
+    {
+      "id": "inventory.lookup",
+      "description": "Read-only lookup of on-hand warehouse stock quantities by item SKU."
+    },
+    {
+      "id": "inventory.audit",
+      "description": "Read-only report of historical stock reconciliation audits for a warehouse."
+    },
+    {
+      "id": "flights.search",
+      "description": "Read-only search of available airline flights and departure times for two cities."
+    },
+    {
+      "id": "flights.status",
+      "description": "Read-only lookup of flight status and delays for an existing flight number."
+    },
+    {
+      "id": "finance.convert_currency",
+      "description": "Read-only currency exchange conversion between currencies for a quoted amount."
+    },
+    {
+      "id": "finance.exchange_history",
+      "description": "Read-only historical exchange rate chart between two currencies."
+    },
+    {
+      "id": "calendar.list_events",
+      "description": "Read-only listing of existing scheduled calendar events for a specified date."
+    },
+    {
+      "id": "maps.directions",
+      "description": "Read-only navigation directions and routes between geographic locations."
+    }
+  ],
+  "cases": [
+    {
+      "id": "supported-en-materials.search",
+      "language": "en",
+      "kind": "supported",
+      "expected_route": "materials.search",
+      "query": "Find the measured band gap of gallium nitride in the materials database."
+    },
+    {
+      "id": "supported-en-papers.search",
+      "language": "en",
+      "kind": "supported",
+      "expected_route": "papers.search",
+      "query": "Find peer-reviewed publications about graph neural network catalysts."
+    },
+    {
+      "id": "supported-en-weather.current",
+      "language": "en",
+      "kind": "supported",
+      "expected_route": "weather.current",
+      "query": "Show the current outdoor temperature for Helsinki."
+    },
+    {
+      "id": "supported-en-inventory.lookup",
+      "language": "en",
+      "kind": "supported",
+      "expected_route": "inventory.lookup",
+      "query": "Look up the recorded stock quantity for product SKU AX-74."
+    },
+    {
+      "id": "supported-en-flights.search",
+      "language": "en",
+      "kind": "supported",
+      "expected_route": "flights.search",
+      "query": "Search available flights between Lisbon and Oslo next month."
+    },
+    {
+      "id": "supported-en-finance.convert_currency",
+      "language": "en",
+      "kind": "supported",
+      "expected_route": "finance.convert_currency",
+      "query": "Convert a quoted amount of 230 euros into Japanese yen."
+    },
+    {
+      "id": "supported-en-calendar.list_events",
+      "language": "en",
+      "kind": "supported",
+      "expected_route": "calendar.list_events",
+      "query": "List the events already scheduled on my calendar this Saturday."
+    },
+    {
+      "id": "supported-en-maps.directions",
+      "language": "en",
+      "kind": "supported",
+      "expected_route": "maps.directions",
+      "query": "Give walking directions from the railway station to the museum."
+    },
+    {
+      "id": "unsupported-en-materials.delete_sample",
+      "language": "en",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "Permanently delete sample record S-81 from the materials database."
+    },
+    {
+      "id": "unsupported-en-papers.submit_paper",
+      "language": "en",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "Submit a manuscript to a journal for peer review."
+    },
+    {
+      "id": "unsupported-en-inventory.adjust_stock",
+      "language": "en",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "Increase the warehouse stock count by forty units."
+    },
+    {
+      "id": "unsupported-en-flights.book_ticket",
+      "language": "en",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "Purchase and issue a confirmed airline ticket for me."
+    },
+    {
+      "id": "unsupported-en-finance.transfer_money",
+      "language": "en",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "Send three hundred dollars from my bank account to another person."
+    },
+    {
+      "id": "unsupported-en-calendar.create_event",
+      "language": "en",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "Create and save a new recurring calendar meeting every Tuesday."
+    },
+    {
+      "id": "supported-ko-materials.search",
+      "language": "ko",
+      "kind": "supported",
+      "expected_route": "materials.search",
+      "query": "재료 데이터베이스에서 질화갈륨의 측정 밴드갭을 찾아주세요."
+    },
+    {
+      "id": "supported-ko-papers.search",
+      "language": "ko",
+      "kind": "supported",
+      "expected_route": "papers.search",
+      "query": "그래프 신경망 촉매에 관한 동료심사 논문을 검색해주세요."
+    },
+    {
+      "id": "supported-ko-weather.current",
+      "language": "ko",
+      "kind": "supported",
+      "expected_route": "weather.current",
+      "query": "헬싱키의 현재 실외 기온을 알려주세요."
+    },
+    {
+      "id": "supported-ko-inventory.lookup",
+      "language": "ko",
+      "kind": "supported",
+      "expected_route": "inventory.lookup",
+      "query": "상품 SKU AX-74의 등록된 재고 수량을 조회해주세요."
+    },
+    {
+      "id": "supported-ko-flights.search",
+      "language": "ko",
+      "kind": "supported",
+      "expected_route": "flights.search",
+      "query": "다음 달 리스본에서 오슬로로 가는 항공편을 검색해주세요."
+    },
+    {
+      "id": "supported-ko-finance.convert_currency",
+      "language": "ko",
+      "kind": "supported",
+      "expected_route": "finance.convert_currency",
+      "query": "230유로를 일본 엔화로 환산해주세요."
+    },
+    {
+      "id": "supported-ko-calendar.list_events",
+      "language": "ko",
+      "kind": "supported",
+      "expected_route": "calendar.list_events",
+      "query": "이번 토요일 달력에 이미 등록된 일정을 목록으로 보여주세요."
+    },
+    {
+      "id": "supported-ko-maps.directions",
+      "language": "ko",
+      "kind": "supported",
+      "expected_route": "maps.directions",
+      "query": "기차역에서 박물관까지 걸어가는 경로를 알려주세요."
+    },
+    {
+      "id": "unsupported-ko-materials.delete_sample",
+      "language": "ko",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "재료 데이터베이스에서 시료 S-81 기록을 영구 삭제해주세요."
+    },
+    {
+      "id": "unsupported-ko-papers.submit_paper",
+      "language": "ko",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "원고를 학술지에 투고하여 심사를 신청해주세요."
+    },
+    {
+      "id": "unsupported-ko-inventory.adjust_stock",
+      "language": "ko",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "창고 재고 수량을 40개 늘리도록 수정해주세요."
+    },
+    {
+      "id": "unsupported-ko-flights.book_ticket",
+      "language": "ko",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "제 명의로 항공권을 결제하고 발권해주세요."
+    },
+    {
+      "id": "unsupported-ko-finance.transfer_money",
+      "language": "ko",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "제 은행 계좌에서 다른 사람에게 300달러 송금해주세요."
+    },
+    {
+      "id": "unsupported-ko-calendar.create_event",
+      "language": "ko",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "매주 화요일에 반복되는 회의 일정을 새로 생성해 저장해주세요."
+    },
+    {
+      "id": "supported-ja-materials.search",
+      "language": "ja",
+      "kind": "supported",
+      "expected_route": "materials.search",
+      "query": "材料データベースから窒化ガリウムのバンドギャップ測定値を検索してください。"
+    },
+    {
+      "id": "supported-ja-papers.search",
+      "language": "ja",
+      "kind": "supported",
+      "expected_route": "papers.search",
+      "query": "グラフニューラルネットワークによる触媒研究の査読論文を探してください。"
+    },
+    {
+      "id": "supported-ja-weather.current",
+      "language": "ja",
+      "kind": "supported",
+      "expected_route": "weather.current",
+      "query": "ヘルシンキの現在の屋外気温を表示してください。"
+    },
+    {
+      "id": "supported-ja-inventory.lookup",
+      "language": "ja",
+      "kind": "supported",
+      "expected_route": "inventory.lookup",
+      "query": "商品SKU AX-74の登録済み在庫数を確認してください。"
+    },
+    {
+      "id": "supported-ja-flights.search",
+      "language": "ja",
+      "kind": "supported",
+      "expected_route": "flights.search",
+      "query": "来月のリスボン発オスロ行きの航空便を検索してください。"
+    },
+    {
+      "id": "supported-ja-finance.convert_currency",
+      "language": "ja",
+      "kind": "supported",
+      "expected_route": "finance.convert_currency",
+      "query": "230ユーロを日本円に換算してください。"
+    },
+    {
+      "id": "supported-ja-calendar.list_events",
+      "language": "ja",
+      "kind": "supported",
+      "expected_route": "calendar.list_events",
+      "query": "今週土曜日のカレンダーに登録済みの予定を一覧表示してください。"
+    },
+    {
+      "id": "supported-ja-maps.directions",
+      "language": "ja",
+      "kind": "supported",
+      "expected_route": "maps.directions",
+      "query": "鉄道駅から博物館までの徒歩ルートを案内してください。"
+    },
+    {
+      "id": "unsupported-ja-materials.delete_sample",
+      "language": "ja",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "材料データベースから試料S-81の記録を完全に削除してください。"
+    },
+    {
+      "id": "unsupported-ja-papers.submit_paper",
+      "language": "ja",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "原稿を学術誌に投稿して査読を申し込んでください。"
+    },
+    {
+      "id": "unsupported-ja-inventory.adjust_stock",
+      "language": "ja",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "倉庫の在庫数量を40個増やして更新してください。"
+    },
+    {
+      "id": "unsupported-ja-flights.book_ticket",
+      "language": "ja",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "私の航空券を購入して発券してください。"
+    },
+    {
+      "id": "unsupported-ja-finance.transfer_money",
+      "language": "ja",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "自分の銀行口座から相手に300ドルを送金してください。"
+    },
+    {
+      "id": "unsupported-ja-calendar.create_event",
+      "language": "ja",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "毎週火曜日の繰り返し会議をカレンダーに新規登録してください。"
+    },
+    {
+      "id": "supported-es-materials.search",
+      "language": "es",
+      "kind": "supported",
+      "expected_route": "materials.search",
+      "query": "Busca el valor medido de la banda prohibida del nitruro de galio."
+    },
+    {
+      "id": "supported-es-papers.search",
+      "language": "es",
+      "kind": "supported",
+      "expected_route": "papers.search",
+      "query": "Busca artículos revisados por pares sobre catalizadores con redes neuronales de grafos."
+    },
+    {
+      "id": "supported-es-weather.current",
+      "language": "es",
+      "kind": "supported",
+      "expected_route": "weather.current",
+      "query": "Muestra la temperatura exterior actual de Helsinki."
+    },
+    {
+      "id": "supported-es-inventory.lookup",
+      "language": "es",
+      "kind": "supported",
+      "expected_route": "inventory.lookup",
+      "query": "Consulta las unidades en inventario del artículo SKU AX-74."
+    },
+    {
+      "id": "supported-es-flights.search",
+      "language": "es",
+      "kind": "supported",
+      "expected_route": "flights.search",
+      "query": "Busca vuelos disponibles de Lisboa a Oslo el próximo mes."
+    },
+    {
+      "id": "supported-es-finance.convert_currency",
+      "language": "es",
+      "kind": "supported",
+      "expected_route": "finance.convert_currency",
+      "query": "Convierte 230 euros a yenes japoneses."
+    },
+    {
+      "id": "supported-es-calendar.list_events",
+      "language": "es",
+      "kind": "supported",
+      "expected_route": "calendar.list_events",
+      "query": "Enumera los eventos ya programados en mi calendario este sábado."
+    },
+    {
+      "id": "supported-es-maps.directions",
+      "language": "es",
+      "kind": "supported",
+      "expected_route": "maps.directions",
+      "query": "Indica la ruta a pie desde la estación de tren hasta el museo."
+    },
+    {
+      "id": "unsupported-es-materials.delete_sample",
+      "language": "es",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "Elimina permanentemente la muestra S-81 de la base de materiales."
+    },
+    {
+      "id": "unsupported-es-papers.submit_paper",
+      "language": "es",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "Envía un manuscrito a una revista para revisión por pares."
+    },
+    {
+      "id": "unsupported-es-inventory.adjust_stock",
+      "language": "es",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "Actualiza el inventario del almacén añadiendo cuarenta unidades."
+    },
+    {
+      "id": "unsupported-es-flights.book_ticket",
+      "language": "es",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "Compra y emite un billete de avión confirmado a mi nombre."
+    },
+    {
+      "id": "unsupported-es-finance.transfer_money",
+      "language": "es",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "Transfiere trescientos dólares desde mi cuenta bancaria a otra persona."
+    },
+    {
+      "id": "unsupported-es-calendar.create_event",
+      "language": "es",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "Crea y guarda una reunión recurrente cada martes en mi calendario."
+    },
+    {
+      "id": "supported-de-materials.search",
+      "language": "de",
+      "kind": "supported",
+      "expected_route": "materials.search",
+      "query": "Suche die gemessene Bandlücke von Galliumnitrid in der Materialdatenbank."
+    },
+    {
+      "id": "supported-de-papers.search",
+      "language": "de",
+      "kind": "supported",
+      "expected_route": "papers.search",
+      "query": "Finde begutachtete Fachartikel über Katalysatoren mit Graph-Neural-Networks."
+    },
+    {
+      "id": "supported-de-weather.current",
+      "language": "de",
+      "kind": "supported",
+      "expected_route": "weather.current",
+      "query": "Zeige die aktuelle Außentemperatur in Helsinki."
+    },
+    {
+      "id": "supported-de-inventory.lookup",
+      "language": "de",
+      "kind": "supported",
+      "expected_route": "inventory.lookup",
+      "query": "Rufe den erfassten Lagerbestand für Produkt SKU AX-74 ab."
+    },
+    {
+      "id": "supported-de-flights.search",
+      "language": "de",
+      "kind": "supported",
+      "expected_route": "flights.search",
+      "query": "Suche verfügbare Flüge von Lissabon nach Oslo im nächsten Monat."
+    },
+    {
+      "id": "supported-de-finance.convert_currency",
+      "language": "de",
+      "kind": "supported",
+      "expected_route": "finance.convert_currency",
+      "query": "Rechne 230 Euro in japanische Yen um."
+    },
+    {
+      "id": "supported-de-calendar.list_events",
+      "language": "de",
+      "kind": "supported",
+      "expected_route": "calendar.list_events",
+      "query": "Liste die bereits eingetragenen Kalendertermine für diesen Samstag auf."
+    },
+    {
+      "id": "supported-de-maps.directions",
+      "language": "de",
+      "kind": "supported",
+      "expected_route": "maps.directions",
+      "query": "Zeige den Fußweg vom Bahnhof zum Museum."
+    },
+    {
+      "id": "unsupported-de-materials.delete_sample",
+      "language": "de",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "Lösche den Probendatensatz S-81 dauerhaft aus der Materialdatenbank."
+    },
+    {
+      "id": "unsupported-de-papers.submit_paper",
+      "language": "de",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "Reiche ein Manuskript zur Begutachtung bei einer Fachzeitschrift ein."
+    },
+    {
+      "id": "unsupported-de-inventory.adjust_stock",
+      "language": "de",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "Erhöhe den Lagerbestand im System um vierzig Stück."
+    },
+    {
+      "id": "unsupported-de-flights.book_ticket",
+      "language": "de",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "Kaufe und stelle ein verbindliches Flugticket für mich aus."
+    },
+    {
+      "id": "unsupported-de-finance.transfer_money",
+      "language": "de",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "Überweise dreihundert Dollar von meinem Bankkonto an eine andere Person."
+    },
+    {
+      "id": "unsupported-de-calendar.create_event",
+      "language": "de",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "Erstelle jeden Dienstag einen neuen wiederkehrenden Kalendereintrag."
+    },
+    {
+      "id": "supported-mixed-materials.search",
+      "language": "mixed",
+      "kind": "supported",
+      "expected_route": "materials.search",
+      "query": "GaN의 band gap 측정값을 materials DB에서 찾아줘."
+    },
+    {
+      "id": "supported-mixed-papers.search",
+      "language": "mixed",
+      "kind": "supported",
+      "expected_route": "papers.search",
+      "query": "GNN 촉매 관련 peer-reviewed papers를 검색해 줘."
+    },
+    {
+      "id": "supported-mixed-weather.current",
+      "language": "mixed",
+      "kind": "supported",
+      "expected_route": "weather.current",
+      "query": "Helsinki 지금 outdoor temperature 보여줘."
+    },
+    {
+      "id": "supported-mixed-inventory.lookup",
+      "language": "mixed",
+      "kind": "supported",
+      "expected_route": "inventory.lookup",
+      "query": "SKU AX-74 inventory 재고 quantity 조회해줘."
+    },
+    {
+      "id": "supported-mixed-flights.search",
+      "language": "mixed",
+      "kind": "supported",
+      "expected_route": "flights.search",
+      "query": "다음달 Lisbon to Oslo flights 검색해줘."
+    },
+    {
+      "id": "supported-mixed-finance.convert_currency",
+      "language": "mixed",
+      "kind": "supported",
+      "expected_route": "finance.convert_currency",
+      "query": "230 EUR를 JPY로 currency convert 해줘."
+    },
+    {
+      "id": "supported-mixed-calendar.list_events",
+      "language": "mixed",
+      "kind": "supported",
+      "expected_route": "calendar.list_events",
+      "query": "this Saturday 내 calendar의 scheduled events를 list 해줘."
+    },
+    {
+      "id": "supported-mixed-maps.directions",
+      "language": "mixed",
+      "kind": "supported",
+      "expected_route": "maps.directions",
+      "query": "station에서 museum까지 walking directions 알려줘."
+    },
+    {
+      "id": "unsupported-mixed-materials.delete_sample",
+      "language": "mixed",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "S-81 materials sample record를 영구 delete 해줘."
+    },
+    {
+      "id": "unsupported-mixed-papers.submit_paper",
+      "language": "mixed",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "논문 manuscript를 journal에 submit 해줘."
+    },
+    {
+      "id": "unsupported-mixed-inventory.adjust_stock",
+      "language": "mixed",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "warehouse inventory의 stock count를 +40 update 해줘."
+    },
+    {
+      "id": "unsupported-mixed-flights.book_ticket",
+      "language": "mixed",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "항공권을 book하고 payment 후 ticket 발권해줘."
+    },
+    {
+      "id": "unsupported-mixed-finance.transfer_money",
+      "language": "mixed",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "내 bank account에서 $300 transfer 해줘."
+    },
+    {
+      "id": "unsupported-mixed-calendar.create_event",
+      "language": "mixed",
+      "kind": "unsupported",
+      "expected_route": null,
+      "query": "매주 Tuesday recurring meeting을 calendar에 create 해줘."
+    }
+  ]
+}
