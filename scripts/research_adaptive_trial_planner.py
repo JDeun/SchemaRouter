@@ -144,7 +144,7 @@ def proposals_from_comments(comments: Any) -> set[str]:
 def candidate_configs(policy: dict[str, Any]):
     grammar = policy["search_space"]
     for values in itertools.product(*(grammar[key] for key in DIMENSIONS)):
-        candidate = dict(zip(DIMENSIONS, values))
+        candidate = dict(zip(DIMENSIONS, values, strict=True))
         # A learned operation filter remains advisory; host policy never changes.
         yield candidate
 
