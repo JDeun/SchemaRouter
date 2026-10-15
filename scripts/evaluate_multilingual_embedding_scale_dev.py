@@ -92,7 +92,7 @@ def expand_catalog(base: list[dict[str, str]], size: int) -> list[dict[str, str]
                 ),
             })
     extra.sort(key=lambda x: hashlib.sha256(
-        f"{SEED}/{x['id']}".encode("utf-8"),
+        f"{SEED}/{x['id']}".encode(),
     ).hexdigest())
     if len(extra) < max(SIZES) - len(base):
         raise ValueError("not enough templated stress distractors")
