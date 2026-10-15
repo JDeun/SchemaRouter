@@ -13,7 +13,10 @@ from scripts.evaluate_multilingual_embedding_cpu_dev import (
     percentile,
 )
 
-CORPUS = Path(__file__).resolve().parents[1] / "benchmarks/multilingual-embedding-cpu-dev-20261015.json"
+CORPUS = (
+    Path(__file__).resolve().parents[1]
+    / "benchmarks/multilingual-embedding-cpu-dev-20261015.json"
+)
 
 
 def test_prospective_corpus_is_disjoint_by_id_and_label_explicit() -> None:
