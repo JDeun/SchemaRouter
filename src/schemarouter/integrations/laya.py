@@ -6,7 +6,13 @@ import threading
 from importlib import import_module
 from typing import Any
 
-from ..decisions import DecisionRequest, DecisionResult, DecisionSelection, validate_decision
+from ..decisions import (
+    DecisionOption,
+    DecisionRequest,
+    DecisionResult,
+    DecisionSelection,
+    validate_decision,
+)
 from ..errors import PlanningError
 
 
@@ -251,6 +257,24 @@ class LayaDecisionBackend:
         return str(device) if device is not None else None
 
     def _decide_sync(self, request: DecisionRequest) -> DecisionResult:
+        # A caller may have bypassed model validation through model_copy.
+        # Validate the entire request before importing/loading local weights,
+        # invoking the SDK or constructing user-visible choice criteria.
+        if (
+            not isinstance(request, DecisionRequest)
+            or not isinstance(request.options, list)
+            or any(not isinstance(option, DecisionOption) for option in request.options)
+        ):
+            raise PlanningError("Laya received an invalid decision request")
+        try:
+            request = DecisionRequest.model_validate(
+                request.model_dump(mode="python", warnings=False),
+                strict=True,
+            )
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise PlanningError("Laya received an invalid decision request") from exc
+        if not request.query.strip():
+            raise PlanningError("Laya received an empty decision query")
         if request.max_selections != 1:
             raise PlanningError(
                 "LayaDecisionBackend supports only single-selection decision requests"
