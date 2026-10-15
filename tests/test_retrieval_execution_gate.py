@@ -107,6 +107,55 @@ async def test_selected_in_scope_plan_reaches_normal_execution_edge_once():
     assert sink.dispatched == [plan]
 
 
+@pytest.mark.asyncio
+async def test_selective_gate_dispatches_a_detached_validated_plan() -> None:
+    retrieval, plan, sink = fixture()
+    # Arguments and fallback lists are caller-owned mutable nested structures.
+    plan.calls[0].arguments["page"] = {"ids": [1]}
+    plan.fallback_routes.append(
+        FallbackRoute(
+            primary_call_index=0,
+            alternatives=[plan.calls[0].model_copy(deep=True)],
+        )
+    )
+
+    await execute_selective_plan(
+        sink,
+        retrieval,
+        plan,
+        policy=RetrievalAbstentionPolicy(min_score=-1e8),
+    )
+    dispatched = sink.dispatched[0]
+    assert dispatched == plan
+    assert dispatched is not plan
+    assert dispatched.calls[0] is not plan.calls[0]
+    assert dispatched.calls[0].arguments is not plan.calls[0].arguments
+    assert dispatched.fallback_routes[0] is not plan.fallback_routes[0]
+
+    # The hostile/accidental post-authorization mutation stays confined to
+    # the original plan, including mutable nested argument and fallback data.
+    plan.calls[0].endpoint = "delete_everything"
+    plan.calls[0].arguments["page"]["ids"].append(2)
+    plan.fallback_routes.clear()
+    assert dispatched.calls[0].endpoint != "delete_everything"
+    assert dispatched.calls[0].arguments == {"page": {"ids": [1]}}
+    assert len(dispatched.fallback_routes) == 1
+
+
+@pytest.mark.asyncio
+async def test_atomic_selective_gate_does_not_dispatch_the_planner_owned_plan() -> None:
+    retrieval, plan, sink = fixture()
+    router = FakeScopedFlow(retrieval, plan)
+    await ainvoke_selective(
+        router,
+        retrieval.query,
+        k=2,
+        policy=RetrievalAbstentionPolicy(min_score=-1e8),
+    )
+    assert router.dispatched == [plan]
+    assert router.dispatched[0] is not plan
+
+
 @pytest.mark.parametrize(("mutation", "reason"), [
     (
         lambda retrieval, plan, sink: setattr(sink.registry, "version", 99),
