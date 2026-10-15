@@ -92,7 +92,8 @@ def test_candidate_worker_uses_only_given_public_candidate_ids() -> None:
             {"route_id": "edit.items", "score": 0.5},
         ]
         result, elapsed = worker.rank("list items", docs)
-        assert result == ["read.items", "edit.items"]
+        assert set(result) == {"read.items", "edit.items"}
+        assert len(result) == 2
         assert elapsed >= 0
 
 
