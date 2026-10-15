@@ -449,3 +449,34 @@ def test_laya_validated_request_roundtrip_preserves_original_options() -> None:
         "candidate:0", "candidate:1",
     ]
     assert len(req.options) == 2
+
+
+@pytest.mark.parametrize(
+    "invalid",
+    ["", "   ", b"opaque", 123, True, "abc\r\nInjected: bad",
+     "abc\x00def", "abc\x7fdef", "abc\tdef"],
+)
+def test_laya_local_token_preflight_fails_before_sdk_use(
+    invalid: Any,
+) -> None:
+    router = FakeRouter(response())
+    with pytest.raises(ValueError, match="token"):
+        LayaDecisionBackend(router=router, token=invalid)
+    assert router.calls == []
+
+
+def test_laya_local_token_error_does_not_log_secret() -> None:
+    dangerous = "secret\r\nInjected: bad"
+    with pytest.raises(ValueError) as exc:
+        LayaDecisionBackend(token=dangerous)
+    assert dangerous not in str(exc.value)
+
+
+def test_laya_local_opaque_token_remains_supported() -> None:
+    router = FakeRouter(response("candidate:0", 0.99))
+    out = choose_sync(
+        LayaDecisionBackend(router=router, token="local-key-dont-echo"),
+        request(),
+    )
+    assert out.selections[0].option_id == "candidate:0"
+    assert "local-key-dont-echo" not in repr(router.calls)
