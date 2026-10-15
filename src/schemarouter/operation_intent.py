@@ -82,7 +82,7 @@ _NEGATED_OR_EXPLANATORY = re.compile(
     flags=re.IGNORECASE,
 )
 
-_COMPILED = {
+_COMPILED: dict[OperationKind, tuple[re.Pattern[str], ...]] = {
     kind: tuple(re.compile(part, flags=re.IGNORECASE | re.ASCII) for part in expressions)
     for kind, expressions in _EXPLICIT_ACTIONS.items()
 }
@@ -114,7 +114,7 @@ def infer_operation_intent(query: str) -> OperationIntentHypothesis:
         return OperationIntentHypothesis(None, "empty_query", ())
     if len(stripped) > 8192:
         return OperationIntentHypothesis(None, "oversized_query", ())
-    matches = tuple(
+    matches: tuple[OperationKind, ...] = tuple(
         kind for kind, expressions in _COMPILED.items()
         if any(pattern.search(stripped) for pattern in expressions)
     )
@@ -124,4 +124,4 @@ def infer_operation_intent(query: str) -> OperationIntentHypothesis:
         return OperationIntentHypothesis(None, "missing_operation", ())
     if len(matches) > 1:
         return OperationIntentHypothesis(None, "ambiguous_operations", matches)
-    return OperationIntentHypothesis(matches[0], "explicit_single_operation", matches)
+    return OperationIntentHypothesis(next(iter(matches)), "explicit_single_operation", matches)
