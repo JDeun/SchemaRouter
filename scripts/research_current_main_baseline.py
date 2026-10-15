@@ -294,6 +294,14 @@ def main() -> int:
         "agent_success": "NOT_MEASURED",
         "output": str(root / "baseline.json"),
     }))
+    for row in result["comparison"]:
+        print(json.dumps({
+            "catalog": row["catalog_size"],
+            "ambiguity": row["ambiguity"],
+            "sr_top3_recall": row["sr_top3_supported_tool_recall"],
+            "schema_lexical_top3_recall": row["schema_lexical_supported_tool_recall"],
+            "unsupported_nonempty": row["sr_unsupported_nonempty_shortlist_rate"],
+        }))
     return 0
 
 
