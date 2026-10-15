@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import math
 import re
+import unicodedata
 from collections.abc import Awaitable, Callable, Set
 from copy import deepcopy
 from dataclasses import dataclass, replace
@@ -67,10 +68,19 @@ from .validation import (
 _TOKEN_RE = re.compile(
     r"[A-Za-z0-9_]+|[가-힣]+|[ぁ-ゖ]+|[ァ-ヺー]+|[一-鿿々〆]+"
 )
+_HALFWIDTH_KATAKANA_RE = re.compile(r"[\uFF66-\uFF9F]+")
+
+
+def _locale_lexical_text(text: str) -> str:
+    """Fold Japanese halfwidth kana only; leave ASCII, units and Korean intact."""
+    return _HALFWIDTH_KATAKANA_RE.sub(
+        lambda match: unicodedata.normalize("NFKC", match.group()),
+        text,
+    )
 
 
 def _normalize(text: str) -> str:
-    return "".join(ch.lower() for ch in text if ch.isalnum())
+    return "".join(ch.lower() for ch in _locale_lexical_text(text) if ch.isalnum())
 
 
 def _semantic_trigrams(value: str) -> frozenset[str]:
@@ -172,7 +182,9 @@ _KOREAN_PARTICLE_SUFFIXES = (
 
 
 def _tokens(text: str) -> set[str]:
-    tokens = {token.lower() for token in _TOKEN_RE.findall(text)}
+    tokens = {
+        token.lower() for token in _TOKEN_RE.findall(_locale_lexical_text(text))
+    }
     expanded = set(tokens)
     for token in tokens:
         if not token or not all("가" <= char <= "힣" for char in token):
