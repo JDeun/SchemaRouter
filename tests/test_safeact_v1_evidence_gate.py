@@ -606,3 +606,50 @@ def test_direct_immutable_typed_observation_still_allows_reviewed_predicate() ->
     ))
     assert gate.check("refund_issue", {"refund_amount": 30}).allowed
     assert not gate.check("refund_issue", {"refund_amount": 60}).allowed
+
+
+def test_reviewer_contract_mutation_after_gate_creation_cannot_relax_policy() -> None:
+    # Dataclass(frozen=True) can be bypassed by object.__setattr__.
+    # The trusted host must take a distinct policy snapshot at construction.
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    condition = ValueCondition(
+        "charge_read", "C2", "amount", "lte",
+        "action_argument", "refund_amount",
+    )
+    author_contract = ActionContract(
+        "refund_issue",
+        (("charge_read", "C2", frozenset({"amount"})),),
+        value_conditions=(condition,),
+    )
+    gate = EvidenceGate(author_contract)
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount"}), values=(("amount", 50),),
+    ))
+    assert gate.check("refund_issue", {"refund_amount": 30}).allowed
+    assert not gate.check("refund_issue", {"refund_amount": 70}).allowed
+
+    # The external author copy must not become execution authority.
+    object.__setattr__(author_contract, "action", "authorize_transfer")
+    object.__setattr__(author_contract, "required_observations", ())
+    object.__setattr__(author_contract, "value_conditions", ())
+    object.__setattr__(condition, "operator", "gte")
+    assert not gate.check("authorize_transfer", {"refund_amount": 70}).allowed
+    assert not gate.check("refund_issue", {"refund_amount": 70}).allowed
+    assert gate.check("refund_issue", {"refund_amount": 30}).allowed
+    assert gate.contract is not author_contract
+    assert gate.contract.value_conditions[0] is not condition
+
+
+def test_mutating_caller_argument_bindings_does_not_retarget_existing_gate() -> None:
+    bindings = [("charge_id", "C2")]
+    author_contract = ActionContract(
+        "refund_issue", (("charge_read", "C2", frozenset({"owner"})),),
+        argument_bindings=bindings,
+    )
+    gate = EvidenceGate(author_contract)
+    gate.observe(Observation("charge_read", "C2", frozenset({"owner"})))
+    bindings[0] = ("charge_id", "C3")
+    bindings.clear()
+    assert gate.check("refund_issue", {"charge_id": "C2"}).allowed
+    assert not gate.check("refund_issue", {"charge_id": "C3"}).allowed
