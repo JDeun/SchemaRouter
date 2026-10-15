@@ -146,6 +146,7 @@ def evaluate(
 ) -> dict[str, Any]:
     # Imported only when explicitly conducting a real-model run.
     import resource  # Linux CPU Actions only; avoid importing on other platforms.
+
     import torch
     from sentence_transformers import SentenceTransformer
 
