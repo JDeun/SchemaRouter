@@ -323,10 +323,16 @@ class EvidenceGate:
         return "missing_required_observation"
 
     def dispatch(self, action: str, args: Mapping[str, Any], execute: Any) -> Any:
-        decision = self.check(action, args)
+        # Evaluate and dispatch the *same* action argument snapshot. A mutable
+        # Mapping may change between check() and dict(args), otherwise letting
+        # a smaller authorized refund become a larger executed one.
+        if not isinstance(args, Mapping):
+            raise PermissionError("evidence incomplete: invalid_action_arguments")
+        safe_args = dict(args)
+        decision = self.check(action, safe_args)
         if not decision.allowed:
             # GateDecision.missing remains detailed for trusted host diagnostics.
             # The untrusted agent-facing exception must expose only categories.
             labels = sorted({self._safe_denial_label(x) for x in decision.missing})
             raise PermissionError("evidence incomplete: " + "; ".join(labels))
-        return execute(action, dict(args))
+        return execute(action, safe_args)
