@@ -2212,15 +2212,27 @@ class RegistryExecutor:
     def _project(value: Any, fields: list[str], endpoint: EndpointSpec) -> Any:
         if not fields:
             return value
+        # HTTP 204 / explicit no-body responses have no source content to
+        # disclose and must retain their existing None result semantics.
+        if value is None:
+            return None
+        # A selected-field allowlist applies to every result item. Passing
+        # through primitive values from a mixed array (or a primitive root)
+        # exposes undeclared provider data to the calling agent. Reject the
+        # malformed shape rather than returning unprojected source content.
         if isinstance(value, list):
+            if any(not isinstance(item, dict) for item in value):
+                raise PlanValidationError(
+                    "selected output projection requires object array items"
+                )
             return [
                 RegistryExecutor._project(item, fields, endpoint)
-                if isinstance(item, dict)
-                else deepcopy(item)
                 for item in value
             ]
         if not isinstance(value, dict):
-            return value
+            raise PlanValidationError(
+                "selected output projection requires an object or object array"
+            )
 
         field_map = {field.name: field for field in endpoint.output_fields}
         projected: dict[str, Any] = {}

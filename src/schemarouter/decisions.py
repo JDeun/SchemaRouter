@@ -87,10 +87,24 @@ DecisionOptionTextCallable = Callable[[DecisionOption], str]
 
 
 def validate_decision(request: DecisionRequest, result: DecisionResult) -> DecisionResult:
-    """Fail closed if a backend returns anything outside the offered choice set."""
+    """Fail closed on forged result envelopes and unoffered option IDs.
+
+    Pydantic model_copy(update=...) bypasses nested field and model validators.
+    A backend is an untrusted authority for both its chosen IDs and the shape
+    of its returned result, even if it hands back a DecisionResult instance.
+    """
+    if not isinstance(result, DecisionResult):
+        raise PlanningError("decision backend returned an invalid typed result")
+    try:
+        verified = DecisionResult.model_validate(
+            result.model_dump(mode="python", warnings=False),
+            strict=True,
+        )
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise PlanningError("decision backend returned an invalid typed result") from exc
 
     allowed = {option.id for option in request.options}
-    selected = [selection.option_id for selection in result.selections]
+    selected = [selection.option_id for selection in verified.selections]
 
     if len(selected) != len(set(selected)):
         raise PlanningError("decision backend returned duplicate option IDs")
@@ -101,7 +115,7 @@ def validate_decision(request: DecisionRequest, result: DecisionResult) -> Decis
         )
     if len(selected) > request.max_selections:
         raise PlanningError("decision backend exceeded max_selections")
-    return result
+    return verified
 
 
 class _ValidatedAwaitable:
@@ -255,12 +269,21 @@ class EmbeddingDecisionBackend:
 
     @staticmethod
     def _cosine(left: list[float], right: list[float]) -> float:
-        left_norm = math.sqrt(sum(value * value for value in left))
-        right_norm = math.sqrt(sum(value * value for value in right))
-        if left_norm == 0.0 or right_norm == 0.0:
+        # Squaring an otherwise finite embedding can overflow (or underflow)
+        # and make opposite vectors appear maximally similar: min(1, nan)
+        # evaluates to 1. Scale each vector before computing either its norm
+        # or the dot product, so no unbounded intermediate is constructed.
+        left_scale = max(abs(value) for value in left)
+        right_scale = max(abs(value) for value in right)
+        if left_scale == 0.0 or right_scale == 0.0:
             raise PlanningError("embedding backend returned a zero-norm vector")
-        value = sum(a * b for a, b in zip(left, right, strict=True)) / (
-            left_norm * right_norm
+        left_scaled = [value / left_scale for value in left]
+        right_scaled = [value / right_scale for value in right]
+        left_norm = math.sqrt(math.fsum(value * value for value in left_scaled))
+        right_norm = math.sqrt(math.fsum(value * value for value in right_scaled))
+        value = math.fsum(
+            (a / left_norm) * (b / right_norm)
+            for a, b in zip(left_scaled, right_scaled, strict=True)
         )
         return max(-1.0, min(1.0, value))
 
@@ -348,24 +371,52 @@ class FirstOptionDecisionBackend:
         )
 
 
+def _validated_choice_request(request: DecisionRequest) -> DecisionRequest:
+    """Reject a bypassed/forged request before asking any decision provider.
+
+    model_copy(update=...) does not validate nested options or numeric bounds.
+    A fresh snapshot also prevents caller-side list mutations from expanding
+    the set of options after the host has invoked a paid/local backend.
+    """
+    if not isinstance(request, DecisionRequest):
+        raise PlanningError("decision request must be a valid typed request")
+    try:
+        validated = DecisionRequest.model_validate(
+            request.model_dump(mode="python", warnings=False),
+            strict=True,
+        )
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise PlanningError("decision request must be a valid typed request") from exc
+    if not validated.query.strip():
+        raise PlanningError("decision request query must not be empty")
+    return validated
+
+
 def choose_sync(
     backend: DecisionBackend,
     request: DecisionRequest,
 ) -> DecisionResult:
-    result = backend.decide(request)
+    verified = _validated_choice_request(request)
+    # The backend is not the authority for the offered option set. Hand it
+    # an independent snapshot, then authorize against the host-owned copy.
+    # A callable provider may mutate even a Pydantic model's nested objects.
+    provider_request = _validated_choice_request(verified)
+    result = backend.decide(provider_request)
     if inspect.isawaitable(result):
         close = getattr(result, "close", None)
         if callable(close):
             close()
         raise PlanningError("the configured decision backend is asynchronous; use an async path")
-    return validate_decision(request, result)
+    return validate_decision(verified, result)
 
 
 async def choose_async(
     backend: DecisionBackend,
     request: DecisionRequest,
 ) -> DecisionResult:
-    result = backend.decide(request)
+    verified = _validated_choice_request(request)
+    provider_request = _validated_choice_request(verified)
+    result = backend.decide(provider_request)
     if inspect.isawaitable(result):
         result = await result
-    return validate_decision(request, result)
+    return validate_decision(verified, result)
