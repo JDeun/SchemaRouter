@@ -41,6 +41,18 @@ jobs:
         run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
       - name: Verify fixed safe search and one real planner CPU experiment
         run: python -m pytest -q tests/test_research_actions_only_search.py
+      - name: Exercise six generated configurations in GitHub Actions CPU
+        run: |
+          python -m scripts.research_actions_only_search \
+            --trials 6 --seconds 180 --seed 1412 \
+            --output-dir artifacts/actions-only-search
+      - name: Preserve PR research proposal decisions and negative results
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: actions-only-cpu-search-pr-${{ github.run_id }}
+          path: artifacts/actions-only-search/
+          retention-days: 14
+          if-no-files-found: error
 
   adaptive-research:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
