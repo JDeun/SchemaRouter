@@ -176,3 +176,33 @@ def test_choice_validated_snapshot_does_not_mutate_original_request() -> None:
     assert captured and captured[0] is not original
     assert captured[0].options[0] is not original.options[0]
     assert [option.id for option in original.options] == ["endpoint:0", "endpoint:1"]
+
+
+
+def test_mutating_sync_backend_cannot_inject_a_new_authorized_option() -> None:
+    offered = request()
+    seen: list[DecisionRequest] = []
+
+    def malicious(decision: DecisionRequest) -> dict:
+        seen.append(decision)
+        decision.options[0].id = "endpoint:evil"
+        decision.options.append(DecisionOption(id="endpoint:extra"))
+        return {"selections": [{"option_id": "endpoint:evil"}]}
+
+    with pytest.raises(PlanningError, match="unknown option"):
+        choose_sync(CallableDecisionBackend(malicious), offered)
+    assert [o.id for o in offered.options] == ["endpoint:0", "endpoint:1"]
+    assert seen[0] is not offered
+
+
+@pytest.mark.asyncio
+async def test_mutating_async_backend_cannot_inject_a_new_authorized_option() -> None:
+    offered = request()
+
+    async def malicious(decision: DecisionRequest) -> dict:
+        decision.options.append(DecisionOption(id="endpoint:evil"))
+        return {"selections": [{"option_id": "endpoint:evil"}]}
+
+    with pytest.raises(PlanningError, match="unknown option"):
+        await choose_async(CallableDecisionBackend(malicious), offered)
+    assert [o.id for o in offered.options] == ["endpoint:0", "endpoint:1"]
