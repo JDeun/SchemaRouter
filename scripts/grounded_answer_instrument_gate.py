@@ -60,6 +60,16 @@ def evaluate_instrument_readiness(
     """
     if not isinstance(policy, InstrumentReadinessPolicy):
         raise ValueError("an explicit preregistered readiness policy is required")
+    # frozen=True is not a trust boundary: object.__setattr__ can still change
+    # a caller-held dataclass after preregistration and bypass __post_init__.
+    # Verify a fresh typed snapshot before reading any threshold.
+    policy = InstrumentReadinessPolicy(
+        min_supported=policy.min_supported,
+        min_unsupported=policy.min_unsupported,
+        min_grounded_rate=policy.min_grounded_rate,
+        max_false_match_rate=policy.max_false_match_rate,
+        max_false_refusal_rate=policy.max_false_refusal_rate,
+    )
     if not isinstance(frozen_cases, Mapping) or not frozen_cases:
         raise ValueError("nonempty frozen case manifest required")
     if isinstance(observed_rows, (str, bytes)) or not isinstance(
@@ -70,6 +80,9 @@ def evaluate_instrument_readiness(
     known: set[str] = set()
     supported = grounded = unsupported = bad_match = bad_refusal = 0
     supported_route_observed = 0
+    supported_tool_task_complete = 0
+    supported_missing_dispatch = 0
+    unsupported_tool_calls = 0
     violations = 0
     for row in observed_rows:
         if not isinstance(row, Mapping):
@@ -95,12 +108,14 @@ def evaluate_instrument_readiness(
         if expected_no_fit:
             unsupported += 1
             bad_match += int(result["unsupported_false_match"])
+            unsupported_tool_calls += int(result["unsupported_tool_call"])
             if "grounded" in row:
                 raise ValueError("no-fit tasks may not receive factual scores")
         else:
             fact_count = label.get("expected_fact_count")
             supported += 1
             bad_refusal += int(result["supported_false_refusal"])
+            supported_missing_dispatch += int(result["supported_missing_dispatch"])
             truth = classify_grounded_answer_episode(
                 row.get("grounded"), expected_fact_count=fact_count
             )
@@ -121,6 +136,12 @@ def evaluate_instrument_readiness(
                 and row["no_fit"]["tool_call_count"] > 0
             )
             supported_route_observed += int(route_observed)
+            # Tool-task completion is a distinct observable outcome. Do not
+            # infer grounded facts from it or count a detached model assertion
+            # as a routed task when the physical calls were never recorded.
+            supported_tool_task_complete += int(
+                truth["tool_task_complete"] and route_observed
+            )
             grounded += int(truth["answer_grounded_complete"] and route_observed)
 
     if known != set(frozen_cases):
@@ -131,6 +152,9 @@ def evaluate_instrument_readiness(
         and unsupported >= policy.min_unsupported
     )
     grounded_rate = grounded / supported if supported else None
+    tool_task_complete_rate = (
+        supported_tool_task_complete / supported if supported else None
+    )
     false_match_rate = bad_match / unsupported if unsupported else None
     false_refusal_rate = bad_refusal / supported if supported else None
     qualifies = (
@@ -148,7 +172,11 @@ def evaluate_instrument_readiness(
         "qualified": bool(qualifies),
         "supported_cases": supported,
         "supported_route_observed_cases": supported_route_observed,
+        "supported_missing_dispatch_cases": supported_missing_dispatch,
+        "supported_tool_task_complete_cases": supported_tool_task_complete,
+        "supported_tool_task_complete_rate": tool_task_complete_rate,
         "unsupported_cases": unsupported,
+        "unsupported_tool_call_cases": unsupported_tool_calls,
         "grounded_success_rate": grounded_rate,
         "unsupported_false_match_rate": false_match_rate,
         "supported_false_refusal_rate": false_refusal_rate,

@@ -224,3 +224,116 @@ def test_consistent_host_authority_violation_blocks_confirmation() -> None:
             frozen_cases=cases, observed_rows=rows,
             policy=policy(min_grounded_rate=0.5),
         )
+
+
+def test_report_separates_tool_task_completion_from_grounded_facts() -> None:
+    cases, rows = samples()
+    # The host finished both routed tasks, but the final answer on s2 was
+    # malformed. This must not be collapsed into one apparent success score.
+    rows[1]["grounded"]["source_list_valid"] = False
+    result = evaluate_instrument_readiness(
+        frozen_cases=cases, observed_rows=rows,
+        policy=policy(min_grounded_rate=0.5),
+    )
+    assert result["supported_route_observed_cases"] == 2
+    assert result["supported_tool_task_complete_cases"] == 2
+    assert result["supported_tool_task_complete_rate"] == 1.0
+    assert result["grounded_success_rate"] == 0.5
+
+
+def test_claimed_tool_task_completion_without_host_calls_is_not_counted() -> None:
+    cases, rows = samples()
+    rows[0]["no_fit"]["tool_call_count"] = 0
+    result = evaluate_instrument_readiness(
+        frozen_cases=cases, observed_rows=rows,
+        policy=policy(min_grounded_rate=0.5),
+    )
+    assert result["supported_route_observed_cases"] == 1
+    assert result["supported_tool_task_complete_cases"] == 1
+    assert result["supported_tool_task_complete_rate"] == 0.5
+    assert result["grounded_success_rate"] == 0.5
+
+
+def test_report_distinguishes_incomplete_tool_task_from_valid_answer_envelope() -> None:
+    cases, rows = samples()
+    rows[1]["grounded"]["passed"] = False
+    result = evaluate_instrument_readiness(
+        frozen_cases=cases, observed_rows=rows,
+        policy=policy(min_grounded_rate=0.5),
+    )
+    assert result["supported_tool_task_complete_rate"] == 0.5
+    assert result["grounded_success_rate"] == 0.5
+
+
+@pytest.mark.parametrize(
+    ("attribute", "forged"),
+    [
+        ("min_supported", 0),
+        ("min_unsupported", True),
+        ("min_grounded_rate", -1.0),
+        ("max_false_match_rate", float("inf")),
+        ("max_false_refusal_rate", float("nan")),
+        ("max_false_refusal_rate", "1"),
+    ],
+)
+def test_caller_modified_frozen_policy_cannot_bypass_preregistration(
+    attribute: str, forged: object,
+) -> None:
+    cases, rows = samples()
+    supplied_policy = policy()
+    # Dataclass freezing is for normal clients, not a security boundary.
+    object.__setattr__(supplied_policy, attribute, forged)
+    with pytest.raises(ValueError, match="must be"):
+        evaluate_instrument_readiness(
+            frozen_cases=cases,
+            observed_rows=rows,
+            policy=supplied_policy,
+        )
+
+
+def test_revalidated_readiness_policy_keeps_ordinary_qualification() -> None:
+    cases, rows = samples()
+    result = require_instrument_ready(
+        frozen_cases=cases, observed_rows=rows, policy=policy(),
+    )
+    assert result["qualified"] is True
+    assert result["supported_cases"] == 2
+
+
+def test_grounded_readiness_reports_supported_missing_dispatch_separately() -> None:
+    cases, rows = samples()
+    rows[0]["no_fit"]["tool_call_count"] = 0
+    result = evaluate_instrument_readiness(
+        frozen_cases=cases, observed_rows=rows,
+        policy=policy(min_grounded_rate=0.5),
+    )
+    assert result["supported_missing_dispatch_cases"] == 1
+    assert result["supported_route_observed_cases"] == 1
+    assert result["supported_tool_task_complete_cases"] == 1
+    assert result["unsupported_tool_call_cases"] == 0
+
+
+@pytest.mark.parametrize("physical_call", [0, 1])
+def test_grounded_readiness_reports_unsupported_actual_call_vs_no_call(
+    physical_call: int,
+) -> None:
+    cases, rows = samples()
+    rows[2]["no_fit"]["abstained"] = False
+    rows[2]["no_fit"]["tool_call_count"] = physical_call
+    result = evaluate_instrument_readiness(
+        frozen_cases=cases, observed_rows=rows,
+        policy=policy(max_false_match_rate=1.0),
+    )
+    assert result["unsupported_false_match_rate"] == 1.0
+    assert result["unsupported_tool_call_cases"] == physical_call
+    assert result["supported_missing_dispatch_cases"] == 0
+    # This is diagnostic decomposition, not a new secret promotion threshold.
+
+
+def test_clean_instrument_has_no_physical_no_fit_or_missing_dispatch() -> None:
+    cases, rows = samples()
+    result = require_instrument_ready(
+        frozen_cases=cases, observed_rows=rows, policy=policy(),
+    )
+    assert result["unsupported_tool_call_cases"] == 0
+    assert result["supported_missing_dispatch_cases"] == 0

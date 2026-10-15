@@ -12,7 +12,7 @@ from typing import Literal
 
 from pydantic import field_validator, model_validator
 
-from .models import CapabilityCandidate, CapabilityRetrieval, StrictModel
+from .models import CapabilityCandidate, CapabilityRetrieval, FieldSpec, StrictModel
 
 
 class RetrievalAbstentionPolicy(StrictModel):
@@ -91,8 +91,22 @@ def apply_retrieval_abstention(
     # into this public boundary. Reject it before attribute access, and avoid
     # serializing the untrusted shortlist back to the caller.
     raw_candidates = retrieval.candidates
-    malformed_candidates = not isinstance(raw_candidates, list) or any(
-        not isinstance(candidate, CapabilityCandidate) for candidate in raw_candidates
+    malformed_candidates = (
+        not isinstance(raw_candidates, list)
+        or any(
+            not isinstance(candidate, CapabilityCandidate)
+            for candidate in raw_candidates
+        )
+        or any(
+            not isinstance(candidate.output_fields, list)
+            or any(
+                not isinstance(field, FieldSpec)
+                or type(field.name) is not str
+                or not field.name.strip()
+                for field in candidate.output_fields
+            )
+            for candidate in raw_candidates
+        )
     )
     candidates = [] if malformed_candidates else raw_candidates
     scores = [candidate.score for candidate in candidates]

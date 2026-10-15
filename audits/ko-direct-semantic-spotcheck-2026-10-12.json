@@ -75,9 +75,10 @@
     },
     {
       "path": "concepts/field-first-execution.md",
-      "en_blob": "ed612ae41668e6ae76d5981fd932f78ac65b8e56",
-      "ko_blob": "20800a14a891a2923a381bcc0751e892c35bb3b0",
-      "notes": "Read both EN and KO: provider-neutral field identity/mapping, caller-scoped evidence, default max_calls=1, two-stage projection, fail-closed unit datatype and affine conversion, exact qualifier matching/token-boundary limits."
+      "en_blob": "f905a3063932e8a6fa1920a65e1f5f943b6a89b0",
+      "ko_blob": "7b51313682d0c630556eae7b1355d3a28e4f0a1e",
+      "notes": "Read both EN and KO: provider-neutral field identity/mapping, caller-scoped evidence, default max_calls=1, two-stage projection, fail-closed unit datatype and affine conversion, exact qualifier matching/token-boundary limits.",
+      "revision_checkpoint_2026_10_15": "AI-assisted direct EN/KO pair reread after null-presence field contract documentation changes. Both now distinguish explicit null-only value from non-null observation; preserve canonical unit/schema on null, and state presence does not certify correctness or source authorization. Not independent human sign-off."
     },
     {
       "path": "concepts/planning.md",
