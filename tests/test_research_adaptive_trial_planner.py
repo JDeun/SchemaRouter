@@ -7,8 +7,15 @@ import json
 import pytest
 
 from scripts.research_adaptive_trial_planner import (
-    MARKER, END, candidate_configs, digest, issue_comment, load_evidence,
-    load_policy, make_proposal, proposals_from_comments,
+    END,
+    MARKER,
+    candidate_configs,
+    digest,
+    issue_comment,
+    load_evidence,
+    load_policy,
+    make_proposal,
+    proposals_from_comments,
 )
 
 
