@@ -89,3 +89,40 @@ The exact frozen v0.14 workflow remains **dry-run** as before.
   attested** at runtime in the first iteration; inspect the downloaded
   checkpoint metadata before claiming full reproduction.
 - Cross-check real CPU memory and latency, not just success of the Action.
+
+
+## Extensible inventory and improvement discovery
+
+The new `benchmarks/operation-fit-conveyor-v1-registry.json` contains exactly 13
+named entries, with explicit status and provenance boundaries:
+
+| Status | Count | Meaning |
+| --- | ---: | --- |
+| `active_stage` | 2 | Current offline lexical + CPU NLI pipeline |
+| `completed_reference` | 4 | Prior MiniLM/E5, Laya, exemplar and cross-encoder DEV studies; references only, not automatically rerun |
+| `incomparable_frozen_reference` | 2 | Earlier BGE / v0.14 research; distinct source cohorts, never pooled |
+| `blocked` | 5 | Independent cases, real provider catalog, task-trained classifier, hosted Jev and real tool no-call |
+
+The registry is an **inventory, not a task scheduler**. Any stage not in the
+explicit allowlist remains blocked; source run/artifact IDs of historical
+studies are retained for provenance, not counted as new model validation.
+Changed corpus hashes, missing report documents, registered identities or
+mutated status flags fail preflight.
+
+The `development_gate` job also emits `opportunities.json`, joining the
+**same current-run** baseline and NLI per-case predictions by immutable case
+ID. It computes disagreement counts by language and operation, refusal
+patterns, negative-case false acceptance, and individual failures. It
+generates human-reviewable hypotheses (localized NLI hypotheses, a
+task-trained contrastive selector and explicit negative veto), each marked
+`PROPOSED_UNAPPROVED_NO_AUTO_EXECUTION`. These hypotheses **do not
+demonstrate actual improvements**, choose hyperparameters, mutate the model
+or add an automatic experiment. Prior independent and 0.14 heldout data
+cannot be consumed by this stage.
+
+A future approved and genuinely independent experiment must be separately
+registered and reviewed with a pinned source revision, artifact integrity,
+explicit compute budget, distinct calibration/confirmation splits, and no-call
+execution safety evidence before eligibility can change. Until then,
+`automatic_dispatch_enabled=false` and no release/tool authority can be
+derived from any output.
