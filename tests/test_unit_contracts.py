@@ -1444,3 +1444,53 @@ async def test_field_contracts_do_not_invent_metadata_on_empty_result() -> None:
     assert result.data == {}
     assert result.projected_fields == ["optional_density"]
     assert result.field_contracts == {}
+
+
+@pytest.mark.asyncio
+async def test_null_projected_value_does_not_advertise_factual_contract() -> None:
+    field = FieldSpec(
+        name="confidence",
+        semantic_id="results.confidence",
+        json_schema={"type": ["number", "null"]},
+    )
+    endpoint = EndpointSpec(
+        name="read", read_only=True, output_fields=[field],
+    )
+    tool = ToolSpec(name="nullable_records", endpoints=[endpoint])
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    call = ToolCall(
+        tool=tool.name,
+        endpoint=endpoint.name,
+        fields=["confidence"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+    executor = RegistryExecutor(registry)
+    executor.bind(tool.name, lambda name, args: {"confidence": None})
+    null_result = await executor.execute_call(call)
+    assert null_result.data == {"confidence": None}
+    assert null_result.projected_fields == ["confidence"]
+    assert null_result.field_contracts == {}
+
+    executor.bind(tool.name, lambda name, args: {"confidence": 0.75})
+    measured = await executor.execute_call(call)
+    assert measured.data == {"confidence": 0.75}
+    assert measured.field_contracts["confidence"].semantic_id == "results.confidence"
+
+
+def test_all_null_array_is_not_a_factual_field_contract() -> None:
+    field = FieldSpec(
+        name="values",
+        semantic_id="results.values",
+        json_schema={"type": "array", "items": {"type": ["number", "null"]}},
+    )
+    endpoint = EndpointSpec(
+        name="read", read_only=True, output_fields=[field],
+    )
+    assert RegistryExecutor._result_field_contracts(
+        ["values"], endpoint, {"values": [None, None]}
+    ) == {}
+    assert set(RegistryExecutor._result_field_contracts(
+        ["values"], endpoint, {"values": [None, 1.2]}
+    )) == {"values"}
