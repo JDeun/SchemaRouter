@@ -31,6 +31,9 @@ jobs:
           python scripts/evaluate_opensource_routing_patterns_dev.py --preflight
 
   real-patterns-cpu:
+    # Initial actual weights completed successfully on run 38749636821.
+    # Subsequent model downloads are manual, never implicit PR CI reruns.
+    if: github.event_name == 'workflow_dispatch'
     needs: offline-contract
     runs-on: ubuntu-latest
     timeout-minutes: 75
