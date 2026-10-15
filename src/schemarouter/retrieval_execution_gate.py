@@ -179,6 +179,10 @@ async def execute_selective_plan(
         raise TypeError("retrieval must be a trusted CapabilityRetrieval")
     if not isinstance(plan, ExecutionPlan):
         raise TypeError("plan must be a trusted ExecutionPlan")
+    # Preserve the pre-existing provenance denial for a forged boolean,
+    # non-integer or stale registry identity before strict deep validation.
+    if type(plan.registry_version) is not int:
+        _deny("non-executable retrieval, stale registry or mismatched query/plan provenance")
     try:
         dispatch_plan = ExecutionPlan.model_validate(
             plan.model_dump(mode="python", warnings=False),
