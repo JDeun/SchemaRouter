@@ -51,7 +51,17 @@ class EvidenceGate:
     def __init__(self, contract: ActionContract) -> None:
         if not contract.action or not contract.required_observations:
             raise ValueError("independent action contract must specify required observations")
-        for _, record_id, _ in contract.required_observations:
+        for tool, record_id, fields in contract.required_observations:
+            # An empty required field set is vacuously satisfied by any
+            # observation. Dataclass construction cannot bypass source identity
+            # and nonempty typed-field constraints of a reviewed contract.
+            if (
+                type(tool) is not str or not tool.strip()
+                or type(record_id) is not str or not record_id.strip()
+                or type(fields) is not frozenset or not fields
+                or any(type(field) is not str or not field.strip() for field in fields)
+            ):
+                raise ValueError("invalid required observation contract")
             if record_id.startswith("$action.") and not record_id[8:].isidentifier():
                 raise ValueError("malformed action-bound observation record")
         known_records = {record_id for _, record_id, _ in contract.required_observations}
