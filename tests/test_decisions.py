@@ -206,3 +206,60 @@ async def test_mutating_async_backend_cannot_inject_a_new_authorized_option() ->
     with pytest.raises(PlanningError, match="unknown option"):
         await choose_async(CallableDecisionBackend(malicious), offered)
     assert [o.id for o in offered.options] == ["endpoint:0", "endpoint:1"]
+
+
+@pytest.mark.parametrize(
+    "forgery",
+    [
+        {"selections": ["endpoint:0"]},
+        {"selections": [DecisionSelection(option_id="endpoint:0").model_copy(
+            update={"option_id": ["endpoint:0"]}
+        )]},
+        {"selections": [DecisionSelection(option_id="endpoint:0").model_copy(
+            update={"score": math.nan}
+        )]},
+        {"abstained": True},
+        {"metadata": ["forged"]},
+    ],
+)
+def test_forged_backend_result_is_rejected_with_controlled_error(
+    forgery: dict[str, object],
+) -> None:
+    valid = DecisionResult(
+        selections=[DecisionSelection(option_id="endpoint:0", score=1.0)]
+    )
+    forged = valid.model_copy(update=forgery)
+    with pytest.raises(PlanningError, match="invalid typed result"):
+        choose_sync(CallableDecisionBackend(lambda _: forged), request())
+
+
+@pytest.mark.asyncio
+async def test_async_forged_backend_result_is_rejected() -> None:
+    async def forged(_: DecisionRequest) -> DecisionResult:
+        return DecisionResult(
+            selections=[DecisionSelection(option_id="endpoint:0")]
+        ).model_copy(update={"selections": [{"option_id": "endpoint:0", "score": 2.0}]})
+
+    with pytest.raises(PlanningError, match="invalid typed result"):
+        await choose_async(CallableDecisionBackend(forged), request())
+
+
+def test_direct_backend_must_return_typed_result() -> None:
+    class InvalidBackend:
+        def decide(self, _: DecisionRequest) -> dict[str, object]:
+            return {"selections": [{"option_id": "endpoint:0"}]}
+
+    with pytest.raises(PlanningError, match="invalid typed result"):
+        choose_sync(InvalidBackend(), request())  # type: ignore[arg-type]
+
+
+def test_validated_backend_result_is_independent_of_provider_mutation() -> None:
+    source = DecisionResult(
+        selections=[DecisionSelection(option_id="endpoint:0", score=1.0)]
+    )
+    accepted = choose_sync(CallableDecisionBackend(lambda _: source), request())
+    assert accepted is not source
+    assert accepted.selections[0] is not source.selections[0]
+
+    source.selections[0].option_id = "endpoint:evil"
+    assert accepted.selections[0].option_id == "endpoint:0"
