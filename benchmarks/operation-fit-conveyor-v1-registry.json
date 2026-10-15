@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "experiment": "operation-fit-conveyor-v1",
+  "cohort_sha256": "18fce09092e24ebb44d2df14d3224daa47fec9a2df9134d4a0c708b9935dc7d7",
+  "classification": "dev_research_index_not_execution_schedule",
+  "automatic_dispatch_enabled": false,
+  "independent_qualification": false,
+  "product_promotion": false,
+  "allowed_active_ids": [
+    "lexical_baseline",
+    "multilingual_nli_forced_and_gate"
+  ],
+  "entries": [
+    {
+      "id": "lexical_baseline",
+      "status": "active_stage",
+      "tier": "current_dev",
+      "workflow": "research-operation-fit-conveyor-dev.yml",
+      "source_report": null,
+      "run_id": null,
+      "artifact_id": null,
+      "corpus_sha256": "18fce09092e24ebb44d2df14d3224daa47fec9a2df9134d4a0c708b9935dc7d7",
+      "blocker": null
+    },
+    {
+      "id": "multilingual_nli_forced_and_gate",
+      "status": "active_stage",
+      "tier": "current_dev",
+      "workflow": "research-operation-fit-conveyor-dev.yml",
+      "source_report": null,
+      "run_id": null,
+      "artifact_id": null,
+      "corpus_sha256": "18fce09092e24ebb44d2df14d3224daa47fec9a2df9134d4a0c708b9935dc7d7",
+      "blocker": null
+    },
+    {
+      "id": "minilm_and_e5_prior",
+      "status": "completed_reference",
+      "tier": "prior_dev_same_corpus",
+      "workflow": null,
+      "source_report": "benchmarks/operation-intent-trilingual-dev-20261015-results.md",
+      "run_id": 38741760461,
+      "artifact_id": 11976433197,
+      "corpus_sha256": "18fce09092e24ebb44d2df14d3224daa47fec9a2df9134d4a0c708b9935dc7d7",
+      "blocker": null
+    },
+    {
+      "id": "laya_choice_and_noul_prior",
+      "status": "completed_reference",
+      "tier": "prior_dev_same_corpus",
+      "workflow": null,
+      "source_report": "benchmarks/laya-operation-intent-trilingual-dev-20261015-results.md",
+      "run_id": 38745998518,
+      "artifact_id": 11978677115,
+      "corpus_sha256": "18fce09092e24ebb44d2df14d3224daa47fec9a2df9134d4a0c708b9935dc7d7",
+      "blocker": null
+    },
+    {
+      "id": "semantic_router_style_exemplars_prior",
+      "status": "completed_reference",
+      "tier": "prior_dev_same_corpus",
+      "workflow": null,
+      "source_report": "benchmarks/opensource-routing-patterns-dev-20261015-results.md",
+      "run_id": 38749636821,
+      "artifact_id": 11980486661,
+      "corpus_sha256": "18fce09092e24ebb44d2df14d3224daa47fec9a2df9134d4a0c708b9935dc7d7",
+      "blocker": null
+    },
+    {
+      "id": "retrieval_top3_crossencoder_prior",
+      "status": "completed_reference",
+      "tier": "prior_dev_same_corpus",
+      "workflow": null,
+      "source_report": "benchmarks/opensource-routing-patterns-dev-20261015-results.md",
+      "run_id": 38749636821,
+      "artifact_id": 11980486661,
+      "corpus_sha256": "18fce09092e24ebb44d2df14d3224daa47fec9a2df9134d4a0c708b9935dc7d7",
+      "blocker": null
+    },
+    {
+      "id": "bge_sibling_contrastive_010",
+      "status": "incomparable_frozen_reference",
+      "tier": "legacy_different_cohort",
+      "workflow": null,
+      "source_report": "benchmarks/research-experiment-ledger.json",
+      "run_id": 36246386089,
+      "artifact_id": 10907304722,
+      "corpus_sha256": null,
+      "blocker": "Different cohort and scoring contract; never pool with 72 DEV requests"
+    },
+    {
+      "id": "agent_utility_014",
+      "status": "incomparable_frozen_reference",
+      "tier": "legacy_different_cohort",
+      "workflow": null,
+      "source_report": "benchmarks/research-experiment-ledger.json",
+      "run_id": null,
+      "artifact_id": null,
+      "corpus_sha256": null,
+      "blocker": "Historical frozen 0.14 and dry-run-only controller; no replay or pooling"
+    },
+    {
+      "id": "new_query_disjoint_holdout",
+      "status": "blocked",
+      "tier": "future_independent",
+      "workflow": null,
+      "source_report": null,
+      "run_id": null,
+      "artifact_id": null,
+      "corpus_sha256": null,
+      "blocker": "Needs external authorship, blind annotation and preregistered query-disjoint corpus"
+    },
+    {
+      "id": "authentic_tool_catalog_100_250_500",
+      "status": "blocked",
+      "tier": "future_independent",
+      "workflow": null,
+      "source_report": null,
+      "run_id": null,
+      "artifact_id": null,
+      "corpus_sha256": null,
+      "blocker": "Needs independently curated authentic provider schemas, permissions and ground-truth tools"
+    },
+    {
+      "id": "small_supervised_operation_classifier",
+      "status": "blocked",
+      "tier": "future_training",
+      "workflow": null,
+      "source_report": null,
+      "run_id": null,
+      "artifact_id": null,
+      "corpus_sha256": null,
+      "blocker": "Needs training split, task annotation, independent heldout, artifact weight digest"
+    },
+    {
+      "id": "hosted_jev",
+      "status": "blocked",
+      "tier": "future_paid",
+      "workflow": null,
+      "source_report": null,
+      "run_id": null,
+      "artifact_id": null,
+      "corpus_sha256": null,
+      "blocker": "Requires approved cost budget, credentials and matched hosted environment"
+    },
+    {
+      "id": "real_agent_execution_no_call",
+      "status": "blocked",
+      "tier": "future_independent",
+      "workflow": null,
+      "source_report": null,
+      "run_id": null,
+      "artifact_id": null,
+      "corpus_sha256": null,
+      "blocker": "Needs execution-harness authorization, safe sandbox and independent task cases"
+    }
+  ]
+}

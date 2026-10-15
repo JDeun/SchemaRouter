@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "id": "operation-fit-conveyor-v1-dev",
+  "status": "prospective_development_only",
+  "frozen_v014_unchanged": true,
+  "permitted_execution": [
+    "offline_preflight",
+    "lexical_baseline",
+    "multilingual_nli_cpu",
+    "dev_aggregate"
+  ],
+  "forbidden_execution": [
+    "independent_holdout",
+    "product_cutover",
+    "model_training",
+    "tool_dispatch"
+  ],
+  "source": {
+    "corpus": "benchmarks/operation-intent-trilingual-dev-20261015.json",
+    "sha256": "18fce09092e24ebb44d2df14d3224daa47fec9a2df9134d4a0c708b9935dc7d7",
+    "supported": 54,
+    "unsupported": 18,
+    "languages": [
+      "en",
+      "ko",
+      "ja"
+    ],
+    "provenance": "previously_seen_author_written_development_examples"
+  },
+  "candidates": [
+    {
+      "id": "lexical_baseline",
+      "kind": "offline_reference",
+      "status": "ready",
+      "rejection_mode": "conservative_abstention"
+    },
+    {
+      "id": "multilingual_nli",
+      "kind": "cpu_inference",
+      "status": "ready_for_dev",
+      "model": "MoritzLaurer/multilingual-MiniLMv2-L6-mnli-xnli",
+      "revision": "0a71e92a985b6e1ad1828cf67ce9c459639c1dca",
+      "license": "MIT",
+      "diagnostic_entailment_threshold": 0.7,
+      "model_weight_hash_attested": false
+    },
+    {
+      "id": "task_specific_classifier",
+      "kind": "cpu_inference",
+      "status": "blocked_no_training_data_or_checkpoint",
+      "model": null
+    }
+  ],
+  "decision": {
+    "source": "development_screen_not_promotion",
+    "supported_correct_min": 0.85,
+    "unsupported_false_accept_max": 0.05,
+    "supported_false_refusal_max": 0.1,
+    "supported_wrong_operation_max": 0.03,
+    "p95_cpu_ms_max": 250,
+    "block_on_missing_or_nonfinite_metrics": true,
+    "never_auto_tune_threshold": true
+  },
+  "external_confirmation": {
+    "enabled": false,
+    "approved": false,
+    "reason": "Need independent annotators, authentic provider tool schemas, query-disjoint cases, executable no-call verification and frozen confirmation manifest",
+    "must_not_read_existing_v014_heldout": true
+  }
+}
