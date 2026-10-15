@@ -99,6 +99,9 @@ jobs:
             --output artifacts/autolab/issue-comment.md
           gh issue comment 1405 --repo "${{ github.repository }}" \
             --body-file artifacts/autolab/issue-comment.md
+          # Progress only: this broad accuracy issue MUST stay OPEN.
+          gh issue comment 1339 --repo "${{ github.repository }}" \
+            --body-file artifacts/autolab/issue-comment.md
       - name: No further experiment permitted when registry exhausted
         if: steps.plan.outputs.should_run != 'true' && github.event_name != 'pull_request'
         run: echo 'All registered DEV variants measured; no model re-download.'
