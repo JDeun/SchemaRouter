@@ -93,28 +93,31 @@ def validate(report: dict[str, Any]) -> None:
             ):
                 raise ValueError(f"{ident}: invalid artifact SHA-256")
         if decision in {"PASS", "VALID_NEGATIVE"}:
-            # Explicitly do not accept a DEV/preflight SHA or run as independent.
-            for field in (
-                "independent_run_id", "independent_artifact_sha256",
-                "independent_case_sha256", "independent_gold_review",
-            ):
-                value = row.get(field)
-                if value is None or type(value) is bool or not value:
-                    raise ValueError(
-                        f"{ident}: external verdict requires {field}"
-                    )
-            if type(row["independent_run_id"]) is not int:
-                raise ValueError(f"{ident}: independent run must be an integer")
+            # A Boolean true is the explicit human-review attestation. It must
+            # not be rejected by the scalar provenance type checks.
+            if row.get("independent_gold_review") is not True:
+                raise ValueError(f"{ident}: independent_gold_review is required")
+            independent_run = row.get("independent_run_id")
+            if type(independent_run) is not int or independent_run <= 0:
+                raise ValueError(f"{ident}: independent run must be positive integer")
             for field in ("independent_artifact_sha256", "independent_case_sha256"):
-                digest = row[field]
+                digest = row.get(field)
                 if (
                     not isinstance(digest, str)
                     or len(digest) != 64
                     or any(c not in "0123456789abcdef" for c in digest)
                 ):
                     raise ValueError(f"{ident}: invalid independent digest")
-            if row["independent_gold_review"] is not True:
-                raise ValueError(f"{ident}: no independent signed gold review")
+            if independent_run == run_id:
+                raise ValueError(f"{ident}: independent run reuses DEV run ID")
+            if (
+                artifact_sha is not None
+                and row["independent_artifact_sha256"] == artifact_sha
+            ):
+                raise ValueError(f"{ident}: independent artifact reuses DEV digest")
+            # The manifest proves *format and separation*, not independent
+            # authorship, signature authenticity, or scientific comparability.
+            # These require external review outside this offline guard.
         if decision == "BLOCKED_EXTERNAL" and not row["blocker"].strip():
             raise ValueError(f"{ident}: blocked claim has no dependency")
 
