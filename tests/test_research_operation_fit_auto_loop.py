@@ -162,8 +162,12 @@ def test_plan_output_no_fictional_progress(monkeypatch: pytest.MonkeyPatch,
     # Exact marker JSON is roundtrippable as a GitHub comments API payload.
     _, corpus, _ = protocol()
     measured = loop(empty_state(), corpus, fake_score, 123)
-    comments = [{"user": {"login": "github-actions[bot]"},
-                 "body": formatted_comment(measured, "https://github.com/JDeun/SchemaRouter/actions/runs/123")}]
+    comments = [{
+        "user": {"login": "github-actions[bot]"},
+        "body": formatted_comment(
+            measured, "https://github.com/JDeun/SchemaRouter/actions/runs/123",
+        ),
+    }]
     path = tmp_path / "comments.json"
     path.write_text(json.dumps(comments), encoding="utf-8")
     assert parse_comments(json.loads(path.read_text(encoding="utf-8"))) == measured["state"]
