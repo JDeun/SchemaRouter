@@ -1,8 +1,6 @@
 """Successful DEV workflow evidence may update status, never resolve an issue."""
 from __future__ import annotations
 
-import copy
-
 import pytest
 
 from scripts.research_issue_benchmark_reconcile import (
