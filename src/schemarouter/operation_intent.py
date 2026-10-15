@@ -33,7 +33,7 @@ _EXPLICIT_ACTIONS: dict[OperationKind, tuple[str, ...]] = {
         r"検索|探して|探す",
     ),
     "lookup": (
-        r"\blook\s+up\b|\bretrieve\b|\bfetch\b",
+        r"\blook\s+up\b|\blookup\b|\bretrieve\b|\bfetch\b",
         r"조회|열람|확인해|확인하",
         r"照会|参照|確認して|確認する",
     ),
@@ -83,7 +83,7 @@ _NEGATED_OR_EXPLANATORY = re.compile(
 )
 
 _COMPILED = {
-    kind: tuple(re.compile(part, flags=re.IGNORECASE) for part in expressions)
+    kind: tuple(re.compile(part, flags=re.IGNORECASE | re.ASCII) for part in expressions)
     for kind, expressions in _EXPLICIT_ACTIONS.items()
 }
 
