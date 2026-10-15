@@ -314,3 +314,43 @@ def test_validated_public_policy_retains_ranked_selection_behavior() -> None:
     assert [x.route_id for x in decision.candidates] == [
         x.route_id for x in retrieval.candidates
     ]
+
+
+@pytest.mark.parametrize(
+    "forged",
+    [
+        None,
+        "not-a-list",
+        [None],
+        [{"score": 1000.0, "route_id": "fake.tool"}],
+        [123],
+    ],
+)
+def test_malformed_candidate_containers_fail_closed_without_attribute_errors(
+    forged: object,
+) -> None:
+    retrieval = build_router().retrieve("search papers", k=2)
+    original = [candidate.route_id for candidate in retrieval.candidates]
+    poisoned = retrieval.model_copy(update={"candidates": forged})
+    decision = apply_retrieval_abstention(
+        poisoned, policy=RetrievalAbstentionPolicy(min_score=-1e8)
+    )
+    assert decision.abstained
+    assert decision.reason == "untrusted_ranking"
+    assert decision.candidates == []
+    assert [candidate.route_id for candidate in retrieval.candidates] == original
+
+
+@pytest.mark.parametrize("field", ["route_id", "tool", "endpoint"])
+def test_unhashable_candidate_identity_fails_closed(field: str) -> None:
+    retrieval = build_router().retrieve("search papers", k=2)
+    forged = retrieval.candidates[0].model_copy(update={field: ["fake"]})
+    poisoned = retrieval.model_copy(
+        update={"candidates": [forged, retrieval.candidates[1]]}
+    )
+    decision = apply_retrieval_abstention(
+        poisoned, policy=RetrievalAbstentionPolicy(min_score=-1e8)
+    )
+    assert decision.abstained
+    assert decision.reason == "untrusted_ranking"
+    assert decision.candidates == []
