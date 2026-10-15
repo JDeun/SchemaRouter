@@ -6,7 +6,9 @@ on:
       - ".github/workflows/research-autoresearch-sandbox-dev.yml"
       - "research/autoresearch/**"
       - "scripts/research_autoresearch_sandbox.py"
+      - "scripts/research_autoresearch_trial.py"
       - "tests/test_research_autoresearch_sandbox.py"
+      - "tests/test_research_autoresearch_trial.py"
       - "scripts/research_current_main_multilingual_dev.py"
       - "benchmarks/agent_utility_v5_catalog.py"
   workflow_dispatch:
@@ -43,7 +45,10 @@ jobs:
       - name: Install current library and research checks
         run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
       - name: Verify strict candidate and decision contract
-        run: python -m pytest -q tests/test_research_autoresearch_sandbox.py
+        run: |
+          python -m pytest -q \
+            tests/test_research_autoresearch_sandbox.py \
+            tests/test_research_autoresearch_trial.py
       - name: Paired registered DEV candidate experiment
         env:
           RESEARCH_CASES_PER_GROUP: ${{ inputs.cases_per_group || '1' }}
@@ -56,11 +61,18 @@ jobs:
             --sizes 100 250 500 \
             --cases-per-group "$RESEARCH_CASES_PER_GROUP" \
             --output artifacts/autoresearch-sandbox/report.json
+      - name: Exercise research-only trial ledger and scoped rollback
+        run: |
+          python -m scripts.research_autoresearch_trial \
+            --description "initial identity control" \
+            --output-dir artifacts/autoresearch-trials
       - name: Preserve raw paired DEV results and guarded decision
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: autoresearch-sandbox-dev-${{ github.run_id }}
-          path: artifacts/autoresearch-sandbox/report.json
+          path: |
+            artifacts/autoresearch-sandbox/report.json
+            artifacts/autoresearch-trials/
           if-no-files-found: error
           retention-days: 90
 # Research candidates are ARBITRARY Python code in a disposable read-only
