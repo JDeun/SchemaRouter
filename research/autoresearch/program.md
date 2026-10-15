@@ -1,100 +1,82 @@
-# SchemaRouter AutoResearch: bounded agent research program
+# SchemaRouter research program — GitHub Actions CPU only
 
-This document is an experiment contract, **not** a claim that an LLM coding
-agent already edits and tests code autonomously. The baseline is current
-SchemaRouter typed capability retrieval, planning, registered adapters and
-governed execution, NOT historical frozen 0.14 code or a 9-label intent model.
+## Immutable infrastructure constraint
 
-## Objective
+**The sole compute environment for research is public GitHub Actions Linux.**
+There is no external coding agent, dedicated computer, paid model API, hosted
+experiment process, GPU or persistent runner. Do not design around one.
 
-Improve the quality, multilingual coverage, context exposure and CPU/runtime
-trade-offs of typed capability selection used by an external host/agent.
-Preserve host-owned intent, principal and authorization semantics. Candidate
-research cannot grant tool execution authority.
+The previous Karpathy-inspired code-editing proposal is superseded. The
+current #1416 candidate-only subprocess remains a test infrastructure and
+historical control, **not** an autonomous agent or a required code writer.
 
-## Editable surface: one file
+## What the automated system actually does
 
-Only research/autoresearch/candidate.py may be modified by the research agent
-for an experiment. Its public function is rerank(query, candidates) and it
-returns the exact registered input candidate route IDs in a different order.
-The trusted evaluator rejects omissions, duplicates and invented IDs.
+Workflow: .github/workflows/research-actions-only-cpu-search.yml
 
-The input includes query plus publicly registered endpoint descriptions,
-scores, fields, read/write metadata, and route IDs, never gold answers,
-private principal scopes, outside test cases or sensitive data. This first
-adapter only rearranges already-retrieved top-24 capabilities; it cannot
-recover a capability missing from the initial candidate pool. Changes to
-retrieval breadth, field projection, or progressive exposure need separate
-reviewed interfaces.
+1. On main, recover the most recent successful research state from a prior
+   Actions artifact, when retained and available. Check its scorer, source,
+   corpus and algorithm hashes before accepting it.
+2. Build **current** SchemaPlanner candidate pools from the existing
+   six-language, 100/250/500-route synthetic typed DEV catalog.
+3. Generate *new numeric configurations*, rather than executable Python,
+   using seeded exploration, mutation and crossover of pre-reviewed rankers.
+   Operators: base-position, lexical-token overlap, normalized trigram
+   overlap, matching output-field semantics, endpoint identifiers.
+4. Fit configurations against three previously exposed DEV cases in each
+   language/stratum, then make a one-time check of candidate winners on
+   the other two examples. No hidden or external independent holdout
+   is opened. Do not leak labels into the ranking function.
+5. Enforce route-ID permutation integrity and hard non-regression per
+   catalog/language/K, together with bounded CPU time/latency and schema
+   candidate payload cost. Only research configurations that improve
+   Top-5 route recall without those regressions can become champions.
+6. Upload report.json plus state.json for the next run, including negative
+   attempts. Scheduled runs continue while budget, artifact retention,
+   current source hashes and GitHub Actions availability permit.
+7. Never edit src/schemarouter, benchmark gold, security guards or
+   release configuration from a self-search run.
 
-Do not modify the frozen-side scorer, benchmarking code, case gold, worker,
-CI security boundary, product source, schema identities, or release process
-in an AutoResearch trial.
-
-## One experiment step
-
-1. Record checkout Git SHA, hypothesis, candidate SHA-256 and budget.
-2. Make a small algorithmic edit to the permitted candidate file.
-3. Run the guard tests and paired benchmark on the same existing development
-   cohort, current product build, hardware, candidate pool and Top-K sizes.
-4. Compare required-route Recall@3/5/10, all-route FullCoverage@K,
-   each language at each 100/250/500 catalog size, payload bytes and
-   candidate IPC latency. Retain all failure cases.
-5. The current DEV controller marks KEEP_RESEARCH_CANDIDATE only if
-   Top-5 found-route count rises, no language-and-size cohort loses found
-   routes or full coverage at any K, candidate IPC p95 stays <=20ms, and
-   candidate output bytes do not exceed 110% of baseline. Otherwise it marks
-   DISCARD_OR_REVISE. These research thresholds do not imply commercially
-   qualified performance.
-6. A research-only KEEP never merges production code or qualifies releases.
-   Revert a failed experiment to a known research champion. Maintain trial
-   history and continue from observed gaps within compute and trial caps.
-7. Stop on safety, provenance, corpus or budget violation. A finite
-   autonomous search cannot establish mathematical global optimality.
-
-## Run the current stage on disposable Linux CPU
+Run reproducibly on the checked-out source:
 
     python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
-    python -m pytest -q tests/test_research_autoresearch_sandbox.py
-    python -m scripts.research_autoresearch_sandbox --sizes 100 250 500 \
-      --cases-per-group 1 --output artifacts/autoresearch-sandbox/report.json
-    python -m scripts.research_autoresearch_trial \
-      --description "one bounded research hypothesis" \
-      --output-dir artifacts/autoresearch-trials
+    python -m pytest -q tests/test_research_actions_only_search.py
+    python -m scripts.research_actions_only_search --trials 16 \
+      --seconds 900 --output-dir artifacts/actions-only-search
 
-The shipped candidate is an **identity ranking control**. Expected result
-is zero retrieval quality gain and DISCARD_OR_REVISE; this is evidence of
-a working genuine test harness, not a new research breakthrough.
+## Hard limits of what we can discover
 
-## Claim and security boundaries
+This is an **adaptive configuration optimizer**, not a self-programming
+scientist. It can search a large continuous parameter space inside the
+registered ranking grammar, but cannot invent entirely new network
+architectures, datasets, retrieval stages or models. To enlarge the
+algorithm family, add an operator through a normal reviewed code PR, then
+let the automated search optimize its parameters.
 
-- The cases are **pre-exposed synthetic #430 DEV**, not a fresh split, real
-  heterogeneous provider deployment, blinded confirmation, live authorization
-  fixture, required-output-field gold or downstream agent task outcomes.
-- The evaluator fetches 24 current candidates per request and computes
-  K=3/5/10 slices from the same ranked pool. Smaller-K timings are not
-  separate executions, and candidate JSON bytes are not actual prompt tokens.
-- A raw shortlist on an unsupported query is not a wrong tool execution.
-  Neither the worker nor scorer calls SchemaRouter.execute.
-- Editable Python is arbitrary executable code. A subprocess with a clean
-  environment is **not** a complete security sandbox. Never run candidates
-  with secrets, a writable GitHub token, production data or hidden holdouts.
-  Use ephemeral read-only runners; harden with container/OS network and
-  filesystem restrictions before running potentially hostile generated code.
-- A one-trial local controller is included: it runs the registered
-  guarded test and scorer, appends research status/history, and restores
-  only the allowed candidate file from committed HEAD on DISCARD/CRASH.
-  Run it in a disposable branch/worktree, not a working tree with valuable
-  uncommitted candidate changes. It does not push or merge.
-- Hypothesis generation, LLM-based source edits and persistent continuation
-  across GitHub Actions jobs are **future implementation**. A per-run JSONL
-  artifact is not a durable cross-run database or automatic ongoing agent.
-- Build genuine fresh current-adapter query-disjoint train/DEV cases with
-  principal allow sets, required-field gold, multi-route chains and an
-  independently authored protected confirmation suite. Compare true
-  FULL/SR-K/SR-PROGRESSIVE/ORACLE agent task completion before suggesting any
-  product replacement or commercial-grade quality claim.
-- Historical negative independent research stays immutable, and the pending
-  v0.18 #1345/#1346 release gate stays HOLD.
+The initial selected pool of 24 routes is fixed by the current planner.
+Re-ranking cannot find a necessary route absent from that pool.
+If retrieval misses are dominated by this bound, the reviewed next
+algorithm family must address recall and candidate generation at source,
+rather than endlessly tuning the reranker.
 
-Follow-up tracked at https://github.com/JDeun/SchemaRouter/issues/1412
+The previous #430 data is **exposed synthetic DEV** with task patterns
+from one generator; its three/two internal split is not genuine independent
+confirmation. It has neither required-field gold nor authenticated
+principal-scoped real heterogeneous providers or genuine agent completion
+traces. High scores here do not demonstrate commercial readiness.
+
+Continuation relies on retained Actions artifacts, not a durable database;
+old states expire, and hashes intentionally invalidate incompatible
+prior runs. The workflow has only read permissions and cannot commit
+a champion or enable production by itself. The GitHub Actions default
+branch scheduler and CPU/usage limits constrain how many experiments run.
+
+Before commercial claims, require separately authored and truly disjoint
+development plus confirmation data across supported real current-provider
+schemas, principal/data scopes, required output fields, and fixed-agent
+FULL/SR-K/SR-PROGRESSIVE/ORACLE task-level outcomes.
+
+Historical #432 negative evidence is immutable and #1345/#1346 v0.18
+release stays HOLD until its separate acceptance and audit.
+
+Parent: https://github.com/JDeun/SchemaRouter/issues/1412
