@@ -494,6 +494,7 @@ def test_valid_https_origin_may_use_an_explicit_port() -> None:
         )
         result = choose_sync(backend, decision_request())
     assert result.abstained
-    assert str(captured[0].url).startswith(
+    assert str(captured[0].url) == (
         "https://example.services.ai.azure.com:8443"
+        "/providers/microsoft/v1/systemone"
     )
