@@ -8,9 +8,11 @@ on:
       - "benchmarks/operation-fit-conveyor-v1-registry.json"
       - "scripts/research_operation_fit_conveyor.py"
       - "scripts/research_operation_fit_opportunities.py"
+      - "scripts/research_operation_fit_class_collapse.py"
       - "scripts/evaluate_operation_fit_nli_dev.py"
       - "tests/test_research_operation_fit_conveyor.py"
       - "tests/test_research_operation_fit_opportunities.py"
+      - "tests/test_research_operation_fit_class_collapse.py"
   workflow_dispatch:
 
 permissions:
@@ -32,7 +34,7 @@ jobs:
       - run: python -m pip install -e . "pytest>=8,<10" "pytest-asyncio>=0.23"
       - name: Check authorization boundaries, corpus identity and negative denominators
         run: |
-          python -m pytest -q tests/test_research_operation_fit_conveyor.py tests/test_research_operation_fit_opportunities.py
+          python -m pytest -q tests/test_research_operation_fit_conveyor.py tests/test_research_operation_fit_opportunities.py tests/test_research_operation_fit_class_collapse.py
           python scripts/research_operation_fit_opportunities.py \
             --registry-check --output artifacts/conveyor/registry-check.json
           python scripts/research_operation_fit_conveyor.py \
