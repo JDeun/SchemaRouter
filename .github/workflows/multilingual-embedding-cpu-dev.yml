@@ -1,0 +1,94 @@
+name: Multilingual Embedding CPU DEV (Real Models)
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/multilingual-embedding-cpu-dev.yml"
+      - "benchmarks/multilingual-embedding-cpu-dev-20261015.json"
+      - "scripts/evaluate_multilingual_embedding_cpu_dev.py"
+      - "tests/test_multilingual_embedding_cpu_dev.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: multilingual-embedding-dev-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  corpus-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install core and pytest (no embedding weights)
+        run: python -m pip install -e . "pytest>=8,<10"
+      - name: Verify development-only corpus / thresholds
+        run: |
+          python -m pytest -q tests/test_multilingual_embedding_cpu_dev.py
+          python scripts/evaluate_multilingual_embedding_cpu_dev.py --model validate
+
+  real-model-cpu:
+    needs: corpus-integrity
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        model:
+          - e5-small
+          - minilm
+          - bge-m3
+          - qwen3-0.6b
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install CPU-only PyTorch
+        run: python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+      - name: Install local embedding inference stack and SchemaRouter
+        run: python -m pip install -e . "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
+      - name: Evaluate actual model on NEW multilingual DEV corpus (not heldout)
+        run: |
+          python scripts/evaluate_multilingual_embedding_cpu_dev.py \
+            --model "${{ matrix.model }}" \
+            --output "artifacts/embedding-dev/${{ matrix.model }}.json"
+      - name: Write honest model summary
+        if: success()
+        env:
+          MODEL_KEY: ${{ matrix.model }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = json.loads(Path(f"artifacts/embedding-dev/{os.environ['MODEL_KEY']}.json").read_text(encoding="utf-8"))
+          summary = report["summary"]["overall"]
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as handle:
+              handle.write(f"## CPU DEV: {report['model_id']}\n\n")
+              handle.write("Exploratory, synthetic author-written data — **not** independent validation, calibrated no-match or agent success.\n\n")
+              handle.write(f"- Supported recall@1: {summary['recall_at_1']:.3f}\n")
+              handle.write(f"- Supported recall@5: {summary['recall_at_5']:.3f}\n")
+              handle.write(f"- Median unsupported top cosine: {summary['unsupported_top_similarity_median']:.3f}\n")
+              handle.write(f"- CPU steady-state per-query p50/p95 (ms): {summary['top1_latency_ms_p50']:.2f} / {summary['top1_latency_ms_p95']:.2f}\n")
+              handle.write(f"- Peak process RSS (MiB): {report['peak_process_rss_mb_linux']:.1f}\n")
+              handle.write(f"- Corpus SHA-256: \`{report['corpus_sha256']}\`\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: success()
+        with:
+          name: multilingual-embedding-cpu-dev-${{ matrix.model }}-${{ github.run_id }}
+          path: artifacts/embedding-dev/${{ matrix.model }}.json
+          if-no-files-found: error
+          retention-days: 30
