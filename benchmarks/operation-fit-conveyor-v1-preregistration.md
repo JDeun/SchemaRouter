@@ -126,3 +126,46 @@ explicit compute budget, distinct calibration/confirmation splits, and no-call
 execution safety evidence before eligibility can change. Until then,
 `automatic_dispatch_enabled=false` and no release/tool authority can be
 derived from any output.
+
+
+## Class-collapse observability (2026-10-16; post-discovery)
+
+The `opportunities.json` artifact now includes **descriptive**, deterministic
+`class_collapse_diagnostics` for each current-run model arm. The system
+reports accepted-vs-abstained totals; prediction counts for all nine
+operations; the dominant predicted operation and its share **of all cases**
+and **of accepted cases separately**; EN/KO/JA distributions; supported
+per-class confusion; and unsupported predicted-operation counts.
+
+Two explicitly **post-discovery heuristic** warnings are provided for
+human review, not for calibrated decisions:
+
+- If a model sends >= 50% of all examples to the same *wrong-for-some*
+  operation, warn about majority-class misclassification concentration.
+- If it accepts at least five cases and >= 65% of its accepted predictions
+  concentrate on a single wrong-for-some operation, warn about accepted
+  class concentration. The accepted-only denominator avoids obscuring
+  collapse by large numbers of abstentions.
+
+The original 2026-10-15 NLI run had a `directions` concentration. The
+heuristics were added **after** seeing that phenomenon; they must never
+be presented as prospective evidence of quality or serve as a model
+promotion/selection threshold. The CLI continues to require fully audited
+72-row same-run evidence, preserves previously registered experiment
+states, and never triggers new training or model runs on its own.
+
+## Autonomy and repository write boundaries
+
+This pipeline runs **only on PR changes or manual workflow dispatch**.
+Its 13-entry registry is an inventory, **not an autonomous scheduler**.
+It does **not** use GitHub credentials to create issues, edit product code,
+spawn new research runs, open PRs, merge PRs, close issues or publish releases.
+No calendar schedule/cron, conditional research planner or self-updating
+training step has been enabled.
+
+Any proposed autonomous system should keep a separate human-reviewed
+control plane with explicit scope/allowlist, action budgets, isolated branches,
+protected CI, trustworthy evaluators and rollback. In particular, a
+model-generated hypothesis cannot authorize its own merge or certify the
+same model's performance. The v0.18 HOLD and independent #1346 external
+release gate remain binding.
