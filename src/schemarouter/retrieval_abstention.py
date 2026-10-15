@@ -81,6 +81,11 @@ def apply_retrieval_abstention(
         raise TypeError("expected an already scoped CapabilityRetrieval")
     if not isinstance(policy, RetrievalAbstentionPolicy):
         raise TypeError("policy must be a validated RetrievalAbstentionPolicy")
+    # model_copy(update=...) skips Pydantic validators; the public decision
+    # function must not silently apply forged or uncalibrated thresholds.
+    policy = RetrievalAbstentionPolicy.model_validate(
+        policy.model_dump(mode="python", warnings=False)
+    )
 
     scores = [candidate.score for candidate in retrieval.candidates]
     route_ids = [candidate.route_id for candidate in retrieval.candidates]
