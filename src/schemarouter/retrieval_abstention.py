@@ -12,7 +12,7 @@ from typing import Literal
 
 from pydantic import field_validator, model_validator
 
-from .models import CapabilityRetrieval, StrictModel
+from .models import CapabilityCandidate, CapabilityRetrieval, StrictModel
 
 
 class RetrievalAbstentionPolicy(StrictModel):
@@ -87,14 +87,24 @@ def apply_retrieval_abstention(
         policy.model_dump(mode="python", warnings=False)
     )
 
-    scores = [candidate.score for candidate in retrieval.candidates]
-    route_ids = [candidate.route_id for candidate in retrieval.candidates]
-    ranks = [candidate.rank for candidate in retrieval.candidates]
+    # model_copy(update=...) can inject a non-list or non-candidate object
+    # into this public boundary. Reject it before attribute access, and avoid
+    # serializing the untrusted shortlist back to the caller.
+    raw_candidates = retrieval.candidates
+    malformed_candidates = not isinstance(raw_candidates, list) or any(
+        not isinstance(candidate, CapabilityCandidate) for candidate in raw_candidates
+    )
+    candidates = [] if malformed_candidates else raw_candidates
+    scores = [candidate.score for candidate in candidates]
+    route_ids = [candidate.route_id for candidate in candidates]
+    ranks = [candidate.rank for candidate in candidates]
     reason: str = "selected"
     top: float | None = None
     margin: float | None = None
 
-    if not retrieval.candidates:
+    if malformed_candidates:
+        reason = "untrusted_ranking"
+    elif not candidates:
         reason = "empty_catalog"
     elif (
         not all(
@@ -113,7 +123,6 @@ def apply_retrieval_abstention(
         or retrieval.requested_k < 1
         or retrieval.requested_k < len(scores)
         or retrieval.total_ranked < len(scores)
-        or len(set(route_ids)) != len(route_ids)
         or any(type(rank) is not int for rank in ranks)
         or ranks != list(range(1, len(ranks) + 1))
         or any(
@@ -128,8 +137,11 @@ def apply_retrieval_abstention(
                 )
             )
             or candidate.route_id != f"{candidate.tool}.{candidate.endpoint}"
-            for candidate in retrieval.candidates
+            for candidate in candidates
         )
+        # Validate route_id shape before hashing; a bypassed Pydantic copy
+        # may hold a list/dict here, which must never raise a raw TypeError.
+        or len(set(route_ids)) != len(route_ids)
         or any(scores[i] < scores[i + 1] for i in range(len(scores) - 1))
     ):
         reason = "untrusted_ranking"
@@ -166,7 +178,7 @@ def apply_retrieval_abstention(
     if type(retrieval.executable_only) is not bool:
         # Do not launder forged integer 1 into the authorization-relevant True.
         data["executable_only"] = False
-    data["candidates"] = list(retrieval.candidates) if reason == "selected" else []
+    data["candidates"] = list(candidates) if reason == "selected" else []
     return SelectiveCapabilityRetrieval(
         **data,
         disposition="selected" if reason == "selected" else "abstained",
