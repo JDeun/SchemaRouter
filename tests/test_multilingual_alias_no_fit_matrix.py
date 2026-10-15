@@ -234,3 +234,63 @@ def test_mixed_width_kana_mark_matches_canonically_equivalent_alias(
     assert request.query == query
     english = _scores(query, indexed=indexed, aliases=False)
     assert all(score == 0 for score in english.values())
+
+
+@pytest.mark.parametrize(
+    ("query", "alias"),
+    [
+        ("ＡＰＩ", "API"),
+        ("ＤＡＴＡ＿ＩＤ", "DATA_ID"),
+        ("１２３", "123"),
+        ("ａＰｉ", "aPi"),
+    ],
+)
+@pytest.mark.parametrize("indexed", [False, True])
+def test_japanese_fullwidth_ascii_identifiers_resolve_declared_aliases_only(
+    query: str, alias: str, indexed: bool,
+) -> None:
+    registry = InMemoryRegistry()
+    registry.register(ToolSpec(
+        name="sample_records",
+        description="Unrelated English metadata",
+        endpoints=[EndpointSpec(
+            name="fetch",
+            description="Read records",
+            read_only=True,
+            operation_aliases=[alias],
+        )],
+    ))
+    planner = SchemaPlanner(registry, candidate_index=indexed)
+    request = PlanRequest(query=query)
+    intent = planner.analyzer.analyze(request, registry)
+    scores = {
+        f"{candidate.tool.key}.{candidate.endpoint.name}": candidate.score
+        for candidate in planner._semantic_recall_catalog(request, intent)
+    }
+    assert scores["sample_records.fetch"] > 0
+    assert request.query == query
+
+
+@pytest.mark.parametrize("indexed", [False, True])
+def test_fullwidth_identifier_does_not_invent_capability_translation(indexed: bool) -> None:
+    for query in ("ＡＰＩ", "Ｓｉ", "１２３"):
+        scores = _scores(query, indexed=indexed, aliases=False)
+        assert all(score == 0 for score in scores.values())
+
+
+@pytest.mark.parametrize(
+    ("query", "expected_alias"),
+    [
+        ("①", "1"),
+        ("K", "K"),
+        ("㎡", "m2"),
+    ],
+)
+def test_unrelated_compatibility_symbols_are_not_globally_nfkc_normalized(
+    query: str, expected_alias: str,
+) -> None:
+    # The fullwidth *identifier* fold cannot be expanded into arbitrary
+    # compatibility units/symbols without independent capability semantics.
+    from schemarouter.planner import _normalize
+
+    assert _normalize(query) != _normalize(expected_alias)
