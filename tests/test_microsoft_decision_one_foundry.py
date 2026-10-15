@@ -245,7 +245,7 @@ def test_foundry_http_error_does_not_repeat_provider_body_or_secret(status):
     ({"resource_endpoint": "https://example.com:invalid"}, "HTTPS origin"),
     ({"resource_endpoint": "https://example.com:99999"}, "HTTPS origin"),
     ({"resource_endpoint": "https://example.com:0"}, "HTTPS origin"),
-    ({"resource_endpoint": "https://exa\\nmple.com"}, "HTTPS origin"),
+    ({"resource_endpoint": "https://exa\nmple.com"}, "HTTPS origin"),
     ({"resource_endpoint": "https://exa mple.com"}, "HTTPS origin"),
     ({"resource_endpoint": "https://[::1"}, "HTTPS origin"),
     ({"deployment": ""}, "deployment"),
