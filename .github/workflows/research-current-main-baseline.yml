@@ -34,7 +34,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install checked-out package and standalone validator
-        run: python -m pip install . "pytest>=8,<10"
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
       - name: Validate measurement and authority boundaries
         run: python -m pytest -q tests/test_research_current_main_baseline.py
       - name: Benchmark current checkout on developer-facing synthetic surfaces
