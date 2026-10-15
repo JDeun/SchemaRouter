@@ -204,6 +204,28 @@ async def ainvoke_selective(
     if type(k) is not int or k < 1:
         raise ValueError("k must be a positive integer")
     policy = _validated_abstention_policy(policy)
+
+    # Validate the trusted request *before* an authorized retrieval. A caller
+    # can bypass Pydantic with model_copy(update=...), including a non-string
+    # query or malformed plan fields. Never pass such input into an external
+    # retriever, paid backend, or downstream planner.
+    if isinstance(request, str):
+        expected_query = request
+    elif isinstance(request, PlanRequest):
+        try:
+            request = PlanRequest.model_validate(
+                request.model_dump(mode="python", warnings=False)
+            )
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise PolicyViolationError(
+                "selective retrieval execution denied: invalid request envelope"
+            ) from exc
+        expected_query = request.query
+    else:
+        _deny("invalid request type")
+    if not isinstance(expected_query, str) or not expected_query.strip():
+        _deny("empty or invalid request query")
+
     if run_config.principal is None:
         retrieval = await router.aretrieve_executable(request, k=k)
     else:
@@ -213,7 +235,8 @@ async def ainvoke_selective(
     # Preflight before any potentially remote/costly planner call. The
     # execution gate below rechecks after planning in case the registry or
     # rankings changed. This does not modify plain router.ainvoke().
-    expected_query = request if isinstance(request, str) else request.query
+    if not isinstance(retrieval, CapabilityRetrieval):
+        _deny("invalid retrieval envelope")
     if (
         retrieval.executable_only is not True
         or type(retrieval.registry_version) is not int
