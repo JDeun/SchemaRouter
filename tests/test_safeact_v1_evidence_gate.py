@@ -518,3 +518,18 @@ def test_malformed_repeat_observation_revokes_previous_authority() -> None:
     with pytest.raises(PermissionError, match="evidence incomplete"):
         gate.dispatch("refund_issue", {}, lambda *_: calls.append("unsafe"))
     assert calls == []
+
+
+@pytest.mark.parametrize(
+    "declared_fields",
+    [frozenset(), "owner", ["owner"], frozenset({""}), frozenset({1})],
+)
+def test_empty_or_malformed_contract_fields_never_authorize_action(
+    declared_fields: object,
+) -> None:
+    # A zero-field contract must not authorize any read merely because
+    # frozenset().issubset(...) is mathematically true.
+    with pytest.raises(ValueError, match="invalid required observation contract"):
+        EvidenceGate(ActionContract(
+            "refund_issue", (("charge_read", "C2", declared_fields),),
+        ))
