@@ -7,9 +7,9 @@ import pytest
 from pydantic import ValidationError
 
 from schemarouter import (
-    FieldSpec,
     CapabilityRetrieval,
     EndpointSpec,
+    FieldSpec,
     RetrievalAbstentionPolicy,
     SchemaRouter,
     ToolSpec,
