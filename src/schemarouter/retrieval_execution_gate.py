@@ -209,6 +209,7 @@ async def ainvoke_selective(
     # can bypass Pydantic with model_copy(update=...), including a non-string
     # query or malformed plan fields. Never pass such input into an external
     # retriever, paid backend, or downstream planner.
+    expected_query: str = ""
     if isinstance(request, str):
         expected_query = request
     elif isinstance(request, PlanRequest):
