@@ -282,7 +282,7 @@ def test_fullwidth_identifier_does_not_invent_capability_translation(indexed: bo
     ("query", "expected_alias"),
     [
         ("①", "1"),
-        ("K", "K"),
+        ("Ⅷ", "VIII"),
         ("㎡", "m2"),
     ],
 )
