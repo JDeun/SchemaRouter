@@ -8,18 +8,22 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from scripts.research_operation_fit_conveyor import (
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts.research_operation_fit_conveyor import (  # noqa: E402
     CORPUS_SHA,
     KINDS,
     _metric_rows,
     load_inputs,
 )
 
-ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "benchmarks/operation-fit-conveyor-v1-registry.json"
 ALLOWED_STATUS = {
     "active_stage", "completed_reference",
