@@ -66,6 +66,18 @@ def validate_selective_execution(
         raise TypeError("retrieval must be a trusted CapabilityRetrieval")
     if not isinstance(plan, ExecutionPlan):
         raise TypeError("plan must be a trusted ExecutionPlan")
+    # A forged model_copy(update=...) can smuggle list-shaped arguments,
+    # non-list required-argument flags, or malformed fallback metadata into
+    # an otherwise typed ExecutionPlan. Revalidate its complete nested
+    # envelope before authorizing a single downstream execution.
+    try:
+        ExecutionPlan.model_validate(
+            plan.model_dump(mode="python", warnings=False)
+        )
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise PolicyViolationError(
+            "selective retrieval execution denied: invalid plan envelope"
+        ) from exc
     if type(registry_version) is not int or registry_version < 0:
         _deny("invalid active registry version")
     policy = _validated_abstention_policy(policy)

@@ -515,3 +515,41 @@ async def test_valid_structured_request_uses_same_validated_query_scope():
     assert result == []
     assert [event[0] for event in router.events] == ["retrieve", "plan", "execute"]
     assert router.events[0][1].query == router.events[1][1].query == request.query
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "corrupt",
+    [
+        {"arguments": ["untrusted"]},
+        {"missing_required_arguments": None},
+        {"missing_required_arguments": "required"},
+        {"fields": {"not": "a list"}},
+        {"explanation": ["not a structured plan explanation"]},
+    ],
+)
+async def test_nested_forged_plan_metadata_denied_before_dispatch(corrupt):
+    retrieval, plan, sink = fixture()
+    forged_call = plan.calls[0].model_copy(update=corrupt)
+    forged_plan = plan.model_copy(update={"calls": [forged_call]})
+    with pytest.raises(PolicyViolationError, match="invalid plan envelope"):
+        await execute_selective_plan(
+            sink, retrieval, forged_plan,
+            policy=RetrievalAbstentionPolicy(min_score=-1e8),
+        )
+    assert sink.dispatched == []
+
+
+@pytest.mark.asyncio
+async def test_forged_fallback_envelope_denied_before_dispatch():
+    retrieval, plan, sink = fixture()
+    forged = FallbackRoute(
+        primary_call_index=0, alternatives=[plan.calls[0]],
+    ).model_copy(update={"alternatives": "untrusted"})
+    invalid = plan.model_copy(update={"fallback_routes": [forged]})
+    with pytest.raises(PolicyViolationError, match="invalid plan envelope"):
+        await execute_selective_plan(
+            sink, retrieval, invalid,
+            policy=RetrievalAbstentionPolicy(min_score=-1e8),
+        )
+    assert sink.dispatched == []
