@@ -348,24 +348,52 @@ class FirstOptionDecisionBackend:
         )
 
 
+def _validated_choice_request(request: DecisionRequest) -> DecisionRequest:
+    """Reject a bypassed/forged request before asking any decision provider.
+
+    model_copy(update=...) does not validate nested options or numeric bounds.
+    A fresh snapshot also prevents caller-side list mutations from expanding
+    the set of options after the host has invoked a paid/local backend.
+    """
+    if not isinstance(request, DecisionRequest):
+        raise PlanningError("decision request must be a valid typed request")
+    try:
+        validated = DecisionRequest.model_validate(
+            request.model_dump(mode="python", warnings=False),
+            strict=True,
+        )
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise PlanningError("decision request must be a valid typed request") from exc
+    if not validated.query.strip():
+        raise PlanningError("decision request query must not be empty")
+    return validated
+
+
 def choose_sync(
     backend: DecisionBackend,
     request: DecisionRequest,
 ) -> DecisionResult:
-    result = backend.decide(request)
+    verified = _validated_choice_request(request)
+    # The backend is not the authority for the offered option set. Hand it
+    # an independent snapshot, then authorize against the host-owned copy.
+    # A callable provider may mutate even a Pydantic model's nested objects.
+    provider_request = _validated_choice_request(verified)
+    result = backend.decide(provider_request)
     if inspect.isawaitable(result):
         close = getattr(result, "close", None)
         if callable(close):
             close()
         raise PlanningError("the configured decision backend is asynchronous; use an async path")
-    return validate_decision(request, result)
+    return validate_decision(verified, result)
 
 
 async def choose_async(
     backend: DecisionBackend,
     request: DecisionRequest,
 ) -> DecisionResult:
-    result = backend.decide(request)
+    verified = _validated_choice_request(request)
+    provider_request = _validated_choice_request(verified)
+    result = backend.decide(provider_request)
     if inspect.isawaitable(result):
         result = await result
-    return validate_decision(request, result)
+    return validate_decision(verified, result)

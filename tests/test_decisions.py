@@ -112,3 +112,97 @@ async def test_async_backend_is_validated() -> None:
 
     result = await choose_async(CallableDecisionBackend(decide), request())
     assert result.selections[0].option_id == "endpoint:1"
+
+
+@pytest.mark.parametrize(
+    "forgery",
+    [
+        {"query": ["bad"]},
+        {"query": ""},
+        {"query": "   "},
+        {"options": None},
+        {"options": ["untrusted"]},
+        {"options": [DecisionOption(id="endpoint:0").model_copy(
+            update={"id": ["bad"]}
+        )]},
+        {"options": [DecisionOption(id="endpoint:0"), DecisionOption(id="endpoint:0")]},
+        {"max_selections": True},
+        {"max_selections": 0},
+        {"context": ["bad"]},
+    ],
+)
+def test_sync_choice_rejects_unvalidated_request_before_backend_invocation(
+    forgery: dict[str, object],
+) -> None:
+    calls: list[DecisionRequest] = []
+    backend = CallableDecisionBackend(
+        lambda value: calls.append(value) or {"selections": []}
+    )
+    compromised = request().model_copy(update=forgery)
+    with pytest.raises(PlanningError, match="decision request"):
+        choose_sync(backend, compromised)
+    assert calls == []
+
+
+@pytest.mark.asyncio
+async def test_async_choice_rejects_forged_request_before_backend_invocation() -> None:
+    calls: list[DecisionRequest] = []
+
+    async def decide(value: DecisionRequest) -> dict:
+        calls.append(value)
+        return {"selections": []}
+
+    compromised = request().model_copy(
+        update={"options": [DecisionOption(id="endpoint:0").model_copy(
+            update={"id": ["bad"]}
+        )]}
+    )
+    with pytest.raises(PlanningError, match="decision request"):
+        await choose_async(CallableDecisionBackend(decide), compromised)
+    assert calls == []
+
+
+def test_choice_validated_snapshot_does_not_mutate_original_request() -> None:
+    original = request()
+    captured: list[DecisionRequest] = []
+    result = choose_sync(
+        CallableDecisionBackend(
+            lambda value: captured.append(value)
+            or {"selections": [{"option_id": "endpoint:0"}]}
+        ),
+        original,
+    )
+    assert result.selections[0].option_id == "endpoint:0"
+    assert captured and captured[0] is not original
+    assert captured[0].options[0] is not original.options[0]
+    assert [option.id for option in original.options] == ["endpoint:0", "endpoint:1"]
+
+
+
+def test_mutating_sync_backend_cannot_inject_a_new_authorized_option() -> None:
+    offered = request()
+    seen: list[DecisionRequest] = []
+
+    def malicious(decision: DecisionRequest) -> dict:
+        seen.append(decision)
+        decision.options[0].id = "endpoint:evil"
+        decision.options.append(DecisionOption(id="endpoint:extra"))
+        return {"selections": [{"option_id": "endpoint:evil"}]}
+
+    with pytest.raises(PlanningError, match="unknown option"):
+        choose_sync(CallableDecisionBackend(malicious), offered)
+    assert [o.id for o in offered.options] == ["endpoint:0", "endpoint:1"]
+    assert seen[0] is not offered
+
+
+@pytest.mark.asyncio
+async def test_mutating_async_backend_cannot_inject_a_new_authorized_option() -> None:
+    offered = request()
+
+    async def malicious(decision: DecisionRequest) -> dict:
+        decision.options.append(DecisionOption(id="endpoint:evil"))
+        return {"selections": [{"option_id": "endpoint:evil"}]}
+
+    with pytest.raises(PlanningError, match="unknown option"):
+        await choose_async(CallableDecisionBackend(malicious), offered)
+    assert [o.id for o in offered.options] == ["endpoint:0", "endpoint:1"]
