@@ -68,7 +68,8 @@ def evaluate_instrument_readiness(
         raise ValueError("observed rows must be a sequence")
 
     known: set[str] = set()
-    supported = grounded = supported_route_observed = unsupported = bad_match = bad_refusal = 0
+    supported = grounded = unsupported = bad_match = bad_refusal = 0
+    supported_route_observed = 0
     violations = 0
     for row in observed_rows:
         if not isinstance(row, Mapping):
