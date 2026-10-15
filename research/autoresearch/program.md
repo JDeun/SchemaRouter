@@ -14,9 +14,12 @@ historical control, **not** an autonomous agent or a required code writer.
 
 Workflow: .github/workflows/research-actions-only-cpu-search.yml
 
-1. On main, recover the most recent successful research state from a prior
-   Actions artifact, when retained and available. Check its scorer, source,
-   corpus and algorithm hashes before accepting it.
+1. Start once via GitHub Actions `workflow_dispatch` on `main` with
+   `remaining_batches=12` and no previous run ID. There is **no cron**.
+   Successive runs explicitly pass the predecessor's run ID. Download its
+   uploaded artifact even if its final dispatch job is finishing, and reject
+   missing artifacts, wrong branch/workflow/SHA or stale scorer/corpus/algorithm
+   hashes; never silently restart at epoch zero mid-chain.
 2. Build **current** SchemaPlanner candidate pools from the existing
    six-language, 100/250/500-route synthetic typed DEV catalog.
 3. Generate *new numeric configurations*, rather than executable Python,
@@ -31,11 +34,17 @@ Workflow: .github/workflows/research-actions-only-cpu-search.yml
    catalog/language/K, together with bounded CPU time/latency and schema
    candidate payload cost. Only research configurations that improve
    Top-5 route recall without those regressions can become champions.
-6. Upload report.json plus state.json for the next run, including negative
-   attempts. Scheduled runs continue while budget, artifact retention,
-   current source hashes and GitHub Actions availability permit.
-7. Never edit src/schemarouter, benchmark gold, security guards or
-   release configuration from a self-search run.
+6. Upload `report.json` and `state.json` first, including negative
+   attempts. Validate the report and finite continuation budget. A separate
+   minimal GitHub job with `actions:write` (no source checkout, no research
+   compute) explicitly issues a `workflow_dispatch` for the **next**
+   research run, passing the just-completed run ID and decremented budget.
+   GitHub may queue the next runner; immediate means event-driven, not zero
+   scheduling delay. The research job has only read privileges.
+7. Halt cleanly when 12 total batches have run, no new candidates exist,
+   experiment checks fail, or the artifact/provenance is unavailable. Never
+   edit `src/schemarouter`, benchmark gold, security guards or release
+   configuration from a self-search run.
 
 Run reproducibly on the checked-out source:
 
@@ -65,11 +74,14 @@ confirmation. It has neither required-field gold nor authenticated
 principal-scoped real heterogeneous providers or genuine agent completion
 traces. High scores here do not demonstrate commercial readiness.
 
-Continuation relies on retained Actions artifacts, not a durable database;
-old states expire, and hashes intentionally invalidate incompatible
-prior runs. The workflow has only read permissions and cannot commit
-a champion or enable production by itself. The GitHub Actions default
-branch scheduler and CPU/usage limits constrain how many experiments run.
+Continuation relies on retained GitHub Actions artifacts, not a durable
+database. Missing or expired predecessor state **fails closed**. The
+permitted dispatcher has only `actions:write`, with no code checkout;
+the actual research job has only `actions:read` and `contents:read`.
+Neither job can commit a champion or enable production. The chain is
+finite (at most 12 batches, up to 24 evaluated configurations per batch)
+and can stop sooner. GitHub runner queues and CPU/usage limits remain
+applicable. This is not a 24/7 worker or infinite autonomous operation.
 
 Before commercial claims, require separately authored and truly disjoint
 development plus confirmation data across supported real current-provider
