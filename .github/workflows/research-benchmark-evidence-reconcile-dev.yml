@@ -1,0 +1,88 @@
+name: Research Benchmark Evidence Reconciler DEV
+
+on:
+  workflow_run:
+    workflows:
+      - "ClicShopping 4.33 Offline Development Benchmark"
+      - "Clear Your Tools Development Smoke"
+    types: [completed]
+  pull_request:
+    paths:
+      - ".github/workflows/research-benchmark-evidence-reconcile-dev.yml"
+      - "scripts/research_issue_benchmark_reconcile.py"
+      - "tests/test_research_issue_benchmark_reconcile.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-benchmark-evidence-${{ github.event.workflow_run.id || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  offline-contract:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - run: python -m pytest -q tests/test_research_issue_benchmark_reconcile.py
+
+  reconcile-successful-development-run:
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Fetch workflow completion and original bot-owned dispatch receipt
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BENCHMARK_RUN: ${{ github.event.workflow_run.id }}
+        run: |
+          gh api "repos/${{ github.repository }}/actions/runs/${BENCHMARK_RUN}" > /tmp/run.json
+          gh api "repos/${{ github.repository }}/actions/runs/${BENCHMARK_RUN}/artifacts" > /tmp/artifacts.json
+          gh api --paginate --slurp "repos/${{ github.repository }}/issues/1405/comments?per_page=100" > /tmp/dispatch-comments.json
+          case "$(jq -r '.name' /tmp/run.json)" in
+            "ClicShopping 4.33 Offline Development Benchmark") echo 1208 > /tmp/issue-num ;;
+            "Clear Your Tools Development Smoke") echo 839 > /tmp/issue-num ;;
+            *) exit 1 ;;
+          esac
+          gh api --paginate --slurp "repos/${{ github.repository }}/issues/$(cat /tmp/issue-num)/comments?per_page=100" > /tmp/issue-comments.json
+      - name: Audit immutable source SHA, expected artifact and no-qualification boundary
+        run: |
+          python scripts/research_issue_benchmark_reconcile.py \
+            --run /tmp/run.json --artifacts /tmp/artifacts.json \
+            --dispatch-comments /tmp/dispatch-comments.json \
+            --issue-comments /tmp/issue-comments.json \
+            --output /tmp/decision.json
+      - name: Comment only when new evidence is verified
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          decision = json.loads(Path("/tmp/decision.json").read_text())
+          if decision["status"] == "COMMENT_ONLY":
+              Path("/tmp/evidence.md").write_text(decision["body"])
+          elif decision["status"] != "ALREADY_RECONCILED":
+              raise RuntimeError("unregistered evidence decision")
+          PY
+          if test -f /tmp/evidence.md; then
+            gh issue comment "$(cat /tmp/issue-num)" \
+              --repo "${{ github.repository }}" --body-file /tmp/evidence.md
+          fi
+# This workflow never merges, closes issues, dispatches benchmarks, or releases.
