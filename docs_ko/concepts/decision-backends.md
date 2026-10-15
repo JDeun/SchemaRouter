@@ -153,6 +153,63 @@ planner = SchemaPlanner(
 
 후보 선택 포기 동작은 `candidate_abstention="inherit" | "deterministic" | "no_route" | "error"`로 별도 설정할 수 있습니다. 기본값 `"inherit"`는 `fallback`을 따르는 기존 동작을 보존하므로 이미 설정된 `fallback="deterministic"`, `fallback="error"`의 의미가 유지됩니다. `"no_route"`는 제한된 백엔드가 명시적으로 선택을 포기할 때 후보 경로를 억제하며, 신뢰도 기준으로 도메인 밖 요청을 처리할 때 유용합니다. 제공자 예외나 잘못된 출력은 여전히 `fallback`이 처리하므로 `"no_route"`를 택했다고 해서 제공자 장애가 조용히 경로 없음으로 바뀌지는 않습니다.
 
+### CPU 로컬 다국어 E5 후보 검색 (선택 기능, #1339)
+
+기존 `candidate_recall_backend`에 다국어 임베딩을 연결할 수 있으며 기본
+어휘 검색의 동작은 변하지 않습니다. CPU 우선 실험 후보
+`intfloat/multilingual-e5-small`은 384차원 임베딩을 생성합니다.
+E5 검색에는 질의의 `query: `와 후보 설명의 `passage: ` 접두어를
+구분해야 합니다. `E5CachedEmbedder`는 이를 자동 적용하고 후보 문서
+임베딩만 프로세스 내 상한이 있는 LRU에 캐시합니다.
+모델의 로딩·관리는 애플리케이션 책임이며 코어 필수 의존성은 늘지 않습니다.
+
+```bash
+pip install sentence-transformers
+```
+
+```python
+from sentence_transformers import SentenceTransformer
+from schemarouter import E5CachedEmbedder, EmbeddingDecisionBackend, SchemaPlanner
+
+# 명시적으로 선택한 CPU 로컬 모델. 최초 실행 시 가중치 다운로드 가능.
+model = SentenceTransformer("intfloat/multilingual-e5-small", device="cpu")
+
+def local_encode(texts: list[str]) -> list[list[float]]:
+    return model.encode(
+        texts, batch_size=32, normalize_embeddings=True,
+    ).tolist()
+
+cached_e5 = E5CachedEmbedder(local_encode, max_cached_passages=2048)
+recall = EmbeddingDecisionBackend(cached_e5)
+
+planner = SchemaPlanner(
+    registry,
+    candidate_recall_backend=recall,
+    candidate_recall_limit=4,
+)
+```
+
+비동기 서버에서 CPU 추론으로 이벤트 루프를 차단하지 않으려면 같은
+`cached_e5`를 `async def embed_async(texts): return await
+asyncio.to_thread(cached_e5, texts)` 형태로 감싸고,
+`EmbeddingDecisionBackend(embed_async)`를 비동기 검색 경로에 연결합니다.
+
+**안전·검증 한계:** 임베딩 후보 회수는 실행 적합성·권한·no-match를
+보증하지 않습니다. E5 코사인 값이 대체로 높은 구간에 몰릴 수 있으므로
+임의의 범용 임계값을 지정하지 않습니다. 새로운 독립 데이터에서
+지원 기능 누락, 미지원 기능 오선택, 실제 에이전트 성공률,
+CPU 지연 p50/p95, 최고 메모리 사용량을 비교해 별도 보정해야 합니다.
+과거 동결된 0.14 부정 결과는 변경하지 않으며, 코어 CI는 모델 가중치를
+다운로드하지 않습니다.
+
+선택한 임베딩 제공자에는 후보 설명 문자열이 전달되므로 민감한 메타데이터는
+로컬 인코더로만 처리하고 도구 설명에 비밀을 넣지 않아야 합니다.
+캐시는 전체 문서 문자열의 SHA-256을 키로 사용해 설명 수정 시 다른
+키로 처리합니다. 모델 체크포인트를 변경하면 새 어댑터를 생성해야 합니다.
+동일한 지원·미지원 사례와 하드웨어에서 다국어 MiniLM, BGE-M3,
+Qwen3 Embedding 모델도 비교 후보로 평가합니다.
+
+
 ## 제한된 field selection
 
 필드 선택은 다음과 같이 명시적으로 활성화합니다:
