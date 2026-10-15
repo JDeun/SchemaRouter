@@ -1,0 +1,106 @@
+name: Operation-Fit Autonomous DEV Experiment Loop
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/research-operation-fit-auto-loop-dev.yml"
+      - "scripts/research_operation_fit_auto_loop.py"
+      - "scripts/research_operation_fit_issue_sync.py"
+      - "tests/test_research_operation_fit_auto_loop.py"
+      - "tests/test_research_operation_fit_issue_sync.py"
+      - "benchmarks/operation-fit-auto-loop-v1-plan.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/research-operation-fit-auto-loop-dev.yml"
+      - "scripts/research_operation_fit_auto_loop.py"
+      - "scripts/research_operation_fit_issue_sync.py"
+      - "benchmarks/operation-fit-auto-loop-v1-plan.json"
+  schedule:
+    - cron: "17 2 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: operation-fit-autolab-dev-loop
+  cancel-in-progress: false
+
+jobs:
+  bounded-research-loop:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Offline development-only control and issue permission checks
+        run: |
+          python -m pip install -e . "pytest>=8,<10" "pytest-asyncio>=0.23"
+          python -m pytest -q tests/test_research_operation_fit_auto_loop.py tests/test_research_operation_fit_issue_sync.py
+      - name: Retrieve authorized AutoLab resume cursor (only on main)
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/issues/1405/comments?per_page=100" > /tmp/opfit-autolab-comments.json
+      - name: Offline PR preflight cursor
+        if: github.event_name == 'pull_request'
+        run: echo '[]' > /tmp/opfit-autolab-comments.json
+      - name: Plan next registered trials without loading model
+        id: plan
+        run: |
+          python scripts/research_operation_fit_auto_loop.py \
+            --stage plan --comments /tmp/opfit-autolab-comments.json \
+            --output artifacts/autolab/plan.json
+      - name: Install CPU-only PyTorch
+        if: steps.plan.outputs.should_run == 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+      - name: Install pinned allowlisted NLI runtime dependencies
+        if: steps.plan.outputs.should_run == 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: python -m pip install "transformers>=4.51,<5" "safetensors>=0.4"
+      - name: Iteratively execute at most TWO registered variants (DEV only)
+        if: steps.plan.outputs.should_run == 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          TOKENIZERS_PARALLELISM: "false"
+          HF_HUB_DISABLE_TELEMETRY: "1"
+          CUDA_VISIBLE_DEVICES: ""
+          OMP_NUM_THREADS: "4"
+          MKL_NUM_THREADS: "4"
+        run: |
+          python scripts/research_operation_fit_auto_loop.py \
+            --stage run --state artifacts/autolab/plan.json \
+            --output artifacts/autolab/evidence.json
+      - name: Preserve exact per-case measurements before modifying issues
+        if: steps.plan.outputs.should_run == 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: operation-fit-autolab-real-dev-${{ github.run_id }}
+          path: artifacts/autolab/evidence.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Close only registered bot-owned completed MEASUREMENT issues
+        if: steps.plan.outputs.should_run == 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/research_operation_fit_issue_sync.py \
+            --report artifacts/autolab/evidence.json
+      - name: Commit repeat-loop cursor to parent research ISSUE COMMENT
+        if: steps.plan.outputs.should_run == 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/research_operation_fit_auto_loop.py \
+            --stage comment --report artifacts/autolab/evidence.json \
+            --output artifacts/autolab/issue-comment.md
+          gh issue comment 1405 --repo "${{ github.repository }}" \
+            --body-file artifacts/autolab/issue-comment.md
+      - name: No further experiment permitted when registry exhausted
+        if: steps.plan.outputs.should_run != 'true' && github.event_name != 'pull_request'
+        run: echo 'All registered DEV variants measured; no model re-download.'
+# Strict non-goals: NO autonomous code generation, PR creation/merge, product
+# promotion, deployment, held-out data use or changes to frozen v0.14 evidence.
