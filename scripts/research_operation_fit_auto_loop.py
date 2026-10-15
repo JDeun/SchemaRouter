@@ -96,7 +96,10 @@ def protocol() -> tuple[dict[str, Any], dict[str, Any], str]:
         or plan.get("model_revision") != NLI_REVISION
         or plan.get("per_run_budget") != BUDGET_PER_RUN
         or plan.get("maximum_total_variants") != len(VARIANTS)
-        or plan.get("schedule_policy") != "weekly_main_only_and_manual"
+        or plan.get("schedule_policy") != "event_driven_main_after_success_and_manual"
+        or plan.get("event_driven_next_run") !=
+        "workflow_dispatch_after_persisted_bot_cursor"
+        or plan.get("pending_run_limit") != 1
         or plan.get("issue_tracker") != 1405
         or plan.get("independent_evaluation_approved") is not False
         or plan.get("model_training_enabled") is not False

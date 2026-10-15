@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "id": "issue-bound-benchmark-scheduler-v1",
+  "scope": "registered_gitHub_actions_DEV_benchmarks_only",
+  "parent_issue": 1405,
+  "schedule_owner": "research-operation-fit-auto-loop-dev.yml",
+  "max_dispatches_per_schedule": 2,
+  "max_total_nominal_minutes": 40,
+  "repeat_policy": "once_per_exact_main_commit_and_registry_fingerprint",
+  "unregistered_issue_policy": "suggest_only_no_dispatch",
+  "auto_issue_close": false,
+  "auto_pr_merge": false,
+  "may_release": false,
+  "may_treat_as_independent": false,
+  "benchmark_entries": [
+    {
+      "id": "clicshopping_public_dev",
+      "issue": 1208,
+      "mode": "ready",
+      "workflow": "external-validation-clicshopping-v433-dev.yml",
+      "max_minutes": 20,
+      "blob_sha": {
+        ".github/workflows/external-validation-clicshopping-v433-dev.yml": "72b9179bc982571386510dc3c696ce95437b7621",
+        "benchmarks/external-validation-clicshopping-v433/source-inventory.json": "eaeb4f8f63ecc5c2b5eb6f941d608893a5a268b7",
+        "scripts/run_clicshopping_v433_dev.py": "63fe11ea3ad8e379cdaf181f41c9528238e105d9",
+        "scripts/validate_clicshopping_v433_inventory.py": "a81030dcaa8d69e0b1b3ec7c53c97d360128dc70"
+      },
+      "source_class": "visible_public_development_only",
+      "reason": "Pinned no-credential endpoint/action matrix; synthetic visible DEV cases only"
+    },
+    {
+      "id": "clear_your_tools_public_dev",
+      "issue": 839,
+      "mode": "ready",
+      "workflow": "clear-your-tools-development-smoke.yml",
+      "max_minutes": 20,
+      "blob_sha": {
+        ".github/workflows/clear-your-tools-development-smoke.yml": "a27f263b9fb7eb45284a5e10b1095b77d668f42c",
+        "benchmarks/external-validation-smart-mcp-dev-v1/catalog.json": "32fa8a495fb87e67c229027e2bb588f158833d64",
+        "benchmarks/external-validation-smart-mcp-dev-v1/cases.json": "f4bf2ff138f8dd60d2f5d5dd5d36e93a72d114db",
+        "scripts/run_clear_your_tools_external_validation.py": "34594751318bb9621dee3a888c02f9f1cf19f71e",
+        "scripts/validate_cyt_sdk_development_result.py": "34ea847e41f9fa630ba3b2c762d88c4e220f8a3c",
+        "scripts/build_cyt_development_scaling_catalogs.py": "bee15b55c828485d69544053fa1f38efe6637b34",
+        "scripts/run_schemarouter_external_validation.py": "a2b60ae90860eda82d71c17e46ae22ee74a783a2"
+      },
+      "source_class": "synthetic_visible_development_only",
+      "reason": "Pinned local SDK and synthetic 100/250/500/1000 catalogs; not independent performance evidence"
+    },
+    {
+      "id": "clicshopping_maintainer_20_holdout",
+      "issue": 1311,
+      "mode": "blocked",
+      "workflow": null,
+      "max_minutes": 0,
+      "blob_sha": {},
+      "source_class": "external_unverified",
+      "reason": "Verbatim upstream holdout bytes, canonical digest and independent gold review absent"
+    },
+    {
+      "id": "pi_jev_local_laya",
+      "issue": 1312,
+      "mode": "blocked",
+      "workflow": null,
+      "max_minutes": 0,
+      "blob_sha": {},
+      "source_class": "integration_pending",
+      "reason": "Native local pi-jev protocol, checkpoint and protected runner qualification incomplete"
+    },
+    {
+      "id": "laya_latency_research",
+      "issue": 1313,
+      "mode": "reference_only",
+      "workflow": null,
+      "max_minutes": 0,
+      "blob_sha": {},
+      "source_class": "previously_measured_dev",
+      "reason": "Terminal configurations already measured; no preregistered new source-disjoint evaluation"
+    },
+    {
+      "id": "nli_collapse_research",
+      "issue": 1403,
+      "mode": "reference_only",
+      "workflow": null,
+      "max_minutes": 0,
+      "blob_sha": {},
+      "source_class": "previously_measured_dev",
+      "reason": "Same 72 development cases were seen; independent confirmation not prepared"
+    },
+    {
+      "id": "multilingual_initial_recall",
+      "issue": 1339,
+      "mode": "blocked",
+      "workflow": null,
+      "max_minutes": 0,
+      "blob_sha": {},
+      "source_class": "legacy_frozen_evidence",
+      "reason": "No replay of frozen 0.14 heldout; new disjoint fixture and contract needed"
+    },
+    {
+      "id": "safeact_v1_independent",
+      "issue": 1224,
+      "mode": "blocked",
+      "workflow": null,
+      "max_minutes": 0,
+      "blob_sha": {},
+      "source_class": "protected_external",
+      "reason": "Protected runner and independent contract review incomplete"
+    },
+    {
+      "id": "external_release_gate",
+      "issue": 1346,
+      "mode": "blocked",
+      "workflow": null,
+      "max_minutes": 0,
+      "blob_sha": {},
+      "source_class": "release_hold",
+      "reason": "External qualification cannot be auto-performed or promoted from DEV runs"
+    }
+  ]
+}
