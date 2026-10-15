@@ -6,6 +6,8 @@ import math
 import pytest
 
 from schemarouter import (
+    DecisionOption,
+    DecisionRequest,
     E5CachedEmbedder,
     EmbeddingDecisionBackend,
     EndpointSpec,
@@ -15,8 +17,6 @@ from schemarouter import (
     SchemaPlanner,
     ToolSpec,
     choose_sync,
-    DecisionOption,
-    DecisionRequest,
 )
 
 
