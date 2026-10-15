@@ -11,10 +11,15 @@ import json
 import os
 import re
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any, Callable
 
-from scripts.research_operation_fit_auto_loop import (
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts.research_operation_fit_auto_loop import (  # noqa: E402
     CORPUS_SHA,
     VARIANTS,
     validate_state,
