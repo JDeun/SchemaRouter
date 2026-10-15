@@ -1,0 +1,68 @@
+name: Research AutoResearch Candidate Sandbox DEV
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/research-autoresearch-sandbox-dev.yml"
+      - "research/autoresearch/**"
+      - "scripts/research_autoresearch_sandbox.py"
+      - "tests/test_research_autoresearch_sandbox.py"
+      - "scripts/research_current_main_multilingual_dev.py"
+      - "benchmarks/agent_utility_v5_catalog.py"
+  workflow_dispatch:
+    inputs:
+      cases_per_group:
+        description: "Previously exposed DEV examples per language/stratum (1 smoke, 5 full)"
+        required: true
+        default: "1"
+        type: choice
+        options:
+          - "1"
+          - "5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: autoresearch-sandbox-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unprivileged-research-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install current library and research checks
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Verify strict candidate and decision contract
+        run: python -m pytest -q tests/test_research_autoresearch_sandbox.py
+      - name: Paired registered DEV candidate experiment
+        env:
+          RESEARCH_CASES_PER_GROUP: ${{ inputs.cases_per_group || '1' }}
+        run: |
+          case "$RESEARCH_CASES_PER_GROUP" in
+            1|5) ;;
+            *) echo "unregistered DEV case budget"; exit 1;;
+          esac
+          python -m scripts.research_autoresearch_sandbox \
+            --sizes 100 250 500 \
+            --cases-per-group "$RESEARCH_CASES_PER_GROUP" \
+            --output artifacts/autoresearch-sandbox/report.json
+      - name: Preserve raw paired DEV results and guarded decision
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: autoresearch-sandbox-dev-${{ github.run_id }}
+          path: artifacts/autoresearch-sandbox/report.json
+          if-no-files-found: error
+          retention-days: 90
+# Research candidates are ARBITRARY Python code in a disposable read-only
+# job with no checkout credentials, secrets, production data, write token or
+# independent holdout. No auto release or product source mutation.
