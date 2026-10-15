@@ -18,6 +18,11 @@ from .models import (
     ToolCall,
     ToolResult,
 )
+from .operation_fit import (
+    DeclaredOperationFitPolicy,
+    validate_declared_operation_fit,
+    validated_declared_operation_policy,
+)
 from .retrieval_abstention import (
     RetrievalAbstentionPolicy,
     SelectiveCapabilityRetrieval,
@@ -162,6 +167,7 @@ async def execute_selective_plan(
     *,
     policy: RetrievalAbstentionPolicy,
     config: RunConfig | dict[str, Any] | None = None,
+    operation_fit: DeclaredOperationFitPolicy | None = None,
 ) -> list[ToolResult]:
     """Execute only a selected, in-scope plan; never call on abstention.
 
@@ -199,6 +205,8 @@ async def execute_selective_plan(
         policy=policy,
         registry_version=router.registry.version,
     )
+    if operation_fit is not None:
+        validate_declared_operation_fit(dispatch_plan, policy=operation_fit)
     # Route the validated snapshot, never the mutable caller-supplied plan.
     return await router.execute(dispatch_plan, config=config)
 
@@ -210,6 +218,7 @@ async def ainvoke_selective(
     policy: RetrievalAbstentionPolicy,
     k: int = 5,
     config: RunConfig | dict[str, Any] | None = None,
+    operation_fit: DeclaredOperationFitPolicy | None = None,
 ) -> list[ToolResult]:
     """Opt-in atomic host workflow: same-principal retrieval, plan, execution.
 
@@ -239,6 +248,8 @@ async def ainvoke_selective(
     if type(k) is not int or k < 1:
         raise ValueError("k must be a positive integer")
     policy = _validated_abstention_policy(policy)
+    if operation_fit is not None:
+        operation_fit = validated_declared_operation_policy(operation_fit)
 
     # Validate the trusted request *before* an authorized retrieval. A caller
     # can bypass Pydantic with model_copy(update=...), including a non-string
@@ -296,4 +307,5 @@ async def ainvoke_selective(
         )
     return await execute_selective_plan(
         router, retrieval, plan, policy=policy, config=run_config,
+        operation_fit=operation_fit,
     )
