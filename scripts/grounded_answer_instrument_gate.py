@@ -9,8 +9,8 @@ No model execution or downstream benchmark is performed by this module.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any
 
 from scripts.grounded_answer_contract import classify_grounded_answer_episode
