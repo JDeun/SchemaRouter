@@ -62,9 +62,9 @@ from .validation import (
     json_schemas_compatible,
 )
 
-# ASCII and Korean behavior is unchanged. Match Japanese kana/kanji as separate
-# lexical spans so explicitly declared multilingual field aliases can be
-# retrieved; this does NOT translate English-only capability descriptions.
+# Match normalized Korean syllables and Japanese kana/kanji as lexical
+# spans so explicitly declared multilingual aliases can be retrieved.
+# Canonical Unicode equivalence is not a translation of tool metadata.
 _TOKEN_RE = re.compile(
     r"[A-Za-z0-9_]+|[가-힣]+|[ぁ-ゖ]+|[ァ-ヺー]+|[一-鿿々〆]+"
 )
@@ -72,10 +72,16 @@ _HALFWIDTH_KATAKANA_RE = re.compile(r"[\uFF66-\uFF9F]+")
 
 
 def _locale_lexical_text(text: str) -> str:
-    """Fold Japanese halfwidth kana only; leave ASCII, units and Korean intact."""
+    """Compose canonical Unicode, then fold only Japanese halfwidth kana.
+
+    Korean NFD Jamo and NFC Hangul must search the same declared aliases.
+    Do not apply global NFKC: unrelated compatibility symbols and units are
+    not interchangeable capability names or numerical evidence.
+    """
+    canonical = unicodedata.normalize("NFC", text)
     return _HALFWIDTH_KATAKANA_RE.sub(
         lambda match: unicodedata.normalize("NFKC", match.group()),
-        text,
+        canonical,
     )
 
 
