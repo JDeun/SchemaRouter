@@ -122,8 +122,9 @@ class EvidenceGate:
                 self.invalidate_tool(observation.tool)
             raise ValueError("observation must identify source tool and record")
         # Dataclass type hints do not constrain runtime field containers.
-        # Passing fields="owner" would satisfy frozenset({"owner"}).issubset
-        # because Python treats that string as an iterable of substrings.
+        # A list such as fields=["owner"] can falsely satisfy a required
+        # field set; even fields="x" satisfies frozenset({"x"}).issubset("x").
+        # Only a genuine frozenset of names is trusted as host evidence.
         # Revoke any earlier trusted observation after a malformed retry.
         if (
             type(observation.fields) is not frozenset
