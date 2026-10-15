@@ -90,3 +90,34 @@ dispatch an already registered trial once this workflow is on `main`.
 
 **No autonomous PR merge**, no automatic code changes, no training, no
 frozen v0.14 evidence reuse, and no v0.18 release promotion.
+
+
+## Registered benchmark completion reconciliation (2026-10-16)
+
+Issue-bound benchmark scheduling has **two distinct statuses**:
+
+- `DISPATCH_REQUESTED_NOT_BENCHMARK_SUCCESS`: the fixed allowlisted workflow was
+  requested from the original AutoLab workflow and the bot wrote a dispatch
+  receipt in parent #1405. This must **never** be counted as a successful
+  benchmark.
+- `COMMENT_ONLY`: a separate
+  `.github/workflows/research-benchmark-evidence-reconcile-dev.yml`
+  `workflow_run: completed` listener confirms an allowed **successful**
+  workflow-dispatch event from `main`, an exact matching source commit and
+  bot-owned dispatch receipt, and one nonexpired expected artifact belonging
+  to that run. It then comments the evidence link on the corresponding original
+  issue (#1208 or #839), without closing it or judging independent quality.
+
+The listener only reads the triggering completed run; it does not check out
+untrusted PR code, execute the benchmark output, run models, dispatch other
+workflows, merge PRs or grant release authority. A repeated webhook is
+idempotent using a bot-owned `schemarouter-benchmark-confirmation-v1` marker.
+Missing/expired artifacts, incorrect source, failure/cancellation, unknown
+workflows or unmatched bot receipts fail closed. Existing historical runs
+that predate this listener can be documented manually with verified Actions
+links; the listener must not retroactively fabricate qualification.
+
+**Important:** A successful development-only ClicShopping or Clear Your Tools
+workflow does not complete the parent issue's independent evaluation and
+real-agent gates. Those issues remain OPEN pending their stated acceptance
+criteria. Product/code work and v0.18 HOLD are unaffected.
