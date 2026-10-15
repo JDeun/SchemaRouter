@@ -28,7 +28,7 @@
   ],
   "per_run_budget": 2,
   "maximum_total_variants": 3,
-  "schedule_policy": "weekly_main_only_and_manual",
+  "schedule_policy": "event_driven_main_after_success_and_manual",
   "bootstrap_evidence": "GitHub Actions 38755177614 NLI directions dominance 50/72",
   "issue_tracker": 1405,
   "issues_policy": "only newly generated scoped AutoLab measurement issues may be auto-closed",
@@ -37,5 +37,7 @@
   "model_training_enabled": false,
   "automatic_source_code_changes": false,
   "automatic_pr_merges": false,
-  "developer_claims_not_independent": true
+  "developer_claims_not_independent": true,
+  "event_driven_next_run": "workflow_dispatch_after_persisted_bot_cursor",
+  "pending_run_limit": 1
 }
