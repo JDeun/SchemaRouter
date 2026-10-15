@@ -1,0 +1,78 @@
+name: Laya Native Operation Intent CPU DEV
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/laya-operation-intent-cpu-dev.yml"
+      - "scripts/evaluate_laya_operation_intent_cpu_dev.py"
+      - "tests/test_laya_operation_intent_cpu_dev.py"
+      - "benchmarks/operation-intent-trilingual-dev-20261015.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: laya-native-operation-dev-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-native-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install lightweight test requirements (NO model download)
+        run: python -m pip install -e . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Strict SDK response and cohort tests
+        run: |
+          python -m pytest -q tests/test_laya_operation_intent_cpu_dev.py
+          python scripts/evaluate_laya_operation_intent_cpu_dev.py --preflight
+
+  real-laya-cpu:
+    # The first real native-model study completed on run 38745998518.
+    # Later downloads and re-runs require explicit workflow_dispatch.
+    if: github.event_name == 'workflow_dispatch'
+    needs: offline-native-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      CUDA_VISIBLE_DEVICES: ""
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: CPU-only PyTorch
+        run: python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+      - name: Install pinned local native Laya SDK and core (no Jev API)
+        run: python -m pip install -e . "laya==0.4.7"
+      - name: Record runtime versions without pretending pinned weights
+        run: |
+          python - <<'PY'
+          from importlib.metadata import version
+          import torch
+          print("laya:", version("laya"))
+          print("torch:", torch.__version__)
+          print("torch CUDA available:", torch.cuda.is_available())
+          assert not torch.cuda.is_available()
+          PY
+      - name: Execute genuine local Laya choice / typed noul (DEV only)
+        run: |
+          python scripts/evaluate_laya_operation_intent_cpu_dev.py \
+            --output artifacts/laya-operation-intent-dev/laya.json
+      - name: Upload raw per-case native evidence
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: real-native-laya-choice-noul-72-dev-${{ github.run_id }}
+          path: artifacts/laya-operation-intent-dev/laya.json
+          if-no-files-found: error
+          retention-days: 30
