@@ -153,7 +153,9 @@ def test_missing_sufficient_independent_cohorts_denies_qualification():
     assert outcome["qualified"] is False
 
 
-@pytest.mark.parametrize("missing_observation", ["planner", "tool", "abstain_with_calls"])
+@pytest.mark.parametrize(
+    "missing_observation", ["planner", "tool", "abstain_with_calls"]
+)
 def test_claimed_grounded_success_requires_host_observed_supported_route(
     missing_observation,
 ):
