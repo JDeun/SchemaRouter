@@ -16,7 +16,7 @@ def main() -> None:
     plan = ExecutionPlan(
         query="재고 수량 조회",
         registry_version=1,
-        calls=[ToolCall(tool="inventory", endpoint="lookup")],
+        calls=[ToolCall(tool="inventory", endpoint="lookup", schema_fingerprint="fixture")],
     )
     host_manifest = {"inventory.lookup": "lookup", "inventory.update": "update"}
     policy = DeclaredOperationFitPolicy(
