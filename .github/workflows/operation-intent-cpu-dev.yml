@@ -1,0 +1,76 @@
+name: Operation Intent CPU DEV (Real Models)
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/operation-intent-cpu-dev.yml"
+      - "benchmarks/operation-intent-trilingual-dev-20261015.json"
+      - "scripts/evaluate_operation_intent_cpu_dev.py"
+      - "tests/test_operation_intent_cpu_dev.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: operation-intent-cpu-dev-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Validate DEV data and diagnostic metrics
+        run: |
+          python -m pytest -q tests/test_operation_intent_cpu_dev.py
+          python scripts/evaluate_operation_intent_cpu_dev.py --model validate
+      - name: Measure offline conservative lexical baseline
+        run: |
+          python scripts/evaluate_operation_intent_cpu_dev.py \
+            --model baseline --output artifacts/operation-intent-dev/baseline.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: trilingual-operation-intent-dev-baseline-${{ github.run_id }}
+          path: artifacts/operation-intent-dev/baseline.json
+          retention-days: 30
+
+  real-embedding-cpu:
+    needs: offline-baseline
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        model: [minilm, e5-small]
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install CPU-only torch
+        run: python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+      - name: Install local embeddings runtime
+        run: python -m pip install -e . "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
+      - name: Real CPU inference, never execute tool
+        run: |
+          python scripts/evaluate_operation_intent_cpu_dev.py \
+            --model "${{ matrix.model }}" \
+            --output "artifacts/operation-intent-dev/${{ matrix.model }}.json"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: trilingual-operation-intent-dev-${{ matrix.model }}-${{ github.run_id }}
+          path: artifacts/operation-intent-dev/${{ matrix.model }}.json
+          if-no-files-found: error
+          retention-days: 30
