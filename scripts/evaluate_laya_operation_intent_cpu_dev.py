@@ -119,7 +119,7 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "overall": metrics(rows),
         "by_language": {
             lang: metrics([r for r in rows if r["language"] == lang])
-            for lang in ("en", "ko", "ja")
+            for lang in sorted({r["language"] for r in rows})
         },
     }
 
