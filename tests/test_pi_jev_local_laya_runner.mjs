@@ -49,11 +49,19 @@ test('require observed post-inference Laya model and device evidence',()=>{
     {status:'ok'},
   ]) assert.throws(()=>loadedLayaEvidence(bad),/checkpoint provenance/);
 });
-test('no fallback or forged activation; numeric probability + latency only',()=>{
-  const valid={fallbackUsed:false,candidates:['t0','t1'],activated:['t1'],
-    elapsedMs:5,probabilities:{t0:0.1,t1:0.9}};
+test('no fallback or forged activation; exact native shortlist width',()=>{
+  const candidates=Array.from({length:10},(_,i)=>'t'+i);
+  const probabilities=Object.fromEntries(candidates.map((name,i)=>[name,i===1?0.9:0.01]));
+  const valid={fallbackUsed:false,candidates,activated:['t1'],
+    elapsedMs:5,probabilities};
   nativeResult(valid,catalog);
-  for(const bad of [{...valid,fallbackUsed:true},{...valid,activated:['t2']},
-      {...valid,candidates:['t0','t0']},{...valid,probabilities:{t0:0.1,t1:Infinity}},
-      {...valid,elapsedMs:Infinity}]) assert.throws(()=>nativeResult(bad,catalog));
+  for(const bad of [
+      {...valid,fallbackUsed:true},
+      {...valid,activated:['t20']},
+      {...valid,candidates:[...candidates.slice(0,9),'t0']},
+      {...valid,candidates:candidates.slice(0,9)},
+      {...valid,candidates:[...candidates,'t10']},
+      {...valid,probabilities:{...probabilities,t1:Infinity}},
+      {...valid,elapsedMs:Infinity}
+    ]) assert.throws(()=>nativeResult(bad,catalog));
 });
