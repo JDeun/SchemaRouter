@@ -27,11 +27,15 @@
     ]
   },
   "targets": {
+    "agent_success_gap_vs_full_max": 0.02,
     "supported_tool_recall_min": 0.97,
+    "required_field_recall_min": 0.97,
     "unsupported_rejection_min": 0.99,
     "wrong_operation_rate_max": 0.01,
     "unauthorized_dispatch_max": 0,
-    "selection_p95_ms_max": 250
+    "schema_bytes_ratio_to_full_max": 0.5,
+    "selection_p95_ms_max": 250,
+    "end_to_end_p95_ratio_to_full_max": 1.05
   },
   "langs": [
     "en",
