@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 
 from scripts.evaluate_operation_intent_cpu_dev import (
-    DIAGNOSTIC_THRESHOLDS,
     DESCRIPTIONS,
+    DIAGNOSTIC_THRESHOLDS,
     evaluate_baseline,
     load_corpus,
     summarize,
