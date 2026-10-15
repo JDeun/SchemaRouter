@@ -228,7 +228,12 @@ def evaluate(
     sizes: tuple[int, ...] = CATALOG_SIZES,
     cases_per_group: int = TASKS_PER_CELL,
 ) -> dict[str, Any]:
-    if not sizes or len(sizes) != len(set(sizes)) or any(s not in CATALOG_SIZES for s in sizes):
+    if (
+        not sizes
+        or tuple(sorted(sizes)) != sizes
+        or len(sizes) != len(set(sizes))
+        or any(s not in CATALOG_SIZES for s in sizes)
+    ):
         raise ValueError("not a registered current API DEV catalog size")
     tasks = build_tasks()
     selected_tasks = select_cases(tasks, cases_per_group=cases_per_group)
