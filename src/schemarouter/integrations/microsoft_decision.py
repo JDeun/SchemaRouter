@@ -62,12 +62,23 @@ class MicrosoftDecisionOneFoundryBackend:
         require_no_fit: bool = True,
         client: httpx.Client | None = None,
     ) -> None:
-        if not isinstance(resource_endpoint, str):
+        if not isinstance(resource_endpoint, str) or any(
+            char.isspace() or ord(char) < 32 or ord(char) == 127
+            for char in resource_endpoint
+        ):
             raise ValueError("resource_endpoint must be an HTTPS origin")
-        endpoint = urlsplit(resource_endpoint)
+        # urlsplit() normalizes away some embedded tab/newline characters;
+        # validating the original bytes prevents a disguised credential target.
+        # Accessing .port catches invalid alphabetic/out-of-range ports early.
+        try:
+            endpoint = urlsplit(resource_endpoint)
+            port = endpoint.port
+        except ValueError as exc:
+            raise ValueError("resource_endpoint must be an HTTPS origin") from exc
         if (
             endpoint.scheme != "https"
             or not endpoint.hostname
+            or port == 0
             or endpoint.username is not None
             or endpoint.password is not None
             or endpoint.path not in ("", "/")
