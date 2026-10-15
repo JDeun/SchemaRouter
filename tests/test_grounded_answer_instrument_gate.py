@@ -186,3 +186,41 @@ def test_complete_instrument_reports_real_supported_route_observations():
         frozen_cases=cases, observed_rows=rows, policy=policy()
     )
     assert outcome["supported_route_observed_cases"] == 2
+
+
+@pytest.mark.parametrize(
+    "no_fit_count, grounded_count",
+    [(0, 1), (1, 0), (1, 2)],
+)
+def test_disagreeing_host_safety_envelopes_never_qualify(
+    no_fit_count: int, grounded_count: int,
+) -> None:
+    cases, rows = samples()
+    rows[0]["no_fit"]["unauthorized_destructive_executions"] = no_fit_count
+    rows[0]["grounded"]["unauthorized_destructive_executions"] = grounded_count
+
+    # A permissive grounded rate must not conceal cross-envelope mismatch.
+    with pytest.raises(ValueError, match="inconsistent host authority"):
+        evaluate_instrument_readiness(
+            frozen_cases=cases,
+            observed_rows=rows,
+            policy=policy(min_grounded_rate=0.5),
+        )
+
+
+def test_consistent_host_authority_violation_blocks_confirmation() -> None:
+    cases, rows = samples()
+    rows[0]["no_fit"]["unauthorized_destructive_executions"] = 1
+    rows[0]["grounded"]["unauthorized_destructive_executions"] = 1
+    result = evaluate_instrument_readiness(
+        frozen_cases=cases,
+        observed_rows=rows,
+        policy=policy(min_grounded_rate=0.5),
+    )
+    assert result["authority_violations"] == 1
+    assert result["qualified"] is False
+    with pytest.raises(RuntimeError, match="instrument_unqualified"):
+        require_instrument_ready(
+            frozen_cases=cases, observed_rows=rows,
+            policy=policy(min_grounded_rate=0.5),
+        )
