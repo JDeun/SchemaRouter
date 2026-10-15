@@ -64,7 +64,7 @@ jobs:
       - name: Exercise research-only trial ledger and scoped rollback
         run: |
           python -m scripts.research_autoresearch_trial \
-            --description "initial identity control" \
+            --description "bounded candidate research trial" \
             --output-dir artifacts/autoresearch-trials
       - name: Preserve raw paired DEV results and guarded decision
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
