@@ -653,3 +653,56 @@ def test_mutating_caller_argument_bindings_does_not_retarget_existing_gate() -> 
     bindings.clear()
     assert gate.check("refund_issue", {"charge_id": "C2"}).allowed
     assert not gate.check("refund_issue", {"charge_id": "C3"}).allowed
+
+
+def test_mutating_mapping_cannot_change_action_arguments_after_gate_check() -> None:
+    from collections.abc import Mapping
+
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    class FlipOnIteration(Mapping[str, object]):
+        def __init__(self) -> None:
+            self.values = {"refund_amount": 30}
+
+        def __getitem__(self, key: str) -> object:
+            return self.values[key]
+
+        def __iter__(self):
+            # Dict materialization must happen *before* policy evaluation.
+            # The model must never get amount=30 approved then amount=70 used.
+            self.values["refund_amount"] = 70
+            return iter(self.values)
+
+        def __len__(self) -> int:
+            return len(self.values)
+
+    gate = EvidenceGate(ActionContract(
+        "refund_issue", (("charge_read", "C2", frozenset({"amount"})),),
+        value_conditions=(ValueCondition(
+            "charge_read", "C2", "amount", "lte",
+            "action_argument", "refund_amount",
+        ),),
+    ))
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount"}), values=(("amount", 50),),
+    ))
+    called: list[object] = []
+    with pytest.raises(PermissionError, match="semantic_predicate_failed"):
+        gate.dispatch(
+            "refund_issue", FlipOnIteration(),
+            lambda *args: called.append(args),
+        )
+    assert called == []
+
+
+def test_stable_action_arguments_are_dispatched_unchanged() -> None:
+    gate = EvidenceGate(ActionContract(
+        "refund_issue", (("charge_read", "C2", frozenset({"owner"})),),
+    ))
+    gate.observe(Observation("charge_read", "C2", frozenset({"owner"})))
+    args = {"refund_amount": 30}
+    output = gate.dispatch(
+        "refund_issue", args, lambda name, values: (name, values),
+    )
+    assert output == ("refund_issue", {"refund_amount": 30})
+    assert output[1] is not args
