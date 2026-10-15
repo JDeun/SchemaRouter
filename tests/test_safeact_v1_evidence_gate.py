@@ -546,3 +546,63 @@ def test_empty_or_malformed_contract_fields_never_authorize_action(
         EvidenceGate(ActionContract(
             "refund_issue", (("charge_read", "C2", declared_fields),),
         ))
+
+
+@pytest.mark.parametrize(
+    "bad_values",
+    [
+        [("amount", 50)],
+        {"amount": 50},
+        (("amount", 50), ("amount", 50)),
+        (("undeclared", 50),),
+        (("amount", float("nan")),),
+        (("amount", float("inf")),),
+        (("amount", [50]),),
+        (("amount", {"value": 50}),),
+        ((123, 50),),
+    ],
+)
+def test_direct_observation_rejects_mutable_or_untrusted_typed_values(
+    bad_values: object,
+) -> None:
+    gate = EvidenceGate(ActionContract(
+        "refund_issue", (("charge_read", "C2", frozenset({"amount"})),),
+    ))
+    with pytest.raises(ValueError, match="immutable typed source scalars"):
+        gate.observe(Observation(
+            "charge_read", "C2", frozenset({"amount"}), values=bad_values,
+        ))
+    assert not gate.check("refund_issue").allowed
+
+
+def test_invalid_typed_value_retry_revokes_prior_approval() -> None:
+    gate = EvidenceGate(ActionContract(
+        "refund_issue", (("charge_read", "C2", frozenset({"amount"})),),
+    ))
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount"}), values=(("amount", 50),),
+    ))
+    assert gate.check("refund_issue").allowed
+    with pytest.raises(ValueError, match="immutable typed source scalars"):
+        gate.observe(Observation(
+            "charge_read", "C2", frozenset({"amount"}),
+            values=[("amount", 50)],
+        ))
+    assert not gate.check("refund_issue").allowed
+
+
+def test_direct_immutable_typed_observation_still_allows_reviewed_predicate() -> None:
+    from examples.external_validation.safeact_v1.evidence_gate import ValueCondition
+
+    gate = EvidenceGate(ActionContract(
+        "refund_issue", (("charge_read", "C2", frozenset({"amount"})),),
+        value_conditions=(ValueCondition(
+            "charge_read", "C2", "amount", "lte",
+            "action_argument", "refund_amount",
+        ),),
+    ))
+    gate.observe(Observation(
+        "charge_read", "C2", frozenset({"amount"}), values=(("amount", 50),),
+    ))
+    assert gate.check("refund_issue", {"refund_amount": 30}).allowed
+    assert not gate.check("refund_issue", {"refund_amount": 60}).allowed
