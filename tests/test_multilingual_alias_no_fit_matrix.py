@@ -6,6 +6,8 @@ Lexical evidence is not calibrated agent-level no-fit or task success.
 
 from __future__ import annotations
 
+import unicodedata
+
 import pytest
 
 from schemarouter import (
@@ -151,3 +153,50 @@ def test_halfwidth_katakana_is_not_an_invented_translation(indexed: bool) -> Non
         for c in planner._semantic_recall_catalog(request, intent)
     }
     assert all(score == 0 for score in scores.values())
+
+
+@pytest.mark.parametrize("indexed", [False, True])
+def test_korean_canonical_decomposition_matches_declared_alias(
+    indexed: bool,
+) -> None:
+    composed = "물성조회"
+    decomposed = unicodedata.normalize("NFD", composed)
+    assert decomposed != composed
+
+    scores = _scores(decomposed, indexed=indexed, aliases=True)
+    assert scores["z_measurement.fetch"] > 0
+    assert scores["z_measurement.fetch"] > scores["a_warehouse.count"]
+    no_declared_alias = _scores(decomposed, indexed=indexed, aliases=False)
+    assert all(score == 0 for score in no_declared_alias.values())
+
+
+@pytest.mark.parametrize("indexed", [False, True])
+def test_decomposed_declared_korean_alias_matches_composed_query(
+    indexed: bool,
+) -> None:
+    registry = InMemoryRegistry()
+    registry.register(ToolSpec(
+        name="sample_records",
+        description="Unrelated English text",
+        endpoints=[EndpointSpec(
+            name="fetch",
+            description="Read trusted records",
+            read_only=True,
+            operation_aliases=[unicodedata.normalize("NFD", "물성조회")],
+        )],
+    ))
+    planner = SchemaPlanner(registry, candidate_index=indexed)
+    request = PlanRequest(query="물성조회")
+    intent = planner.analyzer.analyze(request, registry)
+    scores = {
+        f"{candidate.tool.key}.{candidate.endpoint.name}": candidate.score
+        for candidate in planner._semantic_recall_catalog(request, intent)
+    }
+    assert scores["sample_records.fetch"] > 0
+
+
+def test_unicode_normalization_never_rewrites_original_request() -> None:
+    query = unicodedata.normalize("NFD", "물성조회")
+    original = PlanRequest(query=query)
+    _scores(query, indexed=True, aliases=True)
+    assert original.query == query
