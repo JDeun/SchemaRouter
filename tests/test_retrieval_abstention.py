@@ -283,3 +283,34 @@ def test_ordinary_finite_rankings_unchanged_after_overflow_guard() -> None:
     assert [c.route_id for c in decision.candidates] == [
         c.route_id for c in retrieval.candidates
     ]
+
+
+@pytest.mark.parametrize(
+    "poison",
+    [
+        {"min_score": float("nan")},
+        {"min_score": float("inf")},
+        {"min_score": True},
+        {"min_score": "0.3"},
+        {"min_margin": -1.0},
+        {"min_score": None, "min_margin": None},
+    ],
+)
+def test_public_abstention_revalidates_forged_policy(poison: dict) -> None:
+    retrieval = build_router().retrieve("search papers", k=2)
+    original = [x.route_id for x in retrieval.candidates]
+    forged = RetrievalAbstentionPolicy(min_score=-1e8).model_copy(update=poison)
+    with pytest.raises((ValidationError, ValueError)):
+        apply_retrieval_abstention(retrieval, policy=forged)
+    assert [x.route_id for x in retrieval.candidates] == original
+
+
+def test_validated_public_policy_retains_ranked_selection_behavior() -> None:
+    retrieval = build_router().retrieve("search papers", k=2)
+    decision = apply_retrieval_abstention(
+        retrieval, policy=RetrievalAbstentionPolicy(min_score=-1e8)
+    )
+    assert decision.disposition == "selected"
+    assert [x.route_id for x in decision.candidates] == [
+        x.route_id for x in retrieval.candidates
+    ]
