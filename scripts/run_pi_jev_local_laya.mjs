@@ -62,7 +62,10 @@ export function nativeResult(result, catalog) {
   if(result?.fallbackUsed!==false) throw Error('No native Jev/Laya result (fallback detected)');
   const allowed=new Set(catalog.map(x=>x.name));
   const c=result.candidates,a=result.activated,p=result.probabilities;
-  if(!Array.isArray(c)||!Array.isArray(a)||c.length<1||c.length>10 ||
+  // The pinned 82-tool native router advertises exactly ten shortlist
+  // positions. Accepting 1..9 while reporting native_shortlist_width:10
+  // would produce false experiment provenance and invalidate comparisons.
+  if(!Array.isArray(c)||!Array.isArray(a)||c.length!==10 ||
      new Set(c).size!==c.length || new Set(a).size!==a.length ||
      !c.every(x=>allowed.has(x)) || !a.every(x=>c.includes(x)) ||
      !p || typeof p!=='object' || Array.isArray(p) ||
