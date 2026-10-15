@@ -1,6 +1,13 @@
 name: Actions Only Adaptive CPU Search DEV
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      # One-time bootstrap on workflow change/merge; ordinary source pushes
+      # do not start an unbounded research session.
+      - ".github/workflows/research-actions-only-cpu-search.yml"
   pull_request:
     paths:
       - ".github/workflows/research-actions-only-cpu-search.yml"
@@ -68,7 +75,7 @@ jobs:
           if-no-files-found: error
 
   adaptive-research:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'workflow_dispatch' || github.event_name == 'push') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -95,8 +102,8 @@ jobs:
       - name: Validate prior run identity and restore its uploaded state
         env:
           GH_TOKEN: ${{ github.token }}
-          PREVIOUS_ID: ${{ inputs.previous_run_id }}
-          REMAINING: ${{ inputs.remaining_batches }}
+          PREVIOUS_ID: ${{ inputs.previous_run_id || '' }}
+          REMAINING: ${{ inputs.remaining_batches || 12 }}
         shell: bash
         run: |
           set -euo pipefail
@@ -160,7 +167,7 @@ jobs:
 
   dispatch-next:
     needs: adaptive-research
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && needs.adaptive-research.result == 'success' && needs.adaptive-research.outputs.continue_next == 'true'
+    if: (github.event_name == 'workflow_dispatch' || github.event_name == 'push') && github.ref == 'refs/heads/main' && needs.adaptive-research.result == 'success' && needs.adaptive-research.outputs.continue_next == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     permissions:
