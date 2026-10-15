@@ -100,13 +100,31 @@ class EvidenceGate:
         self._observations: list[Observation] = []
 
     def observe(self, observation: Observation) -> None:
+        if not isinstance(observation, Observation):
+            raise ValueError("observation must be trusted host evidence")
         if (
             not isinstance(observation.tool, str)
             or not observation.tool.strip()
             or not isinstance(observation.record_id, str)
             or not observation.record_id.strip()
         ):
+            if isinstance(observation.tool, str) and observation.tool:
+                self.invalidate_tool(observation.tool)
             raise ValueError("observation must identify source tool and record")
+        # Dataclass type hints do not constrain runtime field containers.
+        # Passing fields="owner" would satisfy frozenset({"owner"}).issubset
+        # because Python treats that string as an iterable of substrings.
+        # Revoke any earlier trusted observation after a malformed retry.
+        if (
+            type(observation.fields) is not frozenset
+            or not observation.fields
+            or any(
+                type(field) is not str or not field.strip()
+                for field in observation.fields
+            )
+        ):
+            self.invalidate_tool(observation.tool)
+            raise ValueError("observation fields must be a nonempty string frozenset")
         # Dataclass annotations do not validate at runtime. A supposed
         # successful="false" (or 1) was truthy, allowing failed reads to
         # masquerade as trusted evidence. Revoke prior claims from this tool.
