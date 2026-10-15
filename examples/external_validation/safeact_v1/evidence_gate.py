@@ -5,6 +5,7 @@ be independently authored and provenance-validated before constructing Gate.
 """
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
@@ -136,6 +137,25 @@ class EvidenceGate:
         ):
             self.invalidate_tool(observation.tool)
             raise ValueError("observation fields must be a nonempty string frozenset")
+        # A frozen dataclass can still carry an aliased mutable list/dict.
+        # Direct low-level callers must obey the trusted session's immutable,
+        # source-field-bound JSON scalar validation before evidence is recorded.
+        if (
+            type(observation.values) is not tuple
+            or any(
+                type(item) is not tuple
+                or len(item) != 2
+                or type(item[0]) is not str
+                or item[0] not in observation.fields
+                or type(item[1]) not in {str, bool, int, float}
+                or (type(item[1]) is float and not math.isfinite(item[1]))
+                for item in observation.values
+            )
+            or len({field for field, _ in observation.values})
+            != len(observation.values)
+        ):
+            self.invalidate_tool(observation.tool)
+            raise ValueError("observation values must be immutable typed source scalars")
         # Dataclass annotations do not validate at runtime. A supposed
         # successful="false" (or 1) was truthy, allowing failed reads to
         # masquerade as trusted evidence. Revoke prior claims from this tool.
