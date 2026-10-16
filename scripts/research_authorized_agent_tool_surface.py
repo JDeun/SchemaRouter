@@ -34,6 +34,8 @@ class AuthorizedAgentToolSurface:
 
     router: SchemaRouter
     witness: tuple[Any, ...]
+    _principal: PrincipalContext
+    _principal_claims_snapshot: str
     registered_route_count: int
     visible_route_ids: tuple[str, ...]
     _tool_definitions: dict[str, dict[str, Any]]
@@ -43,6 +45,8 @@ class AuthorizedAgentToolSurface:
 
     def assert_source_unchanged(self) -> None:
         self.router._check_retrieval_authority_witness(self.witness)
+        if _principal_claims_canonical(self._principal) != self._principal_claims_snapshot:
+            raise PolicyViolationError("principal claims changed during model request")
 
     def tool_definitions(
         self, selected_route_ids: list[str], *, k: int = MAX_TOOL_DEFINITIONS,
@@ -151,6 +155,16 @@ class AuthorizedAgentToolSurface:
         return result
 
 
+def _principal_claims_canonical(principal: PrincipalContext) -> str:
+    """Detect mutable trusted roles/attributes changing after source selection."""
+    return json.dumps(
+        principal.model_dump(mode="json"),
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+
+
 def capture_authorized_agent_tool_surface(
     router: SchemaRouter,
     query: str,
@@ -167,6 +181,7 @@ def capture_authorized_agent_tool_surface(
     ):
         raise ValueError("invalid source cap")
     witness = router._retrieval_authority_witness()
+    claims_snapshot = _principal_claims_canonical(principal)
     physical = sum(len(tool.endpoints) for tool in router.registry.tools())
     if physical > max_registered_routes:
         raise ValueError("original catalog exceeds research cap")
@@ -178,6 +193,8 @@ def capture_authorized_agent_tool_surface(
         query, principal=principal, k=max(1, physical),
     )
     router._check_retrieval_authority_witness(witness)
+    if _principal_claims_canonical(principal) != claims_snapshot:
+        raise PolicyViolationError("principal claims changed during model request")
     if (
         result.registry_version != witness[1]
         or result.total_ranked != len(result.candidates)
@@ -243,8 +260,12 @@ def capture_authorized_agent_tool_surface(
             field.name for field in candidate.output_fields
         )
     router._check_retrieval_authority_witness(witness)
+    if _principal_claims_canonical(principal) != claims_snapshot:
+        raise PolicyViolationError("principal claims changed during model request")
     return AuthorizedAgentToolSurface(
-        router=router, witness=witness, registered_route_count=physical,
+        router=router, witness=witness, _principal=principal,
+        _principal_claims_snapshot=claims_snapshot,
+        registered_route_count=physical,
         visible_route_ids=tuple(definitions),
         _tool_definitions=definitions,
         _visible_output_names=visible,
