@@ -366,3 +366,122 @@ def test_forged_route_consistent_name_but_not_visible_is_denied() -> None:
             router, "ocean", principal=VIEWER,
             contract=_contract("wave_height"),
         )
+
+
+def test_fully_hidden_route_does_not_block_scoped_completeness() -> None:
+    """An RBAC-allowed route with no visible output is not a candidate."""
+    router = _router()
+    router.authorization_policy = AuthorizationPolicy(
+        rules=(
+            AuthorizationRule(
+                name="viewer-read", effect="allow", operation="*.*",
+                roles_any=("viewer",),
+            ),
+        ),
+        default_effect="deny",
+        data_rules=(
+            DataScopeRule(
+                operation="archive.read", roles_any=("viewer",),
+                hidden_fields=("archive_values", "sensitive_audit"),
+            ),
+        ),
+    )
+    retrieved = router.retrieve_authorized(
+        "ocean weather", principal=VIEWER, k=2,
+    )
+    assert {item.route_id for item in retrieved.candidates} == {
+        "marine.read", "forecast.read",
+    }
+    decision = select_authorized_field_contract(
+        router, "ocean weather", principal=VIEWER,
+        contract=_contract("wave_height", "ocean_current_velocity"),
+        k=2,
+    )
+    assert decision.reason == "unique_contract_match"
+    assert decision.selected_route_id == "marine.read"
+    assert decision.candidate_count == 2
+    assert "archive.read" not in decision.matching_route_ids
+    assert select_authorized_field_contract(
+        router, "ocean weather", principal=VIEWER,
+        contract=_contract("wave_height", "ocean_current_velocity"),
+        k=1,
+    ).reason == "incomplete_authorized_catalog"
+
+
+def test_locally_unavailable_route_does_not_block_full_visible_catalog() -> None:
+    """The completeness witness must mirror the planner availability gate."""
+    router = _router()
+    router.planner.availability_predicate = (
+        lambda tool, endpoint: tool.key != "archive"
+    )
+    selected = select_authorized_field_contract(
+        router, "ocean weather", principal=VIEWER,
+        contract=_contract("wave_height", "ocean_current_velocity"),
+        k=2,
+    )
+    assert selected.reason == "unique_contract_match"
+    assert selected.selected_route_id == "marine.read"
+    partial = select_authorized_field_contract(
+        router, "ocean weather", principal=VIEWER,
+        contract=_contract("wave_height", "ocean_current_velocity"),
+        k=1,
+    )
+    assert partial.reason == "incomplete_authorized_catalog"
+
+
+def test_forged_fully_hidden_route_is_rejected_not_counted() -> None:
+    """Self-consistent forged route IDs cannot bypass hidden data scope."""
+    router = _router()
+    router.authorization_policy = AuthorizationPolicy(
+        rules=(
+            AuthorizationRule(
+                name="viewer-read", effect="allow", operation="*.*",
+                roles_any=("viewer",),
+            ),
+        ),
+        default_effect="deny",
+        data_rules=(
+            DataScopeRule(
+                operation="archive.read", roles_any=("viewer",),
+                hidden_fields=("archive_values", "sensitive_audit"),
+            ),
+        ),
+    )
+    actual_retrieve = router.retrieve_authorized
+
+    def inject(*args, **kwargs):
+        genuine = actual_retrieve(*args, **kwargs)
+        first = genuine.candidates[0]
+        injected = first.model_copy(update={
+            "route_id": "archive.read", "tool": "archive", "endpoint": "read",
+        })
+        return genuine.model_copy(update={
+            "candidates": [injected, *genuine.candidates[1:]],
+        })
+
+    router.retrieve_authorized = inject
+    with pytest.raises(
+        PolicyViolationError, match="outside current host authorization",
+    ):
+        select_authorized_field_contract(
+            router, "ocean weather", principal=VIEWER,
+            contract=_contract("wave_height"), k=2,
+        )
+
+
+def test_scoped_completeness_is_principal_specific() -> None:
+    """Scope for the verified Viewer must not leak to an outsider."""
+    router = _router()
+    assert select_authorized_field_contract(
+        router, "marine", principal=VIEWER,
+        contract=_contract("wave_height", "ocean_current_velocity"),
+        k=3,
+    ).selected_route_id == "marine.read"
+    outsider = select_authorized_field_contract(
+        router, "marine", principal=OUTSIDER,
+        contract=_contract("wave_height", "ocean_current_velocity"),
+        k=3,
+    )
+    assert outsider.reason == "empty_authorized_catalog"
+    assert outsider.candidate_count == 0
+    assert outsider.matching_route_ids == []
