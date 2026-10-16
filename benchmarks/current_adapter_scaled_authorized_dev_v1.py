@@ -22,7 +22,6 @@ from schemarouter.adapters.openapi import tool_from_openapi
 
 from benchmarks.current_adapter_field_scope_dev_v1 import (
     _object,
-    authored_tasks as previous_authored_tasks,
     native_tools,
     openapi_tool,
     mcp_tool,
