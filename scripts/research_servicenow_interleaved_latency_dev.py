@@ -19,7 +19,6 @@ from typing import Any
 import schemarouter as schemarouter_package
 from schemarouter import SchemaRouter
 from schemarouter.adapters.mcp import tool_from_mcp
-
 from scripts.external_validation_provenance import implementation_provenance
 from scripts.external_validation_servicenow_platform_mcp import validate_package
 
@@ -83,7 +82,9 @@ def validate_samples(
     expected = list(schedule(list(case_map), repeats, seed))
     if not isinstance(samples, list) or len(samples) != len(expected):
         raise ValueError("request-level sample cardinality changed")
-    for row, (case_id, iteration, arm, position) in zip(samples, expected):
+    for row, (case_id, iteration, arm, position) in zip(
+        samples, expected, strict=True,
+    ):
         if not isinstance(row, dict) or set(row) != SAMPLE_KEYS:
             raise ValueError("invalid request-level sample structure")
         if (row["case_id"], row["iteration"], row["arm"], row["order_position"]) != (
