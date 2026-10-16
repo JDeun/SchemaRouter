@@ -12,10 +12,15 @@ import pytest
 
 from schemarouter import PlanRequest, PrincipalContext
 from scripts.research_open_meteo_real_openapi_dev import (
-    SOURCE_COMMIT, SOURCE_NAMES, git_blob_sha1,
+    SOURCE_COMMIT,
+    SOURCE_NAMES,
+    git_blob_sha1,
 )
 from scripts.research_real_open_meteo_e5_cpu_dev import (
-    MODEL_REVISION, candidate_options, catalog, evaluate_with_encoder,
+    MODEL_REVISION,
+    candidate_options,
+    catalog,
+    evaluate_with_encoder,
     validate_semantic_ranks,
 )
 
