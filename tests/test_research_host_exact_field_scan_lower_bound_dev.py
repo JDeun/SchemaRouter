@@ -1,6 +1,8 @@
 """Read-only DEV lower-bound experiments cannot become policy authority."""
 from __future__ import annotations
 
+import time
+
 import pytest
 
 from benchmarks.current_adapter_field_scope_dev_v1 import principal
@@ -12,6 +14,7 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     HostFieldContract,
+    PolicyViolationError,
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
@@ -165,3 +168,67 @@ def test_write_endpoint_and_wrong_declared_fields_do_not_match() -> None:
     )
     assert not _matches(readable, field_contract("secret"))
     assert _matches(readable, field_contract("safe"))
+
+def test_forged_principal_counterexample_is_rejected_by_product_api() -> None:
+    """Research scan does not validate a forged Pydantic identity envelope.
+
+    This is intentionally a *negative* security finding; it must remain
+    visible instead of being counted among authorized-parity successes.
+    """
+    router = small_router()
+    valid = PrincipalContext(subject="trusted-viewer", roles=("viewer",))
+    forged = valid.model_copy(update={"roles": ("viewer", 7)})
+    contract = field_contract("secret")
+    # A raw scan of fields cannot validate caller ownership of claims.
+    assert direct_scan(router, forged, contract)["selected_route_id"] == "locked.read"
+    with pytest.raises(PolicyViolationError, match="invalid principal"):
+        select_authorized_field_contract(
+            router, "read secret", principal=forged, contract=contract, k=1,
+        )
+
+
+def test_forged_host_contract_counterexample_is_rejected_by_product_api() -> None:
+    """Duplicated exact requirements may pass a naïve AND scan."""
+    router = small_router()
+    who = PrincipalContext(subject="trusted-viewer", roles=("viewer",))
+    forged = field_contract("secret").model_copy(
+        update={"required_output_fields": ["secret", "secret"]},
+    )
+    assert direct_scan(router, who, forged)["selected_route_id"] == "locked.read"
+    with pytest.raises(PolicyViolationError, match="invalid or forged"):
+        select_authorized_field_contract(
+            router, "read secret", principal=who, contract=forged, k=1,
+        )
+
+
+def test_active_executor_cooldown_denies_both_product_and_dev_scan() -> None:
+    """A full available route count must honor active executor cooldown."""
+    router = small_router()
+    who = PrincipalContext(subject="trusted-viewer", roles=("viewer",))
+    tool = router.registry.get("locked")
+    router.executor._unavailable_until[
+        ("locked", "read", tool.fingerprint)
+    ] = time.monotonic() + 120
+    contract = field_contract("secret")
+    direct = direct_scan(router, who, contract)
+    public = select_authorized_field_contract(
+        router, "read secret", principal=who, contract=contract, k=1,
+    )
+    assert direct["reason"] == public.reason == "empty_authorized_catalog"
+    assert direct["visible_candidate_count"] == public.candidate_count == 0
+
+
+def test_auth_policy_replacement_during_scan_rejects_research_receipt() -> None:
+    """Policy object identity changes must never issue an apparent selection."""
+    router = small_router()
+    who = PrincipalContext(subject="trusted-viewer", roles=("viewer",))
+
+    def swap_policy(tool: ToolSpec, endpoint: EndpointSpec) -> bool:
+        router.authorization_policy = AuthorizationPolicy(
+            rules=(), default_effect="deny",
+        )
+        return True
+
+    router.planner.availability_predicate = swap_policy
+    with pytest.raises(ValueError, match="scope changed mid-scan"):
+        direct_scan(router, who, field_contract("secret"))
