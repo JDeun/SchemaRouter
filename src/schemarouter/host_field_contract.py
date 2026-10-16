@@ -229,8 +229,43 @@ def select_authorized_field_contract(
             matching_route_ids=matches or [],
         )
 
-    # Do not turn a partial top-K into a false "unique" proof.
-    if verified.total_ranked > len(ids):
+    # Some principal data-scope projections rebuild total_ranked from the
+    # *already truncated* candidate list. In that situation total_ranked == k
+    # is NOT proof that every authorized route has been considered. Verify
+    # against the independently enumerated host-authorized registry routes,
+    # including query-zero-score routes that ranking can never waive.
+    #
+    # Count unavailable/data-hidden routes conservatively: false abstention
+    # is preferable to wrongly proving uniqueness and exposing a tool.
+    # This is intentionally a read-only pass; no execution, planning or
+    # inferred authorization is introduced.
+    try:
+        authorized_routes = {
+            f"{tool.key}.{endpoint.name}"
+            for tool in router.registry.tools()
+            for endpoint in tool.endpoints
+            if router.authorization_policy.visible(
+                approved_principal, tool, endpoint
+            )
+        }
+    except (TypeError, ValueError, AttributeError) as exc:
+        raise PolicyViolationError(
+            "cannot validate the complete authorized catalog"
+        ) from exc
+    if not set(ids) <= authorized_routes:
+        raise PolicyViolationError(
+            "retrieval contains a route outside current host authorization"
+        )
+    if verified.registry_version != router.registry.version:
+        raise PolicyViolationError(
+            "registry changed during authorized catalog enumeration"
+        )
+    # The planner's total_ranked can be exact or a projected lower bound;
+    # never trust it as *the sole* completeness oracle.
+    if (
+        verified.total_ranked > len(ids)
+        or len(authorized_routes) > len(ids)
+    ):
         return abstain("incomplete_authorized_catalog")
     if not ids:
         return abstain("empty_authorized_catalog")
