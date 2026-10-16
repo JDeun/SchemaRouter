@@ -22,10 +22,14 @@ from typing import Any
 
 from benchmarks.current_adapter_field_scope_dev_v1 import principal
 from benchmarks.current_adapter_scaled_authorized_dev_v1 import (
-    DENIED_VIEWER, SIZES, build_fixture,
+    DENIED_VIEWER,
+    SIZES,
+    build_fixture,
 )
 from schemarouter import (
-    HostFieldContract, PlanRequest, SchemaRouter,
+    HostFieldContract,
+    PlanRequest,
+    SchemaRouter,
     select_authorized_field_contract,
 )
 
