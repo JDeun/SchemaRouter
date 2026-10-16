@@ -72,7 +72,7 @@ def evaluate(sizes: tuple[int, ...] = SIZES) -> dict[str, Any]:
                 query = PlanRequest(query=task["query"])
                 with patch.object(
                     router, "_request_local_scoped_projection",
-                    lambda p, pred: _without_reuse(router, p, pred),
+                    lambda p, pred, router=router: _without_reuse(router, p, pred),
                 ):
                     start = time.perf_counter_ns()
                     old = router.retrieve_authorized(
