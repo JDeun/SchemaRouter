@@ -249,12 +249,47 @@ def audit(report: Any) -> dict[str, Any]:
     }
 
 
+def verify_frozen_source(raw: bytes, manifest: dict[str, Any]) -> dict[str, Any]:
+    """Pin exact archived experiment bytes; reject substitutes and missing runs."""
+    if (
+        not isinstance(manifest, dict)
+        or manifest.get("schema_version") != 1
+        or manifest.get("source_repository") != "JDeun/SchemaRouter"
+        or manifest.get("source_workflow_run_id") != 38839753512
+        or manifest.get("source_artifact_id") != 12020808680
+        or manifest.get("source_artifact_file") != "report.json"
+        or not _digest(manifest.get("source_report_raw_sha256"))
+        or hashlib.sha256(raw).hexdigest() != manifest["source_report_raw_sha256"]
+    ):
+        raise ValueError("unverified or replaced frozen Actions report")
+    report = json.loads(raw)
+    if (
+        report.get("source_commit") != manifest.get("source_commit")
+        or report.get("source_sha256") != manifest.get("source_file_manifest_sha256")
+        or report.get("task_manifest_sha256") !=
+            manifest.get("query_gold_manifest_sha256")
+        or report.get("registered_sizes") != manifest.get("registered_sizes")
+        or len(report.get("cases", [])) != manifest.get("paired_cases")
+        or report.get("actual_authorized_router_calls") !=
+            manifest.get("actual_authorized_router_calls")
+        or hashlib.sha256(
+            json.dumps(report, sort_keys=True, ensure_ascii=False,
+                       allow_nan=False, separators=(",", ":")).encode()
+        ).hexdigest() != manifest.get("source_report_canonical_sha256")
+    ):
+        raise ValueError("frozen source contract or scientific cohort changed")
+    return report
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=Path, required=True)
+    parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    result = audit(json.loads(args.input.read_text(encoding="utf-8")))
+    frozen = json.loads(args.manifest.read_text(encoding="utf-8"))
+    report = verify_frozen_source(args.input.read_bytes(), frozen)
+    result = audit(report)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(result, indent=2, ensure_ascii=False, allow_nan=False) + "\n",
