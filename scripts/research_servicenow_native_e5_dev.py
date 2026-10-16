@@ -30,7 +30,10 @@ from scripts.external_validation_servicenow_platform_mcp import (
     load_package,
     validate_package,
 )
-from scripts.research_real_open_meteo_e5_cpu_dev import MODEL_ID, MODEL_REVISION
+# Match the independently pinned real Open-Meteo E5 CPU study, but do not
+# import that study's optional YAML/source-harness runtime into this MCP job.
+MODEL_ID = "intfloat/multilingual-e5-small"
+MODEL_REVISION = "fd1525a9fd15316a2d503bf26ab031a61d056e98"
 
 ROOT = Path(__file__).resolve().parents[1]
 WIDTHS = (3, 5)
