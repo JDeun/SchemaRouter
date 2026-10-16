@@ -602,3 +602,68 @@ def test_authorized_route_cannot_launder_forged_matching_metadata(
             router, "read published data",
             principal=VIEWER, contract=contract, k=8,
         )
+
+
+@pytest.mark.parametrize("hidden", (False, True))
+def test_field_selection_receipt_uses_original_source_fingerprints(
+    hidden: bool,
+) -> None:
+    """Data-scope field projection never changes the source receipt identity."""
+    router = _router(hidden=hidden)
+    decision = select_authorized_field_contract(
+        router, "marine waves and ocean currents",
+        principal=VIEWER,
+        contract=_contract(
+            "wave_height", "ocean_current_velocity",
+            output="ocean_conditions",
+        ),
+    )
+    assert decision.selected_route_id == "marine.read"
+    source = router.registry.get("marine")
+    assert decision.selected_tool_fingerprint == source.fingerprint
+    assert (
+        decision.selected_endpoint_fingerprint
+        == source.endpoint("read").fingerprint
+    )
+
+
+@pytest.mark.parametrize("field_name", ("tool_fingerprint", "endpoint_fingerprint"))
+@pytest.mark.parametrize("target_route", ("marine.read", "archive.read"))
+def test_permitted_candidate_cannot_forge_fingerprint_receipt(
+    field_name: str,
+    target_route: str,
+) -> None:
+    """Reject any source identity alteration before unique-match authority."""
+    router = _router(hidden=True)
+    real = router.retrieve_authorized
+
+    def tampered(*args, **kwargs):
+        result = real(*args, **kwargs)
+        adjusted = [
+            candidate.model_copy(
+                deep=True, update={field_name: "0" * 64},
+            ) if candidate.route_id == target_route else candidate
+            for candidate in result.candidates
+        ]
+        assert any(candidate.route_id == target_route for candidate in adjusted)
+        return result.model_copy(update={"candidates": adjusted})
+
+    router.retrieve_authorized = tampered
+
+    def forbid_tool_call(*args, **kwargs):
+        raise AssertionError("host field receipt validation must not execute")
+
+    router.plan = forbid_tool_call
+    router.execute = forbid_tool_call
+    with pytest.raises(
+        PolicyViolationError,
+        match="fingerprints differ from current authorized source",
+    ):
+        select_authorized_field_contract(
+            router, "marine waves and ocean currents",
+            principal=VIEWER,
+            contract=_contract(
+                "wave_height", "ocean_current_velocity",
+                output="ocean_conditions",
+            ),
+        )
