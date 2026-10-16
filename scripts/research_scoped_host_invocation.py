@@ -54,12 +54,16 @@ async def execute_scoped_host_call(
     ):
         _deny()
     # The endpoint is a *source* fact, not a model assertion.
-    tool_key, endpoint_name = route_id.split(".", 1)
-    try:
-        tool = view.router.registry.get(tool_key)
-        endpoint = tool.endpoint(endpoint_name)
-    except KeyError:
+    matches = [
+        (tool, endpoint)
+        for tool in view.router.registry.tools()
+        for endpoint in tool.endpoints
+        if f"{tool.key}.{endpoint.name}" == route_id
+    ]
+    if len(matches) != 1:
         _deny()
+    tool, endpoint = matches[0]
+    tool_key, endpoint_name = tool.key, endpoint.name
     if endpoint.read_only is not True or endpoint.destructive:
         _deny()
 
@@ -120,5 +124,5 @@ async def execute_scoped_host_call(
     ):
         _deny()
     return view.project_observation(
-        route_id, {"status": "ok", **results[0].data},
+        route_id, {**results[0].data, "status": "ok"},
     )
