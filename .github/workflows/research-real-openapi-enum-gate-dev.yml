@@ -1,0 +1,82 @@
+name: Real OpenAPI Authorized Enum Host-Oracle DEV CPU
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_openapi_authorized_enum_gate_dev.py"
+      - "tests/test_research_openapi_authorized_enum_gate_dev.py"
+      - "research/autoresearch/real-openapi-enum-gate-dev.md"
+      - ".github/workflows/research-real-openapi-enum-gate-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openapi-host-enum-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-locked-cpu-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install actual source and offline schema verifier tests
+        run: |
+          python -m pip install . "PyYAML>=6,<7" "pytest>=8,<10" "pytest-asyncio>=0.23"
+          python -m pytest -q tests/test_research_openapi_authorized_enum_gate_dev.py
+      - name: Download exactly original source-hashed real E5 ranks and publisher YAML
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          run_id=38863136350
+          metadata=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id")
+          test "$(jq -r '.status' <<<"$metadata")" = "completed"
+          test "$(jq -r '.conclusion' <<<"$metadata")" = "success"
+          test "$(jq -r '.head_sha' <<<"$metadata")" = "aab0f20f9e8a5f1939cc3203a652c6ad083d37a1"
+          mkdir -p artifacts/real-openapi-enum-gate
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" \
+            --name "real-open-meteo-passage-ablation-$run_id" \
+            --dir artifacts/real-openapi-enum-gate
+          test -s artifacts/real-openapi-enum-gate/report.json
+          echo "b8fc826397c0385d2b59b5968d3b7f53a2433f7327a8a3679168ecb7127ff038  artifacts/real-openapi-enum-gate/report.json" | sha256sum -c
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.research_open_meteo_real_openapi_dev import load_contracts
+          tools, failures, evidence = load_contracts(
+              Path("benchmarks/open-meteo-openapi-real-source-dev-manifest.json"),
+              Path("artifacts/real-openapi-enum-gate/source"),
+          )
+          if failures or len(tools) != 9:
+              raise ValueError((failures, len(tools)))
+          print("Validated nine original Open-Meteo Git blobs")
+          PY
+      - name: Evaluate 39 strict host-oracle variable/operation cases without model inference
+        run: |
+          python -m scripts.research_openapi_authorized_enum_gate_dev \
+            --manifest benchmarks/open-meteo-openapi-real-source-dev-manifest.json \
+            --source-dir artifacts/real-openapi-enum-gate/source \
+            --frozen-e5-report artifacts/real-openapi-enum-gate/report.json \
+            --output artifacts/real-openapi-enum-gate/enum-verification.json
+      - name: Archive negative/ambiguous cases and immutable original E5 source
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: real-openapi-enum-host-dev-${{ github.run_id }}
+          path: artifacts/real-openapi-enum-gate/
+          if-no-files-found: warn
+          retention-days: 90
+# Actual provider YAML and real E5 output but only author-authored request
+# operation/variable ORACLES; no query intent model, authenticated principal,
+# real provider calls, agent execution, GPU, paid API or v0.18 release.
