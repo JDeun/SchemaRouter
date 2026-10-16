@@ -1,0 +1,73 @@
+name: Multilingual Operation Oracle Counterfactual DEV CPU
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_operation_oracle_recoverability_dev.py"
+      - "tests/test_research_operation_oracle_recoverability_dev.py"
+      - "research/autoresearch/multilingual-operation-oracle-dev.md"
+      - ".github/workflows/research-operation-oracle-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: multilingual-operation-oracle-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  oracle-counterfactual-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Verify the explicit operation contracts and fail-closed regression tests
+        run: |
+          python -m pip install "pytest>=8,<10" "pytest-asyncio>=0.23"
+          python -m pytest -q tests/test_research_operation_oracle_recoverability_dev.py
+      - name: Download the two source-attested historical model reports
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          run_id=38729631022
+          source=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id")
+          test "$(jq -r '.status' <<<"$source")" = "completed"
+          test "$(jq -r '.conclusion' <<<"$source")" = "success"
+          test "$(jq -r '.head_sha' <<<"$source")" = "bc448804d7205ffb4deb4853db6225a4755bb72d"
+          mkdir -p artifacts/operation-oracle-dev/minilm artifacts/operation-oracle-dev/e5
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" \
+            --name "catalog-scale-dev-minilm-$run_id" \
+            --dir artifacts/operation-oracle-dev/minilm
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" \
+            --name "catalog-scale-dev-e5-small-$run_id" \
+            --dir artifacts/operation-oracle-dev/e5
+          echo "e2221dbd0915fff789ee8f34b9c6aeca3e0d7b7deeaa1186afd75fbeadc721ff  artifacts/operation-oracle-dev/minilm/minilm.json" | sha256sum -c
+          echo "998a79a8ea67271257216fa1b2e7fe8233deef030dc1c387577fff8054604215  artifacts/operation-oracle-dev/e5/e5-small.json" | sha256sum -c
+      - name: Measure 672 source-locked candidate oracle counterfactual cases
+        run: |
+          python -m scripts.research_operation_oracle_recoverability_dev \
+            --minilm artifacts/operation-oracle-dev/minilm/minilm.json \
+            --e5 artifacts/operation-oracle-dev/e5/e5-small.json \
+            --manifest benchmarks/1339-multilingual-model-scale-frozen-manifest.json \
+            --output artifacts/operation-oracle-dev/report.json
+      - name: Preserve original reports and constrained oracle failure analysis
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: operation-oracle-counterfactual-${{ github.run_id }}
+          path: artifacts/operation-oracle-dev/
+          if-no-files-found: warn
+          retention-days: 90
+# This is NOT a real user-intent classifier, not independent or real provider
+# operation-fit/host-identity/agent evidence. No model downloads or execution.
