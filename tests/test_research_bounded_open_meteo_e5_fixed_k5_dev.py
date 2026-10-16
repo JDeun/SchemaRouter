@@ -9,8 +9,8 @@ import pytest
 from schemarouter.decisions import CallableDecisionBackend
 from schemarouter.errors import PlanningError
 from scripts.research_bounded_open_meteo_e5_fixed_k5_dev import (
-    MODEL_REVISION,
     MAX_REGISTERED_ROUTES,
+    MODEL_REVISION,
     STRICT_K,
     percentile_95,
     run_visible_dev,
