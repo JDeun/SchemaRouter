@@ -131,7 +131,12 @@ def load_state(path: Path | None) -> dict[str, Any]:
         or type(count) is not int or not 0 <= count <= MAX_BATCHES * MAX_TRIALS
         or not isinstance(seen, list) or len(seen) > MAX_BATCHES * MAX_TRIALS
         or len(seen) != len(set(seen))
-        or any(type(s) is not str or len(s) != 64 or any(c not in "0123456789abcdef" for c in s) for s in seen)
+        or any(
+            type(item) is not str
+            or len(item) != 64
+            or any(c not in "0123456789abcdef" for c in item)
+            for item in seen
+        )
     ):
         raise ValueError("invalid or excessive previous trial state")
     if count != len(seen):
@@ -232,7 +237,10 @@ def measure(
     return rows, {
         "rerank_p95_ms": percentile(ranking_times, 0.95),
         "retrieval_p95_ms": percentile(backend_times, 0.95),
-        "combined_p95_ms": percentile([a + b for a, b in zip(backend_times, ranking_times, strict=True)], 0.95),
+        "combined_p95_ms": percentile(
+            [a + b for a, b in zip(backend_times, ranking_times, strict=True)],
+            0.95,
+        ),
         "average_candidate_pool_json_bytes": round(sum(pool_bytes) / len(pool_bytes), 2),
         "queries": len(cases),
     }
