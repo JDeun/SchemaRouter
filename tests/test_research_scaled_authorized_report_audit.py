@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import hashlib
 
 import pytest
 
@@ -9,6 +10,7 @@ from benchmarks.current_adapter_scaled_authorized_dev_v1 import (
     WIDTHS,
     authored_tasks,
 )
+from scripts.research_current_main_multilingual_dev import encoded
 from scripts.research_scaled_authorized_report_audit import (
     CONDITIONS,
     _aggregate,
@@ -56,10 +58,13 @@ def _report() -> dict:
         ]
         for lang in ("en", "ko", "ja") for role in ("viewer", "editor")
     }
+    sources = {"fixture": "c" * 64}
     return {
         "schema_version": 1,
         "id": "author_visible_scaled_current_adapter_principal_field_dev",
-        "source_sha256": "a" * 64, "task_manifest_sha256": "b" * 64,
+        "source_sha256": hashlib.sha256(encoded(sources)).hexdigest(),
+        "source_file_sha256": sources,
+        "task_manifest_sha256": "b" * 64,
         "registered_sizes": [100], "candidate_widths": list(WIDTHS),
         "actual_authorized_router_calls": 27 * len(CONDITIONS),
         "required_router_calls_expected": 27 * len(CONDITIONS),
