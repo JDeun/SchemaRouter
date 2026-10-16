@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -12,6 +13,7 @@ from scripts.research_open_meteo_real_openapi_dev import (
     evaluate,
     git_blob_sha1,
     load_contracts,
+    ranked_score_diagnostic,
 )
 
 
@@ -101,3 +103,25 @@ def test_fails_closed_on_untrusted_source_provenance(tmp_path: Path) -> None:
 def test_blob_identity_includes_length_and_contents() -> None:
     assert git_blob_sha1(b"x") != git_blob_sha1(b"x\n")
     assert len(git_blob_sha1(b"abc")) == 40
+
+
+def test_zero_score_ties_are_not_counted_as_semantic_recall() -> None:
+    empty_signal = SimpleNamespace(candidates=[
+        SimpleNamespace(score=0.0, selection_source="deterministic"),
+        SimpleNamespace(score=0.0, selection_source="deterministic"),
+    ])
+    diagnostic = ranked_score_diagnostic(empty_signal)
+    assert diagnostic["all_nonpositive"] is True
+    assert diagnostic["top1_score"] == 0.0
+    assert diagnostic["top1_tie_count"] == 2
+
+    nonzero = SimpleNamespace(candidates=[
+        SimpleNamespace(score=2.0, selection_source="lexical"),
+        SimpleNamespace(score=0.0, selection_source="deterministic"),
+    ])
+    assert ranked_score_diagnostic(nonzero)["all_nonpositive"] is False
+    invalid = SimpleNamespace(candidates=[
+        SimpleNamespace(score=float("nan"), selection_source="deterministic"),
+    ])
+    with pytest.raises(ValueError, match="non-finite"):
+        ranked_score_diagnostic(invalid)
