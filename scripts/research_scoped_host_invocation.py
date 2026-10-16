@@ -108,7 +108,7 @@ async def execute_scoped_host_call(
         or call.schema_fingerprint != endpoint.fingerprint
         or not set(call.fields).issubset(view._visible_output_names[route_id])
         or any(type(k) is not str for k in call.arguments)
-        or not set(arguments).issubset(call.arguments)
+        or set(call.arguments) != set(arguments)
         or any(call.arguments[k] != value for k, value in arguments.items())
     ):
         _deny()
