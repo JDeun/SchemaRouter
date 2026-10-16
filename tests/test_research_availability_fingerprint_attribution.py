@@ -22,13 +22,27 @@ def test_instrument_tool_property_restores_after_real_scoped_lookup() -> None:
     item = sample(router, language="en", role="viewer", mode="field_scope")
     assert item["total_ms"] > 0
     assert item["unauthorized_count"] == 0
-    assert item["stages"]["tool_fingerprint_property"]["calls"] > 0
     assert item["stages"]["access_predicate"]["calls"] > 0
-    assert item["stages"]["cooldown_lookup"]["calls"] > 0
+    # No relevant cooldown => no full ToolSpec serialization required.
+    assert item["stages"]["tool_fingerprint_resolve"]["calls"] == 0
+    assert item["stages"]["cooldown_lookup"]["calls"] == 0
     assert ToolSpec.fingerprint is original
     assert all(getattr(target, method) is method_before
                for target, method, method_before in methods)
     assert RegistryExecutor is not SchemaPlanner
+
+
+def test_relevant_active_cooldown_still_invokes_fingerprint() -> None:
+    router, _ = build_fixture(100)
+    router.executor.mark_access_unavailable(
+        "benchdb", "probe_db_0005", cooldown_seconds=60.0,
+    )
+    item = sample(
+        router, language="en", role="editor", mode="field_scope",
+    )
+    assert item["stages"]["tool_fingerprint_resolve"]["calls"] > 0
+    assert item["stages"]["cooldown_lookup"]["calls"] > 0
+    assert item["unauthorized_count"] == 0
 
 
 def test_unmodified_route_policy_control_reports_same_real_api() -> None:
