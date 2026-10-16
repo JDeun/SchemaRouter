@@ -293,11 +293,11 @@ def test_invalid_principal_copy_does_not_launder_roles() -> None:
 def test_projected_k_does_not_launder_incomplete_authorized_catalog(
     size: int,
 ) -> None:
-    """Replicate the actual scaled fixture regression found by #1448.
+    """Recheck #1448 under honest Top-K count semantics.
 
-    Data-scope projection recalculates total_ranked from the already trimmed
-    Top-K. The selector MUST prove completeness from current authorized route
-    identities instead of trusting that projected metadata alone.
+    Projection must preserve the pre-Top-K count of policy-scoped scored
+    routes. The selector STILL must independently prove completeness from
+    the authoritative visible catalog rather than trusting this public count.
     """
     from benchmarks.current_adapter_field_scope_dev_v1 import principal
     from benchmarks.current_adapter_scaled_authorized_dev_v1 import (
@@ -310,7 +310,7 @@ def test_projected_k_does_not_launder_incomplete_authorized_catalog(
         "read invoice", principal=who, k=5,
     )
     assert len(original.candidates) == 5
-    assert original.total_ranked == 5  # regression reproduction
+    assert original.total_ranked == size - 5
     assert sum(
         policy.visible(who, tool, endpoint)
         for tool in router.registry.tools()
@@ -392,6 +392,9 @@ def test_fully_hidden_route_does_not_block_scoped_completeness() -> None:
     assert {item.route_id for item in retrieved.candidates} == {
         "marine.read", "forecast.read",
     }
+    # The physically registered hidden archive cannot change the count
+    # of the two currently principal-visible routes.
+    assert retrieved.total_ranked == 2
     decision = select_authorized_field_contract(
         router, "ocean weather", principal=VIEWER,
         contract=_contract("wave_height", "ocean_current_velocity"),
@@ -667,3 +670,50 @@ def test_permitted_candidate_cannot_forge_fingerprint_receipt(
                 output="ocean_conditions",
             ),
         )
+
+
+@pytest.mark.asyncio
+async def test_async_data_scoped_public_ranked_count_is_pre_top_k() -> None:
+    """Async path must not silently turn a truncated K into a total count."""
+    from benchmarks.current_adapter_field_scope_dev_v1 import principal
+    from benchmarks.current_adapter_scaled_authorized_dev_v1 import build_fixture
+
+    router, _ = build_fixture(100)
+    who = principal("viewer")
+    first = await router.aretrieve_authorized(
+        "read invoice", principal=who, k=3,
+    )
+    second = await router.aretrieve_authorized(
+        "read invoice", principal=who, k=100,
+    )
+    assert len(first.candidates) == 3
+    assert first.total_ranked == second.total_ranked == 95
+    assert len(second.candidates) == 95
+
+
+def test_reprojection_denies_if_visible_route_disappears_mid_scope() -> None:
+    """Never return a stale large total if a route becomes hidden after ranking."""
+    router = _router(hidden=True)
+    original = router.retrieve_authorized(
+        "ocean weather", principal=VIEWER, k=3,
+    )
+    assert len(original.candidates) == 3
+    router.authorization_policy = AuthorizationPolicy(
+        rules=(
+            AuthorizationRule(
+                name="viewer-read", effect="allow", operation="*.*",
+                roles_any=("viewer",),
+            ),
+        ),
+        default_effect="deny",
+        data_rules=(
+            DataScopeRule(
+                operation="archive.read", roles_any=("viewer",),
+                hidden_fields=("archive_values", "sensitive_audit"),
+            ),
+        ),
+    )
+    with pytest.raises(
+        PolicyViolationError, match="scope changed during projection",
+    ):
+        router._project_retrieval_data_scope(original, VIEWER)
