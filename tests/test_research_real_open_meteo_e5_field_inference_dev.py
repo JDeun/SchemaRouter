@@ -19,7 +19,6 @@ from scripts.research_real_open_meteo_e5_field_inference_dev import (
     authorized_enum_fields,
     evaluate,
     field_options,
-    infer_field_rankings,
 )
 
 
