@@ -615,3 +615,28 @@ async def test_host_invocation_fails_closed_on_nested_real_provider_result():
             route_id="marine.read", arguments={"place": "Seoul"},
         )
     assert len(invoked) == 1
+
+
+@pytest.mark.asyncio
+async def test_host_invoker_private_exception_is_never_returned_to_agent():
+    router = fixture_router()
+    tool = router.registry.get("marine")
+    events = []
+
+    def forbidden(endpoint, arguments):
+        events.append((endpoint, arguments))
+        raise RuntimeError("provider failed: " + SECRET)
+
+    router.executor.bind(
+        tool.key, forbidden, expected_fingerprint=tool.fingerprint,
+    )
+    with pytest.raises(PolicyViolationError) as captured_error:
+        await execute_scoped_host_call(
+            captured(router),
+            selected_route_ids=["marine.read"],
+            route_id="marine.read",
+            arguments={"place": "Seoul"},
+        )
+    assert len(events) == 1
+    assert SECRET not in str(captured_error.value)
+    assert "provider failed" not in str(captured_error.value)
