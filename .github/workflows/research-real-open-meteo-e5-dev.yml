@@ -1,0 +1,88 @@
+name: Real Open-Meteo Scoped E5 vs Lexical CPU DEV
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_real_open_meteo_e5_cpu_dev.py"
+      - "tests/test_research_real_open_meteo_e5_cpu_dev.py"
+      - "research/autoresearch/real-open-meteo-e5-paired-dev.md"
+      - ".github/workflows/research-real-open-meteo-e5-dev.yml"
+      - "scripts/research_open_meteo_real_openapi_dev.py"
+      - "benchmarks/open-meteo-openapi-real-source-dev-manifest.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: open-meteo-e5-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pinned-real-e5-cpu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install current package and offline contract test harness
+        run: |
+          python -m pip install . "PyYAML>=6,<7" "pytest>=8,<10" "pytest-asyncio>=0.23"
+          python -m pytest -q tests/test_research_real_open_meteo_e5_cpu_dev.py
+      - name: Fetch exactly nine official source-pinned OpenAPI schemas
+        shell: bash
+        run: |
+          set -euo pipefail
+          commit=b0ff3ebbbafa890000ab8bc5f9598a2e4ef64dc4
+          dir=artifacts/open-meteo-scoped-e5/source
+          mkdir -p "$dir"
+          for name in air-quality climate elevation ensemble flood forecast historical-weather marine seasonal; do
+            curl --fail --silent --show-error --location \
+              --retry 2 --connect-timeout 15 --max-time 90 \
+              "https://raw.githubusercontent.com/open-meteo/open-meteo/$commit/openapi/$name.yml" \
+              --output "$dir/$name.yml"
+            test -s "$dir/$name.yml"
+          done
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.research_open_meteo_real_openapi_dev import load_contracts
+          tools, failures, evidence = load_contracts(
+              Path("benchmarks/open-meteo-openapi-real-source-dev-manifest.json"),
+              Path("artifacts/open-meteo-scoped-e5/source"),
+          )
+          if len(tools) != 9 or failures:
+              raise ValueError((len(tools), failures))
+          print("Verified original publisher OpenAPI source blobs:", len(evidence))
+          PY
+      - name: Install offline local CPU embedding model runtime
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
+      - name: Compute real pinned E5 Small vs authorized lexical 36-case paired report
+        run: |
+          python -m scripts.research_real_open_meteo_e5_cpu_dev \
+            --manifest benchmarks/open-meteo-openapi-real-source-dev-manifest.json \
+            --source-dir artifacts/open-meteo-scoped-e5/source \
+            --output artifacts/open-meteo-scoped-e5/report.json
+      - name: Archive raw official source, failed evidence and paired output
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: real-open-meteo-scoped-e5-${{ github.run_id }}
+          path: artifacts/open-meteo-scoped-e5/
+          if-no-files-found: warn
+          retention-days: 90
+# This explicitly runs an open-source local CPU checkpoint, no paid LLM,
+# external coding agent, GPU, physical tool action, authenticated principal,
+# claim of calibrated no-fit, automatic merge or v0.18 release.
