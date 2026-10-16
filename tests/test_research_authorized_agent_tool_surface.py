@@ -17,6 +17,10 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
+from scripts.agent_utility_generated_common import (
+    EXPERIMENTAL_FIXED5_CONDITION,
+    run_generated_episode,
+)
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
@@ -214,3 +218,139 @@ def test_research_model_inputs_do_not_trigger_planning_or_tool_execution():
     assert view.project_observation("marine.read", {
         "status": "ok", "public_field": 3,
     })["public_field"] == 3
+
+
+class CapturingSyntheticAgent:
+    """Deterministic no-model tool-call control; retains model-facing messages."""
+
+    def __init__(self, *, attack_router=None, wrong_route=False):
+        self.calls = 0
+        self.snapshots = []
+        self.attack_router = attack_router
+        self.wrong_route = wrong_route
+
+    def generate(self, messages, tools):
+        self.snapshots.append(json.dumps({
+            "messages": messages, "tools": tools,
+        }, ensure_ascii=False))
+        if self.attack_router is not None:
+            self.attack_router.authorization_policy = AuthorizationPolicy(
+                default_effect="deny",
+            )
+        if self.calls == 0:
+            selected = "archive__read" if self.wrong_route else "marine__read"
+            text = "<tool_call>" + json.dumps({
+                "name": selected, "arguments": {"place": "Seoul"},
+            }) + "</tool_call>"
+        else:
+            text = "Final answer deliberately includes " + SECRET
+        self.calls += 1
+        return {
+            "text": text,
+            "input_tokens": 13,
+            "tool_tokens": 7,
+            "output_tokens": 5,
+            "latency_ms": 0.0,
+            "context_overflow": False,
+        }
+
+
+def scoped_synthetic_task():
+    return {
+        "semantic_task_id": "host-scope-E0-only",
+        "language": "ko",
+        "query": "marine public papers read values",
+        "supported": True,
+        "required_routes": ["marine.read"],
+        "executor_fixture": {
+            "steps": [{
+                "route_id": "marine.read",
+                "argument_rules": {"place": {"eq": "Seoul"}},
+                "observation": {
+                    "status": "ok",
+                    "public_field": "public-data",
+                    "secret_field": SECRET,
+                    "unexpected": SECRET,
+                },
+            }],
+        },
+    }
+
+
+def test_same_existing_agent_loop_uses_scoped_schema_and_observations_only():
+    router = fixture_router()
+    view = captured(router)
+    agent = CapturingSyntheticAgent()
+    observed = []
+
+    def select(original_query, visible_ids):
+        observed.append((original_query, visible_ids))
+        assert "archive.read" not in visible_ids
+        return ["marine.read"]
+
+    result = run_generated_episode(
+        agent, router.registry, scoped_synthetic_task(),
+        EXPERIMENTAL_FIXED5_CONDITION,
+        experimental_candidate_selector=select,
+        experimental_agent_tool_surface=view,
+    )
+    assert result["passed"] is True
+    assert result["tool_call_count"] == 1
+    assert result["visible_candidate_counts"] == [1]
+    assert len(observed) == 1 and len(agent.snapshots) == 2
+    for model_view in agent.snapshots:
+        assert SECRET not in model_view
+        assert "secret_field" not in model_view
+        assert "filter__secret_field" not in model_view
+        assert "archive" not in model_view
+    assert SECRET not in json.dumps(result)
+    assert "required_routes" not in result
+    assert "attempts" not in result
+    assert "turn_rows" not in result
+    assert "final_text" not in result
+
+
+def test_authority_revoked_during_model_generation_blocks_publication():
+    router = fixture_router()
+    agent = CapturingSyntheticAgent(attack_router=router)
+    with pytest.raises(PolicyViolationError, match="retrieval authority changed"):
+        run_generated_episode(
+            agent, router.registry, scoped_synthetic_task(),
+            EXPERIMENTAL_FIXED5_CONDITION,
+            experimental_candidate_selector=lambda _query, ids: ["marine.read"],
+            experimental_agent_tool_surface=captured(router),
+        )
+    assert agent.calls == 1
+
+
+def test_no_unapproved_route_can_be_processed_via_scoped_agent_hook():
+    router = fixture_router()
+    agent = CapturingSyntheticAgent(wrong_route=True)
+    with pytest.raises(PolicyViolationError, match="unavailable scoped observation route"):
+        run_generated_episode(
+            agent, router.registry, scoped_synthetic_task(),
+            EXPERIMENTAL_FIXED5_CONDITION,
+            experimental_candidate_selector=lambda _query, ids: ["marine.read"],
+            experimental_agent_tool_surface=captured(router),
+        )
+    assert agent.calls == 1
+
+
+def test_scoped_surface_cannot_attach_to_legacy_frozen_condition_or_other_registry():
+    router = fixture_router()
+    view = captured(router)
+    with pytest.raises(ValueError, match="isolated fixed5"):
+        run_generated_episode(
+            CapturingSyntheticAgent(), router.registry, scoped_synthetic_task(),
+            "FULL",
+            experimental_candidate_selector=lambda _query, ids: list(ids[:5]),
+            experimental_agent_tool_surface=view,
+        )
+    other = fixture_router()
+    with pytest.raises(ValueError, match="principal-scoped registry mismatch"):
+        run_generated_episode(
+            CapturingSyntheticAgent(), other.registry, scoped_synthetic_task(),
+            EXPERIMENTAL_FIXED5_CONDITION,
+            experimental_candidate_selector=lambda _query, ids: list(ids[:5]),
+            experimental_agent_tool_surface=view,
+        )
