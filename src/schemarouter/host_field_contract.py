@@ -290,6 +290,8 @@ def select_authorized_field_contract(
         # otherwise permitted route. Avoid copying schemas for nonreturned
         # routes; no unauthorized metadata is included in the receipt.
         returned_contracts: dict[str, tuple[object, ...]] = {}
+        returned_fingerprints: dict[str, tuple[str, str]] = {}
+        tool_fingerprints: dict[str, str] = {}
         for tool in registry.tools():
             for endpoint in tool.endpoints:
                 if not policy.visible(approved_principal, tool, endpoint):
@@ -307,6 +309,14 @@ def select_authorized_field_contract(
                     returned_contracts[route_id] = (
                         visible.read_only, visible.destructive,
                         visible.parameters, visible.output_fields,
+                    )
+                    # Fingerprints bind the receipt to the ORIGINAL registered
+                    # source, never a data-scope-projected endpoint. Compute
+                    # a tool hash once even when it has many returned routes.
+                    if tool.key not in tool_fingerprints:
+                        tool_fingerprints[tool.key] = tool.fingerprint
+                    returned_fingerprints[route_id] = (
+                        tool_fingerprints[tool.key], endpoint.fingerprint,
                     )
     except (TypeError, ValueError, AttributeError) as exc:
         raise PolicyViolationError(
@@ -338,6 +348,12 @@ def select_authorized_field_contract(
         if observed != expected:
             raise PolicyViolationError(
                 "retrieval contract differs from current authorized schema"
+            )
+        if (
+            item.tool_fingerprint, item.endpoint_fingerprint
+        ) != returned_fingerprints[item.route_id]:
+            raise PolicyViolationError(
+                "retrieval fingerprints differ from current authorized source"
             )
     # A positive count excess indicates truncation even if it disagrees with
     # this internal witness; never use a public count to waive completeness.
