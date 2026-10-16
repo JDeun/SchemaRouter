@@ -7,6 +7,7 @@ The trusted host supplies SchemaRouter + PrincipalContext, never the backend.
 from __future__ import annotations
 
 import copy
+import json
 import math
 from dataclasses import dataclass
 from typing import Any
@@ -62,6 +63,8 @@ class AuthorizedAgentToolSurface:
             copy.deepcopy(self._tool_definitions[route])
             for route in selected_route_ids
         ]
+        if len(json.dumps(result, ensure_ascii=False, separators=(",", ":")).encode("utf-8")) > MAX_MODEL_TOOL_JSON_BYTES:
+            raise ValueError("model-visible tool definitions exceed research byte cap")
         self.assert_source_unchanged()
         return result
 
@@ -82,6 +85,7 @@ class AuthorizedAgentToolSurface:
         if status != "ok":
             # Raw provider error text may contain secrets. Only report a
             # coarse code to the agent; keep original internal evidence private.
+            self.assert_source_unchanged()
             return {"status": status, "error": "provider_call_failed"}
         projected: dict[str, Any] = {"status": "ok"}
         for field in self._visible_output_names[route_id]:
@@ -105,7 +109,6 @@ class AuthorizedAgentToolSurface:
             raise ValueError("episode row must be a dictionary")
         allowed = set(self.visible_route_ids)
         result: dict[str, Any] = {
-            "source_registered_route_count": self.registered_route_count,
             "visible_scored_route_count": len(allowed),
             "independent_quality_evidence": False,
             "executable_authority": False,
