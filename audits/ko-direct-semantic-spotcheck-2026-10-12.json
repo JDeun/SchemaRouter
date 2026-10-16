@@ -3,13 +3,14 @@
   "review_date": "2026-10-16",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 151,
-  "total_page_pairs": 151,
+  "reviewed_page_pairs": 152,
+  "total_page_pairs": 152,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
-    "2026-10-16: 151 current, exact-source EN/KO paired page spotchecks by AI project contributor, including product-charter-and-validation-roadmap; not independent translation review and not sentence-by-sentence certification. External editorial evidence for #1202 remains absent."
+    "2026-10-16: 151 current, exact-source EN/KO paired page spotchecks by AI project contributor, including product-charter-and-validation-roadmap; not independent translation review and not sentence-by-sentence certification. External editorial evidence for #1202 remains absent.",
+    "The product north-star and test matrix pair added 2026-10-16 was AI-assisted directly inspected and exact Git blobs pinned; independent bilingual human sentence-level audit is still NOT complete (#1202)."
   ],
   "reviews": [
     {
@@ -870,6 +871,12 @@
       "en_blob": "dcf74ca1dd8b67ef2d42d1aeac845139258167d6",
       "ko_blob": "f7c829c72eb22dee8bf310f8159ce6d1dc6a4416",
       "notes": "2026-10-16 AI-assisted direct EN/KO page-level paired comparison of the new product-charter/validation roadmap. Both versions contain six matching numbered sections, source-first typed field/operation mission, unchanged stable-core/agent-loop boundary, host principal execution/privacy gates, summary of prior 0.14 780-task negative agent evidence and contradictory native Open-Meteo/ServiceNow fixed-K5 model DEV, distinct E0/E1/E2 scopes, strict K=5 and no-fit false-refusal safety, P0/P1/P2 named test matrices, frozen #432 noninferiority and artifact/permission gating. Not independently reviewed by a human or certified sentence-level semantically equivalent; source-only spotcheck."
+    },
+    {
+      "path": "research/product-north-star-and-test-matrix.md",
+      "en_blob": "166c08142381157048f7091048fbcc3bce683c6c",
+      "ko_blob": "1ae5c662d875c159b09a514e9a75ec0097ee6fa1",
+      "notes": "2026-10-16 direct source-only AI-assisted paired review of new unified EN/KO product north-star and integrated test matrix. Checked the purpose vs non-goals, registered-source and field-first immutable trust boundaries, RBAC/ABAC/permission scope, fixed K, no-fit vs missing/ambiguous/forbidden, historical frozen #432 negative result, contradictory ServiceNow/Open-Meteo DEV, all G/S/R/A/E/I matrix IDs and priority, disjoint source/task-author evidence, no product promotion without real agent completion. Section parity and Korean prohibition wording reviewed. This is NOT independent human or sentence-level bilingual sign-off."
     },
     {
       "path": "research/realistic-break-even-result.md",
