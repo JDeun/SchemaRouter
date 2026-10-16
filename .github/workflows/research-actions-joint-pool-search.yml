@@ -1,0 +1,171 @@
+name: Actions Joint Pool and Rerank CPU Research DEV
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/research-actions-joint-pool-search.yml"
+  pull_request:
+    paths:
+      - ".github/workflows/research-actions-joint-pool-search.yml"
+      - "scripts/research_actions_joint_pool.py"
+      - "tests/test_research_actions_joint_pool.py"
+      - "research/autoresearch/joint-pool-program.md"
+  workflow_dispatch:
+    inputs:
+      previous_run_id:
+        description: "Exact predecessor run ID, empty only for fresh eight-batch chain"
+        required: false
+        type: string
+        default: ""
+      remaining_batches:
+        description: "Remaining bounded research batches including this execution (1-8)"
+        required: true
+        type: number
+        default: 8
+
+permissions:
+  contents: read
+
+concurrency:
+  group: joint-cpu-research-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  research-contract:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install checked-out SchemaRouter (no LLM or model service)
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Verify source checks, security boundary, and real CPU joint trial
+        run: python -m pytest -q tests/test_research_actions_joint_pool.py
+      - name: Execute two exploratory parameter and candidate-width combinations
+        run: |
+          python -m scripts.research_actions_joint_pool \
+            --trials 2 --seconds 180 --seed 1412 --remaining 8 \
+            --output-dir artifacts/joint-cpu-dev
+      - name: Archive genuine negative and candidate DEV experiments
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: joint-cpu-research-pr-${{ github.run_id }}
+          path: artifacts/joint-cpu-dev/
+          retention-days: 30
+          if-no-files-found: error
+
+  adaptive-research:
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      continue_next: ${{ steps.score.outputs.continue_next }}
+      remaining_next: ${{ steps.score.outputs.remaining_next }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install exact source under test
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Source+interface invariant check
+        run: python -m pytest -q tests/test_research_actions_joint_pool.py
+      - name: Validate exact predecessor, never silently reset a resumed chain
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIOUS_ID: ${{ inputs.previous_run_id || '' }}
+          REMAINING: ${{ inputs.remaining_batches || 8 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$REMAINING" =~ ^[1-8]$ ]] || { echo "Invalid chain budget"; exit 1; }
+          if [[ -n "$PREVIOUS_ID" ]]; then
+            [[ "$PREVIOUS_ID" =~ ^[1-9][0-9]{0,15}$ ]] ||
+              { echo "Invalid predecessor run"; exit 1; }
+            DATA=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PREVIOUS_ID")
+            [[ "$(jq -r '.head_branch' <<<"$DATA")" == "main" ]] ||
+              { echo "Predecessor branch mismatch"; exit 1; }
+            [[ "$(jq -r '.head_sha' <<<"$DATA")" == "$GITHUB_SHA" ]] ||
+              { echo "Predecessor commit mismatch"; exit 1; }
+            case "$(jq -r '.path' <<<"$DATA")" in
+              .github/workflows/research-actions-joint-pool-search.yml*) ;;
+              *) echo "Predecessor workflow mismatch"; exit 1;;
+            esac
+            mkdir -p /tmp/research-joint-prev
+            gh run download "$PREVIOUS_ID" --repo "$GITHUB_REPOSITORY" \
+              --name "joint-cpu-research-$PREVIOUS_ID" \
+              --dir /tmp/research-joint-prev
+            test -s /tmp/research-joint-prev/state.json ||
+              { echo "Missing exact predecessor state"; exit 1; }
+            cp /tmp/research-joint-prev/state.json /tmp/research-joint-previous.json
+          else
+            [[ "$REMAINING" == "8" ]] ||
+              { echo "Noninitial batch lacks predecessor"; exit 1; }
+          fi
+      - name: Score 12 bounded configurations across registered 24/64/128 pools
+        id: score
+        shell: bash
+        env:
+          REMAINING: ${{ inputs.remaining_batches || 8 }}
+        run: |
+          set -euo pipefail
+          PREVIOUS=()
+          if test -f /tmp/research-joint-previous.json; then
+            PREVIOUS=(--previous-state /tmp/research-joint-previous.json)
+          fi
+          python -m scripts.research_actions_joint_pool \
+            --trials 12 --seconds 900 --seed 1412 \
+            --remaining "$REMAINING" \
+            --output-dir artifacts/joint-cpu-dev \
+            "${PREVIOUS[@]}" | tee /tmp/joint-result.log
+          tail -n1 /tmp/joint-result.log | jq -r \
+            '"continue_next=" + (.continue_next|tostring), "remaining_next=" + (.remaining_next|tostring)' \
+            >> "$GITHUB_OUTPUT"
+      - name: Upload full evidence before any next execution is requested
+        if: always() && steps.score.outcome == 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: joint-cpu-research-${{ github.run_id }}
+          path: artifacts/joint-cpu-dev/
+          if-no-files-found: error
+          retention-days: 90
+
+  dispatch-next:
+    needs: adaptive-research
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && needs.adaptive-research.result == 'success' && needs.adaptive-research.outputs.continue_next == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Queue next exact predecessor batch without source checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REMAINING: ${{ needs.adaptive-research.outputs.remaining_next }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$REMAINING" =~ ^[1-7]$ ]] ||
+            { echo "Refusing out-of-budget dispatch"; exit 1; }
+          gh workflow run research-actions-joint-pool-search.yml \
+            --repo "$GITHUB_REPOSITORY" --ref main \
+            -f previous_run_id="$GITHUB_RUN_ID" \
+            -f remaining_batches="$REMAINING"
+# All experimental code runs without token write permissions. No timed cron.
+# Source code, product, heldout, permissions and releases remain untouched.
