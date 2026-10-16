@@ -94,23 +94,55 @@ def _candidate_matches(
     if candidate.read_only is not True or candidate.destructive is True:
         return False
 
+    # A host's conjunction describes values needed in *one* call, not
+    # independent membership checks against the same scalar enum. Each
+    # parameter's entire required value set must fit one declared schema.
+    required_by_parameter: dict[str, set[str]] = {}
     for required in contract.required_enums:
+        required_by_parameter.setdefault(required.parameter, set()).add(
+            required.value,
+        )
+
+    for parameter_name, required_values in required_by_parameter.items():
         match = False
         for parameter in candidate.parameters:
             if (
                 parameter.location != "query"
-                or parameter.name != required.parameter
+                or parameter.name != parameter_name
             ):
                 continue
             schema = parameter.json_schema
-            enum = schema.get("enum") if isinstance(schema, dict) else None
-            if isinstance(schema, dict) and schema.get("type") == "array":
+            if not isinstance(schema, dict):
+                continue
+            if schema.get("type") == "array":
                 items = schema.get("items")
-                enum = items.get("enum") if isinstance(items, dict) else None
+                if (
+                    not isinstance(items, dict)
+                    or items.get("type") not in (None, "string")
+                ):
+                    continue
+                # A declared one-element array cannot satisfy two distinct
+                # required values, even if both occur in items.enum.
+                if "maxItems" in schema and (
+                    type(schema["maxItems"]) is not int
+                    or schema["maxItems"] < len(required_values)
+                ):
+                    continue
+                enum = items.get("enum")
+            else:
+                # A scalar can satisfy at most one distinct required value.
+                # Untyped single-value enums remain compatible with the
+                # original exact-string contract behavior.
+                if (
+                    schema.get("type") not in (None, "string")
+                    or len(required_values) != 1
+                ):
+                    continue
+                enum = schema.get("enum")
             if (
-                isinstance(enum, list) and
-                all(type(v) is str for v in enum) and
-                required.value in enum
+                isinstance(enum, list)
+                and all(type(v) is str for v in enum)
+                and required_values.issubset(enum)
             ):
                 match = True
                 break
