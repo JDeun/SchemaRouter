@@ -213,6 +213,10 @@ def audit(report: Any) -> dict[str, Any]:
         if not _finite(base_p95) or not _finite(candidate_p95) or base_p95 == 0:
             raise ValueError("unmeasured/invalid CPU timing in source aggregate")
         cpu_ratio = candidate_p95 / base_p95
+        positive_gain = (
+            candidate["required_routes_found"] > control["required_routes_found"]
+            or candidate["required_fields_found"] > control["required_fields_found"]
+        )
         decisions[name] = {
             "route_delta": candidate["required_routes_found"]
             - control["required_routes_found"],
@@ -220,10 +224,11 @@ def audit(report: Any) -> dict[str, Any]:
             - control["required_fields_found"],
             "p95_relative_to_v1": round(cpu_ratio, 5),
             "group_regressions": regressions,
+            "positive_observed_gain": positive_gain,
+            "under_150ms_research_cpu_guard": candidate_p95 <= 150.0,
             "dev_diagnostic_gate": (
-                not regressions and cpu_ratio <= 1.5
-                and candidate["required_routes_found"]
-                >= control["required_routes_found"]
+                not regressions and positive_gain and cpu_ratio <= 1.5
+                and candidate_p95 <= 150.0
             ),
             "may_promote": False,
         }
