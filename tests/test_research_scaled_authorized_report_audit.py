@@ -1,8 +1,8 @@
 """Synthetic report-contract counterexamples, without expensive retrieval/model calls."""
 from __future__ import annotations
 
-from copy import deepcopy
 import hashlib
+from copy import deepcopy
 
 import pytest
 
