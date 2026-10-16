@@ -21,7 +21,6 @@ from typing import Any
 from schemarouter import (
     E5CachedEmbedder,
     EmbeddingDecisionBackend,
-    SchemaRouter,
 )
 from schemarouter.decisions import DecisionBackend
 from scripts.research_bounded_authorized_semantic_diagnostic import (
