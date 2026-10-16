@@ -3653,6 +3653,32 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         with _principal_execution_context(principal):
             return await self.aretrieve_routes(request, k=k)
 
+    def _retrieval_authority_witness(
+        self,
+    ) -> tuple[ToolRegistry, int, AuthorizationPolicy | None, object]:
+        """Capture the policy, registry and local availability source identities."""
+        registry = self.registry
+        return (
+            registry,
+            registry.version,
+            self.authorization_policy,
+            self.planner.availability_predicate,
+        )
+
+    def _check_retrieval_authority_witness(
+        self,
+        witness: tuple[ToolRegistry, int, AuthorizationPolicy | None, object],
+    ) -> None:
+        """Do not publish retrieval metadata authorized by superseded sources."""
+        registry, version, policy, availability = witness
+        if (
+            self.registry is not registry
+            or self.registry.version != version
+            or self.authorization_policy is not policy
+            or self.planner.availability_predicate is not availability
+        ):
+            raise PolicyViolationError("retrieval authority changed during request")
+
     def retrieve(
         self,
         request: PlanRequest | str,
@@ -3661,6 +3687,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
     ) -> CapabilityRetrieval:
         """Return Top-K typed capabilities under any active principal context."""
 
+        witness = self._retrieval_authority_witness()
         principal = _current_principal_context()
         predicate = self._authorization_predicate(principal)
         if predicate is None:
@@ -3690,7 +3717,9 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 predicate,
                 k=k,
             )
-        return self._project_retrieval_data_scope(retrieval, principal)
+        projected = self._project_retrieval_data_scope(retrieval, principal)
+        self._check_retrieval_authority_witness(witness)
+        return projected
 
     async def aretrieve(
         self,
@@ -3700,6 +3729,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
     ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve`."""
 
+        witness = self._retrieval_authority_witness()
         principal = _current_principal_context()
         predicate = self._authorization_predicate(principal)
         if predicate is None:
@@ -3729,7 +3759,9 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 predicate,
                 k=k,
             )
-        return self._project_retrieval_data_scope(retrieval, principal)
+        projected = self._project_retrieval_data_scope(retrieval, principal)
+        self._check_retrieval_authority_witness(witness)
+        return projected
 
     def retrieve_authorized(
         self,
