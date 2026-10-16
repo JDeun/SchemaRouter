@@ -64,7 +64,9 @@ def evaluate(sizes: tuple[int, ...] = SIZES) -> dict[str, Any]:
             who = principal(case["role"])
             for k in WIDTHS:
                 query = PlanRequest(query=case["query"])
-                def original_callback(tool: Any, endpoint: Any) -> bool:
+                def original_callback(
+                    tool: Any, endpoint: Any, router: Any = router,
+                ) -> bool:
                     return router.executor.is_access_available_for_contract(
                         tool.key, endpoint.name,
                         router.planner._snapshot_tool_fingerprint(tool),
