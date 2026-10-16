@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from benchmarks.current_adapter_scaled_authorized_dev_v1 import SIZES, WIDTHS
+from scripts.research_current_main_multilingual_dev import encoded
 
 CONDITIONS = ("v1_k24", *(f"v3_k{width}" for width in WIDTHS))
 LANGUAGES = ("en", "ko", "ja")
@@ -41,11 +42,27 @@ def _aggregate(rows: list[dict[str, Any]], condition: str) -> dict[str, int]:
         "required_fields_found": sum(
             len(item["required_fields_found"]) for item in entries
         ),
-        "full_field_coverage": sum(item["all_required_fields_found"] for item in entries),
+        "full_field_coverage": sum(
+            item["all_required_fields_found"] for item in entries
+        ),
         "unsupported_nonempty_shortlist": sum(
             item["unsupported_nonempty_shortlist"] for item in entries
         ),
-        "unauthorized_candidate_count": sum(item["unauthorized_count"] for item in entries),
+        "unauthorized_candidate_count": sum(
+            item["unauthorized_count"] for item in entries
+        ),
+    }
+
+
+def _costs(rows: list[dict[str, Any]], name: str) -> dict[str, float]:
+    values = [item["conditions"][name] for item in rows]
+    elapsed = sorted(item["retrieval_rerank_ms"] for item in values)
+    p95 = elapsed[math.ceil(len(elapsed) * 0.95) - 1]
+    return {
+        "p95_retrieval_rerank_ms": round(p95, 5),
+        "mean_top5_schema_bytes": round(
+            sum(item["schema_bytes"] for item in values) / len(values), 2,
+        ),
     }
 
 
@@ -65,6 +82,13 @@ def audit(report: Any) -> dict[str, Any]:
             or not _digest(report.get("source_sha256"))
             or not _digest(report.get("task_manifest_sha256"))):
         raise ValueError("missing immutable DEV source or task fingerprint")
+    sources = report.get("source_file_sha256")
+    if (not isinstance(sources, dict) or not sources
+            or any(type(k) is not str or not k or not _digest(v)
+                   for k, v in sources.items())):
+        raise ValueError("missing per-file source SHA manifest")
+    if hashlib.sha256(encoded(sources)).hexdigest() != report["source_sha256"]:
+        raise ValueError("source-manifest digest inconsistency")
     sizes = report.get("registered_sizes")
     if (not isinstance(sizes, list)
             or len(sizes) != len(set(map(str, sizes)))
@@ -153,7 +177,8 @@ def audit(report: Any) -> dict[str, Any]:
     for name in CONDITIONS:
         recomputed = _aggregate(rows, name)
         if not isinstance(all_totals[name], dict) or any(
-            all_totals[name].get(k) != v for k, v in recomputed.items()
+            all_totals[name].get(k) != v
+            for k, v in {**recomputed, **_costs(rows, name)}.items()
         ):
             raise ValueError("aggregate metric does not equal case evidence")
     for key, cohort in groups.items():
@@ -161,7 +186,10 @@ def audit(report: Any) -> dict[str, Any]:
             saved = saved_groups[key].get(name)
             if not isinstance(saved, dict) or any(
                 saved.get(k) != v
-                for k, v in _aggregate(cohort, name).items()
+                for k, v in {
+                    **_aggregate(cohort, name),
+                    **_costs(cohort, name),
+                }.items()
             ):
                 raise ValueError("stratified metric does not equal case evidence")
 
@@ -194,7 +222,8 @@ def audit(report: Any) -> dict[str, Any]:
             "group_regressions": regressions,
             "dev_diagnostic_gate": (
                 not regressions and cpu_ratio <= 1.5
-                and candidate["required_routes_found"] >= control["required_routes_found"]
+                and candidate["required_routes_found"]
+                >= control["required_routes_found"]
             ),
             "may_promote": False,
         }
