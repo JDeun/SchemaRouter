@@ -143,3 +143,30 @@ def test_role_alternation_does_not_share_access_or_fingerprint_scope() -> None:
     router, _ = build_fixture(100)
     for role in ("editor", "viewer", "editor", "viewer"):
         paired(router, "parcel ledger payload audit_tag", role, 56)
+
+
+@pytest.mark.asyncio
+async def test_async_authorized_cooldown_and_full_output_parity() -> None:
+    router, _ = build_fixture(100)
+    who = principal("viewer")
+    query = PlanRequest(query="청구서 합계와 데이터 페이로드를 조회하세요")
+    router.executor.mark_access_unavailable(
+        "benchdb", "probe_db_0005", cooldown_seconds=60.0,
+    )
+    def eager(tool, endpoint):
+        return router.executor.is_access_available_for_contract(
+            tool.key, endpoint.name,
+            router.planner._snapshot_tool_fingerprint(tool),
+        )
+
+    with patch.object(router.planner, "availability_predicate", eager):
+        old = await router.aretrieve_authorized(
+            query, principal=who, k=56,
+        )
+    current = await router.aretrieve_authorized(
+        query, principal=who, k=56,
+    )
+    assert current.model_dump(mode="json") == old.model_dump(mode="json")
+    assert "benchdb.probe_db_0005" not in {
+        item.route_id for item in current.candidates
+    }
