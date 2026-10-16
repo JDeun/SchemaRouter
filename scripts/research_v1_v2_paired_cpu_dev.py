@@ -13,7 +13,6 @@ import math
 import os
 import platform
 import subprocess
-from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
