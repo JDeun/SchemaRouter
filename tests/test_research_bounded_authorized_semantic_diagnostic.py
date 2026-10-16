@@ -28,11 +28,11 @@ OUTSIDER = PrincipalContext(subject="host-outsider", roles=("outsider",))
 def _read_tool(name: str) -> ToolSpec:
     return ToolSpec(
         name=name,
-        description=f"Original {name} published tool",
+        description=f"Original {name} published tool referencing private reporting",
         endpoints=[
             EndpointSpec(
                 name="read", read_only=True,
-                description=f"Original {name} read-only operation",
+                description=f"Original {name} private-sector read-only operation",
                 output_fields=[
                     FieldSpec(name="public"),
                     FieldSpec(name="private"),
