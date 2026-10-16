@@ -26,3 +26,14 @@ The live code contains a different repeated operation: within one `SchemaRouter.
 6. Independent real-provider/host-identity/agent confirmation remains outstanding (#1346). A source-author-visible synthetic speedup is **not** a production SLO.
 
 Workflow: `.github/workflows/research-request-local-projection-dev.yml`, read-only, no paid models, external agents or GPU. Release #1356 remains HOLD and the research-only K56 champion remains unpromoted.
+
+### Pre-registered CPU decision threshold (before any report review)
+
+A **necessary but not sufficient** signal for further product review is a
+source-matched p95 reduction of **at least 20% at both 250 and 500 endpoints
+for each K24 and K56 stratum**, with no more than a 10% regression at 100
+endpoints. Any full-output mismatch or authorization scope violation is an
+automatic stop regardless of speed. Passing this exposed synthetic DEV
+threshold does **not** authorize shipping: separately test policy/ABAC
+invalidation, host execution and independently reviewed provider schemas.
+Comparisons use immutable GitHub Actions CPU artifact only.
