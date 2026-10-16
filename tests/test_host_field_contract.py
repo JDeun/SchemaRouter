@@ -287,3 +287,82 @@ def test_invalid_principal_copy_does_not_launder_roles() -> None:
             _router(), "ocean", principal=forged,
             contract=_contract("wave_height"),
         )
+
+
+@pytest.mark.parametrize("size", (100, 250, 500))
+def test_projected_k_does_not_launder_incomplete_authorized_catalog(
+    size: int,
+) -> None:
+    """Replicate the actual scaled fixture regression found by #1448.
+
+    Data-scope projection recalculates total_ranked from the already trimmed
+    Top-K. The selector MUST prove completeness from current authorized route
+    identities instead of trusting that projected metadata alone.
+    """
+    from benchmarks.current_adapter_field_scope_dev_v1 import principal
+    from benchmarks.current_adapter_scaled_authorized_dev_v1 import (
+        build_fixture,
+    )
+
+    router, policy = build_fixture(size)
+    who = principal("viewer")
+    original = router.retrieve_authorized(
+        "read invoice", principal=who, k=5,
+    )
+    assert len(original.candidates) == 5
+    assert original.total_ranked == 5  # regression reproduction
+    assert sum(
+        policy.visible(who, tool, endpoint)
+        for tool in router.registry.tools()
+        for endpoint in tool.endpoints
+    ) == size - 5
+
+    selected = select_authorized_field_contract(
+        router, "read invoice", principal=who,
+        contract=HostFieldContract(
+            operation="read",
+            required_output_fields=["invoice_id", "total_amount"],
+        ),
+        k=5,
+    )
+    assert selected.disposition == "abstained"
+    assert selected.reason == "incomplete_authorized_catalog"
+    assert selected.selected_route_id is None
+
+    # Full authorized catalog is still selectable under the same principal.
+    complete = select_authorized_field_contract(
+        router, "read invoice", principal=who,
+        contract=HostFieldContract(
+            operation="read",
+            required_output_fields=["invoice_id", "total_amount"],
+        ),
+        k=size,
+    )
+    assert complete.selected_route_id == "billing.getInvoice"
+
+
+def test_forged_route_consistent_name_but_not_visible_is_denied() -> None:
+    router = _router(deny_archive=True)
+    actual = router.retrieve_authorized
+    def poison(*args, **kwargs):
+        original = actual(*args, **kwargs)
+        first = original.candidates[0]
+        return original.model_copy(update={
+            "candidates": [
+                first.model_copy(
+                    update={
+                        "route_id": "archive.read",
+                        "tool": "archive",
+                        "endpoint": "read",
+                    }
+                ),
+                *original.candidates[1:],
+            ]
+        })
+
+    router.retrieve_authorized = poison
+    with pytest.raises(PolicyViolationError, match="outside current host authorization"):
+        select_authorized_field_contract(
+            router, "ocean", principal=VIEWER,
+            contract=_contract("wave_height"),
+        )
