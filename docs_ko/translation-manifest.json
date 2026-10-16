@@ -561,7 +561,7 @@
     },
     {
       "path": "research/prior-art-roadmap.md",
-      "source_blob": "010e7b42529f641e626706663c0dc3bc4afde181"
+      "source_blob": "719295665db8ab081b3f7e0554f47ac8b17f9bd6"
     },
     {
       "path": "research/realistic-break-even-result.md",
@@ -574,6 +574,10 @@
     {
       "path": "research/successor-screen.md",
       "source_blob": "2fbfb4ba68a41c0ebd03cc96eb72864bfe4bb606"
+    },
+    {
+      "path": "research/tool-routing-landscape.md",
+      "source_blob": "4e9ceeeb95ec29de198899d992f7540db9218ae5"
     },
     {
       "path": "research/typed-capability-retrieval-ablation.md",
