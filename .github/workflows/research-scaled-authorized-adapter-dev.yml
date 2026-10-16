@@ -1,0 +1,51 @@
+name: Scaled Authorized Current Adapter DEV CPU
+
+on:
+  pull_request:
+    paths:
+      - "benchmarks/current_adapter_scaled_authorized_dev_v1.py"
+      - "scripts/research_current_adapter_scaled_authorized_dev.py"
+      - "tests/test_research_current_adapter_scaled_authorized_dev.py"
+      - "research/autoresearch/scaled-authorized-adapter-dev.md"
+      - ".github/workflows/research-scaled-authorized-adapter-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scaled-authorized-adapter-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  current-adapter-cpu-dev:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install checked-out SchemaRouter without model inference
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Verify deterministic registered schemas and principal guard
+        run: python -m pytest -q tests/test_research_current_adapter_scaled_authorized_dev.py
+      - name: Measure 100 250 500 current parsed and typed authorized routes
+        run: |
+          python -m scripts.research_current_adapter_scaled_authorized_dev \
+            --sizes 100 250 500 \
+            --output artifacts/scaled-authorized-dev/report.json
+      - name: Archive raw per-case negative and positive DEV evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: scaled-authorized-dev-${{ github.run_id }}
+          path: artifacts/scaled-authorized-dev/
+          if-no-files-found: warn
+          retention-days: 30
+# Unprivileged, source-backed offline CPU research only.
+# No production source changes, secrets, model APIs, GPU, release, execution.
