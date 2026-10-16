@@ -27,8 +27,10 @@ It is wired ONLY into the explicit #1478 `EVAL-FIXED5-OPTIN` synthetic agent con
 2. Call public `retrieve_authorized(query, principal, k=physical_count)`
    to form ONLY principal-visible, positively scored original provider route
    IDs. Reject source/version/availability/policy object changes and
-   incomplete ranked catalogs. This is not an atomic lock against ABA or
-   in-place source mutation (#1450).
+   incomplete ranked catalogs. Also pin the **trusted PrincipalContext roles,
+   departments, teams and mutable attributes** at capture and fail closed if
+   any claim changes before/after model inference, tool projection or report.
+   This is not an atomic lock against ABA or in-place source mutation (#1450).
 3. Produce a strict max-five `tool_definitions` list from those projected
    `CapabilityCandidate` fields. Under ANY data-scope rules, **discard all
    unstructured tool/endpoint/parameter descriptions, examples and nested
