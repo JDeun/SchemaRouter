@@ -30,6 +30,7 @@ from scripts.external_validation_servicenow_platform_mcp import (
     load_package,
     validate_package,
 )
+
 # Match the independently pinned real Open-Meteo E5 CPU study, but do not
 # import that study's optional YAML/source-harness runtime into this MCP job.
 MODEL_ID = "intfloat/multilingual-e5-small"
