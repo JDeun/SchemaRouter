@@ -63,7 +63,8 @@ class AuthorizedAgentToolSurface:
             copy.deepcopy(self._tool_definitions[route])
             for route in selected_route_ids
         ]
-        if len(json.dumps(result, ensure_ascii=False, separators=(",", ":")).encode("utf-8")) > MAX_MODEL_TOOL_JSON_BYTES:
+        encoded = json.dumps(result, ensure_ascii=False, separators=(",", ":"))
+        if len(encoded.encode("utf-8")) > MAX_MODEL_TOOL_JSON_BYTES:
             raise ValueError("model-visible tool definitions exceed research byte cap")
         self.assert_source_unchanged()
         return result
