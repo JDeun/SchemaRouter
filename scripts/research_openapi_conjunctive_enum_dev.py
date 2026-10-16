@@ -22,9 +22,10 @@ from scripts.research_open_meteo_real_openapi_dev import (
 )
 from scripts.research_openapi_authorized_enum_gate_dev import (
     REQUIREMENTS,
-    conservative_selection,
-    evaluate as original_evaluate,
     supports_requested_variable,
+)
+from scripts.research_openapi_authorized_enum_gate_dev import (
+    evaluate as original_evaluate,
 )
 from scripts.research_real_open_meteo_e5_cpu_dev import (
     catalog,
