@@ -80,6 +80,7 @@ def validate_samples(
     names = [tool["name"] for tool in snapshot["tools"]]
     tool_map = {tool["name"]: tool for tool in snapshot["tools"]}
     expected = list(schedule(list(case_map), repeats, seed))
+    stable_routes: dict[tuple[str, str], tuple[str, ...]] = {}
     if not isinstance(samples, list) or len(samples) != len(expected):
         raise ValueError("request-level sample cardinality changed")
     for row, (case_id, iteration, arm, position) in zip(
@@ -101,6 +102,11 @@ def validate_samples(
                 or len(selected) != len(set(selected))
                 or set(selected) - set(tool_map)):
             raise ValueError("invalid source-native candidate identity")
+        stable_key = (case_id, arm)
+        chosen = tuple(selected)
+        if stable_key in stable_routes and stable_routes[stable_key] != chosen:
+            raise ValueError("candidate order drift across repeated requests")
+        stable_routes[stable_key] = chosen
         if arm == "static_readonly" and selected != names:
             raise ValueError("static condition must expose full readonly package")
         if arm != "static_readonly" and len(selected) > (3 if arm.endswith("k3") else 5):
@@ -144,17 +150,28 @@ def summarize(
         route_total = 0
         field_hits = 0
         field_total = 0
+        route_macro: list[float] = []
+        field_macro: list[float] = []
         for case in supported:
             selected = set(case_groups[case["id"]][0]["candidate_tools"])
             required = set(case["required_tools"])
-            route_hits += len(selected & required)
+            hits = len(selected & required)
+            route_hits += hits
             route_total += len(required)
+            route_macro.append(hits / len(required))
+            case_field_hits = 0
+            case_field_total = 0
             for name, required_fields in case["required_fields"].items():
-                field_total += len(required_fields)
+                case_field_total += len(required_fields)
                 if name in selected:
                     native_schema = tools[name].get("inputSchema", {})
                     properties = native_schema.get("properties", {})
-                    field_hits += len(set(required_fields) & set(properties))
+                    case_field_hits += len(set(required_fields) & set(properties))
+            field_hits += case_field_hits
+            field_total += case_field_total
+            field_macro.append(
+                case_field_hits / case_field_total if case_field_total else 1.0
+            )
         nonempty_negatives = sum(
             bool(case_groups[case["id"]][0]["candidate_tools"])
             for case in negatives
@@ -172,8 +189,14 @@ def summarize(
             "mean_exposed_tool_count": mean(
                 len(row["candidate_tools"]) for row in rows
             ),
-            "supported_required_tool_recall": route_hits / route_total,
-            "supported_required_input_field_recall": field_hits / field_total,
+            "supported_tool_recall_macro_per_case": mean(route_macro),
+            "supported_tool_recall_micro_per_required_tool": (
+                route_hits / route_total
+            ),
+            "supported_input_field_recall_macro_per_case": mean(field_macro),
+            "supported_input_field_recall_micro_per_required_field": (
+                field_hits / field_total
+            ),
             "unsupported_nonempty_candidate_fraction_not_no_fit": (
                 nonempty_negatives / len(negatives)
             ),

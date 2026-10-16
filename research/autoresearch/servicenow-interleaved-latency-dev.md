@@ -38,8 +38,12 @@ The report distinguishes:
   measured requests per arm**, with linear interpolation of sorted samples.
 - p95_of_per_case_medians_ms_not_request_p95: historical-style aggregation
   for comparison only, never a production SLO.
-- Required-tool and **native input-parameter availability** recall, unsupported
-  **nonempty candidate exposure**, context schema size, and tool counts.
+- Required-tool and **native input-parameter availability** recall separately
+  reported as **macro means of per-case recall** and **micro totals of required
+  tool/field occurrences**. These have different denominators: the frozen DEV
+  scorer's historical macro 85% must not be conflated with the micro field
+  recall (~90.9% in a source run). Unsupported **nonempty candidate exposure**,
+  context schema size, and tool counts are separate.
   Field availability is not actual model argument extraction or output-field
   selection. Nonempty unsupported retrieval is not unauthorized execution and
   is not calibrated no-fit false acceptance.

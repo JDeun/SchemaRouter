@@ -107,8 +107,10 @@ def test_per_request_p95_is_not_p95_of_case_medians():
     assert item["request_samples"] == 12
     assert item["request_p95_ms"] > 300
     assert item["p95_of_per_case_medians_ms_not_request_p95"] < 5
-    assert item["supported_required_tool_recall"] == 1.0
-    assert item["supported_required_input_field_recall"] == 1.0
+    assert item["supported_tool_recall_macro_per_case"] == 1.0
+    assert item["supported_tool_recall_micro_per_required_tool"] == 1.0
+    assert item["supported_input_field_recall_macro_per_case"] == 1.0
+    assert item["supported_input_field_recall_micro_per_required_field"] == 1.0
     assert item["unsupported_nonempty_candidate_fraction_not_no_fit"] == 1.0
     assert percentile([1.0, 2.0, 3.0, 4.0], 0.95) == pytest.approx(3.85)
 
@@ -143,3 +145,21 @@ def test_complete_original_samples_validate_without_external_agent_claim():
     assert set(measured) == set(ARMS)
     assert all(arm["request_samples"] == 12 for arm in measured.values())
     assert all(arm["case_count"] == 2 for arm in measured.values())
+
+
+def test_ranking_drift_rejected_even_when_each_contract_hash_is_valid():
+    cases, snapshot, samples = _fixture()
+    rows = deepcopy(samples)
+    altered = next(
+        row for row in rows
+        if row["case_id"] == "supported"
+        and row["arm"] == "schemarouter_k5"
+        and row["iteration"] == 5
+    )
+    native = snapshot["tools"]
+    altered["candidate_tools"] = ["b"]
+    raw = canonical([native[1]])
+    altered["contract_sha256"] = hashlib.sha256(raw).hexdigest()
+    altered["visible_schema_bytes"] = len(raw)
+    with pytest.raises(ValueError, match="candidate order drift"):
+        validate_samples(rows, cases, snapshot, 6, 20261016)
