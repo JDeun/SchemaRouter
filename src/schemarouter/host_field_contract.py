@@ -283,17 +283,31 @@ def select_authorized_field_contract(
     # This is a read-only full scan, not a cached or model-scored shortcut.
     try:
         scoped_route_ids: set[str] = set()
-        for tool in router.registry.tools():
+        returned_ids = set(ids)
+        # This same authoritative, principal-scoped scan also attests the
+        # metadata used by _candidate_matches. Checking route IDs alone
+        # cannot detect a forged field/enum or a forged read-only flag on an
+        # otherwise permitted route. Avoid copying schemas for nonreturned
+        # routes; no unauthorized metadata is included in the receipt.
+        returned_contracts: dict[str, tuple[object, ...]] = {}
+        for tool in registry.tools():
             for endpoint in tool.endpoints:
                 if not policy.visible(approved_principal, tool, endpoint):
                     continue
                 if availability is not None and not availability(tool, endpoint):
                     continue
-                if router._data_scope_endpoint_view(
+                visible = router._data_scope_endpoint_view(
                     approved_principal, tool, endpoint,
-                ) is None:
+                )
+                if visible is None:
                     continue
-                scoped_route_ids.add(f"{tool.key}.{endpoint.name}")
+                route_id = f"{tool.key}.{endpoint.name}"
+                scoped_route_ids.add(route_id)
+                if route_id in returned_ids:
+                    returned_contracts[route_id] = (
+                        visible.read_only, visible.destructive,
+                        visible.parameters, visible.output_fields,
+                    )
     except (TypeError, ValueError, AttributeError) as exc:
         raise PolicyViolationError(
             "cannot validate the complete authorized catalog"
@@ -311,6 +325,20 @@ def select_authorized_field_contract(
         raise PolicyViolationError(
             "retrieval contains a route outside current host authorization"
         )
+    for item in verified.candidates:
+        # A structurally valid Pydantic retrieval can carry forged metadata
+        # even when its route identity and fingerprint-shaped strings look
+        # plausible. Authoritative per-principal typed data is the source of
+        # truth for *every* candidate, including competing matches.
+        expected = returned_contracts[item.route_id]
+        observed = (
+            item.read_only, item.destructive,
+            item.parameters, item.output_fields,
+        )
+        if observed != expected:
+            raise PolicyViolationError(
+                "retrieval contract differs from current authorized schema"
+            )
     # A positive count excess indicates truncation even if it disagrees with
     # this internal witness; never use a public count to waive completeness.
     if (
