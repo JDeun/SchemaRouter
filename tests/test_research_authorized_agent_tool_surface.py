@@ -402,3 +402,80 @@ def test_principal_roles_revoked_during_agent_inference_fail_closed():
             experimental_agent_tool_surface=view,
         )
     assert agent.calls == 1
+
+
+def test_two_step_agent_receives_only_allowed_state_for_next_tool_argument():
+    router = fixture_router()
+    view = captured(router)
+    source_task = {
+        "semantic_task_id": "scoped-two-step-E0",
+        "language": "ko",
+        "query": "marine public papers read values",
+        "supported": True,
+        "required_routes": ["marine.read", "papers.read"],
+        "executor_fixture": {
+            "steps": [
+                {
+                    "route_id": "marine.read",
+                    "argument_rules": {"place": {"eq": "Seoul"}},
+                    "observation": {
+                        "public_field": "record-321",
+                        "secret_field": SECRET,
+                    },
+                },
+                {
+                    "route_id": "papers.read",
+                    "argument_rules": {"place": {"state": "public_field"}},
+                    "observation": {
+                        "public_field": "verified",
+                        "secret_field": SECRET,
+                    },
+                },
+            ],
+        },
+    }
+
+    class TwoStepAgent(CapturingSyntheticAgent):
+        def generate(self, messages, tools):
+            self.snapshots.append(json.dumps({
+                "messages": messages, "tools": tools,
+            }, ensure_ascii=False))
+            if self.calls == 0:
+                name, place = "marine__read", "Seoul"
+            elif self.calls == 1:
+                assert "record-321" in self.snapshots[-1]
+                name, place = "papers__read", "record-321"
+            else:
+                name, place = None, None
+            self.calls += 1
+            if name is None:
+                text = "Done."
+            else:
+                text = "<tool_call>" + json.dumps({
+                    "name": name, "arguments": {"place": place},
+                }) + "</tool_call>"
+            return {
+                "text": text, "input_tokens": 12, "tool_tokens": 5,
+                "output_tokens": 5, "latency_ms": 0.0,
+                "context_overflow": False,
+            }
+
+    agent = TwoStepAgent()
+    result = run_generated_episode(
+        agent, router.registry, source_task,
+        EXPERIMENTAL_FIXED5_CONDITION,
+        experimental_candidate_selector=lambda _query, _ids: [
+            "marine.read", "papers.read",
+        ],
+        experimental_agent_tool_surface=view,
+    )
+    assert result["passed"] is True
+    assert result["task_complete"] is True
+    assert result["tool_call_count"] == 2
+    assert result["visible_candidate_counts"] == [2]
+    assert len(agent.snapshots) == 3
+    for model_snapshot in agent.snapshots:
+        assert SECRET not in model_snapshot
+        assert "secret_field" not in model_snapshot
+    assert SECRET not in json.dumps(result)
+    assert "attempts" not in result
