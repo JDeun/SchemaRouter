@@ -38,7 +38,6 @@ LANGUAGES = ("en", "ko", "ja")
 ROLES = ("viewer", "editor")
 MODES = ("field_scope", "route_policy_only")
 STAGES = (
-    (SchemaRouter, "_is_snapshot_access_available", "access_predicate"),
     (SchemaPlanner, "_snapshot_tool_fingerprint", "tool_fingerprint_resolve"),
     (RegistryExecutor, "is_access_available_for_contract", "cooldown_lookup"),
     (SchemaPlanner, "_semantic_recall_catalog", "semantic_catalog"),
@@ -104,6 +103,16 @@ def sample(
                 target, method,
                 wrap_method(getattr(target, method), stage),
             ))
+        # The planner captured the bound availability callback at router
+        # construction. Replacing the SchemaRouter class descriptor later
+        # does not replace that captured callback. Wrap the stored callback.
+        callback = router.planner.availability_predicate
+        if callback is None:
+            raise ValueError("missing current availability predicate")
+        stack.enter_context(patch.object(
+            router.planner, "availability_predicate",
+            wrap_method(callback, "access_predicate"),
+        ))
         started = time.perf_counter_ns()
         result = router.retrieve_authorized(
             PlanRequest(query=QUERIES[language]),
@@ -146,6 +155,7 @@ def sample(
             }
             for stage in (
                 "tool_fingerprint_property",
+                "access_predicate",
                 *(label for _, _, label in STAGES),
             )
         },
