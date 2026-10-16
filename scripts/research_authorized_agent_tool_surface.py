@@ -36,6 +36,7 @@ class AuthorizedAgentToolSurface:
     witness: tuple[Any, ...]
     _principal: PrincipalContext
     _principal_claims_snapshot: str
+    original_query: str
     registered_route_count: int
     visible_route_ids: tuple[str, ...]
     _tool_definitions: dict[str, dict[str, Any]]
@@ -264,7 +265,7 @@ def capture_authorized_agent_tool_surface(
         raise PolicyViolationError("principal claims changed during model request")
     return AuthorizedAgentToolSurface(
         router=router, witness=witness, _principal=principal,
-        _principal_claims_snapshot=claims_snapshot,
+        _principal_claims_snapshot=claims_snapshot, original_query=query,
         registered_route_count=physical,
         visible_route_ids=tuple(definitions),
         _tool_definitions=definitions,
