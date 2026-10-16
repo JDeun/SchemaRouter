@@ -4,7 +4,6 @@ from __future__ import annotations
 import pytest
 
 from benchmarks.current_adapter_field_scope_dev_v1 import principal
-from schemarouter import EndpointSpec, ToolSpec
 from benchmarks.current_adapter_scaled_authorized_dev_v1 import (
     DENIED_VIEWER,
     SIZES,
@@ -12,6 +11,7 @@ from benchmarks.current_adapter_scaled_authorized_dev_v1 import (
     authored_tasks,
     build_fixture,
 )
+from schemarouter import EndpointSpec, ToolSpec
 from scripts.research_current_adapter_scaled_authorized_dev import (
     _measure,
     _tasks,
