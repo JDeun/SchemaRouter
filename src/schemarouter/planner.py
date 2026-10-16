@@ -1792,6 +1792,29 @@ class SchemaPlanner:
                 continue
             scoped_pairs.append((tool, endpoint, visible_endpoint))
 
+        # The principal-scoped schema transform formerly forced exhaustive
+        # scoring of every visible endpoint even with an exact-recall index.
+        # Build an index from ONLY the permitted, already projected schemas.
+        # Never index original hidden fields or cache across principals/versions.
+        # Structural and explicit unindexed modes retain exhaustive behavior.
+        if (
+            index is None
+            and scoring_endpoint_transform is not None
+            and self.candidate_index
+            and not self.structural_retrieval
+            and scoped_pairs
+        ):
+            visible_by_tool: dict[str, tuple[ToolSpec, list[EndpointSpec]]] = {}
+            for tool, _original, visible in scoped_pairs:
+                if tool.key not in visible_by_tool:
+                    visible_by_tool[tool.key] = (tool, [])
+                visible_by_tool[tool.key][1].append(visible)
+            scoped_tools = tuple(
+                tool.model_copy(update={"endpoints": endpoints})
+                for tool, endpoints in visible_by_tool.values()
+            )
+            index = _CandidateIndex(snapshot.version, scoped_tools)
+
         scoring_context = self._scoring_context(request.query, intent)
         if index is None or self.structural_retrieval:
             result: list[_Candidate] = []
