@@ -1,0 +1,63 @@
+name: Candidate Pool Ceiling CPU DEV
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/research-candidate-pool-ceiling-dev.yml"
+      - "scripts/research_candidate_pool_ceiling_dev.py"
+      - "tests/test_research_candidate_pool_ceiling_dev.py"
+      - "research/candidate-pool-ceiling-dev.md"
+      - "benchmarks/agent_utility_v5_catalog.py"
+  workflow_dispatch:
+    inputs:
+      full_existing_dev:
+        description: "Run all 240 exposed DEV cases for each 100/250/500 catalog"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: candidate-pool-ceiling-dev-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-pool-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install checked-out product and test runner without model services
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Test gold isolation and source-bound ceiling evaluator
+        run: python -m pytest -q tests/test_research_candidate_pool_ceiling_dev.py
+      - name: Score actual registered candidate retrieval pools (not oracle execution)
+        env:
+          FULL_DEV: ${{ inputs.full_existing_dev == true && 'true' || 'false' }}
+        shell: bash
+        run: |
+          if [[ "$FULL_DEV" == "true" ]]; then
+            COUNT=5
+          else
+            COUNT=1
+          fi
+          python -m scripts.research_candidate_pool_ceiling_dev \
+            --cases-per-group "$COUNT" \
+            --output artifacts/candidate-pool-ceiling-dev/report.json
+      - name: Preserve measured K24/K64/K128 route pools and true DEV failure labels
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: candidate-pool-ceiling-dev-${{ github.run_id }}
+          path: artifacts/candidate-pool-ceiling-dev/report.json
+          if-no-files-found: error
+          retention-days: 90
+# Research evidence only, no scheduled starts, product writes or schema execution.
