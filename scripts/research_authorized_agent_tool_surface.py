@@ -130,6 +130,15 @@ class AuthorizedAgentToolSurface:
             value = episode_row.get(name)
             if type(value) is int and value >= 0:
                 result[name] = value
+        # Finite nonnegative aggregate timing is safe to publish. Keep
+        # CPU/cost comparison possible without revealing raw data or gold.
+        for name in (
+            "candidate_selection_latency_ms", "model_generation_latency_ms",
+            "episode_wall_latency_ms",
+        ):
+            value = episode_row.get(name)
+            if type(value) in (int, float) and math.isfinite(value) and value >= 0:
+                result[name] = float(value)
         # Do not echo candidate history containing foreign route IDs.
         history = episode_row.get("candidate_history")
         if type(history) is list:
