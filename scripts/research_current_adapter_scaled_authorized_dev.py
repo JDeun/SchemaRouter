@@ -19,8 +19,8 @@ from typing import Any
 
 from benchmarks.current_adapter_field_scope_dev_v1 import (
     authored_tasks as prior_tasks,
-    principal,
 )
+from benchmarks.current_adapter_field_scope_dev_v1 import principal
 from benchmarks.current_adapter_scaled_authorized_dev_v1 import (
     DENIED_VIEWER,
     SIZES,
