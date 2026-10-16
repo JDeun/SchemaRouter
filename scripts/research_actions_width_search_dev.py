@@ -23,8 +23,6 @@ from typing import Any
 
 from benchmarks.agent_utility_v5_catalog import (
     CATALOG_SIZES,
-    LANGUAGES,
-    TASKS_PER_CELL,
     build_registry,
     build_tasks,
 )
@@ -36,7 +34,6 @@ from scripts.research_current_main_multilingual_dev import (
     encoded,
     score_case,
     select_cases,
-    summarize,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
