@@ -4,6 +4,7 @@ from __future__ import annotations
 import pytest
 
 from benchmarks.current_adapter_field_scope_dev_v1 import principal
+from schemarouter import EndpointSpec, ToolSpec
 from benchmarks.current_adapter_scaled_authorized_dev_v1 import (
     DENIED_VIEWER,
     SIZES,
@@ -48,6 +49,11 @@ def test_scaled_current_adapters_have_distinct_real_registered_routes() -> None:
             assert not policy.visible(viewer, tool, endpoint)
             assert policy.visible(editor, tool, endpoint)
         assert sum(policy.visible(viewer, t, e) for t, e in items) == size - 5
+        # Unknown unrelated tools must not inherit viewer visibility
+        # merely because they are read-only.
+        rogue = ToolSpec(name="other", provider="unregistered",
+                         endpoints=[EndpointSpec(name="read", read_only=True)])
+        assert not policy.visible(viewer, rogue, rogue.endpoints[0])
 
 
 def test_query_gold_authoring_and_size_limits() -> None:
