@@ -34,7 +34,9 @@
 | [Semantic Kernel function choice](https://learn.microsoft.com/en-us/semantic-kernel/frameworks/agent/agent-functions)·[filters](https://learn.microsoft.com/en-us/semantic-kernel/concepts/enterprise-readiness/filters) | 함수 선택·노출 설정 및 실행 필터 | 모델의 선택 제안과 실행 승인 분리 | 구조 참고 |
 | [Haystack Routers](https://docs.haystack.deepset.ai/docs/routers), [RouteLLM](https://github.com/lm-sys/RouteLLM) | 파이프라인 분기 / 언어 모델 사이 비용·품질 라우팅 | **LLM 모델 라우팅 ≠ 원본 도구·필드 라우팅** | 카테고리 조사, 직접 성능 비교 없음 |
 
-외부 API는 바뀔 수 있으므로 **참조 당시 버전·확인 날짜·근거 링크**를 기록합니다. 제조사·저자 자체 벤치마크 수치를 SchemaRouter의 검증 성적으로 옮기지 않습니다.
+외부 API는 바뀔 수 있으므로 **참조 당시 버전·확인 날짜·근거 링크**를 기록합니다. 이 표는 설계와 구현 경계를 비교한 것이며, 프레임워크 간 동일한 환경에서 정확도·CPU 지연·토큰 절감률의 승자를 측정한 표가 **아닙니다**.
+
+외부 기능을 제품 코드에 도입하기 전에는 해당 upstream 패키지의 **정확한 버전 또는 커밋**, 실제 호출되는 **API·도구 계약**, 스키마를 열람하고 도구를 실행할 **권한 주체와 보안 경계**, **라이선스와 사용 조건**을 공식 구현과 문서에서 재확인해야 합니다. 제조사나 연구 저자가 README에 제시한 자체 벤치마크 수치는 어디까지나 **그 프로젝트가 보고한 성능**이며, 우리가 독립적으로 재현한 SchemaRouter의 실험 결과로 취급해서는 안 됩니다.
 
 ## 현재 아키텍처 의사결정 초안 — 구현 승인이 아님
 
