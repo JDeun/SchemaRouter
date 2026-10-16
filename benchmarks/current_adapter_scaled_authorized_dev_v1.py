@@ -7,6 +7,12 @@ from __future__ import annotations
 
 from typing import Any
 
+from benchmarks.current_adapter_field_scope_dev_v1 import (
+    _object,
+    mcp_tool,
+    native_tools,
+    openapi_tool,
+)
 from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
@@ -19,14 +25,6 @@ from schemarouter import (
 )
 from schemarouter.adapters.mcp import tool_from_mcp
 from schemarouter.adapters.openapi import tool_from_openapi
-
-from benchmarks.current_adapter_field_scope_dev_v1 import (
-    _object,
-    native_tools,
-    openapi_tool,
-    mcp_tool,
-    principal,
-)
 
 SIZES = (100, 250, 500)
 WIDTHS = (24, 32, 40, 48, 56, 64)
