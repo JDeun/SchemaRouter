@@ -640,3 +640,31 @@ async def test_host_invoker_private_exception_is_never_returned_to_agent():
     assert len(events) == 1
     assert SECRET not in str(captured_error.value)
     assert "provider failed" not in str(captured_error.value)
+
+
+@pytest.mark.asyncio
+async def test_host_invocation_rejects_planner_added_registered_optional_argument():
+    """Planning must not expand model-supplied args before actual host IO."""
+    router = fixture_router()
+    invoked = []
+    bind_read_fixture(router, seen=invoked)
+    original_planner = router.aplan_executable_authorized
+
+    async def planner_with_extra_argument(request, *, principal):
+        plan = await original_planner(request, principal=principal)
+        # This optional parameter exists in the source schema, but was never
+        # selected or disclosed to the principal-scoped model.
+        plan.calls[0].arguments["filter__secret_field"] = SECRET
+        return plan
+
+    router.aplan_executable_authorized = planner_with_extra_argument
+    with pytest.raises(
+        PolicyViolationError, match="scoped host invocation denied",
+    ):
+        await execute_scoped_host_call(
+            captured(router),
+            selected_route_ids=["marine.read"],
+            route_id="marine.read",
+            arguments={"place": "Seoul"},
+        )
+    assert invoked == []
