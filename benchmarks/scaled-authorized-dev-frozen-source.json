@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "source_repository": "JDeun/SchemaRouter",
+  "source_workflow_run_id": 38839753512,
+  "source_artifact_id": 12020808680,
+  "source_artifact_name": "scaled-authorized-dev-38839753512",
+  "source_artifact_file": "report.json",
+  "source_report_raw_sha256": "a076df488754229f8090db5f9fdf69310f21ccad018af4fe1dee22afe6f496c0",
+  "source_report_canonical_sha256": "8f15ebfa2e7d6914c9dfca5d3fe8df77cec5429aea21fe40647c206fd7d537af",
+  "source_commit": "d4126ec1418894fbcd7238a44002e8c4ca95321d",
+  "source_file_manifest_sha256": "cd0550357ddb413e0a248a43b513f5a49401a92d84eb0a7977d92b0741e24856",
+  "query_gold_manifest_sha256": "0f103cca609b9c0959d2abf2066135bb4c22af6eb16ef5276c2c515e0c187cad",
+  "registered_sizes": [
+    100,
+    250,
+    500
+  ],
+  "paired_cases": 81,
+  "actual_authorized_router_calls": 567,
+  "independent_confirmation": false,
+  "automatic_product_promotion": false,
+  "may_release": false
+}
