@@ -112,17 +112,24 @@ def propose_bounded_semantic_shortlist(
             source_endpoint_fingerprints=(),
         )
 
+    # Source tool/endpoint *free text* may mention field names that data
+    # scope hides. Under any configured field-scope policy expose only the
+    # actually projected visible field labels; do not trust free prose as
+    # already redacted. This conservative fallback sacrifices semantic recall
+    # evidence rather than leaking supposedly hidden descriptors.
+    field_scoped = bool(
+        router.authorization_policy is not None
+        and router.authorization_policy.data_rules
+    )
     options = []
     for idx, candidate in enumerate(candidates):
-        # These are already projected principal-visible published fields.
-        # Do NOT pass source-endpoint raw input/output schema or hidden fields.
         visible_fields = ", ".join(
             field.semantic_id or field.name for field in candidate.output_fields
         )
         description = "\n".join(
             text for text in (
-                candidate.tool_description.strip(),
-                candidate.endpoint_description.strip(),
+                "" if field_scoped else candidate.tool_description.strip(),
+                "" if field_scoped else candidate.endpoint_description.strip(),
                 ("Visible fields: " + visible_fields) if visible_fields else "",
             ) if text
         )
