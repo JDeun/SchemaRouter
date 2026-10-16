@@ -18,12 +18,11 @@ from schemarouter import PlanRequest
 
 
 def eager_baseline(router, query: str, role: str, k: int):
-    callback = lambda tool, endpoint: (
-        router.executor.is_access_available_for_contract(
+    def callback(tool, endpoint):
+        return router.executor.is_access_available_for_contract(
             tool.key, endpoint.name,
             router.planner._snapshot_tool_fingerprint(tool),
         )
-    )
     with patch.object(router.planner, "availability_predicate", callback):
         return router.retrieve_authorized(
             PlanRequest(query=query), principal=principal(role), k=k,
