@@ -1,0 +1,51 @@
+name: Scoped Exact Index Parity CPU DEV
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/planner.py"
+      - "tests/test_scoped_candidate_exact_index.py"
+      - "scripts/research_scoped_candidate_exact_index_dev.py"
+      - "research/autoresearch/scoped-index-parity-dev.md"
+      - ".github/workflows/research-scoped-exact-index-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scoped-exact-parity-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scoped-exact-cpu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install current product with no model or agent inference
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Compare full authorized candidate scoring and field output exactly
+        run: python -m pytest -q tests/test_scoped_candidate_exact_index.py
+      - name: Run 162 paired full-response scoped-index/exhaustive comparisons
+        run: |
+          python -m scripts.research_scoped_candidate_exact_index_dev \
+            --sizes 100 250 500 \
+            --output artifacts/scoped-exact-index-dev/report.json
+      - name: Preserve exact per-case parity and negative evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: scoped-exact-index-dev-${{ github.run_id }}
+          path: artifacts/scoped-exact-index-dev/
+          if-no-files-found: warn
+          retention-days: 30
+# No model/LLM, GPU, tools execution, external providers, autonomous patching,
+# unapproved releases or privileged research compute. All source pinned to HEAD.
