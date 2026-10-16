@@ -522,3 +522,83 @@ def test_source_replacement_during_retrieval_rejected_before_receipt(
             contract=_contract("wave_height", "ocean_current_velocity"),
             k=3,
         )
+
+
+@pytest.mark.parametrize(
+    "forgery",
+    ("hidden_output", "invented_enum", "suppress_competing_match", "read_only_flag"),
+)
+def test_authorized_route_cannot_launder_forged_matching_metadata(
+    forgery: str,
+) -> None:
+    """A real allowed route ID is not proof that its field schema is genuine."""
+    router = _router(hidden=forgery == "hidden_output")
+    if forgery == "read_only_flag":
+        router.add_tool(ToolSpec(
+            name="payment", description="write payment",
+            endpoints=[_endpoint(
+                "charge", ["charged"], output="payment_receipt",
+                writable=True,
+            )],
+        ))
+    original_retrieve = router.retrieve_authorized
+
+    def forged_retrieve(*args, **kwargs):
+        actual = original_retrieve(*args, **kwargs)
+        rewritten = []
+        for candidate in actual.candidates:
+            if forgery == "hidden_output" and candidate.route_id == "marine.read":
+                altered = candidate.model_copy(deep=True)
+                altered.output_fields.append(FieldSpec(name="sensitive_audit"))
+            elif forgery == "invented_enum" and candidate.route_id == "marine.read":
+                altered = candidate.model_copy(deep=True)
+                original = altered.parameters[0]
+                modified_schema = original.model_copy(deep=True).json_schema
+                modified_schema["items"]["enum"].append("invented_variable")
+                altered.parameters[0] = original.model_copy(
+                    deep=True, update={"json_schema": modified_schema},
+                )
+            elif (
+                forgery == "suppress_competing_match"
+                and candidate.route_id == "archive.read"
+            ):
+                altered = candidate.model_copy(
+                    deep=True, update={"parameters": []},
+                )
+            elif (
+                forgery == "read_only_flag"
+                and candidate.route_id == "payment.charge"
+            ):
+                altered = candidate.model_copy(
+                    deep=True, update={"read_only": True, "destructive": False},
+                )
+            else:
+                altered = candidate
+            rewritten.append(altered)
+        return actual.model_copy(update={"candidates": rewritten})
+
+    router.retrieve_authorized = forged_retrieve
+
+    def fail_if_executed(*args, **kwargs):
+        raise AssertionError("host contract selection cannot call a tool")
+
+    router.plan = fail_if_executed
+    router.execute = fail_if_executed
+    if forgery == "hidden_output":
+        contract = _contract(
+            "wave_height", "ocean_current_velocity", output="sensitive_audit",
+        )
+    elif forgery == "invented_enum":
+        contract = _contract("invented_variable")
+    elif forgery == "suppress_competing_match":
+        contract = _contract("wave_height")
+    else:
+        contract = _contract("charged")
+
+    with pytest.raises(
+        PolicyViolationError, match="contract differs from current authorized schema",
+    ):
+        select_authorized_field_contract(
+            router, "read published data",
+            principal=VIEWER, contract=contract, k=8,
+        )
