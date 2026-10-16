@@ -99,8 +99,20 @@ def state_from_artifact(path: Path | None, contract: str) -> dict[str, Any]:
         )
     ):
         raise ValueError("untrusted or incompatible previous Actions experiment state")
+    # An artifact's config hashes are the deduplicated attempted-trial ledger.
+    # A forged count, repeated entry, or impossible epoch must fail closed.
+    if (
+        len(saved["seen"]) != saved["total_trials"]
+        or len(set(saved["seen"])) != len(saved["seen"])
+        or saved["total_trials"] > saved["epoch"] * MAX_TRIALS_PER_BATCH
+        or any(any(c not in "0123456789abcdef" for c in entry)
+               for entry in saved["seen"])
+    ):
+        raise ValueError("inconsistent previous Actions trial ledger")
     if saved["champion"] is not None:
         saved["champion"] = valid_genome(saved["champion"])
+        if hashlib.sha256(encoded(saved["champion"])).hexdigest() not in saved["seen"]:
+            raise ValueError("research champion missing from attempted-trial ledger")
     score = saved["best_internal_score"]
     if score is not None and (
         type(score) not in (int, float) or not math.isfinite(score)
@@ -264,6 +276,17 @@ def run(
     return report, state
 
 
+def validate_resume_budget(previous: dict[str, Any], remaining: int) -> None:
+    """Reject mismatched workflow inputs before allocating the research CPU budget."""
+    if (
+        type(remaining) is not int
+        or not 1 <= remaining <= MAX_BATCHES
+        or type(previous.get("epoch")) is not int
+        or previous["epoch"] + remaining != MAX_BATCHES
+    ):
+        raise ValueError("remaining Actions budget does not match predecessor epoch")
+
+
 def continue_chain(report: dict[str, Any], state: dict[str, Any], remaining: int) -> bool:
     if type(remaining) is not int or not 1 <= remaining <= MAX_BATCHES:
         raise ValueError("unregistered continuation budget")
@@ -296,6 +319,7 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
     state = state_from_artifact(args.previous_state, identity())
+    validate_resume_budget(state, args.remaining)
     report, next_state = run(
         previous=state, trials=args.trials,
         cases_per_group=args.cases_per_group, seed=args.seed,
