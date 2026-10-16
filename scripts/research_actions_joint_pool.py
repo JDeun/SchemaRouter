@@ -230,9 +230,9 @@ def measure(
             row["catalog_size"] = item["size"]
             rows.append(row)
     return rows, {
-        "rerank_p95_ms": percentile(ranking_times),
-        "retrieval_p95_ms": percentile(backend_times),
-        "combined_p95_ms": percentile([a + b for a, b in zip(backend_times, ranking_times, strict=True)]),
+        "rerank_p95_ms": percentile(ranking_times, 0.95),
+        "retrieval_p95_ms": percentile(backend_times, 0.95),
+        "combined_p95_ms": percentile([a + b for a, b in zip(backend_times, ranking_times, strict=True)], 0.95),
         "average_candidate_pool_json_bytes": round(sum(pool_bytes) / len(pool_bytes), 2),
         "queries": len(cases),
     }
