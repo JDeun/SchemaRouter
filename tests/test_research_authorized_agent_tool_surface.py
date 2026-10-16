@@ -24,6 +24,7 @@ from scripts.agent_utility_generated_common import (
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
+from scripts.research_scoped_host_invocation import execute_scoped_host_call
 
 SECRET = "SECRET_HIDDEN_CANARY_1749"
 VIEWER = PrincipalContext(subject="synthetic-viewer", roles=("viewer",))
@@ -479,3 +480,138 @@ def test_two_step_agent_receives_only_allowed_state_for_next_tool_argument():
         assert "secret_field" not in model_snapshot
     assert SECRET not in json.dumps(result)
     assert "attempts" not in result
+
+
+def bind_read_fixture(router, *, seen):
+    def invoker(endpoint, arguments):
+        seen.append((endpoint, dict(arguments)))
+        return {"public_field": "record-321", "secret_field": SECRET}
+
+    tool = router.registry.get("marine")
+    router.executor.bind(
+        tool.key, invoker, expected_fingerprint=tool.fingerprint,
+    )
+
+
+@pytest.mark.asyncio
+async def test_actual_router_execute_invokes_bound_host_once_and_projects_fields():
+    """Unlike synthetic FrozenCorpusExecutor, this uses actual router.execute."""
+    router = fixture_router()
+    seen = []
+    bind_read_fixture(router, seen=seen)
+    view = captured(router)
+    returned = await execute_scoped_host_call(
+        view, selected_route_ids=["marine.read"],
+        route_id="marine.read", arguments={"place": "Seoul"},
+    )
+    assert returned == {"status": "ok", "public_field": "record-321"}
+    assert seen == [("read", {"place": "Seoul"})]
+    assert SECRET not in json.dumps(returned)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("selected", "route", "args"), (
+    (["marine.read"], "archive.read", {"place": "Seoul"}),
+    (["archive.read"], "archive.read", {"place": "Seoul"}),
+    (["marine.read"], "marine.read", {"filter__secret_field": SECRET}),
+    (["marine.read"], "marine.read", {"place": "Seoul", "hidden": SECRET}),
+    (["marine.read"], "marine.read", {}),
+    (["marine.read", "marine.read"], "marine.read", {"place": "Seoul"}),
+    (["marine.read"], "marine.read", {"place": "Seoul", "other": 1}),
+))
+async def test_host_invocation_rejects_unselected_hidden_or_malformed_before_io(
+    selected, route, args,
+):
+    router = fixture_router()
+    seen = []
+    bind_read_fixture(router, seen=seen)
+    with pytest.raises((PolicyViolationError, ValueError)):
+        await execute_scoped_host_call(
+            captured(router),
+            selected_route_ids=selected, route_id=route,
+            arguments=args,
+        )
+    assert seen == []
+
+
+@pytest.mark.asyncio
+async def test_host_invocation_rechecks_principal_revocation_before_real_io():
+    router = fixture_router()
+    seen = []
+    bind_read_fixture(router, seen=seen)
+    principal = PrincipalContext(subject="alice", roles=("viewer",))
+    view = captured(router, principal=principal)
+    principal.roles = ("outsider",)
+    with pytest.raises(PolicyViolationError, match="principal claims changed"):
+        await execute_scoped_host_call(
+            view, selected_route_ids=["marine.read"],
+            route_id="marine.read", arguments={"place": "Seoul"},
+        )
+    assert seen == []
+
+
+@pytest.mark.asyncio
+async def test_host_invocation_requires_actual_bound_trusted_invoker():
+    router = fixture_router()
+    with pytest.raises((PolicyViolationError, ValueError, RuntimeError)):
+        await execute_scoped_host_call(
+            captured(router), selected_route_ids=["marine.read"],
+            route_id="marine.read", arguments={"place": "Seoul"},
+        )
+
+
+@pytest.mark.asyncio
+async def test_host_invocation_denies_a_registered_mutation_before_real_io():
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="actions.update", roles_any=("viewer",),
+        ),),
+    ))
+    router.add_tool(ToolSpec(
+        name="actions",
+        endpoints=[EndpointSpec(
+            name="update", read_only=False, destructive=True,
+            parameters=[ParameterSpec(
+                name="place", required=True, json_schema={"type": "string"},
+            )],
+            output_fields=[FieldSpec(name="public_field")],
+        )],
+    ))
+    tool = router.registry.get("actions")
+    invoked = []
+    router.executor.bind(
+        tool.key,
+        lambda endpoint, arguments: invoked.append((endpoint, arguments)),
+        expected_fingerprint=tool.fingerprint,
+    )
+    view = capture_authorized_agent_tool_surface(
+        router, "actions update public_field", principal=VIEWER,
+    )
+    assert "actions.update" in view.visible_route_ids
+    with pytest.raises(PolicyViolationError, match="scoped host invocation denied"):
+        await execute_scoped_host_call(
+            view, selected_route_ids=["actions.update"],
+            route_id="actions.update", arguments={"place": "Seoul"},
+        )
+    assert invoked == []
+
+
+@pytest.mark.asyncio
+async def test_host_invocation_fails_closed_on_nested_real_provider_result():
+    router = fixture_router()
+    tool = router.registry.get("marine")
+    invoked = []
+    def invoker(endpoint, arguments):
+        invoked.append((endpoint, arguments))
+        return {"public_field": {"safe": 1, "secret_field": SECRET}}
+    router.executor.bind(
+        tool.key, invoker, expected_fingerprint=tool.fingerprint,
+    )
+    with pytest.raises(PolicyViolationError, match="nested output"):
+        await execute_scoped_host_call(
+            captured(router),
+            selected_route_ids=["marine.read"],
+            route_id="marine.read", arguments={"place": "Seoul"},
+        )
+    assert len(invoked) == 1
