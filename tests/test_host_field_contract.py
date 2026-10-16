@@ -695,7 +695,7 @@ def test_reprojection_denies_if_visible_route_disappears_mid_scope() -> None:
     """Never return a stale large total if a route becomes hidden after ranking."""
     router = _router(hidden=True)
     original = router.retrieve_authorized(
-        "ocean weather", principal=VIEWER, k=3,
+        "read published data", principal=VIEWER, k=3,
     )
     assert len(original.candidates) == 3
     router.authorization_policy = AuthorizationPolicy(
