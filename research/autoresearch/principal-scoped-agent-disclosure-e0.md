@@ -18,7 +18,7 @@ No claim that the production SchemaRouter public API itself leaks these.
 
 `scripts/research_authorized_agent_tool_surface.py` is an independently
 callable **read-only model-disclosure and artifact-redaction adapter**.
-It is NOT yet wired into production or the #1478 experimental executor loop.
+It is wired ONLY into the explicit #1478 `EVAL-FIXED5-OPTIN` synthetic agent condition and remains completely absent from production routing, public execution and all legacy frozen agent conditions.
 
 1. Accept a host-supplied real `SchemaRouter`, trusted
    `PrincipalContext` and original user query. The default 500-route
@@ -57,18 +57,34 @@ changes, outsider views and no planning/provider execution. Passing these is
 **E0 interface safety evidence on fake source fixtures**, not real tenant
 security certification or independent multilingual retrieval.
 
-## Next integrated implementation (blocking before real agent execution)
+## Actually wired into the existing synthetic agent loop
 
-The merged [#1478](https://github.com/JDeun/SchemaRouter/pull/1478) opt-in
-fixed-K candidate-selection hook currently accepts raw registry IDs and
-reuses the original frozen synthetic tool serializer/executor/trace. It MUST
-NOT be passed a real tenant corpus. Next, a separate research wrapper must
-make the host-scoped `AuthorizedAgentToolSurface.tool_definitions` the **only**
-agent-facing tool list and `project_observation` the **only** agent-visible
-tool observation, while exporting only `public_trace`, with per-turn
-authority witness checks. Actual execution must still pass through an
-independently trusted host invoker with current RBAC/ABAC/approval/parameters;
-the frozen synthetic fixture executor is not that security boundary.
+The existing `scripts/agent_utility_generated_common.py::run_generated_episode`
+now accepts the optional `experimental_agent_tool_surface` **only** together
+with the `EVAL-FIXED5-OPTIN` route selector. This does not alter frozen
+FULL/SR-5/SR-10/ORACLE conditions.
+
+- The selector is shown only this source-scoped view's route IDs, not all raw
+  registered IDs. The source registry identity and authority witness are
+  checked before and after the callback.
+- The agent receives **only** `AuthorizedAgentToolSurface.tool_definitions`
+  instead of the legacy `_visible_tools(raw_registry,...)` serializer.
+- Every model turn and synthetic execution boundary rechecks the authority
+  witness. After a synthetic tool call, the next agent turn receives only
+  `project_observation`, not the original raw observation.
+- The returned episode data comes solely from `public_trace`; raw arguments,
+  gold, original observations and final model text never leave the function.
+- An unexpected route in tool output or a policy/registry/availability swap
+  fails closed; no historical frozen task/gold/scorer was modified.
+
+**Remaining BLOCKER before real tenant execution:** `FrozenCorpusExecutor`
+performs synthetic source fixture policies only and is **not** a trusted
+provider invoker or full RBAC/ABAC execution boundary. A production adapter
+must independently recheck host-allowed tool execution, current policy,
+approval, source/version/ABA safety and all native input/output contracts;
+nested output objects need a true schema projector rather than coarse
+rejection. The source-identity witness is not an atomic concurrent
+transaction. Never expose this experimental E0 route to customer data.
 
 When this end-to-end E0 integration works, run one prospective paired
 Lexical/Dense/Hybrid/Typed+No-fit comparison only with independently authored
