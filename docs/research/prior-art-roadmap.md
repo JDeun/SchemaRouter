@@ -8,6 +8,8 @@ Its purpose is continuity: a new research session should be able to reconstruct 
 already been checked, which SchemaRouter hypotheses it motivated, which experiments are terminal,
 and what should be tried next without relying on chat memory.
 
+**Current OSS implementation comparison and previously tested negative approaches:** read the [tool-routing OSS landscape and decision wiki](tool-routing-landscape.md) *before* another framework/model/threshold comparison. It links October 2026 Semantic Router/LlamaIndex-inspired failures, real Pydantic AI and Agents SDK integrations, provider-dependent E5 results, and the no-repeat decision gate. Historic items below retain their original as-of-study status and must not be read as live 2026-10-16 release qualification.
+
 ## Session bootstrap
 
 Before creating a new routing experiment:

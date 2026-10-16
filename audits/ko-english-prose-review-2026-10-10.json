@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "review_date": "2026-10-11",
-  "scope": "Revision-pinned triage of all 8 advisory natural-language English candidate lines from 147 Korean docs after confirmed research/security repairs. This verifies triage only; not all-sentence semantic equivalence.",
+  "review_date": "2026-10-16",
+  "scope": "Revision-pinned AI-assisted triage of all eight natural-language English-prose scanner candidates in the current Korean docs. Original 2026-10-10 review record extended on 2026-10-16 for prior-art roadmap link edit; review is a narrow candidate disposition, not whole-corpus semantic or independent editorial certification.",
   "reviewer_status": "assistant source/translation inspection; independent bilingual editorial sign-off not established",
   "reviews": [
     {
@@ -37,12 +37,12 @@
     },
     {
       "path": "research/prior-art-roadmap.md",
-      "ko_blob": "c347c8e5f800b153ea28c9ed94231d6d1991ea08",
+      "ko_blob": "106615106085dd35806db6df0cd0d51a2f064ce0",
       "lines": [
-        246
+        248
       ],
       "decision": "technical-terminology-and-paper-title",
-      "evidence": "Scholarly English paper title and exact Evidence Ledger / trajectory-evaluator names embedded in translated research status."
+      "evidence": "Scholarly English paper title and exact Evidence Ledger / trajectory-evaluator names embedded in translated research status. 2026-10-16 follow-up: AI-assisted direct check of newly inserted Korean read-first knowledge-wiki link against English source (no alteration to original historical experiment results); prior English paper-title candidate shifted from line 246 to 248. No independent human semantic certification."
     }
   ],
   "claim_boundary": "The scanner catches some English-prose leakage but cannot certify paragraph-to-paragraph meaning. All new candidate lines require fresh editorial inspection and revision-pinned explicit disposition."
