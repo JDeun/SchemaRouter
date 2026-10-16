@@ -229,42 +229,48 @@ def select_authorized_field_contract(
             matching_route_ids=matches or [],
         )
 
-    # Some principal data-scope projections rebuild total_ranked from the
-    # *already truncated* candidate list. In that situation total_ranked == k
-    # is NOT proof that every authorized route has been considered. Verify
-    # against the independently enumerated host-authorized registry routes,
-    # including query-zero-score routes that ranking can never waive.
-    #
-    # Count unavailable/data-hidden routes conservatively: false abstention
-    # is preferable to wrongly proving uniqueness and exposing a tool.
-    # This is intentionally a read-only pass; no execution, planning or
-    # inferred authorization is introduced.
+    # Principal-visible completeness is an INTERNAL, version-bound witness.
+    # The public total_ranked can be rebuilt after Top-K data projection, so
+    # neither that count nor k can prove the full permitted candidate set.
+    # Mirror the retrieval path's RBAC, local availability and data-scope
+    # endpoint projection without exposing excluded identities or counts.
+    # This is a read-only full scan, not a cached or model-scored shortcut.
+    policy = router.authorization_policy
+    availability = router.planner.availability_predicate
     try:
-        authorized_routes = {
-            f"{tool.key}.{endpoint.name}"
-            for tool in router.registry.tools()
-            for endpoint in tool.endpoints
-            if router.authorization_policy.visible(
-                approved_principal, tool, endpoint
-            )
-        }
+        scoped_route_ids: set[str] = set()
+        for tool in router.registry.tools():
+            for endpoint in tool.endpoints:
+                if not policy.visible(approved_principal, tool, endpoint):
+                    continue
+                if availability is not None and not availability(tool, endpoint):
+                    continue
+                if router._data_scope_endpoint_view(
+                    approved_principal, tool, endpoint,
+                ) is None:
+                    continue
+                scoped_route_ids.add(f"{tool.key}.{endpoint.name}")
     except (TypeError, ValueError, AttributeError) as exc:
         raise PolicyViolationError(
             "cannot validate the complete authorized catalog"
         ) from exc
-    if not set(ids) <= authorized_routes:
+    if (
+        verified.registry_version != router.registry.version
+        or router.authorization_policy is not policy
+        or router.planner.availability_predicate is not availability
+    ):
+        raise PolicyViolationError(
+            "retrieval scope changed during authorized catalog enumeration"
+        )
+    if not set(ids) <= scoped_route_ids:
         raise PolicyViolationError(
             "retrieval contains a route outside current host authorization"
         )
-    if verified.registry_version != router.registry.version:
-        raise PolicyViolationError(
-            "registry changed during authorized catalog enumeration"
-        )
-    # The planner's total_ranked can be exact or a projected lower bound;
-    # never trust it as *the sole* completeness oracle.
+    # A positive count excess indicates truncation even if it disagrees with
+    # this internal witness; never use a public count to waive completeness.
     if (
         verified.total_ranked > len(ids)
-        or len(authorized_routes) > len(ids)
+        or len(scoped_route_ids) > len(ids)
     ):
         return abstain("incomplete_authorized_catalog")
     if not ids:
