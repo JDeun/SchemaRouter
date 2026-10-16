@@ -1,0 +1,81 @@
+name: ServiceNow Native Published DEV K5 Overlap Audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/audit_servicenow_visible_dev_k5_overlap.py"
+      - "tests/test_audit_servicenow_visible_dev_k5_overlap.py"
+      - "research/autoresearch/servicenow-native-k5-overlap-audit.md"
+      - ".github/workflows/research-servicenow-native-k5-overlap-audit.yml"
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: servicenow-dev-overlap-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  immutable-publisher-dev-archive:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CASE_DIR: benchmarks/external-validation-servicenow-platform-mcp-dev-v1
+      EVIDENCE_DIR: artifacts/servicenow-visible-dev-post-hoc-overlap
+      SOURCE_RUN_ID: "38909470584"
+      SOURCE_ARTIFACT: servicenow-pinned-native-e5-visible-dev-38909470584
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install current product and offline audit controls only
+        run: |
+          python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+          ruff check scripts/audit_servicenow_visible_dev_k5_overlap.py tests/test_audit_servicenow_visible_dev_k5_overlap.py
+          python -m pytest -q tests/test_audit_servicenow_visible_dev_k5_overlap.py
+      - name: Download exactly the previously published native CPU source archive
+        run: |
+          mkdir -p "$EVIDENCE_DIR/original"
+          gh run download "$SOURCE_RUN_ID" --repo JDeun/SchemaRouter \
+            --name "$SOURCE_ARTIFACT" --dir "$EVIDENCE_DIR/original"
+          test -s "$EVIDENCE_DIR/original/report.json"
+          test -s "$EVIDENCE_DIR/original/servicenow-readonly-tools.json"
+      - name: Verify immutable bytes and audit source-only 24-case K5 complementarity
+        run: |
+          python -m scripts.audit_servicenow_visible_dev_k5_overlap \
+            --report "$EVIDENCE_DIR/original/report.json" \
+            --snapshot "$EVIDENCE_DIR/original/servicenow-readonly-tools.json" \
+            --package-dir "$CASE_DIR" \
+            --out "$EVIDENCE_DIR/overlap.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          result = json.loads((Path(os.environ["EVIDENCE_DIR"]) / "overlap.json").read_text())
+          assert result["supported_cases"] == 20
+          assert result["unsupported_cases"] == 4
+          assert result["pinned_source_run"] == 38909470584
+          assert result["limitations"]["may_promote_model_or_release"] is False
+          assert len(result["raw"]) == 24
+          assert sum(result["candidate_count_histogram"].values()) == 24
+          PY
+      - name: Preserve audit and source identities even on failure
+        if: always()
+        run: |
+          mkdir -p "$EVIDENCE_DIR"
+          git rev-parse HEAD > "$EVIDENCE_DIR/checkout-commit.txt"
+          sha256sum "$EVIDENCE_DIR/original/"*.json "$EVIDENCE_DIR/overlap.json" \
+            > "$EVIDENCE_DIR/SHA256SUMS" || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: servicenow-visible-dev-overlap-${{ github.run_id }}
+          path: artifacts/servicenow-visible-dev-post-hoc-overlap/
+          retention-days: 90
+          if-no-files-found: warn
