@@ -485,3 +485,40 @@ def test_scoped_completeness_is_principal_specific() -> None:
     assert outsider.reason == "empty_authorized_catalog"
     assert outsider.candidate_count == 0
     assert outsider.matching_route_ids == []
+
+
+@pytest.mark.parametrize("replaced", ["policy", "availability", "registry"])
+def test_source_replacement_during_retrieval_rejected_before_receipt(
+    replaced: str,
+) -> None:
+    """Old and new sources can allow identical routes yet differ in authority."""
+    router = _router()
+    actual_retrieve = router.retrieve_authorized
+
+    def replace_after_retrieval(*args, **kwargs):
+        retrieved = actual_retrieve(*args, **kwargs)
+        if replaced == "policy":
+            old = router.authorization_policy
+            assert old is not None
+            router.authorization_policy = AuthorizationPolicy(
+                rules=old.rules,
+                default_effect=old.default_effect,
+                data_rules=old.data_rules,
+            )
+        elif replaced == "availability":
+            router.planner.availability_predicate = lambda tool, endpoint: True
+        else:
+            # Independently constructed identical registry/version, but not
+            # the registry that authorized the original ranked candidates.
+            clone = _router()
+            assert clone.registry.version == router.registry.version
+            router.registry = clone.registry
+        return retrieved
+
+    router.retrieve_authorized = replace_after_retrieval
+    with pytest.raises(PolicyViolationError, match="retrieval scope changed"):
+        select_authorized_field_contract(
+            router, "marine waves", principal=VIEWER,
+            contract=_contract("wave_height", "ocean_current_velocity"),
+            k=3,
+        )

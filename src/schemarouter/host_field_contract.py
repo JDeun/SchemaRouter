@@ -179,9 +179,23 @@ def select_authorized_field_contract(
         raise PolicyViolationError("request must be text or a PlanRequest")
     if not isinstance(raw_query, str) or not raw_query.strip():
         raise PolicyViolationError("nonempty user query required")
+    # Bind source object identities before the public retrieval call. Without
+    # this guard, a policy/availability/registry replacement *during* ranking
+    # could be mistaken for a single internally consistent authorization view.
+    policy = router.authorization_policy
+    availability = router.planner.availability_predicate
+    registry = router.registry
     retrieved = router.retrieve_authorized(
         request, principal=approved_principal, k=k,
     )
+    if (
+        router.authorization_policy is not policy
+        or router.planner.availability_predicate is not availability
+        or router.registry is not registry
+    ):
+        raise PolicyViolationError(
+            "retrieval scope changed during authorized retrieval"
+        )
     if not isinstance(retrieved, CapabilityRetrieval):
         raise PolicyViolationError("invalid authorized retrieval result")
     # A mutable registry can change mid-request. Never issue a receipt if
@@ -235,8 +249,6 @@ def select_authorized_field_contract(
     # Mirror the retrieval path's RBAC, local availability and data-scope
     # endpoint projection without exposing excluded identities or counts.
     # This is a read-only full scan, not a cached or model-scored shortcut.
-    policy = router.authorization_policy
-    availability = router.planner.availability_predicate
     try:
         scoped_route_ids: set[str] = set()
         for tool in router.registry.tools():
@@ -256,6 +268,7 @@ def select_authorized_field_contract(
         ) from exc
     if (
         verified.registry_version != router.registry.version
+        or router.registry is not registry
         or router.authorization_policy is not policy
         or router.planner.availability_predicate is not availability
     ):
@@ -287,8 +300,13 @@ def select_authorized_field_contract(
             "ambiguous_contract_match", [item.route_id for item in matched],
         )
     selected = matched[0]
-    if verified.registry_version != router.registry.version:
-        raise PolicyViolationError("registry changed during contract validation")
+    if (
+        verified.registry_version != router.registry.version
+        or router.registry is not registry
+        or router.authorization_policy is not policy
+        or router.planner.availability_predicate is not availability
+    ):
+        raise PolicyViolationError("retrieval scope changed during contract validation")
     return AuthorizedContractSelection(
         disposition="selected", reason="unique_contract_match",
         query=raw_query, registry_version=verified.registry_version,
