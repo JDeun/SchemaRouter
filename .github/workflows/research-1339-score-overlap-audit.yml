@@ -33,7 +33,7 @@ jobs:
           python-version: "3.12"
       - name: Verify schema and negative threshold counterexamples offline
         run: |
-          python -m pip install "pytest>=8,<10"
+          python -m pip install "pytest>=8,<10" "pytest-asyncio>=0.23"
           python -m pytest -q tests/test_audit_multilingual_score_overlap_dev.py
       - name: Retrieve only exact successful 2026-10-15 model reports
         shell: bash
