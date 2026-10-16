@@ -138,12 +138,17 @@ def sample(
             for field in item.output_fields
         ):
             raise ValueError("viewer hidden output field leaked")
-    for key in (
-        "access_predicate", "tool_fingerprint_resolve",
-        "cooldown_lookup", "semantic_catalog",
-    ):
+    # Under the old eager contract every available endpoint triggered
+    # a full ToolSpec fingerprint. After the lazy optimization, a catalog
+    # without matching cooldowns MUST have zero fingerprint resolutions.
+    # Missing availability or semantic-catalog calls still mean bad tracing.
+    for key in ("access_predicate", "semantic_catalog"):
         if not measured[key]:
             raise ValueError(f"missing current availability instrument: {key}")
+    if len(measured["cooldown_lookup"]) > len(
+        measured["tool_fingerprint_resolve"]
+    ):
+        raise ValueError("cooldown check without a contract fingerprint")
     if len(measured["semantic_catalog"]) != 1:
         raise ValueError("semantic scorer unexpectedly reentered")
     return {
