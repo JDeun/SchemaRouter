@@ -226,7 +226,6 @@ nav:
   - Research:
       - OSS tool-routing landscape and decisions: research/tool-routing-landscape.md
       - Product north star and integrated test matrix: research/product-north-star-and-test-matrix.md
-      - Product charter, evidence and acceptance roadmap: research/product-charter-and-validation-roadmap.md
       - Research status: research/routing-status.md
       - Complete experiment index: research/experiment-index.md
       - Routing break-even result: research/realistic-break-even-result.md
