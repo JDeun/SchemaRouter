@@ -95,6 +95,7 @@ jobs:
       - name: Preserve pinned source, checkout, runtime and CPU provenance
         if: always()
         run: |
+          mkdir -p "$OUT_DIR"
           git rev-parse HEAD > "$OUT_DIR/schemarouter-revision.txt"
           python --version > "$OUT_DIR/python-version.txt"
           python -m pip freeze > "$OUT_DIR/pip-freeze.txt"
