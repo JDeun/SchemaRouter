@@ -886,8 +886,8 @@
     {
       "path": "research/tool-routing-landscape.md",
       "en_blob": "4e9ceeeb95ec29de198899d992f7540db9218ae5",
-      "ko_blob": "ae6027e6a2c38b76c2e664796f6f87824f2e555c",
-      "notes": "2026-10-16 direct AI-assisted paired reading of new canonical EN/KO routing OSS decision wiki. Compared four historical 2026-10-15 ARM supported/OOD denominators; existing PydanticAI #644 and OpenAI Agents #645 integration evidence roles; contradictory genuine ServiceNow/Open-Meteo E5 strict-K5 DEV; table of external frameworks and native-vs-inspired distinction; raw threshold versus untested Aurelio v1 calibrated fit; fixed-K, auth, no-fit, token and independent agent E2 caveats; repeated research avoidance checklist. No external independent bilingual sign-off and not a sentence-by-sentence certificate."
+      "ko_blob": "16281e9701adea73c751416689c7fa9d55e1c2d9",
+      "notes": "2026-10-16 direct AI-assisted paired reading of new canonical EN/KO routing OSS decision wiki. Compared four historical 2026-10-15 ARM supported/OOD denominators; existing PydanticAI #644 and OpenAI Agents #645 integration evidence roles; contradictory genuine ServiceNow/Open-Meteo E5 strict-K5 DEV; table of external frameworks and native-vs-inspired distinction; raw threshold versus untested Aurelio v1 calibrated fit; fixed-K, auth, no-fit, token and independent agent E2 caveats; repeated research avoidance checklist. No external independent bilingual sign-off and not a sentence-by-sentence certificate. After review, expanded Korean external-framework section to translate upstream exact API/commit, source authority and licensing checks and explicit non-parity for third-party README metrics; eliminates false omission heuristic rather than waiving gate."
     },
     {
       "path": "research/typed-capability-retrieval-ablation.md",
