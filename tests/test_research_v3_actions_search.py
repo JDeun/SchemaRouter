@@ -79,7 +79,6 @@ def test_exact_identity_controls_resuming_across_main_sha_and_dataset(tmp_path) 
             state_from_artifact(restored, contract)
 
 
-
 def test_resume_ledger_consistency_and_champion_membership(tmp_path: Path) -> None:
     contract = identity()
     initial = state_from_artifact(None, contract)
