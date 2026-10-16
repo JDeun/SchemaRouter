@@ -14,7 +14,6 @@ import platform
 import resource
 import subprocess
 import time
-from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
