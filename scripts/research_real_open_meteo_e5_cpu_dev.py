@@ -8,7 +8,6 @@ no-fit, execute provider tools, or create trusted action intents.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import math
 import os
@@ -20,12 +19,24 @@ from pathlib import Path
 from typing import Any
 
 from schemarouter import (
-    AuthorizationPolicy, AuthorizationRule, DecisionOption, DecisionRequest,
-    E5CachedEmbedder, EmbeddingDecisionBackend, InMemoryRegistry,
-    PlanRequest, PrincipalContext, SchemaRouter, choose_sync,
+    AuthorizationPolicy,
+    AuthorizationRule,
+    DecisionOption,
+    DecisionRequest,
+    E5CachedEmbedder,
+    EmbeddingDecisionBackend,
+    InMemoryRegistry,
+    PlanRequest,
+    PrincipalContext,
+    SchemaRouter,
+    choose_sync,
 )
 from scripts.research_open_meteo_real_openapi_dev import (
-    LANGUAGES, QUERIES, SOURCE_COMMIT, SOURCE_NAMES, UNSUPPORTED,
+    LANGUAGES,
+    QUERIES,
+    SOURCE_COMMIT,
+    SOURCE_NAMES,
+    UNSUPPORTED,
     load_contracts,
 )
 
