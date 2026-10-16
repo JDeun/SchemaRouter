@@ -1,0 +1,142 @@
+name: v0.18 Native External DEV Sweep (Not E2)
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/v018-native-external-dev-sweep.yml"
+      - "tests/test_v018_native_external_dev_sweep.py"
+permissions:
+  contents: read
+jobs:
+  clicshopping-source-dev:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: schemarouter
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: retail-ecommerce/ClicShopping
+          ref: 8ada7f1f392f3dd2800e825dac8d245dfd53944a
+          path: clicshopping-repin
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+      - name: Verify publisher raw bytes, run source-bounded DEV
+        working-directory: schemarouter
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m scripts.verify_clicshopping_v433_repin --upstream-root ../clicshopping-repin
+          python -m pytest -q tests/test_clicshopping_v433_repin_dev.py tests/test_clicshopping_v433_dev.py tests/test_clicshopping_v433_inventory.py
+          mkdir -p artifacts/native-v018-clic-dev
+          python -m scripts.run_clicshopping_v433_repin_dev --out artifacts/native-v018-clic-dev/report.json
+      - name: Fail closed on incomplete, disguised or live-scored result
+        working-directory: schemarouter
+        run: |
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          folder = Path("artifacts/native-v018-clic-dev")
+          report = folder / "report.json"
+          result = json.loads(report.read_bytes())
+          assert result["status"] == "development_only_not_independent_heldout"
+          assert result["source_pin"] == "8ada7f1f392f3dd2800e825dac8d245dfd53944a"
+          assert [x["case_count"] for x in result["cohorts"]] == [32, 10]
+          assert all(len(x["per_case"]) == x["case_count"] for x in result["cohorts"])
+          assert result["live_requests"] == result["model_calls"] == 0
+          assert result["independent_confirmation"] is False
+          assert result["native_rest_execution"] is False
+          assert result["customer_id_runtime_scope_verified"] is False
+          (folder / "provenance.json").write_text(json.dumps({
+              "status": "DEV_ONLY_NOT_INDEPENDENT", "suite": "clicshopping_433",
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "schemarouter_github_sha": os.environ["GITHUB_SHA"],
+              "source_repository": "retail-ecommerce/ClicShopping",
+              "source_role": "SHA-identical public fork, NOT original owner",
+              "source_pin": result["source_pin"],
+              "report_sha256": hashlib.sha256(report.read_bytes()).hexdigest(),
+              "counts": [32, 10], "independent_confirmation": False,
+              "real_tool_calls": 0, "may_release": False,
+          }, sort_keys=True, indent=2) + "\n")
+          PY
+          sha256sum artifacts/native-v018-clic-dev/*.json > artifacts/native-v018-clic-dev/SHA256SUMS
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: native-v018-clicshopping-dev
+          path: schemarouter/artifacts/native-v018-clic-dev
+          if-no-files-found: error
+
+  servicenow-native-readonly-dev:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      SERVICENOW_MCP_REVISION: 5bcb83b29ab5b30aee07cabaa8df974881c47126
+      PACKAGE_DIR: benchmarks/external-validation-servicenow-platform-mcp-dev-v1
+      OUT: artifacts/native-v018-servicenow-dev
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+      - name: Install pinned original native MCP source
+        run: |
+          python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2"
+          python -m pip install "git+https://github.com/Xerrion/servicenow-platform-mcp.git@5bcb83b29ab5b30aee07cabaa8df974881c47126"
+      - name: Capture and authenticate native readonly MCP schemas
+        run: |
+          mkdir -p "$OUT"
+          python scripts/capture_servicenow_platform_mcp_tools.py --upstream-revision "$SERVICENOW_MCP_REVISION" --out "$OUT/readonly-tools.json"
+          python scripts/external_validation_servicenow_platform_mcp.py validate --package-dir "$PACKAGE_DIR" --snapshot "$OUT/readonly-tools.json"
+          python -m pytest -q tests/test_servicenow_platform_mcp_provenance.py
+      - name: Compare full 12 tools to actual current SchemaRouter K3 and K5
+        run: |
+          python scripts/run_servicenow_static_external_validation.py --package-dir "$PACKAGE_DIR" --snapshot "$OUT/readonly-tools.json" --out "$OUT/static-result.json"
+          for k in 3 5; do
+            python scripts/run_servicenow_schemarouter_external_validation.py --package-dir "$PACKAGE_DIR" --snapshot "$OUT/readonly-tools.json" --implementation-revision "$GITHUB_SHA" --top-k "$k" --out "$OUT/schemarouter-k$k-result.json"
+          done
+          for label in static schemarouter-k3 schemarouter-k5; do
+            python scripts/external_validation_servicenow_platform_mcp.py score --package-dir "$PACKAGE_DIR" --snapshot "$OUT/readonly-tools.json" --results "$OUT/$label-result.json" --out "$OUT/$label-score.json"
+          done
+      - name: Attest raw native source, input-field recall and unsupported exposure
+        run: |
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root = Path(os.environ["OUT"])
+          capture = root / "readonly-tools.json"
+          native = json.loads(capture.read_bytes())
+          assert native["tool_count"] == 12
+          assert native["source"]["commit"] == os.environ["SERVICENOW_MCP_REVISION"]
+          scores = {}
+          sha = {capture.name: hashlib.sha256(capture.read_bytes()).hexdigest()}
+          for arm in ("static", "schemarouter-k3", "schemarouter-k5"):
+              p = root / f"{arm}-score.json"
+              s = json.loads(p.read_bytes())["summary"]
+              scores[arm] = {k: s[k] for k in (
+                  "supported_required_tool_recall",
+                  "supported_required_input_field_recall",
+                  "unsupported_nonempty_candidate_rate",
+              )}
+              sha[p.name] = hashlib.sha256(p.read_bytes()).hexdigest()
+          (root / "provenance.json").write_text(json.dumps({
+              "status": "DEV_ONLY_NOT_INDEPENDENT", "suite": "xerrion_servicenow",
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "schemarouter_github_sha": os.environ["GITHUB_SHA"],
+              "source_pin": os.environ["SERVICENOW_MCP_REVISION"],
+              "native_tools": 12, "dev_cases": {"supported": 20, "unsupported": 4},
+              "sha256": sha, "scores": scores,
+              "independent_confirmation": False, "real_tool_calls": 0,
+              "may_release": False,
+          }, sort_keys=True, indent=2) + "\n")
+          PY
+          sha256sum "$OUT"/*.json > "$OUT/SHA256SUMS"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: native-v018-servicenow-dev
+          path: artifacts/native-v018-servicenow-dev
+          if-no-files-found: error
