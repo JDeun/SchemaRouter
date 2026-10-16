@@ -1,0 +1,172 @@
+name: Finite Adaptive V3 Width CPU Research
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      # Bootstrap only when the reviewed V3 chaining workflow enters main.
+      - ".github/workflows/research-actions-v3-continue.yml"
+  pull_request:
+    paths:
+      - ".github/workflows/research-actions-v3-continue.yml"
+      - "scripts/research_v3_actions_search.py"
+      - "tests/test_research_v3_actions_search.py"
+      - "research/autoresearch/v3-finite-actions.md"
+  workflow_dispatch:
+    inputs:
+      previous_run_id:
+        description: "Completed research predecessor Actions run ID (blank starts new finite chain)"
+        type: string
+        required: false
+        default: ""
+      remaining_batches:
+        description: "Including this run, maximum 1-6 research batches"
+        type: number
+        required: true
+        default: 6
+
+permissions:
+  contents: read
+
+concurrency:
+  group: actions-v3-width-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  pr-contract:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install only checked-out current registered package
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Test immutable V3 state and actual current public planner
+        run: python -m pytest -q tests/test_research_v3_actions_search.py
+      - name: Exercise three new registered CPU candidates on source DEV
+        run: |
+          python -m scripts.research_v3_actions_search \
+            --trials 3 --cases-per-group 2 --remaining 6 \
+            --output-dir artifacts/v3-width-search
+      - name: Preserve synthetic DEV attempts and bounded research state
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: actions-v3-width-pr-${{ github.run_id }}
+          path: artifacts/v3-width-search/
+          retention-days: 14
+          if-no-files-found: error
+
+  cpu-research:
+    if: (github.event_name == 'workflow_dispatch' || github.event_name == 'push') && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      continue_next: ${{ steps.experiment.outputs.continue_next }}
+      remaining_next: ${{ steps.experiment.outputs.remaining_next }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install only current registered package
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Verify immutable scorer/optimizer contracts
+        run: python -m pytest -q tests/test_research_v3_actions_search.py
+      - name: Validate and recover exact prior successful research artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIOUS_ID: ${{ inputs.previous_run_id || '' }}
+          REMAINING: ${{ inputs.remaining_batches || 6 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$REMAINING" =~ ^[0-9]+$ ]] &&
+            (( REMAINING >= 1 && REMAINING <= 6 )) ||
+            { echo "Invalid bounded chain budget"; exit 1; }
+          if [[ -n "$PREVIOUS_ID" ]]; then
+            [[ "$PREVIOUS_ID" =~ ^[1-9][0-9]{0,15}$ ]] ||
+              { echo "Invalid predecessor Actions run ID"; exit 1; }
+            PRIOR_RUN=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PREVIOUS_ID")
+            PRIOR_PATH=$(jq -r '.path' <<< "$PRIOR_RUN")
+            PRIOR_BRANCH=$(jq -r '.head_branch' <<< "$PRIOR_RUN")
+            PRIOR_SHA=$(jq -r '.head_sha' <<< "$PRIOR_RUN")
+            case "$PRIOR_PATH" in
+              .github/workflows/research-actions-v3-continue.yml*) ;;
+              *) echo "Predecessor belongs to a different workflow"; exit 1;;
+            esac
+            [[ "$PRIOR_BRANCH" == main && "$PRIOR_SHA" == "$GITHUB_SHA" ]] ||
+              { echo "Changed checkout, registry or benchmark surface"; exit 1; }
+            mkdir -p /tmp/actions-v3-prev
+            gh run download "$PREVIOUS_ID" --repo "$GITHUB_REPOSITORY" \
+              --name "actions-v3-width-$PREVIOUS_ID" --dir /tmp/actions-v3-prev
+            test -s /tmp/actions-v3-prev/state.json
+            test -s /tmp/actions-v3-prev/report.json
+          else
+            [[ "$REMAINING" == 6 ]] ||
+              { echo "Cannot restart partial chain without prior artifact"; exit 1; }
+            echo "Starting fresh approved finite V3 Actions research chain"
+          fi
+      - name: Generate and measure 12 bounded width/weight variants
+        id: experiment
+        shell: bash
+        env:
+          REMAINING: ${{ inputs.remaining_batches || 6 }}
+        run: |
+          set -euo pipefail
+          PREVIOUS=()
+          if test -s /tmp/actions-v3-prev/state.json; then
+            PREVIOUS=(--previous-state /tmp/actions-v3-prev/state.json)
+          fi
+          python -m scripts.research_v3_actions_search \
+            --trials 12 --cases-per-group 5 --seed 1412 \
+            --remaining "$REMAINING" \
+            --output-dir artifacts/v3-width-search \
+            "${PREVIOUS[@]}"
+      - name: Preserve source-bound state and both negative/positive results first
+        if: always() && steps.experiment.outcome == 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: actions-v3-width-${{ github.run_id }}
+          path: artifacts/v3-width-search/
+          retention-days: 90
+          if-no-files-found: error
+
+  dispatch-next:
+    needs: cpu-research
+    if: (github.event_name == 'workflow_dispatch' || github.event_name == 'push') && github.ref == 'refs/heads/main' && needs.cpu-research.result == 'success' && needs.cpu-research.outputs.continue_next == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Request successor only after its predecessor artifact uploaded
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REMAINING_NEXT: ${{ needs.cpu-research.outputs.remaining_next }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$REMAINING_NEXT" =~ ^[0-9]+$ ]] &&
+            (( REMAINING_NEXT >= 1 && REMAINING_NEXT < 6 )) ||
+            { echo "Invalid successor budget"; exit 1; }
+          gh workflow run research-actions-v3-continue.yml \
+            --repo "$GITHUB_REPOSITORY" --ref main \
+            -f previous_run_id="$GITHUB_RUN_ID" \
+            -f remaining_batches="$REMAINING_NEXT"
+# No clock schedule, external computer, coding agent, model API, GPU,
+# source write permission for compute, execution, independent holdout or release.

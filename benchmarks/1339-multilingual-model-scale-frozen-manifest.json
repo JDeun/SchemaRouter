@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "source_repository": "JDeun/SchemaRouter",
+  "source_run_id": 38729631022,
+  "head_sha": "bc448804d7205ffb4deb4853db6225a4755bb72d",
+  "independent_confirmation": false,
+  "reports": {
+    "minilm": {
+      "artifact_id": 11969748248,
+      "artifact_name": "catalog-scale-dev-minilm-38729631022",
+      "file_name": "minilm.json",
+      "sha256": "e2221dbd0915fff789ee8f34b9c6aeca3e0d7b7deeaa1186afd75fbeadc721ff"
+    },
+    "e5-small": {
+      "artifact_id": 11969233682,
+      "artifact_name": "catalog-scale-dev-e5-small-38729631022",
+      "file_name": "e5-small.json",
+      "sha256": "998a79a8ea67271257216fa1b2e7fe8233deef030dc1c387577fff8054604215"
+    }
+  }
+}

@@ -450,6 +450,30 @@ class RegistryExecutor:
         with self._runtime_state_lock:
             self._purge_access_cooldowns_locked(tool_key, endpoint)
 
+    def is_access_available_for_contract_lazy(
+        self,
+        tool_key: str,
+        endpoint: str,
+        fingerprint_supplier: Callable[[], str],
+    ) -> bool:
+        """Skip expensive full-tool fingerprinting when no cooldown exists.
+
+        Under the same runtime lock, first check for any cooldown bound to
+        this exact tool and endpoint. Only a relevant entry needs a contract
+        fingerprint to decide whether the cooldown is current, expired, or
+        belongs to an older schema version. Never bypass a matching cooldown.
+        The supplier is not cached across calls or trusted identities.
+        """
+        with self._runtime_state_lock:
+            if not any(
+                key[0] == tool_key and key[1] == endpoint
+                for key in self._unavailable_until
+            ):
+                return True
+            return self.is_access_available_for_contract(
+                tool_key, endpoint, fingerprint_supplier(),
+            )
+
     def is_access_available_for_contract(
         self,
         tool_key: str,

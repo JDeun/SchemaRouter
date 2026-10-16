@@ -1,0 +1,83 @@
+name: Real OpenAPI Conjunctive Enum Gate DEV CPU
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_openapi_conjunctive_enum_dev.py"
+      - "tests/test_research_openapi_conjunctive_enum_dev.py"
+      - "research/autoresearch/openapi-conjunctive-host-oracle-dev.md"
+      - ".github/workflows/research-openapi-conjunctive-enum-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-conjunction-dev-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pinned-source-conjunctive-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install original source and targeted negative tests
+        run: |
+          python -m pip install . "PyYAML>=6,<7" "pytest>=8,<10" "pytest-asyncio>=0.23"
+          python -m pytest -q tests/test_research_openapi_conjunctive_enum_dev.py
+      - name: Download immutable previous one-field and real E5 reports
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          run=38864540058
+          metadata=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run")
+          test "$(jq -r '.status' <<<"$metadata")" = "completed"
+          test "$(jq -r '.conclusion' <<<"$metadata")" = "success"
+          test "$(jq -r '.head_sha' <<<"$metadata")" = \
+            "21d8efc7f4c4e0ce1caf1df2ca4dae4ae43a8d82"
+          mkdir -p artifacts/conjunctive-openapi
+          gh run download "$run" --repo "$GITHUB_REPOSITORY" \
+            --name "real-openapi-enum-host-dev-$run" \
+            --dir artifacts/conjunctive-openapi
+          echo "e3945b0f8eba04370b0bec802dad36483c4ac9e249da6e57434318d829dcfbe1  artifacts/conjunctive-openapi/enum-verification.json" | sha256sum -c
+          echo "b8fc826397c0385d2b59b5968d3b7f53a2433f7327a8a3679168ecb7127ff038  artifacts/conjunctive-openapi/report.json" | sha256sum -c
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.research_open_meteo_real_openapi_dev import load_contracts
+          tools, errors, evidence = load_contracts(
+              Path("benchmarks/open-meteo-openapi-real-source-dev-manifest.json"),
+              Path("artifacts/conjunctive-openapi/source"),
+          )
+          if errors or len(tools) != 9:
+              raise ValueError((len(tools), errors))
+          print("Verified nine original publisher Git blobs")
+          PY
+      - name: Evaluate exactly 39 cases with two-variable conjunction vs old gate
+        run: |
+          python -m scripts.research_openapi_conjunctive_enum_dev \
+            --manifest benchmarks/open-meteo-openapi-real-source-dev-manifest.json \
+            --source-dir artifacts/conjunctive-openapi/source \
+            --frozen-e5-report artifacts/conjunctive-openapi/report.json \
+            --frozen-single-enum artifacts/conjunctive-openapi/enum-verification.json \
+            --output artifacts/conjunctive-openapi/conjunction-report.json
+      - name: Archive negative results and original protected source
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: real-openapi-conjunction-dev-${{ github.run_id }}
+          path: artifacts/conjunctive-openapi/
+          if-no-files-found: warn
+          retention-days: 90
+# Same-author DEV oracle, not real intent inference. No live provider,
+# authenticated user principal, remote agents, inference/GPU or release.

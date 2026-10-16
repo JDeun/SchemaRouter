@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "split": "development",
+  "source": "https://github.com/JDeun/SchemaRouter/issues/1405#issuecomment-6196867723",
+  "corpus_sha256": "18fce09092e24ebb44d2df14d3224daa47fec9a2df9134d4a0c708b9935dc7d7",
+  "run_ids": [
+    38763288192,
+    38768076070
+  ],
+  "failure_counts": {
+    "supported_route_miss": 37,
+    "unsupported_false_accept": 0,
+    "wrong_operation": 0,
+    "supported_false_refusal": 37
+  },
+  "source_class": "previously_observed_DEV_only",
+  "independent_qualification": false
+}

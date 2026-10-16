@@ -1,0 +1,50 @@
+name: Frozen V1 vs V2 Paired CPU DEV
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/research-v1-v2-paired-cpu-dev.yml"
+      - "benchmarks/autoresearch-v1-v2-frozen-incumbents.json"
+      - "scripts/research_v1_v2_paired_cpu_dev.py"
+      - "tests/test_research_v1_v2_paired_cpu_dev.py"
+      - "research/autoresearch/v1-v2-bakeoff.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v1-v2-paired-cpu-dev-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  exact-incumbent-bakeoff:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install current SchemaRouter only (no inference service)
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Validate frozen champion provenance and paired API retrieval
+        run: python -m pytest -q tests/test_research_v1_v2_paired_cpu_dev.py
+      - name: Compare final V1 champion and V2 candidate on every exposed DEV case
+        run: |
+          python -m scripts.research_v1_v2_paired_cpu_dev \
+            --cases-per-group 5 \
+            --output artifacts/v1-v2-paired-cpu-dev/report.json
+      - name: Preserve every V1/V2 disagreement and exact source identity
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: v1-v2-paired-cpu-dev-${{ github.run_id }}
+          path: artifacts/v1-v2-paired-cpu-dev/report.json
+          retention-days: 90
+          if-no-files-found: error
+# No product source modifications, self-editing agent, model API, GPU,
+# live external connectors, independent heldout data or automatic promotion.

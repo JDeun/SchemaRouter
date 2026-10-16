@@ -1,0 +1,91 @@
+name: Adaptive Routing Research Proposal DEV
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/research-adaptive-routing-proposal.yml"
+      - "scripts/research_adaptive_trial_planner.py"
+      - "benchmarks/adaptive-routing-search-v1-policy.json"
+      - "benchmarks/adaptive-routing-search-v1-dev-seed.json"
+      - "tests/test_research_adaptive_trial_planner.py"
+  workflow_dispatch:
+  schedule:
+    # Only proposal generation. Pauses when two candidates are unmeasured.
+    - cron: "23 2 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: adaptive-routing-research-proposal-v1-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  offline-pr-contract:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: |
+          python -m pip install -e . "pytest>=8,<10" "pytest-asyncio>=0.23"
+          python -m pytest -q tests/test_research_adaptive_trial_planner.py
+          echo '[]' > /tmp/adaptive-comments.json
+          python scripts/research_adaptive_trial_planner.py \
+            --comments /tmp/adaptive-comments.json \
+            --output /tmp/research-proposal.json
+
+  proposal-only-on-protected-main:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Verify typed experimental grammar and score/promotion guard
+        run: |
+          python -m pip install -e . "pytest>=8,<10" "pytest-asyncio>=0.23"
+          python -m pytest -q tests/test_research_adaptive_trial_planner.py
+      - name: Retrieve bot-owned proposal receipts on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --paginate --slurp "repos/${{ github.repository }}/issues/1412/comments?per_page=100" > /tmp/adaptive-comments.json
+      - name: Generate a bounded failure-directed proposal
+        run: |
+          python scripts/research_adaptive_trial_planner.py \
+            --comments /tmp/adaptive-comments.json \
+            --output artifacts/adaptive-routing/proposal.json \
+            --comment-output artifacts/adaptive-routing/issue-comment.md
+      - name: Preserve unscored configuration/provenance
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: adaptive-routing-proposal-${{ github.run_id }}
+          path: artifacts/adaptive-routing/proposal.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Record only a new proposal on research issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if test -f artifacts/adaptive-routing/issue-comment.md; then
+            gh issue comment 1412 --repo "${{ github.repository }}" \
+              --body-file artifacts/adaptive-routing/issue-comment.md
+          fi
+# No untrusted pull_request code ever receives issues:write.
+# No inference, execution, arbitrary code, release or automatic PR merge.

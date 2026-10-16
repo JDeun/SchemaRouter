@@ -1,0 +1,53 @@
+name: Current Main Research Baseline DEV
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/research-current-main-baseline.yml"
+      - "scripts/research_current_main_baseline.py"
+      - "tests/test_research_current_main_baseline.py"
+      - "research/current-main-baseline.md"
+      - "scripts/benchmark_realistic_break_even.py"
+      - "scripts/benchmark_retrieval_hot_path.py"
+      - "scripts/external_validation_gearlynx.py"
+      - "src/schemarouter/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-current-main-baseline-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install checked-out package and standalone validator
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Validate measurement and authority boundaries
+        run: python -m pytest -q tests/test_research_current_main_baseline.py
+      - name: Benchmark current checkout on developer-facing synthetic surfaces
+        run: |
+          python scripts/research_current_main_baseline.py \
+            --iterations 1 \
+            --output-dir artifacts/current-main-baseline
+      - name: Upload exact raw inputs/results and source-attested summary
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: current-main-dev-baseline-${{ github.run_id }}
+          path: artifacts/current-main-baseline/
+          if-no-files-found: error
+          retention-days: 90
+# Unprivileged DEV-only source checks: no external model or secrets, issue writes,
+# independent/held-out corpus, arbitrary user-supplied executable, or releases.

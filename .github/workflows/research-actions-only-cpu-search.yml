@@ -1,0 +1,194 @@
+name: Actions Only Adaptive CPU Search DEV
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      # One-time bootstrap on workflow change/merge; ordinary source pushes
+      # do not start an unbounded research session.
+      - ".github/workflows/research-actions-only-cpu-search.yml"
+  pull_request:
+    paths:
+      - ".github/workflows/research-actions-only-cpu-search.yml"
+      - "research/autoresearch/actions_ranker.py"
+      - "scripts/research_actions_only_search.py"
+      - "scripts/research_actions_continuation.py"
+      - "tests/test_research_actions_only_search.py"
+      - "tests/test_research_actions_continuation.py"
+      - "scripts/research_autoresearch_sandbox.py"
+      - "scripts/research_current_main_multilingual_dev.py"
+      - "benchmarks/agent_utility_v5_catalog.py"
+      - "research/autoresearch/program.md"
+  workflow_dispatch:
+    inputs:
+      previous_run_id:
+        description: "Previous successful research job artifact run ID; empty starts a new chain"
+        required: false
+        type: string
+        default: ""
+      remaining_batches:
+        description: "Including this run, bounded 1-12 research batches"
+        required: true
+        type: number
+        default: 12
+
+permissions:
+  contents: read
+
+concurrency:
+  group: actions-only-cpu-search-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  research-contract:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install current SchemaRouter with no external model
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Verify source contract, CPU search, and continuation limits
+        run: |
+          python -m pytest -q \
+            tests/test_research_actions_only_search.py \
+            tests/test_research_actions_continuation.py
+      - name: Exercise six bounded automatically generated CPU variants
+        run: |
+          python -m scripts.research_actions_only_search \
+            --trials 6 --seconds 180 --seed 1412 \
+            --output-dir artifacts/actions-only-search
+      - name: Preserve PR-only synthetic DEV evidence
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: actions-only-cpu-search-pr-${{ github.run_id }}
+          path: artifacts/actions-only-search/
+          retention-days: 14
+          if-no-files-found: error
+
+  adaptive-research:
+    if: (github.event_name == 'workflow_dispatch' || github.event_name == 'push') && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      continue_next: ${{ steps.chain.outputs.continue_next }}
+      remaining_next: ${{ steps.chain.outputs.remaining_next }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install exact current source and tests
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Verify hard scorer and continuation contract
+        run: |
+          python -m pytest -q \
+            tests/test_research_actions_only_search.py \
+            tests/test_research_actions_continuation.py
+      - name: Validate prior run identity and restore its uploaded state
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIOUS_ID: ${{ inputs.previous_run_id || '' }}
+          REMAINING: ${{ inputs.remaining_batches || 12 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$REMAINING" =~ ^[0-9]+$ ]] &&
+            (( REMAINING >= 1 && REMAINING <= 12 )) ||
+            { echo "Invalid chain budget"; exit 1; }
+          if [[ -n "$PREVIOUS_ID" ]]; then
+            [[ "$PREVIOUS_ID" =~ ^[1-9][0-9]{0,15}$ ]] ||
+              { echo "Invalid source run ID"; exit 1; }
+            RUN_JSON=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PREVIOUS_ID")
+            SRC_PATH=$(jq -r '.path' <<< "$RUN_JSON")
+            SRC_BRANCH=$(jq -r '.head_branch' <<< "$RUN_JSON")
+            SRC_SHA=$(jq -r '.head_sha' <<< "$RUN_JSON")
+            case "$SRC_PATH" in
+              .github/workflows/research-actions-only-cpu-search.yml*) ;;
+              *) echo "Predecessor is not this research workflow"; exit 1;;
+            esac
+            [[ "$SRC_BRANCH" = "main" && "$SRC_SHA" = "$GITHUB_SHA" ]] ||
+              { echo "Predecessor branch/source mismatch"; exit 1; }
+            mkdir -p /tmp/actions-search-previous
+            gh run download "$PREVIOUS_ID" --repo "$GITHUB_REPOSITORY" \
+              --name "actions-only-cpu-search-$PREVIOUS_ID" \
+              --dir /tmp/actions-search-previous
+            test -s /tmp/actions-search-previous/state.json ||
+              { echo "Predecessor artifact is missing"; exit 1; }
+            cp /tmp/actions-search-previous/state.json /tmp/actions-search-previous.json
+            echo "Resuming research from completed predecessor computation"
+          else
+            [[ "$REMAINING" = "12" ]] ||
+              { echo "Partial chain requires explicit predecessor"; exit 1; }
+            echo "Starting initial finite research chain with 12 batches"
+          fi
+      - name: Score the next 24 reviewed CPU configurations
+        id: score
+        shell: bash
+        run: |
+          set -euo pipefail
+          PREVIOUS=()
+          if test -f /tmp/actions-search-previous.json; then
+            PREVIOUS=(--previous-state /tmp/actions-search-previous.json)
+          fi
+          python -m scripts.research_actions_only_search \
+            --trials 24 --seconds 900 --seed 1412 \
+            --output-dir artifacts/actions-only-search \
+            "${PREVIOUS[@]}"
+      - name: Validate result and calculate continuation budget
+        id: chain
+        env:
+          REMAINING: ${{ inputs.remaining_batches || 12 }}
+        run: |
+          python -m scripts.research_actions_continuation \
+            --report artifacts/actions-only-search/report.json \
+            --state artifacts/actions-only-search/state.json \
+            --remaining "$REMAINING" >> "$GITHUB_OUTPUT"
+      - name: Persist all candidate evidence and exact next state first
+        if: always() && steps.score.outcome == 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: actions-only-cpu-search-${{ github.run_id }}
+          path: artifacts/actions-only-search/
+          retention-days: 90
+          if-no-files-found: error
+
+  dispatch-next:
+    needs: adaptive-research
+    if: (github.event_name == 'workflow_dispatch' || github.event_name == 'push') && github.ref == 'refs/heads/main' && needs.adaptive-research.result == 'success' && needs.adaptive-research.outputs.continue_next == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Start next research batch only after artifact upload succeeds
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEXT_REMAINING: ${{ needs.adaptive-research.outputs.remaining_next }}
+        run: |
+          set -euo pipefail
+          [[ "$NEXT_REMAINING" =~ ^[0-9]+$ ]] &&
+            (( NEXT_REMAINING >= 1 && NEXT_REMAINING < 12 )) ||
+            { echo "Unexpected continuation budget"; exit 1; }
+          gh workflow run research-actions-only-cpu-search.yml \
+            --repo "$GITHUB_REPOSITORY" --ref main \
+            -f previous_run_id="$GITHUB_RUN_ID" \
+            -f remaining_batches="$NEXT_REMAINING"
+# Explicit workflow_dispatch with GITHUB_TOKEN is supported by GitHub.
+# No cron, workflow_run recursion, external agent, GPU, paid inference,
+# repository write, arbitrary code or independent/heldout qualification.

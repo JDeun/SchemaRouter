@@ -1,0 +1,50 @@
+name: Retrospective Width Pareto CPU DEV
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/research-width-pareto-cpu-dev.yml"
+      - "scripts/research_v3_width_pareto_cpu_dev.py"
+      - "tests/test_research_v3_width_pareto_cpu_dev.py"
+      - "research/autoresearch/width-pareto-dev.md"
+      - "benchmarks/autoresearch-v1-v2-frozen-incumbents.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-width-pareto-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cpu-width-pareto:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install current checked-out SchemaRouter (no model server)
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Verify reviewed pool-width grammar and real current retrieval
+        run: python -m pytest -q tests/test_research_v3_width_pareto_cpu_dev.py
+      - name: Measure six genuine registered widths on all exposed DEV cases
+        run: |
+          python -m scripts.research_v3_width_pareto_cpu_dev \
+            --cases-per-group 5 \
+            --output artifacts/width-pareto-cpu-dev/report.json
+      - name: Archive every negative decision and exact source envelope
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: width-pareto-cpu-dev-${{ github.run_id }}
+          path: artifacts/width-pareto-cpu-dev/report.json
+          retention-days: 90
+          if-no-files-found: error
+# Finite read-only retrospective experiment, not a self-launching loop.
+# No production source modifications, external agent, GPU, heldout or release.

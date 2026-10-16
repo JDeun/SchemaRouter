@@ -1,0 +1,50 @@
+name: Scoped Candidate Nested Hotspot DEV CPU
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_scoped_candidate_hotspot_attribution.py"
+      - "tests/test_research_scoped_candidate_hotspot_attribution.py"
+      - "research/autoresearch/scoped-candidate-hotspot-dev.md"
+      - ".github/workflows/research-scoped-candidate-hotspot-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scoped-hotspot-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nested-attribution:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install current checked-out source and test-only harness
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Enforce bounded profile phase and principal integrity
+        run: python -m pytest -q tests/test_research_scoped_candidate_hotspot_attribution.py
+      - name: Profile nested stage call counts and inclusive wall CPU times
+        run: |
+          python -m scripts.research_scoped_candidate_hotspot_attribution \
+            --sizes 100 250 500 --repeats 2 \
+            --output artifacts/scoped-candidate-hotspot/report.json
+      - name: Archive all stage counts, timings, positive and negative results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: scoped-candidate-hotspot-${{ github.run_id }}
+          path: artifacts/scoped-candidate-hotspot/
+          if-no-files-found: warn
+          retention-days: 30
+# Read-only Actions Linux CPU, no external provider, inference, code agent,
+# GPU, tool invocation, release, production policy change or network calls.

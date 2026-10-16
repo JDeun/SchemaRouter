@@ -1,0 +1,64 @@
+name: Joint Pool Width and Ranking CPU DEV
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/research-pool-width-optimizer-dev.yml"
+      - "scripts/research_actions_width_search_dev.py"
+      - "tests/test_research_actions_width_search_dev.py"
+      - "research/autoresearch/actions_ranker.py"
+      - "research/width-aware-dev.md"
+  workflow_dispatch:
+    inputs:
+      full_visible_dev:
+        description: "Score full exposed DEV cohort (240 per catalog) rather than balanced 96"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: actions-pool-width-dev-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  joint-search:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install checked-out package without external models
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Verify review-gated search grammar and actual planner integration
+        run: python -m pytest -q tests/test_research_actions_width_search_dev.py
+      - name: Search actual source CPU candidate breadth and weights
+        env:
+          FULL_DEV: ${{ inputs.full_visible_dev == true && 'true' || 'false' }}
+        shell: bash
+        run: |
+          if [[ "$FULL_DEV" == "true" ]]; then
+            COUNT=5
+          else
+            COUNT=2
+          fi
+          python -m scripts.research_actions_width_search_dev \
+            --trials 9 --cases-per-group "$COUNT" --seed 1412 \
+            --output artifacts/width-aware-research/report.json
+      - name: Preserve full failed candidates, controls and source hashes
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: width-aware-research-dev-${{ github.run_id }}
+          path: artifacts/width-aware-research/report.json
+          retention-days: 90
+          if-no-files-found: error
+# No scheduled trigger, external LLM, remote agent, GPU, product writes,
+# registry execution, actual protected holdout, independent release claims.

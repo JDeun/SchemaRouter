@@ -1,0 +1,49 @@
+name: Current Adapters and Principal Field DEV
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/research-current-adapter-field-scope-dev.yml"
+      - "benchmarks/current_adapter_field_scope_dev_v1.py"
+      - "scripts/research_current_adapter_field_scope_dev.py"
+      - "tests/test_research_current_adapter_field_scope_dev.py"
+      - "research/current-adapter-field-scope-dev.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-adapter-field-scope-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-real-parsers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install checked-out real current adapter library and guarded tests
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Verify synthetic trusted principal and typed field gold
+        run: python -m pytest -q tests/test_research_current_adapter_field_scope_dev.py
+      - name: Score actually parsed OpenAPI/MCP and native typed source DEV
+        run: |
+          python -m scripts.research_current_adapter_field_scope_dev \
+            --k 5 --output artifacts/current-adapter-field-scope-dev/report.json
+      - name: Preserve exact source hashes and all route/field misses
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: current-adapter-field-scope-dev-${{ github.run_id }}
+          path: artifacts/current-adapter-field-scope-dev/report.json
+          retention-days: 90
+          if-no-files-found: error
+# Local protocol-shaped fixture only: no real provider traffic, secrets,
+# arbitrary code, tool execution, external LLM, independent holdout or release.
