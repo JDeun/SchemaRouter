@@ -156,6 +156,28 @@ def load_contracts(
     return tools, problems, evidence
 
 
+def ranked_score_diagnostic(answer: Any) -> dict[str, Any]:
+    """Separate genuine positive lexical signal from deterministic tie order."""
+    values = [float(item.score) for item in answer.candidates]
+    if any(not math.isfinite(value) for value in values):
+        raise ValueError("non-finite provider lexical retrieval score")
+    rank1 = values[0] if values else None
+    return {
+        "top1_score": round(rank1, 6) if rank1 is not None else None,
+        "top5_scores": [round(x, 6) for x in values[:5]],
+        "all_nonpositive": not any(x > 0 for x in values),
+        "top1_tie_count": (
+            sum(math.isclose(x, rank1, abs_tol=1e-12)
+                for x in values)
+            if rank1 is not None else 0
+        ),
+        "top1_selection_source": (
+            answer.candidates[0].selection_source
+            if answer.candidates else None
+        ),
+    }
+
+
 def evaluate(
     manifest_path: Path, data_dir: Path,
 ) -> dict[str, Any]:
@@ -213,6 +235,7 @@ def evaluate(
                 ),
                 "duration_ms": round(elapsed, 5),
                 "no_tool_execution": True,
+                **ranked_score_diagnostic(answer),
             })
     unsupported_rows = []
     for name, *queries in UNSUPPORTED:
@@ -228,6 +251,7 @@ def evaluate(
                 "retrieval_nonempty": bool(ids),
                 "no_fit_verifier_exercised": False,
                 "tool_executed": False,
+                **ranked_score_diagnostic(answer),
             })
     git_commit = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT,
@@ -254,8 +278,20 @@ def evaluate(
         "supported_top5_source_match": sum(
             r["any_source_target_top5"] for r in rows
         ),
+        "supported_all_nonpositive_count": sum(
+            r["all_nonpositive"] for r in rows
+        ),
+        "supported_all_nonpositive_by_language": {
+            language: sum(
+                r["all_nonpositive"] for r in rows
+                if r["language"] == language
+            ) for language in LANGUAGES
+        },
         "unsupported_nonempty_retrieval": sum(
             r["retrieval_nonempty"] for r in unsupported_rows
+        ),
+        "unsupported_all_nonpositive_count": sum(
+            r["all_nonpositive"] for r in unsupported_rows
         ),
         "cases": rows + unsupported_rows,
         "peak_resident_kib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
