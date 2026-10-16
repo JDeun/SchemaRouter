@@ -14,18 +14,15 @@ import platform
 import random
 import subprocess
 import time
-from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
 from benchmarks.agent_utility_v5_catalog import (
     CATALOG_SIZES,
-    LANGUAGES,
-    TASKS_PER_CELL,
     build_registry,
     build_tasks,
 )
-from research.autoresearch.actions_ranker import BASE, fingerprint, generate, rank, validate
+from research.autoresearch.actions_ranker import BASE, generate, rank, validate
 from schemarouter import PlanRequest, SchemaPlanner
 from scripts.research_actions_only_search import split_tasks, utility
 from scripts.research_autoresearch_sandbox import candidate_view, decide
