@@ -587,16 +587,27 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 )
             )
 
+        # The planner already ranked only policy-allowed, data-visible
+        # endpoint views before applying Top-K. Post-Top-K field projection
+        # must not overwrite that full ranked count with the shortlist size.
+        # If a concurrent scope change makes a previously visible route
+        # disappear here, its pre-Top-K count is no longer trustworthy:
+        # refuse a partial/inconsistent result instead of understating
+        # completeness or leaking a stale authorization count.
+        if (
+            len(projected_candidates) != len(retrieval.candidates)
+            or retrieval.total_ranked < len(projected_candidates)
+        ):
+            raise PolicyViolationError(
+                "authorized retrieval scope changed during projection"
+            )
         ranked = [
             candidate.model_copy(update={"rank": index})
             for index, candidate in enumerate(projected_candidates, start=1)
         ]
         return retrieval.model_copy(
             deep=True,
-            update={
-                "total_ranked": len(ranked),
-                "candidates": ranked,
-            },
+            update={"candidates": ranked},
         )
 
     def _combined_availability_predicate(
