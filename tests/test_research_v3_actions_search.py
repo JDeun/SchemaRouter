@@ -1,6 +1,7 @@
 """Finite, source-bound V3 Github Actions CPU chain invariants."""
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import random
@@ -8,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from scripts.research_current_main_multilingual_dev import encoded
 from scripts.research_v1_v2_paired_cpu_dev import frozen_genomes
 from scripts.research_v3_actions_search import (
     MAX_BATCHES,
@@ -18,6 +20,7 @@ from scripts.research_v3_actions_search import (
     run,
     state_from_artifact,
     valid_genome,
+    validate_resume_budget,
 )
 from scripts.research_v3_width_pareto_cpu_dev import WIDTHS
 
@@ -74,6 +77,44 @@ def test_exact_identity_controls_resuming_across_main_sha_and_dataset(tmp_path) 
         restored.write_text(json.dumps(bad), encoding="utf-8")
         with pytest.raises(ValueError):
             state_from_artifact(restored, contract)
+
+
+def test_resume_ledger_consistency_and_champion_membership(tmp_path: Path) -> None:
+    contract = identity()
+    initial = state_from_artifact(None, contract)
+    _, proposed, _ = frozen_genomes()
+    genome = valid_genome({"width": 56, "weights": proposed["weights"]})
+    config_hash = hashlib.sha256(encoded(genome)).hexdigest()
+    valid = dict(
+        initial, epoch=1, total_trials=1, seen=[config_hash],
+        champion=genome, best_internal_score=1,
+    )
+    path = tmp_path / "resume.json"
+    path.write_text(json.dumps(valid), encoding="utf-8")
+    assert state_from_artifact(path, contract) == valid
+
+    malformed = [
+        dict(valid, total_trials=0),  # dropped attempt count
+        dict(valid, seen=[config_hash, config_hash], total_trials=2),
+        dict(valid, seen=["A" * 64]),  # not canonical lowercase hex
+        dict(valid, seen=["0" * 64]),  # champion never attempted
+        dict(valid, epoch=0),  # impossible nonempty initial state
+        dict(valid, total_trials=13),  # budget and ledger mismatch
+    ]
+    for bad in malformed:
+        path.write_text(json.dumps(bad), encoding="utf-8")
+        with pytest.raises(ValueError):
+            state_from_artifact(path, contract)
+
+
+def test_resume_budget_fails_before_experiment_cpu() -> None:
+    initial = state_from_artifact(None, identity())
+    validate_resume_budget(initial, 6)
+    validate_resume_budget(dict(initial, epoch=1), 5)
+    validate_resume_budget(dict(initial, epoch=5), 1)
+    for epoch, remaining in ((0, 5), (1, 6), (5, 2), (0, 0), (0, True)):
+        with pytest.raises(ValueError):
+            validate_resume_budget(dict(initial, epoch=epoch), remaining)
 
 
 def test_registered_numeric_genomes_and_mutation_without_code() -> None:

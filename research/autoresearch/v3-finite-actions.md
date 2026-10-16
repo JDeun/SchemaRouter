@@ -69,3 +69,24 @@ authored current OpenAPI/MCP/typed field/permission DEV is only
 local protocol-shaped data; authentic current provider and fixed
 agent comparisons remain prerequisites for any production rollout.
 v0.18 release #1345/#1346 stays HOLD.
+
+## Resume-ledger integrity hardening (subsequent reviewed version)
+
+An incoming Actions state must reconcile its deduplicated lowercase-hex
+configuration hashes with `total_trials`, the finite `epoch` budget and
+the recorded research-only champion. A champion must appear in the actual
+attempted-config ledger. Missing, repeated or inconsistent entries are
+rejected rather than causing a silent fresh chain.
+
+The CLI also requires `restored_epoch + remaining_batches == 6` **before**
+measuring any candidate; mismatched manual workflow inputs cannot consume
+the scorer budget and then fail only at dispatch time. The unchanged exact
+predecessor run/commit check and artifact-first dispatch remain responsible
+for cross-run identity. This does not prove artifact authenticity against a
+compromised trusted GitHub workflow or runner.
+
+Apply changes to protected `main` only after an active same-SHA V3 chain
+reaches its terminal state: editing the research source while a chain is
+running intentionally invalidates subsequent source-bound continuation.
+No production routing, release, permission or independent-result contract
+is changed.
