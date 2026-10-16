@@ -25,6 +25,7 @@ from scripts.research_host_exact_field_scan_lower_bound_dev import (
     direct_scan,
 )
 
+
 def field_contract(*names: str) -> HostFieldContract:
     return HostFieldContract(operation="read", required_output_fields=list(names))
 
