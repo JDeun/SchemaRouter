@@ -137,6 +137,7 @@ nav:
       - Adapter 작성: adapter-authoring.md
       - 보안 모델: security/threat-model.md
   - 연구:
+      - 오픈소스 도구 라우팅 조사·의사결정 위키: research/tool-routing-landscape.md
       - 연구 현황: research/routing-status.md
       - 전체 실험 인덱스: research/experiment-index.md
       - 라우팅 break-even 결과: research/realistic-break-even-result.md
