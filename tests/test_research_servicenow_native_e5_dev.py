@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from scripts.research_real_open_meteo_e5_cpu_dev import MODEL_REVISION
 from scripts.research_servicenow_native_e5_dev import (
+    MODEL_REVISION,
     case_metrics,
     evaluate,
     strict_permutation,
