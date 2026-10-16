@@ -10,7 +10,7 @@ abstract: >-
 authors:
   - family-names: "Cho"
     given-names: "Yong-eun"
-version: "0.17.0"
+version: "0.18.0"
 license: MIT
 repository-code: "https://github.com/JDeun/SchemaRouter"
 url: "https://jdeun.github.io/SchemaRouter/"

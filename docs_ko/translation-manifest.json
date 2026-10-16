@@ -85,7 +85,7 @@
     },
     {
       "path": "getting-started/installation.md",
-      "source_blob": "9870961d062b537dc7bb9f5f2d91e609755806c8"
+      "source_blob": "8849b8e76e3909141d9f6daa8dab3c040a388298"
     },
     {
       "path": "getting-started/quickstart.md",
@@ -293,7 +293,7 @@
     },
     {
       "path": "index.md",
-      "source_blob": "5d64e8e420b233de5da0f128bd62755b7c505bdc"
+      "source_blob": "ef44fb692f946ce676c7bbbd83bd2199d5856407"
     },
     {
       "path": "integrations/decision-backend-plugins.md",
@@ -322,6 +322,14 @@
     {
       "path": "integrations/llamaindex.md",
       "source_blob": "df85cf760bcdecedf91e692bc8e3bc267c4ed98f"
+    },
+    {
+      "path": "integrations/microsoft-decision-1.md",
+      "source_blob": "be983823a98e8c74c0ea7d5f3c8f3b7fe1b7ebad"
+    },
+    {
+      "path": "integrations/microsoft-foundry-http-adapter.md",
+      "source_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567"
     },
     {
       "path": "integrations/ollama.md",
@@ -385,7 +393,7 @@
     },
     {
       "path": "project/trust-and-evidence.md",
-      "source_blob": "cdc02abb82026528c0966e5308d28357cd262e08"
+      "source_blob": "c0615805b71b430ab15c3a7fb49e115ec4e8f1e0"
     },
     {
       "path": "project/why-not-all-tool-schemas.md",
@@ -454,6 +462,10 @@
     {
       "path": "releases/0.17.0.md",
       "source_blob": "31d94d28287a2ca5e6b09922ac1c8c444938833c"
+    },
+    {
+      "path": "releases/0.18.0.md",
+      "source_blob": "e5769a62a6fb1f9c7088552051225b4d69325feb"
     },
     {
       "path": "releases/0.2.0a1.md",
@@ -590,14 +602,6 @@
     {
       "path": "versioning.md",
       "source_blob": "61f82f452188aec2f74fde20f09243a9dbbb1497"
-    },
-    {
-      "path": "integrations/microsoft-foundry-http-adapter.md",
-      "source_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567"
-    },
-    {
-      "path": "integrations/microsoft-decision-1.md",
-      "source_blob": "be983823a98e8c74c0ea7d5f3c8f3b7fe1b7ebad"
     }
   ]
 }

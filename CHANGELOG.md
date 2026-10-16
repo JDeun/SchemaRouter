@@ -7,6 +7,55 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+## 0.18.0 - 2026-10-15
+
+### Added
+
+- Added opt-in, principal-bound selective no-match execution guards with validated
+  source/registry/shortlist provenance and physical no-call rejection before planning;
+  ordinary retrieval and execution defaults remain unchanged.
+- Added declared endpoint `operation_aliases` to indexed and exhaustive lexical retrieval
+  and Japanese-script tokenization for declared localized field aliases. This does not
+  infer translations that providers have not declared.
+- Added an optional Microsoft Foundry Decision-1 HTTP integration with explicit HTTPS,
+  deployment/credential configuration, finite-choice validation and `none_of_above` abstention.
+  No live paid-provider quality result is claimed.
+- Added provenance-preserving DEV/source intake for ClicShopping, ServiceNow, SmartMCP,
+  HYSET and related external candidates, retaining independent-review and scoring gates.
+
+### Changed
+
+- Separated prospective tool-task completion from grounded final-answer quality in
+  model-free research diagnostic contracts without changing the frozen 0.14 scorers.
+- Updated English/Korean site identity and release research documentation while preserving
+  published 0.14 negative/non-inferiority results and the strict DEV-versus-heldout boundary.
+- Strengthened native Jev result validation, Microsoft System One option contracts,
+  Laya finite-choice parsing, and ServiceNow benchmark comparator-arm identity.
+
+### Fixed
+
+- Fixed Japanese kana/kanji query token coverage when the schema declares corresponding
+  localized terms; English-only schemas do not gain invented language matches.
+- Fixed lexical candidate selection ignoring explicitly declared multilingual operation
+  aliases in basic/indexed retrieval.
+- Fixed Boolean/numeric choice-ID coercion and malformed confidence/probability metadata
+  that could incorrectly authorize an optional decision-backend selection.
+- Fixed ClicShopping source-repin guards and mirrored-source provenance, without
+  changing the original visible 32+10 DEV scores or claiming independent holdout.
+- Preserved opt-in no-match negative execution safety across stale plans,
+  wrong principals and modified shortlist/policy identities.
+
+### Evidence and release limitations
+
+- Frozen 0.14 #432, #424 and #506 confirmation outcomes remain valid negative evidence;
+  context/token reduction alone did not pass their preregistered quality gates.
+- Reproducible DEV, native contract and source-pinning smokes are **not** independent
+  cross-project end-to-end quality confirmation. Unavailable HYSET paper weights,
+  CYT/SmartMCP/ServiceNow maintainer protocol approval, ClicShopping independent gold
+  and native pi-jev/Laya/SafeAct runs remain explicit external blockers.
+- Only independently preregistered **post-release** validation may compare published
+  v0.17.0 and v0.18.0 distribution wheels for new performance/generalization claims.
+
 ## 0.17.0 - 2026-10-07
 
 ### Added

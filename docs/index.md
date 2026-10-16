@@ -5,7 +5,7 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.17.0</span>
+<span class="sr-kicker">SchemaRouter 0.18.0</span>
 
 # Put a typed execution boundary between agents and tools
 
