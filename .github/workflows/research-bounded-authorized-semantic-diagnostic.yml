@@ -1,0 +1,50 @@
+name: Bounded Authorized Semantic Diagnostic CPU
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_bounded_authorized_semantic_diagnostic.py"
+      - "tests/test_research_bounded_authorized_semantic_diagnostic.py"
+      - "research/autoresearch/bounded-authorized-semantic-diagnostic.md"
+      - ".github/workflows/research-bounded-authorized-semantic-diagnostic.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bounded-native-semantic-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synthetic-source-authority-e0:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install real product, pytest controls and Ruff
+        run: |
+          python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+      - name: Static synthetic source-protection control
+        run: |
+          ruff check scripts/research_bounded_authorized_semantic_diagnostic.py tests/test_research_bounded_authorized_semantic_diagnostic.py
+          python -m pytest -q tests/test_research_bounded_authorized_semantic_diagnostic.py
+      - name: Verify no product release model or executable route was changed
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.research_bounded_authorized_semantic_diagnostic import (
+              DiagnosticSemanticShortlist, MAX_SHORTLIST,
+          )
+          assert MAX_SHORTLIST == 16
+          assert DiagnosticSemanticShortlist.__dataclass_fields__["independent_quality_evidence"].default is False
+          assert DiagnosticSemanticShortlist.__dataclass_fields__["calibrated_no_fit"].default is False
+          assert DiagnosticSemanticShortlist.__dataclass_fields__["executable_authority"].default is False
+          assert Path("research/autoresearch/bounded-authorized-semantic-diagnostic.md").is_file()
+          print("E0 synthetic source identity only; not independent multilingual quality")
+          PY
