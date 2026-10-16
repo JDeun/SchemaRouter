@@ -48,7 +48,7 @@ STAGE_METHODS = (
     (SchemaRouter, "_project_retrieval_data_scope", "final_field_projection"),
     (SchemaPlanner, "_analyze_sync", "planner_query_analysis"),
     (SchemaPlanner, "_retrieve_from_intent", "planner_retrieval_total"),
-    (SchemaPlanner, "_candidates", "planner_candidate_scoring"),
+    (SchemaPlanner, "_semantic_recall_catalog", "planner_candidate_scoring"),
 )
 SOURCES = (
     "benchmarks/current_adapter_scaled_authorized_dev_v1.py",
