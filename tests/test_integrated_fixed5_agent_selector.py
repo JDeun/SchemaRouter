@@ -174,7 +174,8 @@ def test_selector_may_not_mutate_source_catalog():
 
 def test_frozen_conditions_cannot_use_new_hook_or_be_replaced_by_it():
     registry = build_extended_registry(100)
-    callback = lambda _query, ids: list(ids[:5])
+    def callback(_query, ids):
+        return list(ids[:5])
     for condition in ("FULL", "SR-5", "SR-10", "SR-PROGRESSIVE", "ORACLE"):
         with pytest.raises(ValueError, match="isolated fixed5"):
             run_generated_episode(
