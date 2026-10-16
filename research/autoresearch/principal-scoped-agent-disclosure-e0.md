@@ -103,8 +103,10 @@ A local registered and actually bound callable is used in tests to prove a
 real `RegistryExecutor` invocation, one-call success, hidden response-field
 removal, denied write action even with a registered binding, declined
 hidden/unknown parameters, no unauthorized calls and no invocation if
-principal claims change or the binding is absent. This is still **E0 on
-controlled fixtures**, not audited authentication or a customer tenant.
+principal claims change or the binding is absent. An intentionally
+sensitive provider exception is reduced to the same coarse denial rather than
+returned to the agent. This is still **E0 on controlled fixtures**, not
+audited authentication or a customer tenant.
 
 **Critical safety boundary:** This helper **does not turn the old
 `FrozenCorpusExecutor` into a native host invoker**, and it is deliberately
