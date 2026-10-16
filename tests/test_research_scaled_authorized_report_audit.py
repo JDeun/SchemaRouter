@@ -90,7 +90,8 @@ def test_complete_synthetic_receipt_remains_dev_only() -> None:
     assert result["automatic_product_promotion"] is False
     assert result["independent_confirmation"] is False
     assert all(not d["may_promote"] for d in result["decisions"].values())
-    assert all(d["dev_diagnostic_gate"] for d in result["decisions"].values())
+    assert all(not d["dev_diagnostic_gate"] for d in result["decisions"].values())
+    assert all(not d["positive_observed_gain"] for d in result["decisions"].values())
 
 
 @pytest.mark.parametrize("mutation", (
