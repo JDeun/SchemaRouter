@@ -1,0 +1,51 @@
+name: Request Local Scoped Projection Exact DEV CPU
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/runtime.py"
+      - "tests/test_request_local_scoped_projection.py"
+      - "scripts/research_request_local_scoped_projection_dev.py"
+      - "research/autoresearch/request-local-projection-dev.md"
+      - ".github/workflows/research-request-local-projection-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: request-local-scope-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  exact-request-local-cpu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install checked out source without inference
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Verify full scope-preserving sync and async result identity
+        run: python -m pytest -q tests/test_request_local_scoped_projection.py
+      - name: Measure 162 full result parity pairs on 100 250 and 500
+        run: |
+          python -m scripts.research_request_local_scoped_projection_dev \
+            --sizes 100 250 500 \
+            --output artifacts/request-local-projection/report.json
+      - name: Preserve both faster and slower paired evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: request-local-projection-${{ github.run_id }}
+          path: artifacts/request-local-projection/
+          if-no-files-found: warn
+          retention-days: 30
+# CPU only, no privileged writes, external models, agents, GPUs, tool execution
+# or release. One immutable HEAD SHA; exact equality required before scoring.
