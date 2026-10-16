@@ -16,7 +16,6 @@ from typing import Any
 from benchmarks.current_adapter_field_scope_dev_v1 import principal
 from benchmarks.current_adapter_scaled_authorized_dev_v1 import (
     SIZES,
-    WIDTHS,
     authored_tasks,
     build_fixture,
 )
@@ -32,7 +31,7 @@ SOURCES = (
     "scripts/research_scoped_candidate_exact_index_dev.py",
     "tests/test_scoped_candidate_exact_index.py",
 )
-MAX_PAIRS = len(SIZES) * len(WIDTHS) * 27
+PAIR_WIDTHS = (24, 56)
 
 
 def percentile(values: list[float]) -> float:
@@ -56,7 +55,7 @@ def evaluate(sizes: tuple[int, ...] = SIZES) -> dict[str, Any]:
         router, policy = build_fixture(size)
         for task in tasks:
             who = principal(task["role"])
-            for width in (24, 56):
+            for width in PAIR_WIDTHS:
                 query = PlanRequest(query=task["query"])
                 try:
                     router.planner.candidate_index = False
@@ -112,7 +111,7 @@ def evaluate(sizes: tuple[int, ...] = SIZES) -> dict[str, Any]:
                     "identical": True,
                     "unauthorized_ids": 0,
                 })
-    expected = len(sizes) * len(WIDTHS) * len(tasks)
+    expected = len(sizes) * len(PAIR_WIDTHS) * len(tasks)
     if len(rows) != expected:
         raise ValueError("incomplete authorized paired cohort")
     summary = {
@@ -125,7 +124,7 @@ def evaluate(sizes: tuple[int, ...] = SIZES) -> dict[str, Any]:
             "unauthorized_ids": sum(r["unauthorized_ids"] for r in group),
         }
         for size in sizes
-        for width in WIDTHS
+        for width in PAIR_WIDTHS
         if (group := [
             row for row in rows if row["size"] == size and row["width"] == width
         ])
@@ -145,7 +144,7 @@ def evaluate(sizes: tuple[int, ...] = SIZES) -> dict[str, Any]:
         "source_file_sha256": sources,
         "source_sha256": hashlib.sha256(encoded(sources)).hexdigest(),
         "sizes": list(sizes),
-        "widths": [24, 56],
+        "widths": list(PAIR_WIDTHS),
         "paired_case_count": len(rows),
         "expected_paired_cases": expected,
         "summary": summary,
