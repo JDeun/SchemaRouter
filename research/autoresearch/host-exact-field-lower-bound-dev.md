@@ -26,6 +26,14 @@ python -m scripts.research_host_exact_field_scan_lower_bound_dev \
 
 The [dedicated workflow](../../.github/workflows/research-host-exact-field-lower-bound-dev.yml) uses Ubuntu 24.04, Python 3.12, 20-minute job cap, source-pinned dependency installer actions, read-only permissions and artifact retention. No network API, GPU, agent, model execution, deployment, production policy/write keys or release.
 
+## Adversarial input and runtime-state boundary (follow-up #1452)
+
+The previous 108 paired measurements exercised **only prevalidated, source-authored host principals and field contracts**. Passing those comparisons does not establish that the experimental `direct_scan` validates caller-owned authentication claims or forged Pydantic instances. The separately hardened public `select_authorized_field_contract` explicitly revalidates both `PrincipalContext` and `HostFieldContract` under strict parsing. The DEV scan does not.
+
+A negative-control test intentionally constructs (1) a `PrincipalContext.model_copy(update=...)` whose role tuple contains a non-string and (2) a `HostFieldContract.model_copy(update=...)` with duplicate required fields. A raw metadata scan can still select a route because it does **not** validate these envelopes; the public product API must reject both with `PolicyViolationError`. This is a **counterexample to product security parity**, not a bugfix or a disclosure of any real identity. No same-author 108-case performance result can waive this safety blocker.
+
+A positive-control test additionally covers an active exact-contract executor cooldown: both the raw experimental scan and current public selector should expose an empty available catalog. A policy object swap during scan must cause an error instead of yielding a stale research selection. These tests remain in a separate research-only PR; no public API or production logic changes, and no complete concurrency or authenticated host evidence is claimed.
+
 ## Promotion blockers regardless of results
 
 Prospective production-grade design would require a separately reviewed explicitly opt-in API boundary, authenticated host scope, policy version and effect-aware no-leak attestation, resolver cooldown/access parity, principal/role alternation, source and schema mutation/TOCTOU defenses, alias and enum tests, race controls, robust negative coverage, independent real-provider holdout, agent utility study and meaningful CPU improvement on the exact checked-in current source. The current comparator intentionally does **not** meet these requirements. #1450 and #1431 stay open; independent #1339/#1346 and held v0.18 #1356 unchanged.
