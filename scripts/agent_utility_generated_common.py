@@ -39,6 +39,9 @@ from scripts.evaluate_agent_utility_phase_b_smollm3 import (
     _tool_response_message,
     _visible_tools,
 )
+from scripts.research_authorized_agent_tool_surface import (
+    AuthorizedAgentToolSurface,
+)
 
 EXTENDED_CATALOG_SIZES = (100, 250, 500, 1000)
 DOWNSTREAM_CATALOG_SIZES = (100, 250, 500)
@@ -467,6 +470,7 @@ def run_generated_episode(
     | None = None,
     experimental_candidate_selector: Callable[[str, tuple[str, ...]], list[str]]
     | None = None,
+    experimental_agent_tool_surface: AuthorizedAgentToolSurface | None = None,
 ) -> dict[str, Any]:
     """Run one frozen episode.
 
@@ -485,10 +489,11 @@ def run_generated_episode(
     `EVAL-FIXED5-OPTIN`, never under any frozen historical condition.
     It receives the original query and registered route IDs only and is
     validated as a source-member, duplicate-free maximum-five choice.
-    The experiment harness is not an authenticated authorization boundary:
-    upstream policy filtering and the source/field/operation contract need
-    separate qualification. No callback return or gold label is execution
-    authority, and the published #432 results remain unchanged.
+    An optional principal-scoped `experimental_agent_tool_surface` becomes
+    the ONLY source of model-visible tool definitions and observations. When
+    set, returned traces contain safe metrics only. Neither frozen fixture
+    execution nor the model becomes a real invoker authorization receipt.
+    The original #432 results remain unchanged.
     """
     routing_condition = candidate_condition or condition
     episode_started = time.perf_counter_ns()
@@ -503,8 +508,16 @@ def run_generated_episode(
         ):
             raise ValueError("experimental selector requires isolated fixed5 condition")
         version_before = registry.version
-        source_ids = tuple(sorted(route_ids(registry)))
+        if experimental_agent_tool_surface is None:
+            source_ids = tuple(sorted(route_ids(registry)))
+        else:
+            if registry is not experimental_agent_tool_surface.router.registry:
+                raise ValueError("experimental principal-scoped registry mismatch")
+            experimental_agent_tool_surface.assert_source_unchanged()
+            source_ids = experimental_agent_tool_surface.visible_route_ids
         selected = experimental_candidate_selector(str(task["query"]), source_ids)
+        if experimental_agent_tool_surface is not None:
+            experimental_agent_tool_surface.assert_source_unchanged()
         if (
             type(selected) is not list
             or len(selected) > 5
@@ -518,6 +531,8 @@ def run_generated_episode(
         visible_routes = sorted(selected)
         progressive_stages = None
     else:
+        if experimental_agent_tool_surface is not None:
+            raise ValueError("scoped tool view requires isolated fixed5 selector")
         if condition == EXPERIMENTAL_FIXED5_CONDITION:
             raise ValueError("experimental fixed5 condition requires explicit selector")
         visible_routes, progressive_stages = condition_initial_routes(
@@ -551,7 +566,13 @@ def run_generated_episode(
     expansions = 0
 
     for turn in range(1, MAX_TURNS + 1):
-        generated = agent.generate(messages, _visible_tools(registry, visible_routes))
+        if experimental_agent_tool_surface is None:
+            model_tools = _visible_tools(registry, visible_routes)
+        else:
+            model_tools = experimental_agent_tool_surface.tool_definitions(visible_routes)
+        generated = agent.generate(messages, model_tools)
+        if experimental_agent_tool_surface is not None:
+            experimental_agent_tool_surface.assert_source_unchanged()
         total_input += int(generated["input_tokens"])
         total_output += int(generated["output_tokens"])
         total_tool_tokens += int(generated["tool_tokens"])
@@ -629,12 +650,16 @@ def run_generated_episode(
             route_id = str(call["name"]).replace("__", ".", 1)
             arguments = dict(call["arguments"])
             step_index = executor.progress
+            if experimental_agent_tool_surface is not None:
+                experimental_agent_tool_surface.assert_source_unchanged()
             attempt = executor.execute(
                 route_id,
                 arguments,
                 available=route_id in visible_routes,
                 execution_allowed=call_index == 0,
             )
+            if experimental_agent_tool_surface is not None:
+                experimental_agent_tool_surface.assert_source_unchanged()
             serialized_calls.append(
                 {
                     "name": str(call["name"]),
@@ -643,7 +668,11 @@ def run_generated_episode(
                     "attempt": asdict(attempt),
                 }
             )
-            if observation_transform is None:
+            if experimental_agent_tool_surface is not None:
+                visible_observation = experimental_agent_tool_surface.project_observation(
+                    route_id, attempt.observation,
+                )
+            elif observation_transform is None:
                 visible_observation = attempt.observation
             else:
                 # Only a step the executor actually consumed has declared
@@ -767,7 +796,7 @@ def run_generated_episode(
         and initially_missing_routes.issubset(later_candidates)
     )
 
-    return {
+    episode_record = {
         "semantic_task_id": str(task["semantic_task_id"]),
         "task_id": str(task["semantic_task_id"]),
         "task_stratum": task.get("task_stratum"),
@@ -814,3 +843,6 @@ def run_generated_episode(
         "attempts": [asdict(attempt) for attempt in attempts],
         "turn_rows": turn_rows,
     }
+    if experimental_agent_tool_surface is not None:
+        return experimental_agent_tool_surface.public_trace(episode_record)
+    return episode_record
