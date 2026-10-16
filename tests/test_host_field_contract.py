@@ -717,3 +717,144 @@ def test_reprojection_denies_if_visible_route_disappears_mid_scope() -> None:
         PolicyViolationError, match="scope changed during projection",
     ):
         router._project_retrieval_data_scope(original, VIEWER)
+
+
+def test_retrieval_rejects_replaced_policy_after_old_allow_ranking() -> None:
+    """An in-flight result cannot inherit a now-revoked permission."""
+    router = _router()
+    real = router.planner.retrieve_with_additional_availability
+
+    def swap_policy(*args, **kwargs):
+        old_allowed = real(*args, **kwargs)
+        router.authorization_policy = AuthorizationPolicy(default_effect="deny")
+        return old_allowed
+
+    router.planner.retrieve_with_additional_availability = swap_policy
+    with pytest.raises(
+        PolicyViolationError, match="retrieval authority changed during request",
+    ):
+        router.retrieve_authorized(
+            "read ocean conditions", principal=VIEWER, k=3,
+        )
+
+
+def test_scoped_retrieval_rejects_data_policy_replacement_after_ranking() -> None:
+    """Replacing field restrictions cannot silently publish an old scope."""
+    router = _router(hidden=True)
+    real = router.planner.retrieve_with_scoped_schema
+
+    def swap_data_policy(*args, **kwargs):
+        old_scoped = real(*args, **kwargs)
+        router.authorization_policy = AuthorizationPolicy(
+            rules=(
+                AuthorizationRule(
+                    effect="allow", operation="*.*", roles_any=("viewer",),
+                ),
+            ),
+            default_effect="deny",
+        )
+        return old_scoped
+
+    router.planner.retrieve_with_scoped_schema = swap_data_policy
+    with pytest.raises(
+        PolicyViolationError, match="retrieval authority changed during request",
+    ):
+        router.retrieve_authorized(
+            "read ocean conditions", principal=VIEWER, k=3,
+        )
+
+
+@pytest.mark.parametrize("mutation", ("registry", "availability"))
+def test_retrieval_rejects_changed_authoritative_catalog_mid_request(
+    mutation: str,
+) -> None:
+    """An old route ranking is invalid if the live source definition changes."""
+    router = _router()
+    real = router.planner.retrieve_with_additional_availability
+
+    def mutate_source(*args, **kwargs):
+        result = real(*args, **kwargs)
+        if mutation == "registry":
+            router.add_tool(ToolSpec(
+                name="fresh", description="Fresh current data",
+                endpoints=[_endpoint(
+                    "read", ["new_value"], output="new_data",
+                )],
+            ))
+        else:
+            router.planner.availability_predicate = (
+                lambda tool, endpoint: tool.key != "marine"
+            )
+        return result
+
+    router.planner.retrieve_with_additional_availability = mutate_source
+    with pytest.raises(
+        PolicyViolationError, match="retrieval authority changed during request",
+    ):
+        router.retrieve_authorized(
+            "read ocean conditions", principal=VIEWER, k=3,
+        )
+
+
+def test_unscoped_retrieval_rejects_policy_installed_mid_request() -> None:
+    """Even previously unrestricted retrieval cannot bypass a newly set policy."""
+    router = _router()
+    router.authorization_policy = None
+    real = router.planner.retrieve
+
+    def install_deny(*args, **kwargs):
+        result = real(*args, **kwargs)
+        router.authorization_policy = AuthorizationPolicy(default_effect="deny")
+        return result
+
+    router.planner.retrieve = install_deny
+    with pytest.raises(
+        PolicyViolationError, match="retrieval authority changed during request",
+    ):
+        router.retrieve("read ocean conditions", k=3)
+
+
+@pytest.mark.asyncio
+async def test_async_retrieval_rejects_policy_swapped_after_await() -> None:
+    router = _router()
+    real = router.planner.aretrieve_with_additional_availability
+
+    async def swap_after_await(*args, **kwargs):
+        result = await real(*args, **kwargs)
+        router.authorization_policy = AuthorizationPolicy(default_effect="deny")
+        return result
+
+    router.planner.aretrieve_with_additional_availability = swap_after_await
+    with pytest.raises(
+        PolicyViolationError, match="retrieval authority changed during request",
+    ):
+        await router.aretrieve_authorized(
+            "read ocean conditions", principal=VIEWER, k=3,
+        )
+
+
+@pytest.mark.asyncio
+async def test_stable_sync_and_async_retrieval_preserve_visible_routes() -> None:
+    """The witness adds no authorization permission and invokes no tools."""
+    router = _router(hidden=True)
+
+    def fail_if_dispatched(*args, **kwargs):
+        raise AssertionError("retrieval must not plan or execute any tool")
+
+    router.plan = fail_if_dispatched
+    router.execute = fail_if_dispatched
+    synchronous = router.retrieve_authorized(
+        "read ocean conditions", principal=VIEWER, k=3,
+    )
+    asynchronous = await router.aretrieve_authorized(
+        "read ocean conditions", principal=VIEWER, k=3,
+    )
+    assert synchronous.candidates
+    assert [c.route_id for c in synchronous.candidates] == [
+        c.route_id for c in asynchronous.candidates
+    ]
+    assert synchronous.total_ranked == asynchronous.total_ranked
+    assert all(
+        "sensitive_audit" not in {field.name for field in c.output_fields}
+        for c in synchronous.candidates
+    )
