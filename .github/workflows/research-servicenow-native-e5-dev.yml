@@ -1,0 +1,109 @@
+name: ServiceNow Native Readonly E5 Retrieval DEV
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_servicenow_native_e5_dev.py"
+      - "tests/test_research_servicenow_native_e5_dev.py"
+      - "research/autoresearch/servicenow-native-e5-dev.md"
+      - ".github/workflows/research-servicenow-native-e5-dev.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: servicenow-native-e5-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publisher-pinned-english-visible-dev:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      UPSTREAM_REVISION: 5bcb83b29ab5b30aee07cabaa8df974881c47126
+      PACKAGE_DIR: benchmarks/external-validation-servicenow-platform-mcp-dev-v1
+      OUT_DIR: artifacts/servicenow-native-e5-visible-dev
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install current product, offline controls and pinned native MCP source
+        run: |
+          python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+          python -m pip install "git+https://github.com/Xerrion/servicenow-platform-mcp.git@$UPSTREAM_REVISION"
+          ruff check scripts/research_servicenow_native_e5_dev.py tests/test_research_servicenow_native_e5_dev.py
+          python -m pytest -q tests/test_research_servicenow_native_e5_dev.py
+      - name: Capture true pinned upstream native readonly tools and verify originals
+        run: |
+          mkdir -p "$OUT_DIR"
+          python scripts/capture_servicenow_platform_mcp_tools.py \
+            --upstream-revision "$UPSTREAM_REVISION" \
+            --out "$OUT_DIR/servicenow-readonly-tools.json"
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.external_validation_servicenow_platform_mcp import (
+              load_package, validate_package,
+          )
+          manifest, cases, snapshot = load_package(
+              Path("benchmarks/external-validation-servicenow-platform-mcp-dev-v1"),
+              Path("artifacts/servicenow-native-e5-visible-dev/servicenow-readonly-tools.json"),
+          )
+          validate_package(manifest, cases, snapshot)
+          print("Pinned 12 original readonly tools; 24 published visible DEV questions")
+          PY
+      - name: Install public local CPU E5 checkpoint runtime
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
+      - name: Compare current lexical K3/K5 and same-native-route E5 K3/K5
+        run: |
+          python -m scripts.research_servicenow_native_e5_dev \
+            --package-dir "$PACKAGE_DIR" \
+            --snapshot "$OUT_DIR/servicenow-readonly-tools.json" \
+            --out "$OUT_DIR/report.json"
+      - name: Fail closed on author-DEV-only evidence role and exact sample identity
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          report = json.loads((Path(os.environ["OUT_DIR"]) / "report.json").read_text())
+          assert report["status"] == "same_author_visible_dev_not_independent"
+          assert report["limitations"]["independent_e2"] is False
+          assert report["limitations"]["release_authorized"] is False
+          assert report["limitations"]["no_fit_calibrated"] is False
+          assert report["limitations"]["case_language"] == "english_original_only"
+          assert report["limitations"]["product_default_changed"] is False
+          assert len(report["cases"]) == 24
+          assert len({c["id"] for c in report["cases"]}) == 24
+          assert set(report["summary"]) == {
+              "static_full", "lexical_k3", "lexical_k5", "e5_k3", "e5_k5",
+          }
+          assert all(
+              report["summary"][arm]["supported_cases"] == 20
+              for arm in report["summary"]
+          )
+          PY
+      - name: Preserve pinned source, checkout, runtime and CPU provenance
+        if: always()
+        run: |
+          git rev-parse HEAD > "$OUT_DIR/schemarouter-revision.txt"
+          python --version > "$OUT_DIR/python-version.txt"
+          python -m pip freeze > "$OUT_DIR/pip-freeze.txt"
+          lscpu > "$OUT_DIR/lscpu.txt"
+          sha256sum "$OUT_DIR/"*.json > "$OUT_DIR/SHA256SUMS"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: servicenow-pinned-native-e5-visible-dev-${{ github.run_id }}
+          path: artifacts/servicenow-native-e5-visible-dev/
+          if-no-files-found: warn
+          retention-days: 90
