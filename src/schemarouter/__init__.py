@@ -404,6 +404,12 @@ from .openapi_compatibility import (
     OpenAPICompatibilityReport,
     analyze_openapi_compatibility,
 )
+from .host_field_contract import (
+    AuthorizedContractSelection,
+    HostFieldContract,
+    RequiredEnumValue,
+    select_authorized_field_contract,
+)
 from .operation_fit import (
     DeclaredOperationFitPolicy,
     validate_declared_operation_fit,
@@ -553,6 +559,10 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
+    "AuthorizedContractSelection",
+    "HostFieldContract",
+    "RequiredEnumValue",
+    "select_authorized_field_contract",
     "CapabilityOperationalMetadata",
     "HostCapabilityConstraints",
     "OperationalConstraintReason",
