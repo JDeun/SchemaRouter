@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "frozen_source": "Downloaded and inspected immutable GitHub Actions artifacts; dev-only selection.",
+  "source_corpus_sha256": "af5868c43cba5521f5cee639340f5954ff748d7281355ab821651619eb76cfd3",
+  "v1": {
+    "run_id": 38828196450,
+    "artifact_id": 12015752983,
+    "artifact_file": "state.json",
+    "content_sha256": "3a28c3770210820a17ae51351f8b946fd6b44b7303d472cf34bf6c19beee9db9",
+    "source_commit": "053eebea2d2c5dba8a3c9b20ae03dc53f7df1614",
+    "source_contract_sha256": "50a0da86c008d4ad00ae55f323f61f7e4e8cec6428688f9fed183da2d3f13436",
+    "trials": 275,
+    "epoch": 12,
+    "width": 24,
+    "weights": {
+      "base": 3.8408,
+      "token": 0.5807,
+      "trigram": 7.85,
+      "field": 0.3315,
+      "identifier": 1.9062
+    }
+  },
+  "v2": {
+    "run_id": 38828191428,
+    "artifact_id": 12016545301,
+    "artifact_file": "report.json",
+    "content_sha256": "cd0bfe985aff06474377f6e0e6966b3ab861b492f0795e48638bc121b99fb35d",
+    "source_commit": "0097bbd99229cda19a7b407a2a3b5e72044ce748",
+    "width": 64,
+    "weights": {
+      "base": 0.2641,
+      "token": 5.124,
+      "trigram": 7.3689,
+      "field": 1.1206,
+      "identifier": 1.0593
+    }
+  },
+  "restrictions": {
+    "exposed_synthetic_dev": true,
+    "independent_confirmation": false,
+    "may_promote": false,
+    "agent_task_success": false
+  }
+}
