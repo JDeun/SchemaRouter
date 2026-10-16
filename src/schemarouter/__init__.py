@@ -338,6 +338,12 @@ from .explorer import (
 )
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot, HealthStatus
 from .hooks import AfterExecutionHook, BeforeExecutionHook, ExecutionHooks
+from .host_field_contract import (
+    AuthorizedContractSelection,
+    HostFieldContract,
+    RequiredEnumValue,
+    select_authorized_field_contract,
+)
 from .ingestion import (
     SourceAdapterProbeDiagnostic,
     SourceProbeFailureCategory,
@@ -553,6 +559,10 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
+    "AuthorizedContractSelection",
+    "HostFieldContract",
+    "RequiredEnumValue",
+    "select_authorized_field_contract",
     "CapabilityOperationalMetadata",
     "HostCapabilityConstraints",
     "OperationalConstraintReason",
