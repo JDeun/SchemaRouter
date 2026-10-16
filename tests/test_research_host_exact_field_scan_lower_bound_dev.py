@@ -3,17 +3,27 @@ from __future__ import annotations
 
 import pytest
 
-from schemarouter import (
-    AuthorizationPolicy, AuthorizationRule, DataScopeRule, EndpointSpec,
-    FieldSpec, HostFieldContract, PrincipalContext, SchemaRouter, ToolSpec,
-    select_authorized_field_contract,
-)
 from benchmarks.current_adapter_field_scope_dev_v1 import principal
 from benchmarks.current_adapter_scaled_authorized_dev_v1 import build_fixture
-from scripts.research_host_exact_field_scan_lower_bound_dev import (
-    CASES, _matches, _metrics, assess, direct_scan,
+from schemarouter import (
+    AuthorizationPolicy,
+    AuthorizationRule,
+    DataScopeRule,
+    EndpointSpec,
+    FieldSpec,
+    HostFieldContract,
+    PrincipalContext,
+    SchemaRouter,
+    ToolSpec,
+    select_authorized_field_contract,
 )
-
+from scripts.research_host_exact_field_scan_lower_bound_dev import (
+    CASES,
+    _matches,
+    _metrics,
+    assess,
+    direct_scan,
+)
 
 def field_contract(*names: str) -> HostFieldContract:
     return HostFieldContract(operation="read", required_output_fields=list(names))
