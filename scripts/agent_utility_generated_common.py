@@ -45,6 +45,7 @@ DOWNSTREAM_CATALOG_SIZES = (100, 250, 500)
 FINAL_ANSWER_CATALOG_SIZES = (100, 250)
 
 BASE_CONDITIONS = ("FULL", "SR-5", "SR-10", "SR-PROGRESSIVE", "ORACLE")
+EXPERIMENTAL_FIXED5_CONDITION = "EVAL-FIXED5-OPTIN"
 CORRECTIVE_CONDITIONS = (
     "SR-5-STATIC",
     "SR-PROGRESSIVE-STATIC",
@@ -464,6 +465,8 @@ def run_generated_episode(
     candidate_condition: str | None = None,
     observation_transform: Callable[[dict[str, Any], dict[str, Any]], dict[str, Any]]
     | None = None,
+    experimental_candidate_selector: Callable[[str, tuple[str, ...]], list[str]]
+    | None = None,
 ) -> dict[str, Any]:
     """Run one frozen episode.
 
@@ -477,15 +480,51 @@ def run_generated_episode(
     way into the agent's context only. The executor's own record, the task state
     and every completion check keep seeing the untransformed observation, so
     presentation cannot change ground truth.
+
+    The optional `experimental_candidate_selector` is only accepted under
+    `EVAL-FIXED5-OPTIN`, never under any frozen historical condition.
+    It receives the original query and registered route IDs only and is
+    validated as a source-member, duplicate-free maximum-five choice.
+    The experiment harness is not an authenticated authorization boundary:
+    upstream policy filtering and the source/field/operation contract need
+    separate qualification. No callback return or gold label is execution
+    authority, and the published #432 results remain unchanged.
     """
     routing_condition = candidate_condition or condition
     episode_started = time.perf_counter_ns()
     selection_started = time.perf_counter_ns()
-    visible_routes, progressive_stages = condition_initial_routes(
-        registry,
-        task,
-        routing_condition,
-    )
+    if experimental_candidate_selector is not None:
+        # This is NOT one of the frozen #432 conditions. Only the original
+        # query and the source-registered route IDs are passed, never gold,
+        # expected steps, labels, test outcomes or the executor fixture.
+        if (
+            condition != EXPERIMENTAL_FIXED5_CONDITION
+            or candidate_condition is not None
+        ):
+            raise ValueError("experimental selector requires isolated fixed5 condition")
+        version_before = registry.version
+        source_ids = tuple(sorted(route_ids(registry)))
+        selected = experimental_candidate_selector(str(task["query"]), source_ids)
+        if (
+            type(selected) is not list
+            or len(selected) > 5
+            or any(type(route) is not str for route in selected)
+            or len(set(selected)) != len(selected)
+            or not set(selected).issubset(source_ids)
+        ):
+            raise ValueError("invalid experimental source-native fixed5 choice")
+        if registry.version != version_before or tuple(sorted(route_ids(registry))) != source_ids:
+            raise ValueError("experimental source changed during candidate selection")
+        visible_routes = sorted(selected)
+        progressive_stages = None
+    else:
+        if condition == EXPERIMENTAL_FIXED5_CONDITION:
+            raise ValueError("experimental fixed5 condition requires explicit selector")
+        visible_routes, progressive_stages = condition_initial_routes(
+            registry,
+            task,
+            routing_condition,
+        )
     selection_ms = (time.perf_counter_ns() - selection_started) / 1_000_000
 
     progressive = routing_condition in {"SR-PROGRESSIVE", "SR-PROGRESSIVE-STATIC"}
