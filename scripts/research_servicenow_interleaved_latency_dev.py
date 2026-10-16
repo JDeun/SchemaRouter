@@ -266,7 +266,10 @@ def run(
         "implementation": source,
         "protocol": {
             "temperature": None,
-            "timing_boundary": "hot local retrieval plus exact native contract JSON serialization, no execution",
+            "timing_boundary": (
+                "hot local retrieval plus exact native contract JSON "
+                "serialization, no execution"
+            ),
             "warmup": "all 24 queries under K3 and K5 before sampling",
             "index_build_ms_excluded_from_requests": build_ms,
             "repeats": repeats,
