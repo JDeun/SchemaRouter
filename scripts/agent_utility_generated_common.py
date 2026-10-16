@@ -526,7 +526,13 @@ def run_generated_episode(
             or not set(selected).issubset(source_ids)
         ):
             raise ValueError("invalid experimental source-native fixed5 choice")
-        if registry.version != version_before or tuple(sorted(route_ids(registry))) != source_ids:
+        if (
+            registry.version != version_before
+            or (
+                experimental_agent_tool_surface is None
+                and tuple(sorted(route_ids(registry))) != source_ids
+            )
+        ):
             raise ValueError("experimental source changed during candidate selection")
         visible_routes = sorted(selected)
         progressive_stages = None
