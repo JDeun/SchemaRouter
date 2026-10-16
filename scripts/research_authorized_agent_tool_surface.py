@@ -220,7 +220,7 @@ def capture_authorized_agent_tool_surface(
         if field_labels:
             parts.append("Visible output fields: " + "; ".join(field_labels) + ".")
         definition = {
-            "name": candidate.route_id.replace(".", "__", 1),
+            "name": candidate.route_id.replace(".", "__"),
             "description": " ".join(part for part in parts if part),
             "parameters": {
                 "type": "object",
