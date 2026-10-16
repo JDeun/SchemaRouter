@@ -1,8 +1,6 @@
 """Source-declared field-contract selection cannot execute or widen permissions."""
 from __future__ import annotations
 
-from types import SimpleNamespace
-
 import pytest
 
 from schemarouter import (
