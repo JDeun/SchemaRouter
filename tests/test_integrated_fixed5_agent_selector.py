@@ -194,3 +194,65 @@ def test_frozen_conditions_cannot_use_new_hook_or_be_replaced_by_it():
             candidate_condition="ORACLE",
             experimental_candidate_selector=callback,
         )
+
+
+def test_two_step_state_propagation_uses_same_executor_and_strict_k5():
+    slot = next(
+        item for item in projection_authoring_slots()
+        if item["projection_stratum"] == "multi_step_provenance"
+    )
+    source_task = build_projection_task(slot, 1)
+    first, second = source_task["executor_fixture"]["steps"]
+    arguments_first = {"material_id": first["argument_rules"]["material_id"]["eq"]}
+    arguments_second = {"artifact_id": first["observation"]["artifact_id"]}
+    calls = [
+        "<tool_call>" + json.dumps({
+            "name": step["route_id"].replace(".", "__", 1),
+            "arguments": arguments,
+        }) + "</tool_call>"
+        for step, arguments in (
+            (first, arguments_first), (second, arguments_second)
+        )
+    ]
+    agent = ScriptedAgent([*calls, "Done."])
+    required = [step["route_id"] for step in (first, second)]
+    row = run_generated_episode(
+        agent, build_extended_registry(100), source_task,
+        EXPERIMENTAL_FIXED5_CONDITION,
+        experimental_candidate_selector=lambda _query, ids: [
+            *required,
+            *[name for name in ids if name not in required][:3],
+        ],
+    )
+    assert row["passed"] is True
+    assert row["task_complete"] is True
+    assert row["required_routes_advanced"] == 2
+    assert row["tool_call_count"] == 2
+    assert row["required_route_call_coverage"] == 1.0
+    assert row["unauthorized_destructive_executions"] == 0
+    assert row["initial_candidate_count"] == 5
+    assert max(agent.visible_tool_counts) == 5
+
+
+def test_destructive_sibling_suggestion_cannot_override_executor_policy():
+    registry = build_extended_registry(100)
+    dangerous = next(
+        f"{tool.key}.{endpoint.name}"
+        for tool in registry.tools() for endpoint in tool.endpoints
+        if endpoint.destructive
+    )
+    agent = ScriptedAgent([
+        "<tool_call>" + json.dumps({
+            "name": dangerous.replace(".", "__", 1),
+            "arguments": {"item_id": "unapproved"},
+        }) + "</tool_call>",
+        "Done.",
+    ])
+    row = run_generated_episode(
+        agent, registry, task(), EXPERIMENTAL_FIXED5_CONDITION,
+        experimental_candidate_selector=lambda _query, _ids: [dangerous],
+    )
+    assert row["passed"] is False
+    assert row["policy_blocks"] == 1
+    assert row["unauthorized_destructive_executions"] == 0
+    assert row["attempts"][0]["error"] == "destructive_policy_block"
