@@ -3,7 +3,10 @@ from pathlib import Path
 
 import pytest
 
-WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/v018-native-external-dev-sweep.yml"
+WORKFLOW = (
+    Path(__file__).resolve().parents[1]
+    / ".github/workflows/v018-native-external-dev-sweep.yml"
+)
 
 
 def verify(text: str) -> None:
