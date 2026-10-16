@@ -194,8 +194,19 @@ def main() -> None:
     raw_report, raw_snapshot = args.report.read_bytes(), args.snapshot.read_bytes()
     verify_sha(raw_report, PINNED_REPORT_SHA256, kind="report")
     verify_sha(raw_snapshot, PINNED_SNAPSHOT_FILE_SHA256, kind="snapshot")
+    report = json.loads(raw_report)
     manifest, cases, snapshot = load_package(args.package_dir, args.snapshot)
-    result = audit(json.loads(raw_report), manifest, cases, snapshot)
+    # Original task labels and package governance are source inputs. Matching
+    # original scores alone does not authenticate a subtly relabeled gold set.
+    verify_sha(
+        (args.package_dir / "manifest.json").read_bytes(),
+        report["manifest_sha256"], kind="manifest",
+    )
+    verify_sha(
+        (args.package_dir / manifest["files"]["cases"]).read_bytes(),
+        report["cases_sha256"], kind="original case labels",
+    )
+    result = audit(report, manifest, cases, snapshot)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(
         json.dumps(result, sort_keys=True, ensure_ascii=False, indent=2) + "\n",
