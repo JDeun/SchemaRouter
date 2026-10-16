@@ -77,9 +77,14 @@ async def execute_scoped_host_call(
         fallback_scope="disabled",
     )
     view.assert_source_unchanged()
-    plan = await view.router.aplan_executable_authorized(
-        request, principal=view._principal,
-    )
+    try:
+        plan = await view.router.aplan_executable_authorized(
+            request, principal=view._principal,
+        )
+    except Exception:
+        # The planner/backend may include raw source/user data in error text.
+        # An agent-facing host gate must not surface those internals.
+        _deny()
     view.assert_source_unchanged()
     try:
         plan = ExecutionPlan.model_validate(
@@ -112,9 +117,13 @@ async def execute_scoped_host_call(
     # Real host execution policy, binding fingerprints, validated input
     # schema, approval, ABAC and response projection are entirely delegated
     # to the already-existing product path. We do not call a raw invoker.
-    results = await view.router.execute(
-        plan, config=RunConfig(principal=view._principal),
-    )
+    try:
+        results = await view.router.execute(
+            plan, config=RunConfig(principal=view._principal),
+        )
+    except Exception:
+        # Even trusted bindings can return sensitive values in exceptions.
+        _deny()
     view.assert_source_unchanged()
     if (
         len(results) != 1
