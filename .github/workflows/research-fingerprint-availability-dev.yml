@@ -1,0 +1,50 @@
+name: Fingerprint Availability Hotspot DEV CPU
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_availability_fingerprint_attribution.py"
+      - "tests/test_research_availability_fingerprint_attribution.py"
+      - "research/autoresearch/fingerprint-availability-dev.md"
+      - ".github/workflows/research-fingerprint-availability-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fingerprint-cost-dev-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-bound-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install original main source and offline test harness
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23"
+      - name: Verify targeted property patch restores and access safety
+        run: python -m pytest -q tests/test_research_availability_fingerprint_attribution.py
+      - name: Measure fingerprint serialization costs on current public API
+        run: |
+          python -m scripts.research_availability_fingerprint_attribution \
+            --sizes 100 250 500 --repeats 2 \
+            --output artifacts/fingerprint-availability-dev/report.json
+      - name: Preserve all measured nested inclusive spans and SHA source
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fingerprint-availability-dev-${{ github.run_id }}
+          path: artifacts/fingerprint-availability-dev/
+          if-no-files-found: warn
+          retention-days: 30
+# Unprivileged original source on Linux CPU only. No inference/GPU,
+# external provider calls, physical tool execution or release changes.
