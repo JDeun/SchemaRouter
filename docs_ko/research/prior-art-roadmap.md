@@ -2,6 +2,8 @@
 
 이 문서는 [`benchmarks/research-prior-art-registry.json`](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-prior-art-registry.json)과 GitHub Issue #388의 사람이 읽을 수 있는 companion입니다. 새 연구 세션이 대화 기억에 의존하지 않고 이미 검토한 문헌, 그 문헌이 만든 SchemaRouter 가설, terminal experiment, 다음 실험을 재구성하도록 하는 것이 목적입니다.
 
+**최근 OSS 구현 비교와 이미 실패한 방법:** 추가 프레임워크·모델·임계값 연구 전 [오픈소스 도구 라우팅 조사·의사결정 위키](tool-routing-landscape.md)를 먼저 읽습니다. 2026년 10월 Semantic Router/LlamaIndex 영감 실험의 부정적 결과, Pydantic AI/Agents SDK 통합, 제공자별 E5 결과, 중복 방지 규칙을 연결합니다. 아래 과거 연구 항목의 당시 진행 상태는 2026-10-16 현재 릴리스 적합 판정이 아닙니다.
+
 ## Session bootstrap
 
 새 routing experiment를 만들기 전에:
