@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "provider": "Open-Meteo",
+  "provider_repository": "open-meteo/open-meteo",
+  "source_commit": "b0ff3ebbbafa890000ab8bc5f9598a2e4ef64dc4",
+  "license": "CC BY 4.0 (provider OpenAPI document)",
+  "source_reference": "https://github.com/open-meteo/open-meteo/tree/b0ff3ebbbafa890000ab8bc5f9598a2e4ef64dc4/openapi",
+  "docs": {
+    "air-quality": {
+      "path": "openapi/air-quality.yml",
+      "git_blob_sha1": "4d77947433e53a4613ef1ed3c9bc190a5051853d"
+    },
+    "climate": {
+      "path": "openapi/climate.yml",
+      "git_blob_sha1": "3b30abac6b22c70d5fcdf6790d7977b757cdb7e4"
+    },
+    "elevation": {
+      "path": "openapi/elevation.yml",
+      "git_blob_sha1": "c802095d1417354252a437ff78fdeb986c7e4fe3"
+    },
+    "ensemble": {
+      "path": "openapi/ensemble.yml",
+      "git_blob_sha1": "488040f1d7ed17b2af226c817fa50391f4073d15"
+    },
+    "flood": {
+      "path": "openapi/flood.yml",
+      "git_blob_sha1": "aaf85c8dd194140fb8c8ca7211b813866de50324"
+    },
+    "forecast": {
+      "path": "openapi/forecast.yml",
+      "git_blob_sha1": "43869e8a872b8545b352f752c04436250d6e27de"
+    },
+    "historical-weather": {
+      "path": "openapi/historical-weather.yml",
+      "git_blob_sha1": "399f9b065dea0fe102c15515ae5d9e6e5518c58a"
+    },
+    "marine": {
+      "path": "openapi/marine.yml",
+      "git_blob_sha1": "9adee0bc549f38742ae43efd829469af32ea6f1f"
+    },
+    "seasonal": {
+      "path": "openapi/seasonal.yml",
+      "git_blob_sha1": "00c35e7252a5f2f185664af0da5c668c0ba57138"
+    }
+  },
+  "real_provider_authored_spec": true,
+  "independently_authored_query_labels": false,
+  "real_provider_requests_executed": false,
+  "may_release": false
+}
