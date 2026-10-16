@@ -36,6 +36,13 @@ DENIED_VIEWER = (
     "vectors.upsert",
     "graph.link",
 )
+VIEWER_READ = (
+    "billing.getInvoice",
+    "research.search_documents",
+    "orders.lookup",
+    "vectors.search",
+    "graph.neighbors",
+)
 
 # The labels below were explicitly authored for DEV; NEVER score targets
 # derived from runtime retrieval. The original 27-case fixture is NOT reused.
@@ -229,10 +236,16 @@ def build_fixture(size: int) -> tuple[SchemaRouter, AuthorizationPolicy]:
             operation=route, roles_any=("viewer",),
         )
         for index, route in enumerate(DENIED_VIEWER)
+    ) + tuple(
+        AuthorizationRule(
+            name=f"viewer-existing-read-{index}", effect="allow",
+            operation=route, roles_any=("viewer",),
+        )
+        for index, route in enumerate(VIEWER_READ)
     ) + (
         AuthorizationRule(
-            name="viewer-allow-local-read", effect="allow",
-            operation="*", roles_any=("viewer",),
+            name="viewer-bench-read", effect="allow",
+            operation="bench*.*", roles_any=("viewer",),
         ),
         AuthorizationRule(
             name="editor-allow-local-dev", effect="allow",
