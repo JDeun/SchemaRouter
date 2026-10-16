@@ -419,6 +419,9 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         self,
         principal: PrincipalContext,
         predicate: Callable[[ToolSpec, Any], bool],
+        *,
+        endpoint_view: Callable[[ToolSpec, EndpointSpec], EndpointSpec | None]
+        | None = None,
     ) -> ToolRegistry:
         """Build the authorization-bounded schema catalog supplied to analyzers."""
 
@@ -428,10 +431,10 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             for endpoint in tool.endpoints:
                 if not predicate(tool, endpoint):
                     continue
-                visible_endpoint = self._data_scope_endpoint_view(
-                    principal,
-                    tool,
-                    endpoint,
+                visible_endpoint = (
+                    self._data_scope_endpoint_view(principal, tool, endpoint)
+                    if endpoint_view is None
+                    else endpoint_view(tool, endpoint)
                 )
                 if visible_endpoint is not None:
                     endpoints.append(visible_endpoint)
@@ -444,6 +447,43 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 )
             )
         return scoped
+
+    def _request_local_scoped_projection(
+        self,
+        principal: PrincipalContext,
+        predicate: Callable[[ToolSpec, Any], bool],
+    ) -> tuple[
+        ToolRegistry,
+        Callable[[ToolSpec, EndpointSpec], EndpointSpec | None],
+    ]:
+        """Reuse the exact permitted schema projection within one retrieval.
+
+        This closure has no cross-request, cross-principal, or persistent cache.
+        Recheck source-version/policy identity before reusing projections to
+        fail closed if either authority changes while retrieval is in flight.
+        The analyzer receives separately validated and registered copies.
+        """
+        registry_version = self.registry.version
+        policy = self.authorization_policy
+        visible_by_route: dict[tuple[str, str], EndpointSpec | None] = {}
+
+        def visible(tool: ToolSpec, endpoint: EndpointSpec) -> EndpointSpec | None:
+            if (
+                self.registry.version != registry_version
+                or self.authorization_policy is not policy
+            ):
+                return self._data_scope_endpoint_view(principal, tool, endpoint)
+            key = (tool.key, endpoint.name)
+            if key not in visible_by_route:
+                visible_by_route[key] = self._data_scope_endpoint_view(
+                    principal, tool, endpoint,
+                )
+            return visible_by_route[key]
+
+        scoped = self._scoped_analysis_registry(
+            principal, predicate, endpoint_view=visible,
+        )
+        return scoped, visible
 
     def _project_retrieval_data_scope(
         self,
@@ -3639,19 +3679,15 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             and self.authorization_policy.data_rules
             and principal is not None
         ):
+            analysis_registry, scoped_view = self._request_local_scoped_projection(
+                principal, predicate,
+            )
             retrieval = self.planner.retrieve_with_scoped_schema(
                 request,
                 predicate,
-                lambda tool, endpoint: self._data_scope_endpoint_view(
-                    principal,
-                    tool,
-                    endpoint,
-                ),
+                scoped_view,
                 k=k,
-                analysis_registry=self._scoped_analysis_registry(
-                    principal,
-                    predicate,
-                ),
+                analysis_registry=analysis_registry,
             )
         else:
             retrieval = self.planner.retrieve_with_additional_availability(
@@ -3678,19 +3714,15 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             and self.authorization_policy.data_rules
             and principal is not None
         ):
+            analysis_registry, scoped_view = self._request_local_scoped_projection(
+                principal, predicate,
+            )
             retrieval = await self.planner.aretrieve_with_scoped_schema(
                 request,
                 predicate,
-                lambda tool, endpoint: self._data_scope_endpoint_view(
-                    principal,
-                    tool,
-                    endpoint,
-                ),
+                scoped_view,
                 k=k,
-                analysis_registry=self._scoped_analysis_registry(
-                    principal,
-                    predicate,
-                ),
+                analysis_registry=analysis_registry,
             )
         else:
             retrieval = await self.planner.aretrieve_with_additional_availability(
