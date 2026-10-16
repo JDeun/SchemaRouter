@@ -33,7 +33,10 @@ Sequence:
    positively scored source catalog to be complete and route IDs unique.
 3. Form a bounded `DecisionRequest` of **only the already returned,
    principal-visible source route IDs**, tool/operation labels and data-scoped
-   **visible** output-field names. Do not serialize hidden output schemas or
+   **visible** output-field names. Under any configured data-scope policy,
+   **exclude unstructured tool/endpoint descriptions entirely**, as publisher
+   free text may itself contain hidden field names; the semantic quality
+   tradeoff is not quantified. Do not serialize hidden output schemas or
    registered secrets to the model. The raw query stays unchanged for EN,
    KO, JA or other languages.
 4. Pass the fixed-K choice to `choose_sync`, which independently validates
