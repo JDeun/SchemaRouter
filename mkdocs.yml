@@ -224,6 +224,7 @@ nav:
       - Adapter authoring: adapter-authoring.md
       - Security model: security/threat-model.md
   - Research:
+      - OSS tool-routing landscape and decisions: research/tool-routing-landscape.md
       - Research status: research/routing-status.md
       - Complete experiment index: research/experiment-index.md
       - Routing break-even result: research/realistic-break-even-result.md
