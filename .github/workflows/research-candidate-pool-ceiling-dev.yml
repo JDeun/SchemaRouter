@@ -45,7 +45,7 @@ jobs:
           FULL_DEV: ${{ inputs.full_existing_dev == true && 'true' || 'false' }}
         shell: bash
         run: |
-          if [[ "$FULL_DEV" == "true" ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" || "$FULL_DEV" == "true" ]]; then
             COUNT=5
           else
             COUNT=1
