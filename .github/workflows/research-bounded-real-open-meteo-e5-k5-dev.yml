@@ -1,0 +1,122 @@
+name: Real Open-Meteo Authorized Fixed K5 E5 CPU DEV
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_bounded_open_meteo_e5_fixed_k5_dev.py"
+      - "tests/test_research_bounded_open_meteo_e5_fixed_k5_dev.py"
+      - "research/autoresearch/open-meteo-native-fixed-k5-semantic-dev.md"
+      - ".github/workflows/research-bounded-real-open-meteo-e5-k5-dev.yml"
+      - "scripts/research_bounded_authorized_semantic_diagnostic.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: real-bounded-open-meteo-e5-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pinned-original-provider-cpu-dev:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      OPEN_METEO_SOURCE_COMMIT: b0ff3ebbbafa890000ab8bc5f9598a2e4ef64dc4
+      OUT: artifacts/real-open-meteo-bounded-k5-e5-dev
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install current native package and offline strict K controls
+        run: |
+          python -m pip install ".[mcp]" "PyYAML>=6,<7" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+          ruff check scripts/research_bounded_open_meteo_e5_fixed_k5_dev.py tests/test_research_bounded_open_meteo_e5_fixed_k5_dev.py
+          python -m pytest -q tests/test_research_bounded_open_meteo_e5_fixed_k5_dev.py
+          python -m pytest -q tests/test_research_bounded_authorized_semantic_diagnostic.py
+      - name: Fetch exact nine genuine author-published OpenAPI Git blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUT/source"
+          for name in air-quality climate elevation ensemble flood forecast historical-weather marine seasonal; do
+            curl --fail --silent --show-error --location \
+              --retry 2 --connect-timeout 15 --max-time 90 \
+              "https://raw.githubusercontent.com/open-meteo/open-meteo/$OPEN_METEO_SOURCE_COMMIT/openapi/$name.yml" \
+              --output "$OUT/source/$name.yml"
+            test -s "$OUT/source/$name.yml"
+          done
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from scripts.research_open_meteo_real_openapi_dev import (
+              SOURCE_COMMIT, SOURCE_NAMES, load_contracts,
+          )
+          assert os.environ["OPEN_METEO_SOURCE_COMMIT"] == SOURCE_COMMIT
+          tools, failures, evidence = load_contracts(
+              Path("benchmarks/open-meteo-openapi-real-source-dev-manifest.json"),
+              Path(os.environ["OUT"]) / "source",
+          )
+          if failures or len(tools) != len(SOURCE_NAMES) or len(evidence) != 9:
+              raise ValueError("original publisher OpenAPI evidence invalid")
+          print("VERIFIED original provider Git blobs, nine unique native docs")
+          PY
+      - name: Install genuine local CPU pinned E5 model runtime
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
+      - name: Run actual native source-scoped lexical vs E5 exact K5 in EN KO JA
+        run: |
+          python -m scripts.research_bounded_open_meteo_e5_fixed_k5_dev \
+            --manifest benchmarks/open-meteo-openapi-real-source-dev-manifest.json \
+            --source-dir "$OUT/source" \
+            --output "$OUT/report.json"
+      - name: Check unmodified DEV role and strict native K5 denominators
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          report = json.loads((Path(os.environ["OUT"]) / "report.json").read_text())
+          assert report["evidence_role"] == (
+              "SAME_AUTHOR_PREVIOUSLY_VISIBLE_EN_KO_JA_DEV_NOT_INDEPENDENT"
+          )
+          assert report["model_revision"] == "fd1525a9fd15316a2d503bf26ab031a61d056e98"
+          assert report["strict_k"] == 5 and report["original_native_route_count"] == 9
+          assert report["supported_cases"] == 27 and report["unsupported_cases"] == 9
+          assert len(report["original_visible_dev_rows"]) == 36
+          assert len(set((x["original_group"], x["language"]) for x in report["original_visible_dev_rows"])) == 36
+          assert all(len(row["lexical_native_k5"]) == len(row["semantic_native_k5"]) == 5 for row in report["original_visible_dev_rows"])
+          assert set(report["by_language"]) == {"en", "ko", "ja"}
+          assert sum(x["supported_cases"] for x in report["by_language"].values()) == 27
+          assert sum(x["unsupported_cases"] for x in report["by_language"].values()) == 9
+          assert not report["limitations"]["query_gold_independent"]
+          assert not report["limitations"]["calibrated_no_fit"]
+          assert not report["limitations"]["measured_agent_task_success"]
+          assert not report["limitations"]["commercial_release_authorized"]
+          print("Unseen/publisher independent: FALSE, agent E2: FALSE, no-fit: FALSE")
+          PY
+      - name: Preserve checkout CPU model dependency and original source SHA
+        if: always()
+        run: |
+          mkdir -p "$OUT"
+          git rev-parse HEAD > "$OUT/checkout-commit.txt"
+          python --version > "$OUT/python-version.txt"
+          python -m pip freeze > "$OUT/pip-freeze.txt"
+          lscpu > "$OUT/lscpu.txt"
+          find "$OUT/source" -name '*.yml' -type f -print0 | sort -z | xargs -0 -r sha256sum > "$OUT/source-SHA256SUMS"
+          sha256sum "$OUT/report.json" > "$OUT/report-SHA256SUMS" || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: bounded-real-open-meteo-e5-k5-visible-dev-${{ github.run_id }}
+          path: artifacts/real-open-meteo-bounded-k5-e5-dev/
+          retention-days: 90
+          if-no-files-found: warn
