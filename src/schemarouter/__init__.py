@@ -337,6 +337,12 @@ from .explorer import (
     write_schema_explorer,
 )
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot, HealthStatus
+from .host_field_contract import (
+    AuthorizedContractSelection,
+    HostFieldContract,
+    RequiredEnumValue,
+    select_authorized_field_contract,
+)
 from .hooks import AfterExecutionHook, BeforeExecutionHook, ExecutionHooks
 from .ingestion import (
     SourceAdapterProbeDiagnostic,
@@ -403,12 +409,6 @@ from .openapi_compatibility import (
     OpenAPICompatibilityIssue,
     OpenAPICompatibilityReport,
     analyze_openapi_compatibility,
-)
-from .host_field_contract import (
-    AuthorizedContractSelection,
-    HostFieldContract,
-    RequiredEnumValue,
-    select_authorized_field_contract,
 )
 from .operation_fit import (
     DeclaredOperationFitPolicy,
