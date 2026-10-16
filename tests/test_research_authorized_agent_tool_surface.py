@@ -354,3 +354,51 @@ def test_scoped_surface_cannot_attach_to_legacy_frozen_condition_or_other_regist
             experimental_candidate_selector=lambda _query, ids: list(ids[:5]),
             experimental_agent_tool_surface=view,
         )
+
+
+@pytest.mark.parametrize("mutation", ("roles", "attributes"))
+def test_principal_claims_mutated_after_capture_fail_closed(mutation):
+    router = fixture_router()
+    principal = PrincipalContext(
+        subject="mutable-viewer", roles=("viewer",),
+        attributes={"region": "public"},
+    )
+    view = capture_authorized_agent_tool_surface(
+        router, "marine public papers read values", principal=principal,
+    )
+    if mutation == "roles":
+        principal.roles = ("outsider",)
+    else:
+        principal.attributes["region"] = "secret-region"
+    with pytest.raises(PolicyViolationError, match="principal claims changed"):
+        view.tool_definitions(["marine.read"])
+    with pytest.raises(PolicyViolationError, match="principal claims changed"):
+        view.project_observation("marine.read", {
+            "status": "ok", "public_field": "public",
+        })
+    with pytest.raises(PolicyViolationError, match="principal claims changed"):
+        view.public_trace({"passed": True})
+
+
+def test_principal_roles_revoked_during_agent_inference_fail_closed():
+    router = fixture_router()
+    principal = PrincipalContext(subject="revoke-on-model", roles=("viewer",))
+    view = capture_authorized_agent_tool_surface(
+        router, "marine public papers read values", principal=principal,
+    )
+
+    class RevokingAgent(CapturingSyntheticAgent):
+        def generate(self, messages, tools):
+            answer = super().generate(messages, tools)
+            principal.roles = ("outsider",)
+            return answer
+
+    agent = RevokingAgent()
+    with pytest.raises(PolicyViolationError, match="principal claims changed"):
+        run_generated_episode(
+            agent, router.registry, scoped_synthetic_task(),
+            EXPERIMENTAL_FIXED5_CONDITION,
+            experimental_candidate_selector=lambda _query, _ids: ["marine.read"],
+            experimental_agent_tool_surface=view,
+        )
+    assert agent.calls == 1
