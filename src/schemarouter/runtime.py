@@ -310,10 +310,10 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             self._apply_native_schema_binding,
         )
     def _is_snapshot_access_available(self, tool: ToolSpec, endpoint: Any) -> bool:
-        return self.executor.is_access_available_for_contract(
+        return self.executor.is_access_available_for_contract_lazy(
             tool.key,
             endpoint.name,
-            self.planner._snapshot_tool_fingerprint(tool),
+            lambda: self.planner._snapshot_tool_fingerprint(tool),
         )
 
     def _authorization_predicate(
