@@ -79,6 +79,43 @@ FULL/SR-5/SR-10/ORACLE conditions.
 - An unexpected route in tool output or a policy/registry/availability swap
   fails closed; no historical frozen task/gold/scorer was modified.
 
+## Read-only invocation through the REAL existing host executor (not a new invoker)
+
+The new `scripts/research_scoped_host_invocation.py::execute_scoped_host_call`
+accepts a model-proposed original route ID and arguments **only** when they
+belong to the current source-scoped, principal-visible, K≤5 selected list.
+It rejects fields and required arguments not in the model-disclosed
+parameter contract and refuses mutating/destructive endpoints. It NEVER
+constructs a `ToolCall` from model-supplied fingerprints or gives a callable
+provider/credential to the model. Instead the existing
+`router.aplan_executable_authorized(PlanRequest(...), principal=...)`
+compiles a fresh bound source plan and the adapter checks exact route,
+fingerprints, fields, one-call budget, no fallback and no missing required
+input. Only `router.execute(plan, config=RunConfig(principal=...))` invokes
+the actual previously registered trusted host binding with product schema,
+authorization, approval, data-scope and execution policy checks. The returned
+model-visible response is additionally restricted by
+`AuthorizedAgentToolSurface.project_observation`; nested data currently fail
+closed. Source and mutable principal claims are checked before/after
+planning and after the host execution result.
+
+A local registered and actually bound callable is used in tests to prove a
+real `RegistryExecutor` invocation, one-call success, hidden response-field
+removal, denied write action even with a registered binding, declined
+hidden/unknown parameters, no unauthorized calls and no invocation if
+principal claims change or the binding is absent. This is still **E0 on
+controlled fixtures**, not audited authentication or a customer tenant.
+
+**Critical safety boundary:** This helper **does not turn the old
+`FrozenCorpusExecutor` into a native host invoker**, and it is deliberately
+a separate opt-in host-facing function. The existing simulated agent episode
+remains a frozen fixture for task scoring. A production agent loop would
+have to route its calls through this host function (or equivalent product
+bound execution), with real approval/policy and no privileged raw payloads
+available to the model. Concurrent revocation *during* an external side-effect
+cannot be rolled back by checking a witness after the call (#1450). No
+destructive tool invocation is enabled by this research bridge.
+
 **Remaining BLOCKER before real tenant execution:** `FrozenCorpusExecutor`
 performs synthetic source fixture policies only and is **not** a trusted
 provider invoker or full RBAC/ABAC execution boundary. A production adapter
