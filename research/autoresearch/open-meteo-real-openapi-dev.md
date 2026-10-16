@@ -12,6 +12,17 @@ Manifest `benchmarks/open-meteo-openapi-real-source-dev-manifest.json` pins the 
 
 Measured report: actual published source bytes and SHA, parser coverage/failures, currently registered operation identities, source-level Top1/Top5 of supported prompts, unsupported **nonempty retrieval** (retrieval is always an unthresholded shortlist, NOT an execution or semantic acceptance verdict), per-request query time, peak process RSS, exact repository commit. No actual action is invoked. **If a spec does not parse, its attempted path remains logged and no result is inferred for it.**
 
+### Score-zero and registry-order caveat
+
+The current lexical ranker may return a full shortlist of 9 tools even when
+no lexical match exists. Such deterministic **zero-score fallback order** is
+not evidence of Korean/Japanese semantic understanding. The report therefore
+includes each Top-1/Top-5 score, exact Top-1 tie count, selection source,
+`all_nonpositive` flag, and per-language nonpositive case counts. Do not
+interpret coincidental matching at fixed catalog order as real route recall;
+both ordinary Top-K identity and evidence of positive scoring must be
+reported. Unsupported nonempty Top-K likewise does not equal tool dispatch.
+
 ## Honest limitations
 
 - Authentic publisher-authored **schema source**, but only **one external provider** and nine small endpoint families. It is neither 100/250/500 truly distinct providers nor cross-source-disjoint test labels.
