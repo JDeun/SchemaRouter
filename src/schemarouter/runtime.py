@@ -215,6 +215,26 @@ def _coerce_config(config: RunConfig | dict[str, Any] | None) -> RunConfig:
     return RunConfig.model_validate(config)
 
 
+def _validated_explicit_retrieval_principal(
+    principal: PrincipalContext,
+) -> PrincipalContext:
+    """Defend explicit retrieval boundaries against unvalidated model copies.
+
+    Schema validation is not authentication: the host still must verify all
+    identity and role claims independently before calling this API.
+    """
+
+    if not isinstance(principal, PrincipalContext):
+        raise PolicyViolationError("trusted principal context is required")
+    try:
+        return PrincipalContext.model_validate(
+            principal.model_dump(mode="python", warnings=False),
+            strict=True,
+        )
+    except (TypeError, ValueError, OverflowError, AttributeError) as exc:
+        raise PolicyViolationError("invalid principal context") from exc
+
+
 def _coerce_run_config(config: RunConfig | dict[str, Any] | None) -> RunConfig:
     run_config = _coerce_config(config)
     if run_config.run_id is not None:
@@ -3709,7 +3729,9 @@ class SchemaRouter(NativeProviderConvenienceMixin):
     ) -> CapabilityRetrieval:
         """Retrieve capabilities for one explicitly supplied trusted principal."""
 
-        with _principal_execution_context(principal):
+        with _principal_execution_context(
+            _validated_explicit_retrieval_principal(principal)
+        ):
             return self.retrieve(request, k=k)
 
     def retrieve_adaptive(
@@ -3765,7 +3787,9 @@ class SchemaRouter(NativeProviderConvenienceMixin):
     ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve_authorized`."""
 
-        with _principal_execution_context(principal):
+        with _principal_execution_context(
+            _validated_explicit_retrieval_principal(principal)
+        ):
             return await self.aretrieve(request, k=k)
 
     def _state_aware_full_retrieval_k(self, requested_k: int) -> int:
