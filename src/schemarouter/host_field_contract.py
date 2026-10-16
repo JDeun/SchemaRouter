@@ -1,0 +1,259 @@
+"""Opt-in, host-supplied exact field-contract selection over authorized tools.
+
+This is a *read-only capability diagnostic*, NEVER an execution authorization.
+The caller must independently authenticate its PrincipalContext and validate
+the structured request contract. Predicted/model-supplied fields are not
+trusted requirements, and no inference or tool execution happens here.
+"""
+from __future__ import annotations
+
+import re
+from typing import TYPE_CHECKING, Literal
+
+from pydantic import Field, model_validator
+
+from .authorization import PrincipalContext
+from .errors import PolicyViolationError
+from .models import (
+    CapabilityCandidate,
+    CapabilityRetrieval,
+    PlanRequest,
+    StrictModel,
+)
+
+if TYPE_CHECKING:
+    from .runtime import SchemaRouter
+
+_ID = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{0,127}$")
+
+
+class RequiredEnumValue(StrictModel):
+    """Exact published query parameter and enumerated value, not free text."""
+
+    parameter: str
+    value: str
+
+    @model_validator(mode="after")
+    def validate_exact_identity(self) -> RequiredEnumValue:
+        if not _ID.fullmatch(self.parameter) or not _ID.fullmatch(self.value):
+            raise ValueError("host field requirement must be a bounded exact identifier")
+        return self
+
+
+class HostFieldContract(StrictModel):
+    """Trusted host's explicit *read-only* field contract.
+
+    No defaults: the host must deliberately supply at least one exact input
+    enum or output field. The API will NOT infer missing domain/time/intent.
+    """
+
+    operation: Literal["read"]
+    required_enums: list[RequiredEnumValue] = Field(default_factory=list, max_length=8)
+    required_output_fields: list[str] = Field(default_factory=list, max_length=8)
+
+    @model_validator(mode="after")
+    def validate_field_contract(self) -> HostFieldContract:
+        if not self.required_enums and not self.required_output_fields:
+            raise ValueError("host contract needs at least one declared field")
+        pairs = [(item.parameter, item.value) for item in self.required_enums]
+        if len(set(pairs)) != len(pairs):
+            raise ValueError("duplicate required parameter/enum identity")
+        if (
+            any(not _ID.fullmatch(field) for field in self.required_output_fields)
+            or len(set(self.required_output_fields)) != len(self.required_output_fields)
+        ):
+            raise ValueError("invalid or duplicate required output field")
+        return self
+
+
+class AuthorizedContractSelection(StrictModel):
+    """A non-executable selection receipt for the *current* registry version."""
+
+    disposition: Literal["selected", "abstained"]
+    reason: Literal[
+        "unique_contract_match",
+        "empty_authorized_catalog",
+        "incomplete_authorized_catalog",
+        "no_contract_match",
+        "ambiguous_contract_match",
+    ]
+    query: str
+    registry_version: int
+    requested_k: int
+    candidate_count: int
+    matching_route_ids: list[str] = Field(default_factory=list)
+    selected_route_id: str | None = None
+    selected_tool_fingerprint: str | None = None
+    selected_endpoint_fingerprint: str | None = None
+
+
+def _candidate_matches(
+    candidate: CapabilityCandidate, contract: HostFieldContract,
+) -> bool:
+    # Only positive, explicitly read-only public metadata is trusted.
+    if candidate.read_only is not True or candidate.destructive is True:
+        return False
+
+    for required in contract.required_enums:
+        match = False
+        for parameter in candidate.parameters:
+            if (
+                parameter.location != "query"
+                or parameter.name != required.parameter
+            ):
+                continue
+            schema = parameter.json_schema
+            enum = schema.get("enum") if isinstance(schema, dict) else None
+            if isinstance(schema, dict) and schema.get("type") == "array":
+                items = schema.get("items")
+                enum = items.get("enum") if isinstance(items, dict) else None
+            if (
+                isinstance(enum, list) and
+                all(type(v) is str for v in enum) and
+                required.value in enum
+            ):
+                match = True
+                break
+        if not match:
+            return False
+
+    available_fields = {
+        name for field in candidate.output_fields
+        for name in (field.name, field.semantic_id)
+        if name is not None
+    }
+    return all(name in available_fields for name in contract.required_output_fields)
+
+
+def select_authorized_field_contract(
+    router: SchemaRouter,
+    request: PlanRequest | str,
+    *,
+    principal: PrincipalContext,
+    contract: HostFieldContract,
+    k: int = 128,
+) -> AuthorizedContractSelection:
+    """Return a conservative, non-executable typed-match diagnostic.
+
+    Invokes only the public principal-scoped retrieval API; NEVER plans,
+    dispatches or runs a tool. A truncated Top-K cannot prove uniqueness
+    across the entire authorized catalog, so it always abstains. The host
+    must reauthorize and validate registry version before any later action.
+    """
+    if router.authorization_policy is None:
+        raise PolicyViolationError(
+            "host field contract requires an explicit authorization policy"
+        )
+    if not isinstance(principal, PrincipalContext):
+        raise PolicyViolationError("trusted principal context is required")
+    try:
+        approved_principal = PrincipalContext.model_validate(
+            principal.model_dump(mode="python", warnings=False),
+            strict=True,
+        )
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise PolicyViolationError("invalid principal context") from exc
+    if not isinstance(contract, HostFieldContract):
+        raise PolicyViolationError("trusted host field contract is required")
+    try:
+        approved_contract = HostFieldContract.model_validate(
+            contract.model_dump(mode="python", warnings=False),
+            strict=True,
+        )
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise PolicyViolationError("invalid or forged host field contract") from exc
+    if type(k) is not int or not 1 <= k <= 5000:
+        raise ValueError("contract search k must be an integer in 1..5000")
+    if isinstance(request, str):
+        raw_query = request
+    elif isinstance(request, PlanRequest):
+        try:
+            request = PlanRequest.model_validate(
+                request.model_dump(mode="python", warnings=False),
+                strict=True,
+            )
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise PolicyViolationError("invalid request envelope") from exc
+        raw_query = request.query
+    else:
+        raise PolicyViolationError("request must be text or a PlanRequest")
+    if not isinstance(raw_query, str) or not raw_query.strip():
+        raise PolicyViolationError("nonempty user query required")
+    retrieved = router.retrieve_authorized(
+        request, principal=approved_principal, k=k,
+    )
+    if not isinstance(retrieved, CapabilityRetrieval):
+        raise PolicyViolationError("invalid authorized retrieval result")
+    # A mutable registry can change mid-request. Never issue a receipt if
+    # the result is from another registry version or another query.
+    if (
+        retrieved.query != raw_query
+        or type(retrieved.registry_version) is not int
+        or retrieved.registry_version != router.registry.version
+        or retrieved.requested_k != k
+        or type(retrieved.total_ranked) is not int
+        or retrieved.total_ranked < 0
+    ):
+        raise PolicyViolationError("stale or inconsistent retrieval scope")
+
+    try:
+        verified = CapabilityRetrieval.model_validate(
+            retrieved.model_dump(mode="python", warnings=False),
+            strict=True,
+        )
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise PolicyViolationError("untrusted authorized retrieval envelope") from exc
+    ids = [item.route_id for item in verified.candidates]
+    if (
+        len(ids) != len(set(ids))
+        or any(
+            item.route_id != f"{item.tool}.{item.endpoint}"
+            or not item.tool_fingerprint or not item.endpoint_fingerprint
+            for item in verified.candidates
+        )
+        or verified.total_ranked < len(ids)
+        or len(ids) > k
+    ):
+        raise PolicyViolationError("untrusted route identity or shortlist")
+
+    def abstain(reason: Literal[
+        "empty_authorized_catalog",
+        "incomplete_authorized_catalog",
+        "no_contract_match",
+        "ambiguous_contract_match",
+    ], matches: list[str] | None = None) -> AuthorizedContractSelection:
+        return AuthorizedContractSelection(
+            disposition="abstained", reason=reason,
+            query=raw_query, registry_version=verified.registry_version,
+            requested_k=k, candidate_count=len(ids),
+            matching_route_ids=matches or [],
+        )
+
+    # Do not turn a partial top-K into a false "unique" proof.
+    if verified.total_ranked > len(ids):
+        return abstain("incomplete_authorized_catalog")
+    if not ids:
+        return abstain("empty_authorized_catalog")
+
+    matched = [
+        item for item in verified.candidates
+        if _candidate_matches(item, approved_contract)
+    ]
+    if not matched:
+        return abstain("no_contract_match")
+    if len(matched) > 1:
+        return abstain(
+            "ambiguous_contract_match", [item.route_id for item in matched],
+        )
+    selected = matched[0]
+    if verified.registry_version != router.registry.version:
+        raise PolicyViolationError("registry changed during contract validation")
+    return AuthorizedContractSelection(
+        disposition="selected", reason="unique_contract_match",
+        query=raw_query, registry_version=verified.registry_version,
+        requested_k=k, candidate_count=len(ids),
+        matching_route_ids=[selected.route_id],
+        selected_route_id=selected.route_id,
+        selected_tool_fingerprint=selected.tool_fingerprint,
+        selected_endpoint_fingerprint=selected.endpoint_fingerprint,
+    )
