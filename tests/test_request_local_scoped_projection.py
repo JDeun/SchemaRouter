@@ -150,3 +150,52 @@ def test_concurrent_registry_churn_invalidates_inflight_projection_reuse() -> No
     assert second is not None
     assert first is not second
     assert policy.visible(who, tool, endpoint)
+
+
+def test_attribute_scoped_principals_do_not_cross_contaminate_views() -> None:
+    from schemarouter import (
+        AuthorizationPolicy,
+        AuthorizationRule,
+        DataScopeRule,
+        PrincipalContext,
+    )
+
+    router, _ = build_fixture(100)
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=(
+            AuthorizationRule(
+                name="finance-visible", effect="allow",
+                operation="bench*.*", roles_any=("viewer",),
+                departments_any=("finance",),
+            ),
+        ),
+        data_rules=(
+            DataScopeRule(
+                name="restrict-low-tier", operation="bench*.*",
+                roles_any=("viewer",), attributes=(("tier", "low"),),
+                hidden_fields=("audit_tag",),
+            ),
+        ),
+    )
+    low = PrincipalContext(
+        subject="untrusted-host-fixture-low", roles=("viewer",),
+        departments=("finance",), attributes={"tier": "low"},
+    )
+    high = PrincipalContext(
+        subject="untrusted-host-fixture-high", roles=("viewer",),
+        departments=("finance",), attributes={"tier": "high"},
+    )
+    for who in (high, low, high, low):
+        result = query_pair(
+            router, who, "synthetic parcel ledger payload audit_tag", 56,
+        )
+        assert all(item.tool.startswith("bench") for item in result.candidates)
+        exposed = [
+            field.name for item in result.candidates
+            for field in item.output_fields
+        ]
+        if who.attributes["tier"] == "low":
+            assert "audit_tag" not in exposed
+        else:
+            assert "audit_tag" in exposed
