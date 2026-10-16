@@ -19,7 +19,6 @@ from scripts.external_validation_servicenow_platform_mcp import (
 from scripts.research_servicenow_native_e5_dev import (
     MODEL_REVISION,
     WIDTHS,
-    canonical,
     case_metrics,
     strict_permutation,
     summarize,
