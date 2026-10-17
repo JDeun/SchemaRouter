@@ -139,6 +139,19 @@ async def test_forged_second_id_executes_but_fails_state_oracle():
 
 
 @pytest.mark.asyncio
+async def test_duplicate_final_boolean_never_counts_as_correct_answer():
+    # Default json.loads would silently keep the last value, inflating E0 pass.
+    report = await run_model_selected_bound_two_step_e0(
+        ScriptedAgent([FIRST, SECOND, '{"verified":false,"verified":true}']),
+        language="en",
+    )
+    assert report["actual_bound_host_calls"] == 2
+    assert report["typed_host_oracle_confirmed"] is True
+    assert report["correct_strict_final_answer"] is False
+    assert report["full_task_correct"] is False
+
+
+@pytest.mark.asyncio
 async def test_false_final_answer_is_not_laundered_by_two_successful_calls():
     result = await run_model_selected_bound_two_step_e0(
         StateDependentAgent(wrong_final=True), language="ja",
@@ -203,6 +216,14 @@ async def test_no_tool_call_final_never_counts_as_two_step_success():
     FIRST + "<|im_end|><|im_end|>",
     FIRST + "<|im_end|> trailing",
     '<tool_call>{"name":"marine__read","arguments":{"place":[]}}</tool_call>',
+    # Duplicate names/arguments (including nested keys) must never resolve
+    # via Python's default JSON "last value wins" behavior.
+    '<tool_call>{"name":"marine__read","name":"papers__read","arguments":{"place":"Seoul"}}</tool_call>',
+    '<tool_call>{"name":"marine__read","arguments":{"place":"Seoul","place":"Tokyo"}}</tool_call>',
+    '<tool_call>{"name":"marine__read","arguments":{"place":NaN}}</tool_call>',
+    '<tool_call>{"name":"marine__read","arguments":{"place":Infinity}}</tool_call>',
+    '<tool_call>{"name":"marine__read","arguments":{"place":-Infinity}}</tool_call>',
+    '<tool_call>{"name":"marine__read","arguments":{"place":1e309}}</tool_call>',
 ))
 def test_strict_model_tool_parser_rejects_forged_or_malformed_call(bad):
     with pytest.raises((ValueError, TypeError)):
