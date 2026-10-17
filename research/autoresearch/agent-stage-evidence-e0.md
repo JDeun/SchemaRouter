@@ -34,13 +34,21 @@ establish state-propagation or final-answer faithfulness; both require
 separate genuinely instrumented witnesses (#1348).
 
 `EVAL-FIXED5-OPTIN` output can be redacted only **after** the trusted
-evaluator has computed these witnesses. Existing principal-scoped
-`public_trace` is already redacted and intentionally does NOT contain raw
-grader attempts; this helper is NOT secretly scoring those reports.
-Integrating producer/consumer boundaries requires another explicit opt-in
-adapter with exact original source identity, principal-scope attestation, and
-independently authored approved task manifests. This commit adds a
-standalone reusable laboratory component, not a claimed end-to-end E2 path.
+evaluator has computed these witnesses. The existing
+`run_generated_episode(..., experimental_agent_tool_surface=...)`
+now optionally accepts a trusted `E0TraceProvenance` with source revision,
+corpus hash, private HMAC key and seed. It **requires both** the existing
+principal-scoped view and opt-in fixed-K selector; it computes stage witnesses
+only from the raw trusted `episode_record` after all synthetic turns and then
+adds sanitized `e0_stage_evidence` to the existing safe `public_trace`.
+No gold, raw attempts or private key is given to the model, selector, or public
+return. The default research conditions remain untouched.
+
+This is a real opt-in producer/consumer integration into the **existing
+frozen synthetic executor**, not an integration into the separate trusted
+bound-host `router.execute` bridge. Full independent E2 still requires
+approved source/authentication/case manifests and native agent/provider
+observations; the E0 host bridge is not a customer tenant evaluator.
 
 Do not publish the raw-row inputs or the private HMAC key. Do not interpret
 shape-valid synthetic DEV traces as independent EN/KO/JA production evidence.
