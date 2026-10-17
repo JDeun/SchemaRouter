@@ -1,0 +1,97 @@
+name: Real Qwen Bounded Incomplete Retry E0 DEV
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_real_qwen_bound_two_step_e0.py"
+      - "tests/test_research_qwen_bounded_continuation_e0.py"
+      - "research/autoresearch/qwen-bounded-host-continuation-e0.md"
+      - ".github/workflows/research-qwen-bounded-host-continuation-e0.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bounded-host-continuation-e0-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bounded-continuation-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install scoped host and model-episode test dependencies
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+      - name: Check single safe incomplete-turn retry and original no-retry regression
+        run: |
+          ruff check scripts/research_real_qwen_bound_two_step_e0.py tests/test_research_qwen_bounded_continuation_e0.py
+          python -m pytest -q tests/test_research_qwen_bounded_continuation_e0.py tests/test_research_real_qwen_bound_two_step_e0.py
+          python -m scripts.research_real_qwen_bound_two_step_e0 \
+            --mode validate --host-continuation-budget 1
+
+  real-cpu-qwen-continuation:
+    needs: bounded-continuation-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install pinned local Qwen3 CPU
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "transformers>=4.51,<5"
+      - name: Re-execute three model-selected 2-step host tasks with exactly one generic reminder
+        run: |
+          python -m scripts.research_real_qwen_bound_two_step_e0 \
+            --mode real-cpu --host-continuation-budget 1 \
+            --out artifacts/qwen-bounded-continuation-e0/report.json
+      - name: Keep model result negative or positive strictly E0
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d = json.loads(Path("artifacts/qwen-bounded-continuation-e0/report.json").read_text(encoding="utf-8"))
+          assert d["evidence_tier"] == "REAL_QWEN3_CPU_BOUNDED_CONTINUATION_E0_DEV_ONLY"
+          assert d["host_continuation_budget"] == 1
+          assert d["case_count"] == 3
+          assert d["independent_e2_qualified"] is False
+          assert d["real_external_native_provider_execution"] is False
+          assert d["release_safety_gate_passed"] is False
+          assert d["model_default_promoted"] is False
+          assert {r["language"] for r in d["cases"]} == {"en", "ko", "ja"}
+          for r in d["cases"]:
+              assert r["actual_model_inference_measured"] is True
+              assert 0 <= r["host_continuations_issued"] <= 1
+              assert 0 <= r["actual_bound_host_calls"] <= 2
+              assert r["full_task_correct"] <= r["two_stage_completed"]
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write("## Bounded generic host incomplete-task reminder: actual Qwen3 CPU E0 DEV\n\n")
+              out.write("Compared with frozen original no-reminder negative: three languages each 1/2 bound host calls, premature final, zero full task completions on run 39029981154. This is a **separate disclosed** opt-in protocol-variant, not independent E2.\n\n")
+              out.write("| Language | Host continuation | Actual bound calls | Terminal reason | Full result correct |\n|---|---:|---:|---|---|\n")
+              for r in d["cases"]:
+                  out.write(f"| {r['language']} | {r['host_continuations_issued']} | {r['actual_bound_host_calls']} | {r['termination_reason']} | {r['full_task_correct']} |\n")
+              out.write("\nNo gold route/argument, source secret or expected second tool is disclosed in the reminder. A02 NOT_VERIFIED, E2 0/19, v0.18/model promotion HOLD.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: real-qwen-bound-incomplete-e0-${{ github.run_id }}
+          path: artifacts/qwen-bounded-continuation-e0/report.json
+          if-no-files-found: error
+          retention-days: 30
