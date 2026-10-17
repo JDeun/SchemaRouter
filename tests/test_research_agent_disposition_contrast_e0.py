@@ -198,3 +198,35 @@ def test_missing_or_duplicate_disposition_in_cohort_is_rejected():
     rows[0] = ("unsupported", rows[0][1])
     with pytest.raises(ValueError, match="duplicate or missing"):
         summarize_disposition_e0(rows)
+
+
+def test_forged_transcript_tool_attempt_cannot_be_hidden_from_e0_no_call():
+    row = replay("unsupported")
+    assert row["tool_call_count"] == 0
+    row["turn_rows"][0]["tool_calls"] = [{
+        "name": "forged__route", "arguments": {"private": SECRET},
+    }]
+    with pytest.raises(ValueError, match="tool calls hidden"):
+        score_disposition_e0("unsupported", row)
+
+
+def test_attempt_counter_cannot_disagree_with_observed_turn_calls():
+    row = replay("unsupported")
+    row["turn_rows"] = [{
+        "event": "tool_calls", "tool_calls": [{
+            "name": "hidden__attempt", "arguments": {},
+        }],
+        "text": SECRET,
+    }, {
+        "event": "final", "tool_calls": [], "text": "REQUEST_MORE_TOOLS",
+    }]
+    row["turns"] = len(row["turn_rows"])
+    with pytest.raises(ValueError, match="turn-level attempted calls"):
+        score_disposition_e0("unsupported", row)
+
+
+def test_forged_terminal_text_cannot_change_no_call_disposition():
+    row = replay("unsupported")
+    row["final_text"] = "REQUEST_DENIED"
+    with pytest.raises(ValueError, match="differs from observed final"):
+        score_disposition_e0("unsupported", row)
