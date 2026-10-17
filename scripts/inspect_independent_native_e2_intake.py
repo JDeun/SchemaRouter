@@ -77,7 +77,7 @@ def _rows(raw: bytes, label: str, fields: set[str]) -> list[dict[str, Any]]:
     if set(data) != {"cases"}:
         raise ValueError(f"{label}: only a cases collection is accepted")
     rows = data["cases"]
-    if type(rows) is not list or not rows or len(rows) > 50000:
+    if type(rows) is not list or not rows or len(rows) > 256:
         raise ValueError(f"{label}: empty or excessive case cohort")
     ids: set[str] = set()
     for row in rows:
