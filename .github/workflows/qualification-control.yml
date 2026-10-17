@@ -1,0 +1,52 @@
+name: Qualification Control Ledger
+
+on:
+  pull_request:
+    paths:
+      - "benchmarks/qualification-control-v1.json"
+      - "scripts/qualification_control.py"
+      - "tests/test_qualification_control.py"
+      - "docs/project/qualification-control.md"
+      - "docs/research/product-north-star-and-test-matrix.md"
+      - ".github/workflows/qualification-control.yml"
+  push:
+    branches: [main]
+    paths:
+      - "benchmarks/qualification-control-v1.json"
+      - "scripts/qualification_control.py"
+      - "tests/test_qualification_control.py"
+      - "docs/project/qualification-control.md"
+      - "docs/research/product-north-star-and-test-matrix.md"
+      - ".github/workflows/qualification-control.yml"
+  workflow_dispatch:
+  schedule:
+    - cron: "17 2 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  ledger-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Check canonical matrix, gate evidence and generated checklist
+        run: python scripts/qualification_control.py --check
+      - name: Enforce regression contracts without model or credentials
+        run: |
+          python -m pip install "pytest>=8,<10" "ruff>=0.6,<1"
+          ruff check scripts/qualification_control.py tests/test_qualification_control.py
+          python -m pytest -q tests/test_qualification_control.py
+      - name: Read-only check of current issue and release PR state
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python scripts/qualification_control.py --check --live
+      - name: Attach concise qualification summary
+        run: python scripts/qualification_control.py --summary >> "$GITHUB_STEP_SUMMARY"
