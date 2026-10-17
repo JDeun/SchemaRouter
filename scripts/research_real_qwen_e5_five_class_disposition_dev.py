@@ -270,7 +270,7 @@ def run_five_class_dev(
     return {
         "schema_version": 1,
         "issue": 1477,
-        "evidence_tier": "REAL_LOCAL_QWEN_E5_FIVE_CLASS_DEV_ONLY",
+        "evidence_tier": "UNATTESTED_FIVE_CLASS_AGENT_AND_BACKEND_E0_DEV_ONLY",
         "real_agent_generation_measured": False,
         "real_e5_inference_measured": False,
         "real_native_provider_execution": False,
@@ -337,6 +337,9 @@ def main() -> None:
         corpus, digest, agent=LocalQwenAgent(), backend=backend,
         source_revision=sha, hardware=platform.platform(),
     )
+    # Only this protected CLI path loaded actual model weights/runtime.
+    # Injectable unit-test stubs may never inherit a real-model evidence tier.
+    report["evidence_tier"] = "REAL_LOCAL_QWEN_E5_FIVE_CLASS_DEV_ONLY"
     report["real_agent_generation_measured"] = True
     report["real_e5_inference_measured"] = True
     report["runtime"] = {"model_name": MODEL_NAME, "device": "cpu", **runtime_identity()}
