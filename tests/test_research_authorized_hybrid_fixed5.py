@@ -239,3 +239,23 @@ def test_hybrid_diagnostic_never_calls_planning_or_tool_execution():
         view, CallableDecisionBackend(select_deep),
     )
     assert len(selector(view.original_query, view.visible_route_ids)) == 5
+
+
+def test_hybrid_budget_override_is_strictly_optin_and_bounded():
+    view = scoped()
+    ordinary = AuthorizedHybridFixed5Selector(
+        view, CallableDecisionBackend(select_deep),
+    )
+    extended = AuthorizedHybridFixed5Selector(
+        view, CallableDecisionBackend(select_deep),
+        max_model_input_bytes=262144,
+    )
+    assert ordinary.max_model_input_bytes == 131072
+    assert extended.max_model_input_bytes == 262144
+    assert len(extended(view.original_query, view.visible_route_ids)) == 5
+    for budget in (0, True, 262145):
+        with pytest.raises(ValueError, match="comparator input budget"):
+            AuthorizedHybridFixed5Selector(
+                view, CallableDecisionBackend(select_deep),
+                max_model_input_bytes=budget,
+            )
