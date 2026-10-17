@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import hmac
 import json
 import platform
 import secrets
@@ -180,7 +181,7 @@ def run_paired_agent_pilot(
         "arms": list(ARMS),
         **identity,
         "tasks": [{
-            "task_hmac_sha256": __import__("hmac").new(
+            "task_hmac_sha256": hmac.new(
                 key, t["semantic_task_id"].encode("utf-8"), hashlib.sha256,
             ).hexdigest(),
             "language": t["language"],
