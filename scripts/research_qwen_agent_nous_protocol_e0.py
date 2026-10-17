@@ -43,7 +43,13 @@ def run_protocol_probe() -> dict[str, object]:
     from qwen_agent.llm.fncall_prompts.nous_fncall_prompt import NousFnCallPrompt
     from qwen_agent.llm.function_calling import validate_num_fncall_results
     from qwen_agent.llm.schema import (
-        ASSISTANT, FUNCTION, SYSTEM, USER, ContentItem, FunctionCall, Message,
+        ASSISTANT,
+        FUNCTION,
+        SYSTEM,
+        USER,
+        ContentItem,
+        FunctionCall,
+        Message,
     )
 
     call = FunctionCall(
