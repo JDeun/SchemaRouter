@@ -38,7 +38,7 @@ MAX_FALSE_ACCEPT_CALIBRATION = 0.10
 
 def git_blob_sha1(data: bytes) -> str:
     return hashlib.sha1(
-        b"blob " + str(len(data)).encode("ascii") + b"\\0" + data,
+        b"blob " + str(len(data)).encode("ascii") + b"\0" + data,
     ).hexdigest()
 
 
@@ -164,7 +164,7 @@ def option_text(function: dict[str, Any]) -> str:
         if type(value) is not str:
             raise ValueError("invalid BFCL parameter description")
         details.append(key.replace("_", " ") + ": " + value)
-    return "\\n".join([name.replace("_", " "), description, *details])
+    return "\n".join([name.replace("_", " "), description, *details])
 
 
 def default_lexical_one(row: dict[str, Any]) -> tuple[str, float]:
@@ -326,7 +326,7 @@ def main() -> None:
     report = evaluate(rows, encode)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
-        json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\\n",
+        json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
         encoding="utf-8",
     )
     print(json.dumps({"case_count": report["case_count"], "arms": report["by_arm"],
