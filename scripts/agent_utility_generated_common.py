@@ -513,6 +513,8 @@ def run_generated_episode(
         else:
             if registry is not experimental_agent_tool_surface.router.registry:
                 raise ValueError("experimental principal-scoped registry mismatch")
+            if task["query"] != experimental_agent_tool_surface.original_query:
+                raise ValueError("experimental principal-scoped query mismatch")
             experimental_agent_tool_surface.assert_source_unchanged()
             source_ids = experimental_agent_tool_surface.visible_route_ids
         selected = experimental_candidate_selector(str(task["query"]), source_ids)
