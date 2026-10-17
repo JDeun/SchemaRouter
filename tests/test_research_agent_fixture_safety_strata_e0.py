@@ -32,7 +32,7 @@ def paired_fixture():
         for supported, stratum in (
             (True, "single_read_only"), (False, "unsupported_operation"),
         ):
-            for index in range(2):
+            for _index in range(2):
                 tag = (len(tasks) + 1)
                 tasks.append({
                     "task_hmac_sha256": format(tag, "064x"),
@@ -42,7 +42,7 @@ def paired_fixture():
                 })
     for arm in ARMS:
         rows = []
-        for idx, task in enumerate(tasks):
+        for task in tasks:
             positive = task["supported"]
             passed = (
                 arm != "lexical_k5" if positive else False
