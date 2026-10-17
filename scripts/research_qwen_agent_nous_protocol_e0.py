@@ -77,15 +77,15 @@ def run_protocol_probe() -> dict[str, object]:
     assert [x.role for x in processed] == [SYSTEM, USER, ASSISTANT, USER]
     assistant_text = _text(processed[2])
     response_text = _text(processed[3])
-    assert assistant_text.startswith("<tool_call>\\n")
-    assert assistant_text.endswith("\\n</tool_call>")
-    assert response_text.startswith("<tool_response>\\n")
-    assert response_text.endswith("\\n</tool_response>")
+    assert assistant_text.startswith("<tool_call>\n")
+    assert assistant_text.endswith("\n</tool_call>")
+    assert response_text.startswith("<tool_response>\n")
+    assert response_text.endswith("\n</tool_response>")
     assert json.loads(
-        assistant_text.removeprefix("<tool_call>\\n").removesuffix("\\n</tool_call>")
+        assistant_text.removeprefix("<tool_call>\n").removesuffix("\n</tool_call>")
     ) == {"name": FUNCTION_NAME, "arguments": FUNCTION_ARGUMENTS}
     assert json.loads(
-        response_text.removeprefix("<tool_response>\\n").removesuffix("\\n</tool_response>")
+        response_text.removeprefix("<tool_response>\n").removesuffix("\n</tool_response>")
     ) == OBSERVATION
 
     # Actually invoke Qwen-Agent's parser; the host is still the only invoker.
@@ -103,7 +103,7 @@ def run_protocol_probe() -> dict[str, object]:
     # only permits a single reauthorized call per turn.
     parallel = prompt.postprocess_fncall_messages([
         Message(role=ASSISTANT, content=[
-            ContentItem(text=raw + "\\n" + raw),
+            ContentItem(text=raw + "\n" + raw),
         ]),
     ])
     assert len([m for m in parallel if m.function_call]) == 2
