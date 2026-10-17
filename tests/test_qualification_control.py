@@ -27,7 +27,7 @@ def test_19_matrix_rows_and_generated_dashboard():
     assert len({item["id"] for item in data["items"]}) == 19
     assert DASHBOARD.read_text(encoding="utf-8") == render_dashboard(data)
     assert "Independent qualification: 0/19" in render_dashboard(data)
-    assert "v0.18.0 release: HOLD" in render_dashboard(data)
+    assert "v0.18.0 release:** **HOLD**" in render_dashboard(data)
     assert ROOT.joinpath(data["source_matrix"]).is_file()
 
 
