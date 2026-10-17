@@ -782,3 +782,60 @@ def test_empty_authorized_catalog_receipt_is_valid_and_not_no_fit():
     assert view.visible_route_ids == ()
     assert view.tool_definitions([]) == []
     assert view.executable_authority is False
+
+
+def test_optin_fixture_agent_can_grade_hallucinated_unavailable_route_without_leak():
+    """This opt-in turns one blocked *fictional* tool attempt into an E0 failure."""
+    router = fixture_router()
+    view = captured(router)
+    agent = CapturingSyntheticAgent(wrong_route=True)
+    result = run_generated_episode(
+        agent, router.registry, scoped_synthetic_task(),
+        EXPERIMENTAL_FIXED5_CONDITION,
+        experimental_candidate_selector=lambda _query, _ids: ["marine.read"],
+        experimental_agent_tool_surface=view,
+        experimental_block_unavailable_observation=True,
+    )
+    assert result["passed"] is False
+    assert result["tool_call_count"] == 1
+    assert result["unauthorized_destructive_executions"] == 0
+    assert result["visible_candidate_counts"] == [1]
+    assert len(agent.snapshots) == 2
+    assert "unavailable_scoped_route" in agent.snapshots[1]
+    assert SECRET not in agent.snapshots[1]
+    assert "secret_field" not in agent.snapshots[1]
+    # The assistant's own invalid tool name can appear in conversation,
+    # but the host must not reveal the hidden route's real description.
+    assert "Read archive values" not in agent.snapshots[1]
+    assert SECRET not in json.dumps(result)
+
+
+def test_blocked_unavailable_agent_route_flag_rejects_legacy_or_unscoped_use():
+    router = fixture_router()
+    view = captured(router)
+    for condition, scoped, selector in (
+        ("FULL", None, None),
+        (EXPERIMENTAL_FIXED5_CONDITION, None, lambda _query, _ids: ["marine.read"]),
+        (EXPERIMENTAL_FIXED5_CONDITION, view, None),
+    ):
+        with pytest.raises(ValueError, match="blocked unsupported observation"):
+            run_generated_episode(
+                CapturingSyntheticAgent(), router.registry, scoped_synthetic_task(),
+                condition,
+                experimental_agent_tool_surface=scoped,
+                experimental_candidate_selector=selector,
+                experimental_block_unavailable_observation=True,
+            )
+
+
+def test_new_grading_flag_must_be_actual_boolean():
+    router = fixture_router()
+    view = captured(router)
+    with pytest.raises(ValueError, match="blocked unsupported observation"):
+        run_generated_episode(
+            CapturingSyntheticAgent(), router.registry, scoped_synthetic_task(),
+            EXPERIMENTAL_FIXED5_CONDITION,
+            experimental_agent_tool_surface=view,
+            experimental_candidate_selector=lambda _query, _ids: ["marine.read"],
+            experimental_block_unavailable_observation=1,
+        )
