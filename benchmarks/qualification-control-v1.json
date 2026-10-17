@@ -121,10 +121,12 @@
       "owner_issue": 1477,
       "status": "HISTORICAL_NEGATIVE",
       "blocker": "On disclosed synthetic DEV strict unsupported no-call was 0/6 in each arm.",
-      "next_action": "Fix false calls and calibrate false acceptance without excess false refusal.",
+      "next_action": "Retain strict 0/3 unsupported no-call DEV negatives; separate Qwen EOS formatting confounds and calibrate only on independent held-out supported/OOD cases.",
       "evidence_links": [
         "https://github.com/JDeun/SchemaRouter/actions/runs/39007769090",
-        "https://github.com/JDeun/SchemaRouter/pull/1496"
+        "https://github.com/JDeun/SchemaRouter/pull/1496",
+        "https://github.com/JDeun/SchemaRouter/actions/runs/39022306205",
+        "https://github.com/JDeun/SchemaRouter/pull/1500"
       ],
       "qualification": null
     },
@@ -134,9 +136,12 @@
       "owner_issue": 1477,
       "status": "NOT_VERIFIED",
       "blocker": "Ambiguous/needs-input/forbidden dispositions lack independent task evidence.",
-      "next_action": "Add missing-parameter and ambiguity cases to integrated scorer.",
+      "next_action": "Adjudicate 5 host dispositions with separately authored EN/KO/JA native cases, typed required inputs and host-denied vs absent source; do not promote disclosed DEV.",
       "evidence_links": [
-        "https://github.com/JDeun/SchemaRouter/pull/1496"
+        "https://github.com/JDeun/SchemaRouter/pull/1496",
+        "https://github.com/JDeun/SchemaRouter/pull/1499",
+        "https://github.com/JDeun/SchemaRouter/actions/runs/39022306205",
+        "https://github.com/JDeun/SchemaRouter/pull/1500"
       ],
       "qualification": null
     },
