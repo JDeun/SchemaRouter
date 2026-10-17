@@ -22,8 +22,12 @@ from pathlib import Path
 from typing import Any
 
 from schemarouter import (
-    E5CachedEmbedder, EmbeddingDecisionBackend, EndpointSpec, FieldSpec,
-    SchemaRouter, ToolSpec,
+    E5CachedEmbedder,
+    EmbeddingDecisionBackend,
+    EndpointSpec,
+    FieldSpec,
+    SchemaRouter,
+    ToolSpec,
 )
 from schemarouter.decisions import DecisionOption, DecisionRequest, choose_sync
 
@@ -290,9 +294,8 @@ def main() -> None:
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args()
     data, hashes = fetch_original_data()
-    from sentence_transformers import SentenceTransformer
-
     import torch
+    from sentence_transformers import SentenceTransformer
 
     torch.set_num_threads(4)
     model = SentenceTransformer(
