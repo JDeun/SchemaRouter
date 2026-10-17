@@ -32,7 +32,8 @@ OBSERVED = frozenset({
     "initial_required_route_not_exposed", "policy_block_observed",
     "input_schema_rejection_observed", "wrong_operation_attempt_observed",
     "task_argument_mismatch_observed", "tool_execution_error_observed",
-    "agent_final_before_task_completion", "unclassified",
+    "agent_final_before_task_completion",
+    "supported_no_fit_refusal_observed", "unclassified",
 })
 COUNTS = ("input_tokens", "tool_schema_tokens", "tool_call_count")
 LATENCIES = ("candidate_selection_latency_ms", "episode_wall_latency_ms")
