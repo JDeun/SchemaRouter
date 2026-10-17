@@ -75,9 +75,9 @@ jobs:
               for size, scope in report["results"].items():
                   for arm, row in scope["arms"].items():
                       f.write(f"| {size} | {arm} | {row['supported_recall_at_1']:.3f} | {row['supported_recall_at_5']:.3f} | {row['unsupported_nonempty_shortlist_rate']:.3f} | {row['selection_latency_ms_p95']:.2f} |\n")
-              f.write("\\n### Profiled stage p95 CPU timing (ms)\\n\\n")
-              f.write("Shared snapshot preparation is excluded from selection latency. The snapshot+selection metric includes it once. These are not end-to-end agent measurements.\\n\\n")
-              f.write("| Routes | Arm | Source snapshot | Model decision | Other selection | Snapshot+selection |\\n|---:|---|---:|---:|---:|---:|\\n")
+              f.write("\n### Profiled stage p95 CPU timing (ms)\n\n")
+              f.write("Shared snapshot preparation is excluded from selection latency. The snapshot+selection metric includes it once. These are not end-to-end agent measurements.\n\n")
+              f.write("| Routes | Arm | Source snapshot | Model decision | Other selection | Snapshot+selection |\n|---:|---|---:|---:|---:|---:|\n")
               for size, scope in report["results"].items():
                   for arm, row in scope["arms"].items():
                       stages = row["stage_latency_ms"]
@@ -85,8 +85,8 @@ jobs:
                       model = stages["backend_decision_latency_ms"]["p95"]
                       other = stages["nonbackend_selection_latency_ms"]["p95"]
                       combined = stages["source_capture_plus_selection_latency_ms"]["p95"]
-                      f.write(f"| {size} | {arm} | {capture:.2f} | {model:.2f} | {other:.2f} | {combined:.2f} |\\n")
-              f.write("Stage percentiles **cannot be added** to derive a total p95. Metrics use warm E5 passage cache; no production SLA.\\n")
+                      f.write(f"| {size} | {arm} | {capture:.2f} | {model:.2f} | {other:.2f} | {combined:.2f} |\n")
+              f.write("Stage percentiles **cannot be added** to derive a total p95. Metrics use warm E5 passage cache; no production SLA.\n")
               f.write(f"\nFixed K: {report['fixed_k']}. Source SHA256: `{report['source_corpus_sha256']}`. No automatic promotion.\n")
           PY
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
