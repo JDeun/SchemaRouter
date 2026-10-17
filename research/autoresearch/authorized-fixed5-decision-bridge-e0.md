@@ -44,8 +44,8 @@ synthetic agent episode completes using the original executor, without
 leaking hidden schema prose; original EN/KO/JA query bytes are forwarded
 without translated gold, but these checks DO NOT measure multilingual
 semantic accuracy. Negative tests cover forged/duplicate IDs, wrong source
-tuple/query, explicit abstention, revoked principal, native in-place
-schema mutation, input budget violation and unexpected plan/execution.
+tuple/query, explicit abstention, revoked principal, detached registry-read copy versus actual authorized
+registry replacement, input budget violation and unexpected plan/execution.
 
 **Limitations:** The callback adds a second authorized retrieval scan and
 is therefore only a research baseline, not an optimized product hot path.
