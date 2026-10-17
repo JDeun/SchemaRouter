@@ -289,8 +289,6 @@ def select_authorized_field_contract(
         retrieved = router.retrieve_authorized(
             request, principal=approved_principal, k=k,
         )
-    except PolicyViolationError:
-        raise
     except Exception:
         # A provider-controlled availability predicate or unexpected adapter
         # error must not echo private exception text into a host receipt.
@@ -397,8 +395,6 @@ def select_authorized_field_contract(
                     returned_fingerprints[route_id] = (
                         tool_fingerprints[tool.key], endpoint.fingerprint,
                     )
-    except PolicyViolationError:
-        raise
     except Exception:
         # Full-scan predicates and projected-source adapters may raise
         # arbitrary exceptions containing hidden route/field details.
