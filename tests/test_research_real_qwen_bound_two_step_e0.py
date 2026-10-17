@@ -98,6 +98,7 @@ async def test_model_proposes_two_calls_with_required_public_state_and_final(lan
     assert report["typed_host_oracle_confirmed"] is True
     assert report["correct_strict_final_answer"] is True
     assert report["full_task_correct"] is True
+    assert report["termination_reason"] == "terminal_after_two_steps"
     assert report["actual_model_inference_measured"] is False
     assert report["independent_e2_qualified"] is False
     assert report["real_external_native_provider_execution"] is False
@@ -166,6 +167,7 @@ async def test_principal_policy_revoked_between_calls_blocks_second_host_io():
     assert result["actual_bound_host_calls"] == 1
     assert result["full_task_correct"] is False
     assert result["unexpected_or_denied_model_call"] is True
+    assert result["termination_reason"] == "native_host_call_denied"
 
 
 @pytest.mark.asyncio
@@ -189,6 +191,7 @@ async def test_no_tool_call_final_never_counts_as_two_step_success():
     )
     assert result["actual_bound_host_calls"] == 0
     assert result["full_task_correct"] is False
+    assert result["termination_reason"] == "premature_final"
 
 
 @pytest.mark.parametrize("bad", (
