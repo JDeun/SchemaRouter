@@ -10,7 +10,18 @@ import hmac
 import json
 import math
 import re
+from dataclasses import dataclass, field
 from typing import Any
+
+@dataclass(frozen=True)
+class E0TraceProvenance:
+    """Trusted host-supplied synthetic source metadata, never model input."""
+
+    source_revision: str
+    source_sha256: str
+    hmac_key: bytes = field(repr=False)
+    seed: int
+
 
 CONDITION = "EVAL-FIXED5-OPTIN"
 SCHEMA_VERSION = "e0-stage-observations-v1"
