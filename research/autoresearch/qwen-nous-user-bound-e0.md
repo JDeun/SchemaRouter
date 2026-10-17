@@ -22,3 +22,18 @@ Primary E0: per-language full-task correct, two actual bound calls, premature fi
 If fail: retain negative result; investigate protocol readiness only through upstream-native source tests. If pass: retain as E0 transport compatibility only, do **not** promote models or authorize v0.18. The next gate is publisher/task-independent EN/KO/JA native tool/no-fit/clarification and full-task E2 with locked gold/permissions.
 
 **Standing:** A02/R05 NOT_VERIFIED, independent E2 **0/19**, held v0.18 #1356 and default model promotion HOLD.
+
+
+## Actual pinned CPU outcome — 2026-10-18 (negative E0 evidence)
+
+At [GitHub Actions run #39044874054](https://github.com/JDeun/SchemaRouter/actions/runs/39044874054), exact source commit `cee5344ed0aca1683cf1978634f97ab073e2f3ff`, the `no-model-source-host-contract` job passed and the `real-pinned-qwen-nous-user` job completed **SUCCESS** as an engineering workflow. Its *strict scored task outcome* is **0/3 full tasks**, not a model success:
+
+| Original published E0 request | Actual host-bound calls | Two steps complete | Strict final correct | Stop reason |
+| --- | ---: | --- | --- | --- |
+| English | 1 | false | false | `premature_final` |
+| Korean | 1 | false | false | `premature_final` |
+| Japanese | 1 | false | false | `premature_final` |
+
+This reproduces the frozen original `raw` 0.6B E0 symptom even after correcting the upstream Nous **result role** and stripping raw EOS from reconstructed assistant history. No unauthorized tool execution was observed in these three rows, and there was no completed dependent tool or final-answer oracle success. It is falsifying evidence **against role mismatch alone as the sufficient fix**, not a universal causal attribution or a negative benchmark against all models.
+
+Do not retune these now-exposed cases, raise K, or repeat the same prompt with learned gold. Next gate remains original-publisher/task-independent EN/KO/JA multi-step/clarification/no-fit qualification and hypothesis testing on a locked split. Prior #1507/#1508 0/3 and #1509 1.7B 2/3 published observations remain separate. R05/A02 NOT_VERIFIED, E2 0/19, v0.18 and default model HOLD.
