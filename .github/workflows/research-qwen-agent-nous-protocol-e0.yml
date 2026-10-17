@@ -28,7 +28,7 @@ jobs:
           python-version: "3.12"
       - name: Install exact upstream Qwen-Agent Git source (CPU only)
         run: |
-          python -m pip install "git+https://github.com/QwenLM/Qwen-Agent.git@31a4d36d123688581a9e9744427272b33ce940e0" "numpy>=1.26,<3" "soundfile>=0.12,<1" "ruff>=0.6,<1"
+          python -m pip install "git+https://github.com/QwenLM/Qwen-Agent.git@31a4d36d123688581a9e9744427272b33ce940e0" "numpy>=1.26,<3" "soundfile>=0.12,<1" "tqdm>=4.65,<5" "ruff>=0.6,<1"
       - name: Assert source-pinned actual Nous preprocessing and parsing
         run: |
           ruff check scripts/research_qwen_agent_nous_protocol_e0.py
