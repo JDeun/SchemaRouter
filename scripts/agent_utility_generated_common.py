@@ -39,12 +39,12 @@ from scripts.evaluate_agent_utility_phase_b_smollm3 import (
     _tool_response_message,
     _visible_tools,
 )
-from scripts.research_authorized_agent_tool_surface import (
-    AuthorizedAgentToolSurface,
-)
 from scripts.research_agent_stage_evidence_e0 import (
     E0TraceProvenance,
     sanitized_e0_trace,
+)
+from scripts.research_authorized_agent_tool_surface import (
+    AuthorizedAgentToolSurface,
 )
 
 EXTENDED_CATALOG_SIZES = (100, 250, 500, 1000)
