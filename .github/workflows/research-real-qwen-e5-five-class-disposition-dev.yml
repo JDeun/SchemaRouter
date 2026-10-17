@@ -7,6 +7,8 @@ on:
       - "scripts/research_real_qwen_e5_five_class_disposition_dev.py"
       - "tests/test_research_real_qwen_e5_five_class_disposition_dev.py"
       - "scripts/research_agent_disposition_contrast_e0.py"
+      - "scripts/research_qwen_terminal_format_diagnostic_e0.py"
+      - "tests/test_research_qwen_terminal_format_diagnostic_e0.py"
       - "research/autoresearch/real-qwen-e5-five-class-disposition-dev.md"
       - ".github/workflows/research-real-qwen-e5-five-class-disposition-dev.yml"
 
@@ -32,8 +34,8 @@ jobs:
         run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
       - name: Verify cohort identity, no gold leakage and no-model baseline
         run: |
-          ruff check scripts/research_real_qwen_e5_five_class_disposition_dev.py tests/test_research_real_qwen_e5_five_class_disposition_dev.py scripts/research_agent_disposition_contrast_e0.py
-          python -m pytest -q tests/test_research_real_qwen_e5_five_class_disposition_dev.py tests/test_research_agent_disposition_contrast_e0.py
+          ruff check scripts/research_real_qwen_e5_five_class_disposition_dev.py tests/test_research_real_qwen_e5_five_class_disposition_dev.py scripts/research_agent_disposition_contrast_e0.py scripts/research_qwen_terminal_format_diagnostic_e0.py tests/test_research_qwen_terminal_format_diagnostic_e0.py
+          python -m pytest -q tests/test_research_real_qwen_e5_five_class_disposition_dev.py tests/test_research_agent_disposition_contrast_e0.py tests/test_research_qwen_terminal_format_diagnostic_e0.py
           python -m scripts.research_real_qwen_e5_five_class_disposition_dev --mode validate
 
   real-local-model-e0:
@@ -75,6 +77,7 @@ jobs:
           assert report["real_native_provider_execution"] is False
           assert report["release_safety_gate_passed"] is False
           assert report["arms"] == ["lexical_k5", "hybrid_k5"]
+          assert "never reclassifies" in report["terminal_protocol_diagnostic"]
           labels = ("supported", "unsupported", "needs_input", "ambiguous", "forbidden")
           for arm in report["arms"]:
               for label in labels:
@@ -87,6 +90,13 @@ jobs:
                   lex = report["per_disposition"]["lexical_k5"][label]
                   hyb = report["per_disposition"]["hybrid_k5"][label]
                   f.write(f"| {label} | {lex['correct']} | {hyb['correct']} | {lex['tool_attempted']} | {hyb['tool_attempted']} |\n")
+              f.write("\n### Separate terminal decoder vs semantic-decision diagnosis (not passed cases)\n\n")
+              f.write("| Disposition | Arm | Strict / 3 | No-call with final / 3 | EOS-only exact class / 3 | No-call nonprotocol final / 3 | No final & no-call / 3 |\n|---|---|---:|---:|---:|---:|---:|\n")
+              for label in labels:
+                  for arm in report["arms"]:
+                      v = report["per_disposition"][arm][label]
+                      f.write(f"| {label} | {arm} | {v['correct']} | {v['no_tool_attempt_and_final']} | {v['expected_refusal_with_only_decoder_eot_suffix']} | {v['no_call_nonprotocol_final']} | {v['no_tool_attempt_without_final']} |\n")
+              f.write("\n**Strict scores are not changed by EOS suffix analysis.** EOS-only is a decoder formatting hypothesis, not calibrated no-fit. Raw generated text is never published.\n")
               f.write("\n| Language | Lexical correct / 5 | Hybrid correct / 5 |\n|---|---:|---:|\n")
               for lang in ("en", "ko", "ja"):
                   f.write(f"| {lang} | {report['per_language']['lexical_k5'][lang]['correct']} | {report['per_language']['hybrid_k5'][lang]['correct']} |\n")
