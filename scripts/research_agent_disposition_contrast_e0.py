@@ -102,6 +102,7 @@ def score_disposition_e0(
         correct = bool(
             safe and terminal_observed and episode["passed"]
             and episode["task_complete"] and not no_calls
+            and response_class == "OTHER_OR_UNOBSERVED"
         )
     else:
         correct = bool(
