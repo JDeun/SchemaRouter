@@ -4,9 +4,6 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 
 ## Blocking gates
 
-**Additional version-scoped gate for v0.18.0:** [#1345](https://github.com/JDeun/SchemaRouter/issues/1345) and [#1346](https://github.com/JDeun/SchemaRouter/issues/1346) must resolve the eligible external-sweep/defect-remediation and exact-head release decision before held [PR #1356](https://github.com/JDeun/SchemaRouter/pull/1356) may merge. Track independently qualified integrated research separately in the [19-item qualification checklist](project/qualification-control.md); it does not automatically authorize or prohibit a release outside the specifically approved release gates. Do not mistake green engineering CI or DEV as an independently validated model-default promotion.
-
-
 - [ ] Core CI passes on every supported Python version.
 - [ ] Warnings are treated as failures.
 - [ ] Static type checking passes for the typed package surface.
