@@ -96,7 +96,7 @@ Checking one item requires independent provenance, a frozen split, reproducible 
   - Next action: Test indexed parity and absence of concurrency leaks.
   - Evidence: No qualifying independent evidence registered
 
-## Separate hard HOLD decisions
+## Separately reviewed release and promotion decisions
 
 - **v0.18.0 release HOLD:** [#1345](https://github.com/JDeun/SchemaRouter/issues/1345), [#1346](https://github.com/JDeun/SchemaRouter/issues/1346), and held [PR #1356](https://github.com/JDeun/SchemaRouter/pull/1356). Qualify feasible external suites, fix real defects, then pass exact-head checks. Do not merge/tag/publish before approval.
 - **Experimental/model default promotion HOLD:** [#1477](https://github.com/JDeun/SchemaRouter/issues/1477) integrated paired agent E2; [#1339](https://github.com/JDeun/SchemaRouter/issues/1339) language, [#1450](https://github.com/JDeun/SchemaRouter/issues/1450) authority, [#1346](https://github.com/JDeun/SchemaRouter/issues/1346) external independence. The v0.18 release decision and model promotion are distinct.
@@ -107,6 +107,6 @@ Checking one item requires independent provenance, a frozen split, reproducible 
 1. Review current owner issue, exact case/source and permitted evidence.
 2. Change the canonical JSON row only; preserve non-qualifying evidence as DEV/negative.
 3. Regenerate with python scripts/qualification_control.py --write and check with --check; review GitHub Actions.
-4. Scheduled/manual Actions also perform a read-only check that owners remain open and PR #1356 remains held. API outages are failures, not passes.
+4. Scheduled/manual Actions also perform a read-only check that owners stay consistent with unresolved gates and PR #1356 release decision. API outages are failures, not passes.
 
 See [canonical evaluation matrix](docs/research/product-north-star-and-test-matrix.md), [research tracker #200](https://github.com/JDeun/SchemaRouter/issues/200) and [release checklist](docs/release-checklist.md).
