@@ -11,11 +11,12 @@ import hmac
 import json
 import math
 import secrets
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from dataclasses import field as dataclass_field
 from typing import Any
 
 from schemarouter import (
+    AuthorizationPolicy,
     PolicyViolationError,
     PrincipalContext,
     SchemaRouter,
@@ -91,6 +92,52 @@ def _checked_scoped_view_receipt(view: AuthorizedAgentToolSurface) -> str:
 
 
 
+def _authorization_policy_receipt(policy: AuthorizationPolicy | None) -> str:
+    """HMAC current policy contents and mutable compiled authorization indexes.
+
+    The library's general authority witness is identity/version-based. This
+    opt-in model-disclosure guard also rejects in-place policy mutations.
+    It is not an atomic transaction across concurrent host threads.
+    """
+    try:
+        if policy is None:
+            payload: dict[str, Any] = {"policy": None}
+        elif type(policy) is AuthorizationPolicy:
+            def index_rows(index: Any) -> list[dict[str, Any]]:
+                if type(index.partitions) is not dict:
+                    raise ValueError("invalid compiled rule index")
+                rows = [
+                    {"key": list(key), "positions": list(positions)}
+                    for key, positions in index.partitions.items()
+                ]
+                return sorted(
+                    rows, key=lambda row: json.dumps(row["key"], sort_keys=True),
+                )
+
+            payload = {
+                "default_effect": policy.default_effect,
+                "rules": [asdict(rule) for rule in policy.rules],
+                "data_rules": [asdict(rule) for rule in policy.data_rules],
+                "compiled_rule_index": {
+                    "rules": [asdict(rule) for rule in policy._rule_index.rules],
+                    "partitions": index_rows(policy._rule_index),
+                },
+                "compiled_data_rule_index": {
+                    "rules": [asdict(rule) for rule in policy._data_rule_index.rules],
+                    "partitions": index_rows(policy._data_rule_index),
+                },
+            }
+        else:
+            raise ValueError("invalid policy type")
+        encoded = json.dumps(
+            payload, sort_keys=True, ensure_ascii=False,
+            separators=(",", ":"), allow_nan=False,
+        ).encode("utf-8")
+    except (TypeError, ValueError, AttributeError, OverflowError, RecursionError):
+        raise PolicyViolationError("unverifiable in-process authorization policy") from None
+    return hmac.digest(_SCOPED_VIEW_HMAC_KEY, encoded, "sha256").hex()
+
+
 @dataclass(frozen=True)
 class AuthorizedAgentToolSurface:
     """A checked, scoped model-view snapshot, NOT an execution grant."""
@@ -110,6 +157,9 @@ class AuthorizedAgentToolSurface:
     _scoped_view_receipt: str = dataclass_field(
         default="", init=False, repr=False, compare=False,
     )
+    _authorization_policy_receipt: str = dataclass_field(
+        default="", init=False, repr=False, compare=False,
+    )
     independent_quality_evidence: bool = False
     executable_authority: bool = False
 
@@ -127,6 +177,18 @@ class AuthorizedAgentToolSurface:
             )
         ):
             raise PolicyViolationError("captured authorized source identity drift")
+        # Diagnose a forged view with the original source-integrity error
+        # before checking the additional host-policy content receipt.
+        current_policy_receipt = _authorization_policy_receipt(
+            self.router.authorization_policy,
+        )
+        if (
+            type(self._authorization_policy_receipt) is not str
+            or not hmac.compare_digest(
+                self._authorization_policy_receipt, current_policy_receipt,
+            )
+        ):
+            raise PolicyViolationError("authorization policy modified in place")
 
     def tool_definitions(
         self, selected_route_ids: list[str], *, k: int = MAX_TOOL_DEFINITIONS,
@@ -276,6 +338,7 @@ def capture_authorized_agent_tool_surface(
     ):
         raise ValueError("invalid source cap")
     witness = router._retrieval_authority_witness()
+    policy_receipt_before = _authorization_policy_receipt(router.authorization_policy)
     claims_snapshot = _principal_claims_canonical(principal)
     physical = sum(len(tool.endpoints) for tool in router.registry.tools())
     if physical > max_registered_routes:
@@ -288,6 +351,8 @@ def capture_authorized_agent_tool_surface(
         query, principal=principal, k=max(1, physical),
     )
     router._check_retrieval_authority_witness(witness)
+    if _authorization_policy_receipt(router.authorization_policy) != policy_receipt_before:
+        raise PolicyViolationError("authorization policy modified during source capture")
     if _principal_claims_canonical(principal) != claims_snapshot:
         raise PolicyViolationError("principal claims changed during model request")
     if (
@@ -364,6 +429,8 @@ def capture_authorized_agent_tool_surface(
             endpoint_fingerprint=candidate.endpoint_fingerprint,
         ))
     router._check_retrieval_authority_witness(witness)
+    if _authorization_policy_receipt(router.authorization_policy) != policy_receipt_before:
+        raise PolicyViolationError("authorization policy modified during source capture")
     if _principal_claims_canonical(principal) != claims_snapshot:
         raise PolicyViolationError("principal claims changed during model request")
     view = AuthorizedAgentToolSurface(
@@ -376,5 +443,6 @@ def capture_authorized_agent_tool_surface(
         _semantic_source_routes=tuple(semantic_routes),
     )
     object.__setattr__(view, "_scoped_view_receipt", _checked_scoped_view_receipt(view))
+    object.__setattr__(view, "_authorization_policy_receipt", policy_receipt_before)
     view.assert_source_unchanged()
     return view
