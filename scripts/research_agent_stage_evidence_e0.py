@@ -5,12 +5,12 @@ Raw fixture rows and gold remain entirely inside the trusted grading process.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 import hashlib
 import hmac
 import json
 import math
 import re
-from dataclasses import dataclass, field
 from typing import Any
 
 @dataclass(frozen=True)
@@ -63,11 +63,11 @@ def observed_stages(row: dict[str, Any]) -> list[str]:
     if type(attempts) is not list or any(type(a) is not dict for a in attempts):
         raise ValueError("E0 attempt evidence missing or malformed")
     for attempt in attempts:
-        for field in (
+        for flag_name in (
             "schema_valid", "semantic_valid", "policy_blocked",
             "expected_at_step", "advanced_task",
         ):
-            if type(attempt.get(field)) is not bool:
+            if type(attempt.get(flag_name)) is not bool:
                 raise ValueError("E0 attempt verdict is missing or malformed")
     if passed:
         return ["passed"]
