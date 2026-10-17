@@ -173,7 +173,7 @@ async def run_model_selected_bound_two_step_e0(
             break
         calls_attempted += 1
         route_id, arguments = payload["route"], payload["arguments"]
-        if route_id != expected_order[host_calls] if host_calls < 2 else True:
+        if host_calls >= len(expected_order) or route_id != expected_order[host_calls]:
             forbidden_attempt = True
             break
         if host_calls == 1 and revoke_before_second is not None:
