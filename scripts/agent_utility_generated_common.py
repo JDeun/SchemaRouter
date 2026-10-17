@@ -476,6 +476,7 @@ def run_generated_episode(
     | None = None,
     experimental_agent_tool_surface: AuthorizedAgentToolSurface | None = None,
     experimental_e0_trace_provenance: E0TraceProvenance | None = None,
+    experimental_block_unavailable_observation: bool = False,
 ) -> dict[str, Any]:
     """Run one frozen episode.
 
@@ -500,6 +501,15 @@ def run_generated_episode(
     execution nor the model becomes a real invoker authorization receipt.
     The original #432 results remain unchanged.
     """
+    if (
+        type(experimental_block_unavailable_observation) is not bool
+        or (experimental_block_unavailable_observation and (
+            experimental_agent_tool_surface is None
+            or experimental_candidate_selector is None
+            or condition != EXPERIMENTAL_FIXED5_CONDITION
+        ))
+    ):
+        raise ValueError("blocked unsupported observation only allowed for scoped E0")
     if experimental_e0_trace_provenance is not None and (
         type(experimental_e0_trace_provenance) is not E0TraceProvenance
         or experimental_agent_tool_surface is None
@@ -689,9 +699,25 @@ def run_generated_episode(
                 }
             )
             if experimental_agent_tool_surface is not None:
-                visible_observation = experimental_agent_tool_surface.project_observation(
-                    route_id, attempt.observation,
-                )
+                experimental_agent_tool_surface.assert_source_unchanged()
+                if (
+                    experimental_block_unavailable_observation
+                    and route_id not in experimental_agent_tool_surface.visible_route_ids
+                ):
+                    # Existing frozen executor has already recorded the invalid
+                    # attempt as unavailable/unknown with NO provider invocation.
+                    # Never pass hidden source identity or raw backend errors
+                    # to the model. The opt-in E0 pilot may continue grading;
+                    # the default strict host boundary still raises instead.
+                    visible_observation = {
+                        "status": "blocked",
+                        "error": "unavailable_scoped_route",
+                    }
+                    experimental_agent_tool_surface.assert_source_unchanged()
+                else:
+                    visible_observation = experimental_agent_tool_surface.project_observation(
+                        route_id, attempt.observation,
+                    )
             elif observation_transform is None:
                 visible_observation = attempt.observation
             else:
