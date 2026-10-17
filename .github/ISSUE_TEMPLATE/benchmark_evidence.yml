@@ -31,6 +31,41 @@ body:
       description: Include routing/task metrics, latency, errors, authority violations, and links/digests for machine-readable outputs.
     validations:
       required: true
+  - type: dropdown
+    id: evidence_tier
+    attributes:
+      label: Evidence tier (never infer E2 from a green CI)
+      description: E0 is synthetic or no-model; E1 is author-exposed DEV; E2 requires independently authored, frozen, reviewed confirmation.
+      options:
+        - E0 - synthetic / engineering
+        - E1 - development / nonindependent
+        - E2 - independent held-out confirmation
+        - BLOCKED_EXTERNAL - prerequisite missing
+        - VALID_NEGATIVE - evaluation completed but claim failed
+        - INFRA_INVALID - rerun after invalid infrastructure
+    validations:
+      required: true
+  - type: textarea
+    id: source_artifacts
+    attributes:
+      label: Source and artifact provenance
+      description: Original provider/catalog source commit, immutable dataset/split ID, input or blob SHA256, run URL, output artifact SHA256 and license/permission. For blocked cases state what is unavailable.
+    validations:
+      required: true
+  - type: textarea
+    id: independent_review
+    attributes:
+      label: Independent authorship, reviewer and disposition
+      description: Original case author, data isolation/contamination controls, separate reviewer and approved/failed/blocked decision. Use "not independently reviewed" for E0/E1; never invent E2.
+    validations:
+      required: true
+  - type: textarea
+    id: matrix_gates
+    attributes:
+      label: Canonical qualification gate IDs and disposition
+      description: Map G01-I02 IDs from the canonical matrix to accountable issue and measured evidence; any PASS must also update the machine-readable qualification-control-v1.json via reviewed PR.
+    validations:
+      required: true
   - type: textarea
     id: limits
     attributes:
