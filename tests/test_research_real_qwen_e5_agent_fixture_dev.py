@@ -115,6 +115,19 @@ def test_fake_agent_three_arm_scorer_does_not_claim_real_qwen_or_e2():
         assert summary["unauthorized_destructive_executions"] == 0
         assert set(summary["by_language"]) == {"en", "ko", "ja"}
     assert len(result["paired_task_pass_delta_vs_lexical_k5"]) == 2
+    for arm, score in result["operation_scores"].items():
+        assert arm in result["summary"]
+        assert score["supported_tasks"] == 6
+        assert score["supported_fixture_completion"] == 0
+        assert score["unsupported_tasks"] == 6
+        assert score["unsupported_correct_no_call"] == 6
+        assert score["unsupported_executed_observed"] == 0
+        for language, subset in score["by_language"].items():
+            assert language in ("en", "ko", "ja")
+            assert subset["supported_tasks"] == 2
+            assert subset["supported_fixture_completion"] == 0
+            assert subset["unsupported_tasks"] == 2
+            assert subset["unsupported_correct_no_call"] == 2
 
 
 def test_agent_receives_only_original_query_and_sanitized_tools():
