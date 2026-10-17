@@ -176,6 +176,20 @@ def test_truncated_duplicate_or_cross_language_missing_denominators_rejected():
         summarize_disposition_e0(cases)
 
 
+def test_claimed_completion_without_actual_host_dispatch_is_invalid():
+    case = row("ko", "supported", 13)
+    case.update(planner_call_count=0, tool_call_count=0)
+    with pytest.raises(ValueError, match="host dispatch"):
+        classify_disposition_e0(case)
+
+
+def test_supported_answer_with_hidden_route_disclosure_is_not_a_pass():
+    case = row("ko", "supported", 14)
+    case["route_disclosed"] = True
+    scored = classify_disposition_e0(case)
+    assert scored["full_task_correct"] is False
+
+
 def test_unmeasured_answer_oracle_never_counts_as_completed_success():
     case = row("en", "supported", 7)
     case["final_answer_correct"] = None
