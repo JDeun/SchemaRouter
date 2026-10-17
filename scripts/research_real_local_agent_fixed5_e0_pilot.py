@@ -43,10 +43,10 @@ from scripts.research_authorized_fixed5_decision_bridge import (
     AuthorizedFixed5DecisionSelector,
 )
 from scripts.research_authorized_hybrid_fixed5 import AuthorizedHybridFixed5Selector
-from scripts.research_paired_agent_fixed5_e0 import (
-    ARMS,
-    aggregate_paired_e0,
+from scripts.research_agent_fixture_safety_strata_e0 import (
+    summarize_fixture_safety_strata,
 )
+from scripts.research_paired_agent_fixed5_e0 import ARMS
 
 ROOT = Path(__file__).resolve().parents[1]
 # Source-frozen *already published* case IDs, never chosen from model outcomes.
@@ -236,7 +236,7 @@ def run_agent_pilot(
               "rows": arm_rows[arm], **identity}
         for arm in ARMS
     }
-    summary = aggregate_paired_e0(manifest, runs)
+    summary, support_safety = summarize_fixture_safety_strata(manifest, runs)
     return {
         "schema_version": 1,
         "issue": 1477,
@@ -260,6 +260,7 @@ def run_agent_pilot(
             "languages": ["en", "ko", "ja"],
         },
         "agent_task_fixture_pass": summary,
+        "supported_vs_unsupported_fixture_safety": support_safety,
         "limitations": (
             "Published synthetic DEV prompts, six supported and six unsupported. "
             "Existing generated-agent deterministic fixture advances a read-only "
@@ -322,6 +323,9 @@ def main() -> None:
         "evidence_tier": report["evidence_tier"],
         "source_revision": source_revision,
         "summary": report["agent_task_fixture_pass"]["summary"],
+        "supported_vs_unsupported": report[
+            "supported_vs_unsupported_fixture_safety"
+        ]["per_arm"],
     }, ensure_ascii=False, allow_nan=False))
 
 
