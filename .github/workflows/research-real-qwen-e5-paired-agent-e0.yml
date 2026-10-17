@@ -77,9 +77,9 @@ jobs:
           with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as f:
               f.write("## REAL CPU Qwen 0.6B agent + E5 K5: existing deterministic fixture DEV E0\\n\\n")
               f.write("**Synthetic, previously disclosed 6 EN/KO/JA cases. 3 supported, 3 unsupported.** Actual language-model agent tool-call generation and original fixture executor, not real provider invocation, independent E2, calibrated no-fit or release evidence.\\n\\n")
-              f.write("| Arm | Final fixture task-pass | Mean tool calls | Unsupported executable calls observed | Mean agent episode ms |\\n|---|---:|---:|---:|---:|\\n")
+              f.write("| Arm | Final fixture task-pass | Mean tool-schema tokens | Unsupported executable calls observed | Mean agent episode ms |\\n|---|---:|---:|---:|---:|\\n")
               for arm, row in report["summary"].items():
-                  f.write(f"| {arm} | {row['task_pass_rate']:.3f} | {row['mean_tool_schema_tokens']:.1f} tool-schema tokens | {row['unsupported_executed_observed']} | {row['mean_episode_latency_ms']:.0f} |\\n")
+                  f.write(f"| {arm} | {row['task_pass_rate']:.3f} | {row['mean_tool_schema_tokens']:.1f} | {row['unsupported_executed_observed']} | {row['mean_episode_latency_ms']:.0f} |\\n")
               f.write("\\n**Safety:** Zero unauthorized destructive executions. Small synthetic pilot only; 0/1 success in a language/type is not a generalization claim. Original frozen #432 not rescored.\\n")
           PY
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
