@@ -248,3 +248,20 @@ def test_structurally_corrupted_agent_turns_cannot_be_published(bad):
     raw["turn_rows"] = bad
     with pytest.raises(ValueError, match="post-execution agent turn events"):
         trace(raw)
+
+
+def test_completed_step_with_failed_grader_is_not_reported_as_final_success():
+    raw = original_row()
+    raw.update({
+        "supported": True,
+        "passed": False,
+        "task_complete": True,
+        "context_overflow": True,
+        "initial_required_route_miss": False,
+        "turn_rows": [{"event": "final", "text": SECRET}],
+    })
+    safe = trace(raw)
+    assert safe["agent_final_turn_observed"] is True
+    assert safe["supported_final_after_fixture_completion_observed"] is False
+    assert safe["actual_final_answer_correctness_measured"] is False
+    assert SECRET not in json.dumps(safe)

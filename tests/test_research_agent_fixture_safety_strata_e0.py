@@ -253,7 +253,8 @@ def _augment_final_turns(runs):
                 final = True
             row["agent_final_turn_observed"] = final
             row["supported_final_after_fixture_completion_observed"] = bool(
-                row["supported"] and row["task_complete"] and final
+                row["supported"] and row["passed"]
+                and row["task_complete"] and final
             )
             row["actual_final_answer_correctness_measured"] = False
 
@@ -299,3 +300,22 @@ def test_partial_or_forged_e0_final_turn_metrics_are_rejected(kind):
         runs["e5_k5"]["rows"][0]["actual_final_answer_correctness_measured"] = True
     with pytest.raises(ValueError, match="E0 final-turn"):
         summarize_fixture_safety_strata(manifest, runs)
+
+
+def test_failed_supported_step_cannot_inflate_final_turn_success_count():
+    manifest, runs = paired_fixture()
+    _augment_final_turns(runs)
+    row = next(row for row in runs["lexical_k5"]["rows"] if row["supported"])
+    row["task_complete"] = True  # A consumed step can still fail grading.
+    row["agent_final_turn_observed"] = True
+    row["supported_final_after_fixture_completion_observed"] = True
+    with pytest.raises(ValueError, match="contradictory E0 final-turn"):
+        summarize_fixture_safety_strata(manifest, runs)
+    row["supported_final_after_fixture_completion_observed"] = False
+    _, safe = summarize_fixture_safety_strata(manifest, runs)
+    assert safe["per_arm"]["lexical_k5"][
+        "supported_fixture_completed_with_final_turn"
+    ] == 0
+    assert safe["per_arm"]["lexical_k5"][
+        "supported_fixture_completed_without_final_turn"
+    ] == 0

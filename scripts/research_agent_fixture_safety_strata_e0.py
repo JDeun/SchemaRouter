@@ -93,6 +93,7 @@ def summarize_fixture_safety_strata(
                     or row["supported_final_after_fixture_completion_observed"]
                     is not (
                         row["supported"]
+                        and row["passed"]
                         and row["task_complete"]
                         and row["agent_final_turn_observed"]
                     )

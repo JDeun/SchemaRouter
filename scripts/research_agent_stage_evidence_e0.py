@@ -162,7 +162,8 @@ def sanitized_e0_trace(
         raise ValueError("invalid post-execution agent turn events")
     final_observed = bool(turns and turns[-1]["event"] == "final")
     supported_final_after_fixture_completion = bool(
-        row["supported"] and row["task_complete"] and final_observed
+        row["supported"] and row["passed"]
+        and row["task_complete"] and final_observed
     )
     candidate_history = row.get("candidate_history")
     if (
