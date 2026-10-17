@@ -179,8 +179,11 @@
       "owner_issue": 1477,
       "status": "NOT_VERIFIED",
       "blocker": "State-dependent 2/3-step native execution not independently qualified.",
-      "next_action": "Run multi-step E2 with state and final-result oracle.",
-      "evidence_links": [],
+      "next_action": "Run independently authored EN/KO/JA model-driven 2/3-step native provider E2, including state handoff, revocation and final-answer oracle; do not promote E0 host-bound simulation.",
+      "evidence_links": [
+        "https://github.com/JDeun/SchemaRouter/pull/1505",
+        "https://github.com/JDeun/SchemaRouter/actions/runs/39026731254"
+      ],
       "qualification": null
     },
     {
