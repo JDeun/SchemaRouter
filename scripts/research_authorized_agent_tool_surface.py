@@ -159,16 +159,6 @@ class AuthorizedAgentToolSurface:
 
     def assert_source_unchanged(self) -> None:
         self.router._check_retrieval_authority_witness(self.witness)
-        current_policy_receipt = _authorization_policy_receipt(
-            self.router.authorization_policy,
-        )
-        if (
-            type(self._authorization_policy_receipt) is not str
-            or not hmac.compare_digest(
-                self._authorization_policy_receipt, current_policy_receipt,
-            )
-        ):
-            raise PolicyViolationError("authorization policy modified in place")
         if _principal_claims_canonical(self._principal) != self._principal_claims_snapshot:
             raise PolicyViolationError("principal claims changed during model request")
         # Frozen dataclass does not freeze nested dictionaries, and replace()
@@ -181,6 +171,18 @@ class AuthorizedAgentToolSurface:
             )
         ):
             raise PolicyViolationError("captured authorized source identity drift")
+        # Diagnose a forged view with the original source-integrity error
+        # before checking the additional host-policy content receipt.
+        current_policy_receipt = _authorization_policy_receipt(
+            self.router.authorization_policy,
+        )
+        if (
+            type(self._authorization_policy_receipt) is not str
+            or not hmac.compare_digest(
+                self._authorization_policy_receipt, current_policy_receipt,
+            )
+        ):
+            raise PolicyViolationError("authorization policy modified in place")
 
     def tool_definitions(
         self, selected_route_ids: list[str], *, k: int = MAX_TOOL_DEFINITIONS,
