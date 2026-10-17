@@ -299,11 +299,12 @@ def main() -> None:
         ))
         for lang in LANGUAGES
     ]
+    tier = (
+        "REAL_QWEN3_CPU_BOUNDED_CONTINUATION_E0_DEV_ONLY"
+        if args.host_continuation_budget else "REAL_QWEN3_CPU_BOUND_HOST_E0_DEV_ONLY"
+    )
     report = {
-        "evidence_tier": (
-            "REAL_QWEN3_CPU_BOUNDED_CONTINUATION_E0_DEV_ONLY"
-            if args.host_continuation_budget else "REAL_QWEN3_CPU_BOUND_HOST_E0_DEV_ONLY"
-        ),
+        "evidence_tier": tier,
         "host_continuation_budget": args.host_continuation_budget,
         "source_revision": source,
         "model_revision": f"{MODEL_NAME}@{MODEL_REVISION}",
@@ -313,7 +314,7 @@ def main() -> None:
         "cases": [
             {
                 **result,
-                "evidence_tier": report["evidence_tier"],
+                "evidence_tier": tier,
                 "actual_model_inference_measured": True,
             }
             for result in results
