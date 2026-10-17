@@ -181,3 +181,99 @@ def test_enum_conjunction_requires_one_satisfiable_call(
     assert receipt.selected_route_id == (
         "billing.read" if expected == "unique_contract_match" else None
     )
+
+
+@pytest.mark.parametrize(
+    ("schema", "required", "reason"),
+    [
+        pytest.param(
+            {"type": "string", "enum": ["paid"], "not": {"const": "paid"}},
+            ["paid"], "no_contract_match", id="not-excludes-enumerated-value",
+        ),
+        pytest.param(
+            {"type": "string", "enum": ["paid"], "allOf": [
+                {"pattern": "^unpaid$"},
+            ]},
+            ["paid"], "no_contract_match", id="composed-restriction-unsupported",
+        ),
+        pytest.param(
+            {"type": "string", "enum": ["paid"], "pattern": "^unpaid$"},
+            ["paid"], "no_contract_match", id="regex-restriction-unsupported",
+        ),
+        pytest.param(
+            {"type": "string", "enum": ["paid"], "const": "unpaid"},
+            ["paid"], "no_contract_match", id="contradictory-scalar-const",
+        ),
+        pytest.param(
+            {
+                "type": "array", "minItems": 3, "maxItems": 2,
+                "items": {"type": "string", "enum": ["a", "b", "c"]},
+            },
+            ["a", "b"], "no_contract_match", id="impossible-array-bounds",
+        ),
+        pytest.param(
+            {
+                "type": "array", "minItems": 3, "uniqueItems": True,
+                "items": {"type": "string", "enum": ["a", "b"]},
+            },
+            ["a", "b"], "no_contract_match", id="insufficient-unique-items",
+        ),
+        pytest.param(
+            {
+                "type": "array", "uniqueItems": True, "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                    "type": "string", "enum": ["a", "b"], "pattern": "^a$",
+                },
+            },
+            ["a", "b"], "no_contract_match", id="array-item-extra-constraint",
+        ),
+        pytest.param(
+            {
+                "type": "array", "uniqueItems": True, "minItems": 2,
+                "maxItems": 2,
+                "items": {"type": "string", "enum": ["a", "b"]},
+            },
+            ["a", "b"], "unique_contract_match", id="verified-unique-array",
+        ),
+        pytest.param(
+            {
+                "type": "string", "enum": ["paid", "unpaid"],
+                "const": "paid", "title": "Billing state",
+                "description": "Only published billing states",
+            },
+            ["paid"], "unique_contract_match", id="matching-scalar-const",
+        ),
+        pytest.param(
+            {"type": "array", "minItems": True,
+             "items": {"type": "string", "enum": ["a"]}},
+            ["a"], "no_contract_match", id="boolean-array-length-rejected",
+        ),
+    ],
+)
+def test_unhandled_json_schema_constraints_never_prove_field_fit(
+    schema: dict, required: list[str], reason: str,
+) -> None:
+    router = _router([("state", schema)])
+
+    def must_not_dispatch(*_args, **_kwargs):
+        raise AssertionError("a read-only schema match must not dispatch")
+
+    router.execute = must_not_dispatch
+    router.plan = must_not_dispatch
+    result = select_authorized_field_contract(
+        router, "exact field-contract proof",
+        principal=VIEWER,
+        contract=HostFieldContract(
+            operation="read",
+            required_enums=[
+                RequiredEnumValue(parameter="state", value=value)
+                for value in required
+            ],
+        ),
+        k=5,
+    )
+    assert result.reason == reason
+    assert result.selected_route_id == (
+        "billing.read" if reason == "unique_contract_match" else None
+    )
