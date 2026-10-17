@@ -1,0 +1,91 @@
+name: Real Qwen E5 Paired Agent Synthetic E0 DEV
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_real_qwen_e5_agent_paired_e0.py"
+      - "tests/test_research_real_qwen_e5_agent_paired_e0.py"
+      - ".github/workflows/research-real-qwen-e5-paired-agent-e0.yml"
+      - "research/autoresearch/real-qwen-e5-paired-agent-e0.md"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: real-qwen-e5-agent-e0-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-and-agent-fixture-e0:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install safe no-model E0 source and agent tests
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+      - name: Validate frozen preselected 6-case EN/KO/JA agent source
+        run: |
+          ruff check scripts/research_real_qwen_e5_agent_paired_e0.py tests/test_research_real_qwen_e5_agent_paired_e0.py
+          python -m pytest -q tests/test_research_real_qwen_e5_agent_paired_e0.py tests/test_research_paired_agent_fixed5_e0.py tests/test_research_authorized_fixed5_decision_bridge.py tests/test_research_authorized_agent_tool_surface.py
+          python -m scripts.research_real_qwen_e5_agent_paired_e0 --mode validate
+
+  real-e5-and-qwen-cpu-agent-e0:
+    needs: source-and-agent-fixture-e0
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+      TRANSFORMERS_OFFLINE: "0"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install CPU-only Qwen and E5 dependencies
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
+      - name: Execute actual pinned local E5 K5 and Qwen agent task turns
+        run: |
+          python -m scripts.research_real_qwen_e5_agent_paired_e0 \
+            --mode real-cpu --out artifacts/real-qwen-agent-e5-e0/report.json
+      - name: Summarize genuine generated task-success DEV evidence and limits
+        if: success()
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = json.loads(Path("artifacts/real-qwen-agent-e5-e0/report.json").read_text(encoding="utf-8"))
+          assert report["evidence_tier"] == "REAL_QWEN_E5_AGENT_SYNTHETIC_E0_DEV_ONLY"
+          assert report["real_agent_model_inference_measured"] is True
+          assert report["real_retrieval_model_inference_measured"] is True
+          assert report["independent_e2_qualified"] is False
+          assert report["real_provider_invocation_measured"] is False
+          assert report["task_count"] == 6
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as f:
+              f.write("## REAL CPU Qwen 0.6B agent + E5 K5: existing deterministic fixture DEV E0\\n\\n")
+              f.write("**Synthetic, previously disclosed 6 EN/KO/JA cases. 3 supported, 3 unsupported.** Actual language-model agent tool-call generation and original fixture executor, not real provider invocation, independent E2, calibrated no-fit or release evidence.\\n\\n")
+              f.write("| Arm | Final fixture task-pass | Mean tool calls | Unsupported executable calls observed | Mean agent episode ms |\\n|---|---:|---:|---:|---:|\\n")
+              for arm, row in report["summary"].items():
+                  f.write(f"| {arm} | {row['task_pass_rate']:.3f} | {row['mean_tool_schema_tokens']:.1f} tool-schema tokens | {row['unsupported_executed_observed']} | {row['mean_episode_latency_ms']:.0f} |\\n")
+              f.write("\\n**Safety:** Zero unauthorized destructive executions. Small synthetic pilot only; 0/1 success in a language/type is not a generalization claim. Original frozen #432 not rescored.\\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: success()
+        with:
+          name: real-qwen-e5-paired-agent-e0-${{ github.run_id }}
+          path: artifacts/real-qwen-agent-e5-e0/report.json
+          if-no-files-found: error
+          retention-days: 30
