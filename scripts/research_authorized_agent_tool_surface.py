@@ -9,7 +9,7 @@ from __future__ import annotations
 import copy
 import json
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field as dataclass_field
 from typing import Any
 
 from schemarouter import (
@@ -46,7 +46,7 @@ class AuthorizedAgentToolSurface:
     visible_route_ids: tuple[str, ...]
     _tool_definitions: dict[str, dict[str, Any]]
     _visible_output_names: dict[str, frozenset[str]]
-    _semantic_source_routes: tuple[CapturedAuthorizedSemanticRoute, ...] = field(
+    _semantic_source_routes: tuple[CapturedAuthorizedSemanticRoute, ...] = dataclass_field(
         default_factory=tuple, repr=False,
     )
     independent_quality_evidence: bool = False
