@@ -14,7 +14,7 @@ from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / "benchmarks/qualification-control-v1.json"
-DASHBOARD = ROOT / "docs/project/qualification-control.md"
+DASHBOARD = ROOT / "QUALIFICATION.md"
 MATRIX = ROOT / "docs/research/product-north-star-and-test-matrix.md"
 MATRIX_PATTERN = re.compile(r"^\| ([GSRAEI]\d{2}) (P[012]) \|", re.MULTILINE)
 SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -199,9 +199,9 @@ def render_dashboard(data: dict[str, Any]) -> str:
         "4. Scheduled/manual Actions also perform a read-only check that owners "
         "remain open and PR #1356 remains held. API outages are failures, not passes.",
         "",
-        f"See [canonical evaluation matrix](../research/product-north-star-and-test-matrix.md), "
+        f"See [canonical evaluation matrix](docs/research/product-north-star-and-test-matrix.md), "
         f"[research tracker #200]({BASE}/issues/200) and "
-        "[release checklist](../release-checklist.md).",
+        "[release checklist](docs/release-checklist.md).",
         "",
     ])
     return "\n".join(lines)
