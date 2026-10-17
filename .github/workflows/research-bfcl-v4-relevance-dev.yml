@@ -1,0 +1,98 @@
+name: BFCL V4 Publisher Relevance CPU DEV
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_bfcl_v4_relevance_cpu_dev.py"
+      - "tests/test_research_bfcl_v4_relevance_cpu_dev.py"
+      - "research/autoresearch/bfcl-v4-publisher-relevance-cpu-dev.md"
+      - ".github/workflows/research-bfcl-v4-relevance-dev.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-native-publisher-cpu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 85
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install local package and verify code without model
+        run: |
+          python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+          ruff check scripts/research_bfcl_v4_relevance_cpu_dev.py tests/test_research_bfcl_v4_relevance_cpu_dev.py
+          python -m pytest -q tests/test_research_bfcl_v4_relevance_cpu_dev.py
+      - name: Download and verify exact publisher BFCL V4 Git blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          commit=6ea57973c7a6097fd7c5915698c54c17c5b1b6c8
+          base="https://raw.githubusercontent.com/ShishirPatil/gorilla/$commit/berkeley-function-call-leaderboard/bfcl_eval/data"
+          dir=artifacts/bfcl-v4-published/source
+          mkdir -p "$dir"
+          for file in BFCL_v4_multiple.json BFCL_v4_irrelevance.json; do
+            curl --fail --silent --show-error --location --retry 2 --connect-timeout 20 \
+              --max-time 120 "$base/$file" --output "$dir/$file"
+          done
+          curl --fail --silent --show-error --location --retry 2 --connect-timeout 20 \
+            --max-time 120 "$base/possible_answer/BFCL_v4_multiple.json" \
+            --output "$dir/BFCL_v4_multiple_ground_truth.json"
+          python - <<'PY'
+          from pathlib import Path
+          from scripts.research_bfcl_v4_relevance_cpu_dev import load_originals
+          rows = load_originals(Path("artifacts/bfcl-v4-published/source"))
+          assert len(rows) == 440
+          print("Verified original BFCL cases:", len(rows))
+          PY
+      - name: Install actual pinned E5 Small CPU runtime
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
+      - name: Compare actual SchemaRouter lexical and pinned CPU E5
+        run: |
+          python -m scripts.research_bfcl_v4_relevance_cpu_dev \
+            --source-dir artifacts/bfcl-v4-published/source \
+            --output artifacts/bfcl-v4-published/report.json
+      - name: Summarize public calibration and evaluation without E2 claims
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          d = json.loads(Path("artifacts/bfcl-v4-published/report.json").read_text())
+          assert d["case_count"] == 440 and d["real_model_inference_measured"]
+          assert d["query_language"] == "en_only"
+          assert d["native_provider_tools_executed"] is False
+          assert d["independent_e2_qualified"] is False
+          assert d["release_safety_gate_passed"] is False
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write("## Publisher BFCL V4 PUBLIC DEV (not independent E2)\n\n")
+              out.write("| Arm | Correct supported /100 | Wrong supported /100 | False refusals /100 | False accepts /120 |\n")
+              out.write("|---|---:|---:|---:|---:|\n")
+              for arm, entry in d["by_arm"].items():
+                  e = entry["evaluation"]
+                  out.write(f"| {arm} | {e['supported_correct_after_gate']} | "
+                            f"{e['supported_wrong_accepted']} | {e['supported_false_refusal']} "
+                            f"| {e['unsupported_false_accept']} |\n")
+              out.write("\nPublisher public English relevance only; no native API or multi-step tasks. "
+                        "No model/default/release promotion. E2 0/19.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: bfcl-v4-public-relevance-raw
+          path: artifacts/bfcl-v4-published/report.json
+          if-no-files-found: warn
+          retention-days: 90
