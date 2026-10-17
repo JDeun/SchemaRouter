@@ -18,14 +18,14 @@ from typing import Any
 
 from schemarouter import PolicyViolationError
 from scripts.agent_utility_v7_dev_agent import MODEL_NAME, MODEL_REVISION
+from scripts.research_authorized_agent_tool_surface import (
+    capture_authorized_agent_tool_surface,
+)
 from scripts.research_bound_two_step_host_e0 import (
     CANARY,
     LANGUAGES,
     PRINCIPAL,
     build_bound_two_step_source,
-)
-from scripts.research_authorized_agent_tool_surface import (
-    capture_authorized_agent_tool_surface,
 )
 from scripts.research_scoped_host_invocation import execute_scoped_host_call
 
@@ -134,7 +134,7 @@ async def run_model_selected_bound_two_step_e0(
     correct_final = False
     verified = None
     expected_order = TOOLS
-    for turn in range(MAX_TURNS):
+    for _turn in range(MAX_TURNS):
         model_turns += 1
         view = capture_authorized_agent_tool_surface(
             router, query, principal=PRINCIPAL,
@@ -249,6 +249,7 @@ def main() -> None:
         }))
         return
     import asyncio
+
     from scripts.agent_utility_v7_dev_agent import LocalQwenAgent, runtime_identity
 
     source = subprocess.run(
