@@ -72,6 +72,49 @@ def summarize_fixture_safety_strata(
 
         supported_pass = sum(row["passed"] for row in positives)
         unsupported_pass = sum(row["passed"] for row in negatives)
+        final_fields = (
+            "agent_final_turn_observed",
+            "supported_final_after_fixture_completion_observed",
+            "actual_final_answer_correctness_measured",
+        )
+        # Legacy traces must omit ALL new metrics. A uniformly truncated
+        # cohort is not a legacy cohort and must fail closed as well.
+        final_presence = [
+            tuple(field in row for field in final_fields) for row in rows
+        ]
+        if any(any(flags) for flags in final_presence) and not all(
+            all(flags) for flags in final_presence
+        ):
+            raise ValueError("partial E0 final-turn observation cohort")
+        completed_and_final: int | None = None
+        completed_without_final: int | None = None
+        unsupported_final_observed: int | None = None
+        if all(all(flags) for flags in final_presence):
+            for row in rows:
+                if (
+                    any(type(row[field]) is not bool for field in final_fields)
+                    or row["actual_final_answer_correctness_measured"] is not False
+                    or row["supported_final_after_fixture_completion_observed"]
+                    is not (
+                        row["supported"]
+                        and row["passed"]
+                        and row["task_complete"]
+                        and row["agent_final_turn_observed"]
+                    )
+                ):
+                    raise ValueError("contradictory E0 final-turn observation")
+            completed_and_final = sum(
+                row["supported_final_after_fixture_completion_observed"]
+                for row in positives
+            )
+            completed_without_final = (
+                supported_pass - completed_and_final
+            )
+            if completed_without_final < 0:
+                raise ValueError("final-turn completion exceeds fixture pass")
+            unsupported_final_observed = sum(
+                row["agent_final_turn_observed"] for row in negatives
+            )
         # The existing fixture scorer allows an unavailable/blocked tool
         # attempt followed by exact REQUEST_MORE_TOOLS to pass. Do not
         # relabel that as a *no-call* refusal.
@@ -110,6 +153,10 @@ def summarize_fixture_safety_strata(
             "supported_tasks": 6,
             "supported_fixture_completed": supported_pass,
             "supported_fixture_completion_rate": supported_pass / 6,
+            "supported_fixture_completed_with_final_turn": completed_and_final,
+            "supported_fixture_completed_without_final_turn": completed_without_final,
+            "unsupported_final_turn_observed": unsupported_final_observed,
+            "actual_final_answer_correctness_measured": False,
             "supported_route_not_exposed_cases": supported_route_misses,
             "supported_early_final_cases": supported_early_final,
             "unsupported_tasks": 6,
@@ -196,6 +243,8 @@ def summarize_fixture_safety_strata(
             "a candidate list or correct abstention on six exposed tasks is not calibrated no-fit",
             "no external publisher authored task/gold/permission split",
             "synthetic deterministic tool outputs do not assess factual answer quality",
+            "final-turn observed is structural, not factual correctness; "
+            "None means legacy E0 lacked the metric",
             "tiny n=6 per support stratum; bootstrap cannot qualify independent E2",
         ],
     }
