@@ -18,6 +18,7 @@ from scripts.research_bounded_authorized_semantic_diagnostic import (
 )
 
 STRICT_K = 5
+MAX_OPTIN_MODEL_INPUT_BYTES = 262144  # 256 KiB, default stays 128 KiB.
 _ALLOWED_STATUSES = frozenset({
     "empty_visible_catalog_not_no_fit",
     "backend_abstained_not_calibrated_no_fit",
@@ -67,7 +68,7 @@ class AuthorizedFixed5DecisionSelector:
     def __post_init__(self) -> None:
         if (
             type(self.max_model_input_bytes) is not int
-            or not 1 <= self.max_model_input_bytes <= 131072
+            or not 1 <= self.max_model_input_bytes <= MAX_OPTIN_MODEL_INPUT_BYTES
         ):
             raise ValueError("invalid fixed5 comparator input budget")
         self.view.assert_source_unchanged()
