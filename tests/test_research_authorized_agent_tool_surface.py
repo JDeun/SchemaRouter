@@ -839,3 +839,53 @@ def test_new_grading_flag_must_be_actual_boolean():
             experimental_candidate_selector=lambda _query, _ids: ["marine.read"],
             experimental_block_unavailable_observation=1,
         )
+
+
+@pytest.mark.parametrize("policy_mutation", (
+    "default_effect", "existing_rule", "data_scope",
+    "compiled_rule_index", "compiled_data_index", "compiled_rule_objects",
+))
+def test_inplace_authority_mutation_between_agent_turns_fails_closed(policy_mutation):
+    """The opt-in view must reject identity-stable but semantically changed policy."""
+    router = fixture_router()
+    view = captured(router)
+    policy = router.authorization_policy
+    assert policy is not None
+    if policy_mutation == "default_effect":
+        object.__setattr__(policy, "default_effect", "allow")
+    elif policy_mutation == "existing_rule":
+        object.__setattr__(policy.rules[1], "effect", "deny")
+    elif policy_mutation == "data_scope":
+        object.__setattr__(policy.data_rules[0], "hidden_fields", ())
+    elif policy_mutation == "compiled_rule_index":
+        policy._rule_index.partitions.clear()
+    elif policy_mutation == "compiled_rule_objects":
+        object.__setattr__(policy._rule_index, "rules", ())
+    else:
+        policy._data_rule_index.partitions.clear()
+    # Same policy object still passes the legacy identity witness.
+    router._check_retrieval_authority_witness(view.witness)
+    with pytest.raises(PolicyViolationError, match="authorization policy modified in place"):
+        view.tool_definitions(["marine.read"])
+    with pytest.raises(PolicyViolationError, match="authorization policy modified in place"):
+        view.project_observation("marine.read", {
+            "status": "ok", "public_field": "public",
+        })
+    with pytest.raises(PolicyViolationError, match="authorization policy modified in place"):
+        view.public_trace({"passed": True})
+
+
+def test_policy_mutation_during_source_retrieval_fails_before_model_view(monkeypatch):
+    router = fixture_router()
+    policy = router.authorization_policy
+    assert policy is not None
+    original = router.retrieve_authorized
+
+    def mutating_retrieval(*args, **kwargs):
+        result = original(*args, **kwargs)
+        object.__setattr__(policy.data_rules[0], "hidden_fields", ())
+        return result
+
+    monkeypatch.setattr(router, "retrieve_authorized", mutating_retrieval)
+    with pytest.raises(PolicyViolationError, match="policy modified during source capture"):
+        captured(router)
