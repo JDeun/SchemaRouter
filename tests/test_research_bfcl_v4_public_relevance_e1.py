@@ -7,9 +7,14 @@ import json
 import pytest
 
 from schemarouter.decisions import CallableDecisionBackend
+from schemarouter.errors import PlanningError
 from scripts.research_bfcl_v4_public_relevance_e1 import (
-    _parse_jsonl, _sha1_git_blob, _words, evidence_only_lexical_guard,
-    e5_source_choice, host_visible_lexical_choice,
+    _parse_jsonl,
+    _sha1_git_blob,
+    _words,
+    e5_source_choice,
+    evidence_only_lexical_guard,
+    host_visible_lexical_choice,
 )
 
 RELEVANT = {
@@ -68,7 +73,7 @@ def test_untrusted_backend_cannot_select_unoffered_function() -> None:
     backend = CallableDecisionBackend(
         lambda _: {"selections": [{"option_id": "visible:999"}]},
     )
-    with pytest.raises(Exception):
+    with pytest.raises((ValueError, PlanningError)):
         e5_source_choice("Weather forecast", [RELEVANT, IRRELEVANT], backend)
 
 
