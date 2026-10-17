@@ -283,6 +283,42 @@ def run_paired_fixture_pilot(
             runs[arm]["rows"].append(stage)
 
     report = aggregate_paired_e0(manifest, runs)
+    # Combined task pass hides false refusals on supported cases. Report
+    # supported step completion and unsupported strict no-call separately.
+    operation_scores: dict[str, Any] = {}
+    for arm in ARMS:
+        rows = runs[arm]["rows"]
+        supported_rows = [row for row in rows if row["supported"] is True]
+        unsupported_rows = [row for row in rows if row["supported"] is False]
+        if len(supported_rows) != 6 or len(unsupported_rows) != 6:
+            raise ValueError("paired supported and OOD agent denominators drift")
+        per_language: dict[str, Any] = {}
+        for language in PILOT_LANGUAGES:
+            pos = [row for row in supported_rows if row["language"] == language]
+            neg = [row for row in unsupported_rows if row["language"] == language]
+            if len(pos) != 2 or len(neg) != 2:
+                raise ValueError("paired language agent denominators drift")
+            per_language[language] = {
+                "supported_fixture_completion": sum(row["passed"] for row in pos),
+                "supported_tasks": len(pos),
+                "unsupported_correct_no_call": sum(row["passed"] for row in neg),
+                "unsupported_tasks": len(neg),
+            }
+        operation_scores[arm] = {
+            "supported_fixture_completion": sum(
+                row["passed"] for row in supported_rows
+            ),
+            "supported_tasks": len(supported_rows),
+            "unsupported_correct_no_call": sum(
+                row["passed"] for row in unsupported_rows
+            ),
+            "unsupported_tasks": len(unsupported_rows),
+            "unsupported_executed_observed": sum(
+                "unsupported_tool_executed" in row["observed_stages"]
+                for row in unsupported_rows
+            ),
+            "by_language": per_language,
+        }
     if (
         report["task_count"] != len(PILOT_IDS)
         or report["independent_e2_qualified"] is not False
@@ -291,6 +327,7 @@ def run_paired_fixture_pilot(
         raise ValueError("untrusted E0 summary attribution")
     report.update({
         "experimental_condition": EXPERIMENTAL_FIXED5_CONDITION,
+        "operation_scores": operation_scores,
         "evidence_tier": UNATTESTED_EVIDENCE,
         "real_e5_model_routing_measured": False,
         "real_qwen_agent_generation_measured": False,
@@ -375,6 +412,7 @@ def main() -> None:
         "source_revision": revision,
         "pilot_case_count": report["pilot_case_count"],
         "summary": report["summary"],
+        "operation_scores": report["operation_scores"],
         "paired": report["paired_task_pass_delta_vs_lexical_k5"],
     }, ensure_ascii=False, allow_nan=False))
 
