@@ -119,6 +119,23 @@ def _fixture_task(case: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+
+def _native_lexical_selector(view: Any):
+    """Use exact original principal-scoped native top-5; never fixture gold."""
+    def select(query: str, route_ids: tuple[str, ...]) -> list[str]:
+        view.assert_source_unchanged()
+        if query != view.original_query or route_ids != view.visible_route_ids:
+            raise PolicyViolationError("lexical source/query mismatch")
+        candidates = view.router.retrieve_authorized(
+            query, principal=view._principal, k=5,
+        ).candidates
+        picked = [candidate.route_id for candidate in candidates]
+        view.assert_source_unchanged()
+        return picked
+
+    return select
+
+
 def run_paired_agent_pilot(
     corpus: dict[str, Any],
     digest: str,
@@ -202,16 +219,7 @@ def run_paired_agent_pilot(
                 raise PolicyViolationError("agent E0 original source changed")
 
             if arm == "lexical_k5":
-                def selector(query: str, route_ids: tuple[str, ...]) -> list[str]:
-                    view.assert_source_unchanged()
-                    if query != view.original_query or route_ids != view.visible_route_ids:
-                        raise PolicyViolationError("lexical source/query mismatch")
-                    candidates = router.retrieve_authorized(
-                        query, principal=PRINCIPAL, k=5,
-                    ).candidates
-                    ids = [c.route_id for c in candidates]
-                    view.assert_source_unchanged()
-                    return ids
+                selector = _native_lexical_selector(view)
             elif arm == "e5_k5":
                 selector = AuthorizedFixed5DecisionSelector(view, backend)
             else:
