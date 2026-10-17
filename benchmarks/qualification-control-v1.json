@@ -178,7 +178,7 @@
       "priority": "P1",
       "owner_issue": 1477,
       "status": "NOT_VERIFIED",
-      "blocker": "State-dependent 2/3-step native execution not independently qualified.",
+      "blocker": "Real model-selected 2-step tasks failed 0/3 EN/KO/JA on exposed DEV: all stopped after one bound host read; single reminder and transcript-format variants remained 0/3. No independent provider E2.",
       "next_action": "Retain observed 0/3 EN/KO/JA model-selected multi-step E0 negatives (premature final even after one reminder); test independent model/tool-format candidates and externally authored native 2/3-step E2 with final-answer oracle.",
       "evidence_links": [
         "https://github.com/JDeun/SchemaRouter/pull/1505",
@@ -186,7 +186,10 @@
         "https://github.com/JDeun/SchemaRouter/pull/1506",
         "https://github.com/JDeun/SchemaRouter/actions/runs/39029981154",
         "https://github.com/JDeun/SchemaRouter/pull/1507",
-        "https://github.com/JDeun/SchemaRouter/actions/runs/39030372571"
+        "https://github.com/JDeun/SchemaRouter/actions/runs/39030372571",
+        "https://github.com/JDeun/SchemaRouter/pull/1508",
+        "https://github.com/JDeun/SchemaRouter/actions/runs/39037998330",
+        "https://github.com/JDeun/SchemaRouter/pull/1509"
       ],
       "qualification": null
     },
