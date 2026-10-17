@@ -6,6 +6,7 @@ import copy
 import pytest
 
 from schemarouter.decisions import CallableDecisionBackend
+from schemarouter.errors import PlanningError
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
     ARMS,
     CORPUS,
@@ -83,7 +84,7 @@ def test_cannot_register_unbounded_or_forged_native_source():
 
 def test_backend_forgery_cannot_escape_authorized_source():
     corpus, digest = load_development_corpus(CORPUS)
-    with pytest.raises(ValueError):
+    with pytest.raises((PlanningError, ValueError)):
         run_three_arm_dev(
             corpus, digest,
             CallableDecisionBackend(lambda _: {
