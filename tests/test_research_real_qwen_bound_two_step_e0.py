@@ -203,6 +203,14 @@ async def test_no_tool_call_final_never_counts_as_two_step_success():
     FIRST + "<|im_end|><|im_end|>",
     FIRST + "<|im_end|> trailing",
     '<tool_call>{"name":"marine__read","arguments":{"place":[]}}</tool_call>',
+    # Duplicate names/arguments (including nested keys) must never resolve
+    # via Python's default JSON "last value wins" behavior.
+    '<tool_call>{"name":"marine__read","name":"papers__read","arguments":{"place":"Seoul"}}</tool_call>',
+    '<tool_call>{"name":"marine__read","arguments":{"place":"Seoul","place":"Tokyo"}}</tool_call>',
+    '<tool_call>{"name":"marine__read","arguments":{"place":NaN}}</tool_call>',
+    '<tool_call>{"name":"marine__read","arguments":{"place":Infinity}}</tool_call>',
+    '<tool_call>{"name":"marine__read","arguments":{"place":-Infinity}}</tool_call>',
+    '<tool_call>{"name":"marine__read","arguments":{"place":1e309}}</tool_call>',
 ))
 def test_strict_model_tool_parser_rejects_forged_or_malformed_call(bad):
     with pytest.raises((ValueError, TypeError)):
