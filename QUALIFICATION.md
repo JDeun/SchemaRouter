@@ -34,7 +34,7 @@ Checking one item requires independent provenance, a frozen split, reproducible 
 - [ ] **S02 P0** — `ENGINEERING_ONLY` — [owner #1450](https://github.com/JDeun/SchemaRouter/issues/1450)
   - Blocker: Source-swap hardening exists; concurrent authority and availability drift not qualified.
   - Next action: Reproduce concurrent registry/policy revocation with no stale execution.
-  - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/pull/1472)
+  - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/pull/1472) · [evidence 2](https://github.com/JDeun/SchemaRouter/pull/1497)
 - [ ] **S03 P0** — `ENGINEERING_ONLY` — [owner #1269](https://github.com/JDeun/SchemaRouter/issues/1269)
   - Blocker: Synthetic policy protections are not an independent adversarial host evaluation.
   - Next action: Review case-blind action contracts and run approved adversarial host cases.
@@ -54,11 +54,11 @@ Checking one item requires independent provenance, a frozen split, reproducible 
 - [ ] **R04 P1** — `HISTORICAL_NEGATIVE` — [owner #1477](https://github.com/JDeun/SchemaRouter/issues/1477)
   - Blocker: On disclosed synthetic DEV strict unsupported no-call was 0/6 in each arm.
   - Next action: Fix false calls and calibrate false acceptance without excess false refusal.
-  - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/actions/runs/39007769090)
+  - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/actions/runs/39007769090) · [evidence 2](https://github.com/JDeun/SchemaRouter/pull/1496)
 - [ ] **R05 P1** — `NOT_VERIFIED` — [owner #1477](https://github.com/JDeun/SchemaRouter/issues/1477)
   - Blocker: Ambiguous/needs-input/forbidden dispositions lack independent task evidence.
   - Next action: Add missing-parameter and ambiguity cases to integrated scorer.
-  - Evidence: No qualifying independent evidence registered
+  - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/pull/1496)
 - [ ] **R06 P1** — `BLOCKED_EXTERNAL` — [owner #1346](https://github.com/JDeun/SchemaRouter/issues/1346)
   - Blocker: No independent split establishes safe no-fit operating thresholds.
   - Next action: Preregister supported/OOD operating point on sealed split.
