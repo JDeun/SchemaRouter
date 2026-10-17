@@ -80,7 +80,7 @@ jobs:
           d=json.loads(Path("artifacts/qwen3-17b-bound-host-e0/report.json").read_text(encoding="utf-8"))
           assert d["evidence_tier"] == "REAL_QWEN3_17B_CPU_BOUND_HOST_E0_DEV_ONLY"
           assert d["candidate_model"] == "Qwen/Qwen3-1.7B"
-          assert len(d["candidate_revision"]) == 40 and d["candidate_revision"].startswith("70d244c")
+          assert d["candidate_revision"] == "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e"
           assert d["case_count"] == 3
           assert d["independent_e2_qualified"] is False
           assert d["real_native_external_provider_execution"] is False
