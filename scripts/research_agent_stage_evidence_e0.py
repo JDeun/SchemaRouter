@@ -116,6 +116,12 @@ def observed_stages(row: dict[str, Any]) -> list[str]:
             and not row["task_complete"]
         ):
             labels.append("agent_final_before_task_completion")
+            # The positive fixture has a real expected capability, so the
+            # agent's literal REQUEST_MORE_TOOLS terminal is an observed
+            # *false refusal*, not calibrated no-fit or a proven root cause.
+            # Never expose the raw final response in E0 JSONL.
+            if row.get("final_text") == "REQUEST_MORE_TOOLS":
+                labels.append("supported_no_fit_refusal_observed")
     return labels if labels else ["unclassified"]
 
 
