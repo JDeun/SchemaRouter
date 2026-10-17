@@ -90,6 +90,83 @@ class AuthorizedContractSelection(StrictModel):
     selected_endpoint_fingerprint: str | None = None
 
 
+# Only these JSON Schema keywords have a known nonrestrictive meaning
+# (annotations), or are fully checked below for this *proof of fit*.
+# An unknown keyword may constrain an enum further; abstain instead of
+# converting a partial schema understanding into a "unique" tool receipt.
+_SCHEMA_ANNOTATIONS = frozenset({
+    "title", "description", "default", "examples", "deprecated",
+    "readOnly", "writeOnly", "$comment", "nullable",
+})
+_SCALAR_ENUM_KEYS = _SCHEMA_ANNOTATIONS | {"type", "enum", "const"}
+_ARRAY_ENUM_KEYS = _SCHEMA_ANNOTATIONS | {
+    "type", "items", "minItems", "maxItems", "uniqueItems",
+}
+
+
+def _enum_schema_can_hold_required(
+    schema: dict[str, Any], required_values: set[str],
+) -> bool:
+    """Conservatively prove required string enums fit one simple JSON schema.
+
+    This is not general JSON Schema validation. A schema using composition,
+    pattern, references or other unhandled assertions cannot prove a match.
+    """
+    is_array = schema.get("type") == "array"
+    # Bound defaults also make the array-only cardinality proof obvious
+    # to static analyzers without changing scalar matching behavior.
+    minimum = 0
+    unique = False
+    if any(type(key) is not str for key in schema):
+        return False
+    if not set(schema).issubset(
+        _ARRAY_ENUM_KEYS if is_array else _SCALAR_ENUM_KEYS
+    ):
+        return False
+    if is_array:
+        items = schema.get("items")
+        if (
+            type(items) is not dict
+            or not set(items).issubset(_SCALAR_ENUM_KEYS)
+            or items.get("type") not in (None, "string")
+            or "const" in items
+        ):
+            return False
+        minimum = schema.get("minItems", 0)
+        maximum = schema.get("maxItems", None)
+        unique = schema.get("uniqueItems", False)
+        if (
+            type(minimum) is not int or minimum < 0
+            or (maximum is not None and (
+                type(maximum) is not int or maximum < 0 or minimum > maximum
+            ))
+            or type(unique) is not bool
+            or (maximum is not None and maximum < len(required_values))
+        ):
+            return False
+        enum = items.get("enum")
+    else:
+        if schema.get("type") not in (None, "string"):
+            return False
+        if len(required_values) != 1:
+            return False
+        enum = schema.get("enum")
+        if "const" in schema and (
+            type(schema["const"]) is not str
+            or schema["const"] not in required_values
+        ):
+            return False
+    if (
+        type(enum) is not list
+        or not all(type(value) is str for value in enum)
+        or not required_values.issubset(enum)
+    ):
+        return False
+    if is_array and unique and len(set(enum)) < max(minimum, len(required_values)):
+        return False
+    return True
+
+
 def _candidate_matches(
     candidate: CapabilityCandidate, contract: HostFieldContract,
 ) -> bool:
@@ -114,38 +191,11 @@ def _candidate_matches(
                 or parameter.name != parameter_name
             ):
                 continue
-            schema = parameter.json_schema
-            if not isinstance(schema, dict):
-                continue
-            if schema.get("type") == "array":
-                items = schema.get("items")
-                if (
-                    not isinstance(items, dict)
-                    or items.get("type") not in (None, "string")
-                ):
-                    continue
-                # A declared one-element array cannot satisfy two distinct
-                # required values, even if both occur in items.enum.
-                if "maxItems" in schema and (
-                    type(schema["maxItems"]) is not int
-                    or schema["maxItems"] < len(required_values)
-                ):
-                    continue
-                enum = items.get("enum")
-            else:
-                # A scalar can satisfy at most one distinct required value.
-                # Untyped single-value enums remain compatible with the
-                # original exact-string contract behavior.
-                if (
-                    schema.get("type") not in (None, "string")
-                    or len(required_values) != 1
-                ):
-                    continue
-                enum = schema.get("enum")
             if (
-                isinstance(enum, list)
-                and all(type(v) is str for v in enum)
-                and required_values.issubset(enum)
+                type(parameter.json_schema) is dict
+                and _enum_schema_can_hold_required(
+                    parameter.json_schema, required_values,
+                )
             ):
                 match = True
                 break
