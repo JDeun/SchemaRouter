@@ -147,6 +147,23 @@ def sanitized_e0_trace(
     if row.get("language") not in LANGUAGES:
         raise ValueError("unrecognized E0 task language")
     labels = observed_stages(row)
+    # A completed deterministic fixture step is NOT necessarily a completed
+    # assistant answer. Inspect only structural events after agent execution;
+    # never copy generated text, raw observations, arguments or fixture gold.
+    turns = row.get("turn_rows")
+    if (
+        type(turns) is not list
+        or any(type(turn) is not dict for turn in turns)
+        or any(
+            type(turn.get("event")) is not str
+            for turn in turns
+        )
+    ):
+        raise ValueError("invalid post-execution agent turn events")
+    final_observed = bool(turns and turns[-1]["event"] == "final")
+    supported_final_after_fixture_completion = bool(
+        row["supported"] and row["task_complete"] and final_observed
+    )
     candidate_history = row.get("candidate_history")
     if (
         type(candidate_history) is not list or not candidate_history
@@ -173,6 +190,11 @@ def sanitized_e0_trace(
         "passed": row["passed"],
         "supported": row["supported"],
         "task_complete": row["task_complete"],
+        "agent_final_turn_observed": final_observed,
+        "supported_final_after_fixture_completion_observed": (
+            supported_final_after_fixture_completion
+        ),
+        "actual_final_answer_correctness_measured": False,
         "observed_stages": labels,
         "visible_candidate_counts": [len(stage) for stage in candidate_history],
     }
