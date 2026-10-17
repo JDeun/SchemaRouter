@@ -245,7 +245,8 @@ def summarize_fixture_safety_strata(
         "per_arm": outcomes,
         "paired_task_pass_delta_vs_lexical": paired,
         "safety_limitations": [
-            "supported false no-fit refusal is exact terminal text on a synthetic supported fixture, not proof of missing capability",
+            "supported false no-fit refusal is exact terminal text on a "
+            "synthetic supported fixture, not proof of missing capability",
             "unsupported tool attempts are fixture-agent actions, not native I/O",
             "a candidate list or correct abstention on six exposed tasks is not calibrated no-fit",
             "no external publisher authored task/gold/permission split",
