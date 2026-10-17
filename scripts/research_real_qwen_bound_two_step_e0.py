@@ -325,13 +325,14 @@ def main() -> None:
         ))
         for lang in LANGUAGES
     ]
+    evidence_tier = (
+        "REAL_QWEN3_CPU_BOUND_NOUS_USER_E0_DEV_ONLY"
+        if args.transcript_mode == "nous-user"
+        else "REAL_QWEN3_CPU_BOUND_HOST_E0_DEV_ONLY"
+    )
     report = {
         **({"transcript_mode": "nous-user"} if args.transcript_mode == "nous-user" else {}),
-        "evidence_tier": (
-            "REAL_QWEN3_CPU_BOUND_NOUS_USER_E0_DEV_ONLY"
-            if args.transcript_mode == "nous-user"
-            else "REAL_QWEN3_CPU_BOUND_HOST_E0_DEV_ONLY"
-        ),
+        "evidence_tier": evidence_tier,
         "source_revision": source,
         "model_revision": f"{MODEL_NAME}@{MODEL_REVISION}",
         "runtime": {"device": "cpu", **runtime_identity()},
@@ -340,7 +341,7 @@ def main() -> None:
         "cases": [
             {
                 **result,
-                "evidence_tier": report["evidence_tier"],
+                "evidence_tier": evidence_tier,
                 "actual_model_inference_measured": True,
             }
             for result in results
@@ -363,7 +364,7 @@ def main() -> None:
         encoding="utf-8",
     )
     print(json.dumps({
-        "evidence_tier": report["evidence_tier"],
+        "evidence_tier": evidence_tier,
         "case_count": len(results),
         "by_language": {
             r["language"]: {
