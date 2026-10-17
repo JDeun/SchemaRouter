@@ -229,3 +229,73 @@ def test_blocked_then_refused_is_not_claimed_as_strict_no_call():
         assert result["unsupported_tool_attempted_cases"] == 6
         assert result["observed_no_unsupported_fixture_execution"] is False
     assert safety["release_safety_gate_passed"] is False
+
+
+def test_legacy_e0_rows_without_final_turn_stay_unmeasured_not_false_success():
+    manifest, runs = paired_fixture()
+    _, safe = summarize_fixture_safety_strata(manifest, runs)
+    for arm in ARMS:
+        values = safe["per_arm"][arm]
+        assert values["supported_fixture_completed_with_final_turn"] is None
+        assert values["supported_fixture_completed_without_final_turn"] is None
+        assert values["unsupported_final_turn_observed"] is None
+        assert values["actual_final_answer_correctness_measured"] is False
+
+
+def _augment_final_turns(runs):
+    for run in runs.values():
+        supported_seen = 0
+        for row in run["rows"]:
+            if row["supported"]:
+                supported_seen += 1
+                final = bool(row["passed"] and supported_seen % 2 == 1)
+            else:
+                final = True
+            row["agent_final_turn_observed"] = final
+            row["supported_final_after_fixture_completion_observed"] = bool(
+                row["supported"] and row["task_complete"] and final
+            )
+            row["actual_final_answer_correctness_measured"] = False
+
+
+def test_supported_fixture_pass_is_not_unconditionally_final_answer_pass():
+    manifest, runs = paired_fixture()
+    _augment_final_turns(runs)
+    _, safety = summarize_fixture_safety_strata(manifest, runs)
+    for arm in ARMS:
+        metrics = safety["per_arm"][arm]
+        assert metrics["unsupported_final_turn_observed"] == 6
+        assert metrics["actual_final_answer_correctness_measured"] is False
+    assert safety["per_arm"]["lexical_k5"]["supported_fixture_completed"] == 0
+    assert safety["per_arm"]["lexical_k5"][
+        "supported_fixture_completed_with_final_turn"
+    ] == 0
+    for arm in ("e5_k5", "hybrid_k5"):
+        metrics = safety["per_arm"][arm]
+        assert metrics["supported_fixture_completed"] == 6
+        assert metrics["supported_fixture_completed_with_final_turn"] == 3
+        assert metrics["supported_fixture_completed_without_final_turn"] == 3
+    assert safety["e2_publication_gate_passed"] is False
+    assert safety["release_safety_gate_passed"] is False
+
+
+@pytest.mark.parametrize("kind", ("partial", "missing_one", "forged_final", "fake_factual"))
+def test_partial_or_forged_e0_final_turn_metrics_are_rejected(kind):
+    manifest, runs = paired_fixture()
+    _augment_final_turns(runs)
+    if kind == "partial":
+        runs["e5_k5"]["rows"][0].pop("agent_final_turn_observed")
+    elif kind == "missing_one":
+        runs["e5_k5"]["rows"][0].pop("actual_final_answer_correctness_measured")
+    elif kind == "forged_final":
+        row = next(
+            row for row in runs["e5_k5"]["rows"]
+            if row["supported"] and row["passed"]
+        )
+        row["supported_final_after_fixture_completion_observed"] = not row[
+            "supported_final_after_fixture_completion_observed"
+        ]
+    else:
+        runs["e5_k5"]["rows"][0]["actual_final_answer_correctness_measured"] = True
+    with pytest.raises(ValueError, match="E0 final-turn"):
+        summarize_fixture_safety_strata(manifest, runs)
