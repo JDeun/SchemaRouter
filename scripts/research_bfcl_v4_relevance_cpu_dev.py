@@ -249,7 +249,7 @@ def metrics(rows: list[dict[str, Any]], score_key: str, route_key: str,
     }
 
 
-def evaluate(rows: list[dict[str, Any]], encoder: Any) -> dict[str, Any]:
+def evaluate(\n    rows: list[dict[str, Any]], encoder: Any, *, real_cpu_model: bool = False,\n) -> dict[str, Any]:
     backend = EmbeddingDecisionBackend(
         E5CachedEmbedder(encoder, max_cached_passages=2048),
     )
@@ -290,7 +290,7 @@ def evaluate(rows: list[dict[str, Any]], encoder: Any) -> dict[str, Any]:
         "target_calibration_false_accept_rate": MAX_FALSE_ACCEPT_CALIBRATION,
         "by_arm": arms,
         "real_model_wall_seconds_total": round(sum(times), 3),
-        "real_model_inference_measured": True,
+        "real_model_inference_measured": real_cpu_model,
         "native_provider_tools_executed": False,
         "query_language": "en_only",
         "independent_e2_qualified": False,
@@ -323,7 +323,7 @@ def main() -> None:
             convert_to_numpy=True, show_progress_bar=False,
         ).tolist()
 
-    report = evaluate(rows, encode)
+    report = evaluate(rows, encode, real_cpu_model=True)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
