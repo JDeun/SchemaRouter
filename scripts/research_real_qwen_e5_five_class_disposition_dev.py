@@ -37,13 +37,13 @@ from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
 from scripts.research_authorized_hybrid_fixed5 import AuthorizedHybridFixed5Selector
+from scripts.research_qwen_terminal_format_diagnostic_e0 import (
+    terminal_format_diagnostic_e0,
+)
 from scripts.research_real_local_agent_fixed5_e0_pilot import (
     _cases,
     _fixture_task,
     _lexical_selector,
-)
-from scripts.research_qwen_terminal_format_diagnostic_e0 import (
-    terminal_format_diagnostic_e0,
 )
 
 LANGUAGES = ("en", "ko", "ja")
