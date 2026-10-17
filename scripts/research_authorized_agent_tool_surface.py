@@ -9,13 +9,17 @@ from __future__ import annotations
 import copy
 import json
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from schemarouter import (
     PolicyViolationError,
     PrincipalContext,
     SchemaRouter,
+)
+from scripts.research_bounded_authorized_semantic_diagnostic import (
+    CapturedAuthorizedSemanticRoute,
+    scoped_semantic_model_description,
 )
 
 MAX_SOURCE_ENDPOINTS = 500
@@ -42,6 +46,9 @@ class AuthorizedAgentToolSurface:
     visible_route_ids: tuple[str, ...]
     _tool_definitions: dict[str, dict[str, Any]]
     _visible_output_names: dict[str, frozenset[str]]
+    _semantic_source_routes: tuple[CapturedAuthorizedSemanticRoute, ...] = field(
+        default_factory=tuple, repr=False,
+    )
     independent_quality_evidence: bool = False
     executable_authority: bool = False
 
@@ -226,6 +233,7 @@ def capture_authorized_agent_tool_surface(
     )
     definitions: dict[str, dict[str, Any]] = {}
     visible: dict[str, frozenset[str]] = {}
+    semantic_routes: list[CapturedAuthorizedSemanticRoute] = []
     for candidate in result.candidates:
         params: dict[str, dict[str, Any]] = {}
         required: list[str] = []
@@ -276,6 +284,14 @@ def capture_authorized_agent_tool_surface(
         visible[candidate.route_id] = frozenset(
             field.name for field in candidate.output_fields
         )
+        semantic_routes.append(CapturedAuthorizedSemanticRoute(
+            route_id=candidate.route_id,
+            description=scoped_semantic_model_description(
+                candidate, field_scoped=field_scoped,
+            ),
+            tool_fingerprint=candidate.tool_fingerprint,
+            endpoint_fingerprint=candidate.endpoint_fingerprint,
+        ))
     router._check_retrieval_authority_witness(witness)
     if _principal_claims_canonical(principal) != claims_snapshot:
         raise PolicyViolationError("principal claims changed during model request")
@@ -286,4 +302,5 @@ def capture_authorized_agent_tool_surface(
         visible_route_ids=tuple(definitions),
         _tool_definitions=definitions,
         _visible_output_names=visible,
+        _semantic_source_routes=tuple(semantic_routes),
     )
