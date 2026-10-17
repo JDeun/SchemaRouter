@@ -179,10 +179,14 @@
       "owner_issue": 1477,
       "status": "NOT_VERIFIED",
       "blocker": "State-dependent 2/3-step native execution not independently qualified.",
-      "next_action": "Run independently authored EN/KO/JA model-driven 2/3-step native provider E2, including state handoff, revocation and final-answer oracle; do not promote E0 host-bound simulation.",
+      "next_action": "Retain observed 0/3 EN/KO/JA model-selected multi-step E0 negatives (premature final even after one reminder); test independent model/tool-format candidates and externally authored native 2/3-step E2 with final-answer oracle.",
       "evidence_links": [
         "https://github.com/JDeun/SchemaRouter/pull/1505",
-        "https://github.com/JDeun/SchemaRouter/actions/runs/39026731254"
+        "https://github.com/JDeun/SchemaRouter/actions/runs/39026731254",
+        "https://github.com/JDeun/SchemaRouter/pull/1506",
+        "https://github.com/JDeun/SchemaRouter/actions/runs/39029981154",
+        "https://github.com/JDeun/SchemaRouter/pull/1507",
+        "https://github.com/JDeun/SchemaRouter/actions/runs/39030372571"
       ],
       "qualification": null
     },
