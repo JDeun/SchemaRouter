@@ -80,6 +80,7 @@ def test_mock_15_pairs_are_real_executor_actions_not_mock_inferred_e2():
     )
     assert len(agent.requests) == 30
     assert report["case_count_per_arm"] == 15
+    assert report["evidence_tier"] == "UNATTESTED_FIVE_CLASS_AGENT_AND_BACKEND_E0_DEV_ONLY"
     assert report["arms"] == list(ARMS)
     assert report["independent_e2_qualified"] is False
     assert report["real_agent_generation_measured"] is False
