@@ -214,21 +214,28 @@ def run_five_class_dev(
                 for tool in router.registry.tools() for endpoint in tool.endpoints
             ))
 
-            def scoped_choice(query: str, raw_ids: tuple[str, ...]) -> list[str]:
-                view.assert_source_unchanged()
+            def scoped_choice(
+                query: str,
+                raw_ids: tuple[str, ...],
+                *,
+                authorized=view,
+                sealed=registered,
+                ranker=selector,
+            ) -> list[str]:
+                authorized.assert_source_unchanged()
                 if (
-                    type(query) is not str or query != view.original_query
-                    or type(raw_ids) is not tuple or raw_ids != registered
+                    type(query) is not str or query != authorized.original_query
+                    or type(raw_ids) is not tuple or raw_ids != sealed
                 ):
                     raise ValueError("trusted source tuple drift")
-                chosen = selector(query, view.visible_route_ids)
+                chosen = ranker(query, authorized.visible_route_ids)
                 if (
                     type(chosen) is not list
                     or len(chosen) > 5 or len(set(chosen)) != len(chosen)
-                    or not set(chosen).issubset(view.visible_route_ids)
+                    or not set(chosen).issubset(authorized.visible_route_ids)
                 ):
                     raise ValueError("untrusted selector escaped authorized source")
-                view.assert_source_unchanged()
+                authorized.assert_source_unchanged()
                 return chosen
 
             # This disclosed 13-route E0 source has no secret fields or
