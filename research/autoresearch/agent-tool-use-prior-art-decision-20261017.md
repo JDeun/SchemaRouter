@@ -2,7 +2,7 @@
 
 **Decision type:** Research-first architectural decision (PROPOSAL only)
 **Reviewed:** 2026-10-17
-**Owners:** #200 qualification control; #1477 R04/R05/A02; #1346 independent provider E2
+**Owners:** #200 qualification control; #1477 R04/R05/A02; #1346 independent provider E2; #1510 upstream research integration checklist
 **Evidence:** upstream documentation + exact source files; no SchemaRouter performance is established by this review.
 **Current state:** v0.17.0 stable; 0/19 independent E2; v0.18 #1356 and default-model promotion HOLD.
 
