@@ -21,6 +21,7 @@ from scripts.agent_utility_generated_common import (
     EXPERIMENTAL_FIXED5_CONDITION,
     run_generated_episode,
 )
+from scripts.research_agent_stage_evidence_e0 import E0TraceProvenance
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
@@ -692,3 +693,58 @@ async def test_host_invocation_rejects_planner_added_registered_optional_argumen
             arguments={"place": "Seoul"},
         )
     assert invoked == []
+
+
+def test_scoped_agent_trace_is_derived_only_after_execution_and_redacted():
+    router = fixture_router()
+    view = captured(router)
+    agent = CapturingSyntheticAgent()
+    trace = run_generated_episode(
+        agent, router.registry, scoped_synthetic_task(),
+        EXPERIMENTAL_FIXED5_CONDITION,
+        experimental_candidate_selector=lambda _query, _ids: ["marine.read"],
+        experimental_agent_tool_surface=view,
+        experimental_e0_trace_provenance=E0TraceProvenance(
+            source_revision="a" * 40,
+            source_sha256="b" * 64,
+            hmac_key=b"trusted-only-e0-key-0123456789",
+            seed=123,
+        ),
+    )
+    assert trace["passed"] is True
+    assert trace["e0_stage_evidence"]["observed_stages"] == ["passed"]
+    assert trace["e0_stage_evidence"]["visible_candidate_counts"] == [1]
+    assert trace["e0_stage_evidence"]["independent_e2_qualified"] is False
+    assert trace["e0_stage_evidence"]["task_hmac_sha256"]
+    assert agent.calls == 2
+    serialized = json.dumps(trace)
+    assert SECRET not in serialized
+    assert "semantic_task_id" not in serialized
+    assert "required_routes" not in serialized
+    assert "attempts" not in serialized
+    assert "original_query" not in serialized
+
+
+def test_e0_trace_provenance_cannot_attach_to_non_scoped_or_frozen_episode():
+    router = fixture_router()
+    agent = CapturingSyntheticAgent()
+    provenance = E0TraceProvenance(
+        source_revision="a" * 40,
+        source_sha256="b" * 64,
+        hmac_key=b"trusted-only-e0-key-0123456789",
+        seed=123,
+    )
+    with pytest.raises(ValueError, match="trusted scoped fixed5"):
+        run_generated_episode(
+            agent, router.registry, scoped_synthetic_task(),
+            EXPERIMENTAL_FIXED5_CONDITION,
+            experimental_candidate_selector=lambda _query, _ids: ["marine.read"],
+            experimental_e0_trace_provenance=provenance,
+        )
+    with pytest.raises(ValueError, match="trusted scoped fixed5"):
+        run_generated_episode(
+            agent, router.registry, scoped_synthetic_task(), "FULL",
+            experimental_agent_tool_surface=captured(router),
+            experimental_e0_trace_provenance=provenance,
+        )
+    assert agent.calls == 0
