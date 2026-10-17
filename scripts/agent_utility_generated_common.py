@@ -42,6 +42,10 @@ from scripts.evaluate_agent_utility_phase_b_smollm3 import (
 from scripts.research_authorized_agent_tool_surface import (
     AuthorizedAgentToolSurface,
 )
+from scripts.research_agent_stage_evidence_e0 import (
+    E0TraceProvenance,
+    sanitized_e0_trace,
+)
 
 EXTENDED_CATALOG_SIZES = (100, 250, 500, 1000)
 DOWNSTREAM_CATALOG_SIZES = (100, 250, 500)
@@ -471,6 +475,7 @@ def run_generated_episode(
     experimental_candidate_selector: Callable[[str, tuple[str, ...]], list[str]]
     | None = None,
     experimental_agent_tool_surface: AuthorizedAgentToolSurface | None = None,
+    experimental_e0_trace_provenance: E0TraceProvenance | None = None,
 ) -> dict[str, Any]:
     """Run one frozen episode.
 
@@ -495,6 +500,13 @@ def run_generated_episode(
     execution nor the model becomes a real invoker authorization receipt.
     The original #432 results remain unchanged.
     """
+    if experimental_e0_trace_provenance is not None and (
+        type(experimental_e0_trace_provenance) is not E0TraceProvenance
+        or experimental_agent_tool_surface is None
+        or experimental_candidate_selector is None
+        or condition != EXPERIMENTAL_FIXED5_CONDITION
+    ):
+        raise ValueError("E0 stage trace requires trusted scoped fixed5 evaluator")
     routing_condition = candidate_condition or condition
     episode_started = time.perf_counter_ns()
     selection_started = time.perf_counter_ns()
@@ -852,5 +864,19 @@ def run_generated_episode(
         "turn_rows": turn_rows,
     }
     if experimental_agent_tool_surface is not None:
-        return experimental_agent_tool_surface.public_trace(episode_record)
+        # Grader-only raw attempts/gold are consumed AFTER all model turns.
+        # Never hand this record, or the HMAC key, to the agent/selector.
+        public = experimental_agent_tool_surface.public_trace(episode_record)
+        if experimental_e0_trace_provenance is not None:
+            provenance = experimental_e0_trace_provenance
+            public["e0_stage_evidence"] = sanitized_e0_trace(
+                episode_record,
+                source_revision=provenance.source_revision,
+                source_sha256=provenance.source_sha256,
+                task_identity=str(task["semantic_task_id"]),
+                hmac_key=provenance.hmac_key,
+                seed=provenance.seed,
+            )
+            experimental_agent_tool_surface.assert_source_unchanged()
+        return public
     return episode_record
