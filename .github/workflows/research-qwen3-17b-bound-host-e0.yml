@@ -1,0 +1,108 @@
+name: Real Qwen3 1.7B Bound Host E0 DEV
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_qwen3_17b_bound_two_step_e0.py"
+      - "tests/test_research_qwen3_17b_bound_two_step_e0.py"
+      - "research/autoresearch/qwen3-17b-host-bound-e0.md"
+      - ".github/workflows/research-qwen3-17b-bound-host-e0.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qwen3-17b-bound-host-e0-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  candidate-identity-and-oracle-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install isolated test dependencies
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+      - name: Strict source pin, existing host oracle and no-model candidate contract
+        run: |
+          ruff check scripts/research_qwen3_17b_bound_two_step_e0.py tests/test_research_qwen3_17b_bound_two_step_e0.py
+          python -m pytest -q tests/test_research_qwen3_17b_bound_two_step_e0.py tests/test_research_real_qwen_bound_two_step_e0.py
+          python -m scripts.research_qwen3_17b_bound_two_step_e0 --mode validate
+
+  real-pinned-qwen17-cpu:
+    needs: candidate-identity-and-oracle-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install PyTorch CPU and pinned model runtime
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "transformers>=4.51,<5" "huggingface-hub>=0.30,<2"
+      - name: Check available public GitHub Linux runner RAM and disk
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          mem = next(row for row in Path("/proc/meminfo").read_text().splitlines() if row.startswith("MemTotal:"))
+          mem_kib = int(mem.split()[1])
+          free_gib = shutil.disk_usage(".").free / (1024**3)
+          print(f"total_mem_kib={mem_kib}, free_disk_gib={free_gib:.2f}")
+          assert mem_kib >= 12_000_000, "wrong runner memory tier"
+          assert free_gib >= 7, "model checkpoint requires more available disk"
+          PY
+      - name: Evaluate pinned Qwen3-1.7B real model on source-frozen host-bound tasks
+        run: |
+          python -m scripts.research_qwen3_17b_bound_two_step_e0 \
+            --mode real-cpu --out artifacts/qwen3-17b-bound-host-e0/report.json
+      - name: Check source provenance, preserve negatives, prohibit E2 promotion
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path("artifacts/qwen3-17b-bound-host-e0/report.json").read_text(encoding="utf-8"))
+          assert d["evidence_tier"] == "REAL_QWEN3_17B_CPU_BOUND_HOST_E0_DEV_ONLY"
+          assert d["candidate_model"] == "Qwen/Qwen3-1.7B"
+          assert d["candidate_revision"] == "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e"
+          assert d["case_count"] == 3
+          assert d["independent_e2_qualified"] is False
+          assert d["real_native_external_provider_execution"] is False
+          assert d["actual_real_model_inference_measured"] is True
+          assert d["model_default_promoted"] is False
+          assert d["release_safety_gate_passed"] is False
+          assert {r["language"] for r in d["per_language"]} == {"en","ko","ja"}
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write("## Actual Qwen3-1.7B pinned CPU E0 vs preserved Qwen3-0.6B disclosed negative\n\n")
+              out.write("Same host-bound source, prompt, parser and final oracle; model+tokenizer weights differ. No native external provider or independent E2.\n\n")
+              out.write("Resolved SHA: " + d["candidate_revision"] + ". CPU load plus generation seconds: " + str(d["model_load_and_generation_elapsed_s"]) + ". Peak RSS KiB: " + str(d["peak_process_rss_kib_linux"]) + ".\n\n")
+              out.write("| Language | Actual bound calls | Termination reason | Strict final correct | Full task correct |\n|---|---:|---|---|---|\n")
+              for r in d["per_language"]:
+                  assert r["actual_model_inference_measured"] is True
+                  assert 0 <= r["actual_bound_host_calls"] <= 2
+                  assert r["full_task_correct"] <= r["two_stage_completed"]
+                  out.write(f"| {r['language']} | {r['actual_bound_host_calls']} | {r['termination_reason']} | {r['correct_strict_final_answer']} | {r['full_task_correct']} |\n")
+              out.write("\nOriginal small-model prior-run 0/3 full tasks: https://github.com/JDeun/SchemaRouter/actions/runs/39029981154 . Cross-run evidence cannot justify default promotion. A02 NOT_VERIFIED, E2 0/19, v0.18 HOLD.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: qwen3-17b-bound-host-e0-${{ github.run_id }}
+          path: artifacts/qwen3-17b-bound-host-e0/report.json
+          if-no-files-found: error
+          retention-days: 30
