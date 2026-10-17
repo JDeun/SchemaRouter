@@ -230,3 +230,19 @@ def test_forged_terminal_text_cannot_change_no_call_disposition():
     row["final_text"] = "REQUEST_DENIED"
     with pytest.raises(ValueError, match="differs from observed final"):
         score_disposition_e0("unsupported", row)
+
+
+@pytest.mark.parametrize("false_final", (
+    "REQUEST_MORE_TOOLS", "REQUEST_INPUT", "CLARIFY_REQUEST", "REQUEST_DENIED",
+))
+def test_supported_completed_fixture_cannot_end_in_any_refusal(false_final):
+    """A completed tool step plus a refusal is not correct supported utility."""
+    row = replay("supported")
+    assert row["passed"] and row["task_complete"]
+    assert row["tool_call_count"] == 1
+    row["final_text"] = false_final
+    row["turn_rows"][-1]["text"] = false_final
+    scored = score_disposition_e0("supported", row)
+    assert scored["observed_terminal_class"] in EXPECTED_FINAL
+    assert scored["disposition_correct"] is False
+    assert scored["tool_attempted"] is True
