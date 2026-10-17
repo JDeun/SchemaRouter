@@ -1,0 +1,35 @@
+name: Authorized Fixed5 Decision Bridge E0
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_authorized_fixed5_decision_bridge.py"
+      - "tests/test_research_authorized_fixed5_decision_bridge.py"
+      - "research/autoresearch/authorized-fixed5-decision-bridge-e0.md"
+      - ".github/workflows/research-authorized-fixed5-decision-bridge-e0.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fixed5-bridge-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scoped-backend-replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install source-scoped E0 test dependencies
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+      - name: Run opt-in genuine source selection synthetic episode and denied authority cases
+        run: |
+          ruff check scripts/research_authorized_fixed5_decision_bridge.py tests/test_research_authorized_fixed5_decision_bridge.py
+          python -m pytest -q tests/test_research_authorized_fixed5_decision_bridge.py
