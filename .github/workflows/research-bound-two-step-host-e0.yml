@@ -1,0 +1,35 @@
+name: Bound Two Step Host Router E0
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_bound_two_step_host_e0.py"
+      - "tests/test_research_bound_two_step_host_e0.py"
+      - "research/autoresearch/bound-two-step-host-e0.md"
+      - ".github/workflows/research-bound-two-step-host-e0.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: two-step-bound-host-e0-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  real-router-bound-read-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install real package and scoped host dependencies
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+      - name: EN KO JA stateful host-bound invocation and authorization revocation
+        run: |
+          ruff check scripts/research_bound_two_step_host_e0.py tests/test_research_bound_two_step_host_e0.py
+          python -m pytest -q tests/test_research_bound_two_step_host_e0.py tests/test_research_authorized_agent_tool_surface.py tests/test_research_trusted_host_intent_preflight_e0.py
