@@ -163,7 +163,7 @@ def test_duplicate_manifest_json_key_is_never_last_wins():
     b = raw(m)
     assert b.startswith(b"{")
     forged = b'{"schema_version":1,' + b[1:]
-    with pytest.raises(ValueError, match="duplicate JSON"):
+    with pytest.raises(ValueError, match="malformed JSON contents"):
         inspect_unscored_native_cohort(forged, raw(c), raw(g), raw(d))
 
 
@@ -193,3 +193,13 @@ def test_large_query_is_denied_before_pairwise_comparison():
     c["cases"][0]["query"] = "z" * 2001
     with pytest.raises(ValueError, match="oversized"):
         evaluate((m, c, g, d))
+
+
+def test_untrusted_duplicate_field_name_is_not_reflected_in_error():
+    m, c, g, d = example()
+    secret_key = ("sensitive-" + PRIVATE).encode("ascii")
+    raw_case = b'{"' + secret_key + b'":1,"' + secret_key + b'":2}'
+    m["case_bytes_sha256"] = sha(raw_case)
+    with pytest.raises(ValueError, match="malformed JSON contents") as error:
+        inspect_unscored_native_cohort(raw(m), raw_case, raw(g), raw(d))
+    assert PRIVATE not in str(error.value)
