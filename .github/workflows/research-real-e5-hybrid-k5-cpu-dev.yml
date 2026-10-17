@@ -1,0 +1,86 @@
+name: Authorized Real E5 vs Hybrid Fixed5 CPU DEV
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/evaluate_authorized_e5_hybrid_cpu_dev.py"
+      - "tests/test_evaluate_authorized_e5_hybrid_cpu_dev.py"
+      - ".github/workflows/research-real-e5-hybrid-k5-cpu-dev.yml"
+      - "research/autoresearch/authorized-e5-hybrid-real-cpu-dev.md"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: real-e5-hybrid-dev-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validated-corpus-and-backend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+      - name: Verify source bytes and mock-only E0 comparison controls
+        run: |
+          ruff check scripts/evaluate_authorized_e5_hybrid_cpu_dev.py tests/test_evaluate_authorized_e5_hybrid_cpu_dev.py
+          python -m pytest -q tests/test_evaluate_authorized_e5_hybrid_cpu_dev.py
+          python -m scripts.evaluate_authorized_e5_hybrid_cpu_dev --mode validate
+
+  real-e5-retrieval-dev:
+    needs: validated-corpus-and-backend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install CPU inference only, no paid provider
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
+      - name: Run genuine pinned E5 locally against original 84-case exposed DEV
+        run: |
+          python -m scripts.evaluate_authorized_e5_hybrid_cpu_dev \
+            --mode real-e5-cpu \
+            --output artifacts/authorized-e5-hybrid-dev/report.json
+      - name: Publish scoped, clearly non-E2 evidence in job summary
+        if: success()
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          report = json.loads(Path("artifacts/authorized-e5-hybrid-dev/report.json").read_text(encoding="utf-8"))
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as f:
+              f.write("## Real pinned multilingual E5 CPU - **DEV retrieval only**\n\n")
+              f.write("84 previously disclosed synthetic queries, 13 routes; no LLM agent, host native provider task completion, independent E2 or calibrated no-fit.\n\n")
+              f.write("| Arm | Supported R@1 | Supported R@5 | Unsupported nonempty | CPU selection p95 (ms) |\n|---|---:|---:|---:|---:|\n")
+              for arm, row in report["results"].items():
+                  f.write(f"| {arm} | {row['supported_recall_at_1']:.3f} | {row['supported_recall_at_5']:.3f} | {row['unsupported_nonempty_candidate_rate']:.3f} | {row['selection_latency_ms_p95']:.2f} |\n")
+              f.write(f"\nModel revision: `{report['runtime']['model_revision']}`. Corpus SHA256: `{report['source_corpus_sha256']}`.\n")
+              f.write("**No product promotion or release gate can pass from these results.**\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: success()
+        with:
+          name: authorized-real-e5-hybrid-fixed5-dev-${{ github.run_id }}
+          path: artifacts/authorized-e5-hybrid-dev/report.json
+          if-no-files-found: error
+          retention-days: 30
