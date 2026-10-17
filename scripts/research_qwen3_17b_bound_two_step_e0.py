@@ -21,12 +21,16 @@ from typing import Any
 from scripts.agent_utility_v7_dev_agent import (
     MAX_NEW_TOKENS,
     MAX_TURNS,
-    MODEL_NAME as SMALL_MODEL,
-    MODEL_REVISION as SMALL_REVISION,
     SEED,
     THREADS,
     LocalQwenAgent,
     runtime_identity,
+)
+from scripts.agent_utility_v7_dev_agent import (
+    MODEL_NAME as SMALL_MODEL,
+)
+from scripts.agent_utility_v7_dev_agent import (
+    MODEL_REVISION as SMALL_REVISION,
 )
 from scripts.research_real_qwen_bound_two_step_e0 import (
     LANGUAGES,
