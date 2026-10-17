@@ -191,3 +191,60 @@ def test_unclassified_without_direct_stage_evidence():
     raw["attempts"] = []
     raw["turn_rows"] = []
     assert observed_stages(raw) == ["unclassified"]
+
+
+def test_supported_fixture_completion_without_final_agent_turn_is_not_answer():
+    raw = original_row()
+    raw.update({
+        "supported": True, "passed": True, "task_complete": True,
+        "initial_required_route_miss": False,
+        "turn_rows": [{"event": "tool_calls", "text": SECRET}],
+        "final_text": SECRET,
+    })
+    safe = trace(raw)
+    assert safe["passed"] is True
+    assert safe["task_complete"] is True
+    assert safe["agent_final_turn_observed"] is False
+    assert safe["supported_final_after_fixture_completion_observed"] is False
+    assert safe["actual_final_answer_correctness_measured"] is False
+    assert SECRET not in json.dumps(safe)
+
+
+def test_supported_completed_fixture_plus_final_turn_has_structural_not_factual_flag():
+    raw = original_row()
+    raw.update({
+        "supported": True, "passed": True, "task_complete": True,
+        "initial_required_route_miss": False,
+        "turn_rows": [
+            {"event": "tool_calls", "visible_observations": [{"secret": SECRET}]},
+            {"event": "final", "text": SECRET},
+        ],
+        "final_text": SECRET,
+    })
+    safe = trace(raw)
+    assert safe["agent_final_turn_observed"] is True
+    assert safe["supported_final_after_fixture_completion_observed"] is True
+    assert safe["actual_final_answer_correctness_measured"] is False
+    assert "visible_observations" not in safe
+    assert SECRET not in json.dumps(safe)
+
+
+def test_unsupported_refusal_does_not_become_supported_final_answer_success():
+    raw = original_row()
+    raw.update({
+        "supported": False, "passed": True, "task_complete": False,
+        "attempts": [], "final_text": "REQUEST_MORE_TOOLS",
+        "turn_rows": [{"event": "final", "text": SECRET}],
+    })
+    safe = trace(raw)
+    assert safe["agent_final_turn_observed"] is True
+    assert safe["supported_final_after_fixture_completion_observed"] is False
+    assert safe["actual_final_answer_correctness_measured"] is False
+
+
+@pytest.mark.parametrize("bad", (None, "final", {}, [None], [{"event": None}]))
+def test_structurally_corrupted_agent_turns_cannot_be_published(bad):
+    raw = original_row()
+    raw["turn_rows"] = bad
+    with pytest.raises(ValueError, match="post-execution agent turn events"):
+        trace(raw)
