@@ -35,6 +35,9 @@ from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
     real_cpu_backend,
 )
 from scripts.evaluate_multilingual_embedding_cpu_dev import load_development_corpus
+from scripts.research_agent_fixture_safety_strata_e0 import (
+    summarize_fixture_safety_strata,
+)
 from scripts.research_agent_stage_evidence_e0 import E0TraceProvenance
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
@@ -43,9 +46,6 @@ from scripts.research_authorized_fixed5_decision_bridge import (
     AuthorizedFixed5DecisionSelector,
 )
 from scripts.research_authorized_hybrid_fixed5 import AuthorizedHybridFixed5Selector
-from scripts.research_agent_fixture_safety_strata_e0 import (
-    summarize_fixture_safety_strata,
-)
 from scripts.research_paired_agent_fixed5_e0 import ARMS
 
 ROOT = Path(__file__).resolve().parents[1]
