@@ -55,6 +55,8 @@ def _raw_json(raw: bytes, label: str) -> dict[str, Any]:
             parse_constant=_reject_nonfinite,
             parse_float=_finite_float,
         )
+    except ValueError:
+        raise ValueError(f"{label}: malformed JSON contents") from None
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ValueError(f"{label}: invalid UTF-8 JSON") from exc
     if type(data) is not dict:
