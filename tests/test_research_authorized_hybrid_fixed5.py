@@ -26,8 +26,8 @@ from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
 from scripts.research_authorized_hybrid_fixed5 import (
-    AuthorizedHybridFixed5Selector,
     FIXED_RRF_CONSTANT,
+    AuthorizedHybridFixed5Selector,
 )
 
 SECRET = "HIDDEN-HYBRID-1483"
