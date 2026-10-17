@@ -6,7 +6,6 @@ E2 task utility, not calibrated no-fit, not a product default or release gate.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import math
 import os
@@ -97,15 +96,15 @@ def run_three_arm_dev(
     backend: EmbeddingDecisionBackend,
 ) -> dict[str, Any]:
     """Score retrieval only; no fixture grader or agent execution authority."""
+    original, original_sha = load_development_corpus(CORPUS)
     if (
-        corpus.get("surface") != "prospective_development_only"
+        corpus != original or corpus_sha256 != original_sha
+        or corpus.get("surface") != "prospective_development_only"
         or corpus.get("validation_or_holdout_claim_allowed") is not False
-        or type(corpus_sha256) is not str or len(corpus_sha256) != 64
-        or any(c not in "0123456789abcdef" for c in corpus_sha256)
         or len(corpus.get("cases", [])) != 84
         or set(corpus.get("languages", [])) != set(LANGUAGES)
     ):
-        raise ValueError("cannot qualify an unverified or non-DEV corpus")
+        raise ValueError("DEV source/content digest or task cohort drift")
     # Fingerprint the exact already-verified content as an input commitment;
     # no corpus mutation, task-ID cherry-picking or generator side effects.
     router = build_source_router(corpus)
