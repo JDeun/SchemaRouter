@@ -69,8 +69,8 @@ Checking one item requires independent provenance, a frozen split, reproducible 
   - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/actions/runs/39007769090)
 - [ ] **A02 P1** — `NOT_VERIFIED` — [owner #1477](https://github.com/JDeun/SchemaRouter/issues/1477)
   - Blocker: State-dependent 2/3-step native execution not independently qualified.
-  - Next action: Run multi-step E2 with state and final-result oracle.
-  - Evidence: No qualifying independent evidence registered
+  - Next action: Run independently authored EN/KO/JA model-driven 2/3-step native provider E2, including state handoff, revocation and final-answer oracle; do not promote E0 host-bound simulation.
+  - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/pull/1505) · [evidence 2](https://github.com/JDeun/SchemaRouter/actions/runs/39026731254)
 - [ ] **A03 P1** — `HISTORICAL_NEGATIVE` — [owner #1339](https://github.com/JDeun/SchemaRouter/issues/1339)
   - Blocker: Frozen progressive exposure had only 25.09% task pass.
   - Next action: Separate late retrieval, recovery and state propagation failure on fresh cases.
