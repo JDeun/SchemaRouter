@@ -88,9 +88,9 @@ jobs:
               for arm, row in report["agent_task_fixture_pass"]["summary"].items():
                   f.write(f"| {arm} | {row['task_pass_rate']:.3f} | {row['by_language']['en']['pass_rate']:.3f} | {row['by_language']['ko']['pass_rate']:.3f} | {row['by_language']['ja']['pass_rate']:.3f} | {row['unsupported_executed_observed']} |\n")
               f.write("\n### Support/OOD disaggregated fixture safety (six tasks each)\n\n")
-              f.write("| Arm | Supported completed / 6 | Correct OOD refusals / 6 | OOD attempted / 6 | OOD fixture executed / 6 |\n|---|---:|---:|---:|---:|\n")
+              f.write("| Arm | Supported completed / 6 | Strict OOD no-call refusals / 6 | OOD attempted / 6 | OOD fixture executed / 6 |\n|---|---:|---:|---:|---:|\n")
               for arm, values in strata["per_arm"].items():
-                  f.write(f"| {arm} | {values['supported_fixture_completed']} | {values['unsupported_correct_refusals']} | {values['unsupported_tool_attempted_cases']} | {values['unsupported_fixture_executed_cases']} |\n")
+                  f.write(f"| {arm} | {values['supported_fixture_completed']} | {values['unsupported_strict_no_call_refusals']} | {values['unsupported_tool_attempted_cases']} | {values['unsupported_fixture_executed_cases']} |\n")
               f.write("**E2 and release gate: HOLD**. Fixture attempts are NOT external-provider invocations; 12 exposed DEV queries cannot calibrate OOD/no-fit.\n")
               f.write(f"\nExact source: `{report['source_revision']}` · original DEV corpus SHA256: `{report['source_corpus_sha256']}`. Frozen #432 and v0.18 release remain unchanged.\n")
           PY
