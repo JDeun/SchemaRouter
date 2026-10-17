@@ -76,7 +76,9 @@ def build_bound_two_step_source(
                     name=param, location="query", required=True,
                     json_schema={"type": "string", "minLength": 2},
                 )],
-                output_fields=[FieldSpec(name=output), FieldSpec(name="secret")],
+                output_fields=[FieldSpec(name=output)] + (
+                    [] if output == "secret" else [FieldSpec(name="secret")]
+                ),
             )],
         ))
 
