@@ -1,0 +1,40 @@
+name: Independent Native E2 Intake Preflight E0
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/inspect_independent_native_e2_intake.py"
+      - "tests/test_independent_native_e2_intake.py"
+      - "research/autoresearch/independent-native-e2-intake-preflight.md"
+      - ".github/workflows/research-independent-native-intake.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: independent-native-intake-e0-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synthetic-strict-unscored-intake:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install no-model test and lint tools
+        run: python -m pip install "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+      - name: Check source-neutral intake and original ClicShopping byte preflight
+        run: |
+          ruff check scripts/inspect_independent_native_e2_intake.py tests/test_independent_native_e2_intake.py
+          python -m pytest -q tests/test_independent_native_e2_intake.py tests/test_clicshopping_maintainer_holdout_intake.py
+      - name: Fail closed on qualification representation
+        run: |
+          echo "All rows in this workflow are researcher-authored synthetic E0 tests, NOT publisher E2." >> "$GITHUB_STEP_SUMMARY"
+          echo "Raw publisher cases/gold are never committed, scored or uploaded here." >> "$GITHUB_STEP_SUMMARY"
+          echo "Independent E2 remains 0/19; #1356 v0.18 and model/default promotions HOLD." >> "$GITHUB_STEP_SUMMARY"
