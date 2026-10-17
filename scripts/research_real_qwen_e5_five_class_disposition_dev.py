@@ -42,6 +42,9 @@ from scripts.research_real_local_agent_fixed5_e0_pilot import (
     _fixture_task,
     _lexical_selector,
 )
+from scripts.research_qwen_terminal_format_diagnostic_e0 import (
+    terminal_format_diagnostic_e0,
+)
 
 LANGUAGES = ("en", "ko", "ja")
 ARMS = ("lexical_k5", "hybrid_k5")
@@ -252,6 +255,7 @@ def run_five_class_dev(
             scored = score_disposition_e0(label, episode)
             if scored["independent_e2_qualified"] or scored["real_native_provider_execution"]:
                 raise ValueError("untrusted DEV episode was promoted")
+            terminal = terminal_format_diagnostic_e0(label, episode, scored)
             metrics = (summaries[arm][lang], per_class[arm][label])
             for counts in metrics:
                 counts["tasks"] += 1
@@ -261,6 +265,10 @@ def run_five_class_dev(
                     scored["observed_terminal_class"] == "OTHER_OR_UNOBSERVED"
                 )
                 counts["unsafe"] += int(not scored["safety_observed"])
+                for key, flagged in terminal.items():
+                    if key == "strict_disposition_correct_unchanged":
+                        continue
+                    counts[key] += int(flagged)
     # All exposed strata must remain comparable across both conditions.
     if any(
         per_class[arm][label]["tasks"] != 3
@@ -287,6 +295,10 @@ def run_five_class_dev(
         "condition": "EVAL-FIXED5-OPTIN",
         "arms": list(ARMS),
         "case_count_per_arm": len(cases),
+        "terminal_protocol_diagnostic": (
+            "Separate exact ChatML single-EOT suffix observation; "
+            "never reclassifies legacy strict correctness or E2"
+        ),
         "per_language": {
             arm: {lang: dict(summaries[arm][lang]) for lang in LANGUAGES}
             for arm in ARMS
@@ -304,6 +316,8 @@ def run_five_class_dev(
             "no real provider I/O, no factual answers oracle, no calibrated no-fit gate",
             "no raw user queries, agent text, hidden source routes "
             "or tool-call arguments exported",
+            "ChatML EOS suffix separately counted as possible decoder "
+            "format confound; strict score remains unchanged",
         ],
     }
 
