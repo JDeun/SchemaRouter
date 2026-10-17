@@ -5,11 +5,18 @@ import copy
 
 import pytest
 
-from schemarouter.decisions import CallableDecisionBackend
+from schemarouter.decisions import (
+    CallableDecisionBackend,
+    DecisionOption,
+    DecisionRequest,
+)
 from schemarouter.errors import PlanningError
 from scripts.evaluate_authorized_e5_scale_500_cpu_dev import (
     CORPUS,
+    PROFILED_STAGE_FIELDS,
     SIZES,
+    _ProfiledBackend,
+    _summary,
     build_scaled_authorized_router,
     native_route_id,
     run_scaled_retrieval_dev,
@@ -139,3 +146,93 @@ def test_untrusted_model_option_id_still_cannot_appear_in_native_shortlist():
             ),
             sizes=(13,), case_limit=1,
         )
+
+
+def test_profiling_wrapper_is_output_transparent_and_never_accepts_gold():
+    backend = _ProfiledBackend(CallableDecisionBackend(fake_backend))
+    request = DecisionRequest(
+        query="Korean multilingual DEV no model",
+        options=[DecisionOption(id="native:0", label="safe.read")],
+        max_selections=1,
+    )
+    result = backend.decide(request)
+    assert [s.option_id for s in result.selections] == ["native:0"]
+    assert backend.calls == 1
+    assert type(backend.elapsed_ns) is int
+    assert backend.elapsed_ns >= 0
+
+
+def test_profile_aggregates_stage_p95_without_raw_query_or_labels():
+    corpus, _ = load_development_corpus(CORPUS)
+    rows = [
+        {
+            "kind": case["kind"],
+            "language": case["language"],
+            "hit_at_1": True if case["kind"] == "supported" else None,
+            "hit_at_5": True if case["kind"] == "supported" else None,
+            "nonempty_unsupported": case["kind"] == "unsupported",
+            "selection_latency_ms": 4.0,
+            "source_capture_latency_ms": 12.0,
+            "backend_decision_latency_ms": 2.0,
+            "nonbackend_selection_latency_ms": 2.0,
+            "source_capture_plus_selection_latency_ms": 16.0,
+        }
+        for case in corpus["cases"]
+    ]
+    result = _summary(rows)
+    assert set(result["stage_latency_ms"]) == set(PROFILED_STAGE_FIELDS)
+    assert result["supported_recall_at_5"] == 1
+    assert result["stage_latency_ms"]["source_capture_latency_ms"]["p95"] == 12.0
+    assert result["stage_latency_ms"]["backend_decision_latency_ms"]["p99"] == 2.0
+    assert result["stage_latency_ms"]["nonbackend_selection_latency_ms"]["p50"] == 2.0
+    assert result["stage_latency_ms"]["source_capture_plus_selection_latency_ms"]["p95"] == 16.0
+    assert "query" not in str(result)
+    assert "expected_route" not in str(result)
+
+
+def test_invalid_profile_telemetry_is_fail_closed():
+    corpus, _ = load_development_corpus(CORPUS)
+    rows = []
+    for case in corpus["cases"]:
+        rows.append({
+            "kind": case["kind"],
+            "language": case["language"],
+            "hit_at_1": True if case["kind"] == "supported" else None,
+            "hit_at_5": True if case["kind"] == "supported" else None,
+            "nonempty_unsupported": case["kind"] == "unsupported",
+            "selection_latency_ms": 0.1,
+            **{name: 0.1 for name in PROFILED_STAGE_FIELDS},
+        })
+    for corrupt in (-1.0, float("nan"), float("inf"), "fake"):
+        rows[0]["backend_decision_latency_ms"] = corrupt
+        with pytest.raises(ValueError, match="measured CPU latency stage"):
+            _summary(rows)
+
+
+def test_existing_13_route_mock_scores_preserved_with_inference_profile():
+    corpus, digest = load_development_corpus(CORPUS)
+    output = run_scaled_retrieval_dev(
+        corpus, digest, CallableDecisionBackend(fake_backend),
+        sizes=(13,),
+    )
+    assert output["real_model_routing_measured"] is False
+    assert output["independent_e2_qualified"] is False
+    assert output["full_84_case_evaluation"] is True
+    assert output["candidate_arm_ids"] == [
+        "lexical_k5", "e5_k5", "hybrid_rrf60_k5",
+    ]
+    for arm in output["candidate_arm_ids"]:
+        result = output["results"]["13"]["arms"][arm]
+        assert result["supported"] == 48
+        assert result["unsupported"] == 36
+        assert set(result["stage_latency_ms"]) == set(PROFILED_STAGE_FIELDS)
+        for stats in result["stage_latency_ms"].values():
+            assert stats["p50"] >= 0
+            assert stats["p95"] >= stats["p50"]
+            assert stats["p99"] >= stats["p95"]
+    assert output["results"]["13"]["arms"]["lexical_k5"]["stage_latency_ms"][
+        "backend_decision_latency_ms"
+    ]["p95"] == 0
+    assert output["results"]["13"]["arms"]["e5_k5"]["stage_latency_ms"][
+        "backend_decision_latency_ms"
+    ]["p95"] > 0
