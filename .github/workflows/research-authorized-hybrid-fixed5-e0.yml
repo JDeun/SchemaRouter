@@ -1,0 +1,35 @@
+name: Authorized Hybrid Fixed5 RRF E0
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_authorized_hybrid_fixed5.py"
+      - "tests/test_research_authorized_hybrid_fixed5.py"
+      - "research/autoresearch/authorized-hybrid-fixed5-rrf-e0.md"
+      - ".github/workflows/research-authorized-hybrid-fixed5-e0.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hybrid-rrf-e0-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scoped-hybrid-candidate-replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install isolated source-scoped E0 tools
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+      - name: Verify hybrid fixed-K5 safe model options and agent integration
+        run: |
+          ruff check scripts/research_authorized_hybrid_fixed5.py tests/test_research_authorized_hybrid_fixed5.py
+          python -m pytest -q tests/test_research_authorized_hybrid_fixed5.py
