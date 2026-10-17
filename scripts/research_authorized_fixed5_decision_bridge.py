@@ -94,6 +94,7 @@ class AuthorizedFixed5DecisionSelector:
             backend=self.backend,
             k=STRICT_K,
             max_model_input_bytes=self.max_model_input_bytes,
+            authorized_source_view=self.view,
         )
         self.view.assert_source_unchanged()
         if _visible_fingerprints(self.view) != self._pinned_fingerprints:
