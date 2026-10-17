@@ -35,6 +35,11 @@ TOOL_CALL = re.compile(r"<tool_call>\s*(\{.*\})\s*</tool_call>", re.DOTALL)
 TOOLS = ("marine.read", "papers.read")
 MAX_MODEL_BYTES = 4096
 MAX_TURNS = 4
+HOST_INCOMPLETE_PROMPT = (
+    "TASK_INCOMPLETE: The user-requested verification has not yet been "
+    "observed in a trusted tool result. Continue with the authorized tools "
+    "if necessary. Do not guess an answer or invent source data."
+)
 QUERY_BY_LANG = {
     "en": (
         "Check the public marine record for Seoul. Then use the returned "
@@ -112,10 +117,13 @@ def _matches_final_answer(text: str, expected_verified: bool) -> bool:
 async def run_model_selected_bound_two_step_e0(
     agent: Any, *, language: str,
     revoke_before_second: Any = None,
+    host_continuation_budget: int = 0,
 ) -> dict[str, Any]:
     """Return sanitized category counters, NOT prompts, gold or model text."""
     if language not in LANGUAGES:
         raise ValueError("unknown published E0 language")
+    if type(host_continuation_budget) is not int or host_continuation_budget not in (0, 1):
+        raise ValueError("invalid bounded host continuation budget")
     if not callable(getattr(agent, "generate", None)):
         raise ValueError("model-generation delegate required")
     query = QUERY_BY_LANG[language]
@@ -134,6 +142,7 @@ async def run_model_selected_bound_two_step_e0(
     correct_final = False
     verified = None
     termination_reason = "turn_limit"
+    host_continuations_issued = 0
     expected_order = TOOLS
     for _turn in range(MAX_TURNS):
         model_turns += 1
@@ -170,6 +179,13 @@ async def run_model_selected_bound_two_step_e0(
             termination_reason = "malformed_call"
             break
         if kind == "final":
+            if host_calls == 1 and host_continuations_issued < host_continuation_budget:
+                # This is host-attested *incompleteness*, never a hidden
+                # answer/route/gold hint. At most one additional prompt.
+                host_continuations_issued += 1
+                messages.append({"role": "assistant", "content": text})
+                messages.append({"role": "user", "content": HOST_INCOMPLETE_PROMPT})
+                continue
             termination_reason = (
                 "terminal_after_two_steps" if host_calls == 2
                 else "premature_final"
@@ -228,6 +244,8 @@ async def run_model_selected_bound_two_step_e0(
         "language": language,
         "model_turns": model_turns,
         "termination_reason": termination_reason,
+        "host_continuation_budget": host_continuation_budget,
+        "host_continuations_issued": host_continuations_issued,
         "attempted_calls": calls_attempted,
         "actual_bound_host_calls": host_calls,
         "two_stage_completed": host_calls == 2,
@@ -249,6 +267,9 @@ async def run_model_selected_bound_two_step_e0(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", required=True, choices=("validate", "real-cpu"))
+    parser.add_argument(
+        "--host-continuation-budget", type=int, choices=(0, 1), default=0,
+    )
     parser.add_argument(
         "--out", type=Path,
         default=Path("artifacts/two-step-real-qwen-e0/report.json"),
@@ -272,11 +293,19 @@ def main() -> None:
     ).stdout.strip()
     agent = LocalQwenAgent()
     results = [
-        asyncio.run(run_model_selected_bound_two_step_e0(agent, language=lang))
+        asyncio.run(run_model_selected_bound_two_step_e0(
+            agent, language=lang,
+            host_continuation_budget=args.host_continuation_budget,
+        ))
         for lang in LANGUAGES
     ]
+    tier = (
+        "REAL_QWEN3_CPU_BOUNDED_CONTINUATION_E0_DEV_ONLY"
+        if args.host_continuation_budget else "REAL_QWEN3_CPU_BOUND_HOST_E0_DEV_ONLY"
+    )
     report = {
-        "evidence_tier": "REAL_QWEN3_CPU_BOUND_HOST_E0_DEV_ONLY",
+        "evidence_tier": tier,
+        "host_continuation_budget": args.host_continuation_budget,
         "source_revision": source,
         "model_revision": f"{MODEL_NAME}@{MODEL_REVISION}",
         "runtime": {"device": "cpu", **runtime_identity()},
@@ -285,7 +314,7 @@ def main() -> None:
         "cases": [
             {
                 **result,
-                "evidence_tier": "REAL_QWEN3_CPU_BOUND_HOST_E0_DEV_ONLY",
+                "evidence_tier": tier,
                 "actual_model_inference_measured": True,
             }
             for result in results
@@ -316,6 +345,7 @@ def main() -> None:
                     "actual_bound_host_calls", "two_stage_completed",
                     "correct_strict_final_answer", "full_task_correct",
                     "unexpected_or_denied_model_call", "termination_reason",
+                    "host_continuations_issued",
                 )
             }
             for r in results
