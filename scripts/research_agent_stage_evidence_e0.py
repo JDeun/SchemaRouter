@@ -5,13 +5,14 @@ Raw fixture rows and gold remain entirely inside the trusted grading process.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import hashlib
 import hmac
 import json
 import math
 import re
+from dataclasses import dataclass, field
 from typing import Any
+
 
 @dataclass(frozen=True)
 class E0TraceProvenance:
