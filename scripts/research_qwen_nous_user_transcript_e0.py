@@ -34,7 +34,7 @@ def append_authorized_nous_user_history_e0(
         or any(type(x) is not str for x in authorized_route_ids)
         or type(executed_route_id) is not str
         or executed_route_id not in authorized_route_ids
-        or re.fullmatch(r"[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*", executed_route_id) is None
+        or re.fullmatch(r"[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*", executed_route_id) is None
         or type(validated_arguments) is not dict
         or any(type(k) is not str for k in validated_arguments)
         or any(
@@ -73,6 +73,6 @@ def append_authorized_nous_user_history_e0(
     # FunctionCall and a FUNCTION result into assistant <tool_call> and
     # USER <tool_response> messages. Do not replay the raw EOS model text.
     messages.extend([
-        {"role": "assistant", "content": "<tool_call>\\n" + call_json + "\\n</tool_call>"},
-        {"role": "user", "content": "<tool_response>\\n" + result_json + "\\n</tool_response>"},
+        {"role": "assistant", "content": "<tool_call>\n" + call_json + "\n</tool_call>"},
+        {"role": "user", "content": "<tool_response>\n" + result_json + "\n</tool_response>"},
     ])
