@@ -21,10 +21,10 @@ from scripts.agent_utility_generated_common import (
     EXPERIMENTAL_FIXED5_CONDITION,
     run_generated_episode,
 )
+from scripts.research_agent_stage_evidence_e0 import E0TraceProvenance
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
-from scripts.research_agent_stage_evidence_e0 import E0TraceProvenance
 from scripts.research_scoped_host_invocation import execute_scoped_host_call
 
 SECRET = "SECRET_HIDDEN_CANARY_1749"
