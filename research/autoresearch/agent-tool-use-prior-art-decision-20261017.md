@@ -159,3 +159,54 @@ an existing LangGraph/PydanticAI consumer to show the complete host boundary.
 
 No paper leaderboard score, outside README claim or green CI check turns
 any row QUALIFIED.
+
+## 6. Second-pass evidence: multilingual, no-fit, live dependencies, and injection
+
+**Updated 2026-10-17.** This second pass checks upstream papers and
+repositories published through that date, including the September 2026
+Korean public-API study and October 2026 J-tau paper. Treat all public
+datasets below as **published diagnostic material**, not the
+independent, preregistered original-provider E2 gate.
+
+| Source | Evidence and currently accessible status | Precise applicability | Constraint / follow-up |
+| --- | --- | --- | --- |
+| [Kakao FunctionChat-Bench](https://github.com/kakao/functionchat-bench), [paper](https://arxiv.org/abs/2411.14054) | Public Korean conversational function-call benchmark, 700 evaluation items with tool call, answer completion, slot question, and relevance detection | **P0 R04/R05**: adapt *four separate labels* for supported task, missing slot, answer vs no-call and relevance; assess Korean conversational coherence instead of only strict single-token refusals | Confirm dataset license, splits, prompt schema and test contamination before mirroring; Korean published tasks cannot act as independent product-native E2 |
+| [MASSIVE-Agents, Findings EMNLP 2025](https://aclanthology.org/2025.findings-emnlp.1099/) | Published multilingual function calling reformatting of MASSIVE into BFCL methodology: 47,020 cases, 52 languages, 55 functions and 286 arguments; supports language-by-language AST scoring | **P1 multilingual**, derive EN/KO/JA argument/intent parity scorecard and language-conditional false refusal rather than pooling outcomes | Need to verify actual accessible dataset distribution, redistribution terms and language subsets before integrating; largely single-turn semantics, not native provider multi-step E2 |
+| [J-tau code](https://github.com/sbintuitions/j-tau-bench), [2026-10-14 paper](https://arxiv.org/abs/2610.19638) | Japanese-localized tau2 domains, user interaction/policy adherence, simulator and corrected scoring; code available, **Modified MIT** license; English README currently describes telecom/airline/retail Japanese domains | **P0 Japanese A02/R05**: use Japanese policy/multi-turn conversational task rubrics, check clarification and incomplete requests and compare intermediate vs full-task outcomes | Upstream corrects some original invalid tasks and score aggregation: **raw English tau2 and J-tau scores may not be directly comparable**; model/user simulators and assertion grader can require API/server resources beyond free GitHub CPU. Need actual package, tag and locally feasible mode |
+| [ACEBench](https://github.com/chenchen0103/ACEBench), [EMNLP 2025](https://aclanthology.org/2025.findings-emnlp.697/) | Normal, Special (ambiguous/incomplete instructions) and Agent multi-turn subsets; public paper and code | **P0 R05**: separate `required_input_missing` from `multiple_valid_interpretations` and `tool_irrelevant`; test safe abstention without disclosing hidden capability | Dataset is public, does not encode our host authorization ground truth; never teach the model true forbidden-route existence |
+| [KOPA-Bench / EDGE, September 2026](https://github.com/dneirfi/EDGE-KOPA), [paper](https://arxiv.org/abs/2609.05395) | Research reports 145 tasks and execution-verified dependency edges over Korean public APIs, a graph-based synthesis method, and gains on multi-step calls. **Upstream repository explicitly labels benchmark files, EDGE corpus and fine-tuned checkpoints `coming soon`** as checked 2026-10-17 | **P0 A02 design reuse**: model intermediate output-field-to-next-input dependency graph, verify every edge against trusted read-only provider state *before* making synthetic trajectories; fail on stale/hidden fields | **Research methodology only for now.** Do not claim KOPA cases/checkpoints are downloadable, a ready benchmark or a tested production model. Some real Korean public APIs have key/rate-limit/licensing constraints |
+| [AgentDojo](https://github.com/ethz-spylab/agentdojo), [NeurIPS 2024](https://arxiv.org/abs/2406.13352), [CaMeL](https://arxiv.org/abs/2503.18813) | Public prompt-injection adversarial benchmark over tool responses; capability/info-flow-based external enforcement literature | **P0 S02/I02**: adversarial returned tool text that requests wrong tool, exfiltration, permission change or instruction override; report benign-task utility **and** attack success / unauthorized attempt / authorized execution separately | Use untrusted result as *data only*; do not infer security from agent compliance with a prompt. CaMeL design should inform the host boundary but does not replace our existing RBAC/ABAC and data projection |
+| [ToolBench-X, June 2026](https://github.com/Foreverskyou/ToolBench-X), [paper](https://arxiv.org/abs/2606.25819) | Published tool-environment error recovery benchmark with specification drift, invocation error, execution failure, output drift and cross-source conflict | **P1 A02/A03**: stage-specific recovery evaluation for original provider errors, schema drift and changed responses, and verify recovery cannot bypass host authorization | Public code exists but its documented generation paths use external model API; evaluate CPU/free feasibility before using full data pipeline |
+| [BFCL V4](https://gorilla.cs.berkeley.edu/leaderboard) | Multi-turn and hallucination/format evaluation from official Berkeley benchmark; public tasks | **P0 R04/A02**: AST-call and argument correctness, no relevant tool, valid no-call, multi-turn per-stage completion | No inherited E2 status; BFCL public cases cannot certify privacy policy or EN/KO/JA provider-native correctness |
+
+### Important consequence for the next implementation PR
+
+**Do not start with a larger model or a new one-off prompt.** Stage a
+source-provenance and legal/runtime feasibility matrix first. Then combine:
+
+1. **Korean** FunctionChat-Bench Slot Question/Relevance and **Japanese**
+   J-tau user-policy/multi-turn scoring, backed by MASSIVE-Agents
+   language-parity AST methodology.
+2. **Missing/ambiguous/not-applicable** distinctions from ACEBench and BFCL;
+   test **opaque denied vs nonexistent** only with private host-only gold.
+3. **Two-step dependent field provenance** from EDGE-KOPA's published
+   execution-grounded graph principle (do **not** imply its datasets are
+   released); ToolSandbox/J-tau task-completion milestones.
+4. **Untrusted tool-output injection** from AgentDojo, with a CaMeL-like
+   reference-monitor/information-flow threat model constrained by our
+   existing host-owned authorization.
+5. **Provider errors and drift** from ToolBench-X, without making
+   nonlocal API dependencies mandatory on GitHub Actions CPU.
+
+**Explicit acceptance criteria for research inventory:** citation+canonical
+repository URL, data/source-available status, exact version or verified
+commit, license and redistribution, native evaluator code location,
+CPU/runtime/API-key feasibility, score definition, EN/KO/JA coverage,
+applicable qualification gate, and publication/holdout contamination risk.
+The preceding paper descriptions are **not** evidence that each upstream
+suite has been installed, executed or validated locally.
+
+Priority to implement after upstream pin review: first check full
+protocol/required-argument/abstention scoring with Qwen-Agent and
+FunctionChat/ACEBench rubrics, then independent native provider E2.
+R04/R05/A02/S02/I02 **remain not independently qualified**.
