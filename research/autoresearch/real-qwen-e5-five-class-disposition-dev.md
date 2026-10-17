@@ -49,3 +49,43 @@ release PR #1356 or the qualification ledger's 0/19 independent passes.
 If the real model cannot distinguish denied from absent, retain that as
 **observed negative DEV**. Do not add gold-aware hints or retroactively rewrite
 the prompt to improve these disclosed scores.
+
+
+## Observed original real-model negative (strict raw protocol, before EOS diagnosis)
+
+[GitHub Actions run 39022306205](https://github.com/JDeun/SchemaRouter/actions/runs/39022306205)
+executed the pinned local Qwen/E5 experiment (source
+`4b45aed7c24b4101978f2f8bf36f576c1589f2a2`) and completed
+all workflow steps:
+
+| Arm | Supported /3 | Unsupported /3 | Needs input /3 | Ambiguous /3 | Forbidden /3 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| lexical K5 | 1 | 0 | 0 | 0 | 0 |
+| hybrid K5 | 1 | 0 | 0 | 0 | 0 |
+
+Every original category also had 3/3
+`OTHER_OR_UNOBSERVED` raw-terminal classifications per arm
+(including supported, whose correct success depends on the executable
+fixture rather than a recognized no-fit protocol token). These observations
+**must not be rewritten, tuned, or represented as E2**.
+
+### Potential decoder confound — separate diagnostic, not a score change
+
+The reused frozen Qwen adapter calls the tokenizer with
+`skip_special_tokens=False`. ChatML terminal markers such as
+`<|im_end|>` might therefore be present even when the
+generated semantic decision is an exact protocol token.
+
+This possibility **is not proven by the original aggregate report** because
+we intentionally did not export generated text. A new posthoc E0 diagnostic
+counts only a **single canonical suffix** after an otherwise exact protocol
+token, and disaggregates no-call-plus-final versus no-call-without-final.
+It **does not convert a strict failure into a pass**, strip freeform assistant
+answers, modify source prompts, or choose an OOD operating threshold.
+
+Actual CPU inference must be rerun on the new exact source commit to
+determine whether any of the old failures were due to this narrow decoder
+format effect. Any other nonprotocol final remains wrong. A supported case
+whose fixture completes but whose last generated text is a refusal token
+followed by the EOS marker is also reported as a separate wrong-final
+warning, not accepted as a correct substantive answer.
