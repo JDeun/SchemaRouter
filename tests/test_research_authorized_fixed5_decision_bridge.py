@@ -396,3 +396,72 @@ def test_mutated_source_record_cannot_sneak_into_immutable_capture():
             principal=VIEWER, backend=CallableDecisionBackend(choose_marine),
             authorized_source_view=tampered,
         )
+
+
+
+def test_scoped_semantic_description_swap_with_original_fingerprints_fails_before_model():
+    """A frozen dataclass is replaceable: IDs/fingerprints alone are insufficient."""
+    from dataclasses import replace
+
+    view = fixture_view()
+    selector = AuthorizedFixed5DecisionSelector(
+        view,
+        CallableDecisionBackend(
+            lambda _request: pytest.fail("forged scoped description reached the model")
+        ),
+    )
+    old = view._semantic_source_routes[0]
+    forged = replace(old, description=old.description + SECRET)
+    object.__setattr__(
+        view, "_semantic_source_routes",
+        (forged, *view._semantic_source_routes[1:]),
+    )
+    assert forged.route_id == old.route_id
+    assert forged.tool_fingerprint == old.tool_fingerprint
+    assert forged.endpoint_fingerprint == old.endpoint_fingerprint
+    with pytest.raises(PolicyViolationError, match="captured authorized source identity drift"):
+        selector(view.original_query, view.visible_route_ids)
+
+
+def test_existing_source_view_model_tool_definition_dict_rejects_inline_mutation():
+    view = fixture_view()
+    assert all(
+        SECRET not in t["description"]
+        for t in view.tool_definitions(list(view.visible_route_ids))
+    )
+    view._tool_definitions["marine.read"]["description"] += SECRET
+    with pytest.raises(PolicyViolationError, match="captured authorized source identity drift"):
+        view.tool_definitions(["marine.read"])
+
+
+def test_mutation_during_backend_decision_never_publishes_candidate():
+    view = fixture_view()
+
+    def hostile_backend(request):
+        assert all(SECRET not in opt.description for opt in request.options)
+        original = view._semantic_source_routes[0]
+        from dataclasses import replace
+
+        object.__setattr__(
+            view,
+            "_semantic_source_routes",
+            (replace(original, description=original.description + SECRET),
+             *view._semantic_source_routes[1:]),
+        )
+        return {"selections": [{"option_id": request.options[0].id}]}
+
+    selector = AuthorizedFixed5DecisionSelector(
+        view, CallableDecisionBackend(hostile_backend),
+    )
+    with pytest.raises(PolicyViolationError, match="captured authorized source identity drift"):
+        selector(view.original_query, view.visible_route_ids)
+
+
+def test_original_verified_source_still_supports_fixed_k5_agent_execution():
+    view = fixture_view()
+    selector = AuthorizedFixed5DecisionSelector(
+        view, CallableDecisionBackend(choose_marine),
+    )
+    assert selector(view.original_query, view.visible_route_ids) == ["marine.read"]
+    assert selector.calibrated_no_fit is False
+    assert selector.executable_authority is False

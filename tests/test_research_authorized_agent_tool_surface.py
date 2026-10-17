@@ -748,3 +748,37 @@ def test_e0_trace_provenance_cannot_attach_to_non_scoped_or_frozen_episode():
             experimental_e0_trace_provenance=provenance,
         )
     assert agent.calls == 0
+
+
+
+def test_captured_output_visibility_map_mutation_rejects_private_observation():
+    view = captured()
+    view._visible_output_names["marine.read"] = frozenset({
+        "public_field", "secret_field",
+    })
+    with pytest.raises(PolicyViolationError, match="captured authorized source identity drift"):
+        view.project_observation("marine.read", {
+            "status": "ok", "public_field": "ok", "secret_field": SECRET,
+        })
+
+
+def test_captured_route_identity_and_definition_map_changes_rejected():
+    from dataclasses import replace
+
+    view = captured()
+    forged = replace(view, visible_route_ids=tuple(reversed(view.visible_route_ids)))
+    with pytest.raises(PolicyViolationError, match="captured authorized source identity drift"):
+        forged.tool_definitions(["marine.read"])
+    original = captured()
+    original._tool_definitions["marine.read"]["parameters"]["properties"][
+        "private_unregistered_field"
+    ] = {"type": "string"}
+    with pytest.raises(PolicyViolationError, match="captured authorized source identity drift"):
+        original.tool_definitions(["marine.read"])
+
+
+def test_empty_authorized_catalog_receipt_is_valid_and_not_no_fit():
+    view = captured(principal=OUTSIDER)
+    assert view.visible_route_ids == ()
+    assert view.tool_definitions([]) == []
+    assert view.executable_authority is False
