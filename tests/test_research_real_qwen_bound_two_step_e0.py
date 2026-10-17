@@ -139,6 +139,19 @@ async def test_forged_second_id_executes_but_fails_state_oracle():
 
 
 @pytest.mark.asyncio
+async def test_duplicate_final_boolean_never_counts_as_correct_answer():
+    # Default json.loads would silently keep the last value, inflating E0 pass.
+    report = await run_model_selected_bound_two_step_e0(
+        ScriptedAgent([FIRST, SECOND, '{"verified":false,"verified":true}']),
+        language="en",
+    )
+    assert report["actual_bound_host_calls"] == 2
+    assert report["typed_host_oracle_confirmed"] is True
+    assert report["correct_strict_final_answer"] is False
+    assert report["full_task_correct"] is False
+
+
+@pytest.mark.asyncio
 async def test_false_final_answer_is_not_laundered_by_two_successful_calls():
     result = await run_model_selected_bound_two_step_e0(
         StateDependentAgent(wrong_final=True), language="ja",
