@@ -189,7 +189,7 @@ Remote mutation/destructive operations fail closed unless explicitly authorized 
 
 ## Stability
 
-**Qualification status:** [19-item evidence checklist](docs/project/qualification-control.md) tracks engineering/DEV evidence, independent E2, blockers and the separate v0.18 release HOLD. Green CI does not imply task-level qualification.
+**Qualification status:** [19-item evidence checklist](QUALIFICATION.md) tracks engineering/DEV evidence, independent E2, blockers and the separate v0.18 release HOLD. Green CI does not imply task-level qualification.
 
 
 SchemaRouter `0.17.0` is **Beta / pre-1.0**. Public APIs may still evolve,
