@@ -118,8 +118,14 @@ def _authorization_policy_receipt(policy: AuthorizationPolicy | None) -> str:
                 "default_effect": policy.default_effect,
                 "rules": [asdict(rule) for rule in policy.rules],
                 "data_rules": [asdict(rule) for rule in policy.data_rules],
-                "compiled_rule_index": index_rows(policy._rule_index),
-                "compiled_data_rule_index": index_rows(policy._data_rule_index),
+                "compiled_rule_index": {
+                    "rules": [asdict(rule) for rule in policy._rule_index.rules],
+                    "partitions": index_rows(policy._rule_index),
+                },
+                "compiled_data_rule_index": {
+                    "rules": [asdict(rule) for rule in policy._data_rule_index.rules],
+                    "partitions": index_rows(policy._data_rule_index),
+                },
             }
         else:
             raise ValueError("invalid policy type")
