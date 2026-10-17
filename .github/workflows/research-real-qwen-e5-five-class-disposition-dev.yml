@@ -1,0 +1,110 @@
+name: Real Qwen E5 Five-Class Disposition DEV
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_real_qwen_e5_five_class_disposition_dev.py"
+      - "tests/test_research_real_qwen_e5_five_class_disposition_dev.py"
+      - "scripts/research_agent_disposition_contrast_e0.py"
+      - "scripts/research_qwen_terminal_format_diagnostic_e0.py"
+      - "tests/test_research_qwen_terminal_format_diagnostic_e0.py"
+      - "research/autoresearch/real-qwen-e5-five-class-disposition-dev.md"
+      - ".github/workflows/research-real-qwen-e5-five-class-disposition-dev.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: real-five-class-dev-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fixed-dev-15-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install test/runtime dependencies
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+      - name: Verify cohort identity, no gold leakage and no-model baseline
+        run: |
+          ruff check scripts/research_real_qwen_e5_five_class_disposition_dev.py tests/test_research_real_qwen_e5_five_class_disposition_dev.py scripts/research_agent_disposition_contrast_e0.py scripts/research_qwen_terminal_format_diagnostic_e0.py tests/test_research_qwen_terminal_format_diagnostic_e0.py
+          python -m pytest -q tests/test_research_real_qwen_e5_five_class_disposition_dev.py tests/test_research_agent_disposition_contrast_e0.py tests/test_research_qwen_terminal_format_diagnostic_e0.py
+          python -m scripts.research_real_qwen_e5_five_class_disposition_dev --mode validate
+
+  real-local-model-e0:
+    needs: fixed-dev-15-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install pinned local CPU model dependencies
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
+      - name: Generate 30 Qwen episodes for 15 lexical/hybrid paired tasks
+        run: |
+          python -m scripts.research_real_qwen_e5_five_class_disposition_dev \
+            --mode real-cpu --out artifacts/five-class-qwen-e5-dev/report.json
+      - name: Fail closed on false E2 claims and publish five-class outcomes
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = json.loads(Path("artifacts/five-class-qwen-e5-dev/report.json").read_text(encoding="utf-8"))
+          assert report["case_count_per_arm"] == 15
+          assert report["real_agent_generation_measured"] is True
+          assert report["real_e5_inference_measured"] is True
+          assert report["independent_e2_qualified"] is False
+          assert report["calibrated_no_fit"] is False
+          assert report["real_native_provider_execution"] is False
+          assert report["release_safety_gate_passed"] is False
+          assert report["arms"] == ["lexical_k5", "hybrid_k5"]
+          assert "never reclassifies" in report["terminal_protocol_diagnostic"]
+          labels = ("supported", "unsupported", "needs_input", "ambiguous", "forbidden")
+          for arm in report["arms"]:
+              for label in labels:
+                  assert report["per_disposition"][arm][label]["tasks"] == 3
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as f:
+              f.write("## Real Qwen3 0.6B + E5 small, five-class E0 DEV\n\n")
+              f.write("Thirty CPU agent episodes, two paired fixed-K5 arms, fifteen exposed self-authored EN/KO/JA synthetic scenarios. No native provider, independent cases, calibrated no-fit or answer correctness.\n\n")
+              f.write("| Disposition | Lexical correct / 3 | Hybrid correct / 3 | Lexical attempted / 3 | Hybrid attempted / 3 |\n|---|---:|---:|---:|---:|\n")
+              for label in labels:
+                  lex = report["per_disposition"]["lexical_k5"][label]
+                  hyb = report["per_disposition"]["hybrid_k5"][label]
+                  f.write(f"| {label} | {lex['correct']} | {hyb['correct']} | {lex['tool_attempted']} | {hyb['tool_attempted']} |\n")
+              f.write("\n### Separate terminal decoder vs semantic-decision diagnosis (not passed cases)\n\n")
+              f.write("| Disposition | Arm | Strict / 3 | No-call with final / 3 | EOS-only exact class / 3 | No-call nonprotocol final / 3 | No final & no-call / 3 |\n|---|---|---:|---:|---:|---:|---:|\n")
+              for label in labels:
+                  for arm in report["arms"]:
+                      v = report["per_disposition"][arm][label]
+                      f.write(f"| {label} | {arm} | {v['correct']} | {v['no_tool_attempt_and_final']} | {v['expected_refusal_with_only_decoder_eot_suffix']} | {v['no_call_nonprotocol_final']} | {v['no_tool_attempt_without_final']} |\n")
+              f.write("\n**Strict scores are not changed by EOS suffix analysis.** EOS-only is a decoder formatting hypothesis, not calibrated no-fit. Raw generated text is never published.\n")
+              f.write("\n| Language | Lexical correct / 5 | Hybrid correct / 5 |\n|---|---:|---:|\n")
+              for lang in ("en", "ko", "ja"):
+                  f.write(f"| {lang} | {report['per_language']['lexical_k5'][lang]['correct']} | {report['per_language']['hybrid_k5'][lang]['correct']} |\n")
+              f.write("\nR05 NOT VERIFIED; E2 0/19; v0.18 HARD HOLD.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: real-local-qwen-e5-disposition-e0-${{ github.run_id }}
+          path: artifacts/five-class-qwen-e5-dev/report.json
+          if-no-files-found: error
+          retention-days: 30
