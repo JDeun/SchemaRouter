@@ -165,3 +165,31 @@ def test_duplicate_manifest_json_key_is_never_last_wins():
     forged = b'{"schema_version":1,' + b[1:]
     with pytest.raises(ValueError, match="duplicate JSON"):
         inspect_unscored_native_cohort(forged, raw(c), raw(g), raw(d))
+
+
+def test_bounded_holdout_rows_prevent_adversarial_pairwise_blowup():
+    m, c, g, d = example()
+    for i in range(16, 258):
+        source = dict(c["cases"][0])
+        source["id"] = f"extra-case-{i}"
+        source["query"] = f"unique source query number {i}"
+        c["cases"].append(source)
+    with pytest.raises(ValueError, match="excessive case cohort"):
+        evaluate((m, c, g, d))
+
+
+def test_bounded_dev_rows_prevent_adversarial_pairwise_blowup():
+    m, c, g, d = example()
+    for i in range(2, 259):
+        d["cases"].append({
+            "id": f"prior-{i}", "query": f"previous unique task {i}",
+        })
+    with pytest.raises(ValueError, match="excessive case cohort"):
+        evaluate((m, c, g, d))
+
+
+def test_large_query_is_denied_before_pairwise_comparison():
+    m, c, g, d = example()
+    c["cases"][0]["query"] = "z" * 2001
+    with pytest.raises(ValueError, match="oversized"):
+        evaluate((m, c, g, d))
