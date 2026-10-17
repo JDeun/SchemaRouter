@@ -6,7 +6,7 @@ on:
       - "benchmarks/qualification-control-v1.json"
       - "scripts/qualification_control.py"
       - "tests/test_qualification_control.py"
-      - "docs/project/qualification-control.md"
+      - "QUALIFICATION.md"
       - "docs/research/product-north-star-and-test-matrix.md"
       - ".github/workflows/qualification-control.yml"
   push:
@@ -15,7 +15,7 @@ on:
       - "benchmarks/qualification-control-v1.json"
       - "scripts/qualification_control.py"
       - "tests/test_qualification_control.py"
-      - "docs/project/qualification-control.md"
+      - "QUALIFICATION.md"
       - "docs/research/product-north-star-and-test-matrix.md"
       - ".github/workflows/qualification-control.yml"
   workflow_dispatch:
@@ -40,7 +40,7 @@ jobs:
         run: python scripts/qualification_control.py --check
       - name: Enforce regression contracts without model or credentials
         run: |
-          python -m pip install "pytest>=8,<10" "ruff>=0.6,<1"
+          python -m pip install "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
           ruff check scripts/qualification_control.py tests/test_qualification_control.py
           python -m pytest -q tests/test_qualification_control.py
       - name: Read-only check of current issue and release PR state
