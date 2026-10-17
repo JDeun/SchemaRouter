@@ -68,9 +68,9 @@ Checking one item requires independent provenance, a frozen split, reproducible 
   - Next action: Qualify native typed arguments, provider execution and actual task pass.
   - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/actions/runs/39007769090)
 - [ ] **A02 P1** — `NOT_VERIFIED` — [owner #1477](https://github.com/JDeun/SchemaRouter/issues/1477)
-  - Blocker: State-dependent 2/3-step native execution not independently qualified.
+  - Blocker: Real model-selected 2-step tasks failed 0/3 EN/KO/JA on exposed DEV: all stopped after one bound host read; single reminder and transcript-format variants remained 0/3. No independent provider E2.
   - Next action: Retain observed 0/3 EN/KO/JA model-selected multi-step E0 negatives (premature final even after one reminder); test independent model/tool-format candidates and externally authored native 2/3-step E2 with final-answer oracle.
-  - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/pull/1505) · [evidence 2](https://github.com/JDeun/SchemaRouter/actions/runs/39026731254) · [evidence 3](https://github.com/JDeun/SchemaRouter/pull/1506) · [evidence 4](https://github.com/JDeun/SchemaRouter/actions/runs/39029981154) · [evidence 5](https://github.com/JDeun/SchemaRouter/pull/1507) · [evidence 6](https://github.com/JDeun/SchemaRouter/actions/runs/39030372571)
+  - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/pull/1505) · [evidence 2](https://github.com/JDeun/SchemaRouter/actions/runs/39026731254) · [evidence 3](https://github.com/JDeun/SchemaRouter/pull/1506) · [evidence 4](https://github.com/JDeun/SchemaRouter/actions/runs/39029981154) · [evidence 5](https://github.com/JDeun/SchemaRouter/pull/1507) · [evidence 6](https://github.com/JDeun/SchemaRouter/actions/runs/39030372571) · [evidence 7](https://github.com/JDeun/SchemaRouter/pull/1508) · [evidence 8](https://github.com/JDeun/SchemaRouter/actions/runs/39037998330) · [evidence 9](https://github.com/JDeun/SchemaRouter/pull/1509)
 - [ ] **A03 P1** — `HISTORICAL_NEGATIVE` — [owner #1339](https://github.com/JDeun/SchemaRouter/issues/1339)
   - Blocker: Frozen progressive exposure had only 25.09% task pass.
   - Next action: Separate late retrieval, recovery and state propagation failure on fresh cases.
