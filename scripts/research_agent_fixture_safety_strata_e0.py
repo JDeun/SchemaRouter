@@ -77,15 +77,19 @@ def summarize_fixture_safety_strata(
             "supported_final_after_fixture_completion_observed",
             "actual_final_answer_correctness_measured",
         )
-        with_final_metrics = [
-            all(field in row for field in final_fields) for row in rows
+        # Legacy traces must omit ALL new metrics. A uniformly truncated
+        # cohort is not a legacy cohort and must fail closed as well.
+        final_presence = [
+            tuple(field in row for field in final_fields) for row in rows
         ]
-        if any(with_final_metrics) and not all(with_final_metrics):
+        if any(any(flags) for flags in final_presence) and not all(
+            all(flags) for flags in final_presence
+        ):
             raise ValueError("partial E0 final-turn observation cohort")
         completed_and_final: int | None = None
         completed_without_final: int | None = None
         unsupported_final_observed: int | None = None
-        if all(with_final_metrics):
+        if all(all(flags) for flags in final_presence):
             for row in rows:
                 if (
                     any(type(row[field]) is not bool for field in final_fields)

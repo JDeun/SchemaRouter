@@ -280,7 +280,10 @@ def test_supported_fixture_pass_is_not_unconditionally_final_answer_pass():
     assert safety["release_safety_gate_passed"] is False
 
 
-@pytest.mark.parametrize("kind", ("partial", "missing_one", "forged_final", "fake_factual"))
+@pytest.mark.parametrize(
+    "kind", ("partial", "missing_one", "uniform_missing_one",
+             "forged_final", "fake_factual"),
+)
 def test_partial_or_forged_e0_final_turn_metrics_are_rejected(kind):
     manifest, runs = paired_fixture()
     _augment_final_turns(runs)
@@ -288,6 +291,9 @@ def test_partial_or_forged_e0_final_turn_metrics_are_rejected(kind):
         runs["e5_k5"]["rows"][0].pop("agent_final_turn_observed")
     elif kind == "missing_one":
         runs["e5_k5"]["rows"][0].pop("actual_final_answer_correctness_measured")
+    elif kind == "uniform_missing_one":
+        for row in runs["e5_k5"]["rows"]:
+            row.pop("actual_final_answer_correctness_measured")
     elif kind == "forged_final":
         row = next(
             row for row in runs["e5_k5"]["rows"]
