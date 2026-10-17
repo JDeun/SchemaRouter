@@ -291,7 +291,7 @@ def test_research_backend_never_calls_planning_or_provider_execution():
 
 def test_invalid_input_budget_rejected_without_inference():
     view = fixture_view()
-    for bad in (0, True, -1, 131073):
+    for bad in (0, True, -1, 262145):
         with pytest.raises(ValueError, match="comparator input budget"):
             AuthorizedFixed5DecisionSelector(
                 view, CallableDecisionBackend(choose_marine),
@@ -303,3 +303,18 @@ def test_invalid_input_budget_rejected_without_inference():
     )
     with pytest.raises(ValueError, match="bounded research limit"):
         selector(view.original_query, view.visible_route_ids)
+
+
+def test_explicit_256k_optin_keeps_default_128k_unchanged():
+    view = fixture_view()
+    ordinary = AuthorizedFixed5DecisionSelector(
+        view, CallableDecisionBackend(choose_marine),
+    )
+    extended = AuthorizedFixed5DecisionSelector(
+        view, CallableDecisionBackend(choose_marine),
+        max_model_input_bytes=262144,
+    )
+    assert ordinary.max_model_input_bytes == 131072
+    assert extended.max_model_input_bytes == 262144
+    assert ordinary(view.original_query, view.visible_route_ids) == ["marine.read"]
+    assert extended(view.original_query, view.visible_route_ids) == ["marine.read"]
