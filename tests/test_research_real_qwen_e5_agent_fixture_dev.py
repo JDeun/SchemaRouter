@@ -107,7 +107,7 @@ def test_fake_agent_three_arm_scorer_does_not_claim_real_qwen_or_e2():
     assert result["factual_final_answer_correctness_measured"] is False
     assert result["agent_model_revision"] == AGENT_MODEL_REVISION
     assert set(result["summary"]) == {"lexical_k5", "e5_k5", "hybrid_k5"}
-    for arm, summary in result["summary"].items():
+    for summary in result["summary"].values():
         assert summary["task_count"] == 12
         assert summary["task_pass_rate"] == 0.5
         assert summary["unsupported_tasks"] == 6
