@@ -36,3 +36,21 @@ outcomes are not modified. #1346 independently authored real native
 agent task/gold remains BLOCKED_EXTERNAL and #1356 v0.18 release is
 HARD HOLD. The prior pilot #1490/diagnostic #1491 E0 cannot be
 promoted to independent E2 by this additional boolean.
+
+## Real local-model diagnostic integration
+
+The post-execution `summarize_fixture_safety_strata` scorer now consumes
+these optional E0 flags. If a legacy synthetic row cohort entirely lacks
+them, each new count is **null (unmeasured), never an inferred failure
+or a successful final answer**. If only some tasks in an arm provide
+them, or boolean flags contradict the original supported/task-complete/
+final-event state, it fails closed. New real-model runs publish separate
+counts for completed supported fixture **with** a final turn, completed
+fixture **without** one, and unsupported final-turn events (which do not
+prove correct refusal).
+
+The dedicated Qwen3-0.6B + E5 Linux CPU workflow now reruns the identical
+12 already-disclosed synthetic EN/KO/JA tasks and prints these metrics
+beside (not instead of) existing strict no-call/OOD errors. The existing
+published 2/12 vs 6/12 aggregate task-pass denominator, executable
+policy boundaries, all old frozen evidence and Release HOLD are unchanged.
