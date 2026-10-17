@@ -198,10 +198,10 @@ def run_three_arm_dev(
         "schema_version": 1,
         "issue": 1477,
         "surface": "prospective_development_only",
-        "evidence_tier": "REAL_E5_CPU_RETRIEVAL_DEV_ONLY",
+        "evidence_tier": "UNATTESTED_BACKEND_RETRIEVAL_DEV_ONLY",
         "independent_e2_qualified": False,
         "agent_task_success_measured": False,
-        "real_model_routing_measured": True,
+        "real_model_routing_measured": False,
         "calibrated_no_fit": False,
         "product_default_promoted": False,
         "publication_gate_passed": False,
@@ -280,6 +280,10 @@ def main() -> None:
         return
     backend, runtime = real_cpu_backend()
     report = run_three_arm_dev(corpus, sha, backend)
+    # A caller-injected test double cannot claim real model measurements.
+    # This CLI path has actually loaded the pinned CPU SentenceTransformer.
+    report["evidence_tier"] = "REAL_E5_CPU_RETRIEVAL_DEV_ONLY"
+    report["real_model_routing_measured"] = True
     source_revision = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True,
         text=True, check=True, timeout=10,
