@@ -56,6 +56,7 @@ class AuthorizedFixed5DecisionSelector:
     view: AuthorizedAgentToolSurface
     backend: DecisionBackend = field(repr=False)
     max_model_input_bytes: int = 131072
+    reuse_authorized_source: bool = True  # Research-only paired A/B diagnostic.
     last_status: str | None = field(default=None, init=False)
     last_model_input_bytes: int | None = field(default=None, init=False)
     calibrated_no_fit: bool = field(default=False, init=False)
@@ -66,6 +67,8 @@ class AuthorizedFixed5DecisionSelector:
     )
 
     def __post_init__(self) -> None:
+        if type(self.reuse_authorized_source) is not bool:
+            raise ValueError("invalid scoped source reuse A/B selection")
         if (
             type(self.max_model_input_bytes) is not int
             or not 1 <= self.max_model_input_bytes <= MAX_OPTIN_MODEL_INPUT_BYTES
@@ -94,7 +97,9 @@ class AuthorizedFixed5DecisionSelector:
             backend=self.backend,
             k=STRICT_K,
             max_model_input_bytes=self.max_model_input_bytes,
-            authorized_source_view=self.view,
+            authorized_source_view=(
+                self.view if self.reuse_authorized_source else None
+            ),
         )
         self.view.assert_source_unchanged()
         if _visible_fingerprints(self.view) != self._pinned_fingerprints:
