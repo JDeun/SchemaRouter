@@ -88,3 +88,37 @@ real native provider outcomes, multi-step argument/output state fit,
 and prospective no-fit calibration are required before integrated
 E2 or release quality can be assessed. Historical #432 negatives and
 v0.18 (#1356) HARD HOLD remain unchanged.
+
+
+
+## Actual first local-model runner defect and narrow remedy
+
+The first actual dual-checkpoint CPU run
+[#39003442531](https://github.com/JDeun/SchemaRouter/actions/runs/39003442531)
+**failed** after Qwen generated a tool call outside the authorized
+captured source. This was a real observed agent-hallucinated unavailable
+route; the existing `project_observation` correctly **failed closed**
+with `PolicyViolationError("unavailable scoped observation route")`.
+There was **no external provider invocation**, and no partial success
+score was published.
+
+The research-only fix is an additional opt-in flag
+`experimental_block_unavailable_observation=True` on the existing
+`run_generated_episode` *only* when the isolated
+`EVAL-FIXED5-OPTIN` condition also has the principal-scoped view and
+candidate selector. The existing trusted `FrozenCorpusExecutor` already
+records the attempted nonexistent/denied tool as unavailable without
+executing anything. If the model invents a route outside the captured
+authorized set, the E0 harness now sends a constant
+`{"status":"blocked","error":"unavailable_scoped_route"}` rather than
+projecting private source data or aborting all 12 paired cases. It
+continues to score the actual observed attempt with the unchanged
+original fixture execution verdict. **No gold-based rescue or invented
+success is allowed.** The ordinary strict scoped host behavior
+(default flag `False`) still raises exactly as before; no product
+authorization or host invoker behavior is changed.
+
+Additional regression tests assert this opt-in cannot attach to legacy,
+unscoped or invalidly configured paths, that private source data
+never appear in agent observations, and that the preexisting strict
+unauthorized-route failure test continues to pass.
