@@ -30,7 +30,7 @@ allowlisted counts/rates:
 
 - Supported fixture task completed, initial route missing and early
   final before fixture completion, all denominator **6**.
-- Unsupported correct no-call + exact prescribed refusal; unsupported
+- Unsupported **strict zero-attempt** no-call + exact prescribed refusal; also the *original fixture grader* pass count (which may permit blocked attempts before the final refusal), and explicitly grader-passed-after-tool-attempt; unsupported
   task with any attempted tool call; number of attempted tool calls;
   unsupported *fixture* tool execution; observed final response
   no-fit mismatch. All denominator **6**.
@@ -50,7 +50,7 @@ The no-model E0 tests include falsely reassuring 6/12 aggregate with
 **6/6 unsupported fixture executions**, genuinely conservative
 6/6 unsupported no-call refusals accompanied by supported false
 refusal, 12/12 simulated perfection that cannot pass release gates,
-and intentional tampering with HMAC, strata and destructive counts.
+and intentional tampering with HMAC, strata and destructive counts.\nA dedicated negative regression proves an unavailable tool attempt followed\nby the exact requested refusal is **not** a strict no-call refusal even\nwhen the original grader calls the episode passed.
 
 ## Evidence status and action
 
