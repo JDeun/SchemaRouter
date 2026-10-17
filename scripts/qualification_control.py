@@ -57,8 +57,8 @@ def validate_control(data: dict[str, Any], matrix: str) -> None:
         ("release", release, {1345, 1346}),
         ("promotion", promotion, {1339, 1346, 1450, 1477}),
     ):
-        if type(gate) is not dict or gate.get("decision") != "HOLD":
-            invalid(label + " cannot be self-promoted by a ledger edit")
+        if type(gate) is not dict or gate.get("decision") not in ("HOLD", "APPROVED"):
+            invalid(label + " decision must be HOLD or review-backed APPROVED")
         refs = gate.get("owners")
         if (
             type(refs) is not list or not refs
@@ -70,6 +70,38 @@ def validate_control(data: dict[str, Any], matrix: str) -> None:
             invalid(label + " must describe hold")
     if release.get("candidate") != "0.18.0" or release.get("held_pr") != 1356:
         invalid("held release identity changed")
+    # Approval requires a separate reviewer and a frozen evidence record.
+    # Neither green CI nor a resolved issue silently promotes a candidate.
+    for label, gate in (("release", release), ("promotion", promotion)):
+        proof = gate.get("approval")
+        if gate["decision"] == "HOLD":
+            if proof is not None:
+                invalid(label + " HOLD cannot carry an approval receipt")
+            continue
+        required = (
+            "approval_record_url", "exact_head_ci_url", "source_sha256",
+            "artifact_sha256", "approved_by", "approved_at",
+        )
+        if type(proof) is not dict or any(
+            type(proof.get(name)) is not str or not proof[name].strip()
+            for name in required
+        ):
+            invalid(label + " lacks independent approval evidence")
+        if (
+            not SOURCE_LINK.fullmatch(proof["approval_record_url"])
+            or not SOURCE_LINK.fullmatch(proof["exact_head_ci_url"])
+            or not SHA256.fullmatch(proof["source_sha256"])
+            or not SHA256.fullmatch(proof["artifact_sha256"])
+            or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", proof["approved_at"])
+        ):
+            invalid(label + " malformed approval provenance")
+        signed = proof.get("signed_off_issue_ids")
+        if (
+            type(signed) is not list
+            or any(type(n) is not int for n in signed)
+            or sorted(signed) != sorted(gate["owners"])
+        ):
+            invalid(label + " requires exact owner gate sign-off")
     expected = MATRIX_PATTERN.findall(matrix)
     if len(expected) != 19 or len(set(expected)) != 19:
         invalid("canonical source must contain 19 unique matrix rows")
@@ -123,6 +155,11 @@ def validate_control(data: dict[str, Any], matrix: str) -> None:
             invalid(ident + " unqualified row cannot carry E2 proof")
     if actual != expected:
         invalid("matrix IDs, order or priorities drifted")
+    if promotion["decision"] == "APPROVED" and any(
+        item["status"] != "QUALIFIED"
+        for item in entries if item["priority"] in ("P0", "P1")
+    ):
+        invalid("model/default promotion requires every P0/P1 independent E2 gate")
 
 
 def render_dashboard(data: dict[str, Any]) -> str:
@@ -139,8 +176,10 @@ def render_dashboard(data: dict[str, Any]) -> str:
         "",
         f"**Reviewed:** {data['reviewed_at']} · "
         f"**published:** v{data['published_release']} · "
-        f"**v{data['release']['candidate']} release:** **HOLD** · "
-        "**production model/default promotion:** **HOLD**",
+        f"**v{data['release']['candidate']} release:** "
+        f"**{data['release']['decision']}** · "
+        "**production model/default promotion:** "
+        f"**{data['promotion']['decision']}**",
         "",
         f"**Independent qualification: {completed}/19.** "
         "This counts verified E2 only; implemented code, green CI, "
@@ -175,13 +214,13 @@ def render_dashboard(data: dict[str, Any]) -> str:
         ])
     lines.extend([
         "",
-        "## Separate hard HOLD decisions",
+        "## Separately reviewed release and promotion decisions",
         "",
-        f"- **v0.18.0 release HOLD:** [#1345]({BASE}/issues/1345), "
+        f"- **v0.18.0 release {data['release']['decision']}:** [#1345]({BASE}/issues/1345), "
         f"[#1346]({BASE}/issues/1346), and held [PR #1356]({BASE}/pull/1356). "
         "Qualify feasible external suites, fix real defects, then pass exact-head checks. "
         "Do not merge/tag/publish before approval.",
-        f"- **Experimental/model default promotion HOLD:** "
+        f"- **Experimental/model default promotion {data['promotion']['decision']}:** "
         f"[#1477]({BASE}/issues/1477) integrated paired agent E2; "
         f"[#1339]({BASE}/issues/1339) language, "
         f"[#1450]({BASE}/issues/1450) authority, "
@@ -197,7 +236,8 @@ def render_dashboard(data: dict[str, Any]) -> str:
         "3. Regenerate with python scripts/qualification_control.py --write "
         "and check with --check; review GitHub Actions.",
         "4. Scheduled/manual Actions also perform a read-only check that owners "
-        "remain open and PR #1356 remains held. API outages are failures, not passes.",
+        "stay consistent with unresolved gates and PR #1356 release decision. "
+        "API outages are failures, not passes.",
         "",
         f"See [canonical evaluation matrix](docs/research/product-north-star-and-test-matrix.md), "
         f"[research tracker #200]({BASE}/issues/200) and "
@@ -227,16 +267,27 @@ def live_check(data: dict[str, Any]) -> None:
     owners = {row["owner_issue"] for row in data["items"]}
     owners |= set(data["release"]["owners"])
     owners |= set(data["promotion"]["owners"])
+    required_open = {
+        item["owner_issue"] for item in data["items"] if item["status"] != "QUALIFIED"
+    }
+    for gate in (data["release"], data["promotion"]):
+        if gate["decision"] == "HOLD":
+            required_open.update(gate["owners"])
     for number in sorted(owners):
         issue = fetch(f"https://api.github.com/repos/JDeun/SchemaRouter/issues/{number}")
-        if issue.get("state") != "open":
-            invalid(f"owner issue #{number} closed; reconcile ledger")
+        if issue.get("state") not in ("open", "closed"):
+            invalid(f"owner issue #{number} has unknown state")
+        if issue["state"] == "closed" and number in required_open:
+            invalid(f"owner issue #{number} closed while a tracked gate is still open")
     release_pr = fetch(
         f"https://api.github.com/repos/JDeun/SchemaRouter/pulls/"
         f"{data['release']['held_pr']}"
     )
-    if release_pr.get("state") != "open" or release_pr.get("merged_at") is not None:
-        invalid("held release PR changed state; review before publishing")
+    if data["release"]["decision"] == "HOLD":
+        if release_pr.get("state") != "open" or release_pr.get("merged_at") is not None:
+            invalid("held release PR changed state; review before publishing")
+    elif release_pr.get("state") == "closed" and release_pr.get("merged_at") is None:
+        invalid("approved release PR was closed without a merge")
 
 
 def main() -> int:
@@ -261,7 +312,8 @@ def main() -> int:
         else:
             counts = Counter(item["status"] for item in control["items"])
             print("Qualification: " + str(counts["QUALIFIED"]) + "/19; "
-                  "release HOLD; model promotion HOLD")
+                  "release " + control["release"]["decision"] + "; model promotion "
+                  + control["promotion"]["decision"])
             for status in STATES:
                 print(status + ": " + str(counts[status]))
         if args.live:
