@@ -249,7 +249,9 @@ def metrics(rows: list[dict[str, Any]], score_key: str, route_key: str,
     }
 
 
-def evaluate(\n    rows: list[dict[str, Any]], encoder: Any, *, real_cpu_model: bool = False,\n) -> dict[str, Any]:
+def evaluate(
+    rows: list[dict[str, Any]], encoder: Any, *, real_cpu_model: bool = False,
+) -> dict[str, Any]:
     backend = EmbeddingDecisionBackend(
         E5CachedEmbedder(encoder, max_cached_passages=2048),
     )
