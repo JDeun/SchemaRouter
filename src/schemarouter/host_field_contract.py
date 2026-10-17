@@ -285,9 +285,16 @@ def select_authorized_field_contract(
 
     availability = router.planner.availability_predicate
     registry = router.registry
-    retrieved = router.retrieve_authorized(
-        request, principal=approved_principal, k=k,
-    )
+    try:
+        retrieved = router.retrieve_authorized(
+            request, principal=approved_principal, k=k,
+        )
+    except Exception:
+        # A provider-controlled availability predicate or unexpected adapter
+        # error must not echo private exception text into a host receipt.
+        raise PolicyViolationError(
+            "cannot attest authorized retrieval"
+        ) from None
     if (
         router.authorization_policy is not policy
         or router.planner.availability_predicate is not availability
@@ -388,10 +395,12 @@ def select_authorized_field_contract(
                     returned_fingerprints[route_id] = (
                         tool_fingerprints[tool.key], endpoint.fingerprint,
                     )
-    except (TypeError, ValueError, AttributeError) as exc:
+    except Exception:
+        # Full-scan predicates and projected-source adapters may raise
+        # arbitrary exceptions containing hidden route/field details.
         raise PolicyViolationError(
             "cannot validate the complete authorized catalog"
-        ) from exc
+        ) from None
     if (
         verified.registry_version != router.registry.version
         or router.registry is not registry

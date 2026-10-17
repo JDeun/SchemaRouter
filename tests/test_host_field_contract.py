@@ -964,3 +964,49 @@ def test_static_policy_still_selects_real_authorized_read_only_contract():
     )
     assert decision.disposition == "selected"
     assert decision.selected_route_id == "marine.read"
+
+
+@pytest.mark.parametrize("exception_type", (RuntimeError, PolicyViolationError))
+def test_authorized_retrieval_exception_cannot_disclose_hidden_source_details(
+    monkeypatch: pytest.MonkeyPatch, exception_type: type[Exception],
+) -> None:
+    router = _router(hidden=True)
+    secret = "NEVER-ECHO-HIDDEN-ROUTE-AND-FIELD-DETAILS"
+
+    def hostile_retrieval(*_args, **_kwargs):
+        raise exception_type(secret)
+
+    monkeypatch.setattr(router, "retrieve_authorized", hostile_retrieval)
+    with pytest.raises(PolicyViolationError, match="cannot attest authorized retrieval") as e:
+        select_authorized_field_contract(
+            router, "ocean", principal=VIEWER, contract=_contract("wave_height"),
+        )
+    assert secret not in str(e.value)
+
+
+@pytest.mark.parametrize("exception_type", (RuntimeError, PolicyViolationError))
+def test_catalog_projection_exception_cannot_disclose_hidden_source_details(
+    monkeypatch: pytest.MonkeyPatch, exception_type: type[Exception],
+) -> None:
+    router = _router(hidden=True)
+    request = "ocean"
+    # Use a real, principal-scoped snapshot and exercise failure during the
+    # selector's SECOND full-catalog completeness witness, not retrieval.
+    authorized = router.retrieve_authorized(request, principal=VIEWER, k=128)
+    secret = "NEVER-ECHO-CATALOG-SOURCE-AND-HIDDEN-FIELD"
+
+    monkeypatch.setattr(
+        router, "retrieve_authorized", lambda *_args, **_kwargs: authorized,
+    )
+
+    def hostile_projection(*_args, **_kwargs):
+        raise exception_type(secret)
+
+    monkeypatch.setattr(router, "_data_scope_endpoint_view", hostile_projection)
+    with pytest.raises(
+        PolicyViolationError, match="cannot validate the complete authorized catalog",
+    ) as e:
+        select_authorized_field_contract(
+            router, request, principal=VIEWER, contract=_contract("wave_height"),
+        )
+    assert secret not in str(e.value)
