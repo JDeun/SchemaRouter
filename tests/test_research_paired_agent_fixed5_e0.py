@@ -103,9 +103,10 @@ def test_paired_three_arm_e0_report_reuses_task_cluster_bootstrap():
     assert result["decision"] == "E0_DESCRIPTIVE_ONLY_NOT_INDEPENDENT_E2"
     assert result["summary"]["lexical_k5"]["task_pass_rate"] == pytest.approx(1 / 3)
     assert result["summary"]["e5_k5"]["task_pass_rate"] == pytest.approx(2 / 3)
-    assert result["paired_task_pass_delta_vs_lexical_k5"]["e5_k5"]["delta"] == pytest.approx(1 / 3)
-    assert result["paired_task_pass_delta_vs_lexical_k5"]["hybrid_k5"]["delta"] == pytest.approx(1 / 3)
-    assert result["paired_task_pass_delta_vs_lexical_k5"]["e5_k5"]["cluster_unit"] == "semantic_task_id"
+    paired = result["paired_task_pass_delta_vs_lexical_k5"]
+    assert paired["e5_k5"]["delta"] == pytest.approx(1 / 3)
+    assert paired["hybrid_k5"]["delta"] == pytest.approx(1 / 3)
+    assert paired["e5_k5"]["cluster_unit"] == "semantic_task_id"
     assert result["summary"]["e5_k5"]["by_language"]["ko"]["pass_rate"] == 1
     assert result["summary"]["e5_k5"]["unsupported_executed_observed"] == 1
     public = json.dumps(result, ensure_ascii=False)
