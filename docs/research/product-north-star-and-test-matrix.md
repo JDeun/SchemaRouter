@@ -105,7 +105,3 @@ This is an **architecture proposal, not a claim that such a classifier, hybrid s
 **Milestone 4 — qualify or reject:** promote only if independent, task-level, safe, measured under actual CPU budget; otherwise mark which stage failed and stop, without silently raising K or lowering acceptance thresholds. Release #1356 remains HARD HOLD; #1339/#1346/#1450 remain open until their actual independent evidence and authority conditions are satisfied.
 
 **Definition of progress:** one previously failing **real task** now completes correctly, with exact source/field/permission proof and no new unsafe or unsupported calls. A new script, PR count, model leaderboard or synthetic pass is supporting infrastructure, **not the product success criterion**.
-
-## 7. Qualification checklist and proof gates
-
-The [generated qualification checklist](../project/qualification-control.md) is the **current per-ID evidence status** for this unchanged 19-row canonical inventory. Update its source JSON at `benchmarks/qualification-control-v1.json`; the script and Actions validate exact matrix coverage and prevent unreviewed E0/DEV-only promotion. The v0.18 release gate (#1345/#1346) is distinct from independent integrated E2/default promotion (#1477).
