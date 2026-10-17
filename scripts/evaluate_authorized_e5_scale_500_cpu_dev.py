@@ -44,6 +44,34 @@ from scripts.research_authorized_hybrid_fixed5 import AuthorizedHybridFixed5Sele
 
 ROOT = Path(__file__).resolve().parents[1]
 STRESS_MODEL_INPUT_BUDGET_BYTES = 262144  # Explicit 256 KiB research-only cap.
+PROFILED_STAGE_FIELDS = (
+    "source_capture_latency_ms",
+    "backend_decision_latency_ms",
+    "nonbackend_selection_latency_ms",
+    "source_capture_plus_selection_latency_ms",
+)
+
+
+class _ProfiledBackend:
+    """Count model decision time without touching queries, source or gold.
+
+    The existing CPU embedding backend is synchronous. This wrapper does not
+    alter decisions, cache model vectors or persist any request contents.
+    """
+
+    def __init__(self, delegate: Any) -> None:
+        self._delegate = delegate
+        self.calls = 0
+        self.elapsed_ns = 0
+
+    def decide(self, request: Any) -> Any:
+        began = time.perf_counter_ns()
+        try:
+            return self._delegate.decide(request)
+        finally:
+            self.elapsed_ns += time.perf_counter_ns() - began
+            self.calls += 1
+
 
 
 def native_route_id(distractor_id: str) -> str:
@@ -118,6 +146,19 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
             ) / len(no),
         }
     latency = [r["selection_latency_ms"] for r in rows]
+    stages = {}
+    for name in PROFILED_STAGE_FIELDS:
+        observations = [r[name] for r in rows]
+        if any(
+            type(value) is not float or not math.isfinite(value) or value < 0
+            for value in observations
+        ):
+            raise ValueError("invalid measured CPU latency stage")
+        stages[name] = {
+            "p50": percentile(observations, 50),
+            "p95": percentile(observations, 95),
+            "p99": percentile(observations, 99),
+        }
     return {
         "supported": len(positives),
         "unsupported": len(negatives),
@@ -128,6 +169,7 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         ),
         "selection_latency_ms_p50": percentile(latency, 50),
         "selection_latency_ms_p95": percentile(latency, 95),
+        "stage_latency_ms": stages,
         "language": strata,
     }
 
@@ -162,9 +204,11 @@ def run_scaled_retrieval_dev(
         }
         for case in corpus["cases"][:case_limit]:
             query = case["query"]
+            capture_began = time.perf_counter_ns()
             view = capture_authorized_agent_tool_surface(
                 router, query, principal=PRINCIPAL,
             )
+            capture_ms = (time.perf_counter_ns() - capture_began) / 1e6
             visible = view.visible_route_ids
             if len(visible) != size:
                 raise ValueError("incomplete authorized native catalog exposure")
@@ -176,26 +220,37 @@ def run_scaled_retrieval_dev(
             lexical = [item.route_id for item in original_result.candidates]
             lexical_ms = (time.perf_counter_ns() - begin) / 1e6
 
+            traced_backend = _ProfiledBackend(backend)
             e5_selector = AuthorizedFixed5DecisionSelector(
-                view, backend, max_model_input_bytes=STRESS_MODEL_INPUT_BUDGET_BYTES,
+                view, traced_backend,
+                max_model_input_bytes=STRESS_MODEL_INPUT_BUDGET_BYTES,
             )
             begin = time.perf_counter_ns()
             semantic = e5_selector(query, visible)
             semantic_ms = (time.perf_counter_ns() - begin) / 1e6
+            if traced_backend.calls != 1:
+                raise ValueError("E5 selector used unexpected inference calls")
+            semantic_backend_ms = traced_backend.elapsed_ns / 1e6
 
             hybrid_selector = AuthorizedHybridFixed5Selector(
-                view, backend, max_model_input_bytes=STRESS_MODEL_INPUT_BUDGET_BYTES,
+                view, traced_backend,
+                max_model_input_bytes=STRESS_MODEL_INPUT_BUDGET_BYTES,
             )
             begin = time.perf_counter_ns()
             hybrid = hybrid_selector(query, visible)
             hybrid_ms = (time.perf_counter_ns() - begin) / 1e6
+            if traced_backend.calls != 2:
+                raise ValueError("hybrid used unexpected inference calls")
+            hybrid_backend_ms = (
+                traced_backend.elapsed_ns / 1e6 - semantic_backend_ms
+            )
 
             choices = {
-                ARMS[0]: (lexical, lexical_ms),
-                ARMS[1]: (semantic, semantic_ms),
-                ARMS[2]: (hybrid, hybrid_ms),
+                ARMS[0]: (lexical, lexical_ms, 0.0),
+                ARMS[1]: (semantic, semantic_ms, semantic_backend_ms),
+                ARMS[2]: (hybrid, hybrid_ms, hybrid_backend_ms),
             }
-            for arm, (selected, latency) in choices.items():
+            for arm, (selected, latency, backend_ms) in choices.items():
                 if (
                     len(selected) != 5 or len(set(selected)) != 5
                     or not set(selected).issubset(visible)
@@ -215,6 +270,14 @@ def run_scaled_retrieval_dev(
                     "hit_at_5": expected in selected if supported else None,
                     "nonempty_unsupported": not supported and bool(selected),
                     "selection_latency_ms": latency,
+                    "source_capture_latency_ms": capture_ms,
+                    "backend_decision_latency_ms": backend_ms,
+                    "nonbackend_selection_latency_ms": max(
+                        0.0, latency - backend_ms
+                    ),
+                    "source_capture_plus_selection_latency_ms": (
+                        capture_ms + latency
+                    ),
                 })
             view.assert_source_unchanged()
         results[str(size)] = {
@@ -250,8 +313,11 @@ def run_scaled_retrieval_dev(
         "limitations": (
             "Templated distractors are not true native external services. "
             "No agent execution, E2 generalization or calibrated no-fit. "
-            "Source capture occurs outside reported selection latency, and "
-            "embedding passage cache is shared across query order."
+            "Source capture is measured separately from selection; "
+            "snapshot+selection is a summed shared-snapshot diagnostic, not "
+            "a standalone hosted agent latency. Nonbackend overhead includes "
+            "authorized retrieval, native schema formatting and validation. "
+            "Embedding passage cache is shared across query order."
         ),
     }
 

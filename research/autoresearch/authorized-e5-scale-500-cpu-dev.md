@@ -83,3 +83,48 @@ python -m scripts.evaluate_authorized_e5_scale_500_cpu_dev --mode real-e5-cpu \
 same-agent native host invocation and paired final task completion
 remain required for E2. #1356 v0.18.0 hard hold remains unchanged;
 the frozen negative #432 canonical science is untouched.
+
+
+## 2026-10-17: instrumented CPU stage bottleneck, no optimizer claims
+
+After a successful initial 13/100/250/500 real-E5 source-catalog study,
+the 500-route observed E5 selection p95 was **673.5 ms** and fixed
+RRF(60) p95 **1040.3 ms**. The original metric starts *after* the
+scoped tool-surface construction and includes another full authorized
+candidate retrieval, model input construction, backend CPU inference and
+post-inference validation. It is not actual end-to-end request latency.
+
+The follow-up instrumented runner records **for each fixed source and
+query**:
+
+- `source_capture_latency_ms`: native principal-scoped source snapshot
+  and tool schema projection performed once before comparing the arms.
+- `backend_decision_latency_ms`: the actual `DecisionBackend.decide`
+  call in the semantic and hybrid arms; model embedding and cosine sort
+  happen here. Lexical's value is zero.
+- `nonbackend_selection_latency_ms`: selection minus decision time,
+  conservatively clamped to zero only for nanosecond timer ordering.
+  This includes repeated native authorized retrieval, result validation
+  and all additional pre/post backend operations.
+- `source_capture_plus_selection_latency_ms`: the sum of the shared
+  snapshot preparation and one arm's selection; **not independent
+  end-to-end agent latency**.
+  
+Each of the four stages is summarized as p50, p95, p99. The wrapper
+tracks only elapsed nanoseconds and decision call counts; it never
+caches user query embeddings, changes the backend result, exposes
+principal claims, captures raw queries/gold, modifies source
+fingerprints, or grants invoker authority. A real E5 selector and
+hybrid each must call the decision backend **exactly once** per query;
+unexpected call counts fail the evaluation. A mock backend remains
+marked *unattested*.
+
+The original per-arm retrieval rankings, K=5 limit, 84-case
+denominators, authorized snapshots and no-fit nonqualification are
+unchanged. **Percentiles of individually measured stages cannot be
+arithmetically added** to infer total p95. Use the separately measured
+`source_capture_plus_selection_latency_ms` to understand shared-source
+overhead. Results distinguish bottlenecks but cannot in themselves
+demonstrate optimization or commercial quality; a subsequent
+independent A/B code change must reduce a measured stage without
+recall degradation on held-out cases.
