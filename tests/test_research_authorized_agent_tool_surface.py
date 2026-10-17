@@ -804,7 +804,9 @@ def test_optin_fixture_agent_can_grade_hallucinated_unavailable_route_without_le
     assert "unavailable_scoped_route" in agent.snapshots[1]
     assert SECRET not in agent.snapshots[1]
     assert "secret_field" not in agent.snapshots[1]
-    assert "archive" not in agent.snapshots[1]
+    # The assistant's own invalid tool name can appear in conversation,
+    # but the host must not reveal the hidden route's real description.
+    assert "Read archive values" not in agent.snapshots[1]
     assert SECRET not in json.dumps(result)
 
 
