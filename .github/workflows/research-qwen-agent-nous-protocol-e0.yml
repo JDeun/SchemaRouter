@@ -1,0 +1,66 @@
+name: Qwen-Agent Nous Upstream Protocol E0
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_qwen_agent_nous_protocol_e0.py"
+      - "research/autoresearch/qwen-agent-nous-upstream-protocol-e0.md"
+      - ".github/workflows/research-qwen-agent-nous-protocol-e0.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qwen-agent-nous-protocol-e0-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-pinned-read-only-protocol:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install exact upstream Qwen-Agent Git source (CPU only)
+        run: |
+          python -m pip install "git+https://github.com/QwenLM/Qwen-Agent.git@31a4d36d123688581a9e9744427272b33ce940e0" "numpy>=1.26,<3" "soundfile>=0.12,<1" "tqdm>=4.65,<5" "python-dateutil>=2.9,<3" "ruff>=0.6,<1"
+      - name: Assert source-pinned actual Nous preprocessing and parsing
+        run: |
+          ruff check scripts/research_qwen_agent_nous_protocol_e0.py
+          python -m compileall -q scripts/research_qwen_agent_nous_protocol_e0.py
+          python -m scripts.research_qwen_agent_nous_protocol_e0 > qwen-nous-e0-result.json
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          d = json.loads(Path("qwen-nous-e0-result.json").read_text(encoding="utf-8"))
+          assert d["upstream_commit"] == "31a4d36d123688581a9e9744427272b33ce940e0"
+          assert d["source_attested_by_pip_vcs"] is True
+          assert d["upstream_parser_single_call_roundtrip"] is True
+          assert d["upstream_parser_parallel_proposals"] == 2
+          assert d["function_result_model_role"] == "user"
+          assert d["mismatched_function_result_rejected"] is True
+          assert d["provider_calls_executed"] == 0
+          assert d["model_inference_executed"] is False
+          assert d["schemarouter_host_authorization_qualified"] is False
+          assert d["independent_e2_qualified"] is False
+          assert d["model_promoted"] is False
+          assert d["release_qualified"] is False
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
+              f.write("## Upstream Qwen-Agent Nous E0 source conformance\\n\\n")
+              f.write("Exact upstream commit: \`31a4d36d123688581a9e9744427272b33ce940e0\` (Apache-2.0).\\n\\n")
+              f.write("Function result is replayed as a **user** \`<tool_response>\` message, not the existing pilot's \`role:tool\`. Verified with actual upstream code, not a hand-written replica.\\n\\n")
+              f.write("Parser confirms single and parallel proposals; these are *untrusted proposals*, never host execution authority. 0 actual model/provider calls, no E2 qualification, v0.18 HOLD.\\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: qwen-agent-nous-upstream-contract-e0-${{ github.run_id }}
+          path: qwen-nous-e0-result.json
+          if-no-files-found: error
+          retention-days: 30
