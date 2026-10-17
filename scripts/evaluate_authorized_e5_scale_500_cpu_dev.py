@@ -43,6 +43,7 @@ from scripts.research_authorized_fixed5_decision_bridge import (
 from scripts.research_authorized_hybrid_fixed5 import AuthorizedHybridFixed5Selector
 
 ROOT = Path(__file__).resolve().parents[1]
+STRESS_MODEL_INPUT_BUDGET_BYTES = 262144  # Explicit 256 KiB research-only cap.
 
 
 def native_route_id(distractor_id: str) -> str:
@@ -175,12 +176,16 @@ def run_scaled_retrieval_dev(
             lexical = [item.route_id for item in original_result.candidates]
             lexical_ms = (time.perf_counter_ns() - begin) / 1e6
 
-            e5_selector = AuthorizedFixed5DecisionSelector(view, backend)
+            e5_selector = AuthorizedFixed5DecisionSelector(
+                view, backend, max_model_input_bytes=STRESS_MODEL_INPUT_BUDGET_BYTES,
+            )
             begin = time.perf_counter_ns()
             semantic = e5_selector(query, visible)
             semantic_ms = (time.perf_counter_ns() - begin) / 1e6
 
-            hybrid_selector = AuthorizedHybridFixed5Selector(view, backend)
+            hybrid_selector = AuthorizedHybridFixed5Selector(
+                view, backend, max_model_input_bytes=STRESS_MODEL_INPUT_BUDGET_BYTES,
+            )
             begin = time.perf_counter_ns()
             hybrid = hybrid_selector(query, visible)
             hybrid_ms = (time.perf_counter_ns() - begin) / 1e6
