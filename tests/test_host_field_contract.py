@@ -858,3 +858,109 @@ async def test_stable_sync_and_async_retrieval_preserve_visible_routes() -> None
         "sensitive_audit" not in {field.name for field in c.output_fields}
         for c in synchronous.candidates
     )
+
+
+@pytest.mark.parametrize("mutation", (
+    "rule_effect", "default_effect", "compiled_rule_index",
+    "data_scope", "compiled_data_index",
+))
+def test_same_object_host_policy_mutation_during_retrieval_is_rejected(mutation):
+    """Frozen policy identity must not legitimize stale selected source."""
+    router = _router(hidden=True)
+    policy = router.authorization_policy
+    assert policy is not None
+    original_retrieve = router.retrieve_authorized
+
+    def drift(*args, **kwargs):
+        result = original_retrieve(*args, **kwargs)
+        if mutation == "rule_effect":
+            object.__setattr__(policy.rules[-1], "effect", "deny")
+        elif mutation == "default_effect":
+            object.__setattr__(policy, "default_effect", "allow")
+        elif mutation == "compiled_rule_index":
+            policy._rule_index.partitions.clear()
+        elif mutation == "data_scope":
+            object.__setattr__(policy.data_rules[0], "hidden_fields", ())
+        else:
+            policy._data_rule_index.partitions.clear()
+        return result
+
+    router.retrieve_authorized = drift
+    with pytest.raises(PolicyViolationError, match="policy changed"):
+        select_authorized_field_contract(
+            router, "marine wave height", principal=VIEWER,
+            contract=_contract("wave_height", "ocean_current_velocity"),
+        )
+
+
+def test_same_object_authorization_drift_during_full_catalog_scan_is_rejected():
+    router = _router(hidden=True)
+    policy = router.authorization_policy
+    assert policy is not None
+    original_retrieve = router.retrieve_authorized
+    original_view = router._data_scope_endpoint_view
+    completed_retrieval = False
+    def mark_retrieved(*args, **kwargs):
+        nonlocal completed_retrieval
+        result = original_retrieve(*args, **kwargs)
+        completed_retrieval = True
+        return result
+
+    def mutate_while_scanning(*args, **kwargs):
+        result = original_view(*args, **kwargs)
+        if completed_retrieval:
+            object.__setattr__(policy.data_rules[0], "hidden_fields", ())
+        return result
+
+    router.retrieve_authorized = mark_retrieved
+    router._data_scope_endpoint_view = mutate_while_scanning
+    with pytest.raises(PolicyViolationError, match="policy changed"):
+        select_authorized_field_contract(
+            router, "marine", principal=VIEWER,
+            contract=_contract("wave_height", "ocean_current_velocity"),
+        )
+
+
+def test_same_object_index_mutation_during_contract_match_cannot_return_selected(
+    monkeypatch,
+):
+    import schemarouter.host_field_contract as module
+
+    router = _router()
+    policy = router.authorization_policy
+    assert policy is not None
+    original = module._candidate_matches
+
+    def mutate_during_match(candidate, contract):
+        valid = original(candidate, contract)
+        policy._rule_index.partitions.clear()
+        return valid
+
+    monkeypatch.setattr(module, "_candidate_matches", mutate_during_match)
+    with pytest.raises(PolicyViolationError, match="policy changed"):
+        select_authorized_field_contract(
+            router, "marine", principal=VIEWER,
+            contract=_contract("wave_height", "ocean_current_velocity"),
+        )
+
+
+def test_corrupted_compiled_policy_index_before_retrieval_fails_closed():
+    router = _router()
+    policy = router.authorization_policy
+    assert policy is not None
+    object.__setattr__(policy._rule_index, "partitions", [])
+    with pytest.raises(PolicyViolationError, match="cannot attest"):
+        select_authorized_field_contract(
+            router, "marine", principal=VIEWER,
+            contract=_contract("wave_height", "ocean_current_velocity"),
+        )
+
+
+def test_static_policy_still_selects_real_authorized_read_only_contract():
+    router = _router(hidden=True)
+    decision = select_authorized_field_contract(
+        router, "marine waves", principal=VIEWER,
+        contract=_contract("wave_height", "ocean_current_velocity"),
+    )
+    assert decision.disposition == "selected"
+    assert decision.selected_route_id == "marine.read"
