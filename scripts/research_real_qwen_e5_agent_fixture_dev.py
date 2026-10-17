@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import hmac
 import json
 import platform
 import secrets
@@ -227,11 +228,7 @@ def run_paired_fixture_pilot(
     # used for all conditions; rotate arm order to reduce warm-up bias.
     for index, case in enumerate(cases):
         task = one_step_fixture_task(case)
-        identity = hashlib.pbkdf2_hmac(
-            "sha256", case["id"].encode(), hmac_key, 1,
-        ).hex()
-        # Use the IDENTICAL canonical HMAC function as sanitized_e0_trace.
-        import hmac
+        # Use the identical canonical HMAC identity as sanitized_e0_trace.
         identity = hmac.new(
             hmac_key, case["id"].encode("utf-8"), "sha256",
         ).hexdigest()
