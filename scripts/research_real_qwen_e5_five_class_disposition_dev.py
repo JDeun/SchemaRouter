@@ -10,7 +10,6 @@ import argparse
 import hashlib
 import json
 import platform
-import secrets
 import subprocess
 from collections import Counter
 from pathlib import Path
@@ -56,15 +55,24 @@ SYSTEM = (
 # Disclosed researcher-authored query variants, not a prospective holdout.
 VARIANTS = {
     "en": {
-        "needs_input": "Please check the weather for my trip, but I have not given a city. Ask which city first.",
+        "needs_input": (
+            "Please check the weather for my trip, but I have not given a city. "
+            "Ask which city first."
+        ),
         "ambiguous": "Can you pull that record for me? I have not specified which one.",
     },
     "ko": {
-        "needs_input": "여행지 날씨를 확인하고 싶지만 도시 이름을 말하지 않았어요. 도시를 먼저 물어봐 주세요.",
+        "needs_input": (
+            "여행지 날씨를 확인하고 싶지만 도시 이름을 말하지 않았어요. "
+            "도시를 먼저 물어봐 주세요."
+        ),
         "ambiguous": "그 자료를 조회해 주세요. 어떤 자료인지는 지정하지 않았어요.",
     },
     "ja": {
-        "needs_input": "旅行先の天気を確認したいですが、都市名を伝えていません。まず都市名を尋ねてください。",
+        "needs_input": (
+            "旅行先の天気を確認したいですが、都市名を伝えていません。"
+            "まず都市名を尋ねてください。"
+        ),
         "ambiguous": "その記録を調べてください。どの記録なのか指定していません。",
     },
 }
@@ -251,10 +259,13 @@ def run_five_class_dev(
         },
         "limitations": [
             "self-authored exposed synthetic requests and host-provided labels, never independent",
-            "all 13 registered DEV routes are zero-argument read-only, no genuine missing-field contract",
-            "host-denied existing route is hidden from agent; denied vs missing cannot be identified reliably",
+            "all 13 registered DEV routes are zero-argument read-only; "
+            "no genuine missing-field contract",
+            "host-denied existing route is hidden from agent; "
+            "denied vs missing cannot be identified reliably",
             "no real provider I/O, no factual answers oracle, no calibrated no-fit gate",
-            "no raw user queries, agent text, hidden source routes or tool-call arguments are exported",
+            "no raw user queries, agent text, hidden source routes "
+            "or tool-call arguments exported",
         ],
     }
 
