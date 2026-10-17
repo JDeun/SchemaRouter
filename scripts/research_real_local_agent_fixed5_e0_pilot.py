@@ -200,6 +200,7 @@ def run_agent_pilot(
                 experimental_candidate_selector=selector,
                 experimental_agent_tool_surface=view,
                 experimental_e0_trace_provenance=provenance,
+                experimental_block_unavailable_observation=True,
             )
             # Existing agent loop must return its allowlisted scoped trace,
             # never a raw fixture/evaluator row or user/agent transcript.
