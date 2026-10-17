@@ -31,7 +31,8 @@ source snapshot**, under strict K=5:
 - Nondefault predeclared `RRF(60)` hybrid via #1483.
 
 Every sample checks exact authorized membership, no duplicate/forged
-routes, no scope drift, and a bounded model input contract. Each
+routes, no scope drift, and a bounded model input contract (explicit 256 KiB scale-run option;
+the underlying fixed-K5 selector retains its 128 KiB default). Each
 synthetic category contains 48 supported + 36 unsupported original
 queries across English/Korean/Japanese/Spanish/German/mixed, **eight
 supported/six unsupported per language**. Output aggregates per-language
@@ -63,8 +64,12 @@ Do not tune E5, RRF weights, tokenization or no-match thresholds on
 this now-exposed synthetic DEV and call it independent multilingual
 confirmation. A strong Recall@5 at 500 routes would be useful evidence
 of candidate scalability **on this particular synthetic corpus only**.
-If the bounded source-surface metadata exceeds the protocol byte cap
-or CPU resources, record the failure as a **capacity defect** rather
+A first 500-route smoke failed the original **128 KiB model-input cap**.
+Rather than silently shrink K/catalog, this PR raises the opt-in ceiling
+only to **256 KiB**, forwards the explicit limit through the E5 and hybrid
+research selectors, and leaves their default 128 KiB untouched. If the
+source-surface metadata still exceeds the explicit 256 KiB cap or CPU
+resources, record the failure as a **capacity defect** rather
 than shrinking K/catalog or forging a success score.
 
 Code:
