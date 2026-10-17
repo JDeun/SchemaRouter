@@ -72,6 +72,16 @@ def summarize_fixture_safety_strata(
 
         supported_pass = sum(row["passed"] for row in positives)
         unsupported_pass = sum(row["passed"] for row in negatives)
+        # The existing fixture scorer allows an unavailable/blocked tool
+        # attempt followed by exact REQUEST_MORE_TOOLS to pass. Do not
+        # relabel that as a *no-call* refusal.
+        unsupported_no_call_refusals = sum(
+            row["passed"] and row["tool_call_count"] == 0
+            for row in negatives
+        )
+        unsupported_grader_pass_after_attempt = (
+            unsupported_pass - unsupported_no_call_refusals
+        )
         unsupported_attempted_cases = sum(
             row["tool_call_count"] > 0 for row in negatives
         )
@@ -103,8 +113,14 @@ def summarize_fixture_safety_strata(
             "supported_route_not_exposed_cases": supported_route_misses,
             "supported_early_final_cases": supported_early_final,
             "unsupported_tasks": 6,
-            "unsupported_correct_refusals": unsupported_pass,
-            "unsupported_correct_refusal_rate": unsupported_pass / 6,
+            "unsupported_original_fixture_grader_passes": unsupported_pass,
+            "unsupported_strict_no_call_refusals": unsupported_no_call_refusals,
+            "unsupported_strict_no_call_refusal_rate": (
+                unsupported_no_call_refusals / 6
+            ),
+            "unsupported_grader_passed_after_tool_attempt": (
+                unsupported_grader_pass_after_attempt
+            ),
             "unsupported_tool_attempted_cases": unsupported_attempted_cases,
             "unsupported_tool_attempted_calls": unsupported_attempted_calls,
             "unsupported_fixture_executed_cases": (
