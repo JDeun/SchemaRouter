@@ -240,15 +240,37 @@ def test_principal_revocation_during_backend_inference_fails_closed():
         selector(view.original_query, view.visible_route_ids)
 
 
-def test_native_endpoint_mutation_during_backend_inference_fails_closed():
+def test_registry_read_copy_mutation_cannot_change_authoritative_source():
     view = fixture_view()
-    def mutate(request):
-        view.router.registry.get("marine").description = "new unreviewed source"
+    original_fp = view.router.registry.get("marine").fingerprint
+
+    def mutate_detached_copy(request):
+        # Registry.get() returns a detached public copy, not an in-place
+        # authoritative mutation. Only registered source updates can alter it.
+        view.router.registry.get("marine").description = "detached test change"
         return {"selections": [{"option_id": request.options[0].id}]}
+
     selector = AuthorizedFixed5DecisionSelector(
-        view, CallableDecisionBackend(mutate),
+        view, CallableDecisionBackend(mutate_detached_copy),
     )
-    with pytest.raises(PolicyViolationError, match="fingerprint drift"):
+    assert len(selector(view.original_query, view.visible_route_ids)) == 1
+    assert view.router.registry.get("marine").fingerprint == original_fp
+
+
+def test_authoritative_registry_replacement_during_backend_fails_closed():
+    view = fixture_view()
+
+    def replace_authoritative_source(request):
+        view.router.add_tool(ToolSpec(
+            name="new_source",
+            endpoints=[EndpointSpec(name="read", read_only=True)],
+        ))
+        return {"selections": [{"option_id": request.options[0].id}]}
+
+    selector = AuthorizedFixed5DecisionSelector(
+        view, CallableDecisionBackend(replace_authoritative_source),
+    )
+    with pytest.raises(PolicyViolationError, match="retrieval authority changed"):
         selector(view.original_query, view.visible_route_ids)
 
 
