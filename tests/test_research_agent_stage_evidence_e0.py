@@ -265,3 +265,37 @@ def test_completed_step_with_failed_grader_is_not_reported_as_final_success():
     assert safe["supported_final_after_fixture_completion_observed"] is False
     assert safe["actual_final_answer_correctness_measured"] is False
     assert SECRET not in json.dumps(safe)
+
+
+@pytest.mark.parametrize(("terminal", "expected"), (
+    ("REQUEST_MORE_TOOLS", True),
+    ("REQUEST_MORE_TOOLS extra", False),
+    ("No matching capability", False),
+))
+def test_supported_false_no_fit_refusal_is_posthoc_exact_and_private(terminal, expected):
+    raw = original_row()
+    raw.update({
+        "supported": True,
+        "passed": False,
+        "task_complete": False,
+        "initial_required_route_miss": False,
+        "attempts": [],
+        "final_text": terminal,
+        "turn_rows": [{"event": "final", "generated": SECRET}],
+    })
+    safe = trace(raw)
+    assert ("supported_no_fit_refusal_observed" in safe["observed_stages"]) is expected
+    assert "agent_final_before_task_completion" in safe["observed_stages"]
+    assert "unsupported_no_fit_response_mismatch" not in safe["observed_stages"]
+    assert "final_text" not in safe
+    assert SECRET not in json.dumps(safe)
+
+
+def test_supported_no_fit_after_execution_is_not_a_premature_false_refusal():
+    raw = original_row()
+    raw.update({
+        "supported": True, "passed": True, "task_complete": True,
+        "final_text": "REQUEST_MORE_TOOLS",
+        "turn_rows": [{"event": "final", "generated": SECRET}],
+    })
+    assert trace(raw)["observed_stages"] == ["passed"]

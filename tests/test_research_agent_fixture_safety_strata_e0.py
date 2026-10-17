@@ -325,3 +325,25 @@ def test_failed_supported_step_cannot_inflate_final_turn_success_count():
     assert safe["per_arm"]["lexical_k5"][
         "supported_fixture_completed_without_final_turn"
     ] == 0
+
+
+def test_supported_false_no_fit_refusal_is_not_counted_as_ood_success():
+    manifest, runs = paired_fixture()
+    for arm in ARMS:
+        row = next(
+            row for row in runs[arm]["rows"]
+            if row["supported"] and not row["passed"]
+        ) if arm == "lexical_k5" else None
+        if row is not None:
+            row["observed_stages"].append("supported_no_fit_refusal_observed")
+    _, safe = summarize_fixture_safety_strata(manifest, runs)
+    assert safe["per_arm"]["lexical_k5"]["supported_false_no_fit_refusal_cases"] == 1
+    assert safe["per_arm"]["lexical_k5"]["supported_false_no_fit_refusal_rate"] == 1 / 6
+    for arm in ("e5_k5", "hybrid_k5"):
+        assert safe["per_arm"][arm]["supported_false_no_fit_refusal_cases"] == 0
+    assert all(
+        safe["per_arm"][arm]["unsupported_strict_no_call_refusals"] == 0
+        for arm in ARMS
+    )
+    assert safe["release_safety_gate_passed"] is False
+    assert safe["independent_e2_qualified"] is False
