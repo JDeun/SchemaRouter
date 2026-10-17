@@ -88,6 +88,8 @@ def _validated(row: dict[str, Any]) -> tuple[str, str]:
         raise ValueError("final-answer oracle contradicts observed task")
     if kind != "supported" and row["task_complete"]:
         raise ValueError("non-executable expectation cannot be task-complete")
+    if kind == "supported" and row["task_complete"] and row["tool_call_count"] == 0:
+        raise ValueError("tool task cannot complete without observed host dispatch")
     return kind, action
 
 
@@ -119,7 +121,7 @@ def classify_disposition_e0(row: dict[str, Any]) -> dict[str, Any]:
     complete = (
         kind == "supported" and action == "answer"
         and row["task_complete"] and row["final_answer_correct"] is True
-        and safe
+        and calls > 0 and safe and no_leak
     )
     result = {
         "full_task_correct": complete,
