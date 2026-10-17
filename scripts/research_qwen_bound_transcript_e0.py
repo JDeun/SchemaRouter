@@ -45,7 +45,7 @@ def append_bound_tool_transcript_e0(
     try:
         serialized = json.dumps(
             public_observation, ensure_ascii=False, sort_keys=True,
-            allow_nan=False, separators=(",", ":"),
+            allow_nan=False,
         )
         # Defensive preflight: structured tool_calls are rendered by the
         # tokenizer; never provide non-serializable or non-finite arguments.
