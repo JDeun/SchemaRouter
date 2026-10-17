@@ -21,22 +21,26 @@ from scripts.agent_utility_generated_common import (
     canonical_bytes,
     run_generated_episode,
 )
-from scripts.agent_utility_v7_dev_agent import (
-    MODEL_NAME, MODEL_REVISION,
-)
+from scripts.agent_utility_v7_dev_agent import MODEL_NAME, MODEL_REVISION
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
-    CORPUS, PRINCIPAL, build_source_router, real_cpu_backend,
+    CORPUS,
+    PRINCIPAL,
+    build_source_router,
+    real_cpu_backend,
 )
 from scripts.evaluate_multilingual_embedding_cpu_dev import load_development_corpus
 from scripts.research_agent_disposition_contrast_e0 import (
-    ALL_CLASSES, score_disposition_e0,
+    ALL_CLASSES,
+    score_disposition_e0,
 )
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
 from scripts.research_authorized_hybrid_fixed5 import AuthorizedHybridFixed5Selector
 from scripts.research_real_local_agent_fixed5_e0_pilot import (
-    _cases, _fixture_task, _lexical_selector,
+    _cases,
+    _fixture_task,
+    _lexical_selector,
 )
 
 LANGUAGES = ("en", "ko", "ja")
