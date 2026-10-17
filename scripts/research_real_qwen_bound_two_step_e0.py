@@ -28,6 +28,9 @@ from scripts.research_bound_two_step_host_e0 import (
     PRINCIPAL,
     build_bound_two_step_source,
 )
+from scripts.research_qwen_nous_user_transcript_e0 import (
+    append_authorized_nous_user_history_e0,
+)
 from scripts.research_scoped_host_invocation import execute_scoped_host_call
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -140,8 +143,11 @@ def _matches_final_answer(text: str, expected_verified: bool) -> bool:
 async def run_model_selected_bound_two_step_e0(
     agent: Any, *, language: str,
     revoke_before_second: Any = None,
+    transcript_mode: str = "raw",
 ) -> dict[str, Any]:
     """Return sanitized category counters, NOT prompts, gold or model text."""
+    if type(transcript_mode) is not str or transcript_mode not in ("raw", "nous-user"):
+        raise ValueError("unregistered E0 transcript mode")
     if language not in LANGUAGES:
         raise ValueError("unknown published E0 language")
     if not callable(getattr(agent, "generate", None)):
@@ -244,14 +250,25 @@ async def run_model_selected_bound_two_step_e0(
         )
         if CANARY in serialized_observation or "secret" in serialized_observation:
             raise PolicyViolationError("private observation escaped source projection")
-        messages.append({"role": "assistant", "content": text})
-        messages.append({
-            "role": "tool",
-            "content": "<tool_response>\n"
-            + serialized_observation + "\n</tool_response>",
-        })
+        if transcript_mode == "nous-user":
+            append_authorized_nous_user_history_e0(
+                messages,
+                authorized_route_ids=tuple(available),
+                executed_route_id=route_id,
+                validated_arguments=arguments,
+                public_observation=observation,
+            )
+        else:
+            # Preserve the frozen raw history and its EOS token byte-for-byte.
+            messages.append({"role": "assistant", "content": text})
+            messages.append({
+                "role": "tool",
+                "content": "<tool_response>\n"
+                + serialized_observation + "\n</tool_response>",
+            })
     # All source data, gold, model text and arguments remain process-local.
     return {
+        **({"transcript_mode": "nous-user"} if transcript_mode == "nous-user" else {}),
         "evidence_tier": "UNATTESTED_MODEL_BOUND_HOST_E0",
         "language": language,
         "model_turns": model_turns,
@@ -278,6 +295,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", required=True, choices=("validate", "real-cpu"))
     parser.add_argument(
+        "--transcript-mode", choices=("raw", "nous-user"), default="raw",
+    )
+    parser.add_argument(
         "--out", type=Path,
         default=Path("artifacts/two-step-real-qwen-e0/report.json"),
     )
@@ -300,11 +320,19 @@ def main() -> None:
     ).stdout.strip()
     agent = LocalQwenAgent()
     results = [
-        asyncio.run(run_model_selected_bound_two_step_e0(agent, language=lang))
+        asyncio.run(run_model_selected_bound_two_step_e0(
+            agent, language=lang, transcript_mode=args.transcript_mode,
+        ))
         for lang in LANGUAGES
     ]
+    evidence_tier = (
+        "REAL_QWEN3_CPU_BOUND_NOUS_USER_E0_DEV_ONLY"
+        if args.transcript_mode == "nous-user"
+        else "REAL_QWEN3_CPU_BOUND_HOST_E0_DEV_ONLY"
+    )
     report = {
-        "evidence_tier": "REAL_QWEN3_CPU_BOUND_HOST_E0_DEV_ONLY",
+        **({"transcript_mode": "nous-user"} if args.transcript_mode == "nous-user" else {}),
+        "evidence_tier": evidence_tier,
         "source_revision": source,
         "model_revision": f"{MODEL_NAME}@{MODEL_REVISION}",
         "runtime": {"device": "cpu", **runtime_identity()},
@@ -313,7 +341,7 @@ def main() -> None:
         "cases": [
             {
                 **result,
-                "evidence_tier": "REAL_QWEN3_CPU_BOUND_HOST_E0_DEV_ONLY",
+                "evidence_tier": evidence_tier,
                 "actual_model_inference_measured": True,
             }
             for result in results
@@ -336,7 +364,7 @@ def main() -> None:
         encoding="utf-8",
     )
     print(json.dumps({
-        "evidence_tier": report["evidence_tier"],
+        "evidence_tier": evidence_tier,
         "case_count": len(results),
         "by_language": {
             r["language"]: {
