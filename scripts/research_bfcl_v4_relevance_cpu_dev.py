@@ -11,14 +11,16 @@ import hashlib
 import json
 import math
 import os
-import statistics
 import time
 from pathlib import Path
 from typing import Any
 
 from schemarouter import EndpointSpec, InMemoryRegistry, SchemaRouter, ToolSpec
 from schemarouter.decisions import (
-    DecisionOption, DecisionRequest, EmbeddingDecisionBackend, choose_sync,
+    DecisionOption,
+    DecisionRequest,
+    EmbeddingDecisionBackend,
+    choose_sync,
 )
 from schemarouter.embedding_e5 import E5CachedEmbedder
 
