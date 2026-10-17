@@ -8,7 +8,10 @@ work and acceptance criteria.
 
 ## Stable product
 
-**Current stable release:** SchemaRouter 0.14.0 (Beta / pre-1.0).
+**Qualification status:** [generated 19-item evidence checklist](qualification-control.md) connects the [canonical evaluation matrix](../research/product-north-star-and-test-matrix.md), accountable issues, evidence, independent E2 and hard release/promotion gates. Update the JSON ledger instead of copy-pasting status here.
+
+
+**Current stable release:** SchemaRouter 0.17.0 (Beta / pre-1.0).
 
 The stable core is a typed capability retrieval and schema-aware execution boundary. Product work
 should preserve local execution authority, schema/fingerprint validation, explicit side-effect
