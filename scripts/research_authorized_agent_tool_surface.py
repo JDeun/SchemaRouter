@@ -21,6 +21,7 @@ from schemarouter import (
 MAX_SOURCE_ENDPOINTS = 500
 MAX_TOOL_DEFINITIONS = 5
 MAX_MODEL_TOOL_JSON_BYTES = 131072
+MAX_MODEL_OBSERVATION_JSON_BYTES = 32768
 SCALAR_TYPES = (type(None), bool, int, float, str)
 ALLOWED_SCHEMA_TYPES = frozenset({
     "boolean", "integer", "number", "string",
@@ -105,6 +106,21 @@ class AuthorizedAgentToolSurface:
                 # nested keys until an explicit nested schema projector exists.
                 raise PolicyViolationError("nested output requires scoped projector")
             projected[field] = value
+        # One authorized scalar can still exhaust an agent context budget.
+        # Bound the actual JSON payload, not only the schema declaration.
+        try:
+            encoded = json.dumps(
+                projected, ensure_ascii=False, separators=(",", ":"),
+                allow_nan=False,
+            )
+        except (TypeError, ValueError, OverflowError):
+            raise PolicyViolationError(
+                "model-visible observation cannot be serialized safely",
+            ) from None
+        if len(encoded.encode("utf-8")) > MAX_MODEL_OBSERVATION_JSON_BYTES:
+            raise PolicyViolationError(
+                "model-visible observation exceeds research byte cap",
+            )
         self.assert_source_unchanged()
         return projected
 
