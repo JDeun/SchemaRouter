@@ -843,7 +843,7 @@ def test_new_grading_flag_must_be_actual_boolean():
 
 @pytest.mark.parametrize("policy_mutation", (
     "default_effect", "existing_rule", "data_scope",
-    "compiled_rule_index", "compiled_data_index",
+    "compiled_rule_index", "compiled_data_index", "compiled_rule_objects",
 ))
 def test_inplace_authority_mutation_between_agent_turns_fails_closed(policy_mutation):
     """The opt-in view must reject identity-stable but semantically changed policy."""
@@ -859,6 +859,8 @@ def test_inplace_authority_mutation_between_agent_turns_fails_closed(policy_muta
         object.__setattr__(policy.data_rules[0], "hidden_fields", ())
     elif policy_mutation == "compiled_rule_index":
         policy._rule_index.partitions.clear()
+    elif policy_mutation == "compiled_rule_objects":
+        object.__setattr__(policy._rule_index, "rules", ())
     else:
         policy._data_rule_index.partitions.clear()
     # Same policy object still passes the legacy identity witness.
