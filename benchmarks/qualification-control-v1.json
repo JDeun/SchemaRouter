@@ -1,0 +1,238 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-10-17",
+  "source_matrix": "docs/research/product-north-star-and-test-matrix.md",
+  "published_release": "0.17.0",
+  "release": {
+    "decision": "HOLD",
+    "candidate": "0.18.0",
+    "owners": [
+      1345,
+      1346
+    ],
+    "held_pr": 1356,
+    "reason": "Do not merge, tag or publish until eligible external sweep and exact-head checks."
+  },
+  "promotion": {
+    "decision": "HOLD",
+    "owners": [
+      1339,
+      1346,
+      1450,
+      1477
+    ],
+    "reason": "No independent integrated EN/KO/JA E2 qualification or default promotion."
+  },
+  "items": [
+    {
+      "id": "G01",
+      "priority": "P0",
+      "owner_issue": 1346,
+      "status": "BLOCKED_EXTERNAL",
+      "blocker": "Publisher-native source/gold and permitted execution are not fully available.",
+      "next_action": "Freeze approved source bytes, license and artifact identities.",
+      "evidence_links": [],
+      "qualification": null
+    },
+    {
+      "id": "G02",
+      "priority": "P0",
+      "owner_issue": 1346,
+      "status": "BLOCKED_EXTERNAL",
+      "blocker": "Independently authored provider/task-disjoint EN/KO/JA confirmation split unavailable.",
+      "next_action": "Obtain author-reviewed native cases and freeze split plus leakage audit.",
+      "evidence_links": [],
+      "qualification": null
+    },
+    {
+      "id": "S01",
+      "priority": "P0",
+      "owner_issue": 1450,
+      "status": "ENGINEERING_ONLY",
+      "blocker": "Scoped regression work exists; independent hidden-field/count qualification remains open.",
+      "next_action": "Verify multi-principal, all-hidden and field-masking on real snapshots.",
+      "evidence_links": [
+        "https://github.com/JDeun/SchemaRouter/pull/1449"
+      ],
+      "qualification": null
+    },
+    {
+      "id": "S02",
+      "priority": "P0",
+      "owner_issue": 1450,
+      "status": "ENGINEERING_ONLY",
+      "blocker": "Source-swap hardening exists; concurrent authority and availability drift not qualified.",
+      "next_action": "Reproduce concurrent registry/policy revocation with no stale execution.",
+      "evidence_links": [
+        "https://github.com/JDeun/SchemaRouter/pull/1472"
+      ],
+      "qualification": null
+    },
+    {
+      "id": "S03",
+      "priority": "P0",
+      "owner_issue": 1269,
+      "status": "ENGINEERING_ONLY",
+      "blocker": "Synthetic policy protections are not an independent adversarial host evaluation.",
+      "next_action": "Review case-blind action contracts and run approved adversarial host cases.",
+      "evidence_links": [
+        "https://github.com/JDeun/SchemaRouter/pull/1212"
+      ],
+      "qualification": null
+    },
+    {
+      "id": "R01",
+      "priority": "P1",
+      "owner_issue": 1339,
+      "status": "HISTORICAL_NEGATIVE",
+      "blocker": "Frozen #432 KO/JA initial recall 0/160; later DEV has no independent confirmation.",
+      "next_action": "Score new genuine EN/KO/JA provider/task-disjoint cases at fixed K.",
+      "evidence_links": [
+        "https://github.com/JDeun/SchemaRouter/actions/runs/38501112190"
+      ],
+      "qualification": null
+    },
+    {
+      "id": "R02",
+      "priority": "P1",
+      "owner_issue": 1477,
+      "status": "DEV_ONLY",
+      "blocker": "Sibling-operation correctness currently has bounded DEV evidence.",
+      "next_action": "Test read/list/update/delete correct selection and abstention in E2.",
+      "evidence_links": [
+        "https://github.com/JDeun/SchemaRouter/pull/1493"
+      ],
+      "qualification": null
+    },
+    {
+      "id": "R03",
+      "priority": "P1",
+      "owner_issue": 1444,
+      "status": "DEV_ONLY",
+      "blocker": "Typed required field, enum, unit, qualifier and input joint coverage unqualified.",
+      "next_action": "Evaluate source-native input/output/enum conjunctions.",
+      "evidence_links": [],
+      "qualification": null
+    },
+    {
+      "id": "R04",
+      "priority": "P1",
+      "owner_issue": 1477,
+      "status": "HISTORICAL_NEGATIVE",
+      "blocker": "On disclosed synthetic DEV strict unsupported no-call was 0/6 in each arm.",
+      "next_action": "Fix false calls and calibrate false acceptance without excess false refusal.",
+      "evidence_links": [
+        "https://github.com/JDeun/SchemaRouter/actions/runs/39007769090"
+      ],
+      "qualification": null
+    },
+    {
+      "id": "R05",
+      "priority": "P1",
+      "owner_issue": 1477,
+      "status": "NOT_VERIFIED",
+      "blocker": "Ambiguous/needs-input/forbidden dispositions lack independent task evidence.",
+      "next_action": "Add missing-parameter and ambiguity cases to integrated scorer.",
+      "evidence_links": [],
+      "qualification": null
+    },
+    {
+      "id": "R06",
+      "priority": "P1",
+      "owner_issue": 1346,
+      "status": "BLOCKED_EXTERNAL",
+      "blocker": "No independent split establishes safe no-fit operating thresholds.",
+      "next_action": "Preregister supported/OOD operating point on sealed split.",
+      "evidence_links": [],
+      "qualification": null
+    },
+    {
+      "id": "A01",
+      "priority": "P1",
+      "owner_issue": 1477,
+      "status": "DEV_ONLY",
+      "blocker": "Qwen/E5 pilot measures synthetic one-step fixture completion only.",
+      "next_action": "Qualify native typed arguments, provider execution and actual task pass.",
+      "evidence_links": [
+        "https://github.com/JDeun/SchemaRouter/actions/runs/39007769090"
+      ],
+      "qualification": null
+    },
+    {
+      "id": "A02",
+      "priority": "P1",
+      "owner_issue": 1477,
+      "status": "NOT_VERIFIED",
+      "blocker": "State-dependent 2/3-step native execution not independently qualified.",
+      "next_action": "Run multi-step E2 with state and final-result oracle.",
+      "evidence_links": [],
+      "qualification": null
+    },
+    {
+      "id": "A03",
+      "priority": "P1",
+      "owner_issue": 1339,
+      "status": "HISTORICAL_NEGATIVE",
+      "blocker": "Frozen progressive exposure had only 25.09% task pass.",
+      "next_action": "Separate late retrieval, recovery and state propagation failure on fresh cases.",
+      "evidence_links": [
+        "https://github.com/JDeun/SchemaRouter/actions/runs/38501112190"
+      ],
+      "qualification": null
+    },
+    {
+      "id": "A04",
+      "priority": "P1",
+      "owner_issue": 1348,
+      "status": "HISTORICAL_NEGATIVE",
+      "blocker": "Frozen factual answer evidence gate negative; synthetic operation pass is not grounding.",
+      "next_action": "Freeze provider-grounded answer/unit/provenance oracle; rerun E2.",
+      "evidence_links": [
+        "https://github.com/JDeun/SchemaRouter/issues/1345"
+      ],
+      "qualification": null
+    },
+    {
+      "id": "E01",
+      "priority": "P1",
+      "owner_issue": 1477,
+      "status": "HISTORICAL_NEGATIVE",
+      "blocker": "Frozen #432 SR-5 29.19% vs FULL 49.62% failed original gate.",
+      "next_action": "Preregister independent paired E2 without altering frozen negatives.",
+      "evidence_links": [
+        "https://github.com/JDeun/SchemaRouter/actions/runs/38501112190"
+      ],
+      "qualification": null
+    },
+    {
+      "id": "E02",
+      "priority": "P1",
+      "owner_issue": 1428,
+      "status": "DEV_ONLY",
+      "blocker": "CPU DEV scale does not jointly qualify task success and p95/p99/RSS.",
+      "next_action": "Measure identical-task K5 schema tokens, CPU tail latency and RSS.",
+      "evidence_links": [],
+      "qualification": null
+    },
+    {
+      "id": "I01",
+      "priority": "P2",
+      "owner_issue": 1346,
+      "status": "ENGINEERING_ONLY",
+      "blocker": "SDK integration smokes do not qualify native agent approval/execute parity.",
+      "next_action": "Run source-pinned framework-native guarded acceptance.",
+      "evidence_links": [],
+      "qualification": null
+    },
+    {
+      "id": "I02",
+      "priority": "P2",
+      "owner_issue": 1428,
+      "status": "NOT_VERIFIED",
+      "blocker": "1000-tool stress, hot swap, invalidation and concurrent-principal coverage incomplete.",
+      "next_action": "Test indexed parity and absence of concurrency leaks.",
+      "evidence_links": [],
+      "qualification": null
+    }
+  ]
+}
