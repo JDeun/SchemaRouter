@@ -1,0 +1,96 @@
+name: Real Qwen Two-Step Bound Host E0 DEV
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_real_qwen_bound_two_step_e0.py"
+      - "tests/test_research_real_qwen_bound_two_step_e0.py"
+      - "research/autoresearch/real-qwen-bound-two-step-e0.md"
+      - ".github/workflows/research-real-qwen-bound-two-step-e0.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: real-qwen-two-step-bound-e0-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  safety-and-state-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install existing scoped executor and tests
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+      - name: Source-bound Qwen tool-call contract and actual host executor safety
+        run: |
+          ruff check scripts/research_real_qwen_bound_two_step_e0.py tests/test_research_real_qwen_bound_two_step_e0.py
+          python -m pytest -q tests/test_research_real_qwen_bound_two_step_e0.py tests/test_research_bound_two_step_host_e0.py tests/test_research_authorized_agent_tool_surface.py
+          python -m scripts.research_real_qwen_bound_two_step_e0 --mode validate
+
+  real-local-qwen-host-execution:
+    needs: safety-and-state-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install pinned Qwen local CPU dependencies
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "transformers>=4.51,<5"
+      - name: Actually generate model proposals and execute two bound host reads
+        run: |
+          python -m scripts.research_real_qwen_bound_two_step_e0 \
+            --mode real-cpu --out artifacts/real-qwen-bound-two-step-e0/report.json
+      - name: Disallow synthetic E0 promotion and publish strict by-language result
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d = json.loads(Path("artifacts/real-qwen-bound-two-step-e0/report.json").read_text(encoding="utf-8"))
+          assert d["evidence_tier"] == "REAL_QWEN3_CPU_BOUND_HOST_E0_DEV_ONLY"
+          assert d["case_count"] == 3
+          assert d["independent_e2_qualified"] is False
+          assert d["real_external_native_provider_execution"] is False
+          assert d["actual_model_final_answer_correctness_measured"] is True
+          assert d["release_safety_gate_passed"] is False
+          assert d["model_default_promoted"] is False
+          assert {r["language"] for r in d["cases"]} == {"en", "ko", "ja"}
+          for r in d["cases"]:
+              assert r["actual_model_inference_measured"] is True
+              assert r["independent_e2_qualified"] is False
+              assert r["real_external_native_provider_execution"] is False
+              assert 0 <= r["actual_bound_host_calls"] <= r["attempted_calls"] <= 4
+              assert r["full_task_correct"] <= r["two_stage_completed"]
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write("## Actual Qwen3 CPU + real Router.execute in-process bound host, E0 only\n\n")
+              out.write("Exposed synthetic EN/KO/JA prompts; one local read-only source contract, model-proposed typed arguments, state handoff and strict final boolean oracle. Not independently authored E2 or external provider.\n\n")
+              out.write("| Language | Attempted | Actual bound calls | Two stages complete | Strict final correct | Full task correct |\n|---|---:|---:|---|---|---|\n")
+              for r in d["cases"]:
+                  out.write(f"| {r['language']} | {r['attempted_calls']} | {r['actual_bound_host_calls']} | {r['two_stage_completed']} | {r['correct_strict_final_answer']} | {r['full_task_correct']} |\n")
+              out.write("\n**A02 NOT_VERIFIED, 0/19 independent E2, v0.18 release and model promotion HOLD.**\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: qwen-bound-host-two-step-e0-${{ github.run_id }}
+          path: artifacts/real-qwen-bound-two-step-e0/report.json
+          if-no-files-found: error
+          retention-days: 30
