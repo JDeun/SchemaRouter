@@ -1,0 +1,107 @@
+name: Real Qwen Structured Tool Transcript E0 DEV
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_qwen_bound_transcript_e0.py"
+      - "scripts/research_real_qwen_bound_two_step_e0.py"
+      - "tests/test_research_qwen_bound_transcript_e0.py"
+      - "research/autoresearch/qwen-structured-transcript-e0.md"
+      - ".github/workflows/research-qwen-structured-transcript-e0.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qwen-structured-transcript-e0-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  transcript-format-and-authority-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install package and isolated tests
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+      - name: Run unchanged raw and two successor transcript E0 regressions
+        run: |
+          ruff check scripts/research_qwen_bound_transcript_e0.py scripts/research_real_qwen_bound_two_step_e0.py tests/test_research_qwen_bound_transcript_e0.py
+          python -m pytest -q tests/test_research_qwen_bound_transcript_e0.py tests/test_research_real_qwen_bound_two_step_e0.py tests/test_research_bound_two_step_host_e0.py
+          python -m scripts.research_real_qwen_bound_two_step_e0 --mode validate --transcript-mode structured
+
+  real-pinned-qwen-transcript-contrast:
+    needs: transcript-format-and-authority-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install pinned Qwen CPU and package
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "transformers>=4.51,<5"
+      - name: Run EOS-stripped assistant history, real model and actual bound host
+        run: |
+          python -m scripts.research_real_qwen_bound_two_step_e0 \
+            --mode real-cpu --transcript-mode strip-eos \
+            --out artifacts/qwen-transcript-contrast-e0/strip-eos.json
+      - name: Run structured assistant tool_calls and plain tool-role result
+        run: |
+          python -m scripts.research_real_qwen_bound_two_step_e0 \
+            --mode real-cpu --transcript-mode structured \
+            --out artifacts/qwen-transcript-contrast-e0/structured.json
+      - name: Strict posthoc stage and final-answer output, no disclosed raw model content
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path("artifacts/qwen-transcript-contrast-e0")
+          reports = {
+              mode: json.loads((root / f"{mode}.json").read_text(encoding="utf-8"))
+              for mode in ("strip-eos", "structured")
+          }
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write("## Actual pinned Qwen3 CPU bound-host tool-history serialization DEV\n\n")
+              out.write("Original frozen raw-history baseline: [run 39029981154](https://github.com/JDeun/SchemaRouter/actions/runs/39029981154) first real host call only in all three languages, 0/3 full task success. No gold, task or model text is exported.\n\n")
+              out.write("| History | Language | Bound host calls | Stop reason | Strict final correct | Full task correct |\n|---|---|---:|---|---|---|\n")
+              for mode, d in reports.items():
+                  assert d["transcript_mode"] == mode
+                  assert d["evidence_tier"] == "REAL_QWEN3_CPU_BOUND_HOST_TRANSCRIPT_CONTRAST_E0_DEV_ONLY"
+                  assert d["case_count"] == 3
+                  assert d["real_external_native_provider_execution"] is False
+                  assert d["independent_e2_qualified"] is False
+                  assert d["actual_model_final_answer_correctness_measured"] is True
+                  assert d["release_safety_gate_passed"] is False
+                  assert d["model_default_promoted"] is False
+                  assert {r["language"] for r in d["cases"]} == {"en", "ko", "ja"}
+                  for row in d["cases"]:
+                      assert row["actual_model_inference_measured"] is True
+                      assert row["transcript_mode"] == mode
+                      assert 0 <= row["actual_bound_host_calls"] <= 2
+                      assert row["full_task_correct"] <= row["two_stage_completed"]
+                      out.write(f"| {mode} | {row['language']} | {row['actual_bound_host_calls']} | {row['termination_reason']} | {row['correct_strict_final_answer']} | {row['full_task_correct']} |\n")
+              out.write("\nThis changes only the Qwen chat-template message history after previously authorized bound execution. Does not alter source, task prompts, model weights, execution policy, scorer, exposed gold or provider. A02 NOT_VERIFIED; 0/19 independent E2; release/default model HOLD.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: qwen-bound-host-transcript-contrast-e0-${{ github.run_id }}
+          path: artifacts/qwen-transcript-contrast-e0/*.json
+          if-no-files-found: error
+          retention-days: 30
