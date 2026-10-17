@@ -65,7 +65,11 @@ def test_full_five_disposition_english_korean_japanese_matrix_e0():
         }
     assert report["by_expected_kind"]["supported"]["flags"]["full_task_correct"] == 3
     assert report["by_expected_kind"]["unsupported"]["flags"]["unsupported_safe_refusal"] == 3
-    assert report["by_expected_kind"]["required_input_missing"]["flags"]["required_input_clarified"] == 3
+    assert (
+        report["by_expected_kind"]["required_input_missing"]["flags"][
+            "required_input_clarified"
+        ] == 3
+    )
     assert report["by_expected_kind"]["ambiguous"]["flags"]["ambiguity_clarified"] == 3
     assert report["by_expected_kind"]["opaque_unavailable"]["flags"]["opaque_safe_unavailable"] == 3
     assert SENSITIVE not in json.dumps(report)
