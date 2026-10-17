@@ -41,7 +41,7 @@ from scripts.research_real_qwen_bound_two_step_e0 import (
 MODEL_NAME = "Qwen/Qwen3-1.7B"
 # An unchanging Hub commit, not a moving tag; require the full server SHA to
 # start with the source-proven published commit prefix before downloading.
-REVISION_PIN = "70d244c"
+REVISION_PIN = "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e"
 LICENSE = "apache-2.0"
 
 
