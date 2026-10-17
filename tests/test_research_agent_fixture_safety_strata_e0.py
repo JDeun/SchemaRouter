@@ -106,8 +106,9 @@ def test_true_supported_gain_cannot_hide_total_unsupported_fixture_failures():
         s = safe["per_arm"][arm]
         assert s["supported_fixture_completed"] == 6
         assert s["supported_fixture_completion_rate"] == 1
-        assert s["unsupported_correct_refusals"] == 0
-        assert s["unsupported_correct_refusal_rate"] == 0
+        assert s["unsupported_strict_no_call_refusals"] == 0
+        assert s["unsupported_strict_no_call_refusal_rate"] == 0
+        assert s["unsupported_original_fixture_grader_passes"] == 0
         assert s["unsupported_tool_attempted_cases"] == 6
         assert s["unsupported_fixture_executed_cases"] == 6
         assert s["unsupported_nonfit_response_mismatches"] == 6
@@ -138,9 +139,9 @@ def test_supported_and_unsupported_pass_rate_never_conflated():
                 })
     _, safe = summarize_fixture_safety_strata(manifest, runs)
     assert safe["per_arm"]["lexical_k5"]["supported_fixture_completion_rate"] == 0
-    assert safe["per_arm"]["lexical_k5"]["unsupported_correct_refusal_rate"] == 1
+    assert safe["per_arm"]["lexical_k5"]["unsupported_strict_no_call_refusal_rate"] == 1
     assert safe["per_arm"]["e5_k5"]["supported_fixture_completion_rate"] == 1
-    assert safe["per_arm"]["e5_k5"]["unsupported_correct_refusal_rate"] == 1
+    assert safe["per_arm"]["e5_k5"]["unsupported_strict_no_call_refusal_rate"] == 1
     # Synthetic 12/12 is never publisher-native evidence or promotion authority.
     assert safe["release_safety_gate_passed"] is False
     assert safe["independent_e2_qualified"] is False
@@ -200,10 +201,31 @@ def test_original_source_and_mock_agent_pilot_still_cannot_claim_real_e2():
     for arm in ARMS:
         scope = strata["per_arm"][arm]
         assert scope["supported_fixture_completed"] == 0
-        assert scope["unsupported_correct_refusals"] == 6
+        assert scope["unsupported_strict_no_call_refusals"] == 6
         assert scope["unsupported_tool_attempted_cases"] == 0
         assert scope["unsupported_fixture_executed_cases"] == 0
     assert strata["release_safety_gate_passed"] is False
     assert report["real_agent_generation_measured"] is False
     assert report["real_e5_inference_measured"] is False
     assert SECRET not in json.dumps(report)
+
+
+def test_blocked_then_refused_is_not_claimed_as_strict_no_call():
+    manifest, runs = paired_fixture()
+    for run in runs.values():
+        first_ood = next(
+            row for row in run["rows"] if not row["supported"]
+        )
+        first_ood["passed"] = True
+        first_ood["observed_stages"] = ["passed"]
+        first_ood["tool_call_count"] = 1
+        first_ood["task_complete"] = False
+    _, safety = summarize_fixture_safety_strata(manifest, runs)
+    for arm in ARMS:
+        result = safety["per_arm"][arm]
+        assert result["unsupported_original_fixture_grader_passes"] == 1
+        assert result["unsupported_strict_no_call_refusals"] == 0
+        assert result["unsupported_grader_passed_after_tool_attempt"] == 1
+        assert result["unsupported_tool_attempted_cases"] == 6
+        assert result["observed_no_unsupported_fixture_execution"] is False
+    assert safety["release_safety_gate_passed"] is False
