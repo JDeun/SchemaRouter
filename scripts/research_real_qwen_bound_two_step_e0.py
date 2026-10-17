@@ -27,6 +27,10 @@ from scripts.research_bound_two_step_host_e0 import (
     PRINCIPAL,
     build_bound_two_step_source,
 )
+from scripts.research_qwen_bound_transcript_e0 import (
+    ALLOWED_TRANSCRIPTS,
+    append_bound_tool_transcript_e0,
+)
 from scripts.research_scoped_host_invocation import execute_scoped_host_call
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -112,10 +116,13 @@ def _matches_final_answer(text: str, expected_verified: bool) -> bool:
 async def run_model_selected_bound_two_step_e0(
     agent: Any, *, language: str,
     revoke_before_second: Any = None,
+    transcript_mode: str = "raw",
 ) -> dict[str, Any]:
     """Return sanitized category counters, NOT prompts, gold or model text."""
     if language not in LANGUAGES:
         raise ValueError("unknown published E0 language")
+    if type(transcript_mode) is not str or transcript_mode not in ALLOWED_TRANSCRIPTS:
+        raise ValueError("invalid preregistered transcript E0 mode")
     if not callable(getattr(agent, "generate", None)):
         raise ValueError("model-generation delegate required")
     query = QUERY_BY_LANG[language]
@@ -216,17 +223,17 @@ async def run_model_selected_bound_two_step_e0(
         )
         if CANARY in serialized_observation or "secret" in serialized_observation:
             raise PolicyViolationError("private observation escaped source projection")
-        messages.append({"role": "assistant", "content": text})
-        messages.append({
-            "role": "tool",
-            "content": "<tool_response>\n"
-            + serialized_observation + "\n</tool_response>",
-        })
+        append_bound_tool_transcript_e0(
+            messages, mode=transcript_mode,
+            raw_generated_text=text, route_id=route_id,
+            arguments=arguments, public_observation=observation,
+        )
     # All source data, gold, model text and arguments remain process-local.
     return {
         "evidence_tier": "UNATTESTED_MODEL_BOUND_HOST_E0",
         "language": language,
         "model_turns": model_turns,
+        "transcript_mode": transcript_mode,
         "termination_reason": termination_reason,
         "attempted_calls": calls_attempted,
         "actual_bound_host_calls": host_calls,
@@ -250,6 +257,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", required=True, choices=("validate", "real-cpu"))
     parser.add_argument(
+        "--transcript-mode", choices=ALLOWED_TRANSCRIPTS, default="raw",
+    )
+    parser.add_argument(
         "--out", type=Path,
         default=Path("artifacts/two-step-real-qwen-e0/report.json"),
     )
@@ -272,11 +282,19 @@ def main() -> None:
     ).stdout.strip()
     agent = LocalQwenAgent()
     results = [
-        asyncio.run(run_model_selected_bound_two_step_e0(agent, language=lang))
+        asyncio.run(run_model_selected_bound_two_step_e0(
+            agent, language=lang, transcript_mode=args.transcript_mode,
+        ))
         for lang in LANGUAGES
     ]
+    tier = (
+        "REAL_QWEN3_CPU_BOUND_HOST_TRANSCRIPT_CONTRAST_E0_DEV_ONLY"
+        if args.transcript_mode != "raw"
+        else "REAL_QWEN3_CPU_BOUND_HOST_E0_DEV_ONLY"
+    )
     report = {
-        "evidence_tier": "REAL_QWEN3_CPU_BOUND_HOST_E0_DEV_ONLY",
+        "evidence_tier": tier,
+        "transcript_mode": args.transcript_mode,
         "source_revision": source,
         "model_revision": f"{MODEL_NAME}@{MODEL_REVISION}",
         "runtime": {"device": "cpu", **runtime_identity()},
@@ -285,7 +303,7 @@ def main() -> None:
         "cases": [
             {
                 **result,
-                "evidence_tier": "REAL_QWEN3_CPU_BOUND_HOST_E0_DEV_ONLY",
+                "evidence_tier": tier,
                 "actual_model_inference_measured": True,
             }
             for result in results
@@ -316,6 +334,7 @@ def main() -> None:
                     "actual_bound_host_calls", "two_stage_completed",
                     "correct_strict_final_answer", "full_task_correct",
                     "unexpected_or_denied_model_call", "termination_reason",
+                    "transcript_mode",
                 )
             }
             for r in results
