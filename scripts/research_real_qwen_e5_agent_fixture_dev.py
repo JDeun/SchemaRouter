@@ -26,21 +26,29 @@ from scripts.agent_utility_generated_common import (
 )
 from scripts.agent_utility_v7_dev_agent import (
     MODEL_NAME as AGENT_MODEL_ID,
+)
+from scripts.agent_utility_v7_dev_agent import (
     MODEL_REVISION as AGENT_MODEL_REVISION,
+)
+from scripts.agent_utility_v7_dev_agent import (
     SEED as AGENT_SEED,
 )
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
     CORPUS,
-    MODEL_ID as E5_MODEL_ID,
-    MODEL_REVISION as E5_MODEL_REVISION,
     PRINCIPAL,
     build_source_router,
     real_cpu_backend,
 )
+from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
+    MODEL_ID as E5_MODEL_ID,
+)
+from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
+    MODEL_REVISION as E5_MODEL_REVISION,
+)
 from scripts.evaluate_multilingual_embedding_cpu_dev import load_development_corpus
 from scripts.research_agent_stage_evidence_e0 import (
-    E0TraceProvenance,
     EVIDENCE_TIER,
+    E0TraceProvenance,
 )
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
@@ -204,7 +212,10 @@ def run_paired_fixture_pilot(
         "source_revision": source_revision,
         "source_sha256": corpus_digest,
         "split_sha256": split_digest,
-        "model_revision": f"{AGENT_MODEL_ID}@{AGENT_MODEL_REVISION};{E5_MODEL_ID}@{E5_MODEL_REVISION}",
+        "model_revision": (
+            f"{AGENT_MODEL_ID}@{AGENT_MODEL_REVISION};"
+            f"{E5_MODEL_ID}@{E5_MODEL_REVISION}"
+        ),
         "model_runtime": "INJECTED_NOT_ATTESTED",
         "hardware": hardware,
         "split_name": "previously_published_multilingual_12case_dev",
@@ -246,9 +257,8 @@ def run_paired_fixture_pilot(
             if len(view.visible_route_ids) != 13:
                 raise ValueError("principal-visible catalog drift")
             if arm == "lexical_k5":
-                selector = lambda query, offered, scoped=view: _verified_lexical(
-                    scoped, query, offered,
-                )
+                def selector(query, offered, scoped=view):
+                    return _verified_lexical(scoped, query, offered)
             elif arm == "e5_k5":
                 selector = AuthorizedFixed5DecisionSelector(view, backend)
             else:
@@ -295,12 +305,17 @@ def run_paired_fixture_pilot(
         "e5_model_revision": E5_MODEL_REVISION,
         "fixed_k": 5,
         "limitations": [
-            "All 12 cases were selected in advance from already published synthetic DEV; this is not independent E2.",
-            "The original source contains operation gold but no argument, provider response, or final-answer oracle.",
-            "The reused existing FrozenCorpusExecutor grades one-step tool operation completion, not factual answer.",
+            "All 12 cases come from previously published synthetic DEV; "
+            "this is not independent E2.",
+            "Original source has operation gold but no arguments, "
+            "provider responses or final-answer oracle.",
+            "FrozenCorpusExecutor grades one-step operation completion, "
+            "not factual final answers.",
             "Unsupported cases require no executable tool and a REQUEST_MORE_TOOLS final response.",
-            "A full 13-route visible catalog is deliberately retained; 500 routes and multi-step tasks are not measured.",
-            "Synthetic fixture tool execution is not real external provider integration or authorized write dispatch.",
+            "Only 13 visible original routes; no 500-route or "
+            "multi-step agent measurement.",
+            "Synthetic tool execution is not native provider integration "
+            "or authorized write dispatch.",
             "Injected backends and model stubs must never be labeled real model inference.",
         ],
     })
