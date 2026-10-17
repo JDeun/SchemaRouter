@@ -15,7 +15,7 @@ its distributed model weight files total roughly 4GB. Official
 list 4 vCPU, 16GB RAM and 14GB SSD for ubuntu-24.04 in public repositories.
 The E0 job checks actual usable RAM and free disk before inference and treats OOM/timeout as negative feasibility evidence.
 
-The selected immutable Hugging Face revision starts with the published 70d244c commit.
+The selected immutable Hugging Face revision is the exact published 70d244cc86ccca08cf5af4e1e306ecf908b1ad5e commit.
 The runtime resolves it through huggingface_hub.model_info to a full 40-character hash,
 validates that full hash, and passes the exact same revision to both weights and tokenizer.
 The SHA, Linux runner, elapsed time and process peak RSS are recorded.
