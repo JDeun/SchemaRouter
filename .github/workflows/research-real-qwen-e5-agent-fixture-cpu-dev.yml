@@ -1,0 +1,94 @@
+name: Qwen3 Real Agent + E5 Fixed K5 Fixture CPU DEV
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_real_qwen_e5_agent_fixture_dev.py"
+      - "tests/test_research_real_qwen_e5_agent_fixture_dev.py"
+      - "research/autoresearch/real-qwen-e5-fixed5-agent-fixture-cpu-dev.md"
+      - ".github/workflows/research-real-qwen-e5-agent-fixture-cpu-dev.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-real-qwen3-e5-agent-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-validated-e0-no-model:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install deterministic source/agent regression requirements
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+      - name: Verify original 84-case source, balanced 12-case pilot, real-model attribution
+        run: |
+          ruff check scripts/research_real_qwen_e5_agent_fixture_dev.py tests/test_research_real_qwen_e5_agent_fixture_dev.py
+          python -m pytest -q tests/test_research_real_qwen_e5_agent_fixture_dev.py
+          python -m scripts.research_real_qwen_e5_agent_fixture_dev --mode validate
+
+  pinned-local-agent-and-e5-cpu-dev:
+    needs: source-validated-e0-no-model
+    runs-on: ubuntu-24.04
+    timeout-minutes: 95
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install pinned-compatible CPU-only inference runtime
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
+      - name: Execute actual pinned Qwen3 + E5 versus lexical, E5, RRF K5
+        run: |
+          python -m scripts.research_real_qwen_e5_agent_fixture_dev \
+            --mode real-cpu \
+            --out artifacts/agent-fixed5-qwen-e5-cpu-dev/report.json
+      - name: Publish measured fixture completion only, never factual end-to-end success
+        if: success()
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path("artifacts/agent-fixed5-qwen-e5-cpu-dev/report.json")
+          r = json.loads(p.read_text(encoding="utf-8"))
+          assert r["real_e5_model_routing_measured"] is True
+          assert r["real_qwen_agent_generation_measured"] is True
+          assert r["independent_e2_qualified"] is False
+          assert r["live_provider_execution_measured"] is False
+          assert r["factual_final_answer_correctness_measured"] is False
+          assert r["pilot_case_count"] == 12
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as f:
+              f.write("## Genuine Qwen3 0.6B and E5 CPU **synthetic one-step fixture DEV**\n\n")
+              f.write("12 previously published EN/KO/JA tasks (2 supported + 2 unsupported per language), 13 read-only routes, same Qwen3/E5 revisions and fixed K=5. FrozenCorpusExecutor grades one-step synthetic operation completion and exact unsupported no-call, **NOT factual final answer, independent E2 or live provider execution**.\n\n")
+              f.write("| Arm | Supported 1-step complete | Unsupported exact no-call | Unsupported executions | Mean tool schema tokens |\n|---|---:|---:|---:|---:|\n")
+              for arm, row in r["summary"].items():
+                  score = r["operation_scores"][arm]
+                  f.write(f"| {arm} | {score['supported_fixture_completion']}/{score['supported_tasks']} | {score['unsupported_correct_no_call']}/{score['unsupported_tasks']} | {score['unsupported_executed_observed']} | {row['mean_tool_schema_tokens']:.1f} |\n")
+              f.write("\nThe overall fixture pass rate includes both supported completion and unsupported exact refusal; interpret these separately.\n")
+              f.write("\nThis is E0 synthetic DEV, not commercial viability. The original #432 scores, v0.18 release hold and native provider E2 blockers are unchanged.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: success()
+        with:
+          name: qwen3-e5-native-agent-e0-dev-${{ github.run_id }}
+          path: artifacts/agent-fixed5-qwen-e5-cpu-dev/report.json
+          if-no-files-found: error
+          retention-days: 30
