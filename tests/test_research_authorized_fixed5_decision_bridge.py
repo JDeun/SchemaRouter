@@ -29,6 +29,9 @@ from scripts.research_authorized_agent_tool_surface import (
 from scripts.research_authorized_fixed5_decision_bridge import (
     AuthorizedFixed5DecisionSelector,
 )
+from scripts.research_bounded_authorized_semantic_diagnostic import (
+    propose_bounded_semantic_shortlist,
+)
 
 SECRET = "PRIVATE-CANARY-1481"
 VIEWER = PrincipalContext(subject="synthetic-viewer", roles=("viewer",))
@@ -318,3 +321,78 @@ def test_explicit_256k_optin_keeps_default_128k_unchanged():
     assert extended.max_model_input_bytes == 262144
     assert ordinary(view.original_query, view.visible_route_ids) == ["marine.read"]
     assert extended(view.original_query, view.visible_route_ids) == ["marine.read"]
+
+
+@pytest.mark.parametrize("query", (
+    "Find field-scoped marine papers",
+    "해양 논문에서 공개 정보를 조회해 주세요",
+    "海洋研究の公開情報を検索してください",
+))
+def test_captured_comparator_has_byte_identical_model_inputs_to_live_source(query):
+    router = fixture_router()
+    view = fixture_view(router, query)
+    captured_decisions = []
+
+    def identical_top1(request):
+        captured_decisions.append(request.model_dump_json())
+        return {"selections": [{"option_id": request.options[0].id}]}
+
+    backend = CallableDecisionBackend(identical_top1)
+    live = propose_bounded_semantic_shortlist(
+        router, query, principal=VIEWER, backend=backend, k=5,
+    )
+    optimized = AuthorizedFixed5DecisionSelector(view, backend)
+    selected = optimized(query, view.visible_route_ids)
+    assert tuple(selected) == live.route_ids
+    assert optimized.last_status == live.status
+    assert optimized.last_model_input_bytes == live.model_input_bytes
+    assert captured_decisions[0] == captured_decisions[1]
+    assert SECRET not in captured_decisions[0]
+    assert optimized.calibrated_no_fit is False
+    assert optimized.executable_authority is False
+
+
+def test_captured_source_has_no_second_authorized_catalog_lookup():
+    view = fixture_view()
+    selector = AuthorizedFixed5DecisionSelector(
+        view, CallableDecisionBackend(choose_marine),
+    )
+    def forbidden_reretrieve(*args, **kwargs):
+        raise AssertionError("same-request full-catalog reread is forbidden")
+    view.router.retrieve_authorized = forbidden_reretrieve
+    assert selector(view.original_query, view.visible_route_ids) == ["marine.read"]
+
+
+def test_foreign_principal_or_query_cannot_reuse_authorized_capture():
+    view = fixture_view()
+    backend = CallableDecisionBackend(choose_marine)
+    impostor = PrincipalContext(subject="different-reader", roles=("viewer",))
+    with pytest.raises(PolicyViolationError, match="source identity drift"):
+        propose_bounded_semantic_shortlist(
+            view.router, view.original_query,
+            principal=impostor, backend=backend,
+            authorized_source_view=view,
+        )
+    with pytest.raises(PolicyViolationError, match="source identity drift"):
+        propose_bounded_semantic_shortlist(
+            view.router, "malicious substituted query",
+            principal=VIEWER, backend=backend,
+            authorized_source_view=view,
+        )
+
+
+def test_mutated_source_record_cannot_sneak_into_immutable_capture():
+    from dataclasses import replace
+
+    view = fixture_view()
+    route = view._semantic_source_routes[0]
+    bad = replace(route, route_id="archive.read")
+    tampered = replace(
+        view, _semantic_source_routes=(bad, *view._semantic_source_routes[1:]),
+    )
+    with pytest.raises(PolicyViolationError, match="source identity drift"):
+        propose_bounded_semantic_shortlist(
+            tampered.router, tampered.original_query,
+            principal=VIEWER, backend=CallableDecisionBackend(choose_marine),
+            authorized_source_view=tampered,
+        )

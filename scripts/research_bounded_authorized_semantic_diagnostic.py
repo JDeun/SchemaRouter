@@ -8,7 +8,7 @@ success. No external model, HTTP request, credential or native tool is created.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from schemarouter import PolicyViolationError, PrincipalContext, SchemaRouter
 from schemarouter.decisions import (
@@ -21,6 +21,36 @@ from schemarouter.decisions import (
 DEFAULT_NATIVE_CATALOG_CAP = 500
 DEFAULT_MODEL_INPUT_BYTES_CAP = 131072
 MAX_SHORTLIST = 16
+
+if TYPE_CHECKING:
+    from scripts.research_authorized_agent_tool_surface import (
+        AuthorizedAgentToolSurface,
+    )
+
+
+@dataclass(frozen=True)
+class CapturedAuthorizedSemanticRoute:
+    """One immutable, already-authorized original-native model disclosure."""
+
+    route_id: str
+    description: str
+    tool_fingerprint: str
+    endpoint_fingerprint: str
+
+
+def scoped_semantic_model_description(candidate: Any, *, field_scoped: bool) -> str:
+    """Identical conservative disclosure rules for capture and live lookup."""
+    visible_fields = ", ".join(
+        field.semantic_id or field.name for field in candidate.output_fields
+    )
+    return "\n".join(
+        text for text in (
+            "" if field_scoped else candidate.tool_description.strip(),
+            "" if field_scoped else candidate.endpoint_description.strip(),
+            ("Visible fields: " + visible_fields) if visible_fields else "",
+        ) if text
+    )
+
 
 
 @dataclass(frozen=True)
@@ -49,6 +79,7 @@ def propose_bounded_semantic_shortlist(
     k: int = 5,
     max_catalog_routes: int = DEFAULT_NATIVE_CATALOG_CAP,
     max_model_input_bytes: int = DEFAULT_MODEL_INPUT_BYTES_CAP,
+    authorized_source_view: AuthorizedAgentToolSurface | None = None,
 ) -> DiagnosticSemanticShortlist:
     """Only reorder existing currently authorized native candidates.
 
@@ -78,7 +109,27 @@ def propose_bounded_semantic_shortlist(
         raise ValueError("registered catalog exceeds bounded research limit")
 
     authority = router._retrieval_authority_witness()
-    if registered_route_count:
+    if authorized_source_view is not None:
+        # Only the trusted, request-local principal-scoped capture can be
+        # reused. There is no cross-query, cross-principal or cross-policy
+        # cache. Native source fingerprints are also checked by the bridge.
+        view = authorized_source_view
+        view.assert_source_unchanged()
+        routes = view._semantic_source_routes
+        if (
+            view.router is not router
+            or view._principal is not principal
+            or view.original_query != query
+            or view.witness != authority
+            or view.registered_route_count != registered_route_count
+            or type(routes) is not tuple
+            or any(type(route) is not CapturedAuthorizedSemanticRoute for route in routes)
+            or tuple(route.route_id for route in routes) != view.visible_route_ids
+            or len(routes) != len(set(route.route_id for route in routes))
+        ):
+            raise PolicyViolationError("captured authorized source identity drift")
+        candidates = routes
+    elif registered_route_count:
         full = router.retrieve_authorized(
             query, principal=principal, k=registered_route_count,
         )
@@ -123,15 +174,12 @@ def propose_bounded_semantic_shortlist(
     )
     options = []
     for idx, candidate in enumerate(candidates):
-        visible_fields = ", ".join(
-            field.semantic_id or field.name for field in candidate.output_fields
-        )
-        description = "\n".join(
-            text for text in (
-                "" if field_scoped else candidate.tool_description.strip(),
-                "" if field_scoped else candidate.endpoint_description.strip(),
-                ("Visible fields: " + visible_fields) if visible_fields else "",
-            ) if text
+        description = (
+            candidate.description
+            if authorized_source_view is not None
+            else scoped_semantic_model_description(
+                candidate, field_scoped=field_scoped,
+            )
         )
         options.append(DecisionOption(
             id=f"native:{idx}",
