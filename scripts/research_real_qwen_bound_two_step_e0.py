@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import platform
 import re
 import subprocess
@@ -70,6 +71,20 @@ def _strip_one_chatml_marker(text: str) -> str:
     return text
 
 
+def _strict_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """Refuse ambiguous duplicate keys at any nesting depth."""
+    value: dict[str, Any] = {}
+    for key, item in pairs:
+        if key in value:
+            raise ValueError("duplicate model JSON key")
+        value[key] = item
+    return value
+
+
+def _reject_nonfinite_constant(_value: str) -> None:
+    raise ValueError("non-finite model JSON constant")
+
+
 def parse_one_model_action(text: str) -> tuple[str, Any]:
     """Strictly parse a single call OR a terminal; no partial regex matches."""
     raw = _strip_one_chatml_marker(text)
@@ -78,7 +93,11 @@ def parse_one_model_action(text: str) -> tuple[str, Any]:
         if "<tool_call" in raw or "</tool_call>" in raw:
             raise ValueError("partial or multiple model tool calls")
         return ("final", raw)
-    value = json.loads(found.group(1))
+    value = json.loads(
+        found.group(1),
+        object_pairs_hook=_strict_json_object,
+        parse_constant=_reject_nonfinite_constant,
+    )
     if (
         type(value) is not dict or set(value) != {"name", "arguments"}
         or type(value["name"]) is not str
@@ -89,7 +108,11 @@ def parse_one_model_action(text: str) -> tuple[str, Any]:
         raise ValueError("malformed model-selected native tool call")
     args = value["arguments"]
     # No arbitrary JSON data may be carried to the trusted native planner.
-    if any(type(v) not in (str, int, float, bool) for v in args.values()):
+    if any(
+        type(v) not in (str, int, float, bool)
+        or (type(v) is float and not math.isfinite(v))
+        for v in args.values()
+    ):
         raise ValueError("complex model argument rejected")
     return ("tool", {"route": value["name"].replace("__", ".", 1), "arguments": args})
 
