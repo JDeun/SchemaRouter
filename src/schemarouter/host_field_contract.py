@@ -151,7 +151,10 @@ def _enum_schema_can_hold_required(
         if len(required_values) != 1:
             return False
         enum = schema.get("enum")
-        if "const" in schema and schema["const"] not in required_values:
+        if "const" in schema and (
+            type(schema["const"]) is not str
+            or schema["const"] not in required_values
+        ):
             return False
     if (
         type(enum) is not list
