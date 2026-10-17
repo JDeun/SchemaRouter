@@ -38,7 +38,8 @@ def test_real_e5_runner_reuses_prospective_multilingual_corpus_and_source():
     assert report["source_corpus_sha256"] == digest
     assert report["fixed_k"] == 5
     assert report["arms"] == list(ARMS)
-    assert report["evidence_tier"] == "REAL_E5_CPU_RETRIEVAL_DEV_ONLY"
+    assert report["evidence_tier"] == "UNATTESTED_BACKEND_RETRIEVAL_DEV_ONLY"
+    assert report["real_model_routing_measured"] is False
     assert report["agent_task_success_measured"] is False
     assert report["independent_e2_qualified"] is False
     assert report["calibrated_no_fit"] is False
