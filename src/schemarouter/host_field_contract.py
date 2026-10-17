@@ -113,6 +113,10 @@ def _enum_schema_can_hold_required(
     pattern, references or other unhandled assertions cannot prove a match.
     """
     is_array = schema.get("type") == "array"
+    # Bound defaults also make the array-only cardinality proof obvious
+    # to static analyzers without changing scalar matching behavior.
+    minimum = 0
+    unique = False
     if any(type(key) is not str for key in schema):
         return False
     if not set(schema).issubset(
