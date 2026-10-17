@@ -85,6 +85,15 @@ def _reject_nonfinite_constant(_value: str) -> None:
     raise ValueError("non-finite model JSON constant")
 
 
+def _parse_strict_model_json(text: str) -> Any:
+    """Decode model output without last-key-wins or non-finite numbers."""
+    return json.loads(
+        text,
+        object_pairs_hook=_strict_json_object,
+        parse_constant=_reject_nonfinite_constant,
+    )
+
+
 def parse_one_model_action(text: str) -> tuple[str, Any]:
     """Strictly parse a single call OR a terminal; no partial regex matches."""
     raw = _strip_one_chatml_marker(text)
@@ -93,11 +102,7 @@ def parse_one_model_action(text: str) -> tuple[str, Any]:
         if "<tool_call" in raw or "</tool_call>" in raw:
             raise ValueError("partial or multiple model tool calls")
         return ("final", raw)
-    value = json.loads(
-        found.group(1),
-        object_pairs_hook=_strict_json_object,
-        parse_constant=_reject_nonfinite_constant,
-    )
+    value = _parse_strict_model_json(found.group(1))
     if (
         type(value) is not dict or set(value) != {"name", "arguments"}
         or type(value["name"]) is not str
@@ -121,7 +126,7 @@ def _matches_final_answer(text: str, expected_verified: bool) -> bool:
     if type(expected_verified) is not bool:
         raise ValueError("missing trusted final result oracle")
     try:
-        result = json.loads(text)
+        result = _parse_strict_model_json(text)
     except (TypeError, ValueError):
         return False
     return (
