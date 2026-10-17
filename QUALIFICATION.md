@@ -34,7 +34,7 @@ Checking one item requires independent provenance, a frozen split, reproducible 
 - [ ] **S02 P0** — `ENGINEERING_ONLY` — [owner #1450](https://github.com/JDeun/SchemaRouter/issues/1450)
   - Blocker: Source-swap hardening exists; concurrent authority and availability drift not qualified.
   - Next action: Reproduce concurrent registry/policy revocation with no stale execution.
-  - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/pull/1472) · [evidence 2](https://github.com/JDeun/SchemaRouter/pull/1497)
+  - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/pull/1472) · [evidence 2](https://github.com/JDeun/SchemaRouter/pull/1497) · [evidence 3](https://github.com/JDeun/SchemaRouter/pull/1504)
 - [ ] **S03 P0** — `ENGINEERING_ONLY` — [owner #1269](https://github.com/JDeun/SchemaRouter/issues/1269)
   - Blocker: Synthetic policy protections are not an independent adversarial host evaluation.
   - Next action: Review case-blind action contracts and run approved adversarial host cases.
@@ -53,12 +53,12 @@ Checking one item requires independent provenance, a frozen split, reproducible 
   - Evidence: No qualifying independent evidence registered
 - [ ] **R04 P1** — `HISTORICAL_NEGATIVE` — [owner #1477](https://github.com/JDeun/SchemaRouter/issues/1477)
   - Blocker: On disclosed synthetic DEV strict unsupported no-call was 0/6 in each arm.
-  - Next action: Fix false calls and calibrate false acceptance without excess false refusal.
-  - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/actions/runs/39007769090) · [evidence 2](https://github.com/JDeun/SchemaRouter/pull/1496)
+  - Next action: Retain strict 0/3 unsupported no-call DEV negatives; separate Qwen EOS formatting confounds and calibrate only on independent held-out supported/OOD cases.
+  - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/actions/runs/39007769090) · [evidence 2](https://github.com/JDeun/SchemaRouter/pull/1496) · [evidence 3](https://github.com/JDeun/SchemaRouter/actions/runs/39022306205) · [evidence 4](https://github.com/JDeun/SchemaRouter/pull/1500) · [evidence 5](https://github.com/JDeun/SchemaRouter/actions/runs/39023506085) · [evidence 6](https://github.com/JDeun/SchemaRouter/pull/1502)
 - [ ] **R05 P1** — `NOT_VERIFIED` — [owner #1477](https://github.com/JDeun/SchemaRouter/issues/1477)
   - Blocker: Ambiguous/needs-input/forbidden dispositions lack independent task evidence.
-  - Next action: Add missing-parameter and ambiguity cases to integrated scorer.
-  - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/pull/1496)
+  - Next action: Adjudicate 5 host dispositions with separately authored EN/KO/JA native cases, typed required inputs and host-denied vs absent source; do not promote disclosed DEV.
+  - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/pull/1496) · [evidence 2](https://github.com/JDeun/SchemaRouter/pull/1499) · [evidence 3](https://github.com/JDeun/SchemaRouter/actions/runs/39022306205) · [evidence 4](https://github.com/JDeun/SchemaRouter/pull/1500) · [evidence 5](https://github.com/JDeun/SchemaRouter/actions/runs/39023506085) · [evidence 6](https://github.com/JDeun/SchemaRouter/pull/1502) · [evidence 7](https://github.com/JDeun/SchemaRouter/pull/1503)
 - [ ] **R06 P1** — `BLOCKED_EXTERNAL` — [owner #1346](https://github.com/JDeun/SchemaRouter/issues/1346)
   - Blocker: No independent split establishes safe no-fit operating thresholds.
   - Next action: Preregister supported/OOD operating point on sealed split.
@@ -68,9 +68,9 @@ Checking one item requires independent provenance, a frozen split, reproducible 
   - Next action: Qualify native typed arguments, provider execution and actual task pass.
   - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/actions/runs/39007769090)
 - [ ] **A02 P1** — `NOT_VERIFIED` — [owner #1477](https://github.com/JDeun/SchemaRouter/issues/1477)
-  - Blocker: State-dependent 2/3-step native execution not independently qualified.
-  - Next action: Run multi-step E2 with state and final-result oracle.
-  - Evidence: No qualifying independent evidence registered
+  - Blocker: Real model-selected 2-step tasks failed 0/3 EN/KO/JA on exposed DEV: all stopped after one bound host read; single reminder and transcript-format variants remained 0/3. No independent provider E2.
+  - Next action: Retain observed 0/3 EN/KO/JA model-selected multi-step E0 negatives (premature final even after one reminder); test independent model/tool-format candidates and externally authored native 2/3-step E2 with final-answer oracle.
+  - Evidence: [evidence 1](https://github.com/JDeun/SchemaRouter/pull/1505) · [evidence 2](https://github.com/JDeun/SchemaRouter/actions/runs/39026731254) · [evidence 3](https://github.com/JDeun/SchemaRouter/pull/1506) · [evidence 4](https://github.com/JDeun/SchemaRouter/actions/runs/39029981154) · [evidence 5](https://github.com/JDeun/SchemaRouter/pull/1507) · [evidence 6](https://github.com/JDeun/SchemaRouter/actions/runs/39030372571) · [evidence 7](https://github.com/JDeun/SchemaRouter/pull/1508) · [evidence 8](https://github.com/JDeun/SchemaRouter/actions/runs/39037998330) · [evidence 9](https://github.com/JDeun/SchemaRouter/pull/1509)
 - [ ] **A03 P1** — `HISTORICAL_NEGATIVE` — [owner #1339](https://github.com/JDeun/SchemaRouter/issues/1339)
   - Blocker: Frozen progressive exposure had only 25.09% task pass.
   - Next action: Separate late retrieval, recovery and state propagation failure on fresh cases.
