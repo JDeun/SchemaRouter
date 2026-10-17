@@ -205,6 +205,14 @@ def test_enum_conjunction_requires_one_satisfiable_call(
             ["paid"], "no_contract_match", id="contradictory-scalar-const",
         ),
         pytest.param(
+            {"type": "string", "enum": ["paid"], "const": ["paid"]},
+            ["paid"], "no_contract_match", id="array-const-not-string",
+        ),
+        pytest.param(
+            {"type": "string", "enum": ["paid"], "const": {"value": "paid"}},
+            ["paid"], "no_contract_match", id="object-const-not-string",
+        ),
+        pytest.param(
             {
                 "type": "array", "minItems": 3, "maxItems": 2,
                 "items": {"type": "string", "enum": ["a", "b", "c"]},
