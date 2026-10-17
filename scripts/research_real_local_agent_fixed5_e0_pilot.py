@@ -8,7 +8,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import platform
 import secrets
 import subprocess
@@ -27,7 +26,6 @@ from scripts.agent_utility_v7_dev_agent import (
     SEED,
 )
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
-    ARMS as RETRIEVAL_ARMS,
     CORPUS,
     LANGUAGES,
     PRINCIPAL,
@@ -67,13 +65,6 @@ PILOT_SYSTEM_PROMPT = (
     "answer exactly REQUEST_MORE_TOOLS. After completing a task, provide a "
     "short final response. No tool is authorized outside the listed schema."
 )
-PILOT_ARMS = {
-    "lexical_k5": RETRIEVAL_ARMS[0],
-    "e5_k5": RETRIEVAL_ARMS[1],
-    "hybrid_k5": RETRIEVAL_ARMS[2],
-}
-
-
 def _cases(corpus: dict[str, Any], digest: str) -> tuple[list[dict[str, Any]], str]:
     original, authentic = load_development_corpus(CORPUS)
     if corpus != original or digest != authentic:
@@ -207,11 +198,16 @@ def run_agent_pilot(
                 experimental_agent_tool_surface=view,
                 experimental_e0_trace_provenance=provenance,
             )
-            if set(result) != set(view.public_trace({
-                "passed": result["passed"],
-            })) | {"e0_stage_evidence"}:
-                # Only the trusted allowlisted public trace is publishable.
+            # Existing agent loop must return its allowlisted scoped trace,
+            # never a raw fixture/evaluator row or user/agent transcript.
+            if any(name in result for name in (
+                "query", "task_id", "semantic_task_id", "required_routes",
+                "attempts", "turn_rows", "candidate_history", "final_text",
+                "tool_arguments", "private_fixture",
+            )):
                 raise ValueError("unexpected agent private evidence in output")
+            if "e0_stage_evidence" not in result:
+                raise ValueError("missing trusted post-execution E0 grading")
             row = result["e0_stage_evidence"]
             if row["unauthorized_destructive_executions"] != 0:
                 raise ValueError("unauthorized destructive tool executed: STOP")
