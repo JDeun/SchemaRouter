@@ -33,6 +33,7 @@ class AuthorizedHybridFixed5Selector:
 
     view: AuthorizedAgentToolSurface
     backend: DecisionBackend = field(repr=False)
+    max_model_input_bytes: int = 131072  # Override only for bounded stress DEV.
     _semantic: AuthorizedFixed5DecisionSelector = field(init=False, repr=False)
     _source_fingerprints: dict[str, tuple[str, str]] = field(init=False, repr=False)
     last_status: str | None = field(default=None, init=False)
@@ -44,7 +45,10 @@ class AuthorizedHybridFixed5Selector:
 
     def __post_init__(self) -> None:
         self.view.assert_source_unchanged()
-        self._semantic = AuthorizedFixed5DecisionSelector(self.view, self.backend)
+        self._semantic = AuthorizedFixed5DecisionSelector(
+            self.view, self.backend,
+            max_model_input_bytes=self.max_model_input_bytes,
+        )
         self._source_fingerprints = _visible_fingerprints(self.view)
 
     def __call__(self, query: str, source_ids: tuple[str, ...]) -> list[str]:
