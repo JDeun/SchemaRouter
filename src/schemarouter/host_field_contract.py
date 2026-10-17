@@ -7,12 +7,15 @@ trusted requirements, and no inference or tool execution happens here.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import re
-from typing import TYPE_CHECKING, Literal
+from dataclasses import asdict
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import Field, model_validator
 
-from .authorization import PrincipalContext
+from .authorization import AuthorizationPolicy, PrincipalContext
 from .errors import PolicyViolationError
 from .models import (
     CapabilityCandidate,
@@ -157,6 +160,59 @@ def _candidate_matches(
     return all(name in available_fields for name in contract.required_output_fields)
 
 
+def _policy_contents_digest(policy: AuthorizationPolicy) -> str:
+    """Private digest of same-object RBAC, data scopes and compiled indexes.
+
+    Frozen policy dataclasses still have mutable nested rule/index objects.
+    This digest is never exposed as a selection receipt or model input.
+    """
+    try:
+        if type(policy) is not AuthorizationPolicy:
+            raise ValueError("invalid policy class")
+
+        def index_rows(index: Any) -> list[dict[str, Any]]:
+            if type(index.partitions) is not dict or type(index.rules) is not tuple:
+                raise ValueError("invalid compiled authority index")
+            rows: list[dict[str, Any]] = []
+            for key, positions in index.partitions.items():
+                if (
+                    type(key) is not tuple or len(key) != 3
+                    or any(value is not None and type(value) is not str for value in key)
+                    or type(positions) is not tuple
+                    or any(type(value) is not int or value < 0 for value in positions)
+                ):
+                    raise ValueError("invalid compiled authority entry")
+                rows.append({"key": list(key), "positions": list(positions)})
+            rows.sort(key=lambda row: json.dumps(row["key"]))
+            return rows
+
+        payload = {
+            "default_effect": policy.default_effect,
+            "rules": [asdict(rule) for rule in policy.rules],
+            "data_rules": [asdict(rule) for rule in policy.data_rules],
+            "compiled_rule_index": {
+                "rules": [asdict(rule) for rule in policy._rule_index.rules],
+                "partitions": index_rows(policy._rule_index),
+            },
+            "compiled_data_rule_index": {
+                "rules": [asdict(rule) for rule in policy._data_rule_index.rules],
+                "partitions": index_rows(policy._data_rule_index),
+            },
+        }
+        encoded = json.dumps(
+            payload, sort_keys=True, ensure_ascii=False,
+            separators=(",", ":"), allow_nan=False,
+        ).encode("utf-8")
+    except (
+        TypeError, ValueError, AttributeError,
+        OverflowError, RecursionError, RuntimeError,
+    ):
+        raise PolicyViolationError(
+            "cannot attest current authorization policy"
+        ) from None
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def select_authorized_field_contract(
     router: SchemaRouter,
     request: PlanRequest | str,
@@ -215,6 +271,18 @@ def select_authorized_field_contract(
     # this guard, a policy/availability/registry replacement *during* ranking
     # could be mistaken for a single internally consistent authorization view.
     policy = router.authorization_policy
+    assert policy is not None
+    policy_digest = _policy_contents_digest(policy)
+
+    def check_current_policy() -> None:
+        if (
+            router.authorization_policy is not policy
+            or _policy_contents_digest(policy) != policy_digest
+        ):
+            raise PolicyViolationError(
+                "authorization policy changed during field contract selection"
+            )
+
     availability = router.planner.availability_predicate
     registry = router.registry
     retrieved = router.retrieve_authorized(
@@ -228,6 +296,7 @@ def select_authorized_field_contract(
         raise PolicyViolationError(
             "retrieval scope changed during authorized retrieval"
         )
+    check_current_policy()
     if not isinstance(retrieved, CapabilityRetrieval):
         raise PolicyViolationError("invalid authorized retrieval result")
     # A mutable registry can change mid-request. Never issue a receipt if
@@ -268,6 +337,7 @@ def select_authorized_field_contract(
         "no_contract_match",
         "ambiguous_contract_match",
     ], matches: list[str] | None = None) -> AuthorizedContractSelection:
+        check_current_policy()
         return AuthorizedContractSelection(
             disposition="abstained", reason=reason,
             query=raw_query, registry_version=verified.registry_version,
@@ -331,6 +401,7 @@ def select_authorized_field_contract(
         raise PolicyViolationError(
             "retrieval scope changed during authorized catalog enumeration"
         )
+    check_current_policy()
     if not set(ids) <= scoped_route_ids:
         raise PolicyViolationError(
             "retrieval contains a route outside current host authorization"
@@ -376,6 +447,7 @@ def select_authorized_field_contract(
             "ambiguous_contract_match", [item.route_id for item in matched],
         )
     selected = matched[0]
+    check_current_policy()
     if (
         verified.registry_version != router.registry.version
         or router.registry is not registry
