@@ -238,7 +238,8 @@ def summarize_fixture_safety_strata(
             "a candidate list or correct abstention on six exposed tasks is not calibrated no-fit",
             "no external publisher authored task/gold/permission split",
             "synthetic deterministic tool outputs do not assess factual answer quality",
-            "final-turn observed is a structural event, not answer correctness; None means legacy E0 evidence lacked the field",
+            "final-turn observed is structural, not factual correctness; "
+            "None means legacy E0 lacked the metric",
             "tiny n=6 per support stratum; bootstrap cannot qualify independent E2",
         ],
     }
