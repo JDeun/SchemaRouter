@@ -204,13 +204,40 @@ def run_five_class_dev(
                 _lexical_selector(view) if arm == "lexical_k5"
                 else AuthorizedHybridFixed5Selector(view, backend)
             )
-            # This disclosed E0 source has no secret fields and no physical
-            # invoker: the selected registered IDs are already scoped by view.
-            # Keep raw evidence in this process ONLY. It is never returned.
+            # The frozen agent loop without the scoped public redaction
+            # surface uses a sorted raw source tuple. This *trusted adapter*
+            # verifies that tuple but passes ONLY the authorization-scoped
+            # native source to either untrusted ranking selector. Never let
+            # hidden denied routes become model-visible candidates.
+            registered = tuple(sorted(
+                f"{tool.key}.{endpoint.name}"
+                for tool in router.registry.tools() for endpoint in tool.endpoints
+            ))
+
+            def scoped_choice(query: str, raw_ids: tuple[str, ...]) -> list[str]:
+                view.assert_source_unchanged()
+                if (
+                    type(query) is not str or query != view.original_query
+                    or type(raw_ids) is not tuple or raw_ids != registered
+                ):
+                    raise ValueError("trusted source tuple drift")
+                chosen = selector(query, view.visible_route_ids)
+                if (
+                    type(chosen) is not list
+                    or len(chosen) > 5 or len(set(chosen)) != len(chosen)
+                    or not set(chosen).issubset(view.visible_route_ids)
+                ):
+                    raise ValueError("untrusted selector escaped authorized source")
+                view.assert_source_unchanged()
+                return chosen
+
+            # This disclosed 13-route E0 source has no secret fields or
+            # physical provider invoker. Raw execution evidence never leaves
+            # the process; only safe post-execution counts are exported.
             episode = run_generated_episode(
                 agent, router.registry, task, EXPERIMENTAL_FIXED5_CONDITION,
                 system_prompt=SYSTEM,
-                experimental_candidate_selector=selector,
+                experimental_candidate_selector=scoped_choice,
             )
             view.assert_source_unchanged()
             if episode["initial_candidate_count"] > 5:
