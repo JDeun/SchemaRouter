@@ -156,6 +156,15 @@ def test_observation_only_exports_approved_scalar_fields():
     assert error == {"status": "error", "error": "provider_call_failed"}
 
 
+def test_model_observation_json_budget_fails_closed():
+    view = captured()
+    with pytest.raises(PolicyViolationError, match="byte cap"):
+        view.project_observation("marine.read", {
+            "status": "ok", "public_field": "x" * 32769,
+            "secret_field": SECRET,
+        })
+
+
 def test_nested_sensitive_value_cannot_flow_to_agent():
     with pytest.raises(PolicyViolationError, match="nested output"):
         captured().project_observation("marine.read", {
@@ -309,6 +318,21 @@ def test_same_existing_agent_loop_uses_scoped_schema_and_observations_only():
     assert "attempts" not in result
     assert "turn_rows" not in result
     assert "final_text" not in result
+
+
+def test_scoped_agent_view_must_match_the_original_task_query():
+    router = fixture_router()
+    agent = CapturingSyntheticAgent()
+    task = scoped_synthetic_task()
+    task["query"] = "different user request"
+    with pytest.raises(ValueError, match="principal-scoped query mismatch"):
+        run_generated_episode(
+            agent, router.registry, task,
+            EXPERIMENTAL_FIXED5_CONDITION,
+            experimental_candidate_selector=lambda _query, _ids: ["marine.read"],
+            experimental_agent_tool_surface=captured(router),
+        )
+    assert agent.calls == 0
 
 
 def test_authority_revoked_during_model_generation_blocks_publication():
