@@ -93,7 +93,7 @@ def _rows(raw: bytes, label: str, fields: set[str]) -> list[dict[str, Any]]:
 
 
 def _normalized_tokens(query: str) -> tuple[str, ...]:
-    if type(query) is not str or not query.strip() or len(query) > 10000:
+    if type(query) is not str or not query.strip() or len(query) > 2000:
         raise ValueError("blank/oversized or non-text original query")
     normalized = unicodedata.normalize("NFKC", query).casefold()
     return tuple(re.findall(r"\w+", normalized, flags=re.UNICODE))
