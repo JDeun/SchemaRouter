@@ -6,12 +6,18 @@ from pathlib import Path
 
 import pytest
 
-from scripts.research_bfcl_v4_relevance_cpu_dev import (
-    ORIGINAL_BLOBS, calibrate_threshold, default_lexical_one, embedding_one,
-    evaluate, git_blob_sha1, load_originals, load_jsonl,
-)
 from schemarouter.decisions import EmbeddingDecisionBackend
 from schemarouter.embedding_e5 import E5CachedEmbedder
+from scripts.research_bfcl_v4_relevance_cpu_dev import (
+    ORIGINAL_BLOBS,
+    calibrate_threshold,
+    default_lexical_one,
+    embedding_one,
+    evaluate,
+    git_blob_sha1,
+    load_jsonl,
+    load_originals,
+)
 
 GOOD = {
     "name": "record_search.find",
