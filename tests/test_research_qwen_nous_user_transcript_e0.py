@@ -30,8 +30,8 @@ class SourceAlignedTwoStepAgent:
             return {"text": FIRST + EOS, "context_overflow": False}
         assert messages[-2]["role"] == "assistant"
         assert messages[-1]["role"] == "user"
-        assert messages[-2]["content"].startswith("<tool_call>\\n")
-        assert messages[-1]["content"].startswith("<tool_response>\\n")
+        assert messages[-2]["content"].startswith("<tool_call>\n")
+        assert messages[-1]["content"].startswith("<tool_response>\n")
         assert "<|im_end|>" not in messages[-2]["content"]
         observation = json.loads(messages[-1]["content"].splitlines()[1])
         if self.turn == 2:
