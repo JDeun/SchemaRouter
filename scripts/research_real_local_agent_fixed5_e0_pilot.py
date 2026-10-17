@@ -22,9 +22,11 @@ from scripts.agent_utility_generated_common import (
 )
 from scripts.agent_utility_v7_dev_agent import (
     MODEL_NAME as AGENT_MODEL,
-    MODEL_REVISION as AGENT_REVISION,
-    SEED,
 )
+from scripts.agent_utility_v7_dev_agent import (
+    MODEL_REVISION as AGENT_REVISION,
+)
+from scripts.agent_utility_v7_dev_agent import SEED
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
     CORPUS,
     LANGUAGES,
@@ -56,6 +58,7 @@ CASE_IDS = tuple(
         ("supported", ("materials.search", "weather.current")),
         ("unsupported", ("materials.delete_sample", "calendar.create_event")),
     )
+    for route in routes
 )
 PILOT_SYSTEM_PROMPT = (
     "You are a tool-using agent. Use only the registered tools supplied. "
