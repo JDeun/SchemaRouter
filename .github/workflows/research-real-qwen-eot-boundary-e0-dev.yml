@@ -1,0 +1,97 @@
+name: Real Qwen EOS Boundary E0 DEV
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_qwen_protocol_boundary_optin_e0.py"
+      - "tests/test_research_qwen_protocol_boundary_optin_e0.py"
+      - "scripts/research_real_qwen_e5_five_class_disposition_dev.py"
+      - ".github/workflows/research-real-qwen-eot-boundary-e0-dev.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qwen-eot-boundary-e0-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bounded-protocol-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install no-model E0 dependencies
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+      - name: Strict only-literal plus single EOS boundary and 30 mock agent replays
+        run: |
+          ruff check scripts/research_qwen_protocol_boundary_optin_e0.py tests/test_research_qwen_protocol_boundary_optin_e0.py scripts/research_real_qwen_e5_five_class_disposition_dev.py
+          python -m pytest -q tests/test_research_qwen_protocol_boundary_optin_e0.py tests/test_research_qwen_terminal_format_diagnostic_e0.py tests/test_research_real_qwen_e5_five_class_disposition_dev.py
+          python -m scripts.research_real_qwen_e5_five_class_disposition_dev --mode validate --terminal-decoder bounded-eos
+
+  actual-local-model:
+    needs: bounded-protocol-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install CPU-only pinned inference environment
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
+      - name: Run real Qwen and E5 with only EOS-boundary opt-in adapter
+        run: |
+          python -m scripts.research_real_qwen_e5_five_class_disposition_dev \
+            --mode real-cpu --terminal-decoder bounded-eos \
+            --out artifacts/five-class-eot-boundary-e0-dev/report.json
+      - name: Enforce strictly scoped DEV and publish separate protocol-variant metrics
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d = json.loads(Path("artifacts/five-class-eot-boundary-e0-dev/report.json").read_text(encoding="utf-8"))
+          assert d["evidence_tier"] == "REAL_LOCAL_QWEN_E5_FIVE_CLASS_BOUNDED_EOS_DEV_ONLY"
+          assert d["terminal_protocol_boundary"] == "bounded-eos"
+          assert 0 <= d["bounded_eos_rewrites"] <= 30
+          assert d["case_count_per_arm"] == 15
+          assert d["independent_e2_qualified"] is False
+          assert d["calibrated_no_fit"] is False
+          assert d["real_native_provider_execution"] is False
+          assert d["release_safety_gate_passed"] is False
+          assert d["real_agent_generation_measured"] is True
+          assert d["real_e5_inference_measured"] is True
+          for arm in ("lexical_k5", "hybrid_k5"):
+              for label in ("supported", "unsupported", "needs_input", "ambiguous", "forbidden"):
+                  assert d["per_disposition"][arm][label]["tasks"] == 3
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as f:
+              f.write("## Opt-in decoder-boundary E0 ONLY — no model/gold changes\n\n")
+              f.write("Same exposed 15 EN/KO/JA task source and pinned local CPU Qwen/E5 as original raw protocol baseline. Only single ChatML EOS after exact trusted protocol literal is removed before the existing frozen executor. Not an independent E2 test, native provider success or production no-fit solution.\n\n")
+              f.write(f"Total allowable literal suffix-only rewrites: {d['bounded_eos_rewrites']}/30.\n\n")
+              f.write("| Host disposition | Lexical strict after adapter /3 | Hybrid strict after adapter /3 |\n|---|---:|---:|\n")
+              for label in ("supported", "unsupported", "needs_input", "ambiguous", "forbidden"):
+                  f.write(f"| {label} | {d['per_disposition']['lexical_k5'][label]['correct']} | {d['per_disposition']['hybrid_k5'][label]['correct']} |\n")
+              f.write("\n**Original 39022306205 STRICT RAW 1/15 per arm remains a separate unchanged negative.** Neither decoder formatting nor source-exposed small agent is evidence for production promotion. R04/R05 hold; v0.18 HOLD.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: qwen-eot-boundary-e0-dev-${{ github.run_id }}
+          path: artifacts/five-class-eot-boundary-e0-dev/report.json
+          if-no-files-found: error
+          retention-days: 30

@@ -326,6 +326,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", required=True, choices=("validate", "real-cpu"))
     parser.add_argument(
+        "--terminal-decoder", choices=("raw", "bounded-eos"), default="raw",
+    )
+    parser.add_argument(
         "--out", type=Path, default=Path("artifacts/five-class-qwen-e5-dev/report.json"),
     )
     args = parser.parse_args()
@@ -347,13 +350,30 @@ def main() -> None:
     backend, e5_runtime = real_cpu_backend()
     from scripts.agent_utility_v7_dev_agent import LocalQwenAgent, runtime_identity
 
+    base_agent = LocalQwenAgent()
+    if args.terminal_decoder == "bounded-eos":
+        from scripts.research_qwen_protocol_boundary_optin_e0 import (
+            OptInQwenProtocolBoundaryE0,
+        )
+
+        agent = OptInQwenProtocolBoundaryE0(base_agent)
+    else:
+        agent = base_agent
     report = run_five_class_dev(
-        corpus, digest, agent=LocalQwenAgent(), backend=backend,
+        corpus, digest, agent=agent, backend=backend,
         source_revision=sha, hardware=platform.platform(),
+    )
+    report["terminal_protocol_boundary"] = args.terminal_decoder
+    report["bounded_eos_rewrites"] = (
+        agent.boundary_only_rewrites if args.terminal_decoder == "bounded-eos" else 0
     )
     # Only this protected CLI path loaded actual model weights/runtime.
     # Injectable unit-test stubs may never inherit a real-model evidence tier.
-    report["evidence_tier"] = "REAL_LOCAL_QWEN_E5_FIVE_CLASS_DEV_ONLY"
+    report["evidence_tier"] = (
+        "REAL_LOCAL_QWEN_E5_FIVE_CLASS_BOUNDED_EOS_DEV_ONLY"
+        if args.terminal_decoder == "bounded-eos"
+        else "REAL_LOCAL_QWEN_E5_FIVE_CLASS_DEV_ONLY"
+    )
     report["real_agent_generation_measured"] = True
     report["real_e5_inference_measured"] = True
     report["runtime"] = {"model_name": MODEL_NAME, "device": "cpu", **runtime_identity()}
