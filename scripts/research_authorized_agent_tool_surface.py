@@ -7,8 +7,10 @@ The trusted host supplies SchemaRouter + PrincipalContext, never the backend.
 from __future__ import annotations
 
 import copy
+import hmac
 import json
 import math
+import secrets
 from dataclasses import dataclass
 from dataclasses import field as dataclass_field
 from typing import Any
@@ -32,6 +34,61 @@ ALLOWED_SCHEMA_TYPES = frozenset({
     "boolean", "integer", "number", "string",
 })
 ALLOWED_OBSERVATION_STATUSES = frozenset({"ok", "blocked", "error"})
+# Process-local integrity receipt; not a portable credential or a tool grant.
+# This guards accidental or adversarial dataclass/dict source-view mutations.
+_SCOPED_VIEW_HMAC_KEY = secrets.token_bytes(32)
+
+
+def _checked_scoped_view_receipt(view: AuthorizedAgentToolSurface) -> str:
+    """Commit to model-visible source contents without exporting source bytes.
+
+    No cross-request cache: this evaluates precisely the trusted capture's
+    source metadata. Arbitrary code executing in this process is outside this
+    receipt's trust boundary, as it could access private runtime state.
+    """
+    try:
+        if (
+            type(view.visible_route_ids) is not tuple
+            or type(view._tool_definitions) is not dict
+            or type(view._visible_output_names) is not dict
+            or type(view._semantic_source_routes) is not tuple
+            or any(
+                type(route) is not CapturedAuthorizedSemanticRoute
+                for route in view._semantic_source_routes
+            )
+        ):
+            raise ValueError("captured source container changed")
+        payload = {
+            "original_query": view.original_query,
+            "principal_claims": view._principal_claims_snapshot,
+            "registered_route_count": view.registered_route_count,
+            "registry_version": view.witness[1],
+            "visible_route_ids": view.visible_route_ids,
+            "tool_definitions": view._tool_definitions,
+            "output_names": {
+                name: sorted(fields)
+                for name, fields in view._visible_output_names.items()
+            },
+            "semantic_routes": [
+                (
+                    route.route_id,
+                    route.description,
+                    route.tool_fingerprint,
+                    route.endpoint_fingerprint,
+                )
+                for route in view._semantic_source_routes
+            ],
+        }
+        serialized = json.dumps(
+            payload, ensure_ascii=False, sort_keys=True,
+            separators=(",", ":"), allow_nan=False,
+        ).encode("utf-8")
+    except (TypeError, ValueError, OverflowError, AttributeError, IndexError):
+        raise PolicyViolationError(
+            "captured authorized source identity drift",
+        ) from None
+    return hmac.digest(_SCOPED_VIEW_HMAC_KEY, serialized, "sha256").hex()
+
 
 
 @dataclass(frozen=True)
@@ -50,6 +107,9 @@ class AuthorizedAgentToolSurface:
     _semantic_source_routes: tuple[CapturedAuthorizedSemanticRoute, ...] = dataclass_field(
         default_factory=tuple, repr=False,
     )
+    _scoped_view_receipt: str = dataclass_field(
+        default="", init=False, repr=False, compare=False,
+    )
     independent_quality_evidence: bool = False
     executable_authority: bool = False
 
@@ -57,6 +117,16 @@ class AuthorizedAgentToolSurface:
         self.router._check_retrieval_authority_witness(self.witness)
         if _principal_claims_canonical(self._principal) != self._principal_claims_snapshot:
             raise PolicyViolationError("principal claims changed during model request")
+        # Frozen dataclass does not freeze nested dictionaries, and replace()
+        # can swap an otherwise correctly fingerprinted semantic description.
+        # Reject any changed model-visible bytes BEFORE backend disclosure.
+        if (
+            type(self._scoped_view_receipt) is not str
+            or not hmac.compare_digest(
+                self._scoped_view_receipt, _checked_scoped_view_receipt(self),
+            )
+        ):
+            raise PolicyViolationError("captured authorized source identity drift")
 
     def tool_definitions(
         self, selected_route_ids: list[str], *, k: int = MAX_TOOL_DEFINITIONS,
@@ -296,7 +366,7 @@ def capture_authorized_agent_tool_surface(
     router._check_retrieval_authority_witness(witness)
     if _principal_claims_canonical(principal) != claims_snapshot:
         raise PolicyViolationError("principal claims changed during model request")
-    return AuthorizedAgentToolSurface(
+    view = AuthorizedAgentToolSurface(
         router=router, witness=witness, _principal=principal,
         _principal_claims_snapshot=claims_snapshot, original_query=query,
         registered_route_count=physical,
@@ -305,3 +375,6 @@ def capture_authorized_agent_tool_surface(
         _visible_output_names=visible,
         _semantic_source_routes=tuple(semantic_routes),
     )
+    object.__setattr__(view, "_scoped_view_receipt", _checked_scoped_view_receipt(view))
+    view.assert_source_unchanged()
+    return view
