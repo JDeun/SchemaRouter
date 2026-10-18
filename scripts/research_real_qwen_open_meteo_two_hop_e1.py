@@ -133,7 +133,8 @@ async def evaluate_one(
     reason = "turn_limit"
     total_model_ms = 0.0
 
-    for turns in range(1, MAX_TURNS + 1):
+    for _ in range(MAX_TURNS):
+        turns += 1
         # Fresh source authority and freshness check EACH generation.
         view = capture_authorized_agent_tool_surface(
             router, query, principal=PRINCIPAL,
