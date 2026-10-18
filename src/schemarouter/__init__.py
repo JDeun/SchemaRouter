@@ -384,11 +384,6 @@ from .inspection import (
     raw_tool_spec_document,
     tool_spec_document,
 )
-from .native_semantic_index import (
-    IndexedNativeFieldCandidate,
-    IndexedNativeFieldResult,
-    NativeSchemaPostingIndex,
-)
 from .models import (
     AuthRequirementSet,
     AuthSchemeRequirement,
@@ -419,6 +414,11 @@ from .models import (
     ToolResult,
     ToolSpec,
     UnitNormalizationSpec,
+)
+from .native_semantic_index import (
+    IndexedNativeFieldCandidate,
+    IndexedNativeFieldResult,
+    NativeSchemaPostingIndex,
 )
 from .network_policy import NetworkPolicy, NetworkPolicyError
 from .openapi_compatibility import (
