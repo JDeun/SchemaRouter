@@ -72,6 +72,12 @@ jobs:
           assert data["calibrate_odd"] == {"supported": 100, "irrelevant": 120}
           assert data["live_category_evaluation"]["supported"] == 16
           assert data["live_category_evaluation"]["irrelevant"] >= 10
+          assert data["live_category_evaluation"]["irrelevant_with_candidate_functions"] > 0
+          assert (
+              data["live_category_evaluation"]["irrelevant_with_candidate_functions"]
+              + data["live_category_evaluation"]["irrelevant_zero_candidate_functions"]
+              == data["live_category_evaluation"]["irrelevant"]
+          )
           assert "live_relevance" in data["publisher_sha256"]
           assert "live_irrelevance" in data["publisher_sha256"]
           for arm in ("e5_raw_cosine", "trained_pair_fit"):
@@ -85,7 +91,9 @@ jobs:
           assert not data["release_qualified"]
           with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
               out.write("## BFCL original public LIVE category evaluation (NOT independent E2)\n\n")
-              out.write("| Arm | Supported admitted /16 | False refused /16 | Unsupported falsely accepted | Correctly refused |\n|---|---:|---:|---:|---:|\n")
+              n = data["live_category_evaluation"]["irrelevant_zero_candidate_functions"]
+              out.write(f"Publisher irrelevant cases with **zero offered functions**: {n}; structural no-call, EXCLUDED from classifier denominators.\\n\\n")
+              out.write("| Arm | Supported admitted /16 | False refused /16 | False accepted /nonempty menu | Correctly refused /nonempty menu |\\n|---|---:|---:|---:|---:|\\n")
               for name in ("e5_raw_cosine", "trained_pair_fit"):
                   row = data["live_category_evaluation"][name]["live"]
                   out.write(f"| {name} | {row['supported_admitted']} | {row['supported_false_refused']} | {row['unsupported_false_accepted']}/{row['unsupported_total']} | {row['unsupported_correctly_refused']} |\n")
