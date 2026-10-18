@@ -8,11 +8,63 @@ import pytest
 from scripts.research_bfcl_pair_fit_live_transfer_e1 import (
     familywise_negative_tail_accept,
 )
-from tests.test_research_bfcl_pair_fit_live_transfer_e1 import (
-    _live,
-    _training,
-    fake_encode,
-)
+
+def _fn(name: str, description: str) -> dict:
+    return {
+        "name": name, "description": description,
+        "parameters": {"type": "dict", "properties": {
+            "query": {"type": "string", "description": "Query text"},
+        }},
+    }
+
+
+GOOD = _fn("paper_search", "Search original scientific papers by keyword")
+BAD = _fn("bank_transfer", "Transfer money to a bank account")
+
+
+def _training() -> dict:
+    return {
+        "multiple": [
+            {"id": f"multiple_{i}",
+             "question": [[{"role": "user", "content": "Search scientific papers"}]],
+             "function": [BAD, GOOD]}
+            for i in range(200)
+        ],
+        "irrelevance": [
+            {"id": f"irrelevance_{i}",
+             "question": [[{"role": "user", "content": "Translate this audio"}]],
+             "function": [BAD]}
+            for i in range(240)
+        ],
+        "gold": [
+            {"id": f"multiple_{i}", "ground_truth": [{GOOD["name"]: {}}]}
+            for i in range(200)
+        ],
+    }
+
+
+def _live() -> dict:
+    return {
+        "live_relevance": [
+            {"id": f"live_relevance_{i}-0-0",
+             "question": [[{"role": "user", "content": "Search scientific papers"}]],
+             "function": [BAD, GOOD]}
+            for i in range(16)
+        ],
+        "live_irrelevance": [
+            {"id": f"live_irrelevance_{i}-0-0",
+             "question": [[{"role": "user", "content": "Translate this audio"}]],
+             "function": [] if i < 4 else [BAD]}
+            for i in range(24)
+        ],
+    }
+
+
+def fake_encode(texts: list[str]) -> list[list[float]]:
+    return [
+        [1.0, 0.0] if txt.startswith("query:") else [0.8, 0.6]
+        for txt in texts
+    ]
 
 
 NEGATIVE_120 = [i / 120.0 for i in range(120)]
