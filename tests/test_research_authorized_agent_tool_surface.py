@@ -963,3 +963,87 @@ def test_catalog_index_rejects_mutated_source_or_revoked_authority():
     view.router.planner.availability_predicate = lambda _tool, _endpoint: False
     with pytest.raises(PolicyViolationError, match="retrieval authority changed"):
         view.catalog_index()
+
+
+@pytest.mark.parametrize(("size", "role"), (
+    (100, "viewer"), (250, "viewer"),
+    (500, "viewer"), (500, "editor"),
+))
+def test_ranked_catalog_preview_at_scale_has_bounded_top_k(
+    size: int, role: str,
+) -> None:
+    """No LLM: source-ranked candidate previews, even if full index fails."""
+    from benchmarks.current_adapter_field_scope_dev_v1 import principal
+    from benchmarks.current_adapter_scaled_authorized_dev_v1 import build_fixture
+
+    router, _ = build_fixture(size)
+    view = capture_authorized_agent_tool_surface(
+        router, "invoice total amount", principal=principal(role),
+    )
+    entries = view.ranked_catalog_preview(k=5)
+    assert len(entries) == 5
+    assert tuple(route for route, _ in entries) == view.visible_route_ids[:5]
+    assert len(json.dumps(entries, ensure_ascii=False).encode("utf-8")) < 32768
+    assert view.executable_authority is False
+    assert view.independent_quality_evidence is False
+    assert len(view.tool_definitions([entries[0][0]], k=1)) == 1
+
+    # A 500-route fully-authorized index cannot fit the synthetic 32KiB
+    # ceiling; unlike it, the K5 preview never scans/serializes all 500.
+    if size == 500 and role == "editor":
+        with pytest.raises(ValueError, match="scoped catalog index exceeds"):
+            view.catalog_index()
+
+
+@pytest.mark.parametrize("k", (0, 6, True, None, "5", 2.5))
+def test_catalog_preview_refuses_invalid_k(k) -> None:
+    with pytest.raises(ValueError, match="invalid scoped catalog preview K"):
+        captured().ranked_catalog_preview(k=k)
+
+
+def test_catalog_preview_refuses_over_budget_without_shortening_k() -> None:
+    view = captured()
+    with pytest.raises(ValueError, match="scoped catalog preview exceeds"):
+        view.ranked_catalog_preview(max_json_bytes=1)
+    assert len(view.ranked_catalog_preview(k=1)) == 1
+    assert len(view.ranked_catalog_preview(k=5)) == 2
+
+
+def test_catalog_preview_cannot_disclose_denied_or_hidden_source():
+    view = captured()
+    preview = view.ranked_catalog_preview()
+    assert tuple(route for route, _ in preview) == view.visible_route_ids
+    output = json.dumps(preview)
+    assert SECRET not in output
+    assert "secret_field" not in output
+    assert "archive.read" not in output
+    assert "registered_route_count" not in output
+    assert view.executable_authority is False
+    assert captured(principal=OUTSIDER).ranked_catalog_preview() == ()
+
+
+def test_catalog_preview_fails_on_authority_or_source_mutation():
+    from dataclasses import replace
+
+    view = captured()
+    corrupted = replace(view, _semantic_source_routes=tuple(
+        reversed(view._semantic_source_routes)
+    ))
+    with pytest.raises(PolicyViolationError):
+        corrupted.ranked_catalog_preview(k=1)
+    view.router.planner.availability_predicate = lambda _t, _e: False
+    with pytest.raises(PolicyViolationError):
+        view.ranked_catalog_preview(k=1)
+
+
+def test_catalog_preview_and_detail_never_execute(monkeypatch):
+    view = captured()
+
+    def deny(*_args, **_kwargs):
+        raise AssertionError("catalog disclosure must not plan or execute")
+
+    monkeypatch.setattr(view.router, "plan", deny)
+    monkeypatch.setattr(view.router, "execute", deny)
+    preview = view.ranked_catalog_preview()
+    assert preview
+    assert len(view.tool_definitions([preview[0][0]], k=1)) == 1
