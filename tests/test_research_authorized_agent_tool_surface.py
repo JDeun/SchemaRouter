@@ -889,3 +889,75 @@ def test_policy_mutation_during_source_retrieval_fails_before_model_view(monkeyp
     monkeypatch.setattr(router, "retrieve_authorized", mutating_retrieval)
     with pytest.raises(PolicyViolationError, match="policy modified during source capture"):
         captured(router)
+
+
+def test_catalog_index_only_discloses_authorized_route_titles_and_visible_fields():
+    """The model receives a table of contents, never executable authority."""
+    view = captured()
+    index = view.catalog_index()
+    assert type(index) is tuple
+    assert len(index) == len(view.visible_route_ids) == 2
+    assert tuple(route for route, _ in index) == view.visible_route_ids
+    assert all(type(item) is tuple and len(item) == 2 for item in index)
+    assert "public_field" in json.dumps(index)
+    assert SECRET not in json.dumps(index)
+    assert "secret_field" not in json.dumps(index)
+    assert "archive.read" not in json.dumps(index)
+    assert "registered_route_count" not in json.dumps(index)
+    assert "parameters" not in json.dumps(index)
+    assert view.executable_authority is False
+
+    # The application/agent picks an ID from the index, then asks the trusted
+    # router for that entry's *separate* schema. Neither step executes a tool.
+    chosen = index[0][0]
+    detail = view.tool_definitions([chosen], k=1)
+    assert len(detail) == 1
+    assert detail[0]["name"] == chosen.replace(".", "__")
+
+
+def test_catalog_index_never_plans_or_invokes_a_tool(monkeypatch):
+    view = captured()
+    router = view.router
+
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError("catalog reading must never plan or execute")
+
+    monkeypatch.setattr(router, "plan", forbidden)
+    monkeypatch.setattr(router, "execute", forbidden)
+    assert len(view.catalog_index()) == 2
+    assert len(view.tool_definitions(["marine.read"], k=1)) == 1
+
+
+@pytest.mark.parametrize("budget", (0, -1, True, 131073, "32768"))
+def test_catalog_index_invalid_byte_budget_fails_closed(budget):
+    with pytest.raises(ValueError, match="invalid scoped catalog index byte budget"):
+        captured().catalog_index(max_json_bytes=budget)
+
+
+def test_catalog_index_fails_closed_instead_of_truncating_source():
+    view = captured()
+    with pytest.raises(ValueError, match="scoped catalog index exceeds research byte cap"):
+        view.catalog_index(max_json_bytes=2)
+    # Lowered budget cannot trim or reorder authorized native routes.
+    assert tuple(route for route, _ in view.catalog_index()) == view.visible_route_ids
+
+
+def test_catalog_index_no_visible_routes_is_not_a_no_fit_verdict():
+    view = captured(principal=OUTSIDER)
+    assert view.catalog_index() == ()
+    assert view.executable_authority is False
+    assert view.independent_quality_evidence is False
+
+
+def test_catalog_index_rejects_mutated_source_or_revoked_authority():
+    from dataclasses import replace
+
+    view = captured()
+    forged = replace(view, _semantic_source_routes=tuple(
+        reversed(view._semantic_source_routes)
+    ))
+    with pytest.raises(PolicyViolationError):
+        forged.catalog_index()
+    view.router.mark_access_unavailable("marine", "read")
+    with pytest.raises(PolicyViolationError):
+        view.catalog_index()
