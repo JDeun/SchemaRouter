@@ -13,7 +13,7 @@ OPTIMADE production discovery converter `_tool_from_discovery` on locally
 authored source-document fixtures, then registers all three resulting actual
 `ToolSpec` contracts in one `SchemaRouter`.
 
-- OpenAPI contact-ID producer and MCP case-status consumer can form a single
+- A real OpenAPI parameter-free GET publishes the explicit input envelope\n  `{type: object, properties: {}, additionalProperties: false}`. G2 now\n  proves this *exact* safe empty contract can serve as a root without\n  deleting the schema; extra JSON Schema constraints prevent the edge.\n- OpenAPI contact-ID producer and MCP case-status consumer can form a single
   proven typed graph edge **only after locally trusted authorization, immutable
   native source fingerprints, source/license labels, exact output and input
   semantic IDs, and a trusted read-only classification are explicitly supplied**.
