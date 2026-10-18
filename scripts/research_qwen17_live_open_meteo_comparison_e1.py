@@ -106,7 +106,9 @@ async def compare_model(
             time.perf_counter() - started, 3,
         ),
         "actual_pinned_model_inference": True,
-        "real_provider_observed": report["total_real_http_attempts"] > 0,
+        # An attempted request alone does NOT prove valid source observation.
+        "real_provider_observed": report["total_real_source_calls"] > 0,
+        "real_http_attempt_observed": report["total_real_http_attempts"] > 0,
         "private_holdout": False,
         "independent_e2_qualified": False,
         "released_or_promoted": False,
