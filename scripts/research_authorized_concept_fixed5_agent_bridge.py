@@ -6,9 +6,9 @@ cannot confer execution privileges or independently calibrated no-fit.
 """
 from __future__ import annotations
 
+import hmac
 from dataclasses import dataclass, field
 from hashlib import sha256
-import hmac
 
 from schemarouter import PolicyViolationError
 from schemarouter.concept_retrieval import (
