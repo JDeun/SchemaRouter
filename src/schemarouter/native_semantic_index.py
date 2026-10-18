@@ -212,8 +212,6 @@ class NativeSchemaPostingIndex:
             ))
         self._assert_source(router)
         router._check_retrieval_authority_witness(witness)
-        if router.planner.availability_predicate is not availability:
-            raise PolicyViolationError("native availability policy changed during lookup")
         current_policy = router.authorization_policy
         if (
             current_policy.default_effect,
