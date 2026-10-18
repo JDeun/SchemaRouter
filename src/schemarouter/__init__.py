@@ -415,6 +415,11 @@ from .models import (
     ToolSpec,
     UnitNormalizationSpec,
 )
+from .native_semantic_index import (
+    IndexedNativeFieldCandidate,
+    IndexedNativeFieldResult,
+    NativeSchemaPostingIndex,
+)
 from .network_policy import NetworkPolicy, NetworkPolicyError
 from .openapi_compatibility import (
     OpenAPICompatibilityIssue,
@@ -575,6 +580,9 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
+    "IndexedNativeFieldCandidate",
+    "IndexedNativeFieldResult",
+    "NativeSchemaPostingIndex",
     "HostSemanticAttestation",
     "HostSemanticMapping",
     "apply_host_semantic_attestation",
