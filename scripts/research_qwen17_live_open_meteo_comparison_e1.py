@@ -26,7 +26,11 @@ from scripts.agent_utility_v7_dev_agent import (
 )
 from scripts.research_real_qwen_open_meteo_two_hop_e1 import (
     MODEL_NAME as BASELINE_MODEL,
+)
+from scripts.research_real_qwen_open_meteo_two_hop_e1 import (
     MODEL_REVISION as BASELINE_REVISION,
+)
+from scripts.research_real_qwen_open_meteo_two_hop_e1 import (
     ROOT,
     evaluate,
 )
