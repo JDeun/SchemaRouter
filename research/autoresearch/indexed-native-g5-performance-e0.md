@@ -44,3 +44,29 @@ separately before production claims.
 
 Maintain original #432 negative result and v0.18 #1356 release HOLD,
 and continue #1346 independent publisher-native gold / #1477 E2.
+
+
+## Observed Linux CI sample — 2026-10-18 22:30 UTC
+
+Source head `c15ec9630bf46623f6d06923e34001aadb802617`,
+dedicated workflow run `39172508084` (job `117808344930`).
+Python 3.12.15 on GitHub Actions
+`Linux-6.17.0-1022-azure-x86_64-with-glibc2.39`.
+
+| Measure | One DEV observation |
+|---|---:|
+| Synthetic registered endpoints | 5,102 |
+| Verified one-hop candidate paths | 1 |
+| Index build wall | 945.4202 ms |
+| Query wall p50 / p95 / p99 | 0.2292 / 0.2491 / 0.3387 ms |
+| Mean query wall | 0.2349 ms |
+| Process CPU p50 / p95 / p99 | 0.2282 / 0.2478 / 0.3372 ms |
+| Peak process RSS | 107,868 KiB |
+| Warmup / measured repetitions | 5 / 50 |
+
+Ruff PASS, 39 focused pytest cases PASS, Pyright 0 errors/0 warnings.
+This is **one CI runner, one highly selective synthetically authored query**,
+not a distribution, a comparison with a nonindexed implementation, a
+confidence interval, a representative provider traffic benchmark, or a
+production SLO. Peak RSS includes the interpreter, construction of all
+registered tools, and index creation, not only the index.
