@@ -114,6 +114,7 @@ async def evaluate_one(
     agent: Any, client: httpx.AsyncClient, *,
     language: str, city: str, country: str,
     menu_mode: str = "all_visible",
+    transport_retry_budget: int = 0,
 ) -> dict[str, Any]:
     """Never convert a denied/incomplete model action into a successful call."""
     if (
@@ -121,9 +122,13 @@ async def evaluate_one(
         or language not in USER_REQUESTS
         or not callable(getattr(agent, "generate", None))
         or menu_mode not in ("all_visible", "state_ready")
+        or type(transport_retry_budget) is not int
+        or transport_retry_budget not in (0, 1)
     ):
         raise ValueError("unregistered source task or model")
-    router, geocode, weather = build_live_router(client)
+    router, geocode, weather = build_live_router(
+        client, transport_retry_budget=transport_retry_budget,
+    )
     query = USER_REQUESTS[language]
     messages = [
         {"role": "system", "content": SYSTEM},
@@ -320,8 +325,8 @@ async def evaluate_one(
     ):
         raise ValueError("native provider verification/host observation mismatch")
     if (
-        not 0 <= geocode.calls <= geocode.http_attempts <= 1
-        or not 0 <= weather.calls <= weather.http_attempts <= 1
+        not 0 <= geocode.calls <= geocode.http_attempts <= 1 + transport_retry_budget
+        or not 0 <= weather.calls <= weather.http_attempts <= 1 + transport_retry_budget
         or (weather.http_attempts and geocode.calls != 1)
     ):
         raise ValueError("inconsistent attempted vs validated native source calls")
