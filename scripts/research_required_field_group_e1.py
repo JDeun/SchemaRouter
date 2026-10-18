@@ -18,10 +18,12 @@ from schemarouter import (
     QueryIntent,
     SchemaRouter,
 )
-from schemarouter.capability_contracts import CapabilityFieldContract
+from schemarouter.capability_contracts import (
+    CapabilityFieldContract,
+    compare_capability_fields,
+)
 from schemarouter.models import EndpointSpec, FieldSpec, ToolSpec
 from schemarouter.planner import KeywordAnalyzer
-from schemarouter.validation import json_schemas_compatible
 
 STRICT_K = 5
 
@@ -82,25 +84,27 @@ class DeclaredFieldGroupAnalyzer:
 
 
 def _satisfies(required: CapabilityFieldContract, field: FieldSpec) -> bool:
-    if field.semantic_id != required.semantic_id:
+    """Use canonical typed graph comparison, never a loose name-only hit."""
+    if field.semantic_id is None:
         return False
-    if required.json_schema and not json_schemas_compatible(
-        required.json_schema, field.json_schema,
-    ):
-        return False
-    # Unit conversion is only safe when separately verified by a trusted
-    # contract. E1 does NOT infer unit equivalence or follow implicit edges.
-    if required.unit is not None and field.unit != required.unit:
-        return False
-    if required.dimension is not None and (
-        field.unit_normalization is None
-        or field.unit_normalization.dimension != required.dimension
-    ):
-        return False
-    return all(
-        field.qualifiers.get(key) == value
-        for key, value in required.qualifiers.items()
+    produced = CapabilityFieldContract(
+        semantic_id=field.semantic_id,
+        json_schema=field.json_schema,
+        unit=field.unit,
+        dimension=(
+            field.unit_normalization.dimension
+            if field.unit_normalization is not None else None
+        ),
+        qualifiers=field.qualifiers,
     )
+    # The canonical comparator distinguishes an incompatible type/qualifier,
+    # UNKNOWN missing metadata and compatible contracts. No implicit
+    # equivalence graph or unit conversion is allowed in this E1 gate.
+    if required.unit is not None and produced.unit != required.unit:
+        return False
+    return compare_capability_fields(required, produced).status in {
+        "exact", "compatible",
+    }
 
 
 def retrieve_required_field_group_e1(
