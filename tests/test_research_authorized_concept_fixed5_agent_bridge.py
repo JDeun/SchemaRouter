@@ -231,3 +231,20 @@ def test_cannot_enable_selector_under_any_frozen_condition():
                 experimental_candidate_selector=selector,
                 experimental_agent_tool_surface=view,
             )
+
+
+def test_valid_but_changed_concept_catalog_content_is_not_silently_reapproved():
+    view = _view(_router())
+    catalog = CATALOG.model_copy(deep=True)
+    selector = AuthorizedConceptFixed5Selector(view, catalog)
+    # It is still a *valid* catalog with a different source-owner alias.
+    # Validation alone cannot detect post-approval semantic-map drift.
+    object.__setattr__(
+        catalog.concepts[0], "aliases",
+        ("different case status", "문의 상태", "問い合わせ状態"),
+    )
+    with pytest.raises(PolicyViolationError, match="catalog mutated"):
+        selector(QUERY, view.visible_route_ids)
+    selector.catalog = CATALOG
+    with pytest.raises(PolicyViolationError, match="catalog mutated"):
+        selector(QUERY, view.visible_route_ids)
