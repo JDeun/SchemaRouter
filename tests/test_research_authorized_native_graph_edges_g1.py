@@ -36,6 +36,9 @@ def _make_router(
     wrong_type: bool = False,
     target_extra_required: bool = False,
     target_input_type: str = "string",
+    producer_pattern: bool = False,
+    consumer_enum: bool = False,
+    target_location: str = "argument",
 ) -> SchemaRouter:
     router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
@@ -56,7 +59,10 @@ def _make_router(
     ))
     producer = FieldSpec(
         name="material_id", semantic_id="resource.material_id",
-        json_schema={"type": "integer" if wrong_type else "string"},
+        json_schema=(
+            {"type": "string", "pattern": "^MP-"} if producer_pattern
+            else {"type": "integer" if wrong_type else "string"}
+        ),
     )
     router.add_tool(ToolSpec(
         name="materials", endpoints=[EndpointSpec(
@@ -75,7 +81,11 @@ def _make_router(
             parameters=[
                 ParameterSpec(
                     name="material_id", required=True,
-                    json_schema={"type": target_input_type},
+                    location=target_location,
+                    json_schema=(
+                        {"type": "string", "enum": ["known"]}
+                        if consumer_enum else {"type": target_input_type}
+                    ),
                 ),
                 *(
                     [ParameterSpec(
@@ -136,6 +146,9 @@ def test_hidden_field_does_not_produce_graph_edge():
     {"wrong_type": True},
     {"target_extra_required": True},
     {"target_input_type": "number"},
+    {"producer_pattern": True},
+    {"consumer_enum": True},
+    {"target_location": "header"},
 ))
 def test_incompatible_or_unbound_consumer_does_not_fake_edge(kwargs):
     assert retrieve_authorized_dependency_hints_g1(
@@ -215,3 +228,30 @@ def test_invalid_alias_declarations_rejected():
             target_output_semantic_id="resource.structure_id",
             parameter_name="material_id", input_semantic_id="resource.material_id",
         )
+
+
+def test_graph_more_than_k5_proven_edges_is_rejected_not_truncated():
+    router = _make_router()
+    for i in range(5):
+        router.add_tool(ToolSpec(
+            name=f"secondary_{i}", endpoints=[EndpointSpec(
+                name="read", read_only=True,
+                output_fields=[FieldSpec(
+                    name="resource_material_id",
+                    semantic_id="resource.material_id",
+                    json_schema={"type": "string"},
+                )],
+            )],
+        ))
+    with pytest.raises(ValueError, match="predecessor K budget exceeded"):
+        retrieve_authorized_dependency_hints_g1(
+            router, LINK.query_aliases[0], principal=ANALYST, link=LINK,
+        )
+
+
+def test_denied_consumer_does_not_reveal_graph_predecessors():
+    router = _make_router()
+    router.authorization_policy = AuthorizationPolicy(default_effect="deny")
+    assert retrieve_authorized_dependency_hints_g1(
+        router, LINK.query_aliases[0], principal=ANALYST, link=LINK,
+    ) == ()
