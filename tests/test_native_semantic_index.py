@@ -263,3 +263,28 @@ def test_index_builds_over_five_thousand_registered_heterogeneous_routes():
     result = index.lookup(router, ALIASES[0], principal=ANALYST, group=GROUP)
     assert result.qualified_count == 1
     assert [x.route_id for x in result.candidates] == ["complete.read"]
+
+
+def test_index_rechecks_current_policy_and_availability_at_query_time():
+    router = _router()
+    index = NativeSchemaPostingIndex.build(router.registry)
+    assert index.lookup(
+        router, ALIASES[0], principal=ANALYST, group=GROUP,
+    ).qualified_count == 1
+
+    router.planner.availability_predicate = (
+        lambda tool, endpoint: tool.key != "complete"
+    )
+    unavailable = index.lookup(
+        router, ALIASES[0], principal=ANALYST, group=GROUP,
+    )
+    assert unavailable.status == "no_proven_hit"
+    assert unavailable.candidates == ()
+
+    router.planner.availability_predicate = None
+    router.authorization_policy = AuthorizationPolicy(default_effect="deny")
+    denied = index.lookup(
+        router, ALIASES[0], principal=ANALYST, group=GROUP,
+    )
+    assert denied.status == "no_proven_hit"
+    assert denied.candidates == ()
