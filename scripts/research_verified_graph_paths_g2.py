@@ -113,6 +113,24 @@ class NonExecutableGraphPathG2:
     scoped_snapshot_id: str
 
 
+def _proved_empty_root_envelope(endpoint: EndpointSpec) -> bool:
+    """Prove an adapter-declared empty argument object is truly parameter-free.
+
+    OpenAPI emits an explicit `additionalProperties: false` envelope even for
+    GET operations with no parameters. It is not permission to erase provider
+    input schemas or to ignore unknown keywords and required arguments.
+    """
+    if not endpoint.input_schema:
+        return True
+    if endpoint.parameters:
+        return False
+    return endpoint.input_schema in (
+        {"type": "object", "properties": {}, "additionalProperties": False},
+        {"type": "object", "properties": {}, "required": [],
+         "additionalProperties": False},
+    )
+
+
 def _native_required_param(
     endpoint: EndpointSpec,
 ) -> tuple[str, dict] | None:
@@ -230,7 +248,8 @@ def retrieve_verified_graph_paths_g2(
         if not required_native:
             # Zero-input sources may provide the first identifier. Any declared
             # consumer binding to such a route is stale or inconsistent.
-            if route_id in bindings or endpoint.input_schema or endpoint.auth_requirements:
+            if (route_id in bindings or not _proved_empty_root_envelope(endpoint)
+                    or endpoint.auth_requirements):
                 continue
             if any(p.location in {"header", "body_root"} for p in endpoint.parameters):
                 continue

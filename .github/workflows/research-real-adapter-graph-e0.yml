@@ -1,0 +1,33 @@
+name: Real Adapter Graph Boundary E0
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/adapters/**"
+      - "scripts/research_verified_graph_paths_g2.py"
+      - "scripts/research_authorized_native_graph_edges_g1.py"
+      - "tests/test_research_real_adapter_graph_boundary_e0.py"
+      - ".github/workflows/research-real-adapter-graph-e0.yml"
+      - "research/autoresearch/real-adapter-graph-boundary-e0.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-native-adapter-qualification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install source and qualification dependencies
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23" "ruff>=0.9,<1"
+      - name: Real converter E0 security and graph contracts
+        run: |
+          ruff check tests/test_research_real_adapter_graph_boundary_e0.py
+          python -m pytest -q tests/test_research_real_adapter_graph_boundary_e0.py
