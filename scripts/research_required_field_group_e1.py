@@ -12,7 +12,11 @@ import unicodedata
 from dataclasses import dataclass
 
 from schemarouter import (
-    CapabilityRetrieval, PlanRequest, PrincipalContext, QueryIntent, SchemaRouter,
+    CapabilityRetrieval,
+    PlanRequest,
+    PrincipalContext,
+    QueryIntent,
+    SchemaRouter,
 )
 from schemarouter.capability_contracts import CapabilityFieldContract
 from schemarouter.models import EndpointSpec, FieldSpec, ToolSpec
