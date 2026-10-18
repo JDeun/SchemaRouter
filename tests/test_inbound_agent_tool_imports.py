@@ -5,7 +5,13 @@ from types import SimpleNamespace
 import pytest
 from pydantic import BaseModel
 
-from schemarouter import PlanRequest, SchemaRouter
+from schemarouter import (
+    ExecutionPlan,
+    PlanRequest,
+    SchemaRouter,
+    ToolCall,
+)
+from schemarouter.errors import PlanValidationError, SchemaValidationError
 from schemarouter.integrations import tool_from_langchain, tool_from_llamaindex
 
 
@@ -238,3 +244,69 @@ def test_llamaindex_import_exposes_structured_result_array_fields() -> None:
     } <= set(fields)
     assert fields["results[].url"].path == ["results", "*", "url"]
     assert fields["results[].url"].result_path == ["results", "*", "url"]
+
+
+@pytest.mark.asyncio
+async def test_web_search_required_optional_and_undeclared_unit_at_execution() -> None:
+    """Provider schemas, not global research field assumptions, govern calls."""
+
+    class InstrumentedWebSearch(FakeLangChainTool):
+        def __init__(self) -> None:
+            self.calls = 0
+
+        async def ainvoke(self, arguments: dict) -> dict:
+            self.calls += 1
+            return await super().ainvoke(arguments)
+
+    source = InstrumentedWebSearch()
+    router = SchemaRouter()
+    tool_key = router.add_langchain_tool(
+        source, provider="tavily", read_only=True, remote=False,
+    )
+    spec = router.registry.get(tool_key)
+    endpoint = spec.endpoint("invoke")
+
+    # The original Pydantic input schema has ONE required field; "limit"
+    # is optional. Neither an input argument nor a provider output has units.
+    assert {p.name: p.required for p in endpoint.parameters} == {
+        "query": True, "limit": False,
+    }
+    assert "unit" not in {p.name for p in endpoint.parameters}
+    assert endpoint.input_schema["required"] == ["query"]
+    assert all(f.unit is None for f in endpoint.output_fields)
+
+    def plan(arguments: dict) -> ExecutionPlan:
+        return ExecutionPlan(
+            query="web search",
+            registry_version=router.registry.version,
+            calls=[ToolCall(
+                tool=tool_key,
+                endpoint="invoke",
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=spec.fingerprint,
+                arguments=arguments,
+                fields=["answer", "count"],
+            )],
+        )
+
+    # Optional input is genuinely optional at the execution boundary.
+    answer = await router.execute(plan({"query": "SchemaRouter"}))
+    assert answer[0].data["answer"] == "result:SchemaRouter"
+    assert answer[0].data["count"] == 3
+    assert source.calls == 1
+
+    # A required query is missing; no tool invocation occurs.
+    with pytest.raises(PlanValidationError, match="missing required arguments"):
+        await router.execute(plan({"limit": 2}))
+    assert source.calls == 1
+
+    # "unit" does not belong to this web tool, so it cannot be smuggled in
+    # as a global argument even when its value looks like valid metadata.
+    with pytest.raises(PlanValidationError, match="undeclared arguments"):
+        await router.execute(plan({"query": "SchemaRouter", "unit": "°C"}))
+    assert source.calls == 1
+
+    # A declared optional argument still has its own JSON Schema type.
+    with pytest.raises(SchemaValidationError):
+        await router.execute(plan({"query": "SchemaRouter", "limit": "bad"}))
+    assert source.calls == 1
