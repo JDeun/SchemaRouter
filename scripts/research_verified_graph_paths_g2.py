@@ -211,6 +211,7 @@ def retrieve_verified_graph_paths_g2(
     eligible_routes: dict[str, tuple[ToolSpec, EndpointSpec]] = {}
     requirements: dict[str, CapabilityFieldContract] = {}
     roots: set[str] = set()
+    raw_source_fingerprints: dict[str, str] = {}
     for route_id, (tool, endpoint) in sorted(routes.items()):
         required_native = [p for p in endpoint.parameters if p.required]
         if not required_native:
@@ -251,6 +252,9 @@ def retrieve_verified_graph_paths_g2(
         if not tool.source_type or not tool.license:
             continue
         eligible_routes[route_id] = (tool, endpoint)
+        raw_source_fingerprints[route_id] = (
+            router.registry.get(tool.key).endpoint(endpoint.name).fingerprint
+        )
         contracts.append(CapabilityContract(
             capability_id=route_id,
             requires=required_contracts,
@@ -339,5 +343,15 @@ def retrieve_verified_graph_paths_g2(
                     semantic_id=binding.semantic_id,
                 )),
             ))
+    # Registry.version is useful but cannot prove that an adapter did not
+    # mutate a live EndpointSpec object without bumping the registry. Recheck
+    # native source identities independently of principal-scoped projections.
+    for route_id, (tool, endpoint) in eligible_routes.items():
+        try:
+            current = router.registry.get(tool.key).endpoint(endpoint.name).fingerprint
+        except (KeyError, ValueError) as exc:
+            raise ValueError("native graph source changed during query") from exc
+        if current != raw_source_fingerprints[route_id]:
+            raise ValueError("native graph source changed during query")
     router._check_retrieval_authority_witness(witness)
     return tuple(sorted(paths, key=lambda p: p.route_ids))
