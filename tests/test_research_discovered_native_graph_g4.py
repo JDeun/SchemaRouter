@@ -160,7 +160,7 @@ def test_attested_native_graph_discovers_target_without_user_pinned_route(query)
 
 def test_no_gold_route_or_target_is_needed_to_discover_native_schema_edge():
     router, approved = _router()
-    names = [field for field in CATALOG.model_fields]
+    names = list(NativeConceptCatalog.model_fields)
     assert "target_route_id" not in names
     assert all(not hasattr(x, "target_route_id") for x in approved)
     found = discover_authorized_native_graph_paths_g4(
