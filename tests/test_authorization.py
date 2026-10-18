@@ -481,3 +481,93 @@ async def test_retry_recomputes_data_scope_before_second_invocation() -> None:
 
     assert attempts == 1
 
+
+def test_scoped_retrieval_never_embeds_hidden_schema_property() -> None:
+    """Trusted raw provider schema is not an authorized model-visible view."""
+    from schemarouter.planner import KeywordAnalyzer
+
+    seen_analysis_schemas: list[dict] = []
+
+    class InspectingAnalyzer:
+        def analyze(self, request, registry):
+            seen_analysis_schemas.extend(
+                endpoint.output_schema
+                for tool in registry.tools()
+                for endpoint in tool.endpoints
+            )
+            return KeywordAnalyzer().analyze(request, registry)
+
+    policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="materials.read", roles_any=("viewer",),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="materials.*", roles_any=("viewer",),
+            hidden_fields=("private_value",),
+        ),),
+    )
+    router = SchemaRouter(
+        analyzer=InspectingAnalyzer(),
+        authorization_policy=policy,
+    )
+    original_schema = {
+        "type": "object",
+        "properties": {
+            "public_value": {"type": "number"},
+            "private_value": {"type": "string"},
+        },
+    }
+    router.add_tool(ToolSpec(
+        name="materials",
+        endpoints=[EndpointSpec(
+            name="read", description="Fetch public sample", read_only=True,
+            output_fields=[
+                FieldSpec(name="public_value", json_schema={"type": "number"}),
+                FieldSpec(name="private_value", json_schema={"type": "string"}),
+            ],
+            output_schema=original_schema,
+        )],
+    ))
+    viewer = PrincipalContext(subject="viewer", roles=("viewer",))
+    result = router.retrieve_authorized(
+        "public_value", principal=viewer, k=5,
+    )
+    assert len(result.candidates) == 1
+    candidate = result.candidates[0]
+    assert [field.name for field in candidate.output_fields] == ["public_value"]
+    assert candidate.output_schema["properties"] == {
+        "public_value": {"type": "number"},
+    }
+    assert seen_analysis_schemas
+    assert all(
+        "private_value" not in __import__("json").dumps(schema)
+        for schema in seen_analysis_schemas
+    )
+    assert "private_value" not in __import__("json").dumps(
+        result.model_dump(mode="json")
+    )
+    # Original source remains available for the trusted provider validator;
+    # this change must not mutate the registered schema.
+    assert router.registry.get("materials").endpoint("read").output_schema == (
+        original_schema
+    )
+
+
+def test_unrestricted_retrieval_retains_original_source_output_schema() -> None:
+    router = SchemaRouter()
+    original = {
+        "type": "object", "properties": {
+            "public_value": {"type": "number"},
+            "private_value": {"type": "string"},
+        },
+    }
+    router.add_tool(ToolSpec(
+        name="materials",
+        endpoints=[EndpointSpec(
+            name="read", output_schema=original,
+            output_fields=[FieldSpec(name="public_value")],
+        )],
+    ))
+    result = router.retrieve("public_value", k=5)
+    assert result.candidates[0].output_schema == original
