@@ -34,7 +34,9 @@ STRUCTURE_ID = FieldSpec(
 )
 
 
-def _tool(name: str, endpoint: EndpointSpec, *, provider: str = "synthetic") -> ToolSpec:
+def _tool(
+    name: str, endpoint: EndpointSpec, *, provider: str | None = "synthetic",
+) -> ToolSpec:
     return ToolSpec(
         name=name, provider=provider,
         source_type="materials_data", license="CC-BY-4.0",
@@ -79,7 +81,7 @@ def _router(
             FieldSpec(name="formula", semantic_id="material.formula",
                       json_schema={"type": "string"}),
         ],
-    ), provider="" if missing_source_provenance else "synthetic"))
+    ), provider=None if missing_source_provenance else "synthetic"))
     router.add_tool(_tool("structure", EndpointSpec(
         name="read", read_only=not mutate_middle, destructive=mutate_middle,
         parameters=[
@@ -246,9 +248,7 @@ def test_rejects_fake_two_hop_relation_and_missing_semantic_output():
     with pytest.raises(ValueError, match="invalid pinned"):
         DeclaredTwoHopGraphIntent(
             first=old.first,
-            second=old.second.model_copy(update={
-                "input_semantic_id": "resource.unrelated_id",
-            }) if hasattr(old.second, "model_copy") else DeclaredQueryInputLink(
+            second=DeclaredQueryInputLink(
                 query_aliases=ALIASES,
                 target_route_id="properties.read",
                 target_output_semantic_id="mechanics.elastic_modulus",
@@ -290,7 +290,6 @@ def test_no_invoker_agent_or_execution(monkeypatch):
 
 
 def test_composite_join_is_not_claimed_from_arbitrary_field_union():
-    router = _router()
     # Extra required inputs at the middle endpoint fail even if another
     # unrelated tool happens to produce a same-named output.
     bad_router = _router(extra_middle_required=True)
