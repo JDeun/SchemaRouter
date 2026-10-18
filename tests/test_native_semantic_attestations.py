@@ -321,3 +321,33 @@ def test_approved_existing_openapi_fields_feed_real_authorized_fieldgroup_topk()
         ).fingerprint
     assert all(field.semantic_id is None
                for field in original.endpoint("lookup").output_fields)
+
+
+def test_existing_published_qwen_dev_catalog_has_no_native_field_attestation_source():
+    """Inspect exact original DEV catalog, not a convenient reconstructed stand-in."""
+    from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
+        CORPUS,
+        build_source_router,
+    )
+    from scripts.evaluate_multilingual_embedding_cpu_dev import (
+        load_development_corpus,
+    )
+
+    corpus, _corpus_sha256 = load_development_corpus(CORPUS)
+    router = build_source_router(corpus)
+    tools = list(router.registry.tools())
+    assert sum(len(t.endpoints) for t in tools) == 13
+    assert all(not ep.output_fields and not ep.parameters
+               for t in tools for ep in t.endpoints)
+    assert all(t.source_type is None and t.license is None for t in tools)
+    # Do not retrofit field gold into this source for claimed retrieval recall.
+    example = tools[0].model_copy(deep=True)
+    example.source_type = "published-dev-fixture"
+    example.license = "host-reviewed"
+    with pytest.raises(ValueError, match="cannot invent"):
+        apply_host_semantic_attestation(
+            example, attestation=_attest(
+                example, example.endpoints[0].name,
+                ("output_field", "manufactured_from_gold", "invented.expected"),
+            ),
+        )
