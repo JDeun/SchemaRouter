@@ -85,6 +85,7 @@ def _router() -> SchemaRouter:
          "materials_data", "CC-BY-4.0"),
         ("wrong_type", [A, B.model_copy(update={
             "name": "wrong_type_value", "json_schema": {"type": "string"},
+            "unit": None,
         })], "materials_data", "CC-BY-4.0"),
         ("wrong_qualifier", [A, B.model_copy(update={
             "name": "wrong_qualifier_value", "qualifiers": {"temperature": "cold"},
