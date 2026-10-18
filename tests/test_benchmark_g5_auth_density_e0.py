@@ -5,15 +5,15 @@ import json
 
 import pytest
 
+from schemarouter import PrincipalContext
+from schemarouter.native_graph_index import NativeSchemaGraphIndex
+from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.benchmark_g5_auth_density_e0 import (
     DENIED_TYPED_DISTRACTORS,
     SCENARIOS,
     _build_shared_density_source,
     benchmark_density_matrix,
 )
-from schemarouter import PrincipalContext
-from schemarouter.native_graph_index import NativeSchemaGraphIndex
-from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.benchmark_indexed_native_graph_g5_cpu_e0 import GROUP, QUERY
 
 
