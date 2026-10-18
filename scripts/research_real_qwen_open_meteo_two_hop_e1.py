@@ -133,6 +133,7 @@ async def evaluate_one(
     reason = "turn_limit"
     host_exception_family: str | None = None
     host_failure_after_http_attempt: bool | None = None
+    trusted_failure_stage: str | None = None
     total_model_ms = 0.0
 
     for _ in range(MAX_TURNS):
@@ -185,6 +186,8 @@ async def evaluate_one(
             reason = "wrong_arguments_or_unobserved_state"
             break
 
+        before_http = geocode.http_attempts + weather.http_attempts
+        before_verified = geocode.calls + weather.calls
         try:
             # This is the ALREADY EXISTING trusted planner, auth gate,
             # read-only RegistryExecutor and output projection.
@@ -207,10 +210,34 @@ async def evaluate_one(
                 else "value_error" if isinstance(exc, ValueError)
                 else "runtime_error"
             )
-            host_failure_after_http_attempt = (
-                geocode.http_attempts + weather.http_attempts
-                > geocode.calls + weather.calls
-            )
+            after_http = geocode.http_attempts + weather.http_attempts
+            after_verified = geocode.calls + weather.calls
+            host_failure_after_http_attempt = after_http > after_verified
+            # Host-owned public fixed-source diagnostic only. No raw HTTP
+            # body, coordinates, provider exception, route secret or policy.
+            if any(
+                inv.last_failure_stage is not None
+                and inv.last_failure_stage not in inv.FAILURE_STAGES
+                for inv in (geocode, weather)
+            ):
+                raise ValueError("invalid trusted source failure-stage receipt") from None
+            source_stages = [
+                f"geocode_{geocode.last_failure_stage}"
+                if geocode.last_failure_stage is not None else None,
+                f"forecast_{weather.last_failure_stage}"
+                if weather.last_failure_stage is not None else None,
+            ]
+            source_stages = [stage for stage in source_stages if stage is not None]
+            if len(source_stages) > 1:
+                raise ValueError("ambiguous simultaneous trusted source failures") from None
+            if source_stages:
+                trusted_failure_stage = source_stages[0]
+            elif after_http == before_http:
+                trusted_failure_stage = "host_boundary_without_new_http"
+            elif after_verified > before_verified:
+                trusted_failure_stage = "host_boundary_after_validated_source"
+            else:
+                trusted_failure_stage = "unclassified_after_http_attempt"
             reason = "host_or_native_source_denied"
             break
         if (
@@ -259,8 +286,17 @@ async def evaluate_one(
             public_observation=observation,
         )
 
-    if completed != geocode.calls + weather.calls:
-        raise ValueError("native provider calls differ from successful host observations")
+    # A provider can verify a response, then the host may still reject
+    # projection/policy before publishing its observation to the model.
+    # This is one FAILED agent step, not a model-completed step and not an
+    # invalid aggregate. Never allow a concealed multi-call surplus.
+    verified = geocode.calls + weather.calls
+    if (
+        completed > verified
+        or verified - completed > 1
+        or (verified != completed and reason != "host_or_native_source_denied")
+    ):
+        raise ValueError("native provider verification/host observation mismatch")
     if (
         not 0 <= geocode.calls <= geocode.http_attempts <= 1
         or not 0 <= weather.calls <= weather.http_attempts <= 1
@@ -279,6 +315,7 @@ async def evaluate_one(
         "real_forecast_http_attempts": weather.http_attempts,
         "host_exception_family": host_exception_family,
         "host_failure_after_http_attempt": host_failure_after_http_attempt,
+        "trusted_failure_stage": trusted_failure_stage,
         "model_generated_first_step_complete": completed >= 1,
         "model_generated_two_step_complete": completed == 2,
         "strict_final_answer_correct": correctly_ended,

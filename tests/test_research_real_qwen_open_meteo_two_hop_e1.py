@@ -213,6 +213,7 @@ async def test_provider_wrong_country_does_not_trigger_weather_call() -> None:
     assert row["termination_reason"] == "host_or_native_source_denied"
     assert row["host_exception_family"] == "scoped_boundary_denial"
     assert row["host_failure_after_http_attempt"] is True
+    assert row["trusted_failure_stage"] == "geocode_geocoding_payload_rejected"
     assert row["real_geocoding_http_attempts"] == 1
     assert row["real_geocoding_calls"] == 0
     assert row["real_forecast_http_attempts"] == 0
@@ -283,3 +284,107 @@ def test_truthful_final_and_exact_second_hop_argument_binding() -> None:
         language=LANGUAGE, city=CITY, country=COUNTRY,
         validated_location=None,
     )
+
+
+@pytest.mark.asyncio
+async def test_transport_error_is_host_classified_without_private_error_text() -> None:
+    seen = []
+
+    def broken(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url.path)
+        raise httpx.ConnectError("PRIVATE_PROVIDER_CANARY", request=request)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(broken)) as client:
+        row = await evaluate_one(
+            ScriptedAgent([FIRST]), client,
+            language=LANGUAGE, city=CITY, country=COUNTRY,
+        )
+    assert seen == ["/v1/search"]
+    assert row["termination_reason"] == "host_or_native_source_denied"
+    assert row["trusted_failure_stage"] == "geocode_http_transport_failure"
+    assert row["host_exception_family"] == "scoped_boundary_denial"
+    assert row["host_failure_after_http_attempt"] is True
+    assert row["real_geocoding_http_attempts"] == 1
+    assert row["real_geocoding_calls"] == 0
+    assert row["full_task_complete"] is False
+    assert "PRIVATE_PROVIDER_CANARY" not in json.dumps(row)
+
+
+@pytest.mark.asyncio
+async def test_host_pre_http_denial_is_not_mislabeled_source_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scripts import research_real_qwen_open_meteo_two_hop_e1 as module
+
+    async def deny_host(*_args: Any, **_kwargs: Any) -> dict:
+        raise PolicyViolationError("PRIVATE_POLICY_CANARY")
+
+    monkeypatch.setattr(module, "execute_scoped_host_call", deny_host)
+    seen: list[str] = []
+    async with httpx.AsyncClient(transport=_fixture_transport(seen)) as client:
+        row = await evaluate_one(
+            ScriptedAgent([FIRST]), client,
+            language=LANGUAGE, city=CITY, country=COUNTRY,
+        )
+    assert seen == []
+    assert row["trusted_failure_stage"] == "host_boundary_without_new_http"
+    assert row["host_failure_after_http_attempt"] is False
+    assert row["real_geocoding_http_attempts"] == 0
+    assert row["real_geocoding_calls"] == 0
+    assert row["full_task_complete"] is False
+    assert "PRIVATE_POLICY_CANARY" not in json.dumps(row)
+
+@pytest.mark.asyncio
+async def test_post_verified_source_host_denial_is_failed_episode_not_abort(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scripts import research_real_qwen_open_meteo_two_hop_e1 as module
+
+    actual_execution = module.execute_scoped_host_call
+
+    async def masked_after_verified(*args: Any, **kwargs: Any) -> dict:
+        await actual_execution(*args, **kwargs)
+        raise PolicyViolationError("PRIVATE_PROJECTION_CANARY")
+
+    monkeypatch.setattr(
+        module, "execute_scoped_host_call", masked_after_verified,
+    )
+    seen: list[str] = []
+    async with httpx.AsyncClient(transport=_fixture_transport(seen)) as client:
+        row = await evaluate_one(
+            ScriptedAgent([FIRST]), client,
+            language=LANGUAGE, city=CITY, country=COUNTRY,
+        )
+    assert seen == ["/v1/search"]
+    assert row["trusted_failure_stage"] == "host_boundary_after_validated_source"
+    assert row["host_failure_after_http_attempt"] is False
+    assert row["real_geocoding_http_attempts"] == 1
+    assert row["real_geocoding_calls"] == 1
+    assert row["model_generated_first_step_complete"] is False
+    assert row["full_task_complete"] is False
+    assert row["termination_reason"] == "host_or_native_source_denied"
+    assert "PRIVATE_PROJECTION_CANARY" not in json.dumps(row)
+
+
+@pytest.mark.asyncio
+async def test_unclassified_failure_after_http_is_not_guessed_as_source(
+) -> None:
+    seen = []
+
+    def unexpected(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url.path)
+        raise RuntimeError("PRIVATE_UNEXPECTED_CANARY")
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(unexpected),
+    ) as client:
+        row = await evaluate_one(
+            ScriptedAgent([FIRST]), client,
+            language=LANGUAGE, city=CITY, country=COUNTRY,
+        )
+    assert seen == ["/v1/search"]
+    assert row["trusted_failure_stage"] == "unclassified_after_http_attempt"
+    assert row["real_geocoding_http_attempts"] == 1
+    assert row["real_geocoding_calls"] == 0
+    assert row["full_task_complete"] is False
+    assert "PRIVATE_UNEXPECTED_CANARY" not in json.dumps(row)

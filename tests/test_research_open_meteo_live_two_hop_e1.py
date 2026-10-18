@@ -142,3 +142,117 @@ async def test_wrong_source_response_country_blocks_second_live_call() -> None:
         assert geo.http_attempts == 1 and weather.http_attempts == 0
         # The HTTPS request occurred; no provider response was verified.
         assert geo.calls == 0 and weather.calls == 0
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("response", "expected_stage"), [
+    (httpx.Response(503, json={"secret": "do-not-expose"}),
+     "http_status_rejected"),
+    (httpx.Response(200, content=b'{"results":'),
+     "response_json_rejected"),
+    (httpx.Response(200, json={"results": []}),
+     "geocoding_payload_rejected"),
+    (httpx.Response(200, json={"results": [{
+        "id": 123, "country_code": "JP",
+        "latitude": 37.0, "longitude": 127.0,
+    }]}), "geocoding_payload_rejected"),
+])
+async def test_source_failure_stage_is_bounded_without_raw_response(
+    response: httpx.Response, expected_stage: str,
+) -> None:
+    from scripts.research_open_meteo_live_two_hop_e1 import (
+        OpenMeteoBoundInvoker,
+    )
+
+    captured: list[httpx.Request] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return response
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handle)) as client:
+        invoker = OpenMeteoBoundInvoker(client, source="geocode")
+        with pytest.raises((ValueError, httpx.HTTPStatusError)):
+            await invoker("search", {
+                "name": "Seoul", "country_code": "KR", "language": "en",
+            })
+    assert len(captured) == invoker.http_attempts == 1
+    assert invoker.calls == 0
+    assert invoker.last_failure_stage == expected_stage
+    assert invoker.last_failure_stage in invoker.FAILURE_STAGES
+
+
+@pytest.mark.asyncio
+async def test_source_transport_failure_and_unregistered_endpoint_are_separate() -> None:
+    from scripts.research_open_meteo_live_two_hop_e1 import (
+        OpenMeteoBoundInvoker,
+    )
+
+    def transport_failure(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("PRIVATE_RAW_ERROR", request=request)
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(transport_failure),
+    ) as client:
+        invoker = OpenMeteoBoundInvoker(client, source="geocode")
+        with pytest.raises(ValueError, match="unregistered trusted Open-Meteo endpoint"):
+            await invoker("current", {"latitude": 37.5, "longitude": 127.0})
+        assert invoker.http_attempts == 0
+        with pytest.raises(ValueError, match="unknown trusted Open-Meteo source"):
+            OpenMeteoBoundInvoker(client, source="unregistered")
+        assert invoker.http_attempts == 0
+        with pytest.raises(httpx.ConnectError):
+            await invoker("search", {
+                "name": "Seoul", "country_code": "KR", "language": "en",
+            })
+        assert invoker.http_attempts == 1
+        assert invoker.calls == 0
+        assert invoker.last_failure_stage == "http_transport_failure"
+
+
+@pytest.mark.asyncio
+async def test_forecast_contract_failure_is_distinct_from_geocoding() -> None:
+    from scripts.research_open_meteo_live_two_hop_e1 import (
+        OpenMeteoBoundInvoker,
+    )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(
+        lambda _request: httpx.Response(200, json={
+            "current": {"time": "2026-10-18T10:00", "temperature_2m": 12.5},
+            "current_units": {"temperature_2m": "°F"},
+        }),
+    )) as client:
+        invoker = OpenMeteoBoundInvoker(client, source="forecast")
+        with pytest.raises(ValueError):
+            await invoker("current", {"latitude": 37.5, "longitude": 127.0})
+        assert invoker.last_failure_stage == "weather_payload_rejected"
+        assert invoker.http_attempts == 1 and invoker.calls == 0
+
+
+@pytest.mark.asyncio
+async def test_source_stage_resets_only_after_verified_success() -> None:
+    from scripts.research_open_meteo_live_two_hop_e1 import (
+        OpenMeteoBoundInvoker,
+    )
+
+    attempted = 0
+
+    def handle(_request: httpx.Request) -> httpx.Response:
+        nonlocal attempted
+        attempted += 1
+        if attempted == 1:
+            return httpx.Response(200, json={"results": []})
+        return httpx.Response(200, json={"results": [{
+            "id": 1835848, "country_code": "KR",
+            "latitude": 37.56, "longitude": 126.98,
+        }]})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handle)) as client:
+        invoker = OpenMeteoBoundInvoker(client, source="geocode")
+        arguments = {"name": "Seoul", "country_code": "KR", "language": "en"}
+        with pytest.raises(ValueError):
+            await invoker("search", arguments)
+        assert invoker.last_failure_stage == "geocoding_payload_rejected"
+        result = await invoker("search", arguments)
+        assert result["latitude"] == 37.56
+        assert invoker.last_failure_stage is None
+        assert invoker.http_attempts == 2 and invoker.calls == 1
