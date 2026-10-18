@@ -75,8 +75,11 @@ async def test_mismatched_native_call_count_is_rejected(
 
     async def invalid(*_a):
         return {"case_count": 3, "total_real_source_calls": 2,
+                "total_real_http_attempts": 1,
                 "outcomes": [{"real_geocoding_calls": 1,
-                              "real_forecast_calls": 0}]}
+                              "real_forecast_calls": 0,
+                              "real_geocoding_http_attempts": 1,
+                              "real_forecast_http_attempts": 0}]}
 
     monkeypatch.setattr(module, "evaluate", invalid)
     async with httpx.AsyncClient() as client:
