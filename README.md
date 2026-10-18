@@ -115,6 +115,17 @@ flowchart LR
 The surrounding application owns conversation, decomposition, memory, checkpoints, and final
 generation. SchemaRouter owns the **registered capability and execution boundary**.
 
+**Agent-neutral tool catalog:** the router first supplies a bounded, optionally
+principal-authorized **index of available capabilities** (route ID, endpoint,
+parameter/output-field contract). The agent/application interprets the task,
+chooses whether and which tool to use, constructs its arguments and decides
+whether to continue. SchemaRouter does **not** autonomously decide the next
+agent step, call tools merely because they appeared in retrieval, or write a
+final answer. Its optional `plan/execute` APIs are explicitly host-invoked
+validation and execution boundaries, **not** an autonomous agent loop.
+The research-only scoped index-to-schema experiment lives under `scripts/`;
+it is not a new product-default model or a production `catalog_index` API.
+
 Retrieval is side-effect free:
 
 ```python
