@@ -214,7 +214,10 @@ async def evaluate_one(
                 # the geocoding adapter *before* Router.execute. The planner
                 # can legitimately project country_code away, so never
                 # require it to reappear in the model-visible observation.
-                reason = "invalid_first_source_observation"
+                # Presence-only source projection telemetry, not values.
+                lat = int(type(observation.get("latitude")) in (int, float))
+                lon = int(type(observation.get("longitude")) in (int, float))
+                reason = f"invalid_first_source_observation_lat{lat}_lon{lon}"
                 break
             actual_location = observation
         else:
