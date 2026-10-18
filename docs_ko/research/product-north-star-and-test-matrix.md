@@ -25,6 +25,50 @@
 6. **동결된 연구 보존:** 이미 노출된 #432/ServiceNow/Open-Meteo 결과를 보고 사후 임계값을 조절하거나, 가변 K 합집합을 K=5 결과라고 표시하거나, 합성 다국어 문장 테스트를 실제 언어 성능으로 설명해서는 안 됩니다.
 7. **검증 실패 차단과 감사 가능성:** 스키마·권한의 최신성이 불분명하거나 단위 호환이 증명되지 않으면 실행을 차단합니다. 도구 선택 이유는 관찰 가능한 사실만 표시하고 chain-of-thought·자격증명·숨겨진 목록은 노출하지 않습니다.
 
+## 초기 논문과의 일치 여부: 스키마 그래프 관계 검색이 제품 목표 (2026-10-18)
+
+[SchemaRouter 초기 논문](https://arxiv.org/abs/2608.21375)의 목표는 등록된
+Tool → Endpoint → Parameter/OutputField의 타입 계약과 DomainConcept·
+FieldGroup·Unit·SourceType·License/Provenance의 관계를 **내부 버전드
+Capability 온톨로지**로 관리하는 것입니다. 사용자의 질의에서 필요한
+개념과 필드를 해석하여 **라우터가** 권한이 허용된 도구·필드 후보만 찾아
+제공합니다. **외부 에이전트는** 후보 중 도구와 인자를 선택하고 작업 단계와
+최종 응답을 결정합니다. 후보 검색은 호스트 실행 허가가 아닙니다.
+
+**이미 구현한 기능과 미검증 부분을 구분합니다.**
+`SchemaRouter.retrieve_authorized(query, k=5)`는 기존부터 권한별 Top-K를
+제공합니다. 현재 `SchemaPlanner` 기본값은 `KeywordAnalyzer`와 어휘 기반
+`_CandidateIndex`입니다. `structural_retrieval`은 구조 특이성 기반 점수를
+보강하지만, `capability_graph.py`의 producer→consumer 의존성 그래프와
+논문 목표의 **질의→개념→필드 그룹→엔드포인트** 검색은 별개의 기능입니다.
+그래프 스냅샷이나 그래프 DB의 존재만으로 기본 검색이 논문 방식으로
+구동된다고 판단하지 않습니다. 코드별 대응표는 [#1530](https://github.com/JDeun/SchemaRouter/issues/1530)에 기록합니다.
+
+**추가 에이전트·모델 실험보다 앞서는 개발 게이트:**
+논문과 기본 검색 경로를 대조하고, P0인
+[#1532 권한별 숨김 필드 메타데이터](https://github.com/JDeun/SchemaRouter/issues/1532)와
+[#1450 권한/소스 변경](https://github.com/JDeun/SchemaRouter/issues/1450)을
+검증합니다. 이후 [#1531](https://github.com/JDeun/SchemaRouter/pull/1531)의
+**명시적으로 선언된** 다국어 개념→semantic ID→필드 연결을 연구용 E0에서
+평가합니다. 그다음 타입·단위·한정자·출처·라이선스를 고려하는 필드 그룹 및
+엔드포인트 검색을 같은 권한·스냅샷·K5 조건의 기존 어휘 검색과 비교해야
+합니다. E0 별칭 연결이나 목차 출력만으로 Algorithm 1 전체 구현 또는
+성능 개선을 주장하지 않습니다.
+
+[#1346](https://github.com/JDeun/SchemaRouter/issues/1346)의 **독립 작성자와
+제공자 원본 작업·정답·권한 근거**가 확보된 이후에만, 새로 사전 등록한
+EN/KO/JA와 외부 에이전트의 [#1477](https://github.com/JDeun/SchemaRouter/issues/1477)
+짝지은 과제 평가로 도구·필드 재현율, 연산·입력 인자, 정상 요청 오거부와
+미지원 요청 오수락, 실제 모델 토큰, CPU p50/p95/p99, 최종 완료율을
+검증합니다. #432 동결된 부정적 결과는 유지하고 v0.18
+[#1356](https://github.com/JDeun/SchemaRouter/pull/1356)은 **HARD HOLD**입니다.
+[#1528](https://github.com/JDeun/SchemaRouter/pull/1528)의 전체 목차 비용 증가는
+부정적 E0 근거이지, 모든 그래프 정보를 모델에 제공할 이유가 아닙니다.
+
+이 항목은 **앞으로의 아키텍처 방향과 검증 누락 사항**을 명시한 것이며,
+현재 새 기능이 출시되었거나 상용 성능이 입증됐다는 뜻이 아닙니다.
+[공식 로드맵](../project/roadmap.md)도 같은 방향을 따릅니다.
+
 ## 2. 기존 증거 정렬: 완료한 것과 입증하지 못한 것
 
 | 영역 | 실제 확인된 상태 | 아직 입증하지 못한 주장 | 기존 근거 |
