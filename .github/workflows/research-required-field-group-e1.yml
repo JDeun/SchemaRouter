@@ -1,0 +1,39 @@
+name: Declared Complete Field Group E1
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_required_field_group_e1.py"
+      - "tests/test_research_required_field_group_e1.py"
+      - "research/autoresearch/declared-required-field-group-pre-k-e1.md"
+      - ".github/workflows/research-required-field-group-e1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: field-group-e1-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synthetic-authorized-group:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install checked-out library and E1 test dependencies
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23" "ruff>=0.9,<1"
+      - name: Run typed group pre-K tests and lint
+        run: |
+          ruff check scripts/research_required_field_group_e1.py tests/test_research_required_field_group_e1.py
+          python -m pytest -q tests/test_research_required_field_group_e1.py
+# Synthetic only: source-authorized native scoring; no model, executor,
+# external agent, provider traffic or independent final-task outcome.
