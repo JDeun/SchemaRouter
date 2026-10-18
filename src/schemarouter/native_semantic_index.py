@@ -66,12 +66,14 @@ class NativeSchemaPostingIndex:
     indexed_route_count: int
     postings: Mapping[str, tuple[str, ...]]
     route_fingerprints: Mapping[str, tuple[str, str]]
+    route_locations: Mapping[str, tuple[str, str]]
 
     @classmethod
     def build(cls, registry: ToolRegistry) -> NativeSchemaPostingIndex:
         version = registry.version
         semantic: dict[str, set[str]] = {}
         revisions: dict[str, tuple[str, str]] = {}
+        locations: dict[str, tuple[str, str]] = {}
         count = 0
         for tool in registry.tools():
             for endpoint in tool.endpoints:
@@ -80,6 +82,7 @@ class NativeSchemaPostingIndex:
                 if route in revisions:
                     raise ValueError("duplicated registered native route")
                 revisions[route] = (tool.fingerprint, endpoint.fingerprint)
+                locations[route] = (tool.key, endpoint.name)
                 # Index all schema nodes but only scalar source-typed output
                 # semantics; no inferred IDs from descriptions or task gold.
                 if not tool.source_type or not tool.license:
@@ -104,6 +107,7 @@ class NativeSchemaPostingIndex:
             indexed_route_count=count,
             postings=MappingProxyType(ordered),
             route_fingerprints=MappingProxyType(revisions),
+            route_locations=MappingProxyType(locations),
         )
 
     def _assert_source(self, router: SchemaRouter) -> None:
@@ -163,17 +167,11 @@ class NativeSchemaPostingIndex:
             revisions = self.route_fingerprints.get(route)
             if revisions is None:
                 raise PolicyViolationError("indexed route missing original fingerprint")
-            tool_key = next((
-                key for key in router.registry.keys()
-                if route.startswith(key + ".") and
-                route[len(key) + 1:] in {
-                    ep.name for ep in router.registry.get(key).endpoints
-                }
-            ), None)
-            if tool_key is None:
+            location = self.route_locations.get(route)
+            if location is None:
                 raise PolicyViolationError("indexed registered route missing")
+            tool_key, endpoint_name = location
             tool = router.registry.get(tool_key)
-            endpoint_name = route[len(tool_key) + 1:]
             endpoint = tool.endpoint(endpoint_name)
             if (tool.fingerprint, endpoint.fingerprint) != revisions:
                 raise PolicyViolationError("indexed source fingerprint drift")
