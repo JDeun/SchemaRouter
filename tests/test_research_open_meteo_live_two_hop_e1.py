@@ -26,7 +26,8 @@ async def test_live_api_route_and_second_call_use_actual_first_output() -> None:
         if request.url.host == "geocoding-api.open-meteo.com":
             assert request.url.path == "/v1/search"
             assert params["countryCode"] in ("KR", "JP")
-            assert params["count"] == "1"
+            assert params["count"] == "10"
+            assert params["language"] in ("en", "ko", "ja")
             country = params["countryCode"]
             latitude, longitude, identifier = (
                 (37.56, 126.98, 1835848) if country == "KR"
@@ -134,7 +135,7 @@ async def test_wrong_source_response_country_blocks_second_live_call() -> None:
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         router, geo, weather = build_live_router(client)
         from scripts.research_open_meteo_live_two_hop_e1 import live_task
-        with pytest.raises(ValueError, match="wrong country"):
+        with pytest.raises(ValueError, match="matching trusted country"):
             await live_task(router, "ko", "서울", "KR")
         assert requests == ["geocoding-api.open-meteo.com"]
         assert geo.calls == 0 and weather.calls == 0
