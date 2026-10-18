@@ -27,6 +27,28 @@ Use real, fixed local `intfloat/multilingual-e5-small` at HF revision `fd1525a9f
 - B: `StandardScaler` + `LogisticRegression(C=1.0 default, class_weight='balanced', solver='liblinear', random_state=0, max_iter=1000)` on even-ID **per-function pairs**; request relevance is max offered original function probability. **Same** public calibration-negative cutoff rule applied to B (separately to probability scale).
 - Neither arm is allowed to choose a live-data-derived threshold, use live labels in training, emit a model-generated route not in source, execute tools, or change production default. Label accuracy on live-relevance **function names is not known**: report only "at least one tool" relevance / refusal, NOT official BFCL answer AST or action success.
 
+## Original publisher no-tool structural cases and source messages
+
+Live publisher source inspection revealed two legitimate source shapes NOT covered by
+the previous internal artificial fixtures: system-prefaced user tasks, and
+`live_irrelevance` requests with **zero offered functions**. These findings
+concern byte-format validity, not model scores.
+
+- Restrict relevance features to the **last user content**; any earlier
+  publisher message (`system`, `assistant`, `user`) is not promoted to a
+  trusted host instruction. This may remove useful task context; the result is
+  a last-user-message fit diagnostic, **not full official BFCL task evaluation**.
+- Report `irrelevant_zero_candidate_functions` and
+  `irrelevant_with_candidate_functions` separately, without dropping any
+  original cases. No offered functions means **structural no-call**, and those
+  samples are expressly **excluded from model no-fit denominators**. Otherwise
+  a model would earn credit for requests it never examined. Conditional
+  predictor FPR/true refusal is computed only when at least one original
+  publisher function was actually offered. If none exists, abort scoring
+  rather than fabricate model quality.
+- Preserve exact file SHA and case count; no new prompts, function gold,
+  unseen task labels, tuned score cutoffs or per-source exemptions.
+
 ## Fixed output and stopping
 
 Store original source SHA hashes, stable model SHA, positive and negative denominators separately for calibration and LIVE evaluation, supported admitted/false-refused and unsupported falsely-accepted/correctly-refused for A/B, with real Linux CPU runtime. Publish negative outcomes unmodified even if trained B loses to raw A. Do **not** adapt prompts/features/thresholds from these observed scores.
