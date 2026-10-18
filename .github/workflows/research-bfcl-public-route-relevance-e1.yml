@@ -1,0 +1,99 @@
+name: BFCL V4 Public External Route Relevance E1 CPU
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_bfcl_v4_public_relevance_e1.py"
+      - "tests/test_research_bfcl_v4_public_relevance_e1.py"
+      - "research/autoresearch/bfcl-v4-public-route-relevance-e1.md"
+      - ".github/workflows/research-bfcl-public-route-relevance-e1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bfcl-public-route-relevance-e1-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-structural-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Source and contract checks without model
+        run: |
+          python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+          ruff check scripts/research_bfcl_v4_public_relevance_e1.py tests/test_research_bfcl_v4_public_relevance_e1.py
+          python -m pytest -q tests/test_research_bfcl_v4_public_relevance_e1.py
+
+  actual-external-publisher-cpu:
+    needs: offline-structural-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: CPU model runtime and local SchemaRouter package
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install . "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
+      - name: Run original pinned BFCL multiple and irrelevance model comparison
+        run: |
+          python -m scripts.research_bfcl_v4_public_relevance_e1 \
+            --out artifacts/bfcl-v4-e1/report.json
+      - name: Strict external source/denominator and nonpromotion guard
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          d = json.loads(Path("artifacts/bfcl-v4-e1/report.json").read_text())
+          assert d["publisher_commit"] == "6ea57973c7a6097fd7c5915698c54c17c5b1b6c8"
+          assert d["model_revision"] == "fd1525a9fd15316a2d503bf26ab031a61d056e98"
+          assert d["supported_multiple"] == 200
+          assert d["unsupported_irrelevance"] == 240
+          assert set(d["results"]) == {"lexical", "lexical_guard", "e5", "e5_guard"}
+          assert set(d["publisher_git_blob_sha1"]) == {
+              "multiple", "irrelevance", "gold"
+          }
+          for arm, m in d["results"].items():
+              assert m["supported_correct"] + m["supported_wrong_function"] + m["supported_false_refusal"] == 200
+              assert m["unsupported_safe_refusal"] + m["unsupported_false_accept"] == 240
+              assert m["inference_ms_p95"] >= 0
+          assert d["independent_private_holdout"] is False
+          assert d["native_provider_e2_qualified"] is False
+          assert d["unsupported_abstention_calibrated"] is False
+          assert d["model_promoted"] is False
+          assert d["release_qualified"] is False
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as f:
+              f.write("## UC Berkeley original public BFCL V4 E1 200+240 comparison\\n\\n")
+              f.write("Function-name ONLY, no arguments/actual calls; English public corpus, not EN/KO/JA provider E2.\\n\\n")
+              f.write("| Arm | Supported name hit /200 | Supported false refusal /200 | Unsupported safe no-call /240 | Unsupported false accept /240 |\\n|---|---:|---:|---:|---:|\\n")
+              for arm, m in d["results"].items():
+                  f.write(f"| {arm} | {m['supported_correct']} | {m['supported_false_refusal']} | {m['unsupported_safe_refusal']} | {m['unsupported_false_accept']} |\\n")
+              f.write("\\nExisting default unchanged; all test cases public and external, not private E2; #1356 release HOLD.\\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bfcl-v4-external-publisher-e1-${{ github.run_id }}
+          path: artifacts/bfcl-v4-e1/report.json
+          if-no-files-found: error
+          retention-days: 90
