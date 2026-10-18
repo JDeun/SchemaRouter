@@ -25,6 +25,60 @@
 6. **Frozen research stays frozen:** no DEV-informed post-hoc threshold on original #432 or already-consumed ServiceNow/Open-Meteo tasks, no variable-K results described as strict K5, no metric from synthetic strings described as multilingual competence.
 7. **Fail-closed and auditability:** schema drift, stale authorization or incompatible scientific units fail closed; decisions expose observable reason codes and complete tool-call/field/result provenance without chain-of-thought, credentials or hidden catalog leaks.
 
+## Paper parity: schema-graph relationship routing is the product goal (2026-10-18)
+
+This document's north star must be interpreted alongside the
+[original SchemaRouter paper](https://arxiv.org/abs/2608.21375):
+registered Tool → Endpoint → Parameter/OutputField contracts and
+DomainConcept/FieldGroup/Unit/SourceType/License/Provenance relationships
+form an **internal, versioned typed capability ontology**. From the
+request's intended concepts and required fields, the *router* should
+locate the appropriate authorized, typed candidate tools and only the
+necessary field contracts. The *external agent* chooses the route and
+arguments and owns multistep sequencing and the final response.
+A query/catalog match is never host authority to execute.
+
+**Actual current-main gap — not a restatement of a completed feature:**
+`SchemaRouter.retrieve_authorized(query, k=5)` already produces a
+bounded principal-scoped Top-K. `SchemaPlanner` defaults to
+`KeywordAnalyzer` and the exact-recall lexical `_CandidateIndex`;
+`structural_retrieval` adds schema-specificity scoring, while
+`capability_graph.py` builds independent producer→consumer
+compatibility edges. Neither the latter edge graph nor the existence of
+a graph snapshot artifact demonstrates that the original
+**query→concept→field group→endpoint** relation traversal is wired to
+the default Top-K. See the line-referenced [#1530 paper-to-code audit](https://github.com/JDeun/SchemaRouter/issues/1530).
+A graph database is optional, not a success metric.
+
+**Next-development decision gate (before any new model or agent-loop
+experiments):** verify original-paper graph relation coverage; correct
+[#1532 principal-hidden output-schema metadata](https://github.com/JDeun/SchemaRouter/issues/1532)
+and [#1450 authorization/drift](https://github.com/JDeun/SchemaRouter/issues/1450)
+as P0; separately test **declared**, source-trusted multilingual
+concept→semantic-ID→field/operation mapping (research-only
+[#1531](https://github.com/JDeun/SchemaRouter/pull/1531)); then
+test true field-group, type/unit/qualifier, provenance/license and
+permission-constrained ranking at strict K5. Compare against the
+**existing** lexical baseline on the same exact visible source/snapshot
+and include negative unsupported, hidden-field and stale-source cases.
+Do not claim full Algorithm 1 parity or product gains from an alias
+lookup E0, K5 wrapper or synthetic bytes.
+
+Only after [#1346 independently authored publisher-native task/gold](https://github.com/JDeun/SchemaRouter/issues/1346)
+may a new versioned, prospective EN/KO/JA + agent-paired
+qualification under [#1477](https://github.com/JDeun/SchemaRouter/issues/1477)
+test required route/field recall, operation and parameter fit, false
+acceptance/refusal, actual tokenizer cost, CPU p50/p95/p99 and final task
+completion. Frozen #432 negative results stay frozen; v0.18
+[#1356](https://github.com/JDeun/SchemaRouter/pull/1356)
+remains **HARD HOLD**. Whole-catalog-index E0
+[#1528](https://github.com/JDeun/SchemaRouter/pull/1528) is a
+negative-cost control, not a reason to send the graph to the model.
+
+This section records **architectural direction and evidence gaps**,
+not a new shipped feature or empirical success claim. See also the
+[public roadmap](../project/roadmap.md).
+
 ## 2. Evidence triage: what exists versus what is merely hoped
 
 | Workstream | Current demonstrated state | Claim explicitly NOT supported | Anchor |
