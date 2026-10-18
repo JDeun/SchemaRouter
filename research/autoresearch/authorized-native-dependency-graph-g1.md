@@ -44,6 +44,17 @@ must remain unchanged. The tool and agent execution pipelines are
 - The graph is built from *currently authorized* source views, not
   filtered only after graph construction. Denied or data-scope-hidden
   output IDs must not influence candidates or returned hints.
+- **G1 typed input/output evidence is intentionally stricter than the
+  general JSON Schema language**: only a simple scalar `{"type":"..."}`
+  shape with no pattern/enum/other constraints is accepted for producer
+  fields and target required parameter. Unverified implicit unit
+  normalization and target credential/header inputs are rejected, as are
+  unknown extra required parameters in native `input_schema`.
+  Unsupported constraints must not be silently treated as compatible.
+- The per-request research construction caps the authorized graph at
+  **512 visible read-only routes and 4,096 visible output fields**.
+  Exceeding the fixed K5 predecessor count fails closed rather than
+  arbitrarily claiming the first five graph edges are best.
 - The result does not return provider data, calculate input values,
   invoke either tool, decide an agent's actions or create an execution
   grant. No multi-hop dataflow, semantic rank over more than five
