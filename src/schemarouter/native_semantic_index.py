@@ -150,7 +150,11 @@ class NativeSchemaPostingIndex:
             raise PolicyViolationError("explicit authorization policy required")
         self._assert_source(router)
         witness = router._retrieval_authority_witness()
-        original_policy = router.authorization_policy.model_dump(mode="json")
+        original_policy = (
+            router.authorization_policy.default_effect,
+            repr(router.authorization_policy.rules),
+            repr(router.authorization_policy.data_rules),
+        )
         # The inverted index is ONLY a conservative candidate prefilter.
         # It never bypasses live access checks or the canonical typed compare.
         ids = [set(self.postings.get(field.semantic_id, ()))
@@ -208,7 +212,12 @@ class NativeSchemaPostingIndex:
             ))
         self._assert_source(router)
         router._check_retrieval_authority_witness(witness)
-        if router.authorization_policy.model_dump(mode="json") != original_policy:
+        current_policy = router.authorization_policy
+        if (
+            current_policy.default_effect,
+            repr(current_policy.rules),
+            repr(current_policy.data_rules),
+        ) != original_policy:
             raise PolicyViolationError("authorization policy changed during indexed lookup")
         count = len(qualified)
         return IndexedNativeFieldResult(
