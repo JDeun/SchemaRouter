@@ -415,6 +415,11 @@ from .models import (
     ToolSpec,
     UnitNormalizationSpec,
 )
+from .native_graph_index import (
+    NativeIndexedGraphCandidate,
+    NativeIndexedGraphResult,
+    NativeSchemaGraphIndex,
+)
 from .native_semantic_index import (
     IndexedNativeFieldCandidate,
     IndexedNativeFieldResult,
@@ -580,6 +585,9 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
+    "NativeIndexedGraphCandidate",
+    "NativeIndexedGraphResult",
+    "NativeSchemaGraphIndex",
     "IndexedNativeFieldCandidate",
     "IndexedNativeFieldResult",
     "NativeSchemaPostingIndex",
