@@ -29,6 +29,7 @@ def _simple_scalar_schema(schema: dict) -> bool:
     return (
         type(schema) is dict
         and set(schema) == {"type"}
+        and type(schema["type"]) is str
         and schema["type"] in {"string", "integer", "number", "boolean"}
     )
 
