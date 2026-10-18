@@ -239,12 +239,8 @@ def retrieve_verified_graph_paths_g2(
     ):
         raise ValueError("G2 requires a bounded exact route approval set")
     witness = router._retrieval_authority_witness()
-    routes = _safe_routes(router, principal)
-    if allowed_route_ids is not None:
-        # Restrict BEFORE graph construction and K accounting, not after
-        # collecting paths that may reveal unapproved provider metadata.
-        routes = {key: value for key, value in routes.items()
-                  if key in allowed_route_ids}
+    # Filter before scoped route/field budgets (and graph/K accounting).
+    routes = _safe_routes(router, principal, allowed_route_ids=allowed_route_ids)
     bindings = {binding.route_id: binding for binding in goal.bindings}
     if goal.target_route_id not in routes:
         router._check_retrieval_authority_witness(witness)
