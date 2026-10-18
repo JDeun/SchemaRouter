@@ -100,7 +100,7 @@ def parse_task(row: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
             for message in turns[0][:-1]
         )
         or type(funcs) is not list
-        or not 1 <= len(funcs) <= MAX_FUNCTIONS
+        or not 0 <= len(funcs) <= MAX_FUNCTIONS
         or any(
             type(fn) is not dict
             or type(fn.get("name")) is not str
@@ -133,6 +133,8 @@ def parse_task(row: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
 def pair_features(
     query: str, offered: list[dict[str, Any]], embedder: E5CachedEmbedder,
 ) -> list[list[float]]:
+    if not offered:
+        raise ValueError("pair similarity cannot score an empty source menu")
     texts = [_source_text(fn) for fn in offered]
     if any(not text.strip() or len(text) > 12_000 for text in texts):
         raise ValueError("BFCL function semantic text out of bounds")
@@ -253,13 +255,23 @@ def run(
     fit_cutoff = fixed_fpr_cutoff(calibrated_prob["neg"])
     eval_pos: dict[str, list[float]] = {"e5": [], "pair_fit": []}
     eval_neg: dict[str, list[float]] = {"e5": [], "pair_fit": []}
+    zero_menu_irrelevant = 0
     for kind, bucket in (("live_relevance", eval_pos),
                          ("live_irrelevance", eval_neg)):
         for record in live[kind]:
             question, funcs = parse_task(record)
+            if not funcs:
+                if kind != "live_irrelevance":
+                    raise ValueError("publisher claims relevance with no offered function")
+                # Structural no-tool is mechanically safe, but not evidence
+                # that either relevance classifier recognized no-fit.
+                zero_menu_irrelevant += 1
+                continue
             features = pair_features(question, funcs, embedder)
             bucket["e5"].append(max(x[0] for x in features))
             bucket["pair_fit"].append(max(fit_scores(features, model)))
+    if not eval_neg["e5"]:
+        raise ValueError("no nonempty-menu irrelevant cases for model evaluation")
     return {
         "study": "PUBLIC_BFCL_V4_PAIR_FIT_LIVE_CATEGORY_TRANSFER_E1",
         "source_commit": BFCL_COMMIT,
@@ -271,7 +283,9 @@ def run(
         "calibrate_odd": {"supported": 100, "irrelevant": 120},
         "live_category_evaluation": {
             "supported": len(eval_pos["e5"]),
-            "irrelevant": len(eval_neg["e5"]),
+            "irrelevant": len(eval_neg["e5"]) + zero_menu_irrelevant,
+            "irrelevant_with_candidate_functions": len(eval_neg["e5"]),
+            "irrelevant_zero_candidate_functions": zero_menu_irrelevant,
             "e5_raw_cosine": {
                 "threshold_from_public_calibration": e5_cutoff,
                 "calibration": stats(
@@ -306,6 +320,16 @@ def main() -> None:
     args = parser.parse_args()
     old, old_shas = fetch_original_data()
     live, live_shas = load_live_source()
+    # Publish only counts, never original task content or hidden source text.
+    for category in ("live_relevance", "live_irrelevance"):
+        counts = [len(record.get("function", [])) for record in live[category]]
+        print(json.dumps({
+            "publisher_category": category,
+            "source_rows": len(counts),
+            "empty_menus": sum(count == 0 for count in counts),
+            "nonempty_menus": sum(count > 0 for count in counts),
+            "largest_menu": max(counts),
+        }))
 
     import torch
     from sentence_transformers import SentenceTransformer
