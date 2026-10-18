@@ -1,0 +1,38 @@
+name: Native Verified Two-Hop Graph Paths G2
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_verified_graph_paths_g2.py"
+      - "tests/test_research_verified_graph_paths_g2.py"
+      - "research/autoresearch/authorized-native-two-hop-graph-path-g2.md"
+      - ".github/workflows/research-verified-native-path-g2.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verified-g2-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verified-g2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install source and offline G2 verification
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23" "ruff>=0.9,<1"
+      - name: Verify graph typing, scopes, provenance, bounded query and no execution
+        run: |
+          ruff check scripts/research_verified_graph_paths_g2.py tests/test_research_verified_graph_paths_g2.py
+          python -m pytest -q tests/test_research_verified_graph_paths_g2.py
+# Research-only, synthetic; no model, provider calls, agent or release.
