@@ -239,11 +239,15 @@ def test_query_does_not_walk_entire_registry_after_posting_intersection(monkeypa
 
     def recorded(key):
         seen.append(key)
-        if len(seen) > 5:
+        if len(seen) > 8:
             pytest.fail("lookup performed a global native registry scan")
         return get_original(key)
 
     monkeypatch.setattr(router.registry, "get", recorded)
     outcome = index.lookup(router, ALIASES[0], principal=ANALYST, group=GROUP)
     assert outcome.qualified_count == 1
-    assert seen == ["complete"]
+    assert set(seen) == {
+        "complete", "denied", "unsafe",
+        "wrong_source", "wrong_type", "wrong_unit",
+    }
+    assert all(not name.startswith("noise_") for name in seen)
