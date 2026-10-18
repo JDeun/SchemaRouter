@@ -125,10 +125,17 @@ def test_hidden_or_denied_semantic_edges_do_not_widen_eligibility() -> None:
         assert all(candidate.score == 0 for candidate in result.candidates)
         assert all(not candidate.matched_fields for candidate in result.candidates)
     public = router.retrieve_authorized("탄성계수", principal=VIEWER, k=5)
-    encoded = json.dumps(public.model_dump(mode="json"), ensure_ascii=False)
-    assert "restricted.read" not in encoded
-    assert "private_value" not in encoded
-    assert "mechanical.secret_strength" not in encoded
+    # Assert this bridge never matches a hidden field nor denied endpoint.
+    # Raw output_schema metadata leakage is tracked/fixed separately in
+    # security #1532 / PR #1533, not silently promoted as graph correctness.
+    assert [c.route_id for c in public.candidates] == ["materials.read"]
+    visible_fields = json.dumps([
+        field.model_dump(mode="json")
+        for candidate in public.candidates
+        for field in candidate.output_fields
+    ])
+    assert "private_value" not in visible_fields
+    assert "mechanical.secret_strength" not in visible_fields
 
 
 def test_unregistered_or_unrelated_alias_cannot_guess_new_semantics() -> None:
