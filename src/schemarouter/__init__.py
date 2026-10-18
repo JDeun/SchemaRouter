@@ -474,6 +474,11 @@ from .schema_diff import (
     compare_endpoint_specs,
     compare_tool_specs,
 )
+from .semantic_attestations import (
+    HostSemanticAttestation,
+    HostSemanticMapping,
+    apply_host_semantic_attestation,
+)
 from .state_retrieval import (
     StateAwareCapabilityCandidate,
     StateAwareCapabilityRetrieval,
@@ -570,6 +575,9 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
+    "HostSemanticAttestation",
+    "HostSemanticMapping",
+    "apply_host_semantic_attestation",
     "NativeConceptCatalog",
     "NativeDeclaredConcept",
     "ResolvedNativeConcepts",
