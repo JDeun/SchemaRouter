@@ -189,6 +189,10 @@ async def evaluate_one(
             observation = await execute_scoped_host_call(
                 view, selected_route_ids=list(ROUTES),
                 route_id=route, arguments=arguments,
+                host_required_output_fields=(
+                    ("latitude", "longitude") if route == ROUTES[0]
+                    else ("time", "temperature_2m", "temperature_unit")
+                ),
             )
         except (PolicyViolationError, ValueError, RuntimeError):
             reason = "host_or_native_source_denied"
