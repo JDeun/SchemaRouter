@@ -1,0 +1,39 @@
+name: Native Two Hop Graph G2 E0
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_verified_two_hop_graph_g2.py"
+      - "tests/test_research_verified_two_hop_graph_g2.py"
+      - "research/autoresearch/verified-two-hop-native-graph-g2.md"
+      - ".github/workflows/research-two-hop-native-graph-g2.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-two-hop-g2-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native-graph-two-edge:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install checked-out package and offline test tools
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23" "ruff>=0.9,<1"
+      - name: Enforce typed graph G2 and no-execution controls
+        run: |
+          ruff check scripts/research_verified_two_hop_graph_g2.py tests/test_research_verified_two_hop_graph_g2.py
+          python -m pytest -q tests/test_research_verified_two_hop_graph_g2.py
+# This is only synthetic source-authorized graph research;
+# no model, provider call, agent execution or independent E2.
