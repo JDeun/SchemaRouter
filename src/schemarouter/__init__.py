@@ -336,6 +336,10 @@ from .explorer import (
     render_schema_explorer,
     write_schema_explorer,
 )
+from .field_group_retrieval import (
+    NativeDeclaredFieldGroup,
+    retrieve_authorized_field_group,
+)
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot, HealthStatus
 from .hooks import AfterExecutionHook, BeforeExecutionHook, ExecutionHooks
 from .host_field_contract import (
@@ -559,6 +563,8 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
+    "NativeDeclaredFieldGroup",
+    "retrieve_authorized_field_group",
     "AuthorizedContractSelection",
     "HostFieldContract",
     "RequiredEnumValue",
