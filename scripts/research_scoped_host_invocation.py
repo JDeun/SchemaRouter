@@ -29,6 +29,7 @@ async def execute_scoped_host_call(
     selected_route_ids: list[str],
     route_id: str,
     arguments: dict[str, Any],
+    host_required_output_fields: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     """Run ONE read-only source/host-compiled call through router.execute.
 
@@ -43,6 +44,18 @@ async def execute_scoped_host_call(
         or route_id not in selected_route_ids
         or type(arguments) is not dict
         or any(type(key) is not str for key in arguments)
+    ):
+        _deny()
+    # This optional contract belongs exclusively to the trusted HOST; the
+    # model cannot request formerly hidden output fields or enlarge scope.
+    if (
+        type(host_required_output_fields) is not tuple
+        or len(host_required_output_fields) > 32
+        or any(type(v) is not str or not v for v in host_required_output_fields)
+        or len(set(host_required_output_fields)) != len(host_required_output_fields)
+        or not set(host_required_output_fields).issubset(
+            view._visible_output_names[route_id]
+        )
     ):
         _deny()
     selected_index = selected_route_ids.index(route_id)
@@ -102,6 +115,14 @@ async def execute_scoped_host_call(
     ):
         _deny()
     call = plan.calls[0]
+    if host_required_output_fields:
+        # Preserve planner-selected fields and require original declared
+        # principal-visible state output for subsequent dependent tool calls.
+        # The plan remains a registry-fingerprinted product ExecutionPlan,
+        # and the real executor will validate schema/fields/authorization.
+        call.fields = list(dict.fromkeys([
+            *call.fields, *host_required_output_fields,
+        ]))
     if (
         f"{call.tool}.{call.endpoint}" != route_id
         or call.tool_fingerprint != tool.fingerprint
