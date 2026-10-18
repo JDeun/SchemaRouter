@@ -27,6 +27,7 @@ from scripts.research_authorized_agent_tool_surface import (
 )
 from scripts.research_authorized_concept_fixed5_agent_bridge import (
     AuthorizedConceptFixed5Selector,
+    _catalog_content_digest,
 )
 from scripts.research_authorized_fixed5_decision_bridge import (
     _visible_fingerprints,
@@ -164,6 +165,19 @@ def run_paired_concept_agent_e0(
     NativeConceptCatalog.model_validate(
         catalog.model_dump(mode="python"), strict=True,
     )
+    pinned_catalog_digest = _catalog_content_digest(catalog)
+
+    def assert_catalog_unchanged() -> None:
+        try:
+            NativeConceptCatalog.model_validate(
+                catalog.model_dump(mode="python"), strict=True,
+            )
+            current = _catalog_content_digest(catalog)
+        except (TypeError, ValueError, OverflowError, AttributeError) as exc:
+            raise PolicyViolationError("paired native ontology mutated") from exc
+        if current != pinned_catalog_digest:
+            raise PolicyViolationError("paired native ontology mutated")
+
     original_witness = router._retrieval_authority_witness()
     counts: dict[str, list[dict[str, Any]]] = {arm: [] for arm in ARMS}
     paired_results: list[tuple[bool, bool]] = []
@@ -184,6 +198,7 @@ def run_paired_concept_agent_e0(
         # No task gold or expected route is inspected in either callback.
         # Both conditions use the same original query and the same registry.
         for arm in ARMS:
+            assert_catalog_unchanged()
             router._check_retrieval_authority_witness(original_witness)
             view = capture_authorized_agent_tool_surface(
                 router, task["query"], principal=principal,
@@ -203,6 +218,7 @@ def run_paired_concept_agent_e0(
                 else AuthorizedConceptFixed5Selector(view, catalog)
             )
             agent = agent_factory()
+            assert_catalog_unchanged()
             row = run_generated_episode(
                 agent, router.registry, task,
                 EXPERIMENTAL_FIXED5_CONDITION,
@@ -210,6 +226,7 @@ def run_paired_concept_agent_e0(
                 experimental_agent_tool_surface=view,
             )
             view.assert_source_unchanged()
+            assert_catalog_unchanged()
             router._check_retrieval_authority_witness(original_witness)
             measure = _safe_measures(row)
             counts[arm].append(measure)
