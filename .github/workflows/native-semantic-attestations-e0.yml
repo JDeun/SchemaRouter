@@ -1,0 +1,33 @@
+name: Host-Pinned Native Semantic Attestation E0
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/semantic_attestations.py"
+      - "src/schemarouter/__init__.py"
+      - "tests/test_native_semantic_attestations.py"
+      - "tests/test_public_api.py"
+      - ".github/workflows/native-semantic-attestations-e0.yml"
+      - "research/autoresearch/native-semantic-attestations-e0.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-adapter-source-semantic-boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install source and regressions
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23" "ruff>=0.9,<1"
+      - name: Verify real native converter contracts and public ABI
+        run: |
+          ruff check src/schemarouter/semantic_attestations.py tests/test_native_semantic_attestations.py
+          python -m pytest -q tests/test_native_semantic_attestations.py tests/test_native_field_group_retrieval.py tests/test_public_api.py
