@@ -10,8 +10,9 @@ trusted semantic graph adjacency, and supports original-paper
 
 A **host-approved** `NativeConceptCatalog` records 1–32 concepts, each
 with a canonical concept ID, at most 16 declared synonyms and a typed
-`CapabilityFieldContract` group, plus optional exact source/license
-requirements. Bounded, source-owner-declared EN/KO/JA phrases are matched
+`CapabilityFieldContract` group, and **required exact source/license**
+requirements for every concept. These labels are locally host-reviewed
+contract predicates, not legal licensing clearance. Bounded, source-owner-declared EN/KO/JA phrases are matched
 inside a bounded user query using the native lexical engine's narrow Unicode
 normalization and ASCII token boundaries. Different concept aliases in
 one query are combined into a **conjunction** of at most eight distinct
