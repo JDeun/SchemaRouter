@@ -79,6 +79,10 @@ async def compare_model(
     report = await evaluate(agent, client)
     if (
         report.get("case_count") != 3
+        or report.get("total_real_http_attempts") != sum(
+            r["real_geocoding_http_attempts"] + r["real_forecast_http_attempts"]
+            for r in report["outcomes"]
+        )
         or report.get("total_real_source_calls") != sum(
             r["real_geocoding_calls"] + r["real_forecast_calls"]
             for r in report["outcomes"]
@@ -102,7 +106,9 @@ async def compare_model(
             time.perf_counter() - started, 3,
         ),
         "actual_pinned_model_inference": True,
-        "real_provider_observed": True,
+        # An attempted request alone does NOT prove valid source observation.
+        "real_provider_observed": report["total_real_source_calls"] > 0,
+        "real_http_attempt_observed": report["total_real_http_attempts"] > 0,
         "private_holdout": False,
         "independent_e2_qualified": False,
         "released_or_promoted": False,
@@ -153,11 +159,15 @@ def main() -> None:
         "study": report["study"],
         "model_revision": report["model_revision"],
         "complete_tasks": report["model_generated_full_task_successes"],
-        "real_provider_calls": report["total_real_source_calls"],
+        "validated_provider_calls": report["total_real_source_calls"],
+        "http_attempts": report["total_real_http_attempts"],
         "by_language": {
             r["language"]: {
-                "source_calls": r["real_geocoding_calls"]
+                "validated_source_calls": r["real_geocoding_calls"]
                 + r["real_forecast_calls"],
+                "http_attempts": r["real_geocoding_http_attempts"]
+                + r["real_forecast_http_attempts"],
+                "host_exception_family": r["host_exception_family"],
                 "full_task_complete": r["full_task_complete"],
                 "stop": r["termination_reason"],
             }

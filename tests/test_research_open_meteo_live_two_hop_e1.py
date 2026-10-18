@@ -119,6 +119,7 @@ async def test_missing_city_argument_does_not_call_network() -> None:
         with pytest.raises(PlanValidationError, match="missing required arguments"):
             await router.execute(incomplete)
         assert geo.calls == 0 and weather.calls == 0
+        assert geo.http_attempts == 0 and weather.http_attempts == 0
 
 
 @pytest.mark.asyncio
@@ -138,4 +139,6 @@ async def test_wrong_source_response_country_blocks_second_live_call() -> None:
         with pytest.raises(ValueError, match="matching trusted country"):
             await live_task(router, "ko", "서울", "KR")
         assert requests == ["geocoding-api.open-meteo.com"]
+        assert geo.http_attempts == 1 and weather.http_attempts == 0
+        # The HTTPS request occurred; no provider response was verified.
         assert geo.calls == 0 and weather.calls == 0

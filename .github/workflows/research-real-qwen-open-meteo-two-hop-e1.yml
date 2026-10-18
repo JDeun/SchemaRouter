@@ -79,9 +79,10 @@ jobs:
           assert {row["language"] for row in d["outcomes"]} == {"en", "ko", "ja"}
           assert 0 <= d["model_generated_full_task_successes"] <= 3
           calls = 0
+          attempts = 0
           with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as f:
               f.write("## Real local Qwen3 0.6B + actual Open-Meteo API E1 DEV\\n\\n")
-              f.write("| Language | Generated calls | Real geocodes | Real forecasts | Complete two-step | Strict final | Stop |\\n|---|---:|---:|---:|---|---|---|\\n")
+              f.write("| Language | HTTP attempts | Generated calls | Validated geocodes | Validated forecasts | Complete two-step | Strict final | Stop |\\n|---|---:|---:|---:|---:|---|---|---|\\n")
               for row in d["outcomes"]:
                   assert row["independent_e2_qualified"] is False
                   assert 0 <= row["real_geocoding_calls"] <= 1
@@ -89,9 +90,14 @@ jobs:
                   assert row["full_task_complete"] <= row["model_generated_two_step_complete"]
                   assert row["model_generated_two_step_complete"] <= bool(row["real_forecast_calls"])
                   calls += row["real_geocoding_calls"] + row["real_forecast_calls"]
-                  f.write(f"| {row['language']} | {row['attempted_model_calls']} | {row['real_geocoding_calls']} | {row['real_forecast_calls']} | {row['model_generated_two_step_complete']} | {row['strict_final_answer_correct']} | {row['termination_reason']} |\\n")
+                  assert row["real_geocoding_calls"] <= row["real_geocoding_http_attempts"] <= 1
+                  assert row["real_forecast_calls"] <= row["real_forecast_http_attempts"] <= 1
+                  attempts += row["real_geocoding_http_attempts"] + row["real_forecast_http_attempts"]
+                  f.write(f"| {row['language']} | {row['real_geocoding_http_attempts'] + row['real_forecast_http_attempts']} | {row['attempted_model_calls']} | {row['real_geocoding_calls']} | {row['real_forecast_calls']} | {row['model_generated_two_step_complete']} | {row['strict_final_answer_correct']} | {row['termination_reason']} |\\n")
               f.write("\\nOriginal provider HTTPS only for permitted model calls. Failures remain FAILED cases, not rescue-filled host success. This is exposed self-authored multilingual DEV, no independently qualified E2 or product promotion.\\n")
           assert calls == d["total_real_source_calls"]
+          assert attempts == d["total_real_http_attempts"]
+          assert d["legacy_call_counter_measures_validated_responses_only"] is True
           PY
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()

@@ -141,7 +141,9 @@ class OpenMeteoBoundInvoker:
             raise ValueError("unknown trusted Open-Meteo source")
         self.client = client
         self.source = source
+        # Historical `calls`: validated successful invocations, not HTTPS attempts.
         self.calls = 0
+        self.http_attempts = 0
 
     async def __call__(
         self, endpoint: str, arguments: dict[str, Any],
@@ -155,6 +157,7 @@ class OpenMeteoBoundInvoker:
                 "count": 10,
                 "format": "json",
             }
+            self.http_attempts += 1
             response = await self.client.get(GEOCODE_URL, params=params)
             result = _geocode_response(_provider_json(response), country)
         elif self.source == "forecast" and endpoint == "current":
@@ -164,6 +167,7 @@ class OpenMeteoBoundInvoker:
                 "current": "temperature_2m",
                 "timezone": "auto",
             }
+            self.http_attempts += 1
             response = await self.client.get(WEATHER_URL, params=params)
             result = _forecast_response(_provider_json(response))
         else:

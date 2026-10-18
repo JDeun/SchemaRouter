@@ -35,14 +35,18 @@ async def test_reuse_existing_evaluator_without_extra_executed_calls(
         return {
             "case_count": 3,
             "total_real_source_calls": 3,
+            "total_real_http_attempts": 4,
             "model_generated_full_task_successes": 1,
             "outcomes": [
                 {"language": "en", "real_geocoding_calls": 1,
-                 "real_forecast_calls": 0, "full_task_complete": False},
+                 "real_forecast_calls": 0, "real_geocoding_http_attempts": 1,
+                 "real_forecast_http_attempts": 0, "full_task_complete": False},
                 {"language": "ko", "real_geocoding_calls": 1,
-                 "real_forecast_calls": 1, "full_task_complete": True},
+                 "real_forecast_calls": 1, "real_geocoding_http_attempts": 1,
+                 "real_forecast_http_attempts": 1, "full_task_complete": True},
                 {"language": "ja", "real_geocoding_calls": 0,
-                 "real_forecast_calls": 0, "full_task_complete": False},
+                 "real_forecast_calls": 0, "real_geocoding_http_attempts": 1,
+                 "real_forecast_http_attempts": 0, "full_task_complete": False},
             ],
         }
 
@@ -55,6 +59,8 @@ async def test_reuse_existing_evaluator_without_extra_executed_calls(
     assert called == [(agent, client)]
     assert result["baseline"]["baseline_full_task_successes"] == 1
     assert result["model_generated_full_task_successes"] == 1
+    assert result["total_real_http_attempts"] == 4
+    assert result["real_provider_observed"] is True
     assert result["candidate_only_checkpoint_changed"] is True
     assert result["independent_e2_qualified"] is False
     assert result["released_or_promoted"] is False
@@ -69,8 +75,11 @@ async def test_mismatched_native_call_count_is_rejected(
 
     async def invalid(*_a):
         return {"case_count": 3, "total_real_source_calls": 2,
+                "total_real_http_attempts": 1,
                 "outcomes": [{"real_geocoding_calls": 1,
-                              "real_forecast_calls": 0}]}
+                              "real_forecast_calls": 0,
+                              "real_geocoding_http_attempts": 1,
+                              "real_forecast_http_attempts": 0}]}
 
     monkeypatch.setattr(module, "evaluate", invalid)
     async with httpx.AsyncClient() as client:
