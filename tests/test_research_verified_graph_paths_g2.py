@@ -312,3 +312,85 @@ def test_over_k_verified_graph_paths_fail_closed():
         retrieve_verified_graph_paths_g2(
             router, ALIASES[0], principal=ANALYST, goal=_goal(router),
         )
+
+
+@pytest.mark.parametrize("query", (
+    "고객 문의 우선순위와 상태 조회",
+    "顧客問い合わせの優先度と状態",
+    "look up customer case status and priority",
+))
+def test_protocol_neutral_business_record_graph_uses_same_native_contracts(query):
+    """Synthetic *normalized* contracts, not actual adapter network discovery.
+
+    Mixed adapter-origin labels and a non-materials domain must not change
+    the typed graph rule. Real OpenAPI/MCP/OPTIMADE adapter transfer is
+    separately gated in #1545, not claimed by this fixture.
+    """
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.read", roles_any=("analyst",),
+        ),),
+    ))
+    def register(name, adapter, parameters, fields):
+        router.add_tool(ToolSpec(
+            name=name, source_type=adapter, license="host-reviewed-fixture",
+            metadata={"synthetic_adapter_origin_label": adapter},
+            endpoints=[EndpointSpec(
+                name="read", read_only=True, destructive=False,
+                parameters=parameters, output_fields=fields,
+            )],
+        ))
+
+    register("contact_search", "openapi", [], [
+        _field("contact_id", "crm.contact_id", identifier=True),
+    ])
+    register("case_index", "mcp", [
+        ParameterSpec(name="contact_id", required=True,
+                      json_schema={"type": "string"}),
+    ], [
+        _field("case_id", "support.case_id", identifier=True),
+    ])
+    register("case_status", "record_store", [
+        ParameterSpec(name="case_id", required=True,
+                      json_schema={"type": "string"}),
+    ], [
+        _field("status", "support.status"),
+        _field("priority", "support.priority"),
+    ])
+    goal = DeclaredGraphGoalG2(
+        aliases=(
+            "고객 문의 우선순위와 상태 조회",
+            "顧客問い合わせの優先度と状態",
+            "look up customer case status and priority",
+        ),
+        target_route_id="case_status.read",
+        required_outputs=(
+            CapabilityFieldContract(semantic_id="support.status",
+                                    json_schema={"type": "string"}),
+            CapabilityFieldContract(semantic_id="support.priority",
+                                    json_schema={"type": "string"}),
+        ),
+        bindings=tuple(
+            DeclaredInputBindingG2(
+                route_id=tool_name + ".read",
+                parameter_name=param,
+                semantic_id=semantic,
+                expected_endpoint_fingerprint=router.registry.get(
+                    tool_name
+                ).endpoint("read").fingerprint,
+            )
+            for tool_name, param, semantic in (
+                ("case_index", "contact_id", "crm.contact_id"),
+                ("case_status", "case_id", "support.case_id"),
+            )
+        ),
+    )
+    hints = retrieve_verified_graph_paths_g2(
+        router, query, principal=ANALYST, goal=goal,
+    )
+    assert len(hints) == 1
+    assert hints[0].route_ids == (
+        "contact_search.read", "case_index.read", "case_status.read",
+    )
+    assert hints[0].target_output_fields == ("status", "priority")
