@@ -5,14 +5,14 @@
 ## Source ownership and execution contract
 
 Official provider descriptions: [Open-Meteo geocoding](https://open-meteo.com/en/docs/geocoding-api) and [forecast API](https://open-meteo.com/en/docs). The requested fixed GET endpoints, under sole host-trusted control:
-- `https://geocoding-api.open-meteo.com/v1/search` with `name`, explicit `countryCode`, `count=1`, `format=json`.
+- `https://geocoding-api.open-meteo.com/v1/search` with `name`, explicit `countryCode`, `language`, `count=10`, `format=json`.
 - `https://api.open-meteo.com/v1/forecast` with exactly the first-hop **source-validated latitude/longitude**, `current=temperature_2m`, `timezone=auto`.
 
 No credentials, approval bypass, request-supplied URLs, downloads, mutations, redirects or dynamic paths. Two separately registered `ToolSpec` contracts are bound to trusted fixed-host HTTP invokers. All HTTP and typed result validation is done inside this source-specific adapter; `SchemaRouter.execute` validates each explicitly created `ExecutionPlan` against original registry+endpoint fingerprint, input and output schemas and default local read-only policy. It projects only required public output fields.
 
 ## Exact development task/success criteria
 
-Three *host-authored* inputs: EN-labeled city `Seoul/KR`, KO-labeled `서울/KR`, JA-labeled `東京/JP`. This is a **source API localization** check; the city strings, country and sequential tool operations are **supplied by the trusted host**. The text language label is not a model-inferred operation. For each case two real HTTP 200 responses must be structurally verified, geocoding original ID and WGS84 lat/lon checked and then passed through observed projected SchemaRouter results into the second typed plan, weather time/finite Celsius number verified. One failed/missing provider response fails the run and earns no task success. Exactly six invoker observations are expected.
+Three *host-authored* inputs: EN-labeled city `Seoul/KR`, KO-labeled `서울특별시/KR`, JA-labeled `東京都/JP`. This is a **source API localization** check; the city strings, country and sequential tool operations are **supplied by the trusted host**. The text language label is not a model-inferred operation. These original native-script FULL city names are deliberately host-supplied because two-character abbreviations may not be indexed; these cases do not establish abbreviated city resolution. The host verifies country identity on a bounded returned list rather than assuming the first search candidate belongs to the requested country. For each case two real HTTP 200 responses must be structurally verified, geocoding original ID and WGS84 lat/lon checked and then passed through observed projected SchemaRouter results into the second typed plan, weather time/finite Celsius number verified. One failed/missing provider response fails the run and earns no task success. Exactly six invoker observations are expected.
 
 The output contains **only aggregate call counts, coarse pass markers, language labels, source host names, and latency**. No raw provider messages, user-provided content, coordinates, temperatures or source secrets are published. No synthetic HTTP responses are used in the actual external job.
 
