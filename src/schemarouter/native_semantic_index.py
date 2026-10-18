@@ -8,10 +8,11 @@ an execution engine, graph path planner, or new lexical ranker.
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from hashlib import sha256
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Literal, Mapping
+from typing import TYPE_CHECKING, Literal
 
 from .authorization import PrincipalContext
 from .concept_retrieval import NativeConceptCatalog, resolve_native_concepts
