@@ -162,6 +162,13 @@ class OpenMeteoBoundInvoker:
         self, url: str, params: dict[str, Any],
     ) -> dict[str, Any]:
         """Original fixed-host GET; classify failures without their content."""
+        if url not in (GEOCODE_URL, WEATHER_URL):
+            raise ValueError("unregistered fixed-host provider URL")
+        if (
+            (self.source == "geocode" and url != GEOCODE_URL)
+            or (self.source == "forecast" and url != WEATHER_URL)
+        ):
+            raise ValueError("mismatched trusted provider source")
         self.http_attempts += 1
         try:
             response = await self.client.get(url, params=params)
