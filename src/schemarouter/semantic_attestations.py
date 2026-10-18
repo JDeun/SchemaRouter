@@ -10,7 +10,7 @@ from typing import Literal
 
 from pydantic import model_validator
 
-from .models import StrictModel, ToolSpec
+from .models import FieldSpec, StrictModel, ToolSpec
 
 _HEX64 = re.compile(r"[0-9a-f]{64}\Z")
 _SEMANTIC = re.compile(r"[A-Za-z][A-Za-z0-9_.:/-]{0,159}\Z")
@@ -137,10 +137,7 @@ def apply_host_semantic_attestation(
             or member.json_schema.get("type") not in _SCALARS
         ):
             raise ValueError("unproved native member JSON Schema must abstain")
-        if (
-            mapping.member_kind == "output_field"
-            and member.unit_normalization is not None
-        ):
+        if isinstance(member, FieldSpec) and member.unit_normalization is not None:
             raise ValueError("unproved unit conversion cannot create semantic edge")
         if member.semantic_id is not None and member.semantic_id != mapping.semantic_id:
             raise ValueError("source semantic identity conflicts with host review")
