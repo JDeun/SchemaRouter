@@ -273,3 +273,51 @@ def test_valid_attestation_does_not_allow_declaring_new_readonly_or_updating_reg
     )
     assert tool.fingerprint == fingerprint
     assert tool.endpoint("read_case").read_only is None
+
+
+def test_approved_existing_openapi_fields_feed_real_authorized_fieldgroup_topk():
+    """An attestation must yield useful source-native candidates, not metadata-only tests."""
+    original = _native_openapi()
+    # This owner-local authority declaration is separate from the semantic
+    # attestation; remote MCP hints never acquire read-only permission here.
+    original.endpoint("lookup").read_only = True
+    annotated = apply_host_semantic_attestation(
+        original, attestation=_attest(
+            original, "lookup",
+            ("output_field", "contact_id", "crm.contact_id"),
+            ("output_field", "status", "crm.status"),
+        ),
+    )
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="contacts.lookup",
+            roles_any=("analyst",),
+        ),),
+    ))
+    router.add_tool(annotated)
+    group = NativeDeclaredFieldGroup(
+        aliases=("contact identity and status", "연락처 ID와 상태"),
+        required_fields=(
+            CapabilityFieldContract(
+                semantic_id="crm.contact_id", json_schema={"type": "string"},
+            ),
+            CapabilityFieldContract(
+                semantic_id="crm.status", json_schema={"type": "string"},
+            ),
+        ),
+        source_type="crm", license="host-approved-terms",
+    )
+    for query in group.aliases:
+        result = retrieve_authorized_field_group(
+            router, query, principal=ANALYST, group=group,
+        )
+        assert [candidate.route_id for candidate in result.candidates] == [
+            "contacts.lookup",
+        ]
+        assert result.candidates[0].tool_fingerprint == annotated.fingerprint
+        assert result.candidates[0].endpoint_fingerprint == annotated.endpoint(
+            "lookup"
+        ).fingerprint
+    assert all(field.semantic_id is None
+               for field in original.endpoint("lookup").output_fields)
