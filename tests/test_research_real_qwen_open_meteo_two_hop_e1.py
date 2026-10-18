@@ -11,11 +11,19 @@ from typing import Any
 import httpx
 import pytest
 
+from schemarouter import PolicyViolationError
+from scripts.research_authorized_agent_tool_surface import (
+    capture_authorized_agent_tool_surface,
+)
+from scripts.research_open_meteo_live_two_hop_e1 import build_live_router
 from scripts.research_real_qwen_open_meteo_two_hop_e1 import (
+    PRINCIPAL,
+    USER_REQUESTS,
     _binding_matches,
     _matches_weather_final,
     evaluate_one,
 )
+from scripts.research_scoped_host_invocation import execute_scoped_host_call
 
 LAT = 37.56
 LON = 126.98
@@ -216,6 +224,30 @@ async def test_model_correct_tools_wrong_final_is_not_task_success() -> None:
     assert row["model_generated_two_step_complete"] is True
     assert row["full_task_complete"] is False
     assert row["termination_reason"] == "incorrect_final_value_or_format"
+
+
+@pytest.mark.asyncio
+async def test_host_required_fields_cannot_request_unregistered_or_wrong_shape() -> None:
+    seen: list[str] = []
+    async with httpx.AsyncClient(transport=_fixture_transport(seen)) as client:
+        router, _, _ = build_live_router(client)
+        view = capture_authorized_agent_tool_surface(
+            router, USER_REQUESTS["en"], principal=PRINCIPAL,
+        )
+        for wrong in (("not_a_public_field",), ["latitude", "longitude"]):
+            with pytest.raises(
+                PolicyViolationError, match="scoped host invocation denied",
+            ):
+                await execute_scoped_host_call(
+                    view, selected_route_ids=[
+                        "open_meteo_geocoding.search", "open_meteo_weather.current",
+                    ],
+                    route_id="open_meteo_geocoding.search",
+                    arguments={"name": CITY, "language": LANGUAGE,
+                               "country_code": COUNTRY},
+                    host_required_output_fields=wrong,
+                )
+        assert not seen
 
 
 def test_truthful_final_and_exact_second_hop_argument_binding() -> None:
