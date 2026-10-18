@@ -6,6 +6,7 @@ on:
       - "src/schemarouter/field_group_retrieval.py"
       - "src/schemarouter/__init__.py"
       - "tests/test_native_field_group_retrieval.py"
+      - "tests/test_public_api.py"
       - ".github/workflows/native-field-group-e0.yml"
       - "research/autoresearch/native-field-group-pre-k-e0.md"
   workflow_dispatch:
@@ -33,4 +34,4 @@ jobs:
       - name: Native opt-in contracts and existing E1 parity
         run: |
           ruff check src/schemarouter/field_group_retrieval.py tests/test_native_field_group_retrieval.py
-          python -m pytest -q tests/test_native_field_group_retrieval.py tests/test_research_required_field_group_e1.py
+          python -m pytest -q tests/test_native_field_group_retrieval.py tests/test_research_required_field_group_e1.py tests/test_public_api.py
