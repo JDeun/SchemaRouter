@@ -31,6 +31,9 @@ from scripts.research_real_qwen_bound_two_step_e0 import (
     parse_one_model_action,
 )
 from scripts.research_scoped_host_invocation import execute_scoped_host_call
+from scripts.research_source_ready_native_tool_menu_e1 import (
+    source_ready_visible_routes,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 ROUTES = ("open_meteo_geocoding.search", "open_meteo_weather.current")
@@ -110,12 +113,14 @@ def _binding_matches(
 async def evaluate_one(
     agent: Any, client: httpx.AsyncClient, *,
     language: str, city: str, country: str,
+    menu_mode: str = "all_visible",
 ) -> dict[str, Any]:
     """Never convert a denied/incomplete model action into a successful call."""
     if (
         (language, city, country) not in CASES
         or language not in USER_REQUESTS
         or not callable(getattr(agent, "generate", None))
+        or menu_mode not in ("all_visible", "state_ready")
     ):
         raise ValueError("unregistered source task or model")
     router, geocode, weather = build_live_router(client)
@@ -135,6 +140,7 @@ async def evaluate_one(
     host_failure_after_http_attempt: bool | None = None
     trusted_failure_stage: str | None = None
     total_model_ms = 0.0
+    executed_routes: list[str] = []
 
     for _ in range(MAX_TURNS):
         turns += 1
@@ -144,7 +150,22 @@ async def evaluate_one(
         )
         if set(view.visible_route_ids) != set(ROUTES):
             raise PolicyViolationError("public source visibility unexpectedly changed")
-        definitions = view.tool_definitions(list(ROUTES), k=2)
+        # Experimental source readiness: only expose original authorized
+        # read-only endpoints whose required native inputs actually exist
+        # in owner-supplied request context or validated public state.
+        # The default arm retains the exact original tool menu.
+        offered = (
+            source_ready_visible_routes(
+                view,
+                host_request_inputs={
+                    "name": city, "language": language, "country_code": country,
+                },
+                prior_public_observation=actual_location,
+                executed_route_ids=tuple(executed_routes),
+            )
+            if menu_mode == "state_ready" else ROUTES
+        )
+        definitions = view.tool_definitions(list(offered), k=2) if offered else []
         generated = agent.generate(messages, definitions)
         view.assert_source_unchanged()
         if (
@@ -192,7 +213,7 @@ async def evaluate_one(
             # This is the ALREADY EXISTING trusted planner, auth gate,
             # read-only RegistryExecutor and output projection.
             observation = await execute_scoped_host_call(
-                view, selected_route_ids=list(ROUTES),
+                view, selected_route_ids=list(offered),
                 route_id=route, arguments=arguments,
                 host_required_output_fields=(
                     ("latitude", "longitude") if route == ROUTES[0]
@@ -248,6 +269,7 @@ async def evaluate_one(
             break
 
         completed += 1
+        executed_routes.append(route)
         if route == ROUTES[0]:
             # The provider adapter independently checks the original
             # location ID. SchemaRouter correctly omits identifier-only
