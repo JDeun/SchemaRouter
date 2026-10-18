@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "scripts/research_native_semantic_graph_g3.py"
+      - "scripts/research_authorized_native_graph_edges_g1.py"
       - "scripts/research_verified_graph_paths_g2.py"
       - "tests/test_research_native_semantic_graph_g3.py"
       - ".github/workflows/research-native-semantic-graph-g3.yml"
