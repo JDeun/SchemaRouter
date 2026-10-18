@@ -402,7 +402,6 @@ def main() -> None:
                 "real_geocoding_http_attempts": row["real_geocoding_http_attempts"],
                 "real_forecast_http_attempts": row["real_forecast_http_attempts"],
                 "host_exception_family": row["host_exception_family"],
-                "trusted_failure_stage": row["trusted_failure_stage"],
                 "full_task_complete": row["full_task_complete"],
                 "termination_reason": row["termination_reason"],
             }
