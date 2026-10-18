@@ -68,7 +68,10 @@ def _raw_tools():
     return contacts, cases, materials
 
 
-def _router(*, locally_reviewed: bool, scoped: bool = False) -> SchemaRouter:
+def _router(
+    *, locally_reviewed: bool, scoped: bool = False,
+    root_unknown_schema: bool = False, consumer_extra_schema: bool = False,
+) -> SchemaRouter:
     contacts, cases, materials = _raw_tools()
     if locally_reviewed:
         # TRUSTED LOCAL source-owner augmentation. Never derived from remote
@@ -85,6 +88,15 @@ def _router(*, locally_reviewed: bool, scoped: bool = False) -> SchemaRouter:
         status = next(f for f in cases.endpoint("read_case").output_fields
                       if f.name == "status")
         status.semantic_id = "support.status"
+
+    # Alter source-owned adapter contracts BEFORE registration; registry.get
+    # returns a defensive copy and must not be used to simulate source drift.
+    if root_unknown_schema:
+        contacts.endpoint("lookup_contact").input_schema[
+            "unevaluatedProperties"
+        ] = False
+    if consumer_extra_schema:
+        cases.endpoint("read_case").input_schema["additionalProperties"] = False
 
     rules = (
         AuthorizationRule(effect="allow", operation="contacts.lookup_contact",
@@ -175,23 +187,21 @@ def test_host_review_never_overrides_principal_scope_or_schema_constraints():
 
     # Preserve actual adapter input envelopes. An unproven extra constraint
     # must fail closed rather than be dropped to claim a graph edge.
-    restricted = _router(locally_reviewed=True)
-    endpoint = restricted.registry.get("cases").endpoint("read_case")
-    endpoint.input_schema["additionalProperties"] = False
+    restricted = _router(locally_reviewed=True, consumer_extra_schema=True)
     assert retrieve_verified_graph_paths_g2(
         restricted, ALIASES[0], principal=ANALYST, goal=_goal(restricted),
     ) == ()
 
 
 def test_real_openapi_empty_input_envelope_refuses_unknown_constraints():
-    router = _router(locally_reviewed=True)
-    source = router.registry.get("contacts").endpoint("lookup_contact")
+    baseline = _router(locally_reviewed=True)
+    source = baseline.registry.get("contacts").endpoint("lookup_contact")
     assert source.parameters == []
     assert source.input_schema == {
         "type": "object", "properties": {}, "additionalProperties": False,
     }
-    # This is not an empty contract anymore; do not erase or bypass it.
-    source.input_schema["unevaluatedProperties"] = False
+    # Declare an unsupported constraint in the actual registered source.
+    router = _router(locally_reviewed=True, root_unknown_schema=True)
     assert retrieve_verified_graph_paths_g2(
         router, ALIASES[0], principal=ANALYST, goal=_goal(router),
     ) == ()
