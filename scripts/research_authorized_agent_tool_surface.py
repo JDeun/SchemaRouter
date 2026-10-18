@@ -29,6 +29,7 @@ from scripts.research_bounded_authorized_semantic_diagnostic import (
 MAX_SOURCE_ENDPOINTS = 500
 MAX_TOOL_DEFINITIONS = 5
 MAX_MODEL_TOOL_JSON_BYTES = 131072
+MAX_MODEL_CATALOG_INDEX_JSON_BYTES = 32768
 MAX_MODEL_OBSERVATION_JSON_BYTES = 32768
 SCALAR_TYPES = (type(None), bool, int, float, str)
 ALLOWED_SCHEMA_TYPES = frozenset({
@@ -189,6 +190,46 @@ class AuthorizedAgentToolSurface:
             )
         ):
             raise PolicyViolationError("authorization policy modified in place")
+
+    def catalog_index(
+        self, *, max_json_bytes: int = MAX_MODEL_CATALOG_INDEX_JSON_BYTES,
+    ) -> tuple[tuple[str, str], ...]:
+        """Read-only authorized route ID + description index; NEVER an action.
+
+        The index exposes only the previously captured, policy-projected,
+        native source descriptions. It does not carry argument schemas,
+        fingerprints, raw fixture data, callable tools or execution grants.
+        Fail closed on oversize catalogs rather than silently truncating
+        the available routes; disclosure still requires a fresh witness.
+        """
+        if (
+            type(max_json_bytes) is not int
+            or not 1 <= max_json_bytes <= MAX_MODEL_TOOL_JSON_BYTES
+        ):
+            raise ValueError("invalid scoped catalog index byte budget")
+        self.assert_source_unchanged()
+        routes = self._semantic_source_routes
+        if (
+            len(routes) != len(self.visible_route_ids)
+            or tuple(route.route_id for route in routes) != self.visible_route_ids
+        ):
+            raise PolicyViolationError("scoped catalog source identity mismatch")
+        entries = tuple(
+            (route.route_id, route.description) for route in routes
+        )
+        try:
+            encoded = json.dumps(
+                entries, ensure_ascii=False, separators=(",", ":"),
+                allow_nan=False,
+            ).encode("utf-8")
+        except (TypeError, ValueError, OverflowError):
+            raise PolicyViolationError(
+                "scoped catalog index could not be serialized",
+            ) from None
+        if len(encoded) > max_json_bytes:
+            raise ValueError("scoped catalog index exceeds research byte cap")
+        self.assert_source_unchanged()
+        return entries
 
     def tool_definitions(
         self, selected_route_ids: list[str], *, k: int = MAX_TOOL_DEFINITIONS,
