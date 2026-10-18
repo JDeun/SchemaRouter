@@ -67,7 +67,7 @@ def _live() -> dict:
         "live_irrelevance": [
             {"id": f"live_irrelevance_{i}-0-0",
              "question": [[{"role": "user", "content": "Translate this audio"}]],
-             "function": [BAD]}
+             "function": [] if i < 4 else [BAD]}
             for i in range(24)
         ],
     }
@@ -106,6 +106,17 @@ def test_cutoff_does_not_calibrate_on_live_evaluation() -> None:
     rows = stats([0.0] * 100, values, cutoff)
     assert rows["supported_false_refused"] == 100
     assert rows["unsupported_false_accepted"] <= 12
+
+
+def test_empty_catalog_is_structural_no_call_not_classifier_skill() -> None:
+    query, funcs = parse_task({
+        "question": [[{"role": "user", "content": "Unsupported need"}]],
+        "function": [],
+    })
+    assert query == "Unsupported need"
+    assert not funcs
+    with pytest.raises(ValueError, match="empty source menu"):
+        pair_features(query, funcs, E5CachedEmbedder(fake_encode))
 
 
 def test_model_only_reads_original_query_and_offered_function_descriptions() -> None:
@@ -175,9 +186,12 @@ def test_pair_fit_training_and_live_evaluation_do_not_mix_denominators() -> None
     evidence = result["live_category_evaluation"]
     assert evidence["supported"] == 16
     assert evidence["irrelevant"] == 24
+    assert evidence["irrelevant_with_candidate_functions"] == 20
+    assert evidence["irrelevant_zero_candidate_functions"] == 4
     for arm in ("e5_raw_cosine", "trained_pair_fit"):
         assert evidence[arm]["live"]["supported_total"] == 16
-        assert evidence[arm]["live"]["unsupported_total"] == 24
+        assert evidence[arm]["live"]["unsupported_total"] == 20
+        assert evidence[arm]["live"]["unsupported_false_accepted"] <= 20
     assert result["actual_provider_calls"] is False
     assert result["independently_authored_private_e2"] is False
     assert result["default_product_changed"] is False
