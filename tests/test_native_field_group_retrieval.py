@@ -240,3 +240,40 @@ def test_actual_mcp_and_openapi_converters_share_native_fieldgroup_boundary():
         "api.read_status", "mcp.read_status",
     }
     assert result.total_ranked == 2
+
+
+def test_fieldgroup_pre_k_keeps_five_complete_routes_after_many_partial_matches():
+    """Full required fields must be gated BEFORE lexical Top-K, not filtered after."""
+    router = _router()
+    for index in range(120):
+        router.add_tool(ToolSpec(
+            name=f"noise_{index}", source_type="support_records",
+            license="locally-reviewed",
+            endpoints=[EndpointSpec(
+                name="read", read_only=True,
+                description="support status and priority",
+                output_fields=[_field("status", "support.status")],
+            )],
+        ))
+    for index in range(6):
+        router.add_tool(ToolSpec(
+            name=f"complete_{index}", source_type="support_records",
+            license="locally-reviewed",
+            endpoints=[EndpointSpec(
+                name="read", read_only=True,
+                description="support status and priority",
+                output_fields=[
+                    _field("status", "support.status"),
+                    _field("priority", "support.priority"),
+                ],
+            )],
+        ))
+    result = retrieve_authorized_field_group(
+        router, GROUP.aliases[0], principal=ANALYST, group=GROUP,
+    )
+    assert result.total_ranked == 7
+    assert len(result.candidates) == 5
+    assert all(candidate.route_id.startswith(("complete", "complete_"))
+               for candidate in result.candidates)
+    assert all(not candidate.route_id.startswith("noise_")
+               for candidate in result.candidates)
