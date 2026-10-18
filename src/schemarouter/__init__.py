@@ -384,6 +384,11 @@ from .inspection import (
     raw_tool_spec_document,
     tool_spec_document,
 )
+from .native_semantic_index import (
+    IndexedNativeFieldCandidate,
+    IndexedNativeFieldResult,
+    NativeSchemaPostingIndex,
+)
 from .models import (
     AuthRequirementSet,
     AuthSchemeRequirement,
@@ -570,6 +575,9 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
+    "IndexedNativeFieldCandidate",
+    "IndexedNativeFieldResult",
+    "NativeSchemaPostingIndex",
     "NativeConceptCatalog",
     "NativeDeclaredConcept",
     "ResolvedNativeConcepts",
