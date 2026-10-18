@@ -44,19 +44,21 @@ class DeclaredTwoHopGraphIntent:
 
     first: DeclaredQueryInputLink
     second: DeclaredQueryInputLink
-    required_final_semantics: tuple[str, ...]
+    required_final_fields: tuple[CapabilityFieldContract, ...]
     first_consumer_fingerprint: str
     second_consumer_fingerprint: str
 
     def __post_init__(self) -> None:
         if (
-            type(self.required_final_semantics) is not tuple
-            or not 1 <= len(self.required_final_semantics) <= 4
-            or any(type(s) is not str or not s or s != s.strip()
-                   for s in self.required_final_semantics)
-            or len(set(self.required_final_semantics)) != len(self.required_final_semantics)
-            or self.second.target_output_semantic_id
-            not in self.required_final_semantics
+            type(self.required_final_fields) is not tuple
+            or not 1 <= len(self.required_final_fields) <= 4
+            or any(type(field) is not CapabilityFieldContract
+                   for field in self.required_final_fields)
+            or len({field.semantic_id for field in self.required_final_fields})
+            != len(self.required_final_fields)
+            or self.second.target_output_semantic_id not in {
+                field.semantic_id for field in self.required_final_fields
+            }
             or self.first.target_route_id == self.second.target_route_id
             or self.first.target_output_semantic_id != self.second.input_semantic_id
             or self.first.query_aliases != self.second.query_aliases
@@ -117,16 +119,12 @@ def _compatible_field_name(
 
 
 def _has_all_final_fields(
-    endpoint: EndpointSpec, semantics: tuple[str, ...],
+    endpoint: EndpointSpec, required: tuple[CapabilityFieldContract, ...],
 ) -> bool:
+    # Reuse the same canonical typed comparator as the graph edges.
     return all(
-        any(
-            field.semantic_id == required
-            and field.unit_normalization is None
-            and _simple_scalar_schema(field.json_schema)
-            for field in endpoint.output_fields
-        )
-        for required in semantics
+        _compatible_field_name(endpoint, field) is not None
+        for field in required
     )
 
 
@@ -179,7 +177,7 @@ def retrieve_authorized_two_hop_hints_g2(
     intermediate_endpoint = routes[one.target_route_id][1]
     final_endpoint = routes[two.target_route_id][1]
     if not _has_all_final_fields(
-        final_endpoint, declaration.required_final_semantics,
+        final_endpoint, declaration.required_final_fields,
     ):
         router._check_retrieval_authority_witness(witness)
         return ()
@@ -229,6 +227,10 @@ def retrieve_authorized_two_hop_hints_g2(
     graph = snapshot.build_graph()
     if len(graph.capability_ids) > MAX_VISIBLE_ROUTES or len(graph.edges) > MAX_GRAPH_EDGES:
         raise ValueError("G2 authorized graph budget exceeded")
+    # Only two declared nodes can consume graph fields. If the final tool
+    # also feeds the intermediate, the graph is cyclic, not a safe path.
+    if two.target_route_id in graph.predecessors(one.target_route_id):
+        raise ValueError("G2 declared path participates in a dependency cycle")
     if one.target_route_id not in graph.predecessors(two.target_route_id):
         router._check_retrieval_authority_witness(witness)
         return ()
@@ -270,7 +272,9 @@ def retrieve_authorized_two_hop_hints_g2(
                 consumer_input_parameter=two.parameter_name,
                 semantic_id=two.input_semantic_id,
             ),
-            verified_final_semantics=declaration.required_final_semantics,
+            verified_final_semantics=tuple(
+                field.semantic_id for field in declaration.required_final_fields
+            ),
             authorized_snapshot_id=snapshot.snapshot_id,
         ))
     if len(hints) > k:
