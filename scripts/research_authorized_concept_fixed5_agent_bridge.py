@@ -11,8 +11,8 @@ from dataclasses import dataclass, field
 from schemarouter import PolicyViolationError
 from schemarouter.concept_retrieval import (
     NativeConceptCatalog,
-    retrieve_authorized_concepts,
     resolve_native_concepts,
+    retrieve_authorized_concepts,
 )
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
 from scripts.research_authorized_fixed5_decision_bridge import _visible_fingerprints
