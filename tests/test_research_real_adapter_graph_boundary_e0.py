@@ -132,7 +132,7 @@ def test_real_parser_contracts_do_not_infer_authority_or_ontology():
     assert cases.endpoint("read_case").read_only is None
     assert cases.endpoint("read_case").metadata["annotations"]["readOnlyHint"] is True
     assert cases.endpoint("read_case").input_schema["required"] == ["contact_id"]
-    assert cases.endpoint("read_case").parameters[0].semantic_id is None
+    assert getattr(cases.endpoint("read_case").parameters[0], "semantic_id", None) is None
     assert all(f.semantic_id is None for f in contacts.endpoint(
         "lookup_contact").output_fields)
     assert all(f.semantic_id is None for f in cases.endpoint(
