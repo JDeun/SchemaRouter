@@ -20,7 +20,17 @@ from schemarouter.capability_graph import build_capability_dependency_graph
 from schemarouter.models import EndpointSpec, FieldSpec, ToolSpec
 
 MAX_VISIBLE_ROUTES = 512
+MAX_VISIBLE_FIELDS = 4096
 STRICT_K = 5
+
+
+def _simple_scalar_schema(schema: dict) -> bool:
+    """Canonical comparator checks scalar types, not arbitrary JSON constraints."""
+    return (
+        type(schema) is dict
+        and set(schema) == {"type"}
+        and schema["type"] in {"string", "integer", "number", "boolean"}
+    )
 
 
 def _norm(value: str) -> str:
@@ -68,13 +78,18 @@ class NonExecutableDependencyHint:
 
 
 def _produced_fields(endpoint: EndpointSpec) -> list[CapabilityFieldContract]:
-    return [
-        capability
-        for field in endpoint.output_fields
-        if field.semantic_id is not None
-        and isinstance(field.json_schema.get("type"), str)
-        if (capability := CapabilityFieldContract.from_field(field)) is not None
-    ]
+    fields = []
+    for field in endpoint.output_fields:
+        if (
+            field.semantic_id is None
+            or field.unit_normalization is not None
+            or not _simple_scalar_schema(field.json_schema)
+        ):
+            continue
+        contract = CapabilityFieldContract.from_field(field)
+        if contract is not None:
+            fields.append(contract)
+    return fields
 
 
 def _safe_routes(
@@ -86,6 +101,7 @@ def _safe_routes(
     visible = router._scoped_analysis_registry(principal, allowed)
     entries: dict[str, tuple[ToolSpec, EndpointSpec]] = {}
     availability = router.planner.availability_predicate
+    visible_field_count = 0
     for tool in visible.tools():
         for endpoint in tool.endpoints:
             if endpoint.read_only is not True or endpoint.destructive is True:
@@ -94,6 +110,9 @@ def _safe_routes(
                 continue
             if availability is not None and not availability(tool, endpoint):
                 continue
+            visible_field_count += len(endpoint.output_fields)
+            if visible_field_count > MAX_VISIBLE_FIELDS:
+                raise ValueError("authorized graph field budget exceeded")
             route_id = f"{tool.key}.{endpoint.name}"
             if route_id in entries or len(entries) >= MAX_VISIBLE_ROUTES:
                 raise ValueError("invalid or over-budget authorized graph source")
@@ -112,7 +131,7 @@ def _target_requirement(
     # The target must actually produce the claimed answer semantic.
     if not any(
         field.semantic_id == link.target_output_semantic_id
-        and isinstance(field.json_schema.get("type"), str)
+        and _simple_scalar_schema(field.json_schema)
         for field in endpoint.output_fields
     ):
         return None
@@ -120,7 +139,12 @@ def _target_requirement(
     if (
         len(required_params) != 1
         or required_params[0].name != link.parameter_name
-        or not isinstance(required_params[0].json_schema.get("type"), str)
+        or required_params[0].location in {"header", "body_root"}
+        or not _simple_scalar_schema(required_params[0].json_schema)
+        or any(
+            name != link.parameter_name
+            for name in endpoint.input_schema.get("required", [])
+        )
     ):
         # No silently ignored extra required arguments or guessed inputs.
         return None
@@ -176,6 +200,8 @@ def retrieve_authorized_dependency_hints_g1(
         compatible = [
             field for field in endpoint.output_fields
             if field.semantic_id is not None
+            and field.unit_normalization is None
+            and _simple_scalar_schema(field.json_schema)
             and (contract := CapabilityFieldContract.from_field(field)) is not None
             and compare_capability_fields(target, contract).satisfies
         ]
