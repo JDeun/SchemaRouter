@@ -91,7 +91,7 @@ def _router(*, many_partial=0, many_complete=0):
                         _field("priority", "crm.priority", typ="integer")],
          "crm", "reviewed", True),
         ("wrong_unit", [_field("status", "crm.status"),
-                        _field("priority", "crm.priority", unit="kg")],
+                        _field("priority", "crm.priority", typ="number", unit="kg")],
          "crm", "reviewed", True),
         ("wrong_source", [_field("status", "crm.status"),
                           _field("priority", "crm.priority")],
