@@ -85,6 +85,7 @@ from .models import (
     CapabilityRouteRetrieval,
     EndpointSpec,
     ExecutionPlan,
+    FieldSpec,
     PlanRequest,
     ToolCall,
     ToolResult,
@@ -150,6 +151,22 @@ from .validation import projected_output_schema
 
 _T = TypeVar("_T")
 _SYNC_LOOP_RUNNER = SyncLoopRunner()
+
+
+def _scoped_public_output_schema(fields: list[FieldSpec]) -> dict[str, Any]:
+    """Only the declared visible projected fields; never a raw provider schema.
+
+    Server-side projection is an execution capability, NOT a prerequisite for
+    removing hidden field metadata from an agent-facing scoped catalog.
+    Raw provider validation still uses the original unmodified endpoint.
+    """
+    return {
+        "type": "object",
+        "properties": {
+            field.name: field.json_schema.copy()
+            for field in fields
+        },
+    }
 
 
 def _require_execution_event_exception(
@@ -427,9 +444,10 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             update={
                 "parameters": parameters,
                 "output_fields": visible_fields,
-                "output_schema": projected_output_schema(
-                    endpoint,
-                    selected_names,
+                "output_schema": (
+                    _scoped_public_output_schema(visible_fields)
+                    if len(visible_fields) < len(endpoint.output_fields)
+                    else projected_output_schema(endpoint, selected_names)
                 ),
                 "server_projection": server_projection,
             },
@@ -577,9 +595,10 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                             field.model_copy(deep=True)
                             for field in visible_fields
                         ],
-                        "output_schema": projected_output_schema(
-                            endpoint,
-                            selected_names,
+                        "output_schema": (
+                            _scoped_public_output_schema(visible_fields)
+                            if hidden_field_names
+                            else projected_output_schema(endpoint, selected_names)
                         ),
                         "matched_fields": matched_fields,
                         "score_components": score_components,
