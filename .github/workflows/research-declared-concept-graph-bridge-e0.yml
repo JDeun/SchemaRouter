@@ -1,0 +1,39 @@
+name: Declared Concept Graph Field Bridge E0
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_declared_concept_graph_bridge_e0.py"
+      - "tests/test_research_declared_concept_graph_bridge_e0.py"
+      - "research/autoresearch/initial-paper-graph-retrieval-crosswalk-e0.md"
+      - ".github/workflows/research-declared-concept-graph-bridge-e0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: declared-field-graph-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  exact-declared-graph:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install checked-out source and lint/test tools
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23" "ruff>=0.9,<1"
+      - name: Test declared graph field route retrieval and scope
+        run: |
+          ruff check scripts/research_declared_concept_graph_bridge_e0.py tests/test_research_declared_concept_graph_bridge_e0.py
+          python -m pytest -q tests/test_research_declared_concept_graph_bridge_e0.py
+# No model, provider traffic, graph DB, LLM agent loop, execution, gold,
+# independent multilingual generalization, default change or release.
