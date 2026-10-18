@@ -116,16 +116,29 @@ class NonExecutableGraphPathG2:
 def _native_required_param(
     endpoint: EndpointSpec,
 ) -> tuple[str, dict] | None:
-    # G2 deliberately does not interpret arbitrary input_schema/$ref,
-    # provider credentials, extra required parameters or auth flow.
-    if endpoint.input_schema or endpoint.auth_requirements:
+    # A source can publish a plain object input envelope (as MCP does).
+    # Only prove the exact trivial one-property schema. Do not silently
+    # discard unknown JSON Schema constraints, $refs or provider auth.
+    if endpoint.auth_requirements:
         return None
     if any(p.location in {"header", "body_root"} for p in endpoint.parameters):
         return None
     required = [p for p in endpoint.parameters if p.required]
     if len(required) != 1 or not _simple_scalar_schema(required[0].json_schema):
         return None
-    return (required[0].name, required[0].json_schema)
+    parameter = required[0]
+    declared = endpoint.input_schema
+    if declared and (
+        type(declared) is not dict
+        or set(declared) != {"type", "properties", "required"}
+        or declared["type"] != "object"
+        or type(declared["properties"]) is not dict
+        or declared["properties"] != {parameter.name: parameter.json_schema}
+        or declared["required"] != [parameter.name]
+        or len(endpoint.parameters) != 1
+    ):
+        return None
+    return (parameter.name, parameter.json_schema)
 
 
 def _full_target_outputs(
