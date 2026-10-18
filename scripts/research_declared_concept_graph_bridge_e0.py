@@ -13,9 +13,9 @@ from __future__ import annotations
 
 import json
 import unicodedata
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import Mapping
 
 from schemarouter import PlanRequest, QueryIntent
 from schemarouter.capability_contracts import SemanticEquivalence
