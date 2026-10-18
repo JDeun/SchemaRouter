@@ -7,11 +7,11 @@ from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
     DataScopeRule,
+    EndpointSpec,
+    FieldSpec,
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
-    EndpointSpec,
-    FieldSpec,
 )
 from schemarouter.adapters import tool_from_mcp, tool_from_openapi
 from schemarouter.capability_contracts import CapabilityFieldContract
