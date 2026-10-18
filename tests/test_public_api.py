@@ -7,6 +7,9 @@ import schemarouter
 def test_public_framework_exports_are_intentional_and_stable() -> None:
     expected = {
         "__version__",
+        "HostSemanticAttestation",
+        "HostSemanticMapping",
+        "apply_host_semantic_attestation",
         "AggregatedField",
         "CanonicalEntity",
         "CapabilityCandidate",
