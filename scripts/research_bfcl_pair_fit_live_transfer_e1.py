@@ -91,12 +91,12 @@ def parse_task(row: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
     funcs = row.get("function")
     if (
         type(turns) is not list or len(turns) != 1
-        or type(turns[0]) is not list or len(turns[0]) != 1
-        or type(turns[0][0]) is not dict
-        or turns[0][0].get("role") != "user"
-        or type(turns[0][0].get("content")) is not str
-        or not turns[0][0]["content"].strip()
-        or len(turns[0][0]["content"]) > 25_000
+        or type(turns[0]) is not list
+        or len(turns[0]) not in (1, 2)
+        or any(type(message) is not dict for message in turns[0])
+        or [m.get("role") for m in turns[0]] not in (
+            ["user"], ["system", "user"],
+        )
         or type(funcs) is not list
         or not 1 <= len(funcs) <= MAX_FUNCTIONS
         or any(
@@ -107,9 +107,15 @@ def parse_task(row: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
         )
     ):
         raise ValueError("BFCL original one-turn function shape unsupported")
+    # Publisher prompts may include a prepended system message. It is
+    # untrusted corpus text, NOT host authority; never pass it to our
+    # semantic feature encoder or treat it as a trusted instruction.
+    user = turns[0][-1].get("content")
+    if type(user) is not str or not user.strip() or len(user) > 25_000:
+        raise ValueError("BFCL user query invalid")
     if len({fn["name"] for fn in funcs}) != len(funcs):
         raise ValueError("duplicate publisher offered function name")
-    return turns[0][0]["content"], funcs
+    return user, funcs
 
 
 def pair_features(
