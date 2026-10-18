@@ -33,6 +33,11 @@ is invoked and no argument values or execution plan are inferred.
 
 ## E0 controls
 
+- A second offline integration test uses **real production** `tool_from_openapi`
+  and `tool_from_mcp` schema converters; local source-owner revision
+  explicitly annotates the identifier field and native MCP input semantic,
+  then host-attested G3 proves the OpenAPI→MCP one-hop path in EN/KO/JA.
+  This is not real network discovery or proof of live provider success.
 - Exact authored EN/KO/JA aliases, scholar-reference non-material chain
   `papers.read → citations.read → claims.read`, complete two-field goal and
   result parity with explicitly declared pinned G2.
