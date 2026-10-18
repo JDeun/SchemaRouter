@@ -1,0 +1,77 @@
+"""Public BFCL menu-size source-negative tail: scoped exploratory only."""
+from __future__ import annotations
+
+import json
+
+import pytest
+
+from scripts.research_bfcl_pair_fit_live_transfer_e1 import (
+    familywise_negative_tail_accept,
+)
+from tests.test_research_bfcl_pair_fit_live_transfer_e1 import (
+    _live,
+    _training,
+    fake_encode,
+)
+
+
+NEGATIVE_120 = [i / 120.0 for i in range(120)]
+
+
+def test_finite_original_calibration_resolution_prevents_big_menu_extrapolation():
+    assert familywise_negative_tail_accept([1.0], NEGATIVE_120)
+    assert familywise_negative_tail_accept([1.0] * 12, NEGATIVE_120)
+    assert not familywise_negative_tail_accept([1.0] * 13, NEGATIVE_120)
+    assert not familywise_negative_tail_accept([1.0] * 37, NEGATIVE_120)
+
+
+def test_candidate_tail_and_ties_account_for_each_nonfit_comparison():
+    assert not familywise_negative_tail_accept([0.5], NEGATIVE_120)
+    assert not familywise_negative_tail_accept([0.9] * 8, NEGATIVE_120)
+    assert familywise_negative_tail_accept([1.0] * 4, NEGATIVE_120)
+    assert not familywise_negative_tail_accept(
+        [0.8],
+        [0.8] * 120,
+    )
+
+
+@pytest.mark.parametrize("candidates,negatives", (
+    ([], NEGATIVE_120),
+    ([float("nan")], NEGATIVE_120),
+    ([True], NEGATIVE_120),
+    ([1.0] * 501, NEGATIVE_120),
+    ([1.0], NEGATIVE_120[:119]),
+    ([1.0], [float("inf")] * 120),
+))
+def test_reject_invalid_or_unsupported_source_calibration(candidates, negatives):
+    with pytest.raises(ValueError, match="invalid source-pinned"):
+        familywise_negative_tail_accept(candidates, negatives)
+
+
+def test_original_bfcl_source_e5_scorer_unchanged_without_optin():
+    pytest.importorskip("sklearn", reason="research-only classifier dependency")
+    from scripts.research_bfcl_pair_fit_live_transfer_e1 import run
+
+    old = run(_training(), _live(), fake_encode)
+    trial = run(_training(), _live(), fake_encode, menu_familywise=True)
+    assert old["live_category_evaluation"]["e5_raw_cosine"] == (
+        trial["live_category_evaluation"]["e5_raw_cosine"]
+    )
+    assert old["live_category_evaluation"]["trained_pair_fit"] == (
+        trial["live_category_evaluation"]["trained_pair_fit"]
+    )
+    assert "menu_familywise_diagnostic" not in old["live_category_evaluation"]
+    extra = trial["live_category_evaluation"]["menu_familywise_diagnostic"]
+    assert extra["supported_total"] == 16
+    assert extra["unsupported_total"] == 20
+    assert extra["supported_admitted"] + extra["supported_false_refused"] == 16
+    assert extra["unsupported_false_accepted"] + extra[
+        "unsupported_correctly_refused"
+    ] == 20
+    assert extra["external_independent_e2_qualified"] is False
+    assert extra["source"] == "original_odd_id_negative_score_tail_Bonferroni"
+    assert not trial["production_threshold_calibrated"]
+    assert not trial["release_qualified"]
+    dumped = json.dumps(trial, ensure_ascii=False)
+    assert "Search scientific papers" not in dumped
+    assert "Translate this audio" not in dumped
