@@ -6,6 +6,7 @@ import json
 
 import pytest
 
+from schemarouter import E5CachedEmbedder
 from scripts.research_bfcl_pair_fit_live_transfer_e1 import (
     _reject_duplicate_pairs,
     fixed_fpr_cutoff,
@@ -15,7 +16,6 @@ from scripts.research_bfcl_pair_fit_live_transfer_e1 import (
     run,
     stats,
 )
-from schemarouter import E5CachedEmbedder
 
 
 def _function(name: str, description: str) -> dict:
