@@ -9,7 +9,27 @@
 2. second route and **exact source-observed** first-output `latitude`, `longitude`; and
 3. a correct final JSON `{"temperature_2m":number,"unit":"°C","observed_at":string}` copied from observed second-stage actual weather result.
 
-Host enforces registered sequence and exact first-observation grounding, **never repairs a model proposal**. These checks are evaluation acceptance and cannot authorize actions. The two routes are registered read-only via `SchemaRouter.add_bound_tool`, never supplied as a fake outcome. Native original provider I/O only happens after `execute_scoped_host_call` revalidates a fresh principal-scoped source view, original route identity, schema, permission, tool fingerprints and Model-visible output projection, then executes using the existing registered bound invoker. API request URLs are fixed trusted Open-Meteo domains with no user/model hostname injection, no mutation, no credential, no redirect. No new agent executor, routing core, or library dependency is added.
+Host enforces registered sequence and exact first-observation grounding, **never repairs a model proposal**. These checks are evaluation acceptance and cannot authorize actions. **First negative integration result:** The original `execute_scoped_host_call`
+used only automatically planner-selected output fields. The real geocoding
+operation returned HTTP 200, but its model-visible projection contained
+**neither latitude nor longitude** (`lat0_lon0` presence diagnostic);
+therefore the first API step could not feed the second. Ignoring that
+failure or copying unprojected provider data into model context would
+invalidate the security boundary. We instead extended the *existing*
+research-only scoped host invocation API with an optional
+`host_required_output_fields: tuple[str,...]` contract. It accepts only
+unique original source field names positively present in the CURRENT
+principal-scoped capture, keeps the planner's original fields, and
+requires the host's additional listed fields before invoking the SAME
+native `router.execute` + post-execution scoped projector. The model
+cannot add fields, and any hidden, nonregistered, duplicate or invalid
+host-output contract fails closed. Host requires
+`(latitude, longitude)` at geocoding and
+`(time, temperature_2m, temperature_unit)` at forecast. No returned
+coordinates are inserted into the model answer by the host. The earlier
+no-model negative E0 tests are still negative outcomes, not omitted cases.
+
+The two routes are registered read-only via `SchemaRouter.add_bound_tool`, never supplied as a fake outcome. Native original provider I/O only happens after `execute_scoped_host_call` revalidates a fresh principal-scoped source view, original route identity, schema, permission, tool fingerprints and Model-visible output projection, then executes using the existing registered bound invoker. API request URLs are fixed trusted Open-Meteo domains with no user/model hostname injection, no mutation, no credential, no redirect. No new agent executor, routing core, or library dependency is added.
 
 **Use exactly the existing parser** from `scripts/research_real_qwen_bound_two_step_e0.py::parse_one_model_action` to disallow partial/multiple tool calls, duplicate JSON keys, unsafe complex/nonfinite args. Use the existing `append_authorized_nous_user_history_e0` to transmit only previously validated public observations as upstream-aligned Qwen Nous assistant/tool-response history. Generator: existing `LocalQwenAgent` from `scripts/agent_utility_v7_dev_agent.py`, `Qwen/Qwen3-0.6B` @ `c1899de289a04d12100db370d81485cdf75e47ca`, float32 Linux CPU greedy, up to four turns, max 256 output tokens per turn. Neither hidden gold, native executor callable nor private credentials are model inputs.
 
