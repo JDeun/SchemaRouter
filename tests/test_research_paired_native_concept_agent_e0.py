@@ -218,5 +218,24 @@ def test_trusted_catalog_change_is_not_reinterpreted_between_paired_arms():
                 ("different concept", "우선순위", "優先度"),
             )
         return FixedScriptedAgent()
-    with pytest.raises(PolicyViolationError, match="catalog mutated"):
+    with pytest.raises(PolicyViolationError, match="paired native ontology mutated"):
         _run(_router(), (_task(),), factory=mutate_after_first_selection, catalog=original)
+
+
+def test_valid_ontology_change_during_baseline_cannot_reapprove_other_arm():
+    catalog = CATALOG.model_copy(deep=True)
+    calls = 0
+
+    def mutate_after_lexical_selector():
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            object.__setattr__(
+                catalog.concepts[0], "aliases",
+                ("new status alias", "문의 상태", "問い合わせ状態"),
+            )
+        return FixedScriptedAgent()
+
+    with pytest.raises(PolicyViolationError, match="paired native ontology mutated"):
+        _run(_router(), (_task(),), factory=mutate_after_lexical_selector,
+             catalog=catalog)
