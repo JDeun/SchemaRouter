@@ -184,7 +184,9 @@ class OpenMeteoBoundInvoker:
         for attempt in range(self.transport_retry_budget + 1):
             self.http_attempts += 1
             try:
-                return await self.client.get(url, params=params)
+                response = await self.client.get(url, params=params)
+                self.last_failure_stage = None
+                return response
             except httpx.RequestError:
                 self.last_failure_stage = "http_transport_failure"
                 if attempt == self.transport_retry_budget:
