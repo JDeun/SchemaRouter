@@ -293,6 +293,8 @@ class NativeSchemaGraphIndex:
                 ))
         self.field_index._assert_source(router)
         router._check_retrieval_authority_witness(witness)
+        if router.planner.availability_predicate is not availability:
+            raise PolicyViolationError("G5 availability policy changed during lookup")
         policy = router.authorization_policy
         if policy is None or (
             policy.default_effect, repr(policy.rules), repr(policy.data_rules),
