@@ -53,7 +53,7 @@ jobs:
                           severity = float(prop.get("security-severity", 0))
                       except (ValueError, TypeError):
                           severity = 0
-                      if severity >= 7:
-                          counts[rule_id] += 1
+                      # Rule IDs only; no file paths, source or dataflow traces.
+                      counts[(rule_id, severity)] += 1
               print("SANITIZED_SECURITY_RULE_COUNTS", sorted(counts.items()))
           PY
