@@ -178,6 +178,10 @@ def test_publisher_system_preface_not_promoted_to_host_instruction() -> None:
 
 
 def test_pair_fit_training_and_live_evaluation_do_not_mix_denominators() -> None:
+    # The production package intentionally has no scikit-learn dependency.
+    # Dedicated research CPU CI installs it and MUST execute this test;
+    # generic wheel/core CI skips only the optional experiment.
+    pytest.importorskip("sklearn", reason="optional BFCL research classifier runtime")
     result = run(_training(), _live(), fake_encode)
     assert result["train_even"] == {
         "supported": 100, "irrelevant": 120, "individual_pairs": 320,
