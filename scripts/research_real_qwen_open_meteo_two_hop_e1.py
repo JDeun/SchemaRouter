@@ -131,6 +131,7 @@ async def evaluate_one(
     turns = 0
     correctly_ended = False
     reason = "turn_limit"
+    host_exception_family: str | None = None
     total_model_ms = 0.0
 
     for _ in range(MAX_TURNS):
@@ -194,7 +195,16 @@ async def evaluate_one(
                     else ("time", "temperature_2m", "temperature_unit")
                 ),
             )
-        except (PolicyViolationError, ValueError, RuntimeError):
+        except (PolicyViolationError, ValueError, RuntimeError) as exc:
+            # Only the bounded exception FAMILY is public. No provider body,
+            # URL, host exception message, coordinates or security details.
+            # ValueError can originate in the host OR source validation;
+            # it is not proof of a root cause or model-routing failure.
+            host_exception_family = (
+                "policy_violation" if isinstance(exc, PolicyViolationError)
+                else "value_error" if isinstance(exc, ValueError)
+                else "runtime_error"
+            )
             reason = "host_or_native_source_denied"
             break
         if (
@@ -245,14 +255,23 @@ async def evaluate_one(
 
     if completed != geocode.calls + weather.calls:
         raise ValueError("native provider calls differ from successful host observations")
-    if geocode.calls > 1 or weather.calls > 1:
-        raise ValueError("unexpected repeated native provider requests")
+    if (
+        not 0 <= geocode.calls <= geocode.http_attempts <= 1
+        or not 0 <= weather.calls <= weather.http_attempts <= 1
+        or (weather.http_attempts and geocode.calls != 1)
+    ):
+        raise ValueError("inconsistent attempted vs validated native source calls")
     return {
         "language": language,
         "model_turns": turns,
         "attempted_model_calls": attempted,
+        # `*_calls` are historic counters for *validated responses*.
+        # HTTP can have been attempted even when source data is rejected.
         "real_geocoding_calls": geocode.calls,
         "real_forecast_calls": weather.calls,
+        "real_geocoding_http_attempts": geocode.http_attempts,
+        "real_forecast_http_attempts": weather.http_attempts,
+        "host_exception_family": host_exception_family,
         "model_generated_first_step_complete": completed >= 1,
         "model_generated_two_step_complete": completed == 2,
         "strict_final_answer_correct": correctly_ended,
@@ -276,9 +295,15 @@ async def evaluate(
         "study": "REAL_QWEN_NATIVE_OPEN_METEO_TWO_STEP_E1_DEV",
         "case_count": len(outcomes),
         "outcomes": outcomes,
+        # Backward-compatible legacy counter: VALIDATED response calls only.
         "total_real_source_calls": sum(
             x["real_geocoding_calls"] + x["real_forecast_calls"] for x in outcomes
         ),
+        "total_real_http_attempts": sum(
+            x["real_geocoding_http_attempts"] + x["real_forecast_http_attempts"]
+            for x in outcomes
+        ),
+        "legacy_call_counter_measures_validated_responses_only": True,
         "model_generated_full_task_successes": sum(
             x["full_task_complete"] for x in outcomes
         ),
@@ -324,11 +349,15 @@ def main() -> None:
     print(json.dumps({
         "study": result["study"],
         "total_real_source_calls": result["total_real_source_calls"],
+        "total_real_http_attempts": result["total_real_http_attempts"],
         "model_generated_full_task_successes": result["model_generated_full_task_successes"],
         "by_language": {
             row["language"]: {
                 "real_geocoding_calls": row["real_geocoding_calls"],
                 "real_forecast_calls": row["real_forecast_calls"],
+                "real_geocoding_http_attempts": row["real_geocoding_http_attempts"],
+                "real_forecast_http_attempts": row["real_forecast_http_attempts"],
+                "host_exception_family": row["host_exception_family"],
                 "full_task_complete": row["full_task_complete"],
                 "termination_reason": row["termination_reason"],
             }
