@@ -211,7 +211,8 @@ async def test_provider_wrong_country_does_not_trigger_weather_call() -> None:
     assert row["model_generated_two_step_complete"] is False
     assert row["full_task_complete"] is False
     assert row["termination_reason"] == "host_or_native_source_denied"
-    assert row["host_exception_family"] == "value_error"
+    assert row["host_exception_family"] == "scoped_boundary_denial"
+    assert row["host_failure_after_http_attempt"] is True
     assert row["real_geocoding_http_attempts"] == 1
     assert row["real_geocoding_calls"] == 0
     assert row["real_forecast_http_attempts"] == 0
