@@ -116,7 +116,7 @@ def test_prefilter_equal_to_unfiltered_graph_for_randomized_authority(seed):
             ),) if hidden else (),
         )
         router.planner.availability_predicate = (
-            lambda tool, ep: tool.key not in unavailable
+            lambda tool, ep, blocked=unavailable: tool.key not in blocked
         )
         _assert_same(router, fast, exhaustive)
         _assert_same(
