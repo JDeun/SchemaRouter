@@ -10,7 +10,6 @@ from scripts.research_bfcl_pair_fit_live_transfer_e1 import (
 )
 
 
-
 def _fn(name: str, description: str) -> dict:
     return {
         "name": name, "description": description,
