@@ -1,0 +1,35 @@
+name: G5 Paired Authorization Density DEV
+
+on:
+  pull_request:
+    paths:
+      - "scripts/benchmark_g5_auth_density_e0.py"
+      - "tests/test_benchmark_g5_auth_density_e0.py"
+      - ".github/workflows/g5-auth-density-e0.yml"
+      - "research/autoresearch/g5-auth-density-e0.md"
+      - "scripts/benchmark_indexed_native_graph_g5_cpu_e0.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  paired-same-index-authorization-density:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install current source and test tools
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Same native index/typed graph G5 four-role safety regression
+        run: |
+          ruff check scripts/benchmark_g5_auth_density_e0.py tests/test_benchmark_g5_auth_density_e0.py
+          python -m pytest -q tests/test_benchmark_g5_auth_density_e0.py tests/test_benchmark_indexed_native_graph_g5_cpu_e0.py tests/test_native_graph_index.py
+          pyright scripts/benchmark_g5_auth_density_e0.py
+      - name: Record paired 5131 registered-route synthetic CPU distribution
+        run: python -m scripts.benchmark_g5_auth_density_e0 --noise-routes 5100 --iterations 50
