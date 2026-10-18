@@ -44,3 +44,30 @@ code; timings on a shared runner cannot establish production SLO.
 The next independent work is ranking over K, original
 publisher-native #1346 query/route/field/permission gold, and real
 agent E2 #1477. Preserve #432 historical negatives and v0.18 HOLD.
+
+
+## First measured paired CI observation
+
+Head `8a8a71bfec64559027dee58f821d89b25f1c4f3d`,
+workflow `39173517181`, job `117811350597`,
+GitHub Actions Linux `Linux-6.17.0-1022-azure-x86_64-with-glibc2.39`,
+Python 3.12.15. Fixed 5,131 synthetic routes, 24 unauthorized
+typed distractors and 30 total compatible consumers. One shared
+index, five warmups and 50 measured queries **for each role**.
+
+| Principal role | Eligible / visible paths | G5 output | Wall p50 / p95 / p99 (ms) |
+|---|---:|---|---|
+| `zero` | 0 / 0 | `no_proven_hit` | 6.5357 / 7.8328 / 8.4579 |
+| `one` | 1 / 1 | `complete` | 6.9069 / 8.1277 / 8.6360 |
+| `five` | 5 / 5 | `complete` | 7.9701 / 8.1856 / 8.2912 |
+| `six` | 6 / 0 | `over_k_unranked` | 8.2377 / 8.4050 / 8.6108 |
+
+Index build wall 1,542.6894 ms; process peak RSS 108,296 KiB.
+All 32 focused pytest tests + Ruff passed and Pyright reported 0
+errors/0 warnings. These numbers are a **single synthetic CI run**.
+Comparing the earlier 5,102-route/one-target 0.2292ms p50 against
+this denser 5,131-route/30-syntactically-relevant-target 6–8ms p50
+is **not** a controlled speedup or regression benchmark; the source
+and authorization rule complexity differ. It is actionable evidence
+that qualifying and filtering more posting-list candidates may be
+materially more expensive in this particular design.
