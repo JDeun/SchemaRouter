@@ -119,6 +119,9 @@ async def test_source_validated_model_selected_two_hop_and_exact_final() -> None
     assert row["attempted_model_calls"] == 2
     assert row["real_geocoding_calls"] == 1
     assert row["real_forecast_calls"] == 1
+    assert row["real_geocoding_http_attempts"] == 1
+    assert row["real_forecast_http_attempts"] == 1
+    assert row["host_exception_family"] is None
     assert row["model_generated_two_step_complete"] is True
     assert row["strict_final_answer_correct"] is True
     assert row["full_task_complete"] is True
@@ -160,6 +163,8 @@ async def test_wrong_model_coordinates_fail_before_second_live_invocation() -> N
         )
     assert seen == ["/v1/search"]
     assert row["real_forecast_calls"] == 0
+    assert row["real_geocoding_http_attempts"] == 1
+    assert row["real_forecast_http_attempts"] == 0
     assert row["termination_reason"] == "wrong_arguments_or_unobserved_state"
     assert row["full_task_complete"] is False
 
@@ -206,6 +211,12 @@ async def test_provider_wrong_country_does_not_trigger_weather_call() -> None:
     assert row["model_generated_two_step_complete"] is False
     assert row["full_task_complete"] is False
     assert row["termination_reason"] == "host_or_native_source_denied"
+    assert row["host_exception_family"] == "value_error"
+    assert row["real_geocoding_http_attempts"] == 1
+    assert row["real_geocoding_calls"] == 0
+    assert row["real_forecast_http_attempts"] == 0
+    # Previously misreported as zero external requests despite one HTTPS GET.
+    assert len(seen) == row["real_geocoding_http_attempts"]
 
 
 @pytest.mark.asyncio
