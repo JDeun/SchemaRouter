@@ -215,6 +215,12 @@ async def evaluate_one(
             host_failure_after_http_attempt = after_http > after_verified
             # Host-owned public fixed-source diagnostic only. No raw HTTP
             # body, coordinates, provider exception, route secret or policy.
+            if any(
+                inv.last_failure_stage is not None
+                and inv.last_failure_stage not in inv.FAILURE_STAGES
+                for inv in (geocode, weather)
+            ):
+                raise ValueError("invalid trusted source failure-stage receipt")
             source_stages = [
                 f"geocode_{geocode.last_failure_stage}"
                 if geocode.last_failure_stage is not None else None,
