@@ -211,6 +211,11 @@ class NativeSchemaGraphIndex:
         if router.authorization_policy is None:
             raise PolicyViolationError("G5 explicit policy required")
         witness = router._retrieval_authority_witness()
+        original_policy = (
+            router.authorization_policy.default_effect,
+            repr(router.authorization_policy.rules),
+            repr(router.authorization_policy.data_rules),
+        )
         # This graph is not authorization-scoped and must never be surfaced
         # directly. All native endpoints are reloaded and checked at lookup.
         permitted = router._authorization_predicate(actor)
@@ -288,6 +293,11 @@ class NativeSchemaGraphIndex:
                 ))
         self.field_index._assert_source(router)
         router._check_retrieval_authority_witness(witness)
+        policy = router.authorization_policy
+        if policy is None or (
+            policy.default_effect, repr(policy.rules), repr(policy.data_rules),
+        ) != original_policy:
+            raise PolicyViolationError("G5 authorization rules changed during lookup")
         if len(found) > k:
             return NativeIndexedGraphResult(
                 "over_k_unranked", self.field_index.snapshot_id,
