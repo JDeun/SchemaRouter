@@ -351,3 +351,98 @@ def test_existing_published_qwen_dev_catalog_has_no_native_field_attestation_sou
                 ("output_field", "manufactured_from_gold", "invented.expected"),
             ),
         )
+
+
+def test_real_openapi_to_mcp_attested_native_semantics_reuse_g3_typed_graph():
+    """Two actual production adapter parses -> source-locked G3 graph lookup."""
+    from scripts.research_native_semantic_graph_g3 import (
+        ApprovedNativeRouteG3,
+        NativeGraphGoalG3,
+        retrieve_native_semantic_paths_g3,
+    )
+
+    producer = tool_from_openapi("contacts", {
+        "openapi": "3.1.0",
+        "info": {"title": "Contacts", "version": "1"},
+        "paths": {"/contact": {"get": {
+            "operationId": "lookup_contact",
+            "responses": {"200": {"description": "OK", "content": {
+                "application/json": {"schema": {
+                    "type": "object",
+                    "properties": {"contact_id": {"type": "string"}},
+                }},
+            }}},
+        }}},
+    })
+    consumer = tool_from_mcp("cases", {"tools": [{
+        "name": "read_case", "annotations": {"readOnlyHint": True},
+        "inputSchema": {
+            "type": "object",
+            "properties": {"contact_id": {"type": "string"}},
+            "required": ["contact_id"],
+        },
+        "outputSchema": {
+            "type": "object",
+            "properties": {"status": {"type": "string"}},
+        },
+    }]})
+    for tool in (producer, consumer):
+        tool.source_type = "host-reviewed-crm"
+        tool.license = "local-review-required"
+    # Independent explicit local authority review; semantic overlays may NOT
+    # mutate read_only and remote MCP annotations are not authoritative.
+    assert consumer.endpoint("read_case").read_only is None
+    producer.endpoint("lookup_contact").read_only = True
+    consumer.endpoint("read_case").read_only = True
+
+    producer = apply_host_semantic_attestation(
+        producer, attestation=_attest(
+            producer, "lookup_contact",
+            ("output_field", "contact_id", "crm.contact_id"),
+        ),
+    )
+    consumer = apply_host_semantic_attestation(
+        consumer, attestation=_attest(
+            consumer, "read_case",
+            ("input_parameter", "contact_id", "crm.contact_id"),
+            ("output_field", "status", "crm.status"),
+        ),
+    )
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.*", roles_any=("analyst",),
+        ),),
+    ))
+    for tool in (producer, consumer):
+        router.add_tool(tool)
+    approvals = tuple(
+        ApprovedNativeRouteG3(
+            route_id=f"{tool.key}.{tool.endpoints[0].name}",
+            expected_tool_fingerprint=tool.fingerprint,
+            expected_endpoint_fingerprint=tool.endpoints[0].fingerprint,
+        )
+        for tool in (producer, consumer)
+    )
+    goal = NativeGraphGoalG3(
+        aliases=("customer case status", "고객 문의 상태"),
+        target_route_id="cases.read_case",
+        required_outputs=(CapabilityFieldContract(
+            semantic_id="crm.status", json_schema={"type": "string"},
+        ),),
+        approved_routes=approvals,
+    )
+    for query in goal.aliases:
+        paths = retrieve_native_semantic_paths_g3(
+            router, query, principal=ANALYST, goal=goal,
+        )
+        assert len(paths) == 1
+        assert paths[0].route_ids == (
+            "contacts.lookup_contact", "cases.read_case",
+        )
+        assert [(edge.producer_output_field, edge.consumer_input_parameter)
+                for edge in paths[0].edges] == [("contact_id", "contact_id")]
+        assert paths[0].target_output_fields == ("status",)
+
+    # Still only NON-EXECUTABLE source evidence; no arguments, invocations
+    # or autonomous plans were created by the G3 graph lookup.
