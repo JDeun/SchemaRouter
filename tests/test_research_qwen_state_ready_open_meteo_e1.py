@@ -18,8 +18,10 @@ async def test_pairs_exact_same_live_tasks_and_never_claims_independent_e2(
     async def fake_evaluate(
         agent: Any, client: Any, *, language: str,
         city: str, country: str, menu_mode: str,
+        transport_retry_budget: int,
     ) -> dict[str, Any]:
         del agent, client, city, country
+        assert transport_retry_budget == 0
         calls.append((language, menu_mode))
         return {
             "language": language,
