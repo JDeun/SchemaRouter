@@ -77,7 +77,14 @@ def _provider_json(response: httpx.Response) -> dict[str, Any]:
 def _geocode_response(payload: dict[str, Any], country_code: str) -> dict[str, Any]:
     rows = payload.get("results")
     if type(rows) is not list or not rows or type(rows[0]) is not dict:
-        raise ValueError("geocoding source returned no verifiable location")
+        shape = "absent" if rows is None else (
+            "empty" if type(rows) is list and not rows else "invalid"
+        )
+        # Public source's coarse JSON shape only: never print actual
+        # place names, error messages, URLs, coordinates or response bodies.
+        raise ValueError(
+            f"geocoding source returned no verifiable location (results={shape})"
+        )
     row = rows[0]
     if row.get("country_code") != country_code:
         raise ValueError("geocoding returned wrong country")
