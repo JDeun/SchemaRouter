@@ -246,6 +246,13 @@ from .capability_snapshot import (
     serialize_capability_snapshot,
     validate_capability_snapshot,
 )
+from .concept_retrieval import (
+    NativeConceptCatalog,
+    NativeDeclaredConcept,
+    ResolvedNativeConcepts,
+    resolve_native_concepts,
+    retrieve_authorized_concepts,
+)
 from .contract_validation import (
     CapabilityContractValidation,
     CapabilityObservation,
@@ -335,13 +342,6 @@ from .explorer import (
     build_capability_explorer_document,
     render_schema_explorer,
     write_schema_explorer,
-)
-from .concept_retrieval import (
-    NativeConceptCatalog,
-    NativeDeclaredConcept,
-    ResolvedNativeConcepts,
-    resolve_native_concepts,
-    retrieve_authorized_concepts,
 )
 from .field_group_retrieval import (
     NativeDeclaredFieldGroup,
