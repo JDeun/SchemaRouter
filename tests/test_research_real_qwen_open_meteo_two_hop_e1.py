@@ -333,3 +333,58 @@ async def test_host_pre_http_denial_is_not_mislabeled_source_failure(
     assert row["real_geocoding_calls"] == 0
     assert row["full_task_complete"] is False
     assert "PRIVATE_POLICY_CANARY" not in json.dumps(row)
+
+@pytest.mark.asyncio
+async def test_post_verified_source_host_denial_is_failed_episode_not_abort(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scripts import research_real_qwen_open_meteo_two_hop_e1 as module
+
+    actual_execution = module.execute_scoped_host_call
+
+    async def masked_after_verified(*args: Any, **kwargs: Any) -> dict:
+        await actual_execution(*args, **kwargs)
+        raise PolicyViolationError("PRIVATE_PROJECTION_CANARY")
+
+    monkeypatch.setattr(
+        module, "execute_scoped_host_call", masked_after_verified,
+    )
+    seen: list[str] = []
+    async with httpx.AsyncClient(transport=_fixture_transport(seen)) as client:
+        row = await evaluate_one(
+            ScriptedAgent([FIRST]), client,
+            language=LANGUAGE, city=CITY, country=COUNTRY,
+        )
+    assert seen == ["/v1/search"]
+    assert row["trusted_failure_stage"] == "host_boundary_after_validated_source"
+    assert row["host_failure_after_http_attempt"] is False
+    assert row["real_geocoding_http_attempts"] == 1
+    assert row["real_geocoding_calls"] == 1
+    assert row["model_generated_first_step_complete"] is False
+    assert row["full_task_complete"] is False
+    assert row["termination_reason"] == "host_or_native_source_denied"
+    assert "PRIVATE_PROJECTION_CANARY" not in json.dumps(row)
+
+
+@pytest.mark.asyncio
+async def test_unclassified_failure_after_http_is_not_guessed_as_source(
+) -> None:
+    seen = []
+
+    def unexpected(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url.path)
+        raise RuntimeError("PRIVATE_UNEXPECTED_CANARY")
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(unexpected),
+    ) as client:
+        row = await evaluate_one(
+            ScriptedAgent([FIRST]), client,
+            language=LANGUAGE, city=CITY, country=COUNTRY,
+        )
+    assert seen == ["/v1/search"]
+    assert row["trusted_failure_stage"] == "unclassified_after_http_attempt"
+    assert row["real_geocoding_http_attempts"] == 1
+    assert row["real_geocoding_calls"] == 0
+    assert row["full_task_complete"] is False
+    assert "PRIVATE_UNEXPECTED_CANARY" not in json.dumps(row)
