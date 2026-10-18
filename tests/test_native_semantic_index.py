@@ -288,3 +288,21 @@ def test_index_rechecks_current_policy_and_availability_at_query_time():
     )
     assert denied.status == "no_proven_hit"
     assert denied.candidates == ()
+
+
+def test_replacing_availability_predicate_mid_field_lookup_fails_closed():
+    router = _router()
+    index = NativeSchemaPostingIndex.build(router.registry)
+    consulted = False
+
+    def replace_during_check(tool, endpoint):
+        nonlocal consulted
+        if not consulted:
+            consulted = True
+            router.planner.availability_predicate = lambda _tool, _ep: False
+        return True
+
+    router.planner.availability_predicate = replace_during_check
+    with pytest.raises(PolicyViolationError, match="retrieval authority changed"):
+        index.lookup(router, ALIASES[0], principal=ANALYST, group=GROUP)
+    assert consulted

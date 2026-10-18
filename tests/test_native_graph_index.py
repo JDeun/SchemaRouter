@@ -293,3 +293,21 @@ def test_in_place_policy_rules_change_during_lookup_fails_closed():
     router.planner.availability_predicate = availability
     with pytest.raises(PolicyViolationError, match="rules changed"):
         idx.lookup(router, ALIASES[0], group=GROUP, principal=ANALYST)
+
+
+def test_replacing_availability_predicate_mid_graph_lookup_fails_closed():
+    router = _router()
+    index = _index(router)
+    consulted = False
+
+    def replace_during_check(tool, endpoint):
+        nonlocal consulted
+        if not consulted:
+            consulted = True
+            router.planner.availability_predicate = lambda _tool, _ep: False
+        return True
+
+    router.planner.availability_predicate = replace_during_check
+    with pytest.raises(PolicyViolationError, match="retrieval authority changed"):
+        index.lookup(router, ALIASES[0], group=GROUP, principal=ANALYST)
+    assert consulted
