@@ -148,11 +148,17 @@ class OpenMeteoBoundInvoker:
         "weather_payload_rejected",
     })
 
-    def __init__(self, client: httpx.AsyncClient, *, source: str) -> None:
+    def __init__(
+        self, client: httpx.AsyncClient, *, source: str,
+        transport_retry_budget: int = 0,
+    ) -> None:
         if source not in ("geocode", "forecast"):
             raise ValueError("unknown trusted Open-Meteo source")
+        if type(transport_retry_budget) is not int or transport_retry_budget not in (0, 1):
+            raise ValueError("only zero or one read-only transport retry allowed")
         self.client = client
         self.source = source
+        self.transport_retry_budget = transport_retry_budget
         # Historical calls means validated successful invocations, NOT HTTP.
         self.calls = 0
         self.http_attempts = 0
@@ -169,6 +175,22 @@ class OpenMeteoBoundInvoker:
             self.last_failure_stage = "response_json_rejected"
             raise
 
+    async def _get_with_bounded_transport_retry(
+        self, url: str, params: dict[str, Any],
+    ) -> httpx.Response:
+        # The original source uses only fixed-host, read-only HTTP GET.
+        # No retry after a response (4xx/5xx, schema/country rejection).
+        # Never retry a non-idempotent endpoint or a host authorization error.
+        for attempt in range(self.transport_retry_budget + 1):
+            self.http_attempts += 1
+            try:
+                return await self.client.get(url, params=params)
+            except httpx.RequestError:
+                self.last_failure_stage = "http_transport_failure"
+                if attempt == self.transport_retry_budget:
+                    raise
+        raise RuntimeError("unreachable bounded native transport state")
+
     async def __call__(
         self, endpoint: str, arguments: dict[str, Any],
     ) -> dict[str, Any]:
@@ -183,12 +205,9 @@ class OpenMeteoBoundInvoker:
                 "count": 10,
                 "format": "json",
             }
-            self.http_attempts += 1
-            try:
-                response = await self.client.get(GEOCODE_URL, params=params)
-            except httpx.RequestError:
-                self.last_failure_stage = "http_transport_failure"
-                raise
+            response = await self._get_with_bounded_transport_retry(
+                GEOCODE_URL, params,
+            )
             payload = self._verified_json(response)
             try:
                 result = _geocode_response(payload, country)
@@ -202,12 +221,9 @@ class OpenMeteoBoundInvoker:
                 "current": "temperature_2m",
                 "timezone": "auto",
             }
-            self.http_attempts += 1
-            try:
-                response = await self.client.get(WEATHER_URL, params=params)
-            except httpx.RequestError:
-                self.last_failure_stage = "http_transport_failure"
-                raise
+            response = await self._get_with_bounded_transport_retry(
+                WEATHER_URL, params,
+            )
             payload = self._verified_json(response)
             try:
                 result = _forecast_response(payload)
@@ -234,7 +250,7 @@ def _schema(params: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_live_router(
-    client: httpx.AsyncClient,
+    client: httpx.AsyncClient, *, transport_retry_budget: int = 0,
 ) -> tuple[SchemaRouter, OpenMeteoBoundInvoker, OpenMeteoBoundInvoker]:
     geo = ToolSpec(
         name="open_meteo_geocoding",
@@ -302,8 +318,12 @@ def build_live_router(
         )],
     )
     router = SchemaRouter()
-    geo_invoker = OpenMeteoBoundInvoker(client, source="geocode")
-    weather_invoker = OpenMeteoBoundInvoker(client, source="forecast")
+    geo_invoker = OpenMeteoBoundInvoker(
+        client, source="geocode", transport_retry_budget=transport_retry_budget,
+    )
+    weather_invoker = OpenMeteoBoundInvoker(
+        client, source="forecast", transport_retry_budget=transport_retry_budget,
+    )
     router.add_bound_tool(geo, geo_invoker)
     router.add_bound_tool(weather, weather_invoker)
     return router, geo_invoker, weather_invoker
