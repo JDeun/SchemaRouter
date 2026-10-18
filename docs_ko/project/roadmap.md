@@ -6,7 +6,7 @@
 
 ## 안정 제품
 
-**현재 안정 릴리스:** SchemaRouter 0.14.0 (Beta / pre-1.0).
+**현재 안정 릴리스:** SchemaRouter 0.17.0 (Beta / pre-1.0).
 
 안정 코어는 typed capability retrieval 및 schema-aware execution boundary입니다. 제품 작업은 local execution authority, schema/fingerprint validation, 명시적 side-effect policy, protocol-neutral contract를 보존해야 합니다.
 
@@ -27,6 +27,59 @@
 - [신뢰성, 안정성 및 공개 근거](trust-and-evidence.md)
 
 하나의 provider를 지원하기 위해 core architecture를 다시 열지 않습니다. Adapter, trusted SDK binding, framework bridge 또는 decision plugin을 우선합니다.
+
+## 초기 논문의 스키마 그래프 검색 — 향후 최우선 방향
+
+**SchemaRouter는 에이전트가 아니라, 필드 중심의 도구 검색과 타입화된
+계약을 제공하는 계층입니다.** [초기 SchemaRouter 논문](https://arxiv.org/abs/2608.21375)은
+Tool·Endpoint·Parameter·OutputField·DomainConcept·FieldGroup·Unit·
+SourceType·License/Provenance 사이의 신뢰된 관계를 **내부 스키마 그래프**로
+관리하는 방향을 제시합니다. 질의의 개념과 필요 필드를 이 관계로 해석하고
+권한·데이터 범위·가용성에 적합한 **소수의 도구·필드 후보**를 반환합니다.
+실제 도구 선택, 인자 작성 및 다음 단계 결정은 **외부 에이전트의 책임**이고
+실행 시에는 호스트가 명시적으로 권한·스키마를 다시 검증합니다.
+그래프 DB는 선택 가능한 저장 수단이지, 그래프 기반 검색의 완성 증거가 아닙니다.
+
+**이미 있는 기능과 앞으로 구현할 부분을 혼동하지 않습니다.**
+`retrieve_authorized(query, k=5)`는 기존부터 권한별 Top-K를 제공합니다.
+새 목차/K5 출력 래퍼 또는 에이전트 루프 개발은 초기 논문의
+**질의→개념→필드 관계 검색** 개선이 아닙니다. producer→consumer
+의존성 그래프, 스냅샷 아티팩트도 기본 검색 경로에 개념 관계가
+연결됐다는 근거와는 별도로 확인해야 합니다.
+
+**개발 순서 및 변경 금지 조건:**
+
+1. [#1530 — 논문과 실제 검색 코드 대조](https://github.com/JDeun/SchemaRouter/issues/1530):
+   Intent·DomainConcept/alias·FieldGroup·단위·타입·출처·라이선스·
+   필드 프로젝션·그래프 버전별로 실제 연결 여부와 테스트 근거를 기록합니다.
+2. [#1532 — P0 숨김 필드 메타데이터](https://github.com/JDeun/SchemaRouter/issues/1532)
+   및 [#1450 — 권한/소스 변경](https://github.com/JDeun/SchemaRouter/issues/1450):
+   비인가 필드명 노출과 스키마·권한 변경 검증을 검색 성능 승격보다
+   우선합니다. 그래프 관계가 비인가 도구/필드를 노출하거나 실행
+   권한을 만들 수 없습니다.
+3. [#1531 — 선언된 개념→필드 관계 E0 실험](https://github.com/JDeun/SchemaRouter/pull/1531):
+   명시된 한국어/일본어 별칭→semantic ID를 검증하고, 이후
+   필드 그룹·엔드포인트·단위/한정자·출처/라이선스를 기존 권한별
+   검색 경계에서 평가합니다. 논문 Algorithm 1 전체 구현이나
+   독립적 성능 입증이 아니므로 기본값·K=5는 유지합니다.
+4. [#1339 — EN/KO/JA 초기 도구·필드 재현율](https://github.com/JDeun/SchemaRouter/issues/1339)
+   및 [#1477 — 외부 에이전트의 실제 작업 완료](https://github.com/JDeun/SchemaRouter/issues/1477):
+   연산·인자·필드 정확도, OOD/no-fit, 스키마 바이트와 실제 토큰,
+   CPU p50/p95/p99를 함께 측정합니다. 독립 작성자의 원본 작업·정답과
+   권한 근거 [#1346](https://github.com/JDeun/SchemaRouter/issues/1346)가
+   없으면 **BLOCKED_EXTERNAL**로 표기하고 동결된 #432를 바꾸지 않습니다.
+5. [#1356 — v0.18 배포](https://github.com/JDeun/SchemaRouter/pull/1356):
+   독립 작업 성능·보안·소스 정합성·CPU 예산 검증 전에는 **HARD HOLD**입니다.
+
+**부정적 결과도 보존합니다:** [#1528](https://github.com/JDeun/SchemaRouter/pull/1528)의
+합성 측정에서 100~500개 도구의 전체 목차가 선택된 K5 상세 스키마보다
+훨씬 많은 바이트를 차지하거나 32KiB 상한을 넘었습니다.
+목차 전체를 LLM에 전달하거나 K/상한을 높이는 방향은 채택하지 않습니다.
+단순 출력 래퍼 [#1529](https://github.com/JDeun/SchemaRouter/pull/1529)는
+그래프 검색 개선이 아니어서 병합하지 않고 종료했습니다.
+
+이 항목은 **향후 아키텍처 기준**이며 논문 전체 구현, 상용 수준
+다국어 검색 성능 또는 새 안정 기능이 완성됐다는 주장이 아닙니다.
 
 ## 연구
 

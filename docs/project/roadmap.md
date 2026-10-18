@@ -8,7 +8,7 @@ work and acceptance criteria.
 
 ## Stable product
 
-**Current stable release:** SchemaRouter 0.14.0 (Beta / pre-1.0).
+**Current stable release:** SchemaRouter 0.17.0 (Beta / pre-1.0).
 
 The stable core is a typed capability retrieval and schema-aware execution boundary. Product work
 should preserve local execution authority, schema/fingerprint validation, explicit side-effect
@@ -32,6 +32,64 @@ Current coordination:
 
 Do not reopen the core architecture merely to support one provider. Prefer adapters, trusted SDK
 bindings, framework bridges, or decision plugins.
+
+## Original paper's schema-graph retrieval north star (current priority)
+
+**SchemaRouter is a field-aware, agent-neutral capability retrieval and typed-contract
+boundary, not an autonomous agent.** The [original SchemaRouter paper](https://arxiv.org/abs/2608.21375)
+models relationships among registered Tool, Endpoint, Parameter, OutputField,
+DomainConcept, FieldGroup, Unit, SourceType, license and provenance. Given a
+query, the goal is to find its required **concepts and output fields** through
+these trusted typed graph relationships, enforce the principal's allowed
+source/data scope, and deliver a small relevant tool/field shortlist. The
+**external agent** chooses the tool, arguments and follow-up action; any actual
+invocation must pass a separate explicit host authorization and schema check.
+A graph database is one storage choice, **not** proof of graph-informed search.
+
+**Do not mistake an existing feature for future work:** the public
+`retrieve_authorized(query, k=5)` already returns principal-filtered Top-K
+contracts. A new catalog wrapper or agent loop does not implement the
+paper's query-to-concept-to-field matching. The separate producer/consumer
+dependency graph and versioned artifacts are valuable but do not, alone,
+prove that the original graph relationships drive default search.
+
+**Implementation and qualification order (source of truth: issue acceptance):**
+
+1. [#1530 — paper-to-code graph retrieval audit](https://github.com/JDeun/SchemaRouter/issues/1530):
+   distinguish wired default matching from existing standalone primitives
+   for intent, aliases, field groups, typed units/qualifiers, source/license,
+   field projection and graph snapshot identity; cite specific code/tests.
+2. [#1532 — P0 hidden schema metadata](https://github.com/JDeun/SchemaRouter/issues/1532)
+   and [#1450 — authority/source drift](https://github.com/JDeun/SchemaRouter/issues/1450):
+   repair or verify principal-hidden fields and source identity **before**
+   ranking promotion. No semantic relationship may expose a denied tool,
+   hidden field or new execution permission.
+3. [#1531 — opt-in E0 declared concept-to-field bridge](https://github.com/JDeun/SchemaRouter/pull/1531):
+   test trusted alias-to-semantic-ID edges, then field-group/endpoint,
+   unit/type/source/license constraints inside the existing authorized
+   retrieval boundary. This **does not** implement all of Algorithm 1;
+   keep production defaults and strict K=5 unchanged pending qualification.
+4. [#1339 — EN/KO/JA initial route/field recall](https://github.com/JDeun/SchemaRouter/issues/1339),
+   [#1477 — paired external-agent task E2](https://github.com/JDeun/SchemaRouter/issues/1477):
+   measure operation, input/field correctness, OOD/no-fit, schema bytes and
+   actual tokenizer count, CPU p50/p95/p99 and final agent completion.
+   Independent publisher-native, permission-reviewed task/gold
+   [#1346](https://github.com/JDeun/SchemaRouter/issues/1346) is a hard
+   **BLOCKED_EXTERNAL** dependency. Do not retune frozen #432 results.
+5. [#1356 — v0.18 release](https://github.com/JDeun/SchemaRouter/pull/1356):
+   remain **HARD HOLD** until independent task-level quality, safety,
+   source correctness and CPU budget gates are passed.
+
+**Negative control:** [#1528](https://github.com/JDeun/SchemaRouter/pull/1528)
+showed that exposing a full authorized 100–500-tool index can use
+far more bytes than a selected K5 schema set, or exceed the 32KiB
+experimental cap. Never infer that sending the entire graph/index to
+an LLM or increasing K/caps improves retrieval. The K5 presentation
+wrapper [#1529](https://github.com/JDeun/SchemaRouter/pull/1529) was
+closed without merging; it was not a graph search improvement.
+
+This section is an **architectural direction**, not a declaration of
+completed paper parity, multilingual quality or a released feature.
 
 ## Research
 
