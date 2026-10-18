@@ -251,3 +251,15 @@ def test_query_does_not_walk_entire_registry_after_posting_intersection(monkeypa
         "wrong_source", "wrong_type", "wrong_unit",
     }
     assert all(not name.startswith("noise_") for name in seen)
+
+
+def test_index_builds_over_five_thousand_registered_heterogeneous_routes():
+    """Scale/boundary DEV: source indexes 5k+ tools, no latency SLO claimed."""
+    router = _router(many_partial=5120)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    assert index.indexed_route_count == 5127
+    assert len(index.route_locations) == 5127
+    assert len(index.snapshot_id) == 64
+    result = index.lookup(router, ALIASES[0], principal=ANALYST, group=GROUP)
+    assert result.qualified_count == 1
+    assert [x.route_id for x in result.candidates] == ["complete.read"]
