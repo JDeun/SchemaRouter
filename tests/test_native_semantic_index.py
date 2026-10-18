@@ -303,6 +303,6 @@ def test_replacing_availability_predicate_mid_field_lookup_fails_closed():
         return True
 
     router.planner.availability_predicate = replace_during_check
-    with pytest.raises(PolicyViolationError, match="availability policy changed"):
+    with pytest.raises(PolicyViolationError, match="retrieval authority changed"):
         index.lookup(router, ALIASES[0], principal=ANALYST, group=GROUP)
     assert consulted
