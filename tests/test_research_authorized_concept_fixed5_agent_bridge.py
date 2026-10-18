@@ -140,7 +140,7 @@ def test_actual_existing_agent_e0_uses_nonexecuting_concept_selector():
     )
     assert row["passed"] is True
     assert row["task_complete"] is True
-    assert row["initial_candidate_count"] == 1
+    assert row["visible_candidate_counts"] == [1]
     assert row["tool_call_count"] == 1
     assert row["unauthorized_destructive_executions"] == 0
     assert selector.last_status == "unverified_declared_concept_candidates"
@@ -202,9 +202,8 @@ def test_mutated_declared_concept_and_ambiguous_intent_fail_closed():
     view = _view(_router())
     catalog = CATALOG.model_copy(deep=True)
     object.__setattr__(catalog.concepts[0], "aliases", ("",))
-    selector = AuthorizedConceptFixed5Selector(view, catalog)
-    with pytest.raises(ValueError, match="trusted concept catalog"):
-        selector(QUERY, view.visible_route_ids)
+    with pytest.raises(ValueError, match="invalid bounded owner-declared concept"):
+        AuthorizedConceptFixed5Selector(view, catalog)
 
     from schemarouter import NativeDeclaredConcept
     ambiguous = NativeConceptCatalog(concepts=(
