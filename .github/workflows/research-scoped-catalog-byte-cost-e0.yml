@@ -1,0 +1,60 @@
+name: Scoped Catalog Index Byte Cost E0
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_authorized_agent_tool_surface.py"
+      - "scripts/research_scoped_catalog_byte_cost_e0.py"
+      - "tests/test_research_scoped_catalog_byte_cost_e0.py"
+      - "research/autoresearch/scoped-catalog-byte-cost-e0.md"
+      - ".github/workflows/research-scoped-catalog-byte-cost-e0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: catalog-byte-e0-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-fixed-scope:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install checked-out code and test-only harness
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23" "ruff>=0.9,<1"
+      - name: Check no-model byte-cost and source safety contracts
+        run: |
+          ruff check scripts/research_scoped_catalog_byte_cost_e0.py tests/test_research_scoped_catalog_byte_cost_e0.py
+          python -m pytest -q tests/test_research_scoped_catalog_byte_cost_e0.py
+      - name: Save bounded synthetic-only numeric observations
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.research_scoped_catalog_byte_cost_e0 import profile
+          result = profile()
+          target = Path("artifacts/scoped-catalog-byte-cost")
+          target.mkdir(parents=True, exist_ok=True)
+          (target / "results.json").write_text(
+              json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8",
+          )
+          PY
+      - name: Archive synthetic-only observations
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: synthetic-scoped-catalog-cost-${{ github.run_id }}
+          path: artifacts/scoped-catalog-byte-cost/results.json
+          if-no-files-found: error
+          retention-days: 30
+# Synthetic registered tool contracts only. No network, model, agent,
+# provider calls, user prompts, credentials or independent-E2 outcome.
