@@ -181,3 +181,17 @@ def test_host_review_never_overrides_principal_scope_or_schema_constraints():
     assert retrieve_verified_graph_paths_g2(
         restricted, ALIASES[0], principal=ANALYST, goal=_goal(restricted),
     ) == ()
+
+
+def test_real_openapi_empty_input_envelope_refuses_unknown_constraints():
+    router = _router(locally_reviewed=True)
+    source = router.registry.get("contacts").endpoint("lookup_contact")
+    assert source.parameters == []
+    assert source.input_schema == {
+        "type": "object", "properties": {}, "additionalProperties": False,
+    }
+    # This is not an empty contract anymore; do not erase or bypass it.
+    source.input_schema["unevaluatedProperties"] = False
+    assert retrieve_verified_graph_paths_g2(
+        router, ALIASES[0], principal=ANALYST, goal=_goal(router),
+    ) == ()
