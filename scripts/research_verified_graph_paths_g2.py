@@ -216,6 +216,7 @@ def retrieve_verified_graph_paths_g2(
     goal: DeclaredGraphGoalG2,
     k: int = STRICT_K,
     max_hops: int = MAX_HOPS,
+    allowed_route_ids: frozenset[str] | None = None,
 ) -> tuple[NonExecutableGraphPathG2, ...]:
     """Return proven, visible, nonexecuting chains; no partial-K backfill."""
     if type(k) is not int or k != STRICT_K:
@@ -231,8 +232,19 @@ def retrieve_verified_graph_paths_g2(
     if not isinstance(principal, PrincipalContext):
         raise ValueError("G2 requires an explicit principal")
 
+    if allowed_route_ids is not None and (
+        type(allowed_route_ids) is not frozenset
+        or not 1 <= len(allowed_route_ids) <= 32
+        or any(not _safe_declared_text(value) for value in allowed_route_ids)
+    ):
+        raise ValueError("G2 requires a bounded exact route approval set")
     witness = router._retrieval_authority_witness()
     routes = _safe_routes(router, principal)
+    if allowed_route_ids is not None:
+        # Restrict BEFORE graph construction and K accounting, not after
+        # collecting paths that may reveal unapproved provider metadata.
+        routes = {key: value for key, value in routes.items()
+                  if key in allowed_route_ids}
     bindings = {binding.route_id: binding for binding in goal.bindings}
     if goal.target_route_id not in routes:
         router._check_retrieval_authority_witness(witness)
