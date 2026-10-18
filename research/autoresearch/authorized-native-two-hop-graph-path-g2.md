@@ -41,7 +41,11 @@ In particular, an actual MCP discovered tool typically contains a
 nonempty `input_schema` and does not automatically carry a locally
 trusted `read_only=True` declaration; OpenAPI/MCP inputs also do not
 automatically supply verified semantic input IDs, and source/license
-labels can be absent. Current strict G2 **abstains** on these cases.
+labels can be absent. Current G2 now accepts only a minimal one-required-property MCP-style
+`input_schema` envelope when a **trusted local source** independently
+supplies the complete read-only classification, exact semantic binding,
+source/license metadata and raw native endpoint fingerprint. Actual
+remote MCP discovery alone **does not** establish these conditions.
 We must integrate locally trusted semantic augmentation, preserve
 provider JSON Schema, and validate real OpenAPI/MCP/OPTIMADE adapters
 under the **same principal-scoped authority** before claiming mixed
@@ -67,7 +71,8 @@ typed scalar schema; each consumer must have exactly one fully bound
 required input in the strict G2 condition. Arbitrary input schema,
 credential/header/body-root inputs, unexpected additional inputs,
 unqualified units, missing field metadata, non-identifier joins,
-unsupported `pattern/enum` JSON constraints and implicit conversions
+unsupported `pattern/enum` JSON constraints, all other nontrivial input
+JSON Schema envelopes, and implicit conversions
 are NOT accepted as proven bindings.
 
 The full target must provide **every** host-declared required output
