@@ -78,7 +78,9 @@ def discover_authorized_native_graph_paths_g4(
                 or original.fingerprint != approved.expected_endpoint_fingerprint):
             raise ValueError("G4 approved native source revision is stale")
 
-    roots: list[str] = []
+    # Semantic-ID adjacency index is an exact prefilter, not an independent
+    # type/permission verifier. G3/G2 still decides every surviving edge.
+    roots_by_semantic: dict[str, list[str]] = {}
     for route_id, (tool, endpoint) in sorted(visible.items()):
         if (
             tool.source_type is not None
@@ -87,7 +89,9 @@ def discover_authorized_native_graph_paths_g4(
             and not endpoint.auth_requirements
             and _proved_empty_root_envelope(endpoint)
         ):
-            roots.append(route_id)
+            for field in endpoint.output_fields:
+                if field.identifier is True and field.semantic_id is not None:
+                    roots_by_semantic.setdefault(field.semantic_id, []).append(route_id)
 
     found: dict[tuple[str, ...], NonExecutableGraphPathG2] = {}
     for target_id, (target_tool, target_ep) in sorted(visible.items()):
@@ -111,7 +115,7 @@ def discover_authorized_native_graph_paths_g4(
             semantic_id=parameter.semantic_id,
             json_schema=param_schema,
         )
-        for root_id in roots:
+        for root_id in roots_by_semantic.get(required_input.semantic_id, ()):
             if root_id == target_id:
                 continue
             _root_tool, root_ep = visible[root_id]
