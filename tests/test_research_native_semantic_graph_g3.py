@@ -323,3 +323,24 @@ def test_native_g3_real_openapi_mcp_converter_contracts_are_explicitly_host_atte
         assert len(hints) == 1
         assert hints[0].route_ids == ("contacts.lookup", "cases.read_case")
         assert hints[0].edges[0].semantic_id == "crm.contact_id"
+
+
+def test_large_catalog_filters_unapproved_sources_before_graph_route_budget():
+    """K5 stays scoped to approved graph nodes in a 500+ route registry."""
+    router = _router()
+    for index in range(520):
+        router.add_tool(ToolSpec(
+            name=f"unreviewed_{index}",
+            source_type="unreviewed-fixture",
+            license="unreviewed",
+            endpoints=[EndpointSpec(
+                name="read", read_only=True,
+                output_fields=[_field("other_id", "unrelated.other", identifier=True)],
+            )],
+        ))
+    goal = _goal(router)
+    paths = retrieve_native_semantic_paths_g3(
+        router, ALIASES[0], principal=ANALYST, goal=goal,
+    )
+    assert len(paths) == 1
+    assert paths[0].route_ids == ROUTES
