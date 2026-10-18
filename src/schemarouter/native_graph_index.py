@@ -127,6 +127,7 @@ class NativeSchemaGraphIndex:
     graph: CapabilityDependencyGraph
     native_root_count: int
     native_consumer_count: int
+    edge_consumer_routes: frozenset[str]
 
     @classmethod
     def build(cls, field_index: NativeSchemaPostingIndex) -> NativeSchemaGraphIndex:
@@ -176,7 +177,12 @@ class NativeSchemaGraphIndex:
         # Reuse the ONE existing canonical semantic-ID producer index and
         # compare_capability_composition; no duplicate graph ranking engine.
         graph = build_capability_dependency_graph(contracts)
-        return cls(field_index, graph, roots, consumers)
+        # The canonical graph already proved which consumers have at
+        # least one structurally compatible producer. A route absent from
+        # this immutable set can NEVER form an eligible G5 one-hop path.
+        # Its output semantic posting should not trigger a registry.get.
+        edge_consumers = frozenset(edge.consumer_id for edge in graph.edges)
+        return cls(field_index, graph, roots, consumers, edge_consumers)
 
     def lookup(
         self,
@@ -225,6 +231,10 @@ class NativeSchemaGraphIndex:
         wanted = [set(self.field_index.postings.get(x.semantic_id, ()))
                   for x in demand.required_fields]
         targets = set.intersection(*wanted) if wanted else set()
+        # Structural prefilter only; this set is not a permission grant.
+        # Every surviving target AND its original source root still gets
+        # current authorization, hidden-field and availability checks.
+        targets.intersection_update(self.edge_consumer_routes)
 
         def authorized(route_id: str) -> tuple[ToolSpec, EndpointSpec] | None:
             where = self.field_index.route_locations.get(route_id)
