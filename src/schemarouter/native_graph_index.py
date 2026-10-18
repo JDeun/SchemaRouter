@@ -28,7 +28,7 @@ from .field_group_retrieval import (
     _complete_fields,
     _scalar_contract,
 )
-from .models import EndpointSpec, FieldSpec
+from .models import EndpointSpec, FieldSpec, ToolSpec
 from .native_semantic_index import NativeSchemaPostingIndex
 
 if TYPE_CHECKING:
@@ -221,7 +221,7 @@ class NativeSchemaGraphIndex:
                   for x in demand.required_fields]
         targets = set.intersection(*wanted) if wanted else set()
 
-        def authorized(route_id: str) -> tuple[object, EndpointSpec] | None:
+        def authorized(route_id: str) -> tuple[ToolSpec, EndpointSpec] | None:
             where = self.field_index.route_locations.get(route_id)
             pinned = self.field_index.route_fingerprints.get(route_id)
             if where is None or pinned is None:
