@@ -340,6 +340,18 @@ def test_protocol_neutral_business_record_graph_uses_same_native_contracts(query
             endpoints=[EndpointSpec(
                 name="read", read_only=True, destructive=False,
                 parameters=parameters, output_fields=fields,
+                # Explicit locally trusted read-only classification is a
+                # synthetic fixture; the real MCP adapter cannot grant it.
+                input_schema=(
+                    {
+                        "type": "object",
+                        "properties": {
+                            parameters[0].name: parameters[0].json_schema,
+                        },
+                        "required": [parameters[0].name],
+                    }
+                    if adapter == "mcp" and parameters else {}
+                ),
             )],
         ))
 
