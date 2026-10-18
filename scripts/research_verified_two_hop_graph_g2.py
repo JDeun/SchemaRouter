@@ -22,7 +22,6 @@ from schemarouter.capability_snapshot import (
     validate_capability_snapshot,
 )
 from schemarouter.models import EndpointSpec, ToolSpec
-
 from scripts.research_authorized_native_graph_edges_g1 import (
     MAX_VISIBLE_ROUTES,
     DeclaredQueryInputLink,
