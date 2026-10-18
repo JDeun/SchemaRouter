@@ -7,6 +7,7 @@ cannot confer execution privileges or independently calibrated no-fit.
 from __future__ import annotations
 
 import hmac
+import json
 from dataclasses import dataclass, field
 from hashlib import sha256
 
@@ -20,6 +21,16 @@ from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSu
 from scripts.research_authorized_fixed5_decision_bridge import _visible_fingerprints
 
 STRICT_K = 5
+
+
+def _catalog_content_digest(catalog: NativeConceptCatalog) -> str:
+    """Stable serialized owner contract; integrity detection, not signature."""
+    raw = json.dumps(
+        catalog.model_dump(mode="json"),
+        ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    return sha256(raw).hexdigest()
 
 
 @dataclass
@@ -47,9 +58,7 @@ class AuthorizedConceptFixed5Selector:
         NativeConceptCatalog.model_validate(
             self.catalog.model_dump(mode="python"), strict=True,
         )
-        self._catalog_digest = sha256(
-            self.catalog.model_dump_json().encode("utf-8")
-        ).hexdigest()
+        self._catalog_digest = _catalog_content_digest(self.catalog)
         self._pinned = _visible_fingerprints(self.view)
 
     def __call__(self, query: str, source_ids: tuple[str, ...]) -> list[str]:
@@ -58,9 +67,7 @@ class AuthorizedConceptFixed5Selector:
             NativeConceptCatalog.model_validate(
                 self.catalog.model_dump(mode="python"), strict=True,
             )
-            current_digest = sha256(
-                self.catalog.model_dump_json().encode("utf-8")
-            ).hexdigest()
+            current_digest = _catalog_content_digest(self.catalog)
         except (ValueError, TypeError, OverflowError, AttributeError) as exc:
             raise PolicyViolationError("concept catalog mutated after approval") from exc
         if not hmac.compare_digest(current_digest, self._catalog_digest):
