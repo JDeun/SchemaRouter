@@ -38,8 +38,11 @@ snapshot IDs; no tool arguments, agent loops, invocations, or permissions.
   count <=5. If >5, **abstain** rather than invent a rank or truncate
   valid candidates. Empty results are unproven, **not calibrated no-fit**.
 - The research boundary intentionally accepts at most 32 approved
-  routes, walks pairwise O(N²), and does not scan every product catalog
-  tool. This is not the desired scalable whole-catalog graph index.
+  routes. It builds a small **exact semantic-ID identifier index** to
+  preselect roots, with G3/G2 retaining all type/field/permission checks.
+  That is a local conservative prefilter, not a proven sublinear global
+  catalog index: the current principal-scoped view still visits the
+  registered tools, and no full-catalog latency claim is justified.
 - Offline production OpenAPI and MCP parsers, synthetic host-reviewed
   source/ontology and simple task examples: not independent retrieval
   metric or actual provider/agent task completion.
