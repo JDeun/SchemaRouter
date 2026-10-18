@@ -95,7 +95,8 @@ def test_openapi_existing_field_is_annotated_without_source_mutation_or_permissi
     assert tool.fingerprint == fp
     assert amended.fingerprint != fp
     assert all(field.semantic_id is None for field in old_ep.output_fields)
-    assert {field.name: field.semantic_id for field in amended.endpoint("lookup").output_fields} == {
+    annotated_fields = amended.endpoint("lookup").output_fields
+    assert {field.name: field.semantic_id for field in annotated_fields} == {
         "contact_id": "crm.contact_id",
         "status": "crm.status",
     }
@@ -215,7 +216,8 @@ def test_duplicate_conflict_and_unsafe_semantic_id_fail_closed():
         )
     with pytest.raises(ValueError, match="invalid bounded"):
         HostSemanticMapping(
-            endpoint_name="lookup", expected_endpoint_fingerprint=tool.endpoint("lookup").fingerprint,
+            endpoint_name="lookup",
+            expected_endpoint_fingerprint=tool.endpoint("lookup").fingerprint,
             member_kind="output_field", member_name="status",
             semantic_id="invalid; injection",
         )
