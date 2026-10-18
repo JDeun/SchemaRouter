@@ -33,5 +33,5 @@ jobs:
         run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23" "ruff>=0.9,<1"
       - name: Native attestation and G2 parity
         run: |
-          ruff check scripts/research_native_semantic_graph_g3.py scripts/research_verified_graph_paths_g2.py tests/test_research_native_semantic_graph_g3.py
+          ruff check scripts/research_authorized_native_graph_edges_g1.py scripts/research_native_semantic_graph_g3.py scripts/research_verified_graph_paths_g2.py tests/test_research_native_semantic_graph_g3.py
           python -m pytest -q tests/test_research_native_semantic_graph_g3.py tests/test_research_verified_graph_paths_g2.py
