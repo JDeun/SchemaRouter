@@ -26,8 +26,11 @@ available, read-only/non-destructive endpoints. Construct
 and typed schemas, and for the declared target required parameter only
 when its typed native parameter and intended response semantic are
 visible. Pass these to the **existing**
-`build_capability_dependency_graph` and read its verified immediate
-`predecessors(target)`. Return only bounded, stable
+`build_capability_snapshot` with the **visible endpoint fingerprints**
+as `CapabilitySourceRevision` receipts, validate its deterministic
+snapshot digest with `validate_capability_snapshot`, and invoke the
+snapshot's native `build_graph().predecessors(target)` relation.
+Return only bounded, stable
 `NonExecutableDependencyHint` references with source/target field
 and input parameter names. A source/permission/availability witness
 must remain unchanged. The tool and agent execution pipelines are
