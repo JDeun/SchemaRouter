@@ -563,6 +563,8 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
+    "NativeDeclaredFieldGroup",
+    "retrieve_authorized_field_group",
     "AuthorizedContractSelection",
     "HostFieldContract",
     "RequiredEnumValue",
