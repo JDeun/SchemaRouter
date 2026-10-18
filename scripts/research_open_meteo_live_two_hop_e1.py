@@ -134,20 +134,54 @@ def _forecast_response(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 class OpenMeteoBoundInvoker:
-    """Trusted fixed-host invoker. No caller-controlled host, path or API key."""
+    """Trusted fixed-host invoker with source-owned, bounded failure stages.
+
+    The stage is host-only research telemetry. The caller/agent never
+    receives an exception message, raw response or additional authority.
+    """
+
+    FAILURE_STAGES = frozenset({
+        "http_transport_failure",
+        "http_status_rejected",
+        "response_json_rejected",
+        "geocoding_payload_rejected",
+        "weather_payload_rejected",
+    })
 
     def __init__(self, client: httpx.AsyncClient, *, source: str) -> None:
         if source not in ("geocode", "forecast"):
             raise ValueError("unknown trusted Open-Meteo source")
         self.client = client
         self.source = source
-        # Historical `calls`: validated successful invocations, not HTTPS attempts.
+        # Historical calls means validated successful invocations, NOT HTTP.
         self.calls = 0
         self.http_attempts = 0
+        self.last_failure_stage: str | None = None
+
+    async def _source_payload(
+        self, url: str, params: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Original fixed-host GET; classify failures without their content."""
+        self.http_attempts += 1
+        try:
+            response = await self.client.get(url, params=params)
+        except httpx.RequestError:
+            self.last_failure_stage = "http_transport_failure"
+            raise
+        try:
+            return _provider_json(response)
+        except httpx.HTTPStatusError:
+            self.last_failure_stage = "http_status_rejected"
+            raise
+        except (ValueError, TypeError, UnicodeError):
+            self.last_failure_stage = "response_json_rejected"
+            raise
 
     async def __call__(
         self, endpoint: str, arguments: dict[str, Any],
     ) -> dict[str, Any]:
+        # No prior call's error may be attributed to a later invocation.
+        self.last_failure_stage = None
         if self.source == "geocode" and endpoint == "search":
             country = arguments["country_code"]
             params = {
@@ -157,9 +191,12 @@ class OpenMeteoBoundInvoker:
                 "count": 10,
                 "format": "json",
             }
-            self.http_attempts += 1
-            response = await self.client.get(GEOCODE_URL, params=params)
-            result = _geocode_response(_provider_json(response), country)
+            payload = await self._source_payload(GEOCODE_URL, params)
+            try:
+                result = _geocode_response(payload, country)
+            except ValueError:
+                self.last_failure_stage = "geocoding_payload_rejected"
+                raise
         elif self.source == "forecast" and endpoint == "current":
             params = {
                 "latitude": arguments["latitude"],
@@ -167,9 +204,12 @@ class OpenMeteoBoundInvoker:
                 "current": "temperature_2m",
                 "timezone": "auto",
             }
-            self.http_attempts += 1
-            response = await self.client.get(WEATHER_URL, params=params)
-            result = _forecast_response(_provider_json(response))
+            payload = await self._source_payload(WEATHER_URL, params)
+            try:
+                result = _forecast_response(payload)
+            except ValueError:
+                self.last_failure_stage = "weather_payload_rejected"
+                raise
         else:
             raise ValueError("unregistered trusted Open-Meteo endpoint")
         self.calls += 1
