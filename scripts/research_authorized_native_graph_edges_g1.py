@@ -99,6 +99,8 @@ def _produced_fields(endpoint: EndpointSpec) -> list[CapabilityFieldContract]:
 
 def _safe_routes(
     router: SchemaRouter, principal: PrincipalContext,
+    *,
+    allowed_route_ids: frozenset[str] | None = None,
 ) -> dict[str, tuple[ToolSpec, EndpointSpec]]:
     allowed = router._authorization_predicate(principal)
     if allowed is None:
@@ -109,6 +111,12 @@ def _safe_routes(
     visible_field_count = 0
     for tool in visible.tools():
         for endpoint in tool.endpoints:
+            route_id = f"{tool.key}.{endpoint.name}"
+            # Trusted opt-in G3 approval scopes the research graph budget
+            # BEFORE output field counting, while still using the full
+            # principal/data-scope filtered registry and source policies.
+            if allowed_route_ids is not None and route_id not in allowed_route_ids:
+                continue
             if endpoint.read_only is not True or endpoint.destructive is True:
                 continue
             if not allowed(tool, endpoint):
