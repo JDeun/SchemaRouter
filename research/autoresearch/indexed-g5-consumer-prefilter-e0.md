@@ -51,3 +51,30 @@ consumers**, independent semantic language understanding, top-K
 ranking, external provider correctness or safe execution authority.
 External publisher-owned #1346 and paired agent E2 #1477 remain
 gates; frozen #432 and v0.18 #1356 HOLD unchanged.
+
+
+## First measured Linux after-fix observation (not paired on one host)
+
+On head `d6026e0e7eeb5b93d23f573a734e320851d1be7a`,
+dedicated GitHub Actions run `39174031188`, job `117812877351`,
+Python 3.12.15, Linux Azure, 5,108 registered synthetic routes:
+
+| Case | Before PR #1569 | With canonical prefilter |
+|---|---:|---:|
+| Broad 5,100 postings with zero dependency paths: wall p50 | 763.5113ms | 0.3899ms |
+| Narrow one eligible path: wall p50 | 1.8593ms | 1.8403ms |
+| Five eligible paths: wall p50 | 2.9070ms | 2.8953ms |
+| Seven eligible paths: result | over_k_unranked | over_k_unranked |
+
+`44 pytest passed`, Ruff passed, Pyright zero errors. Benchmark
+matrix verified source-scoped hidden/denied/unavailable results and
+K5 overflow remained unchanged. Index build wall in the after-fix
+runner was 1,441.2340ms; one-process peak RSS 108,256 KiB.
+
+**Critical interpretation:** these are DIFFERENT Actions jobs/machine
+allocations and only three broad-posting timed calls per job, not
+a paired, randomized, steady-state workload with confidence intervals.
+The fast improvement has a strong structural explanation (zero
+unnecessary registry.get reads) but must NOT be promoted to an
+independent provider workload p99 guarantee or claimed universally
+as a reliable numerical speedup factor.
