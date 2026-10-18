@@ -158,23 +158,8 @@ class OpenMeteoBoundInvoker:
         self.http_attempts = 0
         self.last_failure_stage: str | None = None
 
-    async def _source_payload(
-        self, url: str, params: dict[str, Any],
-    ) -> dict[str, Any]:
-        """Original fixed-host GET; classify failures without their content."""
-        if url not in (GEOCODE_URL, WEATHER_URL):
-            raise ValueError("unregistered fixed-host provider URL")
-        if (
-            (self.source == "geocode" and url != GEOCODE_URL)
-            or (self.source == "forecast" and url != WEATHER_URL)
-        ):
-            raise ValueError("mismatched trusted provider source")
-        self.http_attempts += 1
-        try:
-            response = await self.client.get(url, params=params)
-        except httpx.RequestError:
-            self.last_failure_stage = "http_transport_failure"
-            raise
+    def _verified_json(self, response: httpx.Response) -> dict[str, Any]:
+        """Validate only the original fixed public provider response."""
         try:
             return _provider_json(response)
         except httpx.HTTPStatusError:
@@ -198,7 +183,13 @@ class OpenMeteoBoundInvoker:
                 "count": 10,
                 "format": "json",
             }
-            payload = await self._source_payload(GEOCODE_URL, params)
+            self.http_attempts += 1
+            try:
+                response = await self.client.get(GEOCODE_URL, params=params)
+            except httpx.RequestError:
+                self.last_failure_stage = "http_transport_failure"
+                raise
+            payload = self._verified_json(response)
             try:
                 result = _geocode_response(payload, country)
             except ValueError:
@@ -211,7 +202,13 @@ class OpenMeteoBoundInvoker:
                 "current": "temperature_2m",
                 "timezone": "auto",
             }
-            payload = await self._source_payload(WEATHER_URL, params)
+            self.http_attempts += 1
+            try:
+                response = await self.client.get(WEATHER_URL, params=params)
+            except httpx.RequestError:
+                self.last_failure_stage = "http_transport_failure"
+                raise
+            payload = self._verified_json(response)
             try:
                 result = _forecast_response(payload)
             except ValueError:
