@@ -33,7 +33,11 @@ endpoint fingerprint receipts and native
 `snapshot.build_graph().predecessors(...)` edges to establish a strict
 `upstream → declared intermediate → declared final` path.
 Require the final visible endpoint to provide every host-declared
-answer-field semantic in the final group.
+**typed final output field contract** in the final group, using the same
+canonical comparator as the graph edges. Reject incompatible types,
+qualifiers, units or unknown metadata rather than treating semantic ID
+alone as proof. Reject a graph cycle that would feed a declared
+intermediate back from the final consumer.
 
 An upstream source whose **own required parameters are not established**
 is not returned: in G2 research we conservatively require the upstream
