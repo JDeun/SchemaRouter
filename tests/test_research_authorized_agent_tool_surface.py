@@ -958,6 +958,8 @@ def test_catalog_index_rejects_mutated_source_or_revoked_authority():
     ))
     with pytest.raises(PolicyViolationError):
         forged.catalog_index()
-    view.router.mark_access_unavailable("marine", "read")
-    with pytest.raises(PolicyViolationError):
+    # The retrieval witness tracks the trusted planner availability source.
+    # Temporary execution cooldown is not equivalent to source policy drift.
+    view.router.planner.availability_predicate = lambda _tool, _endpoint: False
+    with pytest.raises(PolicyViolationError, match="retrieval authority changed"):
         view.catalog_index()
