@@ -220,7 +220,7 @@ async def evaluate_one(
                 and inv.last_failure_stage not in inv.FAILURE_STAGES
                 for inv in (geocode, weather)
             ):
-                raise ValueError("invalid trusted source failure-stage receipt")
+                raise ValueError("invalid trusted source failure-stage receipt") from None
             source_stages = [
                 f"geocode_{geocode.last_failure_stage}"
                 if geocode.last_failure_stage is not None else None,
@@ -229,7 +229,7 @@ async def evaluate_one(
             ]
             source_stages = [stage for stage in source_stages if stage is not None]
             if len(source_stages) > 1:
-                raise ValueError("ambiguous simultaneous trusted source failures")
+                raise ValueError("ambiguous simultaneous trusted source failures") from None
             if source_stages:
                 trusted_failure_stage = source_stages[0]
             elif after_http == before_http:
