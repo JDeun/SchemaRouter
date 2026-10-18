@@ -168,7 +168,6 @@ def main() -> None:
                 "http_attempts": r["real_geocoding_http_attempts"]
                 + r["real_forecast_http_attempts"],
                 "host_exception_family": r["host_exception_family"],
-                "trusted_failure_stage": r["trusted_failure_stage"],
                 "full_task_complete": r["full_task_complete"],
                 "stop": r["termination_reason"],
             }
