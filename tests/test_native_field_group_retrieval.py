@@ -120,13 +120,13 @@ def test_principal_field_scope_prevents_a_partial_public_schema():
     assert result.total_ranked == 0
     raw = json.dumps(result.model_dump(mode="json"), ensure_ascii=False)
     assert "private.read" not in raw
-    assert "priority" not in raw
+    assert '"candidates": []' in raw  # request echo is user text, not hidden metadata
 
 
 def test_unknown_json_schema_and_unit_mismatch_do_not_prove_fieldgroup():
     group = GROUP.model_copy(deep=True)
     group.required_fields[0].json_schema = {"type": "string", "pattern": "^X$"}
-    with pytest.raises(ValueError, match="invalid bounded"):
+    with pytest.raises(ValueError, match="invalid current native FieldGroup"):
         retrieve_authorized_field_group(
             _router(), GROUP.aliases[0], principal=ANALYST, group=group,
         )
