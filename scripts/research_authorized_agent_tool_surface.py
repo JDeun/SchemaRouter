@@ -231,6 +231,49 @@ class AuthorizedAgentToolSurface:
         self.assert_source_unchanged()
         return entries
 
+    def ranked_catalog_preview(
+        self, *, k: int = MAX_TOOL_DEFINITIONS,
+        max_json_bytes: int = MAX_MODEL_CATALOG_INDEX_JSON_BYTES,
+    ) -> tuple[tuple[str, str], ...]:
+        """Read-only top-K route titles, chosen by prior authorized retrieval.
+
+        This does NOT present the physical or full authorized catalog to
+        the model. The top K are the currently ranked, principal-visible
+        native routes from the captured query. The model/agent remains
+        responsible for choosing among them and deciding whether to act.
+        No executable receipt, model call or invoker can be returned.
+        """
+        if type(k) is not int or not 1 <= k <= MAX_TOOL_DEFINITIONS:
+            raise ValueError("invalid scoped catalog preview K")
+        if (
+            type(max_json_bytes) is not int
+            or not 1 <= max_json_bytes <= MAX_MODEL_TOOL_JSON_BYTES
+        ):
+            raise ValueError("invalid scoped catalog index byte budget")
+        self.assert_source_unchanged()
+        routes = self._semantic_source_routes
+        if (
+            len(routes) != len(self.visible_route_ids)
+            or tuple(route.route_id for route in routes) != self.visible_route_ids
+        ):
+            raise PolicyViolationError("scoped catalog source identity mismatch")
+        entries = tuple(
+            (route.route_id, route.description) for route in routes[:k]
+        )
+        try:
+            encoded = json.dumps(
+                entries, ensure_ascii=False, separators=(",", ":"),
+                allow_nan=False,
+            ).encode("utf-8")
+        except (TypeError, ValueError, OverflowError):
+            raise PolicyViolationError(
+                "scoped catalog preview could not be serialized",
+            ) from None
+        if len(encoded) > max_json_bytes:
+            raise ValueError("scoped catalog preview exceeds research byte cap")
+        self.assert_source_unchanged()
+        return entries
+
     def tool_definitions(
         self, selected_route_ids: list[str], *, k: int = MAX_TOOL_DEFINITIONS,
     ) -> list[dict[str, Any]]:
