@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from schemarouter import (
@@ -541,10 +543,10 @@ def test_scoped_retrieval_never_embeds_hidden_schema_property() -> None:
     }
     assert seen_analysis_schemas
     assert all(
-        "private_value" not in __import__("json").dumps(schema)
+        "private_value" not in json.dumps(schema)
         for schema in seen_analysis_schemas
     )
-    assert "private_value" not in __import__("json").dumps(
+    assert "private_value" not in json.dumps(
         result.model_dump(mode="json")
     )
     # Original source remains available for the trusted provider validator;
