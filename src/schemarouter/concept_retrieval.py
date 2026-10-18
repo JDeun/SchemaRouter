@@ -51,8 +51,8 @@ class NativeDeclaredConcept(StrictModel):
     concept_id: str
     aliases: tuple[str, ...]
     required_fields: tuple[CapabilityFieldContract, ...]
-    source_type: str | None = None
-    license: str | None = None
+    source_type: str
+    license: str
 
     @model_validator(mode="after")
     def validate_concept(self) -> NativeDeclaredConcept:
@@ -68,10 +68,8 @@ class NativeDeclaredConcept(StrictModel):
             or any(not _scalar_contract(f.json_schema)
                    for f in self.required_fields)
             or any(
-                source is not None and (
-                    type(source) is not str or source != source.strip()
-                    or not 1 <= len(source) <= 160
-                )
+                type(source) is not str or source != source.strip()
+                or not 1 <= len(source) <= 160
                 for source in (self.source_type, self.license)
             )
         ):
