@@ -272,3 +272,24 @@ def test_no_agent_executor_or_arbitrary_k_in_native_graph_lookup(monkeypatch):
         with pytest.raises(ValueError, match="fixed K5"):
             idx.lookup(router, ALIASES[0], group=GROUP,
                        principal=ANALYST, k=value)
+
+
+def test_in_place_policy_rules_change_during_lookup_fails_closed():
+    router = _router()
+    idx = _index(router)
+    original_policy = router.authorization_policy
+    assert original_policy is not None
+    changed = False
+
+    def availability(tool, ep):
+        nonlocal changed
+        if not changed:
+            changed = True
+            # Simulate an adversarial owner-controlled hot policy rewrite
+            # rather than normal immutable-dataclass replacement.
+            object.__setattr__(original_policy, "default_effect", "allow")
+        return True
+
+    router.planner.availability_predicate = availability
+    with pytest.raises(PolicyViolationError, match="rules changed"):
+        idx.lookup(router, ALIASES[0], group=GROUP, principal=ANALYST)
