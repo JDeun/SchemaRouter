@@ -182,7 +182,7 @@ async def test_source_failure_stage_is_bounded_without_raw_response(
 
 
 @pytest.mark.asyncio
-async def test_source_transport_failure_and_host_url_scope_are_separate() -> None:
+async def test_source_transport_failure_and_unregistered_endpoint_are_separate() -> None:
     from scripts.research_open_meteo_live_two_hop_e1 import (
         OpenMeteoBoundInvoker,
     )
@@ -194,12 +194,11 @@ async def test_source_transport_failure_and_host_url_scope_are_separate() -> Non
         transport=httpx.MockTransport(transport_failure),
     ) as client:
         invoker = OpenMeteoBoundInvoker(client, source="geocode")
-        with pytest.raises(ValueError, match="unregistered fixed-host"):
-            await invoker._source_payload("https://unregistered.invalid/path", {})
+        with pytest.raises(ValueError, match="unregistered trusted Open-Meteo endpoint"):
+            await invoker("current", {"latitude": 37.5, "longitude": 127.0})
         assert invoker.http_attempts == 0
-        with pytest.raises(ValueError, match="mismatched trusted provider"):
-            from scripts.research_open_meteo_live_two_hop_e1 import WEATHER_URL
-            await invoker._source_payload(WEATHER_URL, {})
+        with pytest.raises(ValueError, match="unknown trusted Open-Meteo source"):
+            OpenMeteoBoundInvoker(client, source="unregistered")
         assert invoker.http_attempts == 0
         with pytest.raises(httpx.ConnectError):
             await invoker("search", {
