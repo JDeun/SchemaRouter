@@ -14,6 +14,7 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
+from schemarouter.capability_contracts import CapabilityFieldContract
 from schemarouter.errors import PolicyViolationError
 from scripts.research_authorized_native_graph_edges_g1 import DeclaredQueryInputLink
 from scripts.research_verified_two_hop_graph_g2 import (
@@ -49,6 +50,7 @@ def _router(
     extra_middle_required: bool = False, hidden_material: bool = True,
     require_source_input: bool = False, mutate_middle: bool = False,
     missing_source_provenance: bool = False, omit_final_field: bool = False,
+    wrong_final_field_type: bool = False, cyclic_final_output: bool = False,
 ) -> SchemaRouter:
     policy = AuthorizationPolicy(
         default_effect="deny",
@@ -109,8 +111,11 @@ def _router(
             *(
                 [] if omit_final_field else
                 [FieldSpec(name="tensile", semantic_id="mechanics.tensile",
-                           json_schema={"type": "number"})]
+                           json_schema={
+                               "type": "string" if wrong_final_field_type else "number"
+                           })]
             ),
+            *([MATERIAL_ID] if cyclic_final_output else []),
         ],
     )))
     router.add_tool(_tool("private", EndpointSpec(
@@ -141,8 +146,15 @@ def _declaration(router: SchemaRouter) -> DeclaredTwoHopGraphIntent:
             parameter_name="structure_id",
             input_semantic_id="resource.structure_id",
         ),
-        required_final_semantics=(
-            "mechanics.elastic_modulus", "mechanics.tensile",
+        required_final_fields=(
+            CapabilityFieldContract(
+                semantic_id="mechanics.elastic_modulus",
+                json_schema={"type": "number"},
+            ),
+            CapabilityFieldContract(
+                semantic_id="mechanics.tensile",
+                json_schema={"type": "number"},
+            ),
         ),
         first_consumer_fingerprint=router.registry.get(
             "structure"
@@ -197,6 +209,7 @@ def test_hidden_field_and_denied_predecessor_are_not_in_graph():
     {"mutate_middle": True},
     {"missing_source_provenance": True},
     {"omit_final_field": True},
+    {"wrong_final_field_type": True},
 ))
 def test_no_unproven_graph_composition(fixture_change) -> None:
     router = _router(**fixture_change)
@@ -232,7 +245,7 @@ def test_pinned_registered_endpoint_fingerprint_prevents_stale_ontology():
     bad = DeclaredTwoHopGraphIntent(
         first=declaration.first,
         second=declaration.second,
-        required_final_semantics=declaration.required_final_semantics,
+        required_final_fields=declaration.required_final_fields,
         first_consumer_fingerprint="0" * 64,
         second_consumer_fingerprint=declaration.second_consumer_fingerprint,
     )
@@ -255,7 +268,7 @@ def test_rejects_fake_two_hop_relation_and_missing_semantic_output():
                 parameter_name="structure_id",
                 input_semantic_id="resource.unrelated_id",
             ),
-            required_final_semantics=old.required_final_semantics,
+            required_final_fields=old.required_final_fields,
             first_consumer_fingerprint=old.first_consumer_fingerprint,
             second_consumer_fingerprint=old.second_consumer_fingerprint,
         )
@@ -297,6 +310,14 @@ def test_composite_join_is_not_claimed_from_arbitrary_field_union():
         bad_router, ALIASES[0], principal=ANALYST,
         declaration=_declaration(bad_router),
     ) == ()
+
+
+def test_two_hop_dependency_cycle_fails_closed():
+    router = _router(cyclic_final_output=True)
+    with pytest.raises(ValueError, match="dependency cycle"):
+        retrieve_authorized_two_hop_hints_g2(
+            router, ALIASES[0], principal=ANALYST, declaration=_declaration(router),
+        )
 
 
 def test_more_than_k5_complete_predecessors_fail_closed():
