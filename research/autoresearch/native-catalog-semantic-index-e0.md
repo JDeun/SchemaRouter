@@ -63,5 +63,8 @@ capability labels. Missing source/field metadata cannot qualify.
 Offline tests exercise EN/KO/JA declared concepts, >400 irrelevant
 semantic distractors, policy-hidden required output, denied/unsafe
 endpoints, wrong type/unit/source/label, registry source churn and
-K-overflow. Verify the default `retrieve_authorized()` output remains
+K-overflow. A separate **5,127 registered-route synthetic smoke test**
+verifies complete-field lookup correctness at that catalog size, with
+no measured latency, RSS, independent data distribution or adversarial
+provider workload. Verify the default `retrieve_authorized()` output remains
 unchanged and registered tools are never executed.
