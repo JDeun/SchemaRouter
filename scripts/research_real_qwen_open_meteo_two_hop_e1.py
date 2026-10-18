@@ -202,9 +202,12 @@ async def evaluate_one(
 
         completed += 1
         if route == ROUTES[0]:
+            # The provider adapter independently checks the original
+            # location ID. SchemaRouter correctly omits identifier-only
+            # fields from projected agent observations. Never insist that
+            # an internal source identity be disclosed to the model.
             if (
-                type(observation.get("location_id")) is not int
-                or type(observation.get("latitude")) not in (int, float)
+                type(observation.get("latitude")) not in (int, float)
                 or type(observation.get("longitude")) not in (int, float)
                 or observation.get("country_code") != country
             ):
