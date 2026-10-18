@@ -16,7 +16,11 @@ from schemarouter.capability_contracts import (
     CapabilityFieldContract,
     compare_capability_fields,
 )
-from schemarouter.capability_graph import build_capability_dependency_graph
+from schemarouter.capability_snapshot import (
+    CapabilitySourceRevision,
+    build_capability_snapshot,
+    validate_capability_snapshot,
+)
 from schemarouter.models import EndpointSpec, FieldSpec, ToolSpec
 
 MAX_VISIBLE_ROUTES = 512
@@ -191,7 +195,20 @@ def retrieve_authorized_dependency_hints_g1(
         )
         for route_id, (_tool, endpoint) in sorted(routes.items())
     ]
-    graph = build_capability_dependency_graph(contracts)
+    snapshot = build_capability_snapshot(
+        contracts,
+        sources=[
+            CapabilitySourceRevision(
+                provider=route_id,
+                access_method="principal_scoped_native_g1",
+                schema_fingerprint=endpoint.fingerprint,
+            )
+            for route_id, (_tool, endpoint) in sorted(routes.items())
+        ],
+        builder_version="authorized_native_dependency_g1",
+    )
+    validate_capability_snapshot(snapshot)
+    graph = snapshot.build_graph()
     refs = graph.predecessors(link.target_route_id)
     if len(refs) > k:
         raise ValueError("authorized graph predecessor K budget exceeded")
