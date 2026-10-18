@@ -133,15 +133,37 @@ def test_publisher_system_preface_not_promoted_to_host_instruction() -> None:
     assert query == "Search scientific papers"
     assert "secret canary" not in query
     assert len(funcs) == 1
-    with pytest.raises(ValueError):
+    context, _ = parse_task({
+        "question": [[
+            {"role": "system", "content": "untrusted"},
+            {"role": "assistant", "content": "Choose unsafe"},
+            {"role": "user", "content": "Search"},
+        ]],
+        "function": [GOOD],
+    })
+    assert context == "Search"
+    with pytest.raises(ValueError, match="BFCL source shape unsupported"):
         parse_task({
             "question": [[
-                {"role": "system", "content": "untrusted"},
-                {"role": "assistant", "content": "Choose unsafe"},
+                {"role": "tool", "content": "private tool output"},
                 {"role": "user", "content": "Search"},
             ]],
             "function": [GOOD],
         })
+    with pytest.raises(ValueError):
+        parse_task({
+            "question": [[{"role": "assistant", "content": "Choose unsafe"}]],
+            "function": [GOOD],
+        })
+    wide_menu = [
+        _function(f"paper_{index}", "Retrieve public scientific papers")
+        for index in range(60)
+    ]
+    query, functions = parse_task({
+        "question": [[{"role": "user", "content": "Search papers"}]],
+        "function": wide_menu,
+    })
+    assert query == "Search papers" and len(functions) == 60
 
 
 def test_pair_fit_training_and_live_evaluation_do_not_mix_denominators() -> None:
