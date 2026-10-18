@@ -221,6 +221,41 @@ def test_strict_k_rejects_tuning(bad_k):
         )
 
 
+def test_graph_snapshot_contains_only_principal_visible_source_contracts(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Typed graph is built from scoped sources, never redacted afterward."""
+    import scripts.research_authorized_native_graph_edges_g1 as g1
+
+    captured = []
+    original = g1.build_capability_snapshot
+
+    def record(*args, **kwargs):
+        snapshot = original(*args, **kwargs)
+        captured.append(snapshot)
+        return snapshot
+
+    monkeypatch.setattr(g1, "build_capability_snapshot", record)
+    router = _make_router()
+    assert retrieve_authorized_dependency_hints_g1(
+        router, LINK.query_aliases[0], principal=ANALYST, link=LINK,
+    )
+    assert retrieve_authorized_dependency_hints_g1(
+        router, LINK.query_aliases[0], principal=VIEWER, link=LINK,
+    ) == ()
+    assert len(captured) == 2
+    analyst, viewer = captured
+    assert analyst.snapshot_id != viewer.snapshot_id
+    assert "private.read" not in {c.capability_id for c in analyst.contracts}
+    viewer_materials = next(
+        c for c in viewer.contracts if c.capability_id == "materials.read"
+    )
+    assert {
+        field.semantic_id for field in viewer_materials.produces
+    } == {"material.formula"}
+    assert all(source.schema_fingerprint for source in viewer.sources)
+
+
 def test_invalid_alias_declarations_rejected():
     with pytest.raises(ValueError, match="invalid declared"):
         DeclaredQueryInputLink(
