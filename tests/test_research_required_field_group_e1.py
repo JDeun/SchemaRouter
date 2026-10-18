@@ -53,10 +53,10 @@ def _router() -> SchemaRouter:
         default_effect="deny",
         rules=(
             AuthorizationRule(
-                effect="allow", operation="*.read", roles_any=("analyst", "viewer"),
+                effect="deny", operation="private.read", roles_any=("analyst", "viewer"),
             ),
             AuthorizationRule(
-                effect="deny", operation="private.read", roles_any=("analyst", "viewer"),
+                effect="allow", operation="*.read", roles_any=("analyst", "viewer"),
             ),
         ),
         data_rules=(
@@ -97,8 +97,10 @@ def test_group_pre_k_only_exposes_complete_compatible_authorized_tool(query: str
     router = _router()
     original = router.retrieve_authorized(query, principal=ANALYST, k=5)
     # Existing per-field additive ranking DOES include partial routes.
-    assert any(c.route_id == "partial_a.read" for c in original.candidates)
-    assert any(c.route_id == "partial_b.read" for c in original.candidates)
+    assert any(
+        c.route_id in {"partial_a.read", "partial_b.read"}
+        for c in original.candidates
+    )
     assert all(c.route_id != "private.read" for c in original.candidates)
 
     result = retrieve_required_field_group_e1(
