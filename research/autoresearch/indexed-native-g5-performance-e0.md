@@ -17,10 +17,11 @@ build-wall duration, per-query wall p50/p95/p99/mean, process CPU
 p50/p95/p99 and Linux `ru_maxrss` in KiB. Report includes Python
 and host platform; raw tool IDs/credentials/prompts/values are excluded.
 
-`G5` and its supporting field index refuse to return candidates if
-the **availability predicate callable is replaced during lookup**,
-in addition to existing registry, fingerprint, policy and data-scope
-checks. This is an object identity hot-swap guard, **not** a guarantee
+The existing `_retrieval_authority_witness` already prevents `G5`
+and its supporting field index from returning candidates when the
+**availability predicate callable changes during lookup**. New negative
+regressions verify this existing fail-closed guard. No duplicate
+availability-check implementation is introduced. This is **not** a guarantee
 against a malicious stateful availability callback changing its own
 answer without changing identity or an external provider changing
 real-world state between lookup and tool execution.
