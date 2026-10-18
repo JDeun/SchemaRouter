@@ -42,6 +42,8 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "RetrievalAbstentionPolicy",
         "SelectiveCapabilityRetrieval",
         "DeclaredOperationFitPolicy",
+        "NativeDeclaredFieldGroup",
+        "retrieve_authorized_field_group",
         "AuthorizedContractSelection",
         "HostFieldContract",
         "RequiredEnumValue",
