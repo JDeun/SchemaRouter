@@ -23,6 +23,7 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     NativeDeclaredFieldGroup,
+    ParameterSpec,
     ToolSpec,
 )
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
@@ -153,12 +154,11 @@ def benchmark_selectivity(*, noise_routes: int = 5100, iterations: int = 20,
             name=name, source_type="crm", license="host-reviewed-synthetic",
             endpoints=[EndpointSpec(
                 name="read", read_only=True,
-                parameters=[{
-                    "name": "customer_id", "required": True,
-                    "location": "argument",
-                    "json_schema": {"type": "string"},
-                    "semantic_id": "crm.customer_id",
-                }],
+                parameters=[ParameterSpec(
+                    name="customer_id", required=True, location="argument",
+                    json_schema={"type": "string"},
+                    semantic_id="crm.customer_id",
+                )],
                 input_schema={
                     "type": "object",
                     "properties": {"customer_id": {"type": "string"}},
