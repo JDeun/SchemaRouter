@@ -17,7 +17,8 @@ from schemarouter import (
 )
 from schemarouter.capability_contracts import CapabilityFieldContract
 from scripts.research_required_field_group_e1 import (
-    DeclaredFieldGroupAnalyzer, DeclaredRequiredFieldGroup,
+    DeclaredFieldGroupAnalyzer,
+    DeclaredRequiredFieldGroup,
     retrieve_required_field_group_e1,
 )
 
