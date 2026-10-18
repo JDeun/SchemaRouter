@@ -22,6 +22,12 @@ approved source revision is checked against both the entire registered
 mapping. Roots require no native input parameter; consumers in this E0
 require precisely one fully declared required scalar argument.
 
+The scoped G1 helper accepts an opt-in exact approved-route subset, so
+its existing 512-route/4096-field **research graph accounting** applies
+to approved graph nodes before source and K scanning. This is tested
+against 520 additional unreviewed registered routes; it does not imply
+full-catalog indexing or production latency improvement.
+
 The existing `retrieve_verified_graph_paths_g2` performs the full
 principal-/field-scoped, currently available, provenance-aware capability
 snapshot build and fixed K5 typed one/two-edge graph traversal. The additive
