@@ -12,6 +12,7 @@ from schemarouter import (
     SchemaRouter,
 )
 from schemarouter.capability_contracts import CapabilityFieldContract
+from schemarouter.concept_retrieval import resolve_native_concepts
 from scripts.research_authorized_native_graph_edges_g1 import _safe_routes
 from scripts.research_native_semantic_graph_g3 import (
     MAX_APPROVED_ROUTES,
@@ -26,7 +27,6 @@ from scripts.research_verified_graph_paths_g2 import (
     _proved_empty_root_envelope,
     _valid_edge_field,
 )
-from schemarouter.concept_retrieval import resolve_native_concepts
 
 STRICT_K = 5
 
