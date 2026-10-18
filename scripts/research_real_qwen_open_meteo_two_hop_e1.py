@@ -209,8 +209,11 @@ async def evaluate_one(
             if (
                 type(observation.get("latitude")) not in (int, float)
                 or type(observation.get("longitude")) not in (int, float)
-                or observation.get("country_code") != country
             ):
+                # Country is validated against the trusted original JSON by
+                # the geocoding adapter *before* Router.execute. The planner
+                # can legitimately project country_code away, so never
+                # require it to reappear in the model-visible observation.
                 reason = "invalid_first_source_observation"
                 break
             actual_location = observation
