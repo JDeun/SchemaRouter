@@ -83,6 +83,15 @@ def _router() -> SchemaRouter:
         ("complete", [A, B], "materials_data", "CC-BY-4.0"),
         ("wrong_unit", [A, _field("bad_b", "mechanics.tensile_strength", "GPa")],
          "materials_data", "CC-BY-4.0"),
+        ("wrong_type", [A, B.model_copy(update={
+            "name": "wrong_type_value", "json_schema": {"type": "string"},
+        })], "materials_data", "CC-BY-4.0"),
+        ("wrong_qualifier", [A, B.model_copy(update={
+            "name": "wrong_qualifier_value", "qualifiers": {"temperature": "cold"},
+        })], "materials_data", "CC-BY-4.0"),
+        ("missing_unit", [A, B.model_copy(update={
+            "name": "missing_unit_value", "unit": None,
+        })], "materials_data", "CC-BY-4.0"),
         ("wrong_source", [A, B], "incompatible_data", "CC-BY-4.0"),
         ("wrong_license", [A, B], "materials_data", "proprietary"),
         ("private", [A, B], "materials_data", "CC-BY-4.0"),
@@ -145,6 +154,7 @@ def test_group_rejection_never_fills_k_with_partial_or_wrong_contract() -> None:
     routes = {c.route_id for c in result.candidates}
     assert not routes.intersection({
         "partial_a.read", "partial_b.read", "wrong_unit.read",
+        "wrong_type.read", "wrong_qualifier.read", "missing_unit.read",
         "wrong_source.read", "wrong_license.read", "private.read",
     })
 
