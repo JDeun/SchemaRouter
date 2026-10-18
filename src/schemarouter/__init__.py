@@ -479,6 +479,11 @@ from .schema_diff import (
     compare_endpoint_specs,
     compare_tool_specs,
 )
+from .semantic_attestations import (
+    HostSemanticAttestation,
+    HostSemanticMapping,
+    apply_host_semantic_attestation,
+)
 from .state_retrieval import (
     StateAwareCapabilityCandidate,
     StateAwareCapabilityRetrieval,
@@ -578,6 +583,9 @@ __all__ = [
     "IndexedNativeFieldCandidate",
     "IndexedNativeFieldResult",
     "NativeSchemaPostingIndex",
+    "HostSemanticAttestation",
+    "HostSemanticMapping",
+    "apply_host_semantic_attestation",
     "NativeConceptCatalog",
     "NativeDeclaredConcept",
     "ResolvedNativeConcepts",
