@@ -14,6 +14,7 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
+from schemarouter.adapters import tool_from_mcp, tool_from_openapi
 from schemarouter.capability_contracts import CapabilityFieldContract
 from schemarouter.errors import PolicyViolationError
 from scripts.research_verified_graph_paths_g2 import (
@@ -394,3 +395,43 @@ def test_protocol_neutral_business_record_graph_uses_same_native_contracts(query
         "contact_search.read", "case_index.read", "case_status.read",
     )
     assert hints[0].target_output_fields == ("status", "priority")
+
+
+def test_real_openapi_and_mcp_converters_emit_same_canonical_tool_contract():
+    """Parser output is real; no false claim of authorized G2 execution."""
+    openapi_tool = tool_from_openapi("contacts_api", {
+        "openapi": "3.1.0",
+        "info": {"title": "Contacts API"},
+        "paths": {"/contacts": {"get": {
+            "operationId": "search_contacts",
+            "responses": {"200": {"content": {
+                "application/json": {"schema": {
+                    "type": "object",
+                    "properties": {"contact_id": {"type": "string"}},
+                }},
+            }}},
+        }}},
+    })
+    mcp_tool = tool_from_mcp("cases_mcp", {"tools": [{
+        "name": "read_case",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"contact_id": {"type": "string"}},
+            "required": ["contact_id"],
+        },
+        "outputSchema": {
+            "type": "object",
+            "properties": {"case_id": {"type": "string"}},
+        },
+    }]})
+    assert openapi_tool.metadata["adapter"] == "openapi"
+    assert mcp_tool.metadata["adapter"] == "mcp"
+    assert openapi_tool.endpoints
+    assert [p.name for p in mcp_tool.endpoints[0].parameters] == ["contact_id"]
+    assert any(f.name == "contact_id" for f in openapi_tool.endpoints[0].output_fields)
+    assert any(f.name == "case_id" for f in mcp_tool.endpoints[0].output_fields)
+    # Source schemas alone are not semantic input mappings, provenance,
+    # license clearance, or trusted read-only classification.
+    assert all(f.semantic_id is None for f in mcp_tool.endpoints[0].output_fields)
+    assert mcp_tool.endpoints[0].read_only is None
+    assert mcp_tool.endpoints[0].input_schema["required"] == ["contact_id"]
