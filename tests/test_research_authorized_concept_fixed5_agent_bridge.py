@@ -245,6 +245,10 @@ def test_valid_but_changed_concept_catalog_content_is_not_silently_reapproved():
     )
     with pytest.raises(PolicyViolationError, match="catalog mutated"):
         selector(QUERY, view.visible_route_ids)
-    selector.catalog = CATALOG
+    replacement = CATALOG.model_copy(deep=True)
+    object.__setattr__(
+        replacement.concepts[1], "aliases", ("different priority", "우선순위", "優先度"),
+    )
+    selector.catalog = replacement
     with pytest.raises(PolicyViolationError, match="catalog mutated"):
         selector(QUERY, view.visible_route_ids)
