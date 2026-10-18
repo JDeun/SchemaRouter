@@ -115,6 +115,16 @@ flowchart LR
 상위 애플리케이션이 대화, decomposition, memory, checkpoint, 최종 생성을 담당하고,
 SchemaRouter는 **등록된 capability와 실행 경계**를 담당합니다.
 
+**에이전트와 독립적인 도구 목차:** SchemaRouter는 현재 조회 가능한 capability의
+route ID, endpoint, 인자·출력 필드 계약을 권한에 맞춰 제한된 후보 목록으로 제공합니다.
+에이전트/상위 애플리케이션은 이 목록을 참고해 실제 도구를 선택하고 인자를 작성하며
+다음 행동을 결정합니다. **조회만으로 도구가 자동 실행되지 않고**, SchemaRouter가
+스스로 다음 작업을 계획하거나 최종 답변을 생성하지도 않습니다.
+선택적으로 제공되는 `plan/execute`는 호스트가 명시적으로 호출하는
+**검증·실행 경계**이지, 자율 실행하는 에이전트 루프가 아닙니다.
+`scripts/`의 권한별 목차→상세 스키마 E0 실험은 제품 기본 모델이나
+공개 `catalog_index` API에 포함되지 않습니다.
+
 Retrieval 자체는 side effect가 없습니다.
 
 ```python
