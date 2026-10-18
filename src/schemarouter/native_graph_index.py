@@ -8,7 +8,6 @@ leaves this opt-in research retrieval. No model, agent or execution logic.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from hashlib import sha256
 from typing import TYPE_CHECKING, Literal
 
 from .authorization import PrincipalContext
