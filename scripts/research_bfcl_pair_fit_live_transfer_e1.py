@@ -36,7 +36,7 @@ LIVE_BLOBS = {
 TARGET_CALIBRATION_FPR = 0.10
 MAX_ORIGINAL_BYTES = 3_000_000
 MAX_LIVE_CASES = 5_000
-MAX_FUNCTIONS = 32
+MAX_FUNCTIONS = 500
 
 
 def git_blob(raw: bytes) -> str:
@@ -92,10 +92,12 @@ def parse_task(row: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
     if (
         type(turns) is not list or len(turns) != 1
         or type(turns[0]) is not list
-        or len(turns[0]) not in (1, 2)
+        or not 1 <= len(turns[0]) <= 16
         or any(type(message) is not dict for message in turns[0])
-        or [m.get("role") for m in turns[0]] not in (
-            ["user"], ["system", "user"],
+        or turns[0][-1].get("role") != "user"
+        or any(
+            message.get("role") not in ("system", "assistant", "user")
+            for message in turns[0][:-1]
         )
         or type(funcs) is not list
         or not 1 <= len(funcs) <= MAX_FUNCTIONS
@@ -106,10 +108,20 @@ def parse_task(row: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
             for fn in funcs
         )
     ):
-        raise ValueError("BFCL original one-turn function shape unsupported")
-    # Publisher prompts may include a prepended system message. It is
-    # untrusted corpus text, NOT host authority; never pass it to our
-    # semantic feature encoder or treat it as a trusted instruction.
+        # Only public structure counts/types enter diagnostics. Never echo
+        # prompt, system text, tool name or sensitive source payload.
+        outer = len(turns) if type(turns) is list else -1
+        messages = len(turns[0]) if (
+            type(turns) is list and turns and type(turns[0]) is list
+        ) else -1
+        menu = len(funcs) if type(funcs) is list else -1
+        raise ValueError(
+            f"BFCL source shape unsupported (outer={outer}, "
+            f"messages={messages}, offered={menu})"
+        )
+    # The last user message is evaluated. All preceding corpus messages
+    # remain untrusted context and are deliberately NOT treated as host
+    # system instructions, authority, or model-relevance feature inputs.
     user = turns[0][-1].get("content")
     if type(user) is not str or not user.strip() or len(user) > 25_000:
         raise ValueError("BFCL user query invalid")
