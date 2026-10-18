@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - "scripts/research_real_qwen_open_meteo_two_hop_e1.py"
+      - "scripts/research_scoped_host_invocation.py"
       - "tests/test_research_real_qwen_open_meteo_two_hop_e1.py"
       - "research/autoresearch/real-qwen-open-meteo-two-hop-e1.md"
       - ".github/workflows/research-real-qwen-open-meteo-two-hop-e1.yml"
