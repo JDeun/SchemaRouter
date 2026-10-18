@@ -167,6 +167,7 @@ def test_canonical_alias_collision_is_rejected_before_runtime():
             NativeDeclaredConcept(
                 concept_id="other", aliases=("STATUS",),
                 required_fields=(_contract("other"),),
+                source_type="support", license="reviewed",
             ),
         ))
 
@@ -243,3 +244,12 @@ def test_determinism_across_catalog_order_and_unicode():
     assert resolve_native_concepts(
         "문의 상태와 우선순위를 조회", catalog=CATALOG,
     ).concept_ids == ("support.priority", "support.status")
+
+
+def test_concept_without_reviewed_source_and_license_cannot_enter_catalog():
+    with pytest.raises(ValueError):
+        NativeDeclaredConcept(
+            concept_id="unreviewed.concept",
+            aliases=("unreviewed term",),
+            required_fields=(_contract("unreviewed.field"),),
+        )
