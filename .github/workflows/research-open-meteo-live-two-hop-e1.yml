@@ -1,0 +1,81 @@
+name: Live Open-Meteo Two-Hop Bound Contract E1
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_open_meteo_live_two_hop_e1.py"
+      - "tests/test_research_open_meteo_live_two_hop_e1.py"
+      - "research/autoresearch/open-meteo-live-two-hop-e1.md"
+      - ".github/workflows/research-open-meteo-live-two-hop-e1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-open-meteo-two-hop-e1-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-bound-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Verify finite typed host-bound original execution without public internet
+        run: |
+          python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
+          ruff check scripts/research_open_meteo_live_two_hop_e1.py tests/test_research_open_meteo_live_two_hop_e1.py
+          python -m pytest -q tests/test_research_open_meteo_live_two_hop_e1.py
+
+  real-public-provider:
+    needs: offline-bound-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install existing product wheel only (no model runtime)
+        run: python -m pip install .
+      - name: Execute TWO actual approved Open-Meteo HTTPS endpoints per original EN/KO/JA host input
+        run: |
+          python -m scripts.research_open_meteo_live_two_hop_e1 \
+            --out artifacts/open-meteo-live-e1/report.json
+      - name: Verify complete 6 real source HTTP calls, no agent/E2 claim
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          row = json.loads(Path("artifacts/open-meteo-live-e1/report.json").read_text())
+          assert row["source_http_calls"] == {"geocoding": 3, "forecast": 3}
+          assert [c["language_label"] for c in row["cases"]] == ["en", "ko", "ja"]
+          assert all(c["two_real_source_calls_completed"] for c in row["cases"])
+          assert all(c["geocode_observation_to_weather_args"] for c in row["cases"])
+          assert row["actual_external_https"]
+          assert row["host_orchestrated_not_agent"]
+          assert not row["independent_private_e2"]
+          assert not row["tool_choice_accuracy_measured"]
+          assert not row["real_agent_final_answer_pass"]
+          assert not row["product_defaults_changed"]
+          assert not row["release_qualified"]
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as out:
+              out.write("## REAL original provider REST two-hop (E1 host only)\\n\\n")
+              out.write("3 EN/KO/JA-labeled host inputs, 2 verified Open-Meteo HTTPS bound invocations per input, 6 real source calls. Actual coordinates from first provider observation feed second. No local or cloud LLM, no model-generated routing, no real-agent task/final-answer quality, no independently approved E2.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: live-open-meteo-bound-two-hop-e1-${{ github.run_id }}
+          path: artifacts/open-meteo-live-e1/report.json
+          retention-days: 90
+          if-no-files-found: warn
