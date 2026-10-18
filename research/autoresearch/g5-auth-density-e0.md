@@ -71,3 +71,25 @@ is **not** a controlled speedup or regression benchmark; the source
 and authorization rule complexity differ. It is actionable evidence
 that qualifying and filtering more posting-list candidates may be
 materially more expensive in this particular design.
+
+
+### Repeat on rebased main (same fixture, different CI run)
+
+Rebased head `1bcdbaf7701e07d5989aabb4ac3f7a1cc8c049fd`,
+workflow `39173716475`, job `117811951934`, same GitHub Actions
+Linux kernel family/Python 3.12.15; 5 warmups plus 50 iterations per
+role; 32 pytest cases and Ruff PASS, Pyright 0 errors.
+
+| Role | Repeat wall p50 / p95 / p99 (ms) |
+|---|---|
+| `zero` | 5.2933 / 6.0336 / 8.0643 |
+| `one` | 5.6007 / 5.8495 / 5.9469 |
+| `five` | 6.4832 / 6.8099 / 7.3884 |
+| `six` | 6.7937 / 7.6435 / 7.7315 |
+
+Build wall 1,300.7612 ms; peak process RSS 108,284 KiB.
+The different timing observations illustrate **CI runner noise**:
+even this identical synthetic workload varies materially between
+runs; neither single run establishes a stable SLO or independent
+benchmark advantage. Both retain the same source/policy/return
+correctness invariants.
