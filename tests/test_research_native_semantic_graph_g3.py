@@ -241,3 +241,85 @@ def test_graph_does_not_run_agent_planner_or_execution(monkeypatch):
     assert retrieve_native_semantic_paths_g3(
         router, ALIASES[0], principal=ANALYST, goal=_goal(router),
     )
+
+
+def test_native_g3_real_openapi_mcp_converter_contracts_are_explicitly_host_attested():
+    """Production parser output; offline provider schemas, not live calls."""
+    from schemarouter.adapters import tool_from_mcp, tool_from_openapi
+
+    openapi = tool_from_openapi("contacts", {
+        "openapi": "3.1.0",
+        "info": {"title": "Contacts", "version": "1.0.0"},
+        "paths": {"/contacts": {"get": {
+            "operationId": "lookup",
+            "responses": {"200": {"description": "OK", "content": {
+                "application/json": {"schema": {
+                    "type": "object",
+                    "properties": {"contact_id": {"type": "string"}},
+                }},
+            }}},
+        }}},
+    })
+    mcp = tool_from_mcp("cases", {"tools": [{
+        "name": "read_case",
+        "annotations": {"readOnlyHint": True},
+        "inputSchema": {"type": "object",
+                        "properties": {"contact_id": {"type": "string"}},
+                        "required": ["contact_id"]},
+        "outputSchema": {"type": "object",
+                         "properties": {"status": {"type": "string"}}},
+    }]})
+    # The remote hint is not local host authorization. Trust comes only
+    # from an explicit locally owned revision with pinned fingerprints.
+    assert mcp.endpoint("read_case").read_only is None
+    assert mcp.endpoint("read_case").parameters[0].semantic_id is None
+    for tool in (openapi, mcp):
+        tool.source_type = tool.metadata["adapter"]
+        tool.license = "locally-reviewed-fixture"
+    root = openapi.endpoint("lookup")
+    root.read_only = True
+    producer = next(f for f in root.output_fields if f.name == "contact_id")
+    producer.identifier = True
+    producer.semantic_id = "crm.contact_id"
+    consumer = mcp.endpoint("read_case")
+    consumer.read_only = True
+    consumer.parameters[0].semantic_id = "crm.contact_id"
+    field = next(f for f in consumer.output_fields if f.name == "status")
+    field.semantic_id = "support.status"
+
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.lookup", roles_any=("analyst",),
+        ), AuthorizationRule(
+            effect="allow", operation="*.read_case", roles_any=("analyst",),
+        )),
+    ))
+    router.add_tool(openapi)
+    router.add_tool(mcp)
+
+    approvals = tuple(
+        ApprovedNativeRouteG3(
+            route_id=route_id, expected_tool_fingerprint=tool.fingerprint,
+            expected_endpoint_fingerprint=tool.endpoint(ep).fingerprint,
+        )
+        for route_id, tool, ep in (
+            ("contacts.lookup", router.registry.get("contacts"), "lookup"),
+            ("cases.read_case", router.registry.get("cases"), "read_case"),
+        )
+    )
+    goal = NativeGraphGoalG3(
+        aliases=("case status", "고객 문의 상태", "顧客問い合わせ状態"),
+        target_route_id="cases.read_case",
+        required_outputs=(CapabilityFieldContract(
+            semantic_id="support.status", json_schema={"type": "string"},
+        ),),
+        approved_routes=approvals,
+    )
+    for alias in goal.aliases:
+        hints = retrieve_native_semantic_paths_g3(
+            router, alias, principal=ANALYST, goal=goal,
+        )
+        assert len(hints) == 1
+        assert hints[0].route_ids == ("contacts.lookup", "cases.read_case")
+        assert hints[0].edges[0].semantic_id == "crm.contact_id"
