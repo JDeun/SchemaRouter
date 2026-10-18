@@ -7,6 +7,8 @@ cannot confer execution privileges or independently calibrated no-fit.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from hashlib import sha256
+import hmac
 
 from schemarouter import PolicyViolationError
 from schemarouter.concept_retrieval import (
@@ -35,6 +37,7 @@ class AuthorizedConceptFixed5Selector:
     calibrated_no_fit: bool = field(default=False, init=False)
     executable_authority: bool = field(default=False, init=False)
     _pinned: dict[str, tuple[str, str]] = field(init=False, repr=False)
+    _catalog_digest: str = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         if not isinstance(self.catalog, NativeConceptCatalog):
@@ -44,10 +47,24 @@ class AuthorizedConceptFixed5Selector:
         NativeConceptCatalog.model_validate(
             self.catalog.model_dump(mode="python"), strict=True,
         )
+        self._catalog_digest = sha256(
+            self.catalog.model_dump_json().encode("utf-8")
+        ).hexdigest()
         self._pinned = _visible_fingerprints(self.view)
 
     def __call__(self, query: str, source_ids: tuple[str, ...]) -> list[str]:
         self.view.assert_source_unchanged()
+        try:
+            NativeConceptCatalog.model_validate(
+                self.catalog.model_dump(mode="python"), strict=True,
+            )
+            current_digest = sha256(
+                self.catalog.model_dump_json().encode("utf-8")
+            ).hexdigest()
+        except (ValueError, TypeError, OverflowError, AttributeError) as exc:
+            raise PolicyViolationError("concept catalog mutated after approval") from exc
+        if not hmac.compare_digest(current_digest, self._catalog_digest):
+            raise PolicyViolationError("concept catalog mutated after approval")
         if (
             type(query) is not str
             or query != self.view.original_query
