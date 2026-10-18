@@ -7,9 +7,9 @@ an execution engine, graph path planner, or new lexical ranker.
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from hashlib import sha256
-import json
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal, Mapping
 
@@ -22,7 +22,6 @@ from .field_group_retrieval import (
     _complete_fields,
     _scalar_contract,
 )
-from .models import ToolSpec
 from .registry import ToolRegistry
 
 if TYPE_CHECKING:
