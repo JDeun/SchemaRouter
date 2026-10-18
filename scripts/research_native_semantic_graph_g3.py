@@ -102,7 +102,11 @@ def retrieve_native_semantic_paths_g3(
         raise ValueError("no host-declared G3 query alias")
 
     witness = router._retrieval_authority_witness()
-    visible = _safe_routes(router, principal)
+    visible = _safe_routes(
+        router, principal, allowed_route_ids=frozenset(
+            item.route_id for item in goal.approved_routes
+        ),
+    )
     approvals = {item.route_id: item for item in goal.approved_routes}
     # No source information about hidden/denied/unavailable approved routes.
     if not approvals.keys() <= visible.keys():
