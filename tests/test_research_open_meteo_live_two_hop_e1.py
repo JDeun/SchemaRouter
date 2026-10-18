@@ -6,7 +6,7 @@ import json
 import httpx
 import pytest
 
-from schemarouter import SchemaValidationError
+from schemarouter import PlanValidationError
 from scripts.research_open_meteo_live_two_hop_e1 import (
     _forecast_response,
     _geocode_response,
@@ -115,7 +115,7 @@ async def test_missing_city_argument_does_not_call_network() -> None:
             args={"country_code": "KR"},
             fields=["location_id", "latitude", "longitude", "country_code"],
         )
-        with pytest.raises(SchemaValidationError):
+        with pytest.raises(PlanValidationError, match="missing required arguments"):
             await router.execute(incomplete)
         assert geo.calls == 0 and weather.calls == 0
 
