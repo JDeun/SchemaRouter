@@ -78,3 +78,31 @@ The fast improvement has a strong structural explanation (zero
 unnecessary registry.get reads) but must NOT be promoted to an
 independent provider workload p99 guarantee or claimed universally
 as a reliable numerical speedup factor.
+
+
+## Same-process structural AB (stronger diagnostic; still synthetic)
+
+Dedicated CI run `39174307759`, job `117813698438`, Python3.12.15,
+Linux Azure, 5,102 registered routes and 5,100 unrelated common output
+semantic postings. It ran the SAME exact G5 source-index/canonical
+graph, router/principal and `NativeSchemaGraphIndex.lookup` logic in
+alternating AB order, changing ONLY the G5 structural target prefilter:
+the benchmark-only disabled condition uses a **superset of every registered
+route**, while the enabled condition uses canonical graph edge consumers.
+
+| Paired same-process condition | Wall p50 | Wall p95 | Wall p99 |
+|---|---:|---:|---:|
+| Canonical consumer prefilter disabled | 955.2751ms | 960.8975ms | 960.8975ms |
+| Canonical consumer prefilter enabled | 0.3999ms | 0.4678ms | 0.4678ms |
+
+Two full warm-up AB cycles were excluded; **5 measured AB cycles** were
+alternated to reduce fixed invocation order bias. Both returned the
+same empty `no_proven_hit` result. The disabled-superset experiment is
+a benchmark-only `dataclasses.replace` view, not a new alternate
+production retrieval engine. 52 focused pytest cases, Ruff and
+Pyright 0 errors all passed.
+
+This stronger same-process causal test demonstrates the expected
+dramatic reduction for output-only false-positive postings. Nevertheless,
+five samples and one synthetic benchmark workload are insufficient to
+establish a representative p99, universal speedup or SLO.
