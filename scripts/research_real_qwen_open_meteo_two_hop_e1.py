@@ -286,8 +286,17 @@ async def evaluate_one(
             public_observation=observation,
         )
 
-    if completed != geocode.calls + weather.calls:
-        raise ValueError("native provider calls differ from successful host observations")
+    # A provider can verify a response, then the host may still reject
+    # projection/policy before publishing its observation to the model.
+    # This is one FAILED agent step, not a model-completed step and not an
+    # invalid aggregate. Never allow a concealed multi-call surplus.
+    verified = geocode.calls + weather.calls
+    if (
+        completed > verified
+        or verified - completed > 1
+        or (verified != completed and reason != "host_or_native_source_denied")
+    ):
+        raise ValueError("native provider verification/host observation mismatch")
     if (
         not 0 <= geocode.calls <= geocode.http_attempts <= 1
         or not 0 <= weather.calls <= weather.http_attempts <= 1
