@@ -13,7 +13,7 @@ The paired E0 driver calls the **unchanged**
 `router.retrieve_authorized(query, principal, k=5)`; the comparison callback
 uses `AuthorizedConceptFixed5Selector` → native
 `retrieve_authorized_concepts` → native FieldGroup **before-K** filter.
-Both callbacks run against the same registered source, exact original query,
+The paired driver pins the complete approved ontology content hash at **experiment start**, and checks it both before and after each arm (including the interval after agent factory construction); a valid post-baseline alias replacement cannot be silently reapproved for the concept arm. Both callbacks run against the same registered source, exact original query,
 source-/policy-/principal-scoped `AuthorizedAgentToolSurface` and native
 endpoint/tool fingerprint witness. Candidate IDs never come from task gold.
 
