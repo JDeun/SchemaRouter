@@ -112,9 +112,13 @@ def _router() -> SchemaRouter:
 def test_group_pre_k_only_exposes_complete_compatible_authorized_tool(query: str) -> None:
     router = _router()
     original = router.retrieve_authorized(query, principal=ANALYST, k=5)
-    # Existing per-field additive ranking DOES include partial routes.
+    # The baseline can rank field-incomplete contracts whose names/IDs
+    # match even though type, unit or evidence requirements are wrong.
     assert any(
-        c.route_id in {"partial_a.read", "partial_b.read"}
+        c.route_id in {
+            "wrong_unit.read", "wrong_type.read",
+            "wrong_qualifier.read", "missing_unit.read",
+        }
         for c in original.candidates
     )
     assert all(c.route_id != "private.read" for c in original.candidates)
@@ -132,6 +136,32 @@ def test_group_pre_k_only_exposes_complete_compatible_authorized_tool(query: str
     assert result.candidates[0].license == "CC-BY-4.0"
     assert result.candidates[0].tool_fingerprint
     assert result.candidates[0].endpoint_fingerprint
+
+
+def test_two_partial_sources_do_not_form_a_proven_full_endpoint() -> None:
+    """An arbitrary union of A-only and B-only tool contracts is not a join."""
+    router = SchemaRouter(
+        analyzer=DeclaredFieldGroupAnalyzer(GROUP),
+        authorization_policy=AuthorizationPolicy(default_effect="allow"),
+    )
+    for name, item in (("partial_a", A), ("partial_b", B)):
+        router.add_tool(ToolSpec(
+            name=name, source_type="materials_data", license="CC-BY-4.0",
+            endpoints=[EndpointSpec(
+                name="read", read_only=True, output_fields=[item],
+            )],
+        ))
+    baseline = router.retrieve_authorized(
+        GROUP.aliases[0], principal=ANALYST, k=5,
+    )
+    assert {c.route_id for c in baseline.candidates} == {
+        "partial_a.read", "partial_b.read",
+    }
+    gated = retrieve_required_field_group_e1(
+        router, GROUP.aliases[0], principal=ANALYST, group=GROUP,
+    )
+    assert gated.candidates == []
+    assert gated.total_ranked == 0
 
 
 def test_hidden_member_of_required_group_is_not_satisfied_by_public_alias() -> None:
