@@ -6,8 +6,14 @@ import json
 import pytest
 
 from schemarouter import (
-    AuthorizationPolicy, AuthorizationRule, DataScopeRule, EndpointSpec,
-    FieldSpec, PrincipalContext, SchemaRouter, ToolSpec,
+    AuthorizationPolicy,
+    AuthorizationRule,
+    DataScopeRule,
+    EndpointSpec,
+    FieldSpec,
+    PrincipalContext,
+    SchemaRouter,
+    ToolSpec,
 )
 from schemarouter.capability_contracts import CapabilityFieldContract
 from scripts.research_required_field_group_e1 import (
