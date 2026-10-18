@@ -132,6 +132,7 @@ async def evaluate_one(
     correctly_ended = False
     reason = "turn_limit"
     host_exception_family: str | None = None
+    host_failure_after_http_attempt: bool | None = None
     total_model_ms = 0.0
 
     for _ in range(MAX_TURNS):
@@ -198,12 +199,17 @@ async def evaluate_one(
         except (PolicyViolationError, ValueError, RuntimeError) as exc:
             # Only the bounded exception FAMILY is public. No provider body,
             # URL, host exception message, coordinates or security details.
-            # ValueError can originate in the host OR source validation;
-            # it is not proof of a root cause or model-routing failure.
+            # The scoped host wraps provider, planner AND authorization
+            # exceptions as PolicyViolationError; the class does NOT reveal
+            # the root cause or prove a real policy breach.
             host_exception_family = (
-                "policy_violation" if isinstance(exc, PolicyViolationError)
+                "scoped_boundary_denial" if isinstance(exc, PolicyViolationError)
                 else "value_error" if isinstance(exc, ValueError)
                 else "runtime_error"
+            )
+            host_failure_after_http_attempt = (
+                geocode.http_attempts + weather.http_attempts
+                > geocode.calls + weather.calls
             )
             reason = "host_or_native_source_denied"
             break
@@ -272,6 +278,7 @@ async def evaluate_one(
         "real_geocoding_http_attempts": geocode.http_attempts,
         "real_forecast_http_attempts": weather.http_attempts,
         "host_exception_family": host_exception_family,
+        "host_failure_after_http_attempt": host_failure_after_http_attempt,
         "model_generated_first_step_complete": completed >= 1,
         "model_generated_two_step_complete": completed == 2,
         "strict_final_answer_correct": correctly_ended,
