@@ -15,6 +15,40 @@ chooses the order, values and final answer. **The host** independently checks
 authority for any explicitly invoked action. An inferred multistep executor
 or agent loop is not part of SchemaRouter.
 
+## Protocol- and domain-neutral contract boundary
+
+**The test names `find.read`, `structure.read` and `property.read`
+are fabricated, in-memory research fixtures**, not a Materials Project,
+OPTIMADE, OpenAPI or MCP production integration. SchemaRouter is **not
+materials-specific**. Existing native `adapters/openapi.py`,
+`adapters/mcp.py`, `adapters/optimade.py`, GraphQL, OData, SQL, record,
+vector and graph-store adapters compile capabilities to common
+`ToolSpec → EndpointSpec → ParameterSpec / FieldSpec` contracts.
+The graph engine must operate on those contracts without testing
+protocol or domain names. OPTIMADE is a domain-specific adapter
+feeding the same shared catalog, not the graph's conceptual root.
+
+G2 therefore also tests a **non-materials CRM/customer-support chain**
+`contact_search.read → case_index.read → case_status.read`, using
+synthetic normalized tool contracts labelled as OpenAPI, MCP and a
+record store. These adapter-origin labels do **not** establish actual
+provider discovery or interoperability; the graph test demonstrates
+only that the native typed graph logic itself is domain-neutral.
+
+**Real cross-adapter qualification remains open** in
+[#1545](https://github.com/JDeun/SchemaRouter/issues/1545).
+In particular, an actual MCP discovered tool typically contains a
+nonempty `input_schema` and does not automatically carry a locally
+trusted `read_only=True` declaration; OpenAPI/MCP inputs also do not
+automatically supply verified semantic input IDs, and source/license
+labels can be absent. Current strict G2 **abstains** on these cases.
+We must integrate locally trusted semantic augmentation, preserve
+provider JSON Schema, and validate real OpenAPI/MCP/OPTIMADE adapters
+under the **same principal-scoped authority** before claiming mixed
+protocol graph search works end to end. Never fabricate a safe adapter
+profile by stripping schemas or granting execution authority from
+untrusted remote metadata.
+
 ## Concrete, opt-in G2 research experiment
 
 `scripts/research_verified_graph_paths_g2.py` extends G1's
