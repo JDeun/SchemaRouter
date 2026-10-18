@@ -173,6 +173,36 @@ def fixed_fpr_cutoff(negatives: list[float]) -> float:
     return math.nextafter(sorted(negatives, reverse=True)[12], math.inf)
 
 
+def familywise_negative_tail_accept(
+    candidate_scores: list[float],
+    negative_calibration_scores: list[float],
+    *,
+    alpha: float = 0.10,
+) -> bool:
+    """Conservative original-public negative tail for a menu of functions.
+
+    Uses a single raw per-function empirical p-value per offered candidate,
+    and the Bonferroni alpha/menu bound. Its finite 120-negative resolution
+    automatically abstains on too-large menus instead of extrapolating.
+    The publisher categories are PUBLIC and already exposed, so this
+    diagnostic is NOT a production-calibrated error guarantee or E2.
+    """
+    if (
+        type(candidate_scores) is not list or not 1 <= len(candidate_scores) <= 500
+        or type(negative_calibration_scores) is not list
+        or len(negative_calibration_scores) != 120
+        or type(alpha) is not float or alpha != 0.10
+        or any(type(z) is not float or not math.isfinite(z)
+               for z in [*candidate_scores, *negative_calibration_scores])
+    ):
+        raise ValueError("invalid source-pinned menu-wise negative calibration")
+    highest = max(candidate_scores)
+    # Add-one empirical p-value with ties counted as equally negative.
+    extreme = sum(z >= highest for z in negative_calibration_scores)
+    p_value = (extreme + 1) / (len(negative_calibration_scores) + 1)
+    return len(candidate_scores) * p_value <= alpha
+
+
 def stats(positive: list[float], negative: list[float], cutoff: float) -> dict[str, Any]:
     if (
         not positive or not negative or not math.isfinite(cutoff)
@@ -193,7 +223,11 @@ def run(
     training: dict[str, list[dict[str, Any]]],
     live: dict[str, list[dict[str, Any]]],
     encode: Any,
+    *,
+    menu_familywise: bool = False,
 ) -> dict[str, Any]:
+    if type(menu_familywise) is not bool:
+        raise ValueError("explicit BFCL E1 family-wise mode must be boolean")
     from sklearn.linear_model import LogisticRegression
     from sklearn.pipeline import make_pipeline
     from sklearn.preprocessing import StandardScaler
@@ -255,6 +289,7 @@ def run(
     fit_cutoff = fixed_fpr_cutoff(calibrated_prob["neg"])
     eval_pos: dict[str, list[float]] = {"e5": [], "pair_fit": []}
     eval_neg: dict[str, list[float]] = {"e5": [], "pair_fit": []}
+    familywise_decisions: dict[str, list[bool]] = {"pos": [], "neg": []}
     zero_menu_irrelevant = 0
     for kind, bucket in (("live_relevance", eval_pos),
                          ("live_irrelevance", eval_neg)):
@@ -269,10 +304,19 @@ def run(
                 continue
             features = pair_features(question, funcs, embedder)
             bucket["e5"].append(max(x[0] for x in features))
-            bucket["pair_fit"].append(max(fit_scores(features, model)))
+            candidate_fit = fit_scores(features, model)
+            bucket["pair_fit"].append(max(candidate_fit))
+            if menu_familywise:
+                familywise_decisions[
+                    "pos" if kind == "live_relevance" else "neg"
+                ].append(
+                    familywise_negative_tail_accept(
+                        candidate_fit, calibrated_prob["neg"],
+                    ),
+                )
     if not eval_neg["e5"]:
         raise ValueError("no nonempty-menu irrelevant cases for model evaluation")
-    return {
+    report = {
         "study": "PUBLIC_BFCL_V4_PAIR_FIT_LIVE_CATEGORY_TRANSFER_E1",
         "source_commit": BFCL_COMMIT,
         "source_blobs": dict(LIVE_BLOBS),
@@ -312,11 +356,33 @@ def run(
         "default_product_changed": False,
         "release_qualified": False,
     }
+    if menu_familywise:
+        positives = familywise_decisions["pos"]
+        negatives = familywise_decisions["neg"]
+        if (
+            len(positives) != len(eval_pos["pair_fit"])
+            or len(negatives) != len(eval_neg["pair_fit"])
+        ):
+            raise ValueError("public BFCL family-wise cohort denominator drift")
+        report["live_category_evaluation"]["menu_familywise_diagnostic"] = {
+            "supported_total": len(positives),
+            "supported_admitted": sum(positives),
+            "supported_false_refused": len(positives) - sum(positives),
+            "unsupported_total": len(negatives),
+            "unsupported_false_accepted": sum(negatives),
+            "unsupported_correctly_refused": len(negatives) - sum(negatives),
+            "familywise_alpha": 0.10,
+            "source": "original_odd_id_negative_score_tail_Bonferroni",
+            "external_independent_e2_qualified": False,
+            "large_menu_unresolved_calibration_abstains": True,
+        }
+    return report
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument("--menu-familywise", action="store_true")
     args = parser.parse_args()
     old, old_shas = fetch_original_data()
     live, live_shas = load_live_source()
@@ -344,7 +410,7 @@ def main() -> None:
             texts, batch_size=16, show_progress_bar=False,
             normalize_embeddings=True, convert_to_numpy=True,
         )
-    output = run(old, live, encode)
+    output = run(old, live, encode, menu_familywise=args.menu_familywise)
     output["publisher_sha256"] = {**old_shas, **live_shas}
     output["cpu_cores"] = os.cpu_count()
     output["github_run"] = os.getenv("GITHUB_RUN_ID")
