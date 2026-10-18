@@ -1,0 +1,117 @@
+name: BFCL Public Menu Familywise Risk Diagnostic E1 CPU
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/research_bfcl_pair_fit_live_transfer_e1.py"
+      - "tests/test_research_bfcl_pair_fit_live_transfer_e1.py"
+      - "tests/test_research_bfcl_public_menu_familywise_e1.py"
+      - "research/autoresearch/bfcl-public-menu-familywise-e1.md"
+      - ".github/workflows/research-bfcl-public-menu-familywise-e1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bfcl-menu-familywise-e1-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  no-model-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Static checks and synthetic fit/calibration contract
+        run: |
+          python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1" "scikit-learn>=1.5,<2"
+          ruff check scripts/research_bfcl_pair_fit_live_transfer_e1.py tests/test_research_bfcl_pair_fit_live_transfer_e1.py tests/test_research_bfcl_public_menu_familywise_e1.py
+          python -m pytest -q tests/test_research_bfcl_pair_fit_live_transfer_e1.py tests/test_research_bfcl_public_menu_familywise_e1.py
+
+  original-public-external-cpu:
+    needs: no-model-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install pinned-model CPU dependencies
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install . "sentence-transformers>=5.1,<6" "transformers>=4.51,<5" "scikit-learn>=1.5,<2"
+      - name: Actual E5 source-authorized pair relevance and unrelated LIVE category scoring
+        run: |
+          python -m scripts.research_bfcl_pair_fit_live_transfer_e1 \
+            --out artifacts/bfcl-live-e1/report.json --menu-familywise
+      - name: Verify original source identity and score both dimensions
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          path = Path("artifacts/bfcl-live-e1/report.json")
+          data = json.loads(path.read_text())
+          assert data["source_commit"] == "6ea57973c7a6097fd7c5915698c54c17c5b1b6c8"
+          assert data["model_revision"] == "fd1525a9fd15316a2d503bf26ab031a61d056e98"
+          assert data["train_even"]["supported"] == 100
+          assert data["train_even"]["irrelevant"] == 120
+          assert data["calibrate_odd"] == {"supported": 100, "irrelevant": 120}
+          assert data["live_category_evaluation"]["supported"] == 16
+          assert data["live_category_evaluation"]["irrelevant"] >= 10
+          assert data["live_category_evaluation"]["irrelevant_with_candidate_functions"] > 0
+          assert (
+              data["live_category_evaluation"]["irrelevant_with_candidate_functions"]
+              + data["live_category_evaluation"]["irrelevant_zero_candidate_functions"]
+              == data["live_category_evaluation"]["irrelevant"]
+          )
+          assert "live_relevance" in data["publisher_sha256"]
+          assert "live_irrelevance" in data["publisher_sha256"]
+          for arm in ("e5_raw_cosine", "trained_pair_fit"):
+              value = data["live_category_evaluation"][arm]["live"]
+              assert value["supported_admitted"] + value["supported_false_refused"] == 16
+              assert value["unsupported_false_accepted"] + value["unsupported_correctly_refused"] == value["unsupported_total"]
+          extra = data["live_category_evaluation"]["menu_familywise_diagnostic"]
+          assert extra["supported_total"] == 16
+          assert extra["unsupported_total"] == data["live_category_evaluation"]["irrelevant_with_candidate_functions"]
+          assert extra["supported_admitted"] + extra["supported_false_refused"] == 16
+          assert extra["unsupported_false_accepted"] + extra["unsupported_correctly_refused"] == extra["unsupported_total"]
+          assert not extra["external_independent_e2_qualified"]
+          assert not data["independently_authored_private_e2"]
+          assert not data["actual_provider_calls"]
+          assert not data["production_threshold_calibrated"]
+          assert not data["default_product_changed"]
+          assert not data["release_qualified"]
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write("## BFCL original public LIVE category evaluation (NOT independent E2)\n\n")
+              n = data["live_category_evaluation"]["irrelevant_zero_candidate_functions"]
+              out.write(f"Publisher irrelevant cases with **zero offered functions**: {n}; structural no-call, EXCLUDED from classifier denominators.\\n\\n")
+              out.write("| Arm | Supported admitted /16 | False refused /16 | False accepted /nonempty menu | Correctly refused /nonempty menu |\\n|---|---:|---:|---:|---:|\\n")
+              for name in ("e5_raw_cosine", "trained_pair_fit"):
+                  row = data["live_category_evaluation"][name]["live"]
+                  out.write(f"| {name} | {row['supported_admitted']} | {row['supported_false_refused']} | {row['unsupported_false_accepted']}/{row['unsupported_total']} | {row['unsupported_correctly_refused']} |\n")
+              v = data["live_category_evaluation"]["menu_familywise_diagnostic"]
+              out.write(f"| familywise negative tail | {v['supported_admitted']} | {v['supported_false_refused']} | {v['unsupported_false_accepted']}/{v['unsupported_total']} | {v['unsupported_correctly_refused']} |\\n")
+              out.write("\nPUBLIC original BFCL, not private E2. Function-relevance/no-tool only; no correct function name/arguments/native execution scored. No production threshold or model release.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: bfcl-public-menu-familywise-e1-${{ github.run_id }}
+          path: artifacts/bfcl-live-e1/report.json
+          if-no-files-found: warn
+          retention-days: 90
