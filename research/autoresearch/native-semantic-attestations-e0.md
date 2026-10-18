@@ -11,7 +11,11 @@ and product FieldGroup pre-K [#1550](https://github.com/JDeun/SchemaRouter/pull/
 The earlier published 13-tool Qwen3/E5 synthetic DEV fixture
 `evaluate_authorized_e5_hybrid_cpu_dev.build_source_router` registered
 only operation IDs and prose descriptions — no native output fields,
-typed inputs, semantic IDs, or reviewed source/licensing. Applying the
+typed inputs, semantic IDs, or reviewed source/licensing. This is verified
+by loading the **actual pinned 13-route corpus** in the regression test,
+not an imitation or fabricated gold. A separate real OpenAPI parser
+fixture demonstrates that an approved existing two-field contract can
+qualify for native principal-scoped FieldGroup Top-K. Applying the
 typed FieldGroup search to this fixture cannot honestly find verified
 output fields. Filling field schemas from expected benchmark answers
 would leak the evaluation gold. This change intentionally **refuses**
