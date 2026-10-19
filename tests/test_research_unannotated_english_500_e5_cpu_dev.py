@@ -1,8 +1,6 @@
 """No-model controls for pinned 500-route English-only multilingual E5 E1 DEV."""
 from __future__ import annotations
 
-import hashlib
-
 from scripts.research_unannotated_english_500_e5_cpu_dev import (
     CASES,
     K,
