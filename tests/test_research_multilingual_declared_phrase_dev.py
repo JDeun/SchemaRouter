@@ -58,6 +58,7 @@ def test_scoped_phrase_bridge_improves_supported_korean_japanese_dev() -> None:
     ("Youngs modulusXYZ", "youngs modulus", False),
     ("탄성계수값", "탄성계수", False),
     ("탄성계수와 열전도율", "탄성계수", True),
+    ("열전도율을 확인", "열전도율", True),
     ("탄성계수과 열전도율", "탄성계수", True),
     ("ラマンピーク測定", "ラマンピーク", False),
     ("unknown", "no", False),
