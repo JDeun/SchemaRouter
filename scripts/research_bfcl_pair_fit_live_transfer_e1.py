@@ -244,7 +244,7 @@ def run(
     calibration: dict[str, list[float]] = {
         "e5_pos": [], "e5_neg": [],
     }
-    calibration_pairs: list[tuple[list[list[float]], bool]] = []
+    calibration_pairs: list[tuple[list[list[float]], bool, str]] = []
     clock = time.perf_counter()
     for kind in ("multiple", "irrelevance"):
         for record in training[kind]:
@@ -267,7 +267,7 @@ def run(
                 calibration["e5_pos" if expected is not None else "e5_neg"].append(
                     best_e5,
                 )
-                calibration_pairs.append((features, expected is not None))
+                calibration_pairs.append((features, expected is not None, ident))
     if (
         len(calibration["e5_pos"]) != 100 or len(calibration["e5_neg"]) != 120
         or sum(train_y) != 100 or not any(x == 0 for x in train_y)
@@ -282,9 +282,23 @@ def run(
     )
     model.fit(train_x, train_y)
     calibrated_prob: dict[str, list[float]] = {"pos": [], "neg": []}
-    for feats, supported in calibration_pairs:
-        best = max(fit_scores(feats, model))
-        calibrated_prob["pos" if supported else "neg"].append(best)
+    # The original threshold measures PER-REQUEST maxima. Keep it intact.
+    # Bonferroni needs a SINGLE-CANDIDATE null, not these already-maximized
+    # scores, or the larger-menu penalty is applied a second time.
+    # One original negative function per held-apart original publisher
+    # negative request is chosen by a frozen hash of ID alone, never score,
+    # live label, offered function name or benchmark gold.
+    one_per_negative_request: list[float] = []
+    for feats, supported, ident in calibration_pairs:
+        scores = fit_scores(feats, model)
+        calibrated_prob["pos" if supported else "neg"].append(max(scores))
+        if not supported:
+            selector = int.from_bytes(
+                hashlib.sha256(ident.encode("utf-8")).digest()[:8], "big",
+            )
+            one_per_negative_request.append(scores[selector % len(scores)])
+    if len(one_per_negative_request) != 120:
+        raise ValueError("original calibration negative request count drift")
     e5_cutoff = fixed_fpr_cutoff(calibration["e5_neg"])
     fit_cutoff = fixed_fpr_cutoff(calibrated_prob["neg"])
     eval_pos: dict[str, list[float]] = {"e5": [], "pair_fit": []}
@@ -311,7 +325,7 @@ def run(
                     "pos" if kind == "live_relevance" else "neg"
                 ].append(
                     familywise_negative_tail_accept(
-                        candidate_fit, calibrated_prob["neg"],
+                        candidate_fit, one_per_negative_request,
                     ),
                 )
     if not eval_neg["e5"]:
@@ -372,7 +386,9 @@ def run(
             "unsupported_false_accepted": sum(negatives),
             "unsupported_correctly_refused": len(negatives) - sum(negatives),
             "familywise_alpha": 0.10,
-            "source": "original_odd_id_negative_score_tail_Bonferroni",
+            "source": "original_odd_id_hash_selected_single_negative_pair_Bonferroni",
+            "calibration_unit": "one_function_per_original_negative_request",
+            "negative_calibration_requests": len(one_per_negative_request),
             "external_independent_e2_qualified": False,
             "large_menu_unresolved_calibration_abstains": True,
         }
