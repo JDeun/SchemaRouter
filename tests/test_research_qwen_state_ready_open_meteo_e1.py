@@ -35,6 +35,7 @@ async def test_pairs_exact_same_live_tasks_and_never_claims_independent_e2(
             "real_forecast_http_attempts": 0,
             "termination_reason": "host_or_native_source_denied",
             "trusted_failure_stage": "geocode_http_transport_failure",
+            "trusted_transport_error_kind": "connect_error",
             "model_turns": 1,
             "model_generation_ms": 2.0,
         }
