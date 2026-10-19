@@ -216,10 +216,10 @@
     {
       "path": "research/research-program-2026.md",
       "section": 4,
-      "en_blob": "04420be19eb64b07f3b79500428b530e5969a0a8",
-      "ko_blob": "0f96b9204bff71431d033beac643af8a7791ae27",
+      "en_blob": "fafbf411cdd3862d6de8ff3004f75eb19370c4e8",
+      "ko_blob": "6427c308bc3dfb799dbdc05be82fb8bb4386e775",
       "decision": "meaning-preserved",
-      "evidence": "Manually compared source paragraph: EN explicitly states both #1580/#1584 are diagnostic, not product improvements and release #1356 must not merge. Korean '진단이며 성능 개선 근거가 아닙니다' and '릴리스 PR #1356은 HOLD입니다' retain both negative conclusions. Automated Korean-negation heuristic missed '아닙니다'; section/table labels and linked status are preserved. AI-assisted editorial spotcheck only, NOT independent reviewer sign-off."
+      "evidence": "Rechecked complete revised document blob after only the issue-lifecycle section was edited: section 4 EN prohibits treating #1580/#1584 diagnostics as product improvements and holds #1356 release; KO '진단이며 성능 개선 근거가 아닙니다' and '릴리스 PR #1356은 HOLD입니다' preserve both negations. Korean heuristic does not match '아닙니다'. Full-document repin is an AI-assisted editorial spotcheck, not independent third-party sign-off."
     },
     {
       "path": "research/routing-status.md",
