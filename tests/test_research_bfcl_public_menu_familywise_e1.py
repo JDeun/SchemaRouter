@@ -122,7 +122,11 @@ def test_original_bfcl_source_e5_scorer_unchanged_without_optin():
         "unsupported_correctly_refused"
     ] == 20
     assert extra["external_independent_e2_qualified"] is False
-    assert extra["source"] == "original_odd_id_negative_score_tail_Bonferroni"
+    assert extra["source"] == (
+        "original_odd_id_hash_selected_single_negative_pair_Bonferroni"
+    )
+    assert extra["calibration_unit"] == "one_function_per_original_negative_request"
+    assert extra["negative_calibration_requests"] == 120
     assert not trial["production_threshold_calibrated"]
     assert not trial["release_qualified"]
     dumped = json.dumps(trial, ensure_ascii=False)
