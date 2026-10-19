@@ -91,6 +91,9 @@ async def compare(
                     ),
                     "termination_reason": x["termination_reason"],
                     "trusted_failure_stage": x["trusted_failure_stage"],
+                    "trusted_transport_error_kind": x[
+                        "trusted_transport_error_kind"
+                    ],
                     "model_turns": x["model_turns"],
                     "generation_ms": x["model_generation_ms"],
                 }
