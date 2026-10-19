@@ -46,6 +46,37 @@ def _root_envelope_empty(endpoint: EndpointSpec) -> bool:
          "additionalProperties": False},
     )
 
+def _host_source_input_names(endpoint: EndpointSpec) -> tuple[str, ...] | None:
+    """Only an original, closed 1-4 required scalar source input envelope.
+
+    Semantic meaning of source arguments and their values is HOST supplied.
+    This function does not trust free text or source descriptions to add values.
+    """
+    if not 1 <= len(endpoint.parameters) <= 4 or endpoint.auth_requirements:
+        return None
+    for param in endpoint.parameters:
+        if (
+            not param.required
+            or param.location in {"header", "body_root"}
+            or not _scalar_contract(param.json_schema)
+        ):
+            return None
+    names = tuple(param.name for param in endpoint.parameters)
+    schema = endpoint.input_schema
+    if (
+        len(set(names)) != len(names)
+        or type(schema) is not dict
+        or set(schema) != {"type", "properties", "required"}
+        or schema.get("type") != "object"
+        or schema.get("properties")
+        != {param.name: param.json_schema for param in endpoint.parameters}
+        or type(schema.get("required")) is not list
+        or len(schema["required"]) != len(names)
+        or set(schema["required"]) != set(names)
+    ):
+        return None
+    return names
+
 
 def _native_required_inputs(
     endpoint: EndpointSpec,
@@ -167,6 +198,7 @@ class NativeIndexedGraphCandidate:
     consumer_required_parameter: str | None
     consumer_output_fields: tuple[str, ...]
     parameter_bindings: tuple[tuple[str, str], ...] = ()
+    source_root_parameters: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -191,13 +223,26 @@ class NativeSchemaGraphIndex:
     native_root_count: int
     native_consumer_count: int
     edge_consumer_routes: frozenset[str]
+    approved_host_roots: frozenset[str] = frozenset()
 
     @classmethod
-    def build(cls, field_index: NativeSchemaPostingIndex) -> NativeSchemaGraphIndex:
+    def build(
+        cls,
+        field_index: NativeSchemaPostingIndex,
+        *,
+        approved_host_roots: frozenset[str] = frozenset(),
+    ) -> NativeSchemaGraphIndex:
         """One full native scan at BUILD, not during every query."""
         registry = field_index.registry_ref
         if registry.version != field_index.registry_version:
             raise PolicyViolationError("G5 native source changed before graph build")
+        if (
+            type(approved_host_roots) is not frozenset
+            or len(approved_host_roots) > 64
+            or any(type(route) is not str for route in approved_host_roots)
+        ):
+            raise ValueError("G5 explicit bounded host-approved route set required")
+        accepted_host_roots: set[str] = set()
         contracts: list[CapabilityContract] = []
         roots = consumers = 0
         for tool in registry.tools():
@@ -212,7 +257,13 @@ class NativeSchemaGraphIndex:
                     or endpoint.destructive is True
                 ):
                     continue
-                if _root_envelope_empty(endpoint):
+                empty_root = _root_envelope_empty(endpoint)
+                host_root = route in approved_host_roots
+                if host_root and (
+                    empty_root or _host_source_input_names(endpoint) is None
+                ):
+                    raise ValueError("G5 invalid explicit host-approved source route")
+                if empty_root or host_root:
                     produced = [
                         contract
                         for f in endpoint.output_fields
@@ -227,6 +278,10 @@ class NativeSchemaGraphIndex:
                             capability_id=route, produces=produced,
                         ))
                         roots += 1
+                        if host_root:
+                            accepted_host_roots.add(route)
+                    elif host_root:
+                        raise ValueError("G5 host-approved source has no typed output")
                 else:
                     required = _native_required_inputs(endpoint)
                     if required is None:
@@ -236,6 +291,8 @@ class NativeSchemaGraphIndex:
                         requires=[contract for _, contract in required],
                     ))
                     consumers += 1
+        if accepted_host_roots != approved_host_roots:
+            raise ValueError("G5 host-approved source not accepted by current catalog")
         if registry.version != field_index.registry_version:
             raise PolicyViolationError("G5 native source changed during graph build")
         # Reuse the ONE existing canonical semantic-ID producer index and
@@ -246,7 +303,10 @@ class NativeSchemaGraphIndex:
         # this immutable set can NEVER form an eligible G5 one-hop path.
         # Its output semantic posting should not trigger a registry.get.
         edge_consumers = frozenset(edge.consumer_id for edge in graph.edges)
-        return cls(field_index, graph, roots, consumers, edge_consumers)
+        return cls(
+            field_index, graph, roots, consumers, edge_consumers,
+            approved_host_roots,
+        )
 
     def lookup(
         self,
@@ -342,8 +402,16 @@ class NativeSchemaGraphIndex:
                 if root is None:
                     continue
                 _root_tool, root_endpoint = root
+                root_required: tuple[str, ...] = ()
                 if not _root_envelope_empty(root_endpoint):
-                    continue
+                    if root_id not in self.approved_host_roots:
+                        continue
+                    declared = _host_source_input_names(
+                        _root_tool.endpoint(root_endpoint.name)
+                    )
+                    if declared is None:
+                        continue
+                    root_required = declared
                 bindings: list[tuple[str, str]] = []
                 for parameter, required in required_inputs:
                     field = _root_field(root_endpoint, required)
@@ -382,6 +450,7 @@ class NativeSchemaGraphIndex:
                     consumer_required_parameter=bindings[0][0] if single else None,
                     consumer_output_fields=names,
                     parameter_bindings=tuple(bindings),
+                    source_root_parameters=root_required,
                 ))
         self.field_index._assert_source(router)
         router._check_retrieval_authority_witness(witness)
