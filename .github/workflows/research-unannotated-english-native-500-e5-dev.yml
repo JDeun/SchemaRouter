@@ -1,0 +1,79 @@
+name: English-only Native 500 Multilingual Real E5 CPU DEV
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_unannotated_english_500_e5_cpu_dev.py"
+      - "tests/test_research_unannotated_english_500_e5_cpu_dev.py"
+      - "research/autoresearch/unannotated-english-native-500-real-e5-cpu-dev.md"
+      - ".github/workflows/research-unannotated-english-native-500-e5-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-native-manifest-no-model:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: E0 input integrity and scope/no-fit controls
+        run: |
+          python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1" "pyright>=1.1,<2"
+          ruff check scripts/research_unannotated_english_500_e5_cpu_dev.py tests/test_research_unannotated_english_500_e5_cpu_dev.py
+          python -m pytest -q tests/test_research_unannotated_english_500_e5_cpu_dev.py tests/test_research_authorized_fixed5_decision_bridge.py
+          pyright scripts/research_unannotated_english_500_e5_cpu_dev.py
+          python -m scripts.research_unannotated_english_500_e5_cpu_dev --mode validate
+
+  pinned-real-e5-cpu-500:
+    needs: original-native-manifest-no-model
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install pinned CPU-model runtime
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
+      - name: Run fixed K5 genuine model versus native lexical on 500 English source routes
+        run: |
+          python -m scripts.research_unannotated_english_500_e5_cpu_dev --mode real-e5-cpu --out artifacts/unannotated-en-500-e5-dev/report.json
+      - name: Publish raw denominators and evidence limits
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          doc = json.loads(Path("artifacts/unannotated-en-500-e5-dev/report.json").read_text())
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
+              out.write("## True pinned E5 CPU: 500 native English-only routes, new EN/KO/JA E1 DEV\n\n")
+              out.write("No translated tool aliases, no real provider execution, no independent tasks, not E2 or release authority. Unsupported ALWAYS returns K5 candidates; this does NOT constitute calibrated no-fit.\n\n")
+              out.write("| Language | Arm | Supported Top1 | Supported Top5 | Unsupported nonempty | p95 selection (ms) |\n|---|---|---:|---:|---:|---:|\n")
+              for arm, lang_dict in doc["summary"].items():
+                  for lang, row in lang_dict.items():
+                      out.write(f"| {lang} | {arm} | {row['hit_at_1']}/{row['supported_n']} | {row['hit_at_5']}/{row['supported_n']} | {row['unsupported_nonempty']}/{row['unsupported_n']} | {row['selection_ms_p95']:.2f} |\n")
+              out.write(f"\nModel: {doc['model_runtime']['model_id']}, revision {doc['model_runtime']['model_revision']}. Original source corpus SHA256 {doc['source_input_corpus_sha256']}. No default promotion.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: unannotated-en-native-500-real-e5
+          path: artifacts/unannotated-en-500-e5-dev/report.json
+          retention-days: 30
+          if-no-files-found: error
