@@ -1,6 +1,6 @@
 # SchemaRouter research milestones — evidence-gated plan
 
-**As of 2026-10-19 · DECLARATIVE PLAN, NOT YET CREATED AS GITHUB MILESTONES.** This file accompanies [the canonical EN/KO research wiki](../docs/research/research-program-2026.md) and [session tracker #200](https://github.com/JDeun/SchemaRouter/issues/200). Its machine-readable source is [research-milestones.json](research-milestones.json). Milestone titles and issue assignments become live only after the authenticated, manually approved GitHub milestone sync has run. Do **not** infer success from a plan document.
+**Initial plan prepared 2026-10-19; source-of-truth mapping only. Check live GitHub Issues → Milestones for the current creation/assignment status.** This file accompanies [the canonical EN/KO research wiki](../docs/research/research-program-2026.md) and [session tracker #200](https://github.com/JDeun/SchemaRouter/issues/200). Its machine-readable source is [research-milestones.json](research-milestones.json). Milestone titles and issue assignments become live only after the authenticated, manually approved GitHub milestone sync has run. Do **not** infer success from a plan document.
 
 ## Why and how
 
@@ -50,6 +50,8 @@ M0/M1 and parts of M2 can proceed concurrently on protected branches; M3 can beg
 The connected GitHub write integration currently supports **assigning existing milestone numbers to issues**, but does not expose milestone creation. We therefore provide a **manual, explicitly approved and idempotent synchronization** rather than claiming the milestones already exist. It may be run by a maintainer with a GitHub token carrying Issues write permission, or through a separately reviewed manual workflow if one is installed.
 
 After this PR is merged, open **Actions → Research milestones (manual) → Run workflow** on `main`. First choose `preview` (no GitHub API mutation). Once the 6-stage plan is reviewed, choose `apply` to let the workflow's repository-scoped `GITHUB_TOKEN` create matching GitHub Milestones and assign only still-open issues. This workflow is **manual-only**, never invoked by PR, push, cron or release. Its permission is `contents: read` and `issues: write`; if repository policy denies Issues write, the application fails visibly rather than claiming creation. The command-line equivalent for trusted maintainers is `GITHUB_REPOSITORY=JDeun/SchemaRouter GH_TOKEN=<your-token> python3 .github/scripts/sync_research_milestones.py --apply` (do not paste a token in an issue or chat).
+
+To activate after the protected PR merges: open **Actions → Research milestones (manual) → Run workflow → preview**. Inspect the planned mapping, then explicitly run the same workflow with **apply**; only that second run creates/assigns live GitHub milestones. The preview is read-only and has no Issues-write permission. This conversation cannot trigger workflow_dispatch using the current connector.
 
 On each application, the synchronizer must **read existing open/closed milestones and issue states before mutation**, leave unexpected existing milestone assignments untouched (fail closed), never edit issue contents, labels or state, and never touch #1356. Dry run first; creating milestones is not a release approval.
 
