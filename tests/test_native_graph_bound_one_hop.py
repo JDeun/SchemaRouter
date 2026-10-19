@@ -11,6 +11,7 @@ from schemarouter import (
     AuthorizationRule,
     DataScopeRule,
     EndpointSpec,
+    ExecutionPolicy,
     FieldSpec,
     ParameterSpec,
     PolicyRule,
@@ -48,7 +49,14 @@ def _fixture(
         else produced
     )
     seen: list[tuple[str, dict]] = []
+    rules = (
+        (PolicyRule(
+            effect="deny", operation="cases.read",
+            name="explicit-downstream-denial",
+        ),) if deny_consumer else ()
+    )
     router = SchemaRouter(
+        policy=ExecutionPolicy(rules=rules),
         authorization_policy=AuthorizationPolicy(
             default_effect="deny",
             rules=(AuthorizationRule(
@@ -63,15 +71,6 @@ def _fixture(
             ),),
         ),
     )
-    if deny_consumer:
-        router.policy.rules = (
-            *router.policy.rules,
-            PolicyRule(
-                effect="deny", operation="cases.read",
-                name="explicit-downstream-denial",
-            ),
-        )
-
     source = ToolSpec(
         name="contacts", source_type="crm", license="owner-reviewed",
         endpoints=[EndpointSpec(
