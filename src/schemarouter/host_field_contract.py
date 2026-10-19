@@ -20,6 +20,7 @@ from .errors import PolicyViolationError
 from .models import (
     CapabilityCandidate,
     CapabilityRetrieval,
+    ParameterSpec,
     PlanRequest,
     StrictModel,
 )
@@ -170,7 +171,9 @@ def _enum_schema_can_hold_required(
 def _candidate_matches(
     candidate: CapabilityCandidate, contract: HostFieldContract,
 ) -> bool:
-    # Only positive, explicitly read-only public metadata is trusted.
+    # Caller provides an internally attested, scope-limited candidate.
+    # The final public retrieval result is never modified.
+
     if candidate.read_only is not True or candidate.destructive is True:
         return False
 
@@ -192,13 +195,14 @@ def _candidate_matches(
             ):
                 continue
             if (
-                type(parameter.json_schema) is dict
-                and _enum_schema_can_hold_required(
+                type(parameter.json_schema) is not dict
+                or not _enum_schema_can_hold_required(
                     parameter.json_schema, required_values,
                 )
             ):
-                match = True
-                break
+                continue
+            match = True
+            break
         if not match:
             return False
 
@@ -417,6 +421,8 @@ def select_authorized_field_contract(
         # otherwise permitted route. Avoid copying schemas for nonreturned
         # routes; no unauthorized metadata is included in the receipt.
         returned_contracts: dict[str, tuple[object, ...]] = {}
+        trusted_scoped_params: dict[str, tuple[ParameterSpec, ...]] = {}
+        trusted_relationship_allowlists: dict[str, frozenset[str] | None] = {}
         returned_fingerprints: dict[str, tuple[str, str]] = {}
         tool_fingerprints: dict[str, str] = {}
         for tool in registry.tools():
@@ -436,6 +442,26 @@ def select_authorized_field_contract(
                     returned_contracts[route_id] = (
                         visible.read_only, visible.destructive,
                         visible.parameters, visible.output_fields,
+                    )
+                    # Public metadata is deliberately a privacy-safe
+                    # projection. The trusted host can separately check
+                    # the FULL original required enum constraints, but only
+                    # for parameter identities still visible to this actor.
+                    # Never serialize these raw contracts in the receipt.
+                    visible_param_names = {
+                        param.name for param in visible.parameters
+                    }
+                    trusted_scoped_params[route_id] = tuple(
+                        param for param in endpoint.parameters
+                        if param.name in visible_param_names
+                    )
+                    # The private source schema alone is NOT the full
+                    # principal contract: relationship-type restrictions
+                    # from this actor's current DataScopeRule still apply.
+                    trusted_relationship_allowlists[route_id] = (
+                        policy.data_scope(
+                            approved_principal, tool, endpoint,
+                        ).allowed_relationships
                     )
                     # Fingerprints bind the receipt to the ORIGINAL registered
                     # source, never a data-scope-projected endpoint. Compute
@@ -495,9 +521,29 @@ def select_authorized_field_contract(
     if not ids:
         return abstain("empty_authorized_catalog")
 
+    def scoped_required_relationships_allowed(route_id: str) -> bool:
+        allowed = trusted_relationship_allowlists[route_id]
+        return allowed is None or all(
+            requirement.parameter != "relationship_types"
+            or requirement.value in allowed
+            for requirement in approved_contract.required_enums
+        )
+
     matched = [
         item for item in verified.candidates
-        if _candidate_matches(item, approved_contract)
+        if scoped_required_relationships_allowed(item.route_id)
+        and _candidate_matches(
+            # The host alone evaluates ORIGINAL enum restrictions on only
+            # currently scoped-visible parameter identities. The public
+            # returned candidate and selector receipt never contain these.
+            item.model_copy(
+                deep=True,
+                update={
+                    "parameters": list(trusted_scoped_params[item.route_id]),
+                },
+            ),
+            approved_contract,
+        )
     ]
     if not matched:
         return abstain("no_contract_match")

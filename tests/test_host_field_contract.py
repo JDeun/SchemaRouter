@@ -931,8 +931,8 @@ def test_same_object_index_mutation_during_contract_match_cannot_return_selected
     assert policy is not None
     original = module._candidate_matches
 
-    def mutate_during_match(candidate, contract):
-        valid = original(candidate, contract)
+    def mutate_during_match(candidate, contract, **kwargs):
+        valid = original(candidate, contract, **kwargs)
         policy._rule_index.partitions.clear()
         return valid
 

@@ -86,6 +86,7 @@ from .models import (
     EndpointSpec,
     ExecutionPlan,
     FieldSpec,
+    ParameterSpec,
     PlanRequest,
     ToolCall,
     ToolResult,
@@ -184,6 +185,57 @@ def _scoped_public_output_schema(fields: list[FieldSpec]) -> dict[str, Any]:
             field.name: _scoped_public_value_shape(field.json_schema)
             for field in fields
         },
+    }
+
+
+def _scoped_public_parameter(
+    parameter: ParameterSpec,
+    *,
+    allowed_relationships: frozenset[str] | None = None,
+    max_hops: int | None = None,
+) -> ParameterSpec:
+    """Sanitize raw input annotations, preserving ONLY trusted scope limits.
+
+    This is a public descriptor, not an executable JSON Schema. The original
+    registered provider schema still governs actual argument validation.
+    """
+    public_schema = _scoped_public_value_shape(parameter.json_schema)
+    if parameter.name == "relationship_types" and allowed_relationships is not None:
+        raw_items = parameter.json_schema.get("items")
+        safe_items = (
+            _scoped_public_value_shape(raw_items)
+            if type(raw_items) is dict
+            else {}
+        )
+        safe_items["enum"] = sorted(allowed_relationships)
+        public_schema["items"] = safe_items
+    if parameter.name == "max_hops" and max_hops is not None:
+        # The host's scoped upper bound must not disappear from the planner.
+        original_max = parameter.json_schema.get("maximum")
+        public_schema["maximum"] = (
+            min(original_max, max_hops)
+            if type(original_max) is int
+            else max_hops
+        )
+    return parameter.model_copy(
+        deep=True,
+        update={
+            "description": "",
+            "aliases": [],
+            "json_schema": public_schema,
+        },
+    )
+
+
+def _scoped_public_input_schema(parameters: list[ParameterSpec]) -> dict[str, Any]:
+    """Do not copy arbitrary $defs, refs or nested input schema metadata."""
+    return {
+        "type": "object",
+        "properties": {
+            param.name: dict(param.json_schema)
+            for param in parameters
+        },
+        "required": [param.name for param in parameters if param.required],
     }
 
 
@@ -424,7 +476,13 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 if parameter.name.startswith("filter__")
                 else parameter.name
             )
-            if mapped_field in hidden_field_names:
+            if (
+                mapped_field in hidden_field_names
+                or (
+                    parameter.name.startswith("filter__")
+                    and mapped_field not in scope.visible_fields
+                )
+            ):
                 continue
             clone = parameter.model_copy(deep=True)
             if (
@@ -445,7 +503,11 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                     else min(int(current_max), scope.max_hops)
                 )
                 clone.json_schema = schema
-            parameters.append(clone)
+            parameters.append(_scoped_public_parameter(
+                clone,
+                allowed_relationships=scope.allowed_relationships,
+                max_hops=scope.max_hops,
+            ))
 
         selected_names = [field.name for field in visible_fields]
         server_projection = endpoint.server_projection
@@ -464,6 +526,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             deep=True,
             update={
                 "parameters": parameters,
+                "input_schema": _scoped_public_input_schema(parameters),
                 "output_fields": visible_fields,
                 "output_schema": _scoped_public_output_schema(visible_fields),
                 "server_projection": server_projection,
@@ -549,7 +612,13 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                     if parameter.name.startswith("filter__")
                     else parameter.name
                 )
-                if mapped_field in hidden_field_names:
+                if (
+                    mapped_field in hidden_field_names
+                    or (
+                        parameter.name.startswith("filter__")
+                        and mapped_field not in scope.visible_fields
+                    )
+                ):
                     continue
                 clone = parameter.model_copy(deep=True)
                 if (
@@ -572,21 +641,17 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                     clone.json_schema = schema
                 parameters.append(clone)
 
-            input_schema = dict(candidate.input_schema)
-            properties = dict(input_schema.get("properties", {}))
-            allowed_parameter_names = {parameter.name for parameter in parameters}
-            if properties:
-                input_schema["properties"] = {
-                    name: value
-                    for name, value in properties.items()
-                    if name in allowed_parameter_names
-                }
-            if isinstance(input_schema.get("required"), list):
-                input_schema["required"] = [
-                    name
-                    for name in input_schema["required"]
-                    if name in allowed_parameter_names
-                ]
+            # Public scoped descriptors cannot inherit unreviewed nested
+            # input metadata even when the output field list is already safe.
+            parameters = [
+                _scoped_public_parameter(
+                    param,
+                    allowed_relationships=scope.allowed_relationships,
+                    max_hops=scope.max_hops,
+                )
+                for param in parameters
+            ]
+            input_schema = _scoped_public_input_schema(parameters)
 
             matched_fields = [
                 value

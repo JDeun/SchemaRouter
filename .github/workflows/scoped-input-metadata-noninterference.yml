@@ -1,0 +1,36 @@
+name: Scoped Input Metadata Noninterference E0
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/runtime.py"
+      - "src/schemarouter/host_field_contract.py"
+      - "tests/test_scoped_input_schema_metadata.py"
+      - "tests/test_scoped_schema_ref_safety.py"
+      - ".github/workflows/scoped-input-metadata-noninterference.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scoped-descriptor-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Verify scoped-descriptor fail-closed behavior
+        run: |
+          python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1" "pyright>=1.1,<2"
+          ruff check src/schemarouter/runtime.py src/schemarouter/host_field_contract.py tests/test_scoped_input_schema_metadata.py
+          python -m pytest -q tests/test_scoped_input_schema_metadata.py tests/test_scoped_schema_ref_safety.py tests/test_authorization.py tests/test_data_scope_authorization.py tests/test_host_field_contract.py
+          pyright src/schemarouter/runtime.py src/schemarouter/host_field_contract.py
+      - name: Preserve evidence classification
+        if: success()
+        run: |
+          echo "Input and output public scoped descriptors are distinct from full original trusted execution contracts. Local metadata noninterference regressions E0; not complete information-flow proof, independent E2, or release approval." >> "$GITHUB_STEP_SUMMARY"
