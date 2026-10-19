@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from scripts.research_unannotated_english_500_e5_cpu_dev import (
     CASES,
-    K,
     ROUTES,
     SUPPORTED_ROUTES,
+    K,
     _summary,
     validate_cases_and_source,
 )
@@ -26,7 +26,7 @@ def test_predeclared_denominators_and_source_without_trusted_language_aliases():
 
 def test_no_fit_metrics_do_not_treat_fixed_k_as_calibrated_abstention():
     rows = []
-    for language, query, expected in CASES:
+    for language, _query, expected in CASES:
         rows.append({
             "language": language,
             "supported": expected is not None,
