@@ -200,3 +200,28 @@ def test_midflight_milestone_claim_does_not_get_overwritten(monkeypatch) -> None
         mod.apply(plan, "test-token")
     assert reads[first] == 2
     assert patches == []
+
+
+def test_closed_late_stage_milestone_aborts_before_any_write(monkeypatch) -> None:
+    mod = _load_module()
+    plan = mod.load_plan()
+    monkeypatch.setenv("GITHUB_REPOSITORY", mod.REPO)
+    operations: list[str] = []
+
+    def fake_api(token, method, path, payload=None):
+        operations.append(method)
+        if "milestones?" in path:
+            return [
+                {
+                    "title": plan["milestones"][-1]["title"],
+                    "state": "closed",
+                    "number": 42,
+                }
+            ]
+        raise AssertionError("closed late stage must abort before issue reads or writes")
+
+    monkeypatch.setattr(mod, "api", fake_api)
+    with pytest.raises(ValueError, match="existing milestone is closed"):
+        mod.apply(plan, "test-token")
+    assert operations == ["GET"]
+
