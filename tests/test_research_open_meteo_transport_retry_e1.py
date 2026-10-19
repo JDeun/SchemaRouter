@@ -154,3 +154,51 @@ async def test_only_exact_integer_zero_or_one_read_retry_budget(invalid):
                 Agent(), client, language=LANGUAGE, city=CITY, country=COUNTRY,
                 transport_retry_budget=invalid,
             )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("error_type,expected", (
+    (httpx.ConnectTimeout, "connect_timeout"),
+    (httpx.ReadTimeout, "read_timeout"),
+    (httpx.PoolTimeout, "pool_timeout"),
+    (httpx.ConnectError, "connect_error"),
+    (httpx.ReadError, "read_error"),
+    (httpx.RemoteProtocolError, "remote_protocol_error"),
+))
+async def test_original_transport_exception_class_is_safe_coarse_diagnostic(
+    error_type, expected,
+):
+    requests: list[str] = []
+
+    def fail(req: httpx.Request) -> httpx.Response:
+        requests.append(req.url.path)
+        raise error_type("PRIVATE_URL_TOKEN_COORDINATE_CANARY", request=req)
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(fail), follow_redirects=False,
+    ) as client:
+        row = await evaluate_one(
+            Agent(), client, language=LANGUAGE, city=CITY, country=COUNTRY,
+            transport_retry_budget=1,
+        )
+    assert requests == ["/v1/search", "/v1/search"]
+    assert row["trusted_failure_stage"] == "geocode_http_transport_failure"
+    assert row["trusted_transport_error_kind"] == expected
+    assert row["full_task_complete"] is False
+    assert row["real_geocoding_http_attempts"] == 2
+    assert "PRIVATE_URL_TOKEN_COORDINATE_CANARY" not in json.dumps(row)
+
+
+@pytest.mark.asyncio
+async def test_transient_failure_kind_clears_on_actual_verified_source_success():
+    requests: list[str] = []
+    async with httpx.AsyncClient(
+        transport=_provider(requests, fail_geocode_once=True),
+    ) as client:
+        row = await evaluate_one(
+            Agent(), client, language=LANGUAGE, city=CITY, country=COUNTRY,
+            transport_retry_budget=1,
+        )
+    assert row["full_task_complete"] is True
+    assert row["trusted_failure_stage"] is None
+    assert row["trusted_transport_error_kind"] is None
