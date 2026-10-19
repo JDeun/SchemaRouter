@@ -91,6 +91,7 @@ class JSONPlaceholderBoundInvoker:
         self.validated = 0
 
     async def __call__(self, endpoint: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        expected_post_id = 1  # Non-post invokers never inspect this value.
         if self._resource == "post":
             if endpoint == "one" and not arguments:
                 expected_post_id = 1
