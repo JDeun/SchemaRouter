@@ -20,3 +20,38 @@ For an **original provider** whose actual first record *is* one flat object with
 JSONPlaceholder is explicitly an **online fake REST API for developers**, so successfully binding its seeded `userId` is proof of original HTTPS contract interop on a **demo provider** only, not independent actual provider factuality, external business tool availability, third-party MCP interoperability, open-world EN/KO/JA selection, true multi-required-input commercial native provider or correct agent output. The English/Korean/Japanese approved alias paths belong to the host, not to a measured language model. The `GET /posts/1` record is host-chosen; this does not test dynamic root user input discovery.
 
 A failed live provider response, CI network restriction or changed source schema is a failed/blocked E1, **not** a green result or neutral score; retain all negative failures as evidence and note demo uptime instability. Do not promote product defaults or change the frozen #432 full-agent benchmark. Independent disjoint [#1346](https://github.com/JDeun/SchemaRouter/issues/1346)/[#1477](https://github.com/JDeun/SchemaRouter/issues/1477) remain unsatisfied, v0.18 [#1356](https://github.com/JDeun/SchemaRouter/pull/1356) remains HARD HOLD.
+
+
+## Follow-up: explicit host-parameterized original source root (2026-10-19)
+
+M1 #1560 follows merged E0 PR #1596. This is an **additional**, opt-in
+actual remote E1 path and does not reinterpret the earlier fixed-URL result:
+
+- The trusted host authorizes the original source route
+  `demo_posts.by_post`, supplies integer `post_id=11` (bounded to the
+  public demo provider's 1..100 posts), and runs exact original
+  `GET /posts/11` over HTTPS. The source response must contain original
+  `id=11`; no caller input can set the URL host.
+- The existing G5 index, with the exact approved route set at build time,
+  requires the original source's `userId` identifier to be bound into
+  the downstream required `user_id` before `GET /users/{id}`.
+  The second URL uses the **actually observed** source ID, not a post-ID
+  lookup table or host-guessed downstream value. The public seed has
+  post 11 owned by demo user 2, which tests post-ID / user-ID separation.
+- Both requests pass the original bound invoker, principal, fingerprint,
+  typed input and output validation, and only publish source-safe
+  aggregate success/failure. MockTransport controls include exact paths,
+  non-whitelisted inputs, mismatched source IDs, missing approval and
+  no-call failure on invalid source data.
+- A separate Actions job reaches the unmodified original public demo
+  HTTPS source. A failure cannot be replaced by mock data and is **not**
+  treated as a false result of G5 routing quality. The fixed original
+  `/posts/1` E1 job is retained as a regression control.
+
+**Inference limit:** JSONPlaceholder is intentionally seeded **FAKE**
+content. A successful run only demonstrates live provider transport and
+strict one-hop host-approved typed dataflow. The host selected the exact
+route and post ID, and no EN/KO/JA route intent, unfamiliar provider,
+authenticated access, agent E2, external gold, commercial performance or
+v0.18 release eligibility was measured. Keep #432 negative, #1346/#1477
+E2 external gates and #1356 HARD HOLD unchanged.
