@@ -137,13 +137,15 @@ def _flat_same_record_source_contract(
     by_name = {f.name: f for f in visible.output_fields}
     for name in producer_fields:
         field = by_name.get(name)
+        declared_property = properties.get(name)
         if (
             field is None
             or field.projection_path != (name,)
             or field.result_projection_path != (name,)
-            or not _scalar_contract(properties.get(name))
+            or type(declared_property) is not dict
+            or not _scalar_contract(declared_property)
             or not _scalar_contract(field.json_schema)
-            or properties[name] != field.json_schema
+            or declared_property != field.json_schema
         ):
             return False
     return True
