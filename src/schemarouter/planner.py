@@ -407,7 +407,11 @@ def _scoring_tool_for_visible_endpoint(
     """
     if visible_endpoint is endpoint:
         return tool
-    return tool.model_copy(update={"description": ""})
+    # Canonical tool identity is already visible as route_id and may safely
+    # support natural-language lookup (retry_records -> "retry records").
+    # Never use source-authored description, which can name denied fields.
+    safe_identity_terms = tool.name.replace("_", " ").replace("-", " ")
+    return tool.model_copy(update={"description": safe_identity_terms})
 
 
 def _visible_endpoint(candidate: _Candidate) -> EndpointSpec:
