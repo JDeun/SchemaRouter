@@ -1,0 +1,66 @@
+name: Research milestones one-time main initialization
+
+# A protected-main push of the manifest, or an exact authenticated owner
+# approval comment on canonical #200, can trigger this bounded idempotent sync.
+# Both paths verify the same literal immutable approved blob before any write.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/research-milestones.json"
+  issue_comment:
+    types:
+      - created
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-milestones-main
+  cancel-in-progress: false
+
+jobs:
+  approved-manifest-apply:
+    if: >-
+      github.repository == 'JDeun/SchemaRouter' &&
+      github.ref == 'refs/heads/main' &&
+      (
+        github.event_name == 'push' ||
+        (
+          github.event_name == 'issue_comment' &&
+          github.event.issue.number == 200 &&
+          github.event.comment.user.login == 'JDeun' &&
+          github.event.comment.body == 'SCHEMAROUTER_APPROVE_MILESTONES_20261019'
+        )
+      )
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout immutable protected main merge commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Require exact approved one-time manifest before any GitHub API write
+        run: |
+          test "$(git hash-object .github/research-milestones.json)" = "3df25049ab9854e54961c6fb77518236b9ed92ee"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          plan=json.loads(Path(".github/research-milestones.json").read_text())
+          assert plan["repository"] == "JDeun/SchemaRouter"
+          assert plan["status"] == "REQUEST_LIVE_INITIALIZATION_20261019"
+          assert len(plan["milestones"]) == 6
+          assert sum(len(s["issues"]) for s in plan["milestones"]) == 30
+          assert plan["unassigned_cross_cutting"] == [200]
+          PY
+          python3 -m py_compile .github/scripts/sync_research_milestones.py
+          python3 .github/scripts/sync_research_milestones.py
+      - name: Idempotently create six actual milestones and assign thirty open issues
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 .github/scripts/sync_research_milestones.py --apply
