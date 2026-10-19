@@ -144,6 +144,7 @@ async def evaluate_one(
     host_exception_family: str | None = None
     host_failure_after_http_attempt: bool | None = None
     trusted_failure_stage: str | None = None
+    trusted_transport_error_kind: str | None = None
     total_model_ms = 0.0
     executed_routes: list[str] = []
 
@@ -258,6 +259,16 @@ async def evaluate_one(
                 raise ValueError("ambiguous simultaneous trusted source failures") from None
             if source_stages:
                 trusted_failure_stage = source_stages[0]
+                transport_kinds = [
+                    inv.last_transport_error_kind
+                    for inv in (geocode, weather)
+                    if inv.last_transport_error_kind is not None
+                ]
+                if len(transport_kinds) > 1:
+                    raise ValueError("ambiguous original source transport failures")
+                trusted_transport_error_kind = (
+                    transport_kinds[0] if transport_kinds else None
+                )
             elif after_http == before_http:
                 trusted_failure_stage = "host_boundary_without_new_http"
             elif after_verified > before_verified:
@@ -343,6 +354,7 @@ async def evaluate_one(
         "host_exception_family": host_exception_family,
         "host_failure_after_http_attempt": host_failure_after_http_attempt,
         "trusted_failure_stage": trusted_failure_stage,
+        "trusted_transport_error_kind": trusted_transport_error_kind,
         "model_generated_first_step_complete": completed >= 1,
         "model_generated_two_step_complete": completed == 2,
         "strict_final_answer_correct": correctly_ended,
