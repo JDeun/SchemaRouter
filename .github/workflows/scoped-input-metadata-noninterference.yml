@@ -27,7 +27,7 @@ jobs:
         run: |
           python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1" "pyright>=1.1,<2"
           ruff check src/schemarouter/runtime.py tests/test_scoped_input_schema_metadata.py
-          python -m pytest -q tests/test_scoped_input_schema_metadata.py tests/test_scoped_schema_ref_safety.py tests/test_authorization.py
+          python -m pytest -q tests/test_scoped_input_schema_metadata.py tests/test_scoped_schema_ref_safety.py tests/test_authorization.py tests/test_data_scope_authorization.py
           pyright src/schemarouter/runtime.py
       - name: Preserve evidence classification
         if: success()
