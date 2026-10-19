@@ -1,0 +1,85 @@
+name: Original Public DEMO Parameterized G5 HTTPS E1
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_g5_jsonplaceholder_parameterized_e1.py"
+      - "tests/test_research_g5_jsonplaceholder_parameterized_e1.py"
+      - "research/autoresearch/g5-parameterized-jsonplaceholder-live-e1.md"
+      - ".github/workflows/research-g5-parameterized-jsonplaceholder-e1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-original-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Check original root inputs, bound requests, no network negatives
+        run: |
+          python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1" "pyright>=1.1,<2"
+          ruff check scripts/research_g5_jsonplaceholder_parameterized_e1.py tests/test_research_g5_jsonplaceholder_parameterized_e1.py
+          python -m pytest -q tests/test_research_g5_jsonplaceholder_parameterized_e1.py tests/test_native_graph_host_root.py tests/test_research_g5_jsonplaceholder_live_e1.py
+          pyright scripts/research_g5_jsonplaceholder_parameterized_e1.py
+
+  actual-original-public-demo-https:
+    needs: offline-original-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Four actual original HTTPS requests with two distinct host source IDs
+        run: |
+          python -m pip install .
+          python -m scripts.research_g5_jsonplaceholder_parameterized_e1 --out artifacts/g5-parameterized-demo-e1.json
+      - name: Assert strictly provider-observed E1 only, never agent E2
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          r = json.loads(Path("artifacts/g5-parameterized-demo-e1.json").read_text())
+          assert r["study"] == "G5_ORIGINAL_DEMO_PARAMETERIZED_HTTPS_E1_NOT_E2"
+          assert r["source_provider"] == "jsonplaceholder.typicode.com"
+          assert r["provider_is_demo_fabricated_content"] is True
+          assert r["approved_source_root_count"] == 1
+          assert r["source_input_cases"] == 2
+          assert r["source_http_attempts"] == {"post": 2, "user": 2}
+          assert r["source_responses_verified"] == {"post": 2, "user": 2}
+          assert r["qualified_native_edges"] == 1
+          assert r["complete_observed_typed_bindings"] is True
+          assert r["host_selected_original_routes_and_arguments"] is True
+          assert r["model_selected_tools"] is False
+          assert r["independent_provider_identity"] is False
+          assert r["independent_agent_e2"] is False
+          assert r["product_default_changed"] is False
+          assert r["release_qualified"] is False
+          report_text = json.dumps(r)
+          assert "userId" not in report_text
+          assert "username" not in report_text
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as out:
+              out.write("## Parameterized native G5 original public DEMO provider E1\n\n")
+              out.write("Two host-supplied post IDs; four actual fixed HTTPS GET calls through existing registered SchemaRouter execution. G5 validates typed binding. JSONPlaceholder content is fake public demo data; no agent route selection, independent task oracle, real business source qualification, E2 or release approval.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: g5-parameterized-original-demo-e1
+          path: artifacts/g5-parameterized-demo-e1.json
+          retention-days: 90
+          if-no-files-found: warn
