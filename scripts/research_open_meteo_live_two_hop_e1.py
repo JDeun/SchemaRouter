@@ -133,6 +133,31 @@ def _forecast_response(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _transport_error_kind(exc: httpx.RequestError) -> str:
+    """Coarse allowlisted exception TYPE only; never message, URL or coordinates."""
+    if isinstance(exc, httpx.ConnectTimeout):
+        return "connect_timeout"
+    if isinstance(exc, httpx.ReadTimeout):
+        return "read_timeout"
+    if isinstance(exc, httpx.PoolTimeout):
+        return "pool_timeout"
+    if isinstance(exc, httpx.WriteTimeout):
+        return "write_timeout"
+    if isinstance(exc, httpx.ConnectError):
+        return "connect_error"
+    if isinstance(exc, httpx.ReadError):
+        return "read_error"
+    if isinstance(exc, httpx.WriteError):
+        return "write_error"
+    if isinstance(exc, httpx.RemoteProtocolError):
+        return "remote_protocol_error"
+    if isinstance(exc, httpx.LocalProtocolError):
+        return "local_protocol_error"
+    if isinstance(exc, httpx.ProxyError):
+        return "proxy_error"
+    return "other_request_error"
+
+
 class OpenMeteoBoundInvoker:
     """Trusted fixed-host invoker with source-owned, bounded failure stages.
 
@@ -163,6 +188,7 @@ class OpenMeteoBoundInvoker:
         self.calls = 0
         self.http_attempts = 0
         self.last_failure_stage: str | None = None
+        self.last_transport_error_kind: str | None = None
 
     def _verified_json(self, response: httpx.Response) -> dict[str, Any]:
         """Validate only the original fixed public provider response."""
@@ -186,9 +212,11 @@ class OpenMeteoBoundInvoker:
             try:
                 response = await self.client.get(url, params=params)
                 self.last_failure_stage = None
+                self.last_transport_error_kind = None
                 return response
-            except httpx.RequestError:
+            except httpx.RequestError as exc:
                 self.last_failure_stage = "http_transport_failure"
+                self.last_transport_error_kind = _transport_error_kind(exc)
                 if attempt == self.transport_retry_budget:
                     raise
         raise RuntimeError("unreachable bounded native transport state")
@@ -198,6 +226,7 @@ class OpenMeteoBoundInvoker:
     ) -> dict[str, Any]:
         # No prior call's error may be attributed to a later invocation.
         self.last_failure_stage = None
+        self.last_transport_error_kind = None
         if self.source == "geocode" and endpoint == "search":
             country = arguments["country_code"]
             params = {
