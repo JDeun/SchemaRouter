@@ -37,19 +37,31 @@ EVIDENCE = "REAL_QWEN_OPEN_METEO_SOURCE_READY_E1_EXPOSED_DEV_NOT_E2"
 async def compare(
     agent: Any, client: httpx.AsyncClient, *,
     transport_retry_budget: int = 0,
+    arms: tuple[str, str] = ARMS,
+    evidence: str = EVIDENCE,
 ) -> dict[str, Any]:
     if not callable(getattr(agent, "generate", None)):
         raise ValueError("actual model generator required")
     if type(transport_retry_budget) is not int or transport_retry_budget not in (0, 1):
         raise ValueError("bounded live GET retry budget required")
+    if (
+        (arms, evidence) not in (
+            (ARMS, EVIDENCE),
+            (
+                ("state_ready", "state_ready_progress"),
+                "REAL_QWEN_OPEN_METEO_GROUNDED_PROGRESS_E1_EXPOSED_DEV_NOT_E2",
+            ),
+        )
+    ):
+        raise ValueError("unregistered original E1 comparison arms")
     outcomes: dict[str, dict[str, dict[str, Any]]] = {
-        arm: {} for arm in ARMS
+        arm: {} for arm in arms
     }
     started = time.perf_counter()
     # Alternate order for the same previous original E1 source tasks.
     # Provider time/current data are re-observed independently per arm.
     for i, (language, city, country) in enumerate(CASES):
-        ordered = ARMS if i % 2 == 0 else tuple(reversed(ARMS))
+        ordered = arms if i % 2 == 0 else tuple(reversed(arms))
         for arm in ordered:
             row = await evaluate_one(
                 agent, client, language=language, city=city, country=country,
@@ -101,8 +113,8 @@ async def compare(
             },
         }
     return {
-        "study": EVIDENCE,
-        "arms": list(ARMS),
+        "study": evidence,
+        "arms": list(arms),
         "case_count_per_arm": len(CASES),
         "model_id": MODEL_NAME,
         "model_revision": MODEL_REVISION,
