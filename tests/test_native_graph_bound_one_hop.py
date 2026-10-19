@@ -109,7 +109,6 @@ def _fixture(
                     "region_id": {"type": "string"},
                 },
                 "required": ["contact_id", "region_id"],
-                "additionalProperties": False,
             },
             output_fields=[FieldSpec(
                 name="status", semantic_id="crm.status",
