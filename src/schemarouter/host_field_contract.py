@@ -20,6 +20,7 @@ from .errors import PolicyViolationError
 from .models import (
     CapabilityCandidate,
     CapabilityRetrieval,
+    ParameterSpec,
     PlanRequest,
     StrictModel,
 )
@@ -168,9 +169,15 @@ def _enum_schema_can_hold_required(
 
 
 def _candidate_matches(
-    candidate: CapabilityCandidate, contract: HostFieldContract,
+    candidate: CapabilityCandidate,
+    contract: HostFieldContract,
+    *,
+    trusted_scoped_parameters: tuple[ParameterSpec, ...] | None = None,
 ) -> bool:
-    # Only positive, explicitly read-only public metadata is trusted.
+    # Read-only/output visibility come from the public, attested candidate.
+    # An original enum remains PRIVATE: only the authorized host's internal
+    # fit proof can inspect its full provider schema.
+
     if candidate.read_only is not True or candidate.destructive is True:
         return False
 
@@ -185,7 +192,11 @@ def _candidate_matches(
 
     for parameter_name, required_values in required_by_parameter.items():
         match = False
-        for parameter in candidate.parameters:
+        for parameter in (
+            trusted_scoped_parameters
+            if trusted_scoped_parameters is not None
+            else tuple(candidate.parameters)
+        ):
             if (
                 parameter.location != "query"
                 or parameter.name != parameter_name
@@ -417,6 +428,7 @@ def select_authorized_field_contract(
         # otherwise permitted route. Avoid copying schemas for nonreturned
         # routes; no unauthorized metadata is included in the receipt.
         returned_contracts: dict[str, tuple[object, ...]] = {}
+        trusted_scoped_params: dict[str, tuple[ParameterSpec, ...]] = {}
         returned_fingerprints: dict[str, tuple[str, str]] = {}
         tool_fingerprints: dict[str, str] = {}
         for tool in registry.tools():
@@ -436,6 +448,18 @@ def select_authorized_field_contract(
                     returned_contracts[route_id] = (
                         visible.read_only, visible.destructive,
                         visible.parameters, visible.output_fields,
+                    )
+                    # Public metadata is deliberately a privacy-safe
+                    # projection. The trusted host can separately check
+                    # the FULL original required enum constraints, but only
+                    # for parameter identities still visible to this actor.
+                    # Never serialize these raw contracts in the receipt.
+                    visible_param_names = {
+                        param.name for param in visible.parameters
+                    }
+                    trusted_scoped_params[route_id] = tuple(
+                        param for param in endpoint.parameters
+                        if param.name in visible_param_names
                     )
                     # Fingerprints bind the receipt to the ORIGINAL registered
                     # source, never a data-scope-projected endpoint. Compute
@@ -497,7 +521,10 @@ def select_authorized_field_contract(
 
     matched = [
         item for item in verified.candidates
-        if _candidate_matches(item, approved_contract)
+        if _candidate_matches(
+            item, approved_contract,
+            trusted_scoped_parameters=trusted_scoped_params[item.route_id],
+        )
     ]
     if not matched:
         return abstain("no_contract_match")
