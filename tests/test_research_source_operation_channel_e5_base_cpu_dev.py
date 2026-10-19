@@ -19,7 +19,7 @@ from scripts.research_source_operation_channel_e5_base_cpu_dev import (
 )
 
 
-def test_original_native_no-field_catalog_and_new_language_denominators():
+def test_original_native_no_field_catalog_and_new_language_denominators():
     router, source_sha, catalog_sha = source_catalog()
     assert len(source_sha) == 64 and len(catalog_sha) == 64
     assert ROUTES == 500 and K == 5
