@@ -394,6 +394,26 @@ class _Candidate:
     visible_endpoint: EndpointSpec | None = None
 
 
+def _scoring_tool_for_visible_endpoint(
+    tool: ToolSpec,
+    endpoint: EndpointSpec,
+    visible_endpoint: EndpointSpec,
+) -> ToolSpec:
+    """Use no unapproved source description in a principal-scoped score.
+
+    This is a temporary SCORING descriptor only. _Candidate.tool must always
+    retain the original source object for fingerprint and execution receipts.
+    No change at all when no restrictive data-scope projection is active.
+    """
+    if visible_endpoint is endpoint:
+        return tool
+    # Canonical tool identity is already visible as route_id and may safely
+    # support natural-language lookup (retry_records -> "retry records").
+    # Never use source-authored description, which can name denied fields.
+    safe_identity_terms = tool.name.replace("_", " ").replace("-", " ")
+    return tool.model_copy(update={"description": safe_identity_terms})
+
+
 def _visible_endpoint(candidate: _Candidate) -> EndpointSpec:
     """Return the non-authoritative schema view exposed to planning surfaces."""
 
@@ -1523,7 +1543,9 @@ class SchemaPlanner:
             if visible_endpoint is None:
                 continue
             scored = self._score_endpoint(
-                tool,
+                _scoring_tool_for_visible_endpoint(
+                    tool, endpoint, visible_endpoint,
+                ),
                 visible_endpoint,
                 request.query,
                 intent,
@@ -1533,6 +1555,7 @@ class SchemaPlanner:
                 candidates.append(
                     replace(
                         scored,
+                        tool=tool,
                         endpoint=endpoint,
                         visible_endpoint=(
                             visible_endpoint
@@ -1584,9 +1607,12 @@ class SchemaPlanner:
         frequencies: dict[str, int] = {}
         for candidate in candidates:
             route_id = f"{candidate.tool.key}.{candidate.endpoint.name}"
+            visible_endpoint = _visible_endpoint(candidate)
             terms = _schema_specificity_terms(
-                candidate.tool,
-                _visible_endpoint(candidate),
+                _scoring_tool_for_visible_endpoint(
+                    candidate.tool, candidate.endpoint, visible_endpoint,
+                ),
+                visible_endpoint,
             )
             entries.append((route_id, terms))
             for term in terms:
@@ -1797,7 +1823,9 @@ class SchemaPlanner:
             result: list[_Candidate] = []
             for tool, endpoint, visible_endpoint in scoped_pairs:
                 scored = self._score_endpoint(
-                    tool,
+                    _scoring_tool_for_visible_endpoint(
+                        tool, endpoint, visible_endpoint,
+                    ),
                     visible_endpoint,
                     request.query,
                     intent,
@@ -1806,6 +1834,7 @@ class SchemaPlanner:
                 result.append(
                     replace(
                         scored,
+                        tool=tool,
                         endpoint=endpoint,
                         visible_endpoint=(
                             visible_endpoint
@@ -1824,7 +1853,9 @@ class SchemaPlanner:
         for tool, endpoint, visible_endpoint in scoped_pairs:
             if (tool.key, endpoint.name) in positive_refs:
                 scored = self._score_endpoint(
-                    tool,
+                    _scoring_tool_for_visible_endpoint(
+                        tool, endpoint, visible_endpoint,
+                    ),
                     visible_endpoint,
                     request.query,
                     intent,
@@ -1833,6 +1864,7 @@ class SchemaPlanner:
                 result.append(
                     replace(
                         scored,
+                        tool=tool,
                         endpoint=endpoint,
                         visible_endpoint=(
                             visible_endpoint
@@ -1871,7 +1903,11 @@ class SchemaPlanner:
                 if not field.identifier
             ]
             parts = [
-                candidate.tool.description.strip(),
+                (
+                    candidate.tool.description.strip()
+                    if visible_endpoint is candidate.endpoint
+                    else ""
+                ),
                 visible_endpoint.description.strip(),
             ]
             if field_labels:
