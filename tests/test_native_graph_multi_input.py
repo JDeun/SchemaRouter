@@ -15,10 +15,16 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
+from schemarouter.adapters import tool_from_mcp, tool_from_openapi
 from schemarouter.capability_contracts import CapabilityFieldContract
 from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from schemarouter.semantic_attestations import (
+    HostSemanticAttestation,
+    HostSemanticMapping,
+    apply_host_semantic_attestation,
+)
 
 ACTOR = PrincipalContext(subject="analyst", roles=("reader",))
 MASKED = PrincipalContext(subject="viewer", roles=("viewer",))
@@ -226,3 +232,120 @@ def test_more_than_four_required_inputs_are_conservatively_not_graphable() -> No
     assert idx.lookup(
         router, GROUP.aliases[0], group=GROUP, principal=ACTOR,
     ).status == "no_proven_hit"
+
+
+def test_actual_openapi_producer_and_mcp_two_required_inputs_are_bound() -> None:
+    """Cross-adapter original native schemas, not a fabricated target oracle."""
+    root = tool_from_openapi("contacts", {
+        "openapi": "3.1.0",
+        "info": {"title": "Contacts", "version": "1"},
+        "paths": {"/contacts": {"get": {
+            "operationId": "read_contact",
+            "responses": {"200": {"description": "OK", "content": {
+                "application/json": {"schema": {
+                    "type": "object",
+                    "properties": {
+                        "contact_id": {"type": "string"},
+                        "region_id": {"type": "string"},
+                    },
+                }},
+            }}},
+        }}},
+    })
+    root.source_type = "crm"
+    root.license = "owner-reviewed"
+    root.endpoint("read_contact").read_only = True
+    root = apply_host_semantic_attestation(
+        root,
+        attestation=HostSemanticAttestation(
+            expected_tool_key=root.key,
+            expected_tool_fingerprint=root.fingerprint,
+            source_type=root.source_type,
+            license=root.license,
+            reviewed_by="fixture-source-owner",
+            mappings=(
+                HostSemanticMapping(
+                    endpoint_name="read_contact",
+                    expected_endpoint_fingerprint=(
+                        root.endpoint("read_contact").fingerprint
+                    ),
+                    member_kind="output_field",
+                    member_name=name,
+                    semantic_id=semantic,
+                )
+                for name, semantic in (
+                    ("contact_id", "crm.contact_id"),
+                    ("region_id", "crm.region_id"),
+                )
+            ),
+        ),
+    )
+    assert {f.name for f in root.endpoint("read_contact").output_fields
+            if f.identifier} == {"contact_id", "region_id"}
+
+    consumer = tool_from_mcp("cases", {"tools": [{
+        "name": "read_case",
+        "annotations": {"readOnlyHint": True},
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "contact_id": {"type": "string"},
+                "region_id": {"type": "string"},
+            },
+            "required": ["contact_id", "region_id"],
+        },
+        "outputSchema": {
+            "type": "object",
+            "properties": {"status": {"type": "string"}},
+        },
+    }]})
+    assert consumer.endpoint("read_case").read_only is None
+    # MCP readOnlyHint is untrusted; host makes a separate permission review.
+    consumer.endpoint("read_case").read_only = True
+    consumer.source_type = "crm"
+    consumer.license = "owner-reviewed"
+    consumer = apply_host_semantic_attestation(
+        consumer,
+        attestation=HostSemanticAttestation(
+            expected_tool_key=consumer.key,
+            expected_tool_fingerprint=consumer.fingerprint,
+            source_type=consumer.source_type,
+            license=consumer.license,
+            reviewed_by="fixture-source-owner",
+            mappings=tuple(
+                HostSemanticMapping(
+                    endpoint_name="read_case",
+                    expected_endpoint_fingerprint=(
+                        consumer.endpoint("read_case").fingerprint
+                    ),
+                    member_kind=kind,
+                    member_name=name,
+                    semantic_id=semantic,
+                )
+                for kind, name, semantic in (
+                    ("input_parameter", "contact_id", "crm.contact_id"),
+                    ("input_parameter", "region_id", "crm.region_id"),
+                    ("output_field", "status", "crm.status"),
+                )
+            ),
+        ),
+    )
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.*", roles_any=("reader",),
+        ),),
+    ))
+    router.add_tool(root)
+    router.add_tool(consumer)
+    idx = _index(router)
+    result = idx.lookup(router, GROUP.aliases[0], group=GROUP, principal=ACTOR)
+    assert result.status == "complete"
+    assert len(result.candidates) == 1
+    selected = result.candidates[0]
+    assert selected.producer_route_id == "contacts.read_contact"
+    assert selected.consumer_route_id == "cases.read_case"
+    assert selected.parameter_bindings == (
+        ("contact_id", "contact_id"), ("region_id", "region_id"),
+    )
+    assert not result.executable_authority
