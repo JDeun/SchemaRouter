@@ -450,6 +450,7 @@ def select_authorized_field_contract(
         # routes; no unauthorized metadata is included in the receipt.
         returned_contracts: dict[str, tuple[object, ...]] = {}
         trusted_scoped_params: dict[str, tuple[ParameterSpec, ...]] = {}
+        trusted_relationship_allowlists: dict[str, frozenset[str] | None] = {}
         returned_fingerprints: dict[str, tuple[str, str]] = {}
         tool_fingerprints: dict[str, str] = {}
         for tool in registry.tools():
@@ -481,6 +482,14 @@ def select_authorized_field_contract(
                     trusted_scoped_params[route_id] = tuple(
                         param for param in endpoint.parameters
                         if param.name in visible_param_names
+                    )
+                    # The private source schema alone is NOT the full
+                    # principal contract: relationship-type restrictions
+                    # from this actor's current DataScopeRule still apply.
+                    trusted_relationship_allowlists[route_id] = (
+                        policy.data_scope(
+                            approved_principal, tool, endpoint,
+                        ).allowed_relationships
                     )
                     # Fingerprints bind the receipt to the ORIGINAL registered
                     # source, never a data-scope-projected endpoint. Compute
@@ -542,7 +551,16 @@ def select_authorized_field_contract(
 
     matched = [
         item for item in verified.candidates
-        if _candidate_matches(
+        if (
+            trusted_relationship_allowlists[item.route_id] is None
+            or all(
+                requirement.parameter != "relationship_types"
+                or requirement.value
+                in trusted_relationship_allowlists[item.route_id]
+                for requirement in approved_contract.required_enums
+            )
+        )
+        and _candidate_matches(
             # The host alone evaluates ORIGINAL enum restrictions on only
             # currently scoped-visible parameter identities. The public
             # returned candidate and selector receipt never contain these.
