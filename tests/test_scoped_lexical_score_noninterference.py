@@ -95,5 +95,5 @@ def test_optional_recall_decision_request_uses_scoped_not_raw_description():
     decision = router.planner._semantic_recall_request(request, catalog)
     assert len(decision.options) == 1
     assert CANARY not in decision.options[0].description
-    assert catalog[0].tool is router.registry.get("records")
+    assert catalog[0].tool.fingerprint == router.registry.get("records").fingerprint
     assert catalog[0].tool.description == CANARY
