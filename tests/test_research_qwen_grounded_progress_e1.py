@@ -147,7 +147,7 @@ def test_progress_text_has_no_route_or_answer_or_hidden_native_fields():
         "37.56", "126.98", "16.5", "customer_id", "weather.current",
     ):
         assert prohibited not in lowered
-    assert "not yet" in lowered or "not been verified" in lowered
+    assert "has been verified yet" in lowered
 
 
 @pytest.mark.asyncio
