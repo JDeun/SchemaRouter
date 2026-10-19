@@ -1,0 +1,125 @@
+name: BFCL Original Public Cross Encoder No Fit E1 CPU
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_bfcl_cross_encoder_no_fit_e1.py"
+      - "tests/test_research_bfcl_cross_encoder_no_fit_e1.py"
+      - "research/autoresearch/bfcl-cross-encoder-no-fit-e1.md"
+      - ".github/workflows/research-bfcl-cross-encoder-no-fit-e1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bfcl-cross-encoder-e1-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Ruff and frozen offline no-fit/split invariants
+        run: |
+          python -m pip install . "pytest>=8,<10" "ruff>=0.6,<1"
+          ruff check scripts/research_bfcl_cross_encoder_no_fit_e1.py tests/test_research_bfcl_cross_encoder_no_fit_e1.py
+          python -m pytest -q tests/test_research_bfcl_cross_encoder_no_fit_e1.py
+
+  original-publisher-live-cpu:
+    needs: contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install pinned CPU inference runtime
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install . "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
+      - name: Score actual source-pinned original BFCL with frozen odd calibration
+        run: |
+          python -m scripts.research_bfcl_cross_encoder_no_fit_e1 --out artifacts/bfcl-cross-encoder/report.json
+      - name: Verify E1 accounting, source/model identity and publish safe aggregate
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          data = json.loads(Path("artifacts/bfcl-cross-encoder/report.json").read_text())
+          assert data["study"] == "PUBLIC_BFCL_V4_CPU_CROSS_ENCODER_NO_FIT_E1_EXPOSED_NOT_E2"
+          assert data["publisher_commit"] == "6ea57973c7a6097fd7c5915698c54c17c5b1b6c8"
+          assert data["model_revision"] == "c5ee24cb16019beea0893ab7796b1df96625c6b8"
+          assert len(data["publisher_sha256"]) == 5
+          split = data["split"]
+          assert split["calibrate_publisher_irrelevance_odd_ids"] == 120
+          assert split["calibrate_false_accepted"] <= 12
+          assert split["live_supported"] == 16
+          assert split["live_unsupported_scored"] == 880
+          assert split["live_unsupported_empty_menu_safe_excluded"] == 4
+          pos, neg = data["live"]["supported"], data["live"]["unsupported"]
+          assert pos["total"] == pos["accepted"] + pos["false_refused"] == 16
+          assert neg["total"] == neg["false_accepted"] + neg["refused"] == 880
+          assert sum(
+              b["supported"]["total"]
+              for b in data["live"]["original_menu_size_bins"].values()
+          ) == 16
+          assert sum(
+              b["unsupported"]["total"]
+              for b in data["live"]["original_menu_size_bins"].values()
+          ) == 880
+          assert not data["heldout_independent_e2"]
+          assert not data["original_provider_or_agent_calls"]
+          assert not data["default_product_changed"]
+          assert not data["release_qualified"]
+          report = [
+              "## Original public BFCL CPU cross-encoder (E1, NOT E2)",
+              "",
+              f"Supported admitted: **{pos['accepted']}/16**; false refused: **{pos['false_refused']}/16**.",
+              f"Unsupported falsely admitted: **{neg['false_accepted']}/880**; correctly refused: **{neg['refused']}/880**.",
+              "4 structurally empty menus were not scored by the model.",
+              "",
+              "| Original offered functions | Supported admitted/total | Unsupported false-accepted/total |",
+              "|---|---:|---:|",
+          ]
+          for name, row in data["live"]["original_menu_size_bins"].items():
+              a, b = row["supported"], row["unsupported"]
+              report.append(
+                  f"| {name} | {a['accepted']}/{a['total']} | {b['false_accepted']}/{b['total']} |"
+              )
+          resource = data["cpu_inference"]
+          report.extend([
+              "",
+              f"Pairs scored: {resource['offered_function_pairs_scored']}; "
+              f"CPU scoring seconds: {resource['model_predict_seconds']}; "
+              f"peak RSS KiB: {resource['max_rss_kib_linux']}.",
+              "",
+              "All public/source-exposed diagnostics; original provider not executed, no native task/E2; no production routing or release approval.",
+          ])
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write("\n".join(report) + "\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: bfcl-public-cross-encoder-no-fit-e1-${{ github.run_id }}
+          path: artifacts/bfcl-cross-encoder/report.json
+          if-no-files-found: warn
+          retention-days: 90
