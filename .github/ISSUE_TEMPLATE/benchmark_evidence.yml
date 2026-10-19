@@ -5,6 +5,28 @@ labels:
   - research
 body:
   - type: input
+    id: canonical_parent
+    attributes:
+      label: Canonical existing issue / parent workstream
+      description: Link an existing issue (#200 program, #1560 G5, #1339 multilingual, #1582 no-fit, #1477 agent E2 or #1346 external validation). If genuinely new, explicitly state why none fits.
+      placeholder: "#1477 (existing task-utility program)"
+    validations:
+      required: true
+  - type: textarea
+    id: duplicate_search
+    attributes:
+      label: Existing issue/PR/literature search and nonduplicate justification
+      description: Link closest existing issues, PRs, research wiki or benchmark; explain the one *new* falsifiable gap not covered there. Prefer a comment on the parent instead of a micro-issue when this is only another run/prompt/threshold.
+    validations:
+      required: true
+  - type: textarea
+    id: terminal_scope
+    attributes:
+      label: Single independently checkable terminal decision and issue closure
+      description: Define the one deliverable and criterion for closing this *narrow* issue. Distinguish completed engineering/E0, measured negative E1, blocked external prerequisites and genuine E2; a green CI alone does not establish model or agent quality.
+    validations:
+      required: true
+  - type: input
     id: hypothesis
     attributes:
       label: Hypothesis or claim being tested
@@ -78,6 +100,8 @@ body:
     attributes:
       label: Evidence checks
       options:
+        - label: I checked existing research issues, draft PRs and the canonical research wiki before proposing a new independent issue.
+          required: true
         - label: The report preserves negative/null results rather than only successful runs.
           required: true
         - label: Secrets and private provider configuration are not included in artifacts.
