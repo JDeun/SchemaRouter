@@ -1,0 +1,82 @@
+name: E5 Small Base Native English 500 CPU Paired DEV
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_multilingual_e5_base_cpu_500_dev.py"
+      - "tests/test_research_multilingual_e5_base_cpu_500_dev.py"
+      - "research/autoresearch/e5-small-base-english-only-500-newcpu-dev.md"
+      - ".github/workflows/research-e5-base-english-500-cpu-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preregistered-source-and-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Verify no-model predeclared source and fixed K5 contract
+        run: |
+          python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1" "pyright>=1.1,<2"
+          ruff check scripts/research_multilingual_e5_base_cpu_500_dev.py tests/test_research_multilingual_e5_base_cpu_500_dev.py
+          python -m pytest -q tests/test_research_multilingual_e5_base_cpu_500_dev.py tests/test_research_authorized_fixed5_decision_bridge.py
+          pyright scripts/research_multilingual_e5_base_cpu_500_dev.py
+          python -m scripts.research_multilingual_e5_base_cpu_500_dev --mode validate
+
+  pinned-small-vs-base-real-cpu:
+    needs: preregistered-source-and-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install two original pinned CPU encoder runtimes
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
+      - name: Measure 24 new cases on identical 500 EN native routes, fixed K5
+        run: |
+          python -m scripts.research_multilingual_e5_base_cpu_500_dev --mode real-cpu --out artifacts/e5-base-paired-500-dev/report.json
+      - name: Publish counts including no-fit failures, memory and CPU latency
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          p = Path("artifacts/e5-base-paired-500-dev/report.json")
+          data = json.loads(p.read_text(encoding="utf-8"))
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
+              out.write("## Real CPU E5-small vs E5-base; fresh self-authored English-only 500 native routes\n\n")
+              out.write("EN/KO/JA each 6 supported, 2 unsupported; fixed K5, no translations. No original live provider, independent E2 or calibrated no-fit.\n\n")
+              out.write("| Language | Arm | Top1/6 | Top5/6 | Unsupported nonempty/2 | p50 ms | p95 ms |\n|---|---|---:|---:|---:|---:|---:|\n")
+              for arm, languages in data["summary"].items():
+                  for lang, r in languages.items():
+                      out.write(f"| {lang} | {arm} | {r['top1_hit']}/6 | {r['top5_hit']}/6 | {r['unsupported_nonempty']}/2 | {r['selection_median_ms']} | {r['selection_p95_ms']} |\n")
+              for name, model in data["models"].items():
+                  out.write(f"\n{name}: {model['model_id']} @ {model['model_revision']}; load ms {model.get('model_load_ms', model.get('load_ms'))}, RSS MB {model.get('rss_mb_linux_before_scoring', model.get('rss_mb_before_scoring'))}\n")
+              out.write(f"\nSource commit {data['source_commit']}, task script SHA256 {data['script_sha256']}. Original provider executions 0. No default promotion.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e5-small-base-native-en-500-real-cpu-dev
+          path: artifacts/e5-base-paired-500-dev/report.json
+          retention-days: 30
+          if-no-files-found: error
