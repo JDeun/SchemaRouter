@@ -549,17 +549,17 @@ def select_authorized_field_contract(
     if not ids:
         return abstain("empty_authorized_catalog")
 
+    def scoped_required_relationships_allowed(route_id: str) -> bool:
+        allowed = trusted_relationship_allowlists[route_id]
+        return allowed is None or all(
+            requirement.parameter != "relationship_types"
+            or requirement.value in allowed
+            for requirement in approved_contract.required_enums
+        )
+
     matched = [
         item for item in verified.candidates
-        if (
-            trusted_relationship_allowlists[item.route_id] is None
-            or all(
-                requirement.parameter != "relationship_types"
-                or requirement.value
-                in trusted_relationship_allowlists[item.route_id]
-                for requirement in approved_contract.required_enums
-            )
-        )
+        if scoped_required_relationships_allowed(item.route_id)
         and _candidate_matches(
             # The host alone evaluates ORIGINAL enum restrictions on only
             # currently scoped-visible parameter identities. The public
