@@ -38,6 +38,16 @@ from scripts.research_source_ready_native_tool_menu_e1 import (
 ROOT = Path(__file__).resolve().parents[1]
 ROUTES = ("open_meteo_geocoding.search", "open_meteo_weather.current")
 MAX_TURNS = 4
+# Host-verified progress status, not a gold route or an injected tool call.
+# This contains no coordinates, tool names, predicted values, or task labels.
+SOURCE_PROGRESS_NOTE = (
+    "Source-progress reminder: no authorized current-weather observation "
+    "has been verified yet, so a final temperature JSON would be unsupported. "
+    "Use only a currently offered read-only tool if its required arguments "
+    "can be grounded in already validated observations. "
+    "Do not invent weather, coordinates, timestamps or tool calls. "
+    "If no permitted action is possible, reply REQUEST_MORE_TOOLS."
+)
 PRINCIPAL = PrincipalContext(subject="e1-public-open-meteo-reader", roles=("reader",))
 SYSTEM = (
     "You are a research agent. Make exactly one listed tool call at a time and "
@@ -121,7 +131,7 @@ async def evaluate_one(
         (language, city, country) not in CASES
         or language not in USER_REQUESTS
         or not callable(getattr(agent, "generate", None))
-        or menu_mode not in ("all_visible", "state_ready")
+        or menu_mode not in ("all_visible", "state_ready", "state_ready_progress")
         or type(transport_retry_budget) is not int
         or transport_retry_budget not in (0, 1)
     ):
@@ -147,6 +157,7 @@ async def evaluate_one(
     trusted_transport_error_kind: str | None = None
     total_model_ms = 0.0
     executed_routes: list[str] = []
+    progress_notice_sent = False
 
     for _ in range(MAX_TURNS):
         turns += 1
@@ -169,8 +180,22 @@ async def evaluate_one(
                 prior_public_observation=actual_location,
                 executed_route_ids=tuple(executed_routes),
             )
-            if menu_mode == "state_ready" else ROUTES
+            if menu_mode in ("state_ready", "state_ready_progress")
+            else ROUTES
         )
+        # Separate E1 prompt hypothesis: the HOST may truthfully say an
+        # actual weather observation is still absent after the model's own
+        # first authorized and validated source call. It must not choose
+        # the next route or provide values, nor repair an invalid final.
+        if (
+            menu_mode == "state_ready_progress"
+            and completed == 1 and actual_location is not None
+            and actual_weather is None and not progress_notice_sent
+        ):
+            if messages[-1].get("role") != "user":
+                raise PolicyViolationError("unexpected trusted source history")
+            messages[-1]["content"] += "\n\n" + SOURCE_PROGRESS_NOTE
+            progress_notice_sent = True
         definitions = view.tool_definitions(list(offered), k=2) if offered else []
         generated = agent.generate(messages, definitions)
         view.assert_source_unchanged()
