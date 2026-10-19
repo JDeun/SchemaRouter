@@ -8,7 +8,6 @@ from pathlib import Path
 
 import pytest
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / ".github/scripts/sync_research_milestones.py"
 
@@ -148,7 +147,11 @@ def test_closed_issue_is_not_reopened(monkeypatch) -> None:
         if "milestones?" in path:
             return []
         if path.endswith("/milestones") and method == "POST":
-            return {"number": int(payload["title"][1]) + 1, "title": payload["title"], "state": "open"}
+            return {
+                "number": int(payload["title"][1]) + 1,
+                "title": payload["title"],
+                "state": "open",
+            }
         if "/issues/" in path:
             n = int(path.rsplit("/", 1)[-1])
             if method == "GET":
