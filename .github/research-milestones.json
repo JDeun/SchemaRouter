@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "status": "DECLARATIVE_PLAN_CHECK_LIVE_GITHUB",
+  "status": "REQUEST_LIVE_INITIALIZATION_20261019",
   "as_of": "2026-10-19",
   "repository": "JDeun/SchemaRouter",
   "policy": {
@@ -8,7 +8,8 @@
     "issue_200": "Cross-cutting permanent tracker remains unassigned.",
     "close_rule": "Close milestone only after linked gate evidence, not CI-green or E0 mechanism alone.",
     "release_hold": "#1356 DO NOT MERGE until #1345/#1346 and other release-specific gates.",
-    "live_status": "This manifest never asserts whether a milestone exists; inspect GitHub Issues > Milestones or manually run the protected preview/apply workflow."
+    "live_status": "This manifest never asserts whether a milestone exists; inspect GitHub Issues > Milestones or manually run the protected preview/apply workflow.",
+    "initialization": "One-time protected-main manifest SHA pinned run only; never imply success until GitHub live milestone verification."
   },
   "milestones": [
     {
