@@ -153,17 +153,36 @@ _T = TypeVar("_T")
 _SYNC_LOOP_RUNNER = SyncLoopRunner()
 
 
-def _scoped_public_output_schema(fields: list[FieldSpec]) -> dict[str, Any]:
-    """Only the declared visible projected fields; never a raw provider schema.
+def _scoped_public_value_shape(schema: dict[str, Any]) -> dict[str, Any]:
+    """Only public JSON primitive type evidence; never nested $defs or $refs.
 
-    Server-side projection is an execution capability, NOT a prerequisite for
-    removing hidden field metadata from an agent-facing scoped catalog.
-    Raw provider validation still uses the original unmodified endpoint.
+    The registered raw schema remains intact for trusted provider validation.
+    A visible field can carry unreviewed recursive definitions that name a
+    different, data-scope-hidden field. Such metadata is not a scope grant.
+    """
+    safe_types = {"object", "array", "string", "number", "integer", "boolean", "null"}
+    declared = schema.get("type")
+    if type(declared) is str and declared in safe_types:
+        return {"type": declared}
+    if (
+        type(declared) is list and declared
+        and all(type(value) is str and value in safe_types for value in declared)
+    ):
+        return {"type": list(dict.fromkeys(declared))}
+    return {}
+
+
+def _scoped_public_output_schema(fields: list[FieldSpec]) -> dict[str, Any]:
+    """Only the explicitly visible field names and primitive type metadata.
+
+    Never copy raw schema definitions, references, property descriptions or
+    provider constraints into an agent-facing data-scoped descriptor.
+    The trusted provider validator retains the original source endpoint.
     """
     return {
         "type": "object",
         "properties": {
-            field.name: field.json_schema.copy()
+            field.name: _scoped_public_value_shape(field.json_schema)
             for field in fields
         },
     }
@@ -384,7 +403,10 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             return endpoint
 
         visible_fields = [
-            field.model_copy(deep=True)
+            field.model_copy(
+                deep=True,
+                update={"json_schema": _scoped_public_value_shape(field.json_schema)},
+            )
             for field in endpoint.output_fields
             if field.name in scope.visible_fields
         ]
@@ -444,11 +466,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             update={
                 "parameters": parameters,
                 "output_fields": visible_fields,
-                "output_schema": (
-                    _scoped_public_output_schema(visible_fields)
-                    if len(visible_fields) < len(endpoint.output_fields)
-                    else projected_output_schema(endpoint, selected_names)
-                ),
+                "output_schema": _scoped_public_output_schema(visible_fields),
                 "server_projection": server_projection,
             },
         )
@@ -592,14 +610,17 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                         "parameters": parameters,
                         "input_schema": input_schema,
                         "output_fields": [
-                            field.model_copy(deep=True)
+                            field.model_copy(
+                                deep=True,
+                                update={
+                                    "json_schema": _scoped_public_value_shape(
+                                        field.json_schema,
+                                    ),
+                                },
+                            )
                             for field in visible_fields
                         ],
-                        "output_schema": (
-                            _scoped_public_output_schema(visible_fields)
-                            if hidden_field_names
-                            else projected_output_schema(endpoint, selected_names)
-                        ),
+                        "output_schema": _scoped_public_output_schema(visible_fields),
                         "matched_fields": matched_fields,
                         "score_components": score_components,
                     },
