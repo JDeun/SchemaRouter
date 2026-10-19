@@ -7,13 +7,15 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import inspect
 import json
 import math
 import statistics
 import subprocess
 import time
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from schemarouter.decisions import EmbeddingDecisionBackend
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import CORPUS, PRINCIPAL
@@ -116,6 +118,17 @@ def _passages(rows: tuple[Any, ...]) -> tuple[list[str], list[str]]:
     return full, operation
 
 
+def _sync_e5_vectors(backend: Any, texts: list[str]) -> list[list[float]]:
+    """Validate the existing backend's synchronous source-only CPU vectors."""
+    raw = backend.embedder(texts)
+    if inspect.isawaitable(raw):
+        raise RuntimeError("real CPU E5 backend unexpectedly returned an awaitable")
+    return EmbeddingDecisionBackend._coerce_vectors(
+        cast(Iterable[Iterable[float]], raw),
+        expected_count=len(texts),
+    )
+
+
 def weighted_rank(
     query_vector: list[float],
     full_vectors: list[list[float]],
@@ -180,8 +193,8 @@ def run() -> dict[str, Any]:
     # Capture the model's exact E5 passage vectors from one original
     # source-scoped fixed corpus; all later queries reuse these vectors.
     started = time.perf_counter_ns()
-    reference_query_vector, *vectors = backend.embedder(
-        [CASES[0][1], *descriptions, *operations]
+    reference_query_vector, *vectors = _sync_e5_vectors(
+        backend, [CASES[0][1], *descriptions, *operations],
     )
     passage_ms = (time.perf_counter_ns() - started) / 1e6
     full_vectors = vectors[:ROUTES]
@@ -219,7 +232,7 @@ def run() -> dict[str, Any]:
         ):
             raise RuntimeError("cross-query scope/source contract drift")
         start = time.perf_counter_ns()
-        query_vector = backend.embedder([query])[0]
+        query_vector = _sync_e5_vectors(backend, [query])[0]
         encode_ms = (time.perf_counter_ns() - start) / 1e6
         arms: dict[str, Any] = {}
         for name, weight in (("source_e5", 0.0), ("operation_25", OPERATION_WEIGHT)):
