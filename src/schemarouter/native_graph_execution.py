@@ -6,16 +6,22 @@ no new invoker, no LLM, no policy grants, no production default change.
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from .authorization import PrincipalContext
 from .errors import PolicyViolationError, SchemaValidationError
 from .field_group_retrieval import NativeDeclaredFieldGroup
 from .models import ExecutionPlan, ToolCall, ToolResult
-from .native_graph_index import NativeIndexedGraphCandidate, NativeSchemaGraphIndex
+from .native_graph_index import (
+    NativeIndexedGraphCandidate,
+    NativeSchemaGraphIndex,
+    _host_source_input_names,
+)
 from .native_graph_observation import materialize_native_observed_arguments
 from .runs import ExecutionBudget, RunConfig
+from .validation import validate_json_schema_value
 
 if TYPE_CHECKING:
     from .runtime import SchemaRouter
@@ -41,6 +47,7 @@ async def execute_native_graph_one_hop(
     group: NativeDeclaredFieldGroup,
     principal: PrincipalContext,
     candidate: NativeIndexedGraphCandidate,
+    source_arguments: dict[str, Any] | None = None,
 ) -> NativeOneHopExecutionEvidence:
     """Execute two trusted registered read-only calls with full existing gates.
 
@@ -73,6 +80,37 @@ async def execute_native_graph_one_hop(
     ))
     if len(output_fields) != len(candidate.parameter_bindings):
         raise SchemaValidationError("G5 duplicate source field mapping")
+
+    # A parameterized source requires *all* arguments from the trusted host.
+    # Do not guess them from the natural-language query or typed graph edge.
+    approved_inputs = candidate.source_root_parameters
+    if approved_inputs:
+        if candidate.producer_route_id not in index.approved_host_roots:
+            raise PolicyViolationError("G5 original source was not host approved")
+        source_spec = router.registry.get(source_key).endpoint(source_endpoint)
+        if _host_source_input_names(source_spec) != approved_inputs:
+            raise PolicyViolationError("G5 host source input contract changed")
+        if (
+            type(source_arguments) is not dict
+            or set(source_arguments) != set(approved_inputs)
+        ):
+            raise SchemaValidationError("G5 complete host source inputs required")
+        for value in source_arguments.values():
+            if (
+                type(value) not in (str, int, float, bool)
+                or type(value) is float and not math.isfinite(value)
+                or type(value) is str and len(value.encode("utf-8")) > 4096
+            ):
+                raise SchemaValidationError("G5 invalid bounded host source scalar")
+        validate_json_schema_value(
+            source_arguments, source_spec.input_schema,
+            context="G5 host-approved original source arguments",
+        )
+        initial_args = dict(source_arguments)
+    else:
+        if source_arguments is not None:
+            raise SchemaValidationError("G5 no-input source rejects extra host inputs")
+        initial_args = {}
     # The budget applies to each call separately; this routine cannot bypass
     # the configured executor's policy/trace/invoker validation boundary.
     config = RunConfig(
@@ -111,7 +149,7 @@ async def execute_native_graph_one_hop(
         endpoint=source_endpoint,
         tool_fingerprint=candidate.producer_tool_fingerprint,
         endpoint_fingerprint=candidate.producer_endpoint_fingerprint,
-        arguments={},
+        arguments=initial_args,
         fields=output_fields,
     )
     first = await router.execute(source_plan, config=config)
