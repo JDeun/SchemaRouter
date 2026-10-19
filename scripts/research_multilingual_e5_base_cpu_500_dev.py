@@ -78,8 +78,8 @@ def validate_manifest() -> tuple[dict[str, Any], str]:
     if len(CASES) != 24 or len({q for _, q, _ in CASES}) != len(CASES):
         raise ValueError("fixed NEW case manifest drifted")
     for lang in ("en", "ko", "ja"):
-        positives = sum(l == lang and gold is not None for l, _, gold in CASES)
-        negatives = sum(l == lang and gold is None for l, _, gold in CASES)
+        positives = sum(language == lang and gold is not None for language, _, gold in CASES)
+        negatives = sum(language == lang and gold is None for language, _, gold in CASES)
         if (positives, negatives) != (6, 2):
             raise ValueError("fixed supported and unsupported denominators drifted")
     corpus, source_sha = load_development_corpus(CORPUS)
