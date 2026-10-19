@@ -244,5 +244,13 @@ def test_exact_source_blob_gates_one_time_main_push_initialization() -> None:
     assert "git hash-object .github/research-milestones.json" in workflow
     assert "issues: write" in workflow
     assert "workflow_dispatch:" not in workflow
+    assert "issue_comment:" in workflow
+    assert "github.event_name == 'issue_comment'" in workflow
+    assert "github.event.issue.number == 200" in workflow
+    assert "github.event.comment.user.login == 'JDeun'" in workflow
+    assert (
+        "github.event.comment.body == "
+        "'SCHEMAROUTER_APPROVE_MILESTONES_20261019'" in workflow
+    )
     assert 'github.ref == \'refs/heads/main\'' in workflow
 
