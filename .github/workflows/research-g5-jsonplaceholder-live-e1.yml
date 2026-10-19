@@ -5,6 +5,8 @@ on:
     paths:
       - "scripts/research_g5_jsonplaceholder_live_e1.py"
       - "tests/test_research_g5_jsonplaceholder_live_e1.py"
+      - "src/schemarouter/native_graph_index.py"
+      - "src/schemarouter/native_graph_execution.py"
       - "research/autoresearch/g5-jsonplaceholder-native-live-e1.md"
       - ".github/workflows/research-g5-jsonplaceholder-live-e1.yml"
   workflow_dispatch:
@@ -82,5 +84,56 @@ jobs:
         with:
           name: original-demo-public-g5-e1-${{ github.run_id }}
           path: artifacts/g5-jsonplaceholder-e1.json
+          retention-days: 90
+          if-no-files-found: warn
+
+  real-https-host-approved-source-root:
+    needs: offline-original-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install original runtime (no model, no paid provider)
+        run: python -m pip install .
+      - name: Execute actual dynamic GET posts/11 then observed user ID on original HTTPS
+        run: |
+          python -m scripts.research_g5_jsonplaceholder_live_e1 --post-id 11 --out artifacts/g5-host-root-e1.json
+      - name: Reject incomplete or inflated E1 provenance claims
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          d = json.loads(Path("artifacts/g5-host-root-e1.json").read_text())
+          assert d["study"] == "G5_HOST_PARAMETERIZED_ORIGINAL_DEMO_HTTPS_E1_NOT_E2"
+          assert d["provider_is_demo_fabricated_content"] is True
+          assert d["host_parameterized_source_root"] is True
+          assert d["host_source_arguments_explicitly_provided"] is True
+          assert d["source_paths"] == ["/posts/11", "/users/{id}"]
+          assert d["source_http_attempts"] == {"post": 1, "user": 1}
+          assert d["source_responses_verified"] == {"post": 1, "user": 1}
+          assert d["g5_original_conjunctive_candidate_count"] == 1
+          assert d["complete_field_bindings_observed"] is True
+          assert d["model_selected_tools"] is False
+          assert d["independent_provider_identity"] is False
+          assert d["independent_agent_e2"] is False
+          assert d["release_qualified"] is False
+          assert "userId" not in d and "username" not in d
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as f:
+              f.write("## G5 explicitly host-parameterized original HTTPS root: E1 demo, not E2\\n\\n")
+              f.write("Observed public seeded-fake GET /posts/11, projected real post userId, then typed GET /users/{id}. Host independently chose post=11 and allowed both calls; no model/tool selection, no independent provider or downstream task qualification.\\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: g5-host-approved-dynamic-demo-e1-${{ github.run_id }}
+          path: artifacts/g5-host-root-e1.json
           retention-days: 90
           if-no-files-found: warn
