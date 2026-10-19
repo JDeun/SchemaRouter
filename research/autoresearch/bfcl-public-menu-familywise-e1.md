@@ -84,3 +84,34 @@ threshold may be tuned to the previously observed LIVE outcomes. Report
 the exact current source hash/run and BOTH original and corrected
 admission/refusal metrics; if improved specificity causes unacceptable
 false refusals, keep the production default unchanged.
+
+
+## Actual original PUBLIC BFCL E5 observations — NEGATIVE tradeoff
+
+Pinned original external BFCL actual E5 CPU [workflow run 39179794153](https://github.com/JDeun/SchemaRouter/actions/runs/39179794153),
+job `117830058791`, artifact `12155513883`, on head
+`d5cec6dabac4f2e78b3bea18824a4b32af687e09`.
+The untouched original scorer reproduces 8/16 supported admissions
+and 144/880 nonempty-menu irrelevant false admissions. Opt-in
+Bonferroni single-negative-tail arm instead yields:
+
+| PUBLIC exposed LIVE function relevance metric | Original trained pair-fit | Experimental menu-familywise |
+|---|---:|---:|
+| Offered supported admitted | 8/16 | **4/16** |
+| Offered supported false refused | 8/16 | **12/16** |
+| Irrelevant with nonempty source menu falsely accepted | 144/880 | **91/880** |
+| Irrelevant correctly refused | 736/880 | **789/880** |
+
+**Decision: REJECT product/default promotion.** Fewer false admissions
+come at the unacceptable cost of halving already-poor supported
+recall. This does NOT solve no-fit or calibrated applicability.
+Furthermore **75/508** irrelevant one-function menus remain falsely
+accepted after family-wise correction; multiplicity alone is not
+the sole failure mechanism. The underlying semantic function fit
+and distribution shift still require independent source supervision
+and evaluation, not further threshold tuning on inspected LIVE labels.
+
+All counts are publisher PUBLIC exploratory E1, not independent
+publisher-authored tool/field/permission E2, and don't evaluate
+correct name, arguments, native source execution, or agent final
+task success. Keep #1346 and #1477 open and v0.18 #1356 HOLD.
