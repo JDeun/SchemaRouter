@@ -172,6 +172,27 @@ def _scoped_public_value_shape(schema: dict[str, Any]) -> dict[str, Any]:
     return {}
 
 
+def _scoped_public_output_field(field: FieldSpec) -> FieldSpec:
+    """Expose an authorized field, never source-owned descriptive sidecars.
+
+    The field's canonical name and semantic ID remain to preserve exact
+    host-reviewed field matching. Descriptions, aliases and projection paths
+    are NOT authorizations to reveal related hidden source column names.
+    Trusted original provider projection stays in the registry unchanged.
+    """
+    return field.model_copy(
+        deep=True,
+        update={
+            "description": "",
+            "aliases": [],
+            "path": [],
+            "result_path": [],
+            "qualifiers": {},
+            "json_schema": _scoped_public_value_shape(field.json_schema),
+        },
+    )
+
+
 def _scoped_public_output_schema(fields: list[FieldSpec]) -> dict[str, Any]:
     """Only the explicitly visible field names and primitive type metadata.
 
@@ -454,10 +475,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             return endpoint
 
         visible_fields = [
-            field.model_copy(
-                deep=True,
-                update={"json_schema": _scoped_public_value_shape(field.json_schema)},
-            )
+            _scoped_public_output_field(field)
             for field in endpoint.output_fields
             if field.name in scope.visible_fields
         ]
@@ -673,14 +691,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                         "parameters": parameters,
                         "input_schema": input_schema,
                         "output_fields": [
-                            field.model_copy(
-                                deep=True,
-                                update={
-                                    "json_schema": _scoped_public_value_shape(
-                                        field.json_schema,
-                                    ),
-                                },
-                            )
+                            _scoped_public_output_field(field)
                             for field in visible_fields
                         ],
                         "output_schema": _scoped_public_output_schema(visible_fields),
