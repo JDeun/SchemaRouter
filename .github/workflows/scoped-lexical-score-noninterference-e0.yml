@@ -1,0 +1,35 @@
+name: Scoped Original Lexical Score Noninterference E0
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/planner.py"
+      - "tests/test_scoped_lexical_score_noninterference.py"
+      - ".github/workflows/scoped-lexical-score-noninterference-e0.yml"
+      - "research/autoresearch/scoped-lexical-score-noninterference-e0.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  principal-paired-lexical-e0:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Verify original scorer and host identity noninterference
+        run: |
+          python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1" "pyright>=1.1,<2"
+          ruff check src/schemarouter/planner.py tests/test_scoped_lexical_score_noninterference.py
+          python -m pytest -q tests/test_scoped_lexical_score_noninterference.py tests/test_scoped_tool_endpoint_descriptions.py tests/test_scoped_visible_field_metadata.py tests/test_scoped_input_schema_metadata.py tests/test_host_field_contract.py tests/test_data_scope_authorization.py
+          pyright src/schemarouter/planner.py
+      - name: Strict evidence boundary
+        if: success()
+        run: |
+          echo "E0 local principal-paired source-description score and optional semantic-recall prompt invariance; not independent model agent/E2 quality, no-fit qualification, or general side-channel proof." >> "$GITHUB_STEP_SUMMARY"
