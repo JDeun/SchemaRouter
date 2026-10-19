@@ -226,16 +226,17 @@ def test_closed_late_stage_milestone_aborts_before_any_write(monkeypatch) -> Non
         mod.apply(plan, "test-token")
     assert operations == ["GET"]
 
-def test_exact_source_blob_gates_one_time_main_push_initialization() -> None:
-    from pathlib import Path
 
+def test_exact_source_blob_gates_one_time_main_push_initialization() -> None:
     root = Path(__file__).resolve().parents[1]
     manifest_raw = (root / ".github/research-milestones.json").read_bytes()
     manifest = json.loads(manifest_raw)
     approved_sha = hashlib.sha1(
-        b"blob " + str(len(manifest_raw)).encode("ascii") + b"\\0" + manifest_raw,
+        b"blob " + str(len(manifest_raw)).encode("ascii") + b"\0" + manifest_raw,
     ).hexdigest()
-    workflow = (root / ".github/workflows/research-milestone-initialize-once.yml").read_text()
+    workflow = (
+        root / ".github/workflows/research-milestone-initialize-once.yml"
+    ).read_text()
     assert approved_sha == "3df25049ab9854e54961c6fb77518236b9ed92ee"
     assert approved_sha in workflow
     assert manifest["status"] == "REQUEST_LIVE_INITIALIZATION_20261019"
