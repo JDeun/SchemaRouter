@@ -37,11 +37,17 @@ EVIDENCE = "REAL_QWEN_OPEN_METEO_SOURCE_READY_E1_EXPOSED_DEV_NOT_E2"
 async def compare(
     agent: Any, client: httpx.AsyncClient, *,
     transport_retry_budget: int = 0,
+    host_completion_feedback_budget: int = 0,
 ) -> dict[str, Any]:
     if not callable(getattr(agent, "generate", None)):
         raise ValueError("actual model generator required")
     if type(transport_retry_budget) is not int or transport_retry_budget not in (0, 1):
         raise ValueError("bounded live GET retry budget required")
+    if (
+        type(host_completion_feedback_budget) is not int
+        or host_completion_feedback_budget not in (0, 1)
+    ):
+        raise ValueError("bounded generic completion feedback required")
     outcomes: dict[str, dict[str, dict[str, Any]]] = {
         arm: {} for arm in ARMS
     }
@@ -54,6 +60,7 @@ async def compare(
             row = await evaluate_one(
                 agent, client, language=language, city=city, country=country,
                 menu_mode=arm, transport_retry_budget=transport_retry_budget,
+                host_completion_feedback_budget=host_completion_feedback_budget,
             )
             if row["language"] != language or row["independent_e2_qualified"]:
                 raise ValueError("corrupt native source task outcome")
@@ -96,6 +103,9 @@ async def compare(
                     ],
                     "model_turns": x["model_turns"],
                     "generation_ms": x["model_generation_ms"],
+                    "generic_completion_feedback_sent": x[
+                        "generic_completion_feedback_sent"
+                    ],
                 }
                 for language, x in cases.items()
             },
@@ -110,6 +120,9 @@ async def compare(
         "real_pinned_model_inference": True,
         "host_derived_state_ready_menu_only_in_candidate": True,
         "shared_host_transport_retry_budget": transport_retry_budget,
+        "shared_generic_completion_feedback_budget": (
+            host_completion_feedback_budget
+        ),
         "same_original_source_case_contract": True,
         "independent_e2_qualified": False,
         "default_product_modified": False,
@@ -130,6 +143,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--transport-retry-budget", type=int, default=0)
+    parser.add_argument("--host-completion-feedback-budget", type=int, default=0)
     args = parser.parse_args()
     start = time.perf_counter()
     agent = LocalQwenAgent()
@@ -140,6 +154,9 @@ def main() -> None:
         ) as client:
             return await compare(
                 agent, client, transport_retry_budget=args.transport_retry_budget,
+                host_completion_feedback_budget=(
+                    args.host_completion_feedback_budget
+                ),
             )
 
     report = asyncio.run(run())
