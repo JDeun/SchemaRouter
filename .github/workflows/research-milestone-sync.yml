@@ -1,0 +1,38 @@
+name: Research milestones (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Preview or explicitly create/assign the six research milestones
+        required: true
+        type: choice
+        default: preview
+        options:
+          - preview
+          - apply
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  milestone-sync:
+    if: github.repository == 'JDeun/SchemaRouter' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout protected main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Static manifest and script validation
+        run: |
+          python3 -m py_compile .github/scripts/sync_research_milestones.py
+          python3 .github/scripts/sync_research_milestones.py
+      - name: Apply milestone records (explicit action only)
+        if: inputs.mode == 'apply'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 .github/scripts/sync_research_milestones.py --apply
