@@ -115,6 +115,7 @@ async def evaluate_one(
     language: str, city: str, country: str,
     menu_mode: str = "all_visible",
     transport_retry_budget: int = 0,
+    host_completion_feedback_budget: int = 0,
 ) -> dict[str, Any]:
     """Never convert a denied/incomplete model action into a successful call."""
     if (
@@ -124,6 +125,8 @@ async def evaluate_one(
         or menu_mode not in ("all_visible", "state_ready")
         or type(transport_retry_budget) is not int
         or transport_retry_budget not in (0, 1)
+        or type(host_completion_feedback_budget) is not int
+        or host_completion_feedback_budget not in (0, 1)
     ):
         raise ValueError("unregistered source task or model")
     router, geocode, weather = build_live_router(
@@ -147,6 +150,7 @@ async def evaluate_one(
     trusted_transport_error_kind: str | None = None
     total_model_ms = 0.0
     executed_routes: list[str] = []
+    feedback_sent = 0
 
     for _ in range(MAX_TURNS):
         turns += 1
@@ -196,6 +200,29 @@ async def evaluate_one(
                 correctly_ended = _matches_weather_final(payload, actual_weather)
                 if not correctly_ended:
                     reason = "incorrect_final_value_or_format"
+            if (
+                reason in {"premature_final", "incorrect_final_value_or_format"}
+                and completed >= 1
+                and feedback_sent < host_completion_feedback_budget
+                and turns < MAX_TURNS
+            ):
+                # Strictly one generic source-completeness feedback, no
+                # expected route, provider values, arguments or task gold.
+                # The model MUST still propose every tool and final value.
+                # The original scoped host authorization stays unchanged.
+                messages.append({
+                    "role": "user",
+                    "content": (
+                        "The original request is not yet supported by a "
+                        "complete source-confirmed final response. You may "
+                        "continue using only currently authorized tools and "
+                        "previously observed public results. Do not guess "
+                        "values or invent arguments. If unable to complete, "
+                        "respond REQUEST_MORE_TOOLS."
+                    ),
+                })
+                feedback_sent += 1
+                continue
             break
 
         attempted += 1
@@ -344,6 +371,8 @@ async def evaluate_one(
     return {
         "language": language,
         "model_turns": turns,
+        "generic_completion_feedback_sent": feedback_sent,
+        "host_completion_feedback_budget": host_completion_feedback_budget,
         "attempted_model_calls": attempted,
         # `*_calls` are historic counters for *validated responses*.
         # HTTP can have been attempted even when source data is rejected.
