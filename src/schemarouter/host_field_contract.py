@@ -169,7 +169,10 @@ def _enum_schema_can_hold_required(
 
 
 def _candidate_matches(
-    candidate: CapabilityCandidate, contract: HostFieldContract,
+    candidate: CapabilityCandidate,
+    contract: HostFieldContract,
+    *,
+    scoped_parameters: tuple[ParameterSpec, ...] | None = None,
 ) -> bool:
     # Caller provides an internally attested, scope-limited candidate.
     # The final public retrieval result is never modified.
@@ -204,7 +207,14 @@ def _candidate_matches(
             # Native source enums are verified internally, but a narrower
             # locally trusted relationship-type policy must still win.
             visible_parameter = next(
-                (p for p in candidate.parameters if p.name == parameter_name),
+                (
+                    p for p in (
+                        scoped_parameters
+                        if scoped_parameters is not None
+                        else tuple(candidate.parameters)
+                    )
+                    if p.name == parameter_name
+                ),
                 None,
             )
             if visible_parameter is None:
@@ -543,6 +553,7 @@ def select_authorized_field_contract(
                 },
             ),
             approved_contract,
+            scoped_parameters=tuple(item.parameters),
         )
     ]
     if not matched:
