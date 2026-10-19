@@ -324,6 +324,14 @@
       "source_blob": "df85cf760bcdecedf91e692bc8e3bc267c4ed98f"
     },
     {
+      "path": "integrations/microsoft-decision-1.md",
+      "source_blob": "be983823a98e8c74c0ea7d5f3c8f3b7fe1b7ebad"
+    },
+    {
+      "path": "integrations/microsoft-foundry-http-adapter.md",
+      "source_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567"
+    },
+    {
       "path": "integrations/ollama.md",
       "source_blob": "59efd519def797fb4ae2351697955881e7d7912d"
     },
@@ -560,16 +568,20 @@
       "source_blob": "661b0a4720746af855155cd452fda3e03ae17de3"
     },
     {
-      "path": "research/product-north-star-and-test-matrix.md",
-      "source_blob": "37471d8b023f264aadb621fbb00304603ac7c8a3"
-    },
-    {
       "path": "research/prior-art-roadmap.md",
       "source_blob": "719295665db8ab081b3f7e0554f47ac8b17f9bd6"
     },
     {
+      "path": "research/product-north-star-and-test-matrix.md",
+      "source_blob": "37471d8b023f264aadb621fbb00304603ac7c8a3"
+    },
+    {
       "path": "research/realistic-break-even-result.md",
       "source_blob": "e83ca2b09f61d61456f5fc8122e3839eb0bbeace"
+    },
+    {
+      "path": "research/research-program-2026.md",
+      "source_blob": "04420be19eb64b07f3b79500428b530e5969a0a8"
     },
     {
       "path": "research/routing-status.md",
@@ -598,14 +610,6 @@
     {
       "path": "versioning.md",
       "source_blob": "61f82f452188aec2f74fde20f09243a9dbbb1497"
-    },
-    {
-      "path": "integrations/microsoft-foundry-http-adapter.md",
-      "source_blob": "1a94ea1b7f0a800200b13de2b7cc6b39d16ab567"
-    },
-    {
-      "path": "integrations/microsoft-decision-1.md",
-      "source_blob": "be983823a98e8c74c0ea7d5f3c8f3b7fe1b7ebad"
     }
   ]
 }
