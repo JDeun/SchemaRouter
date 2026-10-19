@@ -43,11 +43,17 @@ EVIDENCE_TIER = "SOURCE_ONLY_E5_BASE_OPERATION_CHANNEL_DEV_NO_E2"
 # requests and untouched after the first model run.
 CASES = (
     ("en", "Locate measurements for a titanium nitride crystal.", "materials.search"),
-    ("en", "Identify the physical units attached to formation-energy reporting.", "materials.units"),
+    (
+        "en", "Identify the physical units attached to formation-energy reporting.",
+        "materials.units",
+    ),
     ("en", "Get a bibliographic citation for DOI 10.5555/test-abc.", "papers.citations"),
     ("en", "Find scientific literature on battery electrolytes.", "papers.search"),
     ("en", "Find out whether flight GH302 has arrived on schedule.", "flights.status"),
-    ("en", "Retrieve the historical exchange rate between yen and pounds.", "finance.exchange_history"),
+    (
+        "en", "Retrieve the historical exchange rate between yen and pounds.",
+        "finance.exchange_history",
+    ),
     ("ko", "질화티타늄 결정에 관한 측정 자료를 검색해.", "materials.search"),
     ("ko", "생성 에너지 데이터에 표시되는 측정 단위를 조회해 줘.", "materials.units"),
     ("ko", "DOI 10.5555/test-abc의 서지 인용 형식을 알려줘.", "papers.citations"),
