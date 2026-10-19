@@ -32,8 +32,15 @@ def test_scoped_phrase_bridge_improves_supported_korean_japanese_dev() -> None:
         assert before["positive_evidence_top1_hits"] == 0
         assert after["positive_evidence_top1_hits"] == 3
         assert after["unsupported_positive_evidence"] == 0
+    # English negated lexical tokens are ALREADY scored positive in the
+    # original exact/KeywordAnalyzer arm. Preserve that negative finding:
+    # the new analyzer may not INTRODUCE additional false positive evidence.
     for lang in ("ko", "ja", "en"):
-        assert report["summary"]["bounded_phrase"][lang]["unsupported_positive_evidence"] == 0
+        old = report["summary"]["exact"][lang]["unsupported_positive_evidence"]
+        new = report["summary"]["bounded_phrase"][lang]["unsupported_positive_evidence"]
+        assert new <= old
+    assert report["summary"]["exact"]["en"]["unsupported_positive_evidence"] == 1
+    assert report["summary"]["bounded_phrase"]["en"]["unsupported_positive_evidence"] == 1
     for row in report["rows"]:
         for arm in ("exact", "bounded_phrase"):
             assert row["arms"][arm]["latency_ms"] >= 0
@@ -81,6 +88,7 @@ def test_default_exact_behavior_and_declared_no_invented_translation() -> None:
 
 def test_phrases_with_multiple_semantic_targets_or_explicit_negation_abstain() -> None:
     router = build_router("bounded_phrase")
+    exact = build_router("exact")
     for query in (
         "탄성계수 열전도율 둘 다 비교해 주세요.",
         "탄성계수는 제외하고 조회해 주세요.",
@@ -89,7 +97,15 @@ def test_phrases_with_multiple_semantic_targets_or_explicit_negation_abstain() -
         "아무 근거 없는 도구를 실행해",
     ):
         retrieval = router.retrieve_authorized(query, principal=VIEWER, k=1)
-        assert all(c.score == 0 for c in retrieval.candidates)
+        baseline = exact.retrieve_authorized(query, principal=VIEWER, k=1)
+        assert [c.route_id for c in retrieval.candidates] == [
+            c.route_id for c in baseline.candidates
+        ]
+        assert [c.score for c in retrieval.candidates] == [
+            c.score for c in baseline.candidates
+        ]
+        if query != "Do not use Youngs modulus.":
+            assert all(c.score == 0 for c in retrieval.candidates)
 
 
 def test_original_query_unicode_unmodified_on_opt_in_analysis() -> None:
