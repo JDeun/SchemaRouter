@@ -34,7 +34,9 @@ _NEGATION_CUES = (
     "除外", "以外", "使わない", "ではなく", "しない",
     " not ", "don't", "do not", "except", "without ",
 )
-_CJK_PARTICLES = frozenset("의를은는이가에도만はがをのにでとへ")
+# Include coordination particles: a query requesting BOTH approved concepts must
+# be treated as ambiguous, never promote only the one after a space.
+_CJK_PARTICLES = frozenset("의를은는이가에도만와과はがをのにでとへ")
 
 
 def _is_cjk(value: str) -> bool:
