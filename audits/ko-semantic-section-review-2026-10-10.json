@@ -216,10 +216,10 @@
     {
       "path": "research/research-program-2026.md",
       "section": 4,
-      "en_blob": "32a725f3596e8be2776708474c711b2711f0d8dd",
-      "ko_blob": "cfad4af38b41be15d3b2ae2e1054caeb21ad2b5b",
+      "en_blob": "0a61d820aad02d6a4ffdb4cf014839cb5b4762b3",
+      "ko_blob": "a04110e53530c8f2e5a0c7604ab678803318137e",
       "decision": "meaning-preserved",
-      "evidence": "AI-assisted exact-blob EN/KO comparison after modifying issue-closure subsection only: EN forbids promotion of three additional DEV-only experiments (#1452, #1473, #1444); KO '모두 작은 E0/E1 범위의 결과이며 독립 정확도나 제품 기본 승격의 증거가 아닙니다' preserves the non-promotion boundary. Current section 4 also preserves #1580/#1584 diagnostic-only and #1356 release-HOLD negations. Not independent human/editorial review."
+      "evidence": "AI-assisted exact-blob spotcheck after adding 5 paired prior-art table rows in section 5 only: source and KO still explicitly deny promotion from #1452/#1473/#1444 DEV and #1580/#1584 diagnostics, hold #1356 release. Section 4 source/target text unchanged, only document blobs repinned. Not independent human/editorial signoff."
     },
     {
       "path": "research/routing-status.md",
