@@ -13,12 +13,13 @@ Both the analyzer-visible endpoint and post-retrieval CapabilityCandidate now re
 - Keep only still-allowed native parameter names, required flags and primitive JSON type information, **plus only the trusted DataScopeRule-origin** relationship-type allowlist and max-hop ceiling; never copy unreviewed provider parameter refs, nested definitions, examples, descriptions, aliases or raw inputSchema keywords.
 - Reconstruct a minimal input descriptor from those allowed names rather than filtering the top-level raw schema while leaving unreviewed definitions behind.
 - Leave the original registered input_schema, parameter validators, read-only/authorization policy, fingerprinted provider contract and execution validation unchanged.
+- The opt-in HostFieldContract selector validates source-native required enum fit **internally from the current authorized original parameters**, restricted to parameter names still present in the principal-scoped view, while the principal-visible candidate and returned receipt never serialize those raw enum values. Original source fingerprints, authorization scans and stale-revision/forgery refusal still apply.
 - The public descriptor is deliberately not a substitute for an executable request schema; host and registered executor must still validate full original constraints and policy.
 - No input normalization, new permission or execution path is introduced, and defaults outside a scoped data-rule view are untouched.
 
 ## Verification
 
-No-network tests assert that the private field name is absent from both custom analyzer's scoped endpoint model dump and user-facing CapabilityRetrieval JSON, including when all declared output fields happen to be visible. They assert raw source schemas remain identical. Dedicated Linux Ruff/Pyright/pytest runs alongside existing scoped ref, authorization, **and graph DataScopeRule relationship/max-hop** regressions; protected CI and CodeQL required before merge.
+No-network tests assert that the private field name is absent from both custom analyzer's scoped endpoint model dump and user-facing CapabilityRetrieval JSON, including when all declared output fields happen to be visible. They assert raw source schemas remain identical. Dedicated Linux Ruff/Pyright/pytest runs alongside existing scoped ref, authorization, **HostFieldContract enum-fit and fingerprint**, and graph DataScopeRule relationship/max-hop regressions; protected CI and CodeQL required before merge.
 
 ## Remaining issue gates
 
