@@ -263,7 +263,7 @@ def test_actual_openapi_producer_and_mcp_two_required_inputs_are_bound() -> None
             source_type=root.source_type,
             license=root.license,
             reviewed_by="fixture-source-owner",
-            mappings=(
+            mappings=tuple(
                 HostSemanticMapping(
                     endpoint_name="read_contact",
                     expected_endpoint_fingerprint=(
