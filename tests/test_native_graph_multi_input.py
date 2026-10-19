@@ -366,7 +366,8 @@ def test_structural_multi_input_cannot_join_values_from_distinct_records(
 ) -> None:
     """A scalar type join is NOT a proof that two values co-occur."""
     router = _router()
-    root = router.registry.get("contacts").endpoint("read")
+    source_tool = router.registry.get("contacts")
+    root = source_tool.endpoint("read")
     if source_shape == "optional":
         root.output_schema["required"] = ["contact_id"]
     elif source_shape == "array":
@@ -395,7 +396,9 @@ def test_structural_multi_input_cannot_join_values_from_distinct_records(
                 },
             },
         }
-    # Reindex after the source fixture changes, do not rely on stale state.
+    # The registry intentionally returns snapshots. Explicit replacement is
+    # required; mutating a fetched copy cannot alter the source of truth.
+    router.registry.register(source_tool, replace=True)
     index = _index(router)
     assert index.graph.predecessors("cases.read") == ("contacts.read",)
     assert index.lookup(
@@ -405,11 +408,19 @@ def test_structural_multi_input_cannot_join_values_from_distinct_records(
 
 def test_nested_record_paths_do_not_synthesize_joint_binding() -> None:
     router = _router()
-    root = router.registry.get("contacts").endpoint("read")
-    root.output_fields[0].path = ["contacts", "*", "contact_id"]
-    root.output_fields[0].result_path = ["contacts", "*", "contact_id"]
-    root.output_fields[1].path = ["regions", "*", "region_id"]
-    root.output_fields[1].result_path = ["regions", "*", "region_id"]
+    source_tool = router.registry.get("contacts")
+    root = source_tool.endpoint("read")
+    root.output_fields = [
+        FieldSpec.model_validate({
+            **field.model_dump(mode="python"),
+            "path": [collection, "*", field.name],
+            "result_path": [collection, "*", field.name],
+        })
+        for collection, field in zip(
+            ("contacts", "regions"), root.output_fields, strict=True,
+        )
+    ]
+    router.registry.register(source_tool, replace=True)
     index = _index(router)
     assert index.lookup(
         router, GROUP.aliases[0], group=GROUP, principal=ACTOR,
