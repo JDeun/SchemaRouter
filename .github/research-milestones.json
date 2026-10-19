@@ -1,13 +1,14 @@
 {
   "schema_version": 1,
-  "status": "PROPOSED_NOT_CREATED",
+  "status": "DECLARATIVE_PLAN_CHECK_LIVE_GITHUB",
   "as_of": "2026-10-19",
   "repository": "JDeun/SchemaRouter",
   "policy": {
     "due_dates": "No invented due dates. Set only after qualified evidence/data availability.",
     "issue_200": "Cross-cutting permanent tracker remains unassigned.",
     "close_rule": "Close milestone only after linked gate evidence, not CI-green or E0 mechanism alone.",
-    "release_hold": "#1356 DO NOT MERGE until #1345/#1346 and other release-specific gates."
+    "release_hold": "#1356 DO NOT MERGE until #1345/#1346 and other release-specific gates.",
+    "live_status": "This manifest never asserts whether a milestone exists; inspect GitHub Issues > Milestones or manually run the protected preview/apply workflow."
   },
   "milestones": [
     {
