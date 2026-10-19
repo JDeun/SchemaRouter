@@ -334,11 +334,11 @@ def test_security_workflows_cover_dependency_and_code_scanning() -> None:
     assert "permissions:\n  contents: read" in codeql
     assert "security-events: write" in codeql
     assert (
-        "github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d"
+        "github/codeql-action/init@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee"
         in codeql
     )
     assert (
-        "github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d"
+        "github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee"
         in codeql
     )
     assert "languages: python" in codeql
@@ -355,12 +355,12 @@ def test_openssf_scorecard_workflow_is_pinned_and_least_privilege() -> None:
     assert "id-token: write" in workflow
     assert "persist-credentials: false" in workflow
     assert (
-        "ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc"
+        "ossf/scorecard-action@fa7117db83c52d787ae5a89f350999701505d78e"
         in workflow
     )
     assert "publish_results: true" in workflow
     assert (
-        "github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d"
+        "github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee"
         in workflow
     )
 
