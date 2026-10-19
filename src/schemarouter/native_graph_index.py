@@ -246,10 +246,15 @@ class NativeSchemaGraphIndex:
         contracts: list[CapabilityContract] = []
         roots = consumers = 0
         for tool in registry.tools():
+            # The full ToolSpec fingerprint already incorporates every
+            # endpoint in this detached registry snapshot. Check all
+            # endpoints but hash their shared parent only once per tool.
+            tool_fingerprint = tool.fingerprint
+            tool_key = tool.key
             for endpoint in tool.endpoints:
-                route = f"{tool.key}.{endpoint.name}"
+                route = f"{tool_key}.{endpoint.name}"
                 pinned = field_index.route_fingerprints.get(route)
-                if pinned != (tool.fingerprint, endpoint.fingerprint):
+                if pinned != (tool_fingerprint, endpoint.fingerprint):
                     raise PolicyViolationError("G5 source changed during graph build")
                 if (
                     not tool.source_type or not tool.license

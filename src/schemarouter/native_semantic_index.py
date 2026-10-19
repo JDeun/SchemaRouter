@@ -76,13 +76,19 @@ class NativeSchemaPostingIndex:
         locations: dict[str, tuple[str, str]] = {}
         count = 0
         for tool in registry.tools():
+            # Each registry tool is a detached snapshot. Its fingerprint
+            # covers all endpoints; recomputing the whole serialized tool
+            # for every endpoint makes a broad multi-endpoint catalog costly.
+            # No cross-build or cross-request cache is introduced.
+            tool_fingerprint = tool.fingerprint
+            tool_key = tool.key
             for endpoint in tool.endpoints:
                 count += 1
-                route = f"{tool.key}.{endpoint.name}"
+                route = f"{tool_key}.{endpoint.name}"
                 if route in revisions:
                     raise ValueError("duplicated registered native route")
-                revisions[route] = (tool.fingerprint, endpoint.fingerprint)
-                locations[route] = (tool.key, endpoint.name)
+                revisions[route] = (tool_fingerprint, endpoint.fingerprint)
+                locations[route] = (tool_key, endpoint.name)
                 # Index all schema nodes but only scalar source-typed output
                 # semantics; no inferred IDs from descriptions or task gold.
                 if not tool.source_type or not tool.license:
