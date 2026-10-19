@@ -246,6 +246,13 @@ from .capability_snapshot import (
     serialize_capability_snapshot,
     validate_capability_snapshot,
 )
+from .concept_retrieval import (
+    NativeConceptCatalog,
+    NativeDeclaredConcept,
+    ResolvedNativeConcepts,
+    resolve_native_concepts,
+    retrieve_authorized_concepts,
+)
 from .contract_validation import (
     CapabilityContractValidation,
     CapabilityObservation,
@@ -336,6 +343,10 @@ from .explorer import (
     render_schema_explorer,
     write_schema_explorer,
 )
+from .field_group_retrieval import (
+    NativeDeclaredFieldGroup,
+    retrieve_authorized_field_group,
+)
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot, HealthStatus
 from .hooks import AfterExecutionHook, BeforeExecutionHook, ExecutionHooks
 from .host_field_contract import (
@@ -404,6 +415,16 @@ from .models import (
     ToolSpec,
     UnitNormalizationSpec,
 )
+from .native_graph_index import (
+    NativeIndexedGraphCandidate,
+    NativeIndexedGraphResult,
+    NativeSchemaGraphIndex,
+)
+from .native_semantic_index import (
+    IndexedNativeFieldCandidate,
+    IndexedNativeFieldResult,
+    NativeSchemaPostingIndex,
+)
 from .network_policy import NetworkPolicy, NetworkPolicyError
 from .openapi_compatibility import (
     OpenAPICompatibilityIssue,
@@ -462,6 +483,11 @@ from .schema_diff import (
     SchemaDiffReport,
     compare_endpoint_specs,
     compare_tool_specs,
+)
+from .semantic_attestations import (
+    HostSemanticAttestation,
+    HostSemanticMapping,
+    apply_host_semantic_attestation,
 )
 from .state_retrieval import (
     StateAwareCapabilityCandidate,
@@ -559,6 +585,22 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
+    "NativeIndexedGraphCandidate",
+    "NativeIndexedGraphResult",
+    "NativeSchemaGraphIndex",
+    "IndexedNativeFieldCandidate",
+    "IndexedNativeFieldResult",
+    "NativeSchemaPostingIndex",
+    "HostSemanticAttestation",
+    "HostSemanticMapping",
+    "apply_host_semantic_attestation",
+    "NativeConceptCatalog",
+    "NativeDeclaredConcept",
+    "ResolvedNativeConcepts",
+    "resolve_native_concepts",
+    "retrieve_authorized_concepts",
+    "NativeDeclaredFieldGroup",
+    "retrieve_authorized_field_group",
     "AuthorizedContractSelection",
     "HostFieldContract",
     "RequiredEnumValue",

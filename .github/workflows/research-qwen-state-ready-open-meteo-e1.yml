@@ -1,0 +1,96 @@
+name: Qwen State-Ready Native Menu Real Open-Meteo E1
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_source_ready_native_tool_menu_e1.py"
+      - "scripts/research_open_meteo_live_two_hop_e1.py"
+      - "tests/test_research_open_meteo_transport_retry_e1.py"
+      - "scripts/research_real_qwen_open_meteo_two_hop_e1.py"
+      - "scripts/research_qwen_state_ready_open_meteo_e1.py"
+      - "tests/test_research_source_ready_native_tool_menu_e1.py"
+      - "tests/test_research_qwen_state_ready_open_meteo_e1.py"
+      - ".github/workflows/research-qwen-state-ready-open-meteo-e1.yml"
+      - "research/autoresearch/qwen-state-ready-open-meteo-e1.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qwen-ready-menu-e1-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ready-menu-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Trusted original native-contract menu and paired oracle tests
+        run: |
+          python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1" "pyright>=1.1.400"
+          ruff check scripts/research_source_ready_native_tool_menu_e1.py scripts/research_open_meteo_live_two_hop_e1.py scripts/research_real_qwen_open_meteo_two_hop_e1.py scripts/research_qwen_state_ready_open_meteo_e1.py tests/test_research_source_ready_native_tool_menu_e1.py tests/test_research_open_meteo_transport_retry_e1.py tests/test_research_qwen_state_ready_open_meteo_e1.py
+          python -m pytest -q tests/test_research_source_ready_native_tool_menu_e1.py tests/test_research_qwen_state_ready_open_meteo_e1.py tests/test_research_open_meteo_transport_retry_e1.py tests/test_research_real_qwen_open_meteo_two_hop_e1.py tests/test_research_open_meteo_live_two_hop_e1.py
+          pyright scripts/research_source_ready_native_tool_menu_e1.py scripts/research_qwen_state_ready_open_meteo_e1.py
+
+  paired-actual-qwen-and-public-provider:
+    needs: ready-menu-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install existing pinned CPU Qwen and original provider host
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "transformers>=4.51,<5"
+      - name: Actual local Qwen3 generation and actual public Open-Meteo calls
+        run: |
+          python -m scripts.research_qwen_state_ready_open_meteo_e1 --out artifacts/qwen-ready-menu/report.json --transport-retry-budget 1
+      - name: Verify source-bound strict final and preserve every failure
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          data = json.loads(Path("artifacts/qwen-ready-menu/report.json").read_text())
+          assert data["study"] == "REAL_QWEN_OPEN_METEO_SOURCE_READY_E1_EXPOSED_DEV_NOT_E2"
+          assert data["model_revision"] == "c1899de289a04d12100db370d81485cdf75e47ca"
+          assert data["real_pinned_model_inference"] is True
+          assert data["original_live_provider_attempts"] is True
+          assert data["case_count_per_arm"] == 3
+          assert data["shared_host_transport_retry_budget"] == 1
+          assert not data["independent_e2_qualified"] and not data["release_qualified"]
+          assert set(data["by_arm"]) == {"all_visible", "state_ready"}
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
+              out.write("## Actual pinned Qwen3 + real Open-Meteo (EXPOSED E1, not E2)\n\n")
+              out.write("| Arm | Strict full tasks /3 | Validated original source calls | Actual HTTP attempts |\n|---|---:|---:|---:|\n")
+              for name, arm in data["by_arm"].items():
+                  assert 0 <= arm["completed_strict_real_provider_tasks"] <= 3
+                  assert arm["http_attempts"] >= arm["source_validated_calls"]
+                  out.write(f"| {name} | {arm['completed_strict_real_provider_tasks']} | {arm['source_validated_calls']} | {arm['http_attempts']} |\n")
+              out.write("\nFailures remain failures. The original model and provider are live, but tasks are disclosed DEV and not independent E2.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: real-qwen-state-ready-open-meteo-e1-${{ github.run_id }}
+          path: artifacts/qwen-ready-menu/report.json
+          if-no-files-found: warn
+          retention-days: 60

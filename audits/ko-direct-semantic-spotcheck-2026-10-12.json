@@ -592,9 +592,9 @@
     },
     {
       "path": "project/roadmap.md",
-      "en_blob": "d7f9c40df8f03ea69e9d5aabb888789c83eadb80",
-      "ko_blob": "f6e7de4ce3dcbb7696d09c9d21e6f4184cebed1b",
-      "notes": "Compared all four tracks and issue links, current stable release shown as 0.14.0 in both languages (stale across both; not a translation asymmetry), issue labels, no promised dates."
+      "en_blob": "5d8ce3c4ed03140962c21b66e6acf1be4927886a",
+      "ko_blob": "8af71385ef804cf8cea32f25dc5562e53ad903e6",
+      "notes": "2026-10-18 AI-assisted direct EN/KO changed-section comparison: original paper typed graph/field retrieval is canonical, authorized K5 already exists, producer-consumer dependency graph does not prove query-to-field traversal, P0 hidden schema metadata and authority drift precede opt-in E0 research, independence and release gates unchanged; stable release header aligned to 0.17.0. Not independent human or sentence-level certification."
     },
     {
       "path": "project/trust-and-evidence.md",
@@ -868,9 +868,9 @@
     },
     {
       "path": "research/product-north-star-and-test-matrix.md",
-      "en_blob": "166c08142381157048f7091048fbcc3bce683c6c",
-      "ko_blob": "1ae5c662d875c159b09a514e9a75ec0097ee6fa1",
-      "notes": "2026-10-16 direct source-only AI-assisted paired review of new unified EN/KO product north-star and integrated test matrix. Checked the purpose vs non-goals, registered-source and field-first immutable trust boundaries, RBAC/ABAC/permission scope, fixed K, no-fit vs missing/ambiguous/forbidden, historical frozen #432 negative result, contradictory ServiceNow/Open-Meteo DEV, all G/S/R/A/E/I matrix IDs and priority, disjoint source/task-author evidence, no product promotion without real agent completion. Section parity and Korean prohibition wording reviewed. This is NOT independent human or sentence-level bilingual sign-off."
+      "en_blob": "37471d8b023f264aadb621fbb00304603ac7c8a3",
+      "ko_blob": "67b303ae5fdb02478712feb1af46c668ca2aafe0",
+      "notes": "2026-10-18 AI-assisted direct EN/KO changed-section comparison of original-paper typed ontology graph and query-to-concept-to-field gap; external agent owns tool selection/action; graph DB not required; #1530 code parity audit; #1532/#1450 P0 privacy/source gate; #1531 synthetic alias E0 non-product; #1346 independent source/gold before #1477 E2; frozen #432 and v0.18 hold. Existing G/S/R/A/E matrix retained. No independent human/sentence-level verification."
     },
     {
       "path": "research/realistic-break-even-result.md",

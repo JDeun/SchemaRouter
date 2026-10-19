@@ -225,6 +225,34 @@ class ParameterSpec(StrictModel):
     allow_reserved: bool = False
     json_schema: dict[str, Any] = Field(default_factory=dict)
     aliases: list[str] = Field(default_factory=list)
+    # An optional source-owner-declared ontology identifier.
+    # It does NOT supply an argument value, permission, or execution grant.
+    semantic_id: str | None = None
+
+    @model_validator(mode="after")
+    def validate_declared_input_semantic(self) -> ParameterSpec:
+        semantic_id = self.semantic_id
+        if semantic_id is None:
+            return self
+        if (
+            not semantic_id
+            or semantic_id != semantic_id.strip()
+            or len(semantic_id) > 160
+            or any(char.isspace() or ord(char) < 32 or ord(char) == 127
+                   for char in semantic_id)
+        ):
+            raise ValueError(
+                "declared input semantic_id must be a nonempty bounded identifier"
+            )
+        return self
+
+    @model_serializer(mode="wrap")
+    def serialize_declared_input_semantic(self, handler: Any) -> dict[str, Any]:
+        """Do not change legacy parameter JSON or endpoint fingerprints."""
+        data = handler(self)
+        if self.semantic_id is None:
+            data.pop("semantic_id", None)
+        return data
 
 
 class ServerProjectionSpec(StrictModel):

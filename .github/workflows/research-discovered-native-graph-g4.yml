@@ -1,0 +1,37 @@
+name: Discovered Native Graph Targets G4 DEV
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_discovered_native_graph_g4.py"
+      - "tests/test_research_discovered_native_graph_g4.py"
+      - "src/schemarouter/semantic_attestations.py"
+      - "scripts/research_native_semantic_graph_g3.py"
+      - ".github/workflows/research-discovered-native-graph-g4.yml"
+      - "research/autoresearch/discovered-native-graph-g4.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: discovered-native-g4-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-approved-discovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install source and regression dependencies
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23" "ruff>=0.9,<1"
+      - name: Check target discovery and original graph/semantic-source contracts
+        run: |
+          ruff check scripts/research_discovered_native_graph_g4.py tests/test_research_discovered_native_graph_g4.py
+          python -m pytest -q tests/test_research_discovered_native_graph_g4.py tests/test_research_native_semantic_graph_g3.py tests/test_native_semantic_attestations.py
