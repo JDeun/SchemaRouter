@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "source_revision": "989039511c2f0c519c35f832a52d4b6278b07d1a",
-  "review_date": "2026-10-12",
+  "review_date": "2026-10-19",
   "method": "Risk-based editorial review of all rule-flagged sections after full 147-pair, 1524-section machine triage; not a claim of formal proof for every sentence.",
-  "reviewed_sections": 27,
+  "reviewed_sections": 28,
   "confirmed_semantic_omission_fixed": [
     {
       "path": "integrations/jev.md",
@@ -11,7 +11,7 @@
       "details": "SDK API-key environment ownership explicitly stated; source code already contained export TYPESAFE_API_KEY."
     }
   ],
-  "limitations": "Checks and human review can miss subtle translation errors in unflagged prose; independent bilingual editorial proof for each of 1524 sections is not asserted.",
+  "limitations": "Checks and human review can miss subtle translation errors in unflagged prose; independent bilingual editorial proof for each of 1524 sections is not asserted. 2026-10-19 new research program section 4 was checked for negation heuristic false positive by AI assistant, not human independent language sign-off.",
   "reviews": [
     {
       "path": "assets/brand/README.md",
@@ -212,6 +212,14 @@
       "ko_blob": "0b19378fdef860ccd709b0cafcf958c0ec2272e7",
       "decision": "meaning-preserved",
       "evidence": "The Korean experiment index continues to distinguish ordinary Git commits from independent experiment decisions. The 2026-10-12 editorial note explicitly identifies English `Hypothesis / purpose` cells as verbatim source-ledger evidence rather than mistakenly claiming a completed Korean translation, preserving immutable experiment statements and references."
+    },
+    {
+      "path": "research/research-program-2026.md",
+      "section": 4,
+      "en_blob": "0a61d820aad02d6a4ffdb4cf014839cb5b4762b3",
+      "ko_blob": "bbf4ba343caf87a02dada11c12819a8d91d79fbe",
+      "decision": "meaning-preserved",
+      "evidence": "Section 4 original EN/KO no-promotion, Qwen diagnostic, and 0.18 HOLD positions remain identical. Later section 7 KO heading-boundary repair changes '5. #1345' to '5. 이슈 #1345' so the issue link is literal, not an accidental Markdown heading; no research claim changed. Document hashes repinned by AI assistant, not independently reviewed."
     },
     {
       "path": "research/routing-status.md",
