@@ -36,7 +36,7 @@ _NEGATION_CUES = (
 )
 # Include coordination particles: a query requesting BOTH approved concepts must
 # be treated as ambiguous, never promote only the one after a space.
-_CJK_PARTICLES = frozenset("의를은는이가에도만와과はがをのにでとへ")
+_CJK_PARTICLES = frozenset("의을를은는이가에도만와과はがをのにでとへ")
 
 
 def _is_cjk(value: str) -> bool:
