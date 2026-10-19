@@ -127,6 +127,25 @@ def test_original_bfcl_source_e5_scorer_unchanged_without_optin():
     )
     assert extra["calibration_unit"] == "one_function_per_original_negative_request"
     assert extra["negative_calibration_requests"] == 120
+    bins = extra["source_menu_size_bins"]
+    assert sum(v["total"] for v in bins["supported"].values()) == 16
+    assert sum(v["total"] for v in bins["unsupported"].values()) == 20
+    assert sum(v["original_fit_admitted"] for v in bins["supported"].values()) == (
+        trial["live_category_evaluation"]["trained_pair_fit"]["live"][
+            "supported_admitted"
+        ]
+    )
+    assert sum(v["original_fit_admitted"] for v in bins["unsupported"].values()) == (
+        trial["live_category_evaluation"]["trained_pair_fit"]["live"][
+            "unsupported_false_accepted"
+        ]
+    )
+    assert sum(v["familywise_admitted"] for v in bins["supported"].values()) == (
+        extra["supported_admitted"]
+    )
+    assert sum(v["familywise_admitted"] for v in bins["unsupported"].values()) == (
+        extra["unsupported_false_accepted"]
+    )
     assert not trial["production_threshold_calibrated"]
     assert not trial["release_qualified"]
     dumped = json.dumps(trial, ensure_ascii=False)
