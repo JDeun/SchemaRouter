@@ -46,7 +46,10 @@ CASES = (
     ("en", "What is the formation energy of a vanadium oxide specimen?", "materials.search"),
     ("en", "Give the measurement unit reported for the gap energy.", "materials.units"),
     ("en", "Find journal research on lithium recycling techniques.", "papers.search"),
-    ("en", "Check when flight CD819 is scheduled to arrive and whether it is delayed.", "flights.status"),
+    (
+        "en", "Check when flight CD819 is scheduled to arrive and whether it is delayed.",
+        "flights.status",
+    ),
     ("en", "Show the historical dollar-to-won foreign exchange rates.", "finance.exchange_history"),
     ("en", "Find a walking route from the port to the library.", "maps.directions"),
     ("ko", "산화바나듐 시편의 생성 에너지 측정 결과를 검색해.", "materials.search"),
