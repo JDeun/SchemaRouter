@@ -57,6 +57,8 @@ def test_scoped_phrase_bridge_improves_supported_korean_japanese_dev() -> None:
     ("unknowns modulus", "youngs modulus", False),
     ("Youngs modulusXYZ", "youngs modulus", False),
     ("탄성계수값", "탄성계수", False),
+    ("탄성계수와 열전도율", "탄성계수", True),
+    ("탄성계수과 열전도율", "탄성계수", True),
     ("ラマンピーク測定", "ラマンピーク", False),
     ("unknown", "no", False),
 ])
@@ -91,6 +93,8 @@ def test_phrases_with_multiple_semantic_targets_or_explicit_negation_abstain() -
     exact = build_router("exact")
     for query in (
         "탄성계수 열전도율 둘 다 비교해 주세요.",
+        "탄성계수와 열전도율 둘 다 비교해야 합니다.",
+        "탄성계수과 열전도율을 비교해주세요.",
         "탄성계수는 제외하고 조회해 주세요.",
         "ヤング率は使わないでください。",
         "Do not use Youngs modulus.",
