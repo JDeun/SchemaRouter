@@ -97,3 +97,38 @@ def test_optional_recall_decision_request_uses_scoped_not_raw_description():
     assert CANARY not in decision.options[0].description
     assert catalog[0].tool.fingerprint == router.registry.get("records").fingerprint
     assert catalog[0].tool.description == CANARY
+
+
+def test_scoped_canonical_tool_identifier_still_matches_spaced_query():
+    """Do not break real plan+retry authority by losing safe tool-name tokens."""
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="retry_records.read",
+            roles_any=("viewer",),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="retry_records.read", roles_any=("viewer",),
+            visible_fields=("value",),
+        ),),
+    ))
+    router.add_tool(ToolSpec(
+        name="retry_records",
+        description=f"untrusted note {CANARY}",
+        endpoints=[EndpointSpec(
+            name="read", read_only=True,
+            output_fields=[FieldSpec(name="value", json_schema={"type": "string"})],
+        )],
+    ))
+    result = router.retrieve_authorized(
+        "retry records", principal=VIEWER, k=5,
+    )
+    assert len(result.candidates) == 1
+    candidate = result.candidates[0]
+    assert candidate.route_id == "retry_records.read"
+    assert candidate.score > 0
+    assert candidate.tool_description == ""
+    assert CANARY not in str(candidate.score_components)
+    plan = router.plan_authorized("retry records", principal=VIEWER)
+    assert plan.calls
+    assert plan.calls[0].tool == "retry_records"
