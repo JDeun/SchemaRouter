@@ -16,6 +16,7 @@ import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
+from typing import Literal
 
 from schemarouter import PlanRequest, QueryIntent
 from schemarouter.capability_contracts import SemanticEquivalence
@@ -27,6 +28,49 @@ MAX_DECLARED_EQUIVALENCES = 32
 MAX_DECLARED_ALIASES = 128
 MAX_DECLARATION_BYTES = 16384
 
+# E0 research-only phrase matcher: provider/host-declared concepts ONLY.
+_NEGATION_CUES = (
+    "제외", "말고", "아닌", "하지 마", "사용하지", "빼고",
+    "除外", "以外", "使わない", "ではなく", "しない",
+    " not ", "don't", "do not", "except", "without ",
+)
+# Include coordination particles: a query requesting BOTH approved concepts must
+# be treated as ambiguous, never promote only the one after a space.
+_CJK_PARTICLES = frozenset("의을를은는이가에도만와과はがをのにでとへ")
+
+
+def _is_cjk(value: str) -> bool:
+    return any(
+        "\u3040" <= char <= "\u30ff"
+        or "\u3400" <= char <= "\u9fff"
+        or "\uac00" <= char <= "\ud7a3"
+        for char in value
+    )
+
+
+def _matches_declared_phrase(query: str, alias: str) -> bool:
+    """Conservative declared whole-phrase match, with bounded CJK particles."""
+    if len(alias) < 3:
+        return False
+    start = 0
+    cjk = _is_cjk(alias)
+    while (found := query.find(alias, start)) >= 0:
+        end = found + len(alias)
+        before = query[found - 1] if found else ""
+        after = query[end] if end < len(query) else ""
+        start = found + 1
+        left_ok = not before or not before.isalnum() or (
+            cjk and before in _CJK_PARTICLES
+        )
+        right_ok = not after or not after.isalnum() or (
+            cjk and after in _CJK_PARTICLES
+        )
+        if left_ok and right_ok:
+            return True
+    return False
+
+
+
 
 def _literal(value: str) -> str:
     return unicodedata.normalize("NFC", value).strip().casefold()
@@ -37,9 +81,12 @@ class DeclaredConceptGraphAnalyzer:
     """Narrow, host-declared exact alias edge to current visible field IDs."""
 
     equivalences: tuple[SemanticEquivalence, ...]
+    match_mode: Literal["exact", "bounded_phrase"] = "exact"
     _alias_to_semantic: Mapping[str, str] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
+        if self.match_mode not in ("exact", "bounded_phrase"):
+            raise ValueError("unsupported declared concept match mode")
         items = self.equivalences
         if (
             type(items) is not tuple
@@ -87,7 +134,19 @@ class DeclaredConceptGraphAnalyzer:
     def analyze(self, request: PlanRequest, registry: ToolRegistry) -> QueryIntent:
         # Preserve the production keyword analyzer as the strict baseline.
         intent = KeywordAnalyzer().analyze(request, registry)
-        requested_semantic = self._alias_to_semantic.get(_literal(request.query))
+        literal_query = _literal(request.query)
+        if self.match_mode == "exact":
+            requested_semantic = self._alias_to_semantic.get(literal_query)
+        elif any(cue in f" {literal_query} " for cue in _NEGATION_CUES):
+            requested_semantic = None
+        else:
+            possible = {
+                semantic
+                for alias, semantic in self._alias_to_semantic.items()
+                if _matches_declared_phrase(literal_query, alias)
+            }
+            # No arbitrary winner for a multi-concept request.
+            requested_semantic = next(iter(possible)) if len(possible) == 1 else None
         if requested_semantic is None:
             return intent
 
