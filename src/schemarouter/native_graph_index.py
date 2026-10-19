@@ -112,6 +112,43 @@ def _root_field(
     return matches[0] if len(matches) == 1 else None
 
 
+def _flat_same_record_source_contract(
+    source: EndpointSpec,
+    visible: EndpointSpec,
+    producer_fields: tuple[str, ...],
+) -> bool:
+    """Conservatively prove a multi-input tuple shares ONE required root object.
+
+    A tool's output_fields may describe different array records. Matching
+    semantic IDs is insufficient to join them into a single argument set.
+    Only explicit, source-declared required scalar root properties qualify.
+    """
+    original = source.output_schema
+    properties = original.get("properties")
+    required = original.get("required")
+    if (
+        original.get("type") != "object"
+        or type(properties) is not dict
+        or type(required) is not list
+        or any(type(name) is not str for name in required)
+        or not set(producer_fields).issubset(required)
+    ):
+        return False
+    by_name = {f.name: f for f in visible.output_fields}
+    for name in producer_fields:
+        field = by_name.get(name)
+        if (
+            field is None
+            or field.projection_path != (name,)
+            or field.result_projection_path != (name,)
+            or not _scalar_contract(properties.get(name))
+            or not _scalar_contract(field.json_schema)
+            or properties[name] != field.json_schema
+        ):
+            return False
+    return True
+
+
 @dataclass(frozen=True, slots=True)
 class NativeIndexedGraphCandidate:
     """Nonexecuting, native original-source-pinned typed one-hop evidence."""
@@ -314,6 +351,15 @@ class NativeSchemaGraphIndex:
                         break
                     bindings.append((parameter, field.name))
                 if len(bindings) != len(required_inputs):
+                    continue
+                # All scalars must be jointly present on a single source
+                # record. Different nested arrays or optional root properties
+                # are not an executable multi-input binding proof.
+                if len(bindings) > 1 and not _flat_same_record_source_contract(
+                    _root_tool.endpoint(root_endpoint.name),
+                    root_endpoint,
+                    tuple(source_field for _, source_field in bindings),
+                ):
                     continue
                 source = self.field_index.route_fingerprints[root_id]
                 dest = self.field_index.route_fingerprints[target_id]
