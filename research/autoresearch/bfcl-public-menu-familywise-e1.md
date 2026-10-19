@@ -17,10 +17,25 @@ It uses **the exact same actual pinned E5 vectors and pair-fit model**,
 publisher original 100 even-ID positive +120 even-ID irrelevant
 training examples, 100 odd-ID positive +120 odd-ID irrelevant
 calibration examples. Gold NEVER enters feature inference.
-The per-function empirical negative upper-tail probability on the
-120 original odd-ID irrelevant scores is
+The ORIGINAL historical threshold uses a **per-request MAX** over
+negative functions. Applying Bonferroni again to that maximized
+distribution effectively counts the menu-size effect twice; its first
+exposed experiment measured **4/16 positive admission and 91/880
+negative false admission** but is NOT the correct single-function-null
+experiment. Preserve those negative metrics separately rather than
+quietly retitling the results.
 
-`p(s) = (1 + count(calibration negatives >= s)) / 121`.
+Corrected prospective E1 arm: choose exactly ONE non-relevant
+function from each of the 120 original odd-ID irrelevant request menus
+using only SHA-256 of that original request ID modulo menu length, **not**
+source score, original function name, LIVE label or task gold. This
+yields 120 independent-at-request-level, deterministic **single-candidate**
+null observations; the original historical per-request MAX threshold and
+both baseline arms are left byte-for-byte unchanged.
+
+The single-candidate empirical negative upper-tail probability is
+
+`p(s) = (1 + count(selected calibration negative functions >= s)) / 121`.
 
 Accept a proposed source function only when
 `p(max-offered-fit) * number-of-offered-functions <= 0.10`.
@@ -56,3 +71,16 @@ authenticated principal, full original argument AST, native API
 execution, other languages, independent EN/KO/JA original publisher
 permissions/gold or real agent task success. No product default,
 model or release promotion; frozen #432 and v0.18 #1356 HOLD remain.
+
+
+## Critical empirical-method caveat
+
+Selecting one deterministic candidate per original irrelevant request
+avoids the **known double-max correction**, but original function order,
+correlated requests and LIVE menu distribution may differ. A 120-case
+empirical tail is not a guaranteed calibrated p-value or a prospective
+independent error bound under distribution shift. No normalization or
+threshold may be tuned to the previously observed LIVE outcomes. Report
+the exact current source hash/run and BOTH original and corrected
+admission/refusal metrics; if improved specificity causes unacceptable
+false refusals, keep the production default unchanged.
