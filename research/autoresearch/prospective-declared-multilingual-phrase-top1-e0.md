@@ -22,3 +22,12 @@ The dedicated Linux py3.12 workflow tests original exact-mode regression, explic
 - This **does not** repair frozen #432 English-only provider 0/160 automatically; a provider/host must independently supply truthful multilingual alias-equivalence data or a separately reviewed model candidate path. No release #1356 until actual independent E2.
 
 No product default promotion, parameter retuning on frozen data, or claim of Cuckoo-like quality.
+
+
+## Separate 500-route stress cohort (same PR; not a held-out confirmation)
+
+To ensure the four-tool diagnostic is not confused with real catalog scale, a second **prospective, newly written 11-request cohort** is registered under `scripts/research_multilingual_declared_phrase_500_dev.py`: 500 original ToolSpec/EndpointSpec routes, exactly 3 verified canonical concepts, 496 intentionally irrelevant English-only native routes, fixed `Top-K=1`, 2 supported requests for each EN/KO/JA language and 5 unsupported/negated/multi-concept controls. Every row records original output/fingerprint attestation, expected route, positive-score evidence and observed Linux CI wall-time. Each experiment arm uses the same actual native registry and approved semantic-equivalence declarations, unlike a translated query or an oracle route insertion. All unsupported controls remain in the denominator even when zero-score backfill returns a candidate.
+
+**Prior-to-run acceptance:** both arms complete the same exact 500-route source catalog; the new bounded-phrase arm should improve the KO/JA supported correct-positive Top1 count versus exact, without **increasing** unsupported positive-score cases. There is no post hoc edit of the frozen #432 corpus, its expected routes, or this newly written case manifest after seeing its first results. An uncalibrated zero-score candidate is **not** a no-fit declaration. The real historical 500-tool KO/JA 0/160 outcome can only change in a new independently authored and separately preregistered cohort; no measurement from this self-authored E0 substitutes for that. Runtime measurements here are wall-clock diagnostics, not stable CPU p95/SLO.
+
+The 500-route cohort still has intentionally sparse decoys and host-curated multilingual aliases; it **does not** establish the semantic transfer needed for an English-only tool catalog that lacks bilingual trusted aliases. A separate multilingual encoder or host-reviewed source enrichment path plus independent external provider/query origin and full agent success are still required before default adoption.
