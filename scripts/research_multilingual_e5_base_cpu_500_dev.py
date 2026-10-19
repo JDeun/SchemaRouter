@@ -102,8 +102,8 @@ def validate_manifest() -> tuple[dict[str, Any], str]:
 def load_base_cpu() -> tuple[EmbeddingDecisionBackend, dict[str, Any]]:
     import resource
 
-    import torch
-    from sentence_transformers import SentenceTransformer
+    import torch  # pyright: ignore[reportMissingImports]
+    from sentence_transformers import SentenceTransformer  # pyright: ignore[reportMissingImports]
 
     torch.manual_seed(20261019)
     torch.set_num_threads(min(4, torch.get_num_threads()))
