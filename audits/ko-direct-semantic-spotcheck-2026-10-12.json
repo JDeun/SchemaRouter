@@ -882,8 +882,8 @@
     {
       "path": "research/research-program-2026.md",
       "en_blob": "0a61d820aad02d6a4ffdb4cf014839cb5b4762b3",
-      "ko_blob": "a04110e53530c8f2e5a0c7604ab678803318137e",
-      "notes": "AI-assisted direct EN/KO source comparison: exact 19 closed narrow issues, original negative scores, G5 and independent gates, plus 5 additional verified prior-art rows (KOPA/EDGE, ACEBench, tau2, AgentDojo, CaMeL); both languages retain paired heading/table shape, 'coming soon' release limitations and separation of simulated vs source-native execution. NOT independent human translation signoff."
+      "ko_blob": "bbf4ba343caf87a02dada11c12819a8d91d79fbe",
+      "notes": "AI-assisted EN/KO direct paired comparison of exact 19 terminal issue dispositions, typed G5 safety boundaries and KOPA/EDGE, ACEBench, tau2, ToolRet, AgentDojo, CaMeL source links; KO checklist wording fixed an accidental issue-identifier Markdown heading without changing 0.18 HOLD. NOT independent editorial signoff."
     },
     {
       "path": "research/routing-status.md",
