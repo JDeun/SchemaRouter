@@ -34,9 +34,14 @@ ARMS = ("all_visible", "state_ready")
 EVIDENCE = "REAL_QWEN_OPEN_METEO_SOURCE_READY_E1_EXPOSED_DEV_NOT_E2"
 
 
-async def compare(agent: Any, client: httpx.AsyncClient) -> dict[str, Any]:
+async def compare(
+    agent: Any, client: httpx.AsyncClient, *,
+    transport_retry_budget: int = 0,
+) -> dict[str, Any]:
     if not callable(getattr(agent, "generate", None)):
         raise ValueError("actual model generator required")
+    if type(transport_retry_budget) is not int or transport_retry_budget not in (0, 1):
+        raise ValueError("bounded live GET retry budget required")
     outcomes: dict[str, dict[str, dict[str, Any]]] = {
         arm: {} for arm in ARMS
     }
@@ -48,7 +53,7 @@ async def compare(agent: Any, client: httpx.AsyncClient) -> dict[str, Any]:
         for arm in ordered:
             row = await evaluate_one(
                 agent, client, language=language, city=city, country=country,
-                menu_mode=arm,
+                menu_mode=arm, transport_retry_budget=transport_retry_budget,
             )
             if row["language"] != language or row["independent_e2_qualified"]:
                 raise ValueError("corrupt native source task outcome")
@@ -86,6 +91,9 @@ async def compare(agent: Any, client: httpx.AsyncClient) -> dict[str, Any]:
                     ),
                     "termination_reason": x["termination_reason"],
                     "trusted_failure_stage": x["trusted_failure_stage"],
+                    "trusted_transport_error_kind": x[
+                        "trusted_transport_error_kind"
+                    ],
                     "model_turns": x["model_turns"],
                     "generation_ms": x["model_generation_ms"],
                 }
@@ -101,6 +109,7 @@ async def compare(agent: Any, client: httpx.AsyncClient) -> dict[str, Any]:
         "original_live_provider_attempts": True,
         "real_pinned_model_inference": True,
         "host_derived_state_ready_menu_only_in_candidate": True,
+        "shared_host_transport_retry_budget": transport_retry_budget,
         "same_original_source_case_contract": True,
         "independent_e2_qualified": False,
         "default_product_modified": False,
@@ -120,6 +129,7 @@ async def compare(agent: Any, client: httpx.AsyncClient) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument("--transport-retry-budget", type=int, default=0)
     args = parser.parse_args()
     start = time.perf_counter()
     agent = LocalQwenAgent()
@@ -128,7 +138,9 @@ def main() -> None:
         async with httpx.AsyncClient(
             timeout=httpx.Timeout(20.0), follow_redirects=False,
         ) as client:
-            return await compare(agent, client)
+            return await compare(
+                agent, client, transport_retry_budget=args.transport_retry_budget,
+            )
 
     report = asyncio.run(run())
     report["elapsed_model_load_and_run_seconds"] = round(
