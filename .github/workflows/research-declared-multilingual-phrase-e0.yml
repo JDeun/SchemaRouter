@@ -1,0 +1,38 @@
+name: Prospective Declared Multilingual Phrase Top1 E0
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_declared_concept_graph_bridge_e0.py"
+      - "scripts/research_multilingual_declared_phrase_dev.py"
+      - "tests/test_research_multilingual_declared_phrase_dev.py"
+      - ".github/workflows/research-declared-multilingual-phrase-e0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  concept-phrase-dev:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Validate prospective no-model source/route behavior
+        run: |
+          python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1" "pyright>=1.1,<2"
+          ruff check scripts/research_declared_concept_graph_bridge_e0.py scripts/research_multilingual_declared_phrase_dev.py tests/test_research_multilingual_declared_phrase_dev.py
+          python -m pytest -q tests/test_research_multilingual_declared_phrase_dev.py tests/test_research_declared_concept_graph_bridge_e0.py tests/test_multilingual_alias_no_fit_matrix.py
+          pyright scripts/research_declared_concept_graph_bridge_e0.py scripts/research_multilingual_declared_phrase_dev.py
+      - name: Measure fixed Top1 on author-built EN KO JA controls
+        run: |
+          python -m scripts.research_multilingual_declared_phrase_dev
+      - name: Explicit research evidence tier
+        if: success()
+        run: |
+          echo "E0 developer-authored fixed Top1 concept alias positive/OOD diagnostic. No independently authored sources, real model, external E2, no-fit calibration, agent success or release authority." >> "$GITHUB_STEP_SUMMARY"
