@@ -188,18 +188,41 @@ def _scoped_public_output_schema(fields: list[FieldSpec]) -> dict[str, Any]:
     }
 
 
-def _scoped_public_parameter(parameter: ParameterSpec) -> ParameterSpec:
-    """Keep source-native argument identity, never unreviewed JSON annotations.
+def _scoped_public_parameter(
+    parameter: ParameterSpec,
+    *,
+    allowed_relationships: frozenset[str] | None = None,
+    max_hops: int | None = None,
+) -> ParameterSpec:
+    """Sanitize raw input annotations, preserving ONLY trusted scope limits.
 
-    This is an analyzer/public retrieval DESCRIPTOR, not an executable schema.
-    Original provider parameter validation stays in the trusted registry.
+    This is a public descriptor, not an executable JSON Schema. The original
+    registered provider schema still governs actual argument validation.
     """
+    public_schema = _scoped_public_value_shape(parameter.json_schema)
+    if parameter.name == "relationship_types" and allowed_relationships is not None:
+        raw_items = parameter.json_schema.get("items")
+        safe_items = (
+            _scoped_public_value_shape(raw_items)
+            if type(raw_items) is dict
+            else {}
+        )
+        safe_items["enum"] = sorted(allowed_relationships)
+        public_schema["items"] = safe_items
+    if parameter.name == "max_hops" and max_hops is not None:
+        # The host's scoped upper bound must not disappear from the planner.
+        original_max = parameter.json_schema.get("maximum")
+        public_schema["maximum"] = (
+            min(original_max, max_hops)
+            if type(original_max) is int
+            else max_hops
+        )
     return parameter.model_copy(
         deep=True,
         update={
             "description": "",
             "aliases": [],
-            "json_schema": _scoped_public_value_shape(parameter.json_schema),
+            "json_schema": public_schema,
         },
     )
 
@@ -209,7 +232,7 @@ def _scoped_public_input_schema(parameters: list[ParameterSpec]) -> dict[str, An
     return {
         "type": "object",
         "properties": {
-            param.name: _scoped_public_value_shape(param.json_schema)
+            param.name: dict(param.json_schema)
             for param in parameters
         },
         "required": [param.name for param in parameters if param.required],
@@ -480,7 +503,11 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                     else min(int(current_max), scope.max_hops)
                 )
                 clone.json_schema = schema
-            parameters.append(_scoped_public_parameter(clone))
+            parameters.append(_scoped_public_parameter(
+                clone,
+                allowed_relationships=scope.allowed_relationships,
+                max_hops=scope.max_hops,
+            ))
 
         selected_names = [field.name for field in visible_fields]
         server_projection = endpoint.server_projection
@@ -616,7 +643,14 @@ class SchemaRouter(NativeProviderConvenienceMixin):
 
             # Public scoped descriptors cannot inherit unreviewed nested
             # input metadata even when the output field list is already safe.
-            parameters = [_scoped_public_parameter(param) for param in parameters]
+            parameters = [
+                _scoped_public_parameter(
+                    param,
+                    allowed_relationships=scope.allowed_relationships,
+                    max_hops=scope.max_hops,
+                )
+                for param in parameters
+            ]
             input_schema = _scoped_public_input_schema(parameters)
 
             matched_fields = [
