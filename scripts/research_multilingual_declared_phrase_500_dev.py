@@ -98,6 +98,19 @@ def evaluate() -> dict:
                 "diagnostic_wall_ms_median": round(statistics.median(durations), 3),
                 "diagnostic_wall_ms_max": max(durations),
             }
+    # Predeclared development guardrails, without editing any observed case.
+    for lang in ("ko", "ja"):
+        if (
+            summary["bounded_phrase"][lang]["correct_positive_top1"]
+            <= summary["exact"][lang]["correct_positive_top1"]
+        ):
+            raise AssertionError("no supported KO/JA Top1 benefit at 500 routes")
+    for lang in ("en", "ko", "ja"):
+        if (
+            summary["bounded_phrase"][lang]["unsupported_positive"]
+            > summary["exact"][lang]["unsupported_positive"]
+        ):
+            raise AssertionError("new unsupported positive-score regression")
     sources = (
         "scripts/research_declared_concept_graph_bridge_e0.py",
         "scripts/research_multilingual_declared_phrase_dev.py",
