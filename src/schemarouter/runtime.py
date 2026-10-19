@@ -578,9 +578,17 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                     endpoint,
                 )
                 if visible_endpoint is not None:
-                    endpoints.append(visible_endpoint)
+                    # A source-side selector is needed by the *trusted*
+                    # planner/executor but is not part of an analyzer's
+                    # principal-safe public schema. Its raw wire path may
+                    # name a field excluded by the DataScopeRule.
                     if visible_endpoint is not endpoint:
                         restricted = True
+                        visible_endpoint = visible_endpoint.model_copy(
+                            deep=True,
+                            update={"server_projection": None},
+                        )
+                    endpoints.append(visible_endpoint)
             if not endpoints:
                 continue
             # The analyzer receives a non-executable principal-scoped
