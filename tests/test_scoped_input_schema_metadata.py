@@ -15,10 +15,13 @@ from schemarouter import (
     DataScopeRule,
     EndpointSpec,
     FieldSpec,
+    HostFieldContract,
     ParameterSpec,
+    RequiredEnumValue,
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
+    select_authorized_field_contract,
 )
 from schemarouter.planner import KeywordAnalyzer
 
@@ -146,3 +149,65 @@ def test_public_descriptor_cannot_be_confused_with_raw_validation_contract():
     assert original.fingerprint != public.fingerprint
     assert original.parameters[0].json_schema is not public.parameters[0].json_schema
     assert original.input_schema is not public.input_schema
+
+
+def test_host_owned_enum_fit_remains_private_but_original_proof_selects():
+    """Raw provider enum is read internally after scope and receipt checks."""
+    policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="records.read", roles_any=("viewer",),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="records.read", roles_any=("viewer",),
+            visible_fields=("public_value",),
+        ),),
+    )
+    router = SchemaRouter(authorization_policy=policy)
+    router.add_tool(ToolSpec(
+        name="records",
+        endpoints=[EndpointSpec(
+            name="read",
+            read_only=True,
+            parameters=[ParameterSpec(
+                name="category", location="query", required=True,
+                json_schema={
+                    "type": "string", "enum": ["marine"],
+                    "description": "private_value",
+                },
+            )],
+            input_schema={
+                "type": "object",
+                "properties": {"category": {
+                    "type": "string", "enum": ["marine"],
+                }},
+                "required": ["category"],
+            },
+            output_fields=[FieldSpec(
+                name="public_value", json_schema={"type": "string"},
+            )],
+        )],
+    ))
+    result = router.retrieve_authorized(
+        "public_value", principal=VIEWER, k=5,
+    )
+    assert len(result.candidates) == 1
+    raw = router.registry.get("records").endpoint("read")
+    assert raw.parameters[0].json_schema["enum"] == ["marine"]
+    visible = result.candidates[0].parameters[0]
+    assert visible.json_schema == {"type": "string"}
+    assert "private_value" not in json.dumps(result.model_dump(mode="json"))
+
+    receipt = select_authorized_field_contract(
+        router, "public_value", principal=VIEWER,
+        contract=HostFieldContract(
+            operation="read",
+            required_enums=[RequiredEnumValue(
+                parameter="category", value="marine",
+            )],
+            required_output_fields=["public_value"],
+        ),
+    )
+    assert receipt.disposition == "selected"
+    assert receipt.selected_route_id == "records.read"
+    assert "marine" not in json.dumps(receipt.model_dump(mode="json"))
