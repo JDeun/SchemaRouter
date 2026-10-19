@@ -304,6 +304,8 @@ def run(
     eval_pos: dict[str, list[float]] = {"e5": [], "pair_fit": []}
     eval_neg: dict[str, list[float]] = {"e5": [], "pair_fit": []}
     familywise_decisions: dict[str, list[bool]] = {"pos": [], "neg": []}
+    # Source-author menu sizes only; never task text or publisher gold.
+    evaluated_menu_sizes: dict[str, list[int]] = {"pos": [], "neg": []}
     zero_menu_irrelevant = 0
     for kind, bucket in (("live_relevance", eval_pos),
                          ("live_irrelevance", eval_neg)):
@@ -321,6 +323,9 @@ def run(
             candidate_fit = fit_scores(features, model)
             bucket["pair_fit"].append(max(candidate_fit))
             if menu_familywise:
+                evaluated_menu_sizes[
+                    "pos" if kind == "live_relevance" else "neg"
+                ].append(len(funcs))
                 familywise_decisions[
                     "pos" if kind == "live_relevance" else "neg"
                 ].append(
@@ -378,7 +383,29 @@ def run(
             or len(negatives) != len(eval_neg["pair_fit"])
         ):
             raise ValueError("public BFCL family-wise cohort denominator drift")
+        bins: dict[str, dict[str, dict[str, int]]] = {}
+        for cohort, scores, decisions in (
+            ("supported", eval_pos["pair_fit"], positives),
+            ("unsupported", eval_neg["pair_fit"], negatives),
+        ):
+            sizes = evaluated_menu_sizes["pos" if cohort == "supported" else "neg"]
+            if len(sizes) != len(scores):
+                raise ValueError("BFCL original offered-menu diagnostics misaligned")
+            bins[cohort] = {}
+            for size, score, accepted in zip(sizes, scores, decisions, strict=True):
+                bucket = (
+                    "1" if size == 1 else "2-4" if size <= 4
+                    else "5-12" if size <= 12 else "13+"
+                )
+                counts = bins[cohort].setdefault(
+                    bucket, {"total": 0, "original_fit_admitted": 0,
+                             "familywise_admitted": 0},
+                )
+                counts["total"] += 1
+                counts["original_fit_admitted"] += int(score >= fit_cutoff)
+                counts["familywise_admitted"] += int(accepted)
         report["live_category_evaluation"]["menu_familywise_diagnostic"] = {
+            "source_menu_size_bins": bins,
             "supported_total": len(positives),
             "supported_admitted": sum(positives),
             "supported_false_refused": len(positives) - sum(positives),
