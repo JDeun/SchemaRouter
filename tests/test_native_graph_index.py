@@ -160,6 +160,7 @@ def test_actual_adapter_graph_discovers_target_with_source_witness_and_no_gold(q
     assert edge.consumer_route_id == "cases_0.read_case"
     assert edge.producer_identifier_field == "contact_id"
     assert edge.consumer_required_parameter == "contact_id"
+    assert edge.parameter_bindings == (("contact_id", "contact_id"),)
     assert edge.consumer_output_fields == ("status",)
     assert len(edge.consumer_tool_fingerprint) == 64
 
