@@ -165,3 +165,38 @@ def test_closed_issue_is_not_reopened(monkeypatch) -> None:
     monkeypatch.setattr(mod, "api", fake_api)
     mod.apply(plan, "test-token")
     assert excluded not in patches and len(patches) == 29
+
+
+def test_midflight_milestone_claim_does_not_get_overwritten(monkeypatch) -> None:
+    mod = _load_module()
+    plan = mod.load_plan()
+    monkeypatch.setenv("GITHUB_REPOSITORY", mod.REPO)
+    first = plan["milestones"][0]["issues"][0]
+    reads: dict[int, int] = {}
+    patches: list[int] = []
+
+    def fake_api(token, method, path, payload=None):
+        if "milestones?" in path:
+            return []
+        if path.endswith("/milestones") and method == "POST":
+            return {"number": 1, "title": payload["title"], "state": "open"}
+        if "/issues/" in path:
+            n = int(path.rsplit("/", 1)[-1])
+            if method == "GET":
+                reads[n] = reads.get(n, 0) + 1
+                assignment = (
+                    {"number": 99, "title": "Other valid owner"}
+                    if n == first and reads[n] > 1
+                    else None
+                )
+                return {"number": n, "state": "open", "milestone": assignment}
+            if method == "PATCH":
+                patches.append(n)
+                return {}
+        raise AssertionError((method, path))
+
+    monkeypatch.setattr(mod, "api", fake_api)
+    with pytest.raises(ValueError, match="changed since preflight"):
+        mod.apply(plan, "test-token")
+    assert reads[first] == 2
+    assert patches == []
