@@ -1,0 +1,39 @@
+name: G5 Original OpenAPI MCP OPTIMADE Contract E0
+
+on:
+  pull_request:
+    paths:
+      - "tests/test_native_graph_three_real_adapters.py"
+      - "research/autoresearch/g5-three-adapter-contracts-e0.md"
+      - ".github/workflows/research-g5-three-adapter-contracts-e0.yml"
+      - "src/schemarouter/adapters/openapi.py"
+      - "src/schemarouter/adapters/mcp.py"
+      - "src/schemarouter/adapters/optimade.py"
+      - "src/schemarouter/native_graph_index.py"
+      - "src/schemarouter/semantic_attestations.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  actual-three-adapter-compilers-e0:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Execute no-network original adapter contract proof
+        run: |
+          python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1" "pyright>=1.1,<2"
+          ruff check tests/test_native_graph_three_real_adapters.py
+          python -m pytest -q tests/test_native_graph_three_real_adapters.py tests/test_native_graph_index.py
+          pyright tests/test_native_graph_three_real_adapters.py
+      - name: Keep E0, E1 and E2 evidence classes disjoint
+        if: success()
+        run: |
+          echo "Three real SchemaRouter adapter compilers share one native G5 catalog with schema and scope refusals. All sources are OFFLINE declared fixtures; this is E0 only, NOT a live OPTIMADE/MCP provider, not EN/KO/JA model quality or independent E2." >> "$GITHUB_STEP_SUMMARY"
