@@ -7,12 +7,17 @@ import json
 import httpx
 import pytest
 
-from scripts.research_g5_jsonplaceholder_live_e1 import (
-    ACTOR, GROUP, JSONPlaceholderBoundInvoker, MAX_JSON_BYTES,
-    _original_json, build_graph_router, run,
-)
 from schemarouter.errors import PolicyViolationError, SchemaValidationError
 from schemarouter.native_graph_execution import execute_native_graph_one_hop
+from scripts.research_g5_jsonplaceholder_live_e1 import (
+    ACTOR,
+    GROUP,
+    MAX_JSON_BYTES,
+    JSONPlaceholderBoundInvoker,
+    _original_json,
+    build_graph_router,
+    run,
+)
 
 
 def _handler(
