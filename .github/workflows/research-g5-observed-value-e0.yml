@@ -1,0 +1,37 @@
+name: G5 Observed Scalar Dataflow E0
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/native_graph_observation.py"
+      - "tests/test_native_graph_observation.py"
+      - "research/autoresearch/g5-observed-source-arguments-e0.md"
+      - ".github/workflows/research-g5-observed-value-e0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-native-observation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Check bound observation and typed producer preconditions
+        run: |
+          python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1" "pyright>=1.1,<2"
+          ruff check src/schemarouter/native_graph_observation.py tests/test_native_graph_observation.py
+          python -m pytest -q tests/test_native_graph_observation.py tests/test_native_graph_multi_input.py
+          pyright src/schemarouter/native_graph_observation.py
+      - name: Explicit E0-only results
+        if: success()
+        run: |
+          echo "Source-native scalar value preflight PASS (E0); no authenticated provider receipt, no tool execution, no final task or E2." >> "$GITHUB_STEP_SUMMARY"
