@@ -203,13 +203,32 @@ def _candidate_matches(
             ):
                 continue
             if (
-                type(parameter.json_schema) is dict
-                and _enum_schema_can_hold_required(
+                type(parameter.json_schema) is not dict
+                or not _enum_schema_can_hold_required(
                     parameter.json_schema, required_values,
                 )
             ):
-                match = True
-                break
+                continue
+            # Native source enums are verified internally, but a narrower
+            # locally trusted relationship-type policy must still win.
+            visible_parameter = next(
+                (p for p in candidate.parameters if p.name == parameter_name),
+                None,
+            )
+            if visible_parameter is None:
+                continue
+            if parameter_name == "relationship_types":
+                scoped_items = visible_parameter.json_schema.get("items")
+                if (
+                    type(scoped_items) is dict
+                    and "enum" in scoped_items
+                    and not _enum_schema_can_hold_required(
+                        visible_parameter.json_schema, required_values,
+                    )
+                ):
+                    continue
+            match = True
+            break
         if not match:
             return False
 
