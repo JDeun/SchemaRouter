@@ -86,6 +86,13 @@ def apply(plan: dict[str, Any], token: str) -> None:
     else:
         raise ValueError("milestone listing exceeds safe pagination bound")
 
+    # Reject all closed milestones before ANY write, even if the closed
+    # milestone belongs to a later stage. Avoid partial application.
+    for stage in plan["milestones"]:
+        existing = known.get(stage["title"])
+        if existing is not None and existing.get("state") != "open":
+            raise ValueError(f"existing milestone is closed: {stage['title']}")
+
     # All issues are checked before ANY create/assign write.
     eligible: dict[int, dict[str, Any]] = {}
     for stage in plan["milestones"]:
