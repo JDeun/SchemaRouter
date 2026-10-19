@@ -145,7 +145,10 @@ def build_parameterized_router(
     posting = NativeSchemaPostingIndex.build(router.registry)
     # Explicit proof that the previously published default remains no-fit.
     default = NativeSchemaGraphIndex.build(posting)
-    if default.lookup(router, GROUP.aliases[0], group=GROUP, principal=ACTOR).status != "no_proven_hit":
+    if (
+        default.lookup(router, GROUP.aliases[0], group=GROUP, principal=ACTOR).status
+        != "no_proven_hit"
+    ):
         raise ValueError("default G5 unexpectedly admitted a parameterized source")
     graph = NativeSchemaGraphIndex.build(
         posting, approved_host_roots=frozenset({SOURCE_ROUTE}),
