@@ -1539,7 +1539,9 @@ class SchemaPlanner:
             if visible_endpoint is None:
                 continue
             scored = self._score_endpoint(
-                _scoring_tool_for_visible_endpoint(tool, endpoint, visible_endpoint),
+                _scoring_tool_for_visible_endpoint(
+                    tool, endpoint, visible_endpoint,
+                ),
                 visible_endpoint,
                 request.query,
                 intent,
