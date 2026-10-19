@@ -1,16 +1,17 @@
 {
   "schema_version": 1,
-  "review_date": "2026-10-16",
+  "review_date": "2026-10-19",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 151,
-  "total_page_pairs": 151,
+  "reviewed_page_pairs": 152,
+  "total_page_pairs": 152,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
     "The product north-star and test matrix pair added 2026-10-16 was AI-assisted directly inspected and exact Git blobs pinned; independent bilingual human sentence-level audit is still NOT complete (#1202).",
-    "2026-10-16 duplicate product charter draft deliberately removed; maintain one bilingual product-north-star-and-test-matrix pair as canonical. All 151 exact page-pair AI-assisted source checks remain explicitly non-independent; #1202 human review open."
+    "2026-10-16 duplicate product charter draft deliberately removed; maintain one bilingual product-north-star-and-test-matrix pair as canonical. All 151 exact page-pair AI-assisted source checks remain explicitly non-independent; #1202 human review open.",
+    "2026-10-19 research-program wiki has an AI-assisted parallel-text and structure spotcheck with exact Git blob pins; independent KO/EN editorial sentence audit remains open."
   ],
   "reviews": [
     {
@@ -877,6 +878,12 @@
       "en_blob": "e83ca2b09f61d61456f5fc8122e3839eb0bbeace",
       "ko_blob": "f8f5c043c3ae7555d20cad2488f3ff3255fa8a4d",
       "notes": "Matched controlled synthetic break-even matrices, no false low/medium superiority, quantitative p95 tail costs and exploratory run invalidation."
+    },
+    {
+      "path": "research/research-program-2026.md",
+      "en_blob": "0a61d820aad02d6a4ffdb4cf014839cb5b4762b3",
+      "ko_blob": "bbf4ba343caf87a02dada11c12819a8d91d79fbe",
+      "notes": "AI-assisted EN/KO direct paired comparison of exact 19 terminal issue dispositions, typed G5 safety boundaries and KOPA/EDGE, ACEBench, tau2, ToolRet, AgentDojo, CaMeL source links; KO checklist wording fixed an accidental issue-identifier Markdown heading without changing 0.18 HOLD. NOT independent editorial signoff."
     },
     {
       "path": "research/routing-status.md",
