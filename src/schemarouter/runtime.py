@@ -453,7 +453,13 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 if parameter.name.startswith("filter__")
                 else parameter.name
             )
-            if mapped_field in hidden_field_names:
+            if (
+                mapped_field in hidden_field_names
+                or (
+                    parameter.name.startswith("filter__")
+                    and mapped_field not in scope.visible_fields
+                )
+            ):
                 continue
             clone = parameter.model_copy(deep=True)
             if (
@@ -579,7 +585,13 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                     if parameter.name.startswith("filter__")
                     else parameter.name
                 )
-                if mapped_field in hidden_field_names:
+                if (
+                    mapped_field in hidden_field_names
+                    or (
+                        parameter.name.startswith("filter__")
+                        and mapped_field not in scope.visible_fields
+                    )
+                ):
                     continue
                 clone = parameter.model_copy(deep=True)
                 if (
