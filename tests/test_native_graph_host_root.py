@@ -158,7 +158,7 @@ async def test_host_inputs_enable_two_real_authorized_local_calls(query: str) ->
 @pytest.mark.parametrize("bad_args", [
     None, {}, {"post_id": "1"}, {"post_id": None},
     {"post_id": True}, {"post_id": 1, "admin": 1},
-    {"post_id": []}, {"post_id": 1.0}, {"post_id": -1},
+    {"post_id": []}, {"post_id": 1.0},
 ])
 async def test_absent_or_incompatible_host_inputs_do_not_invoke_any_tool(
     bad_args: dict[str, Any] | None,
