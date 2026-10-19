@@ -1,0 +1,36 @@
+name: G5 Explicit Host Parameterized Source Root E0
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/native_graph_index.py"
+      - "src/schemarouter/native_graph_execution.py"
+      - "tests/test_native_graph_host_root.py"
+      - "research/autoresearch/g5-host-supplied-source-root-e0.md"
+      - ".github/workflows/research-g5-host-supplied-root-e0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host-parameterized-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Host owned source argument E0 + existing original graph/executor regressions
+        run: |
+          python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1" "pyright>=1.1,<2"
+          ruff check src/schemarouter/native_graph_index.py src/schemarouter/native_graph_execution.py tests/test_native_graph_host_root.py
+          python -m pytest -q tests/test_native_graph_host_root.py tests/test_native_graph_index.py tests/test_native_graph_multi_input.py tests/test_native_graph_bound_one_hop.py tests/test_native_graph_observation.py
+          pyright src/schemarouter/native_graph_index.py src/schemarouter/native_graph_execution.py
+      - name: E0-only no independent task inference
+        if: success()
+        run: |
+          echo "G5 host-supplied parameterized ROOT local E0 succeeded, not native source-value discovery, original external E1 or independent E2." >> "$GITHUB_STEP_SUMMARY"
