@@ -6,8 +6,8 @@ import pytest
 from scripts.research_multilingual_e5_base_cpu_500_dev import (
     CASES,
     CATALOG_ROUTES,
-    K,
     SUPPORTED_ROUTES,
+    K,
     _report_arm,
     validate_manifest,
 )
@@ -30,8 +30,8 @@ def test_original_english_only_catalog_and_fresh_case_denominators():
         "maps.directions",
     }
     for lang in ("en", "ko", "ja"):
-        assert sum(l == lang and g is not None for l, _, g in CASES) == 6
-        assert sum(l == lang and g is None for l, _, g in CASES) == 2
+        assert sum(language == lang and g is not None for language, _, g in CASES) == 6
+        assert sum(language == lang and g is None for language, _, g in CASES) == 2
 
 
 def test_fixed_k5_unsupported_nonempty_is_not_a_correct_no_fit():
