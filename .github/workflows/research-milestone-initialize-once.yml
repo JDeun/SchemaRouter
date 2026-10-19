@@ -1,13 +1,17 @@
 name: Research milestones one-time main initialization
 
-# Only the approved manifest change merged to protected main can trigger the
-# initialization; future manifest revisions fail the immutable blob check.
+# A protected-main push of the manifest, or an exact authenticated owner
+# approval comment on canonical #200, can trigger this bounded idempotent sync.
+# Both paths verify the same literal immutable approved blob before any write.
 on:
   push:
     branches:
       - main
     paths:
       - ".github/research-milestones.json"
+  issue_comment:
+    types:
+      - created
 
 permissions:
   contents: read
@@ -18,7 +22,18 @@ concurrency:
 
 jobs:
   approved-manifest-apply:
-    if: github.repository == 'JDeun/SchemaRouter' && github.ref == 'refs/heads/main'
+    if: >-
+      github.repository == 'JDeun/SchemaRouter' &&
+      github.ref == 'refs/heads/main' &&
+      (
+        github.event_name == 'push' ||
+        (
+          github.event_name == 'issue_comment' &&
+          github.event.issue.number == 200 &&
+          github.event.comment.user.login == 'JDeun' &&
+          github.event.comment.body == 'SCHEMAROUTER_APPROVE_MILESTONES_20261019'
+        )
+      )
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
