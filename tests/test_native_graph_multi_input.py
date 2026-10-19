@@ -89,6 +89,14 @@ def _router(
                 )
                 for name, semantic, kind in producer_fields
             ],
+            output_schema={
+                "type": "object",
+                "properties": {
+                    name: {"type": kind}
+                    for name, _semantic, kind in producer_fields
+                },
+                "required": [name for name, _, _ in producer_fields],
+            },
         )],
     ))
     router.add_tool(ToolSpec(
@@ -248,6 +256,7 @@ def test_actual_openapi_producer_and_mcp_two_required_inputs_are_bound() -> None
                         "contact_id": {"type": "string"},
                         "region_id": {"type": "string"},
                     },
+                    "required": ["contact_id", "region_id"],
                 }},
             }}},
         }}},
@@ -349,3 +358,59 @@ def test_actual_openapi_producer_and_mcp_two_required_inputs_are_bound() -> None
         ("contact_id", "contact_id"), ("region_id", "region_id"),
     )
     assert not result.executable_authority
+
+
+@pytest.mark.parametrize("source_shape", ["optional", "array", "referenced"])
+def test_structural_multi_input_cannot_join_values_from_distinct_records(
+    source_shape: str,
+) -> None:
+    """A scalar type join is NOT a proof that two values co-occur."""
+    router = _router()
+    root = router.registry.get("contacts").endpoint("read")
+    if source_shape == "optional":
+        root.output_schema["required"] = ["contact_id"]
+    elif source_shape == "array":
+        root.output_schema = {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "contact_id": {"type": "string"},
+                    "region_id": {"type": "string"},
+                },
+                "required": ["contact_id", "region_id"],
+            },
+        }
+    else:
+        root.output_schema = {
+            "$ref": "#/$defs/external",
+            "$defs": {
+                "external": {
+                    "type": "object",
+                    "properties": {
+                        "contact_id": {"type": "string"},
+                        "region_id": {"type": "string"},
+                    },
+                    "required": ["contact_id", "region_id"],
+                },
+            },
+        }
+    # Reindex after the source fixture changes, do not rely on stale state.
+    index = _index(router)
+    assert index.graph.predecessors("cases.read") == ("contacts.read",)
+    assert index.lookup(
+        router, GROUP.aliases[0], group=GROUP, principal=ACTOR,
+    ).status == "no_proven_hit"
+
+
+def test_nested_record_paths_do_not_synthesize_joint_binding() -> None:
+    router = _router()
+    root = router.registry.get("contacts").endpoint("read")
+    root.output_fields[0].path = ["contacts", "*", "contact_id"]
+    root.output_fields[0].result_path = ["contacts", "*", "contact_id"]
+    root.output_fields[1].path = ["regions", "*", "region_id"]
+    root.output_fields[1].result_path = ["regions", "*", "region_id"]
+    index = _index(router)
+    assert index.lookup(
+        router, GROUP.aliases[0], group=GROUP, principal=ACTOR,
+    ).status == "no_proven_hit"
