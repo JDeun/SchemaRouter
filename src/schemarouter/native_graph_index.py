@@ -47,37 +47,57 @@ def _root_envelope_empty(endpoint: EndpointSpec) -> bool:
     )
 
 
-def _single_native_input(endpoint: EndpointSpec) -> CapabilityFieldContract | None:
-    """Only one proven required scalar; no hidden defaults or extra parameters."""
-    if len(endpoint.parameters) != 1 or endpoint.auth_requirements:
+def _native_required_inputs(
+    endpoint: EndpointSpec,
+) -> tuple[tuple[str, CapabilityFieldContract], ...] | None:
+    """Prove EVERY declared input is a required, source-typed scalar.
+
+    This is a bounded, conservative one-producer/one-consumer binding
+    contract, not an argument synthesizer or arbitrary multi-hop executor.
+    Optional/untyped/auth parameters and open object schemas remain no-fit.
+    """
+    if not 1 <= len(endpoint.parameters) <= 4 or endpoint.auth_requirements:
         return None
-    param = endpoint.parameters[0]
-    if (
-        not param.required
-        or param.semantic_id is None
-        or param.location in {"header", "body_root"}
-        or not _scalar_contract(param.json_schema)
-    ):
+    mapped: list[tuple[str, CapabilityFieldContract]] = []
+    for param in endpoint.parameters:
+        if (
+            not param.required
+            or param.semantic_id is None
+            or param.location in {"header", "body_root"}
+            or not _scalar_contract(param.json_schema)
+        ):
+            return None
+        mapped.append((
+            param.name,
+            CapabilityFieldContract(
+                semantic_id=param.semantic_id, json_schema=param.json_schema,
+            ),
+        ))
+    names = [name for name, _ in mapped]
+    # One name per source-native parameter, no omitted or implicit inputs.
+    if len(set(names)) != len(names):
         return None
     schema = endpoint.input_schema
     if schema and (
         type(schema) is not dict
         or set(schema) != {"type", "properties", "required"}
         or schema.get("type") != "object"
-        or schema.get("properties") != {param.name: param.json_schema}
-        or schema.get("required") != [param.name]
+        or schema.get("properties")
+        != {param.name: param.json_schema for param in endpoint.parameters}
+        or type(schema.get("required")) is not list
+        or len(schema["required"]) != len(names)
+        or set(schema["required"]) != set(names)
     ):
         return None
-    return CapabilityFieldContract(
-        semantic_id=param.semantic_id, json_schema=param.json_schema,
-    )
+    return tuple(mapped)
 
 
 def _root_field(
     endpoint: EndpointSpec,
     required: CapabilityFieldContract,
 ) -> FieldSpec | None:
-    for f in endpoint.output_fields:
+    matches = [
+        f for f in endpoint.output_fields
         if (
             f.identifier is True and f.semantic_id == required.semantic_id
             and f.unit is None and f.unit_normalization is None
@@ -86,9 +106,10 @@ def _root_field(
             and compare_capability_fields(required, contract).status in {
                 "exact", "compatible",
             }
-        ):
-            return f
-    return None
+        )
+    ]
+    # Ambiguous producer outputs cannot be trusted to bind an argument.
+    return matches[0] if len(matches) == 1 else None
 
 
 @dataclass(frozen=True, slots=True)
@@ -101,9 +122,12 @@ class NativeIndexedGraphCandidate:
     producer_endpoint_fingerprint: str
     consumer_tool_fingerprint: str
     consumer_endpoint_fingerprint: str
-    producer_identifier_field: str
-    consumer_required_parameter: str
+    # Single-binding legacy fields are intentionally absent for multi-input
+    # routes, so hosts cannot mistake a partial mapping for a complete one.
+    producer_identifier_field: str | None
+    consumer_required_parameter: str | None
     consumer_output_fields: tuple[str, ...]
+    parameter_bindings: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -165,11 +189,12 @@ class NativeSchemaGraphIndex:
                         ))
                         roots += 1
                 else:
-                    required = _single_native_input(endpoint)
+                    required = _native_required_inputs(endpoint)
                     if required is None:
                         continue
                     contracts.append(CapabilityContract(
-                        capability_id=route, requires=[required],
+                        capability_id=route,
+                        requires=[contract for _, contract in required],
                     ))
                     consumers += 1
         if registry.version != field_index.registry_version:
@@ -270,8 +295,8 @@ class NativeSchemaGraphIndex:
                         endpoint.output_fields, demand.required_fields,
                     )):
                 continue
-            required = _single_native_input(endpoint)
-            if required is None:
+            required_inputs = _native_required_inputs(endpoint)
+            if required_inputs is None:
                 continue
             for root_id in self.graph.predecessors(target_id):
                 root = authorized(root_id)
@@ -280,8 +305,15 @@ class NativeSchemaGraphIndex:
                 _root_tool, root_endpoint = root
                 if not _root_envelope_empty(root_endpoint):
                     continue
-                field = _root_field(root_endpoint, required)
-                if field is None:
+                bindings: list[tuple[str, str]] = []
+                for parameter, required in required_inputs:
+                    field = _root_field(root_endpoint, required)
+                    if field is None or field.name in {
+                        producer for _, producer in bindings
+                    }:
+                        break
+                    bindings.append((parameter, field.name))
+                if len(bindings) != len(required_inputs):
                     continue
                 source = self.field_index.route_fingerprints[root_id]
                 dest = self.field_index.route_fingerprints[target_id]
@@ -290,6 +322,7 @@ class NativeSchemaGraphIndex:
                     if any(_complete_fields([f], (req,))
                            for req in demand.required_fields)
                 }))
+                single = len(bindings) == 1
                 found.append(NativeIndexedGraphCandidate(
                     producer_route_id=root_id,
                     consumer_route_id=target_id,
@@ -297,9 +330,10 @@ class NativeSchemaGraphIndex:
                     producer_endpoint_fingerprint=source[1],
                     consumer_tool_fingerprint=dest[0],
                     consumer_endpoint_fingerprint=dest[1],
-                    producer_identifier_field=field.name,
-                    consumer_required_parameter=endpoint.parameters[0].name,
+                    producer_identifier_field=bindings[0][1] if single else None,
+                    consumer_required_parameter=bindings[0][0] if single else None,
                     consumer_output_fields=names,
+                    parameter_bindings=tuple(bindings),
                 ))
         self.field_index._assert_source(router)
         router._check_retrieval_authority_witness(witness)
