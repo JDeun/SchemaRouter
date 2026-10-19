@@ -881,9 +881,9 @@
     },
     {
       "path": "research/research-program-2026.md",
-      "en_blob": "fafbf411cdd3862d6de8ff3004f75eb19370c4e8",
-      "ko_blob": "6427c308bc3dfb799dbdc05be82fb8bb4386e775",
-      "notes": "AI-assisted direct EN/KO comparison after updated 16 terminal/de-scoped issue dispositions (8 merged narrow E0/E1, 3 rejected disclosed E1, 5 de-scoped without scored negative). Same heading and table structures, correct source/task claims and original 0.14 negative preserved. NOT independent human language signoff."
+      "en_blob": "32a725f3596e8be2776708474c711b2711f0d8dd",
+      "ko_blob": "cfad4af38b41be15d3b2ae2e1054caeb21ad2b5b",
+      "notes": "AI-assisted EN/KO source comparison of current 19 closed narrow/negative/de-scoped issue dispositions and exact source evidence, including the #1452 forged trust object counterexample, #1473 provider-dependent E5 K5 outcomes and #1444 conservative enum conjunction limitations; same heading and table structure. No independently verified translations or new E2 claims."
     },
     {
       "path": "research/routing-status.md",
