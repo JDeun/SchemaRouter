@@ -95,10 +95,18 @@ async def execute_native_graph_one_hop(
             or set(source_arguments) != set(approved_inputs)
         ):
             raise SchemaValidationError("G5 complete host source inputs required")
-        for value in source_arguments.values():
+        by_name = {param.name: param for param in source_spec.parameters}
+        for name, value in source_arguments.items():
+            expected = by_name[name].json_schema["type"]
             if (
                 type(value) not in (str, int, float, bool)
+                or expected not in {"string", "integer", "number", "boolean"}
+                or type(value) is bool and expected != "boolean"
+                or type(value) is str and expected != "string"
+                or type(value) is int and expected not in {"integer", "number"}
+                or type(value) is float and expected != "number"
                 or type(value) is float and not math.isfinite(value)
+                or type(value) is int and not -(2**63) <= value < 2**63
                 or type(value) is str and len(value.encode("utf-8")) > 4096
             ):
                 raise SchemaValidationError("G5 invalid bounded host source scalar")
