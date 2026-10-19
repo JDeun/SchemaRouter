@@ -169,14 +169,10 @@ def _enum_schema_can_hold_required(
 
 
 def _candidate_matches(
-    candidate: CapabilityCandidate,
-    contract: HostFieldContract,
-    *,
-    trusted_scoped_parameters: tuple[ParameterSpec, ...] | None = None,
+    candidate: CapabilityCandidate, contract: HostFieldContract,
 ) -> bool:
-    # Read-only/output visibility come from the public, attested candidate.
-    # An original enum remains PRIVATE: only the authorized host's internal
-    # fit proof can inspect its full provider schema.
+    # Caller provides an internally attested, scope-limited candidate.
+    # The final public retrieval result is never modified.
 
     if candidate.read_only is not True or candidate.destructive is True:
         return False
@@ -192,11 +188,7 @@ def _candidate_matches(
 
     for parameter_name, required_values in required_by_parameter.items():
         match = False
-        for parameter in (
-            trusted_scoped_parameters
-            if trusted_scoped_parameters is not None
-            else tuple(candidate.parameters)
-        ):
+        for parameter in candidate.parameters:
             if (
                 parameter.location != "query"
                 or parameter.name != parameter_name
@@ -541,8 +533,16 @@ def select_authorized_field_contract(
     matched = [
         item for item in verified.candidates
         if _candidate_matches(
-            item, approved_contract,
-            trusted_scoped_parameters=trusted_scoped_params[item.route_id],
+            # The host alone evaluates ORIGINAL enum restrictions on only
+            # currently scoped-visible parameter identities. The public
+            # returned candidate and selector receipt never contain these.
+            item.model_copy(
+                deep=True,
+                update={
+                    "parameters": list(trusted_scoped_params[item.route_id]),
+                },
+            ),
+            approved_contract,
         )
     ]
     if not matched:
