@@ -69,6 +69,67 @@ def test_scoped_ranking_never_changes_with_source_private_tool_description():
         assert tainted.registry.get("records").description.endswith(CANARY)
 
 
+def test_private_description_cannot_reorder_a_two_route_scoped_shortlist():
+    """A sensitive description may not push its route above a peer."""
+    def make_catalog(hidden_description: str) -> SchemaRouter:
+        policy = AuthorizationPolicy(
+            default_effect="deny",
+            rules=(
+                AuthorizationRule(
+                    effect="allow", operation="records.read",
+                    roles_any=("viewer",),
+                ),
+                AuthorizationRule(
+                    effect="allow", operation="ledger.read",
+                    roles_any=("viewer",),
+                ),
+            ),
+            data_rules=(
+                DataScopeRule(
+                    operation="records.read", roles_any=("viewer",),
+                    visible_fields=("public_value",),
+                ),
+                DataScopeRule(
+                    operation="ledger.read", roles_any=("viewer",),
+                    visible_fields=("public_value",),
+                ),
+            ),
+        )
+        router = SchemaRouter(authorization_policy=policy)
+        for name, description in (
+            ("records", hidden_description),
+            ("ledger", "public registry ledger"),
+        ):
+            router.add_tool(ToolSpec(
+                name=name,
+                description=description,
+                endpoints=[EndpointSpec(
+                    name="read", read_only=True,
+                    output_fields=[
+                        FieldSpec(name="public_value"),
+                        FieldSpec(name="private_value"),
+                    ],
+                )],
+            ))
+        return router
+
+    baseline = make_catalog("")
+    changed = make_catalog(CANARY)
+    for query in (CANARY, "ledger", "public_value"):
+        before = baseline.retrieve_authorized(query, principal=VIEWER, k=2)
+        after = changed.retrieve_authorized(query, principal=VIEWER, k=2)
+        assert before.total_ranked == after.total_ranked == 2
+        assert [c.route_id for c in before.candidates] == [
+            c.route_id for c in after.candidates
+        ]
+        assert [c.score for c in before.candidates] == [
+            c.score for c in after.candidates
+        ]
+        assert [c.score_components for c in before.candidates] == [
+            c.score_components for c in after.candidates
+        ]
+
+
 def test_original_unscoped_keyword_ranking_remains_source_sensitive():
     baseline = _router(description="", scoped=False)
     tainted = _router(description=CANARY, scoped=False)
