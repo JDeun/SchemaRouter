@@ -216,10 +216,10 @@
     {
       "path": "research/research-program-2026.md",
       "section": 4,
-      "en_blob": "fafbf411cdd3862d6de8ff3004f75eb19370c4e8",
-      "ko_blob": "6427c308bc3dfb799dbdc05be82fb8bb4386e775",
+      "en_blob": "32a725f3596e8be2776708474c711b2711f0d8dd",
+      "ko_blob": "cfad4af38b41be15d3b2ae2e1054caeb21ad2b5b",
       "decision": "meaning-preserved",
-      "evidence": "Rechecked complete revised document blob after only the issue-lifecycle section was edited: section 4 EN prohibits treating #1580/#1584 diagnostics as product improvements and holds #1356 release; KO '진단이며 성능 개선 근거가 아닙니다' and '릴리스 PR #1356은 HOLD입니다' preserve both negations. Korean heuristic does not match '아닙니다'. Full-document repin is an AI-assisted editorial spotcheck, not independent third-party sign-off."
+      "evidence": "AI-assisted exact-blob EN/KO comparison after modifying issue-closure subsection only: EN forbids promotion of three additional DEV-only experiments (#1452, #1473, #1444); KO '모두 작은 E0/E1 범위의 결과이며 독립 정확도나 제품 기본 승격의 증거가 아닙니다' preserves the non-promotion boundary. Current section 4 also preserves #1580/#1584 diagnostic-only and #1356 release-HOLD negations. Not independent human/editorial review."
     },
     {
       "path": "research/routing-status.md",
