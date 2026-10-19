@@ -881,9 +881,9 @@
     },
     {
       "path": "research/research-program-2026.md",
-      "en_blob": "04420be19eb64b07f3b79500428b530e5969a0a8",
-      "ko_blob": "0f96b9204bff71431d033beac643af8a7791ae27",
-      "notes": "AI-assisted direct EN/KO comparison of research charter, negative E0/E1 versus independent E2 evidence, complete safety/no-fit metrics, 9 primary prior-art links, issue closure decisions and exact paired heading/table structure. NOT an independent human/editorial certification, external model success, or new benchmark."
+      "en_blob": "fafbf411cdd3862d6de8ff3004f75eb19370c4e8",
+      "ko_blob": "6427c308bc3dfb799dbdc05be82fb8bb4386e775",
+      "notes": "AI-assisted direct EN/KO comparison after updated 16 terminal/de-scoped issue dispositions (8 merged narrow E0/E1, 3 rejected disclosed E1, 5 de-scoped without scored negative). Same heading and table structures, correct source/task claims and original 0.14 negative preserved. NOT independent human language signoff."
     },
     {
       "path": "research/routing-status.md",
