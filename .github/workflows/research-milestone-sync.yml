@@ -12,26 +12,46 @@ on:
           - preview
           - apply
 
+# Prevent concurrent apply runs from interleaving milestone creations.
+concurrency:
+  group: research-milestones-main
+  cancel-in-progress: false
+
 permissions:
   contents: read
-  issues: write
 
 jobs:
-  milestone-sync:
-    if: github.repository == 'JDeun/SchemaRouter' && github.ref == 'refs/heads/main'
+  preview:
+    if: github.repository == 'JDeun/SchemaRouter' && github.ref == 'refs/heads/main' && inputs.mode == 'preview'
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - name: Checkout protected main
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.2.2
         with:
           persist-credentials: false
-      - name: Static manifest and script validation
+      - name: Validate manifest and preview (read-only)
         run: |
           python3 -m py_compile .github/scripts/sync_research_milestones.py
           python3 .github/scripts/sync_research_milestones.py
-      - name: Apply milestone records (explicit action only)
-        if: inputs.mode == 'apply'
+
+  apply:
+    if: github.repository == 'JDeun/SchemaRouter' && github.ref == 'refs/heads/main' && inputs.mode == 'apply'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout protected main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Validate manifest and preview (no write)
+        run: |
+          python3 -m py_compile .github/scripts/sync_research_milestones.py
+          python3 .github/scripts/sync_research_milestones.py
+      - name: Apply six research milestones (explicit manual choice)
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
