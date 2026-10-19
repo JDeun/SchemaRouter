@@ -214,23 +214,30 @@ def run() -> dict[str, Any]:
     if observed_original != original_first:
         raise RuntimeError("reference source-only model ranking disagrees")
     first.assert_source_unchanged()
-    original_fps = tuple(
-        (r.tool_fingerprint, r.endpoint_fingerprint) for r in rows
-    )
+    # The authorized source capture is ranked for EACH query. A change in
+    # row order is not a change of original source schema or authority.
+    # Compare the exact source descriptor/fingerprints keyed by native ID.
+    source_map = {
+        r.route_id: (r.description, r.tool_fingerprint, r.endpoint_fingerprint)
+        for r in rows
+    }
+    if len(source_map) != ROUTES:
+        raise RuntimeError("duplicate original native source route")
     scored_rows = []
     for idx, (lang, query, gold) in enumerate(CASES, 1):
         captured = capture_authorized_agent_tool_surface(
             router, query, principal=PRINCIPAL,
         )
         if (
-            captured.visible_route_ids != source_ids
-            or _passages(captured._semantic_source_routes) != (descriptions, operations)
-            or tuple(
-                (r.tool_fingerprint, r.endpoint_fingerprint)
+            len(captured.visible_route_ids) != ROUTES
+            or {
+                r.route_id: (
+                    r.description, r.tool_fingerprint, r.endpoint_fingerprint,
+                )
                 for r in captured._semantic_source_routes
-            ) != original_fps
+            } != source_map
         ):
-            raise RuntimeError("cross-query scope/source contract drift")
+            raise RuntimeError("cross-query scope/source identity drift")
         start = time.perf_counter_ns()
         query_vector = _sync_e5_vectors(backend, [query])[0]
         encode_ms = (time.perf_counter_ns() - start) / 1e6
