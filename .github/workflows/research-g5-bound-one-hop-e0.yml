@@ -1,0 +1,35 @@
+name: G5 Two Registered Executor Calls E0
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/native_graph_execution.py"
+      - "tests/test_native_graph_bound_one_hop.py"
+      - ".github/workflows/research-g5-bound-one-hop-e0.yml"
+      - "research/autoresearch/g5-local-bound-two-call-e0.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bound-source-to-consumer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Registered invoker execution and source-scoped G5 regressions
+        run: |
+          python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1" "pyright>=1.1,<2"
+          ruff check src/schemarouter/native_graph_execution.py tests/test_native_graph_bound_one_hop.py
+          python -m pytest -q tests/test_native_graph_bound_one_hop.py tests/test_native_graph_observation.py tests/test_native_graph_multi_input.py
+          pyright src/schemarouter/native_graph_execution.py
+      - name: Record bounded E0-only completion
+        if: success()
+        run: |
+          echo "G5 TWO locally trusted bound invocations passed executor validation, E0 only. No independent provider identity, natural-language quality, or E2 release gate." >> "$GITHUB_STEP_SUMMARY"
