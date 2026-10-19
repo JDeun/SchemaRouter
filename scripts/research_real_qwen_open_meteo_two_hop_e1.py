@@ -265,7 +265,7 @@ async def evaluate_one(
                     if inv.last_transport_error_kind is not None
                 ]
                 if len(transport_kinds) > 1:
-                    raise ValueError("ambiguous original source transport failures")
+                    raise ValueError("ambiguous original source transport failures") from None
                 trusted_transport_error_kind = (
                     transport_kinds[0] if transport_kinds else None
                 )
