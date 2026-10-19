@@ -568,6 +568,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         scoped = InMemoryRegistry()
         for tool in self.registry.tools():
             endpoints: list[EndpointSpec] = []
+            restricted = False
             for endpoint in tool.endpoints:
                 if not predicate(tool, endpoint):
                     continue
@@ -578,19 +579,13 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 )
                 if visible_endpoint is not None:
                     endpoints.append(visible_endpoint)
+                    if visible_endpoint is not endpoint:
+                        restricted = True
             if not endpoints:
                 continue
             # The analyzer receives a non-executable principal-scoped
             # descriptor. Original source metadata remains in self.registry
             # for invocation and fingerprint/authorization receipts.
-            restricted = any(
-                self.authorization_policy is not None
-                and self.authorization_policy.data_scope(
-                    principal, tool, source_endpoint,
-                ).visible_fields is not None
-                for source_endpoint in tool.endpoints
-                if predicate(tool, source_endpoint)
-            )
             scoped.register(
                 tool.model_copy(
                     deep=True,
