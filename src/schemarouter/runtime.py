@@ -147,7 +147,6 @@ from .state_retrieval import (
 )
 from .trace_redaction import TraceRedactor
 from .traces import RunTraceStore, append_run_event_async
-from .validation import projected_output_schema
 
 _T = TypeVar("_T")
 _SYNC_LOOP_RUNNER = SyncLoopRunner()
@@ -589,7 +588,6 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                     if name in allowed_parameter_names
                 ]
 
-            selected_names = [field.name for field in visible_fields]
             matched_fields = [
                 value
                 for value in candidate.matched_fields
