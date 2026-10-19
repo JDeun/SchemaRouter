@@ -56,6 +56,11 @@ SchemaRouter의 책임은 **기능 검색과 검증된 타입 기반 실행 경�
 | [ToolSandbox (Lu 외, 2024)](https://arxiv.org/abs/2408.04682) | 상태 유지 도구 실행과 도구 사이 숨은 의존성, 중간 단계 관측 | 노출된 도구의 재현율뿐 아니라 상태·실행·최종 응답 성공 측정 |
 | [FAIL-TaLMs (Treviño 외, NAACL 2025)](https://aclanthology.org/2025.naacl-long.149/) | 부족한 사용자 정보와 사용할 수 없는 도구가 에이전트에 어려움 | 무관 질의, 빠진 인수, 권한 거부, 일시적인 제공자 장애를 다른 분류로 처리 |
 | [SafeActBench (Lin 외, 2026)](https://arxiv.org/abs/2610.07753) | 최종 결과가 맞아도 해당 행동을 정당화하는 관측 근거가 없을 수 있음 | case ID 기반 정답 누설 금지, 사전 작성 정책과 관측값·실행 인수 연결. V1 393개 실제 trajectory 미완료 |
+| [EDGE / KOPA-Bench (Kim 외, 2026 사전공개)](https://arxiv.org/abs/2609.05395) | 실제 한국 공공 API의 다단계 과제 145개와 **실제 API 호출로 검증한** 출력→입력 의존성 그래프 | G5의 typed join 연구와 직접 연결됩니다. [원 저자 저장소](https://github.com/dneirfi/EDGE-KOPA)의 벤치마크, 1,781개 EDGE trajectory, 학습 모델은 이번 검토 시점에 **coming soon**입니다. 내려받아 실행하지 않은 KOPA 점수 또는 임의 생성한 독립 정답을 주장하지 않습니다 |
+| [ACEBench (Chen 외, EMNLP 2025)](https://aclanthology.org/2025.findings-emnlp.697/) | 일반·모호/불완전·대화형 에이전트 도구 사용을 구분한 평가 | 모호함·필수 인수 누락·미지원 요청·operation 적합성을 분리해 사전등록하고 도구 이름 일치뿐 아니라 실제 모델·호스트 결과를 평가 |
+| [tau2-bench (Sierra Research)](https://github.com/sierra-research/tau2-bench) | 정책이 적용된 상태 유지형 가상 고객지원 대화의 과제 완수 평가 | 최종 과제 성공·상태·정책 위반 평가 방법을 참고하되, 시뮬레이션을 **원본 OpenAPI 실제 실행 검증**으로 표시하지 않습니다 |
+| [AgentDojo (Debenedetti 외, NeurIPS 2024)](https://arxiv.org/abs/2406.13352) | 도구 응답 속 악의적 지시의 프롬프트 인젝션 공격과 방어 평가 | 신뢰도가 낮은 도구 관측에 악성 텍스트를 넣고 정당한 과제 성공률과 무단 행동을 함께 측정. 외부 응답이 권한 정책을 바꾸지 못하게 제한 |
+| [CaMeL (Debenedetti 외, 2025)](https://arxiv.org/abs/2503.18813) | 신뢰된 제어/데이터 흐름 및 capability 기반 외부 효과 제한 | 사용자 요청의 제어 지시와 비신뢰 관측을 분리하고 출처·권한·데이터흐름을 재검증합니다. 다만 **SchemaRouter에서 성능이 검증된 즉시 적용 코드라는 뜻은 아닙니다** |
 | [International Tool Calling (Zhang·Zhu, 2026 사전공개)](https://arxiv.org/abs/2603.05515) | 여러 국가·언어의 실제 API 및 도구 호출 평가 | 영문 소스 스키마와 자연스러운 KO/JA/EN 요청 간 이식성 평가. 채택 전 라이선스/데이터 출처 심사 |
 | [MCP 2026-07-28 사양 변경](https://blog.modelcontextprotocol.io/posts/2026-07-28/) | 인증 강화 및 도구/리소스 목록 캐시 메타데이터 | 주체 권한과 출처 revision을 캐시 키에 포함하고 tool/list 결과를 실행 허가로 오인하지 않음 |
 
