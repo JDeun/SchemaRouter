@@ -121,6 +121,21 @@ def apply(plan: dict[str, Any], token: str) -> None:
                 current["milestone"]["number"] == milestone["number"]
             ):
                 continue
+            # Avoid overwriting an assignment changed after the initial preflight.
+            live = api(token, "GET", f"/repos/{REPO}/issues/{n}")
+            if not isinstance(live, dict) or "pull_request" in live:
+                raise ValueError(f"#{n}: changed into an invalid issue")
+            if live.get("state") != "open":
+                print(f"SKIP newly closed #{n}")
+                continue
+            live_milestone = live.get("milestone")
+            if live_milestone:
+                if live_milestone.get("number") == milestone["number"]:
+                    print(f"ALREADY ASSIGNED #{n} -> {title}")
+                    continue
+                raise ValueError(
+                    f"#{n}: milestone changed since preflight; refuse overwrite"
+                )
             api(token, "PATCH", f"/repos/{REPO}/issues/{n}", {
                 "milestone": milestone["number"]
             })
