@@ -42,6 +42,7 @@ def _fixture(
     *,
     produced: dict[str, Any] | None = None,
     deny_consumer: bool = False,
+    revoke_consumer_after_source: bool = False,
 ) -> tuple[SchemaRouter, NativeSchemaGraphIndex, list[tuple[str, dict]]]:
     out = (
         {"contact_id": "c-1", "region_id": "r-2"}
@@ -125,6 +126,10 @@ def _fixture(
     def source_invoker(endpoint: str, arguments: dict) -> dict:
         assert endpoint == "read"
         seen.append(("source", dict(arguments)))
+        if revoke_consumer_after_source:
+            router.planner.availability_predicate = (
+                lambda tool, candidate: tool.key != "cases"
+            )
         return dict(out)
 
     def dest_invoker(endpoint: str, arguments: dict) -> dict:
@@ -231,3 +236,17 @@ async def test_stale_source_schema_denied_before_any_provider_call() -> None:
             principal=ACTOR, candidate=edge,
         )
     assert seen == []
+
+@pytest.mark.asyncio
+async def test_consumer_revoked_between_hops_never_runs() -> None:
+    router, index, seen = _fixture(revoke_consumer_after_source=True)
+    edge = index.lookup(
+        router, GROUP.aliases[0], group=GROUP, principal=ACTOR,
+    ).candidates[0]
+    with pytest.raises(PolicyViolationError, match="current permitted graph"):
+        await execute_native_graph_one_hop(
+            index, router, query=GROUP.aliases[0], group=GROUP,
+            principal=ACTOR, candidate=edge,
+        )
+    assert seen == [("source", {})]
+
