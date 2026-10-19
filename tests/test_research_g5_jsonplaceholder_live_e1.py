@@ -116,7 +116,7 @@ def test_duplicate_key_nonfinite_and_oversize_source_payload_rejected() -> None:
         content=b'{"id":1,"userId":1,"userId":2}',
         headers={"content-type": "application/json"},
     )
-    with pytest.raises(ValueError, match="duplicate"):
+    with pytest.raises(ValueError, match="invalid source JSON content"):
         _original_json(duplicate)
     nonfinite = httpx.Response(
         200, request=httpx.Request("GET", url),
