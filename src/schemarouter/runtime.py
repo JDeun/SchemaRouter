@@ -543,6 +543,13 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         return endpoint.model_copy(
             deep=True,
             update={
+                # These source-owned display fields can mention a denied
+                # field even when the endpoint itself remains permitted.
+                "description": "",
+                "operation_aliases": [],
+                "path": None,
+                "metadata": {},
+                "execution_metadata": {},
                 "parameters": parameters,
                 "input_schema": _scoped_public_input_schema(parameters),
                 "output_fields": visible_fields,
@@ -561,6 +568,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         scoped = InMemoryRegistry()
         for tool in self.registry.tools():
             endpoints: list[EndpointSpec] = []
+            restricted = False
             for endpoint in tool.endpoints:
                 if not predicate(tool, endpoint):
                     continue
@@ -571,12 +579,24 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 )
                 if visible_endpoint is not None:
                     endpoints.append(visible_endpoint)
+                    if visible_endpoint is not endpoint:
+                        restricted = True
             if not endpoints:
                 continue
+            # The analyzer receives a non-executable principal-scoped
+            # descriptor. Original source metadata remains in self.registry
+            # for invocation and fingerprint/authorization receipts.
             scoped.register(
                 tool.model_copy(
                     deep=True,
-                    update={"endpoints": endpoints},
+                    update={
+                        "endpoints": endpoints,
+                        "description": "" if restricted else tool.description,
+                        "metadata": {} if restricted else tool.metadata,
+                        "execution_metadata": (
+                            {} if restricted else tool.execution_metadata
+                        ),
+                    },
                 )
             )
         return scoped
@@ -688,6 +708,8 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 candidate.model_copy(
                     deep=True,
                     update={
+                        "tool_description": "",
+                        "endpoint_description": "",
                         "parameters": parameters,
                         "input_schema": input_schema,
                         "output_fields": [
