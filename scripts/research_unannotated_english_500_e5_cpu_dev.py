@@ -51,7 +51,9 @@ CASES = (
     ),
     ("en", "Find the bibliographic reference details of DOI 10.1038/sample.", "papers.citations"),
     (
-        "en", "I only need the declared units of the material measurement, not its measured values.",
+        "en",
+        "I only need the declared units of the material measurement, not its "
+        "measured values.",
         "materials.units",
     ),
     ("ko", "탄화규소 시료의 측정된 밀도 자료를 찾아줘.", "materials.search"),
