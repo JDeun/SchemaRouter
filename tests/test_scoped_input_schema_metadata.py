@@ -211,3 +211,51 @@ def test_host_owned_enum_fit_remains_private_but_original_proof_selects():
     assert receipt.disposition == "selected"
     assert receipt.selected_route_id == "records.read"
     assert "marine" not in json.dumps(receipt.model_dump(mode="json"))
+
+
+def test_host_enum_uses_private_source_without_overriding_scoped_policy():
+    """Original enum proof cannot re-admit a principal-denied relationship."""
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="graph.read", roles_any=("viewer",),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="graph.read", roles_any=("viewer",),
+            visible_fields=("public_value",),
+            allowed_relationships=("SAFE",),
+        ),),
+    ))
+    router.add_tool(ToolSpec(
+        name="graph",
+        endpoints=[EndpointSpec(
+            name="read", read_only=True,
+            parameters=[ParameterSpec(
+                name="relationship_types", location="query",
+                json_schema={
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["SAFE", "BLOCKED"]},
+                },
+            )],
+            output_fields=[FieldSpec(name="public_value")],
+        )],
+    ))
+    public = router.retrieve_authorized("public_value", principal=VIEWER, k=5)
+    assert public.candidates
+    assert public.candidates[0].parameters[0].json_schema == {
+        "type": "array", "items": {"type": "string", "enum": ["SAFE"]},
+    }
+    for required, expected in (("SAFE", "selected"), ("BLOCKED", "abstained")):
+        verdict = select_authorized_field_contract(
+            router, "public_value", principal=VIEWER,
+            contract=HostFieldContract(
+                operation="read",
+                required_enums=[RequiredEnumValue(
+                    parameter="relationship_types", value=required,
+                )],
+                required_output_fields=["public_value"],
+            ),
+        )
+        assert verdict.disposition == expected
+        if required == "BLOCKED":
+            assert verdict.reason == "no_contract_match"
