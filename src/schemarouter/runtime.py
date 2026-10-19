@@ -86,6 +86,7 @@ from .models import (
     EndpointSpec,
     ExecutionPlan,
     FieldSpec,
+    ParameterSpec,
     PlanRequest,
     ToolCall,
     ToolResult,
@@ -184,6 +185,34 @@ def _scoped_public_output_schema(fields: list[FieldSpec]) -> dict[str, Any]:
             field.name: _scoped_public_value_shape(field.json_schema)
             for field in fields
         },
+    }
+
+
+def _scoped_public_parameter(parameter: ParameterSpec) -> ParameterSpec:
+    """Keep source-native argument identity, never unreviewed JSON annotations.
+
+    This is an analyzer/public retrieval DESCRIPTOR, not an executable schema.
+    Original provider parameter validation stays in the trusted registry.
+    """
+    return parameter.model_copy(
+        deep=True,
+        update={
+            "description": "",
+            "aliases": [],
+            "json_schema": _scoped_public_value_shape(parameter.json_schema),
+        },
+    )
+
+
+def _scoped_public_input_schema(parameters: list[ParameterSpec]) -> dict[str, Any]:
+    """Do not copy arbitrary $defs, refs or nested input schema metadata."""
+    return {
+        "type": "object",
+        "properties": {
+            param.name: _scoped_public_value_shape(param.json_schema)
+            for param in parameters
+        },
+        "required": [param.name for param in parameters if param.required],
     }
 
 
@@ -445,7 +474,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                     else min(int(current_max), scope.max_hops)
                 )
                 clone.json_schema = schema
-            parameters.append(clone)
+            parameters.append(_scoped_public_parameter(clone))
 
         selected_names = [field.name for field in visible_fields]
         server_projection = endpoint.server_projection
@@ -464,6 +493,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             deep=True,
             update={
                 "parameters": parameters,
+                "input_schema": _scoped_public_input_schema(parameters),
                 "output_fields": visible_fields,
                 "output_schema": _scoped_public_output_schema(visible_fields),
                 "server_projection": server_projection,
@@ -572,21 +602,10 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                     clone.json_schema = schema
                 parameters.append(clone)
 
-            input_schema = dict(candidate.input_schema)
-            properties = dict(input_schema.get("properties", {}))
-            allowed_parameter_names = {parameter.name for parameter in parameters}
-            if properties:
-                input_schema["properties"] = {
-                    name: value
-                    for name, value in properties.items()
-                    if name in allowed_parameter_names
-                }
-            if isinstance(input_schema.get("required"), list):
-                input_schema["required"] = [
-                    name
-                    for name in input_schema["required"]
-                    if name in allowed_parameter_names
-                ]
+            # Public scoped descriptors cannot inherit unreviewed nested
+            # input metadata even when the output field list is already safe.
+            parameters = [_scoped_public_parameter(param) for param in parameters]
+            input_schema = _scoped_public_input_schema(parameters)
 
             matched_fields = [
                 value
