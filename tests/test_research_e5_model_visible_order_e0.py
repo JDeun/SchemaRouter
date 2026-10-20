@@ -17,6 +17,17 @@ from scripts.research_e5_model_visible_order_e0 import (
 )
 
 
+class NoToolWrongFinalAgent:
+    """No tool call does not establish a correct unsupported refusal."""
+
+    def generate(self, _messages, _tools):
+        return {
+            "text": "I cannot complete this request.",
+            "input_tokens": 10, "tool_tokens": 0, "output_tokens": 5,
+            "latency_ms": 0.0, "context_overflow": False,
+        }
+
+
 class RefusingAgent:
     def __init__(self):
         self.calls = 0
@@ -74,6 +85,9 @@ def test_order_pilot_is_strict_abba_no_model_and_complete_denominators():
             assert cell["supported"] == cell["unsupported"] == 4
             assert cell["supported_pass"] == 0
             assert cell["unsupported_strict_no_call"] == 4
+            assert cell["unsupported_no_call"] == 4
+            assert cell["unsupported_terminal_mismatch"] == 0
+            assert cell["unsupported_no_call_terminal_mismatch"] == 0
             assert cell["unsupported_tool_executed"] == 0
             assert cell["unsupported_tool_attempted"] == 0
             assert cell["unauthorized_destructive"] == 0
@@ -91,6 +105,29 @@ def test_order_pilot_is_strict_abba_no_model_and_complete_denominators():
     assert "supported-en-materials.search" not in public
     assert "unsupported-ja-finance.transfer_money" not in public
     assert "<tool_call>" not in public
+
+
+
+def test_no_tool_attempt_with_wrong_final_is_not_a_valid_unsupported_refusal():
+    source, digest = load_development_corpus(CORPUS)
+    r = run_order_probe(
+        source, digest, NoToolWrongFinalAgent(),
+        CallableDecisionBackend(reverse_five),
+        source_revision="c" * 40,
+    )
+    assert r["schema_version"] == 2
+    assert r["posthoc_secondary_no_call_terminal_diagnostic"] is True
+    assert r["paired_pass_differences"] == 0
+    for arm in ARMS:
+        for lang in ("en", "ko", "ja"):
+            cell = r["strata"][arm][lang]
+            assert cell["unsupported"] == 4
+            assert cell["unsupported_no_call"] == 4
+            assert cell["unsupported_strict_no_call"] == 0
+            assert cell["unsupported_terminal_mismatch"] == 4
+            assert cell["unsupported_no_call_terminal_mismatch"] == 4
+            assert cell["unsupported_tool_attempted"] == 0
+            assert cell["unsupported_tool_executed"] == 0
 
 
 @pytest.mark.parametrize("revision", (
