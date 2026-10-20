@@ -1,0 +1,32 @@
+name: Host Health Zero Menu Short Circuit E1
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_health_zero_menu_short_circuit_e1.py"
+      - "tests/test_research_health_zero_menu_short_circuit_e1.py"
+      - "research/autoresearch/host-health-zero-menu-short-circuit-e1.md"
+      - ".github/workflows/research-host-health-zero-menu-short-circuit-e1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  no-network-host-no-fit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install bounded E1 harness dependencies
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Prove no-model call on no healthy route and fail-closed stale proposal
+        run: |
+          ruff check scripts/research_health_zero_menu_short_circuit_e1.py tests/test_research_health_zero_menu_short_circuit_e1.py
+          pyright scripts/research_health_zero_menu_short_circuit_e1.py
+          python -m pytest -q tests/test_research_health_zero_menu_short_circuit_e1.py tests/test_research_live_health_model_menu_e1.py tests/test_research_long_lived_health_session_e1.py
