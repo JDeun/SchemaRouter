@@ -25,3 +25,16 @@ Tests exercise exact HTTPX MockTransport success for all three source-native two
 ## Remaining #1618 gates
 
 Verified independently approved per-endpoint probe callbacks that can be reused indefinitely without excessive business traffic, outage detection/recovery measured with those probes, model-selected actual provider usage with correct final outputs, independent published E2, genuine production SLO and safe startup behavior with UNKNOWN remain unqualified. v0.18 #1356 HARD HOLD remains in effect.
+
+
+## 2026-10-20 operational evidence provenance extension
+
+The original published #1625 real HTTP 6/6 observation and its test data remain intact. A subsequent opt-in E1 receipt enhancement makes #1618 evidence accounting more precise **without issuing an additional provider GET**:
+
+- `observation_transport` explicitly separates the actual `httpx.AsyncHTTPTransport` CI run (`real_http`) from `httpx.MockTransport` deterministic tests (`injected_test_transport`). Only the former can count as an external API *observation*, and neither is a qualified independent health probe.
+- `simulated_probe_attempts_by_route` counts every host-owned callback invocation (including background monitor checks). These are ALWAYS in-memory `True` callbacks in this particular research, thus **do not mean that a remote health request occurred**. Every additional callback adds *zero* provider requests; the hard global GET cap stays six.
+- `transport_timeout_attempts` counts genuine `httpx.TimeoutException` raised by the transport delegate for one of the capped attempts. `host_deadline_episodes` counts application `asyncio.wait_for` expiration separately and must not be equated to transport timeouts or a completed provider read.
+- `temporary_unavailable_episodes` counts whole observed EN/KO/JA trial dispositions (not hidden route counts or proved semantic no-fit). `observed_two_hop_success_episodes` counts host-selected native source tasks returning two completed calls; `fallbacks_attempted=0` is explicit because no source-native fallback is precompiled. `initial_model_visible_routes` and `dependent_model_visible_routes` record per-episode disclosed candidate counts, NOT executed model proposals.
+- These counters have narrow literal labels and no model text, source body, exact raw provider error, private route/probe details or city/coordinates. The producer must **never** label successful business GETs as independently verified provider liveness, external end-to-end agent task success, or production availability SLO.
+
+This makes the gap to **genuinely approved and separately rate-limited source-specific health callbacks** observable instead of hiding it behind a generic GitHub green check. No additional external request, default activation, model routing change or independent E2 claim.
