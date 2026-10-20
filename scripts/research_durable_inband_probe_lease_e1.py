@@ -12,6 +12,7 @@ import inspect
 import math
 import sqlite3
 import time
+from contextlib import closing
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any
@@ -75,11 +76,11 @@ class DurableInBandProbeLeaseE1:
             raise ValueError("valid wall clock required")
         # Only the explicit initialize entrypoint has permission to create
         # the file. Insecure/untrusted directory ownership is not supported.
-        with sqlite3.connect(
+        with closing(sqlite3.connect(
             self._path,
             timeout=1.0,
             isolation_level=None,
-        ) as conn:
+        )) as conn:
             conn.execute("PRAGMA busy_timeout=1000")
             conn.execute("BEGIN IMMEDIATE")
             try:
@@ -119,7 +120,7 @@ class DurableInBandProbeLeaseE1:
         if not self._path.is_file() or self._path.is_symlink():
             return False
         try:
-            with self._connect_existing() as conn:
+            with closing(self._connect_existing()) as conn:
                 conn.execute("BEGIN IMMEDIATE")
                 row = conn.execute(
                     "SELECT issued, expires, last_seen, per_route_cap "
@@ -181,7 +182,7 @@ class DurableInBandProbeLeaseE1:
         if not self._path.is_file() or self._path.is_symlink():
             return {}
         try:
-            with self._connect_existing() as conn:
+            with closing(self._connect_existing()) as conn:
                 records = conn.execute(
                     "SELECT route, spent FROM claims WHERE lease_id=?",
                     (_LEASE,),
