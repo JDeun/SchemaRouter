@@ -30,6 +30,7 @@ from scripts.research_open_meteo_live_two_hop_e1 import (
 from scripts.research_source_ready_native_tool_menu_e1 import (
     source_ready_visible_routes,
 )
+from scripts.research_scoped_host_invocation import execute_scoped_host_call
 
 GEO = "open_meteo_geocoding.search"
 WEATHER = "open_meteo_weather.current"
@@ -268,3 +269,22 @@ def capture_health_scoped_model_menu(
     )
     menu.assert_current()
     return menu
+
+async def execute_health_scoped_host_call(
+    menu: HealthScopedModelMenu, *,
+    route_id: str, arguments: dict[str, Any],
+    host_required_output_fields: tuple[str, ...] = (),
+) -> dict[str, Any]:
+    """Recheck same presented, healthy, authorized route BEFORE invocation.
+
+    The canonical existing scoped host builder and RegistryExecutor remain the
+    sole execution authority; a model-proposed route alone never grants it.
+    """
+    menu.assert_current()
+    if route_id not in menu.route_ids:
+        raise PolicyViolationError("model operation not in current healthy menu")
+    return await execute_scoped_host_call(
+        menu.view, selected_route_ids=list(menu.route_ids),
+        route_id=route_id, arguments=arguments,
+        host_required_output_fields=host_required_output_fields,
+    )
