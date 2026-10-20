@@ -477,6 +477,7 @@ def run_generated_episode(
     experimental_agent_tool_surface: AuthorizedAgentToolSurface | None = None,
     experimental_e0_trace_provenance: E0TraceProvenance | None = None,
     experimental_block_unavailable_observation: bool = False,
+    experimental_preserve_rank_order: bool = False,
 ) -> dict[str, Any]:
     """Run one frozen episode.
 
@@ -500,7 +501,27 @@ def run_generated_episode(
     set, returned traces contain safe metrics only. Neither frozen fixture
     execution nor the model becomes a real invoker authorization receipt.
     The original #432 results remain unchanged.
+
+    With the separate, strictly opt-in ranked-disclosure flag, a scoped
+    model sees candidate tools in the selector's supplied order rather than
+    the historical lexical route-name order. No rank/gold/score is injected
+    into the model and the scorer remains unchanged. This is an experimental
+    exposure-order hypothesis, NOT a measured rank-quality improvement.
     """
+    if (
+        type(experimental_preserve_rank_order) is not bool
+        or (
+            experimental_preserve_rank_order
+            and (
+                condition != EXPERIMENTAL_FIXED5_CONDITION
+                or experimental_candidate_selector is None
+                or experimental_agent_tool_surface is None
+            )
+        )
+    ):
+        raise ValueError(
+            "ranked tool disclosure requires scoped fixed5 experimental selector",
+        )
     if (
         type(experimental_block_unavailable_observation) is not bool
         or (experimental_block_unavailable_observation and (
@@ -558,7 +579,13 @@ def run_generated_episode(
             )
         ):
             raise ValueError("experimental source changed during candidate selection")
-        visible_routes = sorted(selected)
+        # Frozen and existing opt-in conditions retain historical name sort.
+        # A separate scoped-only experimental arm may expose the selector
+        # ordering to the agent without changing source membership or K.
+        visible_routes = (
+            list(selected) if experimental_preserve_rank_order
+            else sorted(selected)
+        )
         progressive_stages = None
     else:
         if experimental_agent_tool_surface is not None:
