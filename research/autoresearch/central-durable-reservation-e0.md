@@ -64,3 +64,40 @@ used in tests; no model generations or independent E2 evaluations.
 Do not import this research helper into the production
 `RegistryExecutor` as an authority. #1639 remains OPEN; #1618 remains OPEN;
 #1356 remains HOLD; frozen #432 scores remain unchanged.
+
+
+## 2026-10-21 additional synthetic last-handoff ordering contract
+
+Merely committing a durable SQLite reservation then sending a provider GET
+is NOT safe against `reservation → revoke → send`. The test-only
+`synthetic_handoff_after_reservation` adds two intentionally separate
+serialized phases:
+
+1. Under `BEGIN IMMEDIATE`, confirm an already reserved, exact
+   tenant/workload/source/epoch/idempotency tuple and commit a permanent
+   **single-use synthetic handoff claim**. This survives any crash or
+   synthetic sink error; an interrupted attempt is never retried.
+2. Reacquire the SQLite writer lock and **recheck the current revocation
+   and exact registration** immediately before calling the synthetic sink,
+   still holding the SQLite lock until that local callback completes.
+   If another process stopped this tenant between phases, sink calls are
+   forbidden, while its nonrefundable claim stays consumed. A stop that
+   commits afterward necessarily occurs after this synthetic callback has
+   returned. Duplicate execution is blocked after process restart.
+
+The same-host spawned-process test commits a tenant stop between claim
+commit and final serialized sink check, expecting **zero callback
+invocations**, with the unrelated tenant still able to proceed. Additional
+tests validate sink-error nonrefundability, single-use after restart,
+concurrent stop/execute ordering and absent prior reservation rejection.
+
+**Do not use this for real HTTP/network.** Its arbitrary sink is only
+trusted no-network test instrumentation. It holds a local SQLite transaction
+around a brief synchronous in-process callback. A real provider request has
+latency, timeouts, connection resets, network delivery uncertainty and
+eventual in-flight effects that cannot safely be held under this test-only
+lock. Production needs independently authenticated centrally owned egress,
+durably recorded admission/handoff semantics, host network ACLs preventing
+bypass, and genuine multi-host crash/partition testing. Synthetic success
+proves *only the narrow local ordering model*, not operator authentication
+or commercially qualified availability.

@@ -5,6 +5,7 @@ import sqlite3
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from multiprocessing import get_context
 from pathlib import Path
+from threading import Event
 
 import pytest
 
@@ -261,3 +262,144 @@ def test_interrupted_provision_rolls_back_all_authority_and_registration(
             allowed={("church", "worker-a", GEO): "geo-revision-1"},
             cap_per_tenant_route=1,
         )
+
+
+def test_durable_synthetic_final_handoff_is_nonrefundable_and_once_only(tmp_path):
+    store = _fixture(tmp_path / "one-shot.sqlite3", cap=2)
+    request = _request("reserved-once")
+    assert store.reserve(request) == "synthetic_reservation"
+    forwarded: list[str] = []
+
+    def sink() -> None:
+        forwarded.append("synthetic-only")
+
+    assert store.synthetic_handoff_after_reservation(
+        request, synthetic_sink=sink,
+    ) == "synthetic_handoff"
+    assert store.synthetic_handoff_after_reservation(
+        request, synthetic_sink=sink,
+    ) == "synthetic_handoff_already_claimed"
+    assert forwarded == ["synthetic-only"]
+    assert store.reserved_for_test("church", GEO) == 1
+    restarted = DurableCentralReservationE0(tmp_path / "one-shot.sqlite3")
+    assert restarted.synthetic_handoff_after_reservation(
+        request, synthetic_sink=sink,
+    ) == "synthetic_handoff_already_claimed"
+    assert forwarded == ["synthetic-only"]
+
+
+def test_spawned_process_stop_between_intent_commit_and_last_handoff_denies(
+    tmp_path,
+):
+    path = tmp_path / "process-race.sqlite3"
+    store = _fixture(path)
+    request = _request("before-stop")
+    assert store.reserve(request) == "synthetic_reservation"
+    forwarded: list[str] = []
+
+    def stop_after_durable_claim() -> None:
+        with ProcessPoolExecutor(
+            max_workers=1, mp_context=get_context("spawn"),
+        ) as workers:
+            assert workers.submit(
+                _independent_revoke, str(path), "church",
+            ).result(timeout=30) is True
+
+    outcome = store.synthetic_handoff_after_reservation(
+        request, synthetic_sink=lambda: forwarded.append("FORBIDDEN"),
+        test_after_intent_commit=stop_after_durable_claim,
+    )
+    assert outcome == "operator_revoked"
+    assert forwarded == []
+    assert store.synthetic_handoff_after_reservation(
+        request, synthetic_sink=lambda: forwarded.append("FORBIDDEN"),
+    ) == "operator_revoked"
+    assert store.reserved_for_test("church", GEO) == 1
+    # The cancellation was tenant-scoped: school may still reserve and
+    # perform its own no-network synthetic handoff.
+    school = _request("school-handoff", tenant="school")
+    assert store.reserve(school) == "synthetic_reservation"
+    assert store.synthetic_handoff_after_reservation(
+        school, synthetic_sink=lambda: forwarded.append("school"),
+    ) == "synthetic_handoff"
+    assert forwarded == ["school"]
+
+
+def test_synthetic_handoff_and_scoped_stop_share_final_sqlite_order(tmp_path):
+    store = _fixture(tmp_path / "ordered.sqlite3")
+    request = _request("handoff")
+    assert store.reserve(request) == "synthetic_reservation"
+    started, finish = Event(), Event()
+    forwarded: list[str] = []
+
+    def synthetic_sink() -> None:
+        started.set()
+        assert finish.wait(timeout=10)
+        forwarded.append("prior")
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        handoff = pool.submit(
+            store.synthetic_handoff_after_reservation,
+            request,
+            synthetic_sink=synthetic_sink,
+        )
+        assert started.wait(timeout=10)
+        revoke = pool.submit(store.revoke_tenant, "church")
+        finish.set()
+        assert handoff.result(timeout=20) == "synthetic_handoff"
+        assert revoke.result(timeout=20) is True
+    assert forwarded == ["prior"]
+    future = _request("after")
+    assert store.reserve(future) == "operator_revoked"
+    assert store.synthetic_handoff_after_reservation(
+        request, synthetic_sink=lambda: forwarded.append("late"),
+    ) == "operator_revoked"
+    assert forwarded == ["prior"]
+
+
+def test_failed_sink_is_consumed_without_retry_and_never_leaks_exception(tmp_path):
+    store = _fixture(tmp_path / "failure.sqlite3")
+    request = _request("reserved")
+    assert store.reserve(request) == "synthetic_reservation"
+
+    def failing_sink() -> None:
+        raise RuntimeError("PRIVATE_PROVIDER_RESPONSE")
+
+    assert store.synthetic_handoff_after_reservation(
+        request, synthetic_sink=failing_sink,
+    ) == "synthetic_handoff_failed"
+    assert store.synthetic_handoff_after_reservation(
+        request, synthetic_sink=lambda: pytest.fail("must never replay"),
+    ) == "synthetic_handoff_already_claimed"
+    assert store.reserved_for_test("church", GEO) == 1
+
+
+def test_no_synthetic_handoff_without_valid_prior_reservation(tmp_path):
+    path = tmp_path / "unreserved.sqlite3"
+    store = _fixture(path)
+    forwarded: list[str] = []
+
+    def sink() -> None:
+        forwarded.append("unexpected")
+
+    request = _request("not-reserved")
+    assert store.synthetic_handoff_after_reservation(
+        request, synthetic_sink=sink,
+    ) == "identity_or_scope_denied"
+    wrong_revision = _request("not-reserved", revision="wrong-revision")
+    assert store.synthetic_handoff_after_reservation(
+        wrong_revision, synthetic_sink=sink,
+    ) == "identity_or_scope_denied"
+    assert store.reserve(_request("original")) == "synthetic_reservation"
+    wrong_route = _request(
+        "original", route=WEATHER, revision="weather-revision-1",
+    )
+    assert store.synthetic_handoff_after_reservation(
+        wrong_route, synthetic_sink=sink,
+    ) == "identity_or_scope_denied"
+    assert DurableCentralReservationE0(
+        tmp_path / "missing.sqlite3",
+    ).synthetic_handoff_after_reservation(
+        request, synthetic_sink=sink,
+    ) == "synthetic_authority_unavailable"
+    assert forwarded == []

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 import sqlite3
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Literal
 
@@ -22,6 +22,11 @@ ReservationDecision = Literal[
     "synthetic_reservation", "operator_revoked", "stale_epoch",
     "identity_or_scope_denied", "allowance_exhausted", "duplicate_request",
     "synthetic_authority_unavailable",
+]
+HandoffDecision = Literal[
+    "synthetic_handoff", "synthetic_handoff_failed",
+    "synthetic_handoff_already_claimed", "synthetic_authority_unavailable",
+    "operator_revoked", "stale_epoch", "identity_or_scope_denied",
 ]
 
 _SCHEMA = """
@@ -46,6 +51,11 @@ CREATE TABLE reservation (
     PRIMARY KEY(tenant, request_id)
 );
 CREATE INDEX reservation_by_tenant_route ON reservation(tenant, route);
+CREATE TABLE synthetic_handoff_claim (
+    tenant TEXT NOT NULL,
+    request_id TEXT NOT NULL,
+    PRIMARY KEY(tenant, request_id)
+);
 """
 
 
@@ -229,6 +239,121 @@ class DurableCentralReservationE0:
     def revoke_all(self) -> bool:
         """Test-only global stop; never reissues previously granted budgets."""
         return self._stop(None)
+
+    def synthetic_handoff_after_reservation(
+        self,
+        request: SyntheticEgressRequestE0,
+        *,
+        synthetic_sink: Callable[[], None],
+        test_after_intent_commit: Callable[[], None] | None = None,
+    ) -> HandoffDecision:
+        """E0 ONLY: persist a one-shot sink claim, then recheck under DB lock.
+
+        There are deliberately TWO transactions: commit the non-refundable
+        one-shot claim first; reacquire the writer lock and recheck revocation
+        before executing the synthetic sink under that lock. If stop wins in
+        between, there is no sink call and the claim cannot be replayed.
+        A crash after claim commit also cannot replay an uncertain attempt.
+
+        The sink is in-process TEST INSTRUMENTATION, never provider HTTP.
+        Not a multi-host or production egress guarantee. Never call with an
+        untrusted model-supplied callback or a network transport.
+        """
+        if (
+            not isinstance(request, SyntheticEgressRequestE0)
+            or not all(_safe_label(v) for v in (
+                request.tenant, request.workload, request.route_id,
+                request.source_fingerprint, request.request_id,
+            ))
+            or request.route_id not in _FIXED_ROUTES
+            or type(request.epoch) is not int
+            or not callable(synthetic_sink)
+            or (
+                test_after_intent_commit is not None
+                and not callable(test_after_intent_commit)
+            )
+        ):
+            return "identity_or_scope_denied"
+
+        def current(conn: sqlite3.Connection) -> HandoffDecision | None:
+            row = conn.execute(
+                "SELECT epoch, stopped FROM authority WHERE id=1"
+            ).fetchone()
+            if row is None:
+                return "synthetic_authority_unavailable"
+            identity = conn.execute(
+                "SELECT fingerprint FROM allowed "
+                "WHERE tenant=? AND workload=? AND route=?",
+                (request.tenant, request.workload, request.route_id),
+            ).fetchone()
+            if identity is None or identity[0] != request.source_fingerprint:
+                return "identity_or_scope_denied"
+            if row[1] == 1 or conn.execute(
+                "SELECT 1 FROM stopped_tenant WHERE tenant=?",
+                (request.tenant,),
+            ).fetchone() is not None:
+                return "operator_revoked"
+            if request.epoch != row[0]:
+                return "stale_epoch"
+            reserved = conn.execute(
+                "SELECT route FROM reservation WHERE tenant=? AND request_id=?",
+                (request.tenant, request.request_id),
+            ).fetchone()
+            if reserved is None or reserved[0] != request.route_id:
+                return "identity_or_scope_denied"
+            return None
+
+        try:
+            conn = self._existing_connection()
+            try:
+                conn.execute("BEGIN IMMEDIATE")
+                denied = current(conn)
+                if denied is not None:
+                    return denied
+                claimed = conn.execute(
+                    "SELECT 1 FROM synthetic_handoff_claim "
+                    "WHERE tenant=? AND request_id=?",
+                    (request.tenant, request.request_id),
+                ).fetchone()
+                if claimed is not None:
+                    return "synthetic_handoff_already_claimed"
+                conn.execute(
+                    "INSERT INTO synthetic_handoff_claim VALUES (?,?)",
+                    (request.tenant, request.request_id),
+                )
+                # The once-only claim must survive even if the test sink
+                # fails, crashes or revocation arrives before final check.
+                conn.execute("COMMIT")
+            finally:
+                conn.close()
+            if test_after_intent_commit is not None:
+                test_after_intent_commit()
+            conn = self._existing_connection()
+            try:
+                conn.execute("BEGIN IMMEDIATE")
+                denied = current(conn)
+                if denied is not None:
+                    return denied
+                # Check durable intent again in case the file was replaced;
+                # never invoke a sink without the once-only claim.
+                claimed = conn.execute(
+                    "SELECT 1 FROM synthetic_handoff_claim "
+                    "WHERE tenant=? AND request_id=?",
+                    (request.tenant, request.request_id),
+                ).fetchone()
+                if claimed is None:
+                    return "synthetic_authority_unavailable"
+                try:
+                    synthetic_sink()
+                except Exception:
+                    return "synthetic_handoff_failed"
+                return "synthetic_handoff"
+            finally:
+                # No modifications in the final phase; close releases its
+                # writer lock regardless of simulated sink outcome.
+                conn.close()
+        except (sqlite3.Error, OSError, ValueError, TypeError):
+            return "synthetic_authority_unavailable"
 
     def reserved_for_test(self, tenant: str, route: str) -> int:
         """Internal test counter, never log this as provider traffic."""
