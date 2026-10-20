@@ -147,6 +147,44 @@ async def test_real_scoped_tool_model_menu_cooldown_then_probe_recovery():
 
 
 @pytest.mark.asyncio
+async def test_passive_cooldown_expiry_does_not_reuse_pre_failure_health_receipt():
+    """Strict model menu requires a new successful probe after transport failure."""
+    failing = {"yes": True}
+    async def probe() -> bool:
+        return True
+
+    def transport(request: httpx.Request) -> httpx.Response:
+        if failing["yes"]:
+            raise httpx.ConnectTimeout("PRIVATE_TIMEOUT", request=request)
+        return _transport(request)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as client:
+        router = build_health_aware_router(
+            client, trusted_health_probes={GEO: probe},
+        )
+        router.executor.unavailable_cooldown_seconds = 0.01
+        await router.check_health_once()
+        menu = _menu(router)
+        assert menu.route_ids == (GEO,)
+        with pytest.raises(PolicyViolationError):
+            await execute_health_scoped_host_call(
+                menu, route_id=GEO, arguments=HOST,
+                host_required_output_fields=("latitude", "longitude"),
+            )
+        assert _menu(router).route_ids == ()
+        failing["yes"] = False
+        await asyncio.sleep(0.025)
+        assert router.unavailable_access_paths() == ()
+        # Core passive retry eligibility returns after cooldown; the STRICT
+        # model presentation still requires a NEW healthy probe receipt.
+        assert _menu(router).route_ids == ()
+        assert _menu(router).status == "temporary_unavailable"
+        await router.check_health_once()
+        assert _menu(router).route_ids == (GEO,)
+        await router.aclose()
+
+
+@pytest.mark.asyncio
 async def test_unhealthy_forecast_only_and_strict_unknown_recovery():
     state = {"geo": True, "forecast": False}
 
