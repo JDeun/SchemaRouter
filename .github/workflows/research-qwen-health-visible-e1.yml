@@ -77,6 +77,11 @@ jobs:
               assert [results[phase]["exposed_tool_count"] for phase in r["phases"]] == [1, 0, 1]
               assert results["unavailable"]["menu_status"] == "temporary_unavailable"
               assert all(row["attempts_executed"] == row["provider_http_requests"] == 0 for row in results.values())
+              assert all(type(row["exact_host_refusal_after_allowlisted_eot"]) is bool for row in results.values())
+              assert all(
+                  row["exact_host_refusal_after_allowlisted_eot"] is False
+                  for phase, row in results.items() if row["action_class"] != "terminal_no_tool"
+              )
           with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as f:
               f.write("## REAL pinned Qwen 0.6B health menu visibility — SIMULATED host probes ONLY\n\n")
               f.write("No real Open-Meteo GET, no model-selected provider execution, no independent E2. Original public prompts fixed from E1. One same router and model across nine observations; Qwen receives one geocode definition in Healthy, zero in Unavailable, and one again after Recovery.\n\n")
@@ -84,7 +89,12 @@ jobs:
               for lang in r["languages"]:
                   row = r["results"][lang]
                   f.write(f"| {lang} | {row['healthy']['action_class']} | {row['unavailable']['action_class']} | {row['recovered']['action_class']} |\n")
-              f.write("\nAll tool proposals are parsed, quarantined, and NEVER executed. This does not establish task success or provider liveness.\n")
+              f.write("\n### Post-hoc strict refusal diagnostic (not original primary result)\n\n")
+              f.write("| Language | Unavailable no-call | Exact host REQUEST_MORE_TOOLS after one allowlisted EOT |\n|---|---|---|\n")
+              for lang in r["languages"]:
+                  cell = r["results"][lang]["unavailable"]
+                  f.write(f"| {lang} | {cell['action_class'] == 'terminal_no_tool'} | {cell['exact_host_refusal_after_allowlisted_eot']} |\n")
+              f.write("\nAll tool proposals are parsed, quarantined, and NEVER executed. A final with no tool does NOT imply exact safe refusal. This does not establish task success or provider liveness.\n")
           PY
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
