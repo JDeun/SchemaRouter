@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from pathlib import Path
 
 import httpx
@@ -64,6 +64,25 @@ def test_local_shared_lease_claim_is_atomic_across_connections_and_threads(tmp_p
     assert second.try_claim(GEO) is False
     assert second.try_claim(WEATHER) is True
     assert first.public_counts() == {"geocoding": 2, "forecast": 1}
+
+
+def _reserve_from_independent_process(path: str) -> bool:
+    return DurableInBandProbeLeaseE1(Path(path)).try_claim(GEO)
+
+
+def test_actual_distinct_linux_processes_observe_same_atomic_limit(tmp_path):
+    # Unlike ThreadPoolExecutor, each task runs with an independent process,
+    # separately opens SQLite and races on exactly one shared trusted file.
+    store = _store(tmp_path)
+    _approve(store, cap=2)
+    path = str(tmp_path / "operator-approved.sqlite3")
+    with ProcessPoolExecutor(max_workers=4) as pool:
+        results = list(pool.map(
+            _reserve_from_independent_process,
+            (path for _ in range(12)),
+        ))
+    assert sum(results) == 2
+    assert store.public_counts() == {"geocoding": 2, "forecast": 0}
 
 
 def test_lease_cannot_reset_after_restart_or_reapproval_without_new_path(tmp_path):
