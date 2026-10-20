@@ -19,6 +19,7 @@ def _authority(*, cap: int = 2) -> CentralEgressLinearizationModelE0:
             ("church", "agent-a", GEO): "source-sha-geocode",
             ("church", "agent-b", GEO): "source-sha-geocode",
             ("church", "agent-a", WEATHER): "source-sha-forecast",
+            ("school", "agent-a", GEO): "source-sha-geocode",
         },
         attempts_per_route=cap,
     )
@@ -167,3 +168,31 @@ def test_no_automatic_restart_or_untrusted_synthetic_gateway_initialization():
     assert old.admit_and_handoff(
         _request("denied"), synthetic_handoff=lambda: None,
     ) == "operator_revoked"
+
+
+def test_tenant_quota_isolation_on_the_same_native_route():
+    """Two tenants cannot exhaust each other's permitted route budget."""
+    gate = _authority(cap=2)
+    attempts: list[str] = []
+    for i in range(2):
+        assert gate.admit_and_handoff(
+            _request(f"church-{i}"),
+            synthetic_handoff=lambda: attempts.append("church"),
+        ) == "synthetic_handoff"
+    assert gate.admit_and_handoff(
+        _request("church-third"),
+        synthetic_handoff=lambda: attempts.append("wrong"),
+    ) == "allowance_exhausted"
+    for i in range(2):
+        assert gate.admit_and_handoff(
+            _request(f"school-{i}", tenant="school"),
+            synthetic_handoff=lambda: attempts.append("school"),
+        ) == "synthetic_handoff"
+    assert gate.admit_and_handoff(
+        _request("school-third", tenant="school"),
+        synthetic_handoff=lambda: attempts.append("wrong"),
+    ) == "allowance_exhausted"
+    assert attempts == ["church", "church", "school", "school"]
+    assert gate.spent_by_route() == {"geocoding": 4, "forecast": 0}
+    assert gate.forwarded_synthetic_attempts == 4
+
