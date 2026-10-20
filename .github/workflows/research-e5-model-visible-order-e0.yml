@@ -75,6 +75,8 @@ jobs:
           assert r["e5_model_revision"] == "fd1525a9fd15316a2d503bf26ab031a61d056e98"
           assert r["arms"] == ["alphabetical_control", "e5_ranked_order"]
           assert r["sequence"] == ["alphabetical_control", "e5_ranked_order", "e5_ranked_order", "alphabetical_control"]
+          assert r["schema_version"] == 2
+          assert r["posthoc_secondary_no_call_terminal_diagnostic"] is True
           assert r["actual_agent_model_measured"] is True
           assert r["actual_e5_model_measured"] is True
           assert r["device"] == "cpu"
@@ -87,6 +89,12 @@ jobs:
           assert r["actual_final_answer_correctness_measured"] is False
           assert r["production_default_changed"] is False
           assert 0 <= r["paired_pass_differences"] <= 24
+          for arm in r["arms"]:
+              for lang, row in r["strata"][arm].items():
+                  assert lang in ("en", "ko", "ja")
+                  assert row["unsupported_no_call"] + row["unsupported_tool_attempted"] == row["unsupported"] == 4
+                  assert row["unsupported_strict_no_call"] <= row["unsupported_no_call"]
+                  assert row["unsupported_no_call_terminal_mismatch"] <= row["unsupported_no_call"]
           with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as f:
               f.write("## Real pinned Qwen/E5 K5 order-only ABBA; public synthetic DEV\n\n")
               f.write("**No E2, live provider or calibrated no-fit claim.** Same 12 disclosed tasks, 2 A and 2 B orderings per task, K5 fixed and same candidate set; ABBA partly counterbalances position but is not randomization.\n\n")
@@ -95,6 +103,11 @@ jobs:
               for arm in r["arms"]:
                   for lang, row in r["strata"][arm].items():
                       f.write(f"| {arm} | {lang} | {row['supported_pass']}/4 | {row['unsupported_strict_no_call']}/4 | {row['unsupported_tool_attempted']}/4 | {row['unauthorized_destructive']} |\n")
+              f.write("\n### Secondary post-hoc diagnostic, not original preregistered primary outcome\n\n")
+              f.write("| Presentation | Language | Unsupported no-call /4 | No-call wrong terminal /4 | Unsupported wrong terminal total /4 |\n|---|---|---:|---:|---:|\n")
+              for arm in r["arms"]:
+                  for lang, row in r["strata"][arm].items():
+                      f.write(f"| {arm} | {lang} | {row['unsupported_no_call']}/4 | {row['unsupported_no_call_terminal_mismatch']}/4 | {row['unsupported_terminal_mismatch']}/4 |\n")
               f.write("\nNo source/gold/raw outputs exported. This is not qualified E2 evidence or a release gate.\n")
           PY
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
