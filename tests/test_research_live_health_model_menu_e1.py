@@ -6,7 +6,13 @@ import asyncio
 import httpx
 import pytest
 
-from schemarouter import PolicyViolationError, PrincipalContext
+from schemarouter import (
+    AuthorizationPolicy,
+    AuthorizationRule,
+    DataScopeRule,
+    PolicyViolationError,
+    PrincipalContext,
+)
 from scripts.research_live_health_model_menu_e1 import (
     GEO,
     WEATHER,
@@ -319,6 +325,36 @@ async def test_background_monitor_reopens_after_health_recovers_without_model():
         finally:
             await router.aclose()
         assert router.health_monitor.running is False
+
+
+@pytest.mark.asyncio
+async def test_hidden_field_scoped_cooldown_does_not_reveal_private_route():
+    async with httpx.AsyncClient(transport=httpx.MockTransport(_transport)) as client:
+        router = build_health_aware_router(
+            client, trusted_health_probes={GEO: lambda: True},
+        )
+        policy = AuthorizationPolicy(
+            default_effect="deny",
+            rules=(AuthorizationRule(
+                effect="allow", operation=GEO, roles_any=("reader",),
+            ),),
+            data_rules=(DataScopeRule(
+                operation=GEO, roles_any=("reader",),
+                visible_fields=("not_a_public_field",),
+            ),),
+        )
+        router.authorization_policy = policy
+        router.executor.authorization_policy = policy
+        await router.check_health_once()
+        router.mark_access_unavailable("open_meteo_geocoding", "search")
+        # The role alone is allowed; all actual output fields are hidden.
+        # A scoped caller cannot infer an otherwise private cooled-down
+        # capability from a different public disposition.
+        hidden = _menu(router)
+        assert hidden.route_ids == ()
+        assert hidden.definitions == ()
+        assert hidden.status == "inputs_missing"
+        await router.aclose()
 
 
 @pytest.mark.asyncio
