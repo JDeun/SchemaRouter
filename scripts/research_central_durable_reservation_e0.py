@@ -181,6 +181,15 @@ class DurableCentralReservationE0:
                 ).fetchone()
                 if row is None:
                     raise sqlite3.DatabaseError("no authority")
+                # Validate requested tenant even if a previous global stop
+                # is already committed; unknown fixture labels must not be
+                # silently accepted as an idempotent authorized stop.
+                if tenant is not None:
+                    exists = conn.execute(
+                        "SELECT 1 FROM allowed WHERE tenant=? LIMIT 1", (tenant,)
+                    ).fetchone()
+                    if exists is None:
+                        raise ValueError("preprovisioned synthetic tenant required")
                 if row[0]:
                     return False
                 if tenant is None:
@@ -188,11 +197,6 @@ class DurableCentralReservationE0:
                         "UPDATE authority SET stopped=1, epoch=epoch+1 WHERE id=1"
                     )
                 else:
-                    exists = conn.execute(
-                        "SELECT 1 FROM allowed WHERE tenant=? LIMIT 1", (tenant,)
-                    ).fetchone()
-                    if exists is None:
-                        raise ValueError("preprovisioned synthetic tenant required")
                     already = conn.execute(
                         "SELECT 1 FROM stopped_tenant WHERE tenant=?", (tenant,)
                     ).fetchone()
