@@ -22,3 +22,17 @@ No production promotion regardless of DEV results. The minimum signal to justify
 ## Limitations and release gate
 
 The tasks are deliberately seen/synthetic; tool observations are deterministic and **not original provider HTTPS execution**. Neither independent #1346 publisher labels, multi-step source grounding, correct factual final-answer validation, strong no-fit calibration nor #1477 E2 has been established. Same frozen #432 negative remains immutable, and #1356 v0.18 release remains HARD HOLD. Research output must contain aggregate counters and sanitized model/hardware/source IDs only, never full prompts, task texts, raw generations, source gold or private fields.
+
+
+## Actual first terminal run (frozen before secondary diagnostic change)
+
+- Original experimental runner exact commit `50d042a4540cba8a1920653742a62ee24127a63a`, [successful real local CPU run](https://github.com/JDeun/SchemaRouter/actions/runs/39374050100), [aggregate artifact](https://github.com/JDeun/SchemaRouter/actions/runs/39374050100/artifacts/12243510667), source revision receipt `a12f232a8de8a426078cb31286e7ba950b78175a`. Distinguish the merge-ref source receipt from the PR-head commit. All exact-head CI, CodeQL, CPU jobs green.
+- Every original case had a non-alphabetically ordered E5 shortlist (12/12). Paired pass changed in 2/24 duplicate observations. **Supported one-step fixture completion** alphabetical 10/12 (EN 2/4, KO 4/4, JA 4/4) vs ranked 12/12 (EN/KO/JA all 4/4). The original positive *task* denominator is only 6, not 12 independent positives.
+- **Unsupported strict exact refusal** 0/12 under **both** presentations; **unsupported tool attempts** and **fixture executions** 2/12 under both, both JA. For EN/KO zero attempted tools still produced zero strict terminal passes, implying a no-call-but-terminal-mismatch (or other terminal failure) class needing explicit separation. This original report only exported strict refusal and attempts; no new claim of calibrated no-fit.
+- Both arms observed zero unauthorized destructive actions. The experiment does not demonstrate factual final-answer correctness or any independent E2.
+
+### Secondary post-hoc measurement field (not part of original preregistered outcome)
+
+After viewing the first report, schema v2 adds **only post-execution aggregate fields**, without changing selection, model input, model invocation, executor, success definition or original 12-case cohort: `unsupported_no_call`, `unsupported_terminal_mismatch`, `unsupported_no_call_terminal_mismatch`. These distinguish wrong exact refusal *text* from attempted/executed tools. Source-frozen synthetic no-model tests now exercise a generator that produces no tool calls but wrong refusal text. This change is explicitly post-hoc and its runs are **repeated descriptive DEV only**, not independent confirmation and may not justify prompt/model/threshold tuning. Retain the first artifact separately as original evidence.
+
+No product default or code paths are promoted, #1346/#1477 independent E2 remains open, and #1356 release remains HARD HOLD.
