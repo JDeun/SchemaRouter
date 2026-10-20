@@ -58,10 +58,15 @@ class CappedOpenMeteoTransport(httpx.AsyncBaseTransport):
         self._maximum = max_requests
         self._total = 0
         self._per_host: Counter[str] = Counter()
+        self._transport_timeouts = 0
 
     @property
     def total_requests(self) -> int:
         return self._total
+
+    @property
+    def transport_timeout_attempts(self) -> int:
+        return self._transport_timeouts
 
     @property
     def counts(self) -> dict[str, int]:
@@ -93,7 +98,13 @@ class CappedOpenMeteoTransport(httpx.AsyncBaseTransport):
             raise RuntimeError("fixed provider observation budget exhausted")
         self._total += 1
         self._per_host[request.url.host] += 1
-        return await self._delegate.handle_async_request(request)
+        try:
+            return await self._delegate.handle_async_request(request)
+        except httpx.TimeoutException:
+            # Count only observed transport attempts; no raw URL, error or
+            # provider payload can enter the public receipt.
+            self._transport_timeouts += 1
+            raise
 
     async def aclose(self) -> None:
         await self._delegate.aclose()
@@ -117,7 +128,16 @@ async def observe_real_source_once(
         raise ValueError("bounded observation time required")
     guarded_transport = CappedOpenMeteoTransport(transport_factory())
     reports: dict[str, dict[str, Any]] = {}
+    simulated_probe_attempts: Counter[str] = Counter()
     started = time.perf_counter()
+
+    async def simulated_geo_probe() -> bool:
+        simulated_probe_attempts["geocoding"] += 1
+        return True
+
+    async def simulated_forecast_probe() -> bool:
+        simulated_probe_attempts["forecast"] += 1
+        return True
     async with httpx.AsyncClient(
         transport=guarded_transport,
         timeout=httpx.Timeout(6.0, connect=3.0),
@@ -128,8 +148,8 @@ async def observe_real_source_once(
             # SIMULATED menu gate to isolate actual endpoint execution.
             # Never market these callbacks as independently validated health.
             trusted_health_probes={
-                GEO: lambda: True,
-                WEATHER: lambda: True,
+                GEO: simulated_geo_probe,
+                WEATHER: simulated_forecast_probe,
             },
             probe_interval_seconds=60,
             probe_timeout_seconds=2,
@@ -157,6 +177,12 @@ async def observe_real_source_once(
                 reports[lang] = {
                     "status": status,
                     "native_calls_successful": row["successful_native_calls"],
+                    "initial_model_visible_routes": row.get(
+                        "initial_model_visible_routes", 0,
+                    ),
+                    "dependent_model_visible_routes": row.get(
+                        "dependent_model_visible_routes", 0,
+                    ),
                 }
             if not session.router.health_monitor.running:
                 raise RuntimeError("host never started existing monitor")
@@ -171,6 +197,26 @@ async def observe_real_source_once(
         "total_provider_http_get_attempts": guarded_transport.total_requests,
         "provider_requests_by_source": guarded_transport.counts,
         "business_get_budget": 6,
+        "observation_transport": (
+            "real_http" if transport_factory is httpx.AsyncHTTPTransport
+            else "injected_test_transport"
+        ),
+        "simulated_probe_attempts_by_route": {
+            "geocoding": simulated_probe_attempts["geocoding"],
+            "forecast": simulated_probe_attempts["forecast"],
+        },
+        "transport_timeout_attempts": guarded_transport.transport_timeout_attempts,
+        "host_deadline_episodes": sum(
+            item["status"] == "host_deadline" for item in reports.values()
+        ),
+        "temporary_unavailable_episodes": sum(
+            item["status"] == "temporary_unavailable" for item in reports.values()
+        ),
+        "observed_two_hop_success_episodes": sum(
+            item["status"] == "success" and item["native_calls_successful"] == 2
+            for item in reports.values()
+        ),
+        "fallbacks_attempted": 0,
         "external_provider_success_qualified": False,
         "independent_e2_qualified": False,
         "model_selected_routes": False,

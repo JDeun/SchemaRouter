@@ -65,6 +65,16 @@ jobs:
               assert r[name] is False
           assert r["llm_generations"] == 0
           assert r["business_get_budget"] == 6
+          assert r["observation_transport"] == "real_http"
+          assert r["fallbacks_attempted"] == 0
+          attempts = r["simulated_probe_attempts_by_route"]
+          assert set(attempts) == {"geocoding","forecast"}
+          assert all(type(v) is int and 1 <= v <= 30 for v in attempts.values())
+          for key in ("transport_timeout_attempts","host_deadline_episodes","temporary_unavailable_episodes","observed_two_hop_success_episodes"):
+              assert type(r[key]) is int and 0 <= r[key] <= 6
+          assert r["host_deadline_episodes"] <= 3
+          assert r["temporary_unavailable_episodes"] <= 3
+          assert r["observed_two_hop_success_episodes"] <= 3
           n = r["total_provider_http_get_attempts"]
           assert 0 <= n <= 6
           by = r["provider_requests_by_source"]
@@ -74,6 +84,8 @@ jobs:
               row = r["results"][lang]
               assert row["status"] in allowed
               assert 0 <= row["native_calls_successful"] <= 2
+              assert 0 <= row["initial_model_visible_routes"] <= 1
+              assert 0 <= row["dependent_model_visible_routes"] <= 1
           with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as f:
               f.write("## Actual public Open-Meteo source observation (NOT independently verified health)\n\n")
               f.write("One shared real router, no model, at most six real public GET attempts; healthy probes are HOST-SIMULATED, not actual provider evidence. A successful GitHub job may include external API failures.\n\n")
@@ -82,6 +94,7 @@ jobs:
                   row = r["results"][lang]
                   f.write(f"| {lang} | {row['status']} | {row['native_calls_successful']} |\n")
               f.write(f"\nGET attempts total: {n}/6. Per-route: geocoding {by['geocoding']}, forecast {by['forecast']}. No Qwen inference or verified independent watchdog probes.\n")
+              f.write(f"\nSimulated probe callback checks (NO extra GET): geocode {attempts['geocoding']}, forecast {attempts['forecast']}. Source transport timeouts: {r['transport_timeout_attempts']}; host-deadline episodes: {r['host_deadline_episodes']}; temporary-unavailable episodes: {r['temporary_unavailable_episodes']}; two-hop source successes: {r['observed_two_hop_success_episodes']}/3; fallback attempts: 0.\n")
           PY
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

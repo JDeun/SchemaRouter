@@ -40,7 +40,7 @@ async def test_explicit_six_read_only_provider_gets_same_router_three_languages(
         "geocoding": 3, "forecast": 3,
     }
     assert all(
-        row == {"status": "success", "native_calls_successful": 2}
+        row["status"] == "success" and row["native_calls_successful"] == 2
         for row in output["results"].values()
     )
     assert output["health_probes_are_simulated"] is True
@@ -49,6 +49,23 @@ async def test_explicit_six_read_only_provider_gets_same_router_three_languages(
     assert output["independent_e2_qualified"] is False
     assert output["llm_generations"] == 0
     assert output["model_selected_routes"] is False
+    assert output["observation_transport"] == "injected_test_transport"
+    assert output["transport_timeout_attempts"] == 0
+    assert output["host_deadline_episodes"] == 0
+    assert output["temporary_unavailable_episodes"] == 0
+    assert output["observed_two_hop_success_episodes"] == 3
+    assert output["fallbacks_attempted"] == 0
+    assert set(output["simulated_probe_attempts_by_route"]) == {
+        "geocoding", "forecast",
+    }
+    assert all(
+        count >= 1 for count in output["simulated_probe_attempts_by_route"].values()
+    )
+    assert all(
+        row["initial_model_visible_routes"] == 1
+        and row["dependent_model_visible_routes"] == 1
+        for row in output["results"].values()
+    )
     assert output["production_default_changed"] is False
     trace = json.dumps(output, ensure_ascii=False)
     assert "Seoul" not in trace
@@ -83,6 +100,10 @@ async def test_first_geocoder_transport_timeout_blocks_following_model_menus():
         for row in result["results"].values()
     )
     assert attempts["count"] == 1
+    assert result["transport_timeout_attempts"] == 1
+    assert result["temporary_unavailable_episodes"] == 3
+    assert result["observed_two_hop_success_episodes"] == 0
+    assert result["fallbacks_attempted"] == 0
     assert "PRIVATE_" not in json.dumps(result)
 
 
@@ -147,6 +168,7 @@ async def test_provider_request_cap_is_hard_stop_before_delegate():
     with pytest.raises(RuntimeError, match="budget exhausted"):
         await transport.handle_async_request(req)
     assert transport.total_requests == counter["requests"] == 1
+    assert transport.transport_timeout_attempts == 0
     await transport.aclose()
 
 
