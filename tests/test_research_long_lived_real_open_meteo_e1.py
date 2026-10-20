@@ -139,12 +139,43 @@ async def test_provider_request_cap_is_hard_stop_before_delegate():
         httpx.MockTransport(under), max_requests=1,
     )
     req = httpx.Request(
-        "GET", "https://geocoding-api.open-meteo.com/v1/search?name=Seoul",
+        "GET",
+        "https://geocoding-api.open-meteo.com/v1/search"
+        "?name=Seoul&language=en&countryCode=KR&count=10&format=json",
     )
     await transport.handle_async_request(req)
     with pytest.raises(RuntimeError, match="budget exhausted"):
         await transport.handle_async_request(req)
     assert transport.total_requests == counter["requests"] == 1
+    await transport.aclose()
+
+
+@pytest.mark.asyncio
+async def test_no_unknown_or_duplicate_query_or_embedded_credentials_forwarded():
+    counter = {"sent": 0}
+
+    def delegate(request: httpx.Request) -> httpx.Response:
+        counter["sent"] += 1
+        return httpx.Response(200)
+
+    transport = CappedOpenMeteoTransport(
+        httpx.MockTransport(delegate), max_requests=3,
+    )
+    base = (
+        "https://geocoding-api.open-meteo.com/v1/search?"
+        "name=Seoul&language=en&countryCode=KR&count=10&format=json"
+    )
+    bad = (
+        base + "&apikey=PRIVATE_API_KEY_CANARY",
+        base + "&name=OtherCity",
+        base.replace("https://", "https://user:secret@"),
+        base.replace("&language=en", ""),
+    )
+    for url in bad:
+        with pytest.raises(RuntimeError, match="disallowed"):
+            await transport.handle_async_request(httpx.Request("GET", url))
+    assert counter["sent"] == 0
+    assert transport.total_requests == 0
     await transport.aclose()
 
 
