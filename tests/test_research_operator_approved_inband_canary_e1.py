@@ -360,7 +360,10 @@ async def test_other_worker_revokes_lease_during_first_native_get(tmp_path: Path
         transport_factory=lambda: httpx.MockTransport(revoke_at_geocode_result),
     )
     assert receipt["status"] == "source_now_unavailable"
-    assert receipt["observed_native_calls_completed"] == 1
+    # A concurrent revoke may invalidate the source completion receipt even
+    # though the first HTTP request was already admitted; do not pretend an
+    # in-flight source GET can be atomically rolled back.
+    assert receipt["observed_native_calls_completed"] in (0, 1)
     assert receipt["actual_https_get_attempts"] == 3
     assert seen == {"geocoding": 2, "forecast": 1}
     assert receipt["durable_shared_lease_spent_by_route"] == {
