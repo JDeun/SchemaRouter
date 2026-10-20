@@ -11,6 +11,7 @@ import hashlib
 import json
 import math
 import re
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +28,15 @@ LANGUAGES = ("en", "ko", "ja")
 LABELS = ("supported", "unsupported", "forbidden")
 DIGEST = re.compile(r"^[0-9a-f]{64}$")
 CASE_ID = re.compile(r"^sn-ext-[a-z0-9][a-z0-9_-]{0,71}$")
+ROOT_KEYS = frozenset({"schema_version", "split", "source", "author_claim", "cases"})
+SOURCE_KEYS = frozenset({"repository", "revision", "package", "tools_sha256"})
+AUTHOR_KEYS = frozenset({
+    "authorship_type", "review_requested", "organization",
+    "verified_by_schemarouter",
+})
+CASE_KEYS = frozenset({
+    "id", "language", "label", "query", "required_tools", "required_fields",
+})
 
 
 def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -56,7 +66,10 @@ def _clean_query(value: Any) -> tuple[str, ...]:
         raise ValueError("oversized external task query")
     # Unicode token overlap is a deliberately conservative contamination
     # screen; passing it is NOT proof of publisher-independent authorship.
-    words = tuple(re.findall(r"\w+", value.casefold(), flags=re.UNICODE))
+    # NFKC catches halfwidth-kana and fullwidth-Latin copied DEV text;
+    # compatibility normalization is NOT semantic originality proof.
+    normalized = unicodedata.normalize("NFKC", value).casefold()
+    words = tuple(re.findall(r"\w+", normalized, flags=re.UNICODE))
     if not words:
         raise ValueError("external task query lacks searchable words")
     return words
@@ -105,7 +118,11 @@ def inspect_submitted_bytes(
         )
     except (ValueError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ValueError("invalid strict external UTF-8 JSON") from exc
-    if type(data) is not dict or data.get("schema_version") != 1:
+    if (
+        type(data) is not dict
+        or type(data.get("schema_version")) is not int
+        or data["schema_version"] != 1
+    ):
         raise ValueError("external intake requires schema version 1")
     if data.get("split") != "proposed_external_unscored":
         raise ValueError("external split must remain proposed and unscored")
@@ -114,8 +131,10 @@ def inspect_submitted_bytes(
         "scoring_authorized", "provider_authorized_execution",
     )):
         raise ValueError("source intake cannot attest scoring or execution")
+    if set(data) != ROOT_KEYS:
+        raise ValueError("external submission must use exact unprivileged schema")
     source = data.get("source")
-    if type(source) is not dict or source != {
+    if type(source) is not dict or set(source) != SOURCE_KEYS or source != {
         "repository": "Xerrion/servicenow-platform-mcp",
         "revision": manifest["source_revisions"]["servicenow_platform_mcp"],
         "package": "readonly",
@@ -125,6 +144,7 @@ def inspect_submitted_bytes(
     author = data.get("author_claim")
     if (
         type(author) is not dict
+        or set(author) != AUTHOR_KEYS
         or author.get("authorship_type") != "external_publisher_claimed"
         or author.get("review_requested") is not True
         or type(author.get("organization")) is not str
@@ -148,8 +168,8 @@ def inspect_submitted_bytes(
     ids: set[str] = set()
     seen_queries: list[tuple[str, ...]] = []
     for row in rows:
-        if type(row) is not dict:
-            raise ValueError("external case must be an object")
+        if type(row) is not dict or set(row) != CASE_KEYS:
+            raise ValueError("external case must use exact unprivileged schema")
         ident = row.get("id")
         if (
             type(ident) is not str or len(ident.encode("utf-8")) > MAX_ID_UTF8
@@ -236,6 +256,8 @@ def main() -> None:
     manifest, dev_cases, snapshot = load_package(
         args.package_dir, args.snapshot,
     )
+    if args.submission.stat().st_size > MAX_RAW_BYTES:
+        raise ValueError("oversized external submission before file read")
     report = inspect_submitted_bytes(
         args.submission.read_bytes(),
         declared_sha256=args.declared_sha256,
