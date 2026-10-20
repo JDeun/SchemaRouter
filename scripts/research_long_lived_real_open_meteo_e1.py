@@ -26,8 +26,12 @@ from scripts.research_real_qwen_open_meteo_two_hop_e1 import (
 )
 
 _ALLOWED = {
-    ("geocoding-api.open-meteo.com", "/v1/search"),
-    ("api.open-meteo.com", "/v1/forecast"),
+    ("geocoding-api.open-meteo.com", "/v1/search"): frozenset({
+        "name", "language", "countryCode", "count", "format",
+    }),
+    ("api.open-meteo.com", "/v1/forecast"): frozenset({
+        "latitude", "longitude", "current", "timezone",
+    }),
 }
 _CASES = (
     ("en", "Seoul", "KR"),
@@ -74,8 +78,17 @@ class CappedOpenMeteoTransport(httpx.AsyncBaseTransport):
             or request.url.scheme != "https"
             or (request.url.host, request.url.path) not in _ALLOWED
             or request.url.port not in (None, 443)
+            or bool(request.url.username)
+            or bool(request.url.password)
         ):
             raise RuntimeError("disallowed fixed read-only provider request")
+        expected_params = _ALLOWED[(request.url.host, request.url.path)]
+        actual_params = list(request.url.params.multi_items())
+        if (
+            len(actual_params) != len(expected_params)
+            or {name for name, _ in actual_params} != expected_params
+        ):
+            raise RuntimeError("disallowed provider query parameter set")
         if self._total >= self._maximum:
             raise RuntimeError("fixed provider observation budget exhausted")
         self._total += 1
