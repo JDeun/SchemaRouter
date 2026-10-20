@@ -330,6 +330,51 @@ async def test_no_or_revoked_durable_lease_never_hits_provider(tmp_path: Path):
 
 
 @pytest.mark.asyncio
+async def test_other_worker_revokes_lease_during_first_native_get(tmp_path: Path):
+    """Already exposed weather must disappear before its native business GET.
+
+    The second geocoding request is the original native business request:
+    the first was the separately budgeted in-band health canary. A different
+    SQLite controller commits revocation during that original GET.
+    """
+    lease_file = tmp_path / "another-worker-stop.sqlite3"
+    issuer = DurableInBandProbeLeaseE1(lease_file)
+    issuer.initialize(
+        operator_approved=True, validity_seconds=300, attempts_per_route=1,
+    )
+    separate_worker = DurableInBandProbeLeaseE1(lease_file)
+    seen = {"geocoding": 0, "forecast": 0}
+
+    def revoke_at_geocode_result(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "geocoding-api.open-meteo.com":
+            seen["geocoding"] += 1
+            if seen["geocoding"] == 2:
+                assert separate_worker.revoke(operator_approved=True) is True
+        elif request.url.host == "api.open-meteo.com":
+            seen["forecast"] += 1
+        return source_response(request)
+
+    receipt = await observe_inband_canary_once(
+        approved_public_business_canaries=True,
+        existing_shared_lease_file=lease_file,
+        transport_factory=lambda: httpx.MockTransport(revoke_at_geocode_result),
+    )
+    assert receipt["status"] == "source_now_unavailable"
+    assert receipt["observed_native_calls_completed"] == 1
+    assert receipt["actual_https_get_attempts"] == 3
+    assert seen == {"geocoding": 2, "forecast": 1}
+    assert receipt["durable_shared_lease_spent_by_route"] == {
+        "geocoding": 1, "forecast": 1,
+    }
+    sanitized = json.dumps(receipt)
+    assert str(lease_file) not in sanitized
+    assert "Seoul" not in sanitized
+    assert "PRIVATE_" not in sanitized
+
+
+
+
+@pytest.mark.asyncio
 async def test_no_approval_cannot_create_outbound_requests():
     seen = []
 
