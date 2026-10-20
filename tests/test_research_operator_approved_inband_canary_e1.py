@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import httpx
 import pytest
 
 from schemarouter import PolicyViolationError
+from scripts.research_durable_inband_probe_lease_e1 import DurableInBandProbeLeaseE1
 from scripts.research_live_health_model_menu_e1 import (
     build_health_aware_router,
     capture_health_scoped_model_menu,
@@ -238,6 +240,93 @@ async def test_malformed_geocoder_canary_response_is_not_healthy():
     )
     assert receipt["status"] == "inband_canary_unhealthy"
     assert receipt["observed_native_calls_completed"] == 0
+
+
+@pytest.mark.asyncio
+async def test_real_host_runner_consumes_shared_lease_across_sessions(tmp_path: Path):
+    """No-network original source runner, persisted per-route approval."""
+    lease_file = tmp_path / "bounded-approved.sqlite3"
+    lease = DurableInBandProbeLeaseE1(lease_file)
+    lease.initialize(
+        operator_approved=True, validity_seconds=300, attempts_per_route=1,
+    )
+    calls = {"http_get": 0}
+
+    def counted(request: httpx.Request) -> httpx.Response:
+        calls["http_get"] += 1
+        return source_response(request)
+
+    def factory() -> httpx.AsyncBaseTransport:
+        return httpx.MockTransport(counted)
+
+    first = await observe_inband_canary_once(
+        approved_public_business_canaries=True,
+        transport_factory=factory,
+        existing_shared_lease_file=lease_file,
+    )
+    assert first["status"] == "success"
+    assert first["actual_https_get_attempts"] == 4
+    assert first["durable_shared_lease_enabled"] is True
+    assert first["durable_shared_lease_spent_by_route"] == {
+        "geocoding": 1, "forecast": 1,
+    }
+    # Restart the ORIGINAL host runner with new callback/router objects:
+    # reusing its existing lease MUST NOT authorize even one new canary GET.
+    next_session = await observe_inband_canary_once(
+        approved_public_business_canaries=True,
+        transport_factory=factory,
+        existing_shared_lease_file=lease_file,
+    )
+    assert next_session["status"] == "inband_canary_unhealthy"
+    assert next_session["actual_https_get_attempts"] == 0
+    assert next_session["actual_inband_canary_attempts_by_endpoint"] == {
+        "geocoding": 0, "forecast": 0,
+    }
+    assert next_session["durable_shared_lease_spent_by_route"] == {
+        "geocoding": 1, "forecast": 1,
+    }
+    assert calls["http_get"] == 4
+    for receipt in (first, next_session):
+        redacted = json.dumps(receipt)
+        assert str(lease_file) not in redacted
+        assert "PRIVATE_" not in redacted
+
+
+@pytest.mark.asyncio
+async def test_no_or_revoked_durable_lease_never_hits_provider(tmp_path: Path):
+    lease_file = tmp_path / "never-approved.sqlite3"
+    counter = {"get": 0}
+
+    def forbid(request: httpx.Request) -> httpx.Response:
+        counter["get"] += 1
+        raise AssertionError("unapproved GET")
+
+    def factory() -> httpx.AsyncBaseTransport:
+        return httpx.MockTransport(forbid)
+
+    missing = await observe_inband_canary_once(
+        approved_public_business_canaries=True,
+        transport_factory=factory,
+        existing_shared_lease_file=lease_file,
+    )
+    assert missing["status"] == "inband_canary_unhealthy"
+    assert missing["actual_https_get_attempts"] == 0
+    assert not lease_file.exists()
+    lease = DurableInBandProbeLeaseE1(lease_file)
+    lease.initialize(
+        operator_approved=True, validity_seconds=300, attempts_per_route=2,
+    )
+    assert lease.revoke(operator_approved=True) is True
+    revoked = await observe_inband_canary_once(
+        approved_public_business_canaries=True,
+        transport_factory=factory,
+        existing_shared_lease_file=lease_file,
+    )
+    assert revoked["status"] == "inband_canary_unhealthy"
+    assert revoked["durable_shared_lease_spent_by_route"] == {
+        "geocoding": 0, "forecast": 0,
+    }
+    assert counter["get"] == 0
 
 
 @pytest.mark.asyncio

@@ -13,11 +13,13 @@ import json
 import time
 from collections import Counter
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import httpx
 
 from schemarouter import PolicyViolationError
+from scripts.research_durable_inband_probe_lease_e1 import DurableInBandProbeLeaseE1
 from scripts.research_live_health_model_menu_e1 import (
     GEO,
     WEATHER,
@@ -91,6 +93,7 @@ async def observe_inband_canary_once(
     *,
     approved_public_business_canaries: bool,
     transport_factory: Callable[[], httpx.AsyncBaseTransport] = httpx.AsyncHTTPTransport,
+    existing_shared_lease_file: Path | None = None,
 ) -> dict[str, Any]:
     """One background monitor sweep + (if healthy) one original two-hop task.
 
@@ -100,6 +103,10 @@ async def observe_inband_canary_once(
     """
     if approved_public_business_canaries is not True:
         raise ValueError("explicit operator permission for public in-band GETs required")
+    lease = (
+        DurableInBandProbeLeaseE1(existing_shared_lease_file)
+        if existing_shared_lease_file is not None else None
+    )
     transport = CappedOpenMeteoTransport(
         transport_factory(), max_requests=_MAX_GET_ATTEMPTS,
     )
@@ -112,12 +119,20 @@ async def observe_inband_canary_once(
         canaries = InBandCanaryCallbacksE1(
             client, approved_public_business_canaries=True,
         )
+        probes = {
+            GEO: canaries.geocoding,
+            WEATHER: canaries.forecast,
+        }
+        if lease is not None:
+            # Existing, explicit, nonrenewable allowance. The E1 runner
+            # must NEVER create a new DB or refresh permission on start.
+            probes = {
+                GEO: lease.wrap_probe(GEO, canaries.geocoding),
+                WEATHER: lease.wrap_probe(WEATHER, canaries.forecast),
+            }
         router = build_health_aware_router(
             client,
-            trusted_health_probes={
-                GEO: canaries.geocoding,
-                WEATHER: canaries.forecast,
-            },
+            trusted_health_probes=probes,
             transport_retry_budget=0,
         )
         status = "probe_bootstrap_timeout"
@@ -222,6 +237,10 @@ async def observe_inband_canary_once(
         "actual_https_get_attempts": transport.total_requests,
         "actual_get_attempts_by_endpoint": counts,
         "actual_inband_canary_attempts_by_endpoint": canary_counts,
+        "durable_shared_lease_enabled": lease is not None,
+        "durable_shared_lease_spent_by_route": (
+            lease.public_counts() if lease is not None else {}
+        ),
         "canary_uses_actual_business_endpoint": True,
         "independent_dedicated_health_endpoint_verified": False,
         "long_term_availability_verified": False,
@@ -237,9 +256,11 @@ async def observe_inband_canary_once(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--operator-approves-inband-business-gets", action="store_true")
+    parser.add_argument("--existing-shared-lease-file", type=Path, default=None)
     args = parser.parse_args()
     outcome = asyncio.run(observe_inband_canary_once(
         approved_public_business_canaries=args.operator_approves_inband_business_gets,
+        existing_shared_lease_file=args.existing_shared_lease_file,
     ))
     print(json.dumps(outcome, sort_keys=True, allow_nan=False))
 
