@@ -963,3 +963,70 @@ def test_catalog_index_rejects_mutated_source_or_revoked_authority():
     view.router.planner.availability_predicate = lambda _tool, _endpoint: False
     with pytest.raises(PolicyViolationError, match="retrieval authority changed"):
         view.catalog_index()
+
+
+@pytest.mark.parametrize("preserve_rank", (False, True))
+def test_scoped_fixed5_ranked_model_disclosure_is_explicit_opt_in(preserve_rank):
+    """Model-visible order, not just scorer receipt, is the controlled variable."""
+    router = fixture_router()
+    view = captured(router)
+    agent = CapturingSyntheticAgent()
+    ranker_order = ["papers.read", "marine.read"]  # deliberately nonalphabetic
+
+    row = run_generated_episode(
+        agent, router.registry, scoped_synthetic_task(),
+        EXPERIMENTAL_FIXED5_CONDITION,
+        experimental_candidate_selector=lambda _query, ids: [
+            route for route in ranker_order if route in ids
+        ],
+        experimental_agent_tool_surface=view,
+        experimental_preserve_rank_order=preserve_rank,
+    )
+    observed_tools = json.loads(agent.snapshots[0])["tools"]
+    expected_routes = (
+        ranker_order if preserve_rank else sorted(ranker_order)
+    )
+    expected_tools = view.tool_definitions(expected_routes)
+    assert [tool["name"] for tool in observed_tools] == [
+        tool["name"] for tool in expected_tools
+    ]
+    assert row["passed"] is True
+    assert row["visible_candidate_counts"] == [2]
+    assert row["tool_call_count"] == 1
+    for exposure in agent.snapshots:
+        assert SECRET not in exposure
+        assert "secret_field" not in exposure
+        assert "archive__read" not in exposure
+
+
+@pytest.mark.parametrize("bad", (None, 1, "yes"))
+def test_ranked_disclosure_refuses_nonboolean_flags(bad):
+    router = fixture_router()
+    with pytest.raises(ValueError, match="ranked tool disclosure"):
+        run_generated_episode(
+            CapturingSyntheticAgent(), router.registry,
+            scoped_synthetic_task(), EXPERIMENTAL_FIXED5_CONDITION,
+            experimental_candidate_selector=lambda _query, ids: list(ids),
+            experimental_agent_tool_surface=captured(router),
+            experimental_preserve_rank_order=bad,
+        )
+
+
+def test_ranked_disclosure_refuses_unscoped_or_frozen_execution():
+    router = fixture_router()
+    choose = lambda _query, ids: list(ids[:2])
+    with pytest.raises(ValueError, match="ranked tool disclosure"):
+        run_generated_episode(
+            CapturingSyntheticAgent(), router.registry,
+            scoped_synthetic_task(), EXPERIMENTAL_FIXED5_CONDITION,
+            experimental_candidate_selector=choose,
+            experimental_preserve_rank_order=True,
+        )
+    with pytest.raises(ValueError, match="ranked tool disclosure"):
+        run_generated_episode(
+            CapturingSyntheticAgent(), router.registry,
+            scoped_synthetic_task(), "SR-5",
+            experimental_candidate_selector=choose,
+            experimental_agent_tool_surface=captured(router),
+            experimental_preserve_rank_order=True,
+        )
