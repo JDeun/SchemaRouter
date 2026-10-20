@@ -64,6 +64,7 @@ class CentralEgressLinearizationModelE0:
         self._lock = RLock()
         self._epoch = 1
         self._revoked = False
+        self._revoked_tenants: set[str] = set()
         self._seen: set[tuple[str, str]] = set()
         self._spent: Counter[tuple[str, str]] = Counter()
         self._handoffs = 0
@@ -100,6 +101,24 @@ class CentralEgressLinearizationModelE0:
             self._epoch += 1
             return True
 
+    def revoke_tenant(self, tenant: str) -> bool:
+        """E0 operator-scoped revocation; not proof of operator identity.
+
+        A tenant stop shares the same synthetic serialization lock as every
+        egress handoff. It cannot affect any other provisioned tenant. This
+        is deliberately irreversible within the lifetime of the model.
+        """
+        if (
+            type(tenant) is not str
+            or not any(key[0] == tenant for key in self._provisioned)
+        ):
+            raise ValueError("preprovisioned synthetic tenant required")
+        with self._lock:
+            if self._revoked or tenant in self._revoked_tenants:
+                return False
+            self._revoked_tenants.add(tenant)
+            return True
+
     def admit_and_handoff(
         self,
         request: SyntheticEgressRequestE0, *,
@@ -116,7 +135,7 @@ class CentralEgressLinearizationModelE0:
         ):
             raise ValueError("trusted synthetic E0 request and sink required")
         with self._lock:
-            if self._revoked:
+            if self._revoked or request.tenant in self._revoked_tenants:
                 return "operator_revoked"
             if type(request.epoch) is not int or request.epoch != self._epoch:
                 return "stale_epoch"
