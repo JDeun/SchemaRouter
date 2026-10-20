@@ -304,6 +304,59 @@ async def test_newer_healthy_background_probe_does_not_abort_valid_model_tool_re
 
 
 @pytest.mark.asyncio
+async def test_old_tool_menu_is_invalid_after_probe_replacement_even_if_new_probe_healthy():
+    async with httpx.AsyncClient(transport=httpx.MockTransport(_transport)) as client:
+        router = build_health_aware_router(
+            client, trusted_health_probes={GEO: lambda: True},
+        )
+        await router.check_health_once()
+        first = _menu(router)
+        before = tuple(first.probe_identities)
+        assert first.route_ids == (GEO,)
+        await asyncio.sleep(0.01)
+        router.register_health_probe(
+            "open_meteo_geocoding", "search", lambda: True,
+        )
+        await router.check_health_once()
+        second = _menu(router)
+        assert second.route_ids == (GEO,)
+        assert second.probe_identities != before
+        with pytest.raises(PolicyViolationError, match="availability changed"):
+            first.assert_current()
+        with pytest.raises(PolicyViolationError, match="availability changed"):
+            await execute_health_scoped_host_call(
+                first, route_id=GEO, arguments=HOST,
+            )
+        await router.aclose()
+
+
+@pytest.mark.asyncio
+async def test_old_menu_rejected_after_unhealthy_then_healthy_same_probe():
+    state = {"ok": True}
+
+    async def probe() -> bool:
+        return state["ok"]
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(_transport)) as client:
+        router = build_health_aware_router(
+            client, trusted_health_probes={GEO: probe},
+        )
+        await router.check_health_once()
+        before = _menu(router)
+        state["ok"] = False
+        await router.check_health_once()
+        assert _menu(router).route_ids == ()
+        state["ok"] = True
+        await router.check_health_once()
+        now = _menu(router)
+        assert now.route_ids == (GEO,)
+        assert now.probe_identities != before.probe_identities
+        with pytest.raises(PolicyViolationError, match="availability changed"):
+            before.assert_current()
+        await router.aclose()
+
+
+@pytest.mark.asyncio
 async def test_health_changes_during_model_window_abort_old_menu():
     state = {"ok": True}
 

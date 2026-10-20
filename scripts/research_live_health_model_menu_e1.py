@@ -137,6 +137,7 @@ class HealthScopedModelMenu:
     definitions: tuple[dict[str, Any], ...]
     status: MenuStatus
     checked_at: tuple[tuple[str, datetime], ...]
+    probe_identities: tuple[tuple[str, int, int], ...]
     max_probe_age_seconds: float
 
     def assert_current(self) -> None:
@@ -147,7 +148,8 @@ class HealthScopedModelMenu:
             for snapshot in self.view.router.health_snapshots()
         }
         expected = dict(self.checked_at)
-        if set(self.route_ids) != set(expected):
+        identities = {route: (reg, epoch) for route, reg, epoch in self.probe_identities}
+        if set(self.route_ids) != set(expected) or set(self.route_ids) != set(identities):
             raise PolicyViolationError("model-visible health receipt inconsistent")
         for route in self.route_ids:
             record = current.get(route)
@@ -156,6 +158,7 @@ class HealthScopedModelMenu:
             if (
                 record is None
                 or record.status != "healthy"
+                or (record.registration_id, record.status_epoch) != identities[route]
                 or record.last_checked_at is None
                 # A periodic healthy refresh is not a service outage.
                 # Revalidation must reject older, stale, unhealthy or
@@ -265,6 +268,7 @@ def capture_health_scoped_model_menu(
     }
     selected: list[str] = []
     checked: list[tuple[str, datetime]] = []
+    probe_identities: list[tuple[str, int, int]] = []
     for route in ready:
         if route not in ROUTES:
             raise PolicyViolationError("unregistered health-aware native route")
@@ -288,6 +292,9 @@ def capture_health_scoped_model_menu(
         # _fresh guarantees this timestamp is not None.
         assert item.last_checked_at is not None
         checked.append((route, item.last_checked_at))
+        probe_identities.append((
+            route, item.registration_id, item.status_epoch,
+        ))
     definitions = tuple(view.tool_definitions(selected, k=2)) if selected else ()
     menu: HealthScopedModelMenu = HealthScopedModelMenu(
         view=view,
@@ -304,6 +311,7 @@ def capture_health_scoped_model_menu(
             else "inputs_missing"
         ),
         checked_at=tuple(checked),
+        probe_identities=tuple(probe_identities),
         max_probe_age_seconds=float(max_probe_age_seconds),
     )
     menu.assert_current()

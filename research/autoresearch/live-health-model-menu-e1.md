@@ -27,3 +27,12 @@ Never automatically treat HTTP 200 from an arbitrary business search as a truste
 ## Gate
 
 #1477 agent E2 and #1346 independently authored provider cases remain open. v0.18 #1356 is HARD HOLD. Frozen #432 is immutable, and core opt-in behavior remains default-off.
+
+
+## 2026-10-20 follow-up: probe-identity TOCTOU hardening
+
+A positive new probe timestamp by itself is not sufficient to continue using a previously disclosed model tool menu. A **different trusted registered probe** may have replaced the original while model inference ran, or the old callback may have returned Unhealthy and then Healthy again between the two snapshot checks. Both changes must invalidate an **old** tool menu even though the newest probe result is Healthy.
+
+`HealthProbeSnapshot` now supplies a non-secret, monitor-local monotonically allocated `registration_id` and `status_epoch`. Registration ID changes at each callback re-registration even with the same schema and healthy result; the status epoch changes only on a transition across Unknown/Healthy/Unhealthy/Stale, not on a periodic unchanged Healthy heartbeat. The strict opt-in E1 menu records both alongside its timestamp and checks identity and epoch equality immediately after the model response and before execution. A newer positive **same identity/same state** heartbeat is still accepted, preserving #1621's slow-Qwen fix. A replaced callback or down-then-up episode fails closed and requires a fresh model menu; source/principal/executor authorization remains independent and mandatory.
+
+Neither epoch is a remote health token, secret, distributed ID, or an authorization credential. Rebuilding the router naturally resets counters. This does **not** imply a core global atomic transaction or independently verified source liveness. Actual E2 and operator-approved external probes remain unqualified.
