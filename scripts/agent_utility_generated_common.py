@@ -477,6 +477,7 @@ def run_generated_episode(
     experimental_agent_tool_surface: AuthorizedAgentToolSurface | None = None,
     experimental_e0_trace_provenance: E0TraceProvenance | None = None,
     experimental_block_unavailable_observation: bool = False,
+    experimental_preserve_candidate_order: bool = False,
 ) -> dict[str, Any]:
     """Run one frozen episode.
 
@@ -500,7 +501,23 @@ def run_generated_episode(
     set, returned traces contain safe metrics only. Neither frozen fixture
     execution nor the model becomes a real invoker authorization receipt.
     The original #432 results remain unchanged.
+
+    Only a separately opted-in, principal-scoped fixed5 experiment may expose
+    the selector\u0027s validated relevance order to the agent. The historical
+    default intentionally retains alphabetical model-visible tool ordering.
+    This is a model-presentation hypothesis, NOT calibrated fit/no-fit.
     """
+    if type(experimental_preserve_candidate_order) is not bool:
+        raise ValueError("ranked model visibility flag must be boolean")
+    if experimental_preserve_candidate_order and (
+        condition != EXPERIMENTAL_FIXED5_CONDITION
+        or candidate_condition is not None
+        or experimental_candidate_selector is None
+        or experimental_agent_tool_surface is None
+    ):
+        raise ValueError(
+            "ranked model visibility requires isolated principal-scoped fixed5"
+        )
     if (
         type(experimental_block_unavailable_observation) is not bool
         or (experimental_block_unavailable_observation and (
@@ -558,7 +575,13 @@ def run_generated_episode(
             )
         ):
             raise ValueError("experimental source changed during candidate selection")
-        visible_routes = sorted(selected)
+        # Research-only ordered disclosure: source/scoping and K validation
+        # have already completed. The scoped view preserves this order while
+        # rechecking the original authority witness on every model turn.
+        visible_routes = (
+            list(selected) if experimental_preserve_candidate_order
+            else sorted(selected)
+        )
         progressive_stages = None
     else:
         if experimental_agent_tool_surface is not None:
