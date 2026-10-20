@@ -8,6 +8,7 @@ from pathlib import Path
 import httpx
 import pytest
 
+from schemarouter import PolicyViolationError
 from scripts import research_durable_inband_probe_lease_e1 as lease_module
 from scripts.research_durable_inband_probe_lease_e1 import (
     DurableInBandProbeLeaseE1,
@@ -83,6 +84,120 @@ def test_actual_distinct_linux_processes_observe_same_atomic_limit(tmp_path):
         ))
     assert sum(results) == 2
     assert store.public_counts() == {"geocoding": 2, "forecast": 0}
+
+
+def test_revocation_persists_and_cannot_restore_a_spent_lease(tmp_path):
+    store = _store(tmp_path)
+    _approve(store, cap=2)
+    assert store.try_claim(GEO) is True
+    assert store.revoke(operator_approved=True) is True
+    assert store.revoke(operator_approved=True) is False
+    assert store.try_claim(GEO) is False
+    assert store.try_claim(WEATHER) is False
+    restarted = _store(tmp_path)
+    assert restarted.try_claim(GEO) is False
+    assert restarted.try_claim(WEATHER) is False
+    assert restarted.public_counts() == {"geocoding": 1, "forecast": 0}
+    with pytest.raises(ValueError, match="cannot be renewed"):
+        restarted.initialize(
+            operator_approved=True,
+            validity_seconds=300,
+            attempts_per_route=2,
+        )
+
+
+def test_revocation_blocks_independent_linux_process_claims(tmp_path):
+    store = _store(tmp_path)
+    _approve(store, cap=2)
+    assert store.revoke(operator_approved=True)
+    with ProcessPoolExecutor(max_workers=4) as workers:
+        attempts = list(workers.map(
+            _reserve_from_independent_process,
+            (str(tmp_path / "operator-approved.sqlite3") for _ in range(12)),
+        ))
+    assert not any(attempts)
+    assert store.public_counts() == {"geocoding": 0, "forecast": 0}
+
+
+def test_operator_must_authorize_revocation_and_corrupt_db_fails_closed(tmp_path):
+    store = _store(tmp_path)
+    _approve(store)
+    with pytest.raises(ValueError, match="operator"):
+        store.revoke(operator_approved=False)
+    assert store.try_claim(GEO) is True
+    corrupted = DurableInBandProbeLeaseE1(tmp_path / "corrupt.sqlite3")
+    with pytest.raises(RuntimeError, match="absent"):
+        corrupted.revoke(operator_approved=True)
+    (tmp_path / "corrupt.sqlite3").write_bytes(b"PRIVATE_SQLITE_CANARY")
+    with pytest.raises(RuntimeError, match="revocation failed") as failure:
+        corrupted.revoke(operator_approved=True)
+    assert "PRIVATE_" not in str(failure.value)
+    assert store.try_claim(WEATHER) is True
+
+
+@pytest.mark.asyncio
+async def test_revocation_rechecks_same_router_and_discards_prior_healthy_menu(
+    tmp_path,
+):
+    store = _store(tmp_path)
+    _approve(store, cap=2)
+    network_attempts = {"count": 0}
+
+    def response(request: httpx.Request) -> httpx.Response:
+        network_attempts["count"] += 1
+        return _source_response(request)
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(response),
+    ) as client:
+        callbacks = InBandCanaryCallbacksE1(
+            client, approved_public_business_canaries=True,
+            attempts_per_route=2,
+        )
+        router = build_health_aware_router(
+            client, trusted_health_probes={
+                GEO: store.wrap_probe(GEO, callbacks.geocoding),
+                WEATHER: store.wrap_probe(WEATHER, callbacks.forecast),
+            },
+        )
+        try:
+            await router.check_health_once()
+            before = capture_health_scoped_model_menu(
+                router, USER_REQUESTS["en"], principal=PRINCIPAL,
+                host_request_inputs={
+                    "name": "Seoul", "language": "en", "country_code": "KR",
+                },
+            )
+            assert before.route_ids == (GEO,)
+            assert network_attempts["count"] == 2
+            assert await store.revoke_and_reconcile(
+                router, operator_approved=True,
+            ) is True
+            assert network_attempts["count"] == 2
+            after = capture_health_scoped_model_menu(
+                router, USER_REQUESTS["en"], principal=PRINCIPAL,
+                host_request_inputs={
+                    "name": "Seoul", "language": "en", "country_code": "KR",
+                },
+            )
+            assert after.route_ids == ()
+            assert after.status == "temporary_unavailable"
+            with pytest.raises(PolicyViolationError, match="availability changed"):
+                before.assert_current()
+            assert store.public_counts() == {"geocoding": 1, "forecast": 1}
+        finally:
+            await router.aclose()
+
+
+@pytest.mark.asyncio
+async def test_invalid_router_cannot_trigger_revocation(tmp_path):
+    store = _store(tmp_path)
+    _approve(store)
+    with pytest.raises(ValueError, match="router"):
+        await store.revoke_and_reconcile(
+            object(), operator_approved=True,  # type: ignore[arg-type]
+        )
+    assert store.try_claim(GEO) is True
 
 
 def test_lease_cannot_reset_after_restart_or_reapproval_without_new_path(tmp_path):
