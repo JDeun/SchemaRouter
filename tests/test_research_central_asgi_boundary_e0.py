@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 import httpx
 import pytest
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from scripts.research_central_asgi_boundary_e0 import (
     SyntheticScopeIdentityE0,
@@ -19,8 +19,6 @@ from scripts.research_central_egress_admission_e0 import (
     SyntheticEgressRequestE0,
 )
 from scripts.research_live_health_model_menu_e1 import GEO, WEATHER
-
-_ASGI = Callable[[dict, Callable, Callable], Awaitable[None]]
 
 
 def _store(path: Path) -> DurableCentralReservationE0:
@@ -37,9 +35,9 @@ def _store(path: Path) -> DurableCentralReservationE0:
     return authority
 
 
-def _fixture_scope(app: _ASGI, identity: SyntheticScopeIdentityE0) -> _ASGI:
+def _fixture_scope(app: ASGIApp, identity: SyntheticScopeIdentityE0) -> ASGIApp:
     """A trusted TEST harness, NEVER an unverified public identity middleware."""
-    async def attach(scope: dict, receive: Callable, send: Callable) -> None:
+    async def attach(scope: Scope, receive: Receive, send: Send) -> None:
         new_scope = dict(scope)
         new_scope["schemarouter.e0_fixture_identity"] = identity
         await app(new_scope, receive, send)
