@@ -19,6 +19,7 @@ from contextlib import closing
 from pathlib import Path
 from typing import Any
 
+from schemarouter import SchemaRouter
 from scripts.research_live_health_model_menu_e1 import GEO, WEATHER
 
 _ROUTES = (GEO, WEATHER)
@@ -168,6 +169,53 @@ class DurableInBandProbeLeaseE1:
         except (sqlite3.Error, OSError, ValueError):
             # No silent fallback to per-process counters on I/O/corruption.
             return False
+
+    def revoke(self, *, operator_approved: bool) -> bool:
+        """Operator-owned persistent revocation of ALL remaining canary claims.
+
+        Does not invalidate other active routers' cached Healthy receipts by
+        itself. A same-process router must be explicitly refreshed. In-flight
+        HTTP GETs reserved BEFORE revocation are not cancelled or fenced.
+        """
+        if operator_approved is not True:
+            raise ValueError("explicit operator approval for revocation required")
+        if not self._path.is_file() or self._path.is_symlink():
+            raise RuntimeError("cannot revoke absent trusted lease")
+        try:
+            with closing(self._connect_existing()) as conn:
+                conn.execute("BEGIN IMMEDIATE")
+                # An irrevocable, schema-compatible sentinel: any legitimate
+                # lease has expires > issued; setting expires=issued makes
+                # every later try_claim fail, regardless of clock movement.
+                # Serialized with every try_claim by SQLite BEGIN IMMEDIATE.
+                modified = conn.execute(
+                    "UPDATE lease SET expires=issued "
+                    "WHERE id=? AND expires>issued",
+                    (_LEASE,),
+                )
+                conn.commit()
+                return modified.rowcount == 1
+        except (sqlite3.Error, OSError, ValueError) as exc:
+            # Never leak a local path or SQLite schema to a caller, and never
+            # report revocation success when durable commit wasn't confirmed.
+            raise RuntimeError("trusted operator lease revocation failed") from exc
+
+    async def revoke_and_reconcile(
+        self, router: SchemaRouter, *, operator_approved: bool,
+    ) -> bool:
+        """Revoke durable budget, then refresh THIS router's existing monitor.
+
+        The application must use this operation on each affected local
+        router and coordinate other workers; this is not cross-host fencing.
+        """
+        if not isinstance(router, SchemaRouter):
+            raise ValueError("trusted existing router required")
+        # Revocation I/O must never stall the active health event loop.
+        changed = await asyncio.to_thread(
+            self.revoke, operator_approved=operator_approved,
+        )
+        await router.check_health_once()
+        return changed
 
     def wrap_probe(
         self, route: str, callback: Callable[[], bool | Awaitable[bool]],
