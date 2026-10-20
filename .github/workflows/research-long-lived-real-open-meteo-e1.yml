@@ -1,0 +1,91 @@
+name: Bounded Live Open Meteo One-Shot Source E1
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_long_lived_real_open_meteo_e1.py"
+      - "tests/test_research_long_lived_real_open_meteo_e1.py"
+      - "research/autoresearch/long-lived-real-open-meteo-e1.md"
+      - ".github/workflows/research-long-lived-real-open-meteo-e1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-source-no-network-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install core and controlled E1 test tooling
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Enforce fixed GET count and source-private observer
+        run: |
+          ruff check scripts/research_long_lived_real_open_meteo_e1.py tests/test_research_long_lived_real_open_meteo_e1.py
+          pyright scripts/research_long_lived_real_open_meteo_e1.py
+          python -m pytest -q tests/test_research_long_lived_real_open_meteo_e1.py tests/test_research_long_lived_health_session_e1.py
+
+  optin-six-get-real-public-provider-e1:
+    needs: bounded-source-no-network-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install original read-only source router only
+        run: python -m pip install ".[mcp]"
+      - name: Explicit one-shot <=6 public business GET (no LLM, no health claim)
+        run: |
+          mkdir -p artifacts/open-meteo-live-e1
+          python -m scripts.research_long_lived_real_open_meteo_e1 \
+            --acknowledge-readonly-business-gets > artifacts/open-meteo-live-e1/summary.json
+      - name: Reject overstated evidence and publish measured source statuses
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path("artifacts/open-meteo-live-e1/summary.json")
+          r = json.loads(p.read_text(encoding="utf-8"))
+          assert r["evidence_tier"] == "LIVE_OPEN_METEO_BUSINESS_GETS_SIMULATED_HEALTH_E1_NOT_E2"
+          assert r["schema_version"] == 1
+          assert r["languages"] == ["en","ko","ja"]
+          assert r["shared_router_across_episodes"] is True
+          assert r["health_probes_are_simulated"] is True
+          for name in ("per_endpoint_health_independently_verified","external_provider_success_qualified","independent_e2_qualified","model_selected_routes","production_default_changed"):
+              assert r[name] is False
+          assert r["llm_generations"] == 0
+          assert r["business_get_budget"] == 6
+          n = r["total_provider_http_get_attempts"]
+          assert 0 <= n <= 6
+          by = r["provider_requests_by_source"]
+          assert by["geocoding"] + by["forecast"] == n
+          allowed = {"success","inputs_missing","temporary_unavailable","execution_failure","invalid_source_observation","host_deadline"}
+          for lang in r["languages"]:
+              row = r["results"][lang]
+              assert row["status"] in allowed
+              assert 0 <= row["native_calls_successful"] <= 2
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as f:
+              f.write("## Actual public Open-Meteo source observation (NOT independently verified health)\n\n")
+              f.write("One shared real router, no model, at most six real public GET attempts; healthy probes are HOST-SIMULATED, not actual provider evidence. A successful GitHub job may include external API failures.\n\n")
+              f.write("| Language | Source outcome | Native calls completed |\n|---|---|---:|\n")
+              for lang in r["languages"]:
+                  row = r["results"][lang]
+                  f.write(f"| {lang} | {row['status']} | {row['native_calls_successful']} |\n")
+              f.write(f"\nGET attempts total: {n}/6. Per-route: geocoding {by['geocoding']}, forecast {by['forecast']}. No Qwen inference or verified independent watchdog probes.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bounded-public-open-meteo-e1
+          path: artifacts/open-meteo-live-e1/summary.json
+          retention-days: 30
+          if-no-files-found: error
