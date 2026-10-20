@@ -105,6 +105,38 @@ async def test_malformed_model_final_cannot_be_misreported_as_tool_attempt():
     )
 
 
+@pytest.mark.parametrize(("response", "expected"), (
+    ("REQUEST_MORE_TOOLS", True),
+    ("REQUEST_MORE_TOOLS<|im_end|>", True),
+    ("REQUEST_MORE_TOOLS <|im_end|>", False),
+    ("Cannot do it.", False),
+    ("{\\"reason\\":\\"unsupported\\"}", False),
+))
+def test_exact_host_refusal_is_not_confused_with_any_terminal(
+    response, expected,
+):
+    result = _safe_generation({
+        "text": response, "latency_ms": 1.0,
+        "context_overflow": False,
+        "input_tokens": 20, "tool_tokens": 0, "output_tokens": 5,
+    }, ())
+    assert result["action_class"] == "terminal_no_tool"
+    assert result["exact_host_refusal_after_allowlisted_eot"] is expected
+    assert result["attempts_executed"] == 0
+    assert result["provider_http_requests"] == 0
+
+
+@pytest.mark.asyncio
+async def test_incorrect_final_cannot_be_promoted_to_safe_refusal():
+    result = await run_visibility_probe(ScriptedAgent("I cannot provide it."))
+    assert all(
+        row["action_class"] == "terminal_no_tool"
+        and row["exact_host_refusal_after_allowlisted_eot"] is False
+        for phase in result["results"].values()
+        for row in phase.values()
+    )
+
+
 @pytest.mark.parametrize("broken", (
     {"text": "REQUEST_MORE_TOOLS", "latency_ms": float("nan")},
     {"text": "REQUEST_MORE_TOOLS", "latency_ms": -1.0},
