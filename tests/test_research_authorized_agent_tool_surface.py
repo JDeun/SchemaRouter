@@ -1014,7 +1014,9 @@ def test_ranked_disclosure_refuses_nonboolean_flags(bad):
 
 def test_ranked_disclosure_refuses_unscoped_or_frozen_execution():
     router = fixture_router()
-    choose = lambda _query, ids: list(ids[:2])
+    def choose(_query, ids):
+        return list(ids[:2])
+
     with pytest.raises(ValueError, match="ranked tool disclosure"):
         run_generated_episode(
             CapturingSyntheticAgent(), router.registry,
