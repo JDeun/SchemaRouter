@@ -157,6 +157,13 @@ def test_mock_intake_never_grants_independence_or_scores_public_cases():
     (lambda d: d.update(split="independent_confirmed"), "proposed"),
     (lambda d: d.update(scoring_authorized=True), "cannot attest"),
     (lambda d: d.update(independent_qualified=True), "cannot attest"),
+    (lambda d: d.update(schema_version=True), "schema version"),
+    (lambda d: d.update(independent_qualified="true"), "exact unprivileged"),
+    (lambda d: d.update(reviewer_signed=True), "exact unprivileged"),
+    (lambda d: d["author_claim"].update(approved=True), "independent review"),
+    (lambda d: d["cases"][0].update(
+        gold_approved=True,
+    ), "exact unprivileged"),
     (lambda d: d["source"].update(revision="b" * 40), "source pin"),
     (lambda d: d["source"].update(tools_sha256="f" * 64), "source pin"),
     (lambda d: d["author_claim"].update(
@@ -234,3 +241,52 @@ def test_pinned_native_snapshot_digest_mismatch_rejected_even_if_self_rehashed()
     data["source"]["tools_sha256"] = digest
     with pytest.raises(ValueError, match="independently pinned digest"):
         _inspect(data, manifest=m, dev=dev, snapshot=changed)
+
+
+def test_unicode_compatibility_copies_of_dev_fail_in_all_supported_languages():
+    manifest, dev, snapshot = _package()
+    copied_dev_queries = (
+        ("Read incident records for today", "Ｒｅａｄ incident records for today"),
+        ("データテーブルの状態を確認", "ﾃﾞｰﾀﾃｰﾌﾞﾙの状態を確認"),
+        ("한글 데이터 처리 상태", "한글 데이터 처리 상태"),
+    )
+    for exact, compat in copied_dev_queries:
+        changed_dev = deepcopy(dev)
+        changed_dev["cases"][0]["query"] = exact
+        submitted = _submission(manifest, snapshot)
+        submitted["cases"][0]["query"] = compat
+        with pytest.raises(ValueError, match="overlaps public DEV"):
+            _inspect(
+                submitted, manifest=manifest,
+                dev=changed_dev, snapshot=snapshot,
+            )
+
+
+def test_submitted_duplicate_nested_keys_fail_original_bytes_review():
+    manifest, dev, snapshot = _package()
+    valid = _submission(manifest, snapshot)
+    raw = json.dumps(valid, ensure_ascii=False).encode("utf-8")
+    assert raw.count(b'"label":') == len(valid["cases"])
+    forged = raw.replace(
+        b'"label": "supported"',
+        b'"label": "supported", "label": "unsupported"',
+        1,
+    )
+    assert forged != raw
+    with pytest.raises(ValueError, match="invalid strict external"):
+        inspect_submitted_bytes(
+            forged, declared_sha256=hashlib.sha256(forged).hexdigest(),
+            manifest=manifest, dev_cases=dev, snapshot=snapshot,
+        )
+
+
+def test_no_provider_approval_can_be_smuggled_into_gold_or_author_block():
+    m, _, sn = _package()
+    d = _submission(m, sn)
+    d["cases"][0]["permission_granted"] = True
+    with pytest.raises(ValueError, match="exact unprivileged"):
+        _inspect(d)
+    d = _submission(m, sn)
+    d["author_claim"]["trusted_review"] = "approved"
+    with pytest.raises(ValueError, match="independent review"):
+        _inspect(d)
