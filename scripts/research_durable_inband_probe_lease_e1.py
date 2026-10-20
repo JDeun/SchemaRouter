@@ -214,10 +214,21 @@ class DurableInBandProbeLeaseE1:
         changed = await asyncio.to_thread(
             self.revoke, operator_approved=operator_approved,
         )
+        # A passed router may have stale or even mistakenly UNWRAPPED
+        # callbacks. Re-running those original callbacks here would make
+        # fresh external GETs AFTER operator revocation. Instead replace only
+        # these two original read-only probe registrations with host-local
+        # deny callbacks before rechecking. Re-enabling later requires a new
+        # explicit trusted registration; this lease remains nonrenewable.
+        def revoked_probe() -> bool:
+            return False
+
+        for route in _ROUTES:
+            tool_key, endpoint = route.rsplit(".", 1)
+            router.register_health_probe(tool_key, endpoint, revoked_probe)
         await router.check_health_once()
-        # A caller may accidentally supply a Router whose probes were never
-        # wrapped with this durable lease. Never report that its already
-        # Healthy model-visible source was withdrawn in that case.
+        # Never report a successful local withdrawal while either previously
+        # authorized model-visible source remains Healthy.
         current = {
             f"{item.tool}.{item.endpoint}": item.status
             for item in router.health_snapshots()
