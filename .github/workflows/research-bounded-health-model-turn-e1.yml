@@ -1,0 +1,135 @@
+name: Bounded Health-Gated Model Turn E1
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_bounded_health_model_turn_e1.py"
+      - "tests/test_research_bounded_health_model_turn_e1.py"
+      - "research/autoresearch/bounded-health-model-turn-e1.md"
+      - ".github/workflows/research-bounded-health-model-turn-e1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  single-flight-deadline-quarantine:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install source and no-network test dependencies
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Validate no overlapping generation and no late provider execution
+        run: |
+          ruff check scripts/research_bounded_health_model_turn_e1.py tests/test_research_bounded_health_model_turn_e1.py
+          pyright scripts/research_bounded_health_model_turn_e1.py
+          python -m pytest -q tests/test_research_bounded_health_model_turn_e1.py tests/test_research_health_zero_menu_short_circuit_e1.py tests/test_research_live_health_model_menu_e1.py
+
+  real-pinned-qwen-cpu-request-deadline:
+    needs: single-flight-deadline-quarantine
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install pinned local CPU Qwen and repository
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "transformers>=4.51,<5"
+      - name: Observe actual pinned Qwen over host request deadline, never provider GET
+        run: |
+          python - <<'PY'
+          import asyncio
+          import json
+          import time
+          import httpx
+          from scripts.agent_utility_v7_dev_agent import (
+              LocalQwenAgent, MODEL_REVISION,
+          )
+          from scripts.research_bounded_health_model_turn_e1 import (
+              BoundedHealthModelTurnE1,
+          )
+          from scripts.research_live_health_model_menu_e1 import (
+              GEO, build_health_aware_router,
+          )
+          from scripts.research_real_qwen_open_meteo_two_hop_e1 import (
+              SYSTEM, USER_REQUESTS, PRINCIPAL,
+          )
+
+          def forbid_provider_get(request):
+              raise AssertionError("no provider HTTP in deadline research")
+
+          async def run():
+              agent = LocalQwenAgent()
+              assert MODEL_REVISION == "c1899de289a04d12100db370d81485cdf75e47ca"
+              async with httpx.AsyncClient(
+                  transport=httpx.MockTransport(forbid_provider_get),
+              ) as client:
+                  router = build_health_aware_router(
+                      client, trusted_health_probes={GEO: lambda: True},
+                  )
+                  try:
+                      await router.check_health_once()
+                      guard = BoundedHealthModelTurnE1(
+                          agent, router, model_deadline_seconds=0.5,
+                      )
+                      options = {
+                          "query": USER_REQUESTS["en"],
+                          "principal": PRINCIPAL,
+                          "host_request_inputs": {
+                              "name": "Seoul", "language": "en",
+                              "country_code": "KR",
+                          },
+                          "system_prompt": SYSTEM,
+                      }
+                      start = time.perf_counter()
+                      first = await guard.run(**options)
+                      elapsed = time.perf_counter() - start
+                      assert first["status"] == "generation_timeout"
+                      assert first["model_invoked"] is True
+                      assert first["model_output_discarded"] is True
+                      assert elapsed < 5.0, "request did not meet broad test limit"
+                      assert guard.busy, "real CPU model must remain quarantined"
+                      second = await guard.run(**options)
+                      assert second["status"] == "model_busy"
+                      assert second["model_invoked"] is False
+                      wait_started = time.perf_counter()
+                      while guard.busy and time.perf_counter() - wait_started < 80:
+                          await asyncio.sleep(0.1)
+                      assert not guard.busy, "thread failed to finish under E1 budget"
+                      guard.close()
+                      result = {
+                          "evidence_tier": "REAL_PINNED_QWEN_CPU_HOST_DEADLINE_E1_NOT_E2",
+                          "agent_revision": MODEL_REVISION,
+                          "host_deadline_seconds": 0.5,
+                          "host_return_elapsed_ms": round(elapsed * 1000, 2),
+                          "first_status": first["status"],
+                          "second_status": second["status"],
+                          "late_result_quarantined": True,
+                          "external_provider_requests": 0,
+                          "model_selected_tool_executions": 0,
+                          "independent_e2_qualified": False,
+                          "production_default_changed": False,
+                      }
+                      print(json.dumps(result, sort_keys=True, allow_nan=False))
+                  finally:
+                      await router.aclose()
+
+          asyncio.run(run())
+          PY
