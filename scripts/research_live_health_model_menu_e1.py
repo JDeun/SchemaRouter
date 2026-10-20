@@ -217,6 +217,9 @@ def _authorized_input_ready_cooldown(
             or endpoint.destructive
             or endpoint.auth_requirements
             or authorized is not None and not authorized(tool, endpoint)
+            or router._data_scope_endpoint_view(
+                principal, tool, endpoint,
+            ) is None
         ):
             continue
         if all(
