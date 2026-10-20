@@ -11,15 +11,15 @@ import asyncio
 import json
 import time
 from collections import Counter
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
 from typing import Any
 
 import httpx
 
+from scripts.research_live_health_model_menu_e1 import GEO, WEATHER
 from scripts.research_long_lived_health_session_e1 import (
     LongLivedOpenMeteoHealthSessionE1,
 )
-from scripts.research_live_health_model_menu_e1 import GEO, WEATHER
 from scripts.research_real_qwen_open_meteo_two_hop_e1 import (
     PRINCIPAL,
     USER_REQUESTS,
