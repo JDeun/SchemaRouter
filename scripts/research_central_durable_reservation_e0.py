@@ -14,8 +14,8 @@ from pathlib import Path
 from typing import Literal
 
 from scripts.research_central_egress_admission_e0 import (
-    SyntheticEgressRequestE0,
     _FIXED_ROUTES,
+    SyntheticEgressRequestE0,
 )
 
 ReservationDecision = Literal[
@@ -111,7 +111,7 @@ class DurableCentralReservationE0:
                     "INSERT INTO allowed VALUES(?,?,?,?)",
                     [(*key, fingerprint) for key, fingerprint in allowed.items()],
                 )
-        except (sqlite3.Error, OSError) as exc:
+        except (sqlite3.Error, OSError):
             raise RuntimeError("synthetic central provision unavailable") from None
 
     def reserve(self, request: SyntheticEgressRequestE0) -> ReservationDecision:
