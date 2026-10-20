@@ -25,6 +25,9 @@ class HealthProbeSnapshot:
     status: HealthStatus
     last_checked_at: datetime | None = None
     last_error_type: str | None = None
+    # Non-secret monitor-local epoch; never a remote probe URL or permission.
+    registration_id: int = 0
+    status_epoch: int = 0
 
 
 @dataclass
@@ -32,6 +35,8 @@ class _ProbeRecord:
     probe: HealthProbe
     tool_fingerprint: str
     generation: int = 0
+    registration_id: int = 0
+    status_epoch: int = 0
     invalidated_reason: str | None = None
     status: HealthStatus = "unknown"
     last_checked_at: datetime | None = None
@@ -66,6 +71,7 @@ class AccessHealthMonitor:
     def __init__(self, executor: RegistryExecutor) -> None:
         self.executor = executor
         self._probes: dict[tuple[str, str], _ProbeRecord] = {}
+        self._next_registration_id = 0
         self._probe_lock = RLock()
         self._task: asyncio.Task[None] | None = None
         self._interval_seconds = 30.0
@@ -97,9 +103,11 @@ class AccessHealthMonitor:
                 )
             if not callable(probe):
                 raise TypeError("health probe must be callable")
+            self._next_registration_id += 1
             self._probes[(tool_key, endpoint)] = _ProbeRecord(
                 probe=probe,
                 tool_fingerprint=tool.fingerprint,
+                registration_id=self._next_registration_id,
             )
 
     def unregister(self, tool_key: str, endpoint: str) -> None:
@@ -196,11 +204,15 @@ class AccessHealthMonitor:
                 record.tool_fingerprint = transition.expected_new_fingerprint
                 if entry.invalidated_reason is not None:
                     record.invalidated_reason = entry.invalidated_reason
+                    if record.status != "stale":
+                        record.status_epoch += 1
                     record.status = "stale"
                     record.last_error_type = entry.invalidated_reason
                     continue
 
                 record.invalidated_reason = None
+                if record.status != "unknown":
+                    record.status_epoch += 1
                 record.status = "unknown"
                 record.last_error_type = None
 
@@ -287,6 +299,8 @@ class AccessHealthMonitor:
                     status=record.status,
                     last_checked_at=record.last_checked_at,
                     last_error_type=record.last_error_type,
+                    registration_id=record.registration_id,
+                    status_epoch=record.status_epoch,
                 )
                 for (tool, endpoint), record in sorted(self._probes.items())
             )
@@ -317,6 +331,8 @@ class AccessHealthMonitor:
                     record,
                 )
                 if not current:
+                    if record.status != "stale":
+                        record.status_epoch += 1
                     record.status = "stale"
                     record.last_checked_at = datetime.now(timezone.utc)
                     record.last_error_type = stale_reason
@@ -428,6 +444,8 @@ class AccessHealthMonitor:
                             cooldown_seconds=unavailable_cooldown_seconds,
                         )
 
+                    if record.status != status:
+                        record.status_epoch += 1
                     record.status = status
                     record.last_checked_at = datetime.now(timezone.utc)
                     record.last_error_type = error_type
