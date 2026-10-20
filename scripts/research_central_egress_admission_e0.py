@@ -135,10 +135,10 @@ class CentralEgressLinearizationModelE0:
         ):
             raise ValueError("trusted synthetic E0 request and sink required")
         with self._lock:
-            if self._revoked or request.tenant in self._revoked_tenants:
-                return "operator_revoked"
-            if type(request.epoch) is not int or request.epoch != self._epoch:
-                return "stale_epoch"
+            # Validate the submitted fixture envelope first. A malformed or
+            # unhashable tenant label must fail closed rather than crashing
+            # the central decision path or revealing a different tenant's
+            # revocation state.
             key = (request.tenant, request.workload, request.route_id)
             if (
                 any(type(k) is not str or not k for k in key)
@@ -150,6 +150,10 @@ class CentralEgressLinearizationModelE0:
                 or len(request.request_id) > 128
             ):
                 return "identity_or_scope_denied"
+            if self._revoked or request.tenant in self._revoked_tenants:
+                return "operator_revoked"
+            if type(request.epoch) is not int or request.epoch != self._epoch:
+                return "stale_epoch"
             unique_id = (request.tenant, request.request_id)
             if unique_id in self._seen:
                 return "duplicate_request"
