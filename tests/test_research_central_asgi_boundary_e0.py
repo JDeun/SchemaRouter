@@ -285,3 +285,36 @@ async def test_closed_or_corrupt_authority_cannot_emit_from_http(tmp_path: Path)
         assert response.status_code == 503
         assert response.json() == {"decision": "synthetic_authority_unavailable"}
     assert forwarded == []
+
+
+@pytest.mark.asyncio
+async def test_oversized_and_deep_json_never_reach_synthetic_sink(tmp_path: Path):
+    store = _store(tmp_path / "input-limits.sqlite3")
+    forwarded: list[str] = []
+    app = _fixture_scope(
+        make_synthetic_asgi_gateway_e0(
+            store, synthetic_sink=lambda req: forwarded.append(req.request_id),
+        ),
+        SyntheticScopeIdentityE0("workload", "church", "agent-a"),
+    )
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://synthetic.invalid",
+    ) as client:
+        # More than the strict 2048-byte body cap, with a valid content type.
+        huge = await client.post(
+            "/e0/execute", content="[" * 3000 + "]" * 3000,
+            headers={"content-type": "application/json"},
+        )
+        assert huge.status_code == 400
+        assert huge.json() == {"decision": "invalid_request"}
+        # Fits the byte cap but would exceed the CPython JSON nesting
+        # recursion limit; never let a malformed request crash the app.
+        nested = await client.post(
+            "/e0/execute", content="[" * 1010 + "0" + "]" * 1010,
+            headers={"content-type": "application/json"},
+        )
+        assert nested.status_code == 400
+        assert nested.json() == {"decision": "invalid_request"}
+    assert forwarded == []
+    assert store.reserved_for_test("church", GEO) == 0
