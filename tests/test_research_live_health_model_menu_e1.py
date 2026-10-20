@@ -271,6 +271,39 @@ async def test_only_trusted_transient_status_marks_path_temporarily_unavailable(
 
 
 @pytest.mark.asyncio
+async def test_newer_healthy_background_probe_does_not_abort_valid_model_tool_receipt():
+    """Inference may outlast a healthy heartbeat; no spurious availability veto."""
+    updates = {"count": 0}
+
+    async def probe() -> bool:
+        updates["count"] += 1
+        return True
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(_transport)) as client:
+        router = build_health_aware_router(
+            client, trusted_health_probes={GEO: probe},
+        )
+        await router.check_health_once()
+        first = _menu(router)
+        assert first.route_ids == (GEO,)
+        old_stamp = dict(first.checked_at)[GEO]
+        # Simulate model inference lasting beyond the watchdog interval.
+        await asyncio.sleep(0.01)
+        await router.check_health_once()
+        assert updates["count"] == 2
+        assert dict(_menu(router).checked_at)[GEO] > old_stamp
+        # The old source/authorization/selected-route ID is still valid:
+        # only another successful heartbeat occurred.
+        first.assert_current()
+        observation = await execute_health_scoped_host_call(
+            first, route_id=GEO, arguments=HOST,
+            host_required_output_fields=("latitude", "longitude"),
+        )
+        assert observation["status"] == "ok"
+        await router.aclose()
+
+
+@pytest.mark.asyncio
 async def test_health_changes_during_model_window_abort_old_menu():
     state = {"ok": True}
 
