@@ -156,8 +156,11 @@ class HealthScopedModelMenu:
             if (
                 record is None
                 or record.status != "healthy"
-                or record.last_checked_at != expected[route]
                 or record.last_checked_at is None
+                # A periodic healthy refresh is not a service outage.
+                # Revalidation must reject older, stale, unhealthy or
+                # cooled-down receipts, not harmless newer observations.
+                or record.last_checked_at < expected[route]
                 or not _fresh(record.last_checked_at, self.max_probe_age_seconds)
                 or not _probe_after_latest_failure(
                     self.view.router, route, record.last_checked_at,
