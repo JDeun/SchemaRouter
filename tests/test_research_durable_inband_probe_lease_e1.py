@@ -1,8 +1,10 @@
 """Offline SQLite budgets: atomic same-host concurrency and restart fail-closed."""
 from __future__ import annotations
 
+import asyncio
 import json
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from multiprocessing import get_context
 from pathlib import Path
 
 import httpx
@@ -287,6 +289,13 @@ def test_claim_and_revoke_race_never_exceeds_original_budget(tmp_path):
         assert _store(tmp_path).try_claim(WEATHER) is False
 
 
+def _stop_from_independent_process(path: str) -> bool:
+    """OS process with a new SQLite connection, not merely another object."""
+    return DurableInBandProbeLeaseE1(
+        Path(path),
+    ).revoke(operator_approved=True)
+
+
 @pytest.mark.asyncio
 async def test_other_router_with_cached_healthy_receipt_detects_revocation(tmp_path):
     """Two independently instantiated routers share only the SQLite lease."""
@@ -334,7 +343,19 @@ async def test_other_router_with_cached_healthy_receipt_detects_revocation(tmp_p
                 },
             )
             assert prior.route_ids == (GEO,)
-            assert first.revoke(operator_approved=True) is True
+            # A fresh Python OS process commits the durable stop while the
+            # existing other Router still holds its previously Healthy state.
+            # Explicit spawn avoids inheriting the active asyncio monitor.
+            with ProcessPoolExecutor(
+                max_workers=1, mp_context=get_context("spawn"),
+            ) as worker:
+                revoked = await asyncio.to_thread(
+                    lambda: worker.submit(
+                        _stop_from_independent_process,
+                        str(tmp_path / "operator-approved.sqlite3"),
+                    ).result(timeout=15),
+                )
+            assert revoked is True
 
             # The other router has not polled again and still has a cached
             # Healthy status. The opt-in read-only lease check must withdraw
