@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, cast
 
 import anyio
 from starlette.applications import Starlette
@@ -107,15 +107,21 @@ def make_synthetic_asgi_gateway_e0(
         if identity is None:
             return JSONResponse({"decision": "identity_or_scope_denied"}, status_code=403)
         payload = await _bounded_json(request)
-        if payload is None:
+        if (
+            payload is None
+            or any(type(payload[name]) is not str for name in (
+                "request_id", "route_id", "source_fingerprint",
+            ))
+            or type(payload["epoch"]) is not int
+        ):
             return JSONResponse({"decision": "invalid_request"}, status_code=400)
         candidate = SyntheticEgressRequestE0(
             tenant=identity.tenant,
             workload=identity.workload,
-            request_id=payload["request_id"],
-            route_id=payload["route_id"],
-            source_fingerprint=payload["source_fingerprint"],
-            epoch=payload["epoch"],
+            request_id=cast(str, payload["request_id"]),
+            route_id=cast(str, payload["route_id"]),
+            source_fingerprint=cast(str, payload["source_fingerprint"]),
+            epoch=cast(int, payload["epoch"]),
         )
 
         def attempt() -> str:
