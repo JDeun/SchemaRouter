@@ -74,6 +74,67 @@ async def test_background_watchdog_detects_then_recovers_from_canary_timeout():
 
 
 @pytest.mark.asyncio
+async def test_third_automatic_tick_exhausts_canaries_without_new_network():
+    """Down -> up -> exhausted, the original old healthy receipt fails closed."""
+    seen = {"geocoding": 0, "forecast": 0}
+
+    def transport(request: httpx.Request) -> httpx.Response:
+        label = (
+            "geocoding" if request.url.host == "geocoding-api.open-meteo.com"
+            else "forecast"
+        )
+        seen[label] += 1
+        if label == "geocoding" and seen[label] == 1:
+            raise httpx.ConnectTimeout(
+                "PRIVATE_FIRST_PROBE_FAILURE", request=request,
+            )
+        return _healthy(request)
+
+    report = await observe_finite_background_recovery(
+        lambda: httpx.MockTransport(transport),
+        operator_approved=True,
+        interval_seconds=0.2,
+        include_exhaustion_cycle=True,
+    )
+    assert report["observations"] == [
+        {
+            "health": "unhealthy",
+            "visible_geocoder": False,
+            "menu_status": "temporary_unavailable",
+        },
+        {
+            "health": "healthy",
+            "visible_geocoder": True,
+            "menu_status": "ready",
+        },
+        {
+            "health": "unhealthy",
+            "visible_geocoder": False,
+            "menu_status": "temporary_unavailable",
+        },
+    ]
+    assert report["exhaustion_cycle_checked"] is True
+    assert report["old_healthy_menu_invalidated_after_budget"] is True
+    assert report["inband_get_attempts"] == 4
+    assert report["probe_attempts"] == {"geocoding": 2, "forecast": 2}
+    assert seen == {"geocoding": 2, "forecast": 2}
+    assert "PRIVATE_" not in json.dumps(report)
+
+
+@pytest.mark.asyncio
+async def test_untrusted_exhaustion_flag_aborts_before_transport():
+    def fail_on_construct() -> httpx.AsyncBaseTransport:
+        raise AssertionError("must not allocate unapproved transport")
+
+    with pytest.raises(ValueError, match="boolean"):
+        await observe_finite_background_recovery(
+            fail_on_construct,
+            operator_approved=True,
+            include_exhaustion_cycle=1,  # type: ignore[arg-type]
+        )
+
+
+@pytest.mark.asyncio
 async def test_false_operator_approval_aborts_before_transport_instantiation():
     def no_factory() -> httpx.AsyncBaseTransport:
         raise AssertionError("must not construct transport without approval")
