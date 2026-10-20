@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import argparse
 import json
-import platform
 import secrets
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -56,6 +56,24 @@ ORDER = ("alphabetical_control", "e5_ranked_order",
 EVIDENCE = "REAL_LOCAL_QWEN_E5_MODEL_VISIBLE_ORDER_PUBLIC_DEV_NOT_E2"
 UNATTESTED = "INJECTED_GENERATOR_E5_ORDER_PUBLIC_DEV_UNSCORED"
 SCHEMA_VERSION = 1
+
+
+def strict_ranked_selector(
+    ranker: AuthorizedFixed5DecisionSelector,
+) -> tuple[Callable[[str, tuple[str, ...]], list[str]], list[tuple[str, ...]]]:
+    """Bind each episode's ranker and receipt without a loop closure."""
+    selected: list[tuple[str, ...]] = []
+
+    def select(query: str, offered: tuple[str, ...]) -> list[str]:
+        if selected:
+            raise ValueError("one fixed5 decision required per episode")
+        choices = ranker(query, offered)
+        if len(choices) != 5 or len(set(choices)) != 5:
+            raise ValueError("E5 incomplete or duplicate K5 result")
+        selected.append(tuple(choices))
+        return choices
+
+    return select, selected
 
 
 class OrderWitnessAgent:
@@ -106,7 +124,6 @@ def run_order_probe(
     }
     changed_rank_positions = 0
     paired_different_outcomes = 0
-    per_case_counts: list[dict[str, int]] = []
     for case in cases:
         task = one_step_fixture_task(case)
         # The next expected route and the fixture grader stay completely
@@ -121,17 +138,7 @@ def run_order_probe(
             if len(view.visible_route_ids) != 13:
                 raise ValueError("principal-scoped native catalog drift")
             selector = AuthorizedFixed5DecisionSelector(view, backend)
-            selected: list[tuple[str, ...]] = []
-
-            def select(query: str, offered: tuple[str, ...]) -> list[str]:
-                if selected:
-                    raise ValueError("one fixed5 decision required per episode")
-                choices = selector(query, offered)
-                if len(choices) != 5 or len(set(choices)) != 5:
-                    raise ValueError("E5 incomplete or duplicate K5 result")
-                selected.append(tuple(choices))
-                return choices
-
+            select, selected = strict_ranked_selector(selector)
             witnessed = OrderWitnessAgent(agent)
             result = run_generated_episode(
                 witnessed, router.registry, task,
@@ -197,9 +204,6 @@ def run_order_probe(
                 strict=True,
             )
         )
-        per_case_counts.append({
-            arm: sum(per_case_arm_passes[arm]) for arm in ARMS
-        })
 
     for arm in ARMS:
         for lang in PILOT_LANGUAGES:
