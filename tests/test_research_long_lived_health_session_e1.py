@@ -8,10 +8,10 @@ import httpx
 import pytest
 
 from schemarouter import PrincipalContext
+from scripts.research_live_health_model_menu_e1 import GEO, WEATHER
 from scripts.research_long_lived_health_session_e1 import (
     LongLivedOpenMeteoHealthSessionE1,
 )
-from scripts.research_live_health_model_menu_e1 import GEO, WEATHER
 
 ACTOR = PrincipalContext(subject="e1-host", roles=("reader",))
 QUERY = "Public current weather in Seoul"
