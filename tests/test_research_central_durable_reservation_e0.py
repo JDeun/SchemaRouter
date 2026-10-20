@@ -206,3 +206,58 @@ def test_empty_or_partial_schema_is_not_implicitly_repaired(tmp_path):
             allowed={("church", "worker-a", GEO): "geo-revision-1"},
             cap_per_tenant_route=1,
         )
+
+
+def test_interrupted_provision_rolls_back_all_authority_and_registration(
+    tmp_path, monkeypatch,
+):
+    """An artificial crash after authority insert must NOT persist any grant."""
+    path = tmp_path / "interrupted.sqlite3"
+    store = DurableCentralReservationE0(path)
+    original_connect = store._existing_connection
+
+    class InterruptedRegistration:
+        def __init__(self, connection: sqlite3.Connection) -> None:
+            self.connection = connection
+
+        def executescript(self, script: str) -> None:
+            self.connection.executescript(script)
+
+        def execute(self, statement: str, args=()):
+            return self.connection.execute(statement, args)
+
+        def executemany(self, statement: str, values) -> None:
+            raise sqlite3.OperationalError("PRIVATE_INJECTED_CRASH")
+
+        def close(self) -> None:
+            self.connection.close()
+
+    monkeypatch.setattr(
+        store,
+        "_existing_connection",
+        lambda: InterruptedRegistration(original_connect()),
+    )
+    with pytest.raises(RuntimeError, match="provision unavailable") as failure:
+        store.provision_once(
+            allowed={("church", "worker-a", GEO): "geo-revision-1"},
+            cap_per_tenant_route=1,
+        )
+    assert "PRIVATE_" not in str(failure.value)
+    with sqlite3.connect(path) as conn:
+        names = {
+            row[0] for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            )
+        }
+    # Neither schema nor partial authority can survive the aborted DDL txn.
+    assert "authority" not in names
+    assert "allowed" not in names
+    reopened = DurableCentralReservationE0(path)
+    assert reopened.reserve(_request("after-crash")) == (
+        "synthetic_authority_unavailable"
+    )
+    with pytest.raises(FileExistsError):
+        reopened.provision_once(
+            allowed={("church", "worker-a", GEO): "geo-revision-1"},
+            cap_per_tenant_route=1,
+        )
