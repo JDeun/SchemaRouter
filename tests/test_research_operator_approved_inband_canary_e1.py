@@ -6,10 +6,23 @@ import json
 import httpx
 import pytest
 
+from schemarouter import PolicyViolationError
+from scripts.research_live_health_model_menu_e1 import (
+    build_health_aware_router,
+    capture_health_scoped_model_menu,
+    execute_health_scoped_host_call,
+)
+from scripts.research_long_lived_real_open_meteo_e1 import (
+    CappedOpenMeteoTransport,
+)
 from scripts.research_operator_approved_inband_canary_e1 import (
     GEO,
     InBandCanaryCallbacksE1,
     observe_inband_canary_once,
+)
+from scripts.research_real_qwen_open_meteo_two_hop_e1 import (
+    PRINCIPAL,
+    USER_REQUESTS,
 )
 
 
@@ -99,6 +112,100 @@ async def test_real_canary_timeout_blocks_native_business_calls_without_retry():
     }
     assert len(seen) == 2
     assert "PRIVATE_" not in json.dumps(receipt)
+
+
+@pytest.mark.asyncio
+async def test_actual_native_canary_callback_recovers_after_timeout_then_expires():
+    """Real original invoker/health receipts: network down then healthy canary."""
+    hits = {"geocode": 0}
+
+    def flaky(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "geocoding-api.open-meteo.com":
+            hits["geocode"] += 1
+            if hits["geocode"] == 1:
+                raise httpx.ConnectTimeout(
+                    "PRIVATE_ACTUAL_CANARY_TIMEOUT", request=request,
+                )
+        return source_response(request)
+
+    transport = CappedOpenMeteoTransport(
+        httpx.MockTransport(flaky), max_requests=6,
+    )
+    async with httpx.AsyncClient(
+        transport=transport, follow_redirects=False,
+    ) as client:
+        probes = InBandCanaryCallbacksE1(
+            client, approved_public_business_canaries=True,
+            attempts_per_route=2,
+        )
+        router = build_health_aware_router(
+            client, trusted_health_probes={
+                GEO: probes.geocoding,
+                "open_meteo_weather.current": probes.forecast,
+            },
+            transport_retry_budget=0,
+        )
+        try:
+            await router.check_health_once()
+            unavailable = capture_health_scoped_model_menu(
+                router, USER_REQUESTS["en"], principal=PRINCIPAL,
+                host_request_inputs={
+                    "name": "Seoul", "language": "en", "country_code": "KR",
+                },
+            )
+            assert unavailable.route_ids == ()
+            assert unavailable.status == "temporary_unavailable"
+            assert transport.total_requests == 2
+
+            # The SAME host-approved source callback is invoked a second
+            # time, and a genuinely new HTTP result verifies recovery.
+            await router.check_health_once()
+            recovered = capture_health_scoped_model_menu(
+                router, USER_REQUESTS["en"], principal=PRINCIPAL,
+                host_request_inputs={
+                    "name": "Seoul", "language": "en", "country_code": "KR",
+                },
+            )
+            assert recovered.route_ids == (GEO,)
+            location = await execute_health_scoped_host_call(
+                recovered, route_id=GEO,
+                arguments={
+                    "name": "Seoul", "language": "en", "country_code": "KR",
+                },
+                host_required_output_fields=(
+                    "location_id", "latitude", "longitude", "country_code",
+                ),
+            )
+            second = capture_health_scoped_model_menu(
+                router, USER_REQUESTS["en"], principal=PRINCIPAL,
+                host_request_inputs={
+                    "name": "Seoul", "language": "en", "country_code": "KR",
+                },
+                prior_public_observation=location,
+                executed_route_ids=(GEO,),
+            )
+            result = await execute_health_scoped_host_call(
+                second, route_id="open_meteo_weather.current",
+                arguments={
+                    "latitude": location["latitude"],
+                    "longitude": location["longitude"],
+                },
+                host_required_output_fields=(
+                    "time", "temperature_2m", "temperature_unit",
+                ),
+            )
+            assert result["status"] == "ok"
+            assert transport.total_requests == 6
+            assert probes.counts[GEO] == 2
+
+            # Budget exhausted: a later check MUST NOT recycle stale
+            # Healthy; it fails closed without a seventh provider GET.
+            await router.check_health_once()
+            with pytest.raises(PolicyViolationError, match="availability changed"):
+                recovered.assert_current()
+            assert transport.total_requests == 6
+        finally:
+            await router.aclose()
 
 
 @pytest.mark.asyncio
