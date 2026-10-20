@@ -1,0 +1,234 @@
+"""Offline SQLite budgets: atomic same-host concurrency and restart fail-closed."""
+from __future__ import annotations
+
+import asyncio
+import json
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+import httpx
+import pytest
+
+from scripts import research_durable_inband_probe_lease_e1 as lease_module
+from scripts.research_durable_inband_probe_lease_e1 import (
+    DurableInBandProbeLeaseE1,
+)
+from scripts.research_live_health_model_menu_e1 import (
+    GEO,
+    WEATHER,
+    build_health_aware_router,
+    capture_health_scoped_model_menu,
+)
+from scripts.research_operator_approved_inband_canary_e1 import (
+    InBandCanaryCallbacksE1,
+)
+from scripts.research_real_qwen_open_meteo_two_hop_e1 import (
+    PRINCIPAL,
+    USER_REQUESTS,
+)
+
+
+def _store(tmp_path: Path) -> DurableInBandProbeLeaseE1:
+    return DurableInBandProbeLeaseE1(tmp_path / "operator-approved.sqlite3")
+
+
+def _approve(store: DurableInBandProbeLeaseE1, *, cap: int = 1) -> None:
+    store.initialize(
+        operator_approved=True, validity_seconds=300, attempts_per_route=cap,
+    )
+
+
+def _source_response(request: httpx.Request) -> httpx.Response:
+    if request.url.host == "geocoding-api.open-meteo.com":
+        return httpx.Response(200, json={"results": [{
+            "id": 1835848, "country_code": "KR",
+            "latitude": 37.5665, "longitude": 126.978,
+        }]})
+    if request.url.host == "api.open-meteo.com":
+        return httpx.Response(200, json={
+            "current": {"time": "2026-10-20T19:00", "temperature_2m": 17.0},
+            "current_units": {"temperature_2m": "°C"},
+        })
+    raise AssertionError("unapproved source")
+
+
+def test_local_shared_lease_claim_is_atomic_across_connections_and_threads(tmp_path):
+    first = _store(tmp_path)
+    _approve(first, cap=2)
+    second = _store(tmp_path)
+    def reserve(i: int) -> bool:
+        return (first if i % 2 else second).try_claim(GEO)
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        observed = list(pool.map(reserve, range(24)))
+    assert sum(observed) == 2
+    assert first.public_counts() == {"geocoding": 2, "forecast": 0}
+    assert second.try_claim(GEO) is False
+    assert second.try_claim(WEATHER) is True
+    assert first.public_counts() == {"geocoding": 2, "forecast": 1}
+
+
+def test_lease_cannot_reset_after_restart_or_reapproval_without_new_path(tmp_path):
+    store = _store(tmp_path)
+    _approve(store, cap=1)
+    assert store.try_claim(GEO) is True
+    restarted = _store(tmp_path)
+    assert restarted.try_claim(GEO) is False
+    with pytest.raises(ValueError, match="cannot be renewed"):
+        restarted.initialize(
+            operator_approved=True, validity_seconds=3600,
+            attempts_per_route=2,
+        )
+    assert restarted.public_counts() == {"geocoding": 1, "forecast": 0}
+
+
+def test_missing_or_corrupt_database_must_never_autocreate_healthy(tmp_path):
+    store = _store(tmp_path)
+    assert store.try_claim(GEO) is False
+    assert store.public_counts() == {}
+    assert not (tmp_path / "operator-approved.sqlite3").exists()
+    (tmp_path / "operator-approved.sqlite3").write_bytes(b"not a sqlite database")
+    assert store.try_claim(GEO) is False
+    assert store.public_counts() == {}
+
+
+def test_expiry_and_clock_rollback_fail_closed_without_reissuing_lease(tmp_path, monkeypatch):
+    clock = {"seconds": 1000.0}
+    monkeypatch.setattr(lease_module, "_utc_seconds", lambda: clock["seconds"])
+    store = _store(tmp_path)
+    store.initialize(
+        operator_approved=True, validity_seconds=10, attempts_per_route=2,
+    )
+    assert store.try_claim(GEO) is True
+    clock["seconds"] = 999.0
+    assert store.try_claim(GEO) is False
+    clock["seconds"] = 1010.0
+    assert store.try_claim(GEO) is False
+    assert store.public_counts() == {"geocoding": 1, "forecast": 0}
+    with pytest.raises(ValueError, match="cannot be renewed"):
+        store.initialize(
+            operator_approved=True, validity_seconds=300,
+            attempts_per_route=2,
+        )
+
+
+@pytest.mark.parametrize(("duration", "budget"), (
+    (0, 1), (-1, 1), (3601, 1), (True, 1), (300, 0), (300, 3),
+    (300, True), (300, 1.5),
+))
+def test_invalid_operator_lease_config_fails_closed(tmp_path, duration, budget):
+    store = _store(tmp_path)
+    with pytest.raises(ValueError, match="duration|allowance"):
+        store.initialize(
+            operator_approved=True,
+            validity_seconds=duration,
+            attempts_per_route=budget,
+        )
+    assert store.try_claim(GEO) is False
+
+
+def test_missing_operator_approval_rejected_before_file_creation(tmp_path):
+    store = _store(tmp_path)
+    with pytest.raises(ValueError, match="operator"):
+        store.initialize(
+            operator_approved=False, validity_seconds=300,
+            attempts_per_route=1,
+        )
+    assert not (tmp_path / "operator-approved.sqlite3").exists()
+
+
+@pytest.mark.asyncio
+async def test_real_source_canary_callbacks_denied_after_restart_no_network():
+    from tempfile import TemporaryDirectory
+    with TemporaryDirectory() as d:
+        path = Path(d) / "approved.sqlite3"
+        store = DurableInBandProbeLeaseE1(path)
+        _approve(store, cap=1)
+        requests = {"count": 0}
+
+        def mock(request: httpx.Request) -> httpx.Response:
+            requests["count"] += 1
+            return _source_response(request)
+
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(mock),
+        ) as client:
+            originals = InBandCanaryCallbacksE1(
+                client, approved_public_business_canaries=True,
+            )
+            router = build_health_aware_router(
+                client, trusted_health_probes={
+                    GEO: store.wrap_probe(GEO, originals.geocoding),
+                    WEATHER: store.wrap_probe(WEATHER, originals.forecast),
+                },
+            )
+            try:
+                await router.check_health_once()
+                visible = capture_health_scoped_model_menu(
+                    router, USER_REQUESTS["en"], principal=PRINCIPAL,
+                    host_request_inputs={
+                        "name": "Seoul", "language": "en", "country_code": "KR",
+                    },
+                )
+                assert visible.route_ids == (GEO,)
+                assert requests["count"] == 2
+            finally:
+                await router.aclose()
+
+        # Simulate a new process with a separate controller object. The new
+        # router/callback instance MUST NOT recreate/renew old shared budget.
+        reopened = DurableInBandProbeLeaseE1(path)
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(mock),
+        ) as second_client:
+            callbacks = InBandCanaryCallbacksE1(
+                second_client, approved_public_business_canaries=True,
+            )
+            router2 = build_health_aware_router(
+                second_client, trusted_health_probes={
+                    GEO: reopened.wrap_probe(GEO, callbacks.geocoding),
+                    WEATHER: reopened.wrap_probe(WEATHER, callbacks.forecast),
+                },
+            )
+            try:
+                await router2.check_health_once()
+                hidden = capture_health_scoped_model_menu(
+                    router2, USER_REQUESTS["en"], principal=PRINCIPAL,
+                    host_request_inputs={
+                        "name": "Seoul", "language": "en", "country_code": "KR",
+                    },
+                )
+                assert hidden.status == "temporary_unavailable"
+                assert hidden.route_ids == ()
+                assert requests["count"] == 2
+                assert reopened.public_counts() == {
+                    "geocoding": 1, "forecast": 1,
+                }
+            finally:
+                await router2.aclose()
+
+
+@pytest.mark.asyncio
+async def test_failures_spend_tokens_even_when_remote_canary_times_out(tmp_path):
+    store = _store(tmp_path)
+    _approve(store)
+    attempts = {"calls": 0}
+
+    async def bad() -> bool:
+        attempts["calls"] += 1
+        raise httpx.ConnectTimeout("PRIVATE_PROVIDER_ERROR")
+
+    wrapped = store.wrap_probe(GEO, bad)
+    assert await wrapped() is False
+    assert await wrapped() is False
+    assert attempts["calls"] == 1
+    assert store.public_counts()["geocoding"] == 1
+    assert "PRIVATE_" not in json.dumps(store.public_counts())
+
+
+def test_only_original_canary_route_ids_allowed(tmp_path):
+    store = _store(tmp_path)
+    _approve(store)
+    assert store.try_claim("open_meteo_weather.admin") is False
+    with pytest.raises(ValueError, match="known authorized"):
+        store.wrap_probe("open_meteo_weather.admin", lambda: True)
+    assert store.public_counts() == {"geocoding": 0, "forecast": 0}
