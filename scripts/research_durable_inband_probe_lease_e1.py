@@ -8,8 +8,10 @@ auto-renew expired permission, kill in-flight requests or qualify E2.
 """
 from __future__ import annotations
 
+import asyncio
 import inspect
 import math
+import os
 import sqlite3
 import time
 from collections.abc import Awaitable, Callable
@@ -74,8 +76,17 @@ class DurableInBandProbeLeaseE1:
         now = _utc_seconds()
         if not math.isfinite(now):
             raise ValueError("valid wall clock required")
-        # Only the explicit initialize entrypoint has permission to create
-        # the file. Insecure/untrusted directory ownership is not supported.
+        # Only explicit operator initialize can create the lease file. New
+        # SQLite files start owner-only; an existing lease is never replaced.
+        # The parent directory/filesystem must be operator-controlled.
+        try:
+            fd = os.open(
+                self._path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600,
+            )
+        except FileExistsError:
+            pass
+        else:
+            os.close(fd)
         with closing(sqlite3.connect(
             self._path,
             timeout=1.0,
@@ -166,7 +177,7 @@ class DurableInBandProbeLeaseE1:
         async def capped_callback() -> bool:
             # Reserve BEFORE any business endpoint GET; even a timeout consumes
             # this allowance, preventing retries after process interruption.
-            if not self.try_claim(route):
+            if not await asyncio.to_thread(self.try_claim, route):
                 return False
             try:
                 result: Any = callback()
