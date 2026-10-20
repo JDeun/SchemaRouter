@@ -135,6 +135,15 @@ async def observe_inband_canary_once(
             trusted_health_probes=probes,
             transport_retry_budget=0,
         )
+        async def shared_approval_current() -> bool:
+            # Refresh this router's original health menu when another worker
+            # has revoked/expired its shared lease. Never spends an allowance
+            # or performs a provider GET on this read-only check.
+            return (
+                lease is None
+                or await lease.reconcile_if_approval_invalid(router)
+            )
+
         status = "probe_bootstrap_timeout"
         successful_native_calls = 0
         try:
@@ -169,7 +178,10 @@ async def observe_inband_canary_once(
                     f"{r.tool}.{r.endpoint}": r.status
                     for r in router.health_snapshots()
                 }
-                if all(statuses.get(key) == "healthy" for key in _ROUTES):
+                if (
+                    all(statuses.get(key) == "healthy" for key in _ROUTES)
+                    and await shared_approval_current()
+                ):
                     query = USER_REQUESTS["en"]
                     first = capture_health_scoped_model_menu(
                         router, query, principal=PRINCIPAL,
@@ -178,6 +190,10 @@ async def observe_inband_canary_once(
                     )
                     if GEO in first.route_ids:
                         try:
+                            if not await shared_approval_current():
+                                raise PolicyViolationError(
+                                    "model-visible shared lease approval changed"
+                                )
                             geo = await execute_health_scoped_host_call(
                                 first, route_id=GEO, arguments=dict(_GEO_ARGS),
                                 host_required_output_fields=(
@@ -187,6 +203,10 @@ async def observe_inband_canary_once(
                             if geo.get("status") != "ok":
                                 raise ValueError("native source projection unavailable")
                             successful_native_calls = 1
+                            # Another process could revoke the lease during
+                            # the first source GET. Reconcile before publishing
+                            # the dependent model-visible weather tool menu.
+                            await shared_approval_current()
                             second = capture_health_scoped_model_menu(
                                 router, query, principal=PRINCIPAL,
                                 host_request_inputs=dict(_GEO_ARGS),
@@ -197,6 +217,10 @@ async def observe_inband_canary_once(
                             if WEATHER not in second.route_ids:
                                 status = "source_now_unavailable"
                             else:
+                                if not await shared_approval_current():
+                                    raise PolicyViolationError(
+                                        "model-visible shared lease approval changed"
+                                    )
                                 weather = await execute_health_scoped_host_call(
                                     second, route_id=WEATHER,
                                     arguments={
@@ -213,7 +237,16 @@ async def observe_inband_canary_once(
                                 status = "success"
                         except (PolicyViolationError, httpx.RequestError,
                                 httpx.HTTPStatusError, ValueError, RuntimeError):
-                            status = "source_execution_rejected"
+                            # A different worker may revoke approval DURING an
+                            # already-admitted source GET. The strict host can
+                            # then reject that stage; distinguish an observed
+                            # lease withdrawal from a source/model error.
+                            # This read-only reconciliation spends zero GETs.
+                            status = (
+                                "source_now_unavailable"
+                                if not await shared_approval_current()
+                                else "source_execution_rejected"
+                            )
                     else:
                         status = "source_now_unavailable"
                 else:

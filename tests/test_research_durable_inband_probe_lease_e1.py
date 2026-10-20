@@ -287,6 +287,93 @@ def test_claim_and_revoke_race_never_exceeds_original_budget(tmp_path):
         assert _store(tmp_path).try_claim(WEATHER) is False
 
 
+@pytest.mark.asyncio
+async def test_other_router_with_cached_healthy_receipt_detects_revocation(tmp_path):
+    """Two independently instantiated routers share only the SQLite lease."""
+    first = _store(tmp_path)
+    _approve(first, cap=2)
+    other_worker = _store(tmp_path)
+    calls = {"count": 0}
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        calls["count"] += 1
+        return _source_response(request)
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(respond),
+    ) as client_a, httpx.AsyncClient(
+        transport=httpx.MockTransport(respond),
+    ) as client_b:
+        callbacks_a = InBandCanaryCallbacksE1(
+            client_a, approved_public_business_canaries=True,
+        )
+        callbacks_b = InBandCanaryCallbacksE1(
+            client_b, approved_public_business_canaries=True,
+        )
+        router_a = build_health_aware_router(
+            client_a, trusted_health_probes={
+                GEO: first.wrap_probe(GEO, callbacks_a.geocoding),
+                WEATHER: first.wrap_probe(WEATHER, callbacks_a.forecast),
+            },
+        )
+        router_b = build_health_aware_router(
+            client_b, trusted_health_probes={
+                GEO: other_worker.wrap_probe(GEO, callbacks_b.geocoding),
+                WEATHER: other_worker.wrap_probe(WEATHER, callbacks_b.forecast),
+            },
+        )
+        try:
+            await router_a.check_health_once()
+            await router_b.check_health_once()
+            assert calls["count"] == 4
+            assert other_worker.approval_active() is True
+            prior = capture_health_scoped_model_menu(
+                router_b, USER_REQUESTS["en"], principal=PRINCIPAL,
+                host_request_inputs={
+                    "name": "Seoul", "language": "en", "country_code": "KR",
+                },
+            )
+            assert prior.route_ids == (GEO,)
+            assert first.revoke(operator_approved=True) is True
+
+            # The other router has not polled again and still has a cached
+            # Healthy status. The opt-in read-only lease check must withdraw
+            # it before any next model menu or source dispatch.
+            assert other_worker.approval_active() is False
+            assert await other_worker.reconcile_if_approval_invalid(router_b) is False
+            with pytest.raises(PolicyViolationError, match="availability changed"):
+                prior.assert_current()
+            after = capture_health_scoped_model_menu(
+                router_b, USER_REQUESTS["en"], principal=PRINCIPAL,
+                host_request_inputs={
+                    "name": "Seoul", "language": "en", "country_code": "KR",
+                },
+            )
+            assert after.status == "temporary_unavailable"
+            assert after.route_ids == ()
+            assert calls["count"] == 4  # no post-stop probe GET
+            assert first.public_counts() == {
+                "geocoding": 2, "forecast": 2,
+            }
+        finally:
+            await router_a.aclose()
+            await router_b.aclose()
+
+
+def test_read_only_lease_admission_never_spends_probe_allowance(tmp_path):
+    store = _store(tmp_path)
+    assert store.approval_active() is False
+    _approve(store, cap=1)
+    for _ in range(10):
+        assert store.approval_active() is True
+    assert store.public_counts() == {"geocoding": 0, "forecast": 0}
+    assert store.try_claim(GEO) is True
+    assert store.approval_active() is True  # spent != revoked
+    assert store.revoke(operator_approved=True) is True
+    assert store.approval_active() is False
+    assert store.public_counts() == {"geocoding": 1, "forecast": 0}
+
+
 def test_lease_cannot_reset_after_restart_or_reapproval_without_new_path(tmp_path):
     store = _store(tmp_path)
     _approve(store, cap=1)

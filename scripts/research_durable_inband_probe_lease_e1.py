@@ -170,6 +170,67 @@ class DurableInBandProbeLeaseE1:
             # No silent fallback to per-process counters on I/O/corruption.
             return False
 
+    def approval_active(self) -> bool:
+        """Read-only validity gate for already-probed model-visible routes.
+
+        Unlike try_claim this never spends a canary GET allowance. It does
+        not grant source execution authority; the canonical scoped executor
+        must still validate the route and principal. Missing, revoked,
+        expired, rolled-back-clock and corrupt leases all deny visibility.
+        This is a same-file observation, NOT a distributed atomic fence.
+        """
+        if not self._path.is_file() or self._path.is_symlink():
+            return False
+        try:
+            with closing(self._connect_existing()) as conn:
+                row = conn.execute(
+                    "SELECT issued, expires, last_seen FROM lease WHERE id=?",
+                    (_LEASE,),
+                ).fetchone()
+                now = _utc_seconds()
+                return bool(
+                    row is not None and math.isfinite(now)
+                    and all(
+                        type(value) in (int, float) and math.isfinite(value)
+                        for value in row
+                    )
+                    and row[0] <= row[2] <= now < row[1]
+                    and row[1] > row[0]
+                )
+        except (sqlite3.Error, OSError, ValueError, TypeError):
+            return False
+
+    async def reconcile_if_approval_invalid(self, router: SchemaRouter) -> bool:
+        """Withdraw stale E1 health menus on another router after revocation.
+
+        The host calls this before exposing a model menu and again before
+        each real source dispatch. Checking the local SQLite file performs
+        no outbound request and consumes no canary budget. On invalid lease,
+        replace only the two registered original source probes with local
+        denial callbacks BEFORE a one-off monitor refresh, even if a
+        misconfigured callback was unwrapped. The normal monitor may also
+        remain running. Already in-flight requests cannot be cancelled.
+        """
+        if not isinstance(router, SchemaRouter):
+            raise ValueError("trusted existing router required")
+        if await asyncio.to_thread(self.approval_active):
+            return True
+
+        def denied_probe() -> bool:
+            return False
+
+        for route in _ROUTES:
+            tool_key, endpoint = route.rsplit(".", 1)
+            router.register_health_probe(tool_key, endpoint, denied_probe)
+        await router.check_health_once()
+        if any(
+            snapshot.status == "healthy"
+            and f"{snapshot.tool}.{snapshot.endpoint}" in _ROUTES
+            for snapshot in router.health_snapshots()
+        ):
+            raise RuntimeError("router health did not reflect invalid lease")
+        return False
+
     def revoke(self, *, operator_approved: bool) -> bool:
         """Operator-owned persistent revocation of ALL remaining canary claims.
 
