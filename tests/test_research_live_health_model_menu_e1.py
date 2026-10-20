@@ -12,8 +12,8 @@ from scripts.research_live_health_model_menu_e1 import (
     WEATHER,
     build_health_aware_router,
     capture_health_scoped_model_menu,
+    execute_health_scoped_host_call,
 )
-from scripts.research_scoped_host_invocation import execute_scoped_host_call
 
 ACTOR = PrincipalContext(subject="health-e1-reader", roles=("reader",))
 HOST = {"name": "Seoul", "language": "en", "country_code": "KR"}
@@ -90,14 +90,22 @@ async def test_real_scoped_tool_model_menu_cooldown_then_probe_recovery():
         # timeout, which becomes executor-managed cooldown, not model policy.
         state["fail_geo"] = True
         with pytest.raises(PolicyViolationError):
-            await execute_scoped_host_call(
-                first.view, selected_route_ids=list(first.route_ids),
+            await execute_health_scoped_host_call(
+                first,
                 route_id=GEO, arguments=HOST,
                 host_required_output_fields=("latitude", "longitude"),
             )
         assert ("open_meteo_geocoding", "search") in router.unavailable_access_paths()
         with pytest.raises(PolicyViolationError, match="availability changed"):
             first.assert_current()
+
+        # Even a stale model-emitted proposal must not reuse the old
+        # presentation receipt once the provider enters cooldown.
+        with pytest.raises(PolicyViolationError, match="availability changed"):
+            await execute_health_scoped_host_call(
+                first, route_id=GEO, arguments=HOST,
+                host_required_output_fields=("latitude", "longitude"),
+            )
 
         second = _menu(router)
         assert second.route_ids == ()
@@ -114,8 +122,8 @@ async def test_real_scoped_tool_model_menu_cooldown_then_probe_recovery():
         assert third.status == "ready"
         assert router.unavailable_access_paths() == ()
 
-        observation = await execute_scoped_host_call(
-            third.view, selected_route_ids=list(third.route_ids),
+        observation = await execute_health_scoped_host_call(
+            third,
             route_id=GEO, arguments=HOST,
             host_required_output_fields=("latitude", "longitude"),
         )
@@ -124,8 +132,8 @@ async def test_real_scoped_tool_model_menu_cooldown_then_probe_recovery():
             router, observation=observation, executed=(GEO,),
         )
         assert followup.route_ids == (WEATHER,)
-        weather_obs = await execute_scoped_host_call(
-            followup.view, selected_route_ids=list(followup.route_ids),
+        weather_obs = await execute_health_scoped_host_call(
+            followup,
             route_id=WEATHER, arguments={
                 "latitude": observation["latitude"],
                 "longitude": observation["longitude"],
@@ -181,8 +189,8 @@ async def test_not_every_http_failure_creates_health_cooldown():
             await router.check_health_once()
             menu = _menu(router)
             with pytest.raises(PolicyViolationError):
-                await execute_scoped_host_call(
-                    menu.view, selected_route_ids=list(menu.route_ids),
+                await execute_health_scoped_host_call(
+                    menu,
                     route_id=GEO, arguments=HOST,
                     host_required_output_fields=("latitude", "longitude"),
                 )
@@ -208,8 +216,8 @@ async def test_only_trusted_transient_status_marks_path_temporarily_unavailable(
         await router.check_health_once()
         menu = _menu(router)
         with pytest.raises(PolicyViolationError):
-            await execute_scoped_host_call(
-                menu.view, selected_route_ids=list(menu.route_ids),
+            await execute_health_scoped_host_call(
+                menu,
                 route_id=GEO, arguments=HOST,
                 host_required_output_fields=("latitude", "longitude"),
             )
