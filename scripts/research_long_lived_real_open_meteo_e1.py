@@ -126,12 +126,14 @@ async def observe_real_source_once(
             identity = id(session.router)
             for lang, city, country in _CASES:
                 try:
-                    async with asyncio.timeout(float(max_request_seconds)):
-                        row = await session.get_current_weather(
+                    row = await asyncio.wait_for(
+                        session.get_current_weather(
                             query=USER_REQUESTS[lang],
                             city=city, language=lang, country=country,
                             principal=PRINCIPAL,
-                        )
+                        ),
+                        timeout=float(max_request_seconds),
+                    )
                 except TimeoutError:
                     row = {"status": "host_deadline", "successful_native_calls": 0}
                 status = row.get("status")
