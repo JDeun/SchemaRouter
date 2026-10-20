@@ -8,10 +8,11 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import inspect
 import json
 import time
 from collections import Counter
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 import httpx
@@ -49,12 +50,16 @@ class CappedOpenMeteoTransport(httpx.AsyncBaseTransport):
 
     def __init__(
         self, delegate: httpx.AsyncBaseTransport, *, max_requests: int = 6,
+        source_admission_check: Callable[[], bool | Awaitable[bool]] | None = None,
     ) -> None:
         if not isinstance(delegate, httpx.AsyncBaseTransport):
             raise ValueError("approved async transport required")
         if type(max_requests) is not int or not 1 <= max_requests <= 6:
             raise ValueError("fixed maximum live GET budget must be 1-6")
+        if source_admission_check is not None and not callable(source_admission_check):
+            raise ValueError("trusted bounded source admission callback required")
         self._delegate = delegate
+        self._source_admission_check = source_admission_check
         self._maximum = max_requests
         self._total = 0
         self._per_host: Counter[str] = Counter()
@@ -96,6 +101,21 @@ class CappedOpenMeteoTransport(httpx.AsyncBaseTransport):
             raise RuntimeError("disallowed provider query parameter set")
         if self._total >= self._maximum:
             raise RuntimeError("fixed provider observation budget exhausted")
+        # The optional E1 lease gate is checked AFTER the fixed source
+        # allowlist and IMMEDIATELY BEFORE delegation, narrowing a race
+        # with another process revoking the original operator allowance.
+        # This is not atomic with a remote HTTP request: cancellation may
+        # still land immediately after this check or while GET is in flight.
+        if self._source_admission_check is not None:
+            try:
+                admitted = self._source_admission_check()
+                if inspect.isawaitable(admitted):
+                    admitted = await admitted
+                if admitted is not True:
+                    raise RuntimeError("source request approval unavailable")
+            except Exception:
+                # Do not leak private paths, source args or provider details.
+                raise RuntimeError("source request approval unavailable") from None
         self._total += 1
         self._per_host[request.url.host] += 1
         try:

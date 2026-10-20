@@ -378,6 +378,94 @@ async def test_other_worker_revokes_lease_during_first_native_get(tmp_path: Path
 
 
 @pytest.mark.asyncio
+async def test_transport_denies_revocation_between_host_read_and_delegate(tmp_path: Path):
+    """The opt-in final transport read prevents a now-revoked business GET."""
+    path = tmp_path / "operator-approved.sqlite3"
+    lease = DurableInBandProbeLeaseE1(path)
+    lease.initialize(
+        operator_approved=True, validity_seconds=300, attempts_per_route=1,
+    )
+    separate = DurableInBandProbeLeaseE1(path)
+    outbound = {"count": 0}
+    gates = {"count": 0}
+
+    def never_delegate(request: httpx.Request) -> httpx.Response:
+        outbound["count"] += 1
+        return source_response(request)
+
+    async def revoking_gate() -> bool:
+        gates["count"] += 1
+        # Earlier host admission was true, but a concurrent operator stop
+        # lands just before transport would dispatch the original source GET.
+        assert separate.revoke(operator_approved=True) is True
+        return lease.approval_active()
+
+    assert lease.approval_active() is True  # initial host-level read
+    transport = CappedOpenMeteoTransport(
+        httpx.MockTransport(never_delegate),
+        source_admission_check=revoking_gate,
+    )
+    async with httpx.AsyncClient(
+        transport=transport, follow_redirects=False,
+    ) as client:
+        with pytest.raises(RuntimeError, match="approval unavailable"):
+            await client.get(
+                "https://geocoding-api.open-meteo.com/v1/search",
+                params={
+                    "name": "Seoul", "language": "en", "countryCode": "KR",
+                    "count": 10, "format": "json",
+                },
+            )
+    assert gates["count"] == 1
+    assert outbound["count"] == 0
+    assert transport.total_requests == 0
+    assert lease.public_counts() == {"geocoding": 0, "forecast": 0}
+
+
+@pytest.mark.asyncio
+async def test_transport_optional_lease_read_denies_subsequent_get_without_budget_spend(
+    tmp_path: Path,
+):
+    """Valid GET passes, later revoke forbids future source requests."""
+    path = tmp_path / "original-shared-lease.sqlite3"
+    lease = DurableInBandProbeLeaseE1(path)
+    lease.initialize(
+        operator_approved=True, validity_seconds=300, attempts_per_route=1,
+    )
+    calls = {"count": 0}
+
+    def counted(request: httpx.Request) -> httpx.Response:
+        calls["count"] += 1
+        return source_response(request)
+
+    async def admission() -> bool:
+        return lease.approval_active()
+
+    transport = CappedOpenMeteoTransport(
+        httpx.MockTransport(counted),
+        source_admission_check=admission,
+    )
+    async with httpx.AsyncClient(
+        transport=transport, follow_redirects=False,
+    ) as client:
+        url = "https://geocoding-api.open-meteo.com/v1/search"
+        params = {
+            "name": "Seoul", "language": "en", "countryCode": "KR",
+            "count": 10, "format": "json",
+        }
+        response = await client.get(url, params=params)
+        assert response.status_code == 200
+        assert lease.revoke(operator_approved=True) is True
+        with pytest.raises(RuntimeError, match="approval unavailable"):
+            await client.get(url, params=params)
+    assert calls["count"] == 1
+    assert transport.total_requests == 1
+    # Read-only transport authorization is distinct from consuming the
+    # bounded health-probe GET budget.
+    assert lease.public_counts() == {"geocoding": 0, "forecast": 0}
+
+
+@pytest.mark.asyncio
 async def test_no_approval_cannot_create_outbound_requests():
     seen = []
 
