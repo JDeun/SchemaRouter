@@ -107,8 +107,17 @@ async def observe_inband_canary_once(
         DurableInBandProbeLeaseE1(existing_shared_lease_file)
         if existing_shared_lease_file is not None else None
     )
+    async def approved_at_source_dispatch() -> bool:
+        # Last local SQLite read before the *fixed allowlisted* outbound GET.
+        # This spends no probe allowance. The transport handles the denial,
+        # including requests racing against another process's revocation.
+        return lease is not None and await asyncio.to_thread(lease.approval_active)
+
     transport = CappedOpenMeteoTransport(
         transport_factory(), max_requests=_MAX_GET_ATTEMPTS,
+        source_admission_check=(
+            approved_at_source_dispatch if lease is not None else None
+        ),
     )
     start = time.perf_counter()
     async with httpx.AsyncClient(
