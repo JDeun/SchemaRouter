@@ -1,0 +1,47 @@
+name: ServiceNow External Submission E0 Intake
+
+on:
+  pull_request:
+    paths:
+      - "scripts/inspect_servicenow_external_submission.py"
+      - "tests/test_inspect_servicenow_external_submission.py"
+      - "research/autoresearch/servicenow-external-submission-intake-e0.md"
+      - ".github/workflows/servicenow-external-submission-intake-e0.yml"
+      - "scripts/external_validation_servicenow_platform_mcp.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: servicenow-external-intake-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  no-model-unscored-intake-e0:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install local unscored source validator dependencies
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Validate exact native source fixture and proposed intake boundaries
+        run: |
+          ruff check scripts/inspect_servicenow_external_submission.py tests/test_inspect_servicenow_external_submission.py
+          python -m pytest -q tests/test_inspect_servicenow_external_submission.py tests/test_servicenow_platform_mcp_provenance.py
+          pyright scripts/inspect_servicenow_external_submission.py
+      - name: Record only evidence limits, not any author-submitted tasks
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as f:
+              f.write("## ServiceNow external submission structural intake (E0 only)\n\n")
+              f.write("Strict duplicate-key, original UTF-8 digest, source revision, native tool/input field, and public DEV overlap checks PASS on **synthetic unit mocks only**.\n\n")
+              f.write("**No real provider holdout uploaded, scored, frozen, granted, or executed.** Human source-owner authorship, permission, rights, protocol, OOD and task gold review remain BLOCKED_EXTERNAL.\n")
+          PY
