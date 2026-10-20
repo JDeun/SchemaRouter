@@ -150,6 +150,54 @@ def _fresh(checked: datetime | None, age_seconds: float) -> bool:
     return 0 <= elapsed <= age_seconds
 
 
+def _authorized_input_ready_cooldown(
+    router: SchemaRouter, principal: PrincipalContext,
+    host_request_inputs: dict[str, Any],
+    prior_public_observation: dict[str, Any] | None,
+    executed_route_ids: tuple[str, ...],
+) -> bool:
+    """Host-only cause classification; never disclose denied route identity.
+
+    Availability-filtered retrieval cannot include cooled-down operations.
+    For an internal TEMPORARILY_UNAVAILABLE reason only, cross-check exact
+    registered original read-only route, current principal policy, actual
+    supplied required-parameter names and executor cooldown. Never infer a
+    route from query text, model output, source metadata or hidden gold.
+    """
+    cooled = set(router.unavailable_access_paths())
+    if not cooled:
+        return False
+    names = set(host_request_inputs)
+    if prior_public_observation is not None:
+        names.update(prior_public_observation)
+        names.discard("status")
+    authorized = router._authorization_predicate(principal)
+    for route in ROUTES:
+        if route in executed_route_ids:
+            continue
+        key, endpoint_name = route.rsplit(".", 1)
+        if (key, endpoint_name) not in cooled:
+            continue
+        try:
+            tool = router.registry.get(key)
+            endpoint = tool.endpoint(endpoint_name)
+        except KeyError:
+            continue
+        if (
+            endpoint.read_only is not True
+            or endpoint.destructive
+            or endpoint.auth_requirements
+            or authorized is not None and not authorized(tool, endpoint)
+        ):
+            continue
+        if all(
+            param.name in names for param in endpoint.parameters
+            if param.required
+        ):
+            return True
+    return False
+
+
 def capture_health_scoped_model_menu(
     router: SchemaRouter, query: str, *, principal: PrincipalContext,
     host_request_inputs: dict[str, Any],
@@ -205,8 +253,16 @@ def capture_health_scoped_model_menu(
         view=view,
         route_ids=tuple(selected),
         definitions=definitions,
-        status=("ready" if selected else
-                "temporary_unavailable" if ready else "inputs_missing"),
+        status=(
+            "ready" if selected
+            else "temporary_unavailable" if (
+                ready or _authorized_input_ready_cooldown(
+                    router, principal, host_request_inputs,
+                    prior_public_observation, executed_route_ids,
+                )
+            )
+            else "inputs_missing"
+        ),
         checked_at=tuple(checked),
         max_probe_age_seconds=float(max_probe_age_seconds),
     )
