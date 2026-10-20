@@ -190,6 +190,36 @@ async def test_revocation_rechecks_same_router_and_discards_prior_healthy_menu(
 
 
 @pytest.mark.asyncio
+async def test_revoke_reconcile_reports_failure_for_unguarded_healthy_router(
+    tmp_path,
+):
+    """Never claim active route was withdrawn if it ignores the lease."""
+    store = _store(tmp_path)
+    _approve(store)
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(_source_response),
+    ) as client:
+        router = build_health_aware_router(
+            client, trusted_health_probes={
+                GEO: lambda: True,
+                WEATHER: lambda: True,
+            },
+        )
+        try:
+            await router.check_health_once()
+            with pytest.raises(RuntimeError, match="did not reflect revoked"):
+                await store.revoke_and_reconcile(
+                    router, operator_approved=True,
+                )
+            # The *durable* budget was revoked even though caller supplied a
+            # wrong router, so no new approved canary calls can start.
+            assert store.try_claim(GEO) is False
+            assert store.try_claim(WEATHER) is False
+        finally:
+            await router.aclose()
+
+
+@pytest.mark.asyncio
 async def test_invalid_router_cannot_trigger_revocation(tmp_path):
     store = _store(tmp_path)
     _approve(store)
