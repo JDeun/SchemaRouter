@@ -15,3 +15,12 @@ PR #1628 demonstrates one actual approved background health-sweep using the orig
 ## Boundaries
 
 Production requires a source-operator-approved recurring request quota/terms; the one-shot real #1628 automatically expires its budget and does NOT enable indefinite network polling. A finite 2-cycle deterministic witness cannot prove a sustainable 24/7 refresh policy or fallback quality. Frozen #432 unchanged; #1356 v0.18 stays HARD HOLD. Dependent on #1628 merging before rebasing this new draft to main.
+
+
+## 2026-10-20 additional E1: automatic budget expiry
+
+A provider remains operational even when **an operator-approved E1 canary lease has run out**. These are different states. If `AccessHealthMonitor` repeatedly schedules the registered finite callbacks after their explicit budget, those callbacks MUST return False, never a cached successful request with a fictitious new health timestamp. This does cause the research path to become `temporary_unavailable` even if the real remote provider happens to be available: it is an explicit fail-closed limitation, **not an actual remote outage observation**.
+
+An opt-in `include_exhaustion_cycle=True` extends the original bounded **injected** run from two to THREE actual background ticks and verifies the precise sequence **Unhealthy (injected first geocode timeout) → Healthy (valid next native canary) → Unhealthy (both fixed canary budgets exhausted)**. On the third tick there is **zero additional outbound request**, because each callback already attempted its exact allowance of 2 checks per endpoint; all four prior requests remain in-process MockTransport requests. The second-tick source-/principal-authorized model menu is then rechecked and MUST reject the previous Healthy receipt before any execution. The status `temporary_unavailable` describes absence of an approved *fresh valid liveness proof*, not semantically unsupported tools or a confirmed provider outage.
+
+This contract does **not** implement automatic quota renewal, perpetual polling, shared distributed budgets or operator authorization that persists across process restarts. A new lease requires explicit new operator approval and a new monitored session; product runtime defaults remain off. Do not infer commercial uptime/SLO from these samples or turn this three-tick fault injection into real external API traffic. #1618 remains open, v0.18 #1356 HARD HOLD.
