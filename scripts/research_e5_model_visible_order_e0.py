@@ -13,8 +13,9 @@ import secrets
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
+from schemarouter import InMemoryRegistry
 from schemarouter.decisions import DecisionBackend
 from scripts.agent_utility_generated_common import (
     EXPERIMENTAL_FIXED5_CONDITION,
@@ -39,6 +40,7 @@ from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
     MODEL_REVISION as E5_REVISION,
 )
+from scripts.evaluate_agent_utility_phase_b_smollm3 import LocalSmolLM3Agent
 from scripts.evaluate_multilingual_embedding_cpu_dev import load_development_corpus
 from scripts.research_agent_stage_evidence_e0 import E0TraceProvenance
 from scripts.research_authorized_agent_tool_surface import (
@@ -114,6 +116,8 @@ def run_order_probe(
         raise ValueError("original immutable DEV cohort drift")
 
     router = build_source_router(corpus)
+    if not isinstance(router.registry, InMemoryRegistry):
+        raise ValueError("source-native pilot requires in-memory fixture executor")
     provenance = E0TraceProvenance(
         source_revision=source_revision, source_sha256=corpus_sha256,
         hmac_key=secrets.token_bytes(32), seed=SEED,
@@ -146,8 +150,11 @@ def run_order_probe(
             selector = AuthorizedFixed5DecisionSelector(view, backend)
             select, selected = strict_ranked_selector(selector)
             witnessed = OrderWitnessAgent(agent)
+            # The frozen legacy harness annotates one concrete agent class;
+            # this wrapper implements the same generate() contract and does
+            # NOT change the runtime agent or the original scorer.
             result = run_generated_episode(
-                witnessed, router.registry, task,
+                cast(LocalSmolLM3Agent, witnessed), router.registry, task,
                 EXPERIMENTAL_FIXED5_CONDITION,
                 experimental_candidate_selector=select,
                 experimental_agent_tool_surface=view,
