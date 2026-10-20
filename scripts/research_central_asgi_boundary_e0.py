@@ -77,7 +77,8 @@ async def _bounded_json(request: Request) -> dict[str, object] | None:
         data.extend(chunk)
     try:
         value = json.loads(data)
-    except (ValueError, UnicodeDecodeError, TypeError):
+    except (ValueError, UnicodeDecodeError, TypeError, RecursionError):
+        # Deeply nested JSON must fail closed with a bounded 400, not a 500.
         return None
     if type(value) is not dict or set(value) != {
         "request_id", "route_id", "source_fingerprint", "epoch",
