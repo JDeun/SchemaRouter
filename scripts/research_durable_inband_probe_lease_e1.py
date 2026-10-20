@@ -12,8 +12,8 @@ import inspect
 import math
 import sqlite3
 import time
-from contextlib import closing
 from collections.abc import Awaitable, Callable
+from contextlib import closing
 from pathlib import Path
 from typing import Any
 
