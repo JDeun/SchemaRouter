@@ -237,7 +237,16 @@ async def observe_inband_canary_once(
                                 status = "success"
                         except (PolicyViolationError, httpx.RequestError,
                                 httpx.HTTPStatusError, ValueError, RuntimeError):
-                            status = "source_execution_rejected"
+                            # A different worker may revoke approval DURING an
+                            # already-admitted source GET. The strict host can
+                            # then reject that stage; distinguish an observed
+                            # lease withdrawal from a source/model error.
+                            # This read-only reconciliation spends zero GETs.
+                            status = (
+                                "source_now_unavailable"
+                                if not await shared_approval_current()
+                                else "source_execution_rejected"
+                            )
                     else:
                         status = "source_now_unavailable"
                 else:
