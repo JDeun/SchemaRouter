@@ -1,0 +1,104 @@
+name: Pinned Qwen Health Visible Tool Menus E1 DEV
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_live_health_model_menu_e1.py"
+      - "tests/test_research_live_health_model_menu_e1.py"
+      - "scripts/research_qwen_health_visible_e1.py"
+      - "tests/test_research_qwen_health_visible_e1.py"
+      - ".github/workflows/research-qwen-health-visible-e1.yml"
+      - "research/autoresearch/qwen-health-visible-e1.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  model-free-health-visibility:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install source contract test dependencies
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Fail closed on bogus Qwen proposal and benign healthy refresh
+        run: |
+          ruff check scripts/research_qwen_health_visible_e1.py tests/test_research_qwen_health_visible_e1.py scripts/research_live_health_model_menu_e1.py tests/test_research_live_health_model_menu_e1.py
+          pyright scripts/research_qwen_health_visible_e1.py scripts/research_live_health_model_menu_e1.py
+          python -m pytest -q tests/test_research_qwen_health_visible_e1.py tests/test_research_live_health_model_menu_e1.py
+
+  real-pinned-qwen-exposure-cpu:
+    needs: model-free-health-visibility
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install frozen local pinned Qwen CPU dependencies
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "transformers>=4.51,<5"
+      - name: Run 3 author-exposed languages times 3 monitored visibility phases
+        run: |
+          python -m scripts.research_qwen_health_visible_e1 --mode real-cpu --out artifacts/qwen-health-visible-e1/summary.json
+      - name: Verify attested non-executable model visibility evidence
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          r = json.loads(Path("artifacts/qwen-health-visible-e1/summary.json").read_text(encoding="utf-8"))
+          assert r["evidence_tier"] == "REAL_LOCAL_QWEN_SIMULATED_HOST_HEALTH_VISIBLE_E1_NOT_E2"
+          assert r["model_revision"] == "c1899de289a04d12100db370d81485cdf75e47ca"
+          assert r["phases"] == ["healthy", "unavailable", "recovered"]
+          assert r["languages"] == ["en", "ko", "ja"]
+          assert r["shared_router_across_episodes"] is True
+          assert r["executed_model_tool_calls"] == 0
+          assert r["external_provider_http_requests"] == 0
+          for key in ("real_provider_success_qualified", "independent_e2_qualified", "model_task_completion_measured", "production_default_changed"):
+              assert r[key] is False
+          for language in r["languages"]:
+              results = r["results"][language]
+              assert [results[phase]["exposed_tool_count"] for phase in r["phases"]] == [1, 0, 1]
+              assert results["unavailable"]["menu_status"] == "temporary_unavailable"
+              assert all(row["attempts_executed"] == row["provider_http_requests"] == 0 for row in results.values())
+              assert all(type(row["exact_host_refusal_after_allowlisted_eot"]) is bool for row in results.values())
+              assert all(
+                  row["exact_host_refusal_after_allowlisted_eot"] is False
+                  for phase, row in results.items() if row["action_class"] != "terminal_no_tool"
+              )
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as f:
+              f.write("## REAL pinned Qwen 0.6B health menu visibility — SIMULATED host probes ONLY\n\n")
+              f.write("No real Open-Meteo GET, no model-selected provider execution, no independent E2. Original public prompts fixed from E1. One same router and model across nine observations; Qwen receives one geocode definition in Healthy, zero in Unavailable, and one again after Recovery.\n\n")
+              f.write("| Language | Healthy proposal | Unavailable proposal | Recovery proposal |\n|---|---|---|---|\n")
+              for lang in r["languages"]:
+                  row = r["results"][lang]
+                  f.write(f"| {lang} | {row['healthy']['action_class']} | {row['unavailable']['action_class']} | {row['recovered']['action_class']} |\n")
+              f.write("\n### Post-hoc strict refusal diagnostic (not original primary result)\n\n")
+              f.write("| Language | Unavailable no-call | Exact host REQUEST_MORE_TOOLS after one allowlisted EOT |\n|---|---|---|\n")
+              for lang in r["languages"]:
+                  cell = r["results"][lang]["unavailable"]
+                  f.write(f"| {lang} | {cell['action_class'] == 'terminal_no_tool'} | {cell['exact_host_refusal_after_allowlisted_eot']} |\n")
+              f.write("\nAll tool proposals are parsed, quarantined, and NEVER executed. A final with no tool does NOT imply exact safe refusal. This does not establish task success or provider liveness.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: qwen-health-visible-e1-${{ github.run_id }}
+          path: artifacts/qwen-health-visible-e1/summary.json
+          retention-days: 30
+          if-no-files-found: error
