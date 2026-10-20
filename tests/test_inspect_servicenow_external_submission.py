@@ -83,7 +83,7 @@ def _submission(manifest, snapshot):
          "火山帯の旅程と観光列車を計画"),
     ]
     cases = []
-    for i, (language, positive, negative) in enumerate(tasks):
+    for language, positive, negative in tasks:
         cases.extend([{
             "id": f"sn-ext-example-{language}-pos",
             "language": language, "label": "supported",
