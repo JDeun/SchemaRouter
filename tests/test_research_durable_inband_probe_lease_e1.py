@@ -1,7 +1,6 @@
 """Offline SQLite budgets: atomic same-host concurrency and restart fail-closed."""
 from __future__ import annotations
 
-import asyncio
 import json
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
