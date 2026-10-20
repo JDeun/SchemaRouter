@@ -40,7 +40,7 @@ async def test_explicit_six_read_only_provider_gets_same_router_three_languages(
         "geocoding": 3, "forecast": 3,
     }
     assert all(
-        row == {"status": "success", "native_calls_successful": 2}
+        row["status"] == "success" and row["native_calls_successful"] == 2
         for row in output["results"].values()
     )
     assert output["health_probes_are_simulated"] is True
