@@ -215,6 +215,15 @@ class DurableInBandProbeLeaseE1:
             self.revoke, operator_approved=operator_approved,
         )
         await router.check_health_once()
+        # A caller may accidentally supply a Router whose probes were never
+        # wrapped with this durable lease. Never report that its already
+        # Healthy model-visible source was withdrawn in that case.
+        current = {
+            f"{item.tool}.{item.endpoint}": item.status
+            for item in router.health_snapshots()
+        }
+        if any(current.get(route) == "healthy" for route in _ROUTES):
+            raise RuntimeError("router health did not reflect revoked lease")
         return changed
 
     def wrap_probe(
