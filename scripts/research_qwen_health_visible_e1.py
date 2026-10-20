@@ -54,6 +54,10 @@ def _safe_generation(outcome: Any, offered: tuple[str, ...]) -> dict[str, Any]:
     ):
         raise ValueError("invalid actual generated model envelope")
     label = "context_overflow" if outcome["context_overflow"] else "invalid_format"
+    # Post-hoc diagnostic only: no tool attempt is NOT exact safe refusal.
+    # Reuse the already scoped existing parser, which strips at most one
+    # allowlisted ChatML terminator; never parse arbitrary trailing text.
+    exact_host_refusal = False
     if not outcome["context_overflow"]:
         try:
             kind, content = parse_one_model_action(outcome["text"])
@@ -62,6 +66,7 @@ def _safe_generation(outcome: Any, offered: tuple[str, ...]) -> dict[str, Any]:
         else:
             if kind == "final":
                 label = "terminal_no_tool"
+                exact_host_refusal = content == "REQUEST_MORE_TOOLS"
             elif kind == "tool" and type(content) is dict:
                 route = content["route"]
                 label = (
@@ -70,6 +75,7 @@ def _safe_generation(outcome: Any, offered: tuple[str, ...]) -> dict[str, Any]:
                 )
     return {
         "action_class": label,
+        "exact_host_refusal_after_allowlisted_eot": exact_host_refusal,
         "input_tokens": outcome["input_tokens"],
         "tool_tokens": outcome["tool_tokens"],
         "output_tokens": outcome["output_tokens"],
