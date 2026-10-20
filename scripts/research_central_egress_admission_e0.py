@@ -65,7 +65,7 @@ class CentralEgressLinearizationModelE0:
         self._epoch = 1
         self._revoked = False
         self._seen: set[tuple[str, str]] = set()
-        self._spent: Counter[str] = Counter()
+        self._spent: Counter[tuple[str, str]] = Counter()
         self._handoffs = 0
 
     @property
@@ -80,7 +80,16 @@ class CentralEgressLinearizationModelE0:
 
     def spent_by_route(self) -> dict[str, int]:
         with self._lock:
-            return {"geocoding": self._spent[GEO], "forecast": self._spent[WEATHER]}
+            return {
+                "geocoding": sum(
+                    spent for (_, route), spent in self._spent.items()
+                    if route == GEO
+                ),
+                "forecast": sum(
+                    spent for (_, route), spent in self._spent.items()
+                    if route == WEATHER
+                ),
+            }
 
     def revoke(self) -> bool:
         """E0 abstract operator transition, NOT actual operator IAM."""
@@ -125,10 +134,13 @@ class CentralEgressLinearizationModelE0:
             unique_id = (request.tenant, request.request_id)
             if unique_id in self._seen:
                 return "duplicate_request"
-            if self._spent[request.route_id] >= self._cap:
+            # The same tenant may run multiple registered workloads;
+            # another tenant must never spend this tenant's finite quota.
+            budget_key = (request.tenant, request.route_id)
+            if self._spent[budget_key] >= self._cap:
                 return "allowance_exhausted"
             self._seen.add(unique_id)
-            self._spent[request.route_id] += 1
+            self._spent[budget_key] += 1
             self._handoffs += 1
             try:
                 synthetic_handoff()
