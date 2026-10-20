@@ -169,6 +169,40 @@ class DurableInBandProbeLeaseE1:
             # No silent fallback to per-process counters on I/O/corruption.
             return False
 
+    def revoke(self, *, operator_approved: bool) -> bool:
+        """Permanently stop NEW reservations under this local existing lease.
+
+        This is an opt-in *trusted caller assertion*, not authentication of
+        operator identity. Future production requires audited authorization.
+        It cannot cancel previously reserved/in-flight HTTP requests. Use
+        the original issued timestamp as the expiry to fail closed even if
+        the wall clock subsequently moves backward.
+        """
+        if operator_approved is not True:
+            raise ValueError("explicit trusted operator revocation required")
+        if not self._path.is_file() or self._path.is_symlink():
+            return False
+        try:
+            with closing(self._connect_existing()) as conn:
+                conn.execute("BEGIN IMMEDIATE")
+                row = conn.execute(
+                    "SELECT issued FROM lease WHERE id=?", (_LEASE,),
+                ).fetchone()
+                if row is None:
+                    conn.rollback()
+                    return False
+                updated = conn.execute(
+                    "UPDATE lease SET expires=MIN(expires, issued) WHERE id=?",
+                    (_LEASE,),
+                )
+                if updated.rowcount != 1:
+                    conn.rollback()
+                    return False
+                conn.commit()
+                return True
+        except (sqlite3.Error, OSError, ValueError):
+            return False
+
     def wrap_probe(
         self, route: str, callback: Callable[[], bool | Awaitable[bool]],
     ) -> Callable[[], Awaitable[bool]]:
