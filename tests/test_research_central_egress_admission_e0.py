@@ -196,3 +196,64 @@ def test_tenant_quota_isolation_on_the_same_native_route():
     assert gate.spent_by_route() == {"geocoding": 4, "forecast": 0}
     assert gate.forwarded_synthetic_attempts == 4
 
+
+
+def test_tenant_scoped_stop_preserves_other_tenant_authority():
+    """A local tenant incident must not revoke an unrelated active tenant."""
+    gate = _authority(cap=2)
+    forwarded: list[str] = []
+    assert gate.admit_and_handoff(
+        _request("a-first"),
+        synthetic_handoff=lambda: forwarded.append("church"),
+    ) == "synthetic_handoff"
+    assert gate.revoke_tenant("church") is True
+    assert gate.revoke_tenant("church") is False
+    for identifier in ("a-late", "a-other-worker"):
+        assert gate.admit_and_handoff(
+            _request(identifier, worker="agent-b"),
+            synthetic_handoff=lambda: forwarded.append("invalid"),
+        ) == "operator_revoked"
+    assert gate.admit_and_handoff(
+        _request("school-first", tenant="school"),
+        synthetic_handoff=lambda: forwarded.append("school"),
+    ) == "synthetic_handoff"
+    assert forwarded == ["church", "school"]
+    assert gate.spent_by_route() == {"geocoding": 2, "forecast": 0}
+    with pytest.raises(ValueError, match="preprovisioned"):
+        gate.revoke_tenant("unregistered")
+    assert gate.revoke() is True
+    assert gate.admit_and_handoff(
+        _request("school-after-global", tenant="school"),
+        synthetic_handoff=lambda: forwarded.append("invalid"),
+    ) == "operator_revoked"
+    assert forwarded == ["church", "school"]
+
+
+def test_tenant_stop_serializes_with_inflight_synthetic_handoff():
+    """A tenant revocation waits for a previously admitted handoff."""
+    gate = _authority(cap=2)
+    entered = Event()
+    released = Event()
+    observed: list[str] = []
+
+    def already_admitted() -> None:
+        entered.set()
+        assert released.wait(timeout=10)
+        observed.append("prior")
+
+    with ThreadPoolExecutor(max_workers=2) as workers:
+        first = workers.submit(
+            gate.admit_and_handoff,
+            _request("prior"),
+            synthetic_handoff=already_admitted,
+        )
+        assert entered.wait(timeout=10)
+        revocation = workers.submit(gate.revoke_tenant, "church")
+        released.set()
+        assert first.result(timeout=10) == "synthetic_handoff"
+        assert revocation.result(timeout=10) is True
+    assert gate.admit_and_handoff(
+        _request("later"),
+        synthetic_handoff=lambda: observed.append("later"),
+    ) == "operator_revoked"
+    assert observed == ["prior"]
