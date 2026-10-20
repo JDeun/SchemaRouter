@@ -230,6 +230,43 @@ async def test_invalid_router_cannot_trigger_revocation(tmp_path):
     assert store.try_claim(GEO) is True
 
 
+def test_revoked_lease_remains_revoked_after_clock_rollback(tmp_path, monkeypatch):
+    """Revocation is permanent even when host wall clock jumps backwards."""
+    clock = {"seconds": 1000.0}
+    monkeypatch.setattr(lease_module, "_utc_seconds", lambda: clock["seconds"])
+    store = _store(tmp_path)
+    _approve(store, cap=2)
+    assert store.try_claim(GEO) is True
+    assert store.revoke(operator_approved=True) is True
+    for changed_time in (999.0, 1000.0, 1001.0, 1300.0):
+        clock["seconds"] = changed_time
+        restarted = _store(tmp_path)
+        assert restarted.try_claim(GEO) is False
+        assert restarted.try_claim(WEATHER) is False
+    assert store.public_counts() == {"geocoding": 1, "forecast": 0}
+
+
+def test_claim_and_revoke_race_never_exceeds_original_budget(tmp_path):
+    """A serialized revoke may follow claims, but cannot grant later claims."""
+    store = _store(tmp_path)
+    _approve(store, cap=2)
+    with ThreadPoolExecutor(max_workers=9) as executor:
+        futures = [
+            executor.submit(_store(tmp_path).try_claim, GEO)
+            for _ in range(8)
+        ]
+        revocation = executor.submit(
+            _store(tmp_path).revoke, operator_approved=True,
+        )
+        allowed = sum(future.result() for future in futures)
+        assert revocation.result() is True
+    assert 0 <= allowed <= 2
+    assert store.public_counts() == {"geocoding": allowed, "forecast": 0}
+    for _ in range(10):
+        assert _store(tmp_path).try_claim(GEO) is False
+        assert _store(tmp_path).try_claim(WEATHER) is False
+
+
 def test_lease_cannot_reset_after_restart_or_reapproval_without_new_path(tmp_path):
     store = _store(tmp_path)
     _approve(store, cap=1)
