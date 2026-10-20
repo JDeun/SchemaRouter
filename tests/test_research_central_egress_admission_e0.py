@@ -257,3 +257,26 @@ def test_tenant_stop_serializes_with_inflight_synthetic_handoff():
         synthetic_handoff=lambda: observed.append("later"),
     ) == "operator_revoked"
     assert observed == ["prior"]
+
+
+def test_malformed_unhashable_identity_fails_closed_with_no_handoff():
+    """Do not let an untrusted request envelope crash the decision path."""
+    gate = _authority()
+    malformed = SyntheticEgressRequestE0(
+        tenant=[],  # type: ignore[arg-type]
+        workload="agent-a",
+        route_id=GEO,
+        source_fingerprint="source-sha-geocode",
+        request_id="malformed",
+        epoch=1,
+    )
+    forwarded = {"count": 0}
+
+    def handoff() -> None:
+        forwarded["count"] += 1
+
+    assert gate.admit_and_handoff(
+        malformed, synthetic_handoff=handoff,
+    ) == "identity_or_scope_denied"
+    assert forwarded["count"] == 0
+    assert gate.forwarded_synthetic_attempts == 0
