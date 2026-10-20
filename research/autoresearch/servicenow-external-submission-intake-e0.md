@@ -112,3 +112,25 @@ independent bootstrap only after this evidence. A structural
 No production policy, Qwen/E5 prompt or ranking score is changed.
 Frozen #432 SR5 agent pass 29.19% vs FULL 49.62% and v0.18 release
 #1356 HARD HOLD remain unchanged.
+
+## 2026-10-20 adversarial intake hardening
+
+The input validator now rejects **unknown top-level, author, or case keys**,
+rather than silently accepting hidden `approved`, `reviewer_signed`,
+`gold_approved` or privilege assertions in otherwise valid submissions.
+A JSON Boolean cannot masquerade as integer schema version 1.
+Raw file size is rejected at the CLI boundary before reading bytes.
+
+Unicode overlap screening now applies **NFKC and casefold** before token
+comparison. This catches fullwidth-Latin and halfwidth-Japanese Katakana
+re-encodings of a previously disclosed DEV query; it does **not** identify
+synonyms, reordered CJK phrases, unpublished benchmark contamination, or
+a dishonest external author. These are always manual review tasks. The
+original submitted bytes are **never normalized or reserialized** when
+calculating its declared SHA-256.
+
+The real Linux E0 job tests only adversarial **synthetic fixture contracts**,
+including duplicate nested keys, malicious injected approval metadata,
+native-field/source spoof and copied EN/KO/JA query forms. Do not send
+actual unpublished review cases to repository CI or PR comments. A passing
+validator still returns `BLOCKED_EXTERNAL_REVIEW_UNSCORED`.
