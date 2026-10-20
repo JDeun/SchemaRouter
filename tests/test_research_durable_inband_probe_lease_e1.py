@@ -85,6 +85,98 @@ def test_actual_distinct_linux_processes_observe_same_atomic_limit(tmp_path):
     assert store.public_counts() == {"geocoding": 2, "forecast": 0}
 
 
+def _revoke_from_independent_process(path: str) -> bool:
+    return DurableInBandProbeLeaseE1(Path(path)).revoke(operator_approved=True)
+
+
+def test_revoke_in_separate_process_is_visible_to_existing_workers(tmp_path):
+    store = _store(tmp_path)
+    _approve(store, cap=2)
+    a = _store(tmp_path)
+    assert a.try_claim(GEO) is True
+    with ProcessPoolExecutor(max_workers=1) as pool:
+        assert pool.submit(
+            _revoke_from_independent_process,
+            str(tmp_path / "operator-approved.sqlite3"),
+        ).result(timeout=10) is True
+    assert store.try_claim(GEO) is False
+    assert a.try_claim(WEATHER) is False
+    assert store.public_counts() == {"geocoding": 1, "forecast": 0}
+    assert store.revoke(operator_approved=True) is True
+    with pytest.raises(ValueError, match="cannot be renewed"):
+        store.initialize(
+            operator_approved=True, validity_seconds=300,
+            attempts_per_route=2,
+        )
+
+
+def test_revocation_is_persistent_under_wall_clock_rollback(tmp_path, monkeypatch):
+    clock = {"seconds": 1000.0}
+    monkeypatch.setattr(lease_module, "_utc_seconds", lambda: clock["seconds"])
+    store = _store(tmp_path)
+    store.initialize(
+        operator_approved=True, validity_seconds=300, attempts_per_route=2,
+    )
+    assert store.try_claim(GEO) is True
+    assert store.revoke(operator_approved=True) is True
+    for new_clock in (999.0, 1000.0, 1001.0, 1350.0):
+        clock["seconds"] = new_clock
+        assert _store(tmp_path).try_claim(GEO) is False
+        assert _store(tmp_path).try_claim(WEATHER) is False
+    assert store.public_counts() == {"geocoding": 1, "forecast": 0}
+
+
+def test_revoke_without_explicit_trust_or_existing_database_fails_closed(tmp_path):
+    store = _store(tmp_path)
+    with pytest.raises(ValueError, match="operator revocation"):
+        store.revoke(operator_approved=False)
+    with pytest.raises(ValueError, match="operator revocation"):
+        store.revoke(operator_approved=1)  # type: ignore[arg-type]
+    assert store.revoke(operator_approved=True) is False
+    assert not (tmp_path / "operator-approved.sqlite3").exists()
+
+
+@pytest.mark.asyncio
+async def test_existing_watcher_callback_makes_zero_gets_after_operator_revoke(tmp_path):
+    store = _store(tmp_path)
+    _approve(store, cap=2)
+    source = {"calls": 0}
+
+    async def existing_canary() -> bool:
+        source["calls"] += 1
+        return True
+
+    wrapped = store.wrap_probe(GEO, existing_canary)
+    assert await wrapped() is True
+    assert store.revoke(operator_approved=True) is True
+    assert await wrapped() is False
+    assert source["calls"] == 1
+    assert store.public_counts()["geocoding"] == 1
+
+
+def test_revoke_races_cannot_allow_new_claim_after_committed_stop(tmp_path):
+    store = _store(tmp_path)
+    _approve(store, cap=2)
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        futures = [
+            pool.submit(_store(tmp_path).try_claim, GEO)
+            for _ in range(8)
+        ]
+        revoked = pool.submit(
+            _store(tmp_path).revoke, operator_approved=True,
+        )
+        successful = sum(f.result() for f in futures)
+        assert revoked.result() is True
+    assert 0 <= successful <= 2
+    for _ in range(10):
+        assert _store(tmp_path).try_claim(GEO) is False
+        assert _store(tmp_path).try_claim(WEATHER) is False
+    assert store.public_counts() == {
+        "geocoding": successful,
+        "forecast": 0,
+    }
+
+
 def test_lease_cannot_reset_after_restart_or_reapproval_without_new_path(tmp_path):
     store = _store(tmp_path)
     _approve(store, cap=1)
