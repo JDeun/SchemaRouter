@@ -1,0 +1,32 @@
+name: Durable Shared-Host Inband Probe Budget E1
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_durable_inband_probe_lease_e1.py"
+      - "tests/test_research_durable_inband_probe_lease_e1.py"
+      - "research/autoresearch/durable-inband-probe-lease-e1.md"
+      - ".github/workflows/research-durable-inband-probe-lease-e1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sqlite-atomic-reservations-no-network:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install original read-only E1 source and no-network contract dependencies
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Fail closed on restart quota reuse and non-atomic overlapping claims
+        run: |
+          ruff check scripts/research_durable_inband_probe_lease_e1.py tests/test_research_durable_inband_probe_lease_e1.py
+          pyright scripts/research_durable_inband_probe_lease_e1.py
+          python -m pytest -q tests/test_research_durable_inband_probe_lease_e1.py tests/test_research_operator_approved_inband_canary_e1.py tests/test_research_finite_inband_watchdog_recovery_e1.py
