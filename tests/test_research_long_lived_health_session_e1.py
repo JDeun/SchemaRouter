@@ -231,3 +231,73 @@ async def test_invalid_or_closed_session_cannot_make_host_calls():
                 )
         with pytest.raises(RuntimeError):
             await _run(session)
+
+
+@pytest.mark.asyncio
+async def test_single_router_48_episode_health_flap_soak_without_external_gets():
+    """E1 bounded offline resilience regression, NOT 24/7 provider uptime.
+
+    Explicit trusted simulated probes model repeated state transitions; the
+    original source invoker and executor still use MockTransport only.
+    """
+    state = {
+        "geo_up": True, "weather_up": True,
+        "geo_probe": True, "weather_probe": True,
+    }
+    counts = {"geo": 0, "weather": 0}
+    phases = (
+        (True, True, "success", 2),
+        (False, True, "temporary_unavailable", 0),
+        (True, True, "success", 2),
+        (True, False, "temporary_unavailable", 1),
+        (False, False, "temporary_unavailable", 0),
+        (True, True, "success", 2),
+    )
+
+    async def geo_probe() -> bool:
+        return state["geo_probe"]
+
+    async def weather_probe() -> bool:
+        return state["weather_probe"]
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(_transport(state, counts)),
+    ) as client:
+        session = LongLivedOpenMeteoHealthSessionE1(
+            client,
+            trusted_health_probes={GEO: geo_probe, WEATHER: weather_probe},
+            probe_interval_seconds=60,
+            max_probe_age_seconds=60,
+        )
+        original_router = id(session.router)
+        seen = {"success": 0, "temporary_unavailable": 0}
+        expected_requests = {"geo": 0, "weather": 0}
+        async with session:
+            for episode in range(48):
+                geo_ok, weather_ok, expected_status, expected_completed = (
+                    phases[episode % len(phases)]
+                )
+                state["geo_probe"] = geo_ok
+                state["weather_probe"] = weather_ok
+                await session.router.check_health_once()
+                result = await _run(session)
+                assert result["status"] == expected_status
+                assert result["successful_native_calls"] == expected_completed
+                assert id(session.router) == original_router
+                assert result["health_monitor_running"] is True
+                seen[expected_status] += 1
+                if geo_ok:
+                    expected_requests["geo"] += 1
+                    if weather_ok:
+                        expected_requests["weather"] += 1
+                assert counts == expected_requests
+                assert result["model_selected_routes"] is False
+                assert result["independent_e2_qualified"] is False
+                assert result["real_provider_success_qualified"] is False
+                encoded = json.dumps(result, sort_keys=True)
+                assert "PRIVATE_" not in encoded
+                assert "37.56" not in encoded
+                assert "Seoul" not in encoded
+        assert session.router.health_monitor.running is False
+    assert seen == {"success": 24, "temporary_unavailable": 24}
+    assert counts == {"geo": 32, "weather": 24}
