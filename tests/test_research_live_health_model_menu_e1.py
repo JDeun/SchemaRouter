@@ -340,7 +340,7 @@ async def test_hidden_field_scoped_cooldown_does_not_reveal_private_route():
             ),),
             data_rules=(DataScopeRule(
                 operation=GEO, roles_any=("reader",),
-                visible_fields=("not_a_public_field",),
+                visible_fields=(),
             ),),
         )
         router.authorization_policy = policy
