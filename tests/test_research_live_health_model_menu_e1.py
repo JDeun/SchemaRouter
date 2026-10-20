@@ -167,8 +167,12 @@ async def test_unhealthy_forecast_only_and_strict_unknown_recovery():
 async def test_not_every_http_failure_creates_health_cooldown():
     cases = (401, 404, 422)
     for status in cases:
-        def transport(request: httpx.Request) -> httpx.Response:
-            return httpx.Response(status, json={"error": "PRIVATE_CREDENTIAL_CANARY"})
+        def transport(
+            request: httpx.Request, *, status_code: int = status,
+        ) -> httpx.Response:
+            return httpx.Response(
+                status_code, json={"error": "PRIVATE_CREDENTIAL_CANARY"},
+            )
 
         async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as client:
             router = build_health_aware_router(
