@@ -9,6 +9,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Literal
+from weakref import WeakKeyDictionary
 
 import httpx
 
@@ -50,6 +51,7 @@ class AvailabilityClassifiedInvoker:
         if not isinstance(delegate, OpenMeteoBoundInvoker):
             raise ValueError("trusted original Open-Meteo bound invoker required")
         self.delegate = delegate
+        self.last_unavailable_at: datetime | None = None
 
     async def __call__(
         self, endpoint: str, arguments: dict[str, Any],
@@ -62,16 +64,34 @@ class AvailabilityClassifiedInvoker:
             httpx.RemoteProtocolError,
             httpx.ProxyError,
         ):
+            self.last_unavailable_at = datetime.now(timezone.utc)
             raise InvocationUnavailableError(
                 "trusted read-only provider transport temporarily unavailable"
             ) from None
         except httpx.HTTPStatusError as exc:
             status = exc.response.status_code
             if status == 429 or 500 <= status <= 599:
+                self.last_unavailable_at = datetime.now(timezone.utc)
                 raise InvocationUnavailableError(
                     "trusted read-only provider HTTP temporarily unavailable"
                 ) from None
             raise
+
+
+# Research-only weak-key ownership; the wrapped transport never grants authority.
+_BOUND_HEALTH: WeakKeyDictionary[
+    SchemaRouter, dict[str, AvailabilityClassifiedInvoker]
+] = WeakKeyDictionary()
+
+
+def _probe_after_latest_failure(
+    router: SchemaRouter, route: str, checked_at: datetime,
+) -> bool:
+    wrappers = _BOUND_HEALTH.get(router)
+    if wrappers is None or route not in wrappers:
+        return False
+    failed_at = wrappers[route].last_unavailable_at
+    return failed_at is None or checked_at > failed_at
 
 
 def build_health_aware_router(
@@ -88,19 +108,23 @@ def build_health_aware_router(
     router, geocode, weather = build_live_router(
         client, transport_retry_budget=transport_retry_budget,
     )
+    wrappers: dict[str, AvailabilityClassifiedInvoker] = {}
     for route, delegate in ((GEO, geocode), (WEATHER, weather)):
         tool_key, endpoint = route.rsplit(".", 1)
         tool = router.registry.get(tool_key)
         spec = tool.endpoint(endpoint)
         if spec.read_only is not True or spec.destructive:
             raise ValueError("health-aware classification requires read-only path")
+        wrapped = AvailabilityClassifiedInvoker(delegate)
         router.executor.bind(
-            tool_key, AvailabilityClassifiedInvoker(delegate),
+            tool_key, wrapped,
             expected_fingerprint=tool.fingerprint,
         )
+        wrappers[route] = wrapped
         probe = trusted_health_probes.get(route)
         if probe is not None:
             router.register_health_probe(tool_key, endpoint, probe)
+    _BOUND_HEALTH[router] = wrappers
     return router
 
 
@@ -134,6 +158,9 @@ class HealthScopedModelMenu:
                 or record.status != "healthy"
                 or record.last_checked_at != expected[route]
                 or not _fresh(record.last_checked_at, self.max_probe_age_seconds)
+                or not _probe_after_latest_failure(
+                    self.view.router, route, record.last_checked_at,
+                )
                 or not self.view.router.executor.is_access_available_for_contract(
                     tool_key, endpoint, tool.fingerprint,
                 )
@@ -238,6 +265,11 @@ def capture_health_scoped_model_menu(
         if item is None or item.status != "healthy":
             continue
         if not _fresh(item.last_checked_at, float(max_probe_age_seconds)):
+            continue
+        assert item.last_checked_at is not None
+        if not _probe_after_latest_failure(
+            router, route, item.last_checked_at,
+        ):
             continue
         key, endpoint = route.rsplit(".", 1)
         tool = router.registry.get(key)
