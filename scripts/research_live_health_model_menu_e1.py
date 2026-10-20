@@ -27,10 +27,10 @@ from scripts.research_open_meteo_live_two_hop_e1 import (
     OpenMeteoBoundInvoker,
     build_live_router,
 )
+from scripts.research_scoped_host_invocation import execute_scoped_host_call
 from scripts.research_source_ready_native_tool_menu_e1 import (
     source_ready_visible_routes,
 )
-from scripts.research_scoped_host_invocation import execute_scoped_host_call
 
 GEO = "open_meteo_geocoding.search"
 WEATHER = "open_meteo_weather.current"
