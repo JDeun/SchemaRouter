@@ -190,29 +190,49 @@ async def test_revocation_rechecks_same_router_and_discards_prior_healthy_menu(
 
 
 @pytest.mark.asyncio
-async def test_revoke_reconcile_reports_failure_for_unguarded_healthy_router(
-    tmp_path,
-):
-    """Never claim active route was withdrawn if it ignores the lease."""
+async def test_revoke_reconcile_never_calls_unguarded_provider_callbacks(tmp_path):
+    """A misconfigured router must not emit extra GETs after cancellation."""
     store = _store(tmp_path)
     _approve(store)
+    source = {"unwrapped_probe_calls": 0}
+
+    async def unwrapped_external_probe() -> bool:
+        source["unwrapped_probe_calls"] += 1
+        return True
+
     async with httpx.AsyncClient(
         transport=httpx.MockTransport(_source_response),
     ) as client:
         router = build_health_aware_router(
             client, trusted_health_probes={
-                GEO: lambda: True,
-                WEATHER: lambda: True,
+                GEO: unwrapped_external_probe,
+                WEATHER: unwrapped_external_probe,
             },
         )
         try:
             await router.check_health_once()
-            with pytest.raises(RuntimeError, match="did not reflect revoked"):
-                await store.revoke_and_reconcile(
-                    router, operator_approved=True,
-                )
-            # The *durable* budget was revoked even though caller supplied a
-            # wrong router, so no new approved canary calls can start.
+            assert source["unwrapped_probe_calls"] == 2
+            before = capture_health_scoped_model_menu(
+                router, USER_REQUESTS["en"], principal=PRINCIPAL,
+                host_request_inputs={
+                    "name": "Seoul", "language": "en", "country_code": "KR",
+                },
+            )
+            assert before.route_ids == (GEO,)
+            assert await store.revoke_and_reconcile(
+                router, operator_approved=True,
+            ) is True
+            assert source["unwrapped_probe_calls"] == 2
+            after = capture_health_scoped_model_menu(
+                router, USER_REQUESTS["en"], principal=PRINCIPAL,
+                host_request_inputs={
+                    "name": "Seoul", "language": "en", "country_code": "KR",
+                },
+            )
+            assert after.route_ids == ()
+            assert after.status == "temporary_unavailable"
+            with pytest.raises(PolicyViolationError, match="availability changed"):
+                before.assert_current()
             assert store.try_claim(GEO) is False
             assert store.try_claim(WEATHER) is False
         finally:
