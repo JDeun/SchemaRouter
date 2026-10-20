@@ -49,20 +49,20 @@ async def observe_finite_background_recovery(
                 max_concurrency=2,
             )
             for desired in ("unhealthy", "healthy"):
-                async def await_status() -> None:
+                async def await_status(desired_status: str) -> None:
                     while True:
                         snapshots = {
                             f"{s.tool}.{s.endpoint}": s for s in router.health_snapshots()
                         }
                         if (
                             snapshots.get(GEO) is not None
-                            and snapshots[GEO].status == desired
+                            and snapshots[GEO].status == desired_status
                             and snapshots.get(WEATHER) is not None
                             and snapshots[WEATHER].status == "healthy"
                         ):
                             return
                         await asyncio.sleep(0.01)
-                await asyncio.wait_for(await_status(), timeout=4.0)
+                await asyncio.wait_for(await_status(desired), timeout=4.0)
                 menu = capture_health_scoped_model_menu(
                     router, USER_REQUESTS["en"], principal=PRINCIPAL,
                     host_request_inputs={"name": "Seoul", "language": "en", "country_code": "KR"},
