@@ -28,6 +28,7 @@ from scripts.agent_utility_v7_dev_agent import (
     MODEL_REVISION as QWEN_REVISION,
 )
 from scripts.agent_utility_v7_dev_agent import SEED
+from scripts.evaluate_agent_utility_phase_b_smollm3 import LocalSmolLM3Agent
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
     CORPUS,
     PRINCIPAL,
@@ -40,7 +41,6 @@ from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
 from scripts.evaluate_authorized_e5_hybrid_cpu_dev import (
     MODEL_REVISION as E5_REVISION,
 )
-from scripts.evaluate_agent_utility_phase_b_smollm3 import LocalSmolLM3Agent
 from scripts.evaluate_multilingual_embedding_cpu_dev import load_development_corpus
 from scripts.research_agent_stage_evidence_e0 import E0TraceProvenance
 from scripts.research_authorized_agent_tool_surface import (
