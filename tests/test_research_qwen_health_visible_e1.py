@@ -110,7 +110,7 @@ async def test_malformed_model_final_cannot_be_misreported_as_tool_attempt():
     ("REQUEST_MORE_TOOLS<|im_end|>", True),
     ("REQUEST_MORE_TOOLS <|im_end|>", False),
     ("Cannot do it.", False),
-    ("{\\"reason\\":\\"unsupported\\"}", False),
+    ('{"reason":"unsupported"}', False),
 ))
 def test_exact_host_refusal_is_not_confused_with_any_terminal(
     response, expected,
