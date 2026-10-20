@@ -578,9 +578,16 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                     endpoint,
                 )
                 if visible_endpoint is not None:
-                    endpoints.append(visible_endpoint)
+                    # Trusted planning/execution needs the provider wire
+                    # selector; the scoped analyzer is only entitled to
+                    # source-projected PUBLIC field descriptors.
                     if visible_endpoint is not endpoint:
                         restricted = True
+                        visible_endpoint = visible_endpoint.model_copy(
+                            deep=True,
+                            update={"server_projection": None},
+                        )
+                    endpoints.append(visible_endpoint)
             if not endpoints:
                 continue
             # The analyzer receives a non-executable principal-scoped
