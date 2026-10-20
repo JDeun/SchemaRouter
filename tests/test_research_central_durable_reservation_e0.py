@@ -4,8 +4,8 @@ from __future__ import annotations
 import sqlite3
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from multiprocessing import get_context
-from threading import Event
 from pathlib import Path
+from threading import Event
 
 import pytest
 
