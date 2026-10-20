@@ -91,3 +91,17 @@ invariants*, not an external service or an E2 task outcome.
 **Non-goals:** changes to `SchemaRouter.retrieve_authorized`, external
 network auto-probes, default watchdog enablement, published v0.18, modifying
 frozen #432 or assigning independent E2 status to any generated test.
+
+
+## 2026-10-21 synthetic tenant incident isolation
+
+The no-network E0 model now distinguishes an explicit **global emergency stop**
+(`revoke()`) from **tenant-scoped operator stop** (`revoke_tenant(tenant)`).
+Tenant-scoped stop shares the same synthetic lock with egress-admission
+handoff and is irreversible within that model instance, but does not consume
+or revoke another provisioned tenant's allowance. A separate deterministic
+race test verifies that an already-admitted handoff precedes the local
+tenant-stop linearization; later synthetic calls from that tenant never reach
+the sink, while another tenant may still run. Unprovisioned tenant revocation
+is rejected. This is **not** tenant IAM: literal strings are TEST labels and
+cannot validate real operator identity or enforce a production egress ACL.
