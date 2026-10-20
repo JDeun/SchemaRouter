@@ -64,7 +64,7 @@ server restart recovery, persistence, multi-host sync or production ACL. The
 test-only callback is a local synthetic counter, not a provider invoker.
 
 Deterministic tests cover 20 contending requests from two synthetic
-workloads, a fixed two-attempt budget, a revoked epoch that never renews,
+workloads, a fixed **per-tenant/per-native-route** two-attempt budget with independently tested tenant isolation, a revoked epoch that never renews,
 wrong tenant/source/route/identity, duplicate idempotency key, nonrefundable
 sink exceptions, and handoff/revoke serialization. These validate *model
 invariants*, not an external service or an E2 task outcome.
