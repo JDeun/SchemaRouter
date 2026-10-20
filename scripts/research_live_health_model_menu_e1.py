@@ -157,6 +157,7 @@ class HealthScopedModelMenu:
                 record is None
                 or record.status != "healthy"
                 or record.last_checked_at != expected[route]
+                or record.last_checked_at is None
                 or not _fresh(record.last_checked_at, self.max_probe_age_seconds)
                 or not _probe_after_latest_failure(
                     self.view.router, route, record.last_checked_at,
