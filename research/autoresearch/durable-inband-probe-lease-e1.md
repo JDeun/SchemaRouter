@@ -16,3 +16,12 @@ The existing #1628–#1630 source-native in-band Open-Meteo canary **one-shot** 
 ## Production follow-up
 
 A deployed multihost service needs a separately approved **central atomic durable lease service**, identity/principal-bound issuance, durable operator revocation, rotation/expiry and race-tested failure modes, secure storage permissions and explicit provider terms/rate limits. Those items remain OPEN on #1618. v0.18 #1356 HARD HOLD, original frozen #432 preserved.
+
+
+## 2026-10-20 explicit shared-host operator stop / revocation
+
+The finite same-host SQLite lease also supports **operator-requested revocation** `revoke(operator_approved=True)`. This is a deliberate, explicitly trusted **caller assertion** in the research API, **not proof of a real authenticated operator's identity**. Real deployments require external authentication, authorization and audit logs. The revoke operation takes `BEGIN IMMEDIATE` on the same existing SQLite file, permanently moves its expiry to the original issue timestamp, and commits before returning. It does NOT delete the DB or reset counters, does NOT renew the approval, and does NOT contact external services.
+
+All **future** claims by existing or newly started workers that share this same operator-owned file fail closed, including claims made with a rolled-back wall clock. New in-band monitor callbacks consequently return False without any additional public GET and withdraw Healthy tool menus on their next ordinary check. The outcome of a claim reserved **before** revocation is not rolled back, and any already-running HTTP request is **not** interrupted—revocation is an admission barrier, not remote cancellation or an atomic operation spanning network calls.
+
+The dedicated offline tests prove one independent Linux child process can revoke while another pre-existing client is still running, that a new process after restart cannot reclaim quota, that the original watcher callback makes **zero** extra business GET after revocation, that clock rollback does not resurrect the lease, that missing DB and lack of explicit approval cannot create/revoke silently, and that concurrent claim/revoke admission stays within the fixed original cap. Tests do not claim multi-host/distributed atomicity, filesystem tamper resistance or production user authentication. Operator approval and revocation remain default-off, with no implicit background renewal; original provider/business evidence untouched.
