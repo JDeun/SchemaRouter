@@ -101,8 +101,13 @@ class DurableCentralReservationE0:
         fd = os.open(self._path, flags, 0o600)
         os.close(fd)
         try:
-            with self._existing_connection() as conn:
-                conn.executescript(_SCHEMA)
+            conn = self._existing_connection()
+            try:
+                # CREATE TABLE, authority row and ALL scoped registrations
+                # form one transaction. A crash before COMMIT rolls back
+                # the complete schema and the next opener denies the partial
+                # one-shot file instead of granting a subset of identities.
+                conn.executescript("BEGIN IMMEDIATE;\n" + _SCHEMA)
                 conn.execute(
                     "INSERT INTO authority VALUES(1, 1, 0, ?)",
                     (cap_per_tenant_route,),
@@ -111,6 +116,9 @@ class DurableCentralReservationE0:
                     "INSERT INTO allowed VALUES(?,?,?,?)",
                     [(*key, fingerprint) for key, fingerprint in allowed.items()],
                 )
+                conn.execute("COMMIT")
+            finally:
+                conn.close()
         except (sqlite3.Error, OSError):
             raise RuntimeError("synthetic central provision unavailable") from None
 
