@@ -99,7 +99,7 @@ from .native_schema_lifecycle import (
     NativeSchemaWatchSnapshot,
 )
 from .network_policy import NetworkPolicy
-from .planner import QueryAnalyzer, SchemaPlanner
+from .planner import QueryAnalyzer, SchemaPlanner, _tokens
 from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
 from .provider_profiles import (
@@ -220,6 +220,8 @@ def _scoped_public_score_components(
     *,
     visible_names: set[str],
     source_fields: list[FieldSpec],
+    public_tool_tokens: set[str],
+    public_parameter_names: set[str],
 ) -> list[ScoreComponent]:
     """Never replay source field aliases or qualifiers in a scoped score trace.
 
@@ -250,6 +252,16 @@ def _scoped_public_score_components(
                 and label not in visible_names
             ):
                 continue
+        if component.kind == "tool_token" and (
+            matched is None or matched.casefold() not in public_tool_tokens
+        ):
+            # A stale token from source descriptions is not public evidence.
+            continue
+        if component.kind == "argument_match" and (
+            matched is None or matched.casefold() not in public_parameter_names
+        ):
+            # Only actual surviving canonical parameter names are visible.
+            continue
         safe.append(component)
     return safe
 
@@ -766,6 +778,13 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 candidate.score_components,
                 visible_names=visible_names,
                 source_fields=endpoint.output_fields,
+                public_tool_tokens={
+                    token.casefold()
+                    for token in _tokens(f"{tool.name} {endpoint.name}")
+                },
+                public_parameter_names={
+                    parameter.name.casefold() for parameter in parameters
+                },
             )
             projected_candidates.append(
                 candidate.model_copy(
@@ -3838,6 +3857,14 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 candidate.score_components,
                 visible_names=visible_names,
                 source_fields=endpoint.output_fields,
+                public_tool_tokens={
+                    token.casefold()
+                    for token in _tokens(f"{tool.name} {endpoint.name}")
+                },
+                public_parameter_names={
+                    parameter.name.casefold()
+                    for parameter in visible_endpoint.parameters
+                },
             )
             projected.append(candidate.model_copy(
                 deep=True,

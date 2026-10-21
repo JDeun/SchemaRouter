@@ -11,7 +11,7 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.models import ScoreComponent
+from schemarouter.models import ParameterSpec, ScoreComponent
 
 SECRET_ALIAS = "unreviewed_private_field_name_p614"
 VIEWER = PrincipalContext(subject="viewer", roles=("viewer",))
@@ -32,6 +32,12 @@ def _router() -> SchemaRouter:
         name="records",
         endpoints=[EndpointSpec(
             name="read", read_only=True,
+            parameters=[
+                ParameterSpec(
+                    name="public_query", required=False,
+                    json_schema={"type": "string"},
+                ),
+            ],
             output_fields=[
                 FieldSpec(
                     name="public_value", semantic_id="public.value",
@@ -53,11 +59,21 @@ def _injected_components() -> list[ScoreComponent]:
         ),
         ScoreComponent(kind="tool_token", value=1.5, matched=SECRET_ALIAS),
         ScoreComponent(
+            kind="tool_token", value=1.5,
+            matched="source_description_secret_not_declared_in_aliases",
+        ),
+        ScoreComponent(
+            kind="argument_match", value=2.0,
+            matched="not_a_public_parameter_name",
+        ),
+        ScoreComponent(
             kind="argument_alias_match", value=2.0,
             matched=f"{SECRET_ALIAS}->public_query",
         ),
         ScoreComponent(kind="field_exact", value=6.0, matched="public_value"),
         ScoreComponent(kind="tool_token", value=1.5, matched="records"),
+        ScoreComponent(kind="tool_token", value=1.5, matched="read"),
+        ScoreComponent(kind="argument_match", value=2.0, matched="public_query"),
     ]
 
 
@@ -65,8 +81,17 @@ def _assert_safe(candidate) -> None:
     assert candidate.matched_fields == ["public_value"]
     assert [
         (item.kind, item.matched) for item in candidate.score_components
-    ] == [("field_exact", "public_value"), ("tool_token", "records")]
+    ] == [
+        ("field_exact", "public_value"),
+        ("tool_token", "records"),
+        ("tool_token", "read"),
+        ("argument_match", "public_query"),
+    ]
     assert SECRET_ALIAS not in candidate.model_dump_json()
+    assert "source_description_secret_not_declared_in_aliases" not in (
+        candidate.model_dump_json()
+    )
+    assert "not_a_public_parameter_name" not in candidate.model_dump_json()
 
 
 def test_full_candidate_scope_removes_source_alias_match_traces():
