@@ -604,3 +604,48 @@ def test_registry_journal_refresh_fails_when_receipt_expired(monkeypatch):
         NativeSchemaPostingIndex.refresh_from_inmemory_journal(
             previous, router.registry,
         )
+
+
+@pytest.mark.parametrize("count", (1, 6))
+def test_default_native_postings_same_callable_health_revocation_fails_closed(
+    count,
+):
+    """A later complete field candidate may withdraw an earlier one's health.
+
+    Must guard both complete K5 responses and over-K count-only answers.
+    """
+    router = _router(many_complete=count)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    disabled: set[str] = set()
+    saw_later = False
+
+    def health(tool, _endpoint):
+        nonlocal saw_later
+        if tool.key == f"full_{count - 1}" and not saw_later:
+            saw_later = True
+            disabled.add("complete")
+        return tool.key not in disabled
+
+    router.planner.availability_predicate = health
+    with pytest.raises(
+        PolicyViolationError,
+        match="indexed candidate eligibility changed during lookup",
+    ):
+        index.lookup(router, ALIASES[0], principal=ANALYST, group=GROUP)
+    assert saw_later
+    assert router.planner.availability_predicate is health
+    assert router.registry.version == index.registry_version
+
+
+def test_default_native_postings_stable_health_keeps_complete_field_group():
+    router = _router(many_complete=1)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    router.planner.availability_predicate = lambda _tool, _ep: True
+    result = index.lookup(
+        router, ALIASES[0], principal=ANALYST, group=GROUP,
+    )
+    assert result.status == "complete"
+    assert result.qualified_count == 2
+    assert {candidate.route_id for candidate in result.candidates} == {
+        "complete.read", "full_0.read",
+    }
