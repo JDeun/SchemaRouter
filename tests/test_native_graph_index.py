@@ -14,13 +14,13 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.adapters import tool_from_mcp, tool_from_openapi
+from schemarouter.capability_graph import update_capability_dependency_graph
 from schemarouter.capability_contracts import CapabilityFieldContract
 from schemarouter.concept_retrieval import NativeConceptCatalog, NativeDeclaredConcept
 from schemarouter.decisions import CallableDecisionBackend
 from schemarouter.errors import PlanningError, PolicyViolationError
 from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
-from schemarouter.capability_graph import update_capability_dependency_graph
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from schemarouter.semantic_attestations import (
     HostSemanticAttestation,
