@@ -52,6 +52,10 @@ def _injected_components() -> list[ScoreComponent]:
             matched=f"public_value:{SECRET_ALIAS}",
         ),
         ScoreComponent(kind="tool_token", value=1.5, matched=SECRET_ALIAS),
+        ScoreComponent(
+            kind="argument_alias_match", value=2.0,
+            matched=f"{SECRET_ALIAS}->public_query",
+        ),
         ScoreComponent(kind="field_exact", value=6.0, matched="public_value"),
         ScoreComponent(kind="tool_token", value=1.5, matched="records"),
     ]
