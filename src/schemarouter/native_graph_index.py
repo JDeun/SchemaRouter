@@ -407,7 +407,7 @@ class NativeSchemaGraphIndex:
             or not old_contract_routes.issubset(field_index.route_locations)
         ):
             raise PolicyViolationError("G5 graph refresh corrupt prior contracts")
-        accepted_host_roots = previous.approved_host_roots - {
+        accepted_host_roots = set(previous.approved_host_roots) - {
             route for route in previous.approved_host_roots
             if old.route_locations.get(route, ("", ""))[0] in changed
         }
