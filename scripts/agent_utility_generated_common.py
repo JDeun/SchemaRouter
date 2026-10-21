@@ -13,7 +13,7 @@ import statistics
 import time
 from collections.abc import Callable
 from dataclasses import asdict
-from typing import Any
+from typing import Any, Protocol
 
 from benchmarks.agent_utility_b2_catalog import (
     _base_tools,
@@ -34,10 +34,12 @@ from scripts.evaluate_agent_utility_phase_a import _rank
 from scripts.evaluate_agent_utility_phase_b_smollm3 import (
     MAX_TURNS,
     SYSTEM_PROMPT,
-    LocalSmolLM3Agent,
     _parse_tool_calls,
     _tool_response_message,
     _visible_tools,
+)
+from scripts.evaluate_agent_utility_phase_b_smollm3 import (
+    LocalSmolLM3Agent as LocalSmolLM3Agent,
 )
 from scripts.research_agent_stage_evidence_e0 import (
     E0TraceProvenance,
@@ -462,8 +464,16 @@ def summarize_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+class GeneratedEpisodeAgent(Protocol):
+    """Structural generation interface; frozen agent execution unchanged."""
+
+    def generate(
+        self, messages: list[dict[str, str]], tools: list[dict[str, Any]],
+    ) -> dict[str, Any]: ...
+
+
 def run_generated_episode(
-    agent: LocalSmolLM3Agent,
+    agent: GeneratedEpisodeAgent,
     registry: InMemoryRegistry,
     task: dict[str, Any],
     condition: str,

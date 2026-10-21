@@ -7,7 +7,8 @@ leaves this opt-in research retrieval. No model, agent or execution logic.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Literal
 
 from .authorization import PrincipalContext
@@ -35,6 +36,8 @@ if TYPE_CHECKING:
     from .runtime import SchemaRouter
 
 STRICT_K = 5
+# Absolute research-only model exposure cap; never silently widen fixed K5.
+MAX_RESEARCH_RANKABLE_PATHS = 32
 
 
 def _root_envelope_empty(endpoint: EndpointSpec) -> bool:
@@ -203,7 +206,10 @@ class NativeIndexedGraphCandidate:
 
 @dataclass(frozen=True, slots=True)
 class NativeIndexedGraphResult:
-    status: Literal["complete", "no_proven_hit", "over_k_unranked"]
+    status: Literal[
+        "complete", "no_proven_hit", "over_k_unranked",
+        "ranked_unverified", "ranker_abstained_unverified",
+    ]
     index_snapshot_id: str
     registry_version: int
     requested_k: int
@@ -212,6 +218,7 @@ class NativeIndexedGraphResult:
     independent_quality_evidence: bool = False
     calibrated_no_fit: bool = False
     executable_authority: bool = False
+    experimental_ranked: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -321,10 +328,23 @@ class NativeSchemaGraphIndex:
         group: NativeDeclaredFieldGroup,
         principal: PrincipalContext,
         k: int = STRICT_K,
+        _research_ranker: Callable[
+            [str, tuple[NativeIndexedGraphCandidate, ...], int],
+            tuple[int, ...],
+        ] | None = None,
     ) -> NativeIndexedGraphResult:
-        """Discover output-complete targets AND actual typed producer edges."""
+        """Discover source-proven typed paths; default remains unranked at >K.
+
+        An explicitly supplied host-owned E0 callback sees only FULLY
+        current-authorized and field-scoped graph candidate evidence. Its
+        tuple of offered candidate offsets is untrusted and checked after
+        the callback, as is current authority. This is NOT a production
+        ranking policy, no-fit classifier, or grant of execution authority.
+        """
         if type(k) is not int or k != STRICT_K:
             raise ValueError("G5 strict fixed K5 required")
+        if _research_ranker is not None and not callable(_research_ranker):
+            raise ValueError("G5 experimental ranker must be callable")
         if type(query) is not str or len(query.encode("utf-8")) > 512:
             raise ValueError("G5 invalid bounded query")
         if not isinstance(principal, PrincipalContext):
@@ -465,9 +485,50 @@ class NativeSchemaGraphIndex:
         ) != original_policy:
             raise PolicyViolationError("G5 authorization rules changed during lookup")
         if len(found) > k:
+            if (
+                _research_ranker is None
+                or len(found) > MAX_RESEARCH_RANKABLE_PATHS
+            ):
+                return NativeIndexedGraphResult(
+                    "over_k_unranked", self.field_index.snapshot_id,
+                    self.field_index.registry_version, k, len(found), (),
+                )
+            # All structural, policy, data-scope, visibility, availability
+            # and source checks have already completed, BEFORE disclosure.
+            # The research callback is UNTRUSTED. Even frozen dataclasses
+            # can be mutated with object.__setattr__. Send detached copies:
+            # selected outputs must always be drawn from the original
+            # source-verified `found` snapshot, never objects the backend held.
+            offered = tuple(replace(candidate) for candidate in found)
+            chosen = _research_ranker(query, offered, k)
+            self.field_index._assert_source(router)
+            router._check_retrieval_authority_witness(witness)
+            current_policy = router.authorization_policy
+            if current_policy is None or (
+                current_policy.default_effect,
+                repr(current_policy.rules),
+                repr(current_policy.data_rules),
+            ) != original_policy:
+                raise PolicyViolationError(
+                    "G5 authorization rules changed during research ranking"
+                )
+            if (
+                type(chosen) is not tuple
+                or len(chosen) not in (0, k)
+                or any(type(offset) is not int
+                       or not 0 <= offset < len(found) for offset in chosen)
+                or len(set(chosen)) != len(chosen)
+            ):
+                raise PolicyViolationError(
+                    "G5 research ranker returned forged, partial or duplicate offsets"
+                )
             return NativeIndexedGraphResult(
-                "over_k_unranked", self.field_index.snapshot_id,
-                self.field_index.registry_version, k, len(found), (),
+                "ranked_unverified" if chosen
+                else "ranker_abstained_unverified",
+                self.field_index.snapshot_id,
+                self.field_index.registry_version, k, len(found),
+                tuple(found[offset] for offset in chosen),
+                experimental_ranked=True,
             )
         return NativeIndexedGraphResult(
             "complete" if found else "no_proven_hit",
