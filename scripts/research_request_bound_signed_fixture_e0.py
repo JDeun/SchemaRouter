@@ -14,7 +14,6 @@ import binascii
 import hashlib
 import hmac
 import re
-from collections.abc import Callable
 
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
