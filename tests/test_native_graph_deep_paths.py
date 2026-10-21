@@ -331,11 +331,14 @@ def test_bounded_graph_budget_counts_rejected_candidate_probes(
         graph.lookup_bounded_paths(
             router, ALIASES[0], group=GROUP, principal=ACTOR, hops=3,
         )
-    assert touched
-    # A live endpoint may be rechecked as the consumer and producer of
-    # multiple edges. The 256 budget bounds newly examined indexed
-    # targets/predecessors, not repeat eligibility checks of the same route.
-    assert len(touched) <= 256 + 8
+    # Dense target postings now fail at the preflight, BEFORE any health
+    # callback or original ToolSpec fetch. Predecessor fanout is rejected
+    # after examining the small target/consumer spine only.
+    if fanout == "denied_targets":
+        assert touched == []
+    else:
+        assert touched
+        assert len(touched) <= 8
     assert caught.value.__suppress_context__
     assert router.registry.version == graph.field_index.registry_version
 
