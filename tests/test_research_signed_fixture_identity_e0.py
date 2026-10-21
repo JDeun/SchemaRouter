@@ -9,7 +9,7 @@ from pathlib import Path
 
 import httpx
 import pytest
-from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.types import Receive, Scope, Send
 
 from scripts.research_central_asgi_boundary_e0 import (
     SyntheticScopeIdentityE0,
