@@ -40,6 +40,9 @@ def _router():
     visible = FieldSpec(
         name="public_value",
         semantic_id="public.value",
+        source_type=f"unreviewed source {PRIVATE}",
+        license=f"unreviewed license {PRIVATE}",
+        unit="eV",
         description=f"description links to {PRIVATE}",
         aliases=[PRIVATE],
         path=[PRIVATE, "public_value"],
@@ -88,6 +91,9 @@ def test_visible_field_annotations_cannot_echo_denied_source_names():
     fields = retrieval.candidates[0].output_fields
     assert [field.name for field in fields] == ["public_value"]
     assert fields[0].semantic_id == "public.value"
+    assert fields[0].unit == "eV"
+    assert fields[0].source_type is None
+    assert fields[0].license is None
     assert fields[0].json_schema == {"type": "string"}
     assert fields[0].description == ""
     assert fields[0].aliases == []
@@ -107,6 +113,9 @@ def test_visible_field_annotations_cannot_echo_denied_source_names():
     original = router.registry.get("records").endpoint("read")
     raw = original.output_fields[0]
     assert raw.description.endswith(PRIVATE)
+    assert raw.source_type == f"unreviewed source {PRIVATE}"
+    assert raw.license == f"unreviewed license {PRIVATE}"
+    assert raw.unit == "eV"
     assert raw.aliases == [PRIVATE]
     assert raw.path == [PRIVATE, "public_value"]
     assert raw.qualifiers == {PRIVATE: "sensitive"}
@@ -150,4 +159,8 @@ def test_principal_free_original_schema_remains_unchanged():
     assert scoped is not None
     assert scoped.fingerprint != original.fingerprint
     assert scoped.output_fields[0].path == []
+    assert scoped.output_fields[0].source_type is None
+    assert scoped.output_fields[0].license is None
     assert original.output_fields[0].path == [PRIVATE, "public_value"]
+    assert original.output_fields[0].source_type == f"unreviewed source {PRIVATE}"
+    assert original.output_fields[0].license == f"unreviewed license {PRIVATE}"
