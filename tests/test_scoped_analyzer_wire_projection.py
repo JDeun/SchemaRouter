@@ -17,13 +17,15 @@ from schemarouter import (
     ServerProjectionSpec,
     ToolSpec,
 )
+from schemarouter.models import AuthRequirementSet, AuthSchemeRequirement
 from schemarouter.planner import KeywordAnalyzer
 
 CANARY = "wire_private_source_xyz_2749"
+AUTH_CANARY = "auth_hidden_scope_xyz_8163"
 VIEWER = PrincipalContext(subject="viewer", roles=("viewer",))
 
 
-def _router():
+def _router(*, auth_canary: bool = False):
     analyzer_tools: list[dict] = []
 
     class AuditingAnalyzer:
@@ -58,6 +60,16 @@ def _router():
         endpoints=[EndpointSpec(
             name="read",
             read_only=True,
+            auth_requirements=(
+                [AuthRequirementSet(schemes=[AuthSchemeRequirement(
+                    name=f"source_{AUTH_CANARY}",
+                    kind="api_key",
+                    location="header",
+                    parameter_name=f"X-{AUTH_CANARY}",
+                    scopes=[AUTH_CANARY],
+                )])]
+                if auth_canary else []
+            ),
             output_fields=[
                 FieldSpec(
                     name="public_value",
@@ -117,3 +129,27 @@ def test_original_provider_wire_projection_and_authority_remain_intact():
     assert original.fingerprint == fingerprint
     assert original.output_fields[0].path == [CANARY]
     assert router.plan_authorized("public_value", principal=VIEWER).calls
+
+
+def test_scoped_analyzer_drops_unreviewed_source_auth_requirement_labels():
+    # Source security requirements are a trusted execution/auth contract, not
+    # safe public metadata on a principal-visible, output-restricted route.
+    router, analyzer_tools = _router(auth_canary=True)
+    original = router.registry.get("records").endpoint("read")
+    fingerprint = original.fingerprint
+    assert AUTH_CANARY in original.model_dump_json()
+
+    result = router.retrieve_authorized("public_value", principal=VIEWER, k=5)
+    assert len(result.candidates) == 1
+    assert analyzer_tools
+    exposed = json.dumps(analyzer_tools, sort_keys=True)
+    assert AUTH_CANARY not in exposed
+    assert AUTH_CANARY not in result.model_dump_json()
+    # The public dump omits empty/default requirement lists on some model
+    # versions; both omission and [] correctly carry no source-owned labels.
+    assert analyzer_tools[0]["endpoints"][0].get("auth_requirements", []) == []
+
+    # The raw source is still available to trusted host checks and its
+    # original schema fingerprint cannot be rewritten by display projection.
+    assert original.fingerprint == fingerprint
+    assert AUTH_CANARY in original.model_dump_json()
