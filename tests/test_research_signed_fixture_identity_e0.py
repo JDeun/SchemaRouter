@@ -258,3 +258,42 @@ def test_wrong_key_or_unusable_clock_can_never_verify_assertion():
     assert verifier.verify(_test_token()) is None
     with pytest.raises(ValueError, match="signing key"):
         SignedFixtureIdentityVerifierE0(b"short")
+
+
+@pytest.mark.asyncio
+async def test_signed_bearer_never_reaches_downstream_asgi_headers(tmp_path: Path):
+    authority = DurableCentralReservationE0(tmp_path / "redacted.sqlite3")
+    authority.provision_once(
+        allowed={("church", "agent-a", GEO): "source-revision-1"},
+        cap_per_tenant_route=1,
+    )
+    emitted: list[str] = []
+    seen_headers: list[tuple[bytes, bytes]] = []
+    inner = make_synthetic_asgi_gateway_e0(
+        authority, synthetic_sink=lambda request: emitted.append(request.request_id),
+    )
+
+    async def inspect(scope: Scope, receive: Receive, send: Send) -> None:
+        seen_headers.extend(scope.get("headers", ()))
+        await inner(scope, receive, send)
+
+    app = SignedFixtureScopeMiddlewareE0(
+        inspect,
+        verifier=SignedFixtureIdentityVerifierE0(
+            _KEY, now=lambda: 1010.0,
+        ),
+    )
+    signed_token = _test_token()
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://synthetic.invalid",
+    ) as client:
+        response = await client.post(
+            "/e0/execute",
+            json=_request("redacted"),
+            headers=_attested(signed_token),
+        )
+    assert response.status_code == 200
+    assert emitted == ["redacted"]
+    assert all(name.lower() != b"authorization" for name, _ in seen_headers)
+    assert signed_token not in response.text
