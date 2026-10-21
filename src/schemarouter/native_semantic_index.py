@@ -16,14 +16,15 @@ from typing import TYPE_CHECKING, Literal
 
 from .authorization import PrincipalContext
 from .concept_retrieval import NativeConceptCatalog, resolve_native_concepts
-from .errors import PolicyViolationError
+from .errors import PolicyViolationError, RegistrationError
 from .field_group_retrieval import (
     NativeDeclaredFieldGroup,
     _alias_key,
     _complete_fields,
     _scalar_contract,
 )
-from .registry import ToolRegistry
+from .models import ToolSpec
+from .registry import InMemoryRegistry, ToolRegistry
 
 if TYPE_CHECKING:
     from .runtime import SchemaRouter
@@ -178,6 +179,79 @@ class NativeSchemaPostingIndex:
             # private schema text in an exception. Do not forward it.
             raise PolicyViolationError("native posting refresh cannot verify source") from None
 
+        return cls._assemble_verified_posting_delta(
+            previous, registry, version, changed, changed_tools,
+            fresh_fingerprints,
+        )
+
+    @classmethod
+    def refresh_from_inmemory_journal(
+        cls,
+        previous: NativeSchemaPostingIndex,
+        registry: ToolRegistry,
+    ) -> NativeSchemaPostingIndex:
+        """Opt-in key-only delta from the same exact atomic in-memory source.
+
+        This MUST NOT be used for SQLite, proxies or arbitrary registries:
+        their writes have not been proven to emit the source-owned journal.
+        Exact version checks reject races before publishing a new snapshot;
+        lookup independently rechecks that version before showing evidence.
+        """
+        if not isinstance(registry, InMemoryRegistry) or type(registry) is not InMemoryRegistry:
+            raise PolicyViolationError(
+                "native journal refresh requires exact in-memory registry"
+            )
+        if previous.registry_ref is not registry:
+            raise PolicyViolationError("native journal refresh source mismatch")
+        try:
+            delta = registry.changed_tool_keys_since(previous.registry_version)
+        except RegistrationError:
+            raise PolicyViolationError(
+                "native journal refresh unavailable; full rebuild required"
+            ) from None
+        version = delta.to_version
+        if (
+            delta.from_version != previous.registry_version
+            or version <= previous.registry_version
+            or not 1 <= len(delta.changed_tool_keys) <= 64
+        ):
+            raise PolicyViolationError("native journal refresh invalid delta")
+        changed = frozenset(delta.changed_tool_keys)
+        current_fingerprints = dict(previous.tool_fingerprints)
+        changed_tools: dict[str, ToolSpec] = {}
+        try:
+            for key in changed:
+                try:
+                    tool = registry.get(key)
+                except KeyError:
+                    current_fingerprints.pop(key, None)
+                    continue
+                if tool.key != key:
+                    raise PolicyViolationError("native journal mismatched tool")
+                current_fingerprints[key] = tool.fingerprint
+                changed_tools[key] = tool
+            if registry.version != version:
+                raise PolicyViolationError("native journal concurrent source mutation")
+        except Exception:
+            raise PolicyViolationError(
+                "native journal refresh cannot verify changed source"
+            ) from None
+        return cls._assemble_verified_posting_delta(
+            previous, registry, version, changed, changed_tools,
+            current_fingerprints,
+        )
+
+    @classmethod
+    def _assemble_verified_posting_delta(
+        cls,
+        previous: NativeSchemaPostingIndex,
+        registry: ToolRegistry,
+        version: int,
+        changed: frozenset[str],
+        changed_tools: dict[str, ToolSpec],
+        fresh_fingerprints: dict[str, str],
+    ) -> NativeSchemaPostingIndex:
+        """One canonical index-assembly path for full and journal proof."""
         revisions = dict(previous.route_fingerprints)
         locations = dict(previous.route_locations)
         stale_routes = {
