@@ -70,10 +70,26 @@ def _injected_components() -> list[ScoreComponent]:
             kind="argument_alias_match", value=2.0,
             matched=f"{SECRET_ALIAS}->public_query",
         ),
+        # Stale structural explanations and arbitrary future kinds must fail closed.
+        ScoreComponent(kind="experimental_debug_secret", value=9.0,
+                       matched="unreviewed_kind_secret"),
+        ScoreComponent(kind="preferred_tool", value=100.0,
+                       matched="not_a_public_tool"),
+        ScoreComponent(kind="preferred_endpoint", value=250.0,
+                       matched="not_a_public_endpoint"),
+        ScoreComponent(kind="tool_identifier", value=12.0,
+                       matched="not_a_public_tool_identifier"),
+        ScoreComponent(kind="operation_family", value=8.0,
+                       matched="not_a_public_operation"),
         ScoreComponent(kind="field_exact", value=6.0, matched="public_value"),
         ScoreComponent(kind="tool_token", value=1.5, matched="records"),
         ScoreComponent(kind="tool_token", value=1.5, matched="read"),
         ScoreComponent(kind="argument_match", value=2.0, matched="public_query"),
+        ScoreComponent(kind="preferred_tool", value=100.0, matched="records"),
+        ScoreComponent(kind="preferred_endpoint", value=250.0,
+                       matched="records.read"),
+        ScoreComponent(kind="tool_identifier", value=12.0, matched="records"),
+        ScoreComponent(kind="operation_family", value=8.0, matched="read"),
     ]
 
 
@@ -86,12 +102,25 @@ def _assert_safe(candidate) -> None:
         ("tool_token", "records"),
         ("tool_token", "read"),
         ("argument_match", "public_query"),
+        ("preferred_tool", "records"),
+        ("preferred_endpoint", "records.read"),
+        ("tool_identifier", "records"),
+        ("operation_family", "read"),
     ]
     assert SECRET_ALIAS not in candidate.model_dump_json()
     assert "source_description_secret_not_declared_in_aliases" not in (
         candidate.model_dump_json()
     )
     assert "not_a_public_parameter_name" not in candidate.model_dump_json()
+    for canary in (
+        "unreviewed_kind_secret",
+        "not_a_public_tool",
+        "not_a_public_endpoint",
+        "not_a_public_tool_identifier",
+        "not_a_public_operation",
+        "experimental_debug_secret",
+    ):
+        assert canary not in candidate.model_dump_json()
 
 
 def test_full_candidate_scope_removes_source_alias_match_traces():
