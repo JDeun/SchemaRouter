@@ -89,6 +89,29 @@ def summarize_fixture_safety_strata(
         completed_and_final: int | None = None
         completed_without_final: int | None = None
         unsupported_final_observed: int | None = None
+        progressed_and_final: int | None = None
+        progressed_field = "supported_final_after_progressed_fixture_step_observed"
+        progressed_presence = [progressed_field in row for row in rows]
+        if any(progressed_presence) and not all(progressed_presence):
+            raise ValueError("partial E0 progressed-step witness cohort")
+        if all(progressed_presence):
+            if not all(all(flags) for flags in final_presence):
+                raise ValueError("progressed-step witness lacks final-turn cohort")
+            for row in rows:
+                value = row[progressed_field]
+                if type(value) is not bool or (
+                    value and not (
+                        row["supported"] and row["passed"]
+                        and row["task_complete"]
+                        and row["agent_final_turn_observed"]
+                        and type(row["tool_call_count"]) is int
+                        and row["tool_call_count"] > 0
+                    )
+                ):
+                    raise ValueError("contradictory E0 progressed-step witness")
+            progressed_and_final = sum(
+                row[progressed_field] for row in positives
+            )
         if all(all(flags) for flags in final_presence):
             for row in rows:
                 if (
@@ -159,6 +182,7 @@ def summarize_fixture_safety_strata(
             "supported_fixture_completion_rate": supported_pass / 6,
             "supported_fixture_completed_with_final_turn": completed_and_final,
             "supported_fixture_completed_without_final_turn": completed_without_final,
+            "supported_final_with_progressed_fixture_step": progressed_and_final,
             "unsupported_final_turn_observed": unsupported_final_observed,
             "actual_final_answer_correctness_measured": False,
             "supported_route_not_exposed_cases": supported_route_misses,
