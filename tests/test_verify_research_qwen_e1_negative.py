@@ -101,3 +101,12 @@ def test_reject_transport_timeout_masked_as_model_improvement():
     row["transport_failure"] = None
     with pytest.raises(ValueError):
         verify(data)
+
+
+def test_reject_unallowlisted_top_level_source_text_and_study_metadata():
+    for location in ("top", "study"):
+        data = _data()
+        target = data if location == "top" else data["study"]
+        target["raw_tool_output"] = "PRIVATE_PROVIDER_RESPONSE_CANARY"
+        with pytest.raises(ValueError, match="unallowlisted|protocol drift"):
+            verify(data)
