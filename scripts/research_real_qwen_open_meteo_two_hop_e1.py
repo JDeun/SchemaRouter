@@ -155,8 +155,13 @@ async def evaluate_one(
     language: str, city: str, country: str,
     menu_mode: str = "all_visible",
     transport_retry_budget: int = 0,
+    evidence_reprompt_budget: int = 0,
 ) -> dict[str, Any]:
-    """Never convert a denied/incomplete model action into a successful call."""
+    """Never convert a denied/incomplete model action into a successful call.
+
+    A research-only bounded reminder may ask the model to continue *after*
+    trusted geocoding, but cannot invoke any native source by itself.
+    """
     if (
         (language, city, country) not in CASES
         or language not in USER_REQUESTS
@@ -164,6 +169,8 @@ async def evaluate_one(
         or menu_mode not in ("all_visible", "state_ready")
         or type(transport_retry_budget) is not int
         or transport_retry_budget not in (0, 1)
+        or type(evidence_reprompt_budget) is not int
+        or evidence_reprompt_budget not in (0, 1)
     ):
         raise ValueError("unregistered source task or model")
     router, geocode, weather = build_live_router(
@@ -188,6 +195,7 @@ async def evaluate_one(
     trusted_transport_error_kind: str | None = None
     total_model_ms = 0.0
     executed_routes: list[str] = []
+    evidence_reprompts = 0
 
     for _ in range(MAX_TURNS):
         turns += 1
@@ -232,6 +240,33 @@ async def evaluate_one(
             reason = "malformed_model_tool_call"
             break
         if kind == "final":
+            # Optional E0-only recovery from an observed model failure:
+            # geocoding is complete, but the REQUIRED weather source has
+            # not been called. The host cannot call it on the model's behalf,
+            # invent coordinates, or treat the unfinished final as correct.
+            # One fixed, trusted reminder consumes an existing model turn;
+            # the model must still select a valid native operation/arguments.
+            if (
+                evidence_reprompt_budget == 1
+                and evidence_reprompts == 0
+                and completed == 1
+                and actual_location is not None
+                and actual_weather is None
+                and turns < MAX_TURNS
+            ):
+                evidence_reprompts += 1
+                messages.append({
+                    "role": "user",
+                    "content": (
+                        "The required current-weather source has not been "
+                        "called yet. Do not answer or invent a temperature. "
+                        "Use the listed current-weather tool with the exact "
+                        "latitude and longitude already returned by the "
+                        "verified location tool. Then answer only from the "
+                        "verified weather observation."
+                    ),
+                })
+                continue
             reason = "completed_final" if completed == 2 else "premature_final"
             if completed == 2 and actual_weather is not None:
                 correctly_ended = _matches_weather_final(payload, actual_weather)
@@ -387,7 +422,7 @@ async def evaluate_one(
         or (weather.http_attempts and geocode.calls != 1)
     ):
         raise ValueError("inconsistent attempted vs validated native source calls")
-    return {
+    result = {
         "language": language,
         "model_turns": turns,
         "attempted_model_calls": attempted,
@@ -411,6 +446,11 @@ async def evaluate_one(
         "original_provider_e1": True,
         "independent_e2_qualified": False,
     }
+    if evidence_reprompt_budget:
+        # Deliberately absent in default E1 results: no schema/metric drift.
+        # Only a count, never raw prompt, output, coordinates or source text.
+        result["host_evidence_reprompts"] = evidence_reprompts
+    return result
 
 
 async def evaluate(
