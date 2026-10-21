@@ -430,6 +430,52 @@ class NativeSchemaPostingIndex:
                 endpoint_fingerprint=endpoint.fingerprint,
                 required_output_fields=tuple(sorted(set(matched_names))),
             ))
+        # A live availability callable may keep its identity while a
+        # later candidate's health probe revokes an earlier candidate.
+        # Recheck every already-qualified route, even when >K ultimately
+        # abstains: qualified_count is still disclosed to the caller.
+        try:
+            for candidate in qualified:
+                where = self.route_locations[candidate.route_id]
+                pinned = self.route_fingerprints[candidate.route_id]
+                tool = router.registry.get(where[0])
+                endpoint = tool.endpoint(where[1])
+                if (tool.fingerprint, endpoint.fingerprint) != pinned:
+                    raise PolicyViolationError("indexed candidate source changed")
+                if (
+                    tool.source_type is None or tool.license is None
+                    or declaration.source_type is not None
+                    and tool.source_type != declaration.source_type
+                    or declaration.license is not None
+                    and tool.license != declaration.license
+                    or endpoint.read_only is not True
+                    or endpoint.destructive is True
+                    or not permitted(tool, endpoint)
+                    or availability is not None and not availability(tool, endpoint)
+                ):
+                    raise PolicyViolationError("indexed candidate no longer available")
+                scoped = router._data_scope_endpoint_view(
+                    approved_principal, tool, endpoint,
+                )
+                if (
+                    scoped is None or not _complete_fields(
+                        scoped.output_fields, declaration.required_fields,
+                    )
+                ):
+                    raise PolicyViolationError("indexed candidate scope changed")
+                current_names = tuple(sorted({
+                    field.name for required in declaration.required_fields
+                    for field in scoped.output_fields
+                    if field.semantic_id == required.semantic_id
+                    and _complete_fields([field], (required,))
+                }))
+                if current_names != candidate.required_output_fields:
+                    raise PolicyViolationError("indexed candidate projection changed")
+        except Exception:
+            # Avoid leaking provider/private schema details in callback errors.
+            raise PolicyViolationError(
+                "indexed candidate eligibility changed during lookup"
+            ) from None
         self._assert_source(router)
         router._check_retrieval_authority_witness(witness)
         current_policy = router.authorization_policy
