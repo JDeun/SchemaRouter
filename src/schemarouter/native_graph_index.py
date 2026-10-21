@@ -36,6 +36,7 @@ from .registry import InMemoryRegistry, SQLiteRegistry, ToolRegistry
 
 if TYPE_CHECKING:
     from .native_deep_paths import NativeIndexedPathResult
+    from .native_fork_index import NativeIndexedSharedRootForkResult
     from .runtime import SchemaRouter
 
 STRICT_K = 5
@@ -1211,6 +1212,26 @@ class NativeSchemaGraphIndex:
         return lookup_bounded_native_paths(
             self, router, query, group=group, principal=principal,
             hops=hops, k=k,
+        )
+
+    def lookup_shared_root_forks(
+        self,
+        router: SchemaRouter,
+        query: str,
+        *,
+        group: NativeDeclaredFieldGroup,
+        principal: PrincipalContext,
+        k: int = STRICT_K,
+    ) -> NativeIndexedSharedRootForkResult:
+        """Research-only common-source two-leaf field AND (no row merge).
+
+        Delegates all authorization and typed joins to the existing native
+        G5 single-field lookups; does not create a new retrieval index.
+        """
+        from .native_fork_index import lookup_native_shared_root_forks
+
+        return lookup_native_shared_root_forks(
+            self, router, query, group=group, principal=principal, k=k,
         )
 
     def lookup_concepts(

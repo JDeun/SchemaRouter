@@ -1,0 +1,230 @@
+"""#1560 E0: strictly source-attested two-branch shared-root field evidence.
+
+This is a bounded, nonexecuting AND over TWO already-authorized one-hop
+native G5 results. A common source schema is not a runtime row join.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Literal
+
+from .authorization import PrincipalContext
+from .errors import PolicyViolationError
+from .field_group_retrieval import NativeDeclaredFieldGroup, _alias_key
+from .native_graph_index import (
+    STRICT_K,
+    NativeIndexedGraphCandidate,
+    _flat_same_record_source_contract,
+)
+
+if TYPE_CHECKING:
+    from .native_graph_index import NativeSchemaGraphIndex
+    from .runtime import SchemaRouter
+
+
+@dataclass(frozen=True, slots=True)
+class NativeIndexedSharedRootForkCandidate:
+    """Both single-field consumers bind the SAME flat, source-owned root ID."""
+
+    root_route_id: str
+    branch_route_ids: tuple[str, str]
+    root_fingerprints: tuple[str, str]
+    branch_fingerprints: tuple[tuple[str, str], tuple[str, str]]
+    root_identifier_field: str
+    branch_input_parameters: tuple[str, str]
+    branch_output_fields: tuple[tuple[str, ...], tuple[str, ...]]
+
+
+@dataclass(frozen=True, slots=True)
+class NativeIndexedSharedRootForkResult:
+    status: Literal["complete", "no_proven_hit", "over_k_unranked"]
+    index_snapshot_id: str
+    registry_version: int
+    requested_k: int
+    qualified_fork_count: int
+    candidates: tuple[NativeIndexedSharedRootForkCandidate, ...]
+    independent_quality_evidence: bool = False
+    calibrated_no_fit: bool = False
+    executable_authority: bool = False
+
+
+def lookup_native_shared_root_forks(
+    index: NativeSchemaGraphIndex,
+    router: SchemaRouter,
+    query: str,
+    *,
+    group: NativeDeclaredFieldGroup,
+    principal: PrincipalContext,
+    k: int = STRICT_K,
+) -> NativeIndexedSharedRootForkResult:
+    """Conservative two-field, two-consumer fork evidence before strict K5.
+
+    No inferred multi-output, concatenated rows, cross-source equality, or
+    execution: both branches must have one identical original source root and
+    one *same-named* scalar root identifier, required at the original root
+    object schema. Each scoped leaf must independently prove ONE demanded
+    field via the existing authorized/typed one-hop native G5 path.
+    """
+    if type(k) is not int or k != STRICT_K:
+        raise ValueError("G5 fork requires fixed K5")
+    if not isinstance(group, NativeDeclaredFieldGroup):
+        raise ValueError("G5 fork requires approved FieldGroup")
+    if not isinstance(principal, PrincipalContext):
+        raise PolicyViolationError("G5 fork requires explicit principal")
+    if type(query) is not str or len(query.encode("utf-8")) > 512:
+        raise ValueError("G5 fork requires bounded query")
+    try:
+        declared = NativeDeclaredFieldGroup.model_validate(
+            group.model_dump(mode="python"), strict=True,
+        )
+        actor = PrincipalContext.model_validate(
+            principal.model_dump(mode="python"), strict=True,
+        )
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("G5 fork invalid current host declarations") from exc
+    if len(declared.required_fields) != 2:
+        raise ValueError("G5 fork supports exactly two declared semantic fields")
+    if _alias_key(query) not in {_alias_key(a) for a in declared.aliases}:
+        raise ValueError("G5 fork has no approved query-to-field edge")
+
+    index.field_index._assert_source(router)
+    policy = router.authorization_policy
+    if policy is None:
+        raise PolicyViolationError("G5 fork requires authorization policy")
+    witness = router._retrieval_authority_witness()
+    policy_snapshot = (
+        policy.default_effect, repr(policy.rules), repr(policy.data_rules),
+    )
+
+    def authorized_leaf(
+        required_field_index: int,
+    ) -> tuple[NativeIndexedGraphCandidate, ...] | None:
+        sub_group = NativeDeclaredFieldGroup(
+            aliases=declared.aliases,
+            required_fields=(declared.required_fields[required_field_index],),
+            source_type=declared.source_type,
+            license=declared.license,
+        )
+        result = index.lookup(
+            router, query, group=sub_group, principal=actor, k=k,
+        )
+        if result.status == "over_k_unranked":
+            return None
+        if result.status == "no_proven_hit":
+            return ()
+        if result.status != "complete":
+            raise PolicyViolationError("G5 fork unsupported one-hop evidence")
+        return result.candidates
+
+    def compatible_pair(
+        left: NativeIndexedGraphCandidate,
+        right: NativeIndexedGraphCandidate,
+    ) -> NativeIndexedSharedRootForkCandidate | None:
+        if (
+            left.producer_route_id != right.producer_route_id
+            or left.consumer_route_id == right.consumer_route_id
+            or left.source_root_parameters
+            or right.source_root_parameters
+            or len(left.parameter_bindings) != 1
+            or len(right.parameter_bindings) != 1
+            or left.parameter_bindings[0][1]
+            != right.parameter_bindings[0][1]
+            or left.producer_tool_fingerprint
+            != right.producer_tool_fingerprint
+            or left.producer_endpoint_fingerprint
+            != right.producer_endpoint_fingerprint
+        ):
+            return None
+        root_id = left.producer_route_id
+        where = index.field_index.route_locations.get(root_id)
+        pinned = index.field_index.route_fingerprints.get(root_id)
+        if where is None or pinned is None:
+            raise PolicyViolationError("G5 fork missing pinned root")
+        root_tool = router.registry.get(where[0])
+        root_ep = root_tool.endpoint(where[1])
+        if (root_tool.fingerprint, root_ep.fingerprint) != pinned:
+            raise PolicyViolationError("G5 fork root source drift")
+        source_identifier = left.parameter_bindings[0][1]
+        # A field declared on an array/nested/optional object is not a
+        # source-owned single-record join key, even if semantic IDs match.
+        if not _flat_same_record_source_contract(
+            root_ep, root_ep, (source_identifier,),
+        ):
+            return None
+        return NativeIndexedSharedRootForkCandidate(
+            root_route_id=root_id,
+            branch_route_ids=(
+                left.consumer_route_id, right.consumer_route_id,
+            ),
+            root_fingerprints=pinned,
+            branch_fingerprints=(
+                (left.consumer_tool_fingerprint,
+                 left.consumer_endpoint_fingerprint),
+                (right.consumer_tool_fingerprint,
+                 right.consumer_endpoint_fingerprint),
+            ),
+            root_identifier_field=source_identifier,
+            branch_input_parameters=(
+                left.parameter_bindings[0][0], right.parameter_bindings[0][0],
+            ),
+            branch_output_fields=(
+                left.consumer_output_fields, right.consumer_output_fields,
+            ),
+        )
+
+    try:
+        left = authorized_leaf(0)
+        right = authorized_leaf(1)
+        # Each single-field cohort is independently restricted to K5.
+        # If either arm overflows, never expose partial pair identities or
+        # claim a calibrated count from an unranked subquery.
+        overflowing = left is None or right is None
+        pairs = (
+            {
+                candidate
+                for first in left for second in right
+                if (candidate := compatible_pair(first, second)) is not None
+            }
+            if left is not None and right is not None else set()
+        )
+        # Two separate G5 queries may span a live health/scope mutation.
+        # Repeat BOTH original projections before publishing fork identities
+        # or even the count. This is conservative but not a transaction or
+        # proof of linearizable provider revocation across hosts.
+        fresh_left = authorized_leaf(0)
+        fresh_right = authorized_leaf(1)
+        if fresh_left != left or fresh_right != right:
+            raise PolicyViolationError("G5 fork source eligibility changed")
+    except Exception:
+        raise PolicyViolationError(
+            "G5 fork eligibility changed during lookup"
+        ) from None
+
+    index.field_index._assert_source(router)
+    router._check_retrieval_authority_witness(witness)
+    latest_policy = router.authorization_policy
+    if latest_policy is None or (
+        latest_policy.default_effect,
+        repr(latest_policy.rules),
+        repr(latest_policy.data_rules),
+    ) != policy_snapshot:
+        raise PolicyViolationError("G5 fork authorization rules changed")
+
+    if overflowing:
+        return NativeIndexedSharedRootForkResult(
+            "over_k_unranked", index.field_index.snapshot_id,
+            index.field_index.registry_version, k, 0, (),
+        )
+    count = len(pairs)
+    ordered = tuple(sorted(
+        pairs,
+        key=lambda candidate: (
+            candidate.root_route_id, candidate.branch_route_ids,
+        ),
+    ))
+    return NativeIndexedSharedRootForkResult(
+        "over_k_unranked" if count > k else
+        "complete" if count else "no_proven_hit",
+        index.field_index.snapshot_id, index.field_index.registry_version,
+        k, count, ordered if count <= k else (),
+    )
