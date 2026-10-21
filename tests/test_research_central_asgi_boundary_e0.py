@@ -6,6 +6,9 @@ from pathlib import Path
 
 import httpx
 import pytest
+
+# Optional ASGI test adapter is absent from minimal core-dependency installs.
+pytest.importorskip("starlette")
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from scripts.research_central_asgi_boundary_e0 import (
