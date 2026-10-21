@@ -20,6 +20,7 @@ from .capability_contracts import (
 from .capability_graph import (
     CapabilityDependencyGraph,
     build_capability_dependency_graph,
+    update_capability_dependency_graph,
 )
 from .concept_retrieval import NativeConceptCatalog, resolve_native_concepts
 from .errors import PolicyViolationError
@@ -221,6 +222,57 @@ class NativeIndexedGraphResult:
     experimental_ranked: bool = False
 
 
+
+def _source_native_graph_contracts(
+    tool: ToolSpec,
+    approved_host_roots: frozenset[str],
+) -> tuple[list[CapabilityContract], int, int, set[str]]:
+    """Only the old canonical G5 root/consumer proof, for one current tool."""
+    contracts: list[CapabilityContract] = []
+    roots = consumers = 0
+    accepted: set[str] = set()
+    if not tool.source_type or not tool.license:
+        return contracts, roots, consumers, accepted
+    for endpoint in tool.endpoints:
+        route = f"{tool.key}.{endpoint.name}"
+        if endpoint.read_only is not True or endpoint.destructive is True:
+            continue
+        empty_root = _root_envelope_empty(endpoint)
+        host_root = route in approved_host_roots
+        if host_root and (
+            empty_root or _host_source_input_names(endpoint) is None
+        ):
+            raise ValueError("G5 invalid explicit host-approved source route")
+        if empty_root or host_root:
+            produced = [
+                contract
+                for field in endpoint.output_fields
+                if field.identifier is True and field.unit is None
+                and field.unit_normalization is None
+                and _scalar_contract(field.json_schema)
+                and (contract := CapabilityFieldContract.from_field(field))
+                is not None
+            ]
+            if produced:
+                contracts.append(CapabilityContract(
+                    capability_id=route, produces=produced,
+                ))
+                roots += 1
+                if host_root:
+                    accepted.add(route)
+            elif host_root:
+                raise ValueError("G5 host-approved source has no typed output")
+        else:
+            required = _native_required_inputs(endpoint)
+            if required is not None:
+                contracts.append(CapabilityContract(
+                    capability_id=route,
+                    requires=[contract for _, contract in required],
+                ))
+                consumers += 1
+    return contracts, roots, consumers, accepted
+
+
 @dataclass(frozen=True, slots=True)
 class NativeSchemaGraphIndex:
     """Immutable indexed typed dependency graph of one registered source version."""
@@ -231,6 +283,9 @@ class NativeSchemaGraphIndex:
     native_consumer_count: int
     edge_consumer_routes: frozenset[str]
     approved_host_roots: frozenset[str] = frozenset()
+    # Private source-derived contracts from exact index build, not user gold.
+    # Required to reuse the EXISTING canonical incremental edge updater.
+    _source_contracts: tuple[CapabilityContract, ...] = ()
 
     @classmethod
     def build(
@@ -253,56 +308,24 @@ class NativeSchemaGraphIndex:
         contracts: list[CapabilityContract] = []
         roots = consumers = 0
         for tool in registry.tools():
-            # The full ToolSpec fingerprint already incorporates every
-            # endpoint in this detached registry snapshot. Check all
-            # endpoints but hash their shared parent only once per tool.
+            # Verify the original registry snapshot before projecting native
+            # G5 root/consumer contracts; this is an all-tool BUILD scan.
             tool_fingerprint = tool.fingerprint
-            tool_key = tool.key
+            if field_index.tool_fingerprints.get(tool.key) != tool_fingerprint:
+                raise PolicyViolationError("G5 source changed during graph build")
             for endpoint in tool.endpoints:
-                route = f"{tool_key}.{endpoint.name}"
-                pinned = field_index.route_fingerprints.get(route)
-                if pinned != (tool_fingerprint, endpoint.fingerprint):
+                route = f"{tool.key}.{endpoint.name}"
+                if field_index.route_fingerprints.get(route) != (
+                    tool_fingerprint, endpoint.fingerprint,
+                ):
                     raise PolicyViolationError("G5 source changed during graph build")
-                if (
-                    not tool.source_type or not tool.license
-                    or endpoint.read_only is not True
-                    or endpoint.destructive is True
-                ):
-                    continue
-                empty_root = _root_envelope_empty(endpoint)
-                host_root = route in approved_host_roots
-                if host_root and (
-                    empty_root or _host_source_input_names(endpoint) is None
-                ):
-                    raise ValueError("G5 invalid explicit host-approved source route")
-                if empty_root or host_root:
-                    produced = [
-                        contract
-                        for f in endpoint.output_fields
-                        if f.identifier is True and f.unit is None
-                        and f.unit_normalization is None
-                        and _scalar_contract(f.json_schema)
-                        and (contract := CapabilityFieldContract.from_field(f))
-                        is not None
-                    ]
-                    if produced:
-                        contracts.append(CapabilityContract(
-                            capability_id=route, produces=produced,
-                        ))
-                        roots += 1
-                        if host_root:
-                            accepted_host_roots.add(route)
-                    elif host_root:
-                        raise ValueError("G5 host-approved source has no typed output")
-                else:
-                    required = _native_required_inputs(endpoint)
-                    if required is None:
-                        continue
-                    contracts.append(CapabilityContract(
-                        capability_id=route,
-                        requires=[contract for _, contract in required],
-                    ))
-                    consumers += 1
+            portion, new_roots, new_consumers, accepted = (
+                _source_native_graph_contracts(tool, approved_host_roots)
+            )
+            contracts.extend(portion)
+            roots += new_roots
+            consumers += new_consumers
+            accepted_host_roots.update(accepted)
         if accepted_host_roots != approved_host_roots:
             raise ValueError("G5 host-approved source not accepted by current catalog")
         if registry.version != field_index.registry_version:
@@ -318,6 +341,111 @@ class NativeSchemaGraphIndex:
         return cls(
             field_index, graph, roots, consumers, edge_consumers,
             approved_host_roots,
+            tuple(sorted(contracts, key=lambda item: item.capability_id)),
+        )
+
+    @classmethod
+    def refresh(
+        cls,
+        previous: NativeSchemaGraphIndex,
+        field_index: NativeSchemaPostingIndex,
+        *,
+        changed_tool_keys: tuple[str, ...],
+    ) -> NativeSchemaGraphIndex:
+        """Canonical incremental edge update for a verified posting delta.
+
+        Only original-source root/consumer contracts for named changed tools
+        are re-derived. The previous graph and unchanged contracts are
+        reused by update_capability_dependency_graph, never a second edge
+        comparator. The posting refresh is responsible for the full
+        tool-fingerprint manifest check, not the caller's change hints.
+        """
+        old = previous.field_index
+        registry = field_index.registry_ref
+        if old.registry_ref is not registry:
+            raise PolicyViolationError("G5 graph refresh source mismatch")
+        if field_index.registry_version <= old.registry_version:
+            raise PolicyViolationError("G5 graph refresh needs a newer source")
+        if (
+            type(changed_tool_keys) is not tuple
+            or not 1 <= len(changed_tool_keys) <= 64
+            or any(type(key) is not str or not key for key in changed_tool_keys)
+            or len(set(changed_tool_keys)) != len(changed_tool_keys)
+        ):
+            raise ValueError("G5 graph refresh needs bounded changed-tool keys")
+        changed = set(changed_tool_keys)
+        if changed != {
+            key
+            for key in set(old.tool_fingerprints) | set(field_index.tool_fingerprints)
+            if old.tool_fingerprints.get(key) != field_index.tool_fingerprints.get(key)
+        }:
+            raise PolicyViolationError("G5 graph refresh changed-key mismatch")
+        # Do not trust a newer version label alone: verify that an immutable
+        # posting delta really matches every current native source fingerprint.
+        # This remains O(all tools) until the registry has atomic receipts.
+        current_keys = registry.keys()
+        if set(current_keys) != set(field_index.tool_fingerprints):
+            raise PolicyViolationError("G5 graph refresh incomplete source manifest")
+        for key in current_keys:
+            if registry.get(key).fingerprint != field_index.tool_fingerprints[key]:
+                raise PolicyViolationError("G5 graph refresh source fingerprint drift")
+        if registry.version != field_index.registry_version:
+            raise PolicyViolationError("G5 graph refresh source changed")
+
+        kept = [
+            contract.model_copy(deep=True)
+            for contract in previous._source_contracts
+            if field_index.route_locations.get(contract.capability_id, ("", ""))[0]
+            not in changed
+        ]
+        old_contract_routes = {contract.capability_id for contract in kept}
+        # An in-memory sidecar is only useful when it matches the graph's
+        # recorded node set and stable unchanged source routes.
+        if (
+            {contract.capability_id for contract in previous._source_contracts}
+            != set(previous.graph.capability_ids)
+            or not old_contract_routes.issubset(field_index.route_locations)
+        ):
+            raise PolicyViolationError("G5 graph refresh corrupt prior contracts")
+        accepted_host_roots = previous.approved_host_roots - {
+            route for route in previous.approved_host_roots
+            if old.route_locations.get(route, ("", ""))[0] in changed
+        }
+        roots = sum(bool(contract.produces) for contract in kept)
+        consumers = sum(bool(contract.requires) for contract in kept)
+        for key in changed_tool_keys:
+            if key not in field_index.tool_fingerprints:
+                continue
+            tool = registry.get(key)
+            pinned = field_index.tool_fingerprints[key]
+            if tool.fingerprint != pinned:
+                raise PolicyViolationError("G5 graph refresh changed tool drift")
+            for endpoint in tool.endpoints:
+                if field_index.route_fingerprints.get(
+                    f"{key}.{endpoint.name}"
+                ) != (pinned, endpoint.fingerprint):
+                    raise PolicyViolationError("G5 graph refresh endpoint drift")
+            portion, nr, nc, accepted = _source_native_graph_contracts(
+                tool, previous.approved_host_roots,
+            )
+            kept.extend(portion)
+            roots += nr
+            consumers += nc
+            accepted_host_roots.update(accepted)
+        if accepted_host_roots != previous.approved_host_roots:
+            raise ValueError("G5 approved host source removed or changed")
+        updated = update_capability_dependency_graph(
+            previous.graph,
+            list(previous._source_contracts),
+            kept,
+        )
+        if registry.version != field_index.registry_version:
+            raise PolicyViolationError("G5 graph refresh source changed")
+        edge_consumers = frozenset(edge.consumer_id for edge in updated.edges)
+        return cls(
+            field_index, updated, roots, consumers, edge_consumers,
+            previous.approved_host_roots,
+            tuple(sorted(kept, key=lambda item: item.capability_id)),
         )
 
     def lookup(
