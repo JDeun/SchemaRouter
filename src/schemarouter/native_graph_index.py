@@ -224,6 +224,31 @@ class NativeIndexedGraphResult:
 
 
 
+@dataclass(frozen=True, slots=True)
+class NativeIndexedTwoHopCandidate:
+    """Three current source-native routes, two verified typed joins, no execution."""
+
+    route_ids: tuple[str, str, str]
+    route_fingerprints: tuple[tuple[str, str], tuple[str, str], tuple[str, str]]
+    root_to_intermediate: tuple[tuple[str, str], ...]
+    intermediate_to_target: tuple[tuple[str, str], ...]
+    target_output_fields: tuple[str, ...]
+    source_root_parameters: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class NativeIndexedTwoHopResult:
+    status: Literal["complete", "no_proven_hit", "over_k_unranked"]
+    index_snapshot_id: str
+    registry_version: int
+    requested_k: int
+    qualified_path_count: int
+    candidates: tuple[NativeIndexedTwoHopCandidate, ...]
+    independent_quality_evidence: bool = False
+    calibrated_no_fit: bool = False
+    executable_authority: bool = False
+
+
 def _source_native_graph_contracts(
     tool: ToolSpec,
     approved_host_roots: frozenset[str],
@@ -266,9 +291,23 @@ def _source_native_graph_contracts(
         else:
             required = _native_required_inputs(endpoint)
             if required is not None:
+                # Source-native intermediate routes can BOTH consume typed
+                # identifiers and produce new identifiers. The canonical
+                # graph must preserve both edges for opt-in two-hop lookup;
+                # they are never accepted as zero-input roots by default.
+                produced = [
+                    contract
+                    for field in endpoint.output_fields
+                    if field.identifier is True and field.unit is None
+                    and field.unit_normalization is None
+                    and _scalar_contract(field.json_schema)
+                    and (contract := CapabilityFieldContract.from_field(field))
+                    is not None
+                ]
                 contracts.append(CapabilityContract(
                     capability_id=route,
                     requires=[contract for _, contract in required],
+                    produces=produced,
                 ))
                 consumers += 1
     return contracts, roots, consumers, accepted
@@ -903,6 +942,252 @@ class NativeSchemaGraphIndex:
             "complete" if found else "no_proven_hit",
             self.field_index.snapshot_id,
             self.field_index.registry_version, k, len(found), tuple(found),
+        )
+
+
+    def lookup_two_hop(
+        self,
+        router: SchemaRouter,
+        query: str,
+        *,
+        group: NativeDeclaredFieldGroup,
+        principal: PrincipalContext,
+        k: int = STRICT_K,
+    ) -> NativeIndexedTwoHopResult:
+        """Opt-in E0: root -> typed intermediary -> target, without execution.
+
+        Reuses the existing canonical source graph and index. Every endpoint
+        and both join maps must be current, source-pinned, principal-visible,
+        and explicitly typed. No unknown input, mixed-record join, inferred
+        alias, unapproved parameterized root or model-driven path is allowed.
+        """
+        if type(k) is not int or k != STRICT_K:
+            raise ValueError("G5 two-hop strict fixed K5 required")
+        if type(query) is not str or len(query.encode("utf-8")) > 512:
+            raise ValueError("G5 two-hop invalid bounded query")
+        if not isinstance(group, NativeDeclaredFieldGroup):
+            raise ValueError("G5 two-hop host FieldGroup required")
+        if not isinstance(principal, PrincipalContext):
+            raise PolicyViolationError("G5 two-hop explicit principal required")
+        try:
+            demand = NativeDeclaredFieldGroup.model_validate(
+                group.model_dump(mode="python"), strict=True,
+            )
+            actor = PrincipalContext.model_validate(
+                principal.model_dump(mode="python"), strict=True,
+            )
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("G5 two-hop invalid current declarations") from exc
+        if _alias_key(query) not in {_alias_key(a) for a in demand.aliases}:
+            raise ValueError("G5 two-hop query lacks approved semantic edge")
+        self.field_index._assert_source(router)
+        if router.authorization_policy is None:
+            raise PolicyViolationError("G5 two-hop explicit authorization policy required")
+        witness = router._retrieval_authority_witness()
+        original_policy = (
+            router.authorization_policy.default_effect,
+            repr(router.authorization_policy.rules),
+            repr(router.authorization_policy.data_rules),
+        )
+        permitted = router._authorization_predicate(actor)
+        if permitted is None:
+            raise PolicyViolationError("G5 two-hop explicit authorization required")
+        availability = router.planner.availability_predicate
+
+        def authorized(route: str) -> tuple[ToolSpec, EndpointSpec] | None:
+            where = self.field_index.route_locations.get(route)
+            pinned = self.field_index.route_fingerprints.get(route)
+            if where is None or pinned is None:
+                raise PolicyViolationError("G5 two-hop original route missing")
+            tool = router.registry.get(where[0])
+            endpoint = tool.endpoint(where[1])
+            if (tool.fingerprint, endpoint.fingerprint) != pinned:
+                raise PolicyViolationError("G5 two-hop original source changed")
+            if (
+                not tool.source_type or not tool.license
+                or endpoint.read_only is not True or endpoint.destructive is True
+                or not permitted(tool, endpoint)
+            ):
+                return None
+            if availability is not None and not bool(availability(tool, endpoint)):
+                return None
+            scoped = router._data_scope_endpoint_view(actor, tool, endpoint)
+            return (tool, scoped) if scoped is not None else None
+
+        def bind(
+            source_tool: ToolSpec,
+            source: EndpointSpec,
+            consumer: EndpointSpec,
+        ) -> tuple[tuple[str, str], ...] | None:
+            inputs = _native_required_inputs(consumer)
+            if inputs is None:
+                return None
+            found_bindings: list[tuple[str, str]] = []
+            for parameter, required in inputs:
+                field = _root_field(source, required)
+                if (
+                    field is None or field.name in {
+                        name for _, name in found_bindings
+                    }
+                ):
+                    return None
+                found_bindings.append((parameter, field.name))
+            result = tuple(found_bindings)
+            if len(result) > 1 and not _flat_same_record_source_contract(
+                source_tool.endpoint(source.name), source,
+                tuple(field for _, field in result),
+            ):
+                return None
+            return result
+
+        def root_inputs(
+            route: str, tool: ToolSpec, endpoint: EndpointSpec,
+        ) -> tuple[str, ...] | None:
+            if _root_envelope_empty(endpoint):
+                return ()
+            if route not in self.approved_host_roots:
+                return None
+            return _host_source_input_names(tool.endpoint(endpoint.name))
+
+        wanted = [
+            set(self.field_index.postings.get(field.semantic_id, ()))
+            for field in demand.required_fields
+        ]
+        targets = set.intersection(*wanted) if wanted else set()
+        targets.intersection_update(self.edge_consumer_routes)
+        qualified: list[NativeIndexedTwoHopCandidate] = []
+
+        # Query the indexed predecessor lists only. This does not enumerate
+        # the full registered catalog or grant any source execution access.
+        try:
+            for target_id in sorted(targets):
+                target = authorized(target_id)
+                if target is None:
+                    continue
+                target_tool, target_ep = target
+                if (
+                    demand.source_type is not None
+                    and target_tool.source_type != demand.source_type
+                    or demand.license is not None
+                    and target_tool.license != demand.license
+                    or not _complete_fields(
+                        target_ep.output_fields, demand.required_fields,
+                    )
+                ):
+                    continue
+                names = tuple(sorted({
+                    field.name for field in target_ep.output_fields
+                    if any(
+                        _complete_fields([field], (required,))
+                        for required in demand.required_fields
+                    )
+                }))
+                for middle_id in self.graph.predecessors(target_id):
+                    middle = authorized(middle_id)
+                    if middle is None or middle_id == target_id:
+                        continue
+                    middle_tool, middle_ep = middle
+                    # An intermediary must genuinely consume source inputs
+                    # and produce the typed identifier needed by the target.
+                    if _native_required_inputs(middle_ep) is None:
+                        continue
+                    second = bind(middle_tool, middle_ep, target_ep)
+                    if second is None:
+                        continue
+                    for root_id in self.graph.predecessors(middle_id):
+                        if len({root_id, middle_id, target_id}) != 3:
+                            continue
+                        root = authorized(root_id)
+                        if root is None:
+                            continue
+                        root_tool, root_ep = root
+                        external_inputs = root_inputs(root_id, root_tool, root_ep)
+                        if external_inputs is None:
+                            continue
+                        first = bind(root_tool, root_ep, middle_ep)
+                        if first is None:
+                            continue
+                        qualified.append(NativeIndexedTwoHopCandidate(
+                            route_ids=(root_id, middle_id, target_id),
+                            route_fingerprints=(
+                                self.field_index.route_fingerprints[root_id],
+                                self.field_index.route_fingerprints[middle_id],
+                                self.field_index.route_fingerprints[target_id],
+                            ),
+                            root_to_intermediate=first,
+                            intermediate_to_target=second,
+                            target_output_fields=names,
+                            source_root_parameters=external_inputs,
+                        ))
+                        if len(qualified) > MAX_RESEARCH_RANKABLE_PATHS:
+                            raise PolicyViolationError(
+                                "G5 two-hop source expansion exceeds E0 limit"
+                            )
+            # Every previously qualified route is re-read AFTER all health
+            # callbacks, even if >K would return a count-only abstention.
+            for candidate in qualified:
+                root_id, middle_id, target_id = candidate.route_ids
+                reread = tuple(authorized(route) for route in candidate.route_ids)
+                if any(source is None for source in reread):
+                    raise PolicyViolationError("G5 two-hop route withdrawn")
+                root_current, middle_current, target_current = reread
+                assert root_current is not None
+                assert middle_current is not None
+                assert target_current is not None
+                root_tool, root_ep = root_current
+                middle_tool, middle_ep = middle_current
+                target_tool, target_ep = target_current
+                if (
+                    root_inputs(root_id, root_tool, root_ep)
+                    != candidate.source_root_parameters
+                    or _native_required_inputs(middle_ep) is None
+                    or bind(root_tool, root_ep, middle_ep)
+                    != candidate.root_to_intermediate
+                    or bind(middle_tool, middle_ep, target_ep)
+                    != candidate.intermediate_to_target
+                    or demand.source_type is not None
+                    and target_tool.source_type != demand.source_type
+                    or demand.license is not None
+                    and target_tool.license != demand.license
+                    or not _complete_fields(
+                        target_ep.output_fields, demand.required_fields,
+                    )
+                ):
+                    raise PolicyViolationError("G5 two-hop binding or scope withdrawn")
+                latest_names = tuple(sorted({
+                    field.name for field in target_ep.output_fields
+                    if any(
+                        _complete_fields([field], (required,))
+                        for required in demand.required_fields
+                    )
+                }))
+                if latest_names != candidate.target_output_fields:
+                    raise PolicyViolationError("G5 two-hop output scope changed")
+        except Exception:
+            # Provider/host callbacks may throw messages containing private
+            # source fields; only generic failure reaches an external agent.
+            raise PolicyViolationError(
+                "G5 two-hop source eligibility changed during lookup"
+            ) from None
+
+        self.field_index._assert_source(router)
+        router._check_retrieval_authority_witness(witness)
+        policy = router.authorization_policy
+        if policy is None or (
+            policy.default_effect, repr(policy.rules), repr(policy.data_rules),
+        ) != original_policy:
+            raise PolicyViolationError(
+                "G5 two-hop authorization policy changed during lookup"
+            )
+        count = len(qualified)
+        return NativeIndexedTwoHopResult(
+            "over_k_unranked" if count > k else
+            "complete" if count else "no_proven_hit",
+            self.field_index.snapshot_id,
+            self.field_index.registry_version,
+            k,
+            count,
+            tuple(qualified) if count <= k else (),
         )
 
     def lookup_concepts(
