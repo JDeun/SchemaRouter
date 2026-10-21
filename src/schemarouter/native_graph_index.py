@@ -627,9 +627,20 @@ class NativeSchemaGraphIndex:
                 or endpoint.read_only is not True
                 or endpoint.destructive is True
                 or not permitted(tool, endpoint)
-                or availability is not None and not availability(tool, endpoint)
             ):
                 return None
+            # The first pass must be as private as the final recheck: an
+            # untrusted health callback may throw or return a value whose
+            # truthiness evaluation raises with provider-owned information.
+            if availability is not None:
+                try:
+                    available_now = bool(availability(tool, endpoint))
+                except Exception:
+                    raise PolicyViolationError(
+                        "G5 availability check failed during lookup"
+                    ) from None
+                if not available_now:
+                    return None
             scoped = router._data_scope_endpoint_view(actor, tool, endpoint)
             return (tool, scoped) if scoped is not None else None
 

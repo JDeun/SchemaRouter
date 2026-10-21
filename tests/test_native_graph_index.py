@@ -1040,3 +1040,35 @@ def test_default_native_g5_stable_live_health_returns_exact_evidence():
     assert {c.consumer_route_id for c in result.candidates} == {
         "cases_0.read_case", "cases_1.read_case",
     }
+
+
+@pytest.mark.parametrize("failure_mode", ("callback", "truthiness"))
+def test_native_g5_first_availability_failure_redacts_private_error(
+    failure_mode,
+):
+    """The initial root/target path probe is a private error boundary."""
+    router = _router(n_targets=2)
+    index = _index(router)
+    private_marker = "provider-secret-native-graph-9361"
+    calls: list[str] = []
+
+    class BadAvailability:
+        def __bool__(self):
+            raise RuntimeError(private_marker)
+
+    def health(tool, _endpoint):
+        calls.append(tool.key)
+        if failure_mode == "callback":
+            raise RuntimeError(private_marker)
+        return BadAvailability()
+
+    router.planner.availability_predicate = health
+    with pytest.raises(
+        PolicyViolationError,
+        match="G5 availability check failed during lookup",
+    ) as caught:
+        index.lookup(router, ALIASES[0], group=GROUP, principal=ANALYST)
+    assert calls
+    assert private_marker not in str(caught.value)
+    assert caught.value.__suppress_context__
+    assert router.registry.version == index.field_index.registry_version
