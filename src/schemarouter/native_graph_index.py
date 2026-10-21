@@ -1109,9 +1109,10 @@ class NativeSchemaGraphIndex:
                             continue
                         qualified.append(NativeIndexedTwoHopCandidate(
                             route_ids=(root_id, middle_id, target_id),
-                            route_fingerprints=tuple(
-                                self.field_index.route_fingerprints[item]
-                                for item in (root_id, middle_id, target_id)
+                            route_fingerprints=(
+                                self.field_index.route_fingerprints[root_id],
+                                self.field_index.route_fingerprints[middle_id],
+                                self.field_index.route_fingerprints[target_id],
                             ),
                             root_to_intermediate=first,
                             intermediate_to_target=second,
