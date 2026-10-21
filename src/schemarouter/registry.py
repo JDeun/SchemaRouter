@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sqlite3
 from collections.abc import Iterable
+from dataclasses import dataclass
 from pathlib import Path
 from threading import RLock
 from typing import Protocol
@@ -347,13 +348,62 @@ def replace_if_current(
     return result
 
 
+@dataclass(frozen=True, slots=True)
+class RegistryMutationReceipt:
+    """No source fields or credentials: exact lock-protected mutation keys."""
+
+    from_version: int
+    to_version: int
+    changed_tool_keys: tuple[str, ...]
+
+
 class InMemoryRegistry:
     """Versioned, collision-safe in-memory tool catalog with snapshot reads."""
+
+    # Retain only a bounded history; stale callers MUST full-rebuild.
+    _MAX_MUTATION_JOURNAL_VERSIONS = 256
+    _MAX_CHANGED_KEYS_PER_RECEIPT = 64
 
     def __init__(self) -> None:
         self._tools: dict[str, ToolSpec] = {}
         self._version = 0
         self._lock = RLock()
+        self._mutations: dict[int, tuple[str, ...]] = {}
+
+    def _commit_changed_tool_keys(self, keys: Iterable[str]) -> None:
+        """Call only inside the registry lock AFTER an actual atomic write."""
+        self._version += 1
+        self._mutations[self._version] = tuple(sorted(set(keys)))
+        if len(self._mutations) > self._MAX_MUTATION_JOURNAL_VERSIONS:
+            self._mutations.pop(next(iter(self._mutations)))
+
+    def changed_tool_keys_since(self, from_version: int) -> RegistryMutationReceipt:
+        """Read ONE atomic source-version/cumulative changed-key receipt.
+
+        This is not an authenticated cross-process journal, executable
+        authority, nor a promise that a consumer has already seen the
+        returned version. A consumer must recheck the exact version when
+        publishing its next immutable index.
+        """
+        with self._lock:
+            if (
+                type(from_version) is not int
+                or not 0 <= from_version <= self._version
+            ):
+                raise RegistrationError("invalid registry mutation cursor")
+            found: set[str] = set()
+            for version in range(from_version + 1, self._version + 1):
+                keys = self._mutations.get(version)
+                if keys is None:
+                    raise RegistrationError("registry mutation history expired")
+                found.update(keys)
+                if len(found) > self._MAX_CHANGED_KEYS_PER_RECEIPT:
+                    raise RegistrationError("registry mutation delta exceeds safe bound")
+            return RegistryMutationReceipt(
+                from_version=from_version,
+                to_version=self._version,
+                changed_tool_keys=tuple(sorted(found)),
+            )
 
     @property
     def version(self) -> int:
@@ -371,7 +421,7 @@ class InMemoryRegistry:
             if key in self._tools and not replace:
                 raise RegistrationError(f"tool {key!r} is already registered")
             self._tools[key] = self._snapshot(validated)
-            self._version += 1
+            self._commit_changed_tool_keys((key,))
         return key
 
     def replace_if_fingerprint(
@@ -399,7 +449,7 @@ class InMemoryRegistry:
                     f"{expected_fingerprint!r}, found {current.fingerprint!r}"
                 )
             self._tools[key] = self._snapshot(validated)
-            self._version += 1
+            self._commit_changed_tool_keys((key,))
         return key
 
     def unregister_if_fingerprint(
@@ -424,14 +474,14 @@ class InMemoryRegistry:
                     f"{expected_fingerprint!r}, found {current.fingerprint!r}"
                 )
             del self._tools[key]
-            self._version += 1
+            self._commit_changed_tool_keys((key,))
 
     def unregister(self, key: str) -> None:
         with self._lock:
             if key not in self._tools:
                 raise KeyError(key)
             del self._tools[key]
-            self._version += 1
+            self._commit_changed_tool_keys((key,))
 
     def get(self, key: str) -> ToolSpec:
         with self._lock:
@@ -469,7 +519,7 @@ class InMemoryRegistry:
             for key in expected:
                 del self._tools[key]
             if expected:
-                self._version += 1
+                self._commit_changed_tool_keys(expected)
 
     def restore_many_if_version(
         self,
@@ -512,7 +562,7 @@ class InMemoryRegistry:
                 else:
                     self._tools[key] = self._snapshot(tool)
             if previous:
-                self._version += 1
+                self._commit_changed_tool_keys(previous)
 
     def update_many_if_version(
         self,
@@ -540,7 +590,7 @@ class InMemoryRegistry:
             for tool in staged:
                 self._tools[tool.key] = self._snapshot(tool)
             if staged:
-                self._version += 1
+                self._commit_changed_tool_keys(staged_keys)
         return tuple(staged_keys)
 
     def update_many(self, tools: Iterable[ToolSpec], *, replace: bool = False) -> None:
@@ -558,7 +608,7 @@ class InMemoryRegistry:
             for tool in staged:
                 self._tools[tool.key] = self._snapshot(tool)
             if staged:
-                self._version += 1
+                self._commit_changed_tool_keys(staged_keys)
 
 
 def _validate_legacy_registry_storage(
