@@ -54,3 +54,29 @@ The dedicated Qwen3-0.6B + E5 Linux CPU workflow now reruns the identical
 beside (not instead of) existing strict no-call/OOD errors. The existing
 published 2/12 vs 6/12 aggregate task-pass denominator, executable
 policy boundaries, all old frozen evidence and Release HOLD are unchanged.
+
+
+## 2026-10-21 — progressed synthetic step witness (additive, E0)
+
+The original `passed` and `supported_final_after_fixture_completion_observed`
+are intentionally retained, but their structural truth values **do not
+independently show a performed tool call**. A source/test row may claim the
+fixture complete and show a final turn with no matching attempt record.
+
+The additional
+`supported_final_after_progressed_fixture_step_observed` field is true
+**only if** the existing supported/fixture-passed/final-turn flags are true,
+the context did not overflow, the post-execution `tool_call_count` is a
+positive exact match to both serialized per-turn tool calls and raw trusted
+grader attempt rows, all serialized attempt receipts match their raw attempt,
+and at least one expected, policy-allowed, schema-valid, semantically-valid,
+error-free attempt advanced the synthetic fixture. The raw route/arguments,
+attempt receipt, original query and expected gold remain private; public JSONL
+contains only the new boolean.
+
+The existing tiny EN/KO/JA E0 safety-strata aggregator counts that stricter
+evidence separately as `supported_final_with_progressed_fixture_step` when
+the entire arm has complete, consistent flags. Legacy absent fields yield
+`null`, never an inferred success; partial/malformed evidence is rejected.
+This is **not** a live provider call, independent agent E2, fact correctness,
+a calibrated no-fit rate or grounds for v0.18 release.
