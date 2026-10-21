@@ -30,6 +30,8 @@ database path, source response or prompt is returned in HTTP decisions.
 
 - An unsigned, forged, tampered, expired, wrong-audience, wrong-role,
   overlong TTL or wrong-key assertion cannot invoke synthetic sink callbacks.
+  Invalid Base64 padding (including a correctly MAC-signed malformed payload)
+  produces a sanitized 403 instead of an ASGI 500.
 - A malicious upstream middleware that pre-populates the trusted fixture
   field is stripped at the verifier boundary; it cannot invoke emergency
   operator controls without the valid signature.
