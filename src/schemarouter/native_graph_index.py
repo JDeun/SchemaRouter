@@ -705,6 +705,39 @@ class NativeSchemaGraphIndex:
                     parameter_bindings=tuple(bindings),
                     source_root_parameters=root_required,
                 ))
+        # The availability predicate can be the SAME callable while its
+        # underlying live health set changes during a multi-route lookup.
+        # Revalidate *all* qualified paths before publishing either a
+        # candidate OR the qualified count, including over-K abstention.
+        # A registry version/authorization witness alone cannot detect
+        # closure-state revocation from another candidate's callback.
+        try:
+            for candidate in found:
+                root_now = authorized(candidate.producer_route_id)
+                target_now = authorized(candidate.consumer_route_id)
+                if root_now is None or target_now is None:
+                    raise PolicyViolationError("G5 candidate no longer available")
+                _root_tool_now, root_ep_now = root_now
+                _target_tool_now, target_ep_now = target_now
+                if not _complete_fields(
+                    target_ep_now.output_fields, demand.required_fields,
+                ):
+                    raise PolicyViolationError("G5 candidate scope changed")
+                visible_names = tuple(sorted({
+                    field.name for field in target_ep_now.output_fields
+                    if any(
+                        _complete_fields([field], (required,))
+                        for required in demand.required_fields
+                    )
+                }))
+                if visible_names != candidate.consumer_output_fields:
+                    raise PolicyViolationError("G5 candidate projection changed")
+        except Exception:
+            # A native provider callback may embed private field names or
+            # endpoint IDs in exceptions. Never forward that message.
+            raise PolicyViolationError(
+                "G5 candidate eligibility changed during lookup"
+            ) from None
         self.field_index._assert_source(router)
         router._check_retrieval_authority_witness(witness)
         policy = router.authorization_policy
