@@ -7,6 +7,7 @@ success. No external model, HTTP request, credential or native tool is created.
 """
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -80,6 +81,7 @@ def propose_bounded_semantic_shortlist(
     max_catalog_routes: int = DEFAULT_NATIVE_CATALOG_CAP,
     max_model_input_bytes: int = DEFAULT_MODEL_INPUT_BYTES_CAP,
     authorized_source_view: AuthorizedAgentToolSurface | None = None,
+    stage_timings_ms: dict[str, float] | None = None,
 ) -> DiagnosticSemanticShortlist:
     """Only reorder existing currently authorized native candidates.
 
@@ -88,6 +90,11 @@ def propose_bounded_semantic_shortlist(
     All omissions, abstentions and budget violations are explicit rather than
     implicitly relabeled as unsupported/no-fit.
     """
+    # Optional aggregate-only, research caller-owned CPU stage timings.
+    # No source fields, query text or output values are copied into the sink.
+    if stage_timings_ms is not None and type(stage_timings_ms) is not dict:
+        raise ValueError("invalid opt-in stage timing collector")
+    began_source = time.perf_counter_ns()
     if type(query) is not str or not query.strip():
         raise ValueError("nonempty original query string required")
     if type(k) is not int or not 1 <= k <= MAX_SHORTLIST:
@@ -163,6 +170,12 @@ def propose_bounded_semantic_shortlist(
             source_endpoint_fingerprints=(),
         )
 
+    after_source = time.perf_counter_ns()
+    if stage_timings_ms is not None:
+        stage_timings_ms["source_validation_ms"] = (
+            after_source - began_source
+        ) / 1e6
+
     # Source tool/endpoint *free text* may mention field names that data
     # scope hides. Under any configured field-scope policy expose only the
     # actually projected visible field labels; do not trust free prose as
@@ -196,9 +209,20 @@ def propose_bounded_semantic_shortlist(
     if total_input_bytes > max_model_input_bytes:
         raise ValueError("authorized model input exceeds bounded research limit")
 
+    after_materialize = time.perf_counter_ns()
+    if stage_timings_ms is not None:
+        stage_timings_ms["request_materialization_ms"] = (
+            after_materialize - after_source
+        ) / 1e6
+
     # choose_sync verifies the backend response against an independent
     # host-owned snapshot of offered IDs: forged, duplicate and over-K fail.
     result = choose_sync(backend, decision)
+    after_choose = time.perf_counter_ns()
+    if stage_timings_ms is not None:
+        stage_timings_ms["choose_sync_ms"] = (
+            after_choose - after_materialize
+        ) / 1e6
     router._check_retrieval_authority_witness(authority)
     if result.abstained or not result.selections:
         status = "backend_abstained_not_calibrated_no_fit"
@@ -212,7 +236,7 @@ def propose_bounded_semantic_shortlist(
             else "unverified_partial_k_model_ranking"
         )
 
-    return DiagnosticSemanticShortlist(
+    output = DiagnosticSemanticShortlist(
         status=status,
         route_ids=tuple(c.route_id for c in picked),
         registered_candidate_count=len(candidates),
@@ -224,3 +248,8 @@ def propose_bounded_semantic_shortlist(
             c.endpoint_fingerprint for c in picked
         ),
     )
+    if stage_timings_ms is not None:
+        stage_timings_ms["post_decision_validation_ms"] = (
+            time.perf_counter_ns() - after_choose
+        ) / 1e6
+    return output

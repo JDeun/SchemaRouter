@@ -5,6 +5,7 @@ execution permission, or independent multilingual task-utility result.
 """
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 
 from schemarouter import PolicyViolationError
@@ -32,13 +33,22 @@ def _visible_fingerprints(
 ) -> dict[str, tuple[str, str]]:
     """Check exact native source fingerprints, never descriptions or gold."""
     source: dict[str, tuple[str, str]] = {}
+    visible = frozenset(view.visible_route_ids)
+    # registry.tools() returns detached, versioned ToolSpec snapshots. A
+    # tool-level fingerprint covers all its endpoints; hashing it once per
+    # detached snapshot preserves exact per-route fingerprints while avoiding
+    # repeated full-tool JSON serialization for multi-endpoint native tools.
+    # Each scan still fetches a fresh registry snapshot; no cross-call cache.
     for tool in view.router.registry.tools():
+        tool_fingerprint: str | None = None
         for endpoint in tool.endpoints:
             route = f"{tool.key}.{endpoint.name}"
             if route in source:
                 raise PolicyViolationError("duplicate native source route")
-            if route in view.visible_route_ids:
-                source[route] = (tool.fingerprint, endpoint.fingerprint)
+            if route in visible:
+                if tool_fingerprint is None:
+                    tool_fingerprint = tool.fingerprint
+                source[route] = (tool_fingerprint, endpoint.fingerprint)
     if set(source) != set(view.visible_route_ids):
         raise PolicyViolationError("scoped native source fingerprints incomplete")
     return source
@@ -57,6 +67,7 @@ class AuthorizedFixed5DecisionSelector:
     backend: DecisionBackend = field(repr=False)
     max_model_input_bytes: int = 131072
     reuse_authorized_source: bool = True  # Research-only paired A/B diagnostic.
+    stage_timings_ms: dict[str, float] | None = field(default=None, repr=False)
     last_status: str | None = field(default=None, init=False)
     last_model_input_bytes: int | None = field(default=None, init=False)
     calibrated_no_fit: bool = field(default=False, init=False)
@@ -67,6 +78,10 @@ class AuthorizedFixed5DecisionSelector:
     )
 
     def __post_init__(self) -> None:
+        if self.stage_timings_ms is not None and (
+            type(self.stage_timings_ms) is not dict or self.stage_timings_ms
+        ):
+            raise ValueError("fresh opt-in stage collector required")
         if type(self.reuse_authorized_source) is not bool:
             raise ValueError("invalid scoped source reuse A/B selection")
         if (
@@ -78,6 +93,7 @@ class AuthorizedFixed5DecisionSelector:
         self._pinned_fingerprints = _visible_fingerprints(self.view)
 
     def __call__(self, query: str, source_ids: tuple[str, ...]) -> list[str]:
+        began = time.perf_counter_ns()
         self.view.assert_source_unchanged()
         if (
             type(query) is not str
@@ -90,6 +106,12 @@ class AuthorizedFixed5DecisionSelector:
         if _visible_fingerprints(self.view) != self._pinned_fingerprints:
             raise PolicyViolationError("fixed5 native source fingerprint drift")
 
+        after_preflight = time.perf_counter_ns()
+        if self.stage_timings_ms is not None:
+            self.stage_timings_ms["bridge_prevalidation_ms"] = (
+                after_preflight - began
+            ) / 1e6
+
         result: DiagnosticSemanticShortlist = propose_bounded_semantic_shortlist(
             self.view.router,
             query,
@@ -100,7 +122,9 @@ class AuthorizedFixed5DecisionSelector:
             authorized_source_view=(
                 self.view if self.reuse_authorized_source else None
             ),
+            stage_timings_ms=self.stage_timings_ms,
         )
+        after_semantic = time.perf_counter_ns()
         self.view.assert_source_unchanged()
         if _visible_fingerprints(self.view) != self._pinned_fingerprints:
             raise PolicyViolationError("fixed5 native source fingerprint drift")
@@ -133,4 +157,9 @@ class AuthorizedFixed5DecisionSelector:
         # unsupported. Never refill from gold or widen K in response.
         self.last_status = result.status
         self.last_model_input_bytes = result.model_input_bytes
-        return list(result.route_ids)
+        selected = list(result.route_ids)
+        if self.stage_timings_ms is not None:
+            self.stage_timings_ms["bridge_postvalidation_ms"] = (
+                time.perf_counter_ns() - after_semantic
+            ) / 1e6
+        return selected
