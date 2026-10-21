@@ -266,9 +266,23 @@ def _source_native_graph_contracts(
         else:
             required = _native_required_inputs(endpoint)
             if required is not None:
+                # Source-native intermediate routes can BOTH consume typed
+                # identifiers and produce new identifiers. The canonical
+                # graph must preserve both edges for opt-in two-hop lookup;
+                # they are never accepted as zero-input roots by default.
+                produced = [
+                    contract
+                    for field in endpoint.output_fields
+                    if field.identifier is True and field.unit is None
+                    and field.unit_normalization is None
+                    and _scalar_contract(field.json_schema)
+                    and (contract := CapabilityFieldContract.from_field(field))
+                    is not None
+                ]
                 contracts.append(CapabilityContract(
                     capability_id=route,
                     requires=[contract for _, contract in required],
+                    produces=produced,
                 ))
                 consumers += 1
     return contracts, roots, consumers, accepted
