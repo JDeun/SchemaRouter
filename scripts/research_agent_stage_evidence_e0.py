@@ -171,6 +171,8 @@ def sanitized_e0_trace(
         row["supported"] and row["passed"]
         and row["task_complete"] and final_observed
     )
+    # observed_stages validated the attempt list and all required booleans.
+    attempts = row["attempts"]
     # A synthetic grader can declare completion without enough *recorded*
     # tool-step evidence for an execution-backed final-turn witness. Compare
     # post-execution attempts to the exact per-turn serialized calls without
@@ -189,7 +191,7 @@ def sanitized_e0_trace(
         and all(type(call) is dict for call in call_rows)
         and all(
             call.get("attempt") == attempt
-            for call, attempt in zip(call_rows, attempts)
+            for call, attempt in zip(call_rows, attempts, strict=True)
         )
         and any(
             attempt["advanced_task"] and attempt["schema_valid"]
