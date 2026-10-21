@@ -338,3 +338,46 @@ def test_bounded_graph_budget_counts_rejected_candidate_probes(
     assert len(touched) <= 256 + 8
     assert caught.value.__suppress_context__
     assert router.registry.version == graph.field_index.registry_version
+
+
+@pytest.mark.parametrize("fanout", ("target_postings", "predecessor_adjacency"))
+def test_g5_high_degree_short_circuits_before_sort_and_source_reads(
+    monkeypatch, fanout,
+):
+    """Massive posting/adjacency must fail BEFORE private callback fanout."""
+    if fanout == "target_postings":
+        router = _router(3, targets=270)
+    else:
+        router = _router(3)
+        for idx in range(270):
+            router.add_tool(_tool(
+                f"alternate_{idx:03d}",
+                requires="billing.id_0", output="billing.id_1",
+            ))
+    graph = _index(router)
+    original_get = router.registry.get
+    fetched: list[str] = []
+
+    def observe(key):
+        fetched.append(key)
+        if fanout == "target_postings":
+            pytest.fail("posting preflight must not read any native source")
+        assert not key.startswith("alternate_"), (
+            "predecessor preflight cannot fetch excluded source"
+        )
+        return original_get(key)
+
+    monkeypatch.setattr(router.registry, "get", observe)
+    with pytest.raises(
+        PolicyViolationError,
+        match="G5 bounded path eligibility changed during lookup",
+    ):
+        graph.lookup_bounded_paths(
+            router, ALIASES[0], group=GROUP, principal=ACTOR, hops=3,
+        )
+    if fanout == "target_postings":
+        assert fetched == []
+    else:
+        assert fetched
+        assert set(fetched).issubset({"target_0", "mid_1", "mid_0"})
+    assert router.registry.version == graph.field_index.registry_version
