@@ -145,7 +145,9 @@ def test_scoped_analyzer_drops_unreviewed_source_auth_requirement_labels():
     exposed = json.dumps(analyzer_tools, sort_keys=True)
     assert AUTH_CANARY not in exposed
     assert AUTH_CANARY not in result.model_dump_json()
-    assert analyzer_tools[0]["endpoints"][0]["auth_requirements"] == []
+    # The public dump omits empty/default requirement lists on some model
+    # versions; both omission and [] correctly carry no source-owned labels.
+    assert analyzer_tools[0]["endpoints"][0].get("auth_requirements", []) == []
 
     # The raw source is still available to trusted host checks and its
     # original schema fingerprint cannot be rewritten by display projection.
