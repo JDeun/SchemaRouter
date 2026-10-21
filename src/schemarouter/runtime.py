@@ -3764,6 +3764,70 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         with _principal_execution_context(principal):
             return await self.aplan(request)
 
+    def _project_route_retrieval_data_scope(
+        self,
+        retrieval: CapabilityRouteRetrieval,
+        principal: PrincipalContext | None,
+    ) -> CapabilityRouteRetrieval:
+        """Remove raw source sidecars after schema-free, scoped route ranking."""
+        policy = self.authorization_policy
+        if policy is None or not policy.data_rules:
+            return retrieval
+        if principal is None:
+            raise PolicyViolationError(
+                "principal context is required when authorization_policy is configured"
+            )
+        projected = []
+        for candidate in retrieval.candidates:
+            tool = self.registry.get(candidate.tool)
+            endpoint = tool.endpoint(candidate.endpoint)
+            scope = policy.data_scope(principal, tool, endpoint)
+            if scope.visible_fields is None:
+                projected.append(candidate)
+                continue
+            visible_endpoint = self._data_scope_endpoint_view(
+                principal, tool, endpoint,
+            )
+            if visible_endpoint is None:
+                raise PolicyViolationError(
+                    "authorized route scope changed during projection"
+                )
+            visible_names = {
+                name.casefold()
+                for field in visible_endpoint.output_fields
+                for name in (field.name, field.semantic_id)
+                if name is not None
+            }
+            source_field_names = {
+                field.name.casefold() for field in endpoint.output_fields
+            }
+            components = [
+                component
+                for component in candidate.score_components
+                if component.matched is None
+                or component.matched.casefold() in visible_names
+                or component.matched.casefold() not in source_field_names
+            ]
+            projected.append(candidate.model_copy(
+                deep=True,
+                update={
+                    "provider": None,
+                    "access_mode": None,
+                    "matched_fields": [
+                        name for name in candidate.matched_fields
+                        if name.casefold() in visible_names
+                    ],
+                    "score_components": components,
+                },
+            ))
+        if len(projected) != len(retrieval.candidates):
+            raise PolicyViolationError(
+                "authorized route scope changed during projection"
+            )
+        return retrieval.model_copy(
+            deep=True, update={"candidates": projected},
+        )
+
     def retrieve_routes(
         self,
         request: PlanRequest | str,
@@ -3771,15 +3835,34 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         k: int = 5,
     ) -> CapabilityRouteRetrieval:
         """Return lightweight Top-K route references under active authorization."""
-
-        predicate = self._authorization_predicate(_current_principal_context())
+        witness = self._retrieval_authority_witness()
+        principal = _current_principal_context()
+        predicate = self._authorization_predicate(principal)
         if predicate is None:
-            return self.planner.retrieve_routes(request, k=k)
-        return self.planner.retrieve_routes_with_additional_availability(
-            request,
-            predicate,
-            k=k,
-        )
+            result = self.planner.retrieve_routes(request, k=k)
+        elif (
+            self.authorization_policy is not None
+            and self.authorization_policy.data_rules
+            and principal is not None
+        ):
+            result = self.planner.retrieve_routes_with_scoped_schema(
+                request,
+                predicate,
+                lambda tool, endpoint: self._data_scope_endpoint_view(
+                    principal, tool, endpoint,
+                ),
+                k=k,
+                analysis_registry=self._scoped_analysis_registry(
+                    principal, predicate,
+                ),
+            )
+        else:
+            result = self.planner.retrieve_routes_with_additional_availability(
+                request, predicate, k=k,
+            )
+        result = self._project_route_retrieval_data_scope(result, principal)
+        self._check_retrieval_authority_witness(witness)
+        return result
 
     async def aretrieve_routes(
         self,
@@ -3788,15 +3871,34 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         k: int = 5,
     ) -> CapabilityRouteRetrieval:
         """Async counterpart to :meth:`retrieve_routes`."""
-
-        predicate = self._authorization_predicate(_current_principal_context())
+        witness = self._retrieval_authority_witness()
+        principal = _current_principal_context()
+        predicate = self._authorization_predicate(principal)
         if predicate is None:
-            return await self.planner.aretrieve_routes(request, k=k)
-        return await self.planner.aretrieve_routes_with_additional_availability(
-            request,
-            predicate,
-            k=k,
-        )
+            result = await self.planner.aretrieve_routes(request, k=k)
+        elif (
+            self.authorization_policy is not None
+            and self.authorization_policy.data_rules
+            and principal is not None
+        ):
+            result = await self.planner.aretrieve_routes_with_scoped_schema(
+                request,
+                predicate,
+                lambda tool, endpoint: self._data_scope_endpoint_view(
+                    principal, tool, endpoint,
+                ),
+                k=k,
+                analysis_registry=self._scoped_analysis_registry(
+                    principal, predicate,
+                ),
+            )
+        else:
+            result = await self.planner.aretrieve_routes_with_additional_availability(
+                request, predicate, k=k,
+            )
+        result = self._project_route_retrieval_data_scope(result, principal)
+        self._check_retrieval_authority_witness(witness)
+        return result
 
     def retrieve_routes_authorized(
         self,
