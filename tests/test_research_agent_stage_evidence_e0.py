@@ -299,3 +299,85 @@ def test_supported_no_fit_after_execution_is_not_a_premature_false_refusal():
         "turn_rows": [{"event": "final", "generated": SECRET}],
     })
     assert trace(raw)["observed_stages"] == ["passed"]
+
+
+def _progressed_fixture_episode() -> dict:
+    raw = original_row()
+    attempted = {
+        "route_id": "private-step-do-not-export",
+        "arguments": {"secret": SECRET},
+        "schema_valid": True,
+        "semantic_valid": True,
+        "policy_blocked": False,
+        "expected_at_step": True,
+        "advanced_task": True,
+        "error": None,
+        "observation": {"private": SECRET},
+    }
+    raw.update({
+        "supported": True,
+        "passed": True,
+        "task_complete": True,
+        "context_overflow": False,
+        "initial_required_route_miss": False,
+        "attempts": [attempted],
+        "tool_call_count": 1,
+        "turn_rows": [
+            {"event": "tool_calls", "tool_calls": [{
+                "name": "tool", "attempt": dict(attempted),
+                "arguments": {"secret": SECRET},
+            }]},
+            {"event": "final", "tool_calls": [], "text": SECRET},
+        ],
+    })
+    return raw
+
+
+def test_progressed_fixture_step_is_separate_from_grader_pass_and_factual_answer():
+    safe = trace(_progressed_fixture_episode())
+    assert safe["passed"] is True
+    assert safe["supported_final_after_fixture_completion_observed"] is True
+    assert safe["supported_final_after_progressed_fixture_step_observed"] is True
+    assert safe["actual_final_answer_correctness_measured"] is False
+    assert SECRET not in json.dumps(safe)
+    assert "private-step-do-not-export" not in json.dumps(safe)
+
+
+@pytest.mark.parametrize("defect", (
+    "no_progress", "failed_schema", "blocked", "missing_attempt",
+    "wrong_call_receipt", "unrecorded_call", "overstated_count",
+    "no_final", "overflow", "unsupported", "hidden_calls_under_final",
+))
+def test_grader_pass_alone_cannot_forge_a_progressed_fixture_witness(defect):
+    raw = _progressed_fixture_episode()
+    if defect == "no_progress":
+        raw["attempts"][0]["advanced_task"] = False
+        raw["turn_rows"][0]["tool_calls"][0]["attempt"]["advanced_task"] = False
+    elif defect == "failed_schema":
+        raw["attempts"][0]["schema_valid"] = False
+        raw["turn_rows"][0]["tool_calls"][0]["attempt"]["schema_valid"] = False
+    elif defect == "blocked":
+        raw["attempts"][0]["policy_blocked"] = True
+        raw["turn_rows"][0]["tool_calls"][0]["attempt"]["policy_blocked"] = True
+    elif defect == "missing_attempt":
+        raw["attempts"] = []
+    elif defect == "wrong_call_receipt":
+        raw["turn_rows"][0]["tool_calls"][0]["attempt"]["route_id"] = SECRET
+    elif defect == "unrecorded_call":
+        raw["turn_rows"][0]["tool_calls"] = []
+    elif defect == "overstated_count":
+        raw["tool_call_count"] = 2
+    elif defect == "no_final":
+        raw["turn_rows"] = raw["turn_rows"][:1]
+    elif defect == "overflow":
+        raw["context_overflow"] = True
+    elif defect == "hidden_calls_under_final":
+        # An executed attempt attached to a supposed final turn cannot
+        # stand in for an actual recorded tool_calls event.
+        raw["turn_rows"][0]["event"] = "final"
+    else:
+        raw["supported"] = False
+    safe = trace(raw)
+    assert safe["supported_final_after_progressed_fixture_step_observed"] is False
+    assert safe["actual_final_answer_correctness_measured"] is False
+    assert SECRET not in json.dumps(safe)

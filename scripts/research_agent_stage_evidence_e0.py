@@ -171,6 +171,41 @@ def sanitized_e0_trace(
         row["supported"] and row["passed"]
         and row["task_complete"] and final_observed
     )
+    # observed_stages validated the attempt list and all required booleans.
+    attempts = row["attempts"]
+    # A synthetic grader can declare completion without enough *recorded*
+    # tool-step evidence for an execution-backed final-turn witness. Compare
+    # post-execution attempts to the exact per-turn serialized calls without
+    # exporting route IDs, observations, argument values or gold.
+    call_rows = [
+        call
+        for turn in turns
+        if type(turn.get("tool_calls")) is list
+        for call in turn["tool_calls"]
+    ]
+    count = row.get("tool_call_count")
+    execution_witness = bool(
+        type(count) is int and count > 0
+        and count == len(attempts) == len(call_rows)
+        and all(type(turn.get("tool_calls")) is list for turn in turns)
+        # A final, overflow or malformed turn cannot secretly carry an
+        # executed tool-call receipt; only a tool_calls event witnesses it.
+        and all(
+            (turn.get("event") == "tool_calls") is bool(turn["tool_calls"])
+            for turn in turns
+        )
+        and all(type(call) is dict for call in call_rows)
+        and all(
+            call.get("attempt") == attempt
+            for call, attempt in zip(call_rows, attempts, strict=True)
+        )
+        and any(
+            attempt["advanced_task"] and attempt["schema_valid"]
+            and attempt["semantic_valid"] and attempt["expected_at_step"]
+            and not attempt["policy_blocked"] and attempt.get("error") is None
+            for attempt in attempts
+        )
+    )
     candidate_history = row.get("candidate_history")
     if (
         type(candidate_history) is not list or not candidate_history
@@ -200,6 +235,13 @@ def sanitized_e0_trace(
         "agent_final_turn_observed": final_observed,
         "supported_final_after_fixture_completion_observed": (
             supported_final_after_fixture_completion
+        ),
+        # Stronger than fixture completion: one progressed, schema-valid
+        # synthetic step must match an actual recorded tool-call witness.
+        # Still NOT a real provider call or factual answer verification.
+        "supported_final_after_progressed_fixture_step_observed": bool(
+            supported_final_after_fixture_completion
+            and not row["context_overflow"] and execution_witness
         ),
         "actual_final_answer_correctness_measured": False,
         "observed_stages": labels,
