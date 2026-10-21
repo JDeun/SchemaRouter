@@ -1,0 +1,31 @@
+name: Archived Negative Qwen E1 Provenance Guard
+
+on:
+  pull_request:
+    paths:
+      - "benchmarks/research-qwen-verified-reminder-e1-negative-v1.json"
+      - "scripts/verify_research_qwen_e1_negative.py"
+      - "tests/test_verify_research_qwen_e1_negative.py"
+      - ".github/workflows/research-qwen-negative-e1-evidence-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  attest-recorded-negative-not-independent-e2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Verify archived E1 negative evidence without model/provider execution
+        run: |
+          python -m pip install "pytest>=8,<10" "ruff>=0.9,<1"
+          ruff check scripts/verify_research_qwen_e1_negative.py tests/test_verify_research_qwen_e1_negative.py
+          python -m pytest -q tests/test_verify_research_qwen_e1_negative.py
+          python -m scripts.verify_research_qwen_e1_negative
