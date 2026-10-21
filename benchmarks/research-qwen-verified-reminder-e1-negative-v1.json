@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "experiment_id": "qwen-verified-reminder-paired-live-open-meteo-e1-20261021",
+  "issue": 1477,
+  "evidence_tier": "EXPOSED_SELF_AUTHORED_LIVE_PROVIDER_E1_DEV_ONLY",
+  "decision": "VALID_NEGATIVE_NO_STRICT_TASK_PASS_UPLIFT",
+  "control_arm": "original",
+  "candidate_arm": "one_verified_reminder",
+  "run": {
+    "workflow_run_id": 39533699395,
+    "artifact_id": 12316407743,
+    "artifact_zip_sha256": "c965ad7c8deca49fbd66bb3a8540c508d44eca0cb1f6847e894261ea3bb06cc4",
+    "report_json_sha256": "2e31a3be8c9d8ba3df24ee87bbd6d2e005e26ad2bf54d8e98a2f04df365a4608",
+    "pr_head_sha": "ebd9d6b56672ff6f9164b77df603e7129cc46101",
+    "workflow_report_source_revision": "47f693800031c2cb3824cefc3e6b4b4cce990bc0",
+    "merge_sha": "759b2e65e0fd9fde3b3d588801184ac2fcd0752e"
+  },
+  "runtime": {
+    "model_id": "Qwen/Qwen3-0.6B",
+    "model_revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+    "python": "3.12.15",
+    "torch": "2.14.1+cpu",
+    "transformers": "4.57.6",
+    "hardware": "Linux-x86_64 GitHub Actions CPU"
+  },
+  "study": {
+    "paired_language_count": 3,
+    "language_order": [
+      "en",
+      "ko",
+      "ja"
+    ],
+    "source": "Open-Meteo original live geocoding/weather endpoints",
+    "retries_per_http_get": 1,
+    "model_turn_cap": 4,
+    "model_menu": "state_ready",
+    "total_http_attempt_ceiling": 24,
+    "live_source_drift_possible": true
+  },
+  "by_arm": {
+    "original": {
+      "strict_tasks_passed": 0,
+      "http_attempts": 6,
+      "model_turns": 8,
+      "host_reminders": 0,
+      "model_generation_ms": 75120.9,
+      "input_tokens": 3620,
+      "tool_tokens": 1416,
+      "output_tokens": 358,
+      "by_language": {
+        "en": {
+          "termination": "premature_final",
+          "geocodes": 1,
+          "forecasts": 0,
+          "http_attempts": 1,
+          "turns": 2,
+          "host_reminders": 0,
+          "final_failure": null,
+          "transport_failure": null
+        },
+        "ko": {
+          "termination": "incorrect_final_value_or_format",
+          "geocodes": 1,
+          "forecasts": 1,
+          "http_attempts": 2,
+          "turns": 3,
+          "host_reminders": 0,
+          "final_failure": "invalid_shape",
+          "transport_failure": null
+        },
+        "ja": {
+          "termination": "incorrect_final_value_or_format",
+          "geocodes": 1,
+          "forecasts": 1,
+          "http_attempts": 3,
+          "turns": 3,
+          "host_reminders": 0,
+          "final_failure": "invalid_shape",
+          "transport_failure": null
+        }
+      }
+    },
+    "one_verified_reminder": {
+      "strict_tasks_passed": 0,
+      "http_attempts": 6,
+      "model_turns": 7,
+      "host_reminders": 1,
+      "model_generation_ms": 66703.4,
+      "input_tokens": 3264,
+      "tool_tokens": 1416,
+      "output_tokens": 313,
+      "by_language": {
+        "en": {
+          "termination": "premature_final",
+          "geocodes": 1,
+          "forecasts": 0,
+          "http_attempts": 1,
+          "turns": 3,
+          "host_reminders": 1,
+          "final_failure": null,
+          "transport_failure": null
+        },
+        "ko": {
+          "termination": "host_or_native_source_denied",
+          "geocodes": 0,
+          "forecasts": 0,
+          "http_attempts": 2,
+          "turns": 1,
+          "host_reminders": 0,
+          "final_failure": null,
+          "transport_failure": "connect_timeout"
+        },
+        "ja": {
+          "termination": "incorrect_final_value_or_format",
+          "geocodes": 1,
+          "forecasts": 1,
+          "http_attempts": 3,
+          "turns": 3,
+          "host_reminders": 0,
+          "final_failure": "invalid_shape",
+          "transport_failure": null
+        }
+      }
+    }
+  },
+  "gates": {
+    "independent_task_author_confirmed": false,
+    "independent_e2_qualified": false,
+    "calibrated_no_fit": false,
+    "product_default_changed": false,
+    "release_qualified": false
+  },
+  "cautions": [
+    "N=3 disclosed language cases per arm, not a disjoint benchmark",
+    "Korean candidate suffered live geocoding timeout, so throughput and token aggregates are not causal",
+    "English opt-in reminder did not recover second tool call",
+    "Japanese and Korean baseline terminal shapes were wrong after verified two sources",
+    "Never modify historical frozen #432 outcomes or release PR #1356 based on this snapshot"
+  ]
+}
