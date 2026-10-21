@@ -40,6 +40,9 @@ database path, source response or prompt is returned in HTTP decisions.
 - After verification the original Bearer header is removed from the forwarded
   ASGI scope, limiting accidental credential exposure to downstream handlers.
   A dedicated test spies on downstream headers and asserts no Bearer survives.
+- Even for non-HTTP ASGI types (WebSocket/lifespan), untrusted pre-populated
+  fixture identity is erased rather than forwarded to a downstream app; these
+  protocols cannot obtain identity via the HTTP Bearer verification path.
 - No real remote HTTP client/server, provider GET, credential issuer, key
   management, workload CA, certificate verification or independent E2 is used.
 
