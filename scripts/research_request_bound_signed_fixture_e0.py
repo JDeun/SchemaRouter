@@ -16,7 +16,7 @@ import hmac
 import re
 
 from starlette.responses import JSONResponse
-from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from scripts.research_signed_fixture_identity_e0 import (
     SignedFixtureIdentityVerifierE0,
@@ -172,7 +172,7 @@ class RequestBoundSignedFixtureE0:
         ]
         sent = False
 
-        async def replay_body() -> dict[str, object]:
+        async def replay_body() -> Message:
             nonlocal sent
             if not sent:
                 sent = True
