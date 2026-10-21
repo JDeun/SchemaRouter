@@ -347,3 +347,61 @@ def test_supported_false_no_fit_refusal_is_not_counted_as_ood_success():
     )
     assert safe["release_safety_gate_passed"] is False
     assert safe["independent_e2_qualified"] is False
+
+
+def test_progressed_fixture_metric_is_optional_for_legacy_but_complete_when_present():
+    manifest, runs = paired_fixture()
+    _augment_final_turns(runs)
+    for arm in ARMS:
+        for row in runs[arm]["rows"]:
+            row["supported_final_after_progressed_fixture_step_observed"] = bool(
+                row["supported"] and row["passed"]
+                and row["agent_final_turn_observed"]
+                and row["tool_call_count"] > 0
+            )
+    _, safe = summarize_fixture_safety_strata(manifest, runs)
+    for arm in ARMS:
+        assert safe["per_arm"][arm][
+            "supported_final_with_progressed_fixture_step"
+        ] == 0  # Original synthetic test rows have zero observed call attempts.
+
+    for arm in ARMS:
+        for row in runs[arm]["rows"]:
+            if row["supported"] and row["passed"] and row["agent_final_turn_observed"]:
+                row["tool_call_count"] = 1
+                row["supported_final_after_progressed_fixture_step_observed"] = True
+    _, strengthened = summarize_fixture_safety_strata(manifest, runs)
+    for arm in ("e5_k5", "hybrid_k5"):
+        assert strengthened["per_arm"][arm][
+            "supported_final_with_progressed_fixture_step"
+        ] == 3
+    assert strengthened["e2_publication_gate_passed"] is False
+
+
+@pytest.mark.parametrize("attack", (
+    "partial", "bool_as_str", "fake_unsupported", "fake_no_call",
+    "missing_final_cohort",
+))
+def test_progressed_fixture_metric_never_overrides_existing_safety_gate(attack):
+    manifest, runs = paired_fixture()
+    _augment_final_turns(runs)
+    for arm in ARMS:
+        for row in runs[arm]["rows"]:
+            row["supported_final_after_progressed_fixture_step_observed"] = False
+    row = runs["e5_k5"]["rows"][0]
+    if attack == "partial":
+        row.pop("supported_final_after_progressed_fixture_step_observed")
+    elif attack == "bool_as_str":
+        row["supported_final_after_progressed_fixture_step_observed"] = "yes"
+    elif attack == "fake_unsupported":
+        row = next(r for r in runs["e5_k5"]["rows"] if not r["supported"])
+        row["supported_final_after_progressed_fixture_step_observed"] = True
+    elif attack == "fake_no_call":
+        row["supported_final_after_progressed_fixture_step_observed"] = True
+    else:
+        for result in runs["e5_k5"]["rows"]:
+            result.pop("agent_final_turn_observed")
+            result.pop("supported_final_after_fixture_completion_observed")
+            result.pop("actual_final_answer_correctness_measured")
+    with pytest.raises(ValueError, match="E0 progressed-step"):
+        summarize_fixture_safety_strata(manifest, runs)
