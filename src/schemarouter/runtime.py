@@ -188,6 +188,11 @@ def _scoped_public_output_field(field: FieldSpec) -> FieldSpec:
             "path": [],
             "result_path": [],
             "qualifiers": {},
+            # Free-form provider provenance sidecars may name an unrelated
+            # denied field. Keep them in the trusted source registry; public
+            # scoped descriptors cannot assert an unreviewed source/license.
+            "source_type": None,
+            "license": None,
             "json_schema": _scoped_public_value_shape(field.json_schema),
         },
     )
