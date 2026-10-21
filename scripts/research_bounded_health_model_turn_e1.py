@@ -144,7 +144,7 @@ class BoundedHealthModelTurnE1:
             return await asyncio.wait_for(
                 asyncio.shield(task), timeout=self._deadline,
             )
-        except TimeoutError:
+        except asyncio.TimeoutError:
             return _quarantined_receipt(
                 "generation_timeout", invoked=started.started.is_set(),
             )
