@@ -1,0 +1,70 @@
+name: Native G5 Journal Full Graph Paired CPU E0
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/native_graph_index.py"
+      - "src/schemarouter/native_semantic_index.py"
+      - "src/schemarouter/registry.py"
+      - "scripts/benchmark_native_g5_journal_graph_ab_e0.py"
+      - "tests/test_benchmark_native_g5_journal_graph_ab_e0.py"
+      - ".github/workflows/native-g5-journal-full-graph-cpu-e0.yml"
+      - "research/autoresearch/native-g5-journal-full-graph-cpu-e0.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  paired-g5-canonical-graph-build-vs-journal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install original schema runtime and test tools
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Verify typed oracle, incompatibility and bounded telemetry
+        run: |
+          ruff check scripts/benchmark_native_g5_journal_graph_ab_e0.py tests/test_benchmark_native_g5_journal_graph_ab_e0.py
+          python -m pytest -q tests/test_benchmark_native_g5_journal_graph_ab_e0.py tests/test_native_graph_index.py tests/test_native_semantic_index.py
+          pyright scripts/benchmark_native_g5_journal_graph_ab_e0.py
+      - name: Paired 500 native source routes, graph included E0
+        run: python -m scripts.benchmark_native_g5_journal_graph_ab_e0 --registered-routes 500 --pairs 6 > native-g5-graph-ab-500-e0.json
+      - name: Paired 5000 native source routes, graph included E0
+        run: python -m scripts.benchmark_native_g5_journal_graph_ab_e0 --registered-routes 5000 --pairs 4 > native-g5-graph-ab-5000-e0.json
+      - name: Validate source native graph oracle and write DEV-only summary
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write("## Paired native G5 full-graph update: synthetic CPU E0 only\n\n")
+              out.write("One-host synthetic native ToolSpecs, no provider E2, agent, model, service p95 or release claims.\n\n")
+              for file in ("native-g5-graph-ab-500-e0.json", "native-g5-graph-ab-5000-e0.json"):
+                  result = json.loads(Path(file).read_text(encoding="utf-8"))
+                  assert result["evidence_tier"] == "E0_SYNTHETIC_PAIRED_NATIVE_G5_INDEX_UPDATE_NOT_E2"
+                  assert result["exact_source_native_full_graph_oracle_pairs"] == result["paired_samples"]
+                  assert result["incompatible_typed_pairs"] > 0
+                  assert result["supported_typed_pairs"] > 0
+                  assert result["independent_e2_qualified"] is False
+                  assert result["production_p95_qualified"] is False
+                  out.write(
+                      f"- {result['registered_source_routes']} routes, "
+                      f"{result['paired_samples']} matched versions; "
+                      f"full build p50 {result['wall_ms']['full_build']['p50']:.2f}ms, "
+                      f"journal graph p50 {result['wall_ms']['journal_refresh']['p50']:.2f}ms; "
+                      f"journal faster {result['journal_faster_pairs']}/{result['paired_samples']} pairs\n"
+                  )
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-g5-journal-graph-ab-e0-${{ github.run_id }}
+          path: native-g5-graph-ab-*-e0.json
+          retention-days: 30
+          if-no-files-found: error
