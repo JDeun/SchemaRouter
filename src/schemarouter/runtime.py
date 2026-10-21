@@ -235,8 +235,10 @@ def _scoped_public_score_components(
     }
     safe = []
     for component in components:
-        if component.kind == "field_qualifier":
-            # Scoped field qualifiers are always source-only metadata.
+        if component.kind in {"field_qualifier", "argument_alias_match"}:
+            # Both source field qualifiers and source argument aliases may
+            # echo a separately denied field in stale score receipts.
+            # Canonical argument_match remains public and unaffected.
             continue
         matched = component.matched
         if matched is not None:
