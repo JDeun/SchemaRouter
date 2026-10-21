@@ -88,6 +88,7 @@ from .models import (
     FieldSpec,
     ParameterSpec,
     PlanRequest,
+    ScoreComponent,
     ToolCall,
     ToolResult,
     ToolSpec,
@@ -212,6 +213,43 @@ def _scoped_public_output_schema(fields: list[FieldSpec]) -> dict[str, Any]:
             for field in fields
         },
     }
+
+
+def _scoped_public_score_components(
+    components: list[ScoreComponent],
+    *,
+    visible_names: set[str],
+    source_fields: list[FieldSpec],
+) -> list[ScoreComponent]:
+    """Never replay source field aliases or qualifiers in a scoped score trace.
+
+    Scoring normally runs on sanitized descriptors. This separate projection
+    also guards stale/decision-produced traces that reach the final boundary.
+    Non-field scores (canonical tool tokens, argument matches) are preserved.
+    """
+    disallowed_names = {
+        label.casefold()
+        for field in source_fields
+        for label in (field.name, *field.aliases)
+        if label.casefold() not in visible_names
+    }
+    safe = []
+    for component in components:
+        if component.kind == "field_qualifier":
+            # Scoped field qualifiers are always source-only metadata.
+            continue
+        matched = component.matched
+        if matched is not None:
+            label = matched.casefold()
+            if label in disallowed_names:
+                continue
+            if (
+                component.kind in {"field_exact", "field_lexical", "field_substring"}
+                and label not in visible_names
+            ):
+                continue
+        safe.append(component)
+    return safe
 
 
 def _scoped_public_parameter(
@@ -663,7 +701,6 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 visible_names.add(field.name.casefold())
                 if field.semantic_id:
                     visible_names.add(field.semantic_id.casefold())
-                visible_names.update(alias.casefold() for alias in field.aliases)
 
             hidden_field_names = {
                 field.name
@@ -723,14 +760,11 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 for value in candidate.matched_fields
                 if value.casefold() in visible_names
             ]
-            score_components = [
-                component
-                for component in candidate.score_components
-                if component.matched is None
-                or component.matched.casefold() in visible_names
-                or component.matched.casefold()
-                not in {field.name.casefold() for field in endpoint.output_fields}
-            ]
+            score_components = _scoped_public_score_components(
+                candidate.score_components,
+                visible_names=visible_names,
+                source_fields=endpoint.output_fields,
+            )
             projected_candidates.append(
                 candidate.model_copy(
                     deep=True,
@@ -3798,16 +3832,11 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 for name in (field.name, field.semantic_id)
                 if name is not None
             }
-            source_field_names = {
-                field.name.casefold() for field in endpoint.output_fields
-            }
-            components = [
-                component
-                for component in candidate.score_components
-                if component.matched is None
-                or component.matched.casefold() in visible_names
-                or component.matched.casefold() not in source_field_names
-            ]
+            components = _scoped_public_score_components(
+                candidate.score_components,
+                visible_names=visible_names,
+                source_fields=endpoint.output_fields,
+            )
             projected.append(candidate.model_copy(
                 deep=True,
                 update={
