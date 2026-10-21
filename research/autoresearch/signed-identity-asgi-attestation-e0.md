@@ -37,6 +37,9 @@ database path, source response or prompt is returned in HTTP decisions.
   tenants remain independently permitted up to their reserved synthetic cap.
 - The same signed workload plus request ID cannot replay the durable
   reservation. Duplicate or oversized authentication headers are denied.
+- After verification the original Bearer header is removed from the forwarded
+  ASGI scope, limiting accidental credential exposure to downstream handlers.
+  A dedicated test spies on downstream headers and asserts no Bearer survives.
 - No real remote HTTP client/server, provider GET, credential issuer, key
   management, workload CA, certificate verification or independent E2 is used.
 
