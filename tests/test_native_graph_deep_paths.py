@@ -294,3 +294,44 @@ def test_two_hop_new_general_depth_agrees_with_existing_source_evidence():
         legacy.candidates[0].root_to_intermediate,
         legacy.candidates[0].intermediate_to_target,
     ) == flexible.candidates[0].parameter_bindings
+
+
+@pytest.mark.parametrize("fanout", ("denied_targets", "unavailable_predecessors"))
+def test_bounded_graph_budget_counts_rejected_candidate_probes(
+    fanout, monkeypatch,
+):
+    """Ineligible posting/edge fan-out must not cause unbounded source reads.
+
+    The 256 visit cap includes every examined target and predecessor, even
+    when live health says the route is unavailable and no path qualifies.
+    """
+    if fanout == "denied_targets":
+        router = _router(3, targets=270)
+    else:
+        router = _router(3)
+        for i in range(270):
+            router.add_tool(_tool(
+                f"alternate_{i:03d}",
+                requires="billing.id_0", output="billing.id_1",
+            ))
+    graph = _index(router)
+    touched: list[str] = []
+
+    def health(tool, _endpoint):
+        touched.append(tool.key)
+        if fanout == "denied_targets":
+            return not tool.key.startswith("target_")
+        return not tool.key.startswith("alternate_")
+
+    router.planner.availability_predicate = health
+    with pytest.raises(
+        PolicyViolationError,
+        match="G5 bounded path eligibility changed during lookup",
+    ) as caught:
+        graph.lookup_bounded_paths(
+            router, ALIASES[0], group=GROUP, principal=ACTOR, hops=3,
+        )
+    assert touched
+    assert len(touched) <= 256
+    assert caught.value.__suppress_context__
+    assert router.registry.version == graph.field_index.registry_version
