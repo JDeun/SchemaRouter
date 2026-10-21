@@ -648,7 +648,14 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                         restricted = True
                         visible_endpoint = visible_endpoint.model_copy(
                             deep=True,
-                            update={"server_projection": None},
+                            update={
+                                "server_projection": None,
+                                # Source-owned auth scheme labels, header names
+                                # and scopes are not principal-visible field
+                                # grants. The original registry retains them
+                                # for trusted execution/auth validation.
+                                "auth_requirements": [],
+                            },
                         )
                     endpoints.append(visible_endpoint)
             if not endpoints:
