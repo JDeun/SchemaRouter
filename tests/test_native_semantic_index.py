@@ -649,3 +649,35 @@ def test_default_native_postings_stable_health_keeps_complete_field_group():
     assert {candidate.route_id for candidate in result.candidates} == {
         "complete.read", "full_0.read",
     }
+
+
+@pytest.mark.parametrize("failure_mode", ("callback", "truthiness"))
+def test_native_postings_first_availability_failure_redacts_private_error(
+    failure_mode,
+):
+    """A failing *initial* health probe must not disclose provider details."""
+    router = _router(many_complete=1)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    private_marker = "provider-secret-native-posting-9361"
+    calls: list[str] = []
+
+    class BadAvailability:
+        def __bool__(self):
+            raise RuntimeError(private_marker)
+
+    def health(tool, _endpoint):
+        calls.append(tool.key)
+        if failure_mode == "callback":
+            raise RuntimeError(private_marker)
+        return BadAvailability()
+
+    router.planner.availability_predicate = health
+    with pytest.raises(
+        PolicyViolationError,
+        match="indexed availability check failed during lookup",
+    ) as caught:
+        index.lookup(router, ALIASES[0], principal=ANALYST, group=GROUP)
+    assert calls
+    assert private_marker not in str(caught.value)
+    assert caught.value.__suppress_context__
+    assert router.registry.version == index.registry_version
