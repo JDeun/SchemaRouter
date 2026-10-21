@@ -83,6 +83,9 @@ async def compare(
                 language: {
                     "strict_complete": x["full_task_complete"],
                     "strict_final_answer_correct": x["strict_final_answer_correct"],
+                    "trusted_final_validation_failure_kind": x.get(
+                        "trusted_final_validation_failure_kind"
+                    ),
                     "validated_geocodes": x["real_geocoding_calls"],
                     "validated_forecasts": x["real_forecast_calls"],
                     "http_attempts": (

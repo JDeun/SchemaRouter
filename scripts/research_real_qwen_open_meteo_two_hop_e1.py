@@ -86,6 +86,46 @@ def _matches_weather_final(text: str, actual: dict[str, Any]) -> bool:
     )
 
 
+def _weather_final_failure_kind(
+    model_final: str, actual: dict[str, Any],
+) -> str | None:
+    """Sanitized original-source final failure only; NEVER raw values.
+
+    This is diagnostic evidence, not a correctness adjustment, model
+    response repair, schema coercion or inference of new provider values.
+    The independent strict `_matches_weather_final` remains the sole
+    source-grounded correctness oracle.
+    """
+    try:
+        answer = _parse_strict_model_json(model_final.strip())
+    except (TypeError, ValueError, OverflowError):
+        return "invalid_json"
+    if type(answer) is not dict or set(answer) != {
+        "temperature_2m", "unit", "observed_at",
+    }:
+        return "invalid_shape"
+    if (
+        type(answer["temperature_2m"]) not in (int, float)
+        or type(answer["unit"]) is not str
+        or type(answer["observed_at"]) is not str
+    ):
+        return "invalid_types"
+    mismatches = (
+        answer["temperature_2m"] != actual["temperature_2m"],
+        answer["unit"] != actual["temperature_unit"] or answer["unit"] != "°C",
+        answer["observed_at"] != actual["time"],
+    )
+    if sum(mismatches) > 1:
+        return "multiple_source_fields"
+    if mismatches[0]:
+        return "temperature_mismatch"
+    if mismatches[1]:
+        return "unit_mismatch"
+    if mismatches[2]:
+        return "timestamp_mismatch"
+    return None
+
+
 def _binding_matches(
     route: str, arguments: dict[str, Any], *,
     language: str, city: str, country: str,
@@ -140,6 +180,7 @@ async def evaluate_one(
     completed = 0
     turns = 0
     correctly_ended = False
+    final_failure_kind: str | None = None
     reason = "turn_limit"
     host_exception_family: str | None = None
     host_failure_after_http_attempt: bool | None = None
@@ -195,6 +236,11 @@ async def evaluate_one(
             if completed == 2 and actual_weather is not None:
                 correctly_ended = _matches_weather_final(payload, actual_weather)
                 if not correctly_ended:
+                    final_failure_kind = _weather_final_failure_kind(
+                        payload, actual_weather,
+                    )
+                    if final_failure_kind is None:
+                        raise ValueError("inconsistent strict source final diagnosis")
                     reason = "incorrect_final_value_or_format"
             break
 
@@ -358,6 +404,7 @@ async def evaluate_one(
         "model_generated_first_step_complete": completed >= 1,
         "model_generated_two_step_complete": completed == 2,
         "strict_final_answer_correct": correctly_ended,
+        "trusted_final_validation_failure_kind": final_failure_kind,
         "full_task_complete": completed == 2 and correctly_ended,
         "termination_reason": reason,
         "model_generation_ms": round(total_model_ms, 1),
