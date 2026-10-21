@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -785,6 +786,14 @@ class SQLiteRegistry:
             )
             """
         )
+        self._connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS schemarouter_registry_mutations (
+                version INTEGER PRIMARY KEY,
+                changed_keys TEXT
+            )
+            """
+        )
 
     def _validated_logical_version(self) -> int:
         row = self._connection.execute(
@@ -841,6 +850,24 @@ class SQLiteRegistry:
             )
             if status == "current":
                 self._validated_logical_version()
+                # Existing databases predate this optional journal. They
+                # retain their source version but cannot attest earlier
+                # mutations. A missing record forces full index rebuild.
+                self._connection.execute("BEGIN IMMEDIATE")
+                try:
+                    self._connection.execute(
+                        """
+                        CREATE TABLE IF NOT EXISTS schemarouter_registry_mutations (
+                            version INTEGER PRIMARY KEY,
+                            changed_keys TEXT
+                        )
+                        """
+                    )
+                except Exception:
+                    self._connection.rollback()
+                    raise
+                else:
+                    self._connection.commit()
                 return
 
             # v0 -> v1 only stamps compatibility metadata after every stored
@@ -849,6 +876,16 @@ class SQLiteRegistry:
             self._connection.execute("BEGIN IMMEDIATE")
             try:
                 self._validate_legacy_storage()
+                # v0 source records were not journaled. Preserve this
+                # history gap so incremental readers must full-rebuild.
+                self._connection.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS schemarouter_registry_mutations (
+                        version INTEGER PRIMARY KEY,
+                        changed_keys TEXT
+                    )
+                    """
+                )
                 stamp_current_component_format(
                     self._connection,
                     "registry",
@@ -981,7 +1018,14 @@ class SQLiteRegistry:
         self._ensure_open()
         self._connection.execute("BEGIN IMMEDIATE")
 
-    def _bump_version(self) -> None:
+    _MAX_MUTATION_JOURNAL_VERSIONS = 256
+    _MAX_CHANGED_KEYS_PER_RECEIPT = 64
+
+    def _bump_version(self, changed_keys: Iterable[str]) -> None:
+        """Version and source-owned key receipt share the writer transaction."""
+        keys = tuple(sorted(set(changed_keys)))
+        if not keys:
+            raise RegistrationError("registry version bump requires changed keys")
         self._connection.execute(
             """
             UPDATE schemarouter_registry_meta
@@ -989,6 +1033,92 @@ class SQLiteRegistry:
             WHERE key = 'version'
             """
         )
+        version = self._validated_logical_version()
+        # Existing bulk APIs accept >64 changes. Persist a barrier NULL
+        # instead of lying that an oversized batch was a complete receipt.
+        document = (
+            json.dumps(keys, ensure_ascii=False, separators=(",", ":"))
+            if len(keys) <= self._MAX_CHANGED_KEYS_PER_RECEIPT else None
+        )
+        self._connection.execute(
+            """
+            INSERT INTO schemarouter_registry_mutations(version, changed_keys)
+            VALUES (?, ?)
+            """,
+            (version, document),
+        )
+        self._connection.execute(
+            "DELETE FROM schemarouter_registry_mutations WHERE version <= ?",
+            (version - self._MAX_MUTATION_JOURNAL_VERSIONS,),
+        )
+
+    def changed_tool_keys_since(self, from_version: int) -> RegistryMutationReceipt:
+        """Atomic SQLite read snapshot, without source schemas or guessing gaps.
+
+        SQLite persistence and cross-connection durability are distinct
+        from in-memory registry object identity. This receipt is NOT yet
+        approved for the in-memory-only native index fast path.
+        """
+        if type(from_version) is not int or from_version < 0:
+            raise RegistrationError("invalid SQLite registry mutation cursor")
+        with self._lock:
+            self._ensure_open()
+            self._connection.execute("BEGIN")
+            try:
+                current = self._validated_logical_version()
+                if from_version > current:
+                    raise RegistrationError("invalid SQLite registry mutation cursor")
+                if current - from_version > self._MAX_MUTATION_JOURNAL_VERSIONS:
+                    raise RegistrationError("SQLite registry mutation history expired")
+                rows = self._connection.execute(
+                    """
+                    SELECT version, changed_keys,
+                           length(CAST(changed_keys AS BLOB)) AS document_bytes
+                    FROM schemarouter_registry_mutations
+                    WHERE version > ? AND version <= ?
+                    ORDER BY version
+                    """,
+                    (from_version, current),
+                ).fetchall()
+                if len(rows) != current - from_version:
+                    raise RegistrationError("SQLite registry mutation history missing")
+                changed: set[str] = set()
+                for expected, row in enumerate(rows, from_version + 1):
+                    document = row["changed_keys"]
+                    if (
+                        row["version"] != expected
+                        or type(document) is not str
+                        or row["document_bytes"] > 65536
+                    ):
+                        raise RegistrationError("SQLite registry mutation receipt invalid")
+                    try:
+                        keys = json.loads(document)
+                    except (ValueError, TypeError):
+                        raise RegistrationError(
+                            "SQLite registry mutation receipt invalid"
+                        ) from None
+                    if (
+                        type(keys) is not list
+                        or not 1 <= len(keys) <= self._MAX_CHANGED_KEYS_PER_RECEIPT
+                        or any(type(key) is not str or not key for key in keys)
+                        or keys != sorted(set(keys))
+                    ):
+                        raise RegistrationError(
+                            "SQLite registry mutation receipt invalid"
+                        )
+                    changed.update(keys)
+                    if len(changed) > self._MAX_CHANGED_KEYS_PER_RECEIPT:
+                        raise RegistrationError(
+                            "SQLite registry mutation delta exceeds safe bound"
+                        )
+                return RegistryMutationReceipt(
+                    from_version=from_version,
+                    to_version=current,
+                    changed_tool_keys=tuple(sorted(changed)),
+                )
+            finally:
+                # This was a read transaction, with no modifications.
+                self._connection.rollback()
 
     def _next_position(self) -> int:
         row = self._connection.execute(
@@ -1060,7 +1190,7 @@ class SQLiteRegistry:
                         """,
                         (document, validated.key),
                     )
-                self._bump_version()
+                self._bump_version((validated.key,))
             except Exception:
                 self._connection.rollback()
                 raise
@@ -1110,7 +1240,7 @@ class SQLiteRegistry:
                     """,
                     (document, validated.key),
                 )
-                self._bump_version()
+                self._bump_version((validated.key,))
             except Exception:
                 self._connection.rollback()
                 raise
@@ -1152,7 +1282,7 @@ class SQLiteRegistry:
                     "DELETE FROM schemarouter_registry_tools WHERE key = ?",
                     (key,),
                 )
-                self._bump_version()
+                self._bump_version((key,))
             except Exception:
                 self._connection.rollback()
                 raise
@@ -1169,7 +1299,7 @@ class SQLiteRegistry:
                 )
                 if cursor.rowcount == 0:
                     raise KeyError(key)
-                self._bump_version()
+                self._bump_version((key,))
             except Exception:
                 self._connection.rollback()
                 raise
@@ -1287,7 +1417,7 @@ class SQLiteRegistry:
                     f"DELETE FROM schemarouter_registry_tools WHERE key IN ({placeholders})",
                     tuple(expected),
                 )
-                self._bump_version()
+                self._bump_version(expected)
             except Exception:
                 self._connection.rollback()
                 raise
@@ -1356,7 +1486,7 @@ class SQLiteRegistry:
                             """,
                             (document, key),
                         )
-                self._bump_version()
+                self._bump_version(previous)
             except Exception:
                 self._connection.rollback()
                 raise
@@ -1426,7 +1556,7 @@ class SQLiteRegistry:
                             """,
                             (document, tool.key),
                         )
-                self._bump_version()
+                self._bump_version(staged_keys)
             except Exception:
                 self._connection.rollback()
                 raise
@@ -1486,7 +1616,7 @@ class SQLiteRegistry:
                             """,
                             (document, tool.key),
                         )
-                self._bump_version()
+                self._bump_version(staged_keys)
             except Exception:
                 self._connection.rollback()
                 raise
