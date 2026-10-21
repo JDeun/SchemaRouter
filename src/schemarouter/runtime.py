@@ -220,14 +220,17 @@ def _scoped_public_score_components(
     *,
     visible_names: set[str],
     source_fields: list[FieldSpec],
+    public_tool_identifiers: set[str],
+    public_endpoint_identifiers: set[str],
+    public_operation_names: set[str],
     public_tool_tokens: set[str],
     public_parameter_names: set[str],
 ) -> list[ScoreComponent]:
-    """Never replay source field aliases or qualifiers in a scoped score trace.
+    """Publish only recognized, principal-visible score explanation labels.
 
-    Scoring normally runs on sanitized descriptors. This separate projection
-    also guards stale/decision-produced traces that reach the final boundary.
-    Non-field scores (canonical tool tokens, argument matches) are preserved.
+    Actual planner scores, ordering, source schema and execution authority
+    remain unchanged. Treat unknown/stale decision-produced score kinds as
+    unreviewed metadata rather than allowing them into scoped traces.
     """
     disallowed_names = {
         label.casefold()
@@ -235,36 +238,30 @@ def _scoped_public_score_components(
         for label in (field.name, *field.aliases)
         if label.casefold() not in visible_names
     }
-    safe = []
+    allowed_matches = {
+        "preferred_tool": public_tool_identifiers,
+        "preferred_endpoint": public_endpoint_identifiers,
+        "tool_identifier": public_tool_identifiers,
+        "operation_family": public_operation_names,
+        "tool_token": public_tool_tokens,
+        "argument_match": public_parameter_names,
+        "field_exact": visible_names,
+        "field_lexical": visible_names,
+        "field_substring": visible_names,
+    }
+    safe: list[ScoreComponent] = []
     for component in components:
-        if component.kind in {"field_qualifier", "argument_alias_match"}:
-            # Both source field qualifiers and source argument aliases may
-            # echo a separately denied field in stale score receipts.
-            # Canonical argument_match remains public and unaffected.
-            continue
+        # Field qualifiers, argument aliases, and any future unreviewed kinds
+        # may echo source-owned descriptors not authorized for this principal.
+        allowed = allowed_matches.get(component.kind)
         matched = component.matched
-        if matched is not None:
-            label = matched.casefold()
-            if label in disallowed_names:
-                continue
-            if (
-                component.kind in {"field_exact", "field_lexical", "field_substring"}
-                and label not in visible_names
-            ):
-                continue
-        if component.kind == "tool_token" and (
-            matched is None or matched.casefold() not in public_tool_tokens
-        ):
-            # A stale token from source descriptions is not public evidence.
+        if allowed is None or matched is None:
             continue
-        if component.kind == "argument_match" and (
-            matched is None or matched.casefold() not in public_parameter_names
-        ):
-            # Only actual surviving canonical parameter names are visible.
+        label = matched.casefold()
+        if label in disallowed_names or label not in allowed:
             continue
         safe.append(component)
     return safe
-
 
 def _scoped_public_parameter(
     parameter: ParameterSpec,
@@ -778,6 +775,11 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 candidate.score_components,
                 visible_names=visible_names,
                 source_fields=endpoint.output_fields,
+                public_tool_identifiers={tool.key.casefold()},
+                public_endpoint_identifiers={
+                    f"{tool.key}.{endpoint.name}".casefold()
+                },
+                public_operation_names={endpoint.name.casefold()},
                 public_tool_tokens={
                     token.casefold()
                     for token in _tokens(f"{tool.name} {endpoint.name}")
@@ -3857,6 +3859,11 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 candidate.score_components,
                 visible_names=visible_names,
                 source_fields=endpoint.output_fields,
+                public_tool_identifiers={tool.key.casefold()},
+                public_endpoint_identifiers={
+                    f"{tool.key}.{endpoint.name}".casefold()
+                },
+                public_operation_names={endpoint.name.casefold()},
                 public_tool_tokens={
                     token.casefold()
                     for token in _tokens(f"{tool.name} {endpoint.name}")
