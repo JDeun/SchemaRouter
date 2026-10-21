@@ -19,6 +19,7 @@ from schemarouter import (
     ToolSpec,
     select_authorized_field_contract,
 )
+from schemarouter.evidence import available_evidence
 from schemarouter.planner import KeywordAnalyzer
 
 PRIVATE = "secret_field_reference_xyz"
@@ -40,13 +41,16 @@ def _router():
     visible = FieldSpec(
         name="public_value",
         semantic_id="public.value",
+        source_type=f"unreviewed source {PRIVATE}",
+        license=f"unreviewed license {PRIVATE}",
+        unit="eV",
         description=f"description links to {PRIVATE}",
         aliases=[PRIVATE],
         path=[PRIVATE, "public_value"],
         result_path=[PRIVATE, "result"],
         qualifiers={PRIVATE: "sensitive"},
         json_schema={
-            "type": "string",
+            "type": "number",
             "description": PRIVATE,
             "$defs": {PRIVATE: {"type": "string"}},
         },
@@ -88,7 +92,10 @@ def test_visible_field_annotations_cannot_echo_denied_source_names():
     fields = retrieval.candidates[0].output_fields
     assert [field.name for field in fields] == ["public_value"]
     assert fields[0].semantic_id == "public.value"
-    assert fields[0].json_schema == {"type": "string"}
+    assert fields[0].unit == "eV"
+    assert fields[0].source_type is None
+    assert fields[0].license is None
+    assert fields[0].json_schema == {"type": "number"}
     assert fields[0].description == ""
     assert fields[0].aliases == []
     assert fields[0].path == []
@@ -107,6 +114,9 @@ def test_visible_field_annotations_cannot_echo_denied_source_names():
     original = router.registry.get("records").endpoint("read")
     raw = original.output_fields[0]
     assert raw.description.endswith(PRIVATE)
+    assert raw.source_type == f"unreviewed source {PRIVATE}"
+    assert raw.license == f"unreviewed license {PRIVATE}"
+    assert raw.unit == "eV"
     assert raw.aliases == [PRIVATE]
     assert raw.path == [PRIVATE, "public_value"]
     assert raw.qualifiers == {PRIVATE: "sensitive"}
@@ -150,4 +160,29 @@ def test_principal_free_original_schema_remains_unchanged():
     assert scoped is not None
     assert scoped.fingerprint != original.fingerprint
     assert scoped.output_fields[0].path == []
+    assert scoped.output_fields[0].source_type is None
+    assert scoped.output_fields[0].license is None
     assert original.output_fields[0].path == [PRIVATE, "public_value"]
+    assert original.output_fields[0].source_type == f"unreviewed source {PRIVATE}"
+    assert original.output_fields[0].license == f"unreviewed license {PRIVATE}"
+
+
+def test_scoped_public_evidence_does_not_assert_unreviewed_source_labels():
+    router, _ = _router()
+    registered_tool = router.registry.get("records")
+    original = registered_tool.endpoint("read")
+    scoped = router._data_scope_endpoint_view(VIEWER, registered_tool, original)
+    assert scoped is not None
+
+    # Trusted original evidence must remain available for actual execution.
+    source = available_evidence(registered_tool, original, ["public_value"])
+    assert source.provenance is True
+    assert source.license is True
+    assert source.units is True
+
+    # A public descriptor must not turn arbitrary source-owner free text
+    # into an authorization to disclose the source or its license name.
+    public = available_evidence(registered_tool, scoped, ["public_value"])
+    assert public.provenance is False
+    assert public.license is False
+    assert public.units is True
