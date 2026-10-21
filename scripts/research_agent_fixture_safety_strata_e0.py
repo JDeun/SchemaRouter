@@ -96,7 +96,7 @@ def summarize_fixture_safety_strata(
             raise ValueError("partial E0 progressed-step witness cohort")
         if all(progressed_presence):
             if not all(all(flags) for flags in final_presence):
-                raise ValueError("progressed-step witness lacks final-turn cohort")
+                raise ValueError("E0 progressed-step witness lacks final-turn cohort")
             for row in rows:
                 value = row[progressed_field]
                 if type(value) is not bool or (
