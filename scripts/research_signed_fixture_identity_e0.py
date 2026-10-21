@@ -9,6 +9,7 @@ Never deploy this as a public endpoint or use it as product authorization.
 from __future__ import annotations
 
 import base64
+import binascii
 import hashlib
 import hmac
 import json
@@ -113,7 +114,7 @@ class SignedFixtureIdentityVerifierE0:
                 tenant=payload["tenant"],
                 workload=payload["workload"],
             )
-        except (ValueError, UnicodeDecodeError, TypeError, OverflowError):
+        except (ValueError, UnicodeDecodeError, TypeError, OverflowError, binascii.Error):
             return None
 
 
