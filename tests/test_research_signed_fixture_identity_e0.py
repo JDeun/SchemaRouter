@@ -246,6 +246,44 @@ async def test_separate_signed_operator_role_and_tenant_isolation(
     assert seen == ["school"]
 
 
+
+@pytest.mark.asyncio
+async def test_bad_base64_padding_never_causes_asgi_500(tmp_path: Path):
+    """Malformed auth can reach the decoder before a valid signature exists."""
+    seen: list[str] = []
+    app = _app(tmp_path / "malformed-b64.sqlite3", seen)
+    payload_segment = "a"  # alphabet-valid but invalid Base64 padding
+    valid_mac_for_invalid_payload = _base64(
+        hmac.new(
+            _KEY, _CONTEXT + payload_segment.encode("ascii"),
+            hashlib.sha256,
+        ).digest()
+    )
+    malformed_assertions = [
+        _test_token().split(".")[0] + ".a",  # malformed signature
+        payload_segment + "." + valid_mac_for_invalid_payload,
+    ]
+    verifier = SignedFixtureIdentityVerifierE0(
+        _KEY, now=lambda: 1010.0,
+    )
+    for candidate in malformed_assertions:
+        assert verifier.verify(candidate) is None
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://synthetic.invalid",
+    ) as client:
+        for candidate in malformed_assertions:
+            denied = await client.post(
+                "/e0/execute",
+                json=_request("bad-padding"),
+                headers=_attested(candidate),
+            )
+            assert denied.status_code == 403
+            assert denied.json() == {"decision": "identity_or_scope_denied"}
+    assert seen == []
+
+
 def test_wrong_key_or_unusable_clock_can_never_verify_assertion():
     verifier = SignedFixtureIdentityVerifierE0(
         b"A_NEW_SYNTHETIC_KEY_ONLY_" + b"x" * 40,
