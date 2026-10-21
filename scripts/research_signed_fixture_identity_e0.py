@@ -134,13 +134,14 @@ class SignedFixtureScopeMiddlewareE0:
     async def __call__(
         self, scope: Scope, receive: Receive, send: Send,
     ) -> None:
-        if scope.get("type") != "http":
-            await self._app(scope, receive, send)
-            return
-        # Scope can be assembled by an untrusted upstream ASGI layer.
-        # Remove any pre-injected fixture identity on EVERY HTTP request.
+        # Scope may originate in untrusted middleware. Remove any injected
+        # identity for *every* ASGI protocol, including WebSocket/lifespan.
+        # Only verified HTTP Bearer assertions may reestablish test identity.
         trusted_scope = dict(scope)
         trusted_scope.pop(_SCOPE_KEY, None)
+        if scope.get("type") != "http":
+            await self._app(trusted_scope, receive, send)
+            return
         headers = scope.get("headers", ())
         # Never pass the bearer assertion into a downstream ASGI app, where
         # future logging/exception handlers might accidentally reveal it.
