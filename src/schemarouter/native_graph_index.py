@@ -395,7 +395,7 @@ class NativeSchemaGraphIndex:
         kept = [
             contract.model_copy(deep=True)
             for contract in previous._source_contracts
-            if field_index.route_locations.get(contract.capability_id, ("", ""))[0]
+            if old.route_locations.get(contract.capability_id, ("", ""))[0]
             not in changed
         ]
         old_contract_routes = {contract.capability_id for contract in kept}
