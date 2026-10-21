@@ -153,11 +153,13 @@ async def observe_real_source_once(
 
     async def simulated_geo_probe() -> bool:
         simulated_probe_attempts["geocoding"] += 1
-        return True
+        # Once the real source transport has failed, an unverified synthetic
+        # "healthy" callback must not re-admit a further business GET.
+        return guarded_transport.transport_timeout_attempts == 0
 
     async def simulated_forecast_probe() -> bool:
         simulated_probe_attempts["forecast"] += 1
-        return True
+        return guarded_transport.transport_timeout_attempts == 0
     async with httpx.AsyncClient(
         transport=guarded_transport,
         timeout=httpx.Timeout(6.0, connect=3.0),
