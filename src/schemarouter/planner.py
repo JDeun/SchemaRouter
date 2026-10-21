@@ -890,11 +890,15 @@ class SchemaPlanner:
         *,
         k: int,
         additional_availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
+        scoring_endpoint_transform: Callable[
+            [ToolSpec, EndpointSpec], EndpointSpec | None,
+        ] | None = None,
         catalog_snapshot: RegistrySnapshot | None = None,
     ) -> CapabilityRouteRetrieval:
         context = self._planning_context(
             request,
             intent,
+            scoring_endpoint_transform=scoring_endpoint_transform,
             catalog_snapshot=catalog_snapshot,
         )
         catalog_snapshot = context.registry
@@ -902,6 +906,7 @@ class SchemaPlanner:
             context.request,
             context.intent,
             additional_availability_predicate=additional_availability_predicate,
+            scoring_endpoint_transform=scoring_endpoint_transform,
             catalog_snapshot=catalog_snapshot,
         )
         self._sort_candidates(candidates, catalog_snapshot=catalog_snapshot)
@@ -1133,6 +1138,57 @@ class SchemaPlanner:
             preconditions_by_route=state_preconditions,
         )
 
+
+    def retrieve_routes_with_scoped_schema(
+        self,
+        request: PlanRequest | str,
+        predicate: Callable[[ToolSpec, EndpointSpec], bool],
+        endpoint_transform: Callable[[ToolSpec, EndpointSpec], EndpointSpec | None],
+        *,
+        k: int = 5,
+        analysis_registry: ToolRegistry | None = None,
+    ) -> CapabilityRouteRetrieval:
+        """Rank lightweight routes on a principal-visible schema, not raw source."""
+        k = self._validate_retrieval_k(k)
+        request, intent, catalog_snapshot = self._analyze_sync(
+            request,
+            async_method="planner.aretrieve_routes_with_scoped_schema(...)",
+            analysis_registry=analysis_registry,
+            scoring_endpoint_transform=endpoint_transform,
+        )
+        return self._retrieve_routes_from_intent(
+            request,
+            intent,
+            k=k,
+            additional_availability_predicate=predicate,
+            scoring_endpoint_transform=endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
+        )
+
+    async def aretrieve_routes_with_scoped_schema(
+        self,
+        request: PlanRequest | str,
+        predicate: Callable[[ToolSpec, EndpointSpec], bool],
+        endpoint_transform: Callable[[ToolSpec, EndpointSpec], EndpointSpec | None],
+        *,
+        k: int = 5,
+        analysis_registry: ToolRegistry | None = None,
+    ) -> CapabilityRouteRetrieval:
+        """Async counterpart with identical principal-scoped ranking authority."""
+        k = self._validate_retrieval_k(k)
+        request, intent, catalog_snapshot = await self._analyze_async(
+            request,
+            analysis_registry=analysis_registry,
+            scoring_endpoint_transform=endpoint_transform,
+        )
+        return self._retrieve_routes_from_intent(
+            request,
+            intent,
+            k=k,
+            additional_availability_predicate=predicate,
+            scoring_endpoint_transform=endpoint_transform,
+            catalog_snapshot=catalog_snapshot,
+        )
 
     def retrieve_routes_with_additional_availability(
         self,
