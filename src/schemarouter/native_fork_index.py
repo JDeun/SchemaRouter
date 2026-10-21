@@ -144,6 +144,15 @@ def lookup_native_shared_root_forks(
         root_ep = root_tool.endpoint(where[1])
         if (root_tool.fingerprint, root_ep.fingerprint) != pinned:
             raise PolicyViolationError("G5 fork root source drift")
+        # A same-looking identifier does not certify a legal/provenance
+        # boundary when the source catalog has different reviewed qualifiers.
+        if (
+            declared.source_type is not None
+            and root_tool.source_type != declared.source_type
+            or declared.license is not None
+            and root_tool.license != declared.license
+        ):
+            return None
         source_identifier = left.parameter_bindings[0][1]
         # A field declared on an array/nested/optional object is not a
         # source-owned single-record join key, even if semantic IDs match.
