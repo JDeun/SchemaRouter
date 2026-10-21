@@ -743,6 +743,34 @@ class NativeSchemaGraphIndex:
                 }))
                 if visible_names != candidate.consumer_output_fields:
                     raise PolicyViolationError("G5 candidate projection changed")
+                # A later health/scope callback may keep source identities
+                # stable while withdrawing a previously proven typed join.
+                # The default (unranked) K5 path needs the same binding proof
+                # already required after an optional research ranker.
+                current_inputs = _native_required_inputs(target_ep_now)
+                if (
+                    current_inputs is None
+                    or len(current_inputs) != len(candidate.parameter_bindings)
+                    or any(
+                        required_name != bound_name
+                        or (field := _root_field(root_ep_now, contract))
+                        is None or field.name != bound_field
+                        for (required_name, contract), (bound_name, bound_field)
+                        in zip(
+                            current_inputs, candidate.parameter_bindings,
+                            strict=True,
+                        )
+                    )
+                ):
+                    raise PolicyViolationError("G5 candidate binding changed")
+                if len(candidate.parameter_bindings) > 1 and not (
+                    _flat_same_record_source_contract(
+                        _root_tool_now.endpoint(root_ep_now.name),
+                        root_ep_now,
+                        tuple(field for _, field in candidate.parameter_bindings),
+                    )
+                ):
+                    raise PolicyViolationError("G5 candidate record contract changed")
         except Exception:
             # A native provider callback may embed private field names or
             # endpoint IDs in exceptions. Never forward that message.

@@ -1072,3 +1072,50 @@ def test_native_g5_first_availability_failure_redacts_private_error(
     assert private_marker not in str(caught.value)
     assert caught.value.__suppress_context__
     assert router.registry.version == index.field_index.registry_version
+
+@pytest.mark.parametrize("count", (2, 6))
+@pytest.mark.parametrize("scope_change", ("producer_identifier", "consumer_input"))
+def test_default_native_g5_rechecks_typed_bindings_after_scope_changes(
+    monkeypatch, count, scope_change,
+):
+    """A late same-object health callback can invalidate an earlier join.
+
+    The registered native tool fingerprints and policy remain unchanged.
+    Unlike output-only checks, this asserts root identifier/target input
+    bindability remains true before publishing either candidates or counts.
+    """
+    router = _router(n_targets=count)
+    index = _index(router)
+    original_view = router._data_scope_endpoint_view
+    changed = False
+
+    def health(tool, _endpoint):
+        nonlocal changed
+        if tool.key == f"cases_{count - 1}":
+            changed = True
+        return True
+
+    def live_scoped_view(actor, tool, endpoint):
+        visible = original_view(actor, tool, endpoint)
+        if visible is None or not changed:
+            return visible
+        if scope_change == "producer_identifier" and tool.key == "contacts":
+            return visible.model_copy(update={
+                "output_fields": [
+                    field.model_copy(update={"identifier": False})
+                    for field in visible.output_fields
+                ],
+            })
+        if scope_change == "consumer_input" and tool.key.startswith("cases_"):
+            return visible.model_copy(update={"parameters": []})
+        return visible
+
+    router.planner.availability_predicate = health
+    monkeypatch.setattr(router, "_data_scope_endpoint_view", live_scoped_view)
+    with pytest.raises(
+        PolicyViolationError, match="G5 candidate eligibility changed during lookup",
+    ):
+        index.lookup(router, ALIASES[0], group=GROUP, principal=ANALYST)
+    assert changed
+    assert router.registry.version == index.field_index.registry_version
+    assert router.planner.availability_predicate is health
