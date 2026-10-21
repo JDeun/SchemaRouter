@@ -23,7 +23,7 @@ from .capability_graph import (
     update_capability_dependency_graph,
 )
 from .concept_retrieval import NativeConceptCatalog, resolve_native_concepts
-from .errors import PolicyViolationError
+from .errors import PolicyViolationError, RegistrationError
 from .field_group_retrieval import (
     NativeDeclaredFieldGroup,
     _alias_key,
@@ -32,6 +32,7 @@ from .field_group_retrieval import (
 )
 from .models import EndpointSpec, FieldSpec, ToolSpec
 from .native_semantic_index import NativeSchemaPostingIndex
+from .registry import InMemoryRegistry, ToolRegistry
 
 if TYPE_CHECKING:
     from .runtime import SchemaRouter
@@ -392,6 +393,74 @@ class NativeSchemaGraphIndex:
         if registry.version != field_index.registry_version:
             raise PolicyViolationError("G5 graph refresh source changed")
 
+        return cls._refresh_changed_contracts(
+            previous, field_index, changed_tool_keys,
+        )
+
+    @classmethod
+    def refresh_from_inmemory_journal(
+        cls,
+        previous: NativeSchemaGraphIndex,
+        registry: ToolRegistry,
+    ) -> NativeSchemaGraphIndex:
+        """Refresh canonical G5 graph edges from exact in-memory source receipts.
+
+        Only the builtin InMemoryRegistry's lock-atomic change history is
+        trusted. SQLite, proxies and user-managed registries continue to
+        require the full-fingerprint-verified refresh API.
+        """
+        if type(registry) is not InMemoryRegistry:
+            raise PolicyViolationError("G5 journal graph requires exact in-memory source")
+        if previous.field_index.registry_ref is not registry:
+            raise PolicyViolationError("G5 journal graph source mismatch")
+        try:
+            receipt = registry.changed_tool_keys_since(
+                previous.field_index.registry_version,
+            )
+        except RegistrationError:
+            raise PolicyViolationError(
+                "G5 journal graph history unavailable; full build required"
+            ) from None
+        if (
+            receipt.from_version != previous.field_index.registry_version
+            or receipt.to_version <= receipt.from_version
+            or not 1 <= len(receipt.changed_tool_keys) <= 64
+        ):
+            raise PolicyViolationError("G5 journal graph invalid versioned changes")
+        field_index = NativeSchemaPostingIndex.refresh_from_inmemory_journal(
+            previous.field_index, registry,
+        )
+        if (
+            field_index.registry_version != receipt.to_version
+            or registry.version != receipt.to_version
+        ):
+            raise PolicyViolationError("G5 journal graph source changed mid-refresh")
+        return cls._refresh_changed_contracts(
+            previous, field_index, receipt.changed_tool_keys,
+        )
+
+    @classmethod
+    def _refresh_changed_contracts(
+        cls,
+        previous: NativeSchemaGraphIndex,
+        field_index: NativeSchemaPostingIndex,
+        changed_tool_keys: tuple[str, ...],
+    ) -> NativeSchemaGraphIndex:
+        """Canonical edge-delta assembler, shared by verified refresh arms."""
+        old = previous.field_index
+        registry = field_index.registry_ref
+        if old.registry_ref is not registry:
+            raise PolicyViolationError("G5 graph delta source mismatch")
+        if field_index.registry_version <= old.registry_version:
+            raise PolicyViolationError("G5 graph delta needs newer source")
+        if (
+            type(changed_tool_keys) is not tuple
+            or not 1 <= len(changed_tool_keys) <= 64
+            or any(type(key) is not str or not key for key in changed_tool_keys)
+            or len(set(changed_tool_keys)) != len(changed_tool_keys)
+        ):
+            raise ValueError("G5 graph delta needs bounded changed tool keys")
+        changed = set(changed_tool_keys)
         kept = [
             contract.model_copy(deep=True)
             for contract in previous._source_contracts
