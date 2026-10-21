@@ -20,6 +20,7 @@ from schemarouter.decisions import CallableDecisionBackend
 from schemarouter.errors import PlanningError, PolicyViolationError
 from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
+from schemarouter.capability_graph import update_capability_dependency_graph
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from schemarouter.semantic_attestations import (
     HostSemanticAttestation,
@@ -732,3 +733,133 @@ def test_research_ranker_stable_availability_still_returns_original_k5():
     assert len(actual.candidates) == 5
     assert not actual.independent_quality_evidence
     assert not actual.executable_authority
+
+
+@pytest.mark.parametrize("change", (
+    "add_consumer", "replace_consumer", "replace_root",
+    "remove_consumer", "remove_root", "unrelated",
+))
+def test_g5_incremental_graph_edges_match_complete_native_oracle(change):
+    router = _router(n_targets=2, noise=12)
+    original = _index(router)
+    if change == "add_consumer":
+        from schemarouter.models import ParameterSpec
+        extra = ToolSpec(
+            name="newcase", source_type="crm", license="owner-reviewed",
+            endpoints=[EndpointSpec(
+                name="read", read_only=True,
+                parameters=[ParameterSpec(
+                    name="contact_id", required=True, location="argument",
+                    json_schema={"type": "string"},
+                    semantic_id="crm.contact_id",
+                )],
+                input_schema={
+                    "type": "object",
+                    "properties": {"contact_id": {"type": "string"}},
+                    "required": ["contact_id"],
+                },
+                output_fields=[FieldSpec(
+                    name="status", semantic_id="crm.status",
+                    json_schema={"type": "string"},
+                )],
+            )],
+        )
+        router.add_tool(extra)
+        keys = ("newcase",)
+    elif change == "replace_consumer":
+        replacement = router.registry.get("cases_0")
+        replacement.endpoint("read_case").parameters[0].json_schema = {
+            "type": "integer",
+        }
+        replacement.endpoint("read_case").input_schema = {
+            "type": "object",
+            "properties": {"contact_id": {"type": "integer"}},
+            "required": ["contact_id"],
+        }
+        router.registry.register(replacement, replace=True)
+        keys = ("cases_0",)
+    elif change == "replace_root":
+        replacement = router.registry.get("contacts")
+        replacement.endpoint("read_contact").output_fields = []
+        router.registry.register(replacement, replace=True)
+        keys = ("contacts",)
+    elif change == "remove_consumer":
+        router.registry.unregister("cases_0")
+        keys = ("cases_0",)
+    elif change == "remove_root":
+        router.registry.unregister("contacts")
+        keys = ("contacts",)
+    else:
+        router.registry.register(ToolSpec(
+            name="unrelated_0", source_type="science",
+            license="owner-reviewed",
+            endpoints=[EndpointSpec(
+                name="read", read_only=True, output_fields=[FieldSpec(
+                    name="label", semantic_id="science.updated",
+                    json_schema={"type": "string"},
+                )],
+            )],
+        ), replace=True)
+        keys = ("unrelated_0",)
+    field = NativeSchemaPostingIndex.refresh(
+        original.field_index, router.registry, changed_tool_keys=keys,
+    )
+    updated = NativeSchemaGraphIndex.refresh(
+        original, field, changed_tool_keys=keys,
+    )
+    full = NativeSchemaGraphIndex.build(field)
+    assert updated.field_index.snapshot_id == full.field_index.snapshot_id
+    assert updated.graph.capability_ids == full.graph.capability_ids
+    assert updated.graph.edges == full.graph.edges
+    assert updated.native_root_count == full.native_root_count
+    assert updated.native_consumer_count == full.native_consumer_count
+    assert updated.edge_consumer_routes == full.edge_consumer_routes
+    for actor in (ANALYST, VIEWER):
+        for alias in ALIASES:
+            assert updated.lookup(
+                router, alias, group=GROUP, principal=actor,
+            ) == full.lookup(router, alias, group=GROUP, principal=actor)
+
+
+def test_g5_graph_refresh_rejects_missing_changed_tool_or_stale_source():
+    router = _router(n_targets=2)
+    original = _index(router)
+    changed = router.registry.get("cases_0")
+    changed.endpoint("read_case").description = "revision"
+    router.registry.register(changed, replace=True)
+    router.add_tool(ToolSpec(name="later", endpoints=[EndpointSpec(name="read")]))
+    field = NativeSchemaPostingIndex.refresh(
+        original.field_index, router.registry,
+        changed_tool_keys=("cases_0", "later"),
+    )
+    with pytest.raises(PolicyViolationError, match="changed-key mismatch"):
+        NativeSchemaGraphIndex.refresh(
+            original, field, changed_tool_keys=("later",),
+        )
+    with pytest.raises(PolicyViolationError, match="needs a newer source"):
+        NativeSchemaGraphIndex.refresh(
+            original, original.field_index, changed_tool_keys=("cases_0",),
+        )
+
+
+def test_g5_graph_refresh_does_not_rescan_original_tool_contracts(monkeypatch):
+    router = _router(n_targets=3, noise=75)
+    original = _index(router)
+    changed = router.registry.get("cases_2")
+    changed.endpoint("read_case").description = "new narrative"
+    router.registry.register(changed, replace=True)
+    field = NativeSchemaPostingIndex.refresh(
+        original.field_index, router.registry, changed_tool_keys=("cases_2",),
+    )
+    monkeypatch.setattr(
+        router.registry, "tools",
+        lambda: pytest.fail("G5 refresh may not scan all native schemas"),
+    )
+    refreshed = NativeSchemaGraphIndex.refresh(
+        original, field, changed_tool_keys=("cases_2",),
+    )
+    oracle = update_capability_dependency_graph(
+        original.graph, list(original._source_contracts),
+        list(refreshed._source_contracts),
+    )
+    assert refreshed.graph.edges == oracle.edges
