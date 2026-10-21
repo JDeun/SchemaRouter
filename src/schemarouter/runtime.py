@@ -247,6 +247,9 @@ def _scoped_public_parameter(
             # a separately hidden field even if this parameter is visible.
             "wire_name": None,
             "style": None,
+            # An optional source ontology ID is also unreviewed free text.
+            # Preserve it in the trusted registry, never the scoped catalog.
+            "semantic_id": None,
             "description": "",
             "aliases": [],
             "json_schema": public_schema,
