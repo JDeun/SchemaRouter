@@ -189,6 +189,12 @@ def sanitized_e0_trace(
         type(count) is int and count > 0
         and count == len(attempts) == len(call_rows)
         and all(type(turn.get("tool_calls")) is list for turn in turns)
+        # A final, overflow or malformed turn cannot secretly carry an
+        # executed tool-call receipt; only a tool_calls event witnesses it.
+        and all(
+            (turn.get("event") == "tool_calls") is bool(turn["tool_calls"])
+            for turn in turns
+        )
         and all(type(call) is dict for call in call_rows)
         and all(
             call.get("attempt") == attempt
