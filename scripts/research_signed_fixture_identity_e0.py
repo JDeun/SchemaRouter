@@ -142,6 +142,13 @@ class SignedFixtureScopeMiddlewareE0:
         trusted_scope = dict(scope)
         trusted_scope.pop(_SCOPE_KEY, None)
         headers = scope.get("headers", ())
+        # Never pass the bearer assertion into a downstream ASGI app, where
+        # future logging/exception handlers might accidentally reveal it.
+        # Leave content-type and other non-credential metadata unchanged.
+        trusted_scope["headers"] = [
+            (name, value) for name, value in headers
+            if name.lower() != b"authorization"
+        ]
         authorization = [
             value for name, value in headers
             if name.lower() == b"authorization"
