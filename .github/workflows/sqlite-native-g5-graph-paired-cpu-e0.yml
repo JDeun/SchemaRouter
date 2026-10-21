@@ -1,0 +1,70 @@
+name: SQLite Native G5 Graph 500-5000 Paired CPU E0
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/native_graph_index.py"
+      - "src/schemarouter/native_semantic_index.py"
+      - "src/schemarouter/registry.py"
+      - "scripts/benchmark_sqlite_native_g5_graph_journal_ab_e0.py"
+      - "tests/test_benchmark_sqlite_native_g5_graph_journal_ab_e0.py"
+      - ".github/workflows/sqlite-native-g5-graph-paired-cpu-e0.yml"
+      - "research/autoresearch/sqlite-native-g5-graph-paired-cpu-e0.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sqlite-g5-typed-graph-paired-oracle-cpu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install source and E0 verification tools
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Static and small typed compatibility + full-source oracle checks
+        run: |
+          ruff check scripts/benchmark_sqlite_native_g5_graph_journal_ab_e0.py tests/test_benchmark_sqlite_native_g5_graph_journal_ab_e0.py
+          python -m pytest -q tests/test_benchmark_sqlite_native_g5_graph_journal_ab_e0.py tests/test_sqlite_native_graph_journal_e0.py tests/test_sqlite_native_g5_graph_journal_e0.py
+          pyright scripts/benchmark_sqlite_native_g5_graph_journal_ab_e0.py
+      - name: Pair 500 synthetic routes with actual SQLite WAL
+        run: python -m scripts.benchmark_sqlite_native_g5_graph_journal_ab_e0 --registered-routes 500 --pairs 6 > sqlite-g5-paired-500-e0.json
+      - name: Pair 5000 synthetic routes with actual SQLite WAL
+        run: python -m scripts.benchmark_sqlite_native_g5_graph_journal_ab_e0 --registered-routes 5000 --pairs 4 > sqlite-g5-paired-5000-e0.json
+      - name: Reject inconsistent or E2-promoting CPU results
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as output:
+              output.write("## Native G5 actual SQLite WAL graph refresh — paired synthetic CPU E0 only\n\n")
+              for file in ("sqlite-g5-paired-500-e0.json", "sqlite-g5-paired-5000-e0.json"):
+                  result = json.loads(Path(file).read_text(encoding="utf-8"))
+                  assert result["evidence_tier"] == "E0_SYNTHETIC_SQLITE_G5_GRAPH_JOURNAL_CPU_NOT_E2"
+                  assert result["full_oracle_equal_pairs"] == result["pairs"]
+                  assert result["supported_typed_pairs"] > 0
+                  assert result["incompatible_typed_pairs"] > 0
+                  assert result["provider_independent_e2_qualified"] is False
+                  assert result["production_sla_qualified"] is False
+                  output.write(
+                      f"- {result['registered_native_routes']} routes; "
+                      f"{result['pairs']} full-typed-oracle source pairs; "
+                      f"full p50 {result['wall_ms']['full']['p50']:.2f}ms, "
+                      f"SQLite journal p50 {result['wall_ms']['journal']['p50']:.2f}ms, "
+                      f"faster pairs {result['journal_faster_pairs']}/{result['pairs']}\n"
+                  )
+              output.write("\nNot HTTP, query/inference latency, independent provider E2 or SLA.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sqlite-native-g5-graph-paired-cpu-e0-${{ github.run_id }}
+          path: sqlite-g5-paired-*-e0.json
+          retention-days: 30
+          if-no-files-found: error
