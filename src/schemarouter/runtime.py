@@ -176,7 +176,7 @@ def _scoped_public_value_shape(schema: dict[str, Any]) -> dict[str, Any]:
 
 def _scoped_label_words(value: str) -> tuple[str, ...]:
     """Compare source identifiers at Unicode word/underscore boundaries."""
-    return tuple(re.findall(r"[^\\W_]+", value.casefold()))
+    return tuple(re.findall(r"[^\W_]+", value.casefold()))
 
 
 def _scoped_denied_field_markers(
