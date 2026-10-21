@@ -24,6 +24,23 @@ EXPECTED_RUN = 39533699395
 EXPECTED_ARTIFACT = 12316407743
 EXPECTED_DIGEST = "c965ad7c8deca49fbd66bb3a8540c508d44eca0cb1f6847e894261ea3bb06cc4"
 EXPECTED_JSON_DIGEST = "2e31a3be8c9d8ba3df24ee87bbd6d2e005e26ad2bf54d8e98a2f04df365a4608"
+TOP_KEYS = frozenset({
+    "schema_version", "experiment_id", "issue", "evidence_tier",
+    "decision", "control_arm", "candidate_arm", "run", "runtime",
+    "study", "by_arm", "gates", "cautions",
+})
+STUDY_KEYS = frozenset({
+    "paired_language_count", "language_order", "source",
+    "retries_per_http_get", "model_turn_cap", "model_menu",
+    "total_http_attempt_ceiling", "live_source_drift_possible",
+})
+CAUTIONS = [
+    "N=3 disclosed language cases per arm, not a disjoint benchmark",
+    "Korean candidate suffered live geocoding timeout, so throughput and token aggregates are not causal",
+    "English opt-in reminder did not recover second tool call",
+    "Japanese and Korean baseline terminal shapes were wrong after verified two sources",
+    "Never modify historical frozen #432 outcomes or release PR #1356 based on this snapshot",
+]
 ROW_KEYS = frozenset({
     "termination", "geocodes", "forecasts", "http_attempts", "turns",
     "host_reminders", "final_failure", "transport_failure",
@@ -52,8 +69,16 @@ def _bounded_number(value: Any, label: str) -> float:
 
 
 def verify(snapshot: dict[str, Any]) -> dict[str, Any]:
-    if type(snapshot) is not dict or snapshot.get("schema_version") != 1:
-        raise ValueError("invalid negative-evidence schema")
+    if (
+        type(snapshot) is not dict
+        or set(snapshot) != TOP_KEYS
+        or snapshot.get("schema_version") != 1
+        or type(snapshot.get("schema_version")) is not int
+        or snapshot.get("experiment_id")
+        != "qwen-verified-reminder-paired-live-open-meteo-e1-20261021"
+        or snapshot.get("cautions") != CAUTIONS
+    ):
+        raise ValueError("invalid or unallowlisted negative-evidence schema")
     if (
         snapshot.get("evidence_tier")
         != "EXPOSED_SELF_AUTHORED_LIVE_PROVIDER_E1_DEV_ONLY"
@@ -102,6 +127,9 @@ def verify(snapshot: dict[str, Any]) -> dict[str, Any]:
     study = snapshot.get("study")
     if (
         type(study) is not dict
+        or set(study) != STUDY_KEYS
+        or study.get("source")
+        != "Open-Meteo original live geocoding/weather endpoints"
         or study.get("paired_language_count") != 3
         or type(study.get("paired_language_count")) is not int
         or study.get("language_order") != list(LANGUAGES)
