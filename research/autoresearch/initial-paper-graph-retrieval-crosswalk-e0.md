@@ -66,3 +66,77 @@ results, independent `#1346` validation, and v0.18 `#1356`
 - Do not substitute an 'agent tool table of contents' wrapper for graph
   matching. The existing public `retrieve_authorized(...,k=5)` already
   delivers bounded candidate contracts.
+
+
+## 2026-10-21 canonical-source audit update — M1 architecture acceptance
+
+This updates the **audit**, not the independent product qualification, after
+the source-owned G3/G4/G5 engineering changes. Inspected at main
+`4e4a01fcae4008bdfd8a7bca41d4ef65583e9b2a`.
+The original retrieval API and external-agent boundaries have not become
+an autonomous agent or a default semantic router.
+
+### Paper component → current home → wiring verdict
+
+| Original paper step / typed relationship | Exact product/research code and proof | Verdict |
+| --- | --- | --- |
+| Source Tool/Endpoint/Parameter/ResponseField declarations | `models.py`, `registry.py`, `adapters/openapi.py`, MCP and OPTIMADE adapters; `tests/test_native_graph_three_real_adapters.py` builds one actual adapter-derived catalog | **Native declarations wired**, not identity/permission proof from vendor free text |
+| Query → Intent/DomainConcept/declared alias | Default `planner.py` `KeywordAnalyzer` and lexical `_CandidateIndex`; **separate** `concept_retrieval.py::resolve_native_concepts` with `NativeConceptCatalog` | **Default lexical wired; owner-declared concept matching opt-in only**; no open-vocabulary EN↔KO↔JA translation |
+| Explicit conjunctive FieldGroup → compatible response fields | `field_group_retrieval.py::retrieve_authorized_field_group` and `NativeSchemaPostingIndex.lookup_concepts`; `_complete_fields` / `compare_capability_fields` | **Opt-in pre-K conjunction implemented**, source/type/unit constrained, not default graph retrieval |
+| SourceType / license / unit / qualifier and provenance | `models.py` `FieldSpec`/`ToolSpec`, `capability_contracts.py`, `semantic_attestations.py` pinned tool+endpoint originals; G5 match after source review | **Structural declarations/host claims**, no issuer authentication or legal license clearance |
+| Semantic producer → required consumer inputs / ID propagation | `capability_graph.py::build_capability_dependency_graph`; `native_graph_index.py::NativeSchemaGraphIndex.build/lookup` reuses the canonical compatibility graph and proves a complete one-root/one-consumer binding, at most 4 typed required inputs | **Opt-in one-hop original-source binding**, not a general two-hop/multi-root execution DAG |
+| Versioned query→concept→group index on complete catalog | `native_semantic_index.py::NativeSchemaPostingIndex.build` stores immutable semantic-ID inverted postings, route locations/fingerprints and registry-version snapshot digest; `NativeSchemaGraphIndex.build` adds canonical producer/consumer edges | **Indexed opt-in G5 structural lookup**, stale source fails closed; full catalog **build** still scans, not an incrementally refreshed production index |
+| Current principal/data scope, availability, original fingerprint before K | `NativeSchemaPostingIndex.lookup` and `NativeSchemaGraphIndex.lookup` intersect source-semantic postings then independently recheck original endpoint fingerprint, RBAC, principal visible fields, read-only and availability before emitting candidates | **Wired for opt-in, not invoker authority**; tests enforce hidden identifier and unreviewed MCP `readOnlyHint` refusal |
+| Top-K5 overflow and trustworthy ranking | G5 index returns `complete`, `no_proven_hit` or `over_k_unranked`; `_research_ranker` is separate, bounded to 32 **authorized, detached** candidates and returns `ranked_unverified` only | **Strict K5/no silent truncation**; no independently qualified general relevance ranker, no-fit calibration, production default change |
+| Original default retrieval route | `SchemaRouter.retrieve_authorized` → `SchemaPlanner.retrieve` → keyword/lexical/typed scoring and top-K; never automatically invokes `NativeSchemaGraphIndex.lookup` | **Lexical default preserved**; the paper's full graph-powered default routing is **not implemented** |
+
+### Opt-in original-adapter and negative controls actually present
+
+`tests/test_native_graph_three_real_adapters.py` compiles actual
+OpenAPI 3.1, MCP `tools/list`, and discovered OPTIMADE descriptors
+into a **single** catalog. EN `case status`, KO `문의 상태`, JA
+`問い合わせ状態` are **explicit host-approved aliases** of one field
+group, not naturally inferred translations. A host-reviewed OpenAPI
+identifier producer and MCP case read consumer form one typed binding;
+an unrelated OPTIMADE endpoint must not be borrowed as a compatible root.
+
+Negative controls: an unreviewed remote MCP read-only hint yields
+`no_proven_hit`; a data-scope-hidden OpenAPI identifier prevents
+the producer edge under the restricted principal; an invalid OPTIMADE
+required-input JSON Schema cannot be silently weakened; registered
+endpoint mutation makes the old index fail closed. The matching G5
+research source also tests denied/absent fields, over-K and staged
+authorization. All are **E0** declarations/fixtures, not live calls.
+
+`scripts/benchmark_indexed_native_graph_g5_cpu_e0.py` measures
+synthetic 5,100-noise-route indexing and warm CPU/RSS lookup independently
+and refuses source-result drift. Its results must remain labeled as
+synthetic CPU workload, not empirical third-party provider p95 or
+independent task-success evidence.
+
+### Audit disposition and remaining feature owners
+
+- **Audit's source-to-code crosswalk, default-path trace, falsifiable
+  opt-in controls and non-goals are evidenced above.** The audit can be
+  administratively completed separately from unimplemented product features.
+- [#1535](https://github.com/JDeun/SchemaRouter/issues/1535) owns
+  independently qualified required FieldGroup completeness before K.
+- [#1560](https://github.com/JDeun/SchemaRouter/issues/1560) owns
+  production-grade incremental catalog-wide graph index, 500/5000
+  multi-source scale, multi-hop semantics, defensible >K5 ranker and
+  validated default graph retrieval. Source-fingerprint matches are a
+  necessary condition, not evidence of an authorized production deployment.
+- [#1339](https://github.com/JDeun/SchemaRouter/issues/1339) owns
+  English-only metadata → actual KO/JA semantic transfer and negative no-fit;
+  declared multilingual aliases do **not** solve that gap.
+- [#1346](https://github.com/JDeun/SchemaRouter/issues/1346) and
+  [#1477](https://github.com/JDeun/SchemaRouter/issues/1477) own
+  independently authored source-native query/gold/permission approval and
+  paired **actual agent final-task E2**. No new E2 score is present here.
+- [#1356](https://github.com/JDeun/SchemaRouter/pull/1356) stays
+  release HARD HOLD. The original frozen #432 negative remains unchanged:
+  SR-5 **29.19%** versus FULL **49.62%**, ORACLE **70.98%**.
+
+**Evidence classification:** source-code/adapter-bound E0 audit. Do not
+interpret administrative completion of #1530 as completion of M1 #1535,
+#1560 or any independent commercial release/performance gate.
