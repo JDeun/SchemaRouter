@@ -297,3 +297,37 @@ async def test_signed_bearer_never_reaches_downstream_asgi_headers(tmp_path: Pat
     assert emitted == ["redacted"]
     assert all(name.lower() != b"authorization" for name, _ in seen_headers)
     assert signed_token not in response.text
+
+
+@pytest.mark.asyncio
+async def test_non_http_asgi_scope_cannot_inherit_upstream_forged_identity():
+    seen: list[object] = []
+
+    async def downstream(scope: Scope, receive: Receive, send: Send) -> None:
+        seen.append(scope.get("schemarouter.e0_fixture_identity"))
+
+    protected = SignedFixtureScopeMiddlewareE0(
+        downstream,
+        verifier=SignedFixtureIdentityVerifierE0(
+            _KEY, now=lambda: 1010.0,
+        ),
+    )
+
+    async def unused_receive() -> dict[str, str]:
+        return {"type": "websocket.disconnect"}
+
+    async def unused_send(message: object) -> None:
+        raise AssertionError("no websocket network activity is allowed")
+
+    for protocol in ("websocket", "lifespan"):
+        await protected(
+            {
+                "type": protocol,
+                "schemarouter.e0_fixture_identity": SyntheticScopeIdentityE0(
+                    "emergency_operator", "church",
+                ),
+            },  # type: ignore[arg-type]
+            unused_receive,
+            unused_send,
+        )
+    assert seen == [None, None]
