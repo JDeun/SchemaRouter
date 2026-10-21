@@ -258,8 +258,8 @@ def test_global_registered_catalog_five_thousand_routes_without_query_global_sca
 
     def recorded(key):
         seen.append(key)
-        if len(seen) > 3:
-            pytest.fail("per-query scanned registered native catalog")
+        if len(seen) > 4:
+            pytest.fail("per-query scanned outside its two original native routes")
         return original(key)
 
     monkeypatch.setattr(router.registry, "get", recorded)
@@ -995,3 +995,48 @@ def test_g5_journal_graph_delta_detects_inflight_source_mutation(monkeypatch):
             previous, router.registry,
         )
     assert fired
+
+
+@pytest.mark.parametrize("count", (2, 6))
+def test_default_native_g5_same_callable_health_revocation_is_fail_closed(
+    count,
+):
+    """A later candidate must not leave an earlier now-unavailable path visible.
+
+    Includes the over-K outcome because its qualified_path_count also leaks
+    information about a stale source authorization/availability set.
+    """
+    router = _router(n_targets=count)
+    index = _index(router)
+    disabled: set[str] = set()
+    saw_later = False
+
+    def health(tool, _endpoint):
+        nonlocal saw_later
+        if tool.key == f"cases_{count - 1}" and not saw_later:
+            saw_later = True
+            disabled.add("cases_0")
+        return tool.key not in disabled
+
+    router.planner.availability_predicate = health
+    with pytest.raises(
+        PolicyViolationError, match="G5 candidate eligibility changed during lookup",
+    ):
+        index.lookup(router, ALIASES[0], group=GROUP, principal=ANALYST)
+    assert saw_later
+    assert router.planner.availability_predicate is health
+    assert router.registry.version == index.field_index.registry_version
+
+
+def test_default_native_g5_stable_live_health_returns_exact_evidence():
+    router = _router(n_targets=2)
+    index = _index(router)
+    router.planner.availability_predicate = lambda _tool, _ep: True
+    result = index.lookup(
+        router, ALIASES[0], group=GROUP, principal=ANALYST,
+    )
+    assert result.status == "complete"
+    assert result.qualified_path_count == 2
+    assert {c.consumer_route_id for c in result.candidates} == {
+        "cases_0.read_case", "cases_1.read_case",
+    }
