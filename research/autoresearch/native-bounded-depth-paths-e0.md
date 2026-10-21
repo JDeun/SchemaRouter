@@ -25,7 +25,10 @@ The method reuses the single existing `CapabilityDependencyGraph` and
 - permits only a genuine zero-input or explicitly host-approved root;
   intermediates must each have complete typed required inputs;
 - forbids repeat identities/cycles; caps graph expansions at 256 and
-  qualified paths at 32; and keeps strict K=5 and unranked >K abstention;
+  qualified paths at 32; rejects >256 target posting hits before sorting or
+  source reads, and rejects a predecessor tuple larger than the **remaining**
+  probe budget before sorting/retrieving candidate producers; and keeps
+  strict K=5 and unranked >K abstention;
 - **rechecks every qualified original route and typed binding** after
   all health probes, including when the final result would be an
   overflow count, without returning private untrusted callback messages.
