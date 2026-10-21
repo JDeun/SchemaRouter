@@ -247,6 +247,10 @@ def _scoped_public_parameter(
             # a separately hidden field even if this parameter is visible.
             "wire_name": None,
             "style": None,
+            # Source-supplied ontology identifiers are not an explicit
+            # principal grant. An allowed input may reference a denied
+            # output field through its semantic_id annotation.
+            "semantic_id": None,
             "description": "",
             "aliases": [],
             "json_schema": public_schema,
