@@ -1,0 +1,362 @@
+name: G5 Authorized Overflow Pinned E5 CPU DEV
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_g5_e5_overflow_cpu_dev.py"
+      - "tests/test_research_g5_e5_overflow_cpu_dev.py"
+      - "scripts/research_g5_qwen_agent_fixture_dev.py"
+      - "tests/test_research_g5_qwen_agent_fixture_dev.py"
+      - "scripts/research_g5_decision_backend_ranker_e0.py"
+      - "src/schemarouter/native_graph_index.py"
+      - "research/autoresearch/g5-authorized-overflow-ranking-e0.md"
+      - ".github/workflows/research-g5-e5-overflow-cpu-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: g5-e5-overflow-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  no-model-native-source-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install local E0 contract dependencies
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Check bounded source/native path permissions and no-model cohort
+        run: |
+          ruff check scripts/research_g5_e5_overflow_cpu_dev.py tests/test_research_g5_e5_overflow_cpu_dev.py scripts/research_g5_qwen_agent_fixture_dev.py tests/test_research_g5_qwen_agent_fixture_dev.py scripts/research_g5_decision_backend_ranker_e0.py src/schemarouter/native_graph_index.py
+          python -m pytest -q tests/test_native_graph_index.py tests/test_research_g5_e5_overflow_cpu_dev.py tests/test_research_g5_qwen_agent_fixture_dev.py
+          pyright scripts/research_g5_e5_overflow_cpu_dev.py scripts/research_g5_qwen_agent_fixture_dev.py scripts/research_g5_decision_backend_ranker_e0.py
+          python -m scripts.research_g5_e5_overflow_cpu_dev --mode validate
+          python -m scripts.research_g5_qwen_agent_fixture_dev --mode validate
+
+  real-pinned-e5-g5-ranked-cpu-dev:
+    needs: no-model-native-source-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install pinned-model CPU runtime
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
+      - name: Run actual CPU local multilingual E5 after G5 source verification
+        run: |
+          python -m scripts.research_g5_e5_overflow_cpu_dev \
+            --mode real-e5-cpu \
+            --out artifacts/g5-e5-overflow-dev/report.json
+      - name: Publish exact DEV-only aggregate without queries
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path("artifacts/g5-e5-overflow-dev/report.json")
+          r = json.loads(path.read_text(encoding="utf-8"))
+          assert r["evidence_tier"] == "REAL_PINNED_E5_CPU_G5_OVERFLOW_SYNTHETIC_DEV_ONLY"
+          assert r["real_model_routing_measured"] is True
+          assert r["synthetic_service_paths"] == 24
+          assert r["supported_case_count"] == 27
+          assert r["ood_case_count"] == 3
+          assert r["model_runtime"]["model_revision"] == "fd1525a9fd15316a2d503bf26ab031a61d056e98"
+          assert r["model_runtime"]["model_id"] == "intfloat/multilingual-e5-small"
+          assert r["model_runtime"]["device"] == "cpu"
+          carrier = r["account_carrier_ablation"]
+          assert r["query_variant"] == "task_only"
+          assert carrier["evidence_tier"] == "REAL_E5_PUBLIC_SYNTHETIC_QUERY_CARRIER_DEV_ONLY"
+          assert carrier["real_model_revision"] == r["model_runtime"]["model_revision"]
+          assert carrier["source_snapshot_sha256"] == r["native_source_index_snapshot_id"]
+          assert carrier["same_synthetic_gold_in_scorer_only"] is True
+          assert carrier["different_unsupported_queries"] is False
+          assert carrier["sequential_not_interleaved"] is True
+          assert carrier["independent_publisher_gold"] is False
+          assert carrier["agent_task_success_measured"] is False
+          assert carrier["calibrated_no_fit"] is False
+          assert carrier["product_default_promoted"] is False
+          assert set(carrier["supported_route_recall_by_language"]) == {"en", "ko", "ja"}
+          reduced = r["common_source_description_ablation"]
+          assert reduced["evidence_tier"] == "REAL_E5_COMMON_CONTEXT_ABLATION_PUBLIC_DEV_ONLY"
+          assert reduced["source_snapshot_sha256"] == r["native_source_index_snapshot_id"]
+          assert reduced["model_revision"] == r["model_runtime"]["model_revision"]
+          assert reduced["same_original_source_and_gold"] is True
+          assert reduced["score_threshold_calibrated"] is False
+          assert reduced["heldout_independent"] is False
+          assert reduced["agent_execution_measured"] is False
+          assert reduced["production_default_changed"] is False
+          assert reduced["source_descriptions_remain_unchanged"] is True
+          assert reduced["experiment_order"] == [
+              "full_task_only", "full_account_carrier",
+              "omitted_task_only", "omitted_account_carrier",
+          ]
+          for lang, values in reduced["by_language"].items():
+              assert lang in ("en", "ko", "ja")
+              assert values["supported_count"] == 9
+              assert values["full_task_recall_count"] == r["per_language"][lang]["e5_recall_count"]
+              assert values["full_carrier_recall_count"] == carrier["supported_route_recall_by_language"][lang]["account_carrier_recall_count"]
+              assert 0 <= values["omitted_task_recall_count"] <= 9
+              assert 0 <= values["omitted_carrier_recall_count"] <= 9
+          for lang, pair in carrier["supported_route_recall_by_language"].items():
+              assert pair["count"] == 9
+              assert pair["task_only_recall_count"] == r["per_language"][lang]["e5_recall_count"]
+              assert 0 <= pair["account_carrier_recall_count"] <= 9
+          shadow = r["e5_score_diagnostic_unscored"]
+          assert shadow["evidence_tier"] == "UNSCORED_PUBLIC_SYNTHETIC_DEV_SCORE_ONLY"
+          assert shadow["observed_model_calls"] == 30
+          assert shadow["no_fit_threshold_selected"] is False
+          assert shadow["probabilities_calibrated"] is False
+          assert shadow["independent_publisher_evidence"] is False
+          assert set(shadow["by_stratum_language"]) == {"supported", "unsupported"}
+          assert all(shadow["by_stratum_language"]["supported"][lang]["count"] == 9
+                     for lang in ("en", "ko", "ja"))
+          assert all(shadow["by_stratum_language"]["unsupported"][lang]["count"] == 1
+                     for lang in ("en", "ko", "ja"))
+          assert r["independent_e2_qualified"] is False
+          assert r["calibrated_no_fit"] is False
+          assert r["agent_task_success_measured"] is False
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as f:
+              f.write("## G5 fixed K5 24-source real E5 CPU synthetic DEV only\n\n")
+              f.write("Same scoped 24 typed one-hop paths; 27 disclosed EN/KO/JA cases, 3 unsupported; no provider/agent/E2/fit.\n\n")
+              f.write("| Language | N | First5 Recall@5 | E5 Recall@5 | Unsupported nonempty E5 |\n|---|---:|---:|---:|---:|\n")
+              for lang, x in r["per_language"].items():
+                  f.write(f"| {lang} | {x['supported_count']} | {x['first5_recall_count']} | {x['e5_recall_count']} | {x['ood_nonempty_e5_count']} |\n")
+              f.write(f"\nPaired E5 rescue / regression: {r['paired_first5_to_e5']['rescued']} / {r['paired_first5_to_e5']['regressed']}.\n\n")
+              f.write("| Local lookup | p50 ms | p95 ms | p99 ms |\n|---|---:|---:|---:|\n")
+              for arm, timing in r["whole_lookup_latency_ms"].items():
+                  f.write(f"| {arm} | {timing['p50']:.2f} | {timing['p95']:.2f} | {timing['p99']:.2f} |\n")
+              f.write("\n### Unscored E5 similarity *diagnostic* (NOT no-fit calibration)\n\n")
+              f.write("Cosine values are not probabilities and no threshold was chosen. Fifth selected is NOT the sixth/boundary candidate.\n\n")
+              f.write("| Stratum | Language | N | top cosine p50 | top cosine min | top cosine max |\n|---|---|---:|---:|---:|---:|\n")
+              for group, langs in shadow["by_stratum_language"].items():
+                  for lang, row in langs.items():
+                      top = row["top_cosine"]
+                      f.write(f"| {group} | {lang} | {row['count']} | {top['p50']:.4f} | {top['min']:.4f} | {top['max']:.4f} |\n")
+              f.write("\n### Account-ID query-carrier perturbation — same public DEV task gold\n\n")
+              f.write("Same 27 source-author disclosed task intents; B appends the original fixture account carrier for all languages. Two sequential blocks, not independent or randomized; no answer/translation/tuning evidence.\n\n")
+              f.write("| Language | N | Task-only E5 Recall@5 | With account ID E5 Recall@5 | Task-only top cosine p50 | With account ID top cosine p50 |\n|---|---:|---:|---:|---:|---:|\n")
+              for lang, vals in carrier["supported_route_recall_by_language"].items():
+                  f.write(f"| {lang} | {vals['count']} | {vals['task_only_recall_count']} | {vals['account_carrier_recall_count']} | {vals['task_only_top_cosine_p50']:.4f} | {vals['account_carrier_top_cosine_p50']:.4f} |\n")
+              f.write("\n### All-candidate-identical-source-description ablation — E0 only\n\n")
+              f.write("Each option preserves the real authorized route label and typed original source proof; optional research-only candidate TEXT removes repeated descriptions only if identical across all offered options. No production change, no unseen score.\n\n")
+              f.write("| Language | N | Full/task | Full/with ID | Omit common/task | Omit common/with ID |\n|---|---:|---:|---:|---:|---:|\n")
+              for lang, vals in reduced["by_language"].items():
+                  f.write(f"| {lang} | {vals['supported_count']} | {vals['full_task_recall_count']} | {vals['full_carrier_recall_count']} | {vals['omitted_task_recall_count']} | {vals['omitted_carrier_recall_count']} |\n")
+              f.write("\nResults are published synthetic DEV only; no calibrated no-fit, publisher gold or agent task pass.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: g5-e5-overflow-pinned-cpu-${{ github.run_id }}
+          path: artifacts/g5-e5-overflow-dev/report.json
+          if-no-files-found: error
+          retention-days: 30
+
+  real-qwen-g5-typed-fixture-agent-e0:
+    needs: no-model-native-source-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 110
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install local pinned Qwen and multilingual E5 CPU inference
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
+      - name: Run paired Qwen + E5 through existing authorized G5 fixture executor
+        run: |
+          python -m scripts.research_g5_qwen_agent_fixture_dev \
+            --mode real-cpu \
+            --out artifacts/g5-agent-paired-dev/report.json
+      - name: Assert real models and publish only aggregate E0 fixture pass
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          r = json.loads(Path("artifacts/g5-agent-paired-dev/report.json").read_text(encoding="utf-8"))
+          assert r["evidence_tier"] == "E0_G5_PINNED_QWEN_E5_FIXTURE_DEV_NOT_E2"
+          assert r["real_qwen_generation_measured"] is True
+          assert r["real_e5_ranking_measured"] is True
+          assert r["real_native_provider_execution"] is False
+          assert r["independent_e2_qualified"] is False
+          assert r["actual_final_answer_correctness_measured"] is False
+          assert r["calibrated_no_fit"] is False
+          assert r["product_default_promoted"] is False
+          assert r["case_count"] == 6 and r["supported_cases"] == 3
+          assert r["unsupported_cases"] == 3 and r["typed_native_consumer_paths"] == 24
+          assert r["runtime"]["agent_revision"] == "c1899de289a04d12100db370d81485cdf75e47ca"
+          assert r["runtime"]["e5_revision"] == "fd1525a9fd15316a2d503bf26ab031a61d056e98"
+          prompt_ab = r["prompt_comparison"]
+          assert prompt_ab["evidence_tier"] == "PUBLIC_SYNTHETIC_DEV_PROMPT_CONFOUND_DIAGNOSTIC"
+          assert prompt_ab["prompt_conditions"] == [
+              "legacy_unregistered_example", "grounded_inventory_only",
+          ]
+          assert prompt_ab["same_original_synthetic_cases"] is True
+          assert prompt_ab["heldout_independent"] is False
+          assert prompt_ab["baseline"] == r["post_execution_e0_stage_funnel"]
+          assert set(prompt_ab["inventory_grounded"]) == set(r["arms"])
+          abba = r["prompt_order_balance"]
+          assert abba["evidence_tier"] == "PUBLIC_SYNTHETIC_DEV_ABBA_PROMPT_ORDER_DIAGNOSTIC"
+          assert abba["sequence"] == [
+              "legacy_unregistered_example", "grounded_inventory_only",
+              "grounded_inventory_only", "legacy_unregistered_example",
+          ]
+          assert abba["author_visible_test_cases"] is True
+          assert abba["order_balanced_for_two_blocks"] is True
+          assert abba["randomized"] is False
+          assert abba["independent_e2_qualified"] is False
+          assert abba["calibrated_no_fit"] is False
+          assert abba["scoring_authority"] is False
+          assert abba["model_prompt_tuning_on_public_dev"] is True
+          assert abba["original_source_snapshot_sha256"] == r["source_snapshot_sha256"]
+          for prompt in abba["sequence"]:
+              assert set(abba["by_prompt_and_source_arm"][prompt]) == set(r["arms"])
+              for arm, observation in abba["by_prompt_and_source_arm"][prompt].items():
+                  assert observation["supported_denominator"] == 6
+                  assert observation["unsupported_denominator"] == 6
+                  assert len(observation["by_position"]) == 2
+          reduced = r["common_description_agent_ablation"]
+          assert reduced["evidence_tier"] == "REAL_PINNED_QWEN_E5_COMMON_SOURCE_DEV_NOT_E2"
+          assert reduced["condition"] == "grounded_prompt_e5_fixed5_omit_all_identical_source_description"
+          assert reduced["source_snapshot_sha256"] == r["source_snapshot_sha256"]
+          assert reduced["original_synthetic_cases_unchanged"] is True
+          assert reduced["same_original_scoring_and_authorized_executor"] is True
+          assert reduced["independent_heldout"] is False
+          assert reduced["calibrated_no_fit"] is False
+          assert reduced["real_external_provider_execution"] is False
+          assert reduced["default_policy_changed"] is False
+          for key in (
+              "reference_legacy_grounded", "reference_reverse_grounded",
+              "shortened_ranker_observation",
+          ):
+              stage = reduced[key]
+              assert stage["supported_cases"] == stage["unsupported_cases"] == 3
+              assert 0 <= stage["supported_fixture_completed"] <= stage["supported_required_route_visible"] <= 3
+              assert 0 <= stage["unsupported_correct_terminal_refusal"] <= stage["unsupported_no_call"] <= 3
+          assert set(reduced["shortened_ranker_by_language"]) == {"en", "ko", "ja"}
+          assert reduced["selector_ranking_not_forwarded_to_agent"] is True
+          rank_evidence = r["post_execution_private_rank_diagnostic"]
+          assert rank_evidence["evidence_tier"] == "PUBLIC_SYNTHETIC_DEV_POST_EXECUTION_RANK_ONLY"
+          assert rank_evidence["selector_rank_is_model_visible_order"] is False
+          assert rank_evidence["tool_or_query_names_exported"] is False
+          assert rank_evidence["attempt_arguments_or_generated_text_exported"] is False
+          assert rank_evidence["independent_e2_qualified"] is False
+          assert set(rank_evidence["by_arm_language"]) == set(r["arms"])
+          for arm, languages in rank_evidence["by_arm_language"].items():
+              assert set(languages) == {"en", "ko", "ja"}
+              assert sum(
+                  item["expected_rank_in_selector_order"] is not None
+                  for item in languages.values()
+              ) == r["post_execution_e0_stage_funnel"][arm]["supported_required_route_visible"]
+          for title, stage_key in (
+              ("reference_grounded_positions_by_language", "reference_legacy_grounded"),
+              ("reference_reverse_positions_by_language", "reference_reverse_grounded"),
+              ("shortened_positions_by_language", "shortened_ranker_observation"),
+          ):
+              rows = reduced[title]
+              assert set(rows) == {"en", "ko", "ja"}
+              assert sum(
+                  item["expected_rank_in_selector_order"] is not None
+                  for item in rows.values()
+              ) == reduced[stage_key]["supported_required_route_visible"]
+              for item in rows.values():
+                  for key in (
+                      "expected_rank_in_selector_order",
+                      "first_attempt_rank_in_selector_order",
+                      "first_attempt_slot_in_model_visible_order",
+                  ):
+                      value = item[key]
+                      assert value is None or type(value) is int and 1 <= value <= 5
+                  assert item["first_attempt_was_expected_operation"] in (True, False, None)
+                  assert type(item["first_attempt_outside_top5"]) is bool
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as f:
+              f.write("## G5 actual pinned Qwen+E5 paired synthetic fixture-agent DEV (NOT E2)\n\n")
+              f.write("Same six disclosed generated tasks and current native principal permissions. Actual Qwen calls the unchanged FrozenCorpusExecutor **fixture only**; no external provider, answer-correctness oracle or calibrated no-fit.\n\n")
+              f.write("| Arm | Lang | Supported fixture complete / 1 | Unsupported strict no-call / 1 | Unsupported tool attempted / 1 | selection p95 ms | episode p95 ms |\n|---|---|---:|---:|---:|---:|---:|\n")
+              for arm, langs in r["by_arm_language"].items():
+                  for lang, x in langs.items():
+                      f.write(f"| {arm} | {lang} | {x['supported_fixture_completed']} | {x['unsupported_strict_no_call']} | {x['unsupported_tool_calls']} | {x['candidate_selection_ms_p95']:.2f} | {x['episode_ms_p95']:.2f} |\n")
+              f.write("\n### Post-execution funnel — route visible is not agent success\n\n")
+              f.write("| Arm | Required path exposed /3 | Fixture complete /3 | Completed with final turn /3 | OOD no-call /3 | OOD exact refusal /3 | OOD terminal mismatch /3 |\n|---|---:|---:|---:|---:|---:|---:|\n")
+              for arm, stage in r["post_execution_e0_stage_funnel"].items():
+                  assert stage["supported_cases"] == stage["unsupported_cases"] == 3
+                  assert 0 <= stage["supported_completed_with_final_turn"] <= stage["supported_fixture_completed"] <= stage["supported_required_route_visible"] <= 3
+                  assert 0 <= stage["unsupported_correct_terminal_refusal"] <= stage["unsupported_no_call"] <= 3
+                  f.write(f"| {arm} | {stage['supported_required_route_visible']} | {stage['supported_fixture_completed']} | {stage['supported_completed_with_final_turn']} | {stage['unsupported_no_call']} | {stage['unsupported_correct_terminal_refusal']} | {stage['unsupported_terminal_mismatch']} |\n")
+
+              f.write("\n### Prompt diagnostic on same public DEV tasks — NOT a new holdout\n\n")
+              f.write("Original example names an unregistered tool; treatment names no tool, requiring selection from the provided inventory. Counterfactual is sequential, not prompt-order counterbalanced.\n\n")
+              f.write("| Prompt | Source arm | Route exposed /3 | Fixture completed /3 | Wrong op /3 | OOD no-call /3 | Exact refusal /3 |\n|---|---|---:|---:|---:|---:|---:|\n")
+              for name, study in (
+                  ("legacy_unregistered_example", prompt_ab["baseline"]),
+                  ("grounded_inventory_only", prompt_ab["inventory_grounded"]),
+              ):
+                  for arm, stage in study.items():
+                      assert 0 <= stage["supported_fixture_completed"] <= stage["supported_required_route_visible"] <= 3
+                      f.write(f"| {name} | {arm} | {stage['supported_required_route_visible']} | {stage['supported_fixture_completed']} | {stage['supported_wrong_operation_observed']} | {stage['unsupported_no_call']} | {stage['unsupported_correct_terminal_refusal']} |\n")
+              f.write("\n### Two-block ABBA prompt-order diagnostic — repeated public DEV only\n\n")
+              f.write("A = original unregistered example, B = inventory-only; sequence **A→B→B→A**. This is balanced for two block positions but NOT randomized, unseen, causal, independent E2 or a real provider success rate.\n\n")
+              f.write("| Prompt | K5 source arm | Exposed required /6 | Wrong operation /6 | Fixture complete /6 | OOD no-call /6 | Exact OOD refusal /6 |\n|---|---|---:|---:|---:|---:|---:|\n")
+              for prompt, arms in abba["by_prompt_and_source_arm"].items():
+                  for arm, values in arms.items():
+                      x = values["two_position_pooled_counts"]
+                      assert 0 <= x["supported_fixture_completed"] <= x["supported_required_route_visible"] <= 6
+                      assert 0 <= x["unsupported_correct_terminal_refusal"] <= x["unsupported_no_call"] <= 6
+                      f.write(f"| {prompt} | {arm} | {x['supported_required_route_visible']} | {x['supported_wrong_operation_observed']} | {x['supported_fixture_completed']} | {x['unsupported_no_call']} | {x['unsupported_correct_terminal_refusal']} |\n")
+              f.write("\n### Qwen same-six-task candidate-description ablation (not E2)\n\n")
+              f.write("Only previously repeated source text omitted from E5's authorized option representations, original route names/typed source/agent prompt and fixture grader unchanged; third arm follows full ABBA so **time/order confounded**.\n\n")
+              f.write("| Grounded E5 condition | Required route exposed /3 | Fixture complete /3 | Wrong operation /3 | Exact OOD refusal /3 |\n|---|---:|---:|---:|---:|\n")
+              for key in ("reference_legacy_grounded", "reference_reverse_grounded", "shortened_ranker_observation"):
+                  row = reduced[key]
+                  f.write(f"| {key} | {row['supported_required_route_visible']} | {row['supported_fixture_completed']} | {row['supported_wrong_operation_observed']} | {row['unsupported_correct_terminal_refusal']} |\n")
+              f.write("\n### Ranked E5 Top-5 vs Qwen name-sorted visible tool slot (post-run scorer only)\n\n")
+              f.write("The original executor SORTS selected tool names before model display; selector rank was **not** a model-visible ordinal. Rank receipts are scored after the executor, never in prompts, logs or raw gold exports.\n\n")
+              f.write("| Condition | Language | Expected E5 rank | First attempted E5 rank | First attempted visible slot | First attempted expected operation |\n|---|---|---:|---:|---:|---|\n")
+              for name, key in (
+                  ("ABBA grounded first", "reference_grounded_positions_by_language"),
+                  ("ABBA grounded second", "reference_reverse_positions_by_language"),
+                  ("Omit common source text", "shortened_positions_by_language"),
+              ):
+                  for lang, item in reduced[key].items():
+                      show = lambda value: "-" if value is None else str(value)
+                      f.write(f"| {name} | {lang} | {show(item['expected_rank_in_selector_order'])} | {show(item['first_attempt_rank_in_selector_order'])} | {show(item['first_attempt_slot_in_model_visible_order'])} | {show(item['first_attempt_was_expected_operation'])} |\n")
+              f.write("\n**All E2/release gates HOLD**. These original scripted fixture tasks are publicly authored DEV, not independent publisher-native evidence.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: g5-qwen-e5-agent-fixture-dev-${{ github.run_id }}
+          path: artifacts/g5-agent-paired-dev/report.json
+          if-no-files-found: error
+          retention-days: 30
