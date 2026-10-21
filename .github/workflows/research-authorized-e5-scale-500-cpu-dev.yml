@@ -10,6 +10,9 @@ on:
       - "scripts/research_bounded_authorized_semantic_diagnostic.py"
       - "scripts/research_authorized_fixed5_decision_bridge.py"
       - "tests/test_research_authorized_fixed5_decision_bridge.py"
+      - "scripts/research_authorized_fingerprint_scan_ab_cpu_dev.py"
+      - "scripts/research_authorized_fingerprint_selector_paired_e5_cpu_dev.py"
+      - "tests/test_research_authorized_fingerprint_selector_paired_e5_cpu_dev.py"
       - "scripts/research_authorized_snapshot_reuse_ab_cpu_dev.py"
       - "tests/test_research_authorized_snapshot_reuse_ab_cpu_dev.py"
       - "research/autoresearch/authorized-e5-scale-500-cpu-dev.md"
@@ -37,9 +40,53 @@ jobs:
         run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
       - name: Verify 13 to 500 actual registry source and K5 bound, no E2 claims
         run: |
-          ruff check scripts/evaluate_authorized_e5_scale_500_cpu_dev.py tests/test_evaluate_authorized_e5_scale_500_cpu_dev.py scripts/research_authorized_agent_tool_surface.py scripts/research_bounded_authorized_semantic_diagnostic.py scripts/research_authorized_fixed5_decision_bridge.py tests/test_research_authorized_fixed5_decision_bridge.py scripts/research_authorized_snapshot_reuse_ab_cpu_dev.py tests/test_research_authorized_snapshot_reuse_ab_cpu_dev.py
-          python -m pytest -q tests/test_evaluate_authorized_e5_scale_500_cpu_dev.py tests/test_research_authorized_fixed5_decision_bridge.py tests/test_research_bounded_authorized_semantic_diagnostic.py tests/test_research_authorized_agent_tool_surface.py tests/test_research_authorized_snapshot_reuse_ab_cpu_dev.py
+          ruff check scripts/evaluate_authorized_e5_scale_500_cpu_dev.py tests/test_evaluate_authorized_e5_scale_500_cpu_dev.py scripts/research_authorized_agent_tool_surface.py scripts/research_bounded_authorized_semantic_diagnostic.py scripts/research_authorized_fixed5_decision_bridge.py tests/test_research_authorized_fixed5_decision_bridge.py scripts/research_authorized_snapshot_reuse_ab_cpu_dev.py tests/test_research_authorized_snapshot_reuse_ab_cpu_dev.py scripts/research_authorized_fingerprint_selector_paired_e5_cpu_dev.py tests/test_research_authorized_fingerprint_selector_paired_e5_cpu_dev.py
+          python -m pytest -q tests/test_evaluate_authorized_e5_scale_500_cpu_dev.py tests/test_research_authorized_fixed5_decision_bridge.py tests/test_research_bounded_authorized_semantic_diagnostic.py tests/test_research_authorized_agent_tool_surface.py tests/test_research_authorized_snapshot_reuse_ab_cpu_dev.py tests/test_research_authorized_fingerprint_selector_paired_e5_cpu_dev.py
           python -m scripts.evaluate_authorized_e5_scale_500_cpu_dev --mode validate
+
+  exact-fingerprint-scan-paired-cpu-dev:
+    needs: native-source-and-no-model-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install source-only benchmark requirements
+        run: python -m pip install ".[mcp]" "ruff>=0.6,<1"
+      - name: Exact-original vs one-hash-per-detached-tool paired source scan
+        run: |
+          ruff check scripts/research_authorized_fingerprint_scan_ab_cpu_dev.py
+          python -m scripts.research_authorized_fingerprint_scan_ab_cpu_dev \
+            --out artifacts/authorized-e5-scale-500-dev/fingerprint-paired.json
+      - name: Publish CPU scan-only paired evidence
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d = json.loads(Path("artifacts/authorized-e5-scale-500-dev/fingerprint-paired.json").read_text(encoding="utf-8"))
+          assert d["surface"] == "SYNTHETIC_NATIVE_FINGERPRINT_SCAN_E0_DEV_ONLY"
+          assert not d["independent_agent_e2"] and not d["model_inference_executed"]
+          assert all(s["all_paired_fingerprints_exact"] and s["paired_source_fingerprint_checks"] == 24 for s in d["scales"].values())
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
+              f.write("## Detached native tool fingerprint scan, paired no-model CPU DEV\n\n")
+              f.write("Exact original source fingerprint scan vs one-tool-one-hash. 24 counterbalanced pairs/size; source and principal identical, no model, no agent, no E2 or SLA.\n\n")
+              f.write("| Native routes | Original p50 / p95 ms | Optimized p50 / p95 ms | Faster pairs |\n|---:|---:|---:|---:|\n")
+              for size, row in d["scales"].items():
+                  old = row["scans"]["original_full_per_endpoint"]
+                  new = row["scans"]["once_per_detached_tool"]
+                  f.write(f"| {size} | {old['p50_ms']:.2f} / {old['p95_ms']:.2f} | {new['p50_ms']:.2f} / {new['p95_ms']:.2f} | {row['paired_delta_new_minus_original']['optimized_faster_count']}/24 |\n")
+              f.write("\nPercentiles are independent, only the source fingerprint scan is measured; no downstream end-to-end claim.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-fingerprint-paired-cpu-dev-${{ github.run_id }}
+          path: artifacts/authorized-e5-scale-500-dev/fingerprint-paired.json
+          if-no-files-found: error
+          retention-days: 30
 
   actual-pinned-e5-cpu-scale-dev:
     needs: native-source-and-no-model-contract
@@ -71,6 +118,10 @@ jobs:
         run: |
           python -m scripts.research_authorized_snapshot_reuse_ab_cpu_dev \
             --out artifacts/authorized-e5-scale-500-dev/paired.json
+      - name: Pair original and optimized full-selector actual E5 CPU
+        run: |
+          python -m scripts.research_authorized_fingerprint_selector_paired_e5_cpu_dev \
+            --out artifacts/authorized-e5-scale-500-dev/selector-fingerprint-paired.json
       - name: Publish non-E2, no-fit-not-calibrated summary
         if: success()
         run: |
@@ -97,6 +148,26 @@ jobs:
                       combined = stages["source_capture_plus_selection_latency_ms"]["p95"]
                       f.write(f"| {size} | {arm} | {capture:.2f} | {model:.2f} | {other:.2f} | {combined:.2f} |\n")
               f.write("Stage percentiles **cannot be added** to derive a total p95. Metrics use warm E5 passage cache; no production SLA.\n")
+              f.write("\n### E5 opt-in CPU internal stage p95 at native 500\n\n")
+              f.write("Timing-only instrumentation; the selector constructor is outside candidate selection. `choose_sync` includes validation as well as model inference. Stages are independent distributions and **not additive p95**.\n\n")
+              f.write("| Stage | p50 (ms) | p95 (ms) | p99 (ms) |\n|---|---:|---:|---:|\n")
+              for stage, stats in report["results"]["500"]["e5_substage_profile_ms"].items():
+                  f.write(f"| {stage} | {stats['p50']:.2f} | {stats['p95']:.2f} | {stats['p99']:.2f} |\n")
+              f.write("\n### Paired error attribution at native 500 (same 84 DEV queries)\n\n")
+              f.write("Positive = supported query's true route in fixed Top-5; a rescue can coexist with another regression. These are NOT task successes or independently held-out results.\n\n")
+              f.write("| Arm vs lexical | Language | Supported | K5 rescued | K5 regressed | Top1 rescued | Top1 regressed | Unsupported still nonempty |\n")
+              f.write("|---|---|---:|---:|---:|---:|---:|---:|\n")
+              paired = report["results"]["500"]["paired_attribution"]
+              for comparison, languages in paired.items():
+                  for language in ("all", "en", "ko", "ja", "es", "de", "mixed"):
+                      row = languages[language]
+                      f.write(
+                          f"| {comparison} | {language} | {row['supported']} | "
+                          f"{row['at_5']['rescued']} | {row['at_5']['regressed']} | "
+                          f"{row['at_1']['rescued']} | {row['at_1']['regressed']} | "
+                          f"{row['unsupported_nonempty_both']}/{row['unsupported']} |\n"
+                      )
+              f.write("\nNo gold route IDs, task prompts or per-case predictions are published in this summary. Do not pick new coefficients or thresholds on exposed DEV and call them independently validated.\n")
               paired = json.loads(Path("artifacts/authorized-e5-scale-500-dev/paired.json").read_text(encoding="utf-8"))
               f.write("\n### Paired 500-route actual E5 CPU A/B, same-run\n\n")
               f.write("84 original tasks, counterbalanced order, identical principal and K5. No independent E2 or agent SLA.\n\n")
@@ -104,6 +175,24 @@ jobs:
               for arm, metrics in paired["latency_summary"].items():
                   f.write(f"| {arm} | {metrics['p50_ms']:.2f} | {metrics['p95_ms']:.2f} |\n")
               f.write(f"\nMedian paired reuse minus old reread: {paired['paired_delta_summary']['median_reuse_minus_legacy_ms']:.2f} ms; reuse faster in {paired['paired_delta_summary']['reuse_faster_count']}/84. All decisions identical: {paired['all_paired_decisions_identical']}.\n")
+              fingerprint_ab = json.loads(Path("artifacts/authorized-e5-scale-500-dev/selector-fingerprint-paired.json").read_text(encoding="utf-8"))
+              assert fingerprint_ab["full_84_case_evaluation"]
+              assert fingerprint_ab["all_exact_order_status_bytes_identical"]
+              assert fingerprint_ab["evidence_tier"] == "REAL_E5_CPU_PAIRED_FINGERPRINT_SELECTOR_DEV_ONLY"
+              f.write("\n### Paired true E5 CPU whole-selector including constructor (84 same DEV tasks)\n\n")
+              f.write("Same-run counterbalanced original/optimized validators; actual unchanged E5 model. The result is synthetic DEV only, no external agent E2 or calibrated no-fit.\n\n")
+              f.write("| Arm | p50 (ms) | p95 (ms) |\n|---|---:|---:|\n")
+              for name, stats in fingerprint_ab["selector_including_constructor_latency_ms"].items():
+                  f.write(f"| {name} | {stats['p50_ms']:.2f} | {stats['p95_ms']:.2f} |\n")
+              f.write(f"\nOptimized faster on {fingerprint_ab['paired_delta_summary']['optimized_faster_count']}/84 and every model ranking/status/model-input byte count matches exactly.\n")
+              capture_stats = fingerprint_ab["shared_authorized_source_capture_latency_ms"]
+              assert capture_stats["p95_ms"] >= capture_stats["p50_ms"] >= 0
+              f.write("\n### Shared source capture + one complete E5 selector per query\n\n")
+              f.write("A single authenticated source snapshot is shared by the two paired counterfactuals. One matched source-capture observation is added to each same-query selector observation *before* percentile aggregation. These are **not** a sum of stage p95 values, nor hosted agent/provider end-to-end latency.\n\n")
+              f.write(f"Shared source capture p50 / p95: {capture_stats['p50_ms']:.2f} / {capture_stats['p95_ms']:.2f} ms.\n\n")
+              f.write("| Arm | Capture + constructor + selection p50 (ms) | p95 (ms) |\n|---|---:|---:|\n")
+              for name, stats in fingerprint_ab["shared_capture_plus_selector_latency_ms"].items():
+                  f.write(f"| {name} | {stats['p50_ms']:.2f} | {stats['p95_ms']:.2f} |\n")
               f.write(f"\nFixed K: {report['fixed_k']}. Source SHA256: `{report['source_corpus_sha256']}`. No automatic promotion.\n")
           PY
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -113,5 +202,6 @@ jobs:
           path: |
             artifacts/authorized-e5-scale-500-dev/report.json
             artifacts/authorized-e5-scale-500-dev/paired.json
+            artifacts/authorized-e5-scale-500-dev/selector-fingerprint-paired.json
           if-no-files-found: error
           retention-days: 30

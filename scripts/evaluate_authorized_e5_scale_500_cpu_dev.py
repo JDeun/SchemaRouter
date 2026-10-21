@@ -50,6 +50,16 @@ PROFILED_STAGE_FIELDS = (
     "nonbackend_selection_latency_ms",
     "source_capture_plus_selection_latency_ms",
 )
+E5_PROFILE_STAGE_FIELDS = (
+    "selector_constructor_ms",
+    "bridge_prevalidation_ms",
+    "source_validation_ms",
+    "request_materialization_ms",
+    "choose_sync_ms",
+    "choose_sync_nonbackend_ms",
+    "post_decision_validation_ms",
+    "bridge_postvalidation_ms",
+)
 
 
 class _ProfiledBackend:
@@ -174,6 +184,143 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+
+def aggregate_e5_substages(rows: list[dict[str, float]]) -> dict[str, Any]:
+    """Aggregate all original DEV requests without emitting per-case values."""
+    if len(rows) != 84:
+        raise ValueError("complete E5 substage profiling requires 84 original cases")
+    for row in rows:
+        if type(row) is not dict or set(row) != set(E5_PROFILE_STAGE_FIELDS):
+            raise ValueError("untrusted E5 substage keys")
+        if any(
+            type(value) is not float or not math.isfinite(value) or value < 0
+            for value in row.values()
+        ):
+            raise ValueError("invalid E5 substage timing")
+        if row["choose_sync_nonbackend_ms"] > row["choose_sync_ms"]:
+            raise ValueError("E5 nonbackend choice timing exceeds choice call")
+    return {
+        stage: {
+            "p50": percentile([row[stage] for row in rows], 50),
+            "p95": percentile([row[stage] for row in rows], 95),
+            "p99": percentile([row[stage] for row in rows], 99),
+        }
+        for stage in E5_PROFILE_STAGE_FIELDS
+    }
+
+
+def paired_retrieval_error_attribution(
+    arm_rows: dict[str, list[dict[str, Any]]],
+) -> dict[str, Any]:
+    """Explain fixed-K model gains *and losses* on exact same DEV requests.
+
+    Row alignment is source-authenticated by run_scaled_retrieval_dev and
+    validated again here. Only aggregate counts leave the evaluation
+    process: no query, source gold, tool IDs or per-case model predictions.
+    """
+    if set(arm_rows) != set(ARMS):
+        raise ValueError("paired arms must be the preregistered three conditions")
+    sizes = {len(arm_rows[arm]) for arm in ARMS}
+    if sizes != {84}:
+        raise ValueError("paired attribution requires all 84 original DEV cases")
+
+    primary = arm_rows[ARMS[0]]
+    for arm in ARMS:
+        for index, row in enumerate(arm_rows[arm]):
+            if (
+                type(row.get("case_ordinal")) is not int
+                or row["case_ordinal"] != index
+                or type(row.get("case_id")) is not str
+                or not row["case_id"]
+                or row.get("kind") not in {"supported", "unsupported"}
+                or row.get("language") not in LANGUAGES
+                or (row["case_id"], row["kind"], row["language"]) != (
+                    primary[index]["case_id"], primary[index]["kind"],
+                    primary[index]["language"],
+                )
+                or type(row.get("nonempty_unsupported")) is not bool
+            ):
+                raise ValueError("paired task identity or type drift")
+            for field in ("hit_at_1", "hit_at_5"):
+                expected_type = bool if row["kind"] == "supported" else type(None)
+                if type(row.get(field)) is not expected_type:
+                    raise ValueError("invalid paired retrieval outcome or support label")
+
+    outcome: dict[str, Any] = {}
+    for other in ARMS[1:]:
+        sections: dict[str, Any] = {}
+        for lang in ("all", *LANGUAGES):
+            indexes = [
+                i for i, row in enumerate(primary)
+                if lang == "all" or row["language"] == lang
+            ]
+            supported = [
+                i for i in indexes if primary[i]["kind"] == "supported"
+            ]
+            unsupported = [
+                i for i in indexes if primary[i]["kind"] == "unsupported"
+            ]
+            if len(supported) != (48 if lang == "all" else 8):
+                raise ValueError("paired supported denominators drift")
+            if len(unsupported) != (36 if lang == "all" else 6):
+                raise ValueError("paired unsupported denominators drift")
+            delta: dict[str, Any] = {
+                "supported": len(supported),
+                "unsupported": len(unsupported),
+            }
+            for k in (1, 5):
+                key = f"hit_at_{k}"
+                before_hits = sum(primary[i][key] for i in supported)
+                after_hits = sum(arm_rows[other][i][key] for i in supported)
+                rescued = sum(
+                    not primary[i][key] and arm_rows[other][i][key]
+                    for i in supported
+                )
+                lost = sum(
+                    primary[i][key] and not arm_rows[other][i][key]
+                    for i in supported
+                )
+                both = sum(
+                    primary[i][key] and arm_rows[other][i][key]
+                    for i in supported
+                )
+                neither = sum(
+                    not primary[i][key] and not arm_rows[other][i][key]
+                    for i in supported
+                )
+                if (
+                    before_hits + rescued - lost != after_hits
+                    or both + rescued + lost + neither != len(supported)
+                ):
+                    raise ValueError("paired attribution accounting mismatch")
+                delta[f"at_{k}"] = {
+                    "lexical_hits": before_hits,
+                    "candidate_hits": after_hits,
+                    "rescued": rescued,
+                    "regressed": lost,
+                    "both_hit": both,
+                    "neither_hit": neither,
+                }
+            delta["unsupported_nonempty_both"] = sum(
+                primary[i]["nonempty_unsupported"]
+                and arm_rows[other][i]["nonempty_unsupported"]
+                for i in unsupported
+            )
+            delta["unsupported_newly_nonempty"] = sum(
+                not primary[i]["nonempty_unsupported"]
+                and arm_rows[other][i]["nonempty_unsupported"]
+                for i in unsupported
+            )
+            delta["unsupported_newly_empty"] = sum(
+                primary[i]["nonempty_unsupported"]
+                and not arm_rows[other][i]["nonempty_unsupported"]
+                for i in unsupported
+            )
+            sections[lang] = delta
+        outcome[f"{ARMS[0]}_vs_{other}"] = sections
+    return outcome
+
+
 def run_scaled_retrieval_dev(
     corpus: dict[str, Any],
     digest: str,
@@ -202,7 +349,8 @@ def run_scaled_retrieval_dev(
         arm_rows: dict[str, list[dict[str, Any]]] = {
             arm: [] for arm in ARMS
         }
-        for case in corpus["cases"][:case_limit]:
+        e5_stage_rows: list[dict[str, float]] = []
+        for case_ordinal, case in enumerate(corpus["cases"][:case_limit]):
             query = case["query"]
             capture_began = time.perf_counter_ns()
             view = capture_authorized_agent_tool_surface(
@@ -221,16 +369,31 @@ def run_scaled_retrieval_dev(
             lexical_ms = (time.perf_counter_ns() - begin) / 1e6
 
             traced_backend = _ProfiledBackend(backend)
+            e5_parts: dict[str, float] = {}
+            begin_init = time.perf_counter_ns()
             e5_selector = AuthorizedFixed5DecisionSelector(
                 view, traced_backend,
                 max_model_input_bytes=STRESS_MODEL_INPUT_BUDGET_BYTES,
+                stage_timings_ms=e5_parts,
             )
+            init_ms = (time.perf_counter_ns() - begin_init) / 1e6
             begin = time.perf_counter_ns()
             semantic = e5_selector(query, visible)
             semantic_ms = (time.perf_counter_ns() - begin) / 1e6
             if traced_backend.calls != 1:
                 raise ValueError("E5 selector used unexpected inference calls")
             semantic_backend_ms = traced_backend.elapsed_ns / 1e6
+            # The synchronous choice includes model inference and host-owned
+            # response validation; never mislabel all of it model-only.
+            if e5_parts.get("choose_sync_ms", -1.0) < semantic_backend_ms:
+                raise ValueError("E5 choice time shorter than measured backend")
+            e5_parts["selector_constructor_ms"] = init_ms
+            e5_parts["choose_sync_nonbackend_ms"] = (
+                e5_parts["choose_sync_ms"] - semantic_backend_ms
+            )
+            if set(e5_parts) != set(E5_PROFILE_STAGE_FIELDS):
+                raise ValueError("missing E5 CPU substage instrument")
+            e5_stage_rows.append(dict(e5_parts))
 
             hybrid_selector = AuthorizedHybridFixed5Selector(
                 view, traced_backend,
@@ -265,6 +428,8 @@ def run_scaled_retrieval_dev(
                 if not supported and expected is not None:
                     raise ValueError("unsupported gold corrupted")
                 arm_rows[arm].append({
+                    "case_ordinal": case_ordinal,
+                    "case_id": case["id"],
                     "kind": case["kind"], "language": case["language"],
                     "hit_at_1": selected[0] == expected if supported else None,
                     "hit_at_5": expected in selected if supported else None,
@@ -284,6 +449,16 @@ def run_scaled_retrieval_dev(
             "catalog_sha256": catalog_sha,
             "registered_native_routes": size,
             "cases_scored": len(arm_rows[ARMS[0]]),
+            "e5_substage_profile_ms": (
+                aggregate_e5_substages(e5_stage_rows)
+                if case_limit is None else {"smoke_only_not_scored": True}
+            ),
+            "paired_attribution": (
+                paired_retrieval_error_attribution(arm_rows)
+                if case_limit is None else {
+                    "smoke_only_not_scored": True,
+                }
+            ),
             "arms": {
                 arm: _summary(rows)
                 if case_limit is None else {
@@ -317,7 +492,10 @@ def run_scaled_retrieval_dev(
             "snapshot+selection is a summed shared-snapshot diagnostic, not "
             "a standalone hosted agent latency. Nonbackend overhead includes "
             "authorized retrieval, native schema formatting and validation. "
-            "Embedding passage cache is shared across query order."
+            "Embedding passage cache is shared across query order. "
+            "E5 selector constructor is timed separately from selection; "
+            "choose_sync includes host validation, not just backend inference; "
+            "profiling stages have independent percentiles and overhead."
         ),
     }
 
