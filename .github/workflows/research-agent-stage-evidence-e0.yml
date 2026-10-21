@@ -5,10 +5,13 @@ on:
   pull_request:
     paths:
       - "scripts/research_agent_stage_evidence_e0.py"
+      - "scripts/research_agent_fixture_safety_strata_e0.py"
       - "scripts/agent_utility_generated_common.py"
       - "tests/test_research_agent_stage_evidence_e0.py"
+      - "tests/test_research_agent_fixture_safety_strata_e0.py"
       - "tests/test_research_authorized_agent_tool_surface.py"
       - "research/autoresearch/agent-stage-evidence-e0.md"
+      - "research/autoresearch/agent-final-observation-e0.md"
       - ".github/workflows/research-agent-stage-evidence-e0.yml"
 
 permissions:
@@ -33,5 +36,5 @@ jobs:
         run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
       - name: Verify strict stage classification and artifact redaction
         run: |
-          ruff check scripts/research_agent_stage_evidence_e0.py scripts/agent_utility_generated_common.py tests/test_research_agent_stage_evidence_e0.py tests/test_research_authorized_agent_tool_surface.py
-          python -m pytest -q tests/test_research_agent_stage_evidence_e0.py tests/test_research_authorized_agent_tool_surface.py
+          ruff check scripts/research_agent_stage_evidence_e0.py scripts/research_agent_fixture_safety_strata_e0.py scripts/agent_utility_generated_common.py tests/test_research_agent_stage_evidence_e0.py tests/test_research_agent_fixture_safety_strata_e0.py tests/test_research_authorized_agent_tool_surface.py
+          python -m pytest -q tests/test_research_agent_stage_evidence_e0.py tests/test_research_agent_fixture_safety_strata_e0.py tests/test_research_authorized_agent_tool_surface.py
