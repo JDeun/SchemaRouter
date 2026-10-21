@@ -173,6 +173,7 @@ def sanitized_e0_trace(
     )
     # observed_stages validated the attempt list and all required booleans.
     attempts = row["attempts"]
+    attempts = row["attempts"]
     # A synthetic grader can declare completion without enough *recorded*
     # tool-step evidence for an execution-backed final-turn witness. Compare
     # post-execution attempts to the exact per-turn serialized calls without
