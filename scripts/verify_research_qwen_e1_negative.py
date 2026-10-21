@@ -36,7 +36,8 @@ STUDY_KEYS = frozenset({
 })
 CAUTIONS = [
     "N=3 disclosed language cases per arm, not a disjoint benchmark",
-    "Korean candidate suffered live geocoding timeout, so throughput and token aggregates are not causal",
+    ("Korean candidate suffered live geocoding timeout, so throughput "
+     "and token aggregates are not causal"),
     "English opt-in reminder did not recover second tool call",
     "Japanese and Korean baseline terminal shapes were wrong after verified two sources",
     "Never modify historical frozen #432 outcomes or release PR #1356 based on this snapshot",
