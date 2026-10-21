@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Mapping, Sequence
 from contextlib import nullcontext
 from typing import Any, TypeVar
@@ -173,31 +174,88 @@ def _scoped_public_value_shape(schema: dict[str, Any]) -> dict[str, Any]:
     return {}
 
 
-def _scoped_public_output_field(field: FieldSpec) -> FieldSpec:
-    """Expose an authorized field, never source-owned descriptive sidecars.
+def _scoped_label_words(value: str) -> tuple[str, ...]:
+    """Compare source identifiers at Unicode word/underscore boundaries."""
+    return tuple(re.findall(r"[^\W_]+", value.casefold()))
 
-    The field's canonical name and semantic ID remain to preserve exact
-    host-reviewed field matching. Descriptions, aliases and projection paths
-    are NOT authorizations to reveal related hidden source column names.
-    Trusted original provider projection stays in the registry unchanged.
+
+def _scoped_denied_field_markers(
+    fields: list[FieldSpec],
+    visible_field_names: set[str],
+) -> tuple[tuple[str, ...], ...]:
+    """Only explicitly denied native names/aliases, never guessed secrets."""
+    markers: list[tuple[str, ...]] = []
+    for field in fields:
+        if field.name in visible_field_names:
+            continue
+        for label in (field.name, *field.aliases):
+            words = _scoped_label_words(label)
+            if words:
+                markers.append(words)
+    return tuple(markers)
+
+
+def _scoped_echoes_denied_label(
+    value: str | None,
+    denied_markers: tuple[tuple[str, ...], ...],
+) -> bool:
+    if value is None or not denied_markers:
+        return False
+    words = _scoped_label_words(value)
+    for denied in denied_markers:
+        length = len(denied)
+        if any(words[i:i + length] == denied for i in range(len(words) - length + 1)):
+            return True
+    return False
+
+
+def _scoped_public_output_field(
+    field: FieldSpec,
+    *,
+    denied_markers: tuple[tuple[str, ...], ...] = (),
+) -> FieldSpec:
+    """Retain visible typed field contracts, not denied field-name echoes.
+
+    Provider-authored semantic and unit strings can name another output
+    field forbidden by this principal's DataScopeRule. Deny only matches
+    against that field's declared name/aliases; unrelated native units and
+    semantic contracts remain intact. The original provider model remains
+    the trusted source for conversion, validation, and execution.
     """
+    semantic_id = field.semantic_id
+    if _scoped_echoes_denied_label(semantic_id, denied_markers):
+        semantic_id = None
+    unit = field.unit
+    if _scoped_echoes_denied_label(unit, denied_markers):
+        unit = None
+    normalization = field.unit_normalization
+    if (
+        normalization is not None
+        and (
+            unit is None
+            or _scoped_echoes_denied_label(normalization.dimension, denied_markers)
+            or _scoped_echoes_denied_label(
+                normalization.canonical_unit, denied_markers,
+            )
+        )
+    ):
+        normalization = None
     return field.model_copy(
         deep=True,
         update={
+            "semantic_id": semantic_id,
+            "unit": unit,
+            "unit_normalization": normalization,
             "description": "",
             "aliases": [],
             "path": [],
             "result_path": [],
             "qualifiers": {},
-            # Free-form provider provenance sidecars may name an unrelated
-            # denied field. Keep them in the trusted source registry; public
-            # scoped descriptors cannot assert an unreviewed source/license.
             "source_type": None,
             "license": None,
             "json_schema": _scoped_public_value_shape(field.json_schema),
         },
     )
-
 
 def _scoped_public_output_schema(fields: list[FieldSpec]) -> dict[str, Any]:
     """Only the explicitly visible field names and primitive type metadata.
@@ -537,8 +595,11 @@ class SchemaRouter(NativeProviderConvenienceMixin):
         if scope.visible_fields is None:
             return endpoint
 
+        denied_markers = _scoped_denied_field_markers(
+            endpoint.output_fields, set(scope.visible_fields),
+        )
         visible_fields = [
-            _scoped_public_output_field(field)
+            _scoped_public_output_field(field, denied_markers=denied_markers)
             for field in endpoint.output_fields
             if field.name in scope.visible_fields
         ]
@@ -714,8 +775,15 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             if endpoint.output_fields and not visible_fields:
                 continue
 
+            denied_markers = _scoped_denied_field_markers(
+                endpoint.output_fields, set(scope.visible_fields),
+            )
+            public_fields = [
+                _scoped_public_output_field(field, denied_markers=denied_markers)
+                for field in visible_fields
+            ]
             visible_names: set[str] = set()
-            for field in visible_fields:
+            for field in public_fields:
                 visible_names.add(field.name.casefold())
                 if field.semantic_id:
                     visible_names.add(field.semantic_id.casefold())
@@ -809,11 +877,8 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                         "access_mode": None,
                         "parameters": parameters,
                         "input_schema": input_schema,
-                        "output_fields": [
-                            _scoped_public_output_field(field)
-                            for field in visible_fields
-                        ],
-                        "output_schema": _scoped_public_output_schema(visible_fields),
+                        "output_fields": public_fields,
+                        "output_schema": _scoped_public_output_schema(public_fields),
                         "matched_fields": matched_fields,
                         "score_components": score_components,
                     },
