@@ -409,8 +409,18 @@ class NativeSchemaPostingIndex:
                 continue
             if not permitted(tool, endpoint):
                 continue
-            if availability is not None and not availability(tool, endpoint):
-                continue
+            # Host health callbacks are not a trusted error surface. A provider
+            # exception (including __bool__) must never escape with private
+            # endpoint details before the later final eligibility pass.
+            if availability is not None:
+                try:
+                    available_now = bool(availability(tool, endpoint))
+                except Exception:
+                    raise PolicyViolationError(
+                        "indexed availability check failed during lookup"
+                    ) from None
+                if not available_now:
+                    continue
             visible = router._data_scope_endpoint_view(
                 approved_principal, tool, endpoint,
             )
