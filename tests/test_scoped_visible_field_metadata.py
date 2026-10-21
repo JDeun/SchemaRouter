@@ -19,6 +19,7 @@ from schemarouter import (
     ToolSpec,
     select_authorized_field_contract,
 )
+from schemarouter.evidence import available_evidence
 from schemarouter.planner import KeywordAnalyzer
 
 PRIVATE = "secret_field_reference_xyz"
@@ -164,3 +165,24 @@ def test_principal_free_original_schema_remains_unchanged():
     assert original.output_fields[0].path == [PRIVATE, "public_value"]
     assert original.output_fields[0].source_type == f"unreviewed source {PRIVATE}"
     assert original.output_fields[0].license == f"unreviewed license {PRIVATE}"
+
+
+def test_scoped_public_evidence_does_not_assert_unreviewed_source_labels():
+    router, _ = _router()
+    registered_tool = router.registry.get("records")
+    original = registered_tool.endpoint("read")
+    scoped = router._data_scope_endpoint_view(VIEWER, registered_tool, original)
+    assert scoped is not None
+
+    # Trusted original evidence must remain available for actual execution.
+    source = available_evidence(registered_tool, original, ["public_value"])
+    assert source.provenance is True
+    assert source.license is True
+    assert source.units is True
+
+    # A public descriptor must not turn arbitrary source-owner free text
+    # into an authorization to disclose the source or its license name.
+    public = available_evidence(registered_tool, scoped, ["public_value"])
+    assert public.provenance is False
+    assert public.license is False
+    assert public.units is True
