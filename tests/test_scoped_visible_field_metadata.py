@@ -49,7 +49,7 @@ def _router():
         result_path=[PRIVATE, "result"],
         qualifiers={PRIVATE: "sensitive"},
         json_schema={
-            "type": "string",
+            "type": "number",
             "description": PRIVATE,
             "$defs": {PRIVATE: {"type": "string"}},
         },
@@ -94,7 +94,7 @@ def test_visible_field_annotations_cannot_echo_denied_source_names():
     assert fields[0].unit == "eV"
     assert fields[0].source_type is None
     assert fields[0].license is None
-    assert fields[0].json_schema == {"type": "string"}
+    assert fields[0].json_schema == {"type": "number"}
     assert fields[0].description == ""
     assert fields[0].aliases == []
     assert fields[0].path == []
