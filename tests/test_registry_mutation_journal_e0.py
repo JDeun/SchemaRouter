@@ -132,8 +132,11 @@ def test_atomic_registry_journal_rejects_invalid_expired_and_large_cursors():
     assert registry.changed_tool_keys_since(registry.version) == (
         RegistryMutationReceipt(registry.version, registry.version, ())
     )
+    before_many = registry.version
+    for i in range(65):
+        registry.register(_tool(f"wide_{i}"))
     with pytest.raises(RegistrationError, match="safe bound"):
-        registry.changed_tool_keys_since(registry.version - 256)
+        registry.changed_tool_keys_since(before_many)
 
 
 def test_atomic_registry_journal_limits_returned_data_to_version_and_keys():
