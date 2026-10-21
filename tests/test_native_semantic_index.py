@@ -17,7 +17,7 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.errors import PolicyViolationError
+from schemarouter.errors import PolicyViolationError, RegistrationError
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 
 ANALYST = PrincipalContext(subject="researcher", roles=("analyst",))
@@ -466,3 +466,141 @@ def test_native_posting_refresh_does_not_call_full_catalog_tools(monkeypatch):
         router, ALIASES[0], principal=ANALYST, group=GROUP,
     ).qualified_count == 2
     assert len(refreshed.tool_fingerprints) == 133
+
+
+@pytest.mark.parametrize("change", (
+    "add", "replace", "remove", "batch", "transient",
+))
+def test_registry_journal_refresh_is_exactly_equal_to_full_build(change):
+    router = _router(many_partial=16)
+    previous = NativeSchemaPostingIndex.build(router.registry)
+    if change == "add":
+        router.add_tool(_tool(
+            "added", [_field("status", "crm.status"),
+                      _field("priority", "crm.priority")],
+        ))
+    elif change == "replace":
+        router.registry.register(_tool(
+            "complete", [_field("status", "crm.status")],
+        ), replace=True)
+    elif change == "remove":
+        router.registry.unregister("complete")
+    elif change == "batch":
+        router.registry.update_many((
+            _tool("complete", [_field("priority", "crm.priority")]),
+            _tool("added", [_field("status", "crm.status"),
+                           _field("priority", "crm.priority")]),
+        ), replace=True)
+    else:
+        # A transient tool can be added and removed BETWEEN source
+        # snapshots. It is journalled although absent from both manifests.
+        router.add_tool(_tool(
+            "transient", [_field("status", "crm.status")],
+        ))
+        router.registry.unregister("transient")
+    actual = NativeSchemaPostingIndex.refresh_from_inmemory_journal(
+        previous, router.registry,
+    )
+    oracle = NativeSchemaPostingIndex.build(router.registry)
+    assert actual.snapshot_id == oracle.snapshot_id
+    assert actual.registry_version == oracle.registry_version
+    assert actual.indexed_route_count == oracle.indexed_route_count
+    assert dict(actual.postings) == dict(oracle.postings)
+    assert dict(actual.route_fingerprints) == dict(oracle.route_fingerprints)
+    assert dict(actual.route_locations) == dict(oracle.route_locations)
+    assert dict(actual.tool_fingerprints) == dict(oracle.tool_fingerprints)
+    for actor in (ANALYST, VIEWER):
+        for query in ALIASES:
+            assert actual.lookup(
+                router, query, principal=actor, group=GROUP,
+            ) == oracle.lookup(
+                router, query, principal=actor, group=GROUP,
+            )
+
+
+def test_registry_journal_refresh_does_not_read_unmodified_tools_or_scan_keys(
+    monkeypatch,
+):
+    router = _router(many_partial=215)
+    previous = NativeSchemaPostingIndex.build(router.registry)
+    router.add_tool(_tool(
+        "added", [_field("status", "crm.status"),
+                  _field("priority", "crm.priority")],
+    ))
+    read_get = router.registry.get
+
+    def changed_only(key):
+        if key != "added":
+            pytest.fail("journal refresh read unchanged native source")
+        return read_get(key)
+
+    with monkeypatch.context() as scoped:
+        scoped.setattr(router.registry, "get", changed_only)
+        scoped.setattr(
+            router.registry, "tools",
+            lambda: pytest.fail("journal refresh scanned whole native catalog"),
+        )
+        scoped.setattr(
+            router.registry, "keys",
+            lambda: pytest.fail("journal refresh walked global native manifest"),
+        )
+        refreshed = NativeSchemaPostingIndex.refresh_from_inmemory_journal(
+            previous, router.registry,
+        )
+    assert refreshed.indexed_route_count == previous.indexed_route_count + 1
+    assert refreshed.lookup(
+        router, ALIASES[0], principal=ANALYST, group=GROUP,
+    ).qualified_count == 2
+
+
+def test_registry_journal_refresh_rejects_stale_wrong_source_and_no_change():
+    router = _router()
+    previous = NativeSchemaPostingIndex.build(router.registry)
+    with pytest.raises(PolicyViolationError, match="invalid delta"):
+        NativeSchemaPostingIndex.refresh_from_inmemory_journal(
+            previous, router.registry,
+        )
+    foreign = _router()
+    foreign.add_tool(_tool("added", [_field("status", "crm.status")]))
+    with pytest.raises(PolicyViolationError, match="source mismatch"):
+        NativeSchemaPostingIndex.refresh_from_inmemory_journal(
+            previous, foreign.registry,
+        )
+
+
+def test_registry_journal_refresh_fails_closed_on_concurrent_native_mutation(
+    monkeypatch,
+):
+    router = _router()
+    previous = NativeSchemaPostingIndex.build(router.registry)
+    router.add_tool(_tool("added", [_field("status", "crm.status")]))
+    read_get = router.registry.get
+    changed = False
+
+    def concurrent_get(key):
+        nonlocal changed
+        if not changed:
+            changed = True
+            router.add_tool(_tool("later", [_field("status", "crm.status")]))
+        return read_get(key)
+
+    monkeypatch.setattr(router.registry, "get", concurrent_get)
+    with pytest.raises(PolicyViolationError, match="cannot verify"):
+        NativeSchemaPostingIndex.refresh_from_inmemory_journal(
+            previous, router.registry,
+        )
+
+
+def test_registry_journal_refresh_fails_when_receipt_expired(monkeypatch):
+    router = _router()
+    previous = NativeSchemaPostingIndex.build(router.registry)
+    monkeypatch.setattr(
+        router.registry, "changed_tool_keys_since",
+        lambda _version: (_ for _ in ()).throw(
+            RegistrationError("registry mutation history expired")
+        ),
+    )
+    with pytest.raises(PolicyViolationError, match="full rebuild required"):
+        NativeSchemaPostingIndex.refresh_from_inmemory_journal(
+            previous, router.registry,
+        )
