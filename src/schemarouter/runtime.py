@@ -613,6 +613,12 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                     update={
                         "endpoints": endpoints,
                         "description": "" if restricted else tool.description,
+                        # Source-owned provenance/adapter labels are not scope
+                        # grants and can echo another denied source field.
+                        "source_type": None if restricted else tool.source_type,
+                        "license": None if restricted else tool.license,
+                        "provider": None if restricted else tool.provider,
+                        "access_mode": None if restricted else tool.access_mode,
                         "metadata": {} if restricted else tool.metadata,
                         "execution_metadata": (
                             {} if restricted else tool.execution_metadata
@@ -731,6 +737,12 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                     update={
                         "tool_description": "",
                         "endpoint_description": "",
+                        # Candidate source labels originate from the raw
+                        # registered tool, not the principal's scoped view.
+                        "source_type": None,
+                        "license": None,
+                        "provider": None,
+                        "access_mode": None,
                         "parameters": parameters,
                         "input_schema": input_schema,
                         "output_fields": [

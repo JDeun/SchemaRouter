@@ -109,8 +109,16 @@ def test_declared_graph_alias_links_intent_to_visible_field_and_route(
     assert c.score > 0
     if language_query in ("탄성계수", "ヤング率"):
         assert all(candidate.score == 0 for candidate in baseline.candidates)
-    assert c.source_type == "materials_data"
-    assert c.license == "CC-BY-4.0"
+    # The agent-facing DATA-SCOPED descriptor must never claim source
+    # provenance/license from arbitrary source-owner strings. The host
+    # retains the original attestation for authorized execution.
+    assert c.source_type is None
+    assert c.license is None
+    trusted_tool = router.registry.get("materials")
+    assert trusted_tool.source_type == "materials_data"
+    assert trusted_tool.license == "CC-BY-4.0"
+    assert c.tool_fingerprint == trusted_tool.fingerprint
+    assert c.endpoint_fingerprint == trusted_tool.endpoint("read").fingerprint
     assert [f.semantic_id for f in c.output_fields] == [
         "mechanical.elastic_modulus",
     ]
