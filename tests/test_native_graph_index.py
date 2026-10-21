@@ -863,3 +863,135 @@ def test_g5_graph_refresh_does_not_rescan_original_tool_contracts(monkeypatch):
         list(refreshed._source_contracts),
     )
     assert refreshed.graph.edges == oracle.edges
+
+
+@pytest.mark.parametrize("mutation", (
+    "add", "replace_consumer", "delete", "noise", "transient",
+))
+def test_g5_journal_graph_delta_exact_full_graph_oracle(mutation):
+    router = _router(n_targets=2, noise=18)
+    before = _index(router)
+    if mutation == "add":
+        router.add_tool(_tools(n_targets=3)[-1])
+    elif mutation == "replace_consumer":
+        tool = router.registry.get("cases_0")
+        endpoint = tool.endpoint("read_case")
+        endpoint.parameters[0].json_schema = {"type": "integer"}
+        endpoint.input_schema = {
+            "type": "object",
+            "properties": {"contact_id": {"type": "integer"}},
+            "required": ["contact_id"],
+        }
+        router.registry.register(tool, replace=True)
+    elif mutation == "delete":
+        router.registry.unregister("cases_0")
+    elif mutation == "noise":
+        tool = router.registry.get("unrelated_0")
+        tool.description = "changed original native noise tool"
+        router.registry.register(tool, replace=True)
+    else:
+        transient = ToolSpec(
+            name="new_transient",
+            endpoints=[EndpointSpec(name="read")],
+        )
+        router.add_tool(transient)
+        router.registry.unregister("new_transient")
+    fast = NativeSchemaGraphIndex.refresh_from_inmemory_journal(
+        before, router.registry,
+    )
+    rebuilt = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    assert fast.field_index.snapshot_id == rebuilt.field_index.snapshot_id
+    assert fast.field_index.registry_version == rebuilt.field_index.registry_version
+    assert fast.graph.capability_ids == rebuilt.graph.capability_ids
+    assert fast.graph.edges == rebuilt.graph.edges
+    assert fast.native_root_count == rebuilt.native_root_count
+    assert fast.native_consumer_count == rebuilt.native_consumer_count
+    assert fast.edge_consumer_routes == rebuilt.edge_consumer_routes
+    for principal in (ANALYST, VIEWER):
+        for query in ALIASES:
+            assert fast.lookup(
+                router, query, group=GROUP, principal=principal,
+            ) == rebuilt.lookup(
+                router, query, group=GROUP, principal=principal,
+            )
+
+
+def test_g5_journal_graph_delta_never_scans_or_reads_unchanged_native_tools(
+    monkeypatch,
+):
+    router = _router(n_targets=3, noise=135)
+    before = _index(router)
+    updated = router.registry.get("cases_2")
+    updated.description = "next source version"
+    router.registry.register(updated, replace=True)
+    get_current = router.registry.get
+
+    def changed_only(key):
+        if key != "cases_2":
+            pytest.fail("journal graph delta read unchanged original ToolSpec")
+        return get_current(key)
+
+    with monkeypatch.context() as scope:
+        scope.setattr(router.registry, "get", changed_only)
+        scope.setattr(
+            router.registry, "tools",
+            lambda: pytest.fail("journal graph scanned all original ToolSpecs"),
+        )
+        scope.setattr(
+            router.registry, "keys",
+            lambda: pytest.fail("journal graph scanned global source manifest"),
+        )
+        fast = NativeSchemaGraphIndex.refresh_from_inmemory_journal(
+            before, router.registry,
+        )
+    assert fast.graph.edges == before.graph.edges
+    assert fast.lookup(
+        router, ALIASES[0], group=GROUP, principal=ANALYST,
+    ).qualified_path_count == 3
+
+
+def test_g5_journal_graph_delta_rejects_untrusted_registry_or_empty_history():
+    router = _router()
+    before = _index(router)
+    with pytest.raises(PolicyViolationError, match="invalid versioned changes"):
+        NativeSchemaGraphIndex.refresh_from_inmemory_journal(
+            before, router.registry,
+        )
+    with pytest.raises(PolicyViolationError, match="source mismatch"):
+        NativeSchemaGraphIndex.refresh_from_inmemory_journal(
+            before, _router().registry,
+        )
+    from schemarouter import SQLiteRegistry
+    with SQLiteRegistry(":memory:") as sqlite:
+        with pytest.raises(PolicyViolationError, match="exact in-memory"):
+            NativeSchemaGraphIndex.refresh_from_inmemory_journal(
+                before, sqlite,
+            )
+
+
+def test_g5_journal_graph_delta_detects_inflight_source_mutation(monkeypatch):
+    router = _router(n_targets=2)
+    previous = _index(router)
+    updated = router.registry.get("cases_0")
+    updated.description = "changed"
+    router.registry.register(updated, replace=True)
+    real_get = router.registry.get
+    fired = False
+
+    def raced(key):
+        nonlocal fired
+        if not fired:
+            fired = True
+            router.add_tool(ToolSpec(
+                name="new_race", endpoints=[EndpointSpec(name="read")],
+            ))
+        return real_get(key)
+
+    monkeypatch.setattr(router.registry, "get", raced)
+    with pytest.raises(PolicyViolationError):
+        NativeSchemaGraphIndex.refresh_from_inmemory_journal(
+            previous, router.registry,
+        )
+    assert fired
