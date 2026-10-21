@@ -1,0 +1,72 @@
+name: SQLite Native G5 Journal Graph Paired CPU E0
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/native_graph_index.py"
+      - "src/schemarouter/native_semantic_index.py"
+      - "src/schemarouter/registry.py"
+      - "scripts/benchmark_sqlite_native_g5_journal_graph_ab_e0.py"
+      - "tests/test_benchmark_sqlite_native_g5_journal_graph_ab_e0.py"
+      - ".github/workflows/sqlite-native-g5-journal-graph-cpu-e0.yml"
+      - "research/autoresearch/sqlite-native-g5-journal-cpu-ab-e0.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sqlite-paired-g5-canonical-graph:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install original runtime and bounded static test utilities
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Test SQLite source journal, full graph oracle, and static contract
+        run: |
+          ruff check scripts/benchmark_sqlite_native_g5_journal_graph_ab_e0.py tests/test_benchmark_sqlite_native_g5_journal_graph_ab_e0.py
+          python -m pytest -q tests/test_benchmark_sqlite_native_g5_journal_graph_ab_e0.py tests/test_sqlite_native_g5_graph_journal_e0.py tests/test_sqlite_native_posting_journal_e0.py
+          pyright scripts/benchmark_sqlite_native_g5_journal_graph_ab_e0.py
+      - name: Paired 500 SQLite source-native G5 graph routes E0
+        run: python -m scripts.benchmark_sqlite_native_g5_journal_graph_ab_e0 --registered-routes 500 --pairs 6 > sqlite-g5-graph-ab-500-e0.json
+      - name: Paired 5000 SQLite source-native G5 graph routes E0
+        run: python -m scripts.benchmark_sqlite_native_g5_journal_graph_ab_e0 --registered-routes 5000 --pairs 4 > sqlite-g5-graph-ab-5000-e0.json
+      - name: Require original full graph parity and summarize actual E0
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          files = ("sqlite-g5-graph-ab-500-e0.json", "sqlite-g5-graph-ab-5000-e0.json")
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write("## SQLite WAL source-owned native G5 graph update CPU, synthetic E0 only\n\n")
+              out.write("No original provider, agent E2, model, external SQLite table writers, query p95 or SLA.\n\n")
+              for file in files:
+                  report = json.loads(Path(file).read_text(encoding="utf-8"))
+                  assert report["evidence_tier"] == "E0_SYNTHETIC_SQLITE_PAIRED_NATIVE_G5_NOT_E2"
+                  assert report["exact_source_native_full_graph_oracle_pairs"] == report["paired_samples"]
+                  assert report["incompatible_typed_pairs"] > 0
+                  assert report["supported_typed_pairs"] > 0
+                  assert report["no_real_provider_calls"] is True
+                  assert report["independent_e2_qualified"] is False
+                  assert report["production_p95_qualified"] is False
+                  out.write(
+                      f"- {report['registered_source_routes']} synthetic SQLite routes; "
+                      f"{report['paired_samples']} source-version-matched pairs; "
+                      f"full posting+graph p50 {report['wall_ms']['full_build']['p50']:.2f}ms; "
+                      f"journal posting+graph p50 {report['wall_ms']['journal_refresh']['p50']:.2f}ms; "
+                      f"journal faster {report['journal_faster_pairs']}/{report['paired_samples']}\n"
+                  )
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sqlite-native-g5-journal-graph-paired-cpu-e0-${{ github.run_id }}
+          path: sqlite-g5-graph-ab-*-e0.json
+          retention-days: 30
+          if-no-files-found: error
