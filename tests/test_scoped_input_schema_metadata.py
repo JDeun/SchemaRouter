@@ -87,6 +87,7 @@ def _router(*, declared_hidden: bool = True):
             parameters=[
                 ParameterSpec(
                     name="query", description="private_value in producer docs",
+                    wire_name="private_value", style="private_value",
                     aliases=["private_value"],
                     required=True, location="query", json_schema=RAW_PARAM_SCHEMA,
                 ),
@@ -120,6 +121,8 @@ def test_no_nested_input_refs_or_annotations_reach_scoped_catalog_or_candidate(
     assert candidate.parameters[0].json_schema == {"type": "string"}
     assert candidate.parameters[0].description == ""
     assert candidate.parameters[0].aliases == []
+    assert candidate.parameters[0].wire_name is None
+    assert candidate.parameters[0].style is None
     assert candidate.input_schema == {
         "type": "object",
         "properties": {"query": {"type": "string"}},
@@ -135,6 +138,8 @@ def test_no_nested_input_refs_or_annotations_reach_scoped_catalog_or_candidate(
     original = router.registry.get("records").endpoint("read")
     assert original.input_schema == RAW_INPUT_SCHEMA
     assert original.parameters[0].json_schema == RAW_PARAM_SCHEMA
+    assert original.parameters[0].wire_name == HIDDEN
+    assert original.parameters[0].style == HIDDEN
     assert HIDDEN in json.dumps(original.model_dump(mode="json"))
     assert "filter__private_value" in original.input_schema["properties"]
 

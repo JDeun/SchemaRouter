@@ -241,6 +241,12 @@ def _scoped_public_parameter(
     return parameter.model_copy(
         deep=True,
         update={
+            # Provider wire mapping and encoding style belong to the trusted
+            # registered endpoint, not a principal-visible source descriptor.
+            # Either string may contain source-owner annotations referencing
+            # a separately hidden field even if this parameter is visible.
+            "wire_name": None,
+            "style": None,
             "description": "",
             "aliases": [],
             "json_schema": public_schema,
