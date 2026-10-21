@@ -397,7 +397,8 @@ def test_native_posting_refresh_does_not_trust_malformed_or_extra_hints(bad):
     router.registry.register(_tool(
         "complete", [_field("status", "crm.status")],
     ), replace=True)
-    error = ValueError if bad in ((), ("",), ("complete", "complete"), ["complete"], ("complete",) * 65) else PolicyViolationError
+    malformed = bad != ("absent",)
+    error = ValueError if malformed else PolicyViolationError
     with pytest.raises(error):
         NativeSchemaPostingIndex.refresh(
             original, router.registry, changed_tool_keys=bad,
