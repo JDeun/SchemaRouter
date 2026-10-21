@@ -124,3 +124,83 @@ async def test_async_scoped_route_same_as_sync():
         "public_value", principal=VIEWER,
     )
     assert before == after
+
+
+@pytest.mark.parametrize("structural_retrieval", [False, True])
+@pytest.mark.parametrize("query", ["public_value", "records", CANARY])
+def test_competing_topk_routes_ignore_denied_metadata(
+    structural_retrieval: bool, query: str,
+):
+    """K=1 competition must not turn denied strings into ranking signals."""
+
+    def build(*, tainted: bool) -> SchemaRouter:
+        raw = f"hidden_{CANARY}" if tainted else ""
+        allowed = ("records.read", "reference.read")
+        router = SchemaRouter(
+            analyzer=KeywordAnalyzer(),
+            structural_retrieval=structural_retrieval,
+            authorization_policy=AuthorizationPolicy(
+                default_effect="deny",
+                rules=tuple(
+                    AuthorizationRule(
+                        effect="allow", operation=route, roles_any=("viewer",),
+                    )
+                    for route in allowed
+                ),
+                data_rules=tuple(
+                    DataScopeRule(
+                        operation=route, roles_any=("viewer",),
+                        visible_fields=("public_value",),
+                    )
+                    for route in allowed
+                ),
+            ),
+        )
+        for name in ("records", "reference"):
+            router.add_tool(ToolSpec(
+                name=name,
+                description=raw,
+                provider=raw or "public_provider",
+                access_mode=raw or "public_access",
+                endpoints=[EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    description=raw,
+                    operation_aliases=[raw] if raw else [],
+                    output_fields=[
+                        FieldSpec(
+                            name="public_value",
+                            semantic_id="public.value",
+                            aliases=[raw] if raw else [],
+                            json_schema={"type": "string"},
+                        ),
+                        FieldSpec(
+                            name="private_value",
+                            description=raw,
+                            json_schema={"type": "string"},
+                        ),
+                    ],
+                )],
+            ))
+        return router
+
+    clean, tainted = build(tainted=False), build(tainted=True)
+    for k in (1, 2):
+        a = clean.retrieve_routes_authorized(query, principal=VIEWER, k=k)
+        b = tainted.retrieve_routes_authorized(query, principal=VIEWER, k=k)
+        assert a.total_ranked == b.total_ranked == 2
+        assert len(a.candidates) == len(b.candidates) == k
+        def public_signature(result):
+            return [
+                (
+                    item.route_id,
+                    item.score,
+                    item.matched_fields,
+                    item.score_components,
+                    item.selection_source,
+                )
+                for item in result.candidates
+            ]
+        assert public_signature(a) == public_signature(b)
+        assert all(item.provider is None and item.access_mode is None
+                   for item in b.candidates)
