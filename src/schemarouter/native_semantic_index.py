@@ -67,6 +67,8 @@ class NativeSchemaPostingIndex:
     postings: Mapping[str, tuple[str, ...]]
     route_fingerprints: Mapping[str, tuple[str, str]]
     route_locations: Mapping[str, tuple[str, str]]
+    # Include even zero-endpoint tools for exact omitted-change detection.
+    tool_fingerprints: Mapping[str, str]
 
     @classmethod
     def build(cls, registry: ToolRegistry) -> NativeSchemaPostingIndex:
@@ -74,6 +76,7 @@ class NativeSchemaPostingIndex:
         semantic: dict[str, set[str]] = {}
         revisions: dict[str, tuple[str, str]] = {}
         locations: dict[str, tuple[str, str]] = {}
+        tool_fingerprints: dict[str, str] = {}
         count = 0
         for tool in registry.tools():
             # Each registry tool is a detached snapshot. Its fingerprint
@@ -82,6 +85,7 @@ class NativeSchemaPostingIndex:
             # No cross-build or cross-request cache is introduced.
             tool_fingerprint = tool.fingerprint
             tool_key = tool.key
+            tool_fingerprints[tool_key] = tool_fingerprint
             for endpoint in tool.endpoints:
                 count += 1
                 route = f"{tool_key}.{endpoint.name}"
@@ -114,6 +118,115 @@ class NativeSchemaPostingIndex:
             postings=MappingProxyType(ordered),
             route_fingerprints=MappingProxyType(revisions),
             route_locations=MappingProxyType(locations),
+            tool_fingerprints=MappingProxyType(tool_fingerprints),
+        )
+
+    @classmethod
+    def refresh(
+        cls,
+        previous: NativeSchemaPostingIndex,
+        registry: ToolRegistry,
+        *,
+        changed_tool_keys: tuple[str, ...],
+    ) -> NativeSchemaPostingIndex:
+        """Copy-on-write semantic posting refresh with full manifest validation.
+
+        Changed-key hints are NOT trusted. The current exact fingerprint of
+        every otherwise-unmodified registered tool must equal the old pinned
+        source. Only changed tools are re-indexed for semantic postings, but
+        this method still verifies all tool fingerprints (O(catalog)).
+        No incremental graph-edge rebuild or latency speedup is claimed.
+        """
+        if (
+            type(changed_tool_keys) is not tuple
+            or not 1 <= len(changed_tool_keys) <= 64
+            or any(type(key) is not str or not key for key in changed_tool_keys)
+            or len(set(changed_tool_keys)) != len(changed_tool_keys)
+        ):
+            raise ValueError("bounded exact changed tool keys required")
+        if previous.registry_ref is not registry:
+            raise PolicyViolationError("native posting refresh source mismatch")
+        version = registry.version
+        if version <= previous.registry_version:
+            raise PolicyViolationError("native posting refresh needs newer source")
+        changed = frozenset(changed_tool_keys)
+        old_tools = previous.tool_fingerprints
+        changed_tools = {}
+        fresh_fingerprints: dict[str, str] = {}
+        try:
+            current_keys = registry.keys()
+            if type(current_keys) is not tuple or len(set(current_keys)) != len(current_keys):
+                raise PolicyViolationError("native posting refresh invalid tool manifest")
+            if not changed.issubset(set(current_keys) | set(old_tools)):
+                raise PolicyViolationError("native posting refresh unknown changed tool")
+            for key in current_keys:
+                tool = registry.get(key)
+                if tool.key != key:
+                    raise PolicyViolationError("native posting refresh tool key changed")
+                fingerprint = tool.fingerprint
+                fresh_fingerprints[key] = fingerprint
+                if key in changed:
+                    changed_tools[key] = tool
+                elif old_tools.get(key) != fingerprint:
+                    raise PolicyViolationError("native posting refresh omitted changed tool")
+            if set(old_tools) - set(current_keys) - changed:
+                raise PolicyViolationError("native posting refresh omitted deleted tool")
+            if registry.version != version:
+                raise PolicyViolationError("native posting refresh source changed")
+        except Exception:
+            # An untrusted registry implementation might include its own
+            # private schema text in an exception. Do not forward it.
+            raise PolicyViolationError("native posting refresh cannot verify source") from None
+
+        revisions = dict(previous.route_fingerprints)
+        locations = dict(previous.route_locations)
+        stale_routes = {
+            route for route, (tool_key, _endpoint) in locations.items()
+            if tool_key in changed
+        }
+        for route in stale_routes:
+            revisions.pop(route)
+            locations.pop(route)
+        semantic = {
+            name: set(routes) - stale_routes
+            for name, routes in previous.postings.items()
+        }
+        for key, tool in changed_tools.items():
+            tool_fingerprint = fresh_fingerprints[key]
+            for endpoint in tool.endpoints:
+                route = f"{key}.{endpoint.name}"
+                if route in revisions:
+                    raise PolicyViolationError("native posting refresh duplicate route")
+                revisions[route] = (tool_fingerprint, endpoint.fingerprint)
+                locations[route] = (key, endpoint.name)
+                if tool.source_type and tool.license:
+                    for field in endpoint.output_fields:
+                        if (
+                            field.semantic_id is not None
+                            and field.unit_normalization is None
+                            and _scalar_contract(field.json_schema)
+                        ):
+                            semantic.setdefault(field.semantic_id, set()).add(route)
+        if registry.version != version:
+            raise PolicyViolationError("native posting refresh source changed")
+        ordered = {
+            name: tuple(sorted(routes))
+            for name, routes in sorted(semantic.items()) if routes
+        }
+        receipt = json.dumps(
+            {"version": version, "routes": sorted(revisions.items()),
+             "postings": ordered},
+            ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+        )
+        return cls(
+            registry_ref=registry,
+            registry_version=version,
+            snapshot_id=sha256(receipt.encode("utf-8")).hexdigest(),
+            indexed_route_count=len(revisions),
+            postings=MappingProxyType(ordered),
+            route_fingerprints=MappingProxyType(revisions),
+            route_locations=MappingProxyType(locations),
+            tool_fingerprints=MappingProxyType(fresh_fingerprints),
         )
 
     def _assert_source(self, router: SchemaRouter) -> None:
