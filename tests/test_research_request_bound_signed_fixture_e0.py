@@ -12,7 +12,6 @@ import pytest
 from starlette.types import Receive, Scope, Send
 
 from scripts.research_central_asgi_boundary_e0 import (
-    SyntheticScopeIdentityE0,
     make_synthetic_asgi_gateway_e0,
 )
 from scripts.research_central_durable_reservation_e0 import (
