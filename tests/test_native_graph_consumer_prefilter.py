@@ -67,7 +67,12 @@ def test_canonical_target_and_root_still_verified_in_original_registry(
             for x in result.candidates] == [
         ("contact_directory.read", "case_service.read"),
     ]
-    assert fetched == ["case_service", "contact_directory"]
+    # An additional final live-health/scope pass must fetch only the same
+    # original two routes, never scan unrelated registered tools.
+    assert fetched == [
+        "case_service", "contact_directory",
+        "contact_directory", "case_service",
+    ]
 
 
 def test_paired_selectivity_matrix_preserves_one_five_overflow_and_denials():
