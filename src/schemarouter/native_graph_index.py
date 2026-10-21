@@ -522,6 +522,75 @@ class NativeSchemaGraphIndex:
                 raise PolicyViolationError(
                     "G5 research ranker returned forged, partial or duplicate offsets"
                 )
+            # A caller-owned availability callable can change state without
+            # changing its object identity (or registry/policy version) while
+            # the untrusted research ranker runs. Recheck ALL at-most-32
+            # originally qualified paths, not only the chosen K, because
+            # qualified_path_count is also published to the caller.
+            # These checks never grant access or invoke source tools.
+            try:
+                for candidate in found:
+                    current_root = authorized(candidate.producer_route_id)
+                    current_target = authorized(candidate.consumer_route_id)
+                    if current_root is None or current_target is None:
+                        raise PolicyViolationError(
+                            "G5 source eligibility changed during research ranking"
+                        )
+                    source_tool, source_endpoint = current_root
+                    _target_tool, target_endpoint = current_target
+                    if not _complete_fields(
+                        target_endpoint.output_fields, demand.required_fields,
+                    ):
+                        raise PolicyViolationError(
+                            "G5 visible field contract changed during research ranking"
+                        )
+                    current_inputs = _native_required_inputs(target_endpoint)
+                    if (
+                        current_inputs is None
+                        or len(current_inputs) != len(candidate.parameter_bindings)
+                        or any(
+                            required_name != bound_name
+                            or (field := _root_field(source_endpoint, contract))
+                            is None or field.name != bound_field
+                            for (required_name, contract), (bound_name, bound_field)
+                            in zip(
+                                current_inputs, candidate.parameter_bindings,
+                                strict=True,
+                            )
+                        )
+                    ):
+                        raise PolicyViolationError(
+                            "G5 source binding changed during research ranking"
+                        )
+                    if len(candidate.parameter_bindings) > 1 and not (
+                        _flat_same_record_source_contract(
+                            source_tool.endpoint(source_endpoint.name),
+                            source_endpoint,
+                            tuple(field for _, field in candidate.parameter_bindings),
+                        )
+                    ):
+                        raise PolicyViolationError(
+                            "G5 source record contract changed during research ranking"
+                        )
+                    public_names = tuple(sorted({
+                        field.name for field in target_endpoint.output_fields
+                        if any(
+                            _complete_fields([field], (required,))
+                            for required in demand.required_fields
+                        )
+                    }))
+                    if public_names != candidate.consumer_output_fields:
+                        raise PolicyViolationError(
+                            "G5 source projection changed during research ranking"
+                        )
+            except Exception:
+                # Source/host callbacks may contain private route/field text
+                # in an exception. Never expose it through this optional API.
+                raise PolicyViolationError(
+                    "G5 authorized graph changed during research ranking"
+                ) from None
+            self.field_index._assert_source(router)
+            router._check_retrieval_authority_witness(witness)
             return NativeIndexedGraphResult(
                 "ranked_unverified" if chosen
                 else "ranker_abstained_unverified",

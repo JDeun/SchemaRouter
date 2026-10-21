@@ -683,3 +683,52 @@ def test_research_g5_backend_model_input_budget_fails_before_backend():
                 CallableDecisionBackend(no_call),
                 max_model_input_bytes=invalid,
             )
+
+
+@pytest.mark.parametrize("revoked_tool", ("contacts", "cases_0", "cases_6"))
+def test_research_ranker_same_callable_availability_revocation_is_fail_closed(
+    revoked_tool,
+):
+    """Identity-stable mutable health state cannot stale-authorize an edge.
+
+    Both the selected route and unselected path population are sensitive:
+    qualified_path_count must never be based on an obsolete visible menu.
+    """
+    router = _router(n_targets=7)
+    index = _index(router)
+    disabled: set[str] = set()
+
+    def live_availability(tool, _endpoint):
+        return tool.key not in disabled
+
+    router.planner.availability_predicate = live_availability
+
+    def revoke_after_exposure(_query, offered, k):
+        assert len(offered) == 7
+        assert k == 5
+        disabled.add(revoked_tool)
+        assert router.planner.availability_predicate is live_availability
+        return (0, 1, 2, 3, 4)
+
+    with pytest.raises(
+        PolicyViolationError, match="authorized graph changed",
+    ):
+        index.lookup(
+            router, ALIASES[0], group=GROUP, principal=ANALYST,
+            _research_ranker=revoke_after_exposure,
+        )
+
+
+def test_research_ranker_stable_availability_still_returns_original_k5():
+    router = _router(n_targets=7)
+    index = _index(router)
+    router.planner.availability_predicate = lambda _tool, _endpoint: True
+    actual = index.lookup(
+        router, ALIASES[0], group=GROUP, principal=ANALYST,
+        _research_ranker=lambda _q, _offered, _k: (0, 1, 2, 3, 4),
+    )
+    assert actual.status == "ranked_unverified"
+    assert actual.qualified_path_count == 7
+    assert len(actual.candidates) == 5
+    assert not actual.independent_quality_evidence
+    assert not actual.executable_authority
