@@ -31,3 +31,5 @@ any observed speedup is conditional on the exact synthetic workload.
 No claim of 5000-route commercial readiness or v0.18 qualification.
 #1560 and #1535 stay OPEN; frozen #432 negative and release HARD HOLD
 #1356 remain unchanged.
+
+**Merged-base synchronization:** the benchmark-only four-file research slice was placed on protected native-G5 journal graph PR #1675 merge at `7aae59452323483239957f234e0b2a099086fb6a`. Only tests on the current pushed branch head count toward this PR's merge gate. No replay of cancelled ancestor workflow runs.
