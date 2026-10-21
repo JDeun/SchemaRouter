@@ -1,0 +1,98 @@
+name: Actual Qwen Bounded Continuation Paired E1 DEV
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_qwen_verified_continuation_paired_e1.py"
+      - "tests/test_research_qwen_verified_continuation_paired_e1.py"
+      - "research/autoresearch/qwen-verified-continuation-paired-e1.md"
+      - ".github/workflows/research-qwen-verified-continuation-paired-e1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-paired-cost-and-evidence-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Test existing strict source host and paired pilot without network
+        run: |
+          python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1" "pyright>=1.1.400"
+          ruff check scripts/research_qwen_verified_continuation_paired_e1.py tests/test_research_qwen_verified_continuation_paired_e1.py
+          pyright scripts/research_qwen_verified_continuation_paired_e1.py
+          python -m pytest -q tests/test_research_qwen_verified_continuation_paired_e1.py tests/test_research_qwen_verified_step_continuation_e0.py tests/test_research_real_qwen_open_meteo_two_hop_e1.py
+
+  real-pinned-qwen-and-public-native-sources:
+    needs: offline-paired-cost-and-evidence-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install existing pinned local CPU model and source host
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "transformers>=4.51,<5"
+      - name: Original E1 strict source arm versus one opt-in reminder (six episodes)
+        run: |
+          python -m scripts.research_qwen_verified_continuation_paired_e1 --out artifacts/qwen-verified-continuation-paired/report.json
+      - name: Verify strict per-arm source evidence and publish descriptive only
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          report = json.loads(Path("artifacts/qwen-verified-continuation-paired/report.json").read_text())
+          assert report["study"] == "REAL_QWEN_VERIFIED_CONTINUATION_PAIRED_E1_EXPOSED_DEV_NOT_E2"
+          assert report["model_revision"] == "c1899de289a04d12100db370d81485cdf75e47ca"
+          assert report["paired_case_count"] == 3
+          assert report["transport_retry_budget"] == 1
+          assert report["actual_pinned_model_inference"] is True
+          assert report["source_is_live_not_frozen"] is True
+          assert not report["independent_e2_qualified"]
+          assert not report["product_default_changed"]
+          assert not report["release_qualified"]
+          assert set(report["by_arm"]) == {"original", "one_verified_reminder"}
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
+              out.write("## Actual pinned Qwen/Open-Meteo paired E1 (EXPOSED DEV, not E2)\n\n")
+              out.write("| Arm | Strict tasks /3 | Native HTTP attempts | Model turns | Input tokens | Output tokens | Model generation ms | Reminders |\n")
+              out.write("|---|---:|---:|---:|---:|---:|---:|---:|\n")
+              total_attempts = 0
+              for arm, data in report["by_arm"].items():
+                  assert set(data["by_language"]) == {"en", "ko", "ja"}
+                  assert 0 <= data["strict_full_task_passes"] <= 3
+                  assert all(1 <= v["model_turns"] <= 4 for v in data["by_language"].values())
+                  assert data["model_turns"] == sum(v["model_turns"] for v in data["by_language"].values())
+                  assert data["http_attempts"] <= 12
+                  assert data["token_totals"]["input_tokens"] > 0
+                  total_attempts += data["http_attempts"]
+                  out.write(f"| {arm} | {data['strict_full_task_passes']} | {data['http_attempts']} | {data['model_turns']} | {data['token_totals']['input_tokens']} | {data['token_totals']['output_tokens']} | {data['model_generation_ms']} | {data['host_evidence_reprompts']} |\n")
+              assert total_attempts <= 24
+              assert report["by_arm"]["original"]["host_evidence_reprompts"] == 0
+              out.write("\nThree previously disclosed author-written cases. No private provider/task split, no significance claim, no v0.18 release gate.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: real-qwen-verified-continuation-paired-e1
+          path: artifacts/qwen-verified-continuation-paired/report.json
+          if-no-files-found: warn
+          retention-days: 60
