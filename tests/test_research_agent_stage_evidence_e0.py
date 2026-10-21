@@ -346,7 +346,7 @@ def test_progressed_fixture_step_is_separate_from_grader_pass_and_factual_answer
 @pytest.mark.parametrize("defect", (
     "no_progress", "failed_schema", "blocked", "missing_attempt",
     "wrong_call_receipt", "unrecorded_call", "overstated_count",
-    "no_final", "overflow", "unsupported",
+    "no_final", "overflow", "unsupported", "hidden_calls_under_final",
 ))
 def test_grader_pass_alone_cannot_forge_a_progressed_fixture_witness(defect):
     raw = _progressed_fixture_episode()
@@ -371,6 +371,10 @@ def test_grader_pass_alone_cannot_forge_a_progressed_fixture_witness(defect):
         raw["turn_rows"] = raw["turn_rows"][:1]
     elif defect == "overflow":
         raw["context_overflow"] = True
+    elif defect == "hidden_calls_under_final":
+        # An executed attempt attached to a supposed final turn cannot
+        # stand in for an actual recorded tool_calls event.
+        raw["turn_rows"][0]["event"] = "final"
     else:
         raw["supported"] = False
     safe = trace(raw)
