@@ -174,6 +174,12 @@ def lookup_bounded_native_paths(
     visits = 0
 
     try:
+        # A rejected target still costs a source lookup. Never allocate/sort
+        # an arbitrarily large posting hit set before applying the bound.
+        if len(targets) > MAX_BOUNDED_VISITS:
+            raise PolicyViolationError(
+                "G5 bounded graph expansion budget exceeded"
+            )
         for target_id in sorted(targets):
             visits += 1
             if visits > MAX_BOUNDED_VISITS:
@@ -259,9 +265,15 @@ def lookup_bounded_native_paths(
                 consumer = authorized(backwards[-1])
                 if consumer is None:
                     continue
-                for predecessor in sorted(
-                    index.graph.predecessors(backwards[-1]), reverse=True,
-                ):
+                # The index owns a source-pinned predecessor tuple. Refuse a
+                # high-degree node BEFORE sorting it or invoking any producer
+                # callback. Denied/unhealthy edges are NOT free to inspect.
+                predecessors = index.graph.predecessors(backwards[-1])
+                if len(predecessors) > MAX_BOUNDED_VISITS - visits:
+                    raise PolicyViolationError(
+                        "G5 bounded graph expansion budget exceeded"
+                    )
+                for predecessor in sorted(predecessors, reverse=True):
                     if predecessor in backwards:
                         continue
                     visits += 1
