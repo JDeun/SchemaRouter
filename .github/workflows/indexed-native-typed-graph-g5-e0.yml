@@ -4,10 +4,12 @@ on:
   pull_request:
     paths:
       - "src/schemarouter/native_graph_index.py"
+      - "src/schemarouter/native_deep_paths.py"
       - "src/schemarouter/native_semantic_index.py"
       - "src/schemarouter/__init__.py"
       - "tests/test_native_graph_index.py"
       - "tests/test_native_graph_two_hop.py"
+      - "tests/test_native_graph_deep_paths.py"
       - "scripts/research_g5_decision_backend_ranker_e0.py"
       - "research/autoresearch/g5-authorized-overflow-ranking-e0.md"
       - "tests/test_public_api.py"
@@ -33,6 +35,6 @@ jobs:
         run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23" "ruff>=0.9,<1" "pyright>=1.1.400"
       - name: Reuse typed graph composer and source-scoped native field index
         run: |
-          ruff check src/schemarouter/native_graph_index.py tests/test_native_graph_index.py tests/test_native_graph_two_hop.py scripts/research_g5_decision_backend_ranker_e0.py
-          python -m pytest -q tests/test_native_graph_index.py tests/test_native_graph_two_hop.py tests/test_native_semantic_index.py tests/test_research_discovered_native_graph_g4.py tests/test_public_api.py
-          pyright src/schemarouter/native_graph_index.py scripts/research_g5_decision_backend_ranker_e0.py
+          ruff check src/schemarouter/native_graph_index.py src/schemarouter/native_deep_paths.py tests/test_native_graph_index.py tests/test_native_graph_two_hop.py tests/test_native_graph_deep_paths.py scripts/research_g5_decision_backend_ranker_e0.py
+          python -m pytest -q tests/test_native_graph_index.py tests/test_native_graph_two_hop.py tests/test_native_graph_deep_paths.py tests/test_native_semantic_index.py tests/test_research_discovered_native_graph_g4.py tests/test_public_api.py
+          pyright src/schemarouter/native_graph_index.py src/schemarouter/native_deep_paths.py scripts/research_g5_decision_backend_ranker_e0.py
