@@ -14,8 +14,8 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.adapters import tool_from_mcp, tool_from_openapi
-from schemarouter.capability_graph import update_capability_dependency_graph
 from schemarouter.capability_contracts import CapabilityFieldContract
+from schemarouter.capability_graph import update_capability_dependency_graph
 from schemarouter.concept_retrieval import NativeConceptCatalog, NativeDeclaredConcept
 from schemarouter.decisions import CallableDecisionBackend
 from schemarouter.errors import PlanningError, PolicyViolationError
