@@ -32,7 +32,7 @@ from .field_group_retrieval import (
 )
 from .models import EndpointSpec, FieldSpec, ToolSpec
 from .native_semantic_index import NativeSchemaPostingIndex
-from .registry import InMemoryRegistry, ToolRegistry
+from .registry import InMemoryRegistry, SQLiteRegistry, ToolRegistry
 
 if TYPE_CHECKING:
     from .runtime import SchemaRouter
@@ -409,8 +409,35 @@ class NativeSchemaGraphIndex:
         trusted. SQLite, proxies and user-managed registries continue to
         require the full-fingerprint-verified refresh API.
         """
-        if type(registry) is not InMemoryRegistry:
+        if not isinstance(registry, InMemoryRegistry) or type(registry) is not InMemoryRegistry:
             raise PolicyViolationError("G5 journal graph requires exact in-memory source")
+        return cls._refresh_from_source_journal(previous, registry, sqlite=False)
+
+    @classmethod
+    def refresh_from_sqlite_journal(
+        cls,
+        previous: NativeSchemaGraphIndex,
+        registry: ToolRegistry,
+    ) -> NativeSchemaGraphIndex:
+        """E0 original SQLite journal verified one-hop G5 edge delta.
+
+        Opt-in only for the *exact* builtin SQLiteRegistry backed by a
+        trusted, API-owned database. An externally writable DB can forge
+        syntactically complete journals and is out of this E0 trust model.
+        """
+        if not isinstance(registry, SQLiteRegistry) or type(registry) is not SQLiteRegistry:
+            raise PolicyViolationError("G5 journal graph requires exact SQLite source")
+        return cls._refresh_from_source_journal(previous, registry, sqlite=True)
+
+    @classmethod
+    def _refresh_from_source_journal(
+        cls,
+        previous: NativeSchemaGraphIndex,
+        registry: InMemoryRegistry | SQLiteRegistry,
+        *,
+        sqlite: bool,
+    ) -> NativeSchemaGraphIndex:
+        """Canonical delta on a pinned source-owned atomic changed-key receipt."""
         if previous.field_index.registry_ref is not registry:
             raise PolicyViolationError("G5 journal graph source mismatch")
         try:
@@ -427,8 +454,12 @@ class NativeSchemaGraphIndex:
             or not 1 <= len(receipt.changed_tool_keys) <= 64
         ):
             raise PolicyViolationError("G5 journal graph invalid versioned changes")
-        field_index = NativeSchemaPostingIndex.refresh_from_inmemory_journal(
-            previous.field_index, registry,
+        field_index = (
+            NativeSchemaPostingIndex.refresh_from_sqlite_journal(
+                previous.field_index, registry,
+            ) if sqlite else NativeSchemaPostingIndex.refresh_from_inmemory_journal(
+                previous.field_index, registry,
+            )
         )
         if (
             field_index.registry_version != receipt.to_version
