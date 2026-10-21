@@ -37,9 +37,12 @@ GROUP = NativeDeclaredFieldGroup(
 )
 
 
-def _root(*, required: bool = True, name: str = "origin") -> ToolSpec:
+def _root(
+    *, required: bool = True, name: str = "origin",
+    source_type: str = "crm", license: str = "reviewed",
+) -> ToolSpec:
     return ToolSpec(
-        name=name, source_type="crm", license="reviewed",
+        name=name, source_type=source_type, license=license,
         endpoints=[EndpointSpec(
             name="read", read_only=True,
             output_fields=[FieldSpec(
@@ -84,6 +87,8 @@ def _router(
     required_root_key: bool = True,
     right_count: int = 1,
     noise: int = 0,
+    root_source_type: str = "crm",
+    root_license: str = "reviewed",
 ) -> SchemaRouter:
     policy = AuthorizationPolicy(
         default_effect="deny",
@@ -103,7 +108,10 @@ def _router(
         ),) if hidden_right else (),
     )
     router = SchemaRouter(authorization_policy=policy)
-    router.add_tool(_root(required=required_root_key))
+    router.add_tool(_root(
+        required=required_root_key,
+        source_type=root_source_type, license=root_license,
+    ))
     router.add_tool(_leaf("left", "crm.status", "status"))
     for idx in range(right_count):
         router.add_tool(_leaf(
@@ -272,3 +280,28 @@ def test_shared_root_pair_count_over_k_abstains_even_with_each_arm_under_k():
     assert out.qualified_fork_count == 9
     assert out.candidates == ()
     assert not out.calibrated_no_fit
+
+
+@pytest.mark.parametrize("qualifier", ("source_type", "license"))
+def test_fork_rejects_mismatched_root_provenance_or_license(qualifier):
+    router = _router(
+        root_source_type="external" if qualifier == "source_type" else "crm",
+        root_license="unreviewed" if qualifier == "license" else "reviewed",
+    )
+    index = _index(router)
+    # Both individual leaf routes can still prove their typed required
+    # inputs; that does not certify the combined source/license contract.
+    sub_group = NativeDeclaredFieldGroup(
+        aliases=ALIASES,
+        required_fields=(GROUP.required_fields[0],),
+        source_type=GROUP.source_type,
+        license=GROUP.license,
+    )
+    assert index.lookup(
+        router, ALIASES[0], group=sub_group, principal=ACTOR,
+    ).status == "complete"
+    forks = index.lookup_shared_root_forks(
+        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    )
+    assert forks.status == "no_proven_hit"
+    assert forks.candidates == ()
