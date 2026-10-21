@@ -168,10 +168,18 @@ def lookup_bounded_native_paths(
     targets = set.intersection(*wanted) if wanted else set()
     targets.intersection_update(index.edge_consumer_routes)
     qualified: list[NativeIndexedPathCandidate] = []
+    # Bound EVERY candidate authorization probe, including denied/unhealthy
+    # posting hits, not merely paths that pass all typed-join filters.
+    # Otherwise a dense but ineligible catalog can consume unbounded CPU.
     visits = 0
 
     try:
         for target_id in sorted(targets):
+            visits += 1
+            if visits > MAX_BOUNDED_VISITS:
+                raise PolicyViolationError(
+                    "G5 bounded graph expansion budget exceeded"
+                )
             target = authorized(target_id)
             if target is None:
                 continue
@@ -256,6 +264,11 @@ def lookup_bounded_native_paths(
                 ):
                     if predecessor in backwards:
                         continue
+                    visits += 1
+                    if visits > MAX_BOUNDED_VISITS:
+                        raise PolicyViolationError(
+                            "G5 bounded graph expansion budget exceeded"
+                        )
                     producer = authorized(predecessor)
                     if producer is None or bind(producer, consumer) is None:
                         continue
@@ -267,11 +280,6 @@ def lookup_bounded_native_paths(
                             continue
                     elif _native_required_inputs(producer[1]) is None:
                         continue
-                    visits += 1
-                    if visits > MAX_BOUNDED_VISITS:
-                        raise PolicyViolationError(
-                            "G5 bounded graph expansion budget exceeded"
-                        )
                     stack.append((*backwards, predecessor))
 
         # The first traversal might change the same live health callable's
