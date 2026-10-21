@@ -1,0 +1,69 @@
+name: Native InMemory Posting Delta Paired CPU E0
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/native_semantic_index.py"
+      - "src/schemarouter/registry.py"
+      - "scripts/benchmark_native_posting_journal_ab_e0.py"
+      - "tests/test_benchmark_native_posting_journal_ab_e0.py"
+      - ".github/workflows/native-posting-journal-performance-e0.yml"
+      - "research/autoresearch/native-posting-journal-cpu-ab-e0.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  journal-posting-500-5000-cpu-e0:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install source and static/test tools
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Verify benchmark telemetry and original posting parity
+        run: |
+          ruff check scripts/benchmark_native_posting_journal_ab_e0.py tests/test_benchmark_native_posting_journal_ab_e0.py
+          python -m pytest -q tests/test_benchmark_native_posting_journal_ab_e0.py tests/test_native_semantic_index.py tests/test_registry_mutation_journal_e0.py
+          pyright scripts/benchmark_native_posting_journal_ab_e0.py
+      - name: Pair 500 native routes (synthetic)
+        run: python -m scripts.benchmark_native_posting_journal_ab_e0 --registered-routes 500 --pairs 6 > native-posting-ab-500-e0.json
+      - name: Pair 5000 native routes (synthetic)
+        run: python -m scripts.benchmark_native_posting_journal_ab_e0 --registered-routes 5000 --pairs 4 > native-posting-ab-5000-e0.json
+      - name: Assert exact oracle and summarize DEV-only measurements
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          files = ["native-posting-ab-500-e0.json", "native-posting-ab-5000-e0.json"]
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as output:
+              output.write("## Native posting journal delta — paired synthetic CPU E0 only\n\n")
+              output.write("No graph rebuild, production p95/p99, original publisher source or E2.\n\n")
+              for name in files:
+                  result = json.loads(Path(name).read_text(encoding="utf-8"))
+                  assert result["evidence_tier"] == "E0_SYNTHETIC_NATIVE_POSTING_REFRESH_ONLY_NOT_E2"
+                  assert result["exact_full_build_index_oracle_pairs"] == result["paired_samples"]
+                  assert result["independent_e2_qualified"] is False
+                  assert result["production_p95_qualified"] is False
+                  assert result["graph_delta_included"] is False
+                  output.write(
+                      f"- {result['registered_source_routes']} synthetic native routes; "
+                      f"{result['paired_samples']} source-version-matched pairs; "
+                      f"fresh-build p50: {result['wall_ms']['full_rebuild']['p50']:.2f}ms; "
+                      f"journal posting p50: {result['wall_ms']['journal_refresh']['p50']:.2f}ms; "
+                      f"faster pairs: {result['delta_faster_pairs']}/{result['paired_samples']}\n"
+                  )
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-posting-journal-paired-cpu-e0-${{ github.run_id }}
+          path: native-posting-ab-*-e0.json
+          retention-days: 30
+          if-no-files-found: error
