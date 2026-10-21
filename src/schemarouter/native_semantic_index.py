@@ -24,7 +24,7 @@ from .field_group_retrieval import (
     _scalar_contract,
 )
 from .models import ToolSpec
-from .registry import InMemoryRegistry, ToolRegistry
+from .registry import InMemoryRegistry, SQLiteRegistry, ToolRegistry
 
 if TYPE_CHECKING:
     from .runtime import SchemaRouter
@@ -197,15 +197,42 @@ class NativeSchemaPostingIndex:
         Exact version checks reject races before publishing a new snapshot;
         lookup independently rechecks that version before showing evidence.
         """
-        if not isinstance(registry, InMemoryRegistry) or type(registry) is not InMemoryRegistry:
+        if type(registry) is not InMemoryRegistry:
             raise PolicyViolationError(
                 "native journal refresh requires exact in-memory registry"
             )
+        return cls._refresh_from_source_owned_journal(previous, registry)
+
+    @classmethod
+    def refresh_from_sqlite_journal(
+        cls,
+        previous: NativeSchemaPostingIndex,
+        registry: ToolRegistry,
+    ) -> NativeSchemaPostingIndex:
+        """E0 opt-in durable SQLite source-owned journal posting delta.
+
+        Only exact built-in SQLiteRegistry supports this experiment. No
+        custom registry, arbitrary database adapter, or legacy history can
+        supply a fast-path receipt. All reads stay original-source-owned.
+        """
+        if not isinstance(registry, SQLiteRegistry) or type(registry) is not SQLiteRegistry:
+            raise PolicyViolationError(
+                "native journal refresh requires exact SQLite registry"
+            )
+        return cls._refresh_from_source_owned_journal(previous, registry)
+
+    @classmethod
+    def _refresh_from_source_owned_journal(
+        cls,
+        previous: NativeSchemaPostingIndex,
+        registry: InMemoryRegistry | SQLiteRegistry,
+    ) -> NativeSchemaPostingIndex:
+        """A single immutable posting-delta assembler for two audited sources."""
         if previous.registry_ref is not registry:
             raise PolicyViolationError("native journal refresh source mismatch")
         try:
             delta = registry.changed_tool_keys_since(previous.registry_version)
-        except RegistrationError:
+        except (RegistrationError, RuntimeError):
             raise PolicyViolationError(
                 "native journal refresh unavailable; full rebuild required"
             ) from None
