@@ -306,3 +306,162 @@ def test_replacing_availability_predicate_mid_field_lookup_fails_closed():
     with pytest.raises(PolicyViolationError, match="retrieval authority changed"):
         index.lookup(router, ALIASES[0], principal=ANALYST, group=GROUP)
     assert consulted
+
+
+def _assert_refreshed_posting_oracle_equivalence(router, index):
+    rebuilt = NativeSchemaPostingIndex.build(router.registry)
+    assert index.registry_ref is router.registry
+    assert index.registry_version == rebuilt.registry_version
+    assert index.snapshot_id == rebuilt.snapshot_id
+    assert index.indexed_route_count == rebuilt.indexed_route_count
+    assert dict(index.postings) == dict(rebuilt.postings)
+    assert dict(index.route_fingerprints) == dict(rebuilt.route_fingerprints)
+    assert dict(index.route_locations) == dict(rebuilt.route_locations)
+    assert dict(index.tool_fingerprints) == dict(rebuilt.tool_fingerprints)
+    for principal in (ANALYST, VIEWER):
+        for query in ALIASES:
+            assert index.lookup(
+                router, query, principal=principal, group=GROUP,
+            ) == rebuilt.lookup(
+                router, query, principal=principal, group=GROUP,
+            )
+
+
+@pytest.mark.parametrize("mutation", ("new", "replace", "remove", "batch"))
+def test_native_posting_refresh_matches_exhaustive_rebuild(mutation):
+    router = _router(many_partial=18)
+    original = NativeSchemaPostingIndex.build(router.registry)
+    if mutation == "new":
+        router.add_tool(_tool(
+            "added", [_field("status", "crm.status"),
+                      _field("priority", "crm.priority")],
+        ))
+        touched = ("added",)
+    elif mutation == "replace":
+        router.registry.register(_tool(
+            "complete", [_field("status", "crm.status"),
+                         _field("priority", "crm.alternate")],
+        ), replace=True)
+        touched = ("complete",)
+    elif mutation == "remove":
+        router.registry.unregister("complete")
+        touched = ("complete",)
+    else:
+        changed = _tool(
+            "complete", [_field("status", "crm.status")],
+        )
+        added = _tool(
+            "added", [_field("status", "crm.status"),
+                      _field("priority", "crm.priority")],
+        )
+        router.registry.update_many(
+            [changed, added], replace=True,
+        )
+        touched = ("complete", "added")
+
+    with pytest.raises(PolicyViolationError, match="source revision is stale"):
+        original.lookup(router, ALIASES[0], principal=ANALYST, group=GROUP)
+    refreshed = NativeSchemaPostingIndex.refresh(
+        original, router.registry, changed_tool_keys=touched,
+    )
+    _assert_refreshed_posting_oracle_equivalence(router, refreshed)
+    assert original.registry_version < refreshed.registry_version
+
+
+def test_native_posting_refresh_rejects_omitted_concurrent_tool_revision():
+    router = _router()
+    original = NativeSchemaPostingIndex.build(router.registry)
+    router.registry.register(_tool(
+        "complete", [_field("status", "crm.status")],
+    ), replace=True)
+    router.add_tool(_tool(
+        "added", [_field("status", "crm.status")],
+    ))
+    with pytest.raises(PolicyViolationError, match="cannot verify source"):
+        NativeSchemaPostingIndex.refresh(
+            original, router.registry, changed_tool_keys=("added",),
+        )
+    updated = NativeSchemaPostingIndex.refresh(
+        original, router.registry, changed_tool_keys=("complete", "added"),
+    )
+    _assert_refreshed_posting_oracle_equivalence(router, updated)
+
+
+@pytest.mark.parametrize("bad", [
+    (), ("",), ("complete", "complete"), ["complete"], ("absent",),
+    ("complete",) * 65,
+])
+def test_native_posting_refresh_does_not_trust_malformed_or_extra_hints(bad):
+    router = _router()
+    original = NativeSchemaPostingIndex.build(router.registry)
+    router.registry.register(_tool(
+        "complete", [_field("status", "crm.status")],
+    ), replace=True)
+    error = ValueError if bad in ((), ("",), ("complete", "complete"), ["complete"], ("complete",) * 65) else PolicyViolationError
+    with pytest.raises(error):
+        NativeSchemaPostingIndex.refresh(
+            original, router.registry, changed_tool_keys=bad,
+        )
+
+
+def test_native_posting_refresh_rejects_wrong_registry_and_stale_version():
+    router = _router()
+    original = NativeSchemaPostingIndex.build(router.registry)
+    with pytest.raises(PolicyViolationError, match="newer source"):
+        NativeSchemaPostingIndex.refresh(
+            original, router.registry, changed_tool_keys=("complete",),
+        )
+    other = _router()
+    other.add_tool(_tool("added", [_field("status", "crm.status")]))
+    with pytest.raises(PolicyViolationError, match="source mismatch"):
+        NativeSchemaPostingIndex.refresh(
+            original, other.registry, changed_tool_keys=("added",),
+        )
+
+
+def test_native_posting_refresh_fails_closed_on_mid_manifest_source_drift(
+    monkeypatch,
+):
+    router = _router()
+    original = NativeSchemaPostingIndex.build(router.registry)
+    router.add_tool(_tool("added", [_field("status", "crm.status")]))
+    base_get = router.registry.get
+    fired = False
+
+    def racing_get(key):
+        nonlocal fired
+        if not fired:
+            fired = True
+            router.registry.register(
+                _tool("partial", [_field("priority", "crm.priority")]),
+                replace=True,
+            )
+        return base_get(key)
+
+    monkeypatch.setattr(router.registry, "get", racing_get)
+    with pytest.raises(PolicyViolationError, match="cannot verify source"):
+        NativeSchemaPostingIndex.refresh(
+            original, router.registry, changed_tool_keys=("added",),
+        )
+    assert fired
+
+
+def test_native_posting_refresh_does_not_call_full_catalog_tools(monkeypatch):
+    router = _router(many_partial=125)
+    original = NativeSchemaPostingIndex.build(router.registry)
+    router.add_tool(_tool(
+        "added", [_field("status", "crm.status"),
+                  _field("priority", "crm.priority")],
+    ))
+
+    def banned():
+        pytest.fail("semantic posting refresh must not rebuild all fields")
+
+    monkeypatch.setattr(router.registry, "tools", banned)
+    refreshed = NativeSchemaPostingIndex.refresh(
+        original, router.registry, changed_tool_keys=("added",),
+    )
+    assert refreshed.lookup(
+        router, ALIASES[0], principal=ANALYST, group=GROUP,
+    ).qualified_count == 2
+    assert len(refreshed.tool_fingerprints) == 133
