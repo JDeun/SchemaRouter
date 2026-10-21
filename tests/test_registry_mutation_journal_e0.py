@@ -149,7 +149,9 @@ def test_atomic_registry_journal_limits_returned_data_to_version_and_keys():
         receipt.changed_tool_keys = ("forged",)
 
 
-def test_sqlite_registry_does_not_claim_inmemory_mutation_journal_support(tmp_path):
-    """SQLite needs a separate, transactionally persisted format migration."""
-    with SQLiteRegistry(tmp_path / "journal-negative.sqlite3") as registry:
-        assert not hasattr(registry, "changed_tool_keys_since")
+def test_sqlite_registry_has_separate_persistent_mutation_receipts(tmp_path):
+    """SQLite journal is distinct from in-memory-only posting fast path."""
+    with SQLiteRegistry(tmp_path / "journal-positive.sqlite3") as registry:
+        assert registry.changed_tool_keys_since(0) == RegistryMutationReceipt(
+            0, 0, (),
+        )
