@@ -1,5 +1,7 @@
 # Research program and issue triage (2026-10-19)
 
+**Research navigation:** [Knowledge index for agents and maintainers](knowledge-index.md) — topic → evidence → implementation → issue, without duplicating the experiment ledger.
+
 **Status:** maintained research strategy / exposed evidence; **not** a new benchmark, release approval, or independent performance result. This is the Git-tracked [bilingual research wiki](tool-routing-landscape.md), rather than a separate GitHub Wiki, so every change is reviewable and reproducible. Last source audit: main `a6ec24cf3fa1a4c0c0869e3853ab65d5fda1db83` on 2026-10-19.
 
 ## 1. Mission and scope
