@@ -45,6 +45,33 @@ These six negative controls do not establish arbitrary source/permission
 adversarial coverage, publisher consent, row identity, Top-K ranking quality,
 or external-agent E2 success; the exhaustive oracle remains topology-specific.
 
+## Pre-join K5 false refusal (prospective E0 negative, #1560)
+
+`tests/test_native_fork_prejoin_budget_negative_e0.py` freezes a **known
+negative** for the current opt-in `lookup_shared_root_forks` design.
+One genuine status+owner fork uses the registered `crm.fork_customer_id`
+root. An unrelated second source-native root has a distinct typed semantic
+identifier `crm.noise_customer_id` and six different status leaves sharing
+the demanded *output* semantic ID. Each of those six is individually
+authorized and source-typed, but **none joins the genuine owner leaf**.
+
+The separately scanned original source reference has exactly **one**
+legitimate shared-root two-leaf fork. In the current implementation the
+status-arm one-hop lookup counts **seven** fully authorized paths and returns
+`over_k_unranked` before common-root composition; the fork result then
+abstains with zero disclosed candidates/qualified count. EN/KO/JA aliases
+agree on the false refusal. With only the unrelated noise cohort disabled
+by live availability (no index rebuild), the one genuine fork is returned.
+
+This is a **VALID_NEGATIVE**, neither a privacy leak nor a retrieval success:
+a real qualifying answer is refused because per-arm K5 is applied before
+cross-field intersection. To fix the product, first join all authorized,
+currently-visible source-attested field sets under a bounded search budget,
+then choose at most K=5 *complete* fork candidates by an independently
+evaluated ranking policy. Do not silently raise K, expose intermediate
+overflow arm identities/counts, return an exhaustive oracle as the product
+path, or rename this regression a measured E2 improvement.
+
 ## Non-claims
 
 **No genuine publisher-authored tasks, no independent held-out query/route/field/permission gold and no real external-agent utility**. The aliases, fields, source contracts and expected topology were developed locally. This cannot confirm arbitrary deeper/fan-in joins or row identity, calibrated overflow ranking, production p95, service level, real API latency, data privacy outside the shown source policy, or actual tool execution. Benchmark-only exhaustive matching must **never become the product query path**.
