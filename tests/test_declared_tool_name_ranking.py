@@ -173,6 +173,42 @@ def test_native_compound_endpoint_terminal_identifier_is_retrievable(
 
 
 @pytest.mark.parametrize("indexed", [False, True])
+def test_native_endpoint_identifier_remains_distinct_when_provider_is_also_named(
+    indexed: bool,
+) -> None:
+    """Provider evidence must not erase a separately declared endpoint match."""
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="servicenow",
+            endpoints=[
+                *[
+                    EndpointSpec(
+                        name=f"generic_{index}",
+                        description="Read incidents, named policies and records",
+                        read_only=True,
+                    )
+                    for index in range(5)
+                ],
+                EndpointSpec(name="record_read", read_only=True),
+            ],
+        )
+    )
+
+    result = SchemaPlanner(registry, candidate_index=indexed).retrieve(
+        "Read the servicenow named policy rule", k=5,
+    )
+
+    target = next(
+        candidate for candidate in result.candidates
+        if candidate.route_id == "servicenow.record_read"
+    )
+    assert {component.kind for component in target.score_components} >= {
+        "tool_identifier", "endpoint_identifier"
+    }
+
+
+@pytest.mark.parametrize("indexed", [False, True])
 @pytest.mark.parametrize(
     "query",
     ["Check an unreadable file", "Inspect archive records", "Show the archived list"],
@@ -209,6 +245,77 @@ def test_short_compound_terminal_identifier_is_not_promoted(indexed: bool) -> No
     )
 
     result = SchemaPlanner(registry, candidate_index=indexed).retrieve("Find the ID", k=1)
+
+    assert all(
+        component.kind != "endpoint_identifier"
+        for candidate in result.candidates
+        for component in candidate.score_components
+    )
+
+
+@pytest.mark.parametrize("indexed", [False, True])
+@pytest.mark.parametrize(
+    ("endpoint_name", "query"),
+    [
+        ("fetch_news", "Create a new customer"),
+        ("check_status", "Inspect a statu record"),
+        ("report_analysis", "Find an analysi result"),
+    ],
+)
+def test_native_endpoint_nonplural_s_suffix_is_not_singularized(
+    indexed: bool, endpoint_name: str, query: str,
+) -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="native-provider",
+            endpoints=[EndpointSpec(name=endpoint_name, read_only=True)],
+        )
+    )
+
+    result = SchemaPlanner(registry, candidate_index=indexed).retrieve(query, k=1)
+
+    assert all(
+        component.kind != "endpoint_identifier"
+        for candidate in result.candidates
+        for component in candidate.score_components
+    )
+
+
+@pytest.mark.parametrize("indexed", [False, True])
+def test_native_news_terminal_still_matches_exact_news_word(indexed: bool) -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="native-provider",
+            endpoints=[EndpointSpec(name="fetch_news", read_only=True)],
+        )
+    )
+
+    result = SchemaPlanner(registry, candidate_index=indexed).retrieve(
+        "Fetch the news", k=1,
+    )
+
+    assert any(
+        component.kind == "endpoint_identifier" and component.matched == "fetch_news"
+        for candidate in result.candidates
+        for component in candidate.score_components
+    )
+
+
+@pytest.mark.parametrize("indexed", [False, True])
+def test_numeric_native_endpoint_terminal_is_not_promoted(indexed: bool) -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="native-provider",
+            endpoints=[EndpointSpec(name="archive_2026", read_only=True)],
+        )
+    )
+
+    result = SchemaPlanner(registry, candidate_index=indexed).retrieve(
+        "Compare 2025 and 2026", k=1,
+    )
 
     assert all(
         component.kind != "endpoint_identifier"

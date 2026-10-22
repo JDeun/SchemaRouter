@@ -224,6 +224,10 @@ def _singularize_identifier(value: str) -> str:
     lowered = value.casefold()
     if not lowered.isalpha():
         return lowered
+    # These words end in "s" but are not regular plurals. In particular,
+    # stripping "news" to "new" would create spurious endpoint matches.
+    if lowered == "news" or lowered.endswith(("us", "is")):
+        return lowered
     if len(lowered) > 4 and lowered.endswith("ies"):
         return lowered[:-3] + "y"
     if (
@@ -268,7 +272,7 @@ def _endpoint_identifier_forms(name: str) -> frozenset[str]:
     forms = {_singularize_identifier(name)}
     if "_" in name:
         terminal = name.rsplit("_", 1)[-1]
-        if len(terminal) >= 4:
+        if len(terminal) >= 4 and terminal.isalpha():
             forms.add(_singularize_identifier(terminal))
     return frozenset(forms)
 
@@ -4327,13 +4331,24 @@ class SchemaPlanner:
             tool,
         )
         endpoint_identifier_match = _endpoint_identifier_match(query_tokens, endpoint)
-        if tool_identifier_match or endpoint_identifier_match:
+        if tool_identifier_match:
             score += _STRUCTURAL_TOOL_IDENTIFIER_BONUS
             components.append(
                 ScoreComponent(
-                    kind=("tool_identifier" if tool_identifier_match else "endpoint_identifier"),
+                    kind="tool_identifier",
                     value=_STRUCTURAL_TOOL_IDENTIFIER_BONUS,
-                    matched=tool.key if tool_identifier_match else endpoint.name,
+                    matched=tool.key,
+                )
+            )
+        # Provider identity and endpoint identity are independent evidence:
+        # naming a provider must not mask its named operation at fixed K.
+        if endpoint_identifier_match:
+            score += _STRUCTURAL_TOOL_IDENTIFIER_BONUS
+            components.append(
+                ScoreComponent(
+                    kind="endpoint_identifier",
+                    value=_STRUCTURAL_TOOL_IDENTIFIER_BONUS,
+                    matched=endpoint.name,
                 )
             )
 
