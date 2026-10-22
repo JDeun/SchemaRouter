@@ -79,6 +79,8 @@ def _injected_components() -> list[ScoreComponent]:
                        matched="not_a_public_endpoint"),
         ScoreComponent(kind="tool_identifier", value=12.0,
                        matched="not_a_public_tool_identifier"),
+        ScoreComponent(kind="endpoint_identifier", value=12.0,
+                       matched="not_a_public_endpoint_identifier"),
         ScoreComponent(kind="operation_family", value=8.0,
                        matched="not_a_public_operation"),
         ScoreComponent(kind="field_exact", value=6.0, matched="public_value"),
@@ -117,6 +119,7 @@ def _assert_safe(candidate) -> None:
         "not_a_public_tool",
         "not_a_public_endpoint",
         "not_a_public_tool_identifier",
+        "not_a_public_endpoint_identifier",
         "not_a_public_operation",
         "experimental_debug_secret",
     ):
@@ -171,3 +174,14 @@ def test_original_authority_and_normal_ranking_preserve_canonical_identity():
         assert SECRET_ALIAS not in retrieval.model_dump_json()
         assert candidate.tool_fingerprint == tool.fingerprint
         assert candidate.endpoint_fingerprint == source.fingerprint
+
+
+def test_authorized_score_trace_includes_only_public_native_endpoint_name():
+    router = _router()
+    retrieval = router.retrieve_authorized("read", principal=VIEWER, k=1)
+    assert len(retrieval.candidates) == 1
+    assert ("endpoint_identifier", "read") in [
+        (component.kind, component.matched)
+        for component in retrieval.candidates[0].score_components
+    ]
+    assert SECRET_ALIAS not in retrieval.model_dump_json()

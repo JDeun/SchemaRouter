@@ -256,6 +256,19 @@ def _tool_identifier_match(
     return bool(query_forms & _tool_identifier_forms(tool))
 
 
+def _endpoint_identifier_match(query_tokens: Set[str], endpoint: EndpointSpec) -> bool:
+    """Match only a complete native endpoint name, allowing simple plurals."""
+    name = endpoint.name
+    if not _SIMPLE_IDENTIFIER_RE.fullmatch(name):
+        return False
+    normalized = _singularize_identifier(name)
+    return any(
+        _singularize_identifier(token) == normalized
+        for token in query_tokens
+        if token.isascii() and token.isalnum()
+    )
+
+
 def _common_prefix_length(left: str, right: str) -> int:
     count = 0
     for left_char, right_char in zip(left, right, strict=False):
@@ -4282,16 +4295,22 @@ class SchemaPlanner:
                 ScoreComponent(kind="tool_token", value=1.5, matched=token)
             )
 
-        if self.structural_retrieval and _tool_identifier_match(
+        # An explicit provider-declared tool name is stronger lexical evidence
+        # than repeated generic words in long descriptions. Recognize complete,
+        # token-bounded identifiers (and simple plurals) in the default ranker;
+        # opt-in structural mode still controls operation-family and tie-break logic.
+        tool_identifier_match = _tool_identifier_match(
             query_tokens,
             tool,
-        ):
+        )
+        endpoint_identifier_match = _endpoint_identifier_match(query_tokens, endpoint)
+        if tool_identifier_match or endpoint_identifier_match:
             score += _STRUCTURAL_TOOL_IDENTIFIER_BONUS
             components.append(
                 ScoreComponent(
-                    kind="tool_identifier",
+                    kind=("tool_identifier" if tool_identifier_match else "endpoint_identifier"),
                     value=_STRUCTURAL_TOOL_IDENTIFIER_BONUS,
-                    matched=tool.key,
+                    matched=tool.key if tool_identifier_match else endpoint.name,
                 )
             )
 
