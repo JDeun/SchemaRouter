@@ -106,7 +106,7 @@ def lookup_native_shared_root_forks(
             source_type=declared.source_type,
             license=declared.license,
         )
-        result = index.lookup(
+        result = index._lookup_native_paths(
             router, query, group=sub_group, principal=actor, k=k,
             _fork_arm_internal=True,
         )
