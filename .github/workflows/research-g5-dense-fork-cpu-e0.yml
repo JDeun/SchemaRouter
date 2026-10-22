@@ -1,0 +1,74 @@
+name: G5 Dense Native Shared-Root CPU E0
+
+on:
+  pull_request:
+    paths:
+      - "scripts/benchmark_native_fork_dense_cpu_e0.py"
+      - "tests/test_benchmark_native_fork_dense_cpu_e0.py"
+      - "research/autoresearch/g5-dense-shared-root-cpu-e0.md"
+      - ".github/workflows/research-g5-dense-fork-cpu-e0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-source-dense-cpu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install source and bounded synthetic test dependencies
+        run: |
+          python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Strict-K5 dense native graph tests, syntax, typing
+        run: |
+          ruff check scripts/benchmark_native_fork_dense_cpu_e0.py tests/test_benchmark_native_fork_dense_cpu_e0.py
+          python -m pytest -q tests/test_benchmark_native_fork_dense_cpu_e0.py tests/test_native_fork_prejoin_budget_negative_e0.py
+          pyright scripts/benchmark_native_fork_dense_cpu_e0.py
+      - name: Dense 500/5000 base, 33/64 same-root original-fork workload
+        run: |
+          mkdir -p artifacts
+          for catalog in 500 5000; do
+            for fanout in 33 64; do
+              python -m scripts.benchmark_native_fork_dense_cpu_e0 --registered-routes "$catalog" --extra-status "$fanout" --iterations 20 --out "artifacts/g5-dense-fork-${catalog}-${fanout}-e0.json"
+            done
+          done
+      - name: Validate only E0 measured limits and aggregate output
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for path in sorted(Path("artifacts").glob("g5-dense-fork-*-e0.json")):
+              r = json.loads(path.read_text())
+              fanout = r["source_native_added_status_consumers"]
+              assert r["study"] == "G5_DENSE_SAME_ROOT_NATIVE_CPU_E0_NOT_E2"
+              assert fanout in (33, 64)
+              assert r["registered_base_routes"] in (500, 5000)
+              assert r["registered_native_routes"] == r["registered_base_routes"] + fanout
+              assert r["benchmark_only_original_source_fork_count"] == fanout + 1
+              assert r["dense_over_k"]["status"] == "over_k_unranked"
+              assert r["dense_over_k"]["qualified_forks"] == fanout + 1
+              assert r["revoked_to_single_fork"]["status"] == "complete"
+              assert r["revoked_to_single_fork"]["qualified_forks"] == 1
+              assert r["strict_public_k"] == 5
+              assert r["model_selected_tools"] is False
+              assert r["provider_native_http_calls"] == 0
+              assert r["production_slo_qualified"] is False
+              assert r["independent_e2_qualified"] is False
+              print(path.name, "dense p95", r["dense_over_k"]["wall_ms"]["p95"],
+                    "revoked p95", r["revoked_to_single_fork"]["wall_ms"]["p95"])
+          assert len(list(Path("artifacts").glob("g5-dense-fork-*-e0.json"))) == 4
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: g5-dense-original-source-cpu-e0
+          path: artifacts/g5-dense-fork-*-e0.json
+          retention-days: 30
+          if-no-files-found: warn
