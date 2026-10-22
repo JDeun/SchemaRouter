@@ -3,8 +3,8 @@
   "review_date": "2026-10-19",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 152,
-  "total_page_pairs": 152,
+  "reviewed_page_pairs": 153,
+  "total_page_pairs": 153,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
@@ -838,6 +838,12 @@
       "notes": "Matched sealed held-out policy, failed promotion, all three quantitative result rows, guardrails, per-stratum gains/losses, generator provenance, and no post-hoc tuning."
     },
     {
+      "path": "research/knowledge-index.md",
+      "en_blob": "863bba06fbbedaeac778f1a146b718010f5166dd",
+      "ko_blob": "d91d23dbba38b0edcf571d9ff6d1d53b4ee50a6b",
+      "notes": "AI-assisted paired source review of the new research navigation entry; both versions explicitly preserve canonical evidence, negative results, and non-independent status. This is not an independent sentence-level translation sign-off."
+    },
+    {
       "path": "research/large-heldout-agent-utility.md",
       "en_blob": "31213184bb15fb40d52752131ed07a140a616431",
       "ko_blob": "cd1c71feed457b7781265b001ade37aaad94065f",
@@ -881,7 +887,7 @@
     },
     {
       "path": "research/research-program-2026.md",
-      "en_blob": "0a61d820aad02d6a4ffdb4cf014839cb5b4762b3",
+      "en_blob": "b2eda0ebec645b9a76177f7cb463ea4478c89420",
       "ko_blob": "bbf4ba343caf87a02dada11c12819a8d91d79fbe",
       "notes": "AI-assisted EN/KO direct paired comparison of exact 19 terminal issue dispositions, typed G5 safety boundaries and KOPA/EDGE, ACEBench, tau2, ToolRet, AgentDojo, CaMeL source links; KO checklist wording fixed an accidental issue-identifier Markdown heading without changing 0.18 HOLD. NOT independent editorial signoff."
     },
@@ -941,5 +947,7 @@
     }
   ],
   "directly_examined_across_branches": 147,
-  "review_amendments": []
+  "review_amendments": [
+    "2026-10-22: Added bilingual research knowledge index and refreshed English research-program source blob after navigation link; AI-assisted review only, not independent human verification."
+  ]
 }
