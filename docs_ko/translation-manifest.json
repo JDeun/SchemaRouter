@@ -581,7 +581,7 @@
     },
     {
       "path": "research/research-program-2026.md",
-      "source_blob": "0a61d820aad02d6a4ffdb4cf014839cb5b4762b3"
+      "source_blob": "a5c27dc00dd4c1cef9cd819e81b099804b33f085"
     },
     {
       "path": "research/routing-status.md",
@@ -606,6 +606,14 @@
     {
       "path": "stable-core.md",
       "source_blob": "68d8c335f684c77255dd3cdbd3b95ca4aaf356e6"
+    },
+    {
+      "path": "superpowers/plans/2026-10-22-g5-native-vertical-slice.md",
+      "source_blob": "4856565cbb9c6dbfd6b2423b8c697e0086a8574f"
+    },
+    {
+      "path": "superpowers/specs/2026-10-22-g5-native-vertical-slice-design.md",
+      "source_blob": "d9a40484076fc4a8375ee522542c2ba87194dec5"
     },
     {
       "path": "versioning.md",

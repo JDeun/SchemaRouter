@@ -226,6 +226,9 @@ nav:
   - Research:
       - OSS tool-routing landscape and decisions: research/tool-routing-landscape.md
       - Research program and issue lifecycle (2026): research/research-program-2026.md
+      - G5 integration records:
+          - Source-native concept graph design (2026-10-22): superpowers/specs/2026-10-22-g5-native-vertical-slice-design.md
+          - Source-native G5 implementation plan (2026-10-22): superpowers/plans/2026-10-22-g5-native-vertical-slice.md
       - Product north star and integrated test matrix: research/product-north-star-and-test-matrix.md
       - Research status: research/routing-status.md
       - Complete experiment index: research/experiment-index.md

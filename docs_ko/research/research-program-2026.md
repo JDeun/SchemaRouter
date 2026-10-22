@@ -1,6 +1,6 @@
 # 연구 프로그램 및 이슈 정리 (2026-10-19)
 
-**문서 성격:** 연구 방향과 검증 기준을 정렬하는 관리 문서입니다. 새로운 벤치마크나 독립 성능 결과, 릴리스 승인을 뜻하지 않습니다. 이 저장소는 별도의 GitHub Wiki 대신 리뷰와 CI가 가능한 [한·영 병렬 MkDocs 연구 위키](tool-routing-landscape.md)를 공식 위키로 운영합니다. 점검 기준: 2026-10-19, main `a6ec24cf3fa1a4c0c0869e3853ab65d5fda1db83`.
+**문서 성격:** 연구 방향과 검증 기준을 정렬하는 관리 문서입니다. 새로운 벤치마크나 독립 성능 결과, 릴리스 승인을 뜻하지 않습니다. 이 저장소는 별도의 GitHub Wiki 대신 리뷰와 CI가 가능한 [한·영 병렬 MkDocs 연구 위키](tool-routing-landscape.md)를 공식 위키로 운영합니다. 점검 기준: 2026-10-19, main `a6ec24cf3fa1a4c0c0869e3853ab65d5fda1db83`. G5 opt-in 통합 증거는 2026-10-22 전용 구현 브랜치에서 갱신했으며 릴리스·기본값 승격은 아닙니다.
 
 ## 1. 연구 목적과 범위
 
@@ -9,6 +9,47 @@
 SchemaRouter의 책임은 **기능 검색과 검증된 타입 기반 실행 경계**입니다. 별도의 자율 에이전트, LLM 게이트웨이, 자동 번역기, 벤치마크 정답 오라클, 그래프 DB, 새로운 도구 실행기를 만드는 것이 아닙니다. OpenAPI, MCP, OPTIMADE, Python 및 기타 프로토콜은 **하나의 원본 등록 카탈로그**를 사용합니다. 개념→FieldGroup 해석, 생산자→소비자 엣지, 출처·권한 증거는 후보를 제한할 뿐 새로운 실행 권한을 만들지 않습니다. 실제 도구 호출을 제안하는 외부 모델/호스트와 신뢰 실행 정책은 구분합니다.
 
 [SchemaRouter 원 논문](https://arxiv.org/abs/2608.21375)은 110문항의 특정 도메인 실험입니다. 대규모 이질적 도구 및 실제 에이전트 일반화의 보증은 아닙니다. 독립 0.14 실험의 **부정적 결과**도 보존해야 합니다. FULL 49.62%, SR-5 29.19%, SR-10 31.03%, SR-PROGRESSIVE 25.09%, ORACLE 70.98% 과제 성공률([이슈 #432](https://github.com/JDeun/SchemaRouter/issues/432), [#1339](https://github.com/JDeun/SchemaRouter/issues/1339)). 이후 공개 DEV 점수가 올라가도 이 결과를 바꾸지 않습니다.
+
+### 2026-10-22 G5 opt-in 통합: 구현 범위와 E1 선행 조건
+
+**제품 기능(명시적 opt-in):** `schemarouter.retrieve_authorized_concept_graph`는 이미 존재하는 소유자 선언 기반 `resolve_native_concepts` → 완전한 권한 범위의 FieldGroup 검색 → 버전 일치 `NativeSchemaGraphIndex.lookup`을 조합합니다. 불변 `NativeConceptGraphSelection` 결과에는 `route_sets`, 원본 도구/엔드포인트 fingerprint 삼중항, 요구 semantic ID, 검증된 생산자 출력 필드→소비자 파라미터 바인딩 전체가 들어갑니다. **입력이 없는 완전한 직접 엔드포인트**를 먼저 선택합니다. 필수 입력이 충족되지 않은 엔드포인트는 입력 없는 직접 경로로 승격하지 않고, 기존의 완전한 타입 기반 한 홉 연결로만 사용할 수 있습니다. 이는 검색 기능이므로 언제나 `executable_authority=False`입니다.
+
+다음은 명시적 권한 정책과 검토된 원본 메타데이터가 이미 있는 호스트에서만 사용할 수 있는 연결 예시입니다.
+
+```python
+from schemarouter import (
+    NativeSchemaGraphIndex,
+    NativeSchemaPostingIndex,
+    retrieve_authorized_concept_graph,
+)
+
+# router: 명시적 authorization_policy와 원본 도구가 등록된 SchemaRouter
+# catalog: EN/KO/JA 별칭과 정확한 타입 필드를 가진 소유자 검토 NativeConceptCatalog
+# principal: 현재 요청 범위의 PrincipalContext
+index = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
+result = retrieve_authorized_concept_graph(
+    router, "문의 상태", principal=principal, catalog=catalog, index=index, k=5,
+)
+if result.status == "complete":
+    print(result.route_ids)  # 호출 허가가 아닌 승인된 원본 경로 ID
+```
+
+이 예시는 호스트가 원래 카탈로그에 `"문의 상태"`를 실제로 선언했을 때만 성립합니다. SchemaRouter가 해당 개념을 번역하거나 추론하지는 않습니다. 검토된 EN/KO/JA 별칭은 같은 타입 제약으로 해석됩니다. `no_proven_hit`은 숨긴 ID를 노출하지 않습니다. 완전한 대안이 필요한 **고유 원본 경로 ID**가 5개를 초과하고 검증된 순위가 없으면 `over_k_unranked`는 임의의 상위 5개가 아닌 **빈 경로**를 반환합니다. 그래프 인덱스·레지스트리 버전·정책·데이터 범위·가용성·원본 fingerprint·카탈로그 내용은 재확인됩니다. 질의나 검색 결과에 호출 권한은 없습니다. 첫 통합 범위는 **직접 경로+한 홉**이며 자동 여러 홉 오케스트레이션은 아닙니다.
+
+**에이전트 연결:** `scripts/research_authorized_concept_fixed5_agent_bridge.py`의 `AuthorizedConceptGraphFixed5Selector`가 기존 `EVAL-FIXED5-OPTIN` 에이전트 생성 경로의 콜백을 확장합니다. 요청자·원래 질의·소스 버전 범위에 속하는 `AuthorizedAgentToolSurface` 정의만 표시됩니다. 선택기는 실시간 정책 내용, 숨김·ref 필드의 안전한 투영, 모든 소스 fingerprint, K5, 실제 직렬화된 모델 도구 스키마의 바이트 예산을 확인합니다. 이전 개념 선택기와 통상 검색 기본값은 변하지 않습니다. 제어된 E0 통합 테스트에서는 기존 에이전트 루프가 생산자·소비자 두 경로를 보고 두 호출을 완료했지만, **모의 모델·fixture 결과를 실제 E1 또는 독립 E2 증거로 부르지 않습니다**.
+
+**실제 E1 사전 검사:** `scripts.research_real_qwen_open_meteo_two_hop_e1`에 `concept_graph_optin`, `compare_graph_native_e1`, 기존 `all_visible`, `lexical_k5`와의 대응 비교가 추가됐습니다. 원래 Open-Meteo 호출·소스 상태 검사·엄격한 최종 사실 검증기를 재사용합니다. 모델 가중치·공급자 호출 없이 원본 소스 적격성만 검사하는 명령은 다음과 같습니다.
+
+```bash
+PYTHONPATH=src:. python -m scripts.research_real_qwen_open_meteo_two_hop_e1 \
+  --compare-graph --out /tmp/schemarouter-native-g5-e1.json
+```
+
+**별도 승인된** 원본 소스 입력이 있을 때는 같은 CLI에 `--host-catalog /path/to/reviewed-concepts.json`과 반복 가능한 `--approved-host-root tool.endpoint`를 전달할 수 있습니다. 이는 E1 질의나 평가 정답에서 추론한 것이 아니라 **호스트 검토 선언**입니다. E1 모듈은 모든 호출 전에 실시간 원본 소스·정책·타입 그래프를 다시 검증하며, 자격 요건을 통과한 뒤에만 고정 모델 가중치를 **오프라인으로** 불러옵니다. 플래그만 지정했다고 검증되지 않은 소스가 적격해지지는 않습니다.
+
+**2026-10-22 관측 결과:** `BLOCKED_SOURCE_SEMANTICS`, `task_success_rate: null`, 제공자 HTTP 시도 0회, 모델 턴 0회(사전 검사에서 차단). 기존 `build_live_router`에는 소스 종류는 있지만 라이선스 선언, 정확한 스칼라 출력 semantic ID, 생산자 좌표→날씨 입력 G5 타입 엣지, 명시적 요청자 권한 정책, 검토된 호스트 시작 경로 입력 계약이 없습니다. 이는 실제 소스·호스트 선행 조건입니다. E1 점수를 올리기 위해 필드나 권한을 임의로 채워서는 안 됩니다. 실제 대응 실험 전에 [Open-Meteo 사용 조건](https://open-meteo.com/en/terms)과 원본 스키마를 별도로 확인해야 합니다. 모델 가중치는 적재되지 않았고 새로운 G5 부문의 과제 성공률은 **존재하지 않습니다**. 향후 요건을 충족해도 원본 도구가 두 작업뿐이므로 K5에서 FULL 대비 스키마 비용 절감은 입증되지 않으며 우선 **두 단계 과제 정답성**을 확인합니다.
+
+**작업 순서:** 소유자가 실제 검토한 소스 의미·권한 메타데이터와 모델 가용성을 확보하고, 원본 EN/KO/JA E1 대응 실험을 재실행합니다. 소스·관측값 변경은 비교 불가로, 제공자 장애는 모델 최종 답 오류와 분리해 기록합니다. 공급자/과제 작성자가 분리된 독립 E2는 [#1346](https://github.com/JDeun/SchemaRouter/issues/1346)에서 `BLOCKED_EXTERNAL`이며 [#1535](https://github.com/JDeun/SchemaRouter/issues/1535), [#1560](https://github.com/JDeun/SchemaRouter/issues/1560), [#1477](https://github.com/JDeun/SchemaRouter/issues/1477)도 열려 있습니다. 기본값은 변경되지 않고 [릴리스 PR #1356](https://github.com/JDeun/SchemaRouter/pull/1356)의 병합 권한도 생기지 않습니다. 현재 마일스톤 기록은 [#1700](https://github.com/JDeun/SchemaRouter/issues/1700)→M1(실측된 통합 병목만 최적화), CodeGraph [#1711](https://github.com/JDeun/SchemaRouter/issues/1711)→M5(비차단), 전체 추적용 [#200](https://github.com/JDeun/SchemaRouter/issues/200)은 의도적으로 미배정입니다. [실시간 보충 기록](https://github.com/JDeun/SchemaRouter/blob/main/.github/RESEARCH_MILESTONES.md)을 참조하십시오. 초기 30건 매니페스트는 보호된 과거 초기화 스냅샷입니다.
 
 ## 2. 연구 아키텍처와 변경 불가 원칙
 
