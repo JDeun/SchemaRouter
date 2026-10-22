@@ -342,3 +342,66 @@ def test_one_root_multiple_identifiers_more_than_32_consumers_is_joined():
         ) == expected
         assert result.executable_authority is False
         assert result.independent_quality_evidence is False
+def test_same_root_sharding_preserves_public_k5_and_budget_abstention(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """No shard may promote >5 genuinely complete forks or leak partial arms.
+
+    The same original customer-ID root connects 33 extra approved status
+    consumers and one approved owner consumer. All 34 forks are complete;
+    even with internal target sharding this remains unranked >K5. Force a
+    *smaller test-only internal attempt budget* to prove exhaustion returns
+    only a no-disclosure abstention, never the partially visited shards.
+    Live health removal must restore the sole original fork on the SAME
+    version-pinned index.
+    """
+    router = build_fixture(500)
+    for i in range(33):
+        router.add_tool(_decoy_leaf(
+            f"fork_extra_status_{i}", "crm.fork_status", "status",
+        ))
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    # The generic source oracle is intentionally not used to select routes
+    # or control the query. Only exact permitted constructed source contracts
+    # and observed status/count are inspected.
+    for query in ALIASES:
+        result = index.lookup_shared_root_forks(
+            router, query, group=GROUP, principal=ACTOR,
+        )
+        assert result.status == "over_k_unranked"
+        assert result.qualified_fork_count == 34
+        assert result.candidates == ()
+        assert result.executable_authority is False
+        assert result.independent_quality_evidence is False
+
+    # The production constant is 64. Tightening it for an E0 negative
+    # forces one-target-root recursion to exhaust before all shards.
+    monkeypatch.setattr(
+        "schemarouter.native_fork_index.MAX_FORK_SHARD_LOOKUPS", 2,
+    )
+    for query in ALIASES:
+        exhausted = index.lookup_shared_root_forks(
+            router, query, group=GROUP, principal=ACTOR,
+        )
+        assert exhausted.status == "over_k_unranked"
+        assert exhausted.qualified_fork_count == 0
+        assert exhausted.candidates == ()
+        assert exhausted.executable_authority is False
+        assert exhausted.independent_quality_evidence is False
+
+    # Even the tightened budget must handle a live availability revocation
+    # without a catalog rebuild or stale partial-candidate disclosure.
+    router.planner.availability_predicate = (
+        lambda tool, _ep: not tool.key.startswith("fork_extra_status_")
+    )
+    restored = index.lookup_shared_root_forks(
+        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    )
+    assert restored.status == "complete"
+    assert restored.qualified_fork_count == 1
+    assert tuple(
+        (c.root_route_id, *c.branch_route_ids)
+        for c in restored.candidates
+    ) == (("fork_origin.read", "fork_status.read", "fork_owner.read"),)
