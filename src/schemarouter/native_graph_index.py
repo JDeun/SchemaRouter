@@ -213,6 +213,7 @@ class NativeIndexedGraphResult:
     status: Literal[
         "complete", "no_proven_hit", "over_k_unranked",
         "ranked_unverified", "ranker_abstained_unverified",
+        "internal_fork_arm",
     ]
     index_snapshot_id: str
     registry_version: int
@@ -602,6 +603,26 @@ class NativeSchemaGraphIndex:
             tuple[int, ...],
         ] | None = None,
     ) -> NativeIndexedGraphResult:
+        """Public G5 lookup: strict K5, never exposes private fork arms."""
+        return self._lookup_native_paths(
+            router, query, group=group, principal=principal, k=k,
+            _research_ranker=_research_ranker,
+        )
+
+    def _lookup_native_paths(
+        self,
+        router: SchemaRouter,
+        query: str,
+        *,
+        group: NativeDeclaredFieldGroup,
+        principal: PrincipalContext,
+        k: int = STRICT_K,
+        _research_ranker: Callable[
+            [str, tuple[NativeIndexedGraphCandidate, ...], int],
+            tuple[int, ...],
+        ] | None = None,
+        _fork_arm_internal: bool = False,
+    ) -> NativeIndexedGraphResult:
         """Discover source-proven typed paths; default remains unranked at >K.
 
         An explicitly supplied host-owned E0 callback sees only FULLY
@@ -614,6 +635,10 @@ class NativeSchemaGraphIndex:
             raise ValueError("G5 strict fixed K5 required")
         if _research_ranker is not None and not callable(_research_ranker):
             raise ValueError("G5 experimental ranker must be callable")
+        if type(_fork_arm_internal) is not bool or (
+            _fork_arm_internal and _research_ranker is not None
+        ):
+            raise ValueError("G5 internal fork arm forbids external ranking")
         if type(query) is not str or len(query.encode("utf-8")) > 512:
             raise ValueError("G5 invalid bounded query")
         if not isinstance(principal, PrincipalContext):
@@ -826,6 +851,20 @@ class NativeSchemaGraphIndex:
         ) != original_policy:
             raise PolicyViolationError("G5 authorization rules changed during lookup")
         if len(found) > k:
+            # Source-private composition mode: authorize and recheck each
+            # one-hop witness exactly as in ordinary G5, but do NOT apply
+            # final public K to each arm before proving the shared root.
+            # Never expose >K arms from ordinary lookup or return >32 arms.
+            if _fork_arm_internal:
+                if len(found) > MAX_RESEARCH_RANKABLE_PATHS:
+                    return NativeIndexedGraphResult(
+                        "over_k_unranked", self.field_index.snapshot_id,
+                        self.field_index.registry_version, k, len(found), (),
+                    )
+                return NativeIndexedGraphResult(
+                    "internal_fork_arm", self.field_index.snapshot_id,
+                    self.field_index.registry_version, k, len(found), tuple(found),
+                )
             if (
                 _research_ranker is None
                 or len(found) > MAX_RESEARCH_RANKABLE_PATHS
