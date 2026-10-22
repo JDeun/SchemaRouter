@@ -437,3 +437,37 @@ def test_original_openapi_and_mcp_fork_requires_host_semantic_attestation(
     else:
         assert out.status == "no_proven_hit"
         assert out.candidates == ()
+
+
+@pytest.mark.parametrize("qualifier", ("source_type", "license"))
+def test_shared_root_fork_refuses_cross_owner_join_without_group_qualifiers(
+    qualifier,
+):
+    """Unconstrained host FieldGroup never implies cross-publisher consent."""
+    router = _router()
+    other = router.registry.get("right_0")
+    if qualifier == "source_type":
+        other.source_type = "external-crm"
+    else:
+        other.license = "different-owner"
+    router.registry.register(other, replace=True)
+    unconstrained = NativeDeclaredFieldGroup(
+        aliases=ALIASES,
+        required_fields=GROUP.required_fields,
+    )
+    idx = _index(router)
+    for required in unconstrained.required_fields:
+        single = NativeDeclaredFieldGroup(
+            aliases=ALIASES, required_fields=(required,),
+        )
+        # Each branch is individually type-correct and allowed. Cross-owner
+        # composition nonetheless lacks a reviewed source/legal agreement.
+        assert idx.lookup(
+            router, ALIASES[0], group=single, principal=ACTOR,
+        ).status == "complete"
+    result = idx.lookup_shared_root_forks(
+        router, ALIASES[0], group=unconstrained, principal=ACTOR,
+    )
+    assert result.status == "no_proven_hit"
+    assert result.qualified_fork_count == 0
+    assert result.candidates == ()
