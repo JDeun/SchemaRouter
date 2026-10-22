@@ -300,9 +300,10 @@ def lookup_native_shared_root_forks(
         fresh_right = authorized_leaf(1)
         if fresh_left != left or fresh_right != right:
             raise PolicyViolationError("G5 fork source eligibility changed")
-    except Exception:
+    except Exception as exc:
+        # TEMPORARY E0 CI diagnostic: class only, NEVER provider exception text.
         raise PolicyViolationError(
-            "G5 fork eligibility changed during lookup"
+            f"G5 fork eligibility changed during lookup [{type(exc).__name__}]"
         ) from None
 
     index.field_index._assert_source(router)
