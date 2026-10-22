@@ -602,6 +602,25 @@ class NativeSchemaGraphIndex:
             [str, tuple[NativeIndexedGraphCandidate, ...], int],
             tuple[int, ...],
         ] | None = None,
+    ) -> NativeIndexedGraphResult:
+        """Public G5 lookup: strict K5, never exposes private fork arms."""
+        return self._lookup_native_paths(
+            router, query, group=group, principal=principal, k=k,
+            _research_ranker=_research_ranker,
+        )
+
+    def _lookup_native_paths(
+        self,
+        router: SchemaRouter,
+        query: str,
+        *,
+        group: NativeDeclaredFieldGroup,
+        principal: PrincipalContext,
+        k: int = STRICT_K,
+        _research_ranker: Callable[
+            [str, tuple[NativeIndexedGraphCandidate, ...], int],
+            tuple[int, ...],
+        ] | None = None,
         _fork_arm_internal: bool = False,
     ) -> NativeIndexedGraphResult:
         """Discover source-proven typed paths; default remains unranked at >K.
