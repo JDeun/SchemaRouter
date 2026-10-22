@@ -31,6 +31,35 @@ from one-time index-build cost, plus process peak RSS. No silent K increase,
 gold-aware refill, source/tool executor, authorization grant or default
 routing change. The benchmark report is aggregate metadata only.
 
+## Bounded indexed pre-fork scheduling A/B (#1700, E0)
+
+The follow-up skips one redundant complete >32 source-validated witness scan by
+scheduling canonical *indexed* consumer route ID shards upfront only when:
+a single original source root, private budget >=16 and 33..128
+structural consumer route IDs. Live availability remains a mandatory
+per-shard check, including the default snapshot health callback. The scheduling
+set is NEVER authority or a result. EVERY shard still runs the original
+authorization/field-scope/type/pinned-fingerprint/availability and late
+binding validation, and both complete arms are collected twice before any
+candidate/count disclosure. Public strict K5 and execution rights are unchanged.
+
+Developer A/B runs on the same ephemeral Linux runner: original private
+per-arm >32 scan then split versus bounded index-only prepartition. Both
+conditions use the same native 500/5000 base + 33/64 same-ID status leaves,
+same strict K5 over-K and live health-withdrawn baseline. Each is a separate
+fixture build, run in a fixed noninterleaved order with 20 warmed samples.
+Therefore this is NOT a controlled causal benchmark, stable hardware SLO,
+independently reviewed publisher gold or E2.
+
+The one-index differential regression counts private authorized arm calls
+(33: old 8, new 6; 64: old 12, new 8), compares exact source candidates and
+abstention under the same original index and forbids private IDs. Even
+with a live availability predicate, the SAME original callback runs in every
+typed source-checked leaf; this may incur extra work after most paths are
+revoked, and is reported separately in the A/B results rather than hidden.
+When test-only shard budget is too small, the original path remains in use
+to avoid a new false refusal.
+
 ## Non-claims
 These are **developer-authored synthetic CRM graphs**, not independent
 publisher task/gold/permission labels, runtime business responses,

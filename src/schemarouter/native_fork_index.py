@@ -12,6 +12,7 @@ from .authorization import PrincipalContext
 from .errors import PolicyViolationError
 from .field_group_retrieval import NativeDeclaredFieldGroup, _alias_key
 from .native_graph_index import (
+    MAX_RESEARCH_RANKABLE_PATHS,
     STRICT_K,
     NativeIndexedGraphCandidate,
     _flat_same_record_source_contract,
@@ -26,6 +27,10 @@ if TYPE_CHECKING:
 # Max private source-validated subqueries per arm and live-recheck pass.
 # This is a computational fail-closed budget, NOT a public K or ranker.
 MAX_FORK_SHARD_LOOKUPS = 64
+# Structural-only prepartitioning is worthwhile for bounded dense ROOT
+# cohorts; it does not attest a single route or replace scoped validation.
+MAX_FORK_PREFORK_TARGETS = 128
+MIN_FORK_PREFORK_BUDGET = 16
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,6 +140,51 @@ def lookup_native_shared_root_forks(
             targets: frozenset[str] | None = None,
         ) -> tuple[NativeIndexedGraphCandidate, ...] | None:
             nonlocal attempts
+            # Index-only private scheduling optimization: a single original
+            # root with a bounded number of structurally attached consumers
+            # may be split BEFORE the first >32 verified witness scan.
+            # Split nodes count against the same private attempt budget.
+            # Every leaf is still checked by the ORIGINAL authorized path;
+            # no grant/count/candidate is inferred from these postings.
+            if (
+                len(roots) == 1
+                and MAX_FORK_SHARD_LOOKUPS >= MIN_FORK_PREFORK_BUDGET
+            ):
+                if targets is None:
+                    posting = index.field_index.postings.get(
+                        declared.required_fields[required_field_index].semantic_id,
+                        (),
+                    )
+                    matched = sorted(
+                        route for route in posting
+                        if route in index.edge_consumer_routes
+                        and any(
+                            root in roots for root in index.graph.predecessors(route)
+                        )
+                    )
+                else:
+                    matched = sorted(targets)
+                if (
+                    MAX_RESEARCH_RANKABLE_PATHS < len(matched)
+                    <= MAX_FORK_PREFORK_TARGETS
+                ):
+                    attempts += 1
+                    if attempts > MAX_FORK_SHARD_LOOKUPS:
+                        return None
+                    midpoint = len(matched) // 2
+                    first_shard = collect(
+                        roots, frozenset(matched[:midpoint]),
+                    )
+                    if first_shard is None:
+                        return None
+                    second_shard = collect(
+                        roots, frozenset(matched[midpoint:]),
+                    )
+                    return (
+                        None if second_shard is None
+                        else first_shard + second_shard
+                    )
+
             attempts += 1
             if attempts > MAX_FORK_SHARD_LOOKUPS:
                 # Never claim no-fit or release partially collected arms.

@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "scripts/benchmark_native_fork_dense_cpu_e0.py"
+      - "src/schemarouter/native_fork_index.py"
       - "tests/test_benchmark_native_fork_dense_cpu_e0.py"
       - "research/autoresearch/g5-dense-shared-root-cpu-e0.md"
       - ".github/workflows/research-g5-dense-fork-cpu-e0.yml"
@@ -37,6 +38,7 @@ jobs:
           for catalog in 500 5000; do
             for fanout in 33 64; do
               python -m scripts.benchmark_native_fork_dense_cpu_e0 --registered-routes "$catalog" --extra-status "$fanout" --iterations 20 --out "artifacts/g5-dense-fork-${catalog}-${fanout}-e0.json"
+              python -m scripts.benchmark_native_fork_dense_cpu_e0 --registered-routes "$catalog" --extra-status "$fanout" --iterations 20 --disable-prefork --out "artifacts/g5-dense-fork-${catalog}-${fanout}-baseline-e0.json"
             done
           done
       - name: Validate only E0 measured limits and aggregate output
@@ -57,13 +59,14 @@ jobs:
               assert r["revoked_to_single_fork"]["status"] == "complete"
               assert r["revoked_to_single_fork"]["qualified_forks"] == 1
               assert r["strict_public_k"] == 5
+              assert r["bounded_index_prefork_scheduling"] is ("-baseline-" not in path.name)
               assert r["model_selected_tools"] is False
               assert r["provider_native_http_calls"] == 0
               assert r["production_slo_qualified"] is False
               assert r["independent_e2_qualified"] is False
               print(path.name, "dense p95", r["dense_over_k"]["wall_ms"]["p95"],
                     "revoked p95", r["revoked_to_single_fork"]["wall_ms"]["p95"])
-          assert len(list(Path("artifacts").glob("g5-dense-fork-*-e0.json"))) == 4
+          assert len(list(Path("artifacts").glob("g5-dense-fork-*-e0.json"))) == 8
           PY
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()

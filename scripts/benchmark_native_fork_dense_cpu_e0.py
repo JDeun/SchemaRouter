@@ -13,7 +13,9 @@ import time
 from pathlib import Path
 from statistics import fmean
 from typing import Any
+from unittest.mock import patch
 
+from schemarouter import native_fork_index
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
@@ -32,6 +34,7 @@ PREFIX = "dense_fork_status_"
 
 def benchmark_dense(
     *, registered_routes: int, extra_status: int, iterations: int = 10,
+    prefork: bool = True,
 ) -> dict[str, Any]:
     if type(registered_routes) is not int or registered_routes not in (500, 5000):
         raise ValueError("requires fixed 500/5000 route base")
@@ -39,6 +42,8 @@ def benchmark_dense(
         raise ValueError("requires developer E0 fanout 33 or 64")
     if type(iterations) is not int or not 10 <= iterations <= 40:
         raise ValueError("requires bounded 10..40 E0 samples")
+    if type(prefork) is not bool:
+        raise ValueError("requires explicit boolean prepartition mode")
 
     router = build_fixture(registered_routes)
     for i in range(extra_status):
@@ -63,13 +68,23 @@ def benchmark_dense(
     if graph.field_index.indexed_route_count != registered_routes + extra_status:
         raise AssertionError("dense E0 source registration count drift")
 
+    def lookup(query: str):
+        # Developer-only A/B toggle. Both arms always execute the original
+        # authorized G5 implementation, differing only in the optional
+        # bounded structural scheduling of already indexed targets.
+        with patch.object(
+            native_fork_index, "MAX_FORK_PREFORK_TARGETS",
+            128 if prefork else 0,
+        ):
+            return graph.lookup_shared_root_forks(
+                router, query, group=GROUP, principal=ACTOR,
+            )
+
     def assert_observed(
         *, wanted_status: str, count: int,
     ) -> None:
         for query in ALIASES:
-            actual = graph.lookup_shared_root_forks(
-                router, query, group=GROUP, principal=ACTOR,
-            )
+            actual = lookup(query)
             if (
                 actual.status != wanted_status
                 or actual.qualified_fork_count != count
@@ -95,9 +110,7 @@ def benchmark_dense(
         for _ in range(iterations):
             wall_start = time.perf_counter_ns()
             cpu_start = time.process_time_ns()
-            actual = graph.lookup_shared_root_forks(
-                router, ALIASES[0], group=GROUP, principal=ACTOR,
-            )
+            actual = lookup(ALIASES[0])
             cpus.append((time.process_time_ns() - cpu_start) / 1_000_000)
             walls.append((time.perf_counter_ns() - wall_start) / 1_000_000)
             if actual.status != wanted_status or actual.qualified_fork_count != count:
@@ -144,6 +157,7 @@ def benchmark_dense(
         "private_arms_never_exposed": True,
         "same_source_index_live_health_revocation": True,
         "sample_count": iterations,
+        "bounded_index_prefork_scheduling": prefork,
         "warmup_count_per_condition": 3,
         "index_build_wall_ms": round(index_build_ms, 4),
         "dense_over_k": overflow,
@@ -169,12 +183,13 @@ def main() -> None:
     parser.add_argument("--registered-routes", type=int, required=True)
     parser.add_argument("--extra-status", type=int, required=True)
     parser.add_argument("--iterations", type=int, default=10)
+    parser.add_argument("--disable-prefork", action="store_true")
     parser.add_argument("--out", type=Path, required=True)
     options = parser.parse_args()
     report = benchmark_dense(
         registered_routes=options.registered_routes,
         extra_status=options.extra_status,
-        iterations=options.iterations,
+        iterations=options.iterations, prefork=not options.disable_prefork,
     )
     options.out.parent.mkdir(parents=True, exist_ok=True)
     options.out.write_text(
