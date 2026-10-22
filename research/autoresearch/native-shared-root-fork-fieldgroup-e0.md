@@ -23,9 +23,12 @@ current policy and principal-specific field visibility.
   root endpoint**; consumer parameter *names* may differ.
 - The shared source identifier must be a **required scalar property of a
   flat root output object**, with matching non-nested original field
-  projections. The root's original source type and license must also match
-  any host-declared source/license qualifiers. Optional, array/nested,
-  incompatible, hidden, ambiguous or wrong-license identifiers fail closed.
+  projections. All three original routes must share the same source type
+  and license, **even if the FieldGroup omits those constraints**. The host's
+  declared source/license qualifiers must also match. Cross-publisher joins
+  require a separate explicit, verified consent contract. Optional, array/
+  nested, incompatible, hidden, ambiguous or wrong-license identifiers fail
+  closed.
 - The shared source root must have no input parameters. Arbitrary
   source-argument values or implicit auth cannot be manufactured.
 - Root and both branches must remain authorized/visible/healthy.
