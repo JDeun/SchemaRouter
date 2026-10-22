@@ -238,3 +238,107 @@ def test_dense_structural_common_roots_recheck_and_join_in_bounded_shards(
         ) == oracle
         assert actual.executable_authority is False
         assert actual.independent_quality_evidence is False
+
+
+def test_one_root_multiple_identifiers_more_than_32_consumers_is_joined():
+    """Typed consumer shards rescue one ID join despite 33 other-ID paths.
+
+    Root sharding alone cannot divide a single original source route. All
+    noise status leaves are individually authorized but bind account_id,
+    whereas the sole extra valid owner binds customer_id on that SAME root.
+    The result must contain both baseline and new genuine forks, never the
+    33 account-ID status mismatches.
+    """
+    router = build_fixture(500)
+    router.add_tool(ToolSpec(
+        name="fork_fanout_origin", source_type="crm",
+        license="host-reviewed-synthetic",
+        endpoints=[EndpointSpec(
+            name="read", read_only=True,
+            output_fields=[
+                FieldSpec(
+                    name="customer_id", semantic_id="crm.fanout_customer_id",
+                    identifier=True, json_schema={"type": "string"},
+                ),
+                FieldSpec(
+                    name="account_id", semantic_id="crm.fanout_account_id",
+                    identifier=True, json_schema={"type": "string"},
+                ),
+            ],
+            output_schema={
+                "type": "object",
+                "properties": {
+                    "customer_id": {"type": "string"},
+                    "account_id": {"type": "string"},
+                },
+                "required": ["customer_id", "account_id"],
+            },
+        )],
+    ))
+
+    def leaf(name, semantic, input_name, input_semantic):
+        return ToolSpec(
+            name=name, source_type="crm", license="host-reviewed-synthetic",
+            endpoints=[EndpointSpec(
+                name="read", read_only=True,
+                parameters=[ParameterSpec(
+                    name=input_name, required=True,
+                    semantic_id=input_semantic,
+                    json_schema={"type": "string"},
+                )],
+                input_schema={
+                    "type": "object",
+                    "properties": {input_name: {"type": "string"}},
+                    "required": [input_name],
+                },
+                output_fields=[FieldSpec(
+                    name="value", semantic_id=semantic,
+                    json_schema={"type": "string"},
+                )],
+            )],
+        )
+
+    customer_sem = "crm.fanout_customer_id"
+    account_sem = "crm.fanout_account_id"
+    router.add_tool(leaf(
+        "fork_fanout_status", "crm.fork_status", "customer_id",
+        customer_sem,
+    ))
+    router.add_tool(leaf(
+        "fork_fanout_owner", "crm.fork_owner", "customer_id",
+        customer_sem,
+    ))
+    for i in range(33):
+        router.add_tool(leaf(
+            f"fork_fanout_noise_status_{i}",
+            "crm.fork_status", "account_id", account_sem,
+        ))
+
+    # Deliberately source-constructed expected identities; test never
+    # supplies this positive control to production retrieval.
+    expected = (
+        ("fork_fanout_origin.read",
+         "fork_fanout_status.read", "fork_fanout_owner.read"),
+        ("fork_origin.read",
+         "fork_status.read", "fork_owner.read"),
+    )
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    assert len(index.graph.predecessors("fork_fanout_owner.read")) == 1
+    assert all(
+        "fork_fanout_origin.read" in index.graph.predecessors(
+            f"fork_fanout_noise_status_{i}.read"
+        ) for i in range(33)
+    )
+    for query in ALIASES:
+        result = index.lookup_shared_root_forks(
+            router, query, group=GROUP, principal=ACTOR,
+        )
+        assert result.status == "complete"
+        assert result.qualified_fork_count == 2
+        assert tuple(
+            (c.root_route_id, *c.branch_route_ids) for c in result.candidates
+        ) == expected
+        assert result.executable_authority is False
+        assert result.independent_quality_evidence is False

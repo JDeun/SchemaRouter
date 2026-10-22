@@ -132,6 +132,7 @@ def lookup_native_shared_root_forks(
 
         def collect(
             roots: frozenset[str],
+            targets: frozenset[str] | None = None,
         ) -> tuple[NativeIndexedGraphCandidate, ...] | None:
             nonlocal attempts
             attempts += 1
@@ -141,21 +142,51 @@ def lookup_native_shared_root_forks(
             result = index._lookup_native_paths(
                 router, query, group=sub_group, principal=actor, k=k,
                 _fork_arm_internal=True, _fork_root_filter=roots,
+                _fork_target_filter=targets,
             )
             if result.status == "over_k_unranked":
-                # A single private arm query remains limited to 32 verified
-                # paths. Subdivide disjoint INDEXED ROOT IDs, not field
-                # postings or privileged source state, until each fits.
-                # One root exceeding 32 still conservatively abstains.
-                if len(roots) < 2:
+                # First split disjoint source-root IDs, preserving original
+                # source-scoped lookup and the 32-path per-query budget.
+                if len(roots) >= 2:
+                    ordered = sorted(roots)
+                    midpoint = len(ordered) // 2
+                    before = collect(frozenset(ordered[:midpoint]), targets)
+                    if before is None:
+                        return None
+                    after = collect(frozenset(ordered[midpoint:]), targets)
+                    return None if after is None else before + after
+
+                # A SINGLE source root may feed >32 one-hop consumers via
+                # *different typed identifiers*. Subdivide only existing
+                # source-indexed consumer route IDs, not public candidates.
+                # The target postings form a structural SUPerset; all of
+                # source versions, permission, scope, health and typed
+                # bindings are rechecked inside every private query.
+                if targets is None:
+                    indexed = index.field_index.postings.get(
+                        declared.required_fields[required_field_index].semantic_id,
+                        (),
+                    )
+                    candidates = frozenset(
+                        target_id for target_id in indexed
+                        if target_id in index.edge_consumer_routes
+                        and any(
+                            root_id in roots for root_id in
+                            index.graph.predecessors(target_id)
+                        )
+                    )
+                else:
+                    candidates = targets
+                if len(candidates) < 2:
                     return None
-                ordered = sorted(roots)
+                ordered = sorted(candidates)
                 midpoint = len(ordered) // 2
-                before = collect(frozenset(ordered[:midpoint]))
+                before = collect(roots, frozenset(ordered[:midpoint]))
                 if before is None:
                     return None
-                after = collect(frozenset(ordered[midpoint:]))
+                after = collect(roots, frozenset(ordered[midpoint:]))
                 return None if after is None else before + after
+
             if result.status == "no_proven_hit":
                 return ()
             if result.status not in ("complete", "internal_fork_arm"):
