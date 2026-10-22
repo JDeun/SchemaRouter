@@ -1,0 +1,79 @@
+name: G5 Dense Fork Same-Index Interleaved ABBA CPU E0
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_native_fork_interleaved_abba_e0.py"
+      - "tests/test_research_native_fork_interleaved_abba_e0.py"
+      - "research/autoresearch/g5-native-fork-interleaved-abba-e0.md"
+      - ".github/workflows/research-g5-native-fork-interleaved-abba-e0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host-source-native-abba-e0:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install original native G5, test, static validation
+        run: |
+          python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Strict-K5 parity test and static safety
+        run: |
+          ruff check scripts/research_native_fork_interleaved_abba_e0.py tests/test_research_native_fork_interleaved_abba_e0.py
+          python -m pytest -q tests/test_research_native_fork_interleaved_abba_e0.py
+          pyright scripts/research_native_fork_interleaved_abba_e0.py
+      - name: Cross-order ABBA / BAAB on SAME graph at 500 and 5000 routes
+        run: |
+          mkdir -p artifacts
+          for catalog in 500 5000; do
+            for extra in 33 64; do
+              python -m scripts.research_native_fork_interleaved_abba_e0 --registered-routes "$catalog" --extra-status "$extra" --rounds 10 --out "artifacts/g5-source-interleaved-${catalog}-${extra}-e0.json"
+            done
+          done
+      - name: Validate developer E0 artifacts only
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          artifacts = sorted(Path("artifacts").glob("g5-source-interleaved-*-e0.json"))
+          assert len(artifacts) == 4
+          for path in artifacts:
+              r = json.loads(path.read_text())
+              assert r["study"] == "G5_NATIVE_DENSE_SAME_INDEX_ABBA_CPU_E0_NOT_E2"
+              assert r["native_registered_routes"] == (
+                  r["base_registered_routes"] + r["extra_same_source_status_consumers"]
+              )
+              assert r["rounds"] == 10
+              assert r["strict_public_k"] == 5
+              assert r["dense"]["expected_qualified_forks"] == (
+                  r["extra_same_source_status_consumers"] + 1
+              )
+              assert r["revoked_same_index"]["expected_qualified_forks"] == 1
+              for condition in ("dense", "revoked_same_index"):
+                  assert r[condition]["samples_per_mode"] == 20
+                  assert r[condition]["order"] == "ALTERNATING_ABBA_BAAB"
+              assert r["production_slo_qualified"] is False
+              assert r["independent_agent_e2"] is False
+              assert r["independent_publisher_gold"] is False
+              print(path.name,
+                    "old dense p95", r["dense"]["baseline"]["wall_ms"]["p95"],
+                    "new dense p95", r["dense"]["indexed_preshard"]["wall_ms"]["p95"],
+                    "old revoked p95", r["revoked_same_index"]["baseline"]["wall_ms"]["p95"],
+                    "new revoked p95", r["revoked_same_index"]["indexed_preshard"]["wall_ms"]["p95"])
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: g5-original-index-same-run-abba-cpu-e0
+          path: artifacts/g5-source-interleaved-*-e0.json
+          retention-days: 30
+          if-no-files-found: warn
