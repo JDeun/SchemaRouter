@@ -256,14 +256,28 @@ def _tool_identifier_match(
     return bool(query_forms & _tool_identifier_forms(tool))
 
 
-def _endpoint_identifier_match(query_tokens: Set[str], endpoint: EndpointSpec) -> bool:
-    """Match only a complete native endpoint name, allowing simple plurals."""
-    name = endpoint.name
+def _endpoint_identifier_forms(name: str) -> frozenset[str]:
+    """Return exact, source-declared identifier forms for native endpoints.
+
+    A compound such as ``record_read`` also exposes its terminal ``read``
+    component. Prefix components, short suffixes, and substrings do not gain
+    independent capability identities.
+    """
     if not _SIMPLE_IDENTIFIER_RE.fullmatch(name):
-        return False
-    normalized = _singularize_identifier(name)
+        return frozenset()
+    forms = {_singularize_identifier(name)}
+    if "_" in name:
+        terminal = name.rsplit("_", 1)[-1]
+        if len(terminal) >= 4:
+            forms.add(_singularize_identifier(terminal))
+    return frozenset(forms)
+
+
+def _endpoint_identifier_match(query_tokens: Set[str], endpoint: EndpointSpec) -> bool:
+    """Recognize complete native endpoint forms, allowing simple plurals."""
+    forms = _endpoint_identifier_forms(endpoint.name)
     return any(
-        _singularize_identifier(token) == normalized
+        _singularize_identifier(token) in forms
         for token in query_tokens
         if token.isascii() and token.isalnum()
     )
@@ -452,6 +466,7 @@ class _CandidateIndex:
         self._parameter_refs: dict[str, set[_EndpointRef]] = {}
         self._tool_refs: dict[str, set[_EndpointRef]] = {}
         self._endpoint_refs: dict[str, set[_EndpointRef]] = {}
+        self._endpoint_identifier_refs: dict[str, set[_EndpointRef]] = {}
         self._declared_semantics: set[str] = set()
         self._tool_fingerprints_by_identity = {
             id(tool): tool.fingerprint
@@ -469,6 +484,8 @@ class _CandidateIndex:
                     f"{tool.key}.{endpoint.name}",
                     ref,
                 )
+                for form in _endpoint_identifier_forms(endpoint.name):
+                    self._add(self._endpoint_identifier_refs, form, ref)
 
                 # Endpoint operation aliases are first-class declared
                 # retrieval text. Index and exhaustive scoring must agree;
@@ -555,6 +572,12 @@ class _CandidateIndex:
 
         for token in _tokens(request.query):
             refs.update(self._token_refs.get(token, ()))
+            if token.isascii() and token.isalnum():
+                refs.update(
+                    self._endpoint_identifier_refs.get(
+                        _singularize_identifier(token), ()
+                    )
+                )
         for parameter_name in intent.arguments:
             refs.update(self._parameter_refs.get(parameter_name, ()))
 
