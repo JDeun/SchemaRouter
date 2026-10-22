@@ -113,3 +113,83 @@ def test_dense_original_source_prefork_enforces_updated_policy_and_scoped_fields
         assert actual.status == "over_k_unranked"
         assert actual.qualified_fork_count == extra + 1
         assert actual.candidates == ()
+
+@pytest.mark.parametrize("extra", (127, 128))
+@pytest.mark.parametrize("restriction", ("deny_extra", "hide_extra"))
+def test_128_and_129_structural_targets_cannot_override_denied_or_hidden_scope(
+    monkeypatch: pytest.MonkeyPatch, extra: int, restriction: str,
+) -> None:
+    """An index posting is only an upper bound, never scoped source evidence.
+
+    Exact upper-bound coverage: 127/128 extra status consumers plus one
+    genuine original status consumer yields 128/129 structural targets.
+    The global 129-target query may recursively split, but no disallowed
+    or field-hidden leaf may become a public completed fork.
+    """
+    router = build_fixture(500)
+    for i in range(extra):
+        router.add_tool(_decoy_leaf(
+            f"prefork_denied_boundary_{i}", "crm.fork_status", "status",
+        ))
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    original_policy = router.authorization_policy
+    assert original_policy is not None
+    if restriction == "deny_extra":
+        denied = (AuthorizationRule(
+            effect="deny",
+            operation="prefork_denied_boundary_*.read",
+            roles_any=("reader",),
+        ),)
+        scoped = ()
+    else:
+        denied = ()
+        scoped = (DataScopeRule(
+            operation="prefork_denied_boundary_*.read",
+            roles_any=("reader",),
+            hidden_fields=("status",),
+        ),)
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=denied + (AuthorizationRule(
+            effect="allow", operation="*.read", roles_any=("reader",),
+        ),),
+        data_rules=scoped,
+    )
+
+    def query(alias: str, optimization: bool):
+        monkeypatch.setattr(
+            native_fork_index, "MAX_FORK_PREFORK_TARGETS",
+            128 if optimization else 0,
+        )
+        return index.lookup_shared_root_forks(
+            router, alias, group=GROUP, principal=ACTOR,
+        )
+
+    for alias in ALIASES:
+        original = query(alias, False)
+        preshard = query(alias, True)
+        assert preshard == original
+        assert preshard.status == "complete"
+        assert preshard.qualified_fork_count == 1
+        assert tuple(
+            (c.root_route_id, *c.branch_route_ids)
+            for c in preshard.candidates
+        ) == ((
+            "fork_origin.read", "fork_status.read",
+            "fork_owner.read",
+        ),)
+        assert preshard.executable_authority is False
+        assert preshard.independent_quality_evidence is False
+
+    # Restore CURRENT permissions without rebuilding the original index.
+    router.authorization_policy = original_policy
+    for alias in ALIASES:
+        original = query(alias, False)
+        preshard = query(alias, True)
+        assert preshard == original
+        assert preshard.status == "over_k_unranked"
+        assert preshard.qualified_fork_count == extra + 1
+        assert preshard.candidates == ()
+        assert preshard.executable_authority is False
