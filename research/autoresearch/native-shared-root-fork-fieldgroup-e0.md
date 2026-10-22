@@ -20,7 +20,12 @@ current policy and principal-specific field visibility.
   each satisfied at a distinct terminal read-only native endpoint.
 - Both original native consumers have exactly **one** typed required input,
   bound to the **same field name of the SAME original, source-fingerprinted
-  root endpoint**; consumer parameter *names* may differ.
+  root endpoint**; consumer parameter *names* may differ. The two required
+  scalar input contracts must be **identical**, including their reviewed
+  semantic ID and JSON scalar type. The original root must have **exactly
+  one** `FieldSpec` with the bound property name and that same semantic ID.
+  Duplicate property names with contradictory semantic claims are not
+  proof of a shared identifier, even when each one-hop edge qualifies.
 - The shared source identifier must be a **required scalar property of a
   flat root output object**, with matching non-nested original field
   projections. All three original routes must share the same source type
