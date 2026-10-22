@@ -63,14 +63,23 @@ abstains with zero disclosed candidates/qualified count. EN/KO/JA aliases
 agree on the false refusal. With only the unrelated noise cohort disabled
 by live availability (no index rebuild), the one genuine fork is returned.
 
-This is a **VALID_NEGATIVE**, neither a privacy leak nor a retrieval success:
-a real qualifying answer is refused because per-arm K5 is applied before
-cross-field intersection. To fix the product, first join all authorized,
-currently-visible source-attested field sets under a bounded search budget,
-then choose at most K=5 *complete* fork candidates by an independently
-evaluated ranking policy. Do not silently raise K, expose intermediate
-overflow arm identities/counts, return an exhaustive oracle as the product
-path, or rename this regression a measured E2 improvement.
+The original pre-fix observation is a **VALID_NEGATIVE**, neither a privacy
+leak nor a retrieval success. The following narrow E0 engineering repair
+retains fully authorized and revalidated one-hop candidate arms PRIVATELY
+(up to 32 paths per arm), composes the common root, then applies strict
+public K=5 to the complete forks. The ordinary public G5 one-hop lookup
+still exposes zero arm candidates at >5. Six extra mismatching source-root
+status paths now preserve exactly 1/1 genuine fork (EN/KO/JA) without
+expanding public K. At 33 or more left-arm paths, the fork deliberately
+returns an empty `over_k_unranked` result, **not** a misleading no-fit
+success; the original wrong-budget regression remains documented above.
+
+This is *bounded partial remediation* rather than universal complete-fork
+recall: a valid fork can still be refused when a pre-join arm exceeds 32,
+and >5 complete joined forks still abstain until an independently evaluated
+and separately authorized ranking policy exists. No exhaustive oracle is
+used by the product, no intermediate arms are returned from the fork, no
+E2/executor authority or real publisher row-join proof is added.
 
 ## Non-claims
 

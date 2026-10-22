@@ -108,12 +108,13 @@ def lookup_native_shared_root_forks(
         )
         result = index.lookup(
             router, query, group=sub_group, principal=actor, k=k,
+            _fork_arm_internal=True,
         )
         if result.status == "over_k_unranked":
             return None
         if result.status == "no_proven_hit":
             return ()
-        if result.status != "complete":
+        if result.status not in ("complete", "internal_fork_arm"):
             raise PolicyViolationError("G5 fork unsupported one-hop evidence")
         return result.candidates
 
@@ -229,9 +230,10 @@ def lookup_native_shared_root_forks(
     try:
         left = authorized_leaf(0)
         right = authorized_leaf(1)
-        # Each single-field cohort is independently restricted to K5.
-        # If either arm overflows, never expose partial pair identities or
-        # claim a calibrated count from an unranked subquery.
+        # Arms are privately authorized up to the bounded 32-path cap;
+        # apply strict public K5 only AFTER common-root intersection.
+        # At >32 paths in either arm, fail closed without exposing partial
+        # identities/counts; this is a search-budget abstention, not no-fit.
         overflowing = left is None or right is None
         pairs = (
             {
