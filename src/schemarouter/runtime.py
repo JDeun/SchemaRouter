@@ -300,6 +300,7 @@ def _scoped_public_score_components(
         "preferred_tool": public_tool_identifiers,
         "preferred_endpoint": public_endpoint_identifiers,
         "tool_identifier": public_tool_identifiers,
+        "endpoint_identifier": public_operation_names,
         "operation_family": public_operation_names,
         "tool_token": public_tool_tokens,
         "argument_match": public_parameter_names,

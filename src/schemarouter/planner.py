@@ -224,6 +224,10 @@ def _singularize_identifier(value: str) -> str:
     lowered = value.casefold()
     if not lowered.isalpha():
         return lowered
+    # These words end in "s" but are not regular plurals. In particular,
+    # stripping "news" to "new" would create spurious endpoint matches.
+    if lowered == "news" or lowered.endswith(("us", "is")):
+        return lowered
     if len(lowered) > 4 and lowered.endswith("ies"):
         return lowered[:-3] + "y"
     if (
@@ -254,6 +258,33 @@ def _tool_identifier_match(
         if token.isascii() and token.isalnum()
     }
     return bool(query_forms & _tool_identifier_forms(tool))
+
+
+def _endpoint_identifier_forms(name: str) -> frozenset[str]:
+    """Return exact, source-declared identifier forms for native endpoints.
+
+    A compound such as ``record_read`` also exposes its terminal ``read``
+    component. Prefix components, short suffixes, and substrings do not gain
+    independent capability identities.
+    """
+    if not _SIMPLE_IDENTIFIER_RE.fullmatch(name):
+        return frozenset()
+    forms = {_singularize_identifier(name)}
+    if "_" in name:
+        terminal = name.rsplit("_", 1)[-1]
+        if len(terminal) >= 4 and terminal.isalpha():
+            forms.add(_singularize_identifier(terminal))
+    return frozenset(forms)
+
+
+def _endpoint_identifier_match(query_tokens: Set[str], endpoint: EndpointSpec) -> bool:
+    """Recognize complete native endpoint forms, allowing simple plurals."""
+    forms = _endpoint_identifier_forms(endpoint.name)
+    return any(
+        _singularize_identifier(token) in forms
+        for token in query_tokens
+        if token.isascii() and token.isalnum()
+    )
 
 
 def _common_prefix_length(left: str, right: str) -> int:
@@ -439,6 +470,8 @@ class _CandidateIndex:
         self._parameter_refs: dict[str, set[_EndpointRef]] = {}
         self._tool_refs: dict[str, set[_EndpointRef]] = {}
         self._endpoint_refs: dict[str, set[_EndpointRef]] = {}
+        self._tool_identifier_refs: dict[str, set[_EndpointRef]] = {}
+        self._endpoint_identifier_refs: dict[str, set[_EndpointRef]] = {}
         self._declared_semantics: set[str] = set()
         self._tool_fingerprints_by_identity = {
             id(tool): tool.fingerprint
@@ -456,6 +489,10 @@ class _CandidateIndex:
                     f"{tool.key}.{endpoint.name}",
                     ref,
                 )
+                for form in _tool_identifier_forms(tool):
+                    self._add(self._tool_identifier_refs, form, ref)
+                for form in _endpoint_identifier_forms(endpoint.name):
+                    self._add(self._endpoint_identifier_refs, form, ref)
 
                 # Endpoint operation aliases are first-class declared
                 # retrieval text. Index and exhaustive scoring must agree;
@@ -542,6 +579,12 @@ class _CandidateIndex:
 
         for token in _tokens(request.query):
             refs.update(self._token_refs.get(token, ()))
+            if token.isascii() and token.isalnum():
+                identifier = _singularize_identifier(token)
+                refs.update(self._tool_identifier_refs.get(identifier, ()))
+                refs.update(
+                    self._endpoint_identifier_refs.get(identifier, ())
+                )
         for parameter_name in intent.arguments:
             refs.update(self._parameter_refs.get(parameter_name, ()))
 
@@ -4282,16 +4325,33 @@ class SchemaPlanner:
                 ScoreComponent(kind="tool_token", value=1.5, matched=token)
             )
 
-        if self.structural_retrieval and _tool_identifier_match(
+        # An explicit provider-declared tool name is stronger lexical evidence
+        # than repeated generic words in long descriptions. Recognize complete,
+        # token-bounded identifiers (and simple plurals) in the default ranker;
+        # opt-in structural mode still controls operation-family and tie-break logic.
+        tool_identifier_match = _tool_identifier_match(
             query_tokens,
             tool,
-        ):
+        )
+        endpoint_identifier_match = _endpoint_identifier_match(query_tokens, endpoint)
+        if tool_identifier_match:
             score += _STRUCTURAL_TOOL_IDENTIFIER_BONUS
             components.append(
                 ScoreComponent(
                     kind="tool_identifier",
                     value=_STRUCTURAL_TOOL_IDENTIFIER_BONUS,
                     matched=tool.key,
+                )
+            )
+        # Provider identity and endpoint identity are independent evidence:
+        # naming a provider must not mask its named operation at fixed K.
+        if endpoint_identifier_match:
+            score += _STRUCTURAL_TOOL_IDENTIFIER_BONUS
+            components.append(
+                ScoreComponent(
+                    kind="endpoint_identifier",
+                    value=_STRUCTURAL_TOOL_IDENTIFIER_BONUS,
+                    matched=endpoint.name,
                 )
             )
 
