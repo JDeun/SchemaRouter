@@ -23,6 +23,101 @@ from scripts import research_real_qwen_open_meteo_two_hop_e1 as study
 from scripts.research_open_meteo_live_two_hop_e1 import build_live_router
 
 
+@pytest.mark.parametrize("language", ("en", "ko", "ja"))
+@pytest.mark.asyncio
+async def test_documented_noncommercial_source_proves_complete_native_g5_join(
+    language: str,
+) -> None:
+    """Original provider docs, not case answer gold, own both typed coordinate inputs."""
+    async with httpx.AsyncClient(transport=_fixture_transport([])) as client:
+        router, _, _ = build_live_router(client, documented_noncommercial_e1=True)
+        selector = study._qualified_g5_selector(
+            router, study.USER_REQUESTS[language],
+            catalog=study.documented_open_meteo_e1_catalog(),
+            approved_host_roots=frozenset({study.ROUTES[0]}),
+        )
+    assert selector is not None
+    assert tuple(selector(study.USER_REQUESTS[language], study.ROUTES)) == study.ROUTES
+    assert selector.last_status == "complete"
+    assert router.authorization_policy is not None
+    assert all("Non-Commercial" in (tool.license or "") for tool in router.registry.tools())
+
+
+@pytest.mark.asyncio
+async def test_documented_noncommercial_source_graph_agent_completes_two_real_calls() -> None:
+    seen: list[str] = []
+
+    class SourceReadyAgent(ScriptedAgent):
+        def generate(self, messages, tools):
+            # G5 truthfully offers only the source-ready route at each turn.
+            expected = (("open_meteo_geocoding__search",),
+                        ("open_meteo_weather__current",), ())
+            assert tuple(t["name"] for t in tools) == expected[self.calls]
+            self.history_roles.append([row["role"] for row in messages])
+            position = self.calls
+            self.calls += 1
+            return {"text": self.text[position], "input_tokens": 64,
+                    "tool_tokens": 25, "output_tokens": 30,
+                    "latency_ms": 0.0, "context_overflow": False}
+
+    agent = SourceReadyAgent([FIRST, SECOND, FINAL])
+    async with httpx.AsyncClient(transport=_fixture_transport(seen)) as client:
+        row = await study.evaluate_one(
+            agent, client, language=LANGUAGE, city=CITY, country=COUNTRY,
+            menu_mode="concept_graph_optin", documented_noncommercial_e1=True,
+            host_concept_catalog=study.documented_open_meteo_e1_catalog(),
+            approved_host_roots=frozenset({study.ROUTES[0]}),
+        )
+    assert row["full_task_complete"] is True
+    assert row["strict_final_answer_correct"] is True
+    assert row["real_geocoding_calls"] == row["real_forecast_calls"] == 1
+    assert seen == ["/v1/search", "/v1/forecast"]
+
+
+@pytest.mark.asyncio
+async def test_documented_noncommercial_source_still_requires_explicit_host_review() -> None:
+    """Documented metadata alone must not silently enable the research arm."""
+    seen: list[str] = []
+    async with httpx.AsyncClient(transport=_fixture_transport(seen)) as client:
+        row = await study.evaluate_one(
+            ScriptedAgent([FIRST, SECOND, FINAL]), client,
+            language=LANGUAGE, city=CITY, country=COUNTRY,
+            menu_mode="concept_graph_optin", documented_noncommercial_e1=True,
+        )
+    assert row["status"] == "BLOCKED_SOURCE_SEMANTICS"
+    assert seen == []
+
+
+@pytest.mark.asyncio
+async def test_documented_scalar_graph_view_cannot_bypass_original_source_bounds() -> None:
+    """Graph's type-only proof view must keep source range/enum checking host-side."""
+    seen: list[str] = []
+    async with httpx.AsyncClient(transport=_fixture_transport(seen)) as client:
+        _, geocode, weather = build_live_router(client, documented_noncommercial_e1=True)
+        with pytest.raises(ValueError, match="source argument"):
+            await geocode("search", {
+                "name": "Seoul", "language": "invalid", "country_code": "KR",
+            })
+        with pytest.raises(ValueError, match="source argument"):
+            await weather("current", {"latitude": 91.0, "longitude": 127.0})
+    assert seen == []
+
+
+@pytest.mark.asyncio
+async def test_documented_g5_preflight_requires_model_without_source_calls() -> None:
+    seen: list[str] = []
+    async with httpx.AsyncClient(transport=_fixture_transport(seen)) as client:
+        row = await study.compare_graph_native_e1(
+            None, client,
+            documented_noncommercial_e1=True,
+            host_concept_catalog=study.documented_open_meteo_e1_catalog(),
+            approved_host_roots=frozenset({study.ROUTES[0]}),
+        )
+    assert row["status"] == "BLOCKED_MODEL_RUNTIME"
+    assert row["task_success_rate"] is None
+    assert seen == []
+
+
 @pytest.mark.asyncio
 async def test_unattested_live_open_meteo_g5_never_fabricates_join() -> None:
     seen: list[str] = []

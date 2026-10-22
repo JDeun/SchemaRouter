@@ -65,7 +65,7 @@ class NativeDeclaredFieldGroup(StrictModel):
             not 1 <= len(self.aliases) <= 16
             or any(
                 type(value) is not str
-                or not 1 <= len(value) <= 160
+                or not 1 <= len(value) <= 256
                 or value != value.strip()
                 or not _alias_key(value)
                 or any(ord(char) < 32 or ord(char) == 127 for char in value)

@@ -20,11 +20,13 @@ import httpx
 
 from schemarouter import (
     NativeConceptCatalog,
+    NativeDeclaredConcept,
     NativeSchemaGraphIndex,
     NativeSchemaPostingIndex,
     PolicyViolationError,
     PrincipalContext,
 )
+from schemarouter.capability_contracts import CapabilityFieldContract
 from scripts.agent_utility_v7_dev_agent import MODEL_NAME, MODEL_REVISION
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
@@ -79,6 +81,26 @@ USER_REQUESTS = {
 }
 
 G5_COMPARISON_ARMS = ("all_visible", "lexical_k5", "concept_graph_optin")
+
+
+def documented_open_meteo_e1_catalog() -> NativeConceptCatalog:
+    """Exposed E1 intent labels, independent from actual provider answer values.
+
+    These aliases are declared by the research host, not inferred by an LLM.
+    This catalog is qualified only for the non-commercial public API fixture.
+    """
+    return NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="open_meteo_current_temperature",
+        aliases=(
+            "current Celsius temperature", "현재 섭씨 기온", "現在の摂氏気温",
+        ),
+        required_fields=(CapabilityFieldContract(
+            semantic_id="open_meteo.temperature_2m",
+            json_schema={"type": "number"},
+        ),),
+        source_type="public_rest",
+        license="Open-Meteo Free API / Non-Commercial / CC BY 4.0 data",
+    ),))
 
 
 def _native_source_receipt(router: Any) -> tuple[Any, ...]:
@@ -241,6 +263,7 @@ async def evaluate_one(
     evidence_reprompt_budget: int = 0,
     host_concept_catalog: NativeConceptCatalog | None = None,
     approved_host_roots: frozenset[str] = frozenset(),
+    documented_noncommercial_e1: bool = False,
     _private_source_observations: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Never convert a denied/incomplete model action into a successful call.
@@ -261,6 +284,7 @@ async def evaluate_one(
         raise ValueError("unregistered source task or model")
     router, geocode, weather = build_live_router(
         client, transport_retry_budget=transport_retry_budget,
+        **({"documented_noncommercial_e1": True} if documented_noncommercial_e1 else {}),
     )
     query = USER_REQUESTS[language]
     graph_selector = None
@@ -581,14 +605,17 @@ async def compare_graph_native_e1(
     agent: Any, client: httpx.AsyncClient, *,
     host_concept_catalog: NativeConceptCatalog | None = None,
     approved_host_roots: frozenset[str] = frozenset(),
+    documented_noncommercial_e1: bool = False,
 ) -> dict[str, Any]:
     """Paired original-source E1, *not* a fixture score or independent E2.
 
     Refuses to make even baseline provider calls when a legitimate common G5
     cohort cannot be established. A blocked arm has no success denominator.
     """
-    before, _, _ = build_live_router(client)
-    after, _, _ = build_live_router(client)
+    source_kwargs = ({"documented_noncommercial_e1": True}
+                     if documented_noncommercial_e1 else {})
+    before, _, _ = build_live_router(client, **source_kwargs)
+    after, _, _ = build_live_router(client, **source_kwargs)
     first_receipt = _native_source_receipt(before)
     safe_base: dict[str, Any] = {
         "study": "REAL_QWEN_NATIVE_G5_PAIRED_E1_DEV",
@@ -616,16 +643,17 @@ async def compare_graph_native_e1(
         arms = G5_COMPARISON_ARMS[position:] + G5_COMPARISON_ARMS[:position]
         private_weather: list[dict[str, Any]] = []
         for arm in arms:
-            current, _, _ = build_live_router(client)
+            current, _, _ = build_live_router(client, **source_kwargs)
             if _native_source_receipt(current) != first_receipt:
                 return {**safe_base, "status": "INCOMPARABLE_SOURCE_DRIFT", "outcomes": ()}
             row = await evaluate_one(
                 agent, client, language=language, city=city, country=country,
                 menu_mode=arm, host_concept_catalog=host_concept_catalog,
                 approved_host_roots=approved_host_roots,
+                documented_noncommercial_e1=documented_noncommercial_e1,
                 _private_source_observations=private_weather,
             )
-            current, _, _ = build_live_router(client)
+            current, _, _ = build_live_router(client, **source_kwargs)
             if _native_source_receipt(current) != first_receipt:
                 return {**safe_base, "status": "INCOMPARABLE_SOURCE_DRIFT", "outcomes": ()}
             if row.get("status") == "BLOCKED_SOURCE_SEMANTICS":
@@ -700,6 +728,7 @@ async def real_cpu_run() -> dict[str, Any]:
 async def real_cpu_graph_compare(
     *, host_concept_catalog: NativeConceptCatalog | None = None,
     approved_host_roots: frozenset[str] = frozenset(),
+    documented_noncommercial_e1: bool = False,
 ) -> dict[str, Any]:
     """Gate external/model effects behind independently attested source intake.
 
@@ -709,9 +738,12 @@ async def real_cpu_graph_compare(
     async with httpx.AsyncClient(
         timeout=httpx.Timeout(20.0), follow_redirects=False,
     ) as client:
+        optin_kwargs = ({"documented_noncommercial_e1": True}
+                        if documented_noncommercial_e1 else {})
         preflight = await compare_graph_native_e1(
             None, client, host_concept_catalog=host_concept_catalog,
             approved_host_roots=approved_host_roots,
+            **optin_kwargs,
         )
         if preflight["status"] != "BLOCKED_MODEL_RUNTIME":
             return preflight
@@ -740,6 +772,7 @@ async def real_cpu_graph_compare(
         return await compare_graph_native_e1(
             agent, client, host_concept_catalog=host_concept_catalog,
             approved_host_roots=approved_host_roots,
+            **optin_kwargs,
         )
 
 
@@ -758,14 +791,27 @@ def main() -> None:
         "--approved-host-root", action="append", default=[],
         help="explicit owner-approved parameterized native root route ID",
     )
+    parser.add_argument(
+        "--documented-noncommercial-e1", action="store_true",
+        help="explicitly select reviewed Open-Meteo free/non-commercial source contracts",
+    )
     args = parser.parse_args()
-    if not args.compare_graph and (args.host_catalog or args.approved_host_root):
+    if not args.compare_graph and (
+        args.host_catalog or args.approved_host_root or args.documented_noncommercial_e1
+    ):
         parser.error("host source qualifications require --compare-graph")
+    if args.documented_noncommercial_e1 and (
+        args.host_catalog or args.approved_host_root
+    ):
+        parser.error("documented E1 contract cannot override its pinned catalog/root")
     catalog = (
+        documented_open_meteo_e1_catalog() if args.documented_noncommercial_e1 else
         NativeConceptCatalog.model_validate_json(
             args.host_catalog.read_text(encoding="utf-8"), strict=True,
         ) if args.host_catalog is not None else None
     )
+    roots = (frozenset({ROUTES[0]}) if args.documented_noncommercial_e1
+             else frozenset(args.approved_host_root))
     source = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True,
         capture_output=True, timeout=10, check=True,
@@ -773,7 +819,8 @@ def main() -> None:
     result = asyncio.run(
         real_cpu_graph_compare(
             host_concept_catalog=catalog,
-            approved_host_roots=frozenset(args.approved_host_root),
+            approved_host_roots=roots,
+            documented_noncommercial_e1=args.documented_noncommercial_e1,
         ) if args.compare_graph else real_cpu_run()
     )
     result["source_revision"] = source

@@ -228,6 +228,17 @@ class OpenMeteoBoundInvoker:
         self.last_failure_stage = None
         self.last_transport_error_kind = None
         if self.source == "geocode" and endpoint == "search":
+            # The research-only G5 graph uses a bounded scalar type projection;
+            # enforce the full ORIGINAL source enums and length before HTTP.
+            if (
+                type(arguments) is not dict
+                or set(arguments) != {"name", "language", "country_code"}
+                or type(arguments.get("name")) is not str
+                or len(arguments["name"]) < 2
+                or arguments.get("language") not in ("en", "ko", "ja")
+                or arguments.get("country_code") not in ("KR", "JP")
+            ):
+                raise ValueError("source argument outside declared geocoding schema")
             country = arguments["country_code"]
             params = {
                 "name": arguments["name"],
@@ -246,6 +257,15 @@ class OpenMeteoBoundInvoker:
                 self.last_failure_stage = "geocoding_payload_rejected"
                 raise
         elif self.source == "forecast" and endpoint == "current":
+            if (
+                type(arguments) is not dict
+                or set(arguments) != {"latitude", "longitude"}
+                or any(type(arguments[k]) not in (int, float) for k in arguments)
+                or not all(math.isfinite(arguments[k]) for k in arguments)
+                or not -90 <= arguments["latitude"] <= 90
+                or not -180 <= arguments["longitude"] <= 180
+            ):
+                raise ValueError("source argument outside declared WGS84 schema")
             params = {
                 "latitude": arguments["latitude"],
                 "longitude": arguments["longitude"],
@@ -282,6 +302,7 @@ def _schema(params: dict[str, Any]) -> dict[str, Any]:
 
 def build_live_router(
     client: httpx.AsyncClient, *, transport_retry_budget: int = 0,
+    documented_noncommercial_e1: bool = False,
 ) -> tuple[SchemaRouter, OpenMeteoBoundInvoker, OpenMeteoBoundInvoker]:
     geo = ToolSpec(
         name="open_meteo_geocoding",
@@ -348,7 +369,24 @@ def build_live_router(
             ],
         )],
     )
-    router = SchemaRouter()
+    if documented_noncommercial_e1:
+        geo, weather = _documented_noncommercial_e1_contracts(geo, weather)
+        from schemarouter import AuthorizationPolicy, AuthorizationRule
+
+        # Only these two documented read-only source operations; deny everything else.
+        policy = AuthorizationPolicy(default_effect="deny", rules=(
+            AuthorizationRule(
+                effect="allow", operation="open_meteo_geocoding.search",
+                roles_any=("reader",),
+            ),
+            AuthorizationRule(
+                effect="allow", operation="open_meteo_weather.current",
+                roles_any=("reader",),
+            ),
+        ))
+        router = SchemaRouter(authorization_policy=policy)
+    else:
+        router = SchemaRouter()
     geo_invoker = OpenMeteoBoundInvoker(
         client, source="geocode", transport_retry_budget=transport_retry_budget,
     )
@@ -358,6 +396,116 @@ def build_live_router(
     router.add_bound_tool(geo, geo_invoker)
     router.add_bound_tool(weather, weather_invoker)
     return router, geo_invoker, weather_invoker
+
+
+_DOCUMENTED_SOURCE_LICENSE = "Open-Meteo Free API / Non-Commercial / CC BY 4.0 data"
+# These are fingerprints of the ORIGINAL, unannotated source-native E1 adapters.
+# Any adapter revision must undergo another provider-document cross-check.
+_REVIEWED_RAW_SOURCE_FINGERPRINTS = {
+    "open_meteo_geocoding": "6170cfadf1ed3fe5c792d8498b4af07d3fd84b6a04471092ed849ef2000c9f53",
+    "open_meteo_weather": "8427388a90ef9dba728157b31cc8402cadfba098adbc5be45c4b6d696e3c562c",
+}
+
+
+def _documented_noncommercial_e1_contracts(
+    geo: ToolSpec, weather: ToolSpec,
+) -> tuple[ToolSpec, ToolSpec]:
+    """Opt-in document-checked source contracts; not a commercial entitlement.
+
+    Docs: https://open-meteo.com/en/docs/geocoding-api
+          https://open-meteo.com/en/docs
+    Terms: https://open-meteo.com/en/terms (free API: non-commercial only)
+    The WGS84 coordinate PAIR identifies the requested point, not a unique city.
+    Neither identifier alone supplies all required forecast parameters.
+    """
+    from schemarouter.semantic_attestations import (
+        HostSemanticAttestation,
+        HostSemanticMapping,
+        apply_host_semantic_attestation,
+    )
+
+    for tool in (geo, weather):
+        if tool.fingerprint != _REVIEWED_RAW_SOURCE_FINGERPRINTS[tool.key]:
+            raise ValueError("Open-Meteo source adapter changed since documentation review")
+        tool.license = _DOCUMENTED_SOURCE_LICENSE
+
+    geo_ep = geo.endpoint("search")
+    # The strict canonical G5 graph accepts a flat *type-only* envelope.
+    # Provider-specific range/enum constraints stay enforced by the bound
+    # invoker above; the default native adapter remains unchanged.
+    geo_ep.parameters = [
+        _parameter("name", {"type": "string"}),
+        _parameter("language", {"type": "string"}),
+        _parameter("country_code", {"type": "string"}),
+    ]
+    geo_ep.input_schema = {
+        "type": "object",
+        "properties": {p.name: p.json_schema for p in geo_ep.parameters},
+        "required": [p.name for p in geo_ep.parameters],
+    }
+    geo_ep.output_schema = geo_ep.output_schema.copy()
+    geo_ep.output_schema["properties"] = {
+        **geo_ep.output_schema["properties"],
+        "latitude": {"type": "number"},
+        "longitude": {"type": "number"},
+    }
+    geo_ep.output_fields = [
+        FieldSpec(name="location_id", identifier=True, json_schema={"type": "integer"}),
+        FieldSpec(name="latitude", identifier=True, json_schema={"type": "number"}),
+        FieldSpec(name="longitude", identifier=True, json_schema={"type": "number"}),
+        FieldSpec(name="country_code", json_schema={"type": "string"}),
+    ]
+    weather_ep = weather.endpoint("current")
+    # The complete native input_schema still enforces the original WGS84 bounds.
+    # Scalar parameter metadata exists solely for typed, conjunctive G5 proof.
+    weather_ep.parameters = [
+        _parameter("latitude", {"type": "number"}),
+        _parameter("longitude", {"type": "number"}),
+    ]
+    weather_ep.input_schema = {
+        "type": "object",
+        "properties": {p.name: p.json_schema for p in weather_ep.parameters},
+        "required": [p.name for p in weather_ep.parameters],
+    }
+    weather_ep.output_fields = [
+        FieldSpec(name="time", json_schema={"type": "string"}),
+        FieldSpec(name="temperature_2m", json_schema={"type": "number"}),
+        FieldSpec(name="temperature_unit", json_schema={"type": "string"}),
+    ]
+
+    reviewed = []
+    for tool, mappings in (
+        (geo, (
+            ("output_field", "latitude", "open_meteo.wgs84.latitude"),
+            ("output_field", "longitude", "open_meteo.wgs84.longitude"),
+        )),
+        (weather, (
+            ("input_parameter", "latitude", "open_meteo.wgs84.latitude"),
+            ("input_parameter", "longitude", "open_meteo.wgs84.longitude"),
+            ("output_field", "temperature_2m", "open_meteo.temperature_2m"),
+        )),
+    ):
+        ep = tool.endpoints[0]
+        reviewed.append(apply_host_semantic_attestation(
+            tool,
+            attestation=HostSemanticAttestation(
+                expected_tool_key=tool.key,
+                expected_tool_fingerprint=tool.fingerprint,
+                source_type="public_rest",
+                license=_DOCUMENTED_SOURCE_LICENSE,
+                # This is transparent documentation review provenance, NOT a
+                # cryptographic signature or an independent E2 adjudication.
+                reviewed_by="schemarouter-provider-doc-cross-check-2026-10-23",
+                mappings=tuple(HostSemanticMapping(
+                    endpoint_name=ep.name,
+                    expected_endpoint_fingerprint=ep.fingerprint,
+                    member_kind=kind,
+                    member_name=name,
+                    semantic_id=semantic,
+                ) for kind, name, semantic in mappings),
+            ),
+        ))
+    return reviewed[0], reviewed[1]
 
 
 def _plan(

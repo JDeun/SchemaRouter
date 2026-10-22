@@ -49,6 +49,14 @@ PYTHONPATH=src:. python -m scripts.research_real_qwen_open_meteo_two_hop_e1 \
 
 **2026-10-22 관측 결과:** `BLOCKED_SOURCE_SEMANTICS`, `task_success_rate: null`, 제공자 HTTP 시도 0회, 모델 턴 0회(사전 검사에서 차단). 기존 `build_live_router`에는 소스 종류는 있지만 라이선스 선언, 정확한 스칼라 출력 semantic ID, 생산자 좌표→날씨 입력 G5 타입 엣지, 명시적 요청자 권한 정책, 검토된 호스트 시작 경로 입력 계약이 없습니다. 이는 실제 소스·호스트 선행 조건입니다. E1 점수를 올리기 위해 필드나 권한을 임의로 채워서는 안 됩니다. 실제 대응 실험 전에 [Open-Meteo 사용 조건](https://open-meteo.com/en/terms)과 원본 스키마를 별도로 확인해야 합니다. 모델 가중치는 적재되지 않았고 새로운 G5 부문의 과제 성공률은 **존재하지 않습니다**. 향후 요건을 충족해도 원본 도구가 두 작업뿐이므로 K5에서 FULL 대비 스키마 비용 절감은 입증되지 않으며 우선 **두 단계 과제 정답성**을 확인합니다.
 
+**2026-10-23 선택형 문서 검증 소스 입력(연구 전용):** 평가 과제의 정답과 분리하여 Open-Meteo 공식 [지명 검색](https://open-meteo.com/en/docs/geocoding-api) 및 [날씨 API](https://open-meteo.com/en/docs) 필드 계약을 대조했습니다. 위의 **기본 어댑터는 변경되지 않았으며**, 명시적 `--documented-noncommercial-e1` 모드에서만 원본 두 어댑터의 fingerprint, WGS84 위도·경도의 **동시** 연결, 날씨 API의 입력 필드, 기본 거부 정책의 읽기 전용 두 경로, 별도 선언된 EN/KO/JA 개념 사전 및 승인된 파라미터형 지명 검색 시작 경로를 적용합니다. 이 연구 코드에 한해 G5의 제한적인 스칼라 타입 계약을 원본 입력에서 투영하지만, 호스트 호출기는 HTTP 요청 전에 **원래 열거형·문자열 길이·좌표 범위를 별도로 검증**합니다. 원본 어댑터와 공급자 주소는 그대로입니다. 모의 모델과 `httpx.MockTransport`의 단위 테스트에서 세 언어의 완전한 타입 연결, 순서대로 두 번의 호출, 원본 값에 근거한 최종 답변, 잘못된 입력의 사전 거절을 확인했습니다. 모델 없이 실행한 새 사전 검사 상태는 `BLOCKED_MODEL_RUNTIME`이며 공급자 호출도, 성공률 분모도 없습니다. **실제 Qwen과 실시간 공급자를 통한 E1 성공은 아직 입증되지 않았습니다.** 이 플래그는 [무료 API의 비상업 이용 약관](https://open-meteo.com/en/terms)에 한정된 명시적 연구 선택이며, 상업용 이용권·인간 서명·독립 E2 검토를 뜻하지 않습니다. 상업적으로 SchemaRouter를 사용하는 호스트는 별도 [고객용 API와 계약](https://open-meteo.com/en/pricing)을 준수해야 하며, 라이브러리의 MIT 라이선스가 공급자 사용 제한을 바꾸지는 않습니다.
+
+```bash
+PYTHONPATH=src:. python -m scripts.research_real_qwen_open_meteo_two_hop_e1 \
+  --compare-graph --documented-noncommercial-e1 \
+  --out /tmp/schemarouter-native-g5-documented-e1.json
+```
+
 **작업 순서:** 소유자가 실제 검토한 소스 의미·권한 메타데이터와 모델 가용성을 확보하고, 원본 EN/KO/JA E1 대응 실험을 재실행합니다. 소스·관측값 변경은 비교 불가로, 제공자 장애는 모델 최종 답 오류와 분리해 기록합니다. 공급자/과제 작성자가 분리된 독립 E2는 [#1346](https://github.com/JDeun/SchemaRouter/issues/1346)에서 `BLOCKED_EXTERNAL`이며 [#1535](https://github.com/JDeun/SchemaRouter/issues/1535), [#1560](https://github.com/JDeun/SchemaRouter/issues/1560), [#1477](https://github.com/JDeun/SchemaRouter/issues/1477)도 열려 있습니다. 기본값은 변경되지 않고 [릴리스 PR #1356](https://github.com/JDeun/SchemaRouter/pull/1356)의 병합 권한도 생기지 않습니다. 현재 마일스톤 기록은 [#1700](https://github.com/JDeun/SchemaRouter/issues/1700)→M1(실측된 통합 병목만 최적화), CodeGraph [#1711](https://github.com/JDeun/SchemaRouter/issues/1711)→M5(비차단), 전체 추적용 [#200](https://github.com/JDeun/SchemaRouter/issues/200)은 의도적으로 미배정입니다. [실시간 보충 기록](https://github.com/JDeun/SchemaRouter/blob/main/.github/RESEARCH_MILESTONES.md)을 참조하십시오. 초기 30건 매니페스트는 보호된 과거 초기화 스냅샷입니다.
 
 ## 2. 연구 아키텍처와 변경 불가 원칙
