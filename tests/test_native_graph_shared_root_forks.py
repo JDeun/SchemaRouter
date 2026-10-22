@@ -305,3 +305,135 @@ def test_fork_rejects_mismatched_root_provenance_or_license(qualifier):
     )
     assert forks.status == "no_proven_hit"
     assert forks.candidates == ()
+
+
+@pytest.mark.parametrize("approve_owner_semantics", (True, False))
+def test_original_openapi_and_mcp_fork_requires_host_semantic_attestation(
+    approve_owner_semantics,
+):
+    """Actual two-adapter compilers: never invent an MCP field semantic edge."""
+    from schemarouter.adapters import tool_from_mcp, tool_from_openapi
+    from schemarouter.semantic_attestations import (
+        HostSemanticAttestation,
+        HostSemanticMapping,
+        apply_host_semantic_attestation,
+    )
+
+    root = tool_from_openapi("contacts_openapi", {
+        "openapi": "3.1.0",
+        "info": {"title": "Contacts", "version": "1"},
+        "paths": {"/contacts": {"get": {
+            "operationId": "read_contact",
+            "responses": {"200": {"description": "OK", "content": {
+                "application/json": {"schema": {
+                    "type": "object",
+                    "properties": {"customer_id": {"type": "string"}},
+                    "required": ["customer_id"],
+                }},
+            }}},
+        }}},
+    })
+    root.source_type = "crm"
+    root.license = "reviewed"
+    root.endpoint("read_contact").read_only = True
+    root = apply_host_semantic_attestation(
+        root, attestation=HostSemanticAttestation(
+            expected_tool_key=root.key,
+            expected_tool_fingerprint=root.fingerprint,
+            source_type=root.source_type,
+            license=root.license,
+            reviewed_by="fixture-source-owner",
+            mappings=(HostSemanticMapping(
+                endpoint_name="read_contact",
+                expected_endpoint_fingerprint=(
+                    root.endpoint("read_contact").fingerprint
+                ),
+                member_kind="output_field",
+                member_name="customer_id",
+                semantic_id="crm.customer_id",
+            ),),
+        ),
+    )
+
+    leaves = []
+    for tool_name, method, field, semantic in (
+        ("status_mcp", "read_status", "status", "crm.status"),
+        ("owner_mcp", "read_owner", "owner", "crm.owner"),
+    ):
+        leaf = tool_from_mcp(tool_name, {"tools": [{
+            "name": method,
+            "annotations": {"readOnlyHint": True},
+            "inputSchema": {
+                "type": "object",
+                "properties": {"key": {"type": "string"}},
+                "required": ["key"],
+            },
+            "outputSchema": {
+                "type": "object",
+                "properties": {field: {"type": "string"}},
+            },
+        }]})
+        # MCP readOnlyHint is not authorization; the source-owning host
+        # separately reviews operation safety and typed semantic mappings.
+        assert leaf.endpoint(method).read_only is None
+        leaf.endpoint(method).read_only = True
+        leaf.source_type = "crm"
+        leaf.license = "reviewed"
+        if field != "owner" or approve_owner_semantics:
+            leaf = apply_host_semantic_attestation(
+                leaf, attestation=HostSemanticAttestation(
+                    expected_tool_key=leaf.key,
+                    expected_tool_fingerprint=leaf.fingerprint,
+                    source_type=leaf.source_type,
+                    license=leaf.license,
+                    reviewed_by="fixture-source-owner",
+                    mappings=(
+                        HostSemanticMapping(
+                            endpoint_name=method,
+                            expected_endpoint_fingerprint=(
+                                leaf.endpoint(method).fingerprint
+                            ),
+                            member_kind="input_parameter",
+                            member_name="key",
+                            semantic_id="crm.customer_id",
+                        ),
+                        HostSemanticMapping(
+                            endpoint_name=method,
+                            expected_endpoint_fingerprint=(
+                                leaf.endpoint(method).fingerprint
+                            ),
+                            member_kind="output_field",
+                            member_name=field,
+                            semantic_id=semantic,
+                        ),
+                    ),
+                ),
+            )
+        leaves.append(leaf)
+
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.*", roles_any=("reader",),
+        ),),
+    ))
+    router.add_tool(root)
+    for leaf in leaves:
+        router.add_tool(leaf)
+    idx = _index(router)
+    out = idx.lookup_shared_root_forks(
+        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    )
+    if approve_owner_semantics:
+        assert out.status == "complete"
+        (fork,) = out.candidates
+        assert fork.root_route_id == "contacts_openapi.read_contact"
+        assert fork.branch_route_ids == (
+            "status_mcp.read_status", "owner_mcp.read_owner",
+        )
+        assert fork.root_identifier_field == "customer_id"
+        assert fork.branch_input_parameters == ("key", "key")
+        assert not out.executable_authority
+    else:
+        assert out.status == "no_proven_hit"
+        assert out.candidates == ()
