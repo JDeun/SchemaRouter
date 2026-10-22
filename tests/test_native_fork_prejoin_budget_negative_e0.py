@@ -88,6 +88,13 @@ def test_fork_composes_before_k_without_exceeding_private_arm_cap(
     )
     assert ordinary.status == "over_k_unranked"
     assert ordinary.candidates == ()  # Ordinary public G5 is still strict K5.
+    # The internal fork-arm collector must not be callable via the public
+    # strict-K API, even if a caller passes its former keyword explicitly.
+    with pytest.raises(TypeError, match="unexpected keyword argument"):
+        index.lookup(
+            router, ALIASES[0], group=status_only, principal=ACTOR,
+            _fork_arm_internal=True,
+        )
 
     for query in ALIASES:
         observed = index.lookup_shared_root_forks(
