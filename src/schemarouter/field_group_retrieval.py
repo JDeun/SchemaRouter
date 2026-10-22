@@ -36,6 +36,17 @@ def _scalar_contract(schema: dict) -> bool:
     )
 
 
+def _root_envelope_empty(endpoint: EndpointSpec) -> bool:
+    """Proof of an input-free native endpoint, shared by FieldGroup and G5."""
+    if endpoint.parameters or endpoint.auth_requirements:
+        return False
+    return not endpoint.input_schema or endpoint.input_schema in (
+        {"type": "object", "properties": {}, "additionalProperties": False},
+        {"type": "object", "properties": {}, "required": [],
+         "additionalProperties": False},
+    )
+
+
 class NativeDeclaredFieldGroup(StrictModel):
     """Source-owner approved concept→conjunctive typed output requirements.
 
@@ -116,6 +127,7 @@ def retrieve_authorized_field_group(
     principal: PrincipalContext,
     group: NativeDeclaredFieldGroup,
     k: int = FIXED_FIELD_GROUP_K,
+    input_free_only: bool = False,
 ) -> CapabilityRetrieval:
     """Rank complete, visible, source-matched native endpoints BEFORE K5.
 
@@ -125,6 +137,8 @@ def retrieve_authorized_field_group(
     """
     if type(k) is not int or k != FIXED_FIELD_GROUP_K:
         raise ValueError("native FieldGroup E0 requires exactly K5")
+    if type(input_free_only) is not bool:
+        raise ValueError("input-free FieldGroup option must be boolean")
     if type(query) is not str or len(query.encode("utf-8")) > 512:
         raise ValueError("invalid bounded native FieldGroup query")
     if not isinstance(group, NativeDeclaredFieldGroup):
@@ -162,6 +176,8 @@ def retrieve_authorized_field_group(
         if not permitted(tool, endpoint):
             return None
         if endpoint.read_only is not True or endpoint.destructive is True:
+            return None
+        if input_free_only and not _root_envelope_empty(endpoint):
             return None
         if declared.source_type is not None and tool.source_type != declared.source_type:
             return None

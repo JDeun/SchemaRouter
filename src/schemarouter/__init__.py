@@ -253,6 +253,11 @@ from .concept_retrieval import (
     resolve_native_concepts,
     retrieve_authorized_concepts,
 )
+from .concept_graph_retrieval import (
+    NativeConceptGraphSelection,
+    NativeConceptRouteSet,
+    retrieve_authorized_concept_graph,
+)
 from .contract_validation import (
     CapabilityContractValidation,
     CapabilityObservation,
@@ -585,6 +590,9 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
+    "NativeConceptGraphSelection",
+    "NativeConceptRouteSet",
+    "retrieve_authorized_concept_graph",
     "NativeIndexedGraphCandidate",
     "NativeIndexedGraphResult",
     "NativeSchemaGraphIndex",
