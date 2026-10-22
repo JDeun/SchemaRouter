@@ -473,37 +473,34 @@ def test_shared_root_fork_refuses_cross_owner_join_without_group_qualifiers(
     assert result.candidates == ()
 
 
-@pytest.mark.parametrize("consumer_uses_alias_semantic", (False, True))
-def test_shared_root_refuses_duplicate_property_with_disagreeing_semantic_ids(
-    consumer_uses_alias_semantic,
+@pytest.mark.parametrize("promoted_consumer", ("left", "right_0"))
+def test_fork_rejects_different_consumer_contracts_despite_valid_one_hops(
+    promoted_consumer,
 ):
-    """A shared output property name is not a unique attested join identity.
+    """Two valid one-hop compatible scalars are not one exact fork binding.
 
-    One-hop G5 can independently bind BOTH semantics: its typed comparator
-    sees exactly one producer per semantic ID. Yet at the fork boundary
-    there is only one original JSON root property and a conflicting pair of
-    source declarations. Even without a consumer disagreement we must not
-    falsely assert this root property is unambiguous across two branches.
+    The original identifier is an integer, so both an integer and a number
+    input can independently consume it. The two leaves nevertheless claim
+    nonidentical required scalar types for what a fork promises is one typed
+    joint input contract. The fork must abstain conservatively.
     """
     router = _router()
     root = router.registry.get("origin")
-    root.endpoint("read").output_fields.append(FieldSpec(
-        name="customer_id", semantic_id="crm.account_id",
-        identifier=True, json_schema={"type": "string"},
-    ))
+    source_ep = root.endpoint("read")
+    source_ep.output_fields[0].json_schema = {"type": "integer"}
+    source_ep.output_schema["properties"]["customer_id"] = {"type": "integer"}
     router.registry.register(root, replace=True)
-    if consumer_uses_alias_semantic:
-        right = router.registry.get("right_0")
-        right.endpoint("read").parameters[0].semantic_id = "crm.account_id"
-        router.registry.register(right, replace=True)
+    leaf = router.registry.get(promoted_consumer)
+    endpoint = leaf.endpoint("read")
+    endpoint.parameters[0].json_schema = {"type": "number"}
+    endpoint.input_schema["properties"]["key"] = {"type": "number"}
+    router.registry.register(leaf, replace=True)
     index = _index(router)
     for required in GROUP.required_fields:
         leaf_group = NativeDeclaredFieldGroup(
             aliases=ALIASES, required_fields=(required,),
             source_type=GROUP.source_type, license=GROUP.license,
         )
-        # The one-hop edges are individually legitimate source-typed
-        # matches. The AND of two separate source contracts is not.
         assert index.lookup(
             router, ALIASES[0], group=leaf_group, principal=ACTOR,
         ).status == "complete"
@@ -514,3 +511,24 @@ def test_shared_root_refuses_duplicate_property_with_disagreeing_semantic_ids(
     assert out.qualified_fork_count == 0
     assert out.candidates == ()
     assert not out.executable_authority
+
+
+def test_original_registry_rejects_duplicate_output_field_source_names():
+    """Duplicate property-name ambiguity is already blocked at registration."""
+    from schemarouter.errors import RegistrationError
+
+    router = _router()
+    before = router.registry.version
+    root = router.registry.get("origin")
+    root.endpoint("read").output_fields.append(FieldSpec(
+        name="customer_id", semantic_id="crm.alternate_customer_id",
+        identifier=True, json_schema={"type": "string"},
+    ))
+    with pytest.raises(RegistrationError, match="not a valid ToolSpec"):
+        router.registry.register(root, replace=True)
+    assert router.registry.version == before
+    # The rejected original never enters the typed graph/index.
+    index = _index(router)
+    assert index.lookup_shared_root_forks(
+        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    ).status == "complete"
