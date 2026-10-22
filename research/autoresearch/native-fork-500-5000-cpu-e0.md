@@ -81,6 +81,30 @@ and separately authorized ranking policy exists. No exhaustive oracle is
 used by the product, no intermediate arms are returned from the fork, no
 E2/executor authority or real publisher row-join proof is added.
 
+## Indexed structural common-root prefilter (E0 follow-up)
+
+Before looking up either one-hop arm, intersect the original **indexed**
+semantic postings and existing canonical typed graph predecessor sets to
+identify root route IDs which could structurally feed **both** required
+fields. This is an unscoped *superset only*, neither a permission grant nor a
+new oracle; every surviving consumer/root still needs the original version,
+principal-authorization, scoped projection, health and typed-ID checks.
+The prefilter is passed solely to the private bounded fork-arm path; default
+public one-hop lookup and its strict K5 contract remain unchanged.
+
+Under a new deliberately dense source-native E0 negative control, the same
+one publisher-independent-identifier noise root supplies 6 / 32 / 64
+otherwise eligible status leaves but **cannot** join the owner leaf. The
+original exhaustive benchmark reference is still one genuine fork; these
+unrelated branches no longer use up the private 32-arm composition budget.
+A separate six-*complete*-fork case remains `over_k_unranked` with zero
+candidate disclosure because no evidence-based K5 ranking is qualified.
+
+This pruning does **not** establish complete recall for >32 genuine common-root
+source paths, cross-publisher row equivalence, calibrated Top-K relevance,
+independent publisher-gold, agent E2 or production SLO. The benchmark-only
+exhaustive source oracle never enters the product query path.
+
 ## Non-claims
 
 **No genuine publisher-authored tasks, no independent held-out query/route/field/permission gold and no real external-agent utility**. The aliases, fields, source contracts and expected topology were developed locally. This cannot confirm arbitrary deeper/fan-in joins or row identity, calibrated overflow ranking, production p95, service level, real API latency, data privacy outside the shown source policy, or actual tool execution. Benchmark-only exhaustive matching must **never become the product query path**.

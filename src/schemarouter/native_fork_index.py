@@ -97,6 +97,23 @@ def lookup_native_shared_root_forks(
         policy.default_effect, repr(policy.rules), repr(policy.data_rules),
     )
 
+    # Read only the existing indexed semantic postings and canonical typed
+    # adjacency, NOT an unscoped registry scan or caller-supplied target IDs.
+    # This is a conservative structural superset; source authorization,
+    # field visibility, health and fingerprints are checked as before.
+    def potential_roots(required_field_index: int) -> set[str]:
+        targets = set(index.field_index.postings.get(
+            declared.required_fields[required_field_index].semantic_id, (),
+        ))
+        targets.intersection_update(index.edge_consumer_routes)
+        return {
+            root_id
+            for target_id in targets
+            for root_id in index.graph.predecessors(target_id)
+        }
+
+    shared_structural_roots = frozenset(potential_roots(0) & potential_roots(1))
+
     def authorized_leaf(
         required_field_index: int,
     ) -> tuple[NativeIndexedGraphCandidate, ...] | None:
@@ -109,6 +126,7 @@ def lookup_native_shared_root_forks(
         result = index._lookup_native_paths(
             router, query, group=sub_group, principal=actor, k=k,
             _fork_arm_internal=True,
+            _fork_root_filter=shared_structural_roots,
         )
         if result.status == "over_k_unranked":
             return None
