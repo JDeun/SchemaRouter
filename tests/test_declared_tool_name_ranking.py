@@ -49,7 +49,6 @@ def test_explicit_inflected_tool_name_survives_fixed_k_generic_descriptions(
     assert len(retrieved.candidates) == 5
 
 
-
 def test_inflected_tool_identifier_preserves_indexed_exhaustive_parity() -> None:
     """A tool-name plural must survive prefiltering without help from prose."""
     registry = InMemoryRegistry()
