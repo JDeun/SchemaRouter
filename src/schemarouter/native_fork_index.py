@@ -15,6 +15,7 @@ from .native_graph_index import (
     STRICT_K,
     NativeIndexedGraphCandidate,
     _flat_same_record_source_contract,
+    _native_required_inputs,
 )
 
 if TYPE_CHECKING:
@@ -157,7 +158,14 @@ def lookup_native_shared_root_forks(
             and owner[1] != declared.license
         ):
             return None
-        for leaf_id in (left.consumer_route_id, right.consumer_route_id):
+        # A source field NAME is not a semantic identifier by itself.
+        # Both consumers must require the same original semantic contract,
+        # not two unrelated semantic IDs mapped onto an identical spelling.
+        required_identifiers = []
+        for leaf_id, required_parameter in (
+            (left.consumer_route_id, left.parameter_bindings[0][0]),
+            (right.consumer_route_id, right.parameter_bindings[0][0]),
+        ):
             leaf_where = index.field_index.route_locations.get(leaf_id)
             leaf_pinned = index.field_index.route_fingerprints.get(leaf_id)
             if leaf_where is None or leaf_pinned is None:
@@ -168,7 +176,29 @@ def lookup_native_shared_root_forks(
                 raise PolicyViolationError("G5 fork consumer source drift")
             if (leaf_tool.source_type, leaf_tool.license) != owner:
                 return None
+            inputs = _native_required_inputs(leaf_ep)
+            if (
+                inputs is None or len(inputs) != 1
+                or inputs[0][0] != required_parameter
+            ):
+                return None
+            required_identifiers.append(inputs[0][1])
+        if required_identifiers[0] != required_identifiers[1]:
+            return None
         source_identifier = left.parameter_bindings[0][1]
+        source_fields = [
+            field for field in root_ep.output_fields
+            if field.name == source_identifier
+        ]
+        if (
+            len(source_fields) != 1
+            or source_fields[0].identifier is not True
+            or source_fields[0].semantic_id
+            != required_identifiers[0].semantic_id
+        ):
+            # Two original fields with an identical JSON property name but
+            # different semantic IDs are NOT one attested identifier.
+            return None
         # A field declared on an array/nested/optional object is not a
         # source-owned single-record join key, even if semantic IDs match.
         if not _flat_same_record_source_contract(
