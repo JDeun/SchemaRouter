@@ -105,6 +105,29 @@ source paths, cross-publisher row equivalence, calibrated Top-K relevance,
 independent publisher-gold, agent E2 or production SLO. The benchmark-only
 exhaustive source oracle never enters the product query path.
 
+## Root-sharded authorized fork arm completion (E0)
+
+Structural common-root filtering alone can still leave 33+ authorized status
+paths when their matching owner paths are present in graph topology but are
+rejected under the current host license or data-scope rules. Developer E0
+regressions now construct **33 or 64** distinct registered source roots,
+each with a genuinely source-typed approved status leaf and an incompatible
+unreviewed owner leaf. The original exhaustive source reference remains
+exactly **one** approved complete fork.
+
+The private fork collector now recursively partitions the canonical **root
+route ID set** into disjoint deterministic shards whenever one source-pinned
+query exceeds its original **32-path** private cap, bounded by **64 private
+subquery attempts per arm, per validation pass**. Each shard still applies
+all original principal, live-health, data-scope, pinned fingerprint and typed
+binding checks, and all arms are re-collected before any fork disclosure.
+The actual pair check uses an indexed root-bucket inner join, not a full
+Cartesian product across disparate producers. Public one-hop lookup and
+post-join K5 remain unchanged. Shard-budget exhaustion or >32 paths
+attached to a *single* root still conservatively abstain without exposing
+private partial hits. This is no new source-owned row join, execution grant,
+ranker, calibrated no-fit classifier, independent #1346 gold or #1477 E2.
+
 ## Non-claims
 
 **No genuine publisher-authored tasks, no independent held-out query/route/field/permission gold and no real external-agent utility**. The aliases, fields, source contracts and expected topology were developed locally. This cannot confirm arbitrary deeper/fan-in joins or row identity, calibrated overflow ranking, production p95, service level, real API latency, data privacy outside the shown source policy, or actual tool execution. Benchmark-only exhaustive matching must **never become the product query path**.
