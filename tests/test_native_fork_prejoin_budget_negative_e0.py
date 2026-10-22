@@ -342,6 +342,8 @@ def test_one_root_multiple_identifiers_more_than_32_consumers_is_joined():
         ) == expected
         assert result.executable_authority is False
         assert result.independent_quality_evidence is False
+
+
 def test_same_root_sharding_preserves_public_k5_and_budget_abstention(
     monkeypatch: pytest.MonkeyPatch,
 ):
@@ -363,6 +365,9 @@ def test_same_root_sharding_preserves_public_k5_and_budget_abstention(
     index = NativeSchemaGraphIndex.build(
         NativeSchemaPostingIndex.build(router.registry),
     )
+    oracle = exhaustive_source_fork_reference(router)
+    assert len(oracle) == 34
+    assert all(root == "fork_origin.read" for root, _, _ in oracle)
     # The generic source oracle is intentionally not used to select routes
     # or control the query. Only exact permitted constructed source contracts
     # and observed status/count are inspected.
