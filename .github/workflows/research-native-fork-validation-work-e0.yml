@@ -1,0 +1,71 @@
+name: G5 Native Dense Fork Validation Work E0
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_native_fork_validation_work_e0.py"
+      - "tests/test_research_native_fork_validation_work_e0.py"
+      - "research/autoresearch/g5-dense-validation-work-e0.md"
+      - ".github/workflows/research-native-fork-validation-work-e0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-typed-validation-events:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install fixed developer test environment
+        run: |
+          python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Validation counter parity and strict authorized K5
+        run: |
+          ruff check scripts/research_native_fork_validation_work_e0.py tests/test_research_native_fork_validation_work_e0.py
+          python -m pytest -q tests/test_research_native_fork_validation_work_e0.py
+          pyright scripts/research_native_fork_validation_work_e0.py
+      - name: Count actual original implementation calls at 500/5000 x 33/64
+        run: |
+          mkdir -p artifacts
+          for catalog in 500 5000; do
+            for extra in 33 64; do
+              python -m scripts.research_native_fork_validation_work_e0 --registered-routes "$catalog" --extra-status "$extra" --out "artifacts/g5-native-dense-work-${catalog}-${extra}-e0.json"
+            done
+          done
+      - name: Verify only metadata-safe instrumentation; no timing or E2 claims
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          files = sorted(Path("artifacts").glob("g5-native-dense-work-*-e0.json"))
+          assert len(files) == 4
+          for filename in files:
+              r = json.loads(filename.read_text())
+              assert r["study"] == "G5_DENSE_VALIDATION_WORK_E0_NOT_E2"
+              assert r["extra_same_key_status_consumers"] in (33, 64)
+              assert r["strict_public_k"] == 5
+              assert r["dense"]["qualified_forks"] == r["extra_same_key_status_consumers"] + 1
+              assert r["dense"]["status"] == "over_k_unranked"
+              assert r["extras_unavailable"]["status"] == "complete"
+              assert r["extras_unavailable"]["qualified_forks"] == 1
+              assert r["same_index_live_health_revalidated"] is True
+              assert r["product_changed"] is False
+              assert r["independent_agent_e2"] is False
+              print(filename.name,
+                    r["dense"]["aggregate_validation_events"],
+                    r["extras_unavailable"]["aggregate_validation_events"])
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: g5-native-dense-source-validation-work-e0
+          path: artifacts/g5-native-dense-work-*-e0.json
+          retention-days: 30
+          if-no-files-found: warn
