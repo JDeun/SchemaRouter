@@ -19,8 +19,11 @@ from typing import Any
 import httpx
 
 from schemarouter import (
-    NativeConceptCatalog, NativeSchemaGraphIndex, NativeSchemaPostingIndex,
-    PolicyViolationError, PrincipalContext,
+    NativeConceptCatalog,
+    NativeSchemaGraphIndex,
+    NativeSchemaPostingIndex,
+    PolicyViolationError,
+    PrincipalContext,
 )
 from scripts.agent_utility_v7_dev_agent import MODEL_NAME, MODEL_REVISION
 from scripts.research_authorized_agent_tool_surface import (
