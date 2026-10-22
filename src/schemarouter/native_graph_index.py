@@ -623,6 +623,7 @@ class NativeSchemaGraphIndex:
         ] | None = None,
         _fork_arm_internal: bool = False,
         _fork_root_filter: frozenset[str] | None = None,
+        _fork_target_filter: frozenset[str] | None = None,
     ) -> NativeIndexedGraphResult:
         """Discover source-proven typed paths; default remains unranked at >K.
 
@@ -646,6 +647,12 @@ class NativeSchemaGraphIndex:
             or any(type(route) is not str for route in _fork_root_filter)
         ):
             raise ValueError("G5 root prefilter requires private typed fork mode")
+        if _fork_target_filter is not None and (
+            not _fork_arm_internal
+            or type(_fork_target_filter) is not frozenset
+            or any(type(route) is not str for route in _fork_target_filter)
+        ):
+            raise ValueError("G5 consumer prefilter requires private typed fork mode")
         if type(query) is not str or len(query.encode("utf-8")) > 512:
             raise ValueError("G5 invalid bounded query")
         if not isinstance(principal, PrincipalContext):
@@ -685,6 +692,10 @@ class NativeSchemaGraphIndex:
         # Every surviving target AND its original source root still gets
         # current authorization, hidden-field and availability checks.
         targets.intersection_update(self.edge_consumer_routes)
+        if _fork_target_filter is not None:
+            # Candidate-only optimization; current authorization is NEVER
+            # inferred from route IDs supplied to the private collector.
+            targets.intersection_update(_fork_target_filter)
 
         def authorized(route_id: str) -> tuple[ToolSpec, EndpointSpec] | None:
             where = self.field_index.route_locations.get(route_id)
