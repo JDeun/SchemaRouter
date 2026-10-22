@@ -25,7 +25,6 @@ from schemarouter import (
     SchemaRouter,
     ToolSpec,
 )
-from schemarouter.capability_contracts import compare_capability_fields
 from schemarouter.field_group_retrieval import _complete_fields
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
@@ -38,10 +37,10 @@ GROUP = NativeDeclaredFieldGroup(
     aliases=ALIASES,
     required_fields=(
         CapabilityFieldContract(
-            semantic_id="crm.status", json_schema={"type": "string"},
+            semantic_id="crm.fork_status", json_schema={"type": "string"},
         ),
         CapabilityFieldContract(
-            semantic_id="crm.owner", json_schema={"type": "string"},
+            semantic_id="crm.fork_owner", json_schema={"type": "string"},
         ),
     ),
     source_type="crm",
@@ -61,7 +60,7 @@ def build_fixture(registered_routes: int) -> SchemaRouter:
         endpoints=[EndpointSpec(
             name="read", read_only=True,
             output_fields=[FieldSpec(
-                name="customer_id", semantic_id="crm.customer_id",
+                name="customer_id", semantic_id="crm.fork_customer_id",
                 json_schema={"type": "string"}, identifier=True,
             )],
             output_schema={
@@ -72,8 +71,8 @@ def build_fixture(registered_routes: int) -> SchemaRouter:
         )],
     ))
     for tool_name, semantic, field_name in (
-        ("fork_status", "crm.status", "status"),
-        ("fork_owner", "crm.owner", "owner"),
+        ("fork_status", "crm.fork_status", "status"),
+        ("fork_owner", "crm.fork_owner", "owner"),
     ):
         router.add_tool(ToolSpec(
             name=tool_name, source_type="crm",
@@ -81,7 +80,7 @@ def build_fixture(registered_routes: int) -> SchemaRouter:
             endpoints=[EndpointSpec(
                 name="read", read_only=True,
                 parameters=[ParameterSpec(
-                    name="customer_id", semantic_id="crm.customer_id",
+                    name="customer_id", semantic_id="crm.fork_customer_id",
                     required=True, json_schema={"type": "string"},
                 )],
                 input_schema={
@@ -124,7 +123,7 @@ def exhaustive_source_fork_reference(router: SchemaRouter) -> tuple[tuple[str, s
             if visible is not None:
                 allowed.append((tool, visible))
     roots: list[tuple[str, str]] = []
-    leaves: dict[str, list[str]] = {"crm.status": [], "crm.owner": []}
+    leaves: dict[str, list[str]] = {"crm.fork_status": [], "crm.fork_owner": []}
     for tool, ep in allowed:
         route = f"{tool.key}.{ep.name}"
         if not ep.parameters and ep.output_schema == {
@@ -134,7 +133,7 @@ def exhaustive_source_fork_reference(router: SchemaRouter) -> tuple[tuple[str, s
         } and sum(
             f.name == "customer_id"
             and f.identifier is True
-            and f.semantic_id == "crm.customer_id"
+            and f.semantic_id == "crm.fork_customer_id"
             for f in ep.output_fields
         ) == 1:
             roots.append((route, "customer_id"))
@@ -143,7 +142,7 @@ def exhaustive_source_fork_reference(router: SchemaRouter) -> tuple[tuple[str, s
         param = ep.parameters[0]
         if (
             param.required is not True
-            or param.semantic_id != "crm.customer_id"
+            or param.semantic_id != "crm.fork_customer_id"
             or param.json_schema != {"type": "string"}
             or ep.input_schema != {
                 "type": "object",
@@ -158,8 +157,8 @@ def exhaustive_source_fork_reference(router: SchemaRouter) -> tuple[tuple[str, s
     combinations = [
         (root, left, right)
         for root, _ in roots
-        for left in leaves["crm.status"]
-        for right in leaves["crm.owner"]
+        for left in leaves["crm.fork_status"]
+        for right in leaves["crm.fork_owner"]
         if len({root, left, right}) == 3
     ]
     return tuple(sorted(combinations))
