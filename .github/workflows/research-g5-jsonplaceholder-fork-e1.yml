@@ -1,0 +1,82 @@
+name: Original Public Demo Native G5 Shared-Root Fork E1
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_g5_jsonplaceholder_fork_e1.py"
+      - "tests/test_research_g5_jsonplaceholder_fork_e1.py"
+      - "research/autoresearch/g5-jsonplaceholder-fork-live-e1.md"
+      - ".github/workflows/research-g5-jsonplaceholder-fork-e1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-original-fork-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Bounded no-network original source fork contract
+        run: |
+          python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1" "pyright>=1.1,<2"
+          ruff check scripts/research_g5_jsonplaceholder_fork_e1.py tests/test_research_g5_jsonplaceholder_fork_e1.py
+          python -m pytest -q tests/test_research_g5_jsonplaceholder_fork_e1.py tests/test_native_graph_shared_root_forks.py
+          pyright scripts/research_g5_jsonplaceholder_fork_e1.py
+
+  actual-original-https-demo-fork:
+    needs: offline-original-fork-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Host-selected original four HTTPS calls, NOT fork execution or E2
+        run: |
+          python -m pip install .
+          python -m scripts.research_g5_jsonplaceholder_fork_e1 --out artifacts/g5-demo-fork-e1.json
+      - name: Assert response-verified E1 boundary with no raw identity disclosure
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          r = json.loads(Path("artifacts/g5-demo-fork-e1.json").read_text())
+          assert r["study"] == "G5_ORIGINAL_DEMO_SHARED_ROOT_TWO_LEAVES_HTTPS_E1_NOT_E2"
+          assert r["source_provider"] == "jsonplaceholder.typicode.com"
+          assert r["provider_is_demo_fabricated_content"] is True
+          assert r["source_http_attempts"] == {"post": 2, "user": 1, "email": 1}
+          assert r["source_responses_verified"] == r["source_http_attempts"]
+          assert r["qualified_native_forks"] == 1
+          assert r["host_attested_en_ko_ja_aliases"] == 3
+          assert r["fork_is_nonexecuting"] is True
+          assert r["separate_original_one_hop_invocations_observed"] is True
+          assert r["atomic_row_snapshot_proven"] is False
+          assert r["model_selected_tools"] is False
+          assert r["independent_task_gold"] is False
+          assert r["independent_agent_e2"] is False
+          assert r["product_default_changed"] is False
+          assert r["release_qualified"] is False
+          raw = json.dumps(r)
+          assert "username" not in raw and "userId" not in raw
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as out:
+              out.write("## Original public fake-data HTTPS G5 two-leaf fork E1\n\n")
+              out.write("Host-registered same-source schema fork qualified once. Two distinct separately authorized one-hop calls performed four live public DEMO HTTPS requests, verified original IDs; not an atomic row join, actual agent, independent holdout, E2 or product release.\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: g5-original-demo-shared-root-fork-e1
+          path: artifacts/g5-demo-fork-e1.json
+          retention-days: 30
+          if-no-files-found: warn
