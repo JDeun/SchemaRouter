@@ -147,7 +147,6 @@ def test_more_than_five_genuine_complete_forks_still_abstain_without_leak():
         assert result.executable_authority is False
         assert result.independent_quality_evidence is False
 
-
 @pytest.mark.parametrize("noise_root_count", (33, 64))
 def test_dense_structural_common_roots_recheck_and_join_in_bounded_shards(
     noise_root_count,
