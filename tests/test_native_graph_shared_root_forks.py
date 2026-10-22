@@ -471,3 +471,46 @@ def test_shared_root_fork_refuses_cross_owner_join_without_group_qualifiers(
     assert result.status == "no_proven_hit"
     assert result.qualified_fork_count == 0
     assert result.candidates == ()
+
+
+@pytest.mark.parametrize("consumer_uses_alias_semantic", (False, True))
+def test_shared_root_refuses_duplicate_property_with_disagreeing_semantic_ids(
+    consumer_uses_alias_semantic,
+):
+    """A shared output property name is not a unique attested join identity.
+
+    One-hop G5 can independently bind BOTH semantics: its typed comparator
+    sees exactly one producer per semantic ID. Yet at the fork boundary
+    there is only one original JSON root property and a conflicting pair of
+    source declarations. Even without a consumer disagreement we must not
+    falsely assert this root property is unambiguous across two branches.
+    """
+    router = _router()
+    root = router.registry.get("origin")
+    root.endpoint("read").output_fields.append(FieldSpec(
+        name="customer_id", semantic_id="crm.account_id",
+        identifier=True, json_schema={"type": "string"},
+    ))
+    router.registry.register(root, replace=True)
+    if consumer_uses_alias_semantic:
+        right = router.registry.get("right_0")
+        right.endpoint("read").parameters[0].semantic_id = "crm.account_id"
+        router.registry.register(right, replace=True)
+    index = _index(router)
+    for required in GROUP.required_fields:
+        leaf_group = NativeDeclaredFieldGroup(
+            aliases=ALIASES, required_fields=(required,),
+            source_type=GROUP.source_type, license=GROUP.license,
+        )
+        # The one-hop edges are individually legitimate source-typed
+        # matches. The AND of two separate source contracts is not.
+        assert index.lookup(
+            router, ALIASES[0], group=leaf_group, principal=ACTOR,
+        ).status == "complete"
+    out = index.lookup_shared_root_forks(
+        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    )
+    assert out.status == "no_proven_hit"
+    assert out.qualified_fork_count == 0
+    assert out.candidates == ()
+    assert not out.executable_authority
