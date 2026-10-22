@@ -18,10 +18,10 @@
 4. [Prior-art roadmap](prior-art-roadmap.md): literature and historic hypotheses.
 5. [Routing status](routing-status.md) and [experiment index](experiment-index.md):
    historical experiment interpretation.
-6. [Experiment ledger](../../benchmarks/research-experiment-ledger.json) and
-   [prior-art registry](../../benchmarks/research-prior-art-registry.json):
+6. [Experiment ledger](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json) and
+   [prior-art registry](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-prior-art-registry.json):
    machine-readable provenance; consult these **before** citing performance claims.
-7. [Research milestone plan](../../.github/RESEARCH_MILESTONES.md): *proposed*
+7. [Research milestone plan](https://github.com/JDeun/SchemaRouter/blob/main/.github/RESEARCH_MILESTONES.md): *proposed*
    milestone-to-issue mapping; verify live assignments before claiming completion.
 
 ## Evidence-to-implementation navigation
@@ -29,12 +29,12 @@
 | Stable topic | Question / decision | Evidence source | Implementation or interface | Tracking | Evidence status |
 | --- | --- | --- | --- | --- | --- |
 | SR-R01 | Typed schema and source authority | [Research program](research-program-2026.md) | [Architecture](../architecture.md) | [#1450](https://github.com/JDeun/SchemaRouter/issues/1450) | Design and partial tests; external security gate not independently cleared |
-| SR-R02 | Native G5 graph, FieldGroups and fixed K | [Research program](research-program-2026.md) | [Capability graph](../../src/schemarouter/capability_graph.py) | [#1560](https://github.com/JDeun/SchemaRouter/issues/1560) | Development evidence; independent promotion pending |
+| SR-R02 | Native G5 graph, FieldGroups and fixed K | [Research program](research-program-2026.md) | [Capability graph](https://github.com/JDeun/SchemaRouter/blob/main/src/schemarouter/capability_graph.py) | [#1560](https://github.com/JDeun/SchemaRouter/issues/1560) | Development evidence; independent promotion pending |
 | SR-R03 | EN/KO/JA retrieval and no-fit | [Research program](research-program-2026.md) | [Routing status](routing-status.md) | [#1339](https://github.com/JDeun/SchemaRouter/issues/1339) | Frozen negative evidence retained; subsequent DEV is not blind |
 | SR-R04 | OSS tool selection and integration | [OSS landscape](tool-routing-landscape.md) | [Pydantic AI validation](../project/external-validation-pydanticai.md), [Agents SDK validation](../project/external-validation-openai-agents.md) | [#644](https://github.com/JDeun/SchemaRouter/issues/644), [#645](https://github.com/JDeun/SchemaRouter/issues/645) | Limited E0 integration; not broad task success |
 | SR-R05 | Open-set rejection and prior art | [Prior-art roadmap](prior-art-roadmap.md) | [Experiment index](experiment-index.md) | [#388](https://github.com/JDeun/SchemaRouter/issues/388) | Mixed and rejected historical approaches |
-| SR-R06 | Full-catalog versus bounded retrieval | [Research program](research-program-2026.md) | [Experiment ledger](../../benchmarks/research-experiment-ledger.json) | [#432](https://github.com/JDeun/SchemaRouter/issues/432) | Frozen independent negative result; do not overwrite |
-| SR-R07 | Research lifecycle and reproducibility | [Governance](governance.md) | [Experiment ledger](../../benchmarks/research-experiment-ledger.json) | [#200](https://github.com/JDeun/SchemaRouter/issues/200) | Process documented; individual artifact completeness not audited here |
+| SR-R06 | Full-catalog versus bounded retrieval | [Research program](research-program-2026.md) | [Experiment ledger](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json) | [#432](https://github.com/JDeun/SchemaRouter/issues/432) | Frozen independent negative result; do not overwrite |
+| SR-R07 | Research lifecycle and reproducibility | [Governance](governance.md) | [Experiment ledger](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json) | [#200](https://github.com/JDeun/SchemaRouter/issues/200) | Process documented; individual artifact completeness not audited here |
 
 **Interpretation:** A link to source code proves a navigation path, **not** that the
 linked implementation satisfies a research gate. PR merge, CI-green, development
