@@ -7,7 +7,13 @@ import httpx
 import pytest
 
 from schemarouter.errors import SchemaValidationError
-from scripts.research_g5_jsonplaceholder_fork_e1 import run
+from scripts.research_g5_jsonplaceholder_fork_e1 import (
+    ACTOR,
+    FORK_ALIASES,
+    FORK_GROUP,
+    build_fork_router,
+    run,
+)
 
 
 def demo_transport(
@@ -67,3 +73,86 @@ async def test_provider_identity_drift_fails_without_source_content_leak():
     ) as client:
         with pytest.raises((ValueError, SchemaValidationError)):
             await run(client)
+
+
+@pytest.mark.asyncio
+async def test_original_source_id_changes_between_separate_reads_fail_closed():
+    """Two individually valid HTTP paths must not simulate an atomic row join.
+
+    The post root is observed twice through the host-registered executor.
+    It may point to a different user on the second observation. Even though
+    both consumers independently return valid projected scalar fields, the
+    final E1 result MUST fail closed, never merge different source identities.
+    """
+    observed_paths: list[str] = []
+    post_observations = 0
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        nonlocal post_observations
+        assert request.method == "GET"
+        assert request.url.scheme == "https"
+        assert request.url.host == "jsonplaceholder.typicode.com"
+        assert not request.url.query
+        observed_paths.append(request.url.path)
+        if request.url.path == "/posts/1":
+            post_observations += 1
+            assert post_observations <= 2
+            return httpx.Response(
+                200, headers={"content-type": "application/json"},
+                json={
+                    "id": 1,
+                    "userId": 1 if post_observations == 1 else 2,
+                },
+            )
+        if request.url.path in {"/users/1", "/users/2"}:
+            user_id = int(request.url.path.rsplit("/", 1)[1])
+            return httpx.Response(
+                200, headers={"content-type": "application/json"},
+                json={
+                    "id": user_id,
+                    "username": "simulated-username",
+                    "email": "simulated@example.test",
+                },
+            )
+        raise AssertionError("unregistered original provider URL")
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(respond),
+    ) as client:
+        with pytest.raises(
+            ValueError,
+            match="original provider request/binding/identity mismatch",
+        ):
+            await run(client)
+    assert observed_paths == [
+        "/posts/1", "/users/1", "/posts/1", "/users/2",
+    ]
+    assert post_observations == 2
+
+
+@pytest.mark.asyncio
+async def test_revoked_original_email_consumer_never_reaches_provider():
+    """Same pinned graph cannot disclose a fork after current health revoke."""
+    recorded: list[httpx.Request] = []
+
+    def deny_network(request: httpx.Request) -> httpx.Response:
+        recorded.append(request)
+        raise AssertionError("a non-authorized fork performed HTTPS")
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(deny_network),
+    ) as client:
+        router, graph, post, user, email = build_fork_router(client)
+        router.planner.availability_predicate = (
+            lambda tool, _ep: tool.key != "demo_user_email"
+        )
+        for alias in FORK_ALIASES:
+            forbidden = graph.lookup_shared_root_forks(
+                router, alias, group=FORK_GROUP, principal=ACTOR,
+            )
+            assert forbidden.status == "no_proven_hit"
+            assert forbidden.qualified_fork_count == 0
+            assert forbidden.candidates == ()
+            assert forbidden.executable_authority is False
+        assert (post.attempts, user.attempts, email.attempts) == (0, 0, 0)
+    assert recorded == []
