@@ -67,16 +67,22 @@ jobs:
         run: |
           python -m scripts.benchmark_native_fork_fieldgroup_e0 --registered-routes 500 --iterations 30 > g5-source-fork-500-e0.json
           python -m scripts.benchmark_native_fork_fieldgroup_e0 --registered-routes 5000 --iterations 30 > g5-source-fork-5000-e0.json
+          python -m scripts.benchmark_native_fork_fieldgroup_e0 --registered-routes 500 --iterations 30 --mixed-scope > g5-source-fork-mixed-500-e0.json
+          python -m scripts.benchmark_native_fork_fieldgroup_e0 --registered-routes 5000 --iterations 30 --mixed-scope > g5-source-fork-mixed-5000-e0.json
           python - <<'PY'
           import json, os
           from pathlib import Path
           results = [
-              json.loads(Path(f"g5-source-fork-{n}-e0.json").read_text(encoding="utf-8"))
-              for n in (500, 5000)
+              (n, mixed, json.loads(Path(
+                  f"g5-source-fork-{'mixed-' if mixed else ''}{n}-e0.json"
+              ).read_text(encoding="utf-8")))
+              for n in (500, 5000) for mixed in (False, True)
           ]
-          for expected, item in zip((500, 5000), results, strict=True):
+          for expected, mixed, item in results:
               assert item["evidence_tier"] == "E0_SYNTHETIC_500_5000_NATIVE_FORK_NOT_PUBLISHER_E2"
               assert item["registered_native_routes"] == expected
+              assert item["adversarial_mixed_scope"] is mixed
+              assert item["confusable_source_routes"] == (6 if mixed else 0)
               assert item["exhaustive_original_source_forks"] == 1
               assert item["verified_source_pinned_forks"] == 1
               assert item["same_snapshot_health_revocation_refused"] is True
@@ -85,9 +91,10 @@ jobs:
               assert item["independent_e2_qualified"] is False
           with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as output:
               output.write("## #1560 source-native fork 500/5000 (DEV E0, NOT E2)\\n\\n")
-              for r in results:
+              for _, mixed, r in results:
                   output.write(
-                      f"- {r['registered_native_routes']} synthetic routes: "
+                      f"- {r['registered_native_routes']} synthetic routes "
+                      f"({'mixed-scope' if mixed else 'sparse'}): "
                       f"indexed fork vs full original-source reference = 1/1; "
                       f"CPU p95={r['query_process_cpu_ms']['p95']:.2f} ms; "
                       f"query p95={r['query_wall_ms']['p95']:.2f} ms; "
@@ -102,5 +109,7 @@ jobs:
             g5-multiendpoint-hash-ab.json
             g5-source-fork-500-e0.json
             g5-source-fork-5000-e0.json
+            g5-source-fork-mixed-500-e0.json
+            g5-source-fork-mixed-5000-e0.json
           retention-days: 30
           if-no-files-found: error
