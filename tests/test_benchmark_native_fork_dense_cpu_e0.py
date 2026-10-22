@@ -166,3 +166,87 @@ def test_dense_benchmark_requires_explicit_boolean_prefork_mode(bad_mode):
             registered_routes=500, extra_status=33,
             iterations=10, prefork=bad_mode,
         )
+
+
+@pytest.mark.parametrize(
+    ("extra_status", "prefork_applies"), ((127, True), (128, False)),
+)
+def test_prefork_exact_128_target_limit_and_129_global_probe_preserve_authority(
+    monkeypatch: pytest.MonkeyPatch,
+    extra_status: int,
+    prefork_applies: bool,
+):
+    """Only native structural scheduling changes; all allowed forks stay K5.
+
+    The baseline status leaf also counts as a source-indexed target, so
+    127 extras gives *exactly* 128 eligible consumer route IDs, whereas
+    128 extras gives 129 and must make an original over-cap probe first;
+    subshards may still use bounded prepartition after that.
+    """
+    router = build_fixture(500)
+    for i in range(extra_status):
+        router.add_tool(_decoy_leaf(
+            f"prefork_boundary_status_{i}", "crm.fork_status", "status",
+        ))
+    graph = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    original = NativeSchemaGraphIndex._lookup_native_paths
+
+    def query_and_count(alias: str) -> tuple[object, int, str]:
+        calls = 0
+        first_status: str | None = None
+
+        def counted(self, *args, **kwargs):
+            nonlocal calls, first_status
+            private = kwargs.get("_fork_arm_internal") is True
+            if private:
+                calls += 1
+            result = original(self, *args, **kwargs)
+            if private and first_status is None:
+                first_status = result.status
+            return result
+
+        with patch.object(
+            NativeSchemaGraphIndex, "_lookup_native_paths", counted,
+        ):
+            observed = graph.lookup_shared_root_forks(
+                router, alias, group=GROUP, principal=ACTOR,
+            )
+        assert first_status is not None
+        return observed, calls, first_status
+
+    for alias in ALIASES:
+        monkeypatch.setattr(native_fork_index, "MAX_FORK_PREFORK_TARGETS", 0)
+        baseline, old_calls, old_first = query_and_count(alias)
+        monkeypatch.setattr(native_fork_index, "MAX_FORK_PREFORK_TARGETS", 128)
+        actual, new_calls, new_first = query_and_count(alias)
+        assert actual == baseline
+        assert actual.status == "over_k_unranked"
+        assert actual.qualified_fork_count == extra_status + 1
+        assert actual.candidates == ()
+        assert actual.executable_authority is False
+        assert actual.independent_quality_evidence is False
+        assert old_first == "over_k_unranked"
+        assert (new_first != "over_k_unranked") is prefork_applies
+        assert new_calls < old_calls
+
+    # Test against the same pinned index after current health changes.
+    # Preserve authorization and never reintroduce any revoked identity.
+    router.planner.availability_predicate = (
+        lambda tool, _ep: not tool.key.startswith(
+            "prefork_boundary_status_"
+        )
+    )
+    for alias in ALIASES:
+        monkeypatch.setattr(native_fork_index, "MAX_FORK_PREFORK_TARGETS", 0)
+        baseline, _, _ = query_and_count(alias)
+        monkeypatch.setattr(native_fork_index, "MAX_FORK_PREFORK_TARGETS", 128)
+        actual, _, _ = query_and_count(alias)
+        assert actual == baseline
+        assert actual.status == "complete"
+        assert actual.qualified_fork_count == 1
+        assert tuple(
+            (c.root_route_id, *c.branch_route_ids)
+            for c in actual.candidates
+        ) == (("fork_origin.read", "fork_status.read", "fork_owner.read"),)
