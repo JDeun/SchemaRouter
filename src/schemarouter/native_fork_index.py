@@ -144,15 +144,30 @@ def lookup_native_shared_root_forks(
         root_ep = root_tool.endpoint(where[1])
         if (root_tool.fingerprint, root_ep.fingerprint) != pinned:
             raise PolicyViolationError("G5 fork root source drift")
-        # A same-looking identifier does not certify a legal/provenance
-        # boundary when the source catalog has different reviewed qualifiers.
+        # A common identifier does not authorize an unreviewed cross-owner
+        # join. Even when the host leaves FieldGroup qualifiers unspecified,
+        # the root and BOTH consumers must share a reviewed provenance and
+        # license. Cross-publisher joins need a separate explicit contract.
+        owner = (root_tool.source_type, root_tool.license)
         if (
-            declared.source_type is not None
-            and root_tool.source_type != declared.source_type
+            not all(owner)
+            or declared.source_type is not None
+            and owner[0] != declared.source_type
             or declared.license is not None
-            and root_tool.license != declared.license
+            and owner[1] != declared.license
         ):
             return None
+        for leaf_id in (left.consumer_route_id, right.consumer_route_id):
+            leaf_where = index.field_index.route_locations.get(leaf_id)
+            leaf_pinned = index.field_index.route_fingerprints.get(leaf_id)
+            if leaf_where is None or leaf_pinned is None:
+                raise PolicyViolationError("G5 fork missing pinned consumer")
+            leaf_tool = router.registry.get(leaf_where[0])
+            leaf_ep = leaf_tool.endpoint(leaf_where[1])
+            if (leaf_tool.fingerprint, leaf_ep.fingerprint) != leaf_pinned:
+                raise PolicyViolationError("G5 fork consumer source drift")
+            if (leaf_tool.source_type, leaf_tool.license) != owner:
+                return None
         source_identifier = left.parameter_bindings[0][1]
         # A field declared on an array/nested/optional object is not a
         # source-owned single-record join key, even if semantic IDs match.
