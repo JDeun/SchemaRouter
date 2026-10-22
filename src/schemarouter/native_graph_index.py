@@ -622,7 +622,6 @@ class NativeSchemaGraphIndex:
             tuple[int, ...],
         ] | None = None,
         _fork_arm_internal: bool = False,
-        _fork_root_filter: frozenset[str] | None = None,
     ) -> NativeIndexedGraphResult:
         """Discover source-proven typed paths; default remains unranked at >K.
 
@@ -640,12 +639,6 @@ class NativeSchemaGraphIndex:
             _fork_arm_internal and _research_ranker is not None
         ):
             raise ValueError("G5 internal fork arm forbids external ranking")
-        if _fork_root_filter is not None and (
-            not _fork_arm_internal
-            or type(_fork_root_filter) is not frozenset
-            or any(type(route) is not str for route in _fork_root_filter)
-        ):
-            raise ValueError("G5 root prefilter requires private typed fork mode")
         if type(query) is not str or len(query.encode("utf-8")) > 512:
             raise ValueError("G5 invalid bounded query")
         if not isinstance(principal, PrincipalContext):
@@ -719,14 +712,6 @@ class NativeSchemaGraphIndex:
 
         found: list[NativeIndexedGraphCandidate] = []
         for target_id in sorted(targets):
-            # Source-graph-only optimization, NOT an authorization grant.
-            # Skip routes whose typed indexed producers cannot be part of a
-            # two-field common-root fork; authorization remains downstream.
-            if _fork_root_filter is not None and not any(
-                root in _fork_root_filter
-                for root in self.graph.predecessors(target_id)
-            ):
-                continue
             target = authorized(target_id)
             if target is None:
                 continue
@@ -743,9 +728,6 @@ class NativeSchemaGraphIndex:
             if required_inputs is None:
                 continue
             for root_id in self.graph.predecessors(target_id):
-                if (_fork_root_filter is not None
-                        and root_id not in _fork_root_filter):
-                    continue
                 root = authorized(root_id)
                 if root is None:
                     continue

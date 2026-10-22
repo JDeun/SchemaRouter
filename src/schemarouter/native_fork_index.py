@@ -23,6 +23,11 @@ if TYPE_CHECKING:
     from .runtime import SchemaRouter
 
 
+# Max private source-validated subqueries per arm and live-recheck pass.
+# This is a computational fail-closed budget, NOT a public K or ranker.
+MAX_FORK_SHARD_LOOKUPS = 64
+
+
 @dataclass(frozen=True, slots=True)
 class NativeIndexedSharedRootForkCandidate:
     """Both single-field consumers bind the SAME flat, source-owned root ID."""
@@ -123,18 +128,41 @@ def lookup_native_shared_root_forks(
             source_type=declared.source_type,
             license=declared.license,
         )
-        result = index._lookup_native_paths(
-            router, query, group=sub_group, principal=actor, k=k,
-            _fork_arm_internal=True,
-            _fork_root_filter=shared_structural_roots,
-        )
-        if result.status == "over_k_unranked":
-            return None
-        if result.status == "no_proven_hit":
-            return ()
-        if result.status not in ("complete", "internal_fork_arm"):
-            raise PolicyViolationError("G5 fork unsupported one-hop evidence")
-        return result.candidates
+        attempts = 0
+
+        def collect(
+            roots: frozenset[str],
+        ) -> tuple[NativeIndexedGraphCandidate, ...] | None:
+            nonlocal attempts
+            attempts += 1
+            if attempts > MAX_FORK_SHARD_LOOKUPS:
+                # Never claim no-fit or release partially collected arms.
+                return None
+            result = index._lookup_native_paths(
+                router, query, group=sub_group, principal=actor, k=k,
+                _fork_arm_internal=True, _fork_root_filter=roots,
+            )
+            if result.status == "over_k_unranked":
+                # A single private arm query remains limited to 32 verified
+                # paths. Subdivide disjoint INDEXED ROOT IDs, not field
+                # postings or privileged source state, until each fits.
+                # One root exceeding 32 still conservatively abstains.
+                if len(roots) < 2:
+                    return None
+                ordered = sorted(roots)
+                midpoint = len(ordered) // 2
+                before = collect(frozenset(ordered[:midpoint]))
+                if before is None:
+                    return None
+                after = collect(frozenset(ordered[midpoint:]))
+                return None if after is None else before + after
+            if result.status == "no_proven_hit":
+                return ()
+            if result.status not in ("complete", "internal_fork_arm"):
+                raise PolicyViolationError("G5 fork unsupported one-hop evidence")
+            return result.candidates
+
+        return collect(shared_structural_roots)
 
     def compatible_pair(
         left: NativeIndexedGraphCandidate,
@@ -248,19 +276,22 @@ def lookup_native_shared_root_forks(
     try:
         left = authorized_leaf(0)
         right = authorized_leaf(1)
-        # Arms are privately authorized up to the bounded 32-path cap;
-        # apply strict public K5 only AFTER common-root intersection.
-        # At >32 paths in either arm, fail closed without exposing partial
-        # identities/counts; this is a search-budget abstention, not no-fit.
+        # Each private query retains the original 32-arm cap; disjoint root
+        # shards can be combined after full validation, within a bounded
+        # number of source queries. Public K5 applies ONLY to joined forks.
         overflowing = left is None or right is None
-        pairs = (
-            {
-                candidate
-                for first in left for second in right
-                if (candidate := compatible_pair(first, second)) is not None
-            }
-            if left is not None and right is not None else set()
-        )
+        pairs: set[NativeIndexedSharedRootForkCandidate] = set()
+        if left is not None and right is not None:
+            right_by_root: dict[str, list[NativeIndexedGraphCandidate]] = {}
+            for candidate in right:
+                right_by_root.setdefault(candidate.producer_route_id, []).append(
+                    candidate
+                )
+            for first in left:
+                for second in right_by_root.get(first.producer_route_id, ()):
+                    qualified = compatible_pair(first, second)
+                    if qualified is not None:
+                        pairs.add(qualified)
         # Two separate G5 queries may span a live health/scope mutation.
         # Repeat BOTH original projections before publishing fork identities
         # or even the count. This is conservative but not a transaction or
