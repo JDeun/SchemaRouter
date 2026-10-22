@@ -490,11 +490,15 @@ def test_fork_rejects_different_consumer_contracts_despite_valid_one_hops(
     source_ep.output_fields[0].json_schema = {"type": "integer"}
     source_ep.output_schema["properties"]["customer_id"] = {"type": "integer"}
     router.registry.register(root, replace=True)
-    leaf = router.registry.get(promoted_consumer)
-    endpoint = leaf.endpoint("read")
-    endpoint.parameters[0].json_schema = {"type": "number"}
-    endpoint.input_schema["properties"]["key"] = {"type": "number"}
-    router.registry.register(leaf, replace=True)
+    for leaf_name in ("left", "right_0"):
+        leaf = router.registry.get(leaf_name)
+        endpoint = leaf.endpoint("read")
+        # Both branches must be adapted from the fixture's old string ID.
+        # Only one requests a wider numeric subtype.
+        scalar_type = "number" if leaf_name == promoted_consumer else "integer"
+        endpoint.parameters[0].json_schema = {"type": scalar_type}
+        endpoint.input_schema["properties"]["key"] = {"type": scalar_type}
+        router.registry.register(leaf, replace=True)
     index = _index(router)
     for required in GROUP.required_fields:
         leaf_group = NativeDeclaredFieldGroup(
