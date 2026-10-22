@@ -470,6 +470,7 @@ class _CandidateIndex:
         self._parameter_refs: dict[str, set[_EndpointRef]] = {}
         self._tool_refs: dict[str, set[_EndpointRef]] = {}
         self._endpoint_refs: dict[str, set[_EndpointRef]] = {}
+        self._tool_identifier_refs: dict[str, set[_EndpointRef]] = {}
         self._endpoint_identifier_refs: dict[str, set[_EndpointRef]] = {}
         self._declared_semantics: set[str] = set()
         self._tool_fingerprints_by_identity = {
@@ -488,6 +489,8 @@ class _CandidateIndex:
                     f"{tool.key}.{endpoint.name}",
                     ref,
                 )
+                for form in _tool_identifier_forms(tool):
+                    self._add(self._tool_identifier_refs, form, ref)
                 for form in _endpoint_identifier_forms(endpoint.name):
                     self._add(self._endpoint_identifier_refs, form, ref)
 
@@ -577,10 +580,10 @@ class _CandidateIndex:
         for token in _tokens(request.query):
             refs.update(self._token_refs.get(token, ()))
             if token.isascii() and token.isalnum():
+                identifier = _singularize_identifier(token)
+                refs.update(self._tool_identifier_refs.get(identifier, ()))
                 refs.update(
-                    self._endpoint_identifier_refs.get(
-                        _singularize_identifier(token), ()
-                    )
+                    self._endpoint_identifier_refs.get(identifier, ())
                 )
         for parameter_name in intent.arguments:
             refs.update(self._parameter_refs.get(parameter_name, ()))
