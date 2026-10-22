@@ -21,6 +21,30 @@ The benchmark performs one **exhaustive original registry scan** in **benchmark 
 
 The original E0 CPU benchmark for one-hop and the 5000 multi-endpoint source fingerprint A/B remains in the same workflow, untouched in computation.
 
+## Mixed-scope adversarial follow-up (2026-10-22)
+
+The opt-in `--mixed-scope` arm preserves **exactly** 500 / 5,000 registered
+routes while replacing six irrelevant noise routes with native confusables:
+
+1. An otherwise matching status consumer explicitly denied to the principal
+2. An otherwise matching owner consumer whose only output field is data-scope hidden
+3. A matching owner consumer with an unreviewed license
+4. A matching status consumer with a different declared source type
+5. A matching owner consumer requiring an incompatible integer identifier
+6. A matching root declaring the customer identifier optional instead of required
+
+The separate original-registry scan is run on the *current principal-scoped*
+source records, and the indexed fork must still return **only** the same
+qualified root + two leaves. Tests directly check the denied route and
+the wholly hidden consumer, EN/KO/JA result identity, and same-index policy
+revocation. Existing 500/5000 sparse-run artifacts remain independently
+reported; new `g5-source-fork-mixed-{500,5000}-e0.json` artifacts must never
+be presented as real heterogeneous publisher or production SLA evidence.
+
+These six negative controls do not establish arbitrary source/permission
+adversarial coverage, publisher consent, row identity, Top-K ranking quality,
+or external-agent E2 success; the exhaustive oracle remains topology-specific.
+
 ## Non-claims
 
 **No genuine publisher-authored tasks, no independent held-out query/route/field/permission gold and no real external-agent utility**. The aliases, fields, source contracts and expected topology were developed locally. This cannot confirm arbitrary deeper/fan-in joins or row identity, calibrated overflow ranking, production p95, service level, real API latency, data privacy outside the shown source policy, or actual tool execution. Benchmark-only exhaustive matching must **never become the product query path**.

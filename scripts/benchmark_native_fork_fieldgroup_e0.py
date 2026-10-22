@@ -16,7 +16,10 @@ from statistics import fmean
 from typing import Any
 
 from schemarouter import (
+    AuthorizationPolicy,
+    AuthorizationRule,
     CapabilityFieldContract,
+    DataScopeRule,
     EndpointSpec,
     FieldSpec,
     NativeDeclaredFieldGroup,
@@ -49,12 +52,43 @@ GROUP = NativeDeclaredFieldGroup(
 ROOT = "fork_origin.read"
 LEFT = "fork_status.read"
 RIGHT = "fork_owner.read"
+MIXED_DECOY_COUNT = 6
 
 
-def build_fixture(registered_routes: int) -> SchemaRouter:
+def _decoy_leaf(
+    name: str, semantic: str, output_name: str, *,
+    source_type: str = "crm", license: str = "host-reviewed-synthetic",
+    identifier_type: str = "string",
+) -> ToolSpec:
+    return ToolSpec(
+        name=name, source_type=source_type, license=license,
+        endpoints=[EndpointSpec(
+            name="read", read_only=True,
+            parameters=[ParameterSpec(
+                name="customer_id", semantic_id="crm.fork_customer_id",
+                required=True, json_schema={"type": identifier_type},
+            )],
+            input_schema={
+                "type": "object",
+                "properties": {"customer_id": {"type": identifier_type}},
+                "required": ["customer_id"],
+            },
+            output_fields=[FieldSpec(
+                name=output_name, semantic_id=semantic,
+                json_schema={"type": "string"},
+            )],
+        )],
+    )
+
+
+def build_fixture(registered_routes: int, *, mixed_scope: bool = False) -> SchemaRouter:
     if type(registered_routes) is not int or registered_routes not in (500, 5000):
         raise ValueError("only preregistered 500/5000 synthetic catalogs")
-    router = _synthetic_router(registered_routes - 5)
+    if type(mixed_scope) is not bool:
+        raise ValueError("mixed-scope source fixture requires a boolean")
+    router = _synthetic_router(
+        registered_routes - 5 - (MIXED_DECOY_COUNT if mixed_scope else 0)
+    )
     router.add_tool(ToolSpec(
         name="fork_origin", source_type="crm", license="host-reviewed-synthetic",
         endpoints=[EndpointSpec(
@@ -94,6 +128,61 @@ def build_fixture(registered_routes: int) -> SchemaRouter:
                 )],
             )],
         ))
+    if mixed_scope:
+        # Route count stays fixed. These source-native confusables share
+        # semantic postings but are not authorized, visible, or typed forks.
+        router.add_tool(_decoy_leaf(
+            "fork_status_denied", "crm.fork_status", "status",
+        ))
+        router.add_tool(_decoy_leaf(
+            "fork_owner_hidden", "crm.fork_owner", "owner",
+        ))
+        router.add_tool(_decoy_leaf(
+            "fork_owner_unlicensed", "crm.fork_owner", "owner",
+            license="unreviewed-synthetic",
+        ))
+        router.add_tool(_decoy_leaf(
+            "fork_status_other_source", "crm.fork_status", "status",
+            source_type="research",
+        ))
+        router.add_tool(_decoy_leaf(
+            "fork_owner_wrong_input", "crm.fork_owner", "owner",
+            identifier_type="integer",
+        ))
+        router.add_tool(ToolSpec(
+            name="fork_origin_optional", source_type="crm",
+            license="host-reviewed-synthetic",
+            endpoints=[EndpointSpec(
+                name="read", read_only=True,
+                output_fields=[FieldSpec(
+                    name="customer_id", semantic_id="crm.fork_customer_id",
+                    json_schema={"type": "string"}, identifier=True,
+                )],
+                output_schema={
+                    "type": "object",
+                    "properties": {"customer_id": {"type": "string"}},
+                    "required": [],
+                },
+            )],
+        ))
+        # The original source registry remains unchanged, while its current
+        # read policy and data-scope view are explicitly adversarial.
+        router.authorization_policy = AuthorizationPolicy(
+            default_effect="deny",
+            rules=(
+                AuthorizationRule(
+                    effect="deny", operation="fork_status_denied.read",
+                    roles_any=("reader",),
+                ),
+                AuthorizationRule(
+                    effect="allow", operation="*.read", roles_any=("reader",),
+                ),
+            ),
+            data_rules=(DataScopeRule(
+                operation="fork_owner_hidden.read", roles_any=("reader",),
+                hidden_fields=("owner",),
+            ),),
+        )
     return router
 
 
@@ -169,10 +258,12 @@ def percentile(values: list[float], n: int) -> float:
     return round(samples[max(0, ceil(len(samples) * n / 100) - 1)], 4)
 
 
-def benchmark(*, registered_routes: int, iterations: int = 30) -> dict[str, Any]:
+def benchmark(
+    *, registered_routes: int, iterations: int = 30, mixed_scope: bool = False,
+) -> dict[str, Any]:
     if type(iterations) is not int or not 10 <= iterations <= 100:
         raise ValueError("bounded E0 sample count required")
-    router = build_fixture(registered_routes)
+    router = build_fixture(registered_routes, mixed_scope=mixed_scope)
     start = time.perf_counter_ns()
     index = NativeSchemaGraphIndex.build(
         NativeSchemaPostingIndex.build(router.registry),
@@ -231,6 +322,8 @@ def benchmark(*, registered_routes: int, iterations: int = 30) -> dict[str, Any]
         "evidence_tier": EVIDENCE,
         "independent_e2_qualified": False,
         "registered_native_routes": index.field_index.indexed_route_count,
+        "adversarial_mixed_scope": mixed_scope,
+        "confusable_source_routes": MIXED_DECOY_COUNT if mixed_scope else 0,
         "exhaustive_original_source_forks": len(expected),
         "verified_source_pinned_forks": fixed.qualified_fork_count,
         "en_ko_ja_exact_fieldgroup_parity": True,
@@ -269,9 +362,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--registered-routes", type=int, choices=(500, 5000), required=True)
     parser.add_argument("--iterations", type=int, default=30)
+    parser.add_argument("--mixed-scope", action="store_true")
     args = parser.parse_args()
     print(json.dumps(
-        benchmark(registered_routes=args.registered_routes, iterations=args.iterations),
+        benchmark(
+            registered_routes=args.registered_routes, iterations=args.iterations,
+            mixed_scope=args.mixed_scope,
+        ),
         ensure_ascii=False, sort_keys=True,
     ))
 
