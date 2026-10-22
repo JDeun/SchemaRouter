@@ -1,9 +1,21 @@
 """E0 dense fork performance cohorts preserve strict K5 and source authority."""
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
 
+from schemarouter import native_fork_index
+from schemarouter.native_graph_index import NativeSchemaGraphIndex
+from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.benchmark_native_fork_dense_cpu_e0 import STUDY, benchmark_dense
+from scripts.benchmark_native_fork_fieldgroup_e0 import (
+    ACTOR,
+    ALIASES,
+    GROUP,
+    _decoy_leaf,
+    build_fixture,
+)
 
 
 @pytest.mark.parametrize("fanout", (33, 64))
@@ -19,6 +31,7 @@ def test_dense_same_root_benchmark_is_original_source_scoped_and_no_leak(
     assert result["registered_native_routes"] == 500 + fanout
     assert result["benchmark_only_original_source_fork_count"] == fanout + 1
     assert result["strict_public_k"] == 5
+    assert result["bounded_index_prefork_scheduling"] is True
     assert result["all_aliases_en_ko_ja_match"] is True
     assert result["private_arms_never_exposed"] is True
     assert result["same_source_index_live_health_revocation"] is True
@@ -51,4 +64,105 @@ def test_dense_benchmark_rejects_nonpreregistered_or_unbounded_inputs(
         benchmark_dense(
             registered_routes=routes, extra_status=fanout,
             iterations=iterations,
+        )
+
+
+@pytest.mark.parametrize(("extra", "unsharded_calls", "sharded_calls"), (
+    (33, 8, 6),
+    (64, 12, 8),
+))
+def test_bounded_source_index_prefork_shards_skip_redundant_overcap_scan(
+    monkeypatch: pytest.MonkeyPatch, extra: int,
+    unsharded_calls: int, sharded_calls: int,
+):
+    """Same original source paths and K5; only duplicate private work differs.
+
+    Count the *actual* inner authorized lookup calls on the identical
+    source-native graph. A test-only upper-bound patch disables speculative
+    splitting for the baseline, not authorization or hard K limits.
+    """
+    router = build_fixture(500)
+    for i in range(extra):
+        router.add_tool(_decoy_leaf(
+            f"prefork_extra_status_{i}", "crm.fork_status", "status",
+        ))
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    original = NativeSchemaGraphIndex._lookup_native_paths
+
+    def observed() -> tuple[object, int]:
+        count = 0
+
+        def spy(self, *args, **kwargs):
+            nonlocal count
+            if kwargs.get("_fork_arm_internal") is True:
+                count += 1
+            return original(self, *args, **kwargs)
+
+        with patch.object(NativeSchemaGraphIndex, "_lookup_native_paths", spy):
+            result = index.lookup_shared_root_forks(
+                router, ALIASES[0], group=GROUP, principal=ACTOR,
+            )
+        return result, count
+
+    monkeypatch.setattr(native_fork_index, "MAX_FORK_PREFORK_TARGETS", 0)
+    baseline, baseline_calls = observed()
+    monkeypatch.setattr(native_fork_index, "MAX_FORK_PREFORK_TARGETS", 128)
+    prefork, prefork_calls = observed()
+    assert prefork == baseline
+    assert prefork.status == "over_k_unranked"
+    assert prefork.qualified_fork_count == extra + 1
+    assert prefork.candidates == ()
+    assert prefork.executable_authority is False
+    assert prefork.independent_quality_evidence is False
+    assert baseline_calls == unsharded_calls
+    assert prefork_calls == sharded_calls
+
+    # A live callback must STILL run for every checked shard. Scheduling
+    # uses only indexed structure; current availability is never cached,
+    # skipped, or inferred from the structural partition.
+    router.planner.availability_predicate = (
+        lambda tool, _ep: not tool.key.startswith("prefork_extra_status_")
+    )
+    changed, changed_calls = observed()
+    assert changed.status == "complete"
+    assert changed.qualified_fork_count == 1
+    assert len(changed.candidates) == 1
+    assert changed_calls == sharded_calls
+    for alias in ALIASES:
+        assert index.lookup_shared_root_forks(
+            router, alias, group=GROUP, principal=ACTOR,
+        ) == changed
+
+
+def test_prefork_admissibility_upper_bound_falls_back_to_original_path(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Unverified indexed noise must not consume a tiny private budget."""
+    router = build_fixture(500)
+    for i in range(64):
+        router.add_tool(_decoy_leaf(
+            f"prefork_unreviewed_status_{i}",
+            "crm.fork_status", "status",
+            license="unreviewed-synthetic",
+        ))
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+    )
+    monkeypatch.setattr(native_fork_index, "MAX_FORK_SHARD_LOOKUPS", 2)
+    result = index.lookup_shared_root_forks(
+        router, ALIASES[0], group=GROUP, principal=ACTOR,
+    )
+    assert result.status == "complete"
+    assert result.qualified_fork_count == 1
+    assert len(result.candidates) == 1
+
+
+@pytest.mark.parametrize("bad_mode", (None, 0, 1, "true"))
+def test_dense_benchmark_requires_explicit_boolean_prefork_mode(bad_mode):
+    with pytest.raises(ValueError, match="boolean prepartition"):
+        benchmark_dense(
+            registered_routes=500, extra_status=33,
+            iterations=10, prefork=bad_mode,
         )
