@@ -12,12 +12,12 @@ from dataclasses import dataclass, field
 from hashlib import sha256
 
 from schemarouter import PolicyViolationError
+from schemarouter.concept_graph_retrieval import retrieve_authorized_concept_graph
 from schemarouter.concept_retrieval import (
     NativeConceptCatalog,
     resolve_native_concepts,
     retrieve_authorized_concepts,
 )
-from schemarouter.concept_graph_retrieval import retrieve_authorized_concept_graph
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
 from scripts.research_authorized_fixed5_decision_bridge import _visible_fingerprints

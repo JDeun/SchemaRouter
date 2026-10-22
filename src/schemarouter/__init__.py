@@ -246,17 +246,17 @@ from .capability_snapshot import (
     serialize_capability_snapshot,
     validate_capability_snapshot,
 )
+from .concept_graph_retrieval import (
+    NativeConceptGraphSelection,
+    NativeConceptRouteSet,
+    retrieve_authorized_concept_graph,
+)
 from .concept_retrieval import (
     NativeConceptCatalog,
     NativeDeclaredConcept,
     ResolvedNativeConcepts,
     resolve_native_concepts,
     retrieve_authorized_concepts,
-)
-from .concept_graph_retrieval import (
-    NativeConceptGraphSelection,
-    NativeConceptRouteSet,
-    retrieve_authorized_concept_graph,
 )
 from .contract_validation import (
     CapabilityContractValidation,

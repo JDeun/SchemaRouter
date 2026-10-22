@@ -6,15 +6,21 @@ import json
 
 import httpx
 import pytest
+from test_native_concept_graph_vertical_slice import _catalog
+from test_research_real_qwen_open_meteo_two_hop_e1 import (
+    CITY,
+    COUNTRY,
+    FINAL,
+    FIRST,
+    LANGUAGE,
+    SECOND,
+    ScriptedAgent,
+    _fixture_transport,
+)
 
 from schemarouter import EndpointSpec, ToolSpec
 from scripts import research_real_qwen_open_meteo_two_hop_e1 as study
 from scripts.research_open_meteo_live_two_hop_e1 import build_live_router
-from test_research_real_qwen_open_meteo_two_hop_e1 import (
-    CITY, COUNTRY, FINAL, FIRST, LANGUAGE, SECOND, ScriptedAgent,
-    _fixture_transport,
-)
-from test_native_concept_graph_vertical_slice import _catalog
 
 
 @pytest.mark.asyncio

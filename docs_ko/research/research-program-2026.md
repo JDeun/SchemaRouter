@@ -70,7 +70,7 @@ PYTHONPATH=src:. python -m scripts.research_real_qwen_open_meteo_two_hop_e1 \
 | P1 | 에이전트 실사용 성과: [#1477](https://github.com/JDeun/SchemaRouter/issues/1477), [#1348](https://github.com/JDeun/SchemaRouter/issues/1348) | 실제 Qwen3/Open-Meteo 공개 EN/KO/JA E1 엄격 성공 0–1/3 반복. 모델 조기 종료와 공급자 장애 구분 필요 | 기존 `FrozenCorpusExecutor` 재사용, 독립 과제별 FULL/SR5/G5/Hybrid/No-fit 비교와 출처 검증 답변 |
 | P2 | 외부 검증 및 릴리스: [#1346](https://github.com/JDeun/SchemaRouter/issues/1346), [#1345](https://github.com/JDeun/SchemaRouter/issues/1345), [#1344](https://github.com/JDeun/SchemaRouter/issues/1344) | ClicShopping, SafeAct, CYT, Xerrion, Laya/pi-jev는 DEV·준비 작업 진행. 독립 연구자가 제공해야 할 원본 데이터 일부 `BLOCKED_EXTERNAL` | 실행 가능한 조건 완료→미제공 외부 자료 명시→보호된 CI/배포 검사→v0.18→사후 검증 |
 
-**우선순위 결론:** Qwen3의 공개 2단계 예제에 계속 다른 알림 프롬프트를 추가하기보다, **No-fit 실험과 실제 에이전트 전체 과제 평가**를 우선합니다. Draft [#1580](https://github.com/JDeun/SchemaRouter/pull/1580), [#1584](https://github.com/JDeun/SchemaRouter/pull/1584)는 진단이며 성능 개선 근거가 아닙니다. [릴리스 PR #1356](https://github.com/JDeun/SchemaRouter/pull/1356)은 HOLD입니다.
+**우선순위 결론:** Qwen3의 공개 2단계 예제에 계속 다른 알림 프롬프트를 추가하기보다, **No-fit 실험과 실제 에이전트 전체 과제 평가**를 우선합니다. Draft [#1580](https://github.com/JDeun/SchemaRouter/pull/1580), [#1584](https://github.com/JDeun/SchemaRouter/pull/1584)는 진단이며 성능 개선 근거가 아닙니다. 보류된 [릴리스 PR #1356](https://github.com/JDeun/SchemaRouter/pull/1356)의 병합은 **금지**되며, 기존 0.14 실험 점수의 변경도 **금지**합니다.
 
 ## 4. 비교 실험 및 반증 조건
 

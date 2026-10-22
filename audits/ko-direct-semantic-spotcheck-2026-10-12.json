@@ -883,8 +883,8 @@
     {
       "path": "research/research-program-2026.md",
       "en_blob": "a5c27dc00dd4c1cef9cd819e81b099804b33f085",
-      "ko_blob": "807aada90d12cd2cad6c5ac44f0dd815718856d8",
-      "notes": "AI-assisted EN/KO direct paired comparison of original 19 issue dispositions, typed G5 security/authority boundary, CodeGraph #1711 M5 and #1700 M1, original Open-Meteo E1 BLOCKED_SOURCE_SEMANTICS, no model score/default promotion, and canonical GitHub milestone addendum link. Human editorial signoff still open."
+      "ko_blob": "172c6beb895edc14e803d99d02c3e55ba3ba32d0",
+      "notes": "AI-assisted EN/KO direct paired comparison of original 19 issue dispositions, typed G5 security/authority boundary, CodeGraph #1711 M5 and #1700 M1, original Open-Meteo E1 BLOCKED_SOURCE_SEMANTICS, no model score/default promotion, unchanged 0.14 scores, release #1356 merge prohibition, and canonical GitHub milestone addendum link. Human editorial signoff still open."
     },
     {
       "path": "research/routing-status.md",

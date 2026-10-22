@@ -5,10 +5,23 @@ from __future__ import annotations
 import json
 
 import pytest
+from test_native_concept_graph_vertical_slice import (
+    ACTOR,
+    VIEWER,
+    _catalog,
+    _index,
+    _joined_router,
+)
 
 from schemarouter import (
-    AuthorizationPolicy, AuthorizationRule, DataScopeRule,
-    FieldSpec, PolicyViolationError, SchemaRouter, ToolSpec, EndpointSpec,
+    AuthorizationPolicy,
+    AuthorizationRule,
+    DataScopeRule,
+    EndpointSpec,
+    FieldSpec,
+    PolicyViolationError,
+    SchemaRouter,
+    ToolSpec,
 )
 from scripts.agent_utility_generated_common import (
     EXPERIMENTAL_FIXED5_CONDITION,
@@ -20,9 +33,6 @@ from scripts.research_authorized_agent_tool_surface import (
 )
 from scripts.research_authorized_concept_fixed5_agent_bridge import (
     AuthorizedConceptGraphFixed5Selector,
-)
-from test_native_concept_graph_vertical_slice import (
-    ACTOR, VIEWER, _catalog, _index, _joined_router,
 )
 
 
