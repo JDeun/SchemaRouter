@@ -6,6 +6,8 @@
 
 ## 먼저 확인: 이미 조사하고 실험했습니다
 
+**2026-10-23 — CodeGraph 선택적 컨텍스트 E0 (#1711):** [범위를 제한한 선행연구 비교, 사전 등록 및 실제 바이트 대조 결과](codegraph-surgical-context-e0.md). 원본으로 검증된 합성 2경로 G5에서 참조만 포함한 JSON은 전체 정의 1,825바이트 대비 1,028바이트로 **43.67% 감소**했고, 검증된 경로/바인딩 정보는 동일했습니다. 실제 에이전트·토크나이저·비용·작업 성공은 측정하지 않았으며 실패 사례는 바이트가 감소하지 않았습니다. 이는 **실행하지 않는 E0**로, CodeGraph를 그대로 구현하거나 제품 기본값을 변경한 것이 아닙니다.
+
 1. **2026-10-15 실제 로컬 CPU 패턴 비교:** [사전 연구 프로토콜](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/opensource-routing-patterns-dev-20261015.md), [전체 결과](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/opensource-routing-patterns-dev-20261015-results.md), [코드](https://github.com/JDeun/SchemaRouter/blob/main/scripts/evaluate_opensource_routing_patterns_dev.py). 실제 Aurelio·LlamaIndex 패키지를 동일 조건에서 실행한 비교가 아니라, **두 프로젝트의 공개 아이디어를 자체 구현**해 테스트했습니다. 영어·한국어·일본어 기존 공개 DEV에서 지원 54건, 미지원 18건을 비교했습니다.
 
    | 이미 시험한 방식 | 지원 요청 정확 | 미지원 요청 오선택 | 결론 |

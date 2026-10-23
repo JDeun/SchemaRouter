@@ -3,8 +3,8 @@
   "review_date": "2026-10-23",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 154,
-  "total_page_pairs": 154,
+  "reviewed_page_pairs": 155,
+  "total_page_pairs": 155,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
@@ -12,7 +12,8 @@
     "The product north-star and test matrix pair added 2026-10-16 was AI-assisted directly inspected and exact Git blobs pinned; independent bilingual human sentence-level audit is still NOT complete (#1202).",
     "2026-10-16 duplicate product charter draft deliberately removed; maintain one bilingual product-north-star-and-test-matrix pair as canonical. All 151 exact page-pair AI-assisted source checks remain explicitly non-independent; #1202 human review open.",
     "2026-10-19 research-program wiki has an AI-assisted parallel-text and structure spotcheck with exact Git blob pins; independent KO/EN editorial sentence audit remains open.",
-    "2026-10-23 G5 design/plan and amended research wiki pairs were AI-assisted compared against their source semantics; independent human sentence-level review under #1202 remains open."
+    "2026-10-23 G5 design/plan and amended research wiki pairs were AI-assisted compared against their source semantics; independent human sentence-level review under #1202 remains open.",
+    "2026-10-23 CodeGraph-style E0 report and tool-routing navigation were localized with AI-assisted source/translation comparison and exact current blob pins. Cost and agent-success nonclaims and source authorization boundaries were explicitly retained; independent human audit remains open."
   ],
   "reviews": [
     {
@@ -779,6 +780,12 @@
       "notes": "Matched all 552-episode B1 results, 91.30% SR5 pass, 5.42% token exposure and strictly bounded generalization claims."
     },
     {
+      "path": "research/codegraph-surgical-context-e0.md",
+      "en_blob": "47908888b73b4517fda2b59baa23fed9583dfddb",
+      "ko_blob": "a7622bf2018cfb84822464c472fcdd651de295aa",
+      "notes": "2026-10-23 AI-assisted paired review of E0 CodeGraph prior-art constraints, source-scoped fixed-K5 native two-route setup, same-selection full/reference envelopes, canonical byte method and all six measured controls. Kept 1,825/1,028/43.67% supported results, negative-case 22-byte increase, no tokenizer/model/task/cost evidence, cross-stage policy/principal fail-closed and separate E1/E2 gates explicit. Not independent human editorial sign-off."
+    },
+    {
       "path": "research/corrective-reretrieval.md",
       "en_blob": "b9bfcfb62181bd93cc3dd1be14cf72dffd7cd5fe",
       "ko_blob": "62ab3af149e61f971399ce3b3feb0b670487a537",
@@ -900,9 +907,9 @@
     },
     {
       "path": "research/tool-routing-landscape.md",
-      "en_blob": "4e9ceeeb95ec29de198899d992f7540db9218ae5",
-      "ko_blob": "16281e9701adea73c751416689c7fa9d55e1c2d9",
-      "notes": "2026-10-16 direct AI-assisted paired reading of new canonical EN/KO routing OSS decision wiki. Compared four historical 2026-10-15 ARM supported/OOD denominators; existing PydanticAI #644 and OpenAI Agents #645 integration evidence roles; contradictory genuine ServiceNow/Open-Meteo E5 strict-K5 DEV; table of external frameworks and native-vs-inspired distinction; raw threshold versus untested Aurelio v1 calibrated fit; fixed-K, auth, no-fit, token and independent agent E2 caveats; repeated research avoidance checklist. No external independent bilingual sign-off and not a sentence-by-sentence certificate. After review, expanded Korean external-framework section to translate upstream exact API/commit, source authority and licensing checks and explicit non-parity for third-party README metrics; eliminates false omission heuristic rather than waiving gate."
+      "en_blob": "228456bafc28f4751096208a80cba93fb45b5ff3",
+      "ko_blob": "4f4a465e0f4e5c626d69349b8821e0ae80f91050",
+      "notes": "2026-10-16 direct AI-assisted paired reading of new canonical EN/KO routing OSS decision wiki. Compared four historical 2026-10-15 ARM supported/OOD denominators; existing PydanticAI #644 and OpenAI Agents #645 integration evidence roles; contradictory genuine ServiceNow/Open-Meteo E5 strict-K5 DEV; table of external frameworks and native-vs-inspired distinction; raw threshold versus untested Aurelio v1 calibrated fit; fixed-K, auth, no-fit, token and independent agent E2 caveats; repeated research avoidance checklist. No external independent bilingual sign-off and not a sentence-by-sentence certificate. 2026-10-23 added and paired-reviewed navigational summary of #1711 synthetic E0 1,825/1,028 bytes, 43.67% supported decrease, negative byte increase and strict NOT MEASURED limits."
     },
     {
       "path": "research/typed-capability-retrieval-ablation.md",
