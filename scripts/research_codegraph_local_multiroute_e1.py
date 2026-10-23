@@ -415,6 +415,8 @@ async def run_local_multiroute_codegraph_e1(
         "release_qualified": False,
         "task_success_rate": None,
         "qualified_task_denominator": None,
+        **({"bare_native_json_treatment": "STRICT_ONE_OFFERED_NATIVE_ONLY"}
+           if experimental_bare_native_json else {}),
     }
     if condition != "joined":
         selection = retrieve_authorized_concept_graph(
