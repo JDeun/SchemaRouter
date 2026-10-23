@@ -5,6 +5,27 @@ from pathlib import Path
 from scripts import audit_korean_translation_coverage as checker
 
 
+def test_surgical_e1_report_preserves_explicit_null_and_source_cohort_boundaries() -> None:
+    root = Path(__file__).resolve().parents[1]
+    pages = (
+        root / "docs/research/codegraph-surgical-context-e1.md",
+        root / "docs_ko/research/codegraph-surgical-context-e1.md",
+    )
+    for page in pages:
+        content = page.read_text(encoding="utf-8")
+        for marker in (
+            "E1_LOCAL_SOURCE_CONTROL", "BLOCKED_MODEL_RUNTIME",
+            "INCOMPARABLE_FULL_MENU_CAP", "INCOMPARABLE_SOURCE_FAILURE",
+            "INCOMPARABLE_SOURCE_DRIFT", "BLOCKED_SOURCE_SEMANTICS",
+            "all_visible", "lexical_k5", "concept_graph_optin", "surgical_g5_e1",
+            "model_input_tokens", "tool_schema_tokens", "model_output_tokens",
+            "null", "K=5", "#1711", "#1346", "#1356",
+            "Open-Meteo", "non-commercial",
+        ):
+            assert marker in content, (page, marker)
+        assert "E0 bytes" in content
+
+
 def _write(root: Path, name: str, content: str) -> None:
     path = root / name
     path.parent.mkdir(parents=True, exist_ok=True)

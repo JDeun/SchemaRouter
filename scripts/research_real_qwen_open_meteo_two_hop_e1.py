@@ -13,6 +13,7 @@ import os
 import platform
 import subprocess
 import time
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -33,6 +34,11 @@ from scripts.research_authorized_agent_tool_surface import (
 )
 from scripts.research_authorized_concept_fixed5_agent_bridge import (
     AuthorizedConceptGraphFixed5Selector,
+)
+from scripts.research_codegraph_scoped_materializer import capture_surgical_episode
+from scripts.research_codegraph_surgical_agent_e1 import (
+    SurgicalHostContext,
+    run_surgical_model_episode,
 )
 from scripts.research_open_meteo_live_two_hop_e1 import CASES, build_live_router
 from scripts.research_qwen_nous_user_transcript_e0 import (
@@ -81,6 +87,8 @@ USER_REQUESTS = {
 }
 
 G5_COMPARISON_ARMS = ("all_visible", "lexical_k5", "concept_graph_optin")
+SURGICAL_COMPARISON_ARMS = (*G5_COMPARISON_ARMS, "surgical_g5_e1")
+SURGICAL_SHARED_TURN_BUDGET = 5
 
 
 def documented_open_meteo_e1_catalog() -> NativeConceptCatalog:
@@ -266,6 +274,7 @@ async def evaluate_one(
     documented_noncommercial_e1: bool = False,
     _private_source_observations: list[dict[str, Any]] | None = None,
     _private_token_counts: dict[str, Any] | None = None,
+    max_turns: int = MAX_TURNS,
 ) -> dict[str, Any]:
     """Never convert a denied/incomplete model action into a successful call.
 
@@ -281,6 +290,7 @@ async def evaluate_one(
         or transport_retry_budget not in (0, 1)
         or type(evidence_reprompt_budget) is not int
         or evidence_reprompt_budget not in (0, 1)
+        or type(max_turns) is not int or not 1 <= max_turns <= 8
     ):
         raise ValueError("unregistered source task or model")
     router, geocode, weather = build_live_router(
@@ -316,7 +326,7 @@ async def evaluate_one(
     executed_routes: list[str] = []
     evidence_reprompts = 0
 
-    for _ in range(MAX_TURNS):
+    for _ in range(max_turns):
         turns += 1
         # Fresh source authority and freshness check EACH generation.
         view = capture_authorized_agent_tool_surface(
@@ -414,7 +424,7 @@ async def evaluate_one(
                 and completed == 1
                 and actual_location is not None
                 and actual_weather is None
-                and turns < MAX_TURNS
+                and turns < max_turns
             ):
                 evidence_reprompts += 1
                 messages.append({
@@ -739,6 +749,264 @@ async def compare_graph_native_e1(
     }
 
 
+async def _evaluate_surgical_one(
+    agent: Any, client: httpx.AsyncClient, *,
+    language: str, city: str, country: str,
+    host_concept_catalog: NativeConceptCatalog | None,
+    approved_host_roots: frozenset[str],
+    documented_noncommercial_e1: bool = False,
+    transport_retry_budget: int = 0,
+    max_turns: int = SURGICAL_SHARED_TURN_BUDGET,
+    _private_source_observations: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """One actual original-source run with model-requested G5 schemas.
+
+    Mock transports in tests do not qualify as original live-provider results.
+    Only the host-registered Open-Meteo adapter may make provider requests.
+    """
+    if (language, city, country) not in CASES:
+        raise ValueError("unregistered original source case")
+    source_kwargs: dict[str, Any] = {
+        "transport_retry_budget": transport_retry_budget,
+        "documented_noncommercial_e1": documented_noncommercial_e1,
+    }
+    router, geocode, weather = build_live_router(client, **source_kwargs)
+    query = USER_REQUESTS[language]
+    if _qualified_g5_selector(
+        router, query, catalog=host_concept_catalog,
+        approved_host_roots=approved_host_roots,
+    ) is None:
+        return {
+            **_blocked_g5_case(language),
+            "condition": "surgical_g5_e1",
+            "full_task_correct": None,
+            "model_input_tokens": None,
+            "tool_schema_tokens": None,
+            "model_output_tokens": None,
+            "total_model_tokens": None,
+        }
+    if host_concept_catalog is None:
+        raise ValueError("qualified original source requires owner catalog")
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+        approved_host_roots=approved_host_roots,
+    )
+    episode = capture_surgical_episode(
+        router, query, principal=PRINCIPAL,
+        catalog=host_concept_catalog, index=index,
+    )
+    # This oracle receives only the actual projected weather output, never
+    # evaluator-gold coordinates or a synthetic answer from the host.
+    def validate_final(answer: str, actual: Mapping[str, Any]) -> bool:
+        if _private_source_observations is not None:
+            _private_source_observations.append(dict(actual))
+        return _matches_weather_final(answer, dict(actual))
+
+    context = SurgicalHostContext(
+        trusted_route_inputs={ROUTES[0]: {
+            "name": city, "language": language, "country_code": country,
+        }},
+        required_output_fields={
+            ROUTES[0]: ("latitude", "longitude"),
+            ROUTES[1]: ("time", "temperature_2m", "temperature_unit"),
+        },
+        final_response_instruction=(
+            "Once the original weather source is called, answer ONLY with "
+            "a JSON object with temperature_2m (number), unit (string), "
+            "observed_at (string). Use exact original weather observation "
+            "values; reply REQUEST_MORE_TOOLS if unfinished."
+        ),
+        validate_final=validate_final,
+    )
+    report = await run_surgical_model_episode(
+        agent, episode=episode, host_context=context, max_turns=max_turns,
+    )
+    source_failures = [
+        ("geocode", geocode.last_failure_stage),
+        ("forecast", weather.last_failure_stage),
+    ]
+    failure_stages = [
+        f"{source}_{stage}" for source, stage in source_failures
+        if stage is not None
+    ]
+    if len(failure_stages) > 1:
+        raise ValueError("ambiguous original source failure stages")
+    trusted_failure_stage = failure_stages[0] if failure_stages else None
+    # Auth/projection after a validated source call might still deny the
+    # public observation. That is not a completed agent step.
+    if not (
+        report["actual_source_calls"] <= geocode.calls + weather.calls
+        <= report["actual_source_calls"] + 1
+    ):
+        raise ValueError("original source verification and model step mismatch")
+    return {
+        "language": language,
+        **report,
+        "requested_k": 5,
+        "real_geocoding_http_attempts": geocode.http_attempts,
+        "real_forecast_http_attempts": weather.http_attempts,
+        "real_geocoding_calls": geocode.calls,
+        "real_forecast_calls": weather.calls,
+        "trusted_failure_stage": trusted_failure_stage,
+        "trusted_transport_error_kind": (
+            geocode.last_transport_error_kind or weather.last_transport_error_kind
+        ),
+        "full_task_complete": report["full_task_correct"],
+        "strict_final_answer_correct": report["full_task_correct"],
+        "token_accounting_complete": report["total_model_tokens"] is not None,
+        "original_provider_e1": True,
+        "source_is_live_public_api": True,
+        "independent_e2_qualified": False,
+    }
+
+
+async def compare_codegraph_surgical_e1(
+    agent: Any, client: httpx.AsyncClient, *,
+    host_concept_catalog: NativeConceptCatalog | None = None,
+    approved_host_roots: frozenset[str] = frozenset(),
+    documented_noncommercial_e1: bool = False,
+    transport_retry_budget: int = 0,
+    evidence_reprompt_budget: int = 0,
+) -> dict[str, Any]:
+    """Four same-task research arms; preserve the old three-arm function.
+
+    One extra model generation is allowed in every arm so the G5 meta-action
+    consumes a real turn rather than being free. A reprompt intervention is
+    deliberately disabled in this comparison until the surgical arm offers
+    an equivalent source-verified intervention.
+    """
+    if (
+        type(transport_retry_budget) is not int
+        or transport_retry_budget not in (0, 1)
+        or type(evidence_reprompt_budget) is not int
+        or evidence_reprompt_budget != 0
+    ):
+        raise ValueError("four-arm comparator requires symmetric budgets")
+    safe: dict[str, Any] = {
+        "study": "REAL_QWEN_CODEGRAPH_SURGICAL_FOUR_ARM_E1_DEV",
+        "arms": SURGICAL_COMPARISON_ARMS,
+        "requested_k": 5,
+        "max_model_turns": SURGICAL_SHARED_TURN_BUDGET,
+        "model_id": MODEL_NAME,
+        "model_revision": MODEL_REVISION,
+        "source_license": "Open-Meteo Free API / Non-Commercial (E1 only)",
+        "independently_authored_private_e2": False,
+        "release_qualified": False,
+        "task_success_rate": None,
+        "qualified_task_denominator": None,
+        "transport_retry_budget": transport_retry_budget,
+        "evidence_reprompt_budget": evidence_reprompt_budget,
+    }
+    source_kwargs = {
+        "transport_retry_budget": transport_retry_budget,
+        "documented_noncommercial_e1": documented_noncommercial_e1,
+    }
+    source, _, _ = build_live_router(client, **source_kwargs)
+    witness = _native_source_receipt(source)
+    if any(
+        _qualified_g5_selector(
+            source, USER_REQUESTS[language], catalog=host_concept_catalog,
+            approved_host_roots=approved_host_roots,
+        ) is None for language, _, _ in CASES
+    ):
+        return {**safe, "status": "BLOCKED_SOURCE_SEMANTICS", "outcomes": ()}
+    if not callable(getattr(agent, "generate", None)):
+        return {**safe, "status": "BLOCKED_MODEL_RUNTIME", "outcomes": ()}
+
+    outcomes: list[dict[str, Any]] = []
+    for position, (language, city, country) in enumerate(CASES):
+        arms = (
+            SURGICAL_COMPARISON_ARMS[position:]
+            + SURGICAL_COMPARISON_ARMS[:position]
+        )
+        private_weather: list[dict[str, Any]] = []
+        for arm in arms:
+            current, _, _ = build_live_router(client, **source_kwargs)
+            if _native_source_receipt(current) != witness:
+                return {**safe, "status": "INCOMPARABLE_SOURCE_DRIFT", "outcomes": ()}
+            try:
+                if arm == "surgical_g5_e1":
+                    row = await _evaluate_surgical_one(
+                        agent, client, language=language, city=city, country=country,
+                        host_concept_catalog=host_concept_catalog,
+                        approved_host_roots=approved_host_roots,
+                        documented_noncommercial_e1=documented_noncommercial_e1,
+                        transport_retry_budget=transport_retry_budget,
+                        max_turns=SURGICAL_SHARED_TURN_BUDGET,
+                        _private_source_observations=private_weather,
+                    )
+                else:
+                    counts: dict[str, Any] = {
+                        "complete": True, "model_input_tokens": 0,
+                        "tool_schema_tokens": 0, "model_output_tokens": 0,
+                    }
+                    row = await evaluate_one(
+                        agent, client, language=language, city=city,
+                        country=country, menu_mode=arm,
+                        host_concept_catalog=host_concept_catalog,
+                        approved_host_roots=approved_host_roots,
+                        documented_noncommercial_e1=documented_noncommercial_e1,
+                        transport_retry_budget=transport_retry_budget,
+                        evidence_reprompt_budget=evidence_reprompt_budget,
+                        max_turns=SURGICAL_SHARED_TURN_BUDGET,
+                        _private_source_observations=private_weather,
+                        _private_token_counts=counts,
+                    )
+                    row = {
+                        **row,
+                        "actual_source_calls": row.get("real_geocoding_calls", 0)
+                        + row.get("real_forecast_calls", 0),
+                        "schema_requests": 0,
+                        "token_accounting_complete": counts["complete"],
+                        **{
+                            key: counts[key] if counts["complete"] else None
+                            for key in (
+                                "model_input_tokens", "tool_schema_tokens",
+                                "model_output_tokens",
+                            )
+                        },
+                        "total_model_tokens": (
+                            counts["model_input_tokens"] + counts["model_output_tokens"]
+                            if counts["complete"] else None
+                        ),
+                    }
+            except (ImportError, OSError, RuntimeError) as exc:
+                # A model runtime failure is an unavailable model, never a
+                # false zero-cost or a scored routing miss. No raw errors.
+                del exc
+                return {**safe, "status": "BLOCKED_MODEL_RUNTIME", "outcomes": ()}
+            current, _, _ = build_live_router(client, **source_kwargs)
+            if _native_source_receipt(current) != witness:
+                return {**safe, "status": "INCOMPARABLE_SOURCE_DRIFT", "outcomes": ()}
+            if row.get("status") == "BLOCKED_SOURCE_SEMANTICS":
+                return {**safe, "status": "BLOCKED_SOURCE_SEMANTICS", "outcomes": ()}
+            outcomes.append({"condition": arm, **row})
+        if len(private_weather) > 1 and any(
+            observation != private_weather[0]
+            for observation in private_weather[1:]
+        ):
+            return {**safe, "status": "INCOMPARABLE_SOURCE_DRIFT", "outcomes": ()}
+    if any(
+        (row.get("trusted_failure_stage") or "").startswith((
+            "geocode_http_", "forecast_http_",
+        )) for row in outcomes
+    ):
+        return {
+            **safe, "status": "INCOMPARABLE_SOURCE_FAILURE",
+            "outcomes": outcomes,
+        }
+    return {
+        **safe, "status": "E1_MEASURED_DEV_NOT_E2",
+        "qualified_task_denominator": len(CASES),
+        "outcomes": outcomes,
+        "task_success_rate": {
+            arm: sum(bool(row["full_task_complete"]) for row in outcomes
+                     if row["condition"] == arm) / len(CASES)
+            for arm in SURGICAL_COMPARISON_ARMS
+        },
+    }
+
+
 async def evaluate(
     agent: Any, client: httpx.AsyncClient,
 ) -> dict[str, Any]:
@@ -821,8 +1089,6 @@ async def real_cpu_graph_compare(
         # An independently qualified source may proceed ONLY with the pinned
         # model already present locally. Force offline loading so this flag
         # can never trigger a surprising weight download.
-        from scripts.agent_utility_v7_dev_agent import LocalQwenAgent
-
         previous = {
             key: os.environ.get(key)
             for key in ("HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE")
@@ -831,6 +1097,8 @@ async def real_cpu_graph_compare(
             os.environ["HF_HUB_OFFLINE"] = "1"
             os.environ["TRANSFORMERS_OFFLINE"] = "1"
             try:
+                from scripts.agent_utility_v7_dev_agent import LocalQwenAgent
+
                 agent = LocalQwenAgent()
             except (ImportError, OSError, RuntimeError, ValueError):
                 return preflight
@@ -847,12 +1115,60 @@ async def real_cpu_graph_compare(
         )
 
 
+async def real_cpu_surgical_compare(
+    *, host_concept_catalog: NativeConceptCatalog | None = None,
+    approved_host_roots: frozenset[str] = frozenset(),
+    documented_noncommercial_e1: bool = False,
+    transport_retry_budget: int = 0,
+) -> dict[str, Any]:
+    """Avoid downloading weights or calling the provider before preflight.
+
+    A pinned local model is optional; absent weights yield an explicit blocker.
+    """
+    async with httpx.AsyncClient(
+        timeout=httpx.Timeout(20.0), follow_redirects=False,
+    ) as client:
+        options = {
+            "host_concept_catalog": host_concept_catalog,
+            "approved_host_roots": approved_host_roots,
+            "documented_noncommercial_e1": documented_noncommercial_e1,
+            "transport_retry_budget": transport_retry_budget,
+        }
+        preflight = await compare_codegraph_surgical_e1(None, client, **options)
+        if preflight["status"] != "BLOCKED_MODEL_RUNTIME":
+            return preflight
+        previous = {
+            key: os.environ.get(key)
+            for key in ("HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE")
+        }
+        try:
+            os.environ["HF_HUB_OFFLINE"] = "1"
+            os.environ["TRANSFORMERS_OFFLINE"] = "1"
+            try:
+                from scripts.agent_utility_v7_dev_agent import LocalQwenAgent
+
+                agent = LocalQwenAgent()
+            except (ImportError, OSError, RuntimeError, ValueError):
+                return preflight
+        finally:
+            for key, value in previous.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+        return await compare_codegraph_surgical_e1(agent, client, **options)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument(
         "--compare-graph", action="store_true",
         help="run source-native G5 eligibility gate and paired E1 if qualified",
+    )
+    parser.add_argument(
+        "--compare-surgical", action="store_true",
+        help="explicit four-arm surgical G5 E1 with pinned offline model preflight",
     )
     parser.add_argument(
         "--host-catalog", type=Path,
@@ -875,11 +1191,15 @@ def main() -> None:
         help="paired E1 only: same verified-geocoding follow-up for every arm",
     )
     args = parser.parse_args()
-    if not args.compare_graph and (
+    if args.compare_graph and args.compare_surgical:
+        parser.error("select exactly one research comparison")
+    if not (args.compare_graph or args.compare_surgical) and (
         args.host_catalog or args.approved_host_root or args.documented_noncommercial_e1
         or args.paired_transport_retry_one or args.paired_evidence_followup_one
     ):
-        parser.error("host source qualifications require --compare-graph")
+        parser.error("host source qualifications require a research comparison")
+    if args.compare_surgical and args.paired_evidence_followup_one:
+        parser.error("surgical comparison has no symmetric evidence reprompt arm")
     if args.documented_noncommercial_e1 and (
         args.host_catalog or args.approved_host_root
     ):
@@ -897,19 +1217,21 @@ def main() -> None:
         capture_output=True, timeout=10, check=True,
     ).stdout.strip()
     result = asyncio.run(
-        real_cpu_graph_compare(
+        (real_cpu_surgical_compare if args.compare_surgical else real_cpu_graph_compare)(
             host_concept_catalog=catalog,
             approved_host_roots=roots,
             documented_noncommercial_e1=args.documented_noncommercial_e1,
             transport_retry_budget=int(args.paired_transport_retry_one),
-            evidence_reprompt_budget=int(args.paired_evidence_followup_one),
-        ) if args.compare_graph else real_cpu_run()
+            **({} if args.compare_surgical else {
+                "evidence_reprompt_budget": int(args.paired_evidence_followup_one),
+            }),
+        ) if (args.compare_graph or args.compare_surgical) else real_cpu_run()
     )
     result["source_revision"] = source
     result["hardware"] = platform.platform()
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(result, indent=2, allow_nan=False) + "\n")
-    if args.compare_graph:
+    if args.compare_graph or args.compare_surgical:
         print(json.dumps({
             "study": result["study"], "status": result["status"],
             "task_success_rate": result["task_success_rate"],

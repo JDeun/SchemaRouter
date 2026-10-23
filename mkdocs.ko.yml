@@ -139,6 +139,7 @@ nav:
   - 연구:
       - 오픈소스 도구 라우팅 조사·의사결정 위키: research/tool-routing-landscape.md
       - CodeGraph 방식 G5 선택적 컨텍스트 (합성 E0): research/codegraph-surgical-context-e0.md
+      - CodeGraph 선택적 G5 E1 실행·근거: research/codegraph-surgical-context-e1.md
       - 연구 프로그램·이슈 수명주기 (2026): research/research-program-2026.md
       - G5 통합 구현 기록:
           - 원본 개념 그래프 설계 (2026-10-22): superpowers/specs/2026-10-22-g5-native-vertical-slice-design.md
