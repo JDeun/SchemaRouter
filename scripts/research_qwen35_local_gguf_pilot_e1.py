@@ -136,6 +136,41 @@ def _strict_native_response(message: dict[str, Any], tools: list[dict[str, Any]]
     return text
 
 
+def _native_envelope_category(message: dict[str, Any]) -> str:
+    """Bounded model-shape diagnostic: no text, identifiers, args, or gold."""
+    if type(message) is not dict:
+        return "invalid_envelope"
+    calls = message.get("tool_calls")
+    if calls:
+        if type(calls) is not list or len(calls) != 1:
+            return "structured_multi_or_invalid"
+        call = calls[0]
+        if type(call) is not dict or type(call.get("function")) is not dict:
+            return "structured_invalid_function"
+        arguments = call["function"].get("arguments")
+        if type(arguments) is dict:
+            return "structured_args_mapping"
+        if type(arguments) is str:
+            return "structured_args_string"
+        return "structured_args_other"
+    content = message.get("content")
+    if type(content) is not str:
+        return "missing_content"
+    trimmed = content.strip()
+    if "<tool_call" in trimmed or "<function=" in trimmed:
+        balanced = ("<tool_call>" in trimmed and "</tool_call>" in trimmed)
+        if not balanced:
+            return "native_xml_partial"
+        if trimmed.startswith("<tool_call>"):
+            return "native_xml_balanced"
+        return "native_xml_with_prefix"
+    if "<think>" in trimmed or "</think>" in trimmed:
+        return "thinking_without_call"
+    if trimmed.startswith("{"):
+        return "json_final_or_action"
+    return "other_text_final"
+
+
 class Qwen35LocalGGUFAgent:
     """Local CPU llama.cpp GGUF backend; original host still owns all calls."""
 
@@ -150,6 +185,7 @@ class Qwen35LocalGGUFAgent:
             model_path=str(model_file), n_ctx=n_ctx, n_threads=THREADS,
             n_gpu_layers=0, seed=SEED, verbose=False,
         )
+        self.native_envelope_categories: list[str] = []
 
     def generate(
         self, messages: list[dict[str, str]], tools: list[dict[str, Any]],
@@ -183,6 +219,9 @@ class Qwen35LocalGGUFAgent:
         msg = choices[0].get("message")
         if type(msg) is not dict or not math.isfinite(latency):
             raise ValueError("missing native model response")
+        if not hasattr(self, "native_envelope_categories"):
+            self.native_envelope_categories = []
+        self.native_envelope_categories.append(_native_envelope_category(msg))
         try:
             canonical = _strict_native_response(msg, tools)
         except (ValueError, TypeError, OverflowError):
@@ -228,6 +267,23 @@ async def evaluate_qwen35_local_pilot(
         or result["source_route_count"] != 4
     ):
         raise ValueError("incomparable original four-route E1 task")
+    diag = getattr(agent, "native_envelope_categories", None)
+    diagnostic_rows: list[dict[str, Any]] = []
+    cursor = 0
+    for row in result["outcomes"]:
+        entry = {**row, "tool_schema_tokens": None}
+        if type(diag) is list:
+            consumed = row["model_turns"]
+            if type(consumed) is not int or consumed < 0:
+                raise ValueError("invalid per-arm generation count")
+            labels = diag[cursor:cursor + consumed]
+            if len(labels) != consumed:
+                raise ValueError("native envelope receipt count mismatch")
+            entry["native_envelope_categories"] = labels
+            cursor += consumed
+        diagnostic_rows.append(entry)
+    if type(diag) is list and cursor != len(diag):
+        raise ValueError("extra unattributed native generation receipt")
     return {
         **result,
         "study": "CODEGRAPH_QWEN35_Q4_GGUF_PAIRED_LOCAL_E1",
@@ -239,10 +295,7 @@ async def evaluate_qwen35_local_pilot(
         "quantization": "Q4_K_M",
         "generation_max_new_tokens": MAX_NEW_TOKENS,
         "token_subset_breakdown_available": False,
-        "outcomes": [
-            {**row, "tool_schema_tokens": None}
-            for row in result["outcomes"]
-        ],
+        "outcomes": diagnostic_rows,
         "true_native_local_gguf_execution": True,
         "source_disjoint_external_e2_qualified": False,
         "independent_e2_qualified": False,
