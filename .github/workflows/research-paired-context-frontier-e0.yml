@@ -1,0 +1,84 @@
+name: Paired Quality-Conditioned Schema Exposure E0
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_paired_context_frontier_e0.py"
+      - "tests/test_research_paired_context_frontier_e0.py"
+      - "research/autoresearch/paired-context-frontier-e0.md"
+      - ".github/workflows/research-paired-context-frontier-e0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  paired-source-retrieval-e0:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install current checked-out source and fixed test dependencies
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1"
+      - name: Validate unsafe cost savings cannot be claimed from failed retrieval
+        run: |
+          ruff check scripts/research_paired_context_frontier_e0.py tests/test_research_paired_context_frontier_e0.py
+          python -m pytest -q tests/test_research_paired_context_frontier_e0.py
+      - name: Run original 15-stratum multi-case paired K5 source benchmark
+        run: |
+          mkdir -p artifacts/paired-context-e0
+          PYTHONHASHSEED=0 python -m scripts.research_paired_context_frontier_e0 --out artifacts/paired-context-e0/result.json
+      - name: Verify result denominators, source cost and no model/E2 claims
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          r = json.loads(Path("artifacts/paired-context-e0/result.json").read_text())
+          assert r["schema_version"] == "paired-qualified-schema-exposure-e0-v1"
+          assert r["evidence_tier"] == "E0_DEVELOPER_AUTHORED_SYNTHETIC"
+          assert r["k"] == 5 and len(r["matrix"]) == 15
+          assert r["methods"] == ["schema_lexical_k5", "indexed_default_k5"]
+          assert r["default_indexed_is_g5_graph"] is False
+          assert r["all_model_tokens_measured"] is False
+          assert r["independent_e2_qualified"] is False
+          assert r["release_qualified"] is False
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as f:
+              f.write("## Synthetic paired quality-conditioned schema exposure E0\n\n")
+              f.write("NOT opt-in G5 graph, NOT an agent, NOT model tokens, NOT independent E2.\n\n")
+              f.write("| Catalog | Ambiguity | Paired hits | Indexed-only | Lexical-only | Shared-hit indexed mean contract bytes |\n")
+              f.write("|---:|---|---:|---:|---:|---:|\n")
+              for row in r["matrix"]:
+                  assert row["catalog_size"] in (20, 50, 100, 250, 500)
+                  assert row["ambiguity"] in ("low", "medium", "high")
+                  assert row["supported"] + row["unsupported"] == row["case_count"]
+                  route = row["paired_required_route"]
+                  fit = row["paired_no_fit"]
+                  assert sum(route.values()) == row["supported"], row
+                  assert sum(fit.values()) == row["unsupported"], row
+                  cond = row["quality_conditioned_supported"]
+                  assert cond["both_hit_case_count"] == route["both_hit"]
+                  assert (cond["indexed_cheaper_count"] + cond["lexical_cheaper_count"]
+                          + cond["equal_bytes_count"] == route["both_hit"])
+                  assert row["lexical_case_correct"] <= row["case_count"]
+                  assert row["indexed_case_correct"] <= row["case_count"]
+                  f.write(
+                      f"| {row['catalog_size']} | {row['ambiguity']} | "
+                      f"{route['both_hit']} | {route['indexed_only_hit']} | "
+                      f"{route['lexical_only_hit']} | "
+                      f"{cond['indexed_default_mean_bytes']} |\n"
+                  )
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: paired-context-qualified-e0-${{ github.run_id }}
+          path: artifacts/paired-context-e0/result.json
+          retention-days: 30
+          if-no-files-found: warn
