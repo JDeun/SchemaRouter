@@ -14,10 +14,8 @@ import platform
 import subprocess
 from pathlib import Path
 
-from scripts.agent_utility_v7_dev_agent import (
-    MODEL_NAME as BASELINE_MODEL_ID,
-    MODEL_REVISION as BASELINE_REVISION,
-)
+from scripts.agent_utility_v7_dev_agent import MODEL_NAME as BASELINE_MODEL_ID
+from scripts.agent_utility_v7_dev_agent import MODEL_REVISION as BASELINE_REVISION
 from scripts.research_codegraph_local_multiroute_e1 import (
     LANGUAGE_ALIASES,
     ROOT,
