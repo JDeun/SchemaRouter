@@ -724,11 +724,12 @@ async def compare_graph_native_e1(
             observation != private_weather[0] for observation in private_weather[1:]
         ):
             return {**safe_base, "status": "INCOMPARABLE_SOURCE_DRIFT", "outcomes": ()}
-    # 원본 제공자 HTTPS 자체의 타임아웃/실패는 모델의 경로 선택 실패가
-    # 아닙니다. 진단 행은 보존하되 조건별 작업 성공률 분모를 만들지 않습니다.
+    # Original provider transport, HTTP status, JSON or schema rejection is
+    # not an agent routing failure. Keep diagnostic rows but no success-rate
+    # denominator for any trusted geocode/forecast failure stage.
     if any(
         (row.get("trusted_failure_stage") or "").startswith((
-            "geocode_http_", "forecast_http_",
+            "geocode_", "forecast_",
         ))
         for row in outcomes
     ):

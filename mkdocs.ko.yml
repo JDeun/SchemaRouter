@@ -137,6 +137,7 @@ nav:
       - Adapter 작성: adapter-authoring.md
       - 보안 모델: security/threat-model.md
   - 연구:
+      - 연구 지식 인덱스 (에이전트 안내): research/knowledge-index.md
       - 오픈소스 도구 라우팅 조사·의사결정 위키: research/tool-routing-landscape.md
       - CodeGraph 방식 G5 선택적 컨텍스트 (합성 E0): research/codegraph-surgical-context-e0.md
       - CodeGraph 선택적 G5 E1 실행·근거: research/codegraph-surgical-context-e1.md
