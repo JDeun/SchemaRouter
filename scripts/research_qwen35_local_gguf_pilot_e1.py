@@ -20,7 +20,9 @@ from typing import Any
 
 from scripts.agent_utility_v7_dev_agent import _as_openai_tools
 from scripts.research_codegraph_local_multiroute_e1 import (
-    LANGUAGE_ALIASES, ROOT, run_local_multiroute_codegraph_e1,
+    LANGUAGE_ALIASES,
+    ROOT,
+    run_local_multiroute_codegraph_e1,
 )
 from scripts.research_qwen35_native_tool_adapter_e1 import normalize_qwen35_xml_action
 from scripts.research_real_qwen_bound_two_step_e0 import _parse_strict_model_json
