@@ -15,6 +15,7 @@ from typing import Any
 
 from schemarouter.errors import PolicyViolationError
 from scripts.research_codegraph_action_shape_e1 import structural_action_label
+from scripts.research_codegraph_final_answer_diagnostics_e1 import classify_strict_final_e1
 from scripts.research_codegraph_scoped_materializer import (
     SurgicalEpisode,
     materialize_scoped_original_schemas,
@@ -266,6 +267,7 @@ async def run_surgical_model_episode(
     action_shape_labels: list[str] = []
     argument_alignment_labels: list[str] = []
     bare_schema_request_normalizations = 0
+    final_outcome_category = "no_complete_final"
 
     for _ in range(max_turns):
         try:
@@ -334,6 +336,8 @@ async def run_surgical_model_episode(
                 bare_schema_request_normalizations += 1
         except (ValueError, TypeError, OverflowError):
             reason = "malformed_call"
+            if source_calls == 2:
+                final_outcome_category = "malformed_after_two_source_calls"
             break
 
         if kind == "final":
@@ -343,8 +347,13 @@ async def run_surgical_model_episode(
             ]
             if not completed_paths or not observations:
                 reason = "premature_final"
+                final_outcome_category = "premature_final"
             else:
                 reason = "completed_final"
+                if diagnose_model_actions and "case_state" in observations[executed_routes[-1]]:
+                    final_outcome_category = classify_strict_final_e1(
+                        value, observations[executed_routes[-1]],
+                    )
                 validator = host_context.validate_final
                 if validator is not None:
                     try:
@@ -356,6 +365,8 @@ async def run_surgical_model_episode(
             break
 
         if kind == "schema":
+            if source_calls == 2:
+                final_outcome_category = "extra_native_call_after_two_source_calls"
             if materialized_ids:
                 reason = "unoffered_or_repeated_schema_request"
                 break
@@ -373,8 +384,12 @@ async def run_surgical_model_episode(
 
         route_id, arguments = value["route"], value["arguments"]
         if route_id not in materialized_ids:
+            if source_calls == 2:
+                final_outcome_category = "extra_native_call_after_two_source_calls"
             reason = "unoffered_native_route"
             break
+        if source_calls == 2:
+            final_outcome_category = "extra_native_call_after_two_source_calls"
         expected = _expected_arguments(
             episode, executed_routes, observations, route_id, host_context,
         )
@@ -427,6 +442,7 @@ async def run_surgical_model_episode(
         **({
             "action_structure_labels": action_shape_labels,
             "argument_alignment_labels": argument_alignment_labels,
+            "final_outcome_category": final_outcome_category,
         } if diagnose_model_actions else {}),
         **({"bare_schema_request_normalizations": bare_schema_request_normalizations}
            if experimental_bare_schema_request else {}),

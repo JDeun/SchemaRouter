@@ -9,6 +9,7 @@ import math
 from typing import Any
 
 from schemarouter.errors import PolicyViolationError
+from scripts.research_codegraph_final_answer_diagnostics_e1 import classify_strict_final_e1
 from scripts.research_codegraph_scoped_materializer import (
     SurgicalEpisode,
     materialize_scoped_original_schemas,
@@ -102,6 +103,7 @@ async def run_graph_frontier_model_episode(
     all_receipts = True
     frontier_sizes: list[int] = []
     structure_labels: list[str] = []
+    final_outcome_category = "no_complete_final"
     reason = "turn_limit"
     correct = False
 
@@ -163,6 +165,8 @@ async def run_graph_frontier_model_episode(
             kind, value = parse_one_model_action(generated["text"])
         except (ValueError, TypeError, OverflowError):
             reason = "malformed_call"
+            if source_calls == 2:
+                final_outcome_category = "malformed_after_two_source_calls"
             break
         if kind == "final":
             complete = any(
@@ -171,8 +175,13 @@ async def run_graph_frontier_model_episode(
             )
             if not complete or not observations:
                 reason = "premature_final"
+                final_outcome_category = "premature_final"
             else:
                 reason = "completed_final"
+                if diagnose_model_actions and "case_state" in observations[executed[-1]]:
+                    final_outcome_category = classify_strict_final_e1(
+                        value, observations[executed[-1]],
+                    )
                 validator = host_context.validate_final
                 if validator is not None:
                     try:
@@ -187,8 +196,12 @@ async def run_graph_frontier_model_episode(
             break
         route_id, arguments = value["route"], value["arguments"]
         if route_id not in offered_routes:
+            if source_calls == 2:
+                final_outcome_category = "extra_native_call_after_two_source_calls"
             reason = "unoffered_native_route"
             break
+        if source_calls == 2:
+            final_outcome_category = "extra_native_call_after_two_source_calls"
         expected = _expected_arguments(
             episode, executed, observations, route_id, host_context,
         )
@@ -238,5 +251,7 @@ async def run_graph_frontier_model_episode(
         "independent_e2_qualified": False,
         "model_default_promoted": False,
         "release_safety_gate_passed": False,
-        **({"action_structure_labels": structure_labels} if diagnose_model_actions else {}),
+        **({"action_structure_labels": structure_labels,
+            "final_outcome_category": final_outcome_category}
+           if diagnose_model_actions else {}),
     }
