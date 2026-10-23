@@ -159,17 +159,20 @@ def run_agent_pilot(
     router = build_source_router(corpus)
     if not isinstance(router, SchemaRouter) or not isinstance(PRINCIPAL, PrincipalContext):
         raise ValueError("native source or principal identity changed")
+    model_tag = f"{AGENT_MODEL}@{AGENT_REVISION}+intfloat/multilingual-e5-small"
+    model_runtime = "injected-unattested-agent-and-backend"
     provenance = E0TraceProvenance(
         source_revision=source_revision, source_sha256=digest,
         hmac_key=hmac_key, seed=SEED,
+        split_sha256=split_sha, model_revision=model_tag,
+        model_runtime=model_runtime, hardware=hardware,
     )
-    model_tag = f"{AGENT_MODEL}@{AGENT_REVISION}+intfloat/multilingual-e5-small"
     identity: dict[str, Any] = {
         "source_revision": source_revision,
         "source_sha256": digest,
         "split_sha256": split_sha,
         "model_revision": model_tag,
-        "model_runtime": "injected-unattested-agent-and-backend",
+        "model_runtime": model_runtime,
         "hardware": hardware,
         "split_name": "predeclared_disclosed_multilingual_fixture_dev",
         "seed": SEED,
