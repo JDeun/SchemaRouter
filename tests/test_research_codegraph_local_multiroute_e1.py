@@ -240,15 +240,29 @@ async def test_optin_structure_labels_do_not_change_source_calls_or_gold():
 
 
 class BareJsonNativeMenuAgent(MenuAgent):
-    """Same scripted E1 source action, but native calls omit tool_call tags."""
+    """Native JSON calls; advance only on observed original host callbacks."""
 
     def generate(self, messages, tools):
-        report = super().generate(messages, tools)
-        raw = report["text"]
-        if raw.startswith("<tool_call>") and raw.endswith("</tool_call>"):
-            if "research__request_scoped_source_schema" not in raw:
-                report["text"] = raw[len("<tool_call>"):-len("</tool_call>")]
-        return report
+        menu = {tool["name"] for tool in tools}
+        self.offered.append(menu)
+        observed_source_steps = sum(
+            row["role"] == "tool" and "tool_definitions" not in row["content"]
+            for row in messages
+        )
+        if menu == {"research__request_scoped_source_schema"}:
+            response = SCHEMA
+        elif observed_source_steps == 0 and "contacts__read" in menu:
+            response = CONTACT[len("<tool_call>"):-len("</tool_call>")]
+        elif observed_source_steps == 1 and "cases__read" in menu:
+            response = CASE[len("<tool_call>"):-len("</tool_call>")]
+        elif observed_source_steps == 2:
+            response = FINAL
+        else:
+            response = "REQUEST_MORE_TOOLS"
+        return {
+            "text": response, "latency_ms": 1.0, "context_overflow": False,
+            "input_tokens": 55, "tool_tokens": 12, "output_tokens": 14,
+        }
 
 
 @pytest.mark.asyncio
