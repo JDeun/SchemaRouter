@@ -43,13 +43,13 @@ from scripts.research_authorized_agent_tool_surface import (
 )
 from scripts.research_codegraph_action_shape_e1 import structural_action_label
 from scripts.research_codegraph_bare_json_adapter_e1 import parse_native_action_optin
-from scripts.research_codegraph_scoped_materializer import (
-    SurgicalEpisode,
-    capture_surgical_episode,
-)
 from scripts.research_codegraph_graph_frontier_e1 import (
     FRONTIER_ARM,
     run_graph_frontier_model_episode,
+)
+from scripts.research_codegraph_scoped_materializer import (
+    SurgicalEpisode,
+    capture_surgical_episode,
 )
 from scripts.research_codegraph_surgical_agent_e1 import (
     SINGLE_STEP_PROTOCOL_E1,
