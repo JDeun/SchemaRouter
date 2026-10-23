@@ -125,3 +125,33 @@ source fingerprints, prompts, original executor, five-turn cap and task
 gold. Any positive result would be a *second-stage progress cue*
 effect in this author-prepared E1 fixture, not overall CodeGraph
 superiority or independent E2.
+
+## Verified amended matched-prompt results — six original-source Qwen jobs
+
+The [Linux CPU six-cell run #39934299707](https://github.com/JDeun/SchemaRouter/actions/runs/39934299707) is **SUCCESS in all six matrix jobs**, with actual pinned Qwen3-0.6B and separately pinned Qwen3-1.7B model generations on EN/KO/JA. The original allowlisted JSON evidence is retained as GitHub Actions artifacts under `codegraph-g5-continuation-e1-<model>-<language>-39934299707`. Each file reports both `prompt_treatment=EXACTLY_ONE_NATIVE_ACTION_PER_TURN` and `continuation_treatment=AFTER_VERIFIED_FIRST_G5_CALL`, `verified_continuation_cues=1` for **G5 only**, exact original-source receipt, K5 and `independent_e2_qualified=false`. Checkout's reported merge-source revision was `fafba650f70cd038e25b920fd8dc8c630099dc5b` for all six runs.
+
+| Pinned model | Language | Matched prior #1728 G5: strict full task | Amended G5: native calls | Verified host cues | Amended G5 strict full task | G5 total model input+output tokens |
+| --- | --- | --- | ---: | ---: | --- | ---: |
+| Qwen3-0.6B | EN | 0/1 | 2 | 1 | **0/1** (final wrong) | 1752 |
+| Qwen3-0.6B | KO | 0/1 | 2 | 1 | **0/1** (final wrong) | 1755 |
+| Qwen3-0.6B | JA | 0/1 | 2 | 1 | **0/1** (final wrong) | 1755 |
+| Qwen3-1.7B | EN | 0/1 | 2 | 1 | **1/1** | 1746 |
+| Qwen3-1.7B | KO | 0/1 | 2 | 1 | **1/1** | 1749 |
+| Qwen3-1.7B | JA | 0/1 | 2 | 1 | **1/1** | 1749 |
+
+All amended G5 arms generated **three real model turns**, classified as two correctly formed native tool calls followed by bare final JSON. The original host executed two read-only registered callbacks per G5 arm with source-observation-bound arguments. For Qwen3-0.6B these two calls were **necessary but insufficient**: the final answer did not pass the strict oracle. For Qwen3-1.7B EN/KO/JA the final answer passed. Surgical CodeGraph's **schema-on-demand** arm remained at **zero original source calls and 0/1 full-task success** in all six cells; this result cannot be credited to surgical context materialization.
+
+### Same-run control outcome, total model tokens and interpretation
+
+| Pinned model | Language | FULL strict success (model tokens) | Lexical K5 strict success (model tokens) | G5 strict success (model tokens) | Surgical strict success (model tokens) |
+| --- | --- | --- | --- | --- | --- |
+| 0.6B | EN | 0/1 (677) | 0/1 (677) | 0/1 (1752) | 0/1 (929) |
+| 0.6B | KO | 0/1 (678) | 0/1 (678) | 0/1 (1755) | 0/1 (948) |
+| 0.6B | JA | 0/1 (678) | 0/1 (678) | 0/1 (1755) | 0/1 (948) |
+| 1.7B | EN | 1/1 (2142) | 1/1 (2142) | 1/1 (1746) | 0/1 (947) |
+| 1.7B | KO | 1/1 (2145) | 1/1 (2145) | 1/1 (1749) | 0/1 (948) |
+| 1.7B | JA | 0/1 (2151) | 0/1 (2151) | 1/1 (1749) | 0/1 (948) |
+
+On the **two successful same-run EN/KO 1.7B fixtures**, G5 consumed 396 fewer total model tokens than FULL/lexical (roughly **18.5% fewer**, both arms correctly completed the task). However this is only a local author-authored 4-route setup under one pinned model/checkpoint, plus the incremental **host progress cue**, not an isolated demonstration that graph ranking or CodeGraph context improves completed-task cost. The JA 1.7B FULL/lexical answers failed while G5's answer passed; calculating successful-task cost ratios against a failed arm would be invalid.
+
+**Statistical and security limits:** there is one author-created local task per language and the translations are correlated. There is no independent publisher-authored held-out cohort or production live provider observation, no generalizable success percentage, and no reason to change default tool routing, host authority, access licensing, source identity or v0.18 #1356 HARD HOLD. This positive E1 result changes the follow-up question from *can G5 make a second authenticated source call?* to *will this remain safe and correct on preregistered heterogeneous, independently authored cases?* The separate CodeGraph surgical schema-on-demand branch still lacks even one completed task.
