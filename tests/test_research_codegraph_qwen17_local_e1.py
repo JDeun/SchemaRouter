@@ -59,3 +59,26 @@ async def test_qwen17_wrapper_rejects_incomparable_full_cohort(monkeypatch):
     instance = object.__new__(study.LocalQwen17BRealAgent)
     with pytest.raises(ValueError, match="comparable K5"):
         await study.evaluate_candidate(instance, language="en")
+
+@pytest.mark.asyncio
+async def test_qwen17_continuation_sixth_arm_optin_pass_through(monkeypatch):
+    from scripts.research_codegraph_local_multiroute_e1 import ARMS
+    flags = []
+    async def fake_run(_agent, *, language, condition, catalog_size, **kwargs):
+        flags.append(kwargs)
+        arms = (*ARMS, "graph_frontier_g5_e1", "graph_frontier_cued_e1")
+        return {
+            "status": "E1_MEASURED_LOCAL_SIX_ARM_NOT_E2",
+            "source_route_count": 4,
+            "outcomes": [{"condition": arm} for arm in arms],
+            "language": language,
+        }
+
+    monkeypatch.setattr(study, "run_local_multiroute_codegraph_e1", fake_run)
+    agent = object.__new__(study.LocalQwen17BRealAgent)
+    result = await study.evaluate_candidate(
+        agent, language="ja",
+        experimental_frontier_verified_continuation=True,
+    )
+    assert len(result["outcomes"]) == 6
+    assert flags[0]["experimental_frontier_verified_continuation"] is True
