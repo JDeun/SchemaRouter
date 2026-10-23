@@ -37,7 +37,16 @@ separate genuinely instrumented witnesses (#1348).
 evaluator has computed these witnesses. The existing
 `run_generated_episode(..., experimental_agent_tool_surface=...)`
 now optionally accepts a trusted `E0TraceProvenance` with source revision,
-corpus hash, private HMAC key and seed. It **requires both** the existing
+corpus hash, private HMAC key and seed. It may also include a **complete**
+source-split SHA-256 and the host-declared model revision, runtime and hardware
+descriptors. Only the split digest and **SHA-256 hashes of those three
+descriptors** are added to public JSONL; raw platform/user/path strings stay
+in the trusted manifest. This is an opt-in all-or-none addition: old source-only
+E0 JSONL remains readable. The strict paired E0 aggregator cross-checks the
+four receipts against the cohort manifest and rejects mismatched or mixed
+receipt versions across tasks/arms. These receipts link records to **declared**
+metadata, not to a verified genuine model, hardware attestation or independent
+publisher-authored E2 task set. It **requires both** the existing
 principal-scoped view and opt-in fixed-K selector; it computes stage witnesses
 only from the raw trusted `episode_record` after all synthetic turns and then
 adds sanitized `e0_stage_evidence` to the existing safe `public_trace`.
