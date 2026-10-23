@@ -176,15 +176,24 @@ async def test_paired_g5_never_fabricates_zero_tokens_from_missing_metrics() -> 
     assert seen == []
 
 
+@pytest.mark.parametrize("source_failure_stage", (
+    "geocode_http_transport_failure",
+    "geocode_http_status_rejected",
+    "geocode_response_json_rejected",
+    "geocode_geocoding_payload_rejected",
+    "forecast_weather_payload_rejected",
+))
 @pytest.mark.asyncio
-async def test_paired_g5_live_source_transport_failure_is_incomparable(monkeypatch) -> None:
-    """HTTP availability variation is not evidence for an agent's routing quality."""
+async def test_paired_g5_live_source_failure_is_incomparable(
+    monkeypatch, source_failure_stage: str,
+) -> None:
+    """Rejected original-provider responses cannot score an agent's routing quality."""
     async def source_failure(agent, client, *, language, menu_mode, **kwargs):
         del agent, client, kwargs
         return {
             "language": language, "full_task_complete": False,
             "trusted_failure_stage": (
-                "geocode_http_transport_failure"
+                source_failure_stage
                 if (language, menu_mode) == ("ko", "concept_graph_optin")
                 else None
             ),
@@ -205,7 +214,7 @@ async def test_paired_g5_live_source_transport_failure_is_incomparable(monkeypat
     assert result["task_success_rate"] is None
     assert len(result["outcomes"]) == 9
     assert sum(
-        row["trusted_failure_stage"] == "geocode_http_transport_failure"
+        row["trusted_failure_stage"] == source_failure_stage
         for row in result["outcomes"]
     ) == 1
 

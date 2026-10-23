@@ -3,8 +3,8 @@
   "review_date": "2026-10-23",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 155,
-  "total_page_pairs": 155,
+  "reviewed_page_pairs": 156,
+  "total_page_pairs": 156,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
@@ -846,6 +846,12 @@
       "notes": "Matched sealed held-out policy, failed promotion, all three quantitative result rows, guardrails, per-stratum gains/losses, generator provenance, and no post-hoc tuning."
     },
     {
+      "path": "research/knowledge-index.md",
+      "en_blob": "863e96e358b07c447355b56c371468a926a380ae",
+      "ko_blob": "ae7316c6218094c8e83a791532118c04fdffbf9f",
+      "notes": "2026-10-23 AI-assisted comparison of the expanded Korean research index against the canonical English navigation. Topic IDs SR-R01–SR-R07, source links, negative evidence, no-promotion and non-independent status are preserved; this is not independent human or sentence-level translation sign-off."
+    },
+    {
       "path": "research/large-heldout-agent-utility.md",
       "en_blob": "31213184bb15fb40d52752131ed07a140a616431",
       "ko_blob": "cd1c71feed457b7781265b001ade37aaad94065f",
@@ -889,8 +895,8 @@
     },
     {
       "path": "research/research-program-2026.md",
-      "en_blob": "9b7321e580bdbd0d419943961b6a6b978e9c459b",
-      "ko_blob": "8772fe6bd3742bdc5579b3f79b5f2e5020614b83",
+      "en_blob": "e1d9466aa92b1133c429abae16ce0c963c0a9423",
+      "ko_blob": "b0f099753db4d385b5a645e2e16223eec047cfcc",
       "notes": "AI-assisted EN/KO direct paired comparison of original 19 issue dispositions, typed G5 security/authority boundary, CodeGraph #1711 M5 and #1700 M1, original Open-Meteo E1 BLOCKED_SOURCE_SEMANTICS and new explicitly documented noncommercial-source opt-in (mock-transport typed two-call verification only, no actual model/native E1 or E2 claim); checks source read-only limits, preserved original argument bounds, no token-savings claim, unchanged 0.14 scores, release #1356 merge prohibition, and canonical GitHub milestone addendum link. Human editorial signoff still open."
     },
     {
@@ -961,5 +967,7 @@
     }
   ],
   "directly_examined_across_branches": 147,
-  "review_amendments": []
+  "review_amendments": [
+    "2026-10-22: Added bilingual research knowledge index and refreshed English research-program source blob after navigation link; AI-assisted review only, not independent human verification."
+  ]
 }

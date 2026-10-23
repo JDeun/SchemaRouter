@@ -184,6 +184,44 @@ def test_graph_changed_registry_or_policy_fails_closed() -> None:
         )
 
 
+def test_graph_refuses_principal_claims_mutated_during_lookup(monkeypatch) -> None:
+    router = _joined_router()
+    index = _index(router)
+    principal = PrincipalContext(subject="analyst", roles=("reader",))
+    original = NativeSchemaGraphIndex.lookup
+
+    def change_claims(*args, **kwargs):
+        result = original(*args, **kwargs)
+        object.__setattr__(principal, "roles", ("unprivileged",))
+        return result
+
+    monkeypatch.setattr(NativeSchemaGraphIndex, "lookup", change_claims)
+    with pytest.raises(PolicyViolationError):
+        retrieve_authorized_concept_graph(
+            router, "case status", principal=principal,
+            catalog=_catalog(), index=index,
+        )
+
+
+def test_graph_refuses_compiled_authorization_index_mutation(monkeypatch) -> None:
+    router = _joined_router()
+    index = _index(router)
+    original = NativeSchemaGraphIndex.lookup
+
+    def remove_compiled_permissions(*args, **kwargs):
+        result = original(*args, **kwargs)
+        assert router.authorization_policy is not None
+        router.authorization_policy._rule_index.partitions.clear()
+        return result
+
+    monkeypatch.setattr(NativeSchemaGraphIndex, "lookup", remove_compiled_permissions)
+    with pytest.raises(PolicyViolationError):
+        retrieve_authorized_concept_graph(
+            router, "case status", principal=ACTOR,
+            catalog=_catalog(), index=index,
+        )
+
+
 def test_direct_candidate_revoked_by_live_availability_during_graph_lookup(
     monkeypatch,
 ) -> None:
