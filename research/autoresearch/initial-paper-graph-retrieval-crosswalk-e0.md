@@ -140,3 +140,32 @@ independent task-success evidence.
 **Evidence classification:** source-code/adapter-bound E0 audit. Do not
 interpret administrative completion of #1530 as completion of M1 #1535,
 #1560 or any independent commercial release/performance gate.
+
+
+## 2026-10-24 paper-as-written alignment decision
+
+This is a **new decision trace**, not a correction to the original
+2026-10-18/21 audit or its frozen test outcomes. The verified primary
+source is the literal paper
+[`paper/schemarouter.tex`](https://github.com/JDeun/paper_SchemaRouter/blob/main/paper/schemarouter.tex)
+(especially Algorithm 1 and its recall-preserving operating point),
+compared against current `main`'s actual `retrieve_authorized`,
+`SchemaPlanner`, optional `ModelQueryAnalyzer`,
+`retrieve_authorized_concept_graph`, `FieldGroup` and `ToolCall`.
+
+The definitive step-by-step *product decision and implementation sequence*
+is now [**Original-paper Algorithm 1 parity**](../../docs/research/original-paper-algorithm1-parity.md).
+
+**Conclusion:** typed source contracts, field/evidence projection, execution
+authorization and optional G5 are valid work; the original Algorithm 1
+query→intent/concept→complete FieldGroup→source-metadata plan is **not
+wired end-to-end in the default retrieval path**. Specifically,
+`KeywordAnalyzer` is the production default,
+`ModelQueryAnalyzer` may receive a bounded *full schema catalog*,
+opt-in owner-declared concept aliases are not open semantic inference,
+and producer→consumer G5 is not interchangeable with the paper's
+concept→response-field ontology. The P1 owner is #1535; P2 #1560;
+downstream source/field/answer/reader-context measures require #1346
+and #1477. A native schema-token E0 improvement is not the paper's
+retrieved data-context or verified answer attribution metric.
+Keep #1356 release HARD HOLD.
