@@ -31,13 +31,16 @@ from scripts.research_qwen17_live_open_meteo_comparison_e1 import (
 async def evaluate_candidate(
     agent: LocalQwen17BRealAgent, *, language: str,
     diagnose_model_actions: bool = False,
+    experimental_bare_native_json: bool = False,
 ) -> dict:
     """Run one local synthetic task under genuine four-arm K5 constraints."""
     if type(agent) is not LocalQwen17BRealAgent:
         raise TypeError("pinned Qwen3-1.7B instance required for source receipts")
-    optional = (
-        {"diagnose_model_actions": True} if diagnose_model_actions else {}
-    )
+    optional = {}
+    if diagnose_model_actions:
+        optional["diagnose_model_actions"] = True
+    if experimental_bare_native_json:
+        optional["experimental_bare_native_json"] = True
     report = await run_local_multiroute_codegraph_e1(
         agent, language=language, condition="joined", catalog_size=4,
         **optional,
@@ -69,6 +72,7 @@ def main() -> None:
     parser.add_argument("--cohort", choices=("four-route",), required=True)
     parser.add_argument("--language", choices=LANGUAGE_ALIASES, required=True)
     parser.add_argument("--diagnose-model-actions", action="store_true")
+    parser.add_argument("--experimental-bare-native-json", action="store_true")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     # This class validates its independently pinned 40-character Hugging Face
@@ -77,6 +81,7 @@ def main() -> None:
     report = asyncio.run(evaluate_candidate(
         agent, language=args.language,
         diagnose_model_actions=args.diagnose_model_actions,
+        experimental_bare_native_json=args.experimental_bare_native_json,
     ))
     report["source_revision"] = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True,
