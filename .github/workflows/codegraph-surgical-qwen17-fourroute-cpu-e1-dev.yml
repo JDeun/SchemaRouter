@@ -67,6 +67,7 @@ jobs:
         run: |
           python -m scripts.research_codegraph_qwen17_local_e1 \
             --cohort four-route --language ${{ matrix.language }} \
+            --diagnose-model-actions \
             --out artifacts/codegraph-qwen17/${{ matrix.language }}.json
       - name: Enforce exact model, truthful task denominator and E1-only receipts
         run: |
@@ -93,6 +94,12 @@ jobs:
           assert report["release_qualified"] is False
           assert len(report["outcomes"]) == 4
           assert all(row["model_turns"] >= 1 for row in report["outcomes"])
+          from scripts.research_codegraph_action_shape_e1 import CATEGORIES
+          for row in report["outcomes"]:
+              labels = row["action_structure_labels"]
+              assert len(labels) == row["model_turns"]
+              assert set(labels) <= CATEGORIES
+              assert all(type(label) is str for label in labels)
           assert all(value in (0.0, 1.0) for value in report["task_success_rate"].values())
           with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
               out.write(f"## Qwen3-1.7B local CodeGraph E1 DEV — {lang}\n\n")
