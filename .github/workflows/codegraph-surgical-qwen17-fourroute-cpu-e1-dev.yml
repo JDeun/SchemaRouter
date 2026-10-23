@@ -1,0 +1,110 @@
+name: CodeGraph Surgical Qwen17 Four-Route E1 DEV
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_codegraph_qwen17_local_e1.py"
+      - "scripts/research_codegraph_local_multiroute_e1.py"
+      - "tests/test_research_codegraph_qwen17_local_e1.py"
+      - ".github/workflows/codegraph-surgical-qwen17-fourroute-cpu-e1-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-qwen17-local-four-arm:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [en, ko, ja]
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install pinned CPU-only inference stack and project
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "transformers>=4.51,<5" "huggingface-hub>=0.30,<2" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1"
+      - name: Check four-arm agent reports and identity controls without inference
+        run: |
+          ruff check scripts/research_codegraph_qwen17_local_e1.py tests/test_research_codegraph_qwen17_local_e1.py
+          python -m pytest -q tests/test_research_codegraph_qwen17_local_e1.py tests/test_research_codegraph_local_multiroute_e1.py
+      - name: Bound CPU runner RAM and free model-cache disk
+        run: |
+          python - <<'PY'
+          import shutil
+          from pathlib import Path
+          ram = int(next(x for x in Path("/proc/meminfo").read_text().splitlines() if x.startswith("MemTotal:")).split()[1])
+          free = shutil.disk_usage(".").free / (1024**3)
+          assert ram >= 12_000_000 and free >= 7, (ram, free)
+          PY
+      - name: Prestage the independent public pinned Qwen3-1.7B checkpoint
+        run: |
+          python - <<'PY'
+          from huggingface_hub import model_info, snapshot_download
+          from scripts.research_qwen17_live_open_meteo_comparison_e1 import MODEL_ID, REVISION
+          assert MODEL_ID == "Qwen/Qwen3-1.7B"
+          assert REVISION == "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e"
+          assert model_info(MODEL_ID, revision=REVISION).sha == REVISION
+          snapshot_download(
+              repo_id=MODEL_ID, revision=REVISION,
+              allow_patterns=("*.json", "*.safetensors", "*.model", "tokenizer*", "*.jinja"),
+          )
+          PY
+      - name: Actually run Qwen17 four-arm original registered local tools
+        run: |
+          python -m scripts.research_codegraph_qwen17_local_e1 \
+            --cohort four-route --language ${{ matrix.language }} \
+            --out artifacts/codegraph-qwen17/${{ matrix.language }}.json
+      - name: Enforce exact model, truthful task denominator and E1-only receipts
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          lang = "${{ matrix.language }}"
+          report = json.loads(Path(f"artifacts/codegraph-qwen17/{lang}.json").read_text(encoding="utf-8"))
+          assert report["study"] == "CODEGRAPH_QWEN17_LOCAL_FOUR_ARM_E1_DEV"
+          assert report["model_id"] == "Qwen/Qwen3-1.7B"
+          assert report["model_revision"] == "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e"
+          assert report["baseline_model_id"] == "Qwen/Qwen3-0.6B"
+          assert report["actual_pinned_model_inference"] is True
+          assert report["checkpoint_only_model_intervention"] is True
+          assert report["status"] == "E1_MEASURED_LOCAL_FOUR_ARM_NOT_E2"
+          assert report["source_route_count"] == 4 and report["requested_k"] == 5
+          assert report["language"] == lang and report["qualified_task_denominator"] == {
+              arm: 1 for arm in report["arms"]
+          }
+          assert report["independent_e2_qualified"] is False
+          assert report["original_provider_e1"] is False
+          assert report["real_external_provider_observed"] is False
+          assert report["release_qualified"] is False
+          assert len(report["outcomes"]) == 4
+          assert all(row["model_turns"] >= 1 for row in report["outcomes"])
+          assert all(value in (0.0, 1.0) for value in report["task_success_rate"].values())
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write(f"## Qwen3-1.7B local CodeGraph E1 DEV — {lang}\n\n")
+              out.write("Four original registered routes, genuine K5, one synthetic case/arm; checkpoint changed from Qwen3-0.6B. No independent E2 or causal CodeGraph speedup claim.\n\n")
+              out.write("| Arm | Turns | Source calls | Tokens | Success | Stop |\n|---|---:|---:|---:|---|---|\n")
+              for row in report["outcomes"]:
+                  out.write(f"| {row['condition']} | {row['model_turns']} | {row['actual_source_calls']} | {row['total_model_tokens']} | {row['full_task_complete']} | {row['status']} |\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: codegraph-qwen17-local-e1-${{ matrix.language }}-${{ github.run_id }}
+          path: artifacts/codegraph-qwen17/*.json
+          retention-days: 30
+          if-no-files-found: warn
