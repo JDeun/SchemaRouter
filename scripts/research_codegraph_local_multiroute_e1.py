@@ -48,6 +48,7 @@ from scripts.research_codegraph_scoped_materializer import (
     capture_surgical_episode,
 )
 from scripts.research_codegraph_surgical_agent_e1 import (
+    SINGLE_STEP_PROTOCOL_E1,
     SurgicalHostContext,
     run_surgical_model_episode,
 )
@@ -235,6 +236,7 @@ async def _baseline_local_arm(
     agent: Any, *, source: LocalControlSource, condition: str,
     diagnose_model_actions: bool = False,
     experimental_bare_native_json: bool = False,
+    experimental_single_step_prompt: bool = False,
 ) -> dict[str, Any]:
     """Old native disclosure and invocation, with no >5-route workaround."""
     router = source.router
@@ -274,6 +276,8 @@ async def _baseline_local_arm(
             "Use selected original read-only tools, first contacts then cases. "
             "Only trust the verified public preceding observation. "
             "Answer JSON with case_state after both real calls."
+            + ("\n" + SINGLE_STEP_PROTOCOL_E1
+               if experimental_single_step_prompt else "")
         )},
         {"role": "user", "content": query},
     ]
@@ -384,10 +388,17 @@ async def run_local_multiroute_codegraph_e1(
     catalog_size: int = 12,
     diagnose_model_actions: bool = False,
     experimental_bare_native_json: bool = False,
+    experimental_single_step_prompt: bool = False,
 ) -> dict[str, Any]:
     """12-route scaling negative OR separate true four-route comparable local E1."""
     if type(experimental_bare_native_json) is not bool:
         raise ValueError("research bare-native experiment must be boolean")
+    if type(experimental_single_step_prompt) is not bool:
+        raise ValueError("research one-action prompt flag must be boolean")
+    if experimental_single_step_prompt and experimental_bare_native_json:
+        raise ValueError("grammar and one-step prompt treatments must be separate")
+    if experimental_single_step_prompt and catalog_size != 4:
+        raise ValueError("research one-step prompt requires four-route source")
     if experimental_bare_native_json and catalog_size != 4:
         raise ValueError("research bare-native intervention requires four routes")
     if type(diagnose_model_actions) is not bool:
@@ -417,6 +428,8 @@ async def run_local_multiroute_codegraph_e1(
         "qualified_task_denominator": None,
         **({"bare_native_json_treatment": "STRICT_ONE_OFFERED_NATIVE_ONLY"}
            if experimental_bare_native_json else {}),
+        **({"prompt_treatment": "EXACTLY_ONE_NATIVE_ACTION_PER_TURN"}
+           if experimental_single_step_prompt else {}),
     }
     if condition != "joined":
         selection = retrieve_authorized_concept_graph(
@@ -467,6 +480,7 @@ async def run_local_multiroute_codegraph_e1(
                 agent, episode=current.episode,
                 host_context=context, max_turns=TURN_BUDGET,
                 diagnose_model_actions=diagnose_model_actions,
+                experimental_single_step_prompt=experimental_single_step_prompt,
             )
             row = {
                 **row, "condition": arm,
@@ -479,6 +493,7 @@ async def run_local_multiroute_codegraph_e1(
                 agent, source=current, condition=arm,
                 diagnose_model_actions=diagnose_model_actions,
                 experimental_bare_native_json=experimental_bare_native_json,
+                experimental_single_step_prompt=experimental_single_step_prompt,
             )
         if row["actual_source_calls"] != len(current.callback_log):
             raise ValueError("local original executor count mismatch")
@@ -520,6 +535,7 @@ def main() -> None:
     parser.add_argument("--catalog-size", type=int, choices=(4, 12), default=12)
     parser.add_argument("--diagnose-model-actions", action="store_true")
     parser.add_argument("--experimental-bare-native-json", action="store_true")
+    parser.add_argument("--experimental-single-step-prompt", action="store_true")
     args = parser.parse_args()
     source = build_local_multiroute_source(
         language=args.language, catalog_size=args.catalog_size,
@@ -530,6 +546,7 @@ def main() -> None:
         None, language=args.language, catalog_size=args.catalog_size,
         diagnose_model_actions=args.diagnose_model_actions,
         experimental_bare_native_json=args.experimental_bare_native_json,
+        experimental_single_step_prompt=args.experimental_single_step_prompt,
     ))
     if preflight["status"] == "BLOCKED_MODEL_RUNTIME":
         previous = {key: os.environ.get(key) for key in (
@@ -549,6 +566,7 @@ def main() -> None:
                     agent, language=args.language, catalog_size=args.catalog_size,
                     diagnose_model_actions=args.diagnose_model_actions,
                     experimental_bare_native_json=args.experimental_bare_native_json,
+                    experimental_single_step_prompt=args.experimental_single_step_prompt,
                 ))
         finally:
             for key, value in previous.items():
