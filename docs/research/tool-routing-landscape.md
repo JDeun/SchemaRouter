@@ -6,6 +6,8 @@ This is the **canonical navigation page** for tool discovery, bounded retrieval,
 
 ## Read this first: it was already investigated
 
+**2026-10-23 — CodeGraph surgical-context E0 (#1711):** [bounded prior-art comparison, preregistration and actual paired byte results](codegraph-surgical-context-e0.md). On a source-attested synthetic two-route G5, the reference-only envelope serialized at 1,028 vs 1,825 UTF-8 JSON bytes (43.67% smaller), with identical verified route/binding receipts. No actual agent, tokenizer, cost or task-success evidence; negative cases did not save bytes. This is **nonexecuting E0, not an implementation of CodeGraph or a default change**.
+
 1. **2026-10-15 — actual local open-source-*inspired* routing trials.** [Preregistered protocol](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/opensource-routing-patterns-dev-20261015.md), [negative CPU results](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/opensource-routing-patterns-dev-20261015-results.md), and [implementation](https://github.com/JDeun/SchemaRouter/blob/main/scripts/evaluate_opensource_routing_patterns_dev.py). These were **our reimplementations of ideas**, NOT native Aurelio/LlamaIndex software benchmarks. On an already-visible 54 supported + 18 unsupported EN/KO/JA operation-intent DEV corpus:
 
    | Historical fixed arm | Supported correct | Unsupported falsely accepted | Consequence |

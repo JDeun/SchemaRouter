@@ -512,6 +512,10 @@
       "source_blob": "072af371170bc265baf5afff3793605a8aa439ab"
     },
     {
+      "path": "research/codegraph-surgical-context-e0.md",
+      "source_blob": "47908888b73b4517fda2b59baa23fed9583dfddb"
+    },
+    {
       "path": "research/corrective-reretrieval.md",
       "source_blob": "b9bfcfb62181bd93cc3dd1be14cf72dffd7cd5fe"
     },
@@ -597,7 +601,7 @@
     },
     {
       "path": "research/tool-routing-landscape.md",
-      "source_blob": "4e9ceeeb95ec29de198899d992f7540db9218ae5"
+      "source_blob": "228456bafc28f4751096208a80cba93fb45b5ff3"
     },
     {
       "path": "research/typed-capability-retrieval-ablation.md",

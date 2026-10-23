@@ -226,6 +226,7 @@ nav:
   - Research:
       - Research knowledge index (agent entry point): research/knowledge-index.md
       - OSS tool-routing landscape and decisions: research/tool-routing-landscape.md
+      - CodeGraph-style surgical G5 context (synthetic E0): research/codegraph-surgical-context-e0.md
       - Research program and issue lifecycle (2026): research/research-program-2026.md
       - G5 integration records:
           - Source-native concept graph design (2026-10-22): superpowers/specs/2026-10-22-g5-native-vertical-slice-design.md
