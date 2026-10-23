@@ -41,11 +41,11 @@ from scripts.research_authorized_agent_tool_surface import (
     _authorization_policy_receipt,
     capture_authorized_agent_tool_surface,
 )
+from scripts.research_codegraph_action_shape_e1 import structural_action_label
 from scripts.research_codegraph_scoped_materializer import (
     SurgicalEpisode,
     capture_surgical_episode,
 )
-from scripts.research_codegraph_action_shape_e1 import structural_action_label
 from scripts.research_codegraph_surgical_agent_e1 import (
     SurgicalHostContext,
     run_surgical_model_episode,
