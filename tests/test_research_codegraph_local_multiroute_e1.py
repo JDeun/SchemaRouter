@@ -237,3 +237,74 @@ async def test_optin_structure_labels_do_not_change_source_calls_or_gold():
         assert second["actual_source_calls"] == first["actual_source_calls"]
     assert "contact-4" not in json.dumps(diagnosed)
     assert "region-9" not in json.dumps(diagnosed)
+
+
+class BareJsonNativeMenuAgent(MenuAgent):
+    """Native JSON calls; advance only on observed original host callbacks."""
+
+    def generate(self, messages, tools):
+        menu = {tool["name"] for tool in tools}
+        self.offered.append(menu)
+        observed_source_steps = sum(
+            row["role"] == "tool" and "tool_definitions" not in row["content"]
+            for row in messages
+        )
+        if menu == {"research__request_scoped_source_schema"}:
+            response = SCHEMA
+        elif observed_source_steps == 0 and "contacts__read" in menu:
+            response = CONTACT[len("<tool_call>"):-len("</tool_call>")]
+        elif observed_source_steps == 1 and "cases__read" in menu:
+            response = CASE[len("<tool_call>"):-len("</tool_call>")]
+        elif observed_source_steps == 2:
+            response = FINAL
+        else:
+            response = "REQUEST_MORE_TOOLS"
+        return {
+            "text": response, "latency_ms": 1.0, "context_overflow": False,
+            "input_tokens": 55, "tool_tokens": 12, "output_tokens": 14,
+        }
+
+
+@pytest.mark.asyncio
+async def test_bare_native_treatment_is_a_distinct_four_route_scored_arm():
+    # Baseline makes no original calls because strict parser sees a final JSON;
+    # the opt-in calls still require the same offered route/source/arguments.
+    baseline = await local.run_local_multiroute_codegraph_e1(
+        BareJsonNativeMenuAgent(), language="ko", catalog_size=4,
+        diagnose_model_actions=True,
+    )
+    trial = await local.run_local_multiroute_codegraph_e1(
+        BareJsonNativeMenuAgent(), language="ko", catalog_size=4,
+        diagnose_model_actions=True, experimental_bare_native_json=True,
+    )
+    assert baseline["source_call_count"] == 0
+    assert trial["source_call_count"] >= 2
+    assert trial["bare_native_json_treatment"] == "STRICT_ONE_OFFERED_NATIVE_ONLY"
+    assert "bare_native_json_treatment" not in baseline
+    assert trial["qualified_task_denominator"] == baseline["qualified_task_denominator"]
+    assert trial["independent_e2_qualified"] is False
+    assert trial["release_qualified"] is False
+    assert trial["task_success_rate"]["all_visible"] == 1.0
+    assert trial["task_success_rate"]["lexical_k5"] == 1.0
+    assert any(
+        row.get("bare_json_strict_parser_acceptances", 0) >= 2
+        for row in trial["outcomes"]
+    )
+    assert all(
+        row["action_structure_labels"][0] in (
+            "bare_json_tool_action", "valid_schema_request_shape",
+        )
+        for row in trial["outcomes"]
+    )
+    assert "contact-4" not in json.dumps(trial)
+    assert "region-9" not in json.dumps(trial)
+
+
+@pytest.mark.parametrize("size", (12, 500, False, "4"))
+@pytest.mark.asyncio
+async def test_bare_native_treatment_never_widens_twelve_route_full(size):
+    with pytest.raises(ValueError, match="requires four routes"):
+        await local.run_local_multiroute_codegraph_e1(
+            MenuAgent(), language="en", catalog_size=size,
+            experimental_bare_native_json=True,
+        )
