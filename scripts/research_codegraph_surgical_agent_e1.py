@@ -179,6 +179,7 @@ async def run_surgical_model_episode(
     max_turns: int = MAX_TURNS,
     diagnose_model_actions: bool = False,
     experimental_single_step_prompt: bool = False,
+    experimental_bare_schema_request: bool = False,
 ) -> dict[str, Any]:
     """Measure schema requests and actual original invocations separately.
 
@@ -191,6 +192,8 @@ async def run_surgical_model_episode(
         raise ValueError("research diagnostics flag must be boolean")
     if type(experimental_single_step_prompt) is not bool:
         raise ValueError("single-step prompt experiment must be boolean")
+    if type(experimental_bare_schema_request) is not bool:
+        raise ValueError("bare schema request experiment must be boolean")
     if type(host_context) is not SurgicalHostContext:
         raise ValueError("trusted surgical host context required")
     if type(host_context.final_response_instruction) is not str:
@@ -222,6 +225,7 @@ async def run_surgical_model_episode(
     input_tokens = tool_tokens = output_tokens = 0
     model_latency_ms = 0.0
     action_shape_labels: list[str] = []
+    bare_schema_request_normalizations = 0
 
     for _ in range(max_turns):
         try:
@@ -270,6 +274,24 @@ async def run_surgical_model_episode(
             break
         try:
             kind, value = _parse_action(generated["text"])
+            if (
+                experimental_bare_schema_request
+                and not materialized_ids
+                and kind == "final"
+                and structural_action_label(
+                    generated["text"],
+                    offered_names=tuple(item["name"] for item in offered),
+                ) == "bare_json_offered_schema_request_shape"
+            ):
+                # Research-only: normalize a complete *currently offered*
+                # schema request through the original strict parser. It is
+                # still non-executing; materialization must revalidate all
+                # source, principal, scope and route-ID witnesses below.
+                original = _strip_one_chatml_marker(generated["text"])
+                kind, value = _parse_action("<tool_call>" + original + "</tool_call>")
+                if kind != "schema":
+                    raise ValueError("canonical schema parser parity failed")
+                bare_schema_request_normalizations += 1
         except (ValueError, TypeError, OverflowError):
             reason = "malformed_call"
             break
@@ -361,4 +383,6 @@ async def run_surgical_model_episode(
         **({
             "action_structure_labels": action_shape_labels,
         } if diagnose_model_actions else {}),
+        **({"bare_schema_request_normalizations": bare_schema_request_normalizations}
+           if experimental_bare_schema_request else {}),
     }
