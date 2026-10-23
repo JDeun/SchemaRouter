@@ -1,6 +1,7 @@
 """E0 synthetic-only failure witnesses; never a scored multilingual E2 study."""
 from __future__ import annotations
 
+import hashlib
 import json
 
 import pytest
@@ -381,3 +382,54 @@ def test_grader_pass_alone_cannot_forge_a_progressed_fixture_witness(defect):
     assert safe["supported_final_after_progressed_fixture_step_observed"] is False
     assert safe["actual_final_answer_correctness_measured"] is False
     assert SECRET not in json.dumps(safe)
+
+
+def test_optin_e0_provenance_receipts_are_hashed_and_jsonl_safe():
+    """Bind split/model/runtime/hardware without publishing the raw host."""
+    raw = original_row()
+    fields = {
+        "split_sha256": "c" * 64,
+        "model_revision": "private-model-" + SECRET,
+        "model_runtime": "private-runtime-" + SECRET,
+        "hardware": "host-username-" + SECRET,
+    }
+    safe = trace(raw, **fields)
+    assert safe["split_sha256"] == fields["split_sha256"]
+    for key in ("model_revision", "model_runtime", "hardware"):
+        assert safe[f"{key}_sha256"] == hashlib.sha256(
+            fields[key].encode("utf-8"),
+        ).hexdigest()
+        assert key not in safe
+    assert SECRET not in json.dumps(safe)
+    line = sanitized_e0_jsonl(
+        raw, source_revision=SOURCE, source_sha256=DIGEST,
+        task_identity="private-task-" + SECRET, hmac_key=KEY,
+        seed=123, **fields,
+    )
+    assert json.loads(line) == safe
+    assert line.endswith("\n") and line.count("\n") == 1
+
+
+@pytest.mark.parametrize("change", (
+    {"split_sha256": "bad"},
+    {"model_revision": ""},
+    {"hardware": None},
+    {"model_runtime": " "},
+))
+def test_optin_e0_rejects_incomplete_or_invalid_receipts(change):
+    fields = {
+        "split_sha256": "c" * 64, "model_revision": "model-v1",
+        "model_runtime": "mock-runner", "hardware": "linux-cpu",
+    }
+    fields.update(change)
+    with pytest.raises(ValueError, match="cohort provenance receipts"):
+        trace(original_row(), **fields)
+
+
+def test_legacy_e0_trace_receipt_fields_still_absent():
+    safe = trace(original_row())
+    for name in (
+        "split_sha256", "model_revision_sha256",
+        "model_runtime_sha256", "hardware_sha256",
+    ):
+        assert name not in safe
