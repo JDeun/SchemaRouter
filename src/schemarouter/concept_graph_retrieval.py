@@ -19,6 +19,7 @@ from .field_group_retrieval import (
     _root_envelope_empty,
     retrieve_authorized_field_group,
 )
+from .host_field_contract import _policy_contents_digest
 from .native_graph_index import NativeSchemaGraphIndex
 
 if TYPE_CHECKING:
@@ -80,9 +81,13 @@ def retrieve_authorized_concept_graph(
     policy = router.authorization_policy
     if policy is None:
         raise PolicyViolationError("concept graph requires explicit authorization")
-    policy_content = (
-        policy.default_effect, repr(policy.rules), repr(policy.data_rules),
-    )
+    policy_content = _policy_contents_digest(policy)
+    if not isinstance(principal, PrincipalContext):
+        raise PolicyViolationError("concept graph requires trusted principal claims")
+    try:
+        principal_claims = principal.model_dump_json()
+    except (TypeError, ValueError, OverflowError, AttributeError) as exc:
+        raise PolicyViolationError("cannot attest concept graph principal") from exc
     if not isinstance(catalog, NativeConceptCatalog):
         raise ValueError("owner-reviewed concept catalog required")
     try:
@@ -202,12 +207,13 @@ def retrieve_authorized_concept_graph(
     index.field_index._assert_source(router)
     router._check_retrieval_authority_witness(witness)
     current_policy = router.authorization_policy
-    if current_policy is None or (
-        current_policy.default_effect,
-        repr(current_policy.rules),
-        repr(current_policy.data_rules),
-    ) != policy_content:
+    if current_policy is None or _policy_contents_digest(current_policy) != policy_content:
         raise PolicyViolationError("concept graph authorization changed")
+    try:
+        if principal.model_dump_json() != principal_claims:
+            raise PolicyViolationError("concept graph principal claims changed")
+    except (TypeError, ValueError, OverflowError, AttributeError) as exc:
+        raise PolicyViolationError("cannot attest concept graph principal") from exc
     try:
         if catalog.model_dump_json() != frozen_catalog:
             raise PolicyViolationError("concept catalog changed during lookup")
