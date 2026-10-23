@@ -235,3 +235,26 @@ to the same pinned runner/workflow without changing its protected name.
 An explicit unit test now asserts the workflow coverage; it failed
 before the workflow fix and passed after. Local integrated suite then
 reported **102 passed**, repository Ruff and P2 Pyright green.
+
+## P2 draft CI follow-up: paired Korean documentation — 2026-10-24
+
+The exact PR #1747 head `07206644c1ee9b354d45a4d5a83851cd9ee1ced7`
+(tree `3dc19520a0d38106efa6baf869aae7d286a19207`)
+triggered GitHub Actions. The **Korean Translation Whole-Corpus Coverage
+Report** run `40041770745` failed: one of 69 local-equivalent tests
+reported two new English `docs/superpowers/` pages missing from the
+protected English/Korean paired semantic-spotcheck ledger. This was a
+real CI failure; it was not evidence of an Algorithm 1 compiler defect.
+
+Added equivalent Korean specification and implementation-plan pages under
+`docs_ko/superpowers/`, and registered both exact EN/KO Git blob hashes
+in `audits/ko-direct-semantic-spotcheck-2026-10-12.json`. The ledger
+explicitly identifies the paired reading as **AI-assisted only**;
+independent editorial sign-off remains outstanding under #1202. The
+full translation-workflow pytest invocation now reports **69 passed**
+locally; repository-wide Ruff and `git diff --check` are green. Recheck
+the new published exact GitHub head and every Actions conclusion after
+this follow-up—do not assume that local results imply green CI.
+
+No changes to the original P2 compiler, live execution, default routing,
+independent E2 or the v0.18 release HOLD were made in this follow-up.
