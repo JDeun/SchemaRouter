@@ -122,11 +122,11 @@ jobs:
           with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
               out.write(f"## Strict original JSON tool adapter E1 — {variant}, {lang}\n\n")
               out.write("New model-output grammar treatment, NOT graph-index effectiveness, provider E2 or product release. Source/scorer/seed and K5 unchanged.\n\n")
-              out.write("| Arm | Turns | Native calls | Bare calls accepted | Model tokens | Task complete | Stop |\n|---|---:|---:|---:|---:|---|---|\n")
+              out.write("| Arm | Turns | Native calls | Parser-recognized JSON calls | Model tokens | Task complete | Stop |\n|---|---:|---:|---:|---:|---|---|\n")
               for row in report["outcomes"]:
                   assert len(row["action_structure_labels"]) == row["model_turns"]
                   assert set(row["action_structure_labels"]) <= CATEGORIES
-                  accepted = row.get("accepted_bare_json_calls", 0)
+                  accepted = row.get("bare_json_strict_parser_acceptances", 0)
                   assert type(accepted) is int and 0 <= accepted <= row["model_turns"]
                   out.write(f"| {row['condition']} | {row['model_turns']} | {row['actual_source_calls']} | {accepted} | {row['total_model_tokens']} | {row['full_task_complete']} | {row['status']} |\n")
           PY
