@@ -73,11 +73,27 @@ def normalize_qwen35_xml_action(
     """
     if type(text) is not str or type(offered_tools) not in (list, tuple):
         raise ValueError("model text and trusted tool definitions required")
-    if not text.lstrip().startswith("<tool_call>"):
-        if "<tool_call" in text or "</tool_call>" in text or "<function=" in text:
-            raise ValueError("malformed or partial Qwen3.5 native action")
-        return text, False
-    match = _CALL.fullmatch(text.strip())
+    candidate = text.strip()
+    if not candidate.startswith("<tool_call>"):
+        start = candidate.find("<tool_call>")
+        if start == -1:
+            if "<tool_call" in candidate or "</tool_call>" in candidate or (
+                "<function=" in candidate
+            ):
+                raise ValueError("malformed or partial Qwen3.5 native action")
+            return text, False
+        # The official Qwen3.5 template permits an optional description
+        # *before* the function call. Drop only that bounded non-executable
+        # portion; never alter the offered function, argument keys or values.
+        preamble = candidate[:start]
+        safe_prose = preamble.replace("<think>", "").replace("</think>", "")
+        if (
+            len(preamble.encode("utf-8")) > 4096
+            or "<" in safe_prose or ">" in safe_prose
+        ):
+            raise ValueError("untrusted native preamble markup or size")
+        candidate = candidate[start:]
+    match = _CALL.fullmatch(candidate)
     if match is None:
         raise ValueError("native tool call must be exactly one balanced XML action")
     tool_name = match.group(1)
