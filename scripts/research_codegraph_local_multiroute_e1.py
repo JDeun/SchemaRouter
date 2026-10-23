@@ -42,6 +42,7 @@ from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
 from scripts.research_codegraph_action_shape_e1 import classify_rejected_action_shape
+from scripts.research_codegraph_native_envelope_e1 import strict_native_json_envelope
 from scripts.research_codegraph_scoped_materializer import (
     SurgicalEpisode,
     capture_surgical_episode,
@@ -235,6 +236,7 @@ def _strict_final(text: str, observed: Mapping[str, Any]) -> bool:
 
 async def _baseline_local_arm(
     agent: Any, *, source: LocalControlSource, condition: str,
+    experimental_strict_unwrapped_json: bool = False,
 ) -> dict[str, Any]:
     """Old native disclosure and invocation, with no >5-route workaround."""
     router = source.router
@@ -282,6 +284,7 @@ async def _baseline_local_arm(
     input_tokens = output_tokens = schema_tokens = 0
     all_receipts = True
     reason = "turn_limit"
+    strict_envelope_normalizations = 0
     rejected_model_action_shape: str | None = None
     correct = False
     turns = 0
@@ -305,8 +308,15 @@ async def _baseline_local_arm(
             schema_tokens += generated["tool_tokens"]
         else:
             all_receipts = False
+        parsed_text = generated["text"]
+        if experimental_strict_unwrapped_json:
+            parsed_text, normalized = strict_native_json_envelope(
+                parsed_text,
+                offered_tool_names=tuple(tool["name"] for tool in definitions),
+            )
+            strict_envelope_normalizations += int(normalized)
         try:
-            kind, payload = parse_one_model_action(generated["text"])
+            kind, payload = parse_one_model_action(parsed_text)
         except (ValueError, TypeError, OverflowError):
             reason = "malformed_model_action"
             rejected_model_action_shape = classify_rejected_action_shape(
@@ -353,10 +363,10 @@ async def _baseline_local_arm(
         calls.append(route_id)
         observations[route_id] = observation
         messages.extend((
-            {"role": "assistant", "content": generated["text"]},
+            {"role": "assistant", "content": parsed_text},
             {"role": "tool", "content": json.dumps(observation, sort_keys=True)},
         ))
-    return {
+    report = {
         "condition": condition, "status": reason,
         "rejected_model_action_shape": rejected_model_action_shape,
         "source_receipt_digest": digest,
@@ -369,13 +379,21 @@ async def _baseline_local_arm(
         "model_output_tokens": output_tokens if all_receipts else None,
         "total_model_tokens": input_tokens + output_tokens if all_receipts else None,
     }
+    if experimental_strict_unwrapped_json:
+        report["strict_unwrapped_envelope_normalizations"] = (
+            strict_envelope_normalizations
+        )
+    return report
 
 
 async def run_local_multiroute_codegraph_e1(
     agent: Any, *, language: str, condition: str = "joined",
     catalog_size: int = 12,
+    experimental_strict_unwrapped_json: bool = False,
 ) -> dict[str, Any]:
     """12-route scaling negative OR separate true four-route comparable local E1."""
+    if type(experimental_strict_unwrapped_json) is not bool:
+        raise ValueError("research strict envelope mode must be boolean")
     source = build_local_multiroute_source(
         language=language, condition=condition, catalog_size=catalog_size,
     )
@@ -448,6 +466,7 @@ async def run_local_multiroute_codegraph_e1(
             row = await run_surgical_model_episode(
                 agent, episode=current.episode,
                 host_context=context, max_turns=TURN_BUDGET,
+                experimental_strict_unwrapped_json=experimental_strict_unwrapped_json,
             )
             row = {
                 **row, "condition": arm,
@@ -456,7 +475,10 @@ async def run_local_multiroute_codegraph_e1(
                 "full_task_complete": row["full_task_correct"],
             }
         else:
-            row = await _baseline_local_arm(agent, source=current, condition=arm)
+            row = await _baseline_local_arm(
+                agent, source=current, condition=arm,
+                experimental_strict_unwrapped_json=experimental_strict_unwrapped_json,
+            )
         if row["actual_source_calls"] != len(current.callback_log):
             raise ValueError("local original executor count mismatch")
         total_calls += len(current.callback_log)
