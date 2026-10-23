@@ -265,6 +265,7 @@ async def evaluate_one(
     approved_host_roots: frozenset[str] = frozenset(),
     documented_noncommercial_e1: bool = False,
     _private_source_observations: list[dict[str, Any]] | None = None,
+    _private_token_counts: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Never convert a denied/incomplete model action into a successful call.
 
@@ -374,6 +375,23 @@ async def evaluate_one(
             or type(generated.get("latency_ms")) not in (int, float)
         ):
             raise ValueError("invalid model generation envelope")
+        if _private_token_counts is not None:
+            # 실제 모델이 보고한 값만 누적합니다. 토크나이저 영수증이 하나라도
+            # 없거나 불완전하면 비용은 unknown이며 0으로 보정하지 않습니다.
+            token_keys = (
+                ("input_tokens", "model_input_tokens"),
+                ("tool_tokens", "tool_schema_tokens"),
+                ("output_tokens", "model_output_tokens"),
+            )
+            if (
+                all(type(generated.get(src)) is int and generated[src] >= 0
+                    for src, _ in token_keys)
+                and generated["tool_tokens"] <= generated["input_tokens"]
+            ):
+                for source, target in token_keys:
+                    _private_token_counts[target] += generated[source]
+            else:
+                _private_token_counts["complete"] = False
         total_model_ms += float(generated["latency_ms"])
         if generated["context_overflow"]:
             reason = "context_overflow"
@@ -646,23 +664,53 @@ async def compare_graph_native_e1(
             current, _, _ = build_live_router(client, **source_kwargs)
             if _native_source_receipt(current) != first_receipt:
                 return {**safe_base, "status": "INCOMPARABLE_SOURCE_DRIFT", "outcomes": ()}
+            token_counts: dict[str, Any] = {
+                "complete": True,
+                "model_input_tokens": 0,
+                "tool_schema_tokens": 0,
+                "model_output_tokens": 0,
+            }
             row = await evaluate_one(
                 agent, client, language=language, city=city, country=country,
                 menu_mode=arm, host_concept_catalog=host_concept_catalog,
                 approved_host_roots=approved_host_roots,
                 documented_noncommercial_e1=documented_noncommercial_e1,
                 _private_source_observations=private_weather,
+                _private_token_counts=token_counts,
             )
             current, _, _ = build_live_router(client, **source_kwargs)
             if _native_source_receipt(current) != first_receipt:
                 return {**safe_base, "status": "INCOMPARABLE_SOURCE_DRIFT", "outcomes": ()}
             if row.get("status") == "BLOCKED_SOURCE_SEMANTICS":
                 return {**safe_base, "status": "BLOCKED_SOURCE_SEMANTICS", "outcomes": ()}
-            outcomes.append({"condition": arm, **row})
+            outcomes.append({
+                "condition": arm, **row,
+                "token_accounting_complete": token_counts["complete"],
+                **{
+                    key: token_counts[key] if token_counts["complete"] else None
+                    for key in (
+                        "model_input_tokens", "tool_schema_tokens",
+                        "model_output_tokens",
+                    )
+                },
+            })
         if len(private_weather) >= 2 and any(
             observation != private_weather[0] for observation in private_weather[1:]
         ):
             return {**safe_base, "status": "INCOMPARABLE_SOURCE_DRIFT", "outcomes": ()}
+    # 원본 제공자 HTTPS 자체의 타임아웃/실패는 모델의 경로 선택 실패가
+    # 아닙니다. 진단 행은 보존하되 조건별 작업 성공률 분모를 만들지 않습니다.
+    if any(
+        (row.get("trusted_failure_stage") or "").startswith((
+            "geocode_http_", "forecast_http_",
+        ))
+        for row in outcomes
+    ):
+        return {
+            **safe_base,
+            "status": "INCOMPARABLE_SOURCE_FAILURE",
+            "outcomes": outcomes,
+        }
     return {
         **safe_base,
         "status": "E1_MEASURED_DEV_NOT_E2",

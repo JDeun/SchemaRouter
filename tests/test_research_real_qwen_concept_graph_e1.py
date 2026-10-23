@@ -119,6 +119,98 @@ async def test_documented_g5_preflight_requires_model_without_source_calls() -> 
 
 
 @pytest.mark.asyncio
+async def test_paired_g5_reports_actual_model_token_envelopes_per_arm() -> None:
+    """Model-reported schema and input tokens belong to each arm, not to gold."""
+    seen: list[str] = []
+
+    class TokenAgent:
+        def generate(self, messages, tools):
+            del messages, tools
+            return {
+                "text": "REQUEST_MORE_TOOLS", "input_tokens": 64,
+                "tool_tokens": 25, "output_tokens": 30,
+                "latency_ms": 0.0, "context_overflow": False,
+            }
+
+    async with httpx.AsyncClient(transport=_fixture_transport(seen)) as client:
+        result = await study.compare_graph_native_e1(
+            TokenAgent(), client, documented_noncommercial_e1=True,
+            host_concept_catalog=study.documented_open_meteo_e1_catalog(),
+            approved_host_roots=frozenset({study.ROUTES[0]}),
+        )
+    assert result["status"] == "E1_MEASURED_DEV_NOT_E2"
+    assert len(result["outcomes"]) == 9
+    for row in result["outcomes"]:
+        assert row["model_input_tokens"] == 64 * row["model_turns"]
+        assert row["tool_schema_tokens"] == 25 * row["model_turns"]
+        assert row["model_output_tokens"] == 30 * row["model_turns"]
+        assert row["token_accounting_complete"] is True
+    assert seen == []
+
+
+@pytest.mark.asyncio
+async def test_paired_g5_never_fabricates_zero_tokens_from_missing_metrics() -> None:
+    """Model stubs lacking tokenizer receipts must not imply free inference."""
+    class MissingTokensAgent:
+        def generate(self, messages, tools):
+            del messages, tools
+            return {
+                "text": "REQUEST_MORE_TOOLS", "latency_ms": 0.0,
+                "context_overflow": False,
+            }
+
+    seen: list[str] = []
+    async with httpx.AsyncClient(transport=_fixture_transport(seen)) as client:
+        result = await study.compare_graph_native_e1(
+            MissingTokensAgent(), client, documented_noncommercial_e1=True,
+            host_concept_catalog=study.documented_open_meteo_e1_catalog(),
+            approved_host_roots=frozenset({study.ROUTES[0]}),
+        )
+    assert result["status"] == "E1_MEASURED_DEV_NOT_E2"
+    assert len(result["outcomes"]) == 9
+    for row in result["outcomes"]:
+        assert row["token_accounting_complete"] is False
+        assert row["model_input_tokens"] is None
+        assert row["tool_schema_tokens"] is None
+        assert row["model_output_tokens"] is None
+    assert seen == []
+
+
+@pytest.mark.asyncio
+async def test_paired_g5_live_source_transport_failure_is_incomparable(monkeypatch) -> None:
+    """HTTP availability variation is not evidence for an agent's routing quality."""
+    async def source_failure(agent, client, *, language, menu_mode, **kwargs):
+        del agent, client, kwargs
+        return {
+            "language": language, "full_task_complete": False,
+            "trusted_failure_stage": (
+                "geocode_http_transport_failure"
+                if (language, menu_mode) == ("ko", "concept_graph_optin")
+                else None
+            ),
+        }
+
+    monkeypatch.setattr(study, "evaluate_one", source_failure)
+    class QualifiedAgent:
+        def generate(self, messages, tools):
+            raise AssertionError("the injected evaluator owns this case")
+
+    async with httpx.AsyncClient(transport=_fixture_transport([])) as client:
+        result = await study.compare_graph_native_e1(
+            QualifiedAgent(), client, documented_noncommercial_e1=True,
+            host_concept_catalog=study.documented_open_meteo_e1_catalog(),
+            approved_host_roots=frozenset({study.ROUTES[0]}),
+        )
+    assert result["status"] == "INCOMPARABLE_SOURCE_FAILURE"
+    assert result["task_success_rate"] is None
+    assert len(result["outcomes"]) == 9
+    assert sum(
+        row["trusted_failure_stage"] == "geocode_http_transport_failure"
+        for row in result["outcomes"]
+    ) == 1
+
+
+@pytest.mark.asyncio
 async def test_unattested_live_open_meteo_g5_never_fabricates_join() -> None:
     seen: list[str] = []
     agent = ScriptedAgent([FIRST, SECOND, FINAL])

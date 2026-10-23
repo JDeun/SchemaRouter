@@ -133,16 +133,48 @@ jobs:
                   assert set(row["task_success_rate"]) == set(row["arms"])
                   for rate in row["task_success_rate"].values():
                       assert type(rate) is float and 0 <= rate <= 1
-                  summary.write("| Language | Arm | Strict task success | Native source calls | Stop |\n")
-                  summary.write("|---|---|---|---:|---|\n")
+                  summary.write("| Language | Arm | Strict task success | Native source calls | Input tokens | Schema tokens | Output tokens | Stop |\n")
+                  summary.write("|---|---|---|---:|---:|---:|---:|---|\n")
                   for outcome in row["outcomes"]:
                       assert outcome["original_provider_e1"] is True
                       assert outcome["independent_e2_qualified"] is False
+                      token_fields = (
+                          "model_input_tokens", "tool_schema_tokens",
+                          "model_output_tokens",
+                      )
+                      if outcome["token_accounting_complete"]:
+                          assert all(
+                              type(outcome[name]) is int and outcome[name] >= 0
+                              for name in token_fields
+                          )
+                          assert outcome["tool_schema_tokens"] <= outcome["model_input_tokens"]
+                      else:
+                          assert all(outcome[name] is None for name in token_fields)
                       summary.write(
                           f"| {outcome['language']} | {outcome['condition']} | "
                           f"{outcome['full_task_complete']} | "
                           f"{outcome['real_geocoding_calls'] + outcome['real_forecast_calls']} | "
+                          f"{outcome['model_input_tokens']} | "
+                          f"{outcome['tool_schema_tokens']} | "
+                          f"{outcome['model_output_tokens']} | "
                           f"{outcome['termination_reason']} |\n"
+                      )
+              elif row["status"] == "INCOMPARABLE_SOURCE_FAILURE":
+                  assert len(row["outcomes"]) == 9
+                  assert row["task_success_rate"] is None
+                  assert any(
+                      (o.get("trusted_failure_stage") or "").startswith(
+                          ("geocode_http_", "forecast_http_")
+                      )
+                      for o in row["outcomes"]
+                  )
+                  summary.write("Original provider HTTP errors made the paired run incomparable. No task-success rate is computed.\n\n")
+                  summary.write("| Language | Arm | Source failure stage | Termination |\n")
+                  summary.write("|---|---|---|---|\n")
+                  for outcome in row["outcomes"]:
+                      summary.write(
+                          f"| {outcome['language']} | {outcome['condition']} | "
+                          f"{outcome['trusted_failure_stage']} | {outcome['termination_reason']} |\n"
                       )
               else:
                   assert row["status"] in {

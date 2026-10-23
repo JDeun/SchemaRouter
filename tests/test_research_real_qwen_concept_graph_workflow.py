@@ -23,7 +23,10 @@ def test_pinned_model_job_runs_separate_documented_native_g5_comparison() -> Non
     assert '"E1_MEASURED_DEV_NOT_E2"' in workflow
     assert '"BLOCKED_MODEL_RUNTIME"' in workflow
     assert '"INCOMPARABLE_SOURCE_DRIFT"' in workflow
+    assert '"INCOMPARABLE_SOURCE_FAILURE"' in workflow
     assert '"task_success_rate"' in workflow
+    assert "Input tokens | Schema tokens | Output tokens" in workflow
+    assert 'outcome["token_accounting_complete"]' in workflow
     assert "real-qwen-open-meteo-g5-paired-e1-${{ github.run_id }}" in workflow
     assert "artifacts/real-qwen-open-meteo-g5-paired-e1/report.json" in workflow
 
