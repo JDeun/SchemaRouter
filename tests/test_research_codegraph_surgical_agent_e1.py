@@ -275,3 +275,51 @@ async def test_schema_request_does_not_change_source_call_count():
     assert result["schema_requests"] == 1
     assert result["actual_source_calls"] == len(seen) == 0
     assert result["model_turns"] == 2
+
+
+@pytest.mark.asyncio
+async def test_optin_structure_labels_preserve_strict_original_execution():
+    from scripts.research_codegraph_action_shape_e1 import CATEGORIES
+    from scripts.research_codegraph_surgical_agent_e1 import run_surgical_model_episode
+
+    _, episode, _, context, seen = _source()
+    report = await run_surgical_model_episode(
+        ScriptedAgent([SCHEMA, CONTACT, CASE, FINAL]),
+        episode=episode, host_context=context, diagnose_model_actions=True,
+    )
+    assert report["termination_reason"] == "completed_final"
+    assert report["full_task_correct"] is True
+    assert report["actual_source_calls"] == 2
+    assert report["action_structure_labels"] == [
+        "valid_schema_request_shape",
+        "valid_native_tool_call_shape",
+        "valid_native_tool_call_shape",
+        "bare_final_json",
+    ]
+    assert set(report["action_structure_labels"]) <= CATEGORIES
+    assert "contact-4" not in json.dumps(report)
+    assert len(seen) == 2
+
+    no_diagnostics = await run_surgical_model_episode(
+        ScriptedAgent([SCHEMA, CONTACT, CASE, FINAL]),
+        episode=episode, host_context=context,
+    )
+    assert "action_structure_labels" not in no_diagnostics
+
+
+@pytest.mark.asyncio
+async def test_after_schema_malformed_label_is_fixed_and_private():
+    from scripts.research_codegraph_surgical_agent_e1 import run_surgical_model_episode
+
+    _, episode, _, context, seen = _source()
+    bad = '<tool_call>{"name":"contacts__read","arguments":{"secret":[]}}</tool_call>'
+    report = await run_surgical_model_episode(
+        ScriptedAgent([SCHEMA, bad]),
+        episode=episode, host_context=context, diagnose_model_actions=True,
+    )
+    assert report["termination_reason"] == "malformed_call"
+    assert report["action_structure_labels"] == [
+        "valid_schema_request_shape", "non_scalar_arguments",
+    ]
+    assert report["actual_source_calls"] == len(seen) == 0
+    assert "secret" not in json.dumps(report)

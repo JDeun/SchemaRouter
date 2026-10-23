@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from schemarouter.errors import PolicyViolationError
+from scripts.research_codegraph_action_shape_e1 import structural_action_label
 from scripts.research_codegraph_scoped_materializer import (
     SurgicalEpisode,
     materialize_scoped_original_schemas,
@@ -161,6 +162,7 @@ async def run_surgical_model_episode(
     episode: SurgicalEpisode,
     host_context: SurgicalHostContext,
     max_turns: int = MAX_TURNS,
+    diagnose_model_actions: bool = False,
 ) -> dict[str, Any]:
     """Measure schema requests and actual original invocations separately.
 
@@ -169,6 +171,8 @@ async def run_surgical_model_episode(
     """
     if not callable(getattr(agent, "generate", None)):
         raise ValueError("model generator required")
+    if type(diagnose_model_actions) is not bool:
+        raise ValueError("research diagnostics flag must be boolean")
     if type(host_context) is not SurgicalHostContext:
         raise ValueError("trusted surgical host context required")
     if type(host_context.final_response_instruction) is not str:
@@ -197,6 +201,7 @@ async def run_surgical_model_episode(
     all_receipts = True
     input_tokens = tool_tokens = output_tokens = 0
     model_latency_ms = 0.0
+    action_shape_labels: list[str] = []
 
     for _ in range(max_turns):
         try:
@@ -225,6 +230,13 @@ async def run_surgical_model_episode(
             reason = "invalid_model_envelope"
             all_receipts = False
             break
+        if diagnose_model_actions:
+            action_shape_labels.append(structural_action_label(
+                generated["text"],
+                offered_names=tuple(item["name"] for item in offered),
+                after_schema=bool(materialized_ids),
+                native_calls=source_calls,
+            ))
         receipt = _model_token_receipt(generated)
         if receipt is None:
             all_receipts = False
@@ -326,4 +338,7 @@ async def run_surgical_model_episode(
         "independent_e2_qualified": False,
         "model_default_promoted": False,
         "release_safety_gate_passed": False,
+        **({
+            "action_structure_labels": action_shape_labels,
+        } if diagnose_model_actions else {}),
     }
