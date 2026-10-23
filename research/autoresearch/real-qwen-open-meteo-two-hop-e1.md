@@ -53,3 +53,13 @@ No-model regression tests use `httpx.MockTransport` and a scripted generator to 
 If the live API is temporarily unreachable or a Qwen model call is rejected by the host, do not replace its outcome with a positive or inject true coordinates into another attempt. Report exactly where it stopped. A successful run is **E1 EXPOSED MODEL+ORIGINAL_PROVIDER DEV**, not an independently authored/publisher-gold E2 sample, not a production benchmark or proof of multilingual generalization. No independent author, third-party approval, hidden case source, model baseline noninferiority, full candidate selection with 500 tools, authenticated data policy or side-effect approval assessment. Qwen short-context and small model can fail the strict terminal even if source APIs succeed. Save only privacy-safe counters and category labels (not original coordinates, time, temperatures, assistant text, inner arguments or prompts) in Actions artifacts.
 
 No changes to core default routing or library public API. #1346 independent E2 **0/19**, A02/R05 NOT_VERIFIED, default/model promotion and v0.18 #1356 **HARD HOLD**.
+
+## 2026-10-23 source-native G5 paired successor
+
+The first actual frozen-Qwen FULL / lexical K5 / G5 paired run and its
+source-transport-confounded negative findings are preserved in
+[G5 paired E1 research receipt](g5-source-native-qwen-open-meteo-paired-e1-2026-10-23.md).
+The original Actions artifact remains immutable. The successor comparison
+explicitly separates provider HTTP availability failure from genuine
+model continuation/final-grounding failure and records actual token counts
+without altering this original single-arm E1 output contract.

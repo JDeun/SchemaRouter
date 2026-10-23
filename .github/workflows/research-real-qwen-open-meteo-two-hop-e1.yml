@@ -32,7 +32,7 @@ jobs:
         run: |
           python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
           ruff check scripts/research_real_qwen_open_meteo_two_hop_e1.py tests/test_research_real_qwen_open_meteo_two_hop_e1.py
-          python -m pytest -q tests/test_research_real_qwen_open_meteo_two_hop_e1.py tests/test_research_open_meteo_live_two_hop_e1.py tests/test_research_qwen_nous_user_transcript_e0.py
+          python -m pytest -q tests/test_research_real_qwen_open_meteo_two_hop_e1.py tests/test_research_real_qwen_concept_graph_e1.py tests/test_research_real_qwen_concept_graph_workflow.py tests/test_research_open_meteo_live_two_hop_e1.py tests/test_research_qwen_nous_user_transcript_e0.py
 
   pinned-qwen-real-native-provider:
     needs: scoped-execution-and-oracle-contract
@@ -100,10 +100,180 @@ jobs:
           assert attempts == d["total_real_http_attempts"]
           assert d["legacy_call_counter_measures_validated_responses_only"] is True
           PY
+      - name: Compare FULL, lexical K5 and qualified native G5 with cached pinned Qwen
+        run: |
+          # 앞 단계에서 다운로드된 동일 revision의 Qwen 가중치만 오프라인 재사용.
+          # 이 실행은 무료 비상업 Open-Meteo API에 대한 공개 E1 연구입니다.
+          python -m scripts.research_real_qwen_open_meteo_two_hop_e1 \
+            --compare-graph --documented-noncommercial-e1 \
+            --out artifacts/real-qwen-open-meteo-g5-paired-e1/report.json
+      - name: Record real G5 E1 outcomes or exact blocker without fabricated rates
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          report = Path("artifacts/real-qwen-open-meteo-g5-paired-e1/report.json")
+          row = json.loads(report.read_text())
+          assert row["study"] == "REAL_QWEN_NATIVE_G5_PAIRED_E1_DEV"
+          assert row["model_revision"] == "c1899de289a04d12100db370d81485cdf75e47ca"
+          assert row["requested_k"] == 5
+          assert row["arms"] == ["all_visible", "lexical_k5", "concept_graph_optin"]
+          assert row["independently_authored_private_e2"] is False
+          assert row["release_qualified"] is False
+
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as summary:
+              summary.write("\n## Original-provider G5 paired E1 DEV (non-commercial)\n\n")
+              summary.write(f"Status: `{row['status']}`. Same pinned Qwen runner, live Open-Meteo. Not E2.\n\n")
+              if row["status"] == "E1_MEASURED_DEV_NOT_E2":
+                  assert len(row["outcomes"]) == 9
+                  assert {o["condition"] for o in row["outcomes"]} == set(row["arms"])
+                  assert {o["language"] for o in row["outcomes"]} == {"en", "ko", "ja"}
+                  assert set(row["task_success_rate"]) == set(row["arms"])
+                  for rate in row["task_success_rate"].values():
+                      assert type(rate) is float and 0 <= rate <= 1
+                  summary.write("| Language | Arm | Strict task success | Native source calls | Input tokens | Schema tokens | Output tokens | Stop |\n")
+                  summary.write("|---|---|---|---:|---:|---:|---:|---|\n")
+                  for outcome in row["outcomes"]:
+                      assert outcome["original_provider_e1"] is True
+                      assert outcome["independent_e2_qualified"] is False
+                      token_fields = (
+                          "model_input_tokens", "tool_schema_tokens",
+                          "model_output_tokens",
+                      )
+                      if outcome["token_accounting_complete"]:
+                          assert all(
+                              type(outcome[name]) is int and outcome[name] >= 0
+                              for name in token_fields
+                          )
+                          assert outcome["tool_schema_tokens"] <= outcome["model_input_tokens"]
+                      else:
+                          assert all(outcome[name] is None for name in token_fields)
+                      summary.write(
+                          f"| {outcome['language']} | {outcome['condition']} | "
+                          f"{outcome['full_task_complete']} | "
+                          f"{outcome['real_geocoding_calls'] + outcome['real_forecast_calls']} | "
+                          f"{outcome['model_input_tokens']} | "
+                          f"{outcome['tool_schema_tokens']} | "
+                          f"{outcome['model_output_tokens']} | "
+                          f"{outcome['termination_reason']} |\n"
+                      )
+              elif row["status"] == "INCOMPARABLE_SOURCE_FAILURE":
+                  assert len(row["outcomes"]) == 9
+                  assert row["task_success_rate"] is None
+                  assert any(
+                      (o.get("trusted_failure_stage") or "").startswith(
+                          ("geocode_http_", "forecast_http_")
+                      )
+                      for o in row["outcomes"]
+                  )
+                  summary.write("Original provider HTTP errors made the paired run incomparable. No task-success rate is computed.\n\n")
+                  summary.write("| Language | Arm | Source failure stage | Termination |\n")
+                  summary.write("|---|---|---|---|\n")
+                  for outcome in row["outcomes"]:
+                      summary.write(
+                          f"| {outcome['language']} | {outcome['condition']} | "
+                          f"{outcome['trusted_failure_stage']} | {outcome['termination_reason']} |\n"
+                      )
+              else:
+                  assert row["status"] in {
+                      "BLOCKED_SOURCE_SEMANTICS", "BLOCKED_MODEL_RUNTIME",
+                      "INCOMPARABLE_SOURCE_DRIFT",
+                  }
+                  assert row["task_success_rate"] is None
+                  assert not row["outcomes"]
+                  summary.write("No comparable success denominator; inspect the sanitized status artifact.\n")
+          PY
+      - name: Run preregistered equal-budget native E1 operational robustness cohort
+        run: |
+          # 기존 baseline 및 모델/소스/문제를 바꾸지 않고, 모든 조건에 같은
+          # 1회 읽기 전용 네트워크 재시도와 검증된 지오코딩 후속 유도만 허용합니다.
+          # G5 비용 절감 실험이나 독립 E2가 아닌 별도 운영 견고성 코호트입니다.
+          python -m scripts.research_real_qwen_open_meteo_two_hop_e1 \
+            --compare-graph --documented-noncommercial-e1 \
+            --paired-transport-retry-one --paired-evidence-followup-one \
+            --out artifacts/real-qwen-open-meteo-g5-resilience-e1/report.json
+      - name: Verify source-qualified robustness remains independent of router score
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          report = json.loads(Path(
+              "artifacts/real-qwen-open-meteo-g5-resilience-e1/report.json"
+          ).read_text())
+          assert report["study"] == "REAL_QWEN_NATIVE_G5_PAIRED_E1_DEV"
+          assert report["transport_retry_budget"] == 1
+          assert report["evidence_reprompt_budget"] == 1
+          assert report["model_revision"] == "c1899de289a04d12100db370d81485cdf75e47ca"
+          assert report["requested_k"] == 5
+          assert report["arms"] == ["all_visible", "lexical_k5", "concept_graph_optin"]
+          assert report["release_qualified"] is False
+          assert report["independently_authored_private_e2"] is False
+          status = report["status"]
+          assert status in {
+              "E1_MEASURED_DEV_NOT_E2", "INCOMPARABLE_SOURCE_FAILURE",
+              "INCOMPARABLE_SOURCE_DRIFT", "BLOCKED_SOURCE_SEMANTICS",
+              "BLOCKED_MODEL_RUNTIME",
+          }
+          if status == "E1_MEASURED_DEV_NOT_E2":
+              assert set(report["task_success_rate"]) == set(report["arms"])
+              assert all(0 <= rate <= 1 for rate in report["task_success_rate"].values())
+          else:
+              assert report["task_success_rate"] is None
+          outcomes = report["outcomes"]
+          if status in ("E1_MEASURED_DEV_NOT_E2", "INCOMPARABLE_SOURCE_FAILURE"):
+              assert len(outcomes) == 9
+              assert {(x["language"], x["condition"]) for x in outcomes} == {
+                  (lang, arm) for lang in ("en", "ko", "ja") for arm in report["arms"]
+              }
+          else:
+              assert not outcomes
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as summary:
+              summary.write("\n## Source-native E1 operational robustness (research only)\n\n")
+              summary.write(f"Status: `{status}`; matched 1 transport retry and 1 verified-evidence follow-up across all arms. No E2, release, or G5-cost claim.\n\n")
+              summary.write("| Language | Arm | Complete | HTTP attempts | Evidence follow-ups | Input tokens | Schema tokens | Output tokens | Stop |\n")
+              summary.write("|---|---|---|---:|---:|---:|---:|---:|---|\n")
+              for outcome in outcomes:
+                  assert outcome["original_provider_e1"] is True
+                  assert outcome["independent_e2_qualified"] is False
+                  assert 0 <= outcome["real_geocoding_http_attempts"] <= 2
+                  assert 0 <= outcome["real_forecast_http_attempts"] <= 2
+                  assert 0 <= outcome["host_evidence_reprompts"] <= 1
+                  metrics = ("model_input_tokens", "tool_schema_tokens", "model_output_tokens")
+                  if outcome["token_accounting_complete"]:
+                      assert all(type(outcome[name]) is int and outcome[name] >= 0 for name in metrics)
+                  else:
+                      assert all(outcome[name] is None for name in metrics)
+                  summary.write(
+                      f"| {outcome['language']} | {outcome['condition']} | "
+                      f"{outcome['full_task_complete']} | "
+                      f"{outcome['real_geocoding_http_attempts'] + outcome['real_forecast_http_attempts']} | "
+                      f"{outcome['host_evidence_reprompts']} | "
+                      f"{outcome['model_input_tokens']} | {outcome['tool_schema_tokens']} | "
+                      f"{outcome['model_output_tokens']} | {outcome['termination_reason']} |\n"
+                  )
+          PY
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: real-qwen-open-meteo-two-hop-e1-${{ github.run_id }}
           path: artifacts/real-qwen-open-meteo-e1/report.json
+          if-no-files-found: warn
+          retention-days: 60
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: real-qwen-open-meteo-g5-resilience-e1-${{ github.run_id }}
+          path: artifacts/real-qwen-open-meteo-g5-resilience-e1/report.json
+          if-no-files-found: warn
+          retention-days: 60
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: real-qwen-open-meteo-g5-paired-e1-${{ github.run_id }}
+          path: artifacts/real-qwen-open-meteo-g5-paired-e1/report.json
           if-no-files-found: warn
           retention-days: 60

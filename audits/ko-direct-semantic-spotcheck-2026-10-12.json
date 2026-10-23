@@ -1,17 +1,18 @@
 {
   "schema_version": 1,
-  "review_date": "2026-10-19",
+  "review_date": "2026-10-23",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 153,
-  "total_page_pairs": 153,
+  "reviewed_page_pairs": 155,
+  "total_page_pairs": 155,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
     "Live GitHub Pages inaccessible from this session; inspected exact Markdown published sources instead",
     "The product north-star and test matrix pair added 2026-10-16 was AI-assisted directly inspected and exact Git blobs pinned; independent bilingual human sentence-level audit is still NOT complete (#1202).",
     "2026-10-16 duplicate product charter draft deliberately removed; maintain one bilingual product-north-star-and-test-matrix pair as canonical. All 151 exact page-pair AI-assisted source checks remain explicitly non-independent; #1202 human review open.",
-    "2026-10-19 research-program wiki has an AI-assisted parallel-text and structure spotcheck with exact Git blob pins; independent KO/EN editorial sentence audit remains open."
+    "2026-10-19 research-program wiki has an AI-assisted parallel-text and structure spotcheck with exact Git blob pins; independent KO/EN editorial sentence audit remains open.",
+    "2026-10-23 G5 design/plan and amended research wiki pairs were AI-assisted compared against their source semantics; independent human sentence-level review under #1202 remains open."
   ],
   "reviews": [
     {
@@ -887,9 +888,9 @@
     },
     {
       "path": "research/research-program-2026.md",
-      "en_blob": "b2eda0ebec645b9a76177f7cb463ea4478c89420",
-      "ko_blob": "bbf4ba343caf87a02dada11c12819a8d91d79fbe",
-      "notes": "AI-assisted EN/KO direct paired comparison of exact 19 terminal issue dispositions, typed G5 safety boundaries and KOPA/EDGE, ACEBench, tau2, ToolRet, AgentDojo, CaMeL source links; KO checklist wording fixed an accidental issue-identifier Markdown heading without changing 0.18 HOLD. NOT independent editorial signoff."
+      "en_blob": "e1d9466aa92b1133c429abae16ce0c963c0a9423",
+      "ko_blob": "b0f099753db4d385b5a645e2e16223eec047cfcc",
+      "notes": "AI-assisted EN/KO direct paired comparison of original 19 issue dispositions, typed G5 security/authority boundary, CodeGraph #1711 M5 and #1700 M1, original Open-Meteo E1 BLOCKED_SOURCE_SEMANTICS and new explicitly documented noncommercial-source opt-in (mock-transport typed two-call verification only, no actual model/native E1 or E2 claim); checks source read-only limits, preserved original argument bounds, no token-savings claim, unchanged 0.14 scores, release #1356 merge prohibition, and canonical GitHub milestone addendum link. Human editorial signoff still open."
     },
     {
       "path": "research/routing-status.md",
@@ -926,6 +927,18 @@
       "en_blob": "68d8c335f684c77255dd3cdbd3b95ca4aaf356e6",
       "ko_blob": "2e3c95b363753f5ab2521ed39598df174caa102b",
       "notes": "Matched durable execution boundary, additive state-aware retrieval and conditions for architecture changes without conflating 1.0 guarantee."
+    },
+    {
+      "path": "superpowers/plans/2026-10-22-g5-native-vertical-slice.md",
+      "en_blob": "4856565cbb9c6dbfd6b2423b8c697e0086a8574f",
+      "ko_blob": "592ea4c45ecaa66c4dae8535217bdb59ba3b0038",
+      "notes": "AI-assisted paired review of six G5 implementation tasks, RED/GREEN verification, source and permission boundaries, E1 truthfulness, protected milestone initializer, independent E2 hold and release HOLD. New Korean text is not an independent editorial signoff."
+    },
+    {
+      "path": "superpowers/specs/2026-10-22-g5-native-vertical-slice-design.md",
+      "en_blob": "d9a40484076fc4a8375ee522542c2ba87194dec5",
+      "ko_blob": "9819d2495f36e4e2a02d7c5a087efbed1f994f6f",
+      "notes": "AI-assisted paired review of G5 owner-declared typed concept/FieldGroup, complete fingerprinted direct/one-hop routes, principal-scoped K5, no execution authority, genuine paired original-source E1 and independent E2 gate. Human sentence audit under #1202 remains open."
     },
     {
       "path": "versioning.md",

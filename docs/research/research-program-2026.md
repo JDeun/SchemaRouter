@@ -2,7 +2,7 @@
 
 **Research navigation:** [Knowledge index for agents and maintainers](knowledge-index.md) — topic → evidence → implementation → issue, without duplicating the experiment ledger.
 
-**Status:** maintained research strategy / exposed evidence; **not** a new benchmark, release approval, or independent performance result. This is the Git-tracked [bilingual research wiki](tool-routing-landscape.md), rather than a separate GitHub Wiki, so every change is reviewable and reproducible. Last source audit: main `a6ec24cf3fa1a4c0c0869e3853ab65d5fda1db83` on 2026-10-19.
+**Status:** maintained research strategy / exposed evidence; **not** a new benchmark, release approval, or independent performance result. This is the Git-tracked [bilingual research wiki](tool-routing-landscape.md), rather than a separate GitHub Wiki, so every change is reviewable and reproducible. Baseline source audit: main `a6ec24cf3fa1a4c0c0869e3853ab65d5fda1db83` on 2026-10-19. G5 opt-in integration evidence updated 2026-10-22 on a dedicated implementation branch (not a release/default promotion).
 
 ## 1. Mission and scope
 
@@ -11,6 +11,55 @@
 The boundary is **capability discovery and governed typed execution**, not a new autonomous agent, LLM gateway, translation model, benchmark oracle, graph database, or tool-invoker replacement. Keep the **one canonical registered catalog** across OpenAPI, MCP, OPTIMADE, Python and other native sources. Query-concept-to-FieldGroup matching, producer-to-consumer edges and source/permission proofs may narrow candidates, never create permission. External host/agent retains actual model behavior and call proposal; trusted execution revalidates authority, arguments, source and observations.
 
 The original [SchemaRouter paper](https://arxiv.org/abs/2608.21375) reports a 110-question domain study, not a guarantee on unseen heterogeneous 5k-tool catalogs or downstream agents. The frozen independent 0.14 experiment is an important **negative**: FULL 49.62%, SR-5 29.19%, SR-10 31.03%, SR-PROGRESSIVE 25.09%, ORACLE 70.98% task success (Issue [#432](https://github.com/JDeun/SchemaRouter/issues/432), failure analysis [#1339](https://github.com/JDeun/SchemaRouter/issues/1339)). Never rewrite that outcome when later exposed development scores improve.
+
+### 2026-10-22 integrated G5 opt-in slice: implemented boundary vs E1 blocker
+
+**Product implementation (opt-in):** `schemarouter.retrieve_authorized_concept_graph` composes the existing owner-declared `resolve_native_concepts` → complete authorized FieldGroup retrieval → exact-version `NativeSchemaGraphIndex.lookup`. It returns immutable `NativeConceptGraphSelection` with `route_sets`, native tool/endpoint fingerprint triples, declared semantic output IDs and all proved original producer-field→consumer-parameter bindings. A complete **input-free direct** endpoint is preferred. An endpoint whose required inputs are not satisfied is **not** promoted to an input-free direct route; it must be supported by the existing complete typed one-hop join. Both are discovery-only: `executable_authority=False`.
+
+The exact opt-in wiring, in an explicitly principal-authorized host with already reviewed source metadata, is:
+
+```python
+from schemarouter import (
+    NativeSchemaGraphIndex,
+    NativeSchemaPostingIndex,
+    retrieve_authorized_concept_graph,
+)
+
+# router: existing SchemaRouter with explicit authorization_policy and native source tools
+# catalog: owner-reviewed NativeConceptCatalog with EN/KO/JA aliases and exact typed fields
+# principal: existing PrincipalContext scoped to this request
+index = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
+result = retrieve_authorized_concept_graph(
+    router, "문의 상태", principal=principal, catalog=catalog, index=index, k=5,
+)
+if result.status == "complete":
+    print(result.route_ids)  # Authorised native *route IDs*, not a tool-call grant
+```
+
+This example presumes the original host has genuinely declared `"문의 상태"` in the catalog; SchemaRouter **does not translate or infer it**. Equivalent owner-declared EN/KO/JA aliases resolve to the same typed constraints. `no_proven_hit` reveals no hidden identities; if more than five **distinct route IDs** are needed by complete alternatives without verified ranking, `over_k_unranked` returns **no routes**, never an arbitrary Top-5. The graph index, registry revision, policy/data scope, availability, native fingerprints and catalog contents are rechecked, and neither queries nor discovery results authorize invocation. This first slice supports **direct + one-hop**, not automatic multi-hop orchestration.
+
+**Agent integration:** `AuthorizedConceptGraphFixed5Selector` extends the existing callback in `scripts/research_authorized_concept_fixed5_agent_bridge.py` and plugs into the pre-existing `EVAL-FIXED5-OPTIN` generated-agent path. Only `AuthorizedAgentToolSurface` definitions scoped to the principal, original query and exact source revision are shown. The selector verifies live policy content, hidden/ref-safe field projections, all selected source fingerprints, K5 and actual serialized tool-definition byte budget. The previous concept selector and ordinary retrieval defaults remain unchanged. Controlled E0 integration tests showed that an agent using the existing loop can see both producer and consumer routes and complete two calls, but those model-stub/fixture outcomes **are not native E1 or independent E2 evidence**.
+
+**Native E1 preflight:** `scripts.research_real_qwen_open_meteo_two_hop_e1` has an explicitly named `concept_graph_optin` and `compare_graph_native_e1` comparison with `all_visible` and `lexical_k5`. It reuses the original Open-Meteo source invokers, source-state checks and strict final factual scorer. Run source qualification only (without loading model weights or calling the provider):
+
+```bash
+PYTHONPATH=src:. python -m scripts.research_real_qwen_open_meteo_two_hop_e1 \
+  --compare-graph --out /tmp/schemarouter-native-g5-e1.json
+```
+
+For a **separately approved** original-source intake, the same CLI can be given `--host-catalog /path/to/reviewed-concepts.json` and repeated `--approved-host-root tool.endpoint` arguments. These values are the host's reviewed declarations, **not** inferred from E1 queries or evaluation gold. The E1 module revalidates the live original source/policy/typed graph before any call, and loads pinned model weights **offline only** after this qualification passes. Passing flags alone never cures an unattested source.
+
+**Observed 2026-10-22 result: `BLOCKED_SOURCE_SEMANTICS`, `task_success_rate: null`, 0 provider HTTP attempts, 0 model turns** (qualification preflight). The original `build_live_router` exposes source type but currently lacks a license declaration, exact scalar output semantic IDs, typed producer-coordinate→weather-input G5 edges, an explicit principal authorization policy and qualified host-reviewed source-root input contract. Those are real source/host intake prerequisites; inserting inferred fields/permissions simply to improve an E1 score is prohibited. Verify upstream [Open-Meteo usage terms](https://open-meteo.com/en/terms) and exact source schemas separately before any permitted live paired test. The model's pinned local weights were not loaded and therefore no native agent task outcome percentage exists for the new G5 arm. Even when qualified, this source exposes only two operations, so K5 cannot by itself demonstrate schema-cost reduction versus FULL; it tests **correct two-step outcomes** first.
+
+**2026-10-23 optional documented source intake (research only):** Official [Geocoding](https://open-meteo.com/en/docs/geocoding-api) and [Forecast](https://open-meteo.com/en/docs) field contracts have been cross-checked separately from task answers. The *unmodified default* above remains unqualified; the explicit `--documented-noncommercial-e1` mode pins the two original adapter fingerprints, declares the WGS84 latitude **and** longitude scalar semantics and a matching forecast consumer, a deny-by-default two-route reader policy, a separately declared EN/KO/JA concept catalog, and one approved parameterized geocoding root. Only this research harness projects bounded native arguments to strict G5 scalar types, while the bound host invoker **independently enforces the original enum, length and coordinate-range rules before any HTTP**; the original adapter and API host stay unchanged. Unit tests with scripted model and `httpx.MockTransport` verified all three typed joins, exact two-step tool execution, final source grounding and rejected invalid preflight arguments. A model-free documented-source preflight reported `BLOCKED_MODEL_RUNTIME` (no provider calls). A subsequent actual pinned-Qwen/Open-Meteo paired run recorded nine source episodes, including one strict completion, but provider failures made the comparison **`INCOMPARABLE_SOURCE_FAILURE`** with `task_success_rate: null`; it proves neither a comparative G5 win nor independent E2. See the [retained source-native run record](https://github.com/JDeun/SchemaRouter/blob/main/research/autoresearch/g5-source-native-qwen-open-meteo-paired-e1-2026-10-23.md). The new flag is an opt-in for [Open-Meteo's free non-commercial conditions](https://open-meteo.com/en/terms), not a commercial licence, human signature or E2 review. Commercial SchemaRouter hosts must independently use a permitted [customer API/contract](https://open-meteo.com/en/pricing); the library's MIT licence does not change Open-Meteo API restrictions.
+
+```bash
+PYTHONPATH=src:. python -m scripts.research_real_qwen_open_meteo_two_hop_e1 \
+  --compare-graph --documented-noncommercial-e1 \
+  --out /tmp/schemarouter-native-g5-documented-e1.json
+```
+
+**Sequencing:** obtain legitimate source-owner reviewed semantic/permission metadata and model availability, then rerun genuine native paired EN/KO/JA E1; record source/observation drift as incomparable and source/provider errors separately from model-final mistakes. Independent publisher/task-author-disjoint E2 remains `BLOCKED_EXTERNAL` under [#1346](https://github.com/JDeun/SchemaRouter/issues/1346); [#1535](https://github.com/JDeun/SchemaRouter/issues/1535), [#1560](https://github.com/JDeun/SchemaRouter/issues/1560) and [#1477](https://github.com/JDeun/SchemaRouter/issues/1477) remain open. There is no default behavior change or permission to merge [#1356](https://github.com/JDeun/SchemaRouter/pull/1356). Live milestones: [#1700](https://github.com/JDeun/SchemaRouter/issues/1700) → M1 (only measured integrated G5 bottlenecks), [#1711](https://github.com/JDeun/SchemaRouter/issues/1711) → M5 (CodeGraph nonblocking), global tracker [#200](https://github.com/JDeun/SchemaRouter/issues/200) intentionally unassigned. See [live addendum](https://github.com/JDeun/SchemaRouter/blob/main/.github/RESEARCH_MILESTONES.md); the initial 30-item manifest is a protected historical initializer.
 
 ## 2. Research architecture and non-negotiable invariants
 

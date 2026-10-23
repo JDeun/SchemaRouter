@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import platform
 import subprocess
 import time
@@ -17,10 +18,21 @@ from typing import Any
 
 import httpx
 
-from schemarouter import PolicyViolationError, PrincipalContext
+from schemarouter import (
+    NativeConceptCatalog,
+    NativeDeclaredConcept,
+    NativeSchemaGraphIndex,
+    NativeSchemaPostingIndex,
+    PolicyViolationError,
+    PrincipalContext,
+)
+from schemarouter.capability_contracts import CapabilityFieldContract
 from scripts.agent_utility_v7_dev_agent import MODEL_NAME, MODEL_REVISION
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
+)
+from scripts.research_authorized_concept_fixed5_agent_bridge import (
+    AuthorizedConceptGraphFixed5Selector,
 )
 from scripts.research_open_meteo_live_two_hop_e1 import CASES, build_live_router
 from scripts.research_qwen_nous_user_transcript_e0 import (
@@ -67,6 +79,99 @@ USER_REQUESTS = {
         "位置検索で返された座標で、実際の現在の天気を確認してください。"
     ),
 }
+
+G5_COMPARISON_ARMS = ("all_visible", "lexical_k5", "concept_graph_optin")
+
+
+def documented_open_meteo_e1_catalog() -> NativeConceptCatalog:
+    """Exposed E1 intent labels, independent from actual provider answer values.
+
+    These aliases are declared by the research host, not inferred by an LLM.
+    This catalog is qualified only for the non-commercial public API fixture.
+    """
+    return NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="open_meteo_current_temperature",
+        aliases=(
+            "current Celsius temperature", "현재 섭씨 기온", "現在の摂氏気温",
+        ),
+        required_fields=(CapabilityFieldContract(
+            semantic_id="open_meteo.temperature_2m",
+            json_schema={"type": "number"},
+        ),),
+        source_type="public_rest",
+        license="Open-Meteo Free API / Non-Commercial / CC BY 4.0 data",
+    ),))
+
+
+def _native_source_receipt(router: Any) -> tuple[Any, ...]:
+    """Source-identity receipt for paired arms; never exports private data."""
+    policy = router.authorization_policy
+    return (
+        router.registry.version,
+        tuple(sorted((tool.key, tool.fingerprint) for tool in router.registry.tools())),
+        None if policy is None else (
+            policy.default_effect, repr(policy.rules), repr(policy.data_rules),
+        ),
+    )
+
+
+def _qualified_g5_selector(
+    router: Any, query: str, *,
+    catalog: NativeConceptCatalog | None,
+    approved_host_roots: frozenset[str],
+) -> AuthorizedConceptGraphFixed5Selector | None:
+    """Fail closed until independently host-reviewed native source intake exists.
+
+    Open-Meteo's current E1 schemas have no explicit G5 policy/license,
+    typed scalar semantic IDs or authorized host roots; there is no fallback
+    where the evaluator invents these from its own task gold.
+    """
+    if (
+        router.authorization_policy is None
+        or not isinstance(catalog, NativeConceptCatalog)
+        or type(approved_host_roots) is not frozenset
+        or any(type(root) is not str for root in approved_host_roots)
+        or any(
+            not tool.source_type or not tool.license
+            for tool in router.registry.tools()
+        )
+    ):
+        return None
+    try:
+        index = NativeSchemaGraphIndex.build(
+            NativeSchemaPostingIndex.build(router.registry),
+            approved_host_roots=approved_host_roots,
+        )
+        view = capture_authorized_agent_tool_surface(
+            router, query, principal=PRINCIPAL,
+        )
+        selector = AuthorizedConceptGraphFixed5Selector(view, catalog, index)
+        # All original provider operations must be selected with an actual
+        # fully proved join; an output-only direct route is not enough.
+        selected = selector(query, view.visible_route_ids)
+        if tuple(selected) != ROUTES or selector.last_status != "complete":
+            return None
+        return selector
+    except (PolicyViolationError, ValueError, TypeError):
+        return None
+
+
+def _blocked_g5_case(language: str) -> dict[str, Any]:
+    """No denominators or percentages: this is not an agent failure."""
+    return {
+        "status": "BLOCKED_SOURCE_SEMANTICS",
+        "condition": "concept_graph_optin",
+        "language": language,
+        "requested_k": 5,
+        "model_turns": 0,
+        "real_geocoding_http_attempts": 0,
+        "real_forecast_http_attempts": 0,
+        "real_geocoding_calls": 0,
+        "real_forecast_calls": 0,
+        "full_task_complete": None,
+        "original_provider_e1": False,
+        "independent_e2_qualified": False,
+    }
 
 
 def _matches_weather_final(text: str, actual: dict[str, Any]) -> bool:
@@ -156,6 +261,11 @@ async def evaluate_one(
     menu_mode: str = "all_visible",
     transport_retry_budget: int = 0,
     evidence_reprompt_budget: int = 0,
+    host_concept_catalog: NativeConceptCatalog | None = None,
+    approved_host_roots: frozenset[str] = frozenset(),
+    documented_noncommercial_e1: bool = False,
+    _private_source_observations: list[dict[str, Any]] | None = None,
+    _private_token_counts: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Never convert a denied/incomplete model action into a successful call.
 
@@ -166,7 +276,7 @@ async def evaluate_one(
         (language, city, country) not in CASES
         or language not in USER_REQUESTS
         or not callable(getattr(agent, "generate", None))
-        or menu_mode not in ("all_visible", "state_ready")
+        or menu_mode not in (*G5_COMPARISON_ARMS, "state_ready")
         or type(transport_retry_budget) is not int
         or transport_retry_budget not in (0, 1)
         or type(evidence_reprompt_budget) is not int
@@ -175,8 +285,17 @@ async def evaluate_one(
         raise ValueError("unregistered source task or model")
     router, geocode, weather = build_live_router(
         client, transport_retry_budget=transport_retry_budget,
+        **({"documented_noncommercial_e1": True} if documented_noncommercial_e1 else {}),
     )
     query = USER_REQUESTS[language]
+    graph_selector = None
+    if menu_mode == "concept_graph_optin":
+        graph_selector = _qualified_g5_selector(
+            router, query, catalog=host_concept_catalog,
+            approved_host_roots=approved_host_roots,
+        )
+        if graph_selector is None:
+            return _blocked_g5_case(language)
     messages = [
         {"role": "system", "content": SYSTEM},
         {"role": "user", "content": query},
@@ -209,8 +328,15 @@ async def evaluate_one(
         # read-only endpoints whose required native inputs actually exist
         # in owner-supplied request context or validated public state.
         # The default arm retains the exact original tool menu.
-        offered = (
-            source_ready_visible_routes(
+        if menu_mode == "concept_graph_optin":
+            # The same owner/graph contract is rechecked at *every* turn;
+            # source-ready is an additional host-input/observed-state gate.
+            if graph_selector is None:
+                raise PolicyViolationError("G5 scoped selector unexpectedly unavailable")
+            chosen = graph_selector(query, view.visible_route_ids)
+            if tuple(chosen) != ROUTES:
+                raise PolicyViolationError("G5 route contract changed mid-episode")
+            ready = source_ready_visible_routes(
                 view,
                 host_request_inputs={
                     "name": city, "language": language, "country_code": country,
@@ -218,9 +344,28 @@ async def evaluate_one(
                 prior_public_observation=actual_location,
                 executed_route_ids=tuple(executed_routes),
             )
-            if menu_mode == "state_ready" else ROUTES
-        )
-        definitions = view.tool_definitions(list(offered), k=2) if offered else []
+            offered = tuple(route for route in chosen if route in ready)
+        elif menu_mode == "state_ready":
+            offered = source_ready_visible_routes(
+                view,
+                host_request_inputs={
+                    "name": city, "language": language, "country_code": country,
+                },
+                prior_public_observation=actual_location,
+                executed_route_ids=tuple(executed_routes),
+            )
+        elif menu_mode == "lexical_k5":
+            ranked = router.retrieve_authorized(query, principal=PRINCIPAL, k=5)
+            offered = tuple(c.route_id for c in ranked.candidates
+                            if c.route_id in view.visible_route_ids)
+        else:
+            offered = ROUTES
+        # Fixed5 arms retain their K=5 contract even though this particular
+        # original public provider has only two registered source routes.
+        disclosure_k = 5 if menu_mode in (
+            "concept_graph_optin", "lexical_k5",
+        ) else 2
+        definitions = view.tool_definitions(list(offered), k=disclosure_k) if offered else []
         generated = agent.generate(messages, definitions)
         view.assert_source_unchanged()
         if (
@@ -230,6 +375,23 @@ async def evaluate_one(
             or type(generated.get("latency_ms")) not in (int, float)
         ):
             raise ValueError("invalid model generation envelope")
+        if _private_token_counts is not None:
+            # 실제 모델이 보고한 값만 누적합니다. 토크나이저 영수증이 하나라도
+            # 없거나 불완전하면 비용은 unknown이며 0으로 보정하지 않습니다.
+            token_keys = (
+                ("input_tokens", "model_input_tokens"),
+                ("tool_tokens", "tool_schema_tokens"),
+                ("output_tokens", "model_output_tokens"),
+            )
+            if (
+                all(type(generated.get(src)) is int and generated[src] >= 0
+                    for src, _ in token_keys)
+                and generated["tool_tokens"] <= generated["input_tokens"]
+            ):
+                for source, target in token_keys:
+                    _private_token_counts[target] += generated[source]
+            else:
+                _private_token_counts["complete"] = False
         total_model_ms += float(generated["latency_ms"])
         if generated["context_overflow"]:
             reason = "context_overflow"
@@ -450,7 +612,132 @@ async def evaluate_one(
         # Deliberately absent in default E1 results: no schema/metric drift.
         # Only a count, never raw prompt, output, coordinates or source text.
         result["host_evidence_reprompts"] = evidence_reprompts
+    # Only the in-process paired comparator can inspect original source data
+    # for arm-to-arm drift. No source values or hashes enter public metrics.
+    if _private_source_observations is not None and actual_weather is not None:
+        _private_source_observations.append(dict(actual_weather))
     return result
+
+
+async def compare_graph_native_e1(
+    agent: Any, client: httpx.AsyncClient, *,
+    host_concept_catalog: NativeConceptCatalog | None = None,
+    approved_host_roots: frozenset[str] = frozenset(),
+    documented_noncommercial_e1: bool = False,
+    transport_retry_budget: int = 0,
+    evidence_reprompt_budget: int = 0,
+) -> dict[str, Any]:
+    """Paired original-source E1, *not* a fixture score or independent E2.
+
+    Refuses to make even baseline provider calls when a legitimate common G5
+    cohort cannot be established. A blocked arm has no success denominator.
+    """
+    if (
+        type(transport_retry_budget) is not int
+        or transport_retry_budget not in (0, 1)
+        or type(evidence_reprompt_budget) is not int
+        or evidence_reprompt_budget not in (0, 1)
+    ):
+        raise ValueError("paired source retry/follow-up budget must be zero or one")
+    source_kwargs: dict[str, Any] = (
+        {"documented_noncommercial_e1": True} if documented_noncommercial_e1 else {}
+    )
+    if transport_retry_budget:
+        source_kwargs["transport_retry_budget"] = transport_retry_budget
+    before, _, _ = build_live_router(client, **source_kwargs)
+    after, _, _ = build_live_router(client, **source_kwargs)
+    first_receipt = _native_source_receipt(before)
+    safe_base: dict[str, Any] = {
+        "study": "REAL_QWEN_NATIVE_G5_PAIRED_E1_DEV",
+        "arms": G5_COMPARISON_ARMS,
+        "requested_k": 5,
+        "model_id": MODEL_NAME,
+        "model_revision": MODEL_REVISION,
+        "independently_authored_private_e2": False,
+        "release_qualified": False,
+        "task_success_rate": None,
+        "transport_retry_budget": transport_retry_budget,
+        "evidence_reprompt_budget": evidence_reprompt_budget,
+    }
+    if first_receipt != _native_source_receipt(after):
+        return {**safe_base, "status": "INCOMPARABLE_SOURCE_DRIFT", "outcomes": ()}
+    if any(_qualified_g5_selector(
+        before, USER_REQUESTS[language], catalog=host_concept_catalog,
+        approved_host_roots=approved_host_roots,
+    ) is None for language, _, _ in CASES):
+        return {**safe_base, "status": "BLOCKED_SOURCE_SEMANTICS", "outcomes": ()}
+    if not callable(getattr(agent, "generate", None)):
+        return {**safe_base, "status": "BLOCKED_MODEL_RUNTIME", "outcomes": ()}
+
+    outcomes: list[dict[str, Any]] = []
+    for position, (language, city, country) in enumerate(CASES):
+        # Rotate experiment ordering to limit systematic live-time drift.
+        arms = G5_COMPARISON_ARMS[position:] + G5_COMPARISON_ARMS[:position]
+        private_weather: list[dict[str, Any]] = []
+        for arm in arms:
+            current, _, _ = build_live_router(client, **source_kwargs)
+            if _native_source_receipt(current) != first_receipt:
+                return {**safe_base, "status": "INCOMPARABLE_SOURCE_DRIFT", "outcomes": ()}
+            token_counts: dict[str, Any] = {
+                "complete": True,
+                "model_input_tokens": 0,
+                "tool_schema_tokens": 0,
+                "model_output_tokens": 0,
+            }
+            row = await evaluate_one(
+                agent, client, language=language, city=city, country=country,
+                menu_mode=arm, host_concept_catalog=host_concept_catalog,
+                approved_host_roots=approved_host_roots,
+                documented_noncommercial_e1=documented_noncommercial_e1,
+                transport_retry_budget=transport_retry_budget,
+                evidence_reprompt_budget=evidence_reprompt_budget,
+                _private_source_observations=private_weather,
+                _private_token_counts=token_counts,
+            )
+            current, _, _ = build_live_router(client, **source_kwargs)
+            if _native_source_receipt(current) != first_receipt:
+                return {**safe_base, "status": "INCOMPARABLE_SOURCE_DRIFT", "outcomes": ()}
+            if row.get("status") == "BLOCKED_SOURCE_SEMANTICS":
+                return {**safe_base, "status": "BLOCKED_SOURCE_SEMANTICS", "outcomes": ()}
+            outcomes.append({
+                "condition": arm, **row,
+                "token_accounting_complete": token_counts["complete"],
+                **{
+                    key: token_counts[key] if token_counts["complete"] else None
+                    for key in (
+                        "model_input_tokens", "tool_schema_tokens",
+                        "model_output_tokens",
+                    )
+                },
+            })
+        if len(private_weather) >= 2 and any(
+            observation != private_weather[0] for observation in private_weather[1:]
+        ):
+            return {**safe_base, "status": "INCOMPARABLE_SOURCE_DRIFT", "outcomes": ()}
+    # Original provider transport, HTTP status, JSON or schema rejection is
+    # not an agent routing failure. Keep diagnostic rows but no success-rate
+    # denominator for any trusted geocode/forecast failure stage.
+    if any(
+        (row.get("trusted_failure_stage") or "").startswith((
+            "geocode_", "forecast_",
+        ))
+        for row in outcomes
+    ):
+        return {
+            **safe_base,
+            "status": "INCOMPARABLE_SOURCE_FAILURE",
+            "outcomes": outcomes,
+        }
+    return {
+        **safe_base,
+        "status": "E1_MEASURED_DEV_NOT_E2",
+        "outcomes": outcomes,
+        "task_success_rate": {
+            arm: sum(row["full_task_complete"] for row in outcomes
+                     if row["condition"] == arm) / len(CASES)
+            for arm in G5_COMPARISON_ARMS
+        },
+    }
 
 
 async def evaluate(
@@ -503,38 +790,152 @@ async def real_cpu_run() -> dict[str, Any]:
     return result
 
 
+async def real_cpu_graph_compare(
+    *, host_concept_catalog: NativeConceptCatalog | None = None,
+    approved_host_roots: frozenset[str] = frozenset(),
+    documented_noncommercial_e1: bool = False,
+    transport_retry_budget: int = 0,
+    evidence_reprompt_budget: int = 0,
+) -> dict[str, Any]:
+    """Gate external/model effects behind independently attested source intake.
+
+    In this repository's current Open-Meteo E1 source the gate is blocked,
+    so no model weights are loaded and no provider requests are attempted.
+    """
+    async with httpx.AsyncClient(
+        timeout=httpx.Timeout(20.0), follow_redirects=False,
+    ) as client:
+        optin_kwargs: dict[str, Any] = (
+            {"documented_noncommercial_e1": True} if documented_noncommercial_e1 else {}
+        )
+        if transport_retry_budget:
+            optin_kwargs["transport_retry_budget"] = transport_retry_budget
+        if evidence_reprompt_budget:
+            optin_kwargs["evidence_reprompt_budget"] = evidence_reprompt_budget
+        preflight = await compare_graph_native_e1(
+            None, client, host_concept_catalog=host_concept_catalog,
+            approved_host_roots=approved_host_roots,
+            **optin_kwargs,
+        )
+        if preflight["status"] != "BLOCKED_MODEL_RUNTIME":
+            return preflight
+        # An independently qualified source may proceed ONLY with the pinned
+        # model already present locally. Force offline loading so this flag
+        # can never trigger a surprising weight download.
+        from scripts.agent_utility_v7_dev_agent import LocalQwenAgent
+
+        previous = {
+            key: os.environ.get(key)
+            for key in ("HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE")
+        }
+        try:
+            os.environ["HF_HUB_OFFLINE"] = "1"
+            os.environ["TRANSFORMERS_OFFLINE"] = "1"
+            try:
+                agent = LocalQwenAgent()
+            except (ImportError, OSError, RuntimeError, ValueError):
+                return preflight
+        finally:
+            for key, value in previous.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+        return await compare_graph_native_e1(
+            agent, client, host_concept_catalog=host_concept_catalog,
+            approved_host_roots=approved_host_roots,
+            **optin_kwargs,
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument(
+        "--compare-graph", action="store_true",
+        help="run source-native G5 eligibility gate and paired E1 if qualified",
+    )
+    parser.add_argument(
+        "--host-catalog", type=Path,
+        help="owner-reviewed NativeConceptCatalog JSON, only for --compare-graph",
+    )
+    parser.add_argument(
+        "--approved-host-root", action="append", default=[],
+        help="explicit owner-approved parameterized native root route ID",
+    )
+    parser.add_argument(
+        "--documented-noncommercial-e1", action="store_true",
+        help="explicitly select reviewed Open-Meteo free/non-commercial source contracts",
+    )
+    parser.add_argument(
+        "--paired-transport-retry-one", action="store_true",
+        help="paired E1 only: same single read-only transport retry for every arm",
+    )
+    parser.add_argument(
+        "--paired-evidence-followup-one", action="store_true",
+        help="paired E1 only: same verified-geocoding follow-up for every arm",
+    )
     args = parser.parse_args()
+    if not args.compare_graph and (
+        args.host_catalog or args.approved_host_root or args.documented_noncommercial_e1
+        or args.paired_transport_retry_one or args.paired_evidence_followup_one
+    ):
+        parser.error("host source qualifications require --compare-graph")
+    if args.documented_noncommercial_e1 and (
+        args.host_catalog or args.approved_host_root
+    ):
+        parser.error("documented E1 contract cannot override its pinned catalog/root")
+    catalog = (
+        documented_open_meteo_e1_catalog() if args.documented_noncommercial_e1 else
+        NativeConceptCatalog.model_validate_json(
+            args.host_catalog.read_text(encoding="utf-8"), strict=True,
+        ) if args.host_catalog is not None else None
+    )
+    roots = (frozenset({ROUTES[0]}) if args.documented_noncommercial_e1
+             else frozenset(args.approved_host_root))
     source = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True,
         capture_output=True, timeout=10, check=True,
     ).stdout.strip()
-    result = asyncio.run(real_cpu_run())
+    result = asyncio.run(
+        real_cpu_graph_compare(
+            host_concept_catalog=catalog,
+            approved_host_roots=roots,
+            documented_noncommercial_e1=args.documented_noncommercial_e1,
+            transport_retry_budget=int(args.paired_transport_retry_one),
+            evidence_reprompt_budget=int(args.paired_evidence_followup_one),
+        ) if args.compare_graph else real_cpu_run()
+    )
     result["source_revision"] = source
     result["hardware"] = platform.platform()
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(result, indent=2, allow_nan=False) + "\n")
-    print(json.dumps({
-        "study": result["study"],
-        "total_real_source_calls": result["total_real_source_calls"],
-        "total_real_http_attempts": result["total_real_http_attempts"],
-        "model_generated_full_task_successes": result["model_generated_full_task_successes"],
-        "by_language": {
-            row["language"]: {
-                "real_geocoding_calls": row["real_geocoding_calls"],
-                "real_forecast_calls": row["real_forecast_calls"],
-                "real_geocoding_http_attempts": row["real_geocoding_http_attempts"],
-                "real_forecast_http_attempts": row["real_forecast_http_attempts"],
-                "host_exception_family": row["host_exception_family"],
-                "full_task_complete": row["full_task_complete"],
-                "termination_reason": row["termination_reason"],
-            }
-            for row in result["outcomes"]
-        },
-        "independently_authored_private_e2": False,
-    }, ensure_ascii=False))
+    if args.compare_graph:
+        print(json.dumps({
+            "study": result["study"], "status": result["status"],
+            "task_success_rate": result["task_success_rate"],
+            "independently_authored_private_e2": False,
+        }, ensure_ascii=False))
+    else:
+        print(json.dumps({
+            "study": result["study"],
+            "total_real_source_calls": result["total_real_source_calls"],
+            "total_real_http_attempts": result["total_real_http_attempts"],
+            "model_generated_full_task_successes": result["model_generated_full_task_successes"],
+            "by_language": {
+                row["language"]: {
+                    "real_geocoding_calls": row["real_geocoding_calls"],
+                    "real_forecast_calls": row["real_forecast_calls"],
+                    "real_geocoding_http_attempts": row["real_geocoding_http_attempts"],
+                    "real_forecast_http_attempts": row["real_forecast_http_attempts"],
+                    "host_exception_family": row["host_exception_family"],
+                    "full_task_complete": row["full_task_complete"],
+                    "termination_reason": row["termination_reason"],
+                }
+                for row in result["outcomes"]
+            },
+            "independently_authored_private_e2": False,
+        }, ensure_ascii=False))
 
 
 if __name__ == "__main__":

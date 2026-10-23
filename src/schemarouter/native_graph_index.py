@@ -28,6 +28,7 @@ from .field_group_retrieval import (
     NativeDeclaredFieldGroup,
     _alias_key,
     _complete_fields,
+    _root_envelope_empty,
     _scalar_contract,
 )
 from .models import EndpointSpec, FieldSpec, ToolSpec
@@ -43,15 +44,6 @@ STRICT_K = 5
 # Absolute research-only model exposure cap; never silently widen fixed K5.
 MAX_RESEARCH_RANKABLE_PATHS = 32
 
-
-def _root_envelope_empty(endpoint: EndpointSpec) -> bool:
-    if endpoint.parameters or endpoint.auth_requirements:
-        return False
-    return not endpoint.input_schema or endpoint.input_schema in (
-        {"type": "object", "properties": {}, "additionalProperties": False},
-        {"type": "object", "properties": {}, "required": [],
-         "additionalProperties": False},
-    )
 
 def _host_source_input_names(endpoint: EndpointSpec) -> tuple[str, ...] | None:
     """Only an original, closed 1-4 required scalar source input envelope.

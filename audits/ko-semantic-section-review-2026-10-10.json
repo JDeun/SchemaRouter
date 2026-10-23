@@ -1,17 +1,22 @@
 {
   "schema_version": 1,
   "source_revision": "989039511c2f0c519c35f832a52d4b6278b07d1a",
-  "review_date": "2026-10-19",
-  "method": "Risk-based editorial review of all rule-flagged sections after full 147-pair, 1524-section machine triage; not a claim of formal proof for every sentence.",
+  "review_date": "2026-10-23",
+  "method": "Historical risk-based editorial review of 147 pairs and 1524 sections; on 2026-10-23 reran the 154-pair, 1588-section advisory triage and compared changed research sections against current EN/KO blobs. AI-assisted, not independent per-sentence certification.",
   "reviewed_sections": 28,
   "confirmed_semantic_omission_fixed": [
     {
       "path": "integrations/jev.md",
       "section": 2,
       "details": "SDK API-key environment ownership explicitly stated; source code already contained export TYPESAFE_API_KEY."
+    },
+    {
+      "path": "research/research-program-2026.md",
+      "section": 5,
+      "details": "Korean empirical-priority conclusion previously said only that release #1356 was HOLD, omitting its explicit no-merge requirement and the prohibition on changing original 0.14 scores. Both prohibitions are now explicit in KO; the current heuristic no longer flags this section."
     }
   ],
-  "limitations": "Checks and human review can miss subtle translation errors in unflagged prose; independent bilingual editorial proof for each of 1524 sections is not asserted. 2026-10-19 new research program section 4 was checked for negation heuristic false positive by AI assistant, not human independent language sign-off.",
+  "limitations": "Advisory heuristic and AI-assisted review can miss subtle translation errors in unflagged prose; independent bilingual editorial proof for each of 1588 sections is not asserted. 2026-10-23 research program section 4 hashes were repinned after paired AI-assisted review, not independent human sign-off. Its section 5 Korean omission of the frozen 0.14 scores and held release-PR merge prohibition was corrected explicitly rather than waived.",
   "reviews": [
     {
       "path": "assets/brand/README.md",
@@ -216,10 +221,10 @@
     {
       "path": "research/research-program-2026.md",
       "section": 4,
-      "en_blob": "b2eda0ebec645b9a76177f7cb463ea4478c89420",
-      "ko_blob": "bbf4ba343caf87a02dada11c12819a8d91d79fbe",
+      "en_blob": "e1d9466aa92b1133c429abae16ce0c963c0a9423",
+      "ko_blob": "b0f099753db4d385b5a645e2e16223eec047cfcc",
       "decision": "meaning-preserved",
-      "evidence": "Section 4 original EN/KO no-promotion, Qwen diagnostic, and 0.18 HOLD positions remain identical. The 2026-10-22 English research-program edit adds only navigation to the new knowledge index, while the Korean section 4 and its source blob remain unchanged. The earlier section 7 KO heading-boundary repair retains its literal issue link. Source hashes repinned after an AI-assisted document comparison; this is not independent human review."
+      "evidence": "Section 4 original EN/KO architecture remains aligned: registered source-native evidence is the only authority, conjunctive authorized FieldGroups are filtered before K, no calibration or execution permission follows from similarity, and model/host outcome safety stays separate. In the preceding G5 opt-in section both languages now distinguish default source BLOCKED_SOURCE_SEMANTICS from explicit documented noncommercial source-internal mock verification reaching BLOCKED_MODEL_RUNTIME, with no actual-Qwen outcome, no commercial provider entitlement or independent E2. No default promotion or 0.18 release HOLD relaxation. Section 5 still prohibits merging held PR #1356 and changing frozen 0.14 scores. Exact document blobs repinned after AI-assisted paired comparison, not independent human editorial review."
     },
     {
       "path": "research/routing-status.md",

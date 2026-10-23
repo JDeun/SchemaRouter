@@ -1,6 +1,6 @@
 # SchemaRouter research milestones — evidence-gated plan
 
-**Initial plan prepared 2026-10-19; source-of-truth mapping only. Check live GitHub Issues → Milestones for the current creation/assignment status.** This file accompanies [the canonical EN/KO research wiki](../docs/research/research-program-2026.md) and [session tracker #200](https://github.com/JDeun/SchemaRouter/issues/200). Its machine-readable source is [research-milestones.json](research-milestones.json). Milestone titles and issue assignments become live only after the authenticated, manually approved GitHub milestone sync has run. Do **not** infer success from a plan document.
+**Initial plan prepared 2026-10-19; historical initial mapping with a versioned 2026-10-22 live assignment addendum below. Check live GitHub Issues → Milestones for the current state.** This file accompanies [the canonical EN/KO research wiki](../docs/research/research-program-2026.md) and [session tracker #200](https://github.com/JDeun/SchemaRouter/issues/200). The machine-readable [research-milestones.json](research-milestones.json) is a **historical one-time initialization** snapshot, not a continuously updated representation of all later live assignments. Do **not** infer task success from a milestone assignment.
 
 ## Why and how
 
@@ -15,7 +15,7 @@ Milestones are **research gates** (what must be demonstrated), **not estimated d
 | **M4 — v0.18 controlled release** | 1 | External/source/security gates and protected checks explicitly approved; held release PR #1356 is **not automatically approved** |
 | **M5 — Postrelease adoption and follow-up** | 6 | Released-version comparison, evidence-backed paper/adoption and optional local Laya/pi-jev trials; **not a release blocker** |
 
-### Exact current mapping (30 assigned, 1 cross-cutting)
+### Historical 2026-10-19 initialization mapping (30 assigned, 1 cross-cutting)
 
 - **M0 (4):** [#1268](https://github.com/JDeun/SchemaRouter/issues/1268), [#1269](https://github.com/JDeun/SchemaRouter/issues/1269), [#1450](https://github.com/JDeun/SchemaRouter/issues/1450), [#1532](https://github.com/JDeun/SchemaRouter/issues/1532).
 - **M1 (4):** [#1530](https://github.com/JDeun/SchemaRouter/issues/1530), [#1535](https://github.com/JDeun/SchemaRouter/issues/1535), [#1545](https://github.com/JDeun/SchemaRouter/issues/1545), [#1560](https://github.com/JDeun/SchemaRouter/issues/1560).
@@ -24,6 +24,18 @@ Milestones are **research gates** (what must be demonstrated), **not estimated d
 - **M4 (1):** [#1345](https://github.com/JDeun/SchemaRouter/issues/1345); its held PR [#1356](https://github.com/JDeun/SchemaRouter/pull/1356) **MUST NOT BE MERGED** without separate explicit release go/no-go.
 - **M5 (6):** [#199](https://github.com/JDeun/SchemaRouter/issues/199), [#576](https://github.com/JDeun/SchemaRouter/issues/576), [#584](https://github.com/JDeun/SchemaRouter/issues/584), [#1312](https://github.com/JDeun/SchemaRouter/issues/1312), [#1313](https://github.com/JDeun/SchemaRouter/issues/1313), [#1344](https://github.com/JDeun/SchemaRouter/issues/1344).
 - **Not assigned (global):** [#200](https://github.com/JDeun/SchemaRouter/issues/200).
+
+### Live GitHub assignment addendum — verified 2026-10-22
+
+The following assignments were applied to GitHub Issues after the initial 30-item initialization plan, and verified in the live issue state:
+
+| Issue | Verified live milestone | Intent and disposition |
+| --- | --- | --- |
+| [#1700](https://github.com/JDeun/SchemaRouter/issues/1700) | **M1 — Source-native typed G5 graph** | Continue work only against an identified integrated bottleneck; prioritize genuine native-path completeness and agent task outcomes over standalone CPU micro-tuning |
+| [#1711](https://github.com/JDeun/SchemaRouter/issues/1711) | **M5 — Postrelease adoption and follow-up** | CodeGraph research/experiments remain nonblocking for G5 vertical-slice implementation |
+| [#200](https://github.com/JDeun/SchemaRouter/issues/200) | **Unassigned (intentional)** | Cross-cutting session and evidence tracker, not a permanent milestone blocker |
+
+This is a **versioned addendum**, not a request to rerun or silently repin the protected initializer. Do not edit the original 30-issue JSON, the approved Git blob `3df25049ab9854e54961c6fb77518236b9ed92ee` or the once-only workflow to represent these incremental live assignments. Replacing those guards would require a **separate, reviewed migration** with explicit maintainer authorization and clear write-permission boundaries. A preview may inspect state; it does not assign issues.
 
 ## Milestone critical path
 
@@ -43,7 +55,7 @@ M0/M1 and parts of M2 can proceed concurrently on protected branches; M3 can beg
 - **마일스톤 진행률은 완료 이슈의 비율일 뿐 성능 지표가 아닙니다.** 모든 자식 이슈가 닫혀도 안전/외부 검증 승인 없이 상위 릴리스 게이트를 통과하지 않습니다.
 - **DEV 부정적 실험도 기록합니다.** E0 구현, E1 실패, E2 독립 검증, `BLOCKED_EXTERNAL`는 동일한 ‘성공’으로 계산하지 않습니다.
 - **개별 실험 이슈 남발 금지.** 반복 측정, 추가 모델 후보, 단순 문구 변경은 먼저 해당 상위 이슈의 댓글 또는 연구 위키에 정리합니다.
-- **#200은 마일스톤을 배정하지 않습니다.** 31개 이슈 중 30개만 6개 마일스톤에 정확히 한 번 배정합니다.
+- **#200은 마일스톤을 배정하지 않습니다.** 최초 31개 이슈 중 30개만 초기화 매니페스트에 배정되었습니다. 이후 #1700(M1), #1711(M5)은 위의 **라이브 추가분**으로 별도 기록합니다.
 
 ## 실제 GitHub 마일스톤 적용
 

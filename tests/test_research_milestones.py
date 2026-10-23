@@ -254,3 +254,23 @@ def test_exact_source_blob_gates_one_time_main_push_initialization() -> None:
     )
     assert 'github.ref == \'refs/heads/main\'' in workflow
 
+
+def test_live_assignment_addendum_preserves_initialization_blob_guard() -> None:
+    """Live incremental assignments must never repin the initial write gate."""
+    milestone_page = (ROOT / ".github/RESEARCH_MILESTONES.md").read_text()
+    research_page = (ROOT / "docs/research/research-program-2026.md").read_text()
+    for marker in (
+        "#1700", "#1711", "M1", "M5", "historical one-time initialization",
+    ):
+        assert marker in milestone_page
+    assert "BLOCKED_SOURCE_SEMANTICS" in research_page
+    assert "retrieve_authorized_concept_graph" in research_page
+    assert "EVAL-FIXED5-OPTIN" in research_page
+    manifest = (ROOT / ".github/research-milestones.json").read_bytes()
+    approved_sha = hashlib.sha1(
+        b"blob " + str(len(manifest)).encode("ascii") + b"\0" + manifest,
+    ).hexdigest()
+    assert approved_sha == "3df25049ab9854e54961c6fb77518236b9ed92ee"
+    workflow = (ROOT / ".github/workflows/research-milestone-initialize-once.yml").read_text()
+    assert approved_sha in workflow
+

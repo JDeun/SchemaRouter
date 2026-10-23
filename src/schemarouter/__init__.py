@@ -246,6 +246,11 @@ from .capability_snapshot import (
     serialize_capability_snapshot,
     validate_capability_snapshot,
 )
+from .concept_graph_retrieval import (
+    NativeConceptGraphSelection,
+    NativeConceptRouteSet,
+    retrieve_authorized_concept_graph,
+)
 from .concept_retrieval import (
     NativeConceptCatalog,
     NativeDeclaredConcept,
@@ -585,6 +590,9 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
+    "NativeConceptGraphSelection",
+    "NativeConceptRouteSet",
+    "retrieve_authorized_concept_graph",
     "NativeIndexedGraphCandidate",
     "NativeIndexedGraphResult",
     "NativeSchemaGraphIndex",
