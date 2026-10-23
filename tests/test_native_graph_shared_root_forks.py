@@ -424,6 +424,59 @@ def test_original_openapi_and_mcp_fork_requires_host_semantic_attestation(
     out = idx.lookup_shared_root_forks(
         router, ALIASES[0], group=GROUP, principal=ACTOR,
     )
+    # Original-paper P1 must reuse exactly these real, host-attested
+    # OpenAPI and MCP original source contracts, not a separate mock
+    # catalog or inferred remote semantic/authorization declarations.
+    from schemarouter import (
+        NativeConceptCatalog,
+        NativeDeclaredConcept,
+        retrieve_paper_field_coverage,
+    )
+
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="crm.attested_fields",
+        aliases=ALIASES,
+        required_fields=GROUP.required_fields,
+        source_type=GROUP.source_type,
+        license=GROUP.license,
+    ),))
+    for language_query in ALIASES:
+        paper = retrieve_paper_field_coverage(
+            router, language_query,
+            catalog=catalog, principal=ACTOR, index=idx,
+        )
+        assert not paper.executable_authority
+        if approve_owner_semantics:
+            assert paper.status == "complete"
+            assert len(paper.alternatives) == 1
+            alternative = paper.alternatives[0]
+            assert set(alternative.required_semantic_ids) == {
+                "crm.status", "crm.owner",
+            }
+            assert {route.route_id for route in alternative.routes} == {
+                "contacts_openapi.read_contact",
+                "status_mcp.read_status",
+                "owner_mcp.read_owner",
+            }
+            fields_by_route = {
+                route.route_id: route for route in alternative.routes
+            }
+            assert fields_by_route["contacts_openapi.read_contact"].output_fields == (
+                "customer_id",
+            )
+            assert fields_by_route["status_mcp.read_status"].output_fields == (
+                "status",
+            )
+            assert fields_by_route["owner_mcp.read_owner"].output_fields == (
+                "owner",
+            )
+            for consumer in ("status_mcp.read_status", "owner_mcp.read_owner"):
+                assert fields_by_route[consumer].input_bindings == (
+                    ("key", "contacts_openapi.read_contact", "customer_id"),
+                )
+        else:
+            assert paper.status == "no_proven_hit"
+            assert paper.alternatives == ()
     if approve_owner_semantics:
         assert out.status == "complete"
         (fork,) = out.candidates
