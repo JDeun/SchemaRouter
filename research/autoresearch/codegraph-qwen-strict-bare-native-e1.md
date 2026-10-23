@@ -85,3 +85,36 @@ artifacts. Results MUST be compared with baseline **original** actions
 that negative. Changes in strict success are attributable at most to the
 separate E1 grammar intervention **within these synthetic local cases**,
 never to CodeGraph retrieval or an independent production task set.
+
+## First fully executed six-cell pinned E1 treatment: negative result
+
+**Runner:** [Linux GitHub Actions #39928522628](https://github.com/JDeun/SchemaRouter/actions/runs/39928522628) (six matrix cells completed successfully). Source-local artifact prefix: `codegraph-strict-bare-json-e1-`; full original allowlisted JSON is retained per model and language. These are E1 synthetic-source measurements, not real external provider observations or E2 independent tasks. They are **historical exact-run evidence** and should not be overwritten by newer reruns.
+
+| Checkpoint | Language | Strict parser acceptances in FULL / lexical | Original source calls (all four arms, total) | Completed tasks (four arms) | Structural stop |
+| --- | --- | --- | ---: | --- | --- |
+| Qwen3-0.6B | EN | 0 / 0 | 0 | 0/4 | final before native calls |
+| Qwen3-0.6B | KO | 1 / 1 | 0 | 0/4 | parsed bare JSON, then rejected as unoffered or out-of-order |
+| Qwen3-0.6B | JA | 0 / 0 | 0 | 0/4 | final before native calls |
+| Qwen3-1.7B | EN | 0 / 0 | 0 | 0/4 | multiple tool calls in one model turn |
+| Qwen3-1.7B | KO | 0 / 0 | 2 | 0/4 | one original call per FULL/lexical, then premature final; surgical multiple calls after schema |
+| Qwen3-1.7B | JA | 0 / 0 | 0 | 0/4 | multiple tool calls, including post-schema surgical |
+
+**Interpretation:** This intervention identifies one formerly unrecognized
+bare JSON native-action object per KO 0.6B FULL and lexical arm. That is
+a **parser acceptance**, not native execution. The unchanged existing
+bound source/order check refused both model choices without calling the
+provider. The other checkpoints either prematurely finalized or proposed
+multiple actions in one turn; this experiment intentionally makes **no**
+attempt to split or execute multiple calls. The 1.7B KO's two original
+calls (one per separately run FULL and lexical arm) were already present
+in the original baseline and are **not an improvement** from this adapter.
+
+Every strict two-hop task was unsuccessful. Therefore there is no
+positive completion-rate result, no valid completed-task cost ratio, and
+no measured benefit attributable to CodeGraph from this treatment.
+Four-arm total model tokens are not compared as cost savings because
+all denominators of successful tasks are zero. One owner-declared
+synthetic task per arm/language cannot support a generalizable success
+rate. Future study should distinguish safe sequential *route choice* from
+tool-envelope parsing, without widening K5, source authorization or
+accepting a speculative second tool call.
