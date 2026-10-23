@@ -235,3 +235,40 @@ def test_qwen35_template_items_handles_zero_argument_root():
         "{{ key }}{% endfor %}{% endfor %}"
     ).render(row=payload[1])
     assert result == ""
+
+
+@pytest.mark.parametrize(("message", "expected"), [
+    ({"content": None, "tool_calls": [
+        {"type": "function", "function": {"name": "redacted",
+                                         "arguments": "{}"}},
+    ]}, "structured_args_string"),
+    ({"content": None, "tool_calls": [
+        {"type": "function", "function": {"name": "redacted",
+                                         "arguments": {}}},
+    ]}, "structured_args_mapping"),
+    ({"content": "<tool_call><function=redacted></function></tool_call>"},
+     "native_xml_balanced"),
+    ({"content": "thinking...<tool_call><function=redacted></function></tool_call>"},
+     "native_xml_with_prefix"),
+    ({"content": "<tool_call><function=redacted>"}, "native_xml_partial"),
+    ({"content": "<think>reasoning</think>"}, "thinking_without_call"),
+    ({"content": '{"verified":true}'}, "json_final_or_action"),
+    ({"content": "done"}, "other_text_final"),
+    ({"content": None}, "missing_content"),
+])
+def test_native_diagnostic_only_exposes_shape_category(message, expected):
+    label = pilot._native_envelope_category(message)
+    assert label == expected
+    assert "redacted" not in label
+    assert "reasoning" not in label
+    assert "verified" not in label
+
+
+def test_native_adapter_tracks_bounded_structure_without_raw_model_text():
+    agent = object.__new__(pilot.Qwen35LocalGGUFAgent)
+    agent.engine = StubLlama({
+        "content": "<tool_call><function=contacts__read></function></tool_call>",
+    })
+    model_row = agent.generate([{"role": "user", "content": "private query"}], [TOOL])
+    assert parse_one_model_action(model_row["text"])[0] == "tool"
+    assert agent.native_envelope_categories == ["native_xml_balanced"]
