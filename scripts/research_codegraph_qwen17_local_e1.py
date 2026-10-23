@@ -30,12 +30,17 @@ from scripts.research_qwen17_live_open_meteo_comparison_e1 import (
 
 async def evaluate_candidate(
     agent: LocalQwen17BRealAgent, *, language: str,
+    diagnose_model_actions: bool = False,
 ) -> dict:
     """Run one local synthetic task under genuine four-arm K5 constraints."""
     if type(agent) is not LocalQwen17BRealAgent:
         raise TypeError("pinned Qwen3-1.7B instance required for source receipts")
+    optional = (
+        {"diagnose_model_actions": True} if diagnose_model_actions else {}
+    )
     report = await run_local_multiroute_codegraph_e1(
         agent, language=language, condition="joined", catalog_size=4,
+        **optional,
     )
     if (
         report["status"] != "E1_MEASURED_LOCAL_FOUR_ARM_NOT_E2"
@@ -63,12 +68,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cohort", choices=("four-route",), required=True)
     parser.add_argument("--language", choices=LANGUAGE_ALIASES, required=True)
+    parser.add_argument("--diagnose-model-actions", action="store_true")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     # This class validates its independently pinned 40-character Hugging Face
     # source SHA before loading and shares exactly the legacy generation API.
     agent = LocalQwen17BRealAgent()
-    report = asyncio.run(evaluate_candidate(agent, language=args.language))
+    report = asyncio.run(evaluate_candidate(
+        agent, language=args.language,
+        diagnose_model_actions=args.diagnose_model_actions,
+    ))
     report["source_revision"] = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True,
         check=True, capture_output=True, timeout=10,
