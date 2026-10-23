@@ -25,6 +25,14 @@ from scripts.research_real_qwen_bound_two_step_e0 import parse_one_model_action
 from scripts.research_scoped_host_invocation import execute_scoped_host_call
 
 FRONTIER_ARM = "graph_frontier_g5_e1"
+FRONTIER_CUED_ARM = "graph_frontier_cued_e1"
+FRONTIER_VERIFIED_CONTINUATION_CUE_E1 = (
+    "The host has returned a verified original read-only observation. "
+    "The dependency path is not yet complete. Continue with exactly one "
+    "currently offered read-only operation per turn, using only parameters "
+    "available from actual verified observations. Do not invent arguments, "
+    "or answer finally before the source dependency path is complete."
+)
 FRONTIER_PROMPT_E1 = (
     "Complete the user task with real original read-only source operations. "
     "The host offers only operations authorized at the current dependency step. "
@@ -65,6 +73,7 @@ async def run_graph_frontier_model_episode(
     host_context: SurgicalHostContext,
     max_turns: int = MAX_TURNS,
     diagnose_model_actions: bool = False,
+    experimental_verified_continuation: bool = False,
 ) -> dict[str, Any]:
     """Model chooses original calls; host limits offer to attested next steps.
 
@@ -80,6 +89,8 @@ async def run_graph_frontier_model_episode(
         raise ValueError("frontier E1 requires pinned five-turn budget")
     if type(diagnose_model_actions) is not bool:
         raise ValueError("diagnostics flag must be boolean")
+    if type(experimental_verified_continuation) is not bool:
+        raise ValueError("verified continuation flag must be boolean")
     # Fail before generation on absent or stale original authorization.
     _ = episode.public_reference
     if not episode.selection.route_sets or any(
@@ -102,6 +113,7 @@ async def run_graph_frontier_model_episode(
     all_receipts = True
     frontier_sizes: list[int] = []
     structure_labels: list[str] = []
+    continuation_cues = 0
     reason = "turn_limit"
     correct = False
 
@@ -219,6 +231,15 @@ async def run_graph_frontier_model_episode(
         executed.append(route_id)
         observations[route_id] = observation
         _append_observation(messages, generated["text"], observation)
+        if experimental_verified_continuation and source_calls == 1 and (
+            _frontier_route_ids(episode, tuple(executed))
+        ):
+            # Actual verified first callback is the ONLY model cue trigger.
+            # No next-route ID, argument, hidden field, gold or new grant.
+            messages.append({
+                "role": "user", "content": FRONTIER_VERIFIED_CONTINUATION_CUE_E1,
+            })
+            continuation_cues += 1
 
     return {
         "evidence_tier": "E1_RESEARCH_SCOPED_FRONTIER",
@@ -227,6 +248,8 @@ async def run_graph_frontier_model_episode(
         "source_call_attempts": source_attempts,
         "actual_source_calls": source_calls,
         "frontier_sizes": frontier_sizes,
+        **({"verified_continuation_cues": continuation_cues}
+           if experimental_verified_continuation else {}),
         "termination_reason": reason,
         "full_task_correct": correct,
         "model_input_tokens": input_tokens if all_receipts else None,
