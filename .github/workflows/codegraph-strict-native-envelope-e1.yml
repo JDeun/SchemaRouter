@@ -1,0 +1,124 @@
+name: CodeGraph Strict Native Envelope Paired E1 DEV
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_codegraph_native_envelope_e1.py"
+      - "scripts/research_codegraph_local_multiroute_e1.py"
+      - "scripts/research_codegraph_surgical_agent_e1.py"
+      - "scripts/research_codegraph_qwen17_local_e1.py"
+      - "tests/test_research_codegraph_native_envelope_e1.py"
+      - ".github/workflows/codegraph-strict-native-envelope-e1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  paired-original-model-and-offered-json:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [en, ko, ja]
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install original Qwen17 CPU stack and tests
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "transformers>=4.51,<5" "huggingface-hub>=0.30,<2" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1"
+      - name: Lint original strict scope and one bounded opt-in wrapper
+        run: |
+          ruff check scripts/research_codegraph_native_envelope_e1.py scripts/research_codegraph_surgical_agent_e1.py scripts/research_codegraph_local_multiroute_e1.py scripts/research_codegraph_qwen17_local_e1.py tests/test_research_codegraph_native_envelope_e1.py
+      - name: Prove no broken unscoped or duplicate JSON can gain execution
+        run: |
+          python -m pytest -q tests/test_research_codegraph_native_envelope_e1.py tests/test_research_codegraph_action_shape_e1.py tests/test_research_codegraph_surgical_agent_e1.py tests/test_research_codegraph_local_multiroute_e1.py
+      - name: Check CPU RAM and disk for original pinned weights
+        run: |
+          python - <<'PY'
+          import shutil
+          from pathlib import Path
+          ram = int(next(x for x in Path("/proc/meminfo").read_text().splitlines() if x.startswith("MemTotal:")).split()[1])
+          disk = shutil.disk_usage(".").free / (1024 ** 3)
+          assert ram >= 12_000_000 and disk >= 7, (ram, disk)
+          PY
+      - name: Prestage exactly original Qwen3-1.7B revision
+        run: |
+          python - <<'PY'
+          from huggingface_hub import model_info, snapshot_download
+          from scripts.research_qwen17_live_open_meteo_comparison_e1 import MODEL_ID, REVISION
+          assert MODEL_ID == "Qwen/Qwen3-1.7B"
+          assert REVISION == "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e"
+          assert model_info(MODEL_ID, revision=REVISION).sha == REVISION
+          snapshot_download(repo_id=MODEL_ID, revision=REVISION,
+                            allow_patterns=("*.json", "*.safetensors", "*.model", "tokenizer*", "*.jinja"))
+          PY
+      - name: Paired genuine model on identical original local four-route source
+        run: |
+          python -m scripts.research_codegraph_qwen17_local_e1 \
+            --cohort four-route --language ${{ matrix.language }} \
+            --paired-envelope-comparison \
+            --out artifacts/codegraph-strict-envelope/${{ matrix.language }}.json
+      - name: Verify exact source, token receipts, K5 and no E2 promotion
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          lang = "${{ matrix.language }}"
+          report = json.loads(Path(f"artifacts/codegraph-strict-envelope/{lang}.json").read_text())
+          assert report["study"] == "CODEGRAPH_QWEN17_PAIRED_STRICT_ENVELOPE_E1_DEV"
+          assert report["model_id"] == "Qwen/Qwen3-1.7B"
+          assert report["model_revision"] == "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e"
+          assert report["language"] == lang and report["strict_k"] == 5
+          assert report["intervention"] == "canonical_offered_unwrapped_tool_json_only"
+          assert report["independent_e2_qualified"] is False and report["release_qualified"] is False
+          control = report["results"]["original_strict_control"]
+          treated = report["results"]["exact_json_envelope_treatment"]
+          assert control["source_receipt_digest"] == treated["source_receipt_digest"]
+          for d in (control, treated):
+              assert d["source_route_count"] == 4
+              assert d["qualified_task_denominator"] == {
+                  arm: 1 for arm in d["arms"]
+              }
+              assert d["independent_e2_qualified"] is False
+              assert d["original_provider_e1"] is False
+              assert len(d["outcomes"]) == 4
+              assert all(row["model_turns"] >= 1 for row in d["outcomes"])
+              assert all(row["actual_source_calls"] >= 0 for row in d["outcomes"])
+              assert all(row["total_model_tokens"] is None
+                         or row["total_model_tokens"] >= 0 for row in d["outcomes"])
+          assert treated["strict_unwrapped_json_treatment"] is True
+          assert control["strict_unwrapped_json_treatment"] is False
+          assert all(
+              type(row["strict_unwrapped_envelope_normalizations"]) is int
+              and row["strict_unwrapped_envelope_normalizations"] >= 0
+              for row in treated["outcomes"]
+          )
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write(f"## Qwen17 strict offered JSON envelope E1 DEV — {lang}\n\n")
+              out.write("Same pinned model, original source, principal and K5. This is one local synthetic task/arm; no E2, no default changes.\n\n")
+              out.write("| Arm | Base calls | Treated calls | Base success | Treated success | Normalizations |\n|---|---:|---:|---|---|---:|\n")
+              for c, t in zip(control["outcomes"], treated["outcomes"], strict=True):
+                  assert c["condition"] == t["condition"]
+                  out.write(f"| {c['condition']} | {c['actual_source_calls']} | {t['actual_source_calls']} | {c['full_task_complete']} | {t['full_task_complete']} | {t['strict_unwrapped_envelope_normalizations']} |\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: codegraph-strict-native-envelope-e1-${{ matrix.language }}-${{ github.run_id }}
+          path: artifacts/codegraph-strict-envelope/*.json
+          retention-days: 30
+          if-no-files-found: warn

@@ -15,6 +15,7 @@ from typing import Any
 
 from schemarouter.errors import PolicyViolationError
 from scripts.research_codegraph_action_shape_e1 import classify_rejected_action_shape
+from scripts.research_codegraph_native_envelope_e1 import strict_native_json_envelope
 from scripts.research_codegraph_scoped_materializer import (
     SurgicalEpisode,
     materialize_scoped_original_schemas,
@@ -162,6 +163,7 @@ async def run_surgical_model_episode(
     episode: SurgicalEpisode,
     host_context: SurgicalHostContext,
     max_turns: int = MAX_TURNS,
+    experimental_strict_unwrapped_json: bool = False,
 ) -> dict[str, Any]:
     """Measure schema requests and actual original invocations separately.
 
@@ -176,6 +178,8 @@ async def run_surgical_model_episode(
         raise ValueError("trusted final response instruction must be a string")
     if type(max_turns) is not int or not 1 <= max_turns <= 8:
         raise ValueError("bounded surgical research turn budget required")
+    if type(experimental_strict_unwrapped_json) is not bool:
+        raise ValueError("research strict envelope mode must be boolean")
     initial_reference = episode.public_reference
     messages = [
         {"role": "system", "content": (
@@ -199,6 +203,7 @@ async def run_surgical_model_episode(
     all_receipts = True
     input_tokens = tool_tokens = output_tokens = 0
     model_latency_ms = 0.0
+    strict_envelope_normalizations = 0
 
     for _ in range(max_turns):
         try:
@@ -238,8 +243,15 @@ async def run_surgical_model_episode(
         if generated["context_overflow"]:
             reason = "context_overflow"
             break
+        parsed_text = generated["text"]
+        if experimental_strict_unwrapped_json:
+            parsed_text, normalized = strict_native_json_envelope(
+                parsed_text,
+                offered_tool_names=tuple(tool["name"] for tool in offered),
+            )
+            strict_envelope_normalizations += int(normalized)
         try:
-            kind, value = _parse_action(generated["text"])
+            kind, value = _parse_action(parsed_text)
         except (ValueError, TypeError, OverflowError):
             reason = "malformed_call"
             rejected_model_action_shape = classify_rejected_action_shape(
@@ -280,7 +292,7 @@ async def run_surgical_model_episode(
                 break
             materialized_ids = list(value)
             schema_requests += 1
-            _append_observation(messages, generated["text"], {
+            _append_observation(messages, parsed_text, {
                 "status": "ok", "tool_definitions": definitions,
             })
             continue
@@ -315,9 +327,9 @@ async def run_surgical_model_episode(
         source_calls += 1
         executed_routes.append(route_id)
         observations[route_id] = observation
-        _append_observation(messages, generated["text"], observation)
+        _append_observation(messages, parsed_text, observation)
 
-    return {
+    report = {
         "evidence_tier": "E1_RESEARCH_SCOPED_PROTOCOL",
         "model_turns": model_turns,
         "schema_requests": schema_requests,
@@ -336,3 +348,9 @@ async def run_surgical_model_episode(
         "model_default_promoted": False,
         "release_safety_gate_passed": False,
     }
+    if experimental_strict_unwrapped_json:
+        report["strict_unwrapped_envelope_normalizations"] = (
+            strict_envelope_normalizations
+        )
+        report["strict_unwrapped_envelope_research_only"] = True
+    return report
