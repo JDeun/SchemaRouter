@@ -41,6 +41,7 @@ from scripts.research_authorized_agent_tool_surface import (
     _authorization_policy_receipt,
     capture_authorized_agent_tool_surface,
 )
+from scripts.research_codegraph_action_shape_e1 import classify_rejected_action_shape
 from scripts.research_codegraph_scoped_materializer import (
     SurgicalEpisode,
     capture_surgical_episode,
@@ -281,6 +282,7 @@ async def _baseline_local_arm(
     input_tokens = output_tokens = schema_tokens = 0
     all_receipts = True
     reason = "turn_limit"
+    rejected_model_action_shape: str | None = None
     correct = False
     turns = 0
     for _ in range(TURN_BUDGET):
@@ -307,9 +309,16 @@ async def _baseline_local_arm(
             kind, payload = parse_one_model_action(generated["text"])
         except (ValueError, TypeError, OverflowError):
             reason = "malformed_model_action"
+            rejected_model_action_shape = classify_rejected_action_shape(
+                generated["text"],
+            )
             break
         if kind == "final":
             reason = "completed_final" if len(calls) == 2 else "premature_final"
+            if len(calls) < 2:
+                rejected_model_action_shape = classify_rejected_action_shape(
+                    generated["text"],
+                )
             if len(calls) == 2:
                 correct = _strict_final(payload, observations[ROUTES[1]])
             break
@@ -349,6 +358,7 @@ async def _baseline_local_arm(
         ))
     return {
         "condition": condition, "status": reason,
+        "rejected_model_action_shape": rejected_model_action_shape,
         "source_receipt_digest": digest,
         "model_turns": turns,
         "actual_source_calls": len(calls),
