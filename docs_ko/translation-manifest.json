@@ -556,6 +556,10 @@
       "source_blob": "390e3b55f407827f8ae21d448b8ab579624118af"
     },
     {
+      "path": "research/knowledge-index.md",
+      "source_blob": "863e96e358b07c447355b56c371468a926a380ae"
+    },
+    {
       "path": "research/large-heldout-agent-utility.md",
       "source_blob": "31213184bb15fb40d52752131ed07a140a616431"
     },
@@ -585,7 +589,7 @@
     },
     {
       "path": "research/research-program-2026.md",
-      "source_blob": "9b7321e580bdbd0d419943961b6a6b978e9c459b"
+      "source_blob": "e1d9466aa92b1133c429abae16ce0c963c0a9423"
     },
     {
       "path": "research/routing-status.md",

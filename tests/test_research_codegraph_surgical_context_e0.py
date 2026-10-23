@@ -255,6 +255,26 @@ def test_principal_claims_cannot_change_between_selection_and_source_view(monkey
         )
 
 
+def test_owner_catalog_cannot_change_between_selection_and_source_view(monkeypatch):
+    import scripts.research_codegraph_surgical_context_e0 as study
+
+    router, catalog, index = _source()
+    original = study.capture_authorized_agent_tool_surface
+
+    def revoke_owner_field_contract(*args, **kwargs):
+        view = original(*args, **kwargs)
+        catalog.concepts[0].required_fields[0].json_schema["type"] = "boolean"
+        return view
+
+    monkeypatch.setattr(
+        study, "capture_authorized_agent_tool_surface", revoke_owner_field_contract,
+    )
+    with pytest.raises(PolicyViolationError):
+        study.compare_contexts(
+            router, QUERY, principal=READER, catalog=catalog, index=index,
+        )
+
+
 def test_cli_control_covers_paired_arms_and_provenance_without_cost_claim():
     from scripts.research_codegraph_surgical_context_e0 import run_synthetic_controls
 

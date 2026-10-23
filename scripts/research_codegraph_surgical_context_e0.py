@@ -34,6 +34,9 @@ from scripts.research_authorized_agent_tool_surface import (
     _principal_claims_canonical,
     capture_authorized_agent_tool_surface,
 )
+from scripts.research_authorized_concept_fixed5_agent_bridge import (
+    _catalog_content_digest,
+)
 
 
 def _json_bytes(value: dict[str, Any]) -> bytes:
@@ -64,6 +67,11 @@ def compare_contexts(
     authority_witness = router._retrieval_authority_witness()
     policy_receipt = _authorization_policy_receipt(router.authorization_policy)
     principal_claims = _principal_claims_canonical(principal)
+    try:
+        NativeConceptCatalog.model_validate(catalog.model_dump(mode="python"), strict=True)
+        catalog_receipt = _catalog_content_digest(catalog)
+    except (TypeError, ValueError, OverflowError, AttributeError) as exc:
+        raise PolicyViolationError("cannot attest approved concept catalog") from exc
 
     def assert_scope_unchanged() -> None:
         router._check_retrieval_authority_witness(authority_witness)
@@ -71,6 +79,13 @@ def compare_contexts(
             policy_receipt, _authorization_policy_receipt(router.authorization_policy),
         ) or _principal_claims_canonical(principal) != principal_claims:
             raise PolicyViolationError("graph/source authorization scope changed")
+        try:
+            NativeConceptCatalog.model_validate(catalog.model_dump(mode="python"), strict=True)
+            current_catalog_receipt = _catalog_content_digest(catalog)
+        except (TypeError, ValueError, OverflowError, AttributeError) as exc:
+            raise PolicyViolationError("concept catalog changed during context capture") from exc
+        if not hmac.compare_digest(catalog_receipt, current_catalog_receipt):
+            raise PolicyViolationError("concept catalog changed during context capture")
 
     selection = retrieve_authorized_concept_graph(
         router, query, principal=principal, catalog=catalog, index=index, k=5,
