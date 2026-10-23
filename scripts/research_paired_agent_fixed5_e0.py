@@ -7,6 +7,7 @@ The old #432 statistic implementation is reused without mutating its scores.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import re
@@ -37,6 +38,10 @@ OBSERVED = frozenset({
 })
 COUNTS = ("input_tokens", "tool_schema_tokens", "tool_call_count")
 LATENCIES = ("candidate_selection_latency_ms", "episode_wall_latency_ms")
+TRACE_RECEIPTS = (
+    "split_sha256", "model_revision_sha256",
+    "model_runtime_sha256", "hardware_sha256",
+)
 
 
 def _digest(value: Any, name: str, *, size: int = 64) -> str:
@@ -114,7 +119,15 @@ def _validate_run(
     rows = run.get("rows")
     if type(rows) is not list or len(rows) != len(tasks):
         raise ValueError(f"{arm}: incomplete or oversampled paired task cohort")
+    expected_receipts = {
+        "split_sha256": identity["split_sha256"],
+        **{
+            f"{key}_sha256": hashlib.sha256(identity[key].encode("utf-8")).hexdigest()
+            for key in ("model_revision", "model_runtime", "hardware")
+        },
+    }
     by_id: dict[str, dict[str, Any]] = {}
+    receipt_presence: set[bool] = set()
     for row in rows:
         if (
             type(row) is not dict
@@ -128,6 +141,13 @@ def _validate_run(
             or row["seed"] != identity["seed"]
         ):
             raise ValueError(f"{arm}: unsafe or mismatched E0 trace")
+        present = any(name in row for name in TRACE_RECEIPTS)
+        receipt_presence.add(present)
+        if present and any(
+            row.get(name) != value or type(row.get(name)) is not str
+            for name, value in expected_receipts.items()
+        ):
+            raise ValueError(f"{arm}: E0 trace cohort provenance drift")
         ident = _digest(row.get("task_hmac_sha256"), "task_hmac_sha256")
         if ident not in tasks or ident in by_id:
             raise ValueError(f"{arm}: unknown or duplicate paired task")
@@ -166,6 +186,8 @@ def _validate_run(
         ) != 0:
             raise ValueError(f"{arm}: unauthorized destructive execution: STOP")
         by_id[ident] = row
+    if len(receipt_presence) > 1:
+        raise ValueError(f"{arm}: mixed E0 trace receipt versions")
     if set(by_id) != set(tasks):
         raise ValueError(f"{arm}: tasks not paired to manifest")
     return by_id
@@ -187,6 +209,12 @@ def aggregate_paired_e0(
         arm: _validate_run(arm, runs[arm], identity, tasks)
         for arm in ARMS
     }
+    if len({
+        "split_sha256" in row
+        for arm_rows in rows_by_arm.values()
+        for row in arm_rows.values()
+    }) > 1:
+        raise ValueError("paired arms mix E0 trace receipt versions")
     corpus = {"tasks": [
         {
             "semantic_task_id": ident,
