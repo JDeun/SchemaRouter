@@ -24,6 +24,7 @@ from schemarouter import (
     retrieve_paper_field_coverage,
 )
 from schemarouter.adapters import tool_from_mcp, tool_from_openapi
+from schemarouter.adapters.optimade import _tool_from_discovery
 from schemarouter.errors import PolicyViolationError
 
 ACTOR = PrincipalContext(subject="analyst", roles=("analyst",))
@@ -253,3 +254,108 @@ def test_policy_replacement_during_current_original_source_check_fails_closed(mo
             router, ALIASES[0], principal=ACTOR,
             catalog=_catalog(), index=_index(router),
         )
+
+
+OPTIMADE_ALIASES = (
+    "structure formula and volume",
+    "구조의 화학식과 부피",
+    "構造の化学式と体積",
+)
+
+
+def _optimade_catalog(*, unit="angstrom^3", formula_type="string"):
+    return NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="materials.formula_volume",
+        aliases=OPTIMADE_ALIASES,
+        required_fields=(
+            CapabilityFieldContract(
+                semantic_id="materials.formula",
+                json_schema={"type": formula_type},
+            ),
+            CapabilityFieldContract(
+                semantic_id="materials.volume",
+                json_schema={"type": "number"}, unit=unit,
+            ),
+        ),
+        source_type="optimade", license="locally-reviewed",
+    ),))
+
+
+def _optimade():
+    """Use the actual OPTIMADE discovery converter, not a made-up ToolSpec."""
+    tool = _tool_from_discovery(
+        name="materials", namespace=None,
+        versioned_base_url="https://materials.example.invalid/v1",
+        base_info={"api_version": "1.2.0"},
+        entries={"structures": {"properties": {
+            "chemical_formula_reduced": {"type": "string"},
+            "volume": {"type": "number", "x-optimade-unit": "angstrom^3"},
+        }}}, skipped=[],
+    )
+    # The converter's source metadata is not an authorization or ontology
+    # decision. Only a local source owner can review the license/semantic IDs.
+    tool.license = "locally-reviewed"
+    for endpoint in tool.endpoints:
+        for field in endpoint.output_fields:
+            if field.name == "chemical_formula_reduced":
+                field.semantic_id = "materials.formula"
+            elif field.name == "volume":
+                field.semantic_id = "materials.volume"
+    return tool
+
+
+def _optimade_router(*, hidden_volume=False):
+    data_rules = (DataScopeRule(
+        operation="materials.search_structures", roles_any=("analyst",),
+        hidden_fields=("volume",),
+    ),) if hidden_volume else ()
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="materials.*", roles_any=("analyst",),
+        ),),
+        data_rules=data_rules,
+    ))
+    router.add_tool(_optimade())
+    return router
+
+
+@pytest.mark.parametrize("query", OPTIMADE_ALIASES)
+def test_optimade_native_search_and_get_require_explicit_argument_policy(query):
+    router = _optimade_router()
+    tool = router.registry.get("materials")
+    assert any(not param.required for param in tool.endpoint("search_structures").parameters)
+    assert tool.endpoint("get_structures").parameters[0].required is True
+    result = retrieve_paper_field_coverage(
+        router, query, principal=ACTOR,
+        catalog=_optimade_catalog(), index=_index(router),
+    )
+    # The paper P1 proof only permits input-free native roots. Search's
+    # optional filter is not an owner-approved concrete argument; treating
+    # it as empty risks unbounded data fetch. Get requires an ID. P2 #1560
+    # must bind/approve either path explicitly before a ToolCall is offered.
+    assert result.status == "no_proven_hit"
+    assert result.alternatives == ()
+    assert not result.executable_authority
+
+
+@pytest.mark.parametrize("catalog", [
+    _optimade_catalog(unit="eV"),
+    _optimade_catalog(formula_type="integer"),
+])
+def test_optimade_native_incompatible_unit_or_shape_does_not_count(catalog):
+    router = _optimade_router()
+    assert retrieve_paper_field_coverage(
+        router, OPTIMADE_ALIASES[0], principal=ACTOR,
+        catalog=catalog, index=_index(router),
+    ).status == "no_proven_hit"
+
+
+def test_optimade_native_hidden_volume_abstains():
+    router = _optimade_router(hidden_volume=True)
+    result = retrieve_paper_field_coverage(
+        router, OPTIMADE_ALIASES[0], principal=ACTOR,
+        catalog=_optimade_catalog(), index=_index(router),
+    )
+    assert result.status == "no_proven_hit"
+    assert result.alternatives == ()

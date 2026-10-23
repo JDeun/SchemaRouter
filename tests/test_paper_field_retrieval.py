@@ -139,6 +139,46 @@ def test_changed_registry_invalidates_attested_graph():
         )
 
 
+def test_shared_root_revoked_during_final_projection_cannot_be_published(monkeypatch):
+    """A later leaf's health callback may revoke an earlier verified root."""
+    router = build_fixture(500)
+    index = _index(router)
+    root_is_healthy = True
+    fork_proof_finished = False
+    original_lookup = NativeSchemaGraphIndex.lookup_shared_root_forks
+    original_view = router._data_scope_endpoint_view
+
+    def live_health(tool, _endpoint):
+        return tool.name != "fork_origin" or root_is_healthy
+
+    def observe_fork_proof(self, *args, **kwargs):
+        nonlocal fork_proof_finished
+        result = original_lookup(self, *args, **kwargs)
+        fork_proof_finished = True
+        return result
+
+    def revoke_root_after_right_leaf(principal, tool, endpoint):
+        nonlocal root_is_healthy
+        scoped = original_view(principal, tool, endpoint)
+        if fork_proof_finished and tool.name == "fork_owner":
+            root_is_healthy = False
+        return scoped
+
+    router.planner.availability_predicate = live_health
+    monkeypatch.setattr(
+        NativeSchemaGraphIndex, "lookup_shared_root_forks", observe_fork_proof,
+    )
+    monkeypatch.setattr(router, "_data_scope_endpoint_view", revoke_root_after_right_leaf)
+
+    with pytest.raises(PolicyViolationError, match="source eligibility changed"):
+        retrieve_paper_field_coverage(
+            router, ALIASES[0], principal=ACTOR,
+            catalog=_catalog(), index=index,
+        )
+    assert fork_proof_finished
+    assert not root_is_healthy
+
+
 def test_one_route_covers_complete_field_group_before_k5():
     router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(

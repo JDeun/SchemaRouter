@@ -125,3 +125,38 @@ authored #1346 source-disjoint E2 stays **BLOCKED_EXTERNAL**.
 The full protected CI/code-scan on the code HEAD had NOT
 been declared complete at this checkpoint; check its latest
 SHA-specific conclusion before merge/release claims.
+
+## P1 late source-withdrawal regression — 2026-10-24 continuation
+
+Continuation from Draft PR #1746's `30106715b4663c09199ce4ca44b553ad24085650`
+head, against the original-paper source-attested opt-in path only.
+
+- **Observed red test before the fix:** after a verified two-consumer fork,
+  the final projection's last consumer health/scope callback withdraws its
+  previously inspected original producer. `retrieve_paper_field_coverage`
+  previously returned `complete`, because the initial per-route projection
+  lacked a final whole-menu availability/scope pass. The failing regression
+  is `test_shared_root_revoked_during_final_projection_cannot_be_published`.
+- **Fix:** reuse one source-visible projection function for every original
+  route, then re-evaluate **all** original routes after the first pass,
+  comparing exact field projection, typed semantic hits, identifiers,
+  fingerprints and route bindings. A later health/scope withdrawal aborts
+  with generic `PolicyViolationError`, never a partial menu or private
+  provider callback exception. This is an additional observation, **not an
+  atomic cross-provider transaction** or revocation guarantee after return.
+- **Actual adapter boundary:** added local converter-native OPTIMADE discovery
+  cases with host-assigned semantic IDs and EN/KO/JA concept aliases.
+  The present P1 API must abstain: native `search_structures` has optional
+  query parameters, and `get_structures` requires a bound `id`. These
+  cannot be silently converted into an input-free direct `ToolCall`, nor can
+  a remote OPTIMADE `x-optimade-unit` extension be taken as a host-approved
+  type/unit coercion. A future #1560 explicit host-argument plan is needed.
+- **Local focused verification:** 66 tests passed across the four original
+  paper/native regression suites, and repository-wide Ruff passed, after
+  the red→green cycle. This is local E0 only. Full-suite/CI/published SHA
+  must be recorded from their own results; no independent E2 is asserted.
+
+**Next:** close the exact-head CI loop after publishing; add source-owner
+reviewed optional/required argument binding and OPTIMADE numeric-unit
+canonicalization only under a separately verified trusted contract in
+#1560; preserve strict K5, default routing and #1356 release HOLD.

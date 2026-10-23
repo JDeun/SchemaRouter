@@ -167,6 +167,67 @@ def retrieve_paper_field_coverage(
     if permitted is None:
         raise PolicyViolationError("original source visibility missing")
 
+    # Reuse the SAME current-source projection in the final safety pass.
+    # Live health/data scope can change without an endpoint fingerprint or
+    # callable identity change while another branch is being inspected.
+    def project_route(route_id, pinned, bindings) -> PaperFieldRoute:
+        location = index.field_index.route_locations.get(route_id)
+        if location is None or route_id not in pinned:
+            raise PolicyViolationError("required-field route not in original index")
+        tool = router.registry.get(location[0])
+        endpoint = tool.endpoint(location[1])
+        if (
+            (tool.fingerprint, endpoint.fingerprint) != pinned[route_id]
+            or index.field_index.route_fingerprints.get(route_id) != pinned[route_id]
+            or not permitted(tool, endpoint)
+            or endpoint.read_only is not True
+            or endpoint.destructive is True
+        ):
+            raise PolicyViolationError("original required-field route invalid")
+        availability = router.planner.availability_predicate
+        if availability is not None and not availability(tool, endpoint):
+            raise PolicyViolationError("original required-field route revoked")
+        visible = router._data_scope_endpoint_view(principal, tool, endpoint)
+        if visible is None:
+            raise PolicyViolationError("original required-field route hidden")
+        matched = {
+            f.name for f in visible.output_fields
+            if any(
+                _complete_fields([f], (demand,))
+                for demand in group.required_fields
+            )
+        }
+        semantic_hits = {
+            demand.semantic_id for demand in group.required_fields
+            if _complete_fields(visible.output_fields, (demand,))
+        }
+        required_source = {
+            source_field
+            for pairs in bindings.values()
+            for _parameter, from_route, source_field in pairs
+            if from_route == route_id
+        }
+        visible_names = {field.name for field in visible.output_fields}
+        if not required_source.issubset(visible_names):
+            raise PolicyViolationError("required producer identifier now hidden")
+        selected = tuple(
+            field.name for field in visible.output_fields
+            if field.identifier or field.name in matched
+            or field.name in required_source
+        )
+        if not selected:
+            raise PolicyViolationError("no source-visible required output")
+        return PaperFieldRoute(
+            route_id=route_id,
+            tool_fingerprint=tool.fingerprint,
+            endpoint_fingerprint=endpoint.fingerprint,
+            output_fields=selected,
+            covered_semantic_ids=tuple(
+                demand for demand in required if demand in semantic_hits
+            ),
+            input_bindings=tuple(bindings.get(route_id, ())),
+        )
+
     # Pre-publication projection is computed from CURRENT scoped originals,
     # not public aliases, planner score or detached benchmark fixture gold.
     projected_alternatives: list[PaperFieldAlternative] = []
@@ -176,72 +237,33 @@ def retrieve_paper_field_coverage(
             raise PolicyViolationError("duplicate original route in required-field set")
         pinned = {route: (tool_fp, endpoint_fp)
                   for route, tool_fp, endpoint_fp in fingerprints}
-        routes: list[PaperFieldRoute] = []
-        covered: set[str] = set()
-        for route_id in route_ids:
-            location = index.field_index.route_locations.get(route_id)
-            if location is None or route_id not in pinned:
-                raise PolicyViolationError("required-field route not in original index")
-            tool = router.registry.get(location[0])
-            endpoint = tool.endpoint(location[1])
-            if (
-                (tool.fingerprint, endpoint.fingerprint) != pinned[route_id]
-                or index.field_index.route_fingerprints.get(route_id) != pinned[route_id]
-                or not permitted(tool, endpoint)
-                or endpoint.read_only is not True
-                or endpoint.destructive is True
-            ):
-                raise PolicyViolationError("original required-field route invalid")
-            availability = router.planner.availability_predicate
-            if availability is not None and not availability(tool, endpoint):
-                raise PolicyViolationError("original required-field route revoked")
-            visible = router._data_scope_endpoint_view(principal, tool, endpoint)
-            if visible is None:
-                raise PolicyViolationError("original required-field route hidden")
-            matched = {
-                f.name for f in visible.output_fields
-                if any(
-                    _complete_fields([f], (demand,))
-                    for demand in group.required_fields
-                )
-            }
-            semantic_hits = {
-                demand.semantic_id for demand in group.required_fields
-                if _complete_fields(visible.output_fields, (demand,))
-            }
-            covered.update(semantic_hits)
-            required_source = {
-                source_field
-                for pairs in bindings.values()
-                for _parameter, from_route, source_field in pairs
-                if from_route == route_id
-            }
-            visible_names = {field.name for field in visible.output_fields}
-            if not required_source.issubset(visible_names):
-                raise PolicyViolationError("required producer identifier now hidden")
-            selected = tuple(
-                field.name for field in visible.output_fields
-                if field.identifier or field.name in matched
-                or field.name in required_source
-            )
-            if not selected:
-                raise PolicyViolationError("no source-visible required output")
-            routes.append(PaperFieldRoute(
-                route_id=route_id,
-                tool_fingerprint=tool.fingerprint,
-                endpoint_fingerprint=endpoint.fingerprint,
-                output_fields=selected,
-                covered_semantic_ids=tuple(
-                    demand for demand in required if demand in semantic_hits
-                ),
-                input_bindings=tuple(bindings.get(route_id, ())),
-            ))
+        routes = [project_route(route_id, pinned, bindings) for route_id in route_ids]
+        covered = {
+            semantic_id for route in routes for semantic_id in route.covered_semantic_ids
+        }
         if set(required) != covered:
             raise PolicyViolationError("incomplete source-visible required field union")
         projected_alternatives.append(PaperFieldAlternative(
             routes=tuple(routes), required_semantic_ids=required,
         ))
         published_routes.update(route_ids)
+
+    # This is a second observation, not an atomic transaction with the
+    # provider. Abort rather than disclose a stale route/field projection.
+    try:
+        for (_ids, fingerprints, bindings), alternative in zip(
+            raw_alternatives, projected_alternatives, strict=True,
+        ):
+            pinned = {route: (tool_fp, endpoint_fp)
+                      for route, tool_fp, endpoint_fp in fingerprints}
+            for receipt in alternative.routes:
+                if project_route(receipt.route_id, pinned, bindings) != receipt:
+                    raise PolicyViolationError("original required-field projection changed")
+    except Exception:
+        # Host callbacks can raise messages containing private route details.
+        raise PolicyViolationError(
+            "original required-field source eligibility changed"
+        ) from None
 
     # A route repeated by alternatives still consumes only one budget slot.
     # No lexicographic truncation of valid alternatives or backfilling.
