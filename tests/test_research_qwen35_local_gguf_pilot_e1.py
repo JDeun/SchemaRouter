@@ -31,7 +31,7 @@ def test_prior_original_host_calls_become_openai_tool_history_without_repair():
     native = pilot._to_native_chat(rows)
     assert "native Qwen3.5" in native[0]["content"]
     assert native[2]["tool_calls"][0]["function"] == {
-        "name": "contacts__read", "arguments": "{}",
+        "name": "contacts__read", "arguments": {},
     }
     assert native[3]["tool_call_id"] == native[2]["tool_calls"][0]["id"]
     assert native[3]["content"] == rows[3]["content"]
@@ -194,3 +194,44 @@ async def test_qwen35_pilot_refuses_unregistered_source_revision_or_variant(tmp_
             gguf_path=path, source_repository="unreviewed/other",
             source_revision="c" * 40,
         )
+
+
+def test_qwen35_template_items_filter_receives_native_argument_mapping():
+    # Original upstream Qwen3.5 chat template loops over tool-call
+    # function.arguments|items; a JSON STRING triggers TypeError.
+    from jinja2 import Environment
+
+    payload = pilot._to_native_chat([
+        {"role": "user", "content": "query"},
+        {"role": "assistant", "content": CASE},
+        {"role": "tool", "content": '{"status":"ok","case_state":"ready"}'},
+    ])
+    template = Environment().from_string(
+        "{% for tool_call in row.tool_calls %}"
+        "{% if tool_call.function is defined %}"
+        "{% set tool_call = tool_call.function %}"
+        "{% endif %}"
+        "{% for key, value in tool_call.arguments|items %}"
+        "{{ key }}={{ value }};"
+        "{% endfor %}"
+        "{% endfor %}"
+    )
+    assert template.render(row=payload[1]) == (
+        "contact_id=contact-4;region_id=region-9;"
+    )
+
+
+def test_qwen35_template_items_handles_zero_argument_root():
+    from jinja2 import Environment
+
+    payload = pilot._to_native_chat([
+        {"role": "user", "content": "query"},
+        {"role": "assistant", "content": ROOT},
+        {"role": "tool", "content": '{"status":"ok"}'},
+    ])
+    result = Environment().from_string(
+        "{% for tool_call in row.tool_calls %}"
+        "{% for key, value in tool_call.function.arguments|items %}"
+        "{{ key }}{% endfor %}{% endfor %}"
+    ).render(row=payload[1])
+    assert result == ""
