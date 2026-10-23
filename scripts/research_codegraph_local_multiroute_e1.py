@@ -43,6 +43,7 @@ from scripts.research_authorized_agent_tool_surface import (
 )
 from scripts.research_codegraph_action_shape_e1 import structural_action_label
 from scripts.research_codegraph_bare_json_adapter_e1 import parse_native_action_optin
+from scripts.research_codegraph_final_answer_diagnostics_e1 import classify_strict_final_e1
 from scripts.research_codegraph_graph_frontier_e1 import (
     FRONTIER_ARM,
     run_graph_frontier_model_episode,
@@ -311,6 +312,7 @@ async def _baseline_local_arm(
     action_shape_labels: list[str] = []
     bare_json_strict_parser_acceptances = 0
     verified_continuation_cues = 0
+    final_outcome_category = "no_complete_final"
     for _ in range(TURN_BUDGET):
         view.assert_source_unchanged()
         turns += 1
@@ -346,11 +348,19 @@ async def _baseline_local_arm(
             bare_json_strict_parser_acceptances += int(accepted_bare)
         except (ValueError, TypeError, OverflowError):
             reason = "malformed_model_action"
+            if len(calls) == 2:
+                final_outcome_category = "malformed_after_two_source_calls"
             break
         if kind == "final":
             reason = "completed_final" if len(calls) == 2 else "premature_final"
             if len(calls) == 2:
                 correct = _strict_final(payload, observations[ROUTES[1]])
+                if diagnose_model_actions:
+                    final_outcome_category = classify_strict_final_e1(
+                        payload, observations[ROUTES[1]],
+                    )
+            else:
+                final_outcome_category = "premature_final"
             break
         route_id, arguments = payload["route"], payload["arguments"]
         if (
@@ -358,6 +368,8 @@ async def _baseline_local_arm(
             or route_id not in offered
         ):
             reason = "unoffered_or_out_of_order_route"
+            if len(calls) == 2:
+                final_outcome_category = "extra_native_call_after_two_source_calls"
             break
         expected = {} if not calls else {
             field: observations[ROUTES[0]][field]
@@ -410,7 +422,8 @@ async def _baseline_local_arm(
         "tool_schema_tokens": schema_tokens if all_receipts else None,
         "model_output_tokens": output_tokens if all_receipts else None,
         "total_model_tokens": input_tokens + output_tokens if all_receipts else None,
-        **({"action_structure_labels": action_shape_labels}
+        **({"action_structure_labels": action_shape_labels,
+            "final_outcome_category": final_outcome_category}
            if diagnose_model_actions else {}),
         **({"bare_json_strict_parser_acceptances": bare_json_strict_parser_acceptances}
            if experimental_bare_native_json else {}),
