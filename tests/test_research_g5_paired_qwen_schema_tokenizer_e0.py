@@ -72,7 +72,7 @@ def test_model_menu_rejects_revoked_native_route_and_missing_source():
     )
     with pytest.raises(ValueError, match="unapproved"):
         _original_public_menu(router, ("fork_owner.read",))
-    with pytest.raises(Exception):
+    with pytest.raises(KeyError):
         _original_public_menu(router, ("unregistered.read",))
 
 
