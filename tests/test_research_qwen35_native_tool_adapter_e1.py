@@ -160,3 +160,24 @@ def test_qwen35_optional_preamble_cannot_authorize_unoffered_route():
             "<tool_call><function=admin__delete></function></tool_call>",
             offered_tools=TOOLS,
         )
+
+
+def test_native_adapter_drops_optional_prose_but_keeps_offered_action():
+    class PrefixAgent:
+        def generate(self, messages, tools):
+            return {
+                "text": "First query the original source.\\n" + NEXT,
+                "context_overflow": False,
+                "latency_ms": 1.0, "input_tokens": 45,
+                "tool_tokens": 10, "output_tokens": 19,
+            }
+
+    row = Qwen35XMLAdapter(PrefixAgent()).generate(
+        [{"role": "user", "content": "task"}], TOOLS,
+    )
+    assert row["output_tokens"] == 19
+    assert parse_one_model_action(row["text"]) == (
+        "tool", {"route": "cases.read", "arguments": {
+            "contact_id": "contact-4", "region_id": "region-9",
+        }},
+    )
