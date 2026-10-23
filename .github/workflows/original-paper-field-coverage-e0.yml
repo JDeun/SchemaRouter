@@ -7,6 +7,7 @@ on:
       - "src/schemarouter/__init__.py"
       - "tests/test_paper_field_retrieval.py"
       - "tests/test_paper_field_real_adapters.py"
+      - "tests/test_native_graph_shared_root_forks.py"
       - "research/autoresearch/paper-field-union-implementation-e0.md"
       - ".github/workflows/original-paper-field-coverage-e0.yml"
   workflow_dispatch:
@@ -30,4 +31,4 @@ jobs:
       - name: Source-coded original Algorithm 1 required-field union tests
         run: |
           ruff check src/schemarouter/paper_field_retrieval.py tests/test_paper_field_retrieval.py tests/test_paper_field_real_adapters.py src/schemarouter/__init__.py
-          python -m pytest -q tests/test_paper_field_retrieval.py tests/test_paper_field_real_adapters.py tests/test_native_field_group_retrieval.py
+          python -m pytest -q tests/test_paper_field_retrieval.py tests/test_paper_field_real_adapters.py tests/test_native_graph_shared_root_forks.py tests/test_native_field_group_retrieval.py
