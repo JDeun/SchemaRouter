@@ -27,6 +27,13 @@ Only these **fixed, non-content labels** may appear under
 
 - Final without a tool request (distinguishes before schema, after schema,
   after native call), bare JSON final or bare JSON resembling a tool action.
+- A bare JSON action which matches the **currently offered reserved schema
+  request** in shape (exact two-key envelope, unique bounded string route IDs)
+  is now distinguished from a generic bare JSON tool-like object. The
+  separate `bare_json_offered_schema_request_shape` label is still **not**
+  accepted by the strict parser and does not prove source authorization,
+  route validity or successful materialization. Unoffered, duplicate or
+  malformed requests retain the generic diagnostic label.
 - Tool envelope incomplete, multiple calls, unexpected ChatML wrapping,
   invalid or duplicate-key JSON, non-object payload, extra envelope fields.
 - Malformed/unoffered native name, arguments not an object, non-scalar
@@ -62,6 +69,18 @@ offered native action in an alternate model envelope, preregister a **separate**
 opt-in grammar variant with exact bound semantic equivalence, independent
 strict-parser tests and original authorization checks. No automatic grammar
 normalization is authorized by this diagnostic stage.
+
+### 2026-10-23 surgical follow-up: separate the first-turn shape hypothesis
+
+The successful source-only G5 continuation matrix #39939527677 still saw
+`bare_json_tool_action` as the first surgical action in Qwen3-1.7B KO,
+`schema_requests=0` and `actual_source_calls=0`. That broad category did
+not say whether the bare JSON actually named the only offered schema
+request with valid bounded arguments. This change refines the label without
+changing the model prompt, action parser, source authority, scorer or any
+native callback. A fresh pinned six-cell matrix is required to establish
+which subtype the real model generated. No surgical success is inferred
+from a shape-only category.
 
 Independent publisher E2 (#1346) remains blocked and v0.18 (#1356) stays
 HARD HOLD. All task success and token-savings promotion claims remain held.

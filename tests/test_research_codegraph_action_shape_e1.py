@@ -19,6 +19,16 @@ SECRET = "TOP_SECRET_DO_NOT_DISCLOSE_E1_98372"
     ('{"case_state":"ready"}', OFFERED, "bare_final_json"),
     ('{"name":"contacts__read","arguments":{}}', OFFERED,
      "bare_json_tool_action"),
+    ('{"name":"research__request_scoped_source_schema",'
+     '"arguments":{"route_ids":["contacts.read","cases.read"]}}',
+     ("research__request_scoped_source_schema",),
+     "bare_json_offered_schema_request_shape"),
+    ('{"name":"research__request_scoped_source_schema",'
+     '"arguments":{"route_ids":["contacts.read","contacts.read"]}}',
+     ("research__request_scoped_source_schema",), "bare_json_tool_action"),
+    ('{"name":"research__request_scoped_source_schema",'
+     '"arguments":{"route_ids":["contacts.read"]}}',
+     OFFERED, "bare_json_tool_action"),
     ('<tool_call>{"name":"contacts__read","arguments":{}}</tool_call>',
      OFFERED, "valid_native_tool_call_shape"),
     ('<tool_call>{"name":"research__request_scoped_source_schema",'

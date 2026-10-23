@@ -3,10 +3,12 @@ name: CodeGraph G5 Verified Source Continuation E1 DEV
 on:
   pull_request:
     paths:
+      - "scripts/research_codegraph_action_shape_e1.py"
       - "scripts/research_codegraph_surgical_agent_e1.py"
       - "scripts/research_codegraph_local_multiroute_e1.py"
       - "scripts/research_codegraph_qwen17_local_e1.py"
       - "tests/test_research_codegraph_surgical_agent_e1.py"
+      - "tests/test_research_codegraph_action_shape_e1.py"
       - "tests/test_research_codegraph_local_multiroute_e1.py"
       - ".github/workflows/codegraph-g5-verified-continuation-e1-dev.yml"
   workflow_dispatch:
@@ -44,8 +46,8 @@ jobs:
           python -m pip install ".[mcp]" "transformers>=4.51,<5" "huggingface-hub>=0.30,<2" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1"
       - name: Prove strict offered-only non-executing parser and original source contract
         run: |
-          ruff check scripts/research_codegraph_surgical_agent_e1.py tests/test_research_codegraph_surgical_agent_e1.py scripts/research_codegraph_local_multiroute_e1.py tests/test_research_codegraph_local_multiroute_e1.py
-          python -m pytest -q tests/test_research_codegraph_surgical_agent_e1.py tests/test_research_codegraph_local_multiroute_e1.py
+          ruff check scripts/research_codegraph_action_shape_e1.py tests/test_research_codegraph_action_shape_e1.py scripts/research_codegraph_surgical_agent_e1.py tests/test_research_codegraph_surgical_agent_e1.py scripts/research_codegraph_local_multiroute_e1.py tests/test_research_codegraph_local_multiroute_e1.py
+          python -m pytest -q tests/test_research_codegraph_action_shape_e1.py tests/test_research_codegraph_surgical_agent_e1.py tests/test_research_codegraph_local_multiroute_e1.py
       - name: Confirm bounded RAM and model cache disk
         run: |
           python - <<'PY'
