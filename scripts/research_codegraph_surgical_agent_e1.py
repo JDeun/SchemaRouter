@@ -65,6 +65,18 @@ SINGLE_STEP_PROTOCOL_E1 = (
     "operations are complete. Never infer tool results or arguments."
 )
 
+# Separate model-only protocol hypothesis informed by real #1732 mismatch
+# categories. Does not introduce a host oracle, route, argument or grant.
+GRAPH_PATH_ORDER_CUE_E1 = (
+    "The verified graph reference has route_sets, each with route_ids in "
+    "dependency execution order. Before making any original native call, "
+    "select a verified complete path and call its first producer route. "
+    "Only after the host returns an actual verified observation may you "
+    "call that path's second consumer route, using arguments derived from "
+    "that observation. Never call a later path route first, and never "
+    "invent source arguments or treat graph references as execution grants."
+)
+
 _SYSTEM_PROMPT = (
     "The graph reference contains only authorization-scoped path references; "
     "it is not a tool schema or an execution grant. "
@@ -197,6 +209,7 @@ async def run_surgical_model_episode(
     diagnose_model_actions: bool = False,
     experimental_single_step_prompt: bool = False,
     experimental_bare_schema_request: bool = False,
+    experimental_graph_path_order_prompt: bool = False,
 ) -> dict[str, Any]:
     """Measure schema requests and actual original invocations separately.
 
@@ -211,6 +224,13 @@ async def run_surgical_model_episode(
         raise ValueError("single-step prompt experiment must be boolean")
     if type(experimental_bare_schema_request) is not bool:
         raise ValueError("bare schema request experiment must be boolean")
+    if type(experimental_graph_path_order_prompt) is not bool or (
+        experimental_graph_path_order_prompt and (
+            not experimental_single_step_prompt
+            or not experimental_bare_schema_request
+        )
+    ):
+        raise ValueError("graph path order requires the paired surgical E1 protocol")
     if type(host_context) is not SurgicalHostContext:
         raise ValueError("trusted surgical host context required")
     if type(host_context.final_response_instruction) is not str:
@@ -223,6 +243,8 @@ async def run_surgical_model_episode(
             _SYSTEM_PROMPT + "\n" + host_context.final_response_instruction
             + ("\n" + SINGLE_STEP_PROTOCOL_E1
                if experimental_single_step_prompt else "")
+            + ("\n" + GRAPH_PATH_ORDER_CUE_E1
+               if experimental_graph_path_order_prompt else "")
         )},
         {"role": "user", "content": episode.original_query + "\n" + json.dumps(
             initial_reference, ensure_ascii=False, sort_keys=True, allow_nan=False,

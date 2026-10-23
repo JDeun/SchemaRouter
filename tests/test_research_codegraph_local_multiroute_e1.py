@@ -118,6 +118,61 @@ async def test_bare_schema_treatment_rejects_mixed_or_unsafe_cohorts(
         )
 
 
+@pytest.mark.asyncio
+async def test_graph_path_order_cue_affects_only_surgical_system_prompt():
+    class RecordingAgent(BareSchemaOnlyAgent):
+        def __init__(self):
+            super().__init__()
+            self.system_messages = []
+
+        def generate(self, messages, tools):
+            self.system_messages.append(messages[0]["content"])
+            return super().generate(messages, tools)
+
+    original_agent, treated_agent = RecordingAgent(), RecordingAgent()
+    original = await local.run_local_multiroute_codegraph_e1(
+        original_agent, language="ja", catalog_size=4,
+        experimental_single_step_prompt=True,
+        experimental_bare_schema_request=True,
+    )
+    treated = await local.run_local_multiroute_codegraph_e1(
+        treated_agent, language="ja", catalog_size=4,
+        experimental_single_step_prompt=True,
+        experimental_bare_schema_request=True,
+        experimental_graph_path_order_prompt=True,
+    )
+    assert original["outcomes"] == treated["outcomes"]
+    assert treated["graph_path_order_treatment"] == "STATIC_G5_DEPENDENCY_ORDER_CUE"
+    assert "graph_path_order_treatment" not in original
+    assert len(original_agent.system_messages) == len(treated_agent.system_messages)
+    assert original_agent.system_messages[:7] == treated_agent.system_messages[:7]
+    assert treated_agent.system_messages[-1] != original_agent.system_messages[-1]
+    assert "route_sets" in treated_agent.system_messages[-1]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("size", "single", "schema", "bare", "cue", "order"), (
+    (12, True, True, False, False, True),
+    (4, False, True, False, False, True),
+    (4, True, False, False, False, True),
+    (4, True, True, True, False, True),
+    (4, True, True, False, True, True),
+    (4, True, True, False, False, 1),
+))
+async def test_graph_path_order_cue_rejects_unsafe_or_mixed_cohorts(
+    size, single, schema, bare, cue, order,
+):
+    with pytest.raises(ValueError, match="graph path order"):
+        await local.run_local_multiroute_codegraph_e1(
+            BareSchemaOnlyAgent(), language="en", catalog_size=size,
+            experimental_single_step_prompt=single,
+            experimental_bare_schema_request=schema,
+            experimental_bare_native_json=bare,
+            experimental_g5_verified_continuation=cue,
+            experimental_graph_path_order_prompt=order,
+        )
+
+
 def test_fixture_registers_at_least_ten_real_read_only_host_routes():
     source = local.build_local_multiroute_source(language="en")
     tools = source.router.registry.tools()

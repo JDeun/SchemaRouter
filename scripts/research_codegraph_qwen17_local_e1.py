@@ -35,6 +35,7 @@ async def evaluate_candidate(
     experimental_single_step_prompt: bool = False,
     experimental_g5_verified_continuation: bool = False,
     experimental_bare_schema_request: bool = False,
+    experimental_graph_path_order_prompt: bool = False,
 ) -> dict:
     """Run one local synthetic task under genuine four-arm K5 constraints."""
     if type(agent) is not LocalQwen17BRealAgent:
@@ -50,6 +51,8 @@ async def evaluate_candidate(
         optional["experimental_g5_verified_continuation"] = True
     if experimental_bare_schema_request:
         optional["experimental_bare_schema_request"] = True
+    if experimental_graph_path_order_prompt:
+        optional["experimental_graph_path_order_prompt"] = True
     report = await run_local_multiroute_codegraph_e1(
         agent, language=language, condition="joined", catalog_size=4,
         **optional,
@@ -85,6 +88,7 @@ def main() -> None:
     parser.add_argument("--experimental-single-step-prompt", action="store_true")
     parser.add_argument("--experimental-g5-verified-continuation", action="store_true")
     parser.add_argument("--experimental-bare-schema-request", action="store_true")
+    parser.add_argument("--experimental-graph-path-order-prompt", action="store_true")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     # This class validates its independently pinned 40-character Hugging Face
@@ -97,6 +101,7 @@ def main() -> None:
         experimental_single_step_prompt=args.experimental_single_step_prompt,
         experimental_g5_verified_continuation=args.experimental_g5_verified_continuation,
         experimental_bare_schema_request=args.experimental_bare_schema_request,
+        experimental_graph_path_order_prompt=args.experimental_graph_path_order_prompt,
     ))
     report["source_revision"] = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True,

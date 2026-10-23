@@ -424,6 +424,7 @@ async def run_local_multiroute_codegraph_e1(
     experimental_single_step_prompt: bool = False,
     experimental_g5_verified_continuation: bool = False,
     experimental_bare_schema_request: bool = False,
+    experimental_graph_path_order_prompt: bool = False,
 ) -> dict[str, Any]:
     """12-route scaling negative OR separate true four-route comparable local E1."""
     if type(experimental_bare_native_json) is not bool:
@@ -434,6 +435,17 @@ async def run_local_multiroute_codegraph_e1(
         raise ValueError("verified continuation flag must be boolean")
     if type(experimental_bare_schema_request) is not bool:
         raise ValueError("bare schema request flag must be boolean")
+    if type(experimental_graph_path_order_prompt) is not bool or (
+        experimental_graph_path_order_prompt and (
+            not experimental_bare_schema_request
+            or not experimental_single_step_prompt
+            or catalog_size != 4
+            or condition != "joined"
+            or experimental_bare_native_json
+            or experimental_g5_verified_continuation
+        )
+    ):
+        raise ValueError("graph path order cue requires isolated four-route schema E1")
     if experimental_bare_schema_request and (
         catalog_size != 4
         or condition != "joined"
@@ -488,6 +500,8 @@ async def run_local_multiroute_codegraph_e1(
            if experimental_g5_verified_continuation else {}),
         **({"bare_schema_request_treatment": "STRICT_HOST_OFFERED_SCHEMA_ONLY"}
            if experimental_bare_schema_request else {}),
+        **({"graph_path_order_treatment": "STATIC_G5_DEPENDENCY_ORDER_CUE"}
+           if experimental_graph_path_order_prompt else {}),
     }
     if condition != "joined":
         selection = retrieve_authorized_concept_graph(
@@ -540,6 +554,7 @@ async def run_local_multiroute_codegraph_e1(
                 diagnose_model_actions=diagnose_model_actions,
                 experimental_single_step_prompt=experimental_single_step_prompt,
                 experimental_bare_schema_request=experimental_bare_schema_request,
+                experimental_graph_path_order_prompt=experimental_graph_path_order_prompt,
             )
             row = {
                 **row, "condition": arm,
@@ -598,6 +613,7 @@ def main() -> None:
     parser.add_argument("--experimental-single-step-prompt", action="store_true")
     parser.add_argument("--experimental-g5-verified-continuation", action="store_true")
     parser.add_argument("--experimental-bare-schema-request", action="store_true")
+    parser.add_argument("--experimental-graph-path-order-prompt", action="store_true")
     args = parser.parse_args()
     source = build_local_multiroute_source(
         language=args.language, catalog_size=args.catalog_size,
@@ -611,6 +627,7 @@ def main() -> None:
         experimental_single_step_prompt=args.experimental_single_step_prompt,
         experimental_g5_verified_continuation=args.experimental_g5_verified_continuation,
         experimental_bare_schema_request=args.experimental_bare_schema_request,
+        experimental_graph_path_order_prompt=args.experimental_graph_path_order_prompt,
     ))
     if preflight["status"] == "BLOCKED_MODEL_RUNTIME":
         previous = {key: os.environ.get(key) for key in (
@@ -635,6 +652,9 @@ def main() -> None:
                         args.experimental_g5_verified_continuation
                     ),
                     experimental_bare_schema_request=args.experimental_bare_schema_request,
+                    experimental_graph_path_order_prompt=(
+                        args.experimental_graph_path_order_prompt
+                    ),
                 ))
         finally:
             for key, value in previous.items():
