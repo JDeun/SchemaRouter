@@ -609,7 +609,9 @@ def main() -> None:
                     diagnose_model_actions=args.diagnose_model_actions,
                     experimental_bare_native_json=args.experimental_bare_native_json,
                     experimental_single_step_prompt=args.experimental_single_step_prompt,
-                    experimental_g5_verified_continuation=args.experimental_g5_verified_continuation,
+                    experimental_g5_verified_continuation=(
+                        args.experimental_g5_verified_continuation
+                    ),
                 ))
         finally:
             for key, value in previous.items():
