@@ -1,0 +1,88 @@
+name: Paired G5 Qwen Tokenizer Native Schema E0
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_g5_paired_qwen_schema_tokenizer_e0.py"
+      - "tests/test_research_g5_paired_qwen_schema_tokenizer_e0.py"
+      - "research/autoresearch/g5-paired-qwen-schema-tokenizer-e0.md"
+      - ".github/workflows/research-g5-qwen-schema-tokenizer-e0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-qwen3-tokenizer-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      HF_HUB_DISABLE_PROGRESS_BARS: "1"
+      TOKENIZERS_PARALLELISM: "false"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install native source and pinned tokenizer-only runtime
+        run: |
+          python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1" "transformers==4.57.3"
+      - name: Validate same-source K5 and no unauthorized token measurement
+        run: |
+          ruff check scripts/research_g5_paired_qwen_schema_tokenizer_e0.py tests/test_research_g5_paired_qwen_schema_tokenizer_e0.py
+          python -m pytest -q tests/test_research_g5_paired_qwen_schema_tokenizer_e0.py
+      - name: Measure pinned original Qwen3 tokenizer on all four native catalogs
+        run: |
+          mkdir -p artifacts/g5-qwen-schema-tokens-e0
+          python -m scripts.research_g5_paired_qwen_schema_tokenizer_e0 \
+            --out artifacts/g5-qwen-schema-tokens-e0/result.json
+      - name: Validate only quality-conditioned source menu token receipts
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          report = json.loads(Path("artifacts/g5-qwen-schema-tokens-e0/result.json").read_text())
+          assert report["schema_version"] == "g5-paired-qwen-schema-tokenizer-e0-v1"
+          assert report["tokenizer_repository"] == "Qwen/Qwen3-1.7B"
+          assert report["tokenizer_revision"] == "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e"
+          assert report["transformers_version"] == "4.57.3"
+          assert report["paired_tokenizer_tokens_are_full_agent_cost"] is False
+          assert report["independent_e2_qualified"] is False
+          assert len(report["cases"]) == 4
+          assert sum(len(row["rows"]) for row in report["cases"]) == 36
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as f:
+              f.write("## Actual pinned Qwen3 tokenizer; original source JSON ONLY\n\n")
+              f.write("No model weights, no model prompt/agent output tokens, no external E2.\n\n")
+              f.write("| Base routes | Mixed scope | Both source-complete | G5 schema tokenizer tokens | Lexical schema tokenizer tokens |\n")
+              f.write("|---:|---|---:|---:|---:|\n")
+              for cell in report["cases"]:
+                  assert cell["strict_k"] == 5
+                  assert cell["actual_registered_native_routes"] == cell["base_registered_routes"] + 12
+                  assert cell["model_weights_loaded"] is False
+                  assert cell["original_provider_callbacks"] is False
+                  assert cell["entire_model_prompt_or_completion_tokens_measured"] is False
+                  assert cell["independent_e2_qualified"] is False
+                  assert cell["release_qualified"] is False
+                  assert cell["qualified_paired_cases"] <= len(cell["rows"])
+                  assert all(r["g5_native_schema_json_tokens"] > 0 for r in cell["rows"])
+                  assert all(r["shared_complete_cost_eligible"] == (
+                      r["g5_source_complete"] and r["lexical_source_complete"]
+                  ) for r in cell["rows"])
+                  f.write(
+                      f"| {cell['base_registered_routes']} | {cell['mixed_scope']} | "
+                      f"{cell['qualified_paired_cases']} | "
+                      f"{cell['paired_g5_native_json_tokens']} | "
+                      f"{cell['paired_lexical_native_json_tokens']} |\n"
+                  )
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: g5-qwen3-paired-source-tokenizer-e0-${{ github.run_id }}
+          path: artifacts/g5-qwen-schema-tokens-e0/result.json
+          retention-days: 30
+          if-no-files-found: warn
