@@ -74,3 +74,63 @@ The last one is **not a simultaneous variant**.
 Independent publisher E2 (#1346) remains externally blocked; v0.18
 release (#1356) remains HARD HOLD. No product default or commercial
 provider execution is modified.
+
+## Actual six-cell pinned Linux E1 results (2026-10-23)
+
+[Exact source/model run #39930411562](https://github.com/JDeun/SchemaRouter/actions/runs/39930411562):
+all **six** matrix cells SUCCESS, with separately preserved numeric/label-only
+JSON artifacts `codegraph-single-step-e1-<qwen06|qwen17>-<en|ko|ja>-39930411562`.
+These are the original four source callbacks and the genuine model's
+selected actions, never forced tool calls or injected oracle observations.
+
+| Model checkpoint | Language | FULL full-task | Lexical full-task | G5 full-task | Surgical full-task | Original native calls (FULL / lexical / G5 / surgical) |
+| --- | --- | --- | --- | --- | --- | --- |
+| Qwen3-0.6B | EN | 0/1 | 0/1 | 0/1 | 0/1 | 0 / 0 / 1 / 0 |
+| Qwen3-0.6B | KO | 0/1 | 0/1 | 0/1 | 0/1 | 0 / 0 / 1 / 0 |
+| Qwen3-0.6B | JA | 0/1 | 0/1 | 0/1 | 0/1 | 0 / 0 / 1 / 0 |
+| Qwen3-1.7B | EN | **1/1** | **1/1** | 0/1 | 0/1 | 2 / 2 / 1 / 0 |
+| Qwen3-1.7B | KO | **1/1** | **1/1** | 0/1 | 0/1 | 2 / 2 / 1 / 0 |
+| Qwen3-1.7B | JA | 0/1 | 0/1 | 0/1 | 0/1 | 2 / 2 / 1 / 0 |
+
+### Verification and interpretation
+
+In 1.7B EN and KO the FULL and lexical arms each independently invoked
+the two registered original **read-only** sources in dependency order,
+used the host's actual observations, then generated a final JSON accepted
+by the unchanged strict scorer (`completed_final`, `full_task_complete=true`).
+Their respective original Qwen turns were three and complete model
+input+output token receipts **EN 2,142 / KO 2,145 per successful arm**.
+In 1.7B JA both original native source calls occurred in FULL/lexical,
+but the model's final JSON failed the strict answer oracle despite
+`completed_final`: **native execution alone is not task success**.
+
+For both pinned checkpoints, all three G5 language arms made one
+registered native call and then prematurely finalized; none completed
+the second dependent read. The surgical arm made **zero** original
+source calls in all six model/language cells. The initial surgical
+model action was a non-executable bare JSON-shaped response or final;
+the strict host did not fake a schema request or grant source authority.
+Each 0.6B language cell therefore remained **0/4** completed tasks.
+
+**Scope of the result:** This is a positive, narrowly scoped
+*model-prompt interoperability* observation in a public fixed model,
+not an improvement due to graph indexing or CodeGraph's disclosure.
+There is exactly **one owner-authored synthetic local task per arm
+per language**, and translated tasks are not independent held-out E2
+cases. A meaningful generalization, task success-rate confidence
+interval or production SLO is impossible from this fixture. More
+tokens were generated with the longer prompt and extra turns; it
+would be misleading to compare cost *per successful task* to prior
+zero-success baselines. The larger model checkpoint is a different
+cohort, never pooled with Qwen0.6B. No default or release promotion.
+
+### Follow-up gate
+
+The decisive new blocker for surgical/G5 is **continuation after an
+actual authorized source observation**, not raw graph-index retrieval
+latency. Future protocol experiments should improve proper second
+source call selection and exact final output without injecting
+task gold, changing the original executor or relaxing the existing
+one-tool-per-turn/parser/authorized-input contract. A 12-route FULL
+control remains over the unchanged K5 cap and is not part of this
+four-arm success comparison.
