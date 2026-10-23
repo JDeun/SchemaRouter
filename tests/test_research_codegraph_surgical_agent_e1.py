@@ -404,6 +404,91 @@ async def test_argument_alignment_diagnostics_absent_by_default_and_empty_on_suc
 
 
 @pytest.mark.asyncio
+async def test_graph_path_order_cue_is_model_only_and_cannot_execute_wrong_prefix():
+    from scripts.research_codegraph_surgical_agent_e1 import (
+        GRAPH_PATH_ORDER_CUE_E1,
+        run_surgical_model_episode,
+    )
+
+    _, episode, _, context, seen = _source()
+    treated_agent = ScriptedAgent([SCHEMA, CASE])
+    treated = await run_surgical_model_episode(
+        treated_agent, episode=episode, host_context=context,
+        diagnose_model_actions=True, experimental_single_step_prompt=True,
+        experimental_bare_schema_request=True,
+        experimental_graph_path_order_prompt=True,
+    )
+    assert "route_sets" in GRAPH_PATH_ORDER_CUE_E1
+    assert "first" in GRAPH_PATH_ORDER_CUE_E1
+    assert GRAPH_PATH_ORDER_CUE_E1 in treated_agent.histories[0][0]["content"]
+    assert "contact-4" not in GRAPH_PATH_ORDER_CUE_E1
+    assert "contacts.read" not in GRAPH_PATH_ORDER_CUE_E1
+    assert treated["termination_reason"] == "unbound_source_arguments"
+    assert treated["argument_alignment_labels"] == ["unsupported_bound_path"]
+    assert treated["actual_source_calls"] == len(seen) == 0
+
+    default_agent = ScriptedAgent([SCHEMA, CASE])
+    await run_surgical_model_episode(
+        default_agent, episode=episode, host_context=context,
+    )
+    assert GRAPH_PATH_ORDER_CUE_E1 not in default_agent.histories[0][0]["content"]
+
+
+@pytest.mark.asyncio
+async def test_graph_path_order_cue_preserves_strict_two_hop_valid_execution():
+    from scripts.research_codegraph_surgical_agent_e1 import run_surgical_model_episode
+
+    bare = SCHEMA.removeprefix("<tool_call>").removesuffix("</tool_call>")
+    _, episode, _, context, seen = _source()
+    result = await run_surgical_model_episode(
+        ScriptedAgent([bare, CONTACT, CASE, FINAL]),
+        episode=episode, host_context=context, diagnose_model_actions=True,
+        experimental_single_step_prompt=True,
+        experimental_bare_schema_request=True,
+        experimental_graph_path_order_prompt=True,
+    )
+    assert result["full_task_correct"] is True
+    assert result["schema_requests"] == 1
+    assert result["actual_source_calls"] == len(seen) == 2
+    assert result["bare_schema_request_normalizations"] == 1
+    assert result["argument_alignment_labels"] == []
+
+
+@pytest.mark.asyncio
+async def test_graph_path_order_cue_requires_boolean():
+    from scripts.research_codegraph_surgical_agent_e1 import run_surgical_model_episode
+
+    _, episode, _, context, _ = _source()
+    with pytest.raises(ValueError, match="graph path order"):
+        await run_surgical_model_episode(
+            ScriptedAgent([SCHEMA]), episode=episode, host_context=context,
+            experimental_graph_path_order_prompt=1,
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("one_step", "bare_schema"), (
+    (False, True),
+    (True, False),
+    (False, False),
+))
+async def test_graph_path_order_cue_requires_existing_research_protocols(
+    one_step, bare_schema,
+):
+    from scripts.research_codegraph_surgical_agent_e1 import run_surgical_model_episode
+
+    _, episode, _, context, seen = _source()
+    with pytest.raises(ValueError, match="graph path order"):
+        await run_surgical_model_episode(
+            ScriptedAgent([SCHEMA]), episode=episode, host_context=context,
+            experimental_single_step_prompt=one_step,
+            experimental_bare_schema_request=bare_schema,
+            experimental_graph_path_order_prompt=True,
+        )
+    assert seen == []
+
+
+@pytest.mark.asyncio
 async def test_schema_request_does_not_change_source_call_count():
     from scripts.research_codegraph_surgical_agent_e1 import run_surgical_model_episode
 
