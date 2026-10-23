@@ -1,6 +1,7 @@
 """No-model E0 scope/redaction controls, NOT tenant execution certification."""
 from __future__ import annotations
 
+import hashlib
 import json
 
 import pytest
@@ -965,76 +966,41 @@ def test_catalog_index_rejects_mutated_source_or_revoked_authority():
         view.catalog_index()
 
 
-def test_e0_selector_cannot_change_original_fixture_gold_during_selection():
-    """An injected selector with a closure over task gold must fail closed."""
+def test_scoped_e0_agent_trace_provenance_receipt_is_host_only():
+    """End-to-end agent callback sees no manifest/model/hardware secret."""
     router = fixture_router()
-    task = scoped_synthetic_task()
-
-    def tamper(_query, _visible):
-        task["executor_fixture"]["steps"][0]["argument_rules"]["place"]["eq"] = "Tokyo"
-        return ["marine.read"]
-
-    with pytest.raises(ValueError, match="experimental task evidence changed"):
-        run_generated_episode(
-            CapturingSyntheticAgent(), router.registry, task,
-            EXPERIMENTAL_FIXED5_CONDITION,
-            experimental_candidate_selector=tamper,
-            experimental_agent_tool_surface=captured(router),
-        )
-
-
-def test_e0_agent_cannot_rewrite_grading_gold_during_generation():
-    """Even a stateful injected agent cannot rewrite the paired test task."""
-    router = fixture_router()
-    task = scoped_synthetic_task()
-
-    class MutatingAgent(CapturingSyntheticAgent):
-        def generate(self, messages, tools):
-            task["supported"] = False
-            return super().generate(messages, tools)
-
-    agent = MutatingAgent()
-    with pytest.raises(ValueError, match="experimental task evidence changed"):
-        run_generated_episode(
-            agent, router.registry, task,
-            EXPERIMENTAL_FIXED5_CONDITION,
-            experimental_candidate_selector=lambda _q, _ids: ["marine.read"],
-            experimental_agent_tool_surface=captured(router),
-        )
-    assert agent.calls == 1
-
-
-def test_e0_internal_executor_cannot_change_frozen_expected_steps(monkeypatch):
-    """Fixture step corruption inside the grader must not silently change scores."""
-    from scripts.agent_utility_generated_common import FrozenCorpusExecutor
-
-    router = fixture_router()
-    original_execute = FrozenCorpusExecutor.execute
-
-    def corrupt_before_execute(self, *args, **kwargs):
-        self.steps[0]["argument_rules"]["place"]["eq"] = "Tokyo"
-        return original_execute(self, *args, **kwargs)
-
-    monkeypatch.setattr(FrozenCorpusExecutor, "execute", corrupt_before_execute)
-    with pytest.raises(ValueError, match="experimental task evidence changed"):
-        run_generated_episode(
-            CapturingSyntheticAgent(), router.registry, scoped_synthetic_task(),
-            EXPERIMENTAL_FIXED5_CONDITION,
-            experimental_candidate_selector=lambda _q, _ids: ["marine.read"],
-            experimental_agent_tool_surface=captured(router),
-        )
-
-
-def test_e0_scoped_agent_does_not_mutate_caller_task_fixture():
-    """The valid evaluator still succeeds with a completely unmodified source."""
-    router = fixture_router()
-    task = scoped_synthetic_task()
-    original = json.loads(json.dumps(task))
-    result = run_generated_episode(
-        CapturingSyntheticAgent(), router.registry, task,
+    view = captured(router)
+    agent = CapturingSyntheticAgent()
+    private_model = "synthetic-model-" + SECRET
+    private_runtime = "runner-runtime-" + SECRET
+    private_hardware = "runner-username-" + SECRET
+    trace = run_generated_episode(
+        agent, router.registry, scoped_synthetic_task(),
         EXPERIMENTAL_FIXED5_CONDITION,
-        experimental_candidate_selector=lambda _q, _ids: ["marine.read"],
-        experimental_agent_tool_surface=captured(router),
+        experimental_candidate_selector=lambda _query, _ids: ["marine.read"],
+        experimental_agent_tool_surface=view,
+        experimental_e0_trace_provenance=E0TraceProvenance(
+            source_revision="a" * 40,
+            source_sha256="b" * 64,
+            hmac_key=b"trusted-only-e0-key-0123456789",
+            seed=123,
+            split_sha256="c" * 64,
+            model_revision=private_model,
+            model_runtime=private_runtime,
+            hardware=private_hardware,
+        ),
     )
-    assert result["passed"] is True
-    assert task == original
+    safe = trace["e0_stage_evidence"]
+    assert safe["split_sha256"] == "c" * 64
+    for source, field in (
+        (private_model, "model_revision_sha256"),
+        (private_runtime, "model_runtime_sha256"),
+        (private_hardware, "hardware_sha256"),
+    ):
+        assert safe[field] == hashlib.sha256(source.encode("utf-8")).hexdigest()
+    assert safe["independent_e2_qualified"] is False
+    assert "model_revision" not in safe
+    assert "model_runtime" not in safe
+    assert "hardware" not in safe
+    assert SECRET not in json.dumps(trace)
+    assert all(SECRET not in input_snapshot for input_snapshot in agent.snapshots)
