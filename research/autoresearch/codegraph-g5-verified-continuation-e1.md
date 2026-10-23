@@ -22,13 +22,32 @@ is evidence **against** this hypothesis. No result is pre-asserted.
 
 ## Isolated intervention
 
+**Amendment after an initially non-triggering matrix**: The first
+implementation ran the G5 cue against the original default prompt,
+which did not reliably perform an initial source read (e.g. pinned
+Qwen3-0.6B KO actually made 0 native calls, cue count 0 in [run
+#39932600124](https://github.com/JDeun/SchemaRouter/actions/runs/39932600124)).
+That *cannot test* a treatment delivered only after a verified read.
+The amended primary comparison therefore fixes the **already-measured
+single-step system prompt** (#1728, run #39930411562) for both baseline
+and cue-treated model calls and adds the G5 cue **only as a second-stage
+incremental intervention**. The original zero-cue run remains recorded,
+not overwritten or interpreted as evidence against a triggered cue.
+No task-specific gold was consulted when making this amendment.
+
 An explicit local E1-only `--experimental-g5-verified-continuation` flag
 is permitted only for **four registered read-only original routes**,
-the joined fixture, and no other concurrent prompt/grammar treatment.
+the joined fixture, with the preregistered **single-step system prompt**
+already active. The separate bare-JSON grammar variant remains forbidden
+as a simultaneous treatment.
 
-- FULL, Lexical K5, and surgical G5 run the **unchanged original**
-  study implementation, prompts, strict parser, native executor and
-  scorer. Only `concept_graph_optin` can receive this cue.
+- FULL, Lexical K5 and surgical G5 receive the **same fixed
+  one-action-per-turn system prompt** as in the existing #1728 E1 study,
+  with unchanged strict parser, native executor, source and scorer.
+  The G5 arm receives that identical system prompt **plus** the
+  post-verified-first-callback cue. Only `concept_graph_optin` can
+  receive the additional cue; its incremental effect is assessed
+  against #1728's *G5 arm*, not against a default no-prompt run.
 - The first, original, scoped native callback must have actually
   returned `status=ok` via the pre-existing read-only executor,
   passed output checks, and incremented the trusted source-call log.
@@ -52,9 +71,11 @@ the joined fixture, and no other concurrent prompt/grammar treatment.
 - There is at most one cue: `verified_continuation_cues` is a count
   0 or 1, reported only on the G5 arm. Other arms' prompt inputs
   remain untouched. The new cohort is labeled
-  `AFTER_VERIFIED_FIRST_G5_CALL` and never pooled with the previous
-  [bare-JSON adapter](codegraph-qwen-strict-bare-native-e1.md) or
-  [static single-step prompt](codegraph-qwen-single-step-prompt-e1.md).
+  `AFTER_VERIFIED_FIRST_G5_CALL` **on top of**
+  `EXACTLY_ONE_NATIVE_ACTION_PER_TURN`. It is NOT pooled with the
+  independent [bare-JSON adapter](codegraph-qwen-strict-bare-native-e1.md);
+  the fixed [single-step prompt](codegraph-qwen-single-step-prompt-e1.md)
+  is instead the explicit matched base cohort.
 
 ## Measured acceptance, safety checks and limitations
 
