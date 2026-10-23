@@ -210,3 +210,30 @@ async def test_frozen_twelve_route_scaling_negative_preserved():
     assert result["task_success_rate"] is None
     assert result["qualified_task_denominator"] is None
     assert result["outcomes"][0]["status"] == "BLOCKED_MENU_CAP"
+
+
+@pytest.mark.asyncio
+async def test_optin_structure_labels_do_not_change_source_calls_or_gold():
+    from scripts.research_codegraph_action_shape_e1 import CATEGORIES
+
+    baseline = await local.run_local_multiroute_codegraph_e1(
+        MenuAgent(), language="ko", catalog_size=4,
+    )
+    diagnosed = await local.run_local_multiroute_codegraph_e1(
+        MenuAgent(), language="ko", catalog_size=4,
+        diagnose_model_actions=True,
+    )
+    assert "action_structure_labels" not in json.dumps(baseline)
+    assert diagnosed["status"] == baseline["status"]
+    assert diagnosed["task_success_rate"] == baseline["task_success_rate"]
+    assert diagnosed["source_call_count"] == baseline["source_call_count"]
+    assert diagnosed["qualified_task_denominator"] == baseline["qualified_task_denominator"]
+    for first, second in zip(baseline["outcomes"], diagnosed["outcomes"]):
+        assert second["action_structure_labels"]
+        labels = second["action_structure_labels"]
+        assert len(labels) == second["model_turns"]
+        assert set(labels) <= CATEGORIES
+        assert second["total_model_tokens"] == first["total_model_tokens"]
+        assert second["actual_source_calls"] == first["actual_source_calls"]
+    assert "contact-4" not in json.dumps(diagnosed)
+    assert "region-9" not in json.dumps(diagnosed)
