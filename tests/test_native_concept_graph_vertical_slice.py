@@ -269,3 +269,105 @@ def test_graph_k_must_equal_five(k: object) -> None:
             router, "case status", catalog=_catalog(), principal=ACTOR,
             index=_index(router), k=k,
         )
+
+
+@pytest.mark.parametrize("query", ("case status", "문의 상태", "問い合わせ状態"))
+def test_optin_indexed_concept_direct_matches_current_one_step_and_join(query):
+    """Source-pinned posting lookup reuses existing typed G5 and strict K5."""
+    for router, catalog in (
+        (_direct_router(), _catalog(two_fields=True)),
+        (_joined_router(), _catalog()),
+        (_joined_router(incomplete=True), _catalog()),
+        (_joined_router(extra_consumers=5), _catalog()),
+    ):
+        index = _index(router)
+        baseline = retrieve_authorized_concept_graph(
+            router, query, principal=ACTOR, catalog=catalog, index=index,
+        )
+        indexed = retrieve_authorized_concept_graph(
+            router, query, principal=ACTOR, catalog=catalog, index=index,
+            experimental_indexed_direct=True,
+        )
+        assert indexed == baseline
+        assert not indexed.executable_authority
+        assert indexed.requested_k == 5
+
+
+def test_optin_indexed_direct_filters_unbound_inputs_before_k():
+    router = _joined_router(extra_consumers=7)
+    router.add_tool(ToolSpec(
+        name="direct_status", source_type="crm", license="owner-reviewed",
+        endpoints=[EndpointSpec(name="read", read_only=True,
+                                output_fields=[FieldSpec(
+                                    name="status", semantic_id="crm.status",
+                                    json_schema={"type": "string"},
+                                )])],
+    ))
+    result = retrieve_authorized_concept_graph(
+        router, "case status", principal=ACTOR, catalog=_catalog(),
+        index=_index(router), experimental_indexed_direct=True,
+    )
+    assert result.status == "complete"
+    assert result.route_ids == ("direct_status.read",)
+
+
+def test_optin_indexed_direct_hides_scoped_output_before_disclosure():
+    router = _direct_router()
+    indexed = retrieve_authorized_concept_graph(
+        router, "case status", principal=VIEWER, catalog=_catalog(two_fields=True),
+        index=_index(router), experimental_indexed_direct=True,
+    )
+    assert indexed.status == "no_proven_hit"
+    assert indexed.route_ids == ()
+    assert indexed.route_sets == ()
+
+
+def test_optin_indexed_direct_with_six_real_alternatives_abstains_without_top5():
+    router = SchemaRouter(authorization_policy=_policy())
+    for n in range(6):
+        router.add_tool(ToolSpec(
+            name=f"complete_{n}", source_type="crm", license="owner-reviewed",
+            endpoints=[EndpointSpec(name="read", read_only=True,
+                                    output_fields=[FieldSpec(
+                                        name="status", semantic_id="crm.status",
+                                        json_schema={"type": "string"},
+                                    )])],
+        ))
+    result = retrieve_authorized_concept_graph(
+        router, "case status", principal=ACTOR, catalog=_catalog(),
+        index=_index(router), experimental_indexed_direct=True,
+    )
+    assert result.status == "over_k_unranked"
+    assert result.route_ids == result.route_sets == ()
+
+
+def test_optin_indexed_direct_rechecks_revoked_health_before_publication(monkeypatch):
+    router = _direct_router()
+    index = _index(router)
+    available = {"complete.read": True}
+    router.planner.availability_predicate = (
+        lambda tool, endpoint: available.get(f"{tool.key}.{endpoint.name}", True)
+    )
+    original = NativeSchemaGraphIndex.lookup
+
+    def revoke(*args, **kwargs):
+        result = original(*args, **kwargs)
+        available["complete.read"] = False
+        return result
+
+    monkeypatch.setattr(NativeSchemaGraphIndex, "lookup", revoke)
+    with pytest.raises(PolicyViolationError):
+        retrieve_authorized_concept_graph(
+            router, "case status", principal=ACTOR, catalog=_catalog(two_fields=True),
+            index=index, experimental_indexed_direct=True,
+        )
+
+
+@pytest.mark.parametrize("mode", (0, 1, "true", None))
+def test_optin_indexed_mode_requires_actual_boolean(mode):
+    router = _direct_router()
+    with pytest.raises(ValueError, match="indexed concept direct mode"):
+        retrieve_authorized_concept_graph(
+            router, "case status", principal=ACTOR, catalog=_catalog(),
+            index=_index(router), experimental_indexed_direct=mode,
+        )
