@@ -1,6 +1,6 @@
 # Implementation plan — opt-in graph-path order E1
 
-Source design: `docs/superpowers/specs/2026-10-23-codegraph-path-order-e1-design.md`.
+Source design: `research/autoresearch/codegraph-path-order-e1-design.md`.
 Implement inline on the existing #1732 diagnostic branch as a new stacked
 Draft PR. Never modify the frozen #432 baseline or the original parser.
 

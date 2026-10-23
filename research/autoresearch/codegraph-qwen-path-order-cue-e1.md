@@ -74,3 +74,43 @@ an E1 model-prompt result, not E2, provider consent/entitlement,
 production promotion or authority to lift [#1356](https://github.com/JDeun/SchemaRouter/issues/1356)
 HARD HOLD / [#1346](https://github.com/JDeun/SchemaRouter/issues/1346)
 external confirmation requirements.
+
+## Actual six-cell result — after the preregistration above
+
+The pinned GitHub Linux E1
+[#39952057039](https://github.com/JDeun/SchemaRouter/actions/runs/39952057039)
+completed **all six** real-model jobs on the exact preregistered code
+commit `7242b20dd2353c47c3613fb94311ac2f7886a2fb`.
+Workflow success indicates scripts ran; full-task success is a separate
+outcome below. This post hoc result section does not alter the old
+scientific controls or preregistered scorer.
+
+| Pinned model | Lang | FULL/lexical exact task | Surgical path-order exact task | Surgical schema requests | Surgical original calls | FULL tokens | Surgical tokens |
+| --- | --- | --- | --- | ---: | ---: | ---: | ---: |
+| Qwen3-0.6B | EN | false / false | false | 0 | 0 | 677 | 1,012 |
+| Qwen3-0.6B | KO | false / false | false | 1 | 0 | 678 | 2,410 |
+| Qwen3-0.6B | JA | false / false | false | 1 | 0 | 678 | 2,404 |
+| Qwen3-1.7B | EN | true / true | **true** | 1 | **2** | 2,142 | 5,359 |
+| Qwen3-1.7B | KO | true / true | **true** | 1 | **2** | 2,145 | 5,363 |
+| Qwen3-1.7B | JA | false / false | **true** | 1 | **2** | 2,151 | 5,363 |
+
+Strict surgical success: **1.7B 3/3**, vs its matched #1732 pre-cue
+**0/3** and same-run FULL/lexical **2/3**. All three successful
+surgical cells finished only after **two real original read-only host
+callbacks**, with no unbound argument labels and an independently
+correct final. Qwen0.6B remained **0/3** (premature final); it did not
+gain a real native call in the surgical arm. Typed G5 same-run controls
+remained **0/6** despite a single original call per cell.
+
+**Tradeoff:** the 1.7B successful surgical path costs approximately
+**2.5× the FULL model tokens** (~5.36k vs ~2.14k) on these local tasks.
+The extra schema-request/model turns are included; a lower initial
+schema payload does not constitute net cost savings. This is promising
+model-protocol *correctness recovery* but **not** an evidenced CodeGraph
+index cost benefit, not independent E2 and not release-ready. With a
+single owner-created translated task per language, 3/3 is not a
+population accuracy estimate. The next separately reviewed architectural
+question is whether an authorized Graph Frontier can constrain current
+offered definitions and reduce prompt/turn cost while preserving exact
+source verification and the same task oracle. No silent migration from
+this prompt E1 to a default or release is authorized.
