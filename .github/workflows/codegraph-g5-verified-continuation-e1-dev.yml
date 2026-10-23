@@ -85,12 +85,14 @@ jobs:
               python -m scripts.research_codegraph_local_multiroute_e1 \
               --cohort local-source --catalog-size 4 \
               --language "$LANGUAGE" --diagnose-model-actions \
+              --experimental-single-step-prompt \
               --experimental-g5-verified-continuation \
               --out "artifacts/codegraph-g5-continuation/${{ matrix.model }}-${{ matrix.language }}.json"
           else
             python -m scripts.research_codegraph_qwen17_local_e1 \
               --cohort four-route --language "$LANGUAGE" \
-              --diagnose-model-actions --experimental-g5-verified-continuation \
+              --diagnose-model-actions --experimental-single-step-prompt \
+              --experimental-g5-verified-continuation \
               --out "artifacts/codegraph-g5-continuation/${{ matrix.model }}-${{ matrix.language }}.json"
           fi
       - name: Gate E1-only task gold and no trust boundary widening
@@ -104,6 +106,7 @@ jobs:
           lang = os.environ["LANGUAGE"]
           report = json.loads(Path(f"artifacts/codegraph-g5-continuation/{variant}-{lang}.json").read_text())
           assert report["continuation_treatment"] == "AFTER_VERIFIED_FIRST_G5_CALL"
+          assert report["prompt_treatment"] == "EXACTLY_ONE_NATIVE_ACTION_PER_TURN"
           assert report["language"] == lang and report["source_route_count"] == 4
           assert report["requested_k"] == 5
           assert report["status"] == "E1_MEASURED_LOCAL_FOUR_ARM_NOT_E2"
