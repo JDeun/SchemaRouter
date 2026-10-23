@@ -840,8 +840,8 @@
     {
       "path": "research/knowledge-index.md",
       "en_blob": "863e96e358b07c447355b56c371468a926a380ae",
-      "ko_blob": "d91d23dbba38b0edcf571d9ff6d1d53b4ee50a6b",
-      "notes": "AI-assisted paired source review of the new research navigation entry; both versions explicitly preserve canonical evidence, negative results, and non-independent status. This is not an independent sentence-level translation sign-off."
+      "ko_blob": "ae7316c6218094c8e83a791532118c04fdffbf9f",
+      "notes": "2026-10-23 AI-assisted comparison of the expanded Korean research index against the canonical English navigation. Topic IDs SR-R01–SR-R07, source links, negative evidence, no-promotion and non-independent status are preserved; this is not independent human or sentence-level translation sign-off."
     },
     {
       "path": "research/large-heldout-agent-utility.md",
