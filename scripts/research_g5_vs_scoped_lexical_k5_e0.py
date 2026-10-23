@@ -13,7 +13,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from schemarouter import SchemaRouter
+from schemarouter import NativeDeclaredFieldGroup, SchemaRouter
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
@@ -42,6 +42,7 @@ def _tokens(text: str) -> frozenset[str]:
 
 def scoped_source_lexical_k5(
     router: SchemaRouter, *, query: str,
+    group: NativeDeclaredFieldGroup = GROUP,
 ) -> tuple[tuple[str, ...], dict[str, int]]:
     """Rank only currently visible original source contracts, strict K5.
 
@@ -49,7 +50,11 @@ def scoped_source_lexical_k5(
     Source/FieldGroup constraints, as well as both output and input schema
     keywords, are disclosed equally to G5 and this comparator.
     """
-    if not isinstance(router, SchemaRouter) or query not in ALIASES:
+    if (
+        not isinstance(router, SchemaRouter)
+        or not isinstance(group, NativeDeclaredFieldGroup)
+        or query not in group.aliases
+    ):
         raise ValueError("bounded approved source lexical query required")
     witness = router._retrieval_authority_witness()
     policy = router.authorization_policy
@@ -59,13 +64,13 @@ def scoped_source_lexical_k5(
     permitted = router._authorization_predicate(ACTOR)
     if permitted is None:
         raise ValueError("trusted reader predicate required")
-    wanted = _tokens(" ".join(field.semantic_id for field in GROUP.required_fields))
-    demand_semantics = {field.semantic_id for field in GROUP.required_fields}
+    wanted = _tokens(" ".join(field.semantic_id for field in group.required_fields))
+    demand_semantics = {field.semantic_id for field in group.required_fields}
     query_tokens = _tokens(query)
     scored: list[tuple[int, str]] = []
     costs: dict[str, int] = {}
     for tool in router.registry.tools():
-        if tool.source_type != GROUP.source_type or tool.license != GROUP.license:
+        if tool.source_type != group.source_type or tool.license != group.license:
             continue
         for ep in tool.endpoints:
             if ep.read_only is not True or ep.destructive is True:
