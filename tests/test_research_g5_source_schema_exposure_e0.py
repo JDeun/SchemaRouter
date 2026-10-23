@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import pytest
 
+from scripts.benchmark_native_fork_fieldgroup_e0 import build_fixture
 from scripts.research_g5_source_schema_exposure_e0 import (
     MAX_K,
     SCHEMA_VERSION,
@@ -10,7 +11,6 @@ from scripts.research_g5_source_schema_exposure_e0 import (
     authorized_source_contract_budget,
     evaluate_fixture,
 )
-from scripts.benchmark_native_fork_fieldgroup_e0 import build_fixture
 
 
 def test_g5_actual_500_route_three_language_oracle_and_scope():
