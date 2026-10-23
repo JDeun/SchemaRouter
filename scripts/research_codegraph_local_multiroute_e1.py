@@ -285,7 +285,7 @@ async def _baseline_local_arm(
     correct = False
     turns = 0
     action_shape_labels: list[str] = []
-    accepted_bare_json_calls = 0
+    bare_json_strict_parser_acceptances = 0
     for _ in range(TURN_BUDGET):
         view.assert_source_unchanged()
         turns += 1
@@ -318,7 +318,7 @@ async def _baseline_local_arm(
                 offered_names=tuple(tool["name"] for tool in definitions),
                 accept_bare_json_native=experimental_bare_native_json,
             )
-            accepted_bare_json_calls += int(accepted_bare)
+            bare_json_strict_parser_acceptances += int(accepted_bare)
         except (ValueError, TypeError, OverflowError):
             reason = "malformed_model_action"
             break
@@ -374,7 +374,7 @@ async def _baseline_local_arm(
         "total_model_tokens": input_tokens + output_tokens if all_receipts else None,
         **({"action_structure_labels": action_shape_labels}
            if diagnose_model_actions else {}),
-        **({"accepted_bare_json_calls": accepted_bare_json_calls}
+        **({"bare_json_strict_parser_acceptances": bare_json_strict_parser_acceptances}
            if experimental_bare_native_json else {}),
     }
 
