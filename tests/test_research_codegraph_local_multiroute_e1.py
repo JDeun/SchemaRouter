@@ -706,3 +706,47 @@ async def test_graph_frontier_rejects_unsafe_partial_flag_combinations(flags):
             MenuAgent(), language="ko", catalog_size=4,
             experimental_graph_frontier=True, **flags,
         )
+
+@pytest.mark.asyncio
+async def test_verified_frontier_continuation_adds_sixth_arm_only():
+    opts = {
+        "language": "en", "catalog_size": 4,
+        "experimental_single_step_prompt": True,
+        "experimental_bare_schema_request": True,
+        "experimental_graph_path_order_prompt": True,
+        "experimental_graph_frontier": True,
+    }
+    baseline = await local.run_local_multiroute_codegraph_e1(
+        MenuAgent(), **opts,
+    )
+    cued = await local.run_local_multiroute_codegraph_e1(
+        MenuAgent(), **opts, experimental_frontier_verified_continuation=True,
+    )
+    assert tuple(baseline["arms"]) == (
+        *local.ARMS, "graph_frontier_g5_e1",
+    )
+    assert tuple(cued["arms"]) == (
+        *local.ARMS, "graph_frontier_g5_e1", "graph_frontier_cued_e1",
+    )
+    assert cued["status"] == "E1_MEASURED_LOCAL_SIX_ARM_NOT_E2"
+    assert len(cued["outcomes"]) == 6
+    assert cued["source_receipt_digest"] == baseline["source_receipt_digest"]
+    assert cued["outcomes"][:5] == baseline["outcomes"]
+    assert cued["qualified_task_denominator"] == {
+        arm: 1 for arm in cued["arms"]
+    }
+    last = cued["outcomes"][-1]
+    assert last["verified_continuation_cues"] == 1
+    assert last["actual_source_calls"] == 2
+    assert last["full_task_complete"] is True
+    assert last["frontier_sizes"] == [1, 1, 0]
+    assert last["schema_requests"] == 0
+
+
+@pytest.mark.asyncio
+async def test_verified_frontier_continuation_requires_staged_frontier():
+    with pytest.raises(ValueError, match="continuation requires"):
+        await local.run_local_multiroute_codegraph_e1(
+            MenuAgent(), language="en", catalog_size=4,
+            experimental_frontier_verified_continuation=True,
+        )
