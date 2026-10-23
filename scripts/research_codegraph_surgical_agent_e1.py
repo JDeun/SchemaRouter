@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from schemarouter.errors import PolicyViolationError
+from scripts.research_codegraph_action_shape_e1 import classify_rejected_action_shape
 from scripts.research_codegraph_scoped_materializer import (
     SurgicalEpisode,
     materialize_scoped_original_schemas,
@@ -193,6 +194,7 @@ async def run_surgical_model_episode(
     source_calls = 0
     model_turns = 0
     reason = "turn_limit"
+    rejected_model_action_shape: str | None = None
     full_task_correct = False
     all_receipts = True
     input_tokens = tool_tokens = output_tokens = 0
@@ -240,6 +242,9 @@ async def run_surgical_model_episode(
             kind, value = _parse_action(generated["text"])
         except (ValueError, TypeError, OverflowError):
             reason = "malformed_call"
+            rejected_model_action_shape = classify_rejected_action_shape(
+                generated["text"],
+            )
             break
 
         if kind == "final":
@@ -249,6 +254,9 @@ async def run_surgical_model_episode(
             ]
             if not completed_paths or not observations:
                 reason = "premature_final"
+                rejected_model_action_shape = classify_rejected_action_shape(
+                    generated["text"],
+                )
             else:
                 reason = "completed_final"
                 validator = host_context.validate_final
@@ -316,6 +324,7 @@ async def run_surgical_model_episode(
         "source_call_attempts": source_attempts,
         "actual_source_calls": source_calls,
         "termination_reason": reason,
+        "rejected_model_action_shape": rejected_model_action_shape,
         "full_task_correct": full_task_correct,
         "model_input_tokens": input_tokens if all_receipts else None,
         "tool_schema_tokens": tool_tokens if all_receipts else None,
