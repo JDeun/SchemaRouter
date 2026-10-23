@@ -21,6 +21,7 @@ from .field_group_retrieval import (
     NativeDeclaredFieldGroup,
     _alias_key,
     _complete_fields,
+    _root_envelope_empty,
     _scalar_contract,
 )
 from .models import ToolSpec
@@ -345,8 +346,15 @@ class NativeSchemaPostingIndex:
         group: NativeDeclaredFieldGroup,
         principal: PrincipalContext,
         k: int = STRICT_K,
+        input_free_only: bool = False,
     ) -> IndexedNativeFieldResult:
-        """Conjunctive source-owned FieldGroup lookup with strict no-rank K5."""
+        """Conjunctive source-owned FieldGroup lookup with strict no-rank K5.
+
+        An optional direct-only filter rejects consumers with unbound native
+        inputs BEFORE candidate budgeting, never after a Top-K truncation.
+        """
+        if type(input_free_only) is not bool:
+            raise ValueError("indexed direct-only flag must be boolean")
         if type(k) is not int or k != STRICT_K:
             raise ValueError("native indexed lookup requires exact K5")
         if type(query) is not str or len(query.encode("utf-8")) > 512:
@@ -407,6 +415,8 @@ class NativeSchemaPostingIndex:
                 continue
             if endpoint.read_only is not True or endpoint.destructive is True:
                 continue
+            if input_free_only and not _root_envelope_empty(endpoint):
+                continue
             if not permitted(tool, endpoint):
                 continue
             # Host health callbacks are not a trusted error surface. A provider
@@ -460,6 +470,7 @@ class NativeSchemaPostingIndex:
                     and tool.license != declaration.license
                     or endpoint.read_only is not True
                     or endpoint.destructive is True
+                    or input_free_only and not _root_envelope_empty(endpoint)
                     or not permitted(tool, endpoint)
                     or availability is not None and not availability(tool, endpoint)
                 ):
