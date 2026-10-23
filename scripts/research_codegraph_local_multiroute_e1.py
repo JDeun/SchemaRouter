@@ -43,6 +43,10 @@ from scripts.research_authorized_agent_tool_surface import (
 )
 from scripts.research_codegraph_action_shape_e1 import structural_action_label
 from scripts.research_codegraph_bare_json_adapter_e1 import parse_native_action_optin
+from scripts.research_codegraph_graph_frontier_e1 import (
+    FRONTIER_ARM,
+    run_graph_frontier_model_episode,
+)
 from scripts.research_codegraph_scoped_materializer import (
     SurgicalEpisode,
     capture_surgical_episode,
@@ -425,8 +429,18 @@ async def run_local_multiroute_codegraph_e1(
     experimental_g5_verified_continuation: bool = False,
     experimental_bare_schema_request: bool = False,
     experimental_graph_path_order_prompt: bool = False,
+    experimental_graph_frontier: bool = False,
 ) -> dict[str, Any]:
     """12-route scaling negative OR separate true four-route comparable local E1."""
+    if type(experimental_graph_frontier) is not bool or (
+        experimental_graph_frontier and (
+            not experimental_single_step_prompt or not experimental_bare_schema_request
+            or not experimental_graph_path_order_prompt
+            or experimental_bare_native_json or experimental_g5_verified_continuation
+            or catalog_size != 4 or condition != "joined"
+        )
+    ):
+        raise ValueError("frontier requires isolated four-route paired path-order controls")
     if type(experimental_bare_native_json) is not bool:
         raise ValueError("research bare-native experiment must be boolean")
     if type(experimental_single_step_prompt) is not bool:
@@ -472,6 +486,7 @@ async def run_local_multiroute_codegraph_e1(
     source = build_local_multiroute_source(
         language=language, condition=condition, catalog_size=catalog_size,
     )
+    active_arms = (*ARMS, FRONTIER_ARM) if experimental_graph_frontier else ARMS
     route_count = len(source.registered_callbacks)
     safe: dict[str, Any] = {
         "study": (
@@ -481,7 +496,7 @@ async def run_local_multiroute_codegraph_e1(
         "evidence_tier": "E1_LOCAL_SOURCE_CONTROL",
         "model_id": MODEL_NAME,
         "model_revision": MODEL_REVISION,
-        "arms": ARMS,
+        "arms": active_arms,
         "language": language,
         "source_route_count": route_count,
         "requested_k": 5,
@@ -502,6 +517,8 @@ async def run_local_multiroute_codegraph_e1(
            if experimental_bare_schema_request else {}),
         **({"graph_path_order_treatment": "STATIC_G5_DEPENDENCY_ORDER_CUE"}
            if experimental_graph_path_order_prompt else {}),
+        **({"frontier_treatment": "ATTESTED_STAGE_SPECIFIC_ORIGINAL_NATIVE_MENU"}
+           if experimental_graph_frontier else {}),
     }
     if condition != "joined":
         selection = retrieve_authorized_concept_graph(
@@ -527,7 +544,7 @@ async def run_local_multiroute_codegraph_e1(
         }
     outcomes: list[dict[str, Any]] = []
     total_calls = 0
-    for arm in ARMS:
+    for arm in active_arms:
         current = build_local_multiroute_source(
             language=language, catalog_size=catalog_size,
         )
@@ -537,7 +554,7 @@ async def run_local_multiroute_codegraph_e1(
                 **safe, "status": "INCOMPARABLE_SOURCE_DRIFT",
                 "source_call_count": total_calls, "outcomes": (),
             }
-        if arm == "surgical_g5_e1":
+        if arm in ("surgical_g5_e1", FRONTIER_ARM):
             if current.episode is None:
                 raise ValueError("positive case missing verified G5 selection")
             context = SurgicalHostContext(
@@ -548,14 +565,21 @@ async def run_local_multiroute_codegraph_e1(
                 final_response_instruction="Answer JSON with only case_state.",
                 validate_final=_strict_final,
             )
-            row = await run_surgical_model_episode(
-                agent, episode=current.episode,
-                host_context=context, max_turns=TURN_BUDGET,
-                diagnose_model_actions=diagnose_model_actions,
-                experimental_single_step_prompt=experimental_single_step_prompt,
-                experimental_bare_schema_request=experimental_bare_schema_request,
-                experimental_graph_path_order_prompt=experimental_graph_path_order_prompt,
-            )
+            if arm == FRONTIER_ARM:
+                row = await run_graph_frontier_model_episode(
+                    agent, episode=current.episode, host_context=context,
+                    max_turns=TURN_BUDGET,
+                    diagnose_model_actions=diagnose_model_actions,
+                )
+            else:
+                row = await run_surgical_model_episode(
+                    agent, episode=current.episode,
+                    host_context=context, max_turns=TURN_BUDGET,
+                    diagnose_model_actions=diagnose_model_actions,
+                    experimental_single_step_prompt=experimental_single_step_prompt,
+                    experimental_bare_schema_request=experimental_bare_schema_request,
+                    experimental_graph_path_order_prompt=experimental_graph_path_order_prompt,
+                )
             row = {
                 **row, "condition": arm,
                 "status": row["termination_reason"],
@@ -584,13 +608,16 @@ async def run_local_multiroute_codegraph_e1(
                 "source_call_count": total_calls, "outcomes": outcomes,
             }
         return {
-            **safe, "status": "E1_MEASURED_LOCAL_FOUR_ARM_NOT_E2",
+            **safe, "status": (
+                "E1_MEASURED_LOCAL_FIVE_ARM_NOT_E2" if experimental_graph_frontier
+                else "E1_MEASURED_LOCAL_FOUR_ARM_NOT_E2"
+            ),
             "task_success_rate": {
                 row["condition"]: float(row["full_task_complete"])
                 for row in outcomes
             },
             "qualified_task_denominator": {
-                arm: 1 for arm in ARMS
+                arm: 1 for arm in active_arms
             },
             "source_call_count": total_calls, "outcomes": outcomes,
         }
@@ -614,6 +641,7 @@ def main() -> None:
     parser.add_argument("--experimental-g5-verified-continuation", action="store_true")
     parser.add_argument("--experimental-bare-schema-request", action="store_true")
     parser.add_argument("--experimental-graph-path-order-prompt", action="store_true")
+    parser.add_argument("--experimental-graph-frontier", action="store_true")
     args = parser.parse_args()
     source = build_local_multiroute_source(
         language=args.language, catalog_size=args.catalog_size,
@@ -628,6 +656,7 @@ def main() -> None:
         experimental_g5_verified_continuation=args.experimental_g5_verified_continuation,
         experimental_bare_schema_request=args.experimental_bare_schema_request,
         experimental_graph_path_order_prompt=args.experimental_graph_path_order_prompt,
+        experimental_graph_frontier=args.experimental_graph_frontier,
     ))
     if preflight["status"] == "BLOCKED_MODEL_RUNTIME":
         previous = {key: os.environ.get(key) for key in (
@@ -655,6 +684,7 @@ def main() -> None:
                     experimental_graph_path_order_prompt=(
                         args.experimental_graph_path_order_prompt
                     ),
+                    experimental_graph_frontier=args.experimental_graph_frontier,
                 ))
         finally:
             for key, value in previous.items():

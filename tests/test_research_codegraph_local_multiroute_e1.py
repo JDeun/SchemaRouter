@@ -660,3 +660,49 @@ async def test_verified_g5_cue_refuses_out_of_order_model_action():
     assert row["verified_continuation_cues"] == 0
     assert row["full_task_complete"] is False
     assert source.callback_log == []
+
+@pytest.mark.asyncio
+async def test_graph_frontier_fifth_arm_preserves_four_controls():
+    baseline = await local.run_local_multiroute_codegraph_e1(
+        MenuAgent(), language="ko", catalog_size=4,
+        experimental_single_step_prompt=True,
+        experimental_bare_schema_request=True,
+        experimental_graph_path_order_prompt=True,
+    )
+    treated = await local.run_local_multiroute_codegraph_e1(
+        MenuAgent(), language="ko", catalog_size=4,
+        experimental_single_step_prompt=True,
+        experimental_bare_schema_request=True,
+        experimental_graph_path_order_prompt=True,
+        experimental_graph_frontier=True,
+    )
+    assert tuple(baseline["arms"]) == local.ARMS
+    assert tuple(treated["arms"]) == (*local.ARMS, "graph_frontier_g5_e1")
+    assert len(baseline["outcomes"]) == 4
+    assert len(treated["outcomes"]) == 5
+    assert baseline["source_receipt_digest"] == treated["source_receipt_digest"]
+    assert treated["status"] == "E1_MEASURED_LOCAL_FIVE_ARM_NOT_E2"
+    assert treated["qualified_task_denominator"] == {
+        arm: 1 for arm in treated["arms"]
+    }
+    frontier = treated["outcomes"][-1]
+    assert frontier["frontier_sizes"] == [1, 1, 0]
+    assert frontier["schema_requests"] == 0
+    assert frontier["actual_source_calls"] == 2
+    assert frontier["full_task_complete"] is True
+    assert treated["independent_e2_qualified"] is False
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("flags", [
+    {},
+    {"experimental_single_step_prompt": True},
+    {"experimental_single_step_prompt": True,
+     "experimental_bare_schema_request": True},
+])
+async def test_graph_frontier_rejects_unsafe_partial_flag_combinations(flags):
+    with pytest.raises(ValueError, match="frontier"):
+        await local.run_local_multiroute_codegraph_e1(
+            MenuAgent(), language="ko", catalog_size=4,
+            experimental_graph_frontier=True, **flags,
+        )
