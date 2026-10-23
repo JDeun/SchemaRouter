@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "review_date": "2026-10-23",
+  "review_date": "2026-10-24",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 156,
-  "total_page_pairs": 156,
+  "reviewed_page_pairs": 157,
+  "total_page_pairs": 157,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
@@ -13,7 +13,8 @@
     "2026-10-16 duplicate product charter draft deliberately removed; maintain one bilingual product-north-star-and-test-matrix pair as canonical. All 151 exact page-pair AI-assisted source checks remain explicitly non-independent; #1202 human review open.",
     "2026-10-19 research-program wiki has an AI-assisted parallel-text and structure spotcheck with exact Git blob pins; independent KO/EN editorial sentence audit remains open.",
     "2026-10-23 G5 design/plan and amended research wiki pairs were AI-assisted compared against their source semantics; independent human sentence-level review under #1202 remains open.",
-    "2026-10-23 CodeGraph-style E0 report and tool-routing navigation were localized with AI-assisted source/translation comparison and exact current blob pins. Cost and agent-success nonclaims and source authorization boundaries were explicitly retained; independent human audit remains open."
+    "2026-10-23 CodeGraph-style E0 report and tool-routing navigation were localized with AI-assisted source/translation comparison and exact current blob pins. Cost and agent-success nonclaims and source authorization boundaries were explicitly retained; independent human audit remains open.",
+    "2026-10-24 added English/Korean Algorithm 1 parity docs and roadmap alignment: AI-assisted source semantic comparison with pinned Git blobs only; no independent bilingual human editorial or peer review and no default implementation or performance promotion."
   ],
   "reviews": [
     {
@@ -595,9 +596,9 @@
     },
     {
       "path": "project/roadmap.md",
-      "en_blob": "5d8ce3c4ed03140962c21b66e6acf1be4927886a",
-      "ko_blob": "8af71385ef804cf8cea32f25dc5562e53ad903e6",
-      "notes": "2026-10-18 AI-assisted direct EN/KO changed-section comparison: original paper typed graph/field retrieval is canonical, authorized K5 already exists, producer-consumer dependency graph does not prove query-to-field traversal, P0 hidden schema metadata and authority drift precede opt-in E0 research, independence and release gates unchanged; stable release header aligned to 0.17.0. Not independent human or sentence-level certification."
+      "en_blob": "7ab58abc022974fa9c13a49952126abad10c71a2",
+      "ko_blob": "5040ba80115876c9885dc2b2303d1aabadb16af2",
+      "notes": "2026-10-18 AI-assisted direct EN/KO changed-section comparison: original paper typed graph/field retrieval is canonical, authorized K5 already exists, producer-consumer dependency graph does not prove query-to-field traversal, P0 hidden schema metadata and authority drift precede opt-in E0 research, independence and release gates unchanged; stable release header aligned to 0.17.0. Not independent human or sentence-level certification. 2026-10-24 additive English/Korean paper-first Algorithm 1 P1–P4 status, original-field-recall vs graph-dependency distinction, and #1535/#1560/#1346/#1477 release gate directly compared; AI-assisted only."
     },
     {
       "path": "project/trust-and-evidence.md",
@@ -870,6 +871,12 @@
       "notes": "Matched 85/97/100/1 and p95 thresholds, all frozen DEV/fresh values, negative decision and sealed calibration/blind finals."
     },
     {
+      "path": "research/original-paper-algorithm1-parity.md",
+      "en_blob": "c2ba227d00f1f71acc842b5b6d2bb4633eb0bbdd",
+      "ko_blob": "4b8e4af80d9a41f56ec339fe39312a97b66ebc61",
+      "notes": "2026-10-24 AI-assisted bilingual original-paper Algorithm 1 architecture comparison: 12 requirement-to-code rows checked for aligned/partial/default gap, original KeywordAnalyzer vs opt-in ModelQueryAnalyzer schema payload, concept→FieldGroup vs producer→consumer G5, recall-preserving field union, source/metadata/authorization boundary, original retrieved DATA-context vs later schema-menu token metrics, frozen negative #432, #1535→#1560→#1339/#1346/#1477 priority and v0.18 HOLD. Exact current Git blobs pinned. This is NOT an independent human or sentence-level translation verification."
+    },
+    {
       "path": "research/paper-evidence-package.md",
       "en_blob": "661b0a4720746af855155cd452fda3e03ae17de3",
       "ko_blob": "b44ea29e0bf81f6cefc48abb024fe97a58572b2f",
@@ -968,6 +975,7 @@
   ],
   "directly_examined_across_branches": 147,
   "review_amendments": [
-    "2026-10-22: Added bilingual research knowledge index and refreshed English research-program source blob after navigation link; AI-assisted review only, not independent human verification."
+    "2026-10-22: Added bilingual research knowledge index and refreshed English research-program source blob after navigation link; AI-assisted review only, not independent human verification.",
+    "2026-10-24: Re-reviewed changed EN/KO roadmap and added matched paper-Algorithm1 parity pair, exact currently committed blob receipts; independent sentence review remains explicitly false."
   ]
 }
