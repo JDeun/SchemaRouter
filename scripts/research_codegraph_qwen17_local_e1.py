@@ -30,13 +30,17 @@ from scripts.research_qwen17_live_open_meteo_comparison_e1 import (
 
 async def evaluate_candidate(
     agent: LocalQwen17BRealAgent, *, language: str,
+    experimental_strict_unwrapped_json: bool = False,
 ) -> dict:
     """Run one local synthetic task under genuine four-arm K5 constraints."""
     if type(agent) is not LocalQwen17BRealAgent:
         raise TypeError("pinned Qwen3-1.7B instance required for source receipts")
-    report = await run_local_multiroute_codegraph_e1(
-        agent, language=language, condition="joined", catalog_size=4,
-    )
+    if type(experimental_strict_unwrapped_json) is not bool:
+        raise ValueError("experimental strict envelope mode requires boolean")
+    kwargs = {"language": language, "condition": "joined", "catalog_size": 4}
+    if experimental_strict_unwrapped_json:
+        kwargs["experimental_strict_unwrapped_json"] = True
+    report = await run_local_multiroute_codegraph_e1(agent, **kwargs)
     if (
         report["status"] != "E1_MEASURED_LOCAL_FOUR_ARM_NOT_E2"
         or report["source_route_count"] != 4
@@ -45,11 +49,16 @@ async def evaluate_candidate(
         raise ValueError("pinned candidate study lacks comparable K5 local source")
     return {
         **report,
-        "study": "CODEGRAPH_QWEN17_LOCAL_FOUR_ARM_E1_DEV",
+        "study": (
+            "CODEGRAPH_QWEN17_STRICT_JSON_ENVELOPE_E1_DEV"
+            if experimental_strict_unwrapped_json
+            else "CODEGRAPH_QWEN17_LOCAL_FOUR_ARM_E1_DEV"
+        ),
         "model_id": MODEL_ID,
         "model_revision": REVISION,
         "actual_pinned_model_inference": True,
         "checkpoint_only_model_intervention": True,
+        "strict_unwrapped_json_treatment": experimental_strict_unwrapped_json,
         "baseline_model_id": BASELINE_MODEL_ID,
         "baseline_model_revision": BASELINE_REVISION,
         "real_external_provider_observed": False,
@@ -63,12 +72,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cohort", choices=("four-route",), required=True)
     parser.add_argument("--language", choices=LANGUAGE_ALIASES, required=True)
+    parser.add_argument("--strict-unwrapped-tool-json", action="store_true")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     # This class validates its independently pinned 40-character Hugging Face
     # source SHA before loading and shares exactly the legacy generation API.
     agent = LocalQwen17BRealAgent()
-    report = asyncio.run(evaluate_candidate(agent, language=args.language))
+    report = asyncio.run(evaluate_candidate(
+        agent, language=args.language,
+        experimental_strict_unwrapped_json=args.strict_unwrapped_tool_json,
+    ))
     report["source_revision"] = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True,
         check=True, capture_output=True, timeout=10,
