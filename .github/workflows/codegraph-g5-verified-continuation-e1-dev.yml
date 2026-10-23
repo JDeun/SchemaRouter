@@ -135,6 +135,10 @@ jobs:
                   if row["condition"] == "concept_graph_optin":
                       assert "verified_continuation_cues" in row
                       assert cues <= row["actual_source_calls"]
+                      # A source-triggered prompt with no actual trigger is
+                      # scientifically INCOMPARABLE, not a valid E1 effect.
+                      assert cues == 1, "NO_VERIFIED_FIRST_G5_SOURCE_EXPOSURE"
+                      assert row["model_turns"] >= 2
                   else:
                       assert "verified_continuation_cues" not in row
                   out.write(f"| {row['condition']} | {row['model_turns']} | {row['actual_source_calls']} | {cues} | {row['total_model_tokens']} | {row['full_task_complete']} | {row['status']} |\n")
