@@ -64,6 +64,16 @@ CONDITIONS = ("joined", "denied", "no_fit", "over_k")
 ARMS = ("all_visible", "lexical_k5", "concept_graph_optin", "surgical_g5_e1")
 ROUTES = ("contacts.read", "cases.read")
 TURN_BUDGET = 5
+# E1-only generic state cue: no route identity, argument, hidden source value
+# or evaluator gold. Sent only after a verified original source callback.
+G5_VERIFIED_CONTINUATION_CUE_E1 = (
+    "The host has returned a verified original read-only observation; "
+    "the authorized source path is not yet complete. "
+    "Continue with exactly one currently offered read-only tool per turn "
+    "only if required parameters are available from the preceding "
+    "verified observation. Do not fabricate arguments or results, "
+    "and do not provide a final answer before the source path finishes."
+)
 SOURCE_LICENCE = "deterministic-local-owner-reviewed"
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -237,6 +247,7 @@ async def _baseline_local_arm(
     diagnose_model_actions: bool = False,
     experimental_bare_native_json: bool = False,
     experimental_single_step_prompt: bool = False,
+    experimental_g5_verified_continuation: bool = False,
 ) -> dict[str, Any]:
     """Old native disclosure and invocation, with no >5-route workaround."""
     router = source.router
@@ -290,6 +301,7 @@ async def _baseline_local_arm(
     turns = 0
     action_shape_labels: list[str] = []
     bare_json_strict_parser_acceptances = 0
+    verified_continuation_cues = 0
     for _ in range(TURN_BUDGET):
         view.assert_source_unchanged()
         turns += 1
@@ -365,6 +377,19 @@ async def _baseline_local_arm(
             {"role": "assistant", "content": generated["text"]},
             {"role": "tool", "content": json.dumps(observation, sort_keys=True)},
         ))
+        if (
+            experimental_g5_verified_continuation
+            and condition == "concept_graph_optin"
+            and len(calls) == 1
+            and ROUTES[1] in offered
+        ):
+            # The *first actual callback*, never a model text or gold,
+            # authorizes a static status cue. No next route or arguments
+            # are inserted into the prompt.
+            messages.append({
+                "role": "user", "content": G5_VERIFIED_CONTINUATION_CUE_E1,
+            })
+            verified_continuation_cues += 1
     return {
         "condition": condition, "status": reason,
         "source_receipt_digest": digest,
@@ -380,6 +405,8 @@ async def _baseline_local_arm(
            if diagnose_model_actions else {}),
         **({"bare_json_strict_parser_acceptances": bare_json_strict_parser_acceptances}
            if experimental_bare_native_json else {}),
+        **({"verified_continuation_cues": verified_continuation_cues}
+           if experimental_g5_verified_continuation else {}),
     }
 
 
@@ -389,12 +416,22 @@ async def run_local_multiroute_codegraph_e1(
     diagnose_model_actions: bool = False,
     experimental_bare_native_json: bool = False,
     experimental_single_step_prompt: bool = False,
+    experimental_g5_verified_continuation: bool = False,
 ) -> dict[str, Any]:
     """12-route scaling negative OR separate true four-route comparable local E1."""
     if type(experimental_bare_native_json) is not bool:
         raise ValueError("research bare-native experiment must be boolean")
     if type(experimental_single_step_prompt) is not bool:
         raise ValueError("research one-action prompt flag must be boolean")
+    if type(experimental_g5_verified_continuation) is not bool:
+        raise ValueError("verified continuation flag must be boolean")
+    if experimental_g5_verified_continuation and (
+        catalog_size != 4
+        or experimental_bare_native_json
+        or experimental_single_step_prompt
+        or condition != "joined"
+    ):
+        raise ValueError("verified continuation must be isolated four-route joined E1")
     if experimental_single_step_prompt and experimental_bare_native_json:
         raise ValueError("grammar and one-step prompt treatments must be separate")
     if experimental_single_step_prompt and catalog_size != 4:
@@ -430,6 +467,8 @@ async def run_local_multiroute_codegraph_e1(
            if experimental_bare_native_json else {}),
         **({"prompt_treatment": "EXACTLY_ONE_NATIVE_ACTION_PER_TURN"}
            if experimental_single_step_prompt else {}),
+        **({"continuation_treatment": "AFTER_VERIFIED_FIRST_G5_CALL"}
+           if experimental_g5_verified_continuation else {}),
     }
     if condition != "joined":
         selection = retrieve_authorized_concept_graph(
@@ -494,6 +533,7 @@ async def run_local_multiroute_codegraph_e1(
                 diagnose_model_actions=diagnose_model_actions,
                 experimental_bare_native_json=experimental_bare_native_json,
                 experimental_single_step_prompt=experimental_single_step_prompt,
+                experimental_g5_verified_continuation=experimental_g5_verified_continuation,
             )
         if row["actual_source_calls"] != len(current.callback_log):
             raise ValueError("local original executor count mismatch")
@@ -536,6 +576,7 @@ def main() -> None:
     parser.add_argument("--diagnose-model-actions", action="store_true")
     parser.add_argument("--experimental-bare-native-json", action="store_true")
     parser.add_argument("--experimental-single-step-prompt", action="store_true")
+    parser.add_argument("--experimental-g5-verified-continuation", action="store_true")
     args = parser.parse_args()
     source = build_local_multiroute_source(
         language=args.language, catalog_size=args.catalog_size,
@@ -547,6 +588,7 @@ def main() -> None:
         diagnose_model_actions=args.diagnose_model_actions,
         experimental_bare_native_json=args.experimental_bare_native_json,
         experimental_single_step_prompt=args.experimental_single_step_prompt,
+        experimental_g5_verified_continuation=args.experimental_g5_verified_continuation,
     ))
     if preflight["status"] == "BLOCKED_MODEL_RUNTIME":
         previous = {key: os.environ.get(key) for key in (
@@ -567,6 +609,7 @@ def main() -> None:
                     diagnose_model_actions=args.diagnose_model_actions,
                     experimental_bare_native_json=args.experimental_bare_native_json,
                     experimental_single_step_prompt=args.experimental_single_step_prompt,
+                    experimental_g5_verified_continuation=args.experimental_g5_verified_continuation,
                 ))
         finally:
             for key, value in previous.items():
