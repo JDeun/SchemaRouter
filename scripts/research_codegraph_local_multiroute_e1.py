@@ -42,6 +42,7 @@ from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
 )
 from scripts.research_codegraph_action_shape_e1 import structural_action_label
+from scripts.research_codegraph_bare_json_adapter_e1 import parse_native_action_optin
 from scripts.research_codegraph_scoped_materializer import (
     SurgicalEpisode,
     capture_surgical_episode,
@@ -50,10 +51,7 @@ from scripts.research_codegraph_surgical_agent_e1 import (
     SurgicalHostContext,
     run_surgical_model_episode,
 )
-from scripts.research_real_qwen_bound_two_step_e0 import (
-    _parse_strict_model_json,
-    parse_one_model_action,
-)
+from scripts.research_real_qwen_bound_two_step_e0 import _parse_strict_model_json
 from scripts.research_scoped_host_invocation import execute_scoped_host_call
 
 LANGUAGE_ALIASES = {
@@ -236,6 +234,7 @@ def _strict_final(text: str, observed: Mapping[str, Any]) -> bool:
 async def _baseline_local_arm(
     agent: Any, *, source: LocalControlSource, condition: str,
     diagnose_model_actions: bool = False,
+    experimental_bare_native_json: bool = False,
 ) -> dict[str, Any]:
     """Old native disclosure and invocation, with no >5-route workaround."""
     router = source.router
@@ -286,6 +285,7 @@ async def _baseline_local_arm(
     correct = False
     turns = 0
     action_shape_labels: list[str] = []
+    accepted_bare_json_calls = 0
     for _ in range(TURN_BUDGET):
         view.assert_source_unchanged()
         turns += 1
@@ -313,7 +313,12 @@ async def _baseline_local_arm(
         else:
             all_receipts = False
         try:
-            kind, payload = parse_one_model_action(generated["text"])
+            kind, payload, accepted_bare = parse_native_action_optin(
+                generated["text"],
+                offered_names=tuple(tool["name"] for tool in definitions),
+                accept_bare_json_native=experimental_bare_native_json,
+            )
+            accepted_bare_json_calls += int(accepted_bare)
         except (ValueError, TypeError, OverflowError):
             reason = "malformed_model_action"
             break
@@ -369,6 +374,8 @@ async def _baseline_local_arm(
         "total_model_tokens": input_tokens + output_tokens if all_receipts else None,
         **({"action_structure_labels": action_shape_labels}
            if diagnose_model_actions else {}),
+        **({"accepted_bare_json_calls": accepted_bare_json_calls}
+           if experimental_bare_native_json else {}),
     }
 
 
@@ -376,8 +383,13 @@ async def run_local_multiroute_codegraph_e1(
     agent: Any, *, language: str, condition: str = "joined",
     catalog_size: int = 12,
     diagnose_model_actions: bool = False,
+    experimental_bare_native_json: bool = False,
 ) -> dict[str, Any]:
     """12-route scaling negative OR separate true four-route comparable local E1."""
+    if type(experimental_bare_native_json) is not bool:
+        raise ValueError("research bare-native experiment must be boolean")
+    if experimental_bare_native_json and catalog_size != 4:
+        raise ValueError("research bare-native intervention requires four routes")
     if type(diagnose_model_actions) is not bool:
         raise ValueError("research diagnostics flag must be boolean")
     source = build_local_multiroute_source(
@@ -464,6 +476,7 @@ async def run_local_multiroute_codegraph_e1(
             row = await _baseline_local_arm(
                 agent, source=current, condition=arm,
                 diagnose_model_actions=diagnose_model_actions,
+                experimental_bare_native_json=experimental_bare_native_json,
             )
         if row["actual_source_calls"] != len(current.callback_log):
             raise ValueError("local original executor count mismatch")
@@ -504,6 +517,7 @@ def main() -> None:
     parser.add_argument("--language", choices=LANGUAGE_ALIASES, default="en")
     parser.add_argument("--catalog-size", type=int, choices=(4, 12), default=12)
     parser.add_argument("--diagnose-model-actions", action="store_true")
+    parser.add_argument("--experimental-bare-native-json", action="store_true")
     args = parser.parse_args()
     source = build_local_multiroute_source(
         language=args.language, catalog_size=args.catalog_size,
@@ -513,6 +527,7 @@ def main() -> None:
     preflight = asyncio.run(run_local_multiroute_codegraph_e1(
         None, language=args.language, catalog_size=args.catalog_size,
         diagnose_model_actions=args.diagnose_model_actions,
+        experimental_bare_native_json=args.experimental_bare_native_json,
     ))
     if preflight["status"] == "BLOCKED_MODEL_RUNTIME":
         previous = {key: os.environ.get(key) for key in (
@@ -531,6 +546,7 @@ def main() -> None:
                 result = asyncio.run(run_local_multiroute_codegraph_e1(
                     agent, language=args.language, catalog_size=args.catalog_size,
                     diagnose_model_actions=args.diagnose_model_actions,
+                    experimental_bare_native_json=args.experimental_bare_native_json,
                 ))
         finally:
             for key, value in previous.items():
