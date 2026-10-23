@@ -20,7 +20,7 @@ SECRET = "PRIVATE_SOURCE_CANARY_NEVER_EMIT_1711"
     (None, "invalid_envelope_type"),
     ("x" * 5000, "output_over_limit"),
     ('<tool_call>{"name":"contacts__read"', "unterminated_or_multiple_tool_wrapper"),
-    ("<tool_call>not-json</tool_call>", "invalid_tool_json"),
+    ("<tool_call>{bad}</tool_call>", "invalid_tool_json"),
     ('<tool_call>[]</tool_call>', "non_object_tool_payload"),
     ('<tool_call>{"name":"contacts__read"}</tool_call>', "invalid_tool_envelope"),
     (
