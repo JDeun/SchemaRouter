@@ -221,10 +221,10 @@
     {
       "path": "research/research-program-2026.md",
       "section": 4,
-      "en_blob": "a5c27dc00dd4c1cef9cd819e81b099804b33f085",
-      "ko_blob": "172c6beb895edc14e803d99d02c3e55ba3ba32d0",
+      "en_blob": "9b7321e580bdbd0d419943961b6a6b978e9c459b",
+      "ko_blob": "8772fe6bd3742bdc5579b3f79b5f2e5020614b83",
       "decision": "meaning-preserved",
-      "evidence": "Section 4 original EN/KO architecture remains aligned: registered source-native evidence is the only authority, conjunctive authorized FieldGroups are filtered before K, no calibration or execution permission follows from similarity, and model/host outcome safety stays separate. G5 opt-in section preceding it neither promotes a default nor supersedes the 0.18 release HOLD. Section 5 now explicitly prohibits merging held PR #1356 and changing frozen 0.14 scores. Exact document blobs repinned after AI-assisted comparison, not independent human editorial review."
+      "evidence": "Section 4 original EN/KO architecture remains aligned: registered source-native evidence is the only authority, conjunctive authorized FieldGroups are filtered before K, no calibration or execution permission follows from similarity, and model/host outcome safety stays separate. In the preceding G5 opt-in section both languages now distinguish default source BLOCKED_SOURCE_SEMANTICS from explicit documented noncommercial source-internal mock verification reaching BLOCKED_MODEL_RUNTIME, with no actual-Qwen outcome, no commercial provider entitlement or independent E2. No default promotion or 0.18 release HOLD relaxation. Section 5 still prohibits merging held PR #1356 and changing frozen 0.14 scores. Exact document blobs repinned after AI-assisted paired comparison, not independent human editorial review."
     },
     {
       "path": "research/routing-status.md",
