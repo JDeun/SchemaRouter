@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 
 import pytest
@@ -198,3 +199,59 @@ def test_no_false_broad_claim_when_every_synthetic_task_passes():
     assert result["summary"]["e5_k5"]["task_pass_rate"] == 1
     assert result["publication_gate_passed"] is False
     assert result["independent_e2_qualified"] is False
+
+
+def _attach_trace_receipts(manifest, runs):
+    receipts = {
+        "split_sha256": manifest["split_sha256"],
+        **{
+            f"{key}_sha256": hashlib.sha256(
+                manifest[key].encode("utf-8"),
+            ).hexdigest()
+            for key in ("model_revision", "model_runtime", "hardware")
+        },
+    }
+    for run in runs.values():
+        for row in run["rows"]:
+            row.update(receipts)
+    return receipts
+
+
+def test_paired_trace_receipts_match_manifest_and_legacy_still_works():
+    legacy_manifest, legacy_runs = fixture()
+    assert aggregate_paired_e0(legacy_manifest, legacy_runs)
+    manifest, runs = fixture()
+    receipts = _attach_trace_receipts(manifest, runs)
+    assert len(receipts) == 4
+    assert aggregate_paired_e0(manifest, runs)["task_count"] == len(TASKS)
+
+
+@pytest.mark.parametrize("name", (
+    "split_sha256", "model_revision_sha256",
+    "model_runtime_sha256", "hardware_sha256",
+))
+def test_paired_trace_rejects_tampered_cohort_receipt(name):
+    manifest, runs = fixture()
+    _attach_trace_receipts(manifest, runs)
+    runs["e5_k5"]["rows"][0][name] = "0" * 64
+    with pytest.raises(ValueError, match="cohort provenance drift"):
+        aggregate_paired_e0(manifest, runs)
+
+
+def test_paired_trace_rejects_partial_or_cross_arm_receipt_versions():
+    manifest, runs = fixture()
+    _attach_trace_receipts(manifest, runs)
+    del runs["lexical_k5"]["rows"][0]["hardware_sha256"]
+    with pytest.raises(ValueError, match="cohort provenance drift"):
+        aggregate_paired_e0(manifest, runs)
+
+    manifest, runs = fixture()
+    _attach_trace_receipts(manifest, runs)
+    for row in runs["hybrid_k5"]["rows"]:
+        for name in (
+            "split_sha256", "model_revision_sha256",
+            "model_runtime_sha256", "hardware_sha256",
+        ):
+            del row[name]
+    with pytest.raises(ValueError, match="mix E0 trace receipt versions"):
+        aggregate_paired_e0(manifest, runs)

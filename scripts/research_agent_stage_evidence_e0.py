@@ -22,6 +22,11 @@ class E0TraceProvenance:
     source_sha256: str
     hmac_key: bytes = field(repr=False)
     seed: int
+    # Optional as older opt-in E0 traces have only source/seed receipts.
+    split_sha256: str | None = None
+    model_revision: str | None = None
+    model_runtime: str | None = None
+    hardware: str | None = None
 
 
 CONDITION = "EVAL-FIXED5-OPTIN"
@@ -133,6 +138,10 @@ def sanitized_e0_trace(
     task_identity: str,
     hmac_key: bytes,
     seed: int,
+    split_sha256: str | None = None,
+    model_revision: str | None = None,
+    model_runtime: str | None = None,
+    hardware: str | None = None,
 ) -> dict[str, Any]:
     """Redact source-native E0 grading evidence to an allowlisted record.
 
@@ -150,6 +159,20 @@ def sanitized_e0_trace(
         raise ValueError("a private key of at least 16 bytes is required")
     if type(seed) is not int or seed < 0:
         raise ValueError("invalid E0 seed")
+    # Optional all-or-none attested cohort receipt. Hash free-text descriptors
+    # so public JSONL never exposes hostnames, username-bearing platform IDs,
+    # potentially private runtime paths or model configuration strings.
+    receipt_values = (split_sha256, model_revision, model_runtime, hardware)
+    with_receipts = any(value is not None for value in receipt_values)
+    if with_receipts and (
+        type(split_sha256) is not str
+        or not _HEX64.fullmatch(split_sha256)
+        or any(
+            type(value) is not str or not value.strip() or len(value) > 4096
+            for value in (model_revision, model_runtime, hardware)
+        )
+    ):
+        raise ValueError("incomplete or invalid E0 cohort provenance receipts")
     if row.get("language") not in LANGUAGES:
         raise ValueError("unrecognized E0 task language")
     labels = observed_stages(row)
@@ -247,6 +270,19 @@ def sanitized_e0_trace(
         "observed_stages": labels,
         "visible_candidate_counts": [len(stage) for stage in candidate_history],
     }
+    if with_receipts:
+        record.update({
+            "split_sha256": split_sha256,
+            "model_revision_sha256": hashlib.sha256(
+                model_revision.encode("utf-8"),
+            ).hexdigest(),
+            "model_runtime_sha256": hashlib.sha256(
+                model_runtime.encode("utf-8"),
+            ).hexdigest(),
+            "hardware_sha256": hashlib.sha256(
+                hardware.encode("utf-8"),
+            ).hexdigest(),
+        })
     for name in _INT_METRICS:
         if name in row:
             value = row[name]
