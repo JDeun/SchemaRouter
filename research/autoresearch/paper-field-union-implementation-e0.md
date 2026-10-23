@@ -71,3 +71,57 @@ mid-request mutation and source owner-change checks. Only
 after P1 source-attested tests green, begin P2 #1560 using
 original `SchemaPlanner/ToolCall` to assemble the paper-complete
 non-agent plan. Independently authored #1346 E2 remains blocked.
+
+## P1 adapter integration checkpoint — 2026-10-24
+
+**Measured code HEAD** `d3aac353c034e3bb471b822c583dae91c9cab666` in [Draft PR #1746](https://github.com/JDeun/SchemaRouter/pull/1746).
+**Actual [GitHub Actions #40038357211](https://github.com/JDeun/SchemaRouter/actions/runs/40038357211): SUCCESS, Ruff all checks passed, `59 passed in 5.83s`.**
+This dedicated workflow validates THREE source-native suites together:
+`tests/test_paper_field_retrieval.py`,
+`tests/test_paper_field_real_adapters.py`, and
+`tests/test_native_graph_shared_root_forks.py`, plus the existing
+`tests/test_native_field_group_retrieval.py`.
+
+New concrete adapters and safety controls:
+- Actual `tool_from_openapi` and `tool_from_mcp` direct readers, with
+  **explicit LOCAL host approval of semantic IDs, source/license,
+  read-only access**. Remote MCP `readOnlyHint` and schema alone
+  confer **neither** authority nor a paper-complete field group.
+- Authorized output `status` + `priority` direct reader proves
+  required field union for declared EN/KO/JA aliases.
+- Partial OpenAPI alone + field-hidden MCP must **not** be stitched
+  into an arbitrary field-complete plan. Full providers become no-fit
+  when both priority outputs hidden; incompatible required unit or
+  original `source_type` yields zero fit.
+- SIX fully authorized source providers trigger `over_k_unranked`
+  without truncation to an attractive top five. Mid-request
+  replacement of authorization policy fails closed.
+- Most importantly the existing **host semantic attestation**
+  converter-native test in `tests/test_native_graph_shared_root_forks.py`
+  now invokes `retrieve_paper_field_coverage` on its **real
+  OpenAPI original ID source → two MCP consumer endpoints**, using
+  original *verified* producer field→required MCP parameter bindings.
+  Across EN/KO/JA all three source routes and both required semantic
+  outputs must be present. If the MCP owner's semantic attestation is
+  withheld, field union is **no_proven_hit**, not a guessed join.
+  The original typed G5 one-root/two-leaf test stays intact.
+
+**Important qualification:** These are real *converter code paths* on
+locally constructed manifests, NOT a remote third-party MCP/OpenAPI
+provider's independent task gold or production end-to-end reader.
+No source connection/tool call/LLM generation was made.
+No feature in this PR is promoted to default.
+
+**Next P1/P2 technical tasks:** distinguish author-accepted
+unsupported/ambiguous aliases from noncalibrated `no_proven_hit`;
+negative provenance/qualifier/physical unit compatibility tests
+on actual schemas; enforce source contract and policy/availability
+mutations during joined three-tool selection; domain-neutral
+completeness with >2 required fields rather than guessing an
+unproved record merge. After the P1 contract is qualified, #1560
+should reuse the library's existing `ToolCall` and original
+`SchemaPlanner` to build the paper's final plan. Independently
+authored #1346 source-disjoint E2 stays **BLOCKED_EXTERNAL**.
+The full protected CI/code-scan on the code HEAD had NOT
+been declared complete at this checkpoint; check its latest
+SHA-specific conclusion before merge/release claims.
