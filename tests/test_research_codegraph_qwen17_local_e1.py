@@ -18,12 +18,15 @@ async def test_qwen17_wrapper_preserves_four_arm_local_tier_and_checkpoint(monke
 
     async def source_run(agent, *, language, condition, catalog_size):
         passed.append((language, condition, catalog_size))
+        arms = ("all_visible", "lexical_k5", "concept_graph_optin", "surgical_g5_e1")
         return {
             "status": "E1_MEASURED_LOCAL_FOUR_ARM_NOT_E2",
             "source_route_count": 4,
-            "arms": ("all_visible", "lexical_k5", "concept_graph_optin", "surgical_g5_e1"),
-            "outcomes": [{"condition": arm, "model_turns": 1, "full_task_complete": False}
-                         for arm in ("all_visible", "lexical_k5", "concept_graph_optin", "surgical_g5_e1")],
+            "arms": arms,
+            "outcomes": [
+                {"condition": arm, "model_turns": 1, "full_task_complete": False}
+                for arm in arms
+            ],
             "qualified_task_denominator": {"all_visible": 1, "lexical_k5": 1,
                                            "concept_graph_optin": 1, "surgical_g5_e1": 1},
             "task_success_rate": {"all_visible": 0.0, "lexical_k5": 0.0,
