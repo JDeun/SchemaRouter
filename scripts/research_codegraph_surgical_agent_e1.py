@@ -54,10 +54,10 @@ _SCHEMA_REQUEST_TOOL: dict[str, Any] = {
 # authorization, original executor, source bindings or the strict parser.
 SINGLE_STEP_PROTOCOL_E1 = (
     "For each turn emit exactly ONE action, never a batch or two tool_call "
-    "blocks. For a tool call output precisely: "
-    "<tool_call>{\\\"name\\\":\\\"offered__function\\\","
-    "\\\"arguments\\\":{}}</tool_call>. "
-    "Replace the placeholder with an actually offered tool name; do not "
+    "blocks. For a tool call output precisely one JSON object enclosed by "
+    "<tool_call> and </tool_call>, with keys 'name' and 'arguments'. "
+    "The name must match exactly one offered native tool. "
+    "Never output two or more tool_call blocks in the same turn. "
     "invent or call names that were not offered. Wait for the host's real "
     "tool observation before considering any dependent call. "
     "A final JSON answer is allowed only after the verified native "
