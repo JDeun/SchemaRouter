@@ -26,7 +26,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install static gate requirements
-        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1"
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1" "jinja2>=3.1,<4"
       - name: Verify canonical parser unchanged and Qwen3.5 native protocol safety
         run: |
           ruff check scripts/research_qwen35_native_tool_adapter_e1.py tests/test_research_qwen35_native_tool_adapter_e1.py scripts/research_qwen35_local_gguf_pilot_e1.py tests/test_research_qwen35_local_gguf_pilot_e1.py
