@@ -67,3 +67,28 @@ SR-PROGRESSIVE 25.09%, oracle 70.98%. These cannot be discarded.
 paired model-quality benefit is defensible only with independently
 checked complete tasks at comparable source state and model parameters.
 Small-N development E1 remains exploratory.
+
+## Implementation preflight diagnosis (not model quality, 2026-10-23)
+
+[Original Qwen3.5-2B/4B GGUF pilot run #39971720916](https://github.com/JDeun/SchemaRouter/actions/runs/39971720916)
+downloaded pinned Q4_K_M files and successfully reached native
+`llama-cpp-python==0.3.36` inference. The 2B run failed during
+multi-turn Jinja chat-template rendering with
+`TypeError: Can only get item pairs from a mapping`.
+This is a **host protocol rendering exception, not a model failed task**.
+The official Qwen3.5 tokenizer template at
+https://huggingface.co/Qwen/Qwen3.5-2B/blob/main/chat_template.jinja
+loops over `tool_call.arguments|items` (line ~119).
+Our research adapter had replayed already host-validated assistant
+function arguments as an OpenAI JSON *string*. The Qwen3.5 native
+template expects an argument *mapping*. The follow-up commit changed
+only host-validated assistant history serialization back to a mapping;
+the original strict parser, original native executor, offered-route
+checks, and current model-generated argument validation remain unchanged.
+Template-specific regression tests now reproduce both zero-argument
+and producer-derived two-argument history cases.
+
+This is an engine/template adaptation, **not** an experimental graph
+or model prompt change. The failed original run is excluded from
+task-success denominators, and follow-up outcomes must name their new
+SHA/run. Exact prior artifacts and FAIL state are preserved.
