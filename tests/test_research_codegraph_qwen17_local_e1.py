@@ -39,7 +39,7 @@ async def test_qwen17_wrapper_preserves_four_arm_local_tier_and_checkpoint(monke
     assert report["model_revision"] == study.REVISION
     assert report["baseline_model_id"] != report["model_id"]
     assert report["checkpoint_only_model_intervention"] is True
-    assert report["original_provider_e1"] is not True if "original_provider_e1" in report else True
+    assert report.get("original_provider_e1", False) is False
     assert report["real_external_provider_observed"] is False
     assert report["independent_e2_qualified"] is False
     assert report["release_qualified"] is False
