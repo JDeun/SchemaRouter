@@ -302,7 +302,7 @@ def analyze_multidomain_source(
 
     # Test live current health independently in EVERY source domain. Neither
     # method may leak a previously indexed but now revoked consumer route.
-    for label, group, aliases, oracle in cases:
+    for _label, group, aliases, oracle in cases:
         forbidden = oracle[0][2]
         tool_key = forbidden.rsplit(".", 1)[0]
         router.planner.availability_predicate = (
@@ -340,7 +340,9 @@ def analyze_multidomain_source(
             "lexical_only_complete": lexical_only,
             "neither_complete": neither,
             "quality_conditioned_g5_schema_bytes": sum(r["g5_schema_bytes"] for r in both),
-            "quality_conditioned_lexical_schema_bytes": sum(r["lexical_schema_bytes"] for r in both),
+            "quality_conditioned_lexical_schema_bytes": sum(
+                r["lexical_schema_bytes"] for r in both
+            ),
         },
         "all_domain_revocations_denied": True,
         "model_token_measurement": False,
