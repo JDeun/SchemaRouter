@@ -100,6 +100,19 @@ def structural_action_label(
         return "partial_tool_call"
     match = TOOL_CALL.fullmatch(raw)
     if match is None:
+        # The original strict parser requires a JSON *object* inside a
+        # tool_call block. A complete array/string/number block is invalid,
+        # not a partial fragment. Diagnose that without relaxing parsing.
+        if raw.startswith("<tool_call>") and raw.endswith("</tool_call>"):
+            inner = raw[len("<tool_call>"):-len("</tool_call>")]
+            try:
+                block = _load_untrusted_json(inner)
+            except KeyError:
+                return "duplicate_json_key"
+            except (TypeError, ValueError):
+                return "invalid_json"
+            if type(block) is not dict:
+                return "non_object_payload"
         if "<tool_call" in raw or "</tool_call>" in raw:
             return "partial_tool_call"
         try:
