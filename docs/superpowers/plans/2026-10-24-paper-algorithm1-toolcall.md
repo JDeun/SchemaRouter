@@ -38,7 +38,7 @@
 - [x] Implement minimal explicit planner-model composition and source authorization/provenance checks; invoke fresh P1 proof before and after projection.
 - [x] Verify GREEN and add negative RED tests for malformed dependency/late revoked scope/unchanged default; implement corresponding fail-closed guards.
 - [x] Run focused paper/native tests and repository lint; full suite outcome recorded below.
-- [ ] Commit isolated work and publish as stacked Draft against existing PR #1746 if verified; do not merge or close the parent issues.
+- [x] Commit isolated work and publish as [stacked Draft PR #1747](https://github.com/JDeun/SchemaRouter/pull/1747) against existing PR #1746; no merge or parent-issue closure.
 
 ## Task 2: Later owner-reviewed parameterized sources and native adapter evidence (out of this first slice)
 
@@ -55,3 +55,4 @@
 - Reviewer also reproduced valid P1-approved inputful G5 root failure. Added RED native post ID→user ID→username case, then GREEN qualified `approved_host_roots` + `_host_source_input_names` verification and exact **missing** host-root arguments. Unsupported/unreviewed inputful roots still fail closed. Concrete host values remain excluded.
 - Post-review focused verification: **101 passed** (`test_paper_field_plan`, source-native OpenAPI/MCP/OPTIMADE P1 coverage, native fork/G5 host root, native FieldGroup, public ABI). `ruff check .`: **All checks passed**. `pyright src/schemarouter/paper_field_plan.py`: **0 errors, 0 warnings**. Earlier bare pytest was attempted but stopped after lengthy no-progress near 13%, so full-suite-green is **not** claimed.
 - Reviewer verdict: no Critical; two Important findings (real data-scope test gap and approved inputful-root ambiguity) fixed with tests before publishing; one Minor mutable nested `ToolCall` receipt explicitly documented. No independent E2.
+- Publication: GitHub connector commit `965234e066e87ab1aa0a9399224567dd187f491a` has exactly the same tree SHA `76cadecd35695e6c93ede9965abaa5b92a3909bb` as locally verified `c4598fb` and remote P1 parent `5a530e6`. PR #1747 targets the P1 feature branch and remains Draft. Issue #1560 received exact-head status comment. Parent PR #1746 broad exact-head CI run #40040143730 ultimately succeeded; P2 exact-head Actions were still running at publication.

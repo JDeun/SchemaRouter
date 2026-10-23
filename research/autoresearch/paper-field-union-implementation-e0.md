@@ -172,8 +172,11 @@ reported `success` on that head. The broad `CI` remained `in_progress`
 at the last check; never infer entire CI from the dedicated workflow.
 Issue #1535 has the exact published checkpoint comment.
 
-Follow-on #1560 work is isolated on local branch
-`feat/1560-paper-field-toolcall-plan-20261024` until separately published.
+Follow-on #1560 is on branch
+`feat/1560-paper-field-toolcall-plan-20261024`, published as
+[stacked Draft PR #1747](https://github.com/JDeun/SchemaRouter/pull/1747)
+at initial source SHA `965234e066e87ab1aa0a9399224567dd187f491a`
+based on verified P1 GitHub SHA `5a530e6440601a9fcc0083730653d246014deac8`.
 Spec: `docs/superpowers/specs/2026-10-24-paper-algorithm1-toolcall-design.md`;
 plan: `docs/superpowers/plans/2026-10-24-paper-algorithm1-toolcall.md`.
 New `src/schemarouter/paper_field_plan.py::compile_paper_field_toolcalls`
@@ -216,3 +219,9 @@ executor, independently authored #1346 E2. Keep parent issues open,
 Draft PRs unmerged and release HOLD. Next session should inspect the
 latest stacked P2 PR/checks and continue these remaining acceptance
 criteria; see plan ledger and SHA-specific outcomes for exact status.
+
+**CI closure:** P1 #1746 exact-head broad [CI run #40040143730](https://github.com/JDeun/SchemaRouter/actions/runs/40040143730)
+subsequently reported **SUCCESS**. Its exact-head dedicated paper
+workflow and eleven other listed workflows also reported success.
+P2 #1747 Actions were triggered and were **in progress/queued** at
+publication; do not infer their result from P1.
