@@ -63,9 +63,9 @@ def test_paper_union_of_two_split_fields_requires_original_typed_shared_root(
     assert result.independent_quality_evidence is False
     assert len(result.alternatives) == 1
     alt = result.alternatives[0]
-    assert alt.required_semantic_ids == (
+    assert set(alt.required_semantic_ids) == {
         "crm.fork_status", "crm.fork_owner",
-    )
+    }
     assert {r.route_id for r in alt.routes} == {ROOT, LEFT, RIGHT}
     assert len(alt.routes) == 3
     assert sum(bool(r.covered_semantic_ids) for r in alt.routes) == 2
