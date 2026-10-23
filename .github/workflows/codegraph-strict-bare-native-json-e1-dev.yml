@@ -75,13 +75,14 @@ jobs:
               allow_patterns=("*.json","*.safetensors","*.model","tokenizer*","*.jinja"))
           PY
       - name: Real model with separately labeled bare-JSON-only host intervention
-        env:
-          HF_HUB_OFFLINE: "1"
-          TRANSFORMERS_OFFLINE: "1"
+        # The preexisting Qwen17 runtime independently resolves model_info()
+        # before loading pinned weights; it must retain model metadata access.
+        # Qwen06 requires no remote lookups after pinned prestaging.
         run: |
           mkdir -p artifacts/codegraph-strict-json
           if [ "$MODEL_VARIANT" = "qwen06" ]; then
-            python -m scripts.research_codegraph_local_multiroute_e1 \
+            HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+              python -m scripts.research_codegraph_local_multiroute_e1 \
               --cohort local-source --catalog-size 4 \
               --language "$LANGUAGE" --diagnose-model-actions \
               --experimental-bare-native-json \
