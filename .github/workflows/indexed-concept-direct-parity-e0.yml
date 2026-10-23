@@ -1,0 +1,77 @@
+name: Indexed Concept Direct Native CPU Parity E0
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/native_semantic_index.py"
+      - "src/schemarouter/concept_graph_retrieval.py"
+      - "scripts/benchmark_indexed_concept_direct_parity_e0.py"
+      - "tests/test_benchmark_indexed_concept_direct_parity_e0.py"
+      - ".github/workflows/indexed-concept-direct-parity-e0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-pinned-concept-direct-parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        routes: [500, 5000]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install actual package and bounded test tools
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1"
+      - name: Lint indexed concept CPU benchmark sources
+        run: ruff check scripts/benchmark_indexed_concept_direct_parity_e0.py tests/test_benchmark_indexed_concept_direct_parity_e0.py
+      - name: Test original native source oracle, scope and opt-in parity
+        run: python -m pytest -q -x tests/test_benchmark_indexed_concept_direct_parity_e0.py tests/test_native_concept_graph_vertical_slice.py
+      - name: Same source and principal, indexed-vs-existing ${{ matrix.routes }} routes
+        run: |
+          python -m scripts.benchmark_indexed_concept_direct_parity_e0 \
+            --registered-routes ${{ matrix.routes }} --iterations 10 \
+            > indexed-concept-direct-${{ matrix.routes }}-e0.json
+      - name: Check exact K, parity, privacy tier and log CI-only metrics
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          n = ${{ matrix.routes }}
+          report = json.loads(Path(f"indexed-concept-direct-{n}-e0.json").read_text())
+          assert report["evidence_tier"] == "E0_SYNTHETIC_INDEXED_CONCEPT_PARITY_NOT_E2"
+          assert report["independent_e2_qualified"] is False
+          assert report["model_or_real_provider_called"] is False
+          assert report["new_default_routing"] is False
+          assert report["registered_source_routes"] == n
+          assert report["strict_k"] == 5
+          assert len(report["scenarios"]) == 5
+          expected = {"one": 1, "six": 6, "none": 0, "hidden": 0, "health": 1}
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write(f"## Indexed concept E0 parity: {n} synthetic native routes\\n\\n")
+              out.write("No publisher-authored E2, model agent, speed win or production SLO claimed.\\n\\n")
+              for row in report["scenarios"]:
+                  assert row["exact_structural_parity"] is True
+                  assert row["original_authorized_direct_count"] == expected[row["scenario"]]
+                  assert row["paired_queries_per_arm"] == 30
+                  for arm in ("existing_planner", "optin_posting_index"):
+                      for q in ("wall_ms", "process_cpu_ms"):
+                          assert all(row[arm][q][p] >= 0 for p in ("p50", "p95", "p99"))
+                  p0 = row["existing_planner"]["wall_ms"]["p95"]
+                  p1 = row["optin_posting_index"]["wall_ms"]["p95"]
+                  out.write(f"- {row['scenario']}: full p95 {p0:.2f} ms vs indexed p95 {p1:.2f} ms\\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: indexed-concept-direct-parity-e0-${{ matrix.routes }}-${{ github.run_id }}
+          path: indexed-concept-direct-*-e0.json
+          retention-days: 30
+          if-no-files-found: error
