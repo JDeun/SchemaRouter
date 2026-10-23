@@ -51,6 +51,58 @@ exclusion. Qwen3.5 agent finals 0/5 both quantized models, historical
 v0.14 negative FULL-vs-SR and source-disjoint E2 gate #1346 and paired
 agent #1477 remain unaffected; v0.18 #1356 HARD HOLD.
 
-## Post-measurement
+## Post-measurement — pinned Qwen3-1.7B source JSON token receipts
 
-Append after exact-code GitHub Linux CI run and inspected JSON.
+Measured code head `20df6f7e38eebf2e044a8ef29f97d9368f16425a`.
+[GitHub Actions run #40033130600](https://github.com/JDeun/SchemaRouter/actions/runs/40033130600)
+**success**, artifact ID `12535324302`. Full artifact downloaded
+and inspected (`result.json`, four combined catalog/scope summaries,
+36 task/domain/language rows). The exact official HF revision
+`Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e`,
+`transformers==4.57.3`, and
+`tokenizer.encode(schema_json, add_special_tokens=False)` were
+held constant for both arms. No model weights or generations.
+
+| Combined catalog | Scope | Both-correct source tasks | G5 source JSON tokens | Lexical source JSON tokens | Reduction of G5 source tokens |
+| ---: | --- | ---: | ---: | ---: | ---: |
+| 512 | normal | 9/9 | 4,014 | 5,784 | **30.60%** |
+| 512 | mixed | 9/9 | 4,014 | 5,958 | **32.63%** |
+| 5,012 | normal | 9/9 | 4,014 | 5,784 | **30.60%** |
+| 5,012 | mixed | 9/9 | 4,014 | 5,958 | **32.63%** |
+
+All 36 cells were positive **source-oracle-complete** for both
+actual opt-in indexed typed G5 and source-scoped schema-aware Lexical K5;
+hence all 36 qualified for the menu-only token numerator/denominator.
+Three language aliases produce the same source menu on each domain,
+so identical menu token totals are reused — they are NOT 36
+independently composed task instances.
+
+| Domain / scope | G5 original schema JSON tokens | Lexical source schema JSON tokens |
+| --- | ---: | ---: |
+| CRM / normal | 449 | 713 |
+| CRM / mixed | 449 | 771 |
+| LAB / both | 448 | 613 |
+| INVENTORY / both | 441 | 602 |
+
+The verified Qwen tokenizer counts are close to the previous 30.74%
+(normal) and 32.81% (mixed) raw UTF-8 byte reductions, but those
+percentages are different metrics and should not be exchanged.
+The native source schema menu is serialized in an explicit, fixed,
+compact source-owned JSON format, sorted original tool route IDs
+with one newline separator; those exact strings are tokenized.
+This analysis does **not** account for actual chat template,
+model-provided tool function wrapper, prompt instruction text,
+conversation/tool observations, output tokens, retries, other agents,
+performance latency/billing or strict final-task quality.
+
+**Defensible narrow claim:** Within this THREE-domain developer-authored
+synthetic matched K5 source-complete cohort, the opt-in typed G5
+graph's original contract menu uses **30.6–32.6% fewer tokens
+under a pinned Qwen3-1.7B tokenizer** than the fixed schema-aware
+lexical K5 comparator. This is NOT a demonstrated 30% overall
+LLM/agent token reduction, not empirical response quality increase,
+not source-disjoint independent E2, and not confirmation that G5
+outperforms every lexical/dense/relational alternative.
+Previous negative agent outcomes and independent FULL-vs-SR
+benchmarks remain unchanged; #1346, #1477 and v0.18 #1356 remain gated.
+
