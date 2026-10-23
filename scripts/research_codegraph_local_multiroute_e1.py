@@ -250,6 +250,11 @@ async def _baseline_local_arm(
     experimental_g5_verified_continuation: bool = False,
 ) -> dict[str, Any]:
     """Old native disclosure and invocation, with no >5-route workaround."""
+    if type(experimental_g5_verified_continuation) is not bool or (
+        experimental_g5_verified_continuation
+        and not experimental_single_step_prompt
+    ):
+        raise ValueError("G5 continuation requires fixed one-action baseline")
     router = source.router
     query = LANGUAGE_ALIASES[source.language]
     view = capture_authorized_agent_tool_surface(
@@ -429,10 +434,10 @@ async def run_local_multiroute_codegraph_e1(
     if experimental_g5_verified_continuation and (
         catalog_size != 4
         or experimental_bare_native_json
-        or experimental_single_step_prompt
+        or not experimental_single_step_prompt
         or condition != "joined"
     ):
-        raise ValueError("verified continuation must be isolated four-route joined E1")
+        raise ValueError("verified continuation requires four-route one-step E1")
     if experimental_single_step_prompt and experimental_bare_native_json:
         raise ValueError("grammar and one-step prompt treatments must be separate")
     if experimental_single_step_prompt and catalog_size != 4:
