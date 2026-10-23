@@ -425,12 +425,6 @@ from .native_graph_index import (
     NativeIndexedGraphResult,
     NativeSchemaGraphIndex,
 )
-from .paper_field_retrieval import (
-    PaperFieldAlternative,
-    PaperFieldCoverage,
-    PaperFieldRoute,
-    retrieve_paper_field_coverage,
-)
 from .native_semantic_index import (
     IndexedNativeFieldCandidate,
     IndexedNativeFieldResult,
@@ -448,6 +442,12 @@ from .operation_fit import (
 )
 from .operation_intent import OperationIntentHypothesis, infer_operation_intent
 from .pairwise import PairwiseDecisionBackend, PairwiseScoreCallable
+from .paper_field_retrieval import (
+    PaperFieldAlternative,
+    PaperFieldCoverage,
+    PaperFieldRoute,
+    retrieve_paper_field_coverage,
+)
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
 from .policy import (
     ApprovalCallback,
