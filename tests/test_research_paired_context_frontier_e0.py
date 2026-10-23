@@ -10,6 +10,7 @@ from scripts.research_paired_context_frontier_e0 import (
     evaluate,
 )
 
+
 def _case(supported: bool, route: str | None) -> Case:
     return Case(
         query="dev synthetic",
