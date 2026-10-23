@@ -425,6 +425,12 @@ from .native_graph_index import (
     NativeIndexedGraphResult,
     NativeSchemaGraphIndex,
 )
+from .paper_field_retrieval import (
+    PaperFieldAlternative,
+    PaperFieldCoverage,
+    PaperFieldRoute,
+    retrieve_paper_field_coverage,
+)
 from .native_semantic_index import (
     IndexedNativeFieldCandidate,
     IndexedNativeFieldResult,
@@ -590,6 +596,10 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
+    "PaperFieldAlternative",
+    "PaperFieldCoverage",
+    "PaperFieldRoute",
+    "retrieve_paper_field_coverage",
     "NativeConceptGraphSelection",
     "NativeConceptRouteSet",
     "retrieve_authorized_concept_graph",
