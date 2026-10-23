@@ -102,3 +102,26 @@ are not independent cases, and any measured local success is neither
 publisher-authored independent E2 (#1346) nor production cost/quality
 evidence. #1356 v0.18 remains HARD HOLD. The current index p95 result
 of #1560 is independent of any model task success.
+
+## Historical first pilot: no treatment actually delivered
+
+Before the matched single-step baseline was mandated, the six pinned
+real-model source-local jobs in [run #39932600124](https://github.com/JDeun/SchemaRouter/actions/runs/39932600124)
+finished SUCCESS *operationally*, but **all six** G5 experiments recorded
+`verified_continuation_cues=0`: no original first native callback was
+executed by G5 in the no-single-step-prompt cohort. Accordingly all
+six G5 tasks failed (0/1 each); this is a **non-triggered intervention**
+and must **not** be scored as a negative cue effect.
+
+For the Qwen3-1.7B KO historical control, FULL and lexical each made
+one original call then stopped; in every other listed arm/language there
+were zero original calls. The model did not provide a valid first
+G5 source observation, so the host's safety gate properly abstained
+from appending any cue. Preserve those source-grounded null-exposure
+results separately from the **amended run**, which has the previously
+validated #1728 single-step system prompt active in *both* original
+and extra-cue conditions. Compare only matching model revisions,
+source fingerprints, prompts, original executor, five-turn cap and task
+gold. Any positive result would be a *second-stage progress cue*
+effect in this author-prepared E1 fixture, not overall CodeGraph
+superiority or independent E2.
