@@ -73,15 +73,38 @@ def main() -> None:
     parser.add_argument("--cohort", choices=("four-route",), required=True)
     parser.add_argument("--language", choices=LANGUAGE_ALIASES, required=True)
     parser.add_argument("--strict-unwrapped-tool-json", action="store_true")
+    parser.add_argument("--paired-envelope-comparison", action="store_true")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     # This class validates its independently pinned 40-character Hugging Face
     # source SHA before loading and shares exactly the legacy generation API.
+    if args.strict_unwrapped_tool_json and args.paired_envelope_comparison:
+        parser.error("choose single intervention or paired comparison")
     agent = LocalQwen17BRealAgent()
-    report = asyncio.run(evaluate_candidate(
-        agent, language=args.language,
-        experimental_strict_unwrapped_json=args.strict_unwrapped_tool_json,
-    ))
+    if args.paired_envelope_comparison:
+        control = asyncio.run(evaluate_candidate(agent, language=args.language))
+        treated = asyncio.run(evaluate_candidate(
+            agent, language=args.language,
+            experimental_strict_unwrapped_json=True,
+        ))
+        if control["source_receipt_digest"] != treated["source_receipt_digest"]:
+            raise ValueError("changed original source in paired envelope experiment")
+        report = {
+            "study": "CODEGRAPH_QWEN17_PAIRED_STRICT_ENVELOPE_E1_DEV",
+            "model_id": MODEL_ID, "model_revision": REVISION,
+            "language": args.language,
+            "source_receipt_digest": control["source_receipt_digest"],
+            "strict_k": 5,
+            "intervention": "canonical_offered_unwrapped_tool_json_only",
+            "independent_e2_qualified": False, "release_qualified": False,
+            "results": {"original_strict_control": control,
+                        "exact_json_envelope_treatment": treated},
+        }
+    else:
+        report = asyncio.run(evaluate_candidate(
+            agent, language=args.language,
+            experimental_strict_unwrapped_json=args.strict_unwrapped_tool_json,
+        ))
     report["source_revision"] = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True,
         check=True, capture_output=True, timeout=10,
@@ -91,16 +114,28 @@ def main() -> None:
     args.out.write_text(json.dumps(
         report, indent=2, sort_keys=True, allow_nan=False,
     ) + "\n", encoding="utf-8")
-    print(json.dumps({
-        "study": report["study"],
-        "status": report["status"],
-        "language": report["language"],
-        "qualified_task_denominator": report["qualified_task_denominator"],
-        "actual_source_calls": report["source_call_count"],
-        "model_turns": {
-            row["condition"]: row["model_turns"] for row in report["outcomes"]
-        },
-    }, sort_keys=True))
+    if args.paired_envelope_comparison:
+        printed = {
+            "study": report["study"],
+            "language": report["language"],
+            "complete_task_counts": {
+                arm: sum(row["full_task_complete"] is True
+                         for row in condition["outcomes"])
+                for arm, condition in report["results"].items()
+            },
+        }
+    else:
+        printed = {
+            "study": report["study"],
+            "status": report["status"],
+            "language": report["language"],
+            "qualified_task_denominator": report["qualified_task_denominator"],
+            "actual_source_calls": report["source_call_count"],
+            "model_turns": {
+                row["condition"]: row["model_turns"] for row in report["outcomes"]
+            },
+        }
+    print(json.dumps(printed, sort_keys=True))
 
 
 if __name__ == "__main__":
