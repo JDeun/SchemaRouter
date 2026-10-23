@@ -82,8 +82,10 @@ async def run_graph_frontier_model_episode(
         raise ValueError("diagnostics flag must be boolean")
     # Fail before generation on absent or stale original authorization.
     _ = episode.public_reference
-    if not any(len(path.route_ids) == 2 for path in episode.selection.route_sets):
-        raise ValueError("frontier E1 requires attested two-hop path")
+    if not episode.selection.route_sets or any(
+        len(path.route_ids) != 2 for path in episode.selection.route_sets
+    ):
+        raise ValueError("frontier E1 requires only attested two-hop paths")
 
     messages = [
         {"role": "system", "content": (
