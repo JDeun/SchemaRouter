@@ -966,6 +966,10 @@ def run_generated_episode(
                 task_identity=str(task["semantic_task_id"]),
                 hmac_key=provenance.hmac_key,
                 seed=provenance.seed,
+                split_sha256=provenance.split_sha256,
+                model_revision=provenance.model_revision,
+                model_runtime=provenance.model_runtime,
+                hardware=provenance.hardware,
             )
             experimental_agent_tool_surface.assert_source_unchanged()
         return public
