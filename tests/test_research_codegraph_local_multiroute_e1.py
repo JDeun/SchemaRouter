@@ -287,7 +287,7 @@ async def test_bare_native_treatment_is_a_distinct_four_route_scored_arm():
     assert trial["task_success_rate"]["all_visible"] == 1.0
     assert trial["task_success_rate"]["lexical_k5"] == 1.0
     assert any(
-        row.get("accepted_bare_json_calls", 0) >= 2
+        row.get("bare_json_strict_parser_acceptances", 0) >= 2
         for row in trial["outcomes"]
     )
     assert all(
