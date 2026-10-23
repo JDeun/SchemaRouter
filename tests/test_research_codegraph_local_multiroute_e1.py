@@ -400,11 +400,13 @@ async def test_verified_continuation_sent_only_after_first_actual_g5_callback():
         original, source=local.build_local_multiroute_source(
             language="en", catalog_size=4,
         ), condition="concept_graph_optin",
+        experimental_single_step_prompt=True,
     )
     trial = await local._baseline_local_arm(
         treated, source=local.build_local_multiroute_source(
             language="en", catalog_size=4,
         ), condition="concept_graph_optin",
+        experimental_single_step_prompt=True,
         experimental_g5_verified_continuation=True,
     )
     assert base["full_task_complete"] == trial["full_task_complete"] is True
@@ -433,10 +435,12 @@ async def test_verified_continuation_preserves_full_and_lexical_original_arms():
     before = await local.run_local_multiroute_codegraph_e1(
         MenuAgent(), language="ko", catalog_size=4,
         diagnose_model_actions=True,
+        experimental_single_step_prompt=True,
     )
     after = await local.run_local_multiroute_codegraph_e1(
         MenuAgent(), language="ko", catalog_size=4,
         diagnose_model_actions=True,
+        experimental_single_step_prompt=True,
         experimental_g5_verified_continuation=True,
     )
     assert after["continuation_treatment"] == "AFTER_VERIFIED_FIRST_G5_CALL"
@@ -459,12 +463,12 @@ async def test_verified_continuation_preserves_full_and_lexical_original_arms():
 
 
 @pytest.mark.parametrize(("size", "condition", "bare", "one_step", "cue"), (
-    (12, "joined", False, False, True),
-    (4, "joined", True, False, True),
-    (4, "joined", False, True, True),
-    (4, "denied", False, False, True),
-    (4, "joined", False, False, 1),
-    (4, "joined", False, False, "true"),
+    (12, "joined", False, True, True),
+    (4, "joined", True, True, True),
+    (4, "joined", False, False, True),
+    (4, "denied", False, True, True),
+    (4, "joined", False, True, 1),
+    (4, "joined", False, True, "true"),
 ))
 @pytest.mark.asyncio
 async def test_verified_continuation_cannot_change_cohort_or_combine_interventions(
