@@ -25,9 +25,11 @@ from scripts.benchmark_native_fork_fieldgroup_e0 import (
 )
 from scripts.research_g5_source_schema_exposure_e0 import (
     MAX_K,
-    SCHEMA_VERSION as PARENT_SCHEMA_VERSION,
     SIZES,
     _visible_original_contract_bytes,
+)
+from scripts.research_g5_source_schema_exposure_e0 import (
+    SCHEMA_VERSION as PARENT_SCHEMA_VERSION,
 )
 
 SCHEMA_VERSION = "g5-vs-scoped-lexical-k5-e0-v1"
