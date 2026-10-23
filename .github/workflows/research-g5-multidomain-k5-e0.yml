@@ -1,0 +1,97 @@
+name: G5 Multidomain Native K5 Paired E0
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_g5_multidomain_paired_k5_e0.py"
+      - "scripts/research_g5_vs_scoped_lexical_k5_e0.py"
+      - "tests/test_research_g5_multidomain_paired_k5_e0.py"
+      - "research/autoresearch/g5-multidomain-paired-k5-e0.md"
+      - ".github/workflows/research-g5-multidomain-k5-e0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  three-domain-original-native:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        base: [500, 5000]
+        scope: [normal, mixed]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install original checked-out source and static test tools
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1"
+      - name: Verify independent source-oracle and authorization safety
+        run: |
+          ruff check scripts/research_g5_multidomain_paired_k5_e0.py tests/test_research_g5_multidomain_paired_k5_e0.py scripts/research_g5_vs_scoped_lexical_k5_e0.py
+          python -m pytest -q tests/test_research_g5_multidomain_paired_k5_e0.py tests/test_research_g5_vs_scoped_lexical_k5_e0.py
+      - name: Evaluate one combined CRM LAB INVENTORY native catalog
+        run: |
+          mkdir -p artifacts/g5-multidomain-e0
+          python -m scripts.research_g5_multidomain_paired_k5_e0 \
+            --base-routes ${{ matrix.base }} \
+            ${{ matrix.scope == 'mixed' && '--mixed-scope' || '' }} \
+            --out artifacts/g5-multidomain-e0/${{ matrix.base }}-${{ matrix.scope }}.json
+      - name: Verify denominator, outcomes and no external E2 or token claims
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          files = list(Path("artifacts/g5-multidomain-e0").glob("*.json"))
+          assert len(files) == 1, files
+          result = json.loads(files[0].read_text())
+          assert result["schema_version"] == "g5-multidomain-matched-k5-e0-v1"
+          assert result["base_registered_routes"] in (500, 5000)
+          assert result["actual_registered_native_routes"] == result["base_registered_routes"] + 12
+          assert result["three_source_domains"] == ["crm", "lab", "inventory"]
+          assert result["strict_k"] == 5
+          assert len(result["rows"]) == 9
+          assert result["all_domain_revocations_denied"] is True
+          assert result["independent_e2_qualified"] is False
+          assert result["release_qualified"] is False
+          assert result["model_token_measurement"] is False
+          assert result["actual_provider_calls"] is False
+          paired = result["paired"]
+          assert sum(paired[name] for name in (
+              "both_complete", "g5_only_complete",
+              "lexical_only_complete", "neither_complete",
+          )) == len(result["rows"])
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as f:
+              f.write("## E0 three-domain G5 vs scoped lexical K5\n\n")
+              f.write("Same source snapshot, one owner-authored task per domain, no LLM/model tokens or external E2.\n\n")
+              f.write("| Domain | Language | G5 complete | Lexical complete | G5 menu bytes | Lexical menu bytes | Paired cost eligible |\n")
+              f.write("|---|---|---|---|---:|---:|---|\n")
+              for row in result["rows"]:
+                  assert row["domain"] in ("crm", "lab", "inventory")
+                  assert row["language"] in ("en", "ko", "ja")
+                  assert row["same_host_scope_k"] is True
+                  assert row["g5_route_count"] <= 5
+                  assert row["lexical_route_count"] <= 5
+                  assert row["shared_complete_cost_eligible"] == (
+                      row["g5_source_complete"] and row["lexical_source_complete"]
+                  )
+                  f.write(
+                      f"| {row['domain']} | {row['language']} | "
+                      f"{row['g5_source_complete']} | {row['lexical_source_complete']} | "
+                      f"{row['g5_schema_bytes']} | {row['lexical_schema_bytes']} | "
+                      f"{row['shared_complete_cost_eligible']} |\n"
+                  )
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: g5-multidomain-${{ matrix.base }}-${{ matrix.scope }}-${{ github.run_id }}
+          path: artifacts/g5-multidomain-e0/*.json
+          retention-days: 30
+          if-no-files-found: warn
