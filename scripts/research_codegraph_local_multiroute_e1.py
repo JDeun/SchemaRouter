@@ -45,6 +45,7 @@ from scripts.research_codegraph_scoped_materializer import (
     SurgicalEpisode,
     capture_surgical_episode,
 )
+from scripts.research_codegraph_action_shape_e1 import structural_action_label
 from scripts.research_codegraph_surgical_agent_e1 import (
     SurgicalHostContext,
     run_surgical_model_episode,
@@ -234,6 +235,7 @@ def _strict_final(text: str, observed: Mapping[str, Any]) -> bool:
 
 async def _baseline_local_arm(
     agent: Any, *, source: LocalControlSource, condition: str,
+    diagnose_model_actions: bool = False,
 ) -> dict[str, Any]:
     """Old native disclosure and invocation, with no >5-route workaround."""
     router = source.router
@@ -283,6 +285,7 @@ async def _baseline_local_arm(
     reason = "turn_limit"
     correct = False
     turns = 0
+    action_shape_labels: list[str] = []
     for _ in range(TURN_BUDGET):
         view.assert_source_unchanged()
         turns += 1
@@ -296,6 +299,12 @@ async def _baseline_local_arm(
             reason = "invalid_model_envelope"
             all_receipts = False
             break
+        if diagnose_model_actions:
+            action_shape_labels.append(structural_action_label(
+                generated["text"],
+                offered_names=tuple(tool["name"] for tool in definitions),
+                native_calls=len(calls),
+            ))
         if all(type(generated.get(key)) is int and generated[key] >= 0
                for key in ("input_tokens", "tool_tokens", "output_tokens")):
             input_tokens += generated["input_tokens"]
@@ -358,14 +367,19 @@ async def _baseline_local_arm(
         "tool_schema_tokens": schema_tokens if all_receipts else None,
         "model_output_tokens": output_tokens if all_receipts else None,
         "total_model_tokens": input_tokens + output_tokens if all_receipts else None,
+        **({"action_structure_labels": action_shape_labels}
+           if diagnose_model_actions else {}),
     }
 
 
 async def run_local_multiroute_codegraph_e1(
     agent: Any, *, language: str, condition: str = "joined",
     catalog_size: int = 12,
+    diagnose_model_actions: bool = False,
 ) -> dict[str, Any]:
     """12-route scaling negative OR separate true four-route comparable local E1."""
+    if type(diagnose_model_actions) is not bool:
+        raise ValueError("research diagnostics flag must be boolean")
     source = build_local_multiroute_source(
         language=language, condition=condition, catalog_size=catalog_size,
     )
@@ -438,6 +452,7 @@ async def run_local_multiroute_codegraph_e1(
             row = await run_surgical_model_episode(
                 agent, episode=current.episode,
                 host_context=context, max_turns=TURN_BUDGET,
+                diagnose_model_actions=diagnose_model_actions,
             )
             row = {
                 **row, "condition": arm,
@@ -446,7 +461,10 @@ async def run_local_multiroute_codegraph_e1(
                 "full_task_complete": row["full_task_correct"],
             }
         else:
-            row = await _baseline_local_arm(agent, source=current, condition=arm)
+            row = await _baseline_local_arm(
+                agent, source=current, condition=arm,
+                diagnose_model_actions=diagnose_model_actions,
+            )
         if row["actual_source_calls"] != len(current.callback_log):
             raise ValueError("local original executor count mismatch")
         total_calls += len(current.callback_log)
@@ -485,6 +503,7 @@ def main() -> None:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--language", choices=LANGUAGE_ALIASES, default="en")
     parser.add_argument("--catalog-size", type=int, choices=(4, 12), default=12)
+    parser.add_argument("--diagnose-model-actions", action="store_true")
     args = parser.parse_args()
     source = build_local_multiroute_source(
         language=args.language, catalog_size=args.catalog_size,
@@ -493,6 +512,7 @@ def main() -> None:
     # A genuinely absent local runtime returns a null-denominator blocker.
     preflight = asyncio.run(run_local_multiroute_codegraph_e1(
         None, language=args.language, catalog_size=args.catalog_size,
+        diagnose_model_actions=args.diagnose_model_actions,
     ))
     if preflight["status"] == "BLOCKED_MODEL_RUNTIME":
         previous = {key: os.environ.get(key) for key in (
@@ -510,6 +530,7 @@ def main() -> None:
             else:
                 result = asyncio.run(run_local_multiroute_codegraph_e1(
                     agent, language=args.language, catalog_size=args.catalog_size,
+                    diagnose_model_actions=args.diagnose_model_actions,
                 ))
         finally:
             for key, value in previous.items():
