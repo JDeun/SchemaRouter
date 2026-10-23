@@ -406,7 +406,8 @@ async def _baseline_local_arm(
         **({"bare_json_strict_parser_acceptances": bare_json_strict_parser_acceptances}
            if experimental_bare_native_json else {}),
         **({"verified_continuation_cues": verified_continuation_cues}
-           if experimental_g5_verified_continuation else {}),
+           if experimental_g5_verified_continuation
+           and condition == "concept_graph_optin" else {}),
     }
 
 
