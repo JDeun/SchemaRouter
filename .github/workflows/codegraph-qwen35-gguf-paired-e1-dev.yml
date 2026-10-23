@@ -1,0 +1,131 @@
+name: CodeGraph Qwen35 GGUF Paired E1 PILOT
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_qwen35_local_gguf_pilot_e1.py"
+      - "scripts/research_qwen35_native_tool_adapter_e1.py"
+      - "tests/test_research_qwen35_local_gguf_pilot_e1.py"
+      - "tests/test_research_qwen35_native_tool_adapter_e1.py"
+      - "research/autoresearch/codegraph-qwen35-model-compatibility-e1.md"
+      - ".github/workflows/codegraph-qwen35-gguf-paired-e1-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  local-quantized-model-pilot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 110
+    strategy:
+      fail-fast: false
+      matrix:
+        model: [qwen35_2b, qwen35_4b]
+        language: [en]
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      CMAKE_ARGS: "-DGGML_NATIVE=OFF"
+      FORCE_CMAKE: "1"
+      PYTHONUNBUFFERED: "1"
+      MODEL_VARIANT: ${{ matrix.model }}
+      LANGUAGE: ${{ matrix.language }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install pinned local CPU GGUF inference and original source dependencies
+        run: |
+          python -m pip install cmake ninja
+          python -m pip install "llama-cpp-python==0.3.36" "huggingface-hub>=0.30,<2" ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1"
+      - name: Fail-closed XML and original-source research contract tests
+        run: |
+          ruff check scripts/research_qwen35_native_tool_adapter_e1.py scripts/research_qwen35_local_gguf_pilot_e1.py tests/test_research_qwen35_native_tool_adapter_e1.py tests/test_research_qwen35_local_gguf_pilot_e1.py
+          python -m pytest -q tests/test_research_qwen35_native_tool_adapter_e1.py tests/test_research_qwen35_local_gguf_pilot_e1.py tests/test_research_codegraph_graph_frontier_e1.py tests/test_research_codegraph_local_multiroute_e1.py
+      - name: Verify standard runner resource headroom
+        run: |
+          python - <<'PY'
+          import shutil
+          from pathlib import Path
+          ram_kib = int(next(line for line in Path("/proc/meminfo").read_text().splitlines() if line.startswith("MemTotal:")).split()[1])
+          disk_gib = shutil.disk_usage(".").free / (1024 ** 3)
+          assert ram_kib >= 12_000_000 and disk_gib >= 6, (ram_kib, disk_gib)
+          PY
+      - name: Pin public source snapshot and download one text-only quantized GGUF
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+          from huggingface_hub import hf_hub_download, model_info
+          from scripts.research_qwen35_local_gguf_pilot_e1 import MODELS
+          choice = os.environ["MODEL_VARIANT"]
+          repo, filename = MODELS[choice]
+          identity = model_info(repo)
+          sha = identity.sha
+          assert re.fullmatch(r"[0-9a-f]{40}", sha), sha
+          path = Path(hf_hub_download(repo_id=repo, filename=filename, revision=sha))
+          assert path.name == filename and path.stat().st_size >= 900_000_000
+          print(f"Frozen GGUF source: {repo}@{sha} / {filename}")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as out:
+              out.write(f"GGUF_PATH={path}\n")
+              out.write(f"GGUF_REPO={repo}\n")
+              out.write(f"GGUF_REVISION={sha}\n")
+          PY
+      - name: Measure actual local Qwen3.5 tool-use against same 5 existing arms
+        run: |
+          mkdir -p artifacts/codegraph-qwen35-gguf
+          HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+            python -m scripts.research_qwen35_local_gguf_pilot_e1 \
+              --model "$MODEL_VARIANT" --language "$LANGUAGE" \
+              --gguf-file "$GGUF_PATH" --source-repository "$GGUF_REPO" \
+              --source-revision "$GGUF_REVISION" \
+              --out "artifacts/codegraph-qwen35-gguf/${{ matrix.model }}-${{ matrix.language }}.json"
+      - name: Validate complete-source/task and token provenance, not success assumptions
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          choice, lang = os.environ["MODEL_VARIANT"], os.environ["LANGUAGE"]
+          data = json.loads(Path(f"artifacts/codegraph-qwen35-gguf/{choice}-{lang}.json").read_text())
+          assert data["study"] == "CODEGRAPH_QWEN35_Q4_GGUF_PAIRED_LOCAL_E1"
+          assert data["source_route_count"] == 4 and data["requested_k"] == 5
+          assert data["max_model_turns"] == 5
+          assert data["status"] == "E1_MEASURED_LOCAL_FIVE_ARM_NOT_E2"
+          assert data["gguf_repository"] == os.environ["GGUF_REPO"]
+          assert data["model_revision"] == os.environ["GGUF_REVISION"]
+          assert len(data["gguf_sha256"]) == 64
+          assert data["token_subset_breakdown_available"] is False
+          assert data["true_native_local_gguf_execution"] is True
+          assert data["independent_e2_qualified"] is False
+          assert data["release_qualified"] is False
+          assert len(data["outcomes"]) == 5
+          assert data["qualified_task_denominator"] == {arm: 1 for arm in data["arms"]}
+          assert [r["condition"] for r in data["outcomes"]] == list(data["arms"])
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write(f"## Paired Qwen3.5 GGUF E1 pilot — {choice}, {lang}\n\n")
+              out.write("Original-source local development task, not independent E2.\n\n")
+              out.write("| Arm | Native callbacks | Correct final | Total model tokens | Stop |\n")
+              out.write("|---|---:|---|---:|---|\n")
+              for row in data["outcomes"]:
+                  assert 0 <= row["actual_source_calls"] <= 2
+                  assert row["full_task_complete"] in (True, False)
+                  assert row["model_turns"] <= 5
+                  assert row["total_model_tokens"] is not None
+                  assert row["tool_schema_tokens"] is None
+                  out.write(f"| {row['condition']} | {row['actual_source_calls']} | {row['full_task_complete']} | {row['total_model_tokens']} | {row['status']} |\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: codegraph-qwen35-gguf-e1-${{ matrix.model }}-${{ matrix.language }}-${{ github.run_id }}
+          path: artifacts/codegraph-qwen35-gguf/*.json
+          retention-days: 30
+          if-no-files-found: warn
