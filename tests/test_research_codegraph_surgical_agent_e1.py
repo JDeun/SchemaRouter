@@ -164,6 +164,91 @@ async def test_model_requests_schema_then_calls_two_registered_read_only_routes(
 
 
 @pytest.mark.asyncio
+async def test_bare_schema_treatment_only_reparses_currently_offered_schema_request():
+    from scripts.research_codegraph_surgical_agent_e1 import run_surgical_model_episode
+
+    bare_schema = SCHEMA.removeprefix("<tool_call>").removesuffix("</tool_call>")
+    _, episode, _, context, seen = _source()
+    original = await run_surgical_model_episode(
+        ScriptedAgent([bare_schema]), episode=episode, host_context=context,
+        diagnose_model_actions=True,
+    )
+    assert original["schema_requests"] == original["actual_source_calls"] == 0
+    assert original["termination_reason"] == "premature_final"
+    assert original["action_structure_labels"] == [
+        "bare_json_offered_schema_request_shape",
+    ]
+    assert "bare_schema_request_normalizations" not in original
+
+    treated = await run_surgical_model_episode(
+        ScriptedAgent([bare_schema, CONTACT, CASE, FINAL]),
+        episode=episode, host_context=context, diagnose_model_actions=True,
+        experimental_bare_schema_request=True,
+    )
+    assert treated["schema_requests"] == 1
+    assert treated["actual_source_calls"] == len(seen) == 2
+    assert treated["bare_schema_request_normalizations"] == 1
+    assert treated["full_task_correct"] is True
+    assert treated["model_turns"] == 4
+    assert treated["termination_reason"] == "completed_final"
+    assert "contact-4" not in json.dumps(treated)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("bad", (
+    '{"name":"research__request_scoped_source_schema",'
+    '"arguments":{"route_ids":["contacts.read","contacts.read"]}}',
+    '{"name":"research__request_scoped_source_schema",'
+    '"arguments":{"route_ids":["contacts.read"]},"extra":true}',
+    '{"name":"research__request_scoped_source_schema",'
+    '"name":"research__request_scoped_source_schema",'
+    '"arguments":{"route_ids":["contacts.read"]}}',
+    '{"name":"contacts__read","arguments":{}}',
+    '{"name":"research__request_scoped_source_schema",'
+    '"arguments":{"route_ids":["unapproved.read"]}}',
+))
+async def test_bare_schema_treatment_never_executes_untrusted_or_unoffered_route(bad):
+    from scripts.research_codegraph_surgical_agent_e1 import run_surgical_model_episode
+
+    _, episode, _, context, seen = _source()
+    result = await run_surgical_model_episode(
+        ScriptedAgent([bad]), episode=episode, host_context=context,
+        experimental_bare_schema_request=True,
+    )
+    assert result["schema_requests"] <= 1
+    assert result["actual_source_calls"] == len(seen) == 0
+    assert result["full_task_correct"] is False
+    assert result["bare_schema_request_normalizations"] <= 1
+
+
+@pytest.mark.asyncio
+async def test_bare_schema_request_not_reaccepted_after_materialization():
+    from scripts.research_codegraph_surgical_agent_e1 import run_surgical_model_episode
+
+    _, episode, _, context, seen = _source()
+    bare_schema = SCHEMA.removeprefix("<tool_call>").removesuffix("</tool_call>")
+    result = await run_surgical_model_episode(
+        ScriptedAgent([SCHEMA, bare_schema]), episode=episode, host_context=context,
+        experimental_bare_schema_request=True,
+    )
+    assert result["schema_requests"] == 1
+    assert result["bare_schema_request_normalizations"] == 0
+    assert result["actual_source_calls"] == len(seen) == 0
+
+
+@pytest.mark.asyncio
+async def test_bare_schema_experiment_requires_boolean():
+    from scripts.research_codegraph_surgical_agent_e1 import run_surgical_model_episode
+
+    _, episode, _, context, _ = _source()
+    with pytest.raises(ValueError, match="bare schema"):
+        await run_surgical_model_episode(
+            ScriptedAgent([SCHEMA]), episode=episode, host_context=context,
+            experimental_bare_schema_request=1,
+        )
+
+
+@pytest.mark.asyncio
 async def test_initial_menu_has_only_schema_request_and_no_provider_tool():
     from scripts.research_codegraph_surgical_agent_e1 import run_surgical_model_episode
 

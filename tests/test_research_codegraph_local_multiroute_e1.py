@@ -51,6 +51,73 @@ class MenuAgent:
         return result
 
 
+class BareSchemaOnlyAgent(MenuAgent):
+    """Same scripted original source actions, bare initial schema turn only."""
+
+    def generate(self, messages, tools):
+        result = super().generate(messages, tools)
+        if {tool["name"] for tool in tools} == {
+            "research__request_scoped_source_schema",
+        }:
+            result["text"] = SCHEMA.removeprefix("<tool_call>").removesuffix(
+                "</tool_call>",
+            )
+        return result
+
+
+@pytest.mark.asyncio
+async def test_bare_schema_treatment_changes_only_surgical_host_action_shape():
+    original = await local.run_local_multiroute_codegraph_e1(
+        BareSchemaOnlyAgent(), language="ko", catalog_size=4,
+        diagnose_model_actions=True, experimental_single_step_prompt=True,
+    )
+    treated = await local.run_local_multiroute_codegraph_e1(
+        BareSchemaOnlyAgent(), language="ko", catalog_size=4,
+        diagnose_model_actions=True, experimental_single_step_prompt=True,
+        experimental_bare_schema_request=True,
+    )
+    assert original["source_receipt_digest"] == treated["source_receipt_digest"]
+    assert original["requested_k"] == treated["requested_k"] == 5
+    assert treated["bare_schema_request_treatment"] == "STRICT_HOST_OFFERED_SCHEMA_ONLY"
+    assert "bare_schema_request_treatment" not in original
+    for before, after in zip(original["outcomes"][:3], treated["outcomes"][:3], strict=True):
+        assert before == after
+    failed = original["outcomes"][3]
+    assert failed["schema_requests"] == failed["actual_source_calls"] == 0
+    assert failed["full_task_complete"] is False
+    assert "bare_schema_request_normalizations" not in failed
+    recovered = treated["outcomes"][3]
+    assert recovered["schema_requests"] == recovered["bare_schema_request_normalizations"] == 1
+    assert recovered["actual_source_calls"] == 2
+    assert recovered["full_task_complete"] is True
+    assert recovered["action_structure_labels"][0] == (
+        "bare_json_offered_schema_request_shape"
+    )
+    assert "contact-4" not in json.dumps(treated)
+
+
+@pytest.mark.parametrize(("size", "condition", "single", "bare", "cue", "schema"), (
+    (12, "joined", True, False, False, True),
+    (4, "denied", True, False, False, True),
+    (4, "joined", False, False, False, True),
+    (4, "joined", True, True, False, True),
+    (4, "joined", True, False, True, True),
+    (4, "joined", True, False, False, 1),
+))
+@pytest.mark.asyncio
+async def test_bare_schema_treatment_rejects_mixed_or_unsafe_cohorts(
+    size, condition, single, bare, cue, schema,
+):
+    with pytest.raises(ValueError, match="bare schema"):
+        await local.run_local_multiroute_codegraph_e1(
+            BareSchemaOnlyAgent(), language="en", condition=condition,
+            catalog_size=size, experimental_single_step_prompt=single,
+            experimental_bare_native_json=bare,
+            experimental_g5_verified_continuation=cue,
+            experimental_bare_schema_request=schema,
+        )
+
+
 def test_fixture_registers_at_least_ten_real_read_only_host_routes():
     source = local.build_local_multiroute_source(language="en")
     tools = source.router.registry.tools()
