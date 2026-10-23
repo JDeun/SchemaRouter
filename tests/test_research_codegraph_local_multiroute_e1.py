@@ -706,3 +706,65 @@ async def test_graph_frontier_rejects_unsafe_partial_flag_combinations(flags):
             MenuAgent(), language="ko", catalog_size=4,
             experimental_graph_frontier=True, **flags,
         )
+
+
+@pytest.mark.asyncio
+async def test_e1_final_taxonomy_preserves_exact_existing_scoring():
+    baseline = await local.run_local_multiroute_codegraph_e1(
+        MenuAgent(), language="en", catalog_size=4,
+    )
+    observed = await local.run_local_multiroute_codegraph_e1(
+        MenuAgent(), language="en", catalog_size=4,
+        diagnose_model_actions=True,
+    )
+    assert baseline["task_success_rate"] == observed["task_success_rate"]
+    assert baseline["source_call_count"] == observed["source_call_count"]
+    for row in observed["outcomes"]:
+        assert row["full_task_complete"] is True
+        assert row["final_outcome_category"] == "strict_correct"
+
+
+@pytest.mark.asyncio
+async def test_e1_final_taxonomy_distinguishes_formatting_from_wrong_final():
+    class FencedFinal(MenuAgent):
+        def generate(self, messages, tools):
+            row = super().generate(messages, tools)
+            if row["text"] == FINAL:
+                row["text"] = "```json\\n" + FINAL + "\\n```"
+            return row
+
+    observed = await local.run_local_multiroute_codegraph_e1(
+        FencedFinal(), language="en", catalog_size=4,
+        diagnose_model_actions=True,
+    )
+    assert all(row["actual_source_calls"] == 2 for row in observed["outcomes"])
+    assert all(row["full_task_complete"] is False for row in observed["outcomes"])
+    assert all(
+        row["final_outcome_category"] == "markdown_fenced_not_strict_json"
+        for row in observed["outcomes"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_e1_final_taxonomy_repeated_tool_after_real_two_hop_is_denied():
+    class ExtraTool(MenuAgent):
+        def generate(self, messages, tools):
+            row = super().generate(messages, tools)
+            if row["text"] == FINAL:
+                row["text"] = CONTACT
+            return row
+
+    observed = await local.run_local_multiroute_codegraph_e1(
+        ExtraTool(), language="en", catalog_size=4,
+        diagnose_model_actions=True,
+        experimental_single_step_prompt=True,
+        experimental_bare_schema_request=True,
+        experimental_graph_path_order_prompt=True,
+        experimental_graph_frontier=True,
+    )
+    assert all(row["actual_source_calls"] == 2 for row in observed["outcomes"])
+    assert all(row["full_task_complete"] is False for row in observed["outcomes"])
+    assert all(
+        row["final_outcome_category"] == "extra_native_call_after_two_source_calls"
+        for row in observed["outcomes"]
+    )
