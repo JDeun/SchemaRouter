@@ -372,3 +372,109 @@ async def test_single_step_prompt_rejects_mixed_or_unsafe_research_conditions(
             experimental_bare_native_json=bare,
             experimental_single_step_prompt=single,
         )
+
+
+class VerifiedG5ProgressSpy(MenuAgent):
+    """Tests can inspect transient model input; no prompt is persisted by E1."""
+
+    def __init__(self):
+        super().__init__()
+        self.frames = []
+
+    def generate(self, messages, tools):
+        self.frames.append(tuple(
+            (entry["role"], entry["content"]) for entry in messages
+        ))
+        return super().generate(messages, tools)
+
+
+@pytest.mark.asyncio
+async def test_verified_continuation_sent_only_after_first_actual_g5_callback():
+    from scripts.research_codegraph_local_multiroute_e1 import (
+        G5_VERIFIED_CONTINUATION_CUE_E1,
+    )
+
+    original = VerifiedG5ProgressSpy()
+    treated = VerifiedG5ProgressSpy()
+    base = await local._baseline_local_arm(
+        original, source=local.build_local_multiroute_source(
+            language="en", catalog_size=4,
+        ), condition="concept_graph_optin",
+    )
+    trial = await local._baseline_local_arm(
+        treated, source=local.build_local_multiroute_source(
+            language="en", catalog_size=4,
+        ), condition="concept_graph_optin",
+        experimental_g5_verified_continuation=True,
+    )
+    assert base["full_task_complete"] == trial["full_task_complete"] is True
+    assert base["actual_source_calls"] == trial["actual_source_calls"] == 2
+    assert trial["verified_continuation_cues"] == 1
+    assert "verified_continuation_cues" not in base
+    assert all(
+        G5_VERIFIED_CONTINUATION_CUE_E1 not in frame[1]
+        for frame in original.frames
+    )
+    assert all(
+        G5_VERIFIED_CONTINUATION_CUE_E1 not in content
+        for _, content in treated.frames[0]
+    )
+    assert sum(
+        G5_VERIFIED_CONTINUATION_CUE_E1 == content
+        for _, content in treated.frames[1]
+    ) == 1
+    assert all("case_state" not in G5_VERIFIED_CONTINUATION_CUE_E1
+               and "contact_id" not in G5_VERIFIED_CONTINUATION_CUE_E1
+               for _ in (0,))
+    assert "contact-4" not in json.dumps(trial)
+
+
+@pytest.mark.asyncio
+async def test_verified_continuation_preserves_full_and_lexical_original_arms():
+    before = await local.run_local_multiroute_codegraph_e1(
+        MenuAgent(), language="ko", catalog_size=4,
+        diagnose_model_actions=True,
+    )
+    after = await local.run_local_multiroute_codegraph_e1(
+        MenuAgent(), language="ko", catalog_size=4,
+        diagnose_model_actions=True,
+        experimental_g5_verified_continuation=True,
+    )
+    assert after["continuation_treatment"] == "AFTER_VERIFIED_FIRST_G5_CALL"
+    assert "continuation_treatment" not in before
+    assert after["source_receipt_digest"] == before["source_receipt_digest"]
+    assert after["requested_k"] == before["requested_k"] == 5
+    assert after["qualified_task_denominator"] == before["qualified_task_denominator"]
+    assert after["task_success_rate"] == before["task_success_rate"]
+    assert after["source_call_count"] == before["source_call_count"]
+    for original, treatment in zip(before["outcomes"], after["outcomes"], strict=True):
+        assert original["condition"] == treatment["condition"]
+        assert original["actual_source_calls"] == treatment["actual_source_calls"]
+        assert original["full_task_complete"] == treatment["full_task_complete"]
+        if original["condition"] == "concept_graph_optin":
+            assert treatment["verified_continuation_cues"] == 1
+        else:
+            assert "verified_continuation_cues" not in treatment
+    assert "contact-4" not in json.dumps(after)
+    assert "region-9" not in json.dumps(after)
+
+
+@pytest.mark.parametrize(("size", "condition", "bare", "one_step", "cue"), (
+    (12, "joined", False, False, True),
+    (4, "joined", True, False, True),
+    (4, "joined", False, True, True),
+    (4, "denied", False, False, True),
+    (4, "joined", False, False, 1),
+    (4, "joined", False, False, "true"),
+))
+@pytest.mark.asyncio
+async def test_verified_continuation_cannot_change_cohort_or_combine_interventions(
+    size, condition, bare, one_step, cue,
+):
+    with pytest.raises(ValueError, match="continuation"):
+        await local.run_local_multiroute_codegraph_e1(
+            MenuAgent(), language="ja", condition=condition, catalog_size=size,
+            experimental_bare_native_json=bare,
+            experimental_single_step_prompt=one_step,
+            experimental_g5_verified_continuation=cue,
+        )
