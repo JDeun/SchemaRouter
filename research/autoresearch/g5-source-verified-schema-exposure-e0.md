@@ -49,3 +49,56 @@ Product graph index #1560 and release #1356 remain open/HARD HOLD.
 Add frozen SHA/run and all positive/negative measured bytes **only after**
 the first valid GitHub Linux artifact has been inspected. No runtime
 savings claimed at preregistration.
+
+## Postmeasurement measured result — all 12 cells complete
+
+Frozen implementation tested: `e4c4159322779fd0fcd4431705cf0aa1e071068e`.
+[GitHub Actions #40029371500](https://github.com/JDeun/SchemaRouter/actions/runs/40029371500)
+**four matrix jobs success** (500 / 5000 × normal/mixed scope);
+artifacts `12533668739`, `12533569171`, `12533693564`,
+`12533783314` respectively. All three EN/KO/JA aliases in every
+matrix cell matched the same current authorized original-source fork
+`fork_origin.read → (fork_status.read, fork_owner.read)`, with exactly
+three distinct original registered routes and one attested shared-root
+fork. All 12 cells passed the independent original-source *restricted*
+topology oracle, strict K5, and post-snapshot dynamic provider-health
+revocation denial.
+
+| Registered native routes | Original-scope condition | Principal-visible FULL routes | G5 proof routes | G5 original native contract B | Unbounded FULL visible native contract B | Index build wall ms | EN / KO / JA G5 lookup wall ms |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 500 | normal | 500 | 3 | 2,050 | 239,874 | 71.1295 | 4.649 / 2.4555 / 2.407 |
+| 500 | mixed | 498 | 3 | 2,050 | 239,831 | 96.2243 | 9.645 / 7.2243 / 7.3665 |
+| 5000 | normal | 5000 | 3 | 2,050 | 2,390,874 | 1,523.3989 | 8.3973 / 5.3215 / 5.2296 |
+| 5000 | mixed | 4998 | 3 | 2,050 | 2,390,831 | 1,436.0164 | 14.1404 / 11.1514 / 10.8322 |
+
+Exact currently visible three-route original-source oracle disclosure:
+2,050 B in **all** conditions. Thus G5 had **zero additional menu
+bytes** versus the ideal qualified exact three-route source oracle in
+this constructed one-fork scenario. The 239 KB / 2.39 MB FULL figures
+are source-owned, principal-scope-projected *unbounded* native
+catalog disclosure **upper bounds**; they are NOT actual prompt
+token counts and NOT a competing exact-K5 lexical or indexed model
+quality baseline. Comparing G5 to FULL this way does not establish
+an independently controlled LLM cost-saving ratio.
+
+Mixed-source condition retains only 498/4,998 principal-authorized
+visible source routes out of 500/5,000 registered, excluding source
+denials and projecting hidden fields. Wrong input type, unreviewed
+license, different source-type and non-required root decoys are also
+present in the synthetic fixture; they do not enter the qualified G5
+fork. This evidence is exact for these synthetic source contracts
+rather than a broad safety proof for any arbitrary provider.
+
+**Decision:** Positive engineering evidence for *one* source-verified,
+typed two-consumer G5 fork in 500/5,000 registered inventories, across
+three owner-declared aliases and source-scope decoys. Still only
+developer E0 with one topology and owner-authored gold. Unknown:
+matched-K5 strong schema-aware lexical vs **this same G5 fork** under
+heterogeneous realistic user queries; model tokens, final answer,
+multi-step agent success and external source-disjoint E2. Do NOT claim
+the paper's real-world accuracy+token improvements from this result.
+Previously measured #1740 indexed-default vs schema-aware lexical
+is a separate model-free study and **not** G5.
+
+Independent E2 #1346, paired native-agent #1477 and release #1356
+remain gated/HARD HOLD.
