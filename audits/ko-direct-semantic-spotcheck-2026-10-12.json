@@ -3,8 +3,8 @@
   "review_date": "2026-10-23",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 155,
-  "total_page_pairs": 155,
+  "reviewed_page_pairs": 156,
+  "total_page_pairs": 156,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
@@ -13,7 +13,8 @@
     "2026-10-16 duplicate product charter draft deliberately removed; maintain one bilingual product-north-star-and-test-matrix pair as canonical. All 151 exact page-pair AI-assisted source checks remain explicitly non-independent; #1202 human review open.",
     "2026-10-19 research-program wiki has an AI-assisted parallel-text and structure spotcheck with exact Git blob pins; independent KO/EN editorial sentence audit remains open.",
     "2026-10-23 G5 design/plan and amended research wiki pairs were AI-assisted compared against their source semantics; independent human sentence-level review under #1202 remains open.",
-    "2026-10-23 CodeGraph-style E0 report and tool-routing navigation were localized with AI-assisted source/translation comparison and exact current blob pins. Cost and agent-success nonclaims and source authorization boundaries were explicitly retained; independent human audit remains open."
+    "2026-10-23 CodeGraph-style E0 report and tool-routing navigation were localized with AI-assisted source/translation comparison and exact current blob pins. Cost and agent-success nonclaims and source authorization boundaries were explicitly retained; independent human audit remains open.",
+    "2026-10-23 surgical G5 E1 design was AI-assisted paired in English and Korean, retaining fail-closed materialization, distinct original-provider and local-source cohorts, actual four-arm token cost measurement, commercial source conditions and independent E2 limitations; human editorial sign-off remains open."
   ],
   "reviews": [
     {
@@ -940,6 +941,12 @@
       "en_blob": "d9a40484076fc4a8375ee522542c2ba87194dec5",
       "ko_blob": "9819d2495f36e4e2a02d7c5a087efbed1f994f6f",
       "notes": "AI-assisted paired review of G5 owner-declared typed concept/FieldGroup, complete fingerprinted direct/one-hop routes, principal-scoped K5, no execution authority, genuine paired original-source E1 and independent E2 gate. Human sentence audit under #1202 remains open."
+    },
+    {
+      "path": "superpowers/specs/2026-10-23-codegraph-surgical-context-e1-design.md",
+      "en_blob": "bdf511baf216a2c5d4f2735f2ffafc8e86479361",
+      "ko_blob": "0e98e54a6dacad53dc734d75fcdca62613181660",
+      "notes": "AI-assisted paired review of approved E1 reference to source-revalidated original-schema materialization to scoped tool calls, strict K5, four-arm actual model accounting, distinct Open-Meteo original-provider accuracy and multi-route local control, source failure handling, no commercial entitlement and no E2/default/release claim. Human sentence-level review under #1202 remains open."
     },
     {
       "path": "versioning.md",
