@@ -22,3 +22,52 @@ Code: `src/schemarouter/paper_field_retrieval.py`, exported via `__init__.py`; t
 6. Keep all implementation opt-in pending independent qualification. Do not merge/change production `retrieve[_authorized]`/security or merge #1356 release HOLD without gates.
 
 **Evidence status at creation:** implementation changes submitted, CI outcome must be inspected. This note documents procedure, not passing tests or full original-paper parity. Update this exact file after each measured fix with branch/PR/head SHA, failed/passed jobs, remaining acceptance blockers and next code entry point so the next session can continue without context loss.
+
+## Verified engineering checkpoint (2026-10-24)
+
+**Measured code head:** `aec34cb255f8dd04ca523a1b1d6c591bf310d234`
+on [Draft PR #1746](https://github.com/JDeun/SchemaRouter/pull/1746)
+stacked **conceptually** on paper-first architecture
+[Draft PR #1745](https://github.com/JDeun/SchemaRouter/pull/1745),
+but branched from untouched product `main` for safe independent review.
+
+[Dedicated source-native field coverage GitHub Actions #40037124349](https://github.com/JDeun/SchemaRouter/actions/runs/40037124349):
+**SUCCESS — Ruff all checks passed and pytest 28 passed** (`tests/test_paper_field_retrieval.py` and existing
+`tests/test_native_field_group_retrieval.py`). New P1 source-owned
+tests include 6 EN/KO/JA × normal/mixed split-field fork cases,
+full direct-projected case, unavailable/hidden typed source,
+unchanged default retrieval and source revision fail-closed.
+Existing native FieldGroup Pre-K, indexed typed G5, source postings,
+source attestation and concept composition workflows also passed on
+this code head. The initial prior-head static import error and public
+ABI list mismatch were FIXED; `tests/test_public_api.py` now
+explicitly lists the four opt-in exported receipt names. Full CI
+[run #40037124414](https://github.com/JDeun/SchemaRouter/actions/runs/40037124414)
+was at last inspection **10 passed jobs, 5 in progress, 1 queued,
+4 skipped, 0 failures**; check its **final status**, do not claim all
+green before completion.
+
+**Current implemented P1 scope:**
+- EXACT host-approved aliases+fully conjunctive FieldGroup after source
+  authorization, before K5 route disclosure, over 1 direct endpoint,
+  1 existing G5 one-hop (inherited), or strictly original shared-root
+  TWO consumer fork; returns required per-route source-visible output
+  field projection, typed input source binding, immutable fingerprint
+  receipts. All alternatives complete before publication.
+- This does NOT solve arbitrary fields split across *unrelated*
+  providers, unknown multi-field inference, actual small-LLM
+  `Understand`, full paper `ToolCall` or general mixed schema
+  consumer group algebra. Do not promote as full #1535 completion
+  until negative and real-adapter cases in the steps above qualify.
+- No product default, host execution authority, source policy, data
+  scope, frozen research scores or release was changed.
+
+**Next exact step for another session:** inspect current PR #1746
+checks; add native OpenAPI + MCP + OPTIMADE actual adapter
+contract regression that proves direct + valid common-ID split field
+path without exposing hidden/denied fields. Then enforce
+more negative unit/qualifier, >K alternatives, source-health
+mid-request mutation and source owner-change checks. Only
+after P1 source-attested tests green, begin P2 #1560 using
+original `SchemaPlanner/ToolCall` to assemble the paper-complete
+non-agent plan. Independently authored #1346 E2 remains blocked.
