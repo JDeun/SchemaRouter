@@ -171,6 +171,23 @@ def _expected_arguments(
     return known
 
 
+def _argument_alignment_label(
+    expected: Mapping[str, Any] | None, actual: Mapping[str, Any],
+) -> str:
+    """Diagnose a refused model call with fixed labels, never keys or values."""
+    if expected is None:
+        return "unsupported_bound_path"
+    extra = bool(actual.keys() - expected.keys())
+    missing = bool(expected.keys() - actual.keys())
+    if extra and missing:
+        return "unexpected_and_missing_argument_keys"
+    if extra:
+        return "unexpected_argument_keys"
+    if missing:
+        return "missing_argument_keys"
+    return "argument_value_mismatch"
+
+
 async def run_surgical_model_episode(
     agent: Any,
     *,
@@ -225,6 +242,7 @@ async def run_surgical_model_episode(
     input_tokens = tool_tokens = output_tokens = 0
     model_latency_ms = 0.0
     action_shape_labels: list[str] = []
+    argument_alignment_labels: list[str] = []
     bare_schema_request_normalizations = 0
 
     for _ in range(max_turns):
@@ -339,6 +357,10 @@ async def run_surgical_model_episode(
             episode, executed_routes, observations, route_id, host_context,
         )
         if expected is None or arguments != expected:
+            if diagnose_model_actions:
+                argument_alignment_labels.append(
+                    _argument_alignment_label(expected, arguments),
+                )
             reason = "unbound_source_arguments"
             break
         try:
@@ -382,6 +404,7 @@ async def run_surgical_model_episode(
         "release_safety_gate_passed": False,
         **({
             "action_structure_labels": action_shape_labels,
+            "argument_alignment_labels": argument_alignment_labels,
         } if diagnose_model_actions else {}),
         **({"bare_schema_request_normalizations": bare_schema_request_normalizations}
            if experimental_bare_schema_request else {}),

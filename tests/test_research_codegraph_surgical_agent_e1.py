@@ -349,6 +349,61 @@ async def test_premature_final_and_unbound_arguments_are_task_failures():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(("responses", "expected_label", "source_calls"), (
+    ([SCHEMA, '<tool_call>{"name":"contacts__read",'
+     '"arguments":{"leak":"private-99"}}</tool_call>'],
+     "unexpected_argument_keys", 0),
+    ([SCHEMA, CONTACT, '<tool_call>{"name":"cases__read",'
+     '"arguments":{"contact_id":"contact-4"}}</tool_call>'],
+     "missing_argument_keys", 1),
+    ([SCHEMA, CONTACT, CASE.replace("contact-4", "secret-99")],
+     "argument_value_mismatch", 1),
+    ([SCHEMA, CONTACT, '<tool_call>{"name":"cases__read",'
+     '"arguments":{"region_id":"region-9",'
+     '"leak":"secret-99"}}</tool_call>'],
+     "unexpected_and_missing_argument_keys", 1),
+))
+async def test_unbound_argument_diagnostic_only_reports_private_safe_category(
+    responses, expected_label, source_calls,
+):
+    from scripts.research_codegraph_surgical_agent_e1 import run_surgical_model_episode
+
+    _, episode, _, context, seen = _source()
+    result = await run_surgical_model_episode(
+        ScriptedAgent(responses), episode=episode, host_context=context,
+        diagnose_model_actions=True,
+    )
+    assert result["termination_reason"] == "unbound_source_arguments"
+    assert result["argument_alignment_labels"] == [expected_label]
+    assert result["actual_source_calls"] == len(seen) == source_calls
+    assert result["full_task_correct"] is False
+    serialized = json.dumps(result)
+    assert "secret-99" not in serialized
+    assert "private-99" not in serialized
+    assert "leak" not in serialized
+
+
+@pytest.mark.asyncio
+async def test_argument_alignment_diagnostics_absent_by_default_and_empty_on_success():
+    from scripts.research_codegraph_surgical_agent_e1 import run_surgical_model_episode
+
+    _, episode, _, context, seen = _source()
+    green = await run_surgical_model_episode(
+        ScriptedAgent([SCHEMA, CONTACT, CASE, FINAL]),
+        episode=episode, host_context=context, diagnose_model_actions=True,
+    )
+    assert green["argument_alignment_labels"] == []
+    assert green["full_task_correct"] is True
+    assert len(seen) == 2
+
+    private = await run_surgical_model_episode(
+        ScriptedAgent([SCHEMA, CONTACT, CASE, FINAL]),
+        episode=episode, host_context=context,
+    )
+    assert "argument_alignment_labels" not in private
+
+
+@pytest.mark.asyncio
 async def test_schema_request_does_not_change_source_call_count():
     from scripts.research_codegraph_surgical_agent_e1 import run_surgical_model_episode
 

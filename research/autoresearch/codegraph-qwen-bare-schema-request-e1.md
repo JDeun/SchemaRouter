@@ -84,3 +84,44 @@ result is only a grammar protocol effect in these correlated local E1
 translations, **not** CodeGraph index utility, external publisher-authored
 E2 (#1346), a commercial API entitlement, or evidence for v0.18 promotion
 (#1356 HARD HOLD). Preserve any zero-success or worse token-cost outcome.
+
+## Actual pinned-model result — recorded before follow-up diagnosis
+
+The **six-cell** GitHub Linux run
+[#39946110637](https://github.com/JDeun/SchemaRouter/actions/runs/39946110637)
+completed successfully at [draft PR #1731](https://github.com/JDeun/SchemaRouter/pull/1731),
+commit `46d983d5e2c99903e68e3189d76265e4ed775473`. All six cells have
+denominator **one author-created local E1 task**, not six independent cases.
+
+| Pinned model | Lang | Surgical normalized reserved requests | Materialized schemas | Executed original calls | Surgical full-task success | Surgical stop |
+| --- | --- | ---: | ---: | ---: | --- | --- |
+| Qwen3-0.6B | EN | 0 | 0 | 0 | false | premature_final |
+| Qwen3-0.6B | KO | 1 | 1 | 0 | false | premature_final |
+| Qwen3-0.6B | JA | 1 | 1 | 0 | false | premature_final |
+| Qwen3-1.7B | EN | 1 | 1 | 0 | false | unbound_source_arguments |
+| Qwen3-1.7B | KO | 1 | 1 | 0 | false | unbound_source_arguments |
+| Qwen3-1.7B | JA | 1 | 1 | 0 | false | unbound_source_arguments |
+
+This is a **negative strict task result**: surgical 0/6. The 1.7B model
+produced `valid_native_tool_call_shape` after schema materialization in
+all three languages, but the original host refused the arguments as
+unbound, correctly making **zero** source calls. The current strict
+native argument check **must not** be relaxed. In the unchanged FULL and
+lexical K5 controls, 1.7B executed two source calls per language, and
+passed EN/KO full final correctness (2/3 each), with JA final wrong;
+0.6B FULL/lexical passed 0/3. Graph-only G5 passed 0/6. No claim of
+CodeGraph-caused savings or task success is supported by these results.
+
+### Preregistered next diagnostic, no intervention to scored behavior
+
+For the **next** head/run, record only a fixed, non-sensitive category
+when the existing host check `arguments != expected` refuses a surgical
+native call: `unexpected_argument_keys`, `missing_argument_keys`,
+`unexpected_and_missing_argument_keys`, `argument_value_mismatch`, or
+`unsupported_bound_path`. Never expose the differing names or values,
+gold, route IDs, model text or source response. Absence of mismatch gives
+an empty label list. Diagnostics are off by default; they do not affect
+accepted calls, the model prompt, original parser/executor, authority,
+K5, source, task oracle or scoring. Preserve this run #39946110637 as
+the unchanged scored baseline. **Do not propose model prompting or
+automatic argument repair before locating the actual mismatch class.**

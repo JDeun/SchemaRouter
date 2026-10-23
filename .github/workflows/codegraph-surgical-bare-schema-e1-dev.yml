@@ -123,6 +123,18 @@ jobs:
               for row in report["outcomes"]:
                   assert len(row["action_structure_labels"]) == row["model_turns"]
                   assert set(row["action_structure_labels"]) <= CATEGORIES
+                  allowed_alignments = {
+                      "unexpected_argument_keys", "missing_argument_keys",
+                      "unexpected_and_missing_argument_keys",
+                      "argument_value_mismatch", "unsupported_bound_path",
+                  }
+                  if row["condition"] == "surgical_g5_e1":
+                      assert set(row["argument_alignment_labels"]) <= allowed_alignments
+                      assert len(row["argument_alignment_labels"]) <= 1
+                      assert bool(row["argument_alignment_labels"]) == (
+                          row["status"] == "unbound_source_arguments")
+                  else:
+                      assert "argument_alignment_labels" not in row
                   assert 0 <= row["actual_source_calls"] <= 2
                   assert row["full_task_complete"] in (True, False)
                   assert row["total_model_tokens"] is None or row["total_model_tokens"] >= 0
