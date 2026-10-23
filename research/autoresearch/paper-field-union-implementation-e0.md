@@ -160,3 +160,59 @@ head, against the original-paper source-attested opt-in path only.
 reviewed optional/required argument binding and OPTIMADE numeric-unit
 canonicalization only under a separately verified trusted contract in
 #1560; preserve strict K5, default routing and #1356 release HOLD.
+
+## P2 source-attested ToolCall projection — 2026-10-24 continuation
+
+Draft PR #1746 P1 head was published through the authenticated GitHub
+connector as `5a530e6440601a9fcc0083730653d246014deac8`, with
+the exact identical tree as local late-revocation fix. The **original-paper
+dedicated workflow #40040143726**, native FieldGroup, G5 typed graph,
+host evidence, research candidate, retrieval fast path and CodeQL all
+reported `success` on that head. The broad `CI` remained `in_progress`
+at the last check; never infer entire CI from the dedicated workflow.
+Issue #1535 has the exact published checkpoint comment.
+
+Follow-on #1560 work is isolated on local branch
+`feat/1560-paper-field-toolcall-plan-20261024` until separately published.
+Spec: `docs/superpowers/specs/2026-10-24-paper-algorithm1-toolcall-design.md`;
+plan: `docs/superpowers/plans/2026-10-24-paper-algorithm1-toolcall.md`.
+New `src/schemarouter/paper_field_plan.py::compile_paper_field_toolcalls`
+composes ONLY original P1-complete, source-scoped routes into existing
+`ToolCall` descriptors, source-first with separate original typed
+`PaperFieldArgumentDependency` receipts. Required consumer ID values
+remain deliberately **unbound** and `ToolCall.executable=False`; producer
+input-free calls and direct reads have no invented arguments. No calls are
+executed; result explicitly carries `executable_authority=False`. All
+P1 no-hit/over-K statuses and fixed K5 are preserved with empty output.
+The original `SchemaRouter.plan/retrieve/execute` functions are untouched.
+
+**P2 reviewer follow-up:** added genuine `DataScopeRule` hidden-field
+and hidden original producer-ID regressions, and actual native
+OpenAPI/MCP compiled source visibility checks across three declared
+EN/KO/JA query aliases. Qualified G5 `approved_host_roots` can prove a
+parameterized producer topology: the compiler now represents such a
+root with its original required input names in
+`ToolCall.missing_required_arguments` and no invented values, alongside
+the consumer's unresolved typed dependency. Source input envelopes
+are checked on the original, fingerprint-pinned endpoint: a scoped
+read-only view may change empty JSON schema presentation without
+altering the original input-free source contract. **No actual concrete
+host inputs, execution or OPTIMADE coercion are implemented.**
+
+IMPORTANT observed red→green: mutations to source-owner aliases or
+policy after the FIRST complete P1 proof but before final compiler
+projection initially slipped through when the selected fields stayed the
+same. Tests reproduced both failures. The compiler now freezes principal,
+catalog, policy and original source witness BEFORE P1 and compares
+the full declaration/proof AFTER the second re-proof. No atomic live
+provider transaction is claimed. P2 test matrix includes direct and
+one-root/two-consumer fork, actual 5000-route index, hidden/denied and
+availability/owner drift, over-K no-public-output, and EN/KO/JA.
+
+Remaining #1560: full source-owner-approved concrete argument binding
+for parameterized roots (including authentic OPTIMADE schema quirks),
+observation-time dependency materialization through the existing
+executor, independently authored #1346 E2. Keep parent issues open,
+Draft PRs unmerged and release HOLD. Next session should inspect the
+latest stacked P2 PR/checks and continue these remaining acceptance
+criteria; see plan ledger and SHA-specific outcomes for exact status.

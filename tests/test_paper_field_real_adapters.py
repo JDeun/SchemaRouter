@@ -21,6 +21,7 @@ from schemarouter import (
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
+    compile_paper_field_toolcalls,
     retrieve_paper_field_coverage,
 )
 from schemarouter.adapters import tool_from_mcp, tool_from_openapi
@@ -162,6 +163,27 @@ def test_actual_mcp_annotations_alone_never_grant_field_or_read_only_authority()
     )
     assert result.status == "no_proven_hit"
     assert result.alternatives == ()
+
+
+@pytest.mark.parametrize("query", ALIASES)
+def test_actual_native_openapi_mcp_compilation_is_principal_scoped(query):
+    """P2 must keep the exact P1-native converter source and field restriction."""
+    openapi, mcp = _openapi(), _mcp()
+    for tool in (openapi, mcp):
+        _review(tool)
+    router = _router(openapi, mcp, hide_priority=("mcp",))
+    plan = compile_paper_field_toolcalls(
+        router, query, principal=ACTOR, catalog=_catalog(), index=_index(router),
+    )
+    assert plan.status == "complete"
+    assert len(plan.alternatives) == 1
+    call = plan.alternatives[0].calls[0]
+    assert (call.tool, call.endpoint) == ("api", "read_status")
+    assert set(call.fields) == {"status", "priority"}
+    assert call.arguments == {}
+    assert plan.alternatives[0].dependencies == ()
+    assert "mcp.read_status" not in str(plan)
+    assert not plan.executable_authority
 
 
 def test_partial_openapi_does_not_become_complete_by_text_or_unrelated_mcp():

@@ -442,6 +442,12 @@ from .operation_fit import (
 )
 from .operation_intent import OperationIntentHypothesis, infer_operation_intent
 from .pairwise import PairwiseDecisionBackend, PairwiseScoreCallable
+from .paper_field_plan import (
+    PaperFieldArgumentDependency,
+    PaperFieldCallAlternative,
+    PaperFieldToolCallPlan,
+    compile_paper_field_toolcalls,
+)
 from .paper_field_retrieval import (
     PaperFieldAlternative,
     PaperFieldCoverage,
@@ -596,6 +602,10 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
+    "PaperFieldArgumentDependency",
+    "PaperFieldCallAlternative",
+    "PaperFieldToolCallPlan",
+    "compile_paper_field_toolcalls",
     "PaperFieldAlternative",
     "PaperFieldCoverage",
     "PaperFieldRoute",
