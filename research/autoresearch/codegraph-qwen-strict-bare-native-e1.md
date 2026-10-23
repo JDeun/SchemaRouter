@@ -36,7 +36,7 @@ control and **never enabled in product, frozen harness or default routing**.
    native executor remain unchanged. No tool is inferred from graph
    rank, private evaluator gold, a previous failure or model-generated
    free text that is not one valid original native call.
-5. A bounded numeric `accepted_bare_json_calls` counter is added to
+5. A bounded numeric `bare_json_strict_parser_acceptances` counter is added to
    each treated baseline arm. The original fixed-allowlist
    `action_structure_labels` still observes the **raw action shape**
    but never exports the model output or hidden details.
