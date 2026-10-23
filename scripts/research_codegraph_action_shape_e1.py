@@ -12,7 +12,6 @@ from typing import Any
 
 from scripts.research_real_qwen_bound_two_step_e0 import (
     TOOL_CALL,
-    _parse_strict_model_json,
     _strip_one_chatml_marker,
 )
 
