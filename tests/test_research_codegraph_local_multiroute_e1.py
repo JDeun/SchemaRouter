@@ -412,8 +412,8 @@ async def test_verified_continuation_sent_only_after_first_actual_g5_callback():
     assert trial["verified_continuation_cues"] == 1
     assert "verified_continuation_cues" not in base
     assert all(
-        G5_VERIFIED_CONTINUATION_CUE_E1 not in frame[1]
-        for frame in original.frames
+        G5_VERIFIED_CONTINUATION_CUE_E1 not in content
+        for frame in original.frames for _, content in frame
     )
     assert all(
         G5_VERIFIED_CONTINUATION_CUE_E1 not in content
@@ -423,9 +423,8 @@ async def test_verified_continuation_sent_only_after_first_actual_g5_callback():
         G5_VERIFIED_CONTINUATION_CUE_E1 == content
         for _, content in treated.frames[1]
     ) == 1
-    assert all("case_state" not in G5_VERIFIED_CONTINUATION_CUE_E1
-               and "contact_id" not in G5_VERIFIED_CONTINUATION_CUE_E1
-               for _ in (0,))
+    assert "case_state" not in G5_VERIFIED_CONTINUATION_CUE_E1
+    assert "contact_id" not in G5_VERIFIED_CONTINUATION_CUE_E1
     assert "contact-4" not in json.dumps(trial)
 
 
