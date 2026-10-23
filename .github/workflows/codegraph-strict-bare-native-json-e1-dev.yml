@@ -1,0 +1,138 @@
+name: CodeGraph Qwen Strict Bare Native JSON E1 DEV
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_codegraph_bare_json_adapter_e1.py"
+      - "scripts/research_codegraph_local_multiroute_e1.py"
+      - "scripts/research_codegraph_qwen17_local_e1.py"
+      - "tests/test_research_codegraph_bare_json_adapter_e1.py"
+      - "tests/test_research_codegraph_local_multiroute_e1.py"
+      - ".github/workflows/codegraph-strict-bare-native-json-e1-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preregistered-bare-native-json:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 110
+    strategy:
+      fail-fast: false
+      matrix:
+        model: [qwen06, qwen17]
+        language: [en, ko, ja]
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+      MODEL_VARIANT: ${{ matrix.model }}
+      LANGUAGE: ${{ matrix.language }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install same real CPU inference stack and regression dependencies
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "transformers>=4.51,<5" "huggingface-hub>=0.30,<2" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1"
+      - name: Prove strict offered-only non-executing parser and original source contract
+        run: |
+          ruff check scripts/research_codegraph_bare_json_adapter_e1.py tests/test_research_codegraph_bare_json_adapter_e1.py scripts/research_codegraph_local_multiroute_e1.py tests/test_research_codegraph_local_multiroute_e1.py
+          python -m pytest -q tests/test_research_codegraph_bare_json_adapter_e1.py tests/test_research_codegraph_local_multiroute_e1.py
+      - name: Confirm bounded RAM and model cache disk
+        run: |
+          python - <<'PY'
+          import shutil
+          from pathlib import Path
+          ram = int(next(x for x in Path("/proc/meminfo").read_text().splitlines() if x.startswith("MemTotal:")).split()[1])
+          disk = shutil.disk_usage(".").free / (1024**3)
+          assert ram >= 12_000_000 and disk >= 7, (ram, disk)
+          PY
+      - name: Fetch only the unchanged original pinned model
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import model_info, snapshot_download
+          from scripts.agent_utility_v7_dev_agent import MODEL_NAME, MODEL_REVISION
+          from scripts.research_qwen17_live_open_meteo_comparison_e1 import MODEL_ID, REVISION
+          if os.environ["MODEL_VARIANT"] == "qwen06":
+              name, sha = MODEL_NAME, MODEL_REVISION
+              assert name == "Qwen/Qwen3-0.6B"
+              assert sha == "c1899de289a04d12100db370d81485cdf75e47ca"
+          else:
+              name, sha = MODEL_ID, REVISION
+              assert name == "Qwen/Qwen3-1.7B"
+              assert sha == "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e"
+              assert model_info(name, revision=sha).sha == sha
+          snapshot_download(repo_id=name, revision=sha,
+              allow_patterns=("*.json","*.safetensors","*.model","tokenizer*","*.jinja"))
+          PY
+      - name: Real model with separately labeled bare-JSON-only host intervention
+        env:
+          HF_HUB_OFFLINE: "1"
+          TRANSFORMERS_OFFLINE: "1"
+        run: |
+          mkdir -p artifacts/codegraph-strict-json
+          if [ "$MODEL_VARIANT" = "qwen06" ]; then
+            python -m scripts.research_codegraph_local_multiroute_e1 \
+              --cohort local-source --catalog-size 4 \
+              --language "$LANGUAGE" --diagnose-model-actions \
+              --experimental-bare-native-json \
+              --out "artifacts/codegraph-strict-json/${{ matrix.model }}-${{ matrix.language }}.json"
+          else
+            python -m scripts.research_codegraph_qwen17_local_e1 \
+              --cohort four-route --language "$LANGUAGE" \
+              --diagnose-model-actions --experimental-bare-native-json \
+              --out "artifacts/codegraph-strict-json/${{ matrix.model }}-${{ matrix.language }}.json"
+          fi
+      - name: Gate E1-only task gold and no trust boundary widening
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from scripts.research_codegraph_action_shape_e1 import CATEGORIES
+          variant = os.environ["MODEL_VARIANT"]
+          lang = os.environ["LANGUAGE"]
+          report = json.loads(Path(f"artifacts/codegraph-strict-json/{variant}-{lang}.json").read_text())
+          assert report["bare_native_json_treatment"] == "STRICT_ONE_OFFERED_NATIVE_ONLY"
+          assert report["language"] == lang and report["source_route_count"] == 4
+          assert report["requested_k"] == 5
+          assert report["status"] == "E1_MEASURED_LOCAL_FOUR_ARM_NOT_E2"
+          assert report["independent_e2_qualified"] is False
+          assert report["release_qualified"] is False
+          assert report["original_provider_e1"] is False
+          assert report["qualified_task_denominator"] == {arm: 1 for arm in report["arms"]}
+          assert all(value in (0.0,1.0) for value in report["task_success_rate"].values())
+          assert len(report["outcomes"]) == 4
+          if variant == "qwen06":
+              assert report["model_id"] == "Qwen/Qwen3-0.6B"
+              assert report["model_revision"] == "c1899de289a04d12100db370d81485cdf75e47ca"
+          else:
+              assert report["model_id"] == "Qwen/Qwen3-1.7B"
+              assert report["model_revision"] == "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e"
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write(f"## Strict original JSON tool adapter E1 — {variant}, {lang}\n\n")
+              out.write("New model-output grammar treatment, NOT graph-index effectiveness, provider E2 or product release. Source/scorer/seed and K5 unchanged.\n\n")
+              out.write("| Arm | Turns | Native calls | Bare calls accepted | Model tokens | Task complete | Stop |\n|---|---:|---:|---:|---:|---|---|\n")
+              for row in report["outcomes"]:
+                  assert len(row["action_structure_labels"]) == row["model_turns"]
+                  assert set(row["action_structure_labels"]) <= CATEGORIES
+                  accepted = row.get("accepted_bare_json_calls", 0)
+                  assert type(accepted) is int and 0 <= accepted <= row["model_turns"]
+                  out.write(f"| {row['condition']} | {row['model_turns']} | {row['actual_source_calls']} | {accepted} | {row['total_model_tokens']} | {row['full_task_complete']} | {row['status']} |\n")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: codegraph-strict-bare-json-e1-${{ matrix.model }}-${{ matrix.language }}-${{ github.run_id }}
+          path: artifacts/codegraph-strict-json/*.json
+          retention-days: 30
+          if-no-files-found: warn
