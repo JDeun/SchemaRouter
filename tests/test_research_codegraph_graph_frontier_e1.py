@@ -158,3 +158,102 @@ def test_frontier_only_uses_graph_prefixes():
     assert _frontier_route_ids(source.episode, ("contacts.read",)) == ["cases.read"]
     assert _frontier_route_ids(source.episode, ("contacts.read", "cases.read")) == []
     assert _frontier_route_ids(source.episode, ("cases.read",)) == []
+
+class CueAwareAgent(ScriptedAgent):
+    """Scripted model responds to a generic cue; never receives route gold."""
+
+    def __init__(self):
+        super().__init__([])
+
+    def generate(self, messages, tools):
+        if not self.offered:
+            next_text = ROOT
+        elif len(self.offered) == 1:
+            cued = any(
+                m["role"] == "user"
+                and "dependency path is not yet complete" in m["content"]
+                for m in messages
+            )
+            next_text = CONSUMER if cued else FINAL
+        else:
+            next_text = FINAL
+        self.texts.append(next_text)
+        return super().generate(messages, tools)
+
+
+@pytest.mark.asyncio
+async def test_cue_only_after_real_verified_first_callback():
+    before, context = _setup()
+    plain = CueAwareAgent()
+    ordinary = await run_graph_frontier_model_episode(
+        plain, episode=before.episode, host_context=context,
+    )
+    assert ordinary["actual_source_calls"] == 1
+    assert ordinary["termination_reason"] == "premature_final"
+    assert "verified_continuation_cues" not in ordinary
+    assert all(
+        "dependency path is not yet complete" not in m["content"]
+        for turn in plain.messages for m in turn
+    )
+
+    source, context = _setup()
+    cued = CueAwareAgent()
+    improved = await run_graph_frontier_model_episode(
+        cued, episode=source.episode, host_context=context,
+        experimental_verified_continuation=True,
+    )
+    assert source.callback_log == ["contacts.read", "cases.read"]
+    assert improved["actual_source_calls"] == 2
+    assert improved["full_task_correct"] is True
+    assert improved["verified_continuation_cues"] == 1
+    assert improved["frontier_sizes"] == [1, 1, 0]
+    assert cued.offered == [("contacts__read",), ("cases__read",), ()]
+    assert not any(
+        "dependency path is not yet complete" in m["content"]
+        for m in cued.messages[0]
+    )
+    assert any(
+        "dependency path is not yet complete" in m["content"]
+        for m in cued.messages[1]
+    )
+
+
+@pytest.mark.asyncio
+async def test_cue_never_emitted_without_verified_original_callback():
+    source, context = _setup()
+    agent = ScriptedAgent([FINAL])
+    result = await run_graph_frontier_model_episode(
+        agent, episode=source.episode, host_context=context,
+        experimental_verified_continuation=True,
+    )
+    assert result["verified_continuation_cues"] == 0
+    assert result["actual_source_calls"] == 0
+    assert source.callback_log == []
+
+
+@pytest.mark.asyncio
+async def test_cue_does_not_fix_wrong_bound_consumer_argument():
+    source, context = _setup()
+    agent = ScriptedAgent([
+        ROOT,
+        '<tool_call>{"name":"cases__read","arguments":'
+        '{"contact_id":"fabricated","region_id":"region-9"}}</tool_call>',
+    ])
+    result = await run_graph_frontier_model_episode(
+        agent, episode=source.episode, host_context=context,
+        experimental_verified_continuation=True,
+    )
+    assert result["verified_continuation_cues"] == 1
+    assert result["actual_source_calls"] == 1
+    assert result["termination_reason"] == "unbound_source_arguments"
+    assert source.callback_log == ["contacts.read"]
+
+
+@pytest.mark.asyncio
+async def test_cue_option_refuses_nonboolean():
+    source, context = _setup()
+    with pytest.raises(ValueError, match="continuation flag"):
+        await run_graph_frontier_model_episode(
+            ScriptedAgent([FINAL]), episode=source.episode,
+            host_context=context, experimental_verified_continuation="yes",
+        )
