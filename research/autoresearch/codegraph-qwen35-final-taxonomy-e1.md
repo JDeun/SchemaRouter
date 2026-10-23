@@ -56,3 +56,53 @@ call lower token count on an unsuccessful task a cost saving.
 Language expansion and large-tool inventory generalization require
 independent preregistration. E2 source-disjoint external #1346 BLOCKED,
 v0.18 #1356 HARD HOLD unchanged.
+
+## Post-measurement result (added after examination of both artifacts)
+
+Reproducible exact-code workflow: [GitHub Actions #39982274748](https://github.com/JDeun/SchemaRouter/actions/runs/39982274748), source checkout SHA
+`943b7d0ec666179baffcc502816e98af7816d7bb`.
+All **11 associated workflows passed** on the same PR commit, including
+GitHub CI, Qwen3.5 GGUF pilot and preexisting Qwen3 control workflows.
+The five-arm output is local one-English-task E1 only, not held-out E2.
+
+Pinned Q4_K_M GGUF source receipts:
+- Qwen3.5-2B `gguf/Qwen3.5-2B-GGUF@47f5192dcee31b32db0ba0acc04cccef89cb4b2c`;
+  SHA256 `9a3d0aa6c920f096441139b6a254542da855223fdad06855ea00c6c087fd713d`.
+- Qwen3.5-4B `gguf/Qwen3.5-4B-GGUF@76e05555d64c8d045dd4b9c9f1ebaef1e35d99f7`;
+  SHA256 `c3c2cf023efdbd913c2363a14d5c7266db5e05c4602f1c0790eaed567d8aff23`.
+
+| Model | Arm | Actual original callbacks | Strict task success | Total model tokens | Final failure category |
+| --- | --- | ---: | --- | ---: | --- |
+| 2B | FULL | 2 | no | 2736 | `nonjson_or_prefixed_final` |
+| 2B | Lexical K5 | 2 | no | 2736 | `nonjson_or_prefixed_final` |
+| 2B | Concept Graph | 2 | no | 2144 | `nonjson_or_prefixed_final` |
+| 2B | Surgical path-order | 2 | no | 6142 | `nonjson_or_prefixed_final` |
+| 2B | Graph Frontier | 1 | no | 1244 | `no_complete_final` |
+| 4B | FULL | 2 | no | 2958 | `extra_native_call_after_two_source_calls` |
+| 4B | Lexical K5 | 2 | no | 2958 | `extra_native_call_after_two_source_calls` |
+| 4B | Concept Graph | 2 | no | 2485 | `extra_native_call_after_two_source_calls` |
+| 4B | Surgical path-order | 2 | no | 6417 | `nonjson_or_prefixed_final` |
+| 4B | Graph Frontier | 2 | no | 1963 | `malformed_after_two_source_calls` |
+
+The labels are fixed no-content diagnostics. The five 2B and five 4B
+strict full-task outcomes are **all failures**. Lower token usage in
+the 2B/4B Concept Graph than FULL is not an established
+quality-preserving cost win: neither completed the task correctly.
+For 2B final-only replies, the strict JSON parser does not recognize
+a complete exact object, so it is **not valid to call them semantic
+wrong-value errors**. In 4B baseline/G5 the model generated an
+additional native call after two real callbacks; the trusted host denied
+it, as required. Surgical final text was not strict JSON. Frontier 4B
+failed in the no-tools final phase. Underlying source callbacks and
+authorization remain unchanged; no model output or private argument
+was copied to this note.
+
+The next substantive question is **not** whether another output
+format trick makes a single four-route fixture look favorable. Pair
+the already documented 20–500-tool strong lexical / typed ambiguity
+break-even study with fixed-schema contextual token accounting
+and independently authored, query-disjoint heterogeneous tasks;
+run true task-completion comparisons only when all arms have a
+qualified common finalization contract. The existing 500/5000 native
+G5 CPU/indexing work is separate and must not be relabeled as E2.
+E2 #1346 BLOCKED_EXTERNAL and v0.18 #1356 HARD HOLD remain unchanged.
