@@ -33,6 +33,31 @@ Current coordination:
 Do not reopen the core architecture merely to support one provider. Prefer adapters, trusted SDK
 bindings, framework bridges, or decision plugins.
 
+## Original-paper Algorithm 1 parity checkpoint (2026-10-24)
+
+Read the [**paper-first Algorithm 1 ↔ product code alignment**](../research/original-paper-algorithm1-parity.md)
+before proposing more graph-frontier, tool-list presentation, agent-harness
+or synthetic cost experiments. The current product is **not a different
+project**: original contracts, typed endpoints, field projection,
+evidence/provenance and permission-checked execution remain.
+**However, complete paper parity is not yet delivered:**
+`retrieve[_authorized]` defaults to `KeywordAnalyzer` and
+lexical/typed K ranking, not the original query→intent/concept→
+declared FieldGroup→recall-preserving field projection graph algorithm.
+The existing producer→consumer graph and exact owner-declared
+concept aliases are useful **opt-in** modules, not a substitute
+for that default end-to-end path.
+
+Priority is **#1535 required source-visible field completeness before K**
+then **#1560 opt-in paper-complete plan composition**,
+followed by **#1339 + #1346 + #1477** independent downstream
+field recall, retrieved *data-context* tokens, answer quality
+and source/license attribution. The newer #1742–#1744
+multi-domain **schema-menu** token evidence is valid narrow E0,
+**not** the original paper's retrieved-context savings or
+task-quality reproduction. No default behavior, permission
+or release gate changes are authorized by this documentation.
+
 ## Original paper's schema-graph retrieval north star (current priority)
 
 **SchemaRouter is a field-aware, agent-neutral capability retrieval and typed-contract
