@@ -36,6 +36,7 @@ async def evaluate_candidate(
     experimental_g5_verified_continuation: bool = False,
     experimental_bare_schema_request: bool = False,
     experimental_graph_path_order_prompt: bool = False,
+    experimental_graph_frontier: bool = False,
 ) -> dict:
     """Run one local synthetic task under genuine four-arm K5 constraints."""
     if type(agent) is not LocalQwen17BRealAgent:
@@ -53,14 +54,19 @@ async def evaluate_candidate(
         optional["experimental_bare_schema_request"] = True
     if experimental_graph_path_order_prompt:
         optional["experimental_graph_path_order_prompt"] = True
+    if experimental_graph_frontier:
+        optional["experimental_graph_frontier"] = True
     report = await run_local_multiroute_codegraph_e1(
         agent, language=language, condition="joined", catalog_size=4,
         **optional,
     )
     if (
-        report["status"] != "E1_MEASURED_LOCAL_FOUR_ARM_NOT_E2"
+        report["status"] != (
+            "E1_MEASURED_LOCAL_FIVE_ARM_NOT_E2" if experimental_graph_frontier
+            else "E1_MEASURED_LOCAL_FOUR_ARM_NOT_E2"
+        )
         or report["source_route_count"] != 4
-        or len(report["outcomes"]) != 4
+        or len(report["outcomes"]) != (5 if experimental_graph_frontier else 4)
     ):
         raise ValueError("pinned candidate study lacks comparable K5 local source")
     return {
@@ -89,6 +95,7 @@ def main() -> None:
     parser.add_argument("--experimental-g5-verified-continuation", action="store_true")
     parser.add_argument("--experimental-bare-schema-request", action="store_true")
     parser.add_argument("--experimental-graph-path-order-prompt", action="store_true")
+    parser.add_argument("--experimental-graph-frontier", action="store_true")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     # This class validates its independently pinned 40-character Hugging Face
@@ -102,6 +109,7 @@ def main() -> None:
         experimental_g5_verified_continuation=args.experimental_g5_verified_continuation,
         experimental_bare_schema_request=args.experimental_bare_schema_request,
         experimental_graph_path_order_prompt=args.experimental_graph_path_order_prompt,
+        experimental_graph_frontier=args.experimental_graph_frontier,
     ))
     report["source_revision"] = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True,
