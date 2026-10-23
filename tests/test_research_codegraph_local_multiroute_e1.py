@@ -145,3 +145,68 @@ async def test_no_claim_of_independent_or_remote_provider_evidence():
     assert result["release_qualified"] is False
     assert "contact-4" not in json.dumps(result)
     assert "region-9" not in json.dumps(result)
+
+
+@pytest.mark.parametrize("language", ("en", "ko", "ja"))
+@pytest.mark.asyncio
+async def test_k5_safe_four_route_cohort_has_genuinely_comparable_full_arm(language):
+    """Never split the 12-route FULL menu; preregister a separate source."""
+    source = local.build_local_multiroute_source(
+        language=language, catalog_size=4,
+    )
+    assert len(source.registered_callbacks) == 4
+    assert source.episode is not None
+    assert source.episode.selection.status == "complete"
+    agent = MenuAgent()
+    result = await local.run_local_multiroute_codegraph_e1(
+        agent, language=language, catalog_size=4,
+    )
+    assert result["status"] == "E1_MEASURED_LOCAL_FOUR_ARM_NOT_E2"
+    assert result["source_route_count"] == 4
+    assert result["qualified_task_denominator"] == {
+        arm: 1 for arm in local.ARMS
+    }
+    assert set(result["task_success_rate"]) == set(local.ARMS)
+    assert all(type(rate) is float and rate in (0.0, 1.0)
+               for rate in result["task_success_rate"].values())
+    rows = result["outcomes"]
+    assert len(rows) == 4
+    assert len({row["source_receipt_digest"] for row in rows}) == 1
+    assert rows[0]["condition"] == "all_visible"
+    assert rows[0]["status"] != "BLOCKED_MENU_CAP"
+    assert rows[0]["model_turns"] >= 1
+    assert all(row["model_turns"] >= 1 for row in rows)
+    assert rows[-1]["schema_requests"] == 1
+    assert rows[-1]["actual_source_calls"] == 2
+    assert result["independent_e2_qualified"] is False
+    assert result["release_qualified"] is False
+    assert result["original_provider_e1"] is False
+    assert "contact-4" not in json.dumps(result)
+
+
+@pytest.mark.parametrize("size", (0, 3, 5, 13, True, "4"))
+def test_local_source_refuses_unreviewed_comparison_catalog_sizes(size):
+    with pytest.raises(ValueError, match="only preregistered"):
+        local.build_local_multiroute_source(
+            language="en", catalog_size=size,
+        )
+
+
+@pytest.mark.parametrize("condition", ("denied", "no_fit", "over_k"))
+def test_four_route_comparable_source_does_not_relabel_negative_cohorts(condition):
+    with pytest.raises(ValueError, match="requires the joined task"):
+        local.build_local_multiroute_source(
+            language="en", catalog_size=4, condition=condition,
+        )
+
+
+@pytest.mark.asyncio
+async def test_frozen_twelve_route_scaling_negative_preserved():
+    result = await local.run_local_multiroute_codegraph_e1(
+        MenuAgent(), language="en", catalog_size=12,
+    )
+    assert result["status"] == "INCOMPARABLE_FULL_MENU_CAP"
+    assert result["source_route_count"] == 12
+    assert result["task_success_rate"] is None
+    assert result["qualified_task_denominator"] is None
+    assert result["outcomes"][0]["status"] == "BLOCKED_MENU_CAP"

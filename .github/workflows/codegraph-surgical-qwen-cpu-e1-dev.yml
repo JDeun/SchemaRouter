@@ -23,6 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         language: [en, ko, ja]
+        catalog_size: [4, 12]
     env:
       HF_HUB_DISABLE_TELEMETRY: "1"
       TOKENIZERS_PARALLELISM: "false"
@@ -74,7 +75,8 @@ jobs:
         run: |
           python -m scripts.research_codegraph_local_multiroute_e1 \
             --cohort local-source --language ${{ matrix.language }} \
-            --out artifacts/codegraph-local-qwen/${{ matrix.language }}.json
+            --catalog-size ${{ matrix.catalog_size }} \
+            --out artifacts/codegraph-local-qwen/${{ matrix.language }}-${{ matrix.catalog_size }}.json
       - name: Verify genuine model receipts and truthful comparison blockers
         run: |
           python - <<'PY'
@@ -82,22 +84,43 @@ jobs:
           import os
           from pathlib import Path
           lang = "${{ matrix.language }}"
-          report = json.loads(Path(f"artifacts/codegraph-local-qwen/{lang}.json").read_text(encoding="utf-8"))
+          size = int("${{ matrix.catalog_size }}")
+          report = json.loads(Path(f"artifacts/codegraph-local-qwen/{lang}-{size}.json").read_text(encoding="utf-8"))
           assert report["model_id"] == "Qwen/Qwen3-0.6B"
           assert report["model_revision"] == "c1899de289a04d12100db370d81485cdf75e47ca"
-          assert report["status"] == "INCOMPARABLE_FULL_MENU_CAP", report["status"]
+          expected_status = (
+              "E1_MEASURED_LOCAL_FOUR_ARM_NOT_E2"
+              if size == 4 else "INCOMPARABLE_FULL_MENU_CAP"
+          )
+          assert report["status"] == expected_status, report["status"]
           assert report["evidence_tier"] == "E1_LOCAL_SOURCE_CONTROL"
           assert report["independent_e2_qualified"] is False and report["release_qualified"] is False
           assert report["original_provider_e1"] is False
-          assert report["task_success_rate"] is None and report["qualified_task_denominator"] is None
           assert report["language"] == lang and report["requested_k"] == 5
-          assert report["source_route_count"] >= 10
+          assert report["source_route_count"] == size
+          if size == 12:
+              assert report["task_success_rate"] is None
+              assert report["qualified_task_denominator"] is None
+          else:
+              assert report["qualified_task_denominator"] == {
+                  arm: 1 for arm in report["arms"]
+              }
+              assert set(report["task_success_rate"]) == set(report["arms"])
+              assert all(value in (0.0, 1.0)
+                         for value in report["task_success_rate"].values())
           outcomes = report["outcomes"]
           assert len(outcomes) == 4
           assert outcomes[0]["condition"] == "all_visible"
-          assert outcomes[0]["status"] == "BLOCKED_MENU_CAP"
-          assert outcomes[0]["model_turns"] == 0
-          active = [row for row in outcomes if row["condition"] != "all_visible"]
+          if size == 12:
+              assert outcomes[0]["status"] == "BLOCKED_MENU_CAP"
+              assert outcomes[0]["model_turns"] == 0
+          else:
+              assert outcomes[0]["status"] != "BLOCKED_MENU_CAP"
+              assert outcomes[0]["model_turns"] >= 1
+          active = [
+              row for row in outcomes
+              if size == 4 or row["condition"] != "all_visible"
+          ]
           assert all(type(row["model_turns"]) is int for row in active)
           assert any(row["model_turns"] >= 1 for row in active), "model inference never ran"
           for row in active:
@@ -107,8 +130,12 @@ jobs:
               assert type(row["actual_source_calls"]) is int and row["actual_source_calls"] >= 0
           summary = Path(os.environ["GITHUB_STEP_SUMMARY"])
           with summary.open("a", encoding="utf-8") as out:
-              out.write(f"## Genuine pinned Qwen local E1 control — {lang}\n\n")
-              out.write("This is not a fair four-way success/cost comparison: FULL is blocked by existing K5 disclosure. No live provider, independent E2, cost win, or default promotion.\n\n")
+              out.write(f"## Genuine pinned Qwen local E1 control — {lang}, {size} routes\n\n")
+              if size == 12:
+                  out.write("FULL blocked by the unchanged K5 menu cap; four-arm outcome incomparable.\n\n")
+              else:
+                  out.write("Four original read-only routes let FULL fit K5 without bypass; one local synthetic task, not E2.\n\n")
+              out.write("No live provider, independent E2, validated cost win or default promotion.\n\n")
               out.write("| Arm | Turns | Host calls | Reported tokens | Completion | Stop |\n|---|---:|---:|---:|---|---|\n")
               for row in outcomes:
                   out.write(f"| {row['condition']} | {row['model_turns']} | {row['actual_source_calls']} | {row['total_model_tokens']} | {row['full_task_complete']} | {row['status']} |\n")
@@ -116,7 +143,7 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
-          name: codegraph-qwen-local-e1-${{ matrix.language }}-${{ github.run_id }}
+          name: codegraph-qwen-local-e1-${{ matrix.language }}-${{ matrix.catalog_size }}-${{ github.run_id }}
           path: artifacts/codegraph-local-qwen/*.json
           retention-days: 30
           if-no-files-found: warn

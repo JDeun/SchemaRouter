@@ -89,8 +89,10 @@ def _field(name: str, *, semantic_id: str, identifier: bool = False) -> FieldSpe
 
 
 def _registered_source_contracts(
-    router: SchemaRouter, *, condition: str,
+    router: SchemaRouter, *, condition: str, inventory_routes: int = 10,
 ) -> None:
+    if type(inventory_routes) is not int or inventory_routes not in (2, 10):
+        raise ValueError("only the preregistered 4 or 12 route local source")
     aliases = " ".join(LANGUAGE_ALIASES.values())
     original_ids = ("contact_id", "region_id")
     produced = original_ids[:1] if condition == "no_fit" else original_ids
@@ -129,7 +131,7 @@ def _registered_source_contracts(
                 output_fields=[_field("case_state", semantic_id="crm.status")],
             )],
         ))
-    for index in range(10):
+    for index in range(inventory_routes):
         name = f"inventory_{index:02d}"
         router.add_tool(ToolSpec(
             name=name, source_type="local_reviewed", license=SOURCE_LICENCE,
@@ -145,9 +147,13 @@ def _registered_source_contracts(
 
 
 def build_local_multiroute_source(
-    *, language: str, condition: str = "joined",
+    *, language: str, condition: str = "joined", catalog_size: int = 12,
 ) -> LocalControlSource:
-    """Bind *real* local callbacks to every separately registered endpoint."""
+    """Bind the original 12-route control or an independent K5-safe 4-route source."""
+    if type(catalog_size) is not int or catalog_size not in (4, 12):
+        raise ValueError("only preregistered 4 or 12 route local source")
+    if catalog_size == 4 and condition != "joined":
+        raise ValueError("four-route comparison requires the joined task")
     if language not in LANGUAGE_ALIASES or condition not in CONDITIONS:
         raise ValueError("unregistered local source cohort")
     router = SchemaRouter(authorization_policy=AuthorizationPolicy(
@@ -156,7 +162,9 @@ def build_local_multiroute_source(
             effect="allow", operation="*.*", roles_any=("reader",),
         ),),
     ))
-    _registered_source_contracts(router, condition=condition)
+    _registered_source_contracts(
+        router, condition=condition, inventory_routes=catalog_size - 2,
+    )
     callbacks: list[str] = []
     seen: list[str] = []
 
@@ -355,12 +363,18 @@ async def _baseline_local_arm(
 
 async def run_local_multiroute_codegraph_e1(
     agent: Any, *, language: str, condition: str = "joined",
+    catalog_size: int = 12,
 ) -> dict[str, Any]:
-    """Four-arm single-case control; no successful FULL arm above hard cap."""
-    source = build_local_multiroute_source(language=language, condition=condition)
+    """12-route scaling negative OR separate true four-route comparable local E1."""
+    source = build_local_multiroute_source(
+        language=language, condition=condition, catalog_size=catalog_size,
+    )
     route_count = len(source.registered_callbacks)
     safe: dict[str, Any] = {
-        "study": "CODEGRAPH_SURGICAL_LOCAL_MULTIROUTE_E1",
+        "study": (
+            "CODEGRAPH_SURGICAL_LOCAL_FOUR_ROUTE_E1"
+            if catalog_size == 4 else "CODEGRAPH_SURGICAL_LOCAL_MULTIROUTE_E1"
+        ),
         "evidence_tier": "E1_LOCAL_SOURCE_CONTROL",
         "model_id": MODEL_NAME,
         "model_revision": MODEL_REVISION,
@@ -401,7 +415,9 @@ async def run_local_multiroute_codegraph_e1(
     outcomes: list[dict[str, Any]] = []
     total_calls = 0
     for arm in ARMS:
-        current = build_local_multiroute_source(language=language)
+        current = build_local_multiroute_source(
+            language=language, catalog_size=catalog_size,
+        )
         digest = _same_source_digest(current)
         if digest != safe["source_receipt_digest"]:
             return {
@@ -435,6 +451,26 @@ async def run_local_multiroute_codegraph_e1(
             raise ValueError("local original executor count mismatch")
         total_calls += len(current.callback_log)
         outcomes.append(row)
+    if catalog_size == 4:
+        # Each arm receives the same ORIGINAL registered four-route inventory;
+        # FULL now fits the existing public K5 cap without special-case bypass.
+        # This is ONE local synthetic task per language, not independent E2.
+        if any(type(row["full_task_complete"]) is not bool for row in outcomes):
+            return {
+                **safe, "status": "INCOMPARABLE_LOCAL_ARM",
+                "source_call_count": total_calls, "outcomes": outcomes,
+            }
+        return {
+            **safe, "status": "E1_MEASURED_LOCAL_FOUR_ARM_NOT_E2",
+            "task_success_rate": {
+                row["condition"]: float(row["full_task_complete"])
+                for row in outcomes
+            },
+            "qualified_task_denominator": {
+                arm: 1 for arm in ARMS
+            },
+            "source_call_count": total_calls, "outcomes": outcomes,
+        }
     return {
         **safe,
         "status": "INCOMPARABLE_FULL_MENU_CAP",
@@ -448,12 +484,15 @@ def main() -> None:
     parser.add_argument("--cohort", choices=["local-source"], required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--language", choices=LANGUAGE_ALIASES, default="en")
+    parser.add_argument("--catalog-size", type=int, choices=(4, 12), default=12)
     args = parser.parse_args()
-    source = build_local_multiroute_source(language=args.language)
+    source = build_local_multiroute_source(
+        language=args.language, catalog_size=args.catalog_size,
+    )
     # Source registration completes without model generation or fake scores.
     # A genuinely absent local runtime returns a null-denominator blocker.
     preflight = asyncio.run(run_local_multiroute_codegraph_e1(
-        None, language=args.language,
+        None, language=args.language, catalog_size=args.catalog_size,
     ))
     if preflight["status"] == "BLOCKED_MODEL_RUNTIME":
         previous = {key: os.environ.get(key) for key in (
@@ -470,7 +509,7 @@ def main() -> None:
                 result = preflight
             else:
                 result = asyncio.run(run_local_multiroute_codegraph_e1(
-                    agent, language=args.language,
+                    agent, language=args.language, catalog_size=args.catalog_size,
                 ))
         finally:
             for key, value in previous.items():
