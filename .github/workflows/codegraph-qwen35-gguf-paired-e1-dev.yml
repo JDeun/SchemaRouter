@@ -134,7 +134,7 @@ jobs:
               out.write(f"## Paired Qwen3.5 GGUF E1 pilot — {choice}, {lang}\n\n")
               out.write("Original-source local development task, not independent E2.\n\n")
               out.write("| Arm | Native callbacks | Correct final | Total model tokens | Stop | Final class |\n")
-              out.write("|---|---:|---|---:|---|\n")
+              out.write("|---|---:|---|---:|---|---|\n")
               for row in data["outcomes"]:
                   assert 0 <= row["actual_source_calls"] <= 2
                   assert row["full_task_complete"] in (True, False)
@@ -144,7 +144,7 @@ jobs:
                   assert row["final_outcome_category"] in permitted_final_labels
                   if row["full_task_complete"]:
                       assert row["final_outcome_category"] == "strict_correct"
-                  out.write(f"| {row['condition']} | {row['actual_source_calls']} | {row['full_task_complete']} | {row['total_model_tokens']} | {row['status']} |\n")
+                  out.write(f"| {row['condition']} | {row['actual_source_calls']} | {row['full_task_complete']} | {row['total_model_tokens']} | {row['status']} | {row['final_outcome_category']} |\n")
           PY
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
