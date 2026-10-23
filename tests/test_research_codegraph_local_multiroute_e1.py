@@ -308,3 +308,67 @@ async def test_bare_native_treatment_never_widens_twelve_route_full(size):
             MenuAgent(), language="en", catalog_size=size,
             experimental_bare_native_json=True,
         )
+
+
+class OneStepPromptCaptureAgent(MenuAgent):
+    def __init__(self):
+        super().__init__()
+        self.system_messages = []
+
+    def generate(self, messages, tools):
+        self.system_messages.append(messages[0]["content"])
+        return super().generate(messages, tools)
+
+
+@pytest.mark.asyncio
+async def test_single_step_prompt_is_new_treatment_without_new_parser_or_tool_access():
+    from scripts.research_codegraph_surgical_agent_e1 import (
+        SINGLE_STEP_PROTOCOL_E1,
+    )
+
+    original_agent = OneStepPromptCaptureAgent()
+    treatment_agent = OneStepPromptCaptureAgent()
+    baseline = await local.run_local_multiroute_codegraph_e1(
+        original_agent, language="ja", catalog_size=4,
+        diagnose_model_actions=True,
+    )
+    treatment = await local.run_local_multiroute_codegraph_e1(
+        treatment_agent, language="ja", catalog_size=4,
+        diagnose_model_actions=True, experimental_single_step_prompt=True,
+    )
+    assert "prompt_treatment" not in baseline
+    assert treatment["prompt_treatment"] == "EXACTLY_ONE_NATIVE_ACTION_PER_TURN"
+    assert baseline["source_receipt_digest"] == treatment["source_receipt_digest"]
+    assert baseline["task_success_rate"] == treatment["task_success_rate"]
+    assert baseline["source_call_count"] == treatment["source_call_count"]
+    assert baseline["qualified_task_denominator"] == treatment["qualified_task_denominator"]
+    assert baseline["requested_k"] == treatment["requested_k"] == 5
+    assert baseline["max_model_turns"] == treatment["max_model_turns"]
+    assert all(SINGLE_STEP_PROTOCOL_E1 not in msg for msg in original_agent.system_messages)
+    assert all(SINGLE_STEP_PROTOCOL_E1 in msg for msg in treatment_agent.system_messages)
+    assert "contact-4" not in json.dumps(treatment)
+    assert "region-9" not in json.dumps(treatment)
+    assert "bare_native_json_treatment" not in treatment
+    for before, after in zip(baseline["outcomes"], treatment["outcomes"], strict=True):
+        assert before["model_turns"] == after["model_turns"]
+        assert before["actual_source_calls"] == after["actual_source_calls"]
+        assert before["full_task_complete"] == after["full_task_complete"]
+        assert after["action_structure_labels"] == before["action_structure_labels"]
+
+
+@pytest.mark.parametrize(("size", "bare", "single"), (
+    (12, False, True),
+    (4, True, True),
+    (4, False, 1),
+    (4, False, "yes"),
+))
+@pytest.mark.asyncio
+async def test_single_step_prompt_rejects_mixed_or_unsafe_research_conditions(
+    size, bare, single,
+):
+    with pytest.raises(ValueError, match="one-step|treatments|prompt flag"):
+        await local.run_local_multiroute_codegraph_e1(
+            MenuAgent(), language="en", catalog_size=size,
+            experimental_bare_native_json=bare,
+            experimental_single_step_prompt=single,
+        )

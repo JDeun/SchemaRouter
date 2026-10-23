@@ -50,6 +50,21 @@ _SCHEMA_REQUEST_TOOL: dict[str, Any] = {
     },
 }
 
+# Model-only protocol condition. It is never used by routing, gold,
+# authorization, original executor, source bindings or the strict parser.
+SINGLE_STEP_PROTOCOL_E1 = (
+    "For each turn emit exactly ONE action, never a batch or two tool_call "
+    "blocks. For a tool call output precisely one JSON object enclosed by "
+    "<tool_call> and </tool_call>, with keys 'name' and 'arguments'. "
+    "The name must match exactly one offered native tool. "
+    "Never output two or more tool_call blocks in the same turn. "
+    "Do not invent names or call tools that were not offered. Wait for " 
+    "the host's real "
+    "tool observation before considering any dependent call. "
+    "A final JSON answer is allowed only after the verified native "
+    "operations are complete. Never infer tool results or arguments."
+)
+
 _SYSTEM_PROMPT = (
     "The graph reference contains only authorization-scoped path references; "
     "it is not a tool schema or an execution grant. "
@@ -163,6 +178,7 @@ async def run_surgical_model_episode(
     host_context: SurgicalHostContext,
     max_turns: int = MAX_TURNS,
     diagnose_model_actions: bool = False,
+    experimental_single_step_prompt: bool = False,
 ) -> dict[str, Any]:
     """Measure schema requests and actual original invocations separately.
 
@@ -173,6 +189,8 @@ async def run_surgical_model_episode(
         raise ValueError("model generator required")
     if type(diagnose_model_actions) is not bool:
         raise ValueError("research diagnostics flag must be boolean")
+    if type(experimental_single_step_prompt) is not bool:
+        raise ValueError("single-step prompt experiment must be boolean")
     if type(host_context) is not SurgicalHostContext:
         raise ValueError("trusted surgical host context required")
     if type(host_context.final_response_instruction) is not str:
@@ -183,6 +201,8 @@ async def run_surgical_model_episode(
     messages = [
         {"role": "system", "content": (
             _SYSTEM_PROMPT + "\n" + host_context.final_response_instruction
+            + ("\n" + SINGLE_STEP_PROTOCOL_E1
+               if experimental_single_step_prompt else "")
         )},
         {"role": "user", "content": episode.original_query + "\n" + json.dumps(
             initial_reference, ensure_ascii=False, sort_keys=True, allow_nan=False,
