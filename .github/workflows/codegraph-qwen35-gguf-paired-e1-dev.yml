@@ -4,6 +4,12 @@ on:
   pull_request:
     paths:
       - "scripts/research_qwen35_local_gguf_pilot_e1.py"
+      - "scripts/research_codegraph_final_answer_diagnostics_e1.py"
+      - "tests/test_research_codegraph_final_answer_diagnostics_e1.py"
+      - "scripts/research_codegraph_surgical_agent_e1.py"
+      - "scripts/research_codegraph_graph_frontier_e1.py"
+      - "scripts/research_codegraph_local_multiroute_e1.py"
+      - "research/autoresearch/codegraph-qwen35-final-taxonomy-e1.md"
       - "scripts/research_qwen35_native_tool_adapter_e1.py"
       - "tests/test_research_qwen35_local_gguf_pilot_e1.py"
       - "tests/test_research_qwen35_native_tool_adapter_e1.py"
@@ -46,8 +52,8 @@ jobs:
           python -m pip install "llama-cpp-python==0.3.36" "huggingface-hub>=0.30,<2" ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1"
       - name: Fail-closed XML and original-source research contract tests
         run: |
-          ruff check scripts/research_qwen35_native_tool_adapter_e1.py scripts/research_qwen35_local_gguf_pilot_e1.py tests/test_research_qwen35_native_tool_adapter_e1.py tests/test_research_qwen35_local_gguf_pilot_e1.py
-          python -m pytest -q tests/test_research_qwen35_native_tool_adapter_e1.py tests/test_research_qwen35_local_gguf_pilot_e1.py tests/test_research_codegraph_graph_frontier_e1.py tests/test_research_codegraph_local_multiroute_e1.py
+          ruff check scripts/research_qwen35_native_tool_adapter_e1.py scripts/research_qwen35_local_gguf_pilot_e1.py tests/test_research_qwen35_native_tool_adapter_e1.py tests/test_research_qwen35_local_gguf_pilot_e1.py scripts/research_codegraph_final_answer_diagnostics_e1.py tests/test_research_codegraph_final_answer_diagnostics_e1.py scripts/research_codegraph_surgical_agent_e1.py scripts/research_codegraph_graph_frontier_e1.py scripts/research_codegraph_local_multiroute_e1.py
+          python -m pytest -q tests/test_research_qwen35_native_tool_adapter_e1.py tests/test_research_qwen35_local_gguf_pilot_e1.py tests/test_research_codegraph_final_answer_diagnostics_e1.py tests/test_research_codegraph_surgical_agent_e1.py tests/test_research_codegraph_graph_frontier_e1.py tests/test_research_codegraph_local_multiroute_e1.py
       - name: Verify standard runner resource headroom
         run: |
           python - <<'PY'
@@ -67,8 +73,14 @@ jobs:
           from scripts.research_qwen35_local_gguf_pilot_e1 import MODELS
           choice = os.environ["MODEL_VARIANT"]
           repo, filename = MODELS[choice]
-          identity = model_info(repo)
+          # Freeze exact original GGUF source revisions observed in #1738.
+          pinned = {
+              "qwen35_2b": "47f5192dcee31b32db0ba0acc04cccef89cb4b2c",
+              "qwen35_4b": "76e05555d64c8d045dd4b9c9f1ebaef1e35d99f7",
+          }
+          identity = model_info(repo, revision=pinned[choice])
           sha = identity.sha
+          assert sha == pinned[choice]
           assert re.fullmatch(r"[0-9a-f]{40}", sha), sha
           path = Path(hf_hub_download(repo_id=repo, filename=filename, revision=sha))
           assert path.name == filename and path.stat().st_size >= 900_000_000
@@ -109,10 +121,19 @@ jobs:
           assert len(data["outcomes"]) == 5
           assert data["qualified_task_denominator"] == {arm: 1 for arm in data["arms"]}
           assert [r["condition"] for r in data["outcomes"]] == list(data["arms"])
+          permitted_final_labels = {
+              "strict_correct", "valid_json_wrong_value",
+              "valid_json_wrong_type", "valid_json_wrong_contract",
+              "invalid_json_structure", "markdown_fenced_not_strict_json",
+              "reasoning_wrapped_not_strict_json", "nonjson_or_prefixed_final",
+              "extra_native_call_after_two_source_calls",
+              "malformed_after_two_source_calls", "no_complete_final",
+              "premature_final",
+          }
           with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
               out.write(f"## Paired Qwen3.5 GGUF E1 pilot — {choice}, {lang}\n\n")
               out.write("Original-source local development task, not independent E2.\n\n")
-              out.write("| Arm | Native callbacks | Correct final | Total model tokens | Stop |\n")
+              out.write("| Arm | Native callbacks | Correct final | Total model tokens | Stop | Final class |\n")
               out.write("|---|---:|---|---:|---|\n")
               for row in data["outcomes"]:
                   assert 0 <= row["actual_source_calls"] <= 2
@@ -120,6 +141,9 @@ jobs:
                   assert row["model_turns"] <= 5
                   assert row["total_model_tokens"] is not None
                   assert row["tool_schema_tokens"] is None
+                  assert row["final_outcome_category"] in permitted_final_labels
+                  if row["full_task_complete"]:
+                      assert row["final_outcome_category"] == "strict_correct"
                   out.write(f"| {row['condition']} | {row['actual_source_calls']} | {row['full_task_complete']} | {row['total_model_tokens']} | {row['status']} |\n")
           PY
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
