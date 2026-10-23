@@ -624,14 +624,26 @@ async def compare_graph_native_e1(
     host_concept_catalog: NativeConceptCatalog | None = None,
     approved_host_roots: frozenset[str] = frozenset(),
     documented_noncommercial_e1: bool = False,
+    transport_retry_budget: int = 0,
+    evidence_reprompt_budget: int = 0,
 ) -> dict[str, Any]:
     """Paired original-source E1, *not* a fixture score or independent E2.
 
     Refuses to make even baseline provider calls when a legitimate common G5
     cohort cannot be established. A blocked arm has no success denominator.
     """
-    source_kwargs = ({"documented_noncommercial_e1": True}
-                     if documented_noncommercial_e1 else {})
+    if (
+        type(transport_retry_budget) is not int
+        or transport_retry_budget not in (0, 1)
+        or type(evidence_reprompt_budget) is not int
+        or evidence_reprompt_budget not in (0, 1)
+    ):
+        raise ValueError("paired source retry/follow-up budget must be zero or one")
+    source_kwargs: dict[str, Any] = (
+        {"documented_noncommercial_e1": True} if documented_noncommercial_e1 else {}
+    )
+    if transport_retry_budget:
+        source_kwargs["transport_retry_budget"] = transport_retry_budget
     before, _, _ = build_live_router(client, **source_kwargs)
     after, _, _ = build_live_router(client, **source_kwargs)
     first_receipt = _native_source_receipt(before)
@@ -644,6 +656,8 @@ async def compare_graph_native_e1(
         "independently_authored_private_e2": False,
         "release_qualified": False,
         "task_success_rate": None,
+        "transport_retry_budget": transport_retry_budget,
+        "evidence_reprompt_budget": evidence_reprompt_budget,
     }
     if first_receipt != _native_source_receipt(after):
         return {**safe_base, "status": "INCOMPARABLE_SOURCE_DRIFT", "outcomes": ()}
@@ -675,6 +689,8 @@ async def compare_graph_native_e1(
                 menu_mode=arm, host_concept_catalog=host_concept_catalog,
                 approved_host_roots=approved_host_roots,
                 documented_noncommercial_e1=documented_noncommercial_e1,
+                transport_retry_budget=transport_retry_budget,
+                evidence_reprompt_budget=evidence_reprompt_budget,
                 _private_source_observations=private_weather,
                 _private_token_counts=token_counts,
             )
@@ -777,6 +793,8 @@ async def real_cpu_graph_compare(
     *, host_concept_catalog: NativeConceptCatalog | None = None,
     approved_host_roots: frozenset[str] = frozenset(),
     documented_noncommercial_e1: bool = False,
+    transport_retry_budget: int = 0,
+    evidence_reprompt_budget: int = 0,
 ) -> dict[str, Any]:
     """Gate external/model effects behind independently attested source intake.
 
@@ -786,8 +804,13 @@ async def real_cpu_graph_compare(
     async with httpx.AsyncClient(
         timeout=httpx.Timeout(20.0), follow_redirects=False,
     ) as client:
-        optin_kwargs = ({"documented_noncommercial_e1": True}
-                        if documented_noncommercial_e1 else {})
+        optin_kwargs: dict[str, Any] = (
+            {"documented_noncommercial_e1": True} if documented_noncommercial_e1 else {}
+        )
+        if transport_retry_budget:
+            optin_kwargs["transport_retry_budget"] = transport_retry_budget
+        if evidence_reprompt_budget:
+            optin_kwargs["evidence_reprompt_budget"] = evidence_reprompt_budget
         preflight = await compare_graph_native_e1(
             None, client, host_concept_catalog=host_concept_catalog,
             approved_host_roots=approved_host_roots,
@@ -843,9 +866,18 @@ def main() -> None:
         "--documented-noncommercial-e1", action="store_true",
         help="explicitly select reviewed Open-Meteo free/non-commercial source contracts",
     )
+    parser.add_argument(
+        "--paired-transport-retry-one", action="store_true",
+        help="paired E1 only: same single read-only transport retry for every arm",
+    )
+    parser.add_argument(
+        "--paired-evidence-followup-one", action="store_true",
+        help="paired E1 only: same verified-geocoding follow-up for every arm",
+    )
     args = parser.parse_args()
     if not args.compare_graph and (
         args.host_catalog or args.approved_host_root or args.documented_noncommercial_e1
+        or args.paired_transport_retry_one or args.paired_evidence_followup_one
     ):
         parser.error("host source qualifications require --compare-graph")
     if args.documented_noncommercial_e1 and (
@@ -869,6 +901,8 @@ def main() -> None:
             host_concept_catalog=catalog,
             approved_host_roots=roots,
             documented_noncommercial_e1=args.documented_noncommercial_e1,
+            transport_retry_budget=int(args.paired_transport_retry_one),
+            evidence_reprompt_budget=int(args.paired_evidence_followup_one),
         ) if args.compare_graph else real_cpu_run()
     )
     result["source_revision"] = source

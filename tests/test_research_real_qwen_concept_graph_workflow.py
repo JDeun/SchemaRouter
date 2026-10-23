@@ -30,3 +30,16 @@ def test_pinned_model_job_runs_separate_documented_native_g5_comparison() -> Non
     assert "real-qwen-open-meteo-g5-paired-e1-${{ github.run_id }}" in workflow
     assert "artifacts/real-qwen-open-meteo-g5-paired-e1/report.json" in workflow
 
+
+def test_pinned_workflow_runs_separate_equal_budget_robustness_cohort() -> None:
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    assert workflow.index("--compare-graph --documented-noncommercial-e1 \\") < workflow.index(
+        "--paired-transport-retry-one --paired-evidence-followup-one"
+    )
+    assert "real-qwen-open-meteo-g5-resilience-e1-${{ github.run_id }}" in workflow
+    assert "artifacts/real-qwen-open-meteo-g5-resilience-e1/report.json" in workflow
+    assert 'report["transport_retry_budget"] == 1' in workflow
+    assert 'report["evidence_reprompt_budget"] == 1' in workflow
+    assert 'report["task_success_rate"] is None' in workflow
+    assert 'outcome["host_evidence_reprompts"]' in workflow
+

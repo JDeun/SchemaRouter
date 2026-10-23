@@ -27,3 +27,27 @@ Raw runner report originally returned `E1_MEASURED_DEV_NOT_E2` with `all_visible
 4. Rerun the same *unchanged host-authored DEV tasks* with these validity gates. Treat repeated source transport failure as a reason to investigate provider availability and paired design **before any prompt tuning or graph-ranking optimization**. A source-available negative model outcome is a legitimate development finding, not a request to edit the gold/scorer.
 
 The verified G5 source-authority/typed-route implementation can progress to code review independently of task-success promotion. Parent #1535/#1560/#1477 remain constrained by independent #1346 E2; release PR #1356 stays HARD HOLD. SchemaRouter's MIT licensing does not license commercial Open-Meteo Free API traffic on behalf of downstream adopters.
+
+## Second original-provider run — after evaluator and token-accounting correction
+
+- [GitHub Actions run 39879598633](https://github.com/JDeun/SchemaRouter/actions/runs/39879598633), `pinned-qwen-real-native-provider` job `120173746574`: **successfully executed** on PR branch head `7864e2df05d7b1e01699b63394ffd056b2869148` (Actions pull-request source checkout revision `13592aeb79af3387022ca56e4853243a366ed7bc`; these are not the same SHA).
+- [Sanitized original-source paired report artifact](https://github.com/JDeun/SchemaRouter/actions/runs/39879598633/artifacts/12469928501), artifact ID `12469928501`, ZIP digest `sha256:4d0aad2772e86393de30a2e2c68285529d1339e6d4d18dc228dfe640bda1825e`. Expires 2026-12-22. No raw model turns, tool arguments, coordinates, provider values or private gold are in this note.
+- Same frozen `Qwen/Qwen3-0.6B` revision, EN/KO/JA cases, original Open-Meteo source and three disclosed arms. Real model-reported `model_input_tokens`, `tool_schema_tokens`, `model_output_tokens` receipts are **complete for every one of nine episodes**. No dollar or reduction estimate follows from this two-route, incomplete-run sample.
+
+| Language | Arm | Original source / agent result | Input tokens | Schema tokens | Output tokens |
+| --- | --- | --- | ---: | ---: | ---: |
+| EN | all-visible | Geocoding validated; premature final | 1161 | 714 | 88 |
+| EN | lexical K5 | Geocoding validated; premature final | 1161 | 714 | 88 |
+| EN | G5 | Geocoding `connect_timeout` | 402 | 230 | 41 |
+| KO | all-visible | **Completed both native calls and strict final** | 1944 | 1071 | 134 |
+| KO | lexical K5 | Geocoding `connect_timeout` | 544 | 357 | 43 |
+| KO | G5 | Geocoding validated; premature final | 913 | 434 | 90 |
+| JA | all-visible | Geocoding `connect_timeout` | 547 | 357 | 41 |
+| JA | lexical K5 | Geocoding validated; premature final | 1199 | 714 | 87 |
+| JA | G5 | Geocoding `connect_timeout` | 420 | 230 | 41 |
+
+Corrected evaluator status: **`INCOMPARABLE_SOURCE_FAILURE`**; `task_success_rate=null`. Four independent actual-provider connection timeouts prevent comparable denominators. Four source-available episodes ended with `premature_final` after valid geocoding; one reached strict final. The latter are genuine diagnostic agent-task failures but **not evidence that a particular retrieval arm is worse** in the contaminated nine-row aggregate. Token totals across episodes with different numbers of source calls/model turns do **not** establish context savings or cost superiority.
+
+### Next major experiment, preregistered separately from these two baselines
+
+Separate externally induced HTTP transport failures from model-dependent premature finalization using the **already existing** single idempotent read-only transport retry and one verified-evidence follow-up allowance. Apply identical budgets to every arm. Preserve source-failure invalidation, original native inputs, strict final oracle, untouched prompts/gold, no elevated tool authority, and model/source revisions; record the actual retry attempts and number of follow-up prompts. This is a bounded **operational robustness cohort**, not a G5-vs-FULL routing improvement claim, independent E2, or a replacement for the two no-intervention baseline runs. If Open-Meteo stays unavailable, publish another explicit incomparable result rather than adjusting the model or silently simulating provider replies.

@@ -211,6 +211,90 @@ async def test_paired_g5_live_source_transport_failure_is_incomparable(monkeypat
 
 
 @pytest.mark.asyncio
+async def test_paired_robustness_cohort_uses_identical_bounded_budgets(monkeypatch) -> None:
+    """Reliability intervention is arm-neutral; do not quietly reward one router."""
+    calls: list[tuple[str, str, int, int]] = []
+
+    async def observe(agent, client, *, language, menu_mode,
+                      transport_retry_budget=0, evidence_reprompt_budget=0, **kwargs):
+        del agent, client, kwargs
+        calls.append((language, menu_mode, transport_retry_budget,
+                      evidence_reprompt_budget))
+        return {
+            "language": language, "full_task_complete": False,
+            "trusted_failure_stage": None, "model_turns": 1,
+            "termination_reason": "premature_final",
+        }
+
+    monkeypatch.setattr(study, "evaluate_one", observe)
+
+    class QualifiedAgent:
+        def generate(self, messages, tools):
+            raise AssertionError("test stub owns the episode")
+
+    async with httpx.AsyncClient(transport=_fixture_transport([])) as client:
+        row = await study.compare_graph_native_e1(
+            QualifiedAgent(), client, documented_noncommercial_e1=True,
+            host_concept_catalog=study.documented_open_meteo_e1_catalog(),
+            approved_host_roots=frozenset({study.ROUTES[0]}),
+            transport_retry_budget=1, evidence_reprompt_budget=1,
+        )
+    assert row["status"] == "E1_MEASURED_DEV_NOT_E2"
+    assert row["transport_retry_budget"] == 1
+    assert row["evidence_reprompt_budget"] == 1
+    assert len(calls) == 9
+    assert {(retry, reprompt) for _, _, retry, reprompt in calls} == {(1, 1)}
+    assert {language for language, _, _, _ in calls} == {"en", "ko", "ja"}
+    assert {arm for _, arm, _, _ in calls} == set(study.G5_COMPARISON_ARMS)
+
+
+@pytest.mark.asyncio
+async def test_robustness_uses_actual_idempotent_retry_and_verified_followup() -> None:
+    """No host auto-call: Qwen surrogate must still choose the weather operation."""
+    requests: list[str] = []
+    baseline = _fixture_transport(requests)
+    first_search = True
+
+    def flaky_search(request: httpx.Request) -> httpx.Response:
+        nonlocal first_search
+        if request.url.path == "/v1/search" and first_search:
+            first_search = False
+            requests.append(request.url.path)
+            raise httpx.ConnectTimeout("synthetic first-attempt outage", request=request)
+        return baseline.handle_request(request)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(flaky_search)) as client:
+        row = await study.evaluate_one(
+            ScriptedAgent([FIRST, "REQUEST_MORE_TOOLS", SECOND, FINAL]), client,
+            language=LANGUAGE, city=CITY, country=COUNTRY,
+            transport_retry_budget=1, evidence_reprompt_budget=1,
+        )
+    assert row["full_task_complete"] is True
+    assert row["real_geocoding_http_attempts"] == 2
+    assert row["real_geocoding_calls"] == 1
+    assert row["real_forecast_http_attempts"] == 1
+    assert row["real_forecast_calls"] == 1
+    assert row["host_evidence_reprompts"] == 1
+    assert row["model_turns"] == 4
+    assert requests == ["/v1/search", "/v1/search", "/v1/forecast"]
+
+
+@pytest.mark.asyncio
+async def test_paired_robustness_budget_rejects_out_of_bounds_before_source(monkeypatch) -> None:
+    def forbidden_router(*args, **kwargs):
+        raise AssertionError("invalid research budgets must fail before source")
+
+    monkeypatch.setattr(study, "build_live_router", forbidden_router)
+    async with httpx.AsyncClient(transport=_fixture_transport([])) as client:
+        for retry, reprompt in ((2, 0), (0, 2), (True, 0), (0, -1)):
+            with pytest.raises(ValueError, match="budget"):
+                await study.compare_graph_native_e1(
+                    ScriptedAgent([FIRST]), client,
+                    transport_retry_budget=retry, evidence_reprompt_budget=reprompt,
+                )
+
+
+@pytest.mark.asyncio
 async def test_unattested_live_open_meteo_g5_never_fabricates_join() -> None:
     seen: list[str] = []
     agent = ScriptedAgent([FIRST, SECOND, FINAL])
