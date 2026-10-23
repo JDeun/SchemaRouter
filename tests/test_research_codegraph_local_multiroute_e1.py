@@ -481,3 +481,60 @@ async def test_verified_continuation_cannot_change_cohort_or_combine_interventio
             experimental_single_step_prompt=one_step,
             experimental_g5_verified_continuation=cue,
         )
+
+
+@pytest.mark.parametrize("failure", ("native_host_denied", "non_ok_observation"))
+@pytest.mark.asyncio
+async def test_verified_g5_cue_refuses_failed_first_original_source(monkeypatch, failure):
+    """No false verified progress after an original denied/non-ok callback."""
+    async def denied_or_unavailable(*_args, **_kwargs):
+        if failure == "native_host_denied":
+            raise ValueError("source authorization revoked")
+        return {"status": "unavailable"}
+
+    monkeypatch.setattr(local, "execute_scoped_host_call", denied_or_unavailable)
+    source = local.build_local_multiroute_source(
+        language="en", catalog_size=4,
+    )
+    agent = VerifiedG5ProgressSpy()
+    row = await local._baseline_local_arm(
+        agent, source=source, condition="concept_graph_optin",
+        experimental_single_step_prompt=True,
+        experimental_g5_verified_continuation=True,
+    )
+    assert row["status"] == {
+        "native_host_denied": "native_host_call_denied",
+        "non_ok_observation": "non_ok_observation",
+    }[failure]
+    assert row["actual_source_calls"] == 0
+    assert row["verified_continuation_cues"] == 0
+    assert row["full_task_complete"] is False
+    assert len(agent.frames) == 1
+    assert source.callback_log == []
+    assert "contact-4" not in json.dumps(row)
+
+
+@pytest.mark.asyncio
+async def test_verified_g5_cue_refuses_out_of_order_model_action():
+    """No progress cue from an unbound requested second tool."""
+    class WrongFirstAgent:
+        def generate(self, messages, tools):
+            del messages, tools
+            return {
+                "text": CASE, "context_overflow": False,
+                "input_tokens": 12, "tool_tokens": 4, "output_tokens": 9,
+            }
+
+    source = local.build_local_multiroute_source(
+        language="ko", catalog_size=4,
+    )
+    row = await local._baseline_local_arm(
+        WrongFirstAgent(), source=source, condition="concept_graph_optin",
+        experimental_single_step_prompt=True,
+        experimental_g5_verified_continuation=True,
+    )
+    assert row["status"] == "unoffered_or_out_of_order_route"
+    assert row["actual_source_calls"] == 0
+    assert row["verified_continuation_cues"] == 0
+    assert row["full_task_complete"] is False
+    assert source.callback_log == []
