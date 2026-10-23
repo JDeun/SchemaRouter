@@ -3,8 +3,8 @@
   "review_date": "2026-10-23",
   "review_method": "Direct AI-assisted paired reading of English and Korean GitHub publishing sources; not live-browser validation",
   "reviewer_status": "AI project contributor; not independent human or third-party sign-off",
-  "reviewed_page_pairs": 158,
-  "total_page_pairs": 158,
+  "reviewed_page_pairs": 159,
+  "total_page_pairs": 159,
   "independent_sentence_review_complete": false,
   "evidence_limitations": [
     "Cannot authenticate independent reviewer identity or language correctness",
@@ -15,7 +15,8 @@
     "2026-10-23 G5 design/plan and amended research wiki pairs were AI-assisted compared against their source semantics; independent human sentence-level review under #1202 remains open.",
     "2026-10-23 CodeGraph-style E0 report and tool-routing navigation were localized with AI-assisted source/translation comparison and exact current blob pins. Cost and agent-success nonclaims and source authorization boundaries were explicitly retained; independent human audit remains open.",
     "2026-10-23 surgical G5 E1 design was AI-assisted paired in English and Korean, retaining fail-closed materialization, distinct original-provider and local-source cohorts, actual four-arm token cost measurement, commercial source conditions and independent E2 limitations; human editorial sign-off remains open.",
-    "2026-10-23 surgical G5 E1 implementation plan was AI-assisted reviewed as a bilingual matched task sequence. Five security/failure regressions, source-attested four-arm actual-model measurement, ≥10-route local control, noncommercial original provider limitations, A-option sequential workflow and independent E2/release holds were preserved; this is not an independent human sign-off."
+    "2026-10-23 surgical G5 E1 implementation plan was AI-assisted reviewed as a bilingual matched task sequence. Five security/failure regressions, source-attested four-arm actual-model measurement, ≥10-route local control, noncommercial original provider limitations, A-option sequential workflow and independent E2/release holds were preserved; this is not an independent human sign-off.",
+    "2026-10-23 E1 implementation verdict pair directly reviewed by the AI contributor: pinned original-provider and local-source execution attempts were BLOCKED_MODEL_RUNTIME, the local 12-route FULL arm was BLOCKED_MENU_CAP, no actual Qwen token/accuracy percentages were invented, and Open-Meteo free use remains non-commercial; this is not independent human sign-off."
   ],
   "reviews": [
     {
@@ -786,6 +787,12 @@
       "en_blob": "47908888b73b4517fda2b59baa23fed9583dfddb",
       "ko_blob": "a7622bf2018cfb84822464c472fcdd651de295aa",
       "notes": "2026-10-23 AI-assisted paired review of E0 CodeGraph prior-art constraints, source-scoped fixed-K5 native two-route setup, same-selection full/reference envelopes, canonical byte method and all six measured controls. Kept 1,825/1,028/43.67% supported results, negative-case 22-byte increase, no tokenizer/model/task/cost evidence, cross-stage policy/principal fail-closed and separate E1/E2 gates explicit. Not independent human editorial sign-off."
+    },
+    {
+      "path": "research/codegraph-surgical-context-e1.md",
+      "en_blob": "9913c17884327bb6ad974e44c00a963dd18f13ee",
+      "ko_blob": "cd0e9048e24c0eb025b21e5ee103ef8696b775b3",
+      "notes": "2026-10-23 direct AI-assisted bilingual comparison of E1 source-only action, strict K5 revalidation, model-selected original callbacks and cost counters. Preserved BLOCKED_MODEL_RUNTIME for both original Open-Meteo and local actual-model attempts, 12-route FULL disclosure cap, scripted 207/276 token receipts not treated as genuine model measurements, no task success denominator or E0-byte cost inference, non-commercial Open-Meteo terms, #1711/#1346/#1356 open gates. Not independent human sign-off."
     },
     {
       "path": "research/corrective-reretrieval.md",
