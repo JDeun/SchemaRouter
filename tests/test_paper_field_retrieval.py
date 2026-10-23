@@ -16,7 +16,6 @@ from schemarouter import (
     NativeDeclaredConcept,
     NativeSchemaGraphIndex,
     NativeSchemaPostingIndex,
-    PrincipalContext,
     SchemaRouter,
     ToolSpec,
     retrieve_paper_field_coverage,
@@ -26,9 +25,9 @@ from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
     ALIASES,
     GROUP,
-    ROOT,
     LEFT,
     RIGHT,
+    ROOT,
     build_fixture,
 )
 
