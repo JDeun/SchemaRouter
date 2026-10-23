@@ -24,6 +24,7 @@ CATEGORIES = frozenset({
     "multiple_tool_calls",
     "partial_tool_call",
     "bare_json_tool_action",
+    "bare_json_offered_schema_request_shape",
     "invalid_json",
     "duplicate_json_key",
     "non_object_payload",
@@ -61,6 +62,18 @@ def _load_untrusted_json(text: str) -> Any:
 
     return json.loads(
         text, object_pairs_hook=_object_pairs, parse_constant=_constant,
+    )
+
+
+def _valid_schema_request_arguments(args: Any) -> bool:
+    if type(args) is not dict or set(args) != {"route_ids"}:
+        return False
+    values = args["route_ids"]
+    return (
+        type(values) is list
+        and 1 <= len(values) <= 5
+        and all(type(value) is str for value in values)
+        and len(set(values)) == len(values)
     )
 
 
@@ -121,6 +134,13 @@ def structural_action_label(
             bare = None
         if type(bare) is dict:
             if "name" in bare and "arguments" in bare:
+                if (
+                    set(bare) == {"name", "arguments"}
+                    and bare["name"] == "research__request_scoped_source_schema"
+                    and bare["name"] in offered_names
+                    and _valid_schema_request_arguments(bare["arguments"])
+                ):
+                    return "bare_json_offered_schema_request_shape"
                 return "bare_json_tool_action"
             return "bare_final_json"
         if native_calls:
@@ -150,14 +170,7 @@ def structural_action_label(
         return "arguments_not_object"
 
     if name == "research__request_scoped_source_schema":
-        values = args.get("route_ids")
-        if (
-            set(args) == {"route_ids"}
-            and type(values) is list
-            and 1 <= len(values) <= 5
-            and all(type(x) is str for x in values)
-            and len(set(values)) == len(values)
-        ):
+        if _valid_schema_request_arguments(args):
             return (
                 "valid_schema_request_shape" if name in offered_names
                 else "unoffered_tool_name"
