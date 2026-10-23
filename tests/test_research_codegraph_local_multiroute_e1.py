@@ -228,7 +228,7 @@ async def test_optin_structure_labels_do_not_change_source_calls_or_gold():
     assert diagnosed["task_success_rate"] == baseline["task_success_rate"]
     assert diagnosed["source_call_count"] == baseline["source_call_count"]
     assert diagnosed["qualified_task_denominator"] == baseline["qualified_task_denominator"]
-    for first, second in zip(baseline["outcomes"], diagnosed["outcomes"]):
+    for first, second in zip(baseline["outcomes"], diagnosed["outcomes"], strict=True):
         assert second["action_structure_labels"]
         labels = second["action_structure_labels"]
         assert len(labels) == second["model_turns"]
