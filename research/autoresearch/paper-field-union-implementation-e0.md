@@ -225,3 +225,13 @@ subsequently reported **SUCCESS**. Its exact-head dedicated paper
 workflow and eleven other listed workflows also reported success.
 P2 #1747 Actions were triggered and were **in progress/queued** at
 publication; do not infer their result from P1.
+
+**Dedicated P2 CI regression follow-up:** existing
+`.github/workflows/original-paper-field-coverage-e0.yml` was originally
+triggered only by P1 source/tests and did not execute the P2
+`test_paper_field_plan.py` module. Add source and test path triggers,
+P2 Ruff checking, and the P2 + approved-native-host-root pytest suites
+to the same pinned runner/workflow without changing its protected name.
+An explicit unit test now asserts the workflow coverage; it failed
+before the workflow fix and passed after. Local integrated suite then
+reported **102 passed**, repository Ruff and P2 Pyright green.

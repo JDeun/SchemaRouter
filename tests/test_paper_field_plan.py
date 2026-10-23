@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from pathlib import Path
 
 import pytest
 
@@ -33,6 +34,19 @@ from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ROOT,
     build_fixture,
 )
+
+
+def test_dedicated_paper_ci_watches_and_runs_p2_recipe():
+    workflow = (Path(__file__).resolve().parents[1]
+                / ".github/workflows/original-paper-field-coverage-e0.yml")
+    contents = workflow.read_text(encoding="utf-8")
+    assert '"src/schemarouter/paper_field_plan.py"' in contents
+    assert '"tests/test_paper_field_plan.py"' in contents
+    assert (
+        "ruff check src/schemarouter/paper_field_plan.py tests/test_paper_field_plan.py"
+        in contents
+    )
+    assert "python -m pytest -q tests/test_paper_field_plan.py" in contents
 
 
 def _index(router):

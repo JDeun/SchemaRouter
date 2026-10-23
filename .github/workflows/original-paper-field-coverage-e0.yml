@@ -4,11 +4,15 @@ on:
   pull_request:
     paths:
       - "src/schemarouter/paper_field_retrieval.py"
+      - "src/schemarouter/paper_field_plan.py"
       - "src/schemarouter/__init__.py"
       - "tests/test_paper_field_retrieval.py"
+      - "tests/test_paper_field_plan.py"
       - "tests/test_paper_field_real_adapters.py"
       - "tests/test_native_graph_shared_root_forks.py"
       - "research/autoresearch/paper-field-union-implementation-e0.md"
+      - "docs/superpowers/specs/2026-10-24-paper-algorithm1-toolcall-design.md"
+      - "docs/superpowers/plans/2026-10-24-paper-algorithm1-toolcall.md"
       - ".github/workflows/original-paper-field-coverage-e0.yml"
   workflow_dispatch:
 
@@ -31,4 +35,6 @@ jobs:
       - name: Source-coded original Algorithm 1 required-field union tests
         run: |
           ruff check src/schemarouter/paper_field_retrieval.py tests/test_paper_field_retrieval.py tests/test_paper_field_real_adapters.py src/schemarouter/__init__.py
+          ruff check src/schemarouter/paper_field_plan.py tests/test_paper_field_plan.py
           python -m pytest -q tests/test_paper_field_retrieval.py tests/test_paper_field_real_adapters.py tests/test_native_graph_shared_root_forks.py tests/test_native_field_group_retrieval.py
+          python -m pytest -q tests/test_paper_field_plan.py tests/test_native_graph_host_root.py
