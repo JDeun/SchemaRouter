@@ -224,6 +224,7 @@ nav:
       - Adapter authoring: adapter-authoring.md
       - Security model: security/threat-model.md
   - Research:
+      - Research knowledge index (agent entry point): research/knowledge-index.md
       - OSS tool-routing landscape and decisions: research/tool-routing-landscape.md
       - Research program and issue lifecycle (2026): research/research-program-2026.md
       - Product north star and integrated test matrix: research/product-north-star-and-test-matrix.md
