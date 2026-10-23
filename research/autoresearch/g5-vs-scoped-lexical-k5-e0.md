@@ -53,3 +53,53 @@ revocation original evidence; do not discard previous negative Qwen3.5
 terminal failures, #1740 default-indexed cost overhead, or independent
 v0.14 FULL>SR negative evidence. Independent external E2 #1346 and
 paired real source agent #1477 remain blocked; #1356 v0.18 HOLD.
+
+## Post-measurement — first qualifying GitHub Linux result
+
+Measurement code head `83fa367728eff5bfebf76d1a6a941f3622248295`.
+[GitHub Actions run #40030754793](https://github.com/JDeun/SchemaRouter/actions/runs/40030754793),
+all **4/4** strict scoped-paired source jobs succeeded.
+Archived JSON artifact IDs:
+`12534976621` (500 normal), `12534966787` (500 mixed),
+`12533824174` (5000 normal), and `12534497900` (5000 mixed).
+The preregistered report output contains EN/KO/JA rows for every cell.
+
+| Catalog | Original authorization view | G5 complete | Lexical complete | G5 routes | Lexical routes | G5 source schema bytes | Lexical source schema bytes | G5 byte reduction on same-success menus |
+| ---: | --- | --- | --- | ---: | ---: | ---: | ---: | ---: |
+| 500 | normal | 3/3 languages | 3/3 languages | 3 | 5 | 2,050 | 3,264 | 37.19% |
+| 500 | mixed | 3/3 languages | 3/3 languages | 3 | 5 | 2,050 | 3,536 | 42.02% |
+| 5000 | normal | 3/3 languages | 3/3 languages | 3 | 5 | 2,050 | 3,264 | 37.19% |
+| 5000 | mixed | 3/3 languages | 3/3 languages | 3 | 5 | 2,050 | 3,536 | 42.02% |
+
+**12/12** owner-authored catalog/scope/language cells are paired
+*source-oracle-complete* in both arms, using equal strict maximum K5.
+The shared-success cost denominator is therefore **12/12** here, rather
+than dropping lexical failures. Both source authorization and a revoked
+consumer were revalidated: neither arm disclosed a revoked source
+route. No tool execution or model action occurred.
+
+The schema-aware lexical comparator receives the same host-approved
+FieldGroup, source_type/license, current source-visible inputs/outputs
+as G5. It chooses exactly 5 native routes rather than the three
+needed for this one root/two-leaf fixture. The graph's typed
+connectivity excludes two extra **relevant-looking but unnecessary**
+route schemas; the effect is a **descriptive serialized native
+schema-byte reduction** while preserving this specific fork. It is
+not independent proof that every lexical method would expose those
+two extras: a better learned BM25/reranker/relational method or
+tuned lexical K could produce another Pareto point.
+
+***Scientific limits:*** The 12 cells reuse **one owner-designed
+gold topology** across EN/KO/JA aliases and two catalog sizes, plus
+one group of adversarial source-visibility decoys. Do not assign
+independent-trial confidence intervals or treat the 37/42% schema
+byte reduction as an LLM model token saving. The bytes are
+serialization of existing read-only original native source
+contracts, and none of the Qwen agent correctness failures
+were repaired by this new analysis. A reproducible,
+host-attested G5 K5-vs-K5 cost/required-route result in this
+construction IS supported; a general cross-provider accurate
+and cost-saving agent paper claim remains unproven.
+External author/source-disjoint task+field+permission E2 #1346,
+paired genuine source agent #1477 and release HOLD #1356
+remain mandatory.
