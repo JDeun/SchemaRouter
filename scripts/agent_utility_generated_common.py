@@ -7,6 +7,7 @@ their own deterministic execution fixtures.
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import statistics
@@ -544,6 +545,31 @@ def run_generated_episode(
         or condition != EXPERIMENTAL_FIXED5_CONDITION
     ):
         raise ValueError("E0 stage trace requires trusted scoped fixed5 evaluator")
+    # #1477 E0 only: detach the scorer's task/gold from the caller before any
+    # selector or model callback runs. A callback with an external reference to
+    # the original task must not be able to rewrite success criteria mid-episode.
+    # Leave all historical/frozen experiment paths exactly as they were.
+    source_task = task if experimental_candidate_selector is not None else None
+    task_digest: str | None = None
+    if source_task is not None:
+        try:
+            task_digest = sha256_json(source_task)
+            task = copy.deepcopy(source_task)
+            if sha256_json(task) != task_digest:
+                raise ValueError("experimental task evidence changed during capture")
+        except (TypeError, OverflowError) as exc:
+            raise ValueError("experimental task evidence cannot be frozen") from exc
+
+    def assert_experimental_task_unchanged() -> None:
+        if source_task is None:
+            return
+        try:
+            if (sha256_json(source_task) != task_digest
+                    or sha256_json(task) != task_digest):
+                raise ValueError("experimental task evidence changed during evaluation")
+        except (TypeError, OverflowError) as exc:
+            raise ValueError("experimental task evidence changed during evaluation") from exc
+
     routing_condition = candidate_condition or condition
     episode_started = time.perf_counter_ns()
     selection_started = time.perf_counter_ns()
@@ -567,6 +593,7 @@ def run_generated_episode(
             experimental_agent_tool_surface.assert_source_unchanged()
             source_ids = experimental_agent_tool_surface.visible_route_ids
         selected = experimental_candidate_selector(str(task["query"]), source_ids)
+        assert_experimental_task_unchanged()
         if experimental_agent_tool_surface is not None:
             experimental_agent_tool_surface.assert_source_unchanged()
         if (
@@ -634,6 +661,7 @@ def run_generated_episode(
         else:
             model_tools = experimental_agent_tool_surface.tool_definitions(visible_routes)
         generated = agent.generate(messages, model_tools)
+        assert_experimental_task_unchanged()
         if experimental_agent_tool_surface is not None:
             experimental_agent_tool_surface.assert_source_unchanged()
         total_input += int(generated["input_tokens"])
@@ -721,6 +749,7 @@ def run_generated_episode(
                 available=route_id in visible_routes,
                 execution_allowed=call_index == 0,
             )
+            assert_experimental_task_unchanged()
             if experimental_agent_tool_surface is not None:
                 experimental_agent_tool_surface.assert_source_unchanged()
             serialized_calls.append(
@@ -818,6 +847,7 @@ def run_generated_episode(
             visible_routes = list(progressive_stages[stage_index])
             candidate_history.append(list(visible_routes))
 
+    assert_experimental_task_unchanged()
     attempts = executor.attempts
     valid_schema_calls = sum(attempt.schema_valid for attempt in attempts)
     valid_semantic_calls = sum(
@@ -925,6 +955,7 @@ def run_generated_episode(
     if experimental_agent_tool_surface is not None:
         # Grader-only raw attempts/gold are consumed AFTER all model turns.
         # Never hand this record, or the HMAC key, to the agent/selector.
+        assert_experimental_task_unchanged()
         public = experimental_agent_tool_surface.public_trace(episode_record)
         if experimental_e0_trace_provenance is not None:
             provenance = experimental_e0_trace_provenance
