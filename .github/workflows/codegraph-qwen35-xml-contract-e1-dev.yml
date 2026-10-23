@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "scripts/research_qwen35_native_tool_adapter_e1.py"
+      - "scripts/research_qwen35_local_gguf_pilot_e1.py"
+      - "tests/test_research_qwen35_local_gguf_pilot_e1.py"
       - "tests/test_research_qwen35_native_tool_adapter_e1.py"
       - "research/autoresearch/codegraph-qwen35-model-compatibility-e1.md"
       - ".github/workflows/codegraph-qwen35-xml-contract-e1-dev.yml"
@@ -27,5 +29,5 @@ jobs:
         run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1"
       - name: Verify canonical parser unchanged and Qwen3.5 native protocol safety
         run: |
-          ruff check scripts/research_qwen35_native_tool_adapter_e1.py tests/test_research_qwen35_native_tool_adapter_e1.py
-          python -m pytest -q tests/test_research_qwen35_native_tool_adapter_e1.py tests/test_research_codegraph_bare_json_adapter_e1.py tests/test_research_codegraph_surgical_agent_e1.py
+          ruff check scripts/research_qwen35_native_tool_adapter_e1.py tests/test_research_qwen35_native_tool_adapter_e1.py scripts/research_qwen35_local_gguf_pilot_e1.py tests/test_research_qwen35_local_gguf_pilot_e1.py
+          python -m pytest -q tests/test_research_qwen35_native_tool_adapter_e1.py tests/test_research_qwen35_local_gguf_pilot_e1.py tests/test_research_codegraph_bare_json_adapter_e1.py tests/test_research_codegraph_surgical_agent_e1.py
