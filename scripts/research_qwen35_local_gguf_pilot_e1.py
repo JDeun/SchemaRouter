@@ -73,10 +73,11 @@ def _to_native_chat(messages: list[dict[str, str]]) -> list[dict[str, Any]]:
                     "id": last_call_id, "type": "function",
                     "function": {
                         "name": action["name"],
-                        "arguments": json.dumps(
-                            action["arguments"], ensure_ascii=False, allow_nan=False,
-                            separators=(",", ":"),
-                        ),
+                        # Qwen3.5's shipped Jinja template iterates
+                        # tool_call.arguments|items: a native MAPPING, not
+                        # the OpenAI wire JSON string. This is trusted
+                        # canonical history, not a model permission grant.
+                        "arguments": action["arguments"],
                     },
                 }],
             })
