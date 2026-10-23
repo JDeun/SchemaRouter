@@ -76,6 +76,7 @@ jobs:
           python -m scripts.research_codegraph_local_multiroute_e1 \
             --cohort local-source --language ${{ matrix.language }} \
             --catalog-size ${{ matrix.catalog_size }} \
+            --diagnose-model-actions \
             --out artifacts/codegraph-local-qwen/${{ matrix.language }}-${{ matrix.catalog_size }}.json
       - name: Verify genuine model receipts and truthful comparison blockers
         run: |
@@ -123,7 +124,11 @@ jobs:
           ]
           assert all(type(row["model_turns"]) is int for row in active)
           assert any(row["model_turns"] >= 1 for row in active), "model inference never ran"
+          from scripts.research_codegraph_action_shape_e1 import CATEGORIES
           for row in active:
+              labels = row["action_structure_labels"]
+              assert len(labels) == row["model_turns"]
+              assert set(labels) <= CATEGORIES
               for key in ("model_input_tokens", "tool_schema_tokens", "model_output_tokens", "total_model_tokens"):
                   value = row.get(key)
                   assert value is None or (type(value) is int and value >= 0)
