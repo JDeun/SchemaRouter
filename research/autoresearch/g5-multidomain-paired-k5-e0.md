@@ -64,8 +64,7 @@ results downloaded and inspected for ALL conditions. Additional
 same-head existing scoped K5 benchmark and research sandbox green.
 Retained artifacts: `12535227392` (512 normal),
 `12535024038` (512 mixed),
-`12535821470` (5012 normal), and the fourth 5012-mixed artifact
-in the same GitHub run. Each file includes 9 rows and source-safe
+`12535821470` (5012 normal), and `12536045325` (5012 mixed). Each file includes 9 rows and source-safe
 per-cell measurement results.
 
 Actual combined registered native routes are **512 and 5,012**,
