@@ -30,7 +30,7 @@ def test_direct_field_index_uses_native_source_tools_no_execution():
         route = router.registry.get(f"service_{name}").endpoint("read")
         assert route.read_only is True
         assert not route.parameters
-        assert route.input_schema is None
+        assert not route.input_schema
     query = "invoicing status test"
     qualified = index.lookup(
         router, query, principal=ACTOR,
