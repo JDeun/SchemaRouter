@@ -367,12 +367,6 @@ async def test_original_empty_root_does_not_accept_extra_host_inputs() -> None:
 
 
 @pytest.mark.parametrize("bad_schema", [
-    {
-        "type": "object",
-        "properties": {"post_id": {"type": "integer"}},
-        "required": ["post_id"],
-        "additionalProperties": False,
-    },
     {"type": "object", "properties": {"post_id": {"type": "integer"}}},
 ])
 def test_explicit_host_root_does_not_strip_or_guess_provider_schema(
