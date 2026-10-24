@@ -702,9 +702,14 @@ def review_optimade_paper_tool(
     if (
         type(units) is not dict or not set(units) <= set(field_semantic_ids)
         or any(not isinstance(value, UnitNormalizationSpec) for value in units.values())
-        or type(source_units) is not dict or set(source_units) != set(units)
-        or any(type(value) is not str or not value or value != value.strip()
-               for value in source_units.values())
+        or type(source_units) is not dict
+        or not set(units) <= set(source_units)
+        or not set(source_units) <= set(field_semantic_ids)
+        or any(
+            type(value) is not str or not value or value != value.strip()
+            or len(value) > 64 or any(ord(char) < 32 or ord(char) == 127 for char in value)
+            for value in source_units.values()
+        )
     ):
         raise SchemaSourceError("OPTIMADE unit review requires exact owner-declared source units")
 
@@ -752,16 +757,16 @@ def review_optimade_paper_tool(
                             "OPTIMADE reviewed schema source unit annotation mismatch"
                         )
             field.json_schema = schema
-            if name in units:
-                if (
-                    not _schema_supports_numeric_unit(field.json_schema)
-                    or field.unit != source_units[name]
-                ):
+            if field.unit is not None:
+                if name not in source_units or field.unit != source_units[name]:
                     raise SchemaSourceError("OPTIMADE reviewed source unit mismatch")
-                field.unit_normalization = units[name].model_copy(deep=True)
-            elif name in source_units and field.unit != source_units[name]:
+            elif name in source_units:
                 raise SchemaSourceError("OPTIMADE reviewed source unit mismatch")
-            elif name not in source_units:
+            if name in units:
+                if not _schema_supports_numeric_unit(field.json_schema):
+                    raise SchemaSourceError("OPTIMADE reviewed source unit requires numeric field")
+                field.unit_normalization = units[name].model_copy(deep=True)
+            else:
                 field.unit_normalization = None
 
     id_field = next((f for f in get.output_fields if f.name == "id"), None)
