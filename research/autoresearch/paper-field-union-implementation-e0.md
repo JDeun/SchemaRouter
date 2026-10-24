@@ -307,6 +307,18 @@ CI was still running at observation. The latest *new* head and
 individual workflow conclusions MUST be checked after publishing this
 step; no unpublished/local outcome should be represented as GitHub CI.
 
+**Further exact-head CI observation:** GitHub PR #1747 follow-up
+`27712d0ad33392ecc4873b4541d787440fa4f202` passed 12 of its
+14 workflows including dedicated original-paper coverage and Korean
+whole-corpus translation when inspected. Its Docs Browser/Link QA
+**still failed** at the next independent gate: `mkdocs build --strict`
+warned that the two new English `superpowers/` pages were absent from
+the explicit site navigation. Added both original-paper P2 links to
+the **English and Korean** `mkdocs.yml` / `mkdocs.ko.yml` Research
+navigation, separate from G5 records. The broad CI was then still
+in progress. This documentation fix needs another latest-head
+strict-site CI check; do not infer completion from the manifest fix.
+
 **Next #1560:** owner-approved, observed producer result→consumer
 argument value materialization with verified result field contracts;
 subsequent executor invocation only via existing host authority;
