@@ -32,7 +32,9 @@ ACTOR = PrincipalContext(subject="host-researcher", roles=("reader",))
 
 
 def _fixture(*, observed_customer_id="customer-017", source_parameter=False,
-             single_consumer=False, noise_count=0, on_source=None):
+             single_consumer=False, noise_count=0, on_source=None,
+             allow_consumers=False, on_consumer=None, consumer_payloads=None,
+             consumer_result_paths=None):
     seen: list[tuple[str, dict]] = []
     router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
@@ -94,12 +96,21 @@ def _fixture(*, observed_customer_id="customer-017", source_parameter=False,
                 output_fields=[FieldSpec(
                     name=field, semantic_id=semantic,
                     json_schema={"type": "string"},
+                    result_path=(consumer_result_paths or {}).get(name, []),
                 )],
             ),
         ])
 
-        def forbidden(endpoint, args, *, consumer=name):
+        def forbidden(endpoint, args, *, consumer=name, observed_field=field):
             seen.append((consumer, dict(args)))
+            if allow_consumers:
+                if on_consumer is not None:
+                    on_consumer(router, consumer)
+                if consumer_payloads is not None:
+                    return consumer_payloads[consumer]
+                return {
+                    observed_field: "active" if observed_field == "status" else "alice",
+                }
             raise AssertionError("consumer must not execute during observed binding")
 
         router.add_bound_tool(tool, forbidden)
@@ -307,6 +318,22 @@ async def test_policy_denial_during_producer_return_prevents_binding():
     with pytest.raises(PolicyViolationError):
         await observe_and_bind_paper_plan(
             router, ALIASES[0], principal=ACTOR, catalog=catalog, index=index,
+        )
+    assert seen == [("root", {})]
+
+
+@pytest.mark.asyncio
+async def test_observed_only_receipt_rejects_principal_swap_during_producer():
+    """Even a non-executable bound receipt must retain its producer identity."""
+    principal = PrincipalContext(subject="tenant-a", roles=("reader",))
+
+    def change_principal(router):
+        principal.subject = "tenant-b"
+
+    router, catalog, index, seen = _fixture(on_source=change_principal)
+    with pytest.raises(PolicyViolationError, match="principal claims changed"):
+        await observe_and_bind_paper_plan(
+            router, ALIASES[0], principal=principal, catalog=catalog, index=index,
         )
     assert seen == [("root", {})]
 

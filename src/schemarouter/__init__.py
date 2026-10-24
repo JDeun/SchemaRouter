@@ -442,6 +442,10 @@ from .operation_fit import (
 )
 from .operation_intent import OperationIntentHypothesis, infer_operation_intent
 from .pairwise import PairwiseDecisionBackend, PairwiseScoreCallable
+from .paper_consumer_execution import (
+    PaperExecutedToolSequence,
+    observe_and_execute_paper_plan,
+)
 from .paper_field_retrieval import (
     PaperFieldAlternative,
     PaperFieldCoverage,
@@ -609,6 +613,8 @@ def __dir__() -> list[str]:
 __all__ = [
     "PaperObservedBinding",
     "observe_and_bind_paper_plan",
+    "PaperExecutedToolSequence",
+    "observe_and_execute_paper_plan",
     "PaperPlanBinding",
     "PaperPlanCall",
     "PaperPlanFieldMeta",

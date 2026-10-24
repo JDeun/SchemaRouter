@@ -63,6 +63,7 @@ async def observe_and_bind_paper_plan(
     typed shapes now have concrete, validated arguments. Use of this API
     never constitutes publisher-authenticated or independently graded E2.
     """
+    original_principal_claims = principal.model_dump_json()
     original = compile_paper_typed_tool_plan(
         router, query, principal=principal, catalog=catalog, index=index,
         host_source_arguments=host_source_arguments,
@@ -137,6 +138,8 @@ async def observe_and_bind_paper_plan(
             max_tool_calls=1, max_attempts=1, max_remote_attempts=1,
         ),
     ))
+    if principal.model_dump_json() != original_principal_claims:
+        raise PolicyViolationError("paper source principal claims changed")
     if (
         len(results) != 1 or not isinstance(results[0], ToolResult)
         or (results[0].tool, results[0].endpoint)
@@ -189,6 +192,9 @@ async def observe_and_bind_paper_plan(
         alternative_index=alternative_index, k=k,
     ) != original:
         raise PolicyViolationError("paper source eligibility changed during binding")
+
+    if principal.model_dump_json() != original_principal_claims:
+        raise PolicyViolationError("paper source principal claims changed")
 
     return PaperObservedBinding(
         producer=observation,
