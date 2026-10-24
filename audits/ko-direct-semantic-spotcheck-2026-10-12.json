@@ -14,7 +14,8 @@
     "2026-10-19 research-program wiki has an AI-assisted parallel-text and structure spotcheck with exact Git blob pins; independent KO/EN editorial sentence audit remains open.",
     "2026-10-23 G5 design/plan and amended research wiki pairs were AI-assisted compared against their source semantics; independent human sentence-level review under #1202 remains open.",
     "2026-10-23 CodeGraph-style E0 report and tool-routing navigation were localized with AI-assisted source/translation comparison and exact current blob pins. Cost and agent-success nonclaims and source authorization boundaries were explicitly retained; independent human audit remains open.",
-    "2026-10-24 original-paper P2 specification and plan were compared in English and Korean, with exact blob pins and explicit nonexecuting ToolCall, unresolved host/consumer arguments, source/policy drift, K5, E0 and E2/release hold boundaries. This is AI-assisted source reading, NOT independent bilingual editorial sign-off under #1202."
+    "2026-10-24 original-paper P2 specification and plan were compared in English and Korean, with exact blob pins and explicit nonexecuting ToolCall, unresolved host/consumer arguments, source/policy drift, K5, E0 and E2/release hold boundaries. This is AI-assisted source reading, NOT independent bilingual editorial sign-off under #1202.",
+    "2026-10-24 P2.1 English/Korean spec and plan additions were read side by side. Compared opt-in indexed direct routing, same-root fork unchanged, disabled default, 500/5000 synthetic-only timing limitations, host/producer replay mode, serialized field addition, test/timeouts and type-check environment caveats. These four current source blobs are AI-assisted pins, NOT independent sentence-level editorial certification."
   ],
   "reviews": [
     {
@@ -944,9 +945,9 @@
     },
     {
       "path": "superpowers/plans/2026-10-24-paper-algorithm1-toolcall.md",
-      "en_blob": "8a2b976f549bd3559072ca97d7fd6d3d03c75f7c",
-      "ko_blob": "01904d307eaa259fea81dbf037c8e78ad13f4db9",
-      "notes": "AI-assisted English/Korean paired reading of P2 implementation steps, RED/GREEN review, 102 focused tests, original typed dependency and approved-root unbound input contracts, no new authority, fixed K5, source policy drift, E2 and v0.18 release HOLD. Not independent editorial sign-off."
+      "en_blob": "4c3b8160b7500fd993101417e2afd85aa63e7635",
+      "ko_blob": "016cf71e2425a778fe2af3647bca99e01469db31",
+      "notes": "AI-assisted English/Korean paired reading of P2 implementation steps and opt-in P2.1 indexed direct prepass; 180 focused tests, same original typed dependency/approved-root contracts, no new authority or LLM execution, K5, P2 receipt serialization addition, scoped type-check exception, synthetic E0 only, E2 and release HOLD. Not independent editorial sign-off."
     },
     {
       "path": "superpowers/specs/2026-10-22-g5-native-vertical-slice-design.md",
@@ -956,9 +957,9 @@
     },
     {
       "path": "superpowers/specs/2026-10-24-paper-algorithm1-toolcall-design.md",
-      "en_blob": "92742631ed4783368ceced1ea8a8aee9f0ddd972",
-      "ko_blob": "863a7aa74f6eca36b09fb6985884410682883c4e",
-      "notes": "AI-assisted English/Korean paired reading of Algorithm 1 P1→P2 original route projection, nonexecuting ToolCall, host-approved G5 root inputs marked missing, producer→consumer dependencies, repeated source fingerprint and policy checks, explicit mutable nested receipt limitation, and independent E2/release hold. No third-party human translation sign-off."
+      "en_blob": "91f5ec5a81a4ac6b58de448a19c04b9bb2f22b12",
+      "ko_blob": "6b1349e319b155316640158d5fa2723a136935ca",
+      "notes": "AI-assisted English/Korean paired reading of Algorithm 1 P1→P2 original route projection, nonexecuting ToolCall, host-approved G5 input prerequisites, source/owner reproof, optional existing indexed direct selection with unchanged fork and default, cross-mode receipt replay protection, Optional serial field, E0 only and independent E2/release hold. No third-party human translation sign-off."
     },
     {
       "path": "versioning.md",
