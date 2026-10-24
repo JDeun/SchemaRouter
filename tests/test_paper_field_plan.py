@@ -50,11 +50,19 @@ def test_dedicated_paper_ci_watches_and_runs_p2_recipe():
     contents = workflow.read_text(encoding="utf-8")
     assert '"src/schemarouter/paper_field_plan.py"' in contents
     assert '"tests/test_paper_field_plan.py"' in contents
+    assert '"scripts/benchmark_paper_indexed_direct_e0.py"' in contents
+    assert '"tests/test_benchmark_paper_indexed_direct_e0.py"' in contents
     assert (
         "ruff check src/schemarouter/paper_field_plan.py tests/test_paper_field_plan.py"
         in contents
     )
     assert "python -m pytest -q tests/test_paper_field_plan.py" in contents
+    assert "python -m pytest -q tests/test_benchmark_paper_indexed_direct_e0.py" in contents
+    assert (
+        "pyright src/schemarouter/paper_field_retrieval.py "
+        "src/schemarouter/paper_field_plan.py "
+        "scripts/benchmark_paper_indexed_direct_e0.py" in contents
+    )
 
 
 def _index(router):
@@ -217,6 +225,87 @@ def test_attach_meta_sibling_scope_scrubs_shared_tool_labels():
     # Unlike tool-level labels, this *unrestricted* endpoint's own
     # selected source fields retain their original per-field contracts.
     assert plan.alternatives[0].field_metadata[1].field_license == "field-specific-license"
+
+
+def test_indexed_p2_direct_preserves_fields_metadata_and_source_receipt():
+    router, catalog, index = _attach_meta_fixture(scoped=True)
+    indexed = compile_paper_field_toolcalls(
+        router, "formula and volume", principal=ACTOR, catalog=catalog, index=index,
+        experimental_indexed_direct=True,
+    )
+    baseline = compile_paper_field_toolcalls(
+        router, "formula and volume", principal=ACTOR, catalog=catalog, index=index,
+    )
+    assert indexed.status == baseline.status == "complete"
+    assert indexed.alternatives == baseline.alternatives
+    assert not indexed.executable_authority
+    assert indexed.alternatives[0].calls[0].fields == [
+        "structure_id", "formula", "volume",
+    ]
+
+
+def test_indexed_p2_host_and_observed_producer_receipts_stay_nonexecuting():
+    router, catalog, index = _host_input_fixture()
+    plan = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        experimental_indexed_direct=True,
+    )
+    bound = bind_paper_field_host_inputs(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=plan, alternative_index=0, host_arguments={"post_id": 42},
+        experimental_indexed_direct=True,
+    )
+    observation = _producer_observation(
+        router, bound.alternatives[0].calls[0], {"userId": 99},
+    )
+    result = bind_paper_field_producer_result(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=bound, alternative_index=0, producer_call_index=0,
+        executed_call=bound.alternatives[0].calls[0], result=observation,
+        experimental_indexed_direct=True,
+    )
+    assert result.status == "complete"
+    assert result.alternatives[0].calls[1].arguments == {"user_id": 99}
+    assert result.alternatives[0].field_metadata == plan.alternatives[0].field_metadata
+    assert not result.executable_authority
+
+
+def test_indexed_receipt_cannot_silently_replay_using_default_mode():
+    router, catalog, index = _host_input_fixture()
+    indexed = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        experimental_indexed_direct=True,
+    )
+    assert indexed.experimental_indexed_direct is True
+    with pytest.raises(PolicyViolationError, match="binding rejected"):
+        bind_paper_field_host_inputs(
+            router, "lookup username", principal=ACTOR,
+            catalog=catalog, index=index, plan=indexed,
+            alternative_index=0, host_arguments={"post_id": 42},
+        )
+
+
+def test_indexed_direct_does_not_expose_required_field_hidden_by_scope():
+    router, catalog, index = _attach_meta_fixture()
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.read", roles_any=("reader",),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="materials.read", roles_any=("reader",),
+            hidden_fields=("volume",),
+        ),),
+    )
+    for indexed in (False, True):
+        plan = compile_paper_field_toolcalls(
+            router, "formula and volume", principal=ACTOR,
+            catalog=catalog, index=index,
+            experimental_indexed_direct=indexed,
+        )
+        assert plan.status == "no_proven_hit"
+        assert plan.alternatives == ()
+        assert "materials.volume" not in str(plan)
 
 
 def test_compiled_direct_reuses_exact_scoped_field_projection():
@@ -753,11 +842,13 @@ def test_host_input_binding_rejects_wrong_alternative(index_value):
         )
 
 
+@pytest.mark.parametrize("indexed", [False, True])
 @pytest.mark.parametrize("query", ALIASES)
-def test_compiled_fork_unbound_arguments_remain_nonexecutable(query):
+def test_compiled_fork_unbound_arguments_remain_nonexecutable(query, indexed):
     router = build_fixture(500)
     plan = compile_paper_field_toolcalls(
         router, query, principal=ACTOR, catalog=_fork_catalog(), index=_index(router),
+        experimental_indexed_direct=indexed,
     )
     assert plan.status == "complete"
     assert len(plan.alternatives) == 1
@@ -785,12 +876,14 @@ def test_compiled_fork_unbound_arguments_remain_nonexecutable(query):
     assert not plan.executable_authority
 
 
-def test_compiler_preserves_no_proven_hit_or_over_k():
+@pytest.mark.parametrize("indexed", [False, True])
+def test_compiler_preserves_no_proven_hit_or_over_k(indexed):
     router = build_fixture(500, mixed_scope=True)
     index = _index(router)
     router.planner.availability_predicate = lambda tool, ep: tool.key != "fork_owner"
     missing = compile_paper_field_toolcalls(
         router, ALIASES[0], principal=ACTOR, catalog=_fork_catalog(), index=index,
+        experimental_indexed_direct=indexed,
     )
     assert missing.status == "no_proven_hit"
     assert missing.alternatives == ()
@@ -809,6 +902,7 @@ def test_compiler_preserves_no_proven_hit_or_over_k():
     overflow = compile_paper_field_toolcalls(
         all_complete, ALIASES[0], principal=ACTOR,
         catalog=_fork_catalog(), index=_index(all_complete),
+        experimental_indexed_direct=indexed,
     )
     assert overflow.status == "over_k_unranked"
     assert overflow.alternatives == ()

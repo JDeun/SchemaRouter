@@ -57,3 +57,17 @@
 - 별도 리뷰 결과 Critical 0건. Important 두 건(실제 데이터 스코프 검증 부족, 입력 필요 루트 구분)을 테스트와 함께 수정했고, 변경 가능한 내부 `ToolCall`이라는 Minor 한계는 설계서에 명시했습니다. 독립 E2는 수행하지 않았습니다.
 - 게시 커밋 `965234e066e87ab1aa0a9399224567dd187f491a`의 트리 `76cadecd35695e6c93ede9965abaa5b92a3909bb`는 로컬 검증 결과와 동일하며 P1 원격 커밋 `5a530e6`을 부모로 둡니다. PR #1747은 P1 기능 브랜치 대상으로 Draft 상태입니다. #1560에 해당 체크포인트를 기록했습니다. P1 전체 CI #40040143730은 최종 성공했습니다.
 - 전용 CI 회귀도 실패→수정→통과로 확인했습니다. 기존 워크플로는 P2 소스·테스트 변경에 반응하지 않았으므로 `test_dedicated_paper_ci_watches_and_runs_p2_recipe`를 추가하고, P2 및 호스트 입력 G5 테스트와 Ruff 검사를 실행하도록 연결했습니다. 관련 테스트 **102개 통과**, Ruff 및 P2 Pyright 검사도 성공했습니다. 이후 결과는 항상 최신 P2 커밋의 GitHub Actions에서 확인해야 합니다.
+
+## 작업 3: 기존 인덱스 기반 직접 선택기를 P1/P2에 연결 (승인된 이어쓰기)
+
+**파일:** `src/schemarouter/paper_field_retrieval.py`, `src/schemarouter/paper_field_plan.py`, `tests/test_paper_field_retrieval.py`, `tests/test_paper_field_plan.py`를 수정하고, E0 측정 결과를 `research/autoresearch/paper-field-union-implementation-e0.md`에 기록합니다.
+
+**인터페이스:** `retrieve_paper_field_coverage`, `compile_paper_field_toolcalls`, `bind_paper_field_host_inputs`, `bind_paper_field_producer_result`에 키워드 전용 `experimental_indexed_direct: bool = False`를 추가합니다. 이미 제공되는 `retrieve_authorized_concept_graph(..., experimental_indexed_direct=...)`만 재사용합니다.
+
+- [x] 기존 승인된 직접 경로·G5 분기 fixture에서 `experimental_indexed_direct=True`로 P1/P2를 호출하는 RED 테스트를 작성합니다. 결과 상태·원본 경로 ID·가시 필드·필수 그룹 범위를 비교하되 임의의 순서 일치는 요구하지 않습니다. 미지원 인자로 실패하는지 확인합니다.
+- [x] 엄격한 불리언 검사와 기존 인덱스 기반 직접 선택기 전달을 구현하고, 모든 내부 재검증 및 호스트/생산자 바인더에도 같은 모드를 전달합니다. 기본 False의 출처 선택·권한 검사는 같지만 P2 결과 데이터클래스에 모드 필드가 추가되므로 직렬화 구조 자체는 확장됩니다.
+- [x] 접근 거부·숨김·K 초과·오래된 출처·잘못된 인자 자료형을 RED→GREEN으로 검증합니다. 승인된 입력 필요 루트와 실제 관찰 결과의 바인딩도 인덱스 모드에서 검증하며 자동 호출은 추가하지 않습니다.
+- [x] 500/5000 경로의 결정적 E0 직접·분기 비용을 측정합니다. 초기 인덱스 구성과 웜 검색을 분리하고 Python/Linux 및 p50/p95를 기록합니다. 독립 E2나 운영 기본 순위 품질을 주장하지 않습니다.
+- [ ] 관련 출처 어댑터·공개 API 테스트, 전체 Ruff, Pyright를 검증하고 프로젝트 전체 pytest를 시도해 실패나 시간 제한을 기록합니다. 커밋·독립 리뷰·기존 Draft PR #1747 게시 후 실제 GitHub SHA와 CI를 기록합니다.
+
+**작업 3 검증 한계:** 출처 기반·공개 API·번역 관련 집중 테스트 **180개**가 로컬 Python 3.12.14에서 통과했고 저장소 Ruff와 한국어 문서 준비(번역 158개, 대체 0개)도 통과했습니다. 다만 설정 없는 로컬 Pyright는 Python 실행 시 의존성 import가 정상임에도 `.venv/lib/python3.12/site-packages`를 검색 경로에 포함하지 않아 저장소 전역에서 진단 84건을 보고했습니다. 설치된 패키지 경로를 명시한 임시(미커밋) 설정으로 **변경된 구현·벤치마크 파일 3개**를 분리 검사한 결과, fixture의 Optional 타입 오류 2건을 발견·수정해 **오류/경고 0건**으로 통과했습니다. 이는 전체 저장소의 타입 검사 성공을 의미하지 않으며 정확한 PR 헤드의 원격 CI에서 별도 확인해야 합니다. 저장소 전체 pytest는 `timeout 120s`에서 종료 코드 124로 중단됐습니다(일부 진행 출력에서 실패 단언은 보이지 않았지만 약 13%만 수행). 따라서 전체 통과라고 주장할 수 없습니다. 실제 GitHub 게시 및 최신 SHA의 CI도 별도 증거가 필요합니다. 직접 조회와 타입 검증 분기의 E0 p50/p95는 연구 기록에 정리했으며, 분기 비교는 **기존 동일 분기 알고리즘 앞의 직접 검색 단계만** 바꾼 실험입니다.

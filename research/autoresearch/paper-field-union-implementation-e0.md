@@ -501,3 +501,101 @@ required-field union across a general owner-indexed tool catalog;
 no independently authored end-to-end field gold or answer-quality
 validation exists yet. Keep #1535/#1560 open, #1346 externally blocked,
 and the v0.18 release on HOLD.
+
+## P2.1: existing indexed direct selector through Algorithm 1 P1/P2 — 2026-10-24
+
+**Purpose:** advance #1560's catalog-wide indexed lookup instead of
+adding another LLM classifier or agent graph. Existing P1 queried the
+full scoped planner for a direct conjunctive FieldGroup despite the
+already implemented `NativeSchemaPostingIndex.lookup` and
+`retrieve_authorized_concept_graph(experimental_indexed_direct=True)`.
+The new opt-in `experimental_indexed_direct: bool = False` parameter is
+forwarded through P1 coverage, P2 ToolCall compilation and both
+host/producer observation binders, including EVERY internal re-proof.
+The immutable outer P2 receipt records the selected mode; attempting to
+bind an indexed receipt under the default mode fails closed. No
+new index, schema registry, ranking model, semantic inference, auto
+execution or change to the production default was introduced.
+
+**Measured local source-native E0 parity:** host-declared
+`crm.fork_status ∧ crm.fork_owner` requiring BOTH typed fields;
+principal `reader`; original licensed CRM source; deterministic
+`paper_complete.read` has `request_id,status,owner`. Of 500 or 5000
+registered source-native routes, two are typed CRM G5 support routes
+and the remaining non-target sources repeat an unrelated
+`research.label:string` shape. This E0 fixture stresses catalog size,
+NOT heterogeneous connector variability; NO external provider or LLM is used.
+Both original planner direct search and indexed direct lookup returned
+the identical `PaperFieldAlternative` (and separately the same P2
+`ToolCall`/AttachMeta plan). EN/KO/JA licensed one-original-root/two-
+consumer forks also agreed in field projection and typed dependencies.
+Hidden fields, deny policy, wrong type, stale index, >K unranked and
+invalid flag cases abstain or fail closed. Nothing invokes the tools.
+
+**Sequential warm timing on local Linux Python 3.12.14, 2026-10-24:**
+
+| Registered routes | Warm queries / mode | Planner direct p50 / p95 | Indexed direct p50 / p95 | p50 ratio | Posting+graph cold build | Peak process RSS |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 500 | 20 | 208.8091 / 247.1227 ms | 2.1698 / 2.6985 ms | 96.2× | 80.1936 ms | 58,116 KiB |
+| 5000 | 10 | 3209.0016 / 3369.6213 ms | 2.1984 / 3.4480 ms | 1459.7× | 1105.8794 ms | 150,736 KiB |
+
+**Original typed fork scenario**, using `build_fixture(...,
+mixed_scope=True)` including 1 original `fork_origin.read` source,
+two typed `fork_status.read`/`fork_owner.read` consumers, plus denied,
+hidden, source/license-incompatible and wrong-input-type traps:
+
+| Registered routes | Warm queries / mode | Planner-direct prepass + same fork p50 / p95 | Indexed-direct prepass + same fork p50 / p95 | p50 ratio | Posting+graph cold build | Peak RSS |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 500 | 20 | 101.7841 / 127.2245 ms | 7.9780 / 9.1938 ms | 12.8× | 84.7265 ms | 58,060 KiB |
+| 5000 | 10 | 1578.4390 / 1773.4139 ms | 8.3230 / 9.4867 ms | 189.6× | 1055.9990 ms | 150,620 KiB |
+
+The fork comparator uses the **same existing indexed shared-root
+graph algorithm in both modes**; only its preceding direct FieldGroup
+prepass changes. These fork ratios are therefore savings in the
+overall P1 selection sequence, NOT a new faster fork traversal or
+graph algorithm. The alternatives' source fingerprints, typed edges,
+scoped field projections and full required-field union were equal.
+
+Command: `python -m scripts.benchmark_paper_indexed_direct_e0
+--routes {500|5000} --iterations {20|10} --scenario {direct|fork}`
+(one process at a time),
+using monotonic `perf_counter_ns`, alternating mode order, one warmup
+per mode. The 5000 case also completed a separate 20-iteration E0 run
+with planner/index p50 3256.3642 / 2.3117 ms and cold build 1202.7398
+ms, but that first measurement overlapped the 500-route run. The table
+uses the subsequent isolated measurements. Index construction and
+resident memory are NOT excluded from deployment/cold-start cost.
+These numbers are **source schema discovery latency only**, not
+retrieved DATA-context tokens, OpenAPI/MCP network cost, answer
+accuracy, cross-provider latency or representative product/user traffic.
+Peak RSS is Linux `ru_maxrss` KiB and non-Linux runs now fail closed
+instead of reporting incompatible memory units.
+The existing exhaustive oracle/independent publisher gold #1346 and
+external-agent #1477 E2 remain BLOCKED; this benchmark has no
+statistical promise of ranking/recall/answer-quality superiority.
+
+**Tests/CI:** RED tests first reproduced missing P1 and P2 opt-in
+parameters; a separate RED binder regression required the mode to be
+recorded in the immutable receipt. GREEN tests cover source-owner
+projection and host/observed-result replay. A new bounded benchmark
+script and `tests/test_benchmark_paper_indexed_direct_e0.py` are wired
+into the dedicated original-paper Actions workflow and its path list.
+The workflow now also installs Pyright and typechecks the two changed
+production modules plus the benchmark; a workflow-content test failed
+RED without this coverage and passed after it was added.
+The latest nine-suite local focused run passed **180 tests**; full
+repository Ruff and Korean documentation preparation passed (158
+translated pages, zero fallbacks). Local repository Pyright did NOT
+pass: its diagnostic search paths omitted installed `.venv` third-party
+packages even while Python could import them, yielding 84 largely
+existing unresolved-import and type diagnostics. A temporary uncommitted
+Pyright config with the installed site-packages path narrowed verification
+to the three changed implementation/benchmark files and caught two
+Optional fixture attribute arguments in the new benchmark; after a
+source-fixture assertion, focused Pyright returned **0 errors and 0
+warnings**. This is NOT a successful repository-wide Pyright run.
+Treat exact-head GitHub CI as separate verification. Whole-suite `pytest`
+timed out after 120s at approximately 13% and is NOT counted as green.
+Check the current published Draft PR #1747 **exact latest SHA** and
+CI before any green or merge claim. Remain Draft, no default change,
+parent issues OPEN and v0.18 HOLD.

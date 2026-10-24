@@ -83,6 +83,7 @@ class PaperFieldToolCallPlan:
     alternatives: tuple[PaperFieldCallAlternative, ...] = ()
     independent_quality_evidence: bool = False
     executable_authority: bool = False
+    experimental_indexed_direct: bool = False
 
 
 def compile_paper_field_toolcalls(
@@ -93,6 +94,7 @@ def compile_paper_field_toolcalls(
     catalog: NativeConceptCatalog,
     index: NativeSchemaGraphIndex,
     k: int = 5,
+    experimental_indexed_direct: bool = False,
 ) -> PaperFieldToolCallPlan:
     """Project a fresh P1 proof onto existing ``ToolCall`` contracts.
 
@@ -114,6 +116,7 @@ def compile_paper_field_toolcalls(
         raise PolicyViolationError("invalid original ToolCall owner declaration") from None
     proof = retrieve_paper_field_coverage(
         router, query, principal=principal, catalog=catalog, index=index, k=k,
+        experimental_indexed_direct=experimental_indexed_direct,
     )
     if proof.registry_version != witness[1]:
         raise PolicyViolationError("original ToolCall source revision changed")
@@ -273,6 +276,7 @@ def compile_paper_field_toolcalls(
         # A different observation is a failure, never an updated best effort.
         renewed = retrieve_paper_field_coverage(
             router, query, principal=principal, catalog=catalog, index=index, k=k,
+            experimental_indexed_direct=experimental_indexed_direct,
         )
         index.field_index._assert_source(router)
         router._check_retrieval_authority_witness(witness)
@@ -294,6 +298,7 @@ def compile_paper_field_toolcalls(
         registry_version=proof.registry_version,
         requested_k=proof.requested_k,
         alternatives=tuple(alternatives),
+        experimental_indexed_direct=experimental_indexed_direct,
     )
 
 
@@ -308,6 +313,7 @@ def bind_paper_field_host_inputs(
     alternative_index: int,
     host_arguments: dict[str, Any],
     k: int = 5,
+    experimental_indexed_direct: bool = False,
 ) -> PaperFieldToolCallPlan:
     """Validate owner-approved root inputs without binding dependent calls.
 
@@ -320,6 +326,7 @@ def bind_paper_field_host_inputs(
     try:
         original = compile_paper_field_toolcalls(
             router, query, principal=principal, catalog=catalog, index=index, k=k,
+            experimental_indexed_direct=experimental_indexed_direct,
         )
         if (
             type(plan) is not PaperFieldToolCallPlan
@@ -378,6 +385,7 @@ def bind_paper_field_host_inputs(
         # validation, since external callbacks may revoke owner contracts.
         if compile_paper_field_toolcalls(
             router, query, principal=principal, catalog=catalog, index=index, k=k,
+            experimental_indexed_direct=experimental_indexed_direct,
         ) != original or host_arguments != validated_arguments:
             raise PolicyViolationError("original ToolCall input proof changed")
 
@@ -407,6 +415,7 @@ def bind_paper_field_producer_result(
     executed_call: ToolCall,
     result: ToolResult,
     k: int = 5,
+    experimental_indexed_direct: bool = False,
 ) -> PaperFieldToolCallPlan:
     """Bind a host-supplied producer observation into dependent ToolCalls.
 
@@ -427,6 +436,7 @@ def bind_paper_field_producer_result(
         catalog_digest = catalog.model_dump_json()
         original = compile_paper_field_toolcalls(
             router, query, principal=principal, catalog=catalog, index=index, k=k,
+            experimental_indexed_direct=experimental_indexed_direct,
         )
         if (
             type(plan) is not PaperFieldToolCallPlan
@@ -452,6 +462,7 @@ def bind_paper_field_producer_result(
                 router, query, principal=principal, catalog=catalog, index=index,
                 plan=original, alternative_index=alternative_index,
                 host_arguments=dict(submitted_root.arguments), k=k,
+                experimental_indexed_direct=experimental_indexed_direct,
             )
         if plan != expected:
             raise PolicyViolationError("original input receipt changed")
@@ -559,7 +570,7 @@ def bind_paper_field_producer_result(
         if (
             compile_paper_field_toolcalls(
                 router, query, principal=principal, catalog=catalog, index=index,
-                k=k,
+                k=k, experimental_indexed_direct=experimental_indexed_direct,
             ) != original
             or plan != expected
             or executed_call != producer

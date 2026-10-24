@@ -21,3 +21,17 @@ Every call still passes the existing authorization and executor gates if the hos
 The compiler rereads the native original ToolSpec and current scoped EndpointSpec, checks policy, fingerprints, availability, read-only and field visibility, validates that *every* binding references a preceding call, a declared consumer parameter, an original producer output, and no duplicate target, then performs a fresh P1 proof comparison before returning. Any mismatch fails closed; a second observation cannot provide cross-provider atomicity after return.
 
 This slice supports P1-qualified no-input routes, G5-reviewed inputful root *descriptors*, one-hop and same-root two-consumer forks; it abstains for unsupported OPTIMADE search parameters. Host-bound complete **concrete** input values and later execution through the existing executor require a separate qualified extension. The outer dataclasses are frozen, but nested Pydantic `ToolCall` values remain mutable; this is a descriptive recipe, not a tamper-proof persisted attestation. Quality, source-independent E2, production default and v0.18 release HOLD remain unchanged.
+
+## P2.1: optional indexed direct FieldGroup qualification (2026-10-24)
+
+**Intent:** #1560 requires catalog-wide source-attested retrieval without rescanning every endpoint for each query. The existing `NativeSchemaPostingIndex.lookup` and `retrieve_authorized_concept_graph(experimental_indexed_direct=True)` already implement an index-backed conjunctive *direct* route. P1/P2 must be able to opt in to this original source-backed implementation and measure it under the same declared query, principal and K5.
+
+**Considered approaches:**
+
+1. **Selected:** add keyword-only `experimental_indexed_direct: bool = False` to P1 retrieval, P2 compilation and both P2 receipt binders. Pass it to the existing concept-graph direct selector and preserve the choice for each nested re-proof. No new index, ranker, graph edge, parsing semantics or provider call.
+2. **Rejected:** post-filter conventional top-K or copy the posting lookup into the paper compiler. This changes pre-K completeness and duplicates an authorization surface.
+3. **Deferred:** switch default/direct ranking to the index globally. The indexed direct path has no measured ranking quality or independent E2, and must not silently replace product defaults.
+
+**Acceptance:** complete direct field-group and typed fork receipts must have equal status, required semantic coverage, original source IDs and visible field sets in both modes; relative ordering is **not** a ranking-parity promise. No hit, source denial, data-scope hiding, over-K and source drift must fail closed. Invalid option types fail before source lookup; binders must re-prove with the exact chosen mode. Run deterministic 500/5000-source E0 comparisons and CPU timing if feasible, reporting cold index build separately from warm query and never inferring answer quality/cost from schema-only timings.
+
+**Receipt compatibility:** the compiler must store the chosen mode in an optional trailing P2 dataclass field so a replay under a different mode is rejected. Legacy constructor arguments and the default retrieval result remain valid, but a serializer of this *opt-in* P2 dataclass will see the new `experimental_indexed_direct=False` field; no byte-for-byte serialization compatibility is promised.
