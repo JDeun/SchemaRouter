@@ -62,6 +62,7 @@ jobs:
           python -m pip install ".[mcp]" "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
       - name: Run actual pinned E5 on the same already-approved native direct routes
         run: |
+          mkdir -p artifacts/indexed-direct-dev
           python -m scripts.research_indexed_e5_overflow_cpu_dev --mode real-e5-cpu --out artifacts/indexed-direct-dev/real-e5-report.json > artifacts/indexed-direct-dev/runtime-output.log
       - name: Verify evidence tier and publish aggregate only
         run: |
