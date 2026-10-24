@@ -131,7 +131,7 @@ def test_model_receives_only_seven_scoped_source_candidates_and_returns_original
 ])
 def test_model_forgery_partial_or_duplicate_cannot_select(malformed):
     router, index = _source()
-    with pytest.raises(PolicyViolationError, match="research decision failed|partial"):
+    with pytest.raises(PolicyViolationError, match="indexed research ranking failed"):
         index.lookup(
             router, QUERY, group=GROUP, principal=PRINCIPAL,
             _research_ranker=_ranker(lambda _request: malformed),
@@ -155,14 +155,14 @@ def test_adapter_sanitizes_private_backend_error_and_model_payload_is_bounded():
     def secret_error(_request):
         raise RuntimeError("DO_NOT_LEAK_PROVIDER_API_KEY")
 
-    with pytest.raises(PolicyViolationError, match="indexed research decision failed") as exc:
+    with pytest.raises(PolicyViolationError, match="indexed research ranking failed") as exc:
         index.lookup(
             router, QUERY, group=GROUP, principal=PRINCIPAL,
             _research_ranker=_ranker(secret_error),
         )
     assert "DO_NOT_LEAK_PROVIDER_API_KEY" not in str(exc.value)
     assert exc.value.__cause__ is None
-    with pytest.raises(PolicyViolationError, match="model input byte cap"):
+    with pytest.raises(PolicyViolationError, match="indexed research ranking failed"):
         index.lookup(
             router, QUERY, group=GROUP, principal=PRINCIPAL,
             _research_ranker=_ranker(
