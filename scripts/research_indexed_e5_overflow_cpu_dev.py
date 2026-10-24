@@ -179,18 +179,24 @@ def run(semantic_backend: DecisionBackend | None = None) -> dict[str, Any]:
             raise ValueError("first-five control escaped native source")
         row = metrics[lang]
         if expected is None:
-            row["ood_nonempty_first5_count"] += int(bool(old))
+            row["ood_nonempty_first5_count"] = (
+                int(row["ood_nonempty_first5_count"] or 0) + int(bool(old))
+            )
             if new is not None:
-                assert isinstance(row["ood_nonempty_model_count"], int)
-                row["ood_nonempty_model_count"] += int(bool(new))
+                row["ood_nonempty_model_count"] = (
+                    int(row["ood_nonempty_model_count"] or 0) + int(bool(new))
+                )
             continue
-        row["supported_count"] += 1
+        row["supported_count"] = int(row["supported_count"] or 0) + 1
         found_before = expected in old
-        row["first5_recall_count"] += int(found_before)
+        row["first5_recall_count"] = (
+            int(row["first5_recall_count"] or 0) + int(found_before)
+        )
         if new is not None:
             found_after = expected in new
-            assert isinstance(row["model_recall_count"], int)
-            row["model_recall_count"] += int(found_after)
+            row["model_recall_count"] = (
+                int(row["model_recall_count"] or 0) + int(found_after)
+            )
             paired_rescued += int(not found_before and found_after)
             paired_regressed += int(found_before and not found_after)
         index._assert_source(router)
