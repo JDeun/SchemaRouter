@@ -6,15 +6,16 @@ on #1749 (source-index K5 callback) → #1748 (typed original-paper plans)
 
 ## Goal
 
-Close the gap between the source-authorized NativeSchemaPostingIndex research
-callback and the EXISTING model-neutral schemarouter.decisions.DecisionBackend.
-Avoid creating a second inference API, route classifier, executor, auth bypass
-or relevance ground truth.
+Provide an additional 500/5000 heterogeneous-registry source-oracle and
+paired CPU scaling experiment for the EXACT native-index DecisionBackend
+adapter already implemented in Draft PR #1751. Do not duplicate its model,
+inference, adapter, or actual pinned E5 experimental code.
 
 ## Implemented integration
 
-- scripts/research_native_posting_decision_ranker_e0.py converts a bounded
-  6–32 original source-attested direct candidate receipt into a DecisionRequest.
+- The reused scripts/research_indexed_decision_backend_ranker_e0.py from
+  Draft PR #1751 converts a bounded 6–32 source-attested direct candidate
+  receipt into a DecisionRequest.
   The model sees the original query, opaque decision IDs, currently
   principal-visible route labels and required output field names.
   Identical field descriptions may be omitted to reduce input bytes.
@@ -28,7 +29,7 @@ or relevance ground truth.
   registered fingerprints, policy, principal, live availability, hidden field
   scope, typed completeness and source witness. Default >K5 behavior is
   unchanged; >32 never invokes a model.
-- This adapter is NOT a fitted ranking policy. A genuine pretrained backend
+- The existing PR #1751 adapter is NOT a fitted ranking policy. A genuine pretrained backend
   and independently scored tasks are needed to determine quality.
 
 ## Paired E0 smoke experiment
@@ -61,18 +62,19 @@ to a product-wide latency or model-quality claim.
 
 ## Reproduction
 
-- Focused: python -m pytest -q tests/test_research_native_posting_decision_ranker_e0.py tests/test_benchmark_native_posting_ranked_k5_e0.py
+- Focused: python -m pytest -q tests/test_research_indexed_decision_backend_ranker_e0.py tests/test_benchmark_native_posting_ranked_k5_e0.py
 - 500 routes: python -m scripts.benchmark_native_posting_ranked_k5_e0 --registered-routes 500 --iterations 3
 - 5000 routes (manual and potentially slow): python -m scripts.benchmark_native_posting_ranked_k5_e0 --registered-routes 5000 --iterations 3
 - CI: .github/workflows/native-direct-index-decision-k5-e0.yml (exact PR HEAD).
 
 ## Next high-value investigation
 
-1. Connect a PINNED actual pretrained multilingual embedding backend already
-   used in G5 E5 probes to the same source-proven direct K5 callback.
-   Preregister model revision, hardware, input byte/tokens and compare
-   default, lexical, E5, hybrid RRF and typed model under identical scopes.
-   Explicit backend failures must never silently fall back to lexical.
+1. Draft PR #1751 already connects the pinned real E5 CPU backend to
+   a synthetic 24-route direct index with 27 EN/KO/JA + 3 OOD cases.
+   Its model-quality evidence is synthetic DEV; extend its experiment to
+   5000 heterogeneous current-source catalogs only with paired, controlled
+   CPU/provenance measurement, not a second ranker. Benchmark lexical/E5/
+   hybrid with identical explicit principal and original source conditions.
 2. Independently authored hidden EN/KO/JA + OOD route, argument and field
    gold (#1346), paired external agent executor (#1477) and genuine Recall@5,
    MRR, NDCG, agent completion, provenance and cost evidence.
@@ -82,3 +84,11 @@ to a product-wide latency or model-quality claim.
 
 Release #1356 remains HARD HOLD. Do not merge or change default based on
 this E0 synthetic fixture or call literal-name matching model generalization.
+
+## Branch structure
+
+This benchmark-only patch is stacked on Draft PR #1751, which owns
+ResearchAuthorizedIndexedDecisionRanker and its actual pinned-E5 CPU experiment.
+The upstream PR #1749 supplies the pre-K source-verification boundary.
+This branch deliberately deletes its initially duplicated adapter/tests;
+only source-oracle parity and CPU control remain as added behavior.
