@@ -164,6 +164,54 @@ def test_unapproved_host_root_stays_non_proven_in_paper_compiler():
     assert seen == []
 
 
+@pytest.mark.parametrize("query", GROUP.aliases)
+def test_paper_compiler_accepts_only_explicit_validated_host_source_input(query):
+    router, seen = _setup()
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="demo.username", aliases=GROUP.aliases,
+        required_fields=GROUP.required_fields,
+        source_type=GROUP.source_type, license=GROUP.license,
+    ),))
+    plan = compile_paper_typed_tool_plan(
+        router, query, principal=ACTOR, catalog=catalog,
+        index=_index(router, allow=True),
+        host_source_arguments={"posts.by_id": {"post_id": 42}},
+    )
+    assert plan.status == "requires_observation"
+    assert not plan.executable_authority
+    assert plan.calls[0].call.arguments == {"post_id": 42}
+    assert plan.calls[0].call.missing_required_arguments == []
+    assert plan.calls[1].call.arguments == {}
+    assert plan.calls[1].call.missing_required_arguments == ["user_id"]
+    assert seen == []
+
+
+@pytest.mark.parametrize("host_values", [
+    {"posts.by_id": {}},
+    {"posts.by_id": {"post_id": "42"}},
+    {"posts.by_id": {"post_id": True}},
+    {"posts.by_id": {"post_id": 1.5}},
+    {"posts.by_id": {"post_id": 2**72}},
+    {"posts.by_id": {"post_id": 42, "admin": True}},
+    {"users.by_id": {"user_id": 7}},
+    {"unknown.read": {"post_id": 42}},
+])
+def test_paper_compiler_rejects_untrusted_or_partial_host_input(host_values):
+    router, seen = _setup()
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="demo.username", aliases=GROUP.aliases,
+        required_fields=GROUP.required_fields,
+        source_type=GROUP.source_type, license=GROUP.license,
+    ),))
+    with pytest.raises((ValueError, PolicyViolationError)):
+        compile_paper_typed_tool_plan(
+            router, GROUP.aliases[0], principal=ACTOR, catalog=catalog,
+            index=_index(router, allow=True),
+            host_source_arguments=host_values,
+        )
+    assert seen == []
+
+
 def test_root_with_required_inputs_is_not_discoverable_without_explicit_opt_in() -> None:
     router, seen = _setup()
     graph = _index(router, allow=False)

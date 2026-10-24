@@ -5,9 +5,10 @@ In particular, a dependent call never receives a fabricated producer ID.
 """
 from __future__ import annotations
 
+import math
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from .authorization import PrincipalContext
 from .concept_retrieval import NativeConceptCatalog
@@ -15,8 +16,13 @@ from .errors import PolicyViolationError
 from .evidence import available_evidence
 from .host_field_contract import _policy_contents_digest
 from .models import EndpointSpec, ToolCall, ToolSpec
-from .native_graph_index import NativeSchemaGraphIndex, _native_required_inputs
+from .native_graph_index import (
+    NativeSchemaGraphIndex,
+    _host_source_input_names,
+    _native_required_inputs,
+)
 from .paper_field_retrieval import PaperFieldRoute, retrieve_paper_field_coverage
+from .validation import validate_json_schema_value
 
 if TYPE_CHECKING:
     from .runtime import SchemaRouter
@@ -80,6 +86,7 @@ def compile_paper_typed_tool_plan(
     index: NativeSchemaGraphIndex,
     alternative_index: int = 0,
     k: int = 5,
+    host_source_arguments: dict[str, dict[str, Any]] | None = None,
 ) -> PaperTypedToolPlan:
     """Compile ONE source-proven K5 alternative without executing or binding data.
 
@@ -89,10 +96,23 @@ def compile_paper_typed_tool_plan(
     """
     if type(alternative_index) is not int or alternative_index < 0:
         raise ValueError("invalid paper alternative index")
+    if host_source_arguments is not None and (
+        type(host_source_arguments) is not dict
+        or any(
+            type(route) is not str or type(values) is not dict
+            for route, values in host_source_arguments.items()
+        )
+    ):
+        raise ValueError("invalid explicit host source argument declaration")
+    host_inputs = {
+        route: dict(values) for route, values in (host_source_arguments or {}).items()
+    }
     proof = retrieve_paper_field_coverage(
         router, query, principal=principal, catalog=catalog, index=index, k=k,
     )
     if proof.status != "complete":
+        if host_inputs:
+            raise ValueError("explicit host arguments require a proven source route")
         if alternative_index:
             raise ValueError("paper alternative index is out of range")
         return PaperTypedToolPlan(
@@ -120,6 +140,8 @@ def compile_paper_typed_tool_plan(
         raise PolicyViolationError("paper typed plan requires original source policy")
 
     positions = {route.route_id: i for i, route in enumerate(chosen.routes)}
+    if not host_inputs.keys() <= positions.keys():
+        raise ValueError("explicit host arguments name an unproved source route")
     receipts_by_route = {route.route_id: route for route in chosen.routes}
     calls: list[PaperPlanCall] = []
     edges: list[PaperPlanBinding] = []
@@ -127,7 +149,7 @@ def compile_paper_typed_tool_plan(
         for i, route in enumerate(chosen.routes):
             calls.append(_compile_one_route(
                 router, principal, index, route, i, positions,
-                receipts_by_route, edges, permitted,
+                receipts_by_route, edges, permitted, host_inputs.get(route.route_id),
             ))
         # End-of-compilation second observation of the SAME complete proof,
         # not a substitute for atomic provider snapshots or execution checks.
@@ -175,6 +197,7 @@ def _compile_one_route(
     receipts_by_route: dict[str, PaperFieldRoute],
     edges: list[PaperPlanBinding],
     permitted: Callable[[ToolSpec, EndpointSpec], bool],
+    host_values: dict[str, Any] | None,
 ) -> PaperPlanCall:
     location = index.field_index.route_locations.get(route.route_id)
     if location is None:
@@ -249,15 +272,49 @@ def _compile_one_route(
     else:
         bindings = {}
 
+    # Host input values may be supplied ONLY for a previously explicit
+    # original G5 host root. No query inference, partial values, default
+    # filling or dependency-consumer prebinding occurs here.
+    arguments: dict[str, Any] = {}
+    if host_values is not None:
+        names = _host_source_input_names(endpoint)
+        if (
+            route.input_bindings
+            or route.route_id not in index.approved_host_roots
+            or names is None
+            or set(host_values) != set(names)
+        ):
+            raise PolicyViolationError("unapproved original source arguments")
+        by_name = {param.name: param for param in endpoint.parameters}
+        for name, value in host_values.items():
+            expected = by_name[name].json_schema["type"]
+            if (
+                type(value) not in (str, int, float, bool)
+                or expected not in ("string", "integer", "number", "boolean")
+                or type(value) is bool and expected != "boolean"
+                or type(value) is str and expected != "string"
+                or type(value) is int and expected not in ("integer", "number")
+                or type(value) is float and expected != "number"
+                or type(value) is float and not math.isfinite(value)
+                or type(value) is int and not -(2**63) <= value < 2**63
+                or type(value) is str and len(value.encode("utf-8")) > 4096
+            ):
+                raise PolicyViolationError("invalid bounded host input scalar")
+        validate_json_schema_value(
+            host_values, endpoint.input_schema,
+            context="original paper host-approved source input",
+        )
+        arguments = dict(host_values)
+
     return PaperPlanCall(
         route_id=route.route_id,
         call=ToolCall(
-            tool=location[0], endpoint=location[1], arguments={},
+            tool=location[0], endpoint=location[1], arguments=arguments,
             fields=list(route.output_fields),
             evidence=available_evidence(tool, visible, list(route.output_fields)),
             schema_fingerprint=route.endpoint_fingerprint,
             tool_fingerprint=route.tool_fingerprint,
-            missing_required_arguments=sorted(required_names),
+            missing_required_arguments=sorted(required_names - arguments.keys()),
         ),
         source_type=tool.source_type,
         license=tool.license,
