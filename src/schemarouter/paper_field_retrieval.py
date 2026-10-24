@@ -10,12 +10,13 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
 from .authorization import PrincipalContext
+from .capability_contracts import CapabilityFieldContract
 from .concept_graph_retrieval import retrieve_authorized_concept_graph
 from .concept_retrieval import NativeConceptCatalog, resolve_native_concepts
 from .errors import PolicyViolationError
 from .field_group_retrieval import _complete_fields
 from .host_field_contract import _policy_contents_digest
-from .native_graph_index import NativeSchemaGraphIndex
+from .native_graph_index import NativeSchemaGraphIndex, _host_source_input_names
 
 if TYPE_CHECKING:
     from .runtime import SchemaRouter
@@ -55,6 +56,62 @@ class PaperFieldCoverage:
     alternatives: tuple[PaperFieldAlternative, ...] = ()
     independent_quality_evidence: bool = False
     executable_authority: bool = False
+
+
+def _paper_complete_fields(fields, required: tuple[CapabilityFieldContract, ...]) -> bool:
+    """Check the complete owner-declared semantic/unit contract."""
+    return bool(required) and _complete_fields(fields, required)
+
+
+def _host_approved_paper_roots(
+    router: SchemaRouter, *, principal: PrincipalContext,
+    required: tuple[CapabilityFieldContract, ...],
+    source_type: str | None, license: str | None,
+    index: NativeSchemaGraphIndex,
+) -> tuple[PaperFieldRoute, ...]:
+    """Find only host-pinned, explicitly parameterized roots with complete fields."""
+    if not required or not source_type or not license:
+        return ()
+    permitted = router._authorization_predicate(principal)
+    if permitted is None:
+        raise PolicyViolationError("host-approved paper root requires source policy")
+    found: list[PaperFieldRoute] = []
+    for route_id in sorted(index.approved_host_roots):
+        location = index.field_index.route_locations.get(route_id)
+        if location is None:
+            continue
+        tool = router.registry.get(location[0])
+        endpoint = tool.endpoint(location[1])
+        fingerprint = (tool.fingerprint, endpoint.fingerprint)
+        if (
+            index.field_index.route_fingerprints.get(route_id) != fingerprint
+            or tool.source_type != source_type or tool.license != license
+            or not permitted(tool, endpoint) or endpoint.read_only is not True
+            or endpoint.destructive is True or _host_source_input_names(endpoint) is None
+        ):
+            continue
+        availability = router.planner.availability_predicate
+        if availability is not None and not availability(tool, endpoint):
+            continue
+        visible = router._data_scope_endpoint_view(principal, tool, endpoint)
+        if visible is None or not _paper_complete_fields(visible.output_fields, required):
+            continue
+        selected = tuple(
+            field.name for field in visible.output_fields
+            if any(_complete_fields([field], (demand,)) for demand in required)
+        )
+        covered = tuple(
+            demand.semantic_id for demand in required
+            if _complete_fields(visible.output_fields, (demand,))
+        )
+        if set(covered) != {d.semantic_id for d in required}:
+            continue
+        found.append(PaperFieldRoute(
+            route_id=route_id, tool_fingerprint=tool.fingerprint,
+            endpoint_fingerprint=endpoint.fingerprint, output_fields=selected,
+            covered_semantic_ids=covered,
+        ))
+    return tuple(found)
 
 
 def retrieve_paper_field_coverage(
@@ -105,6 +162,14 @@ def retrieve_paper_field_coverage(
     current = retrieve_authorized_concept_graph(
         router, query, principal=principal, catalog=catalog, index=index, k=k,
     )
+    host_roots = (
+        ()
+        if current.status == "complete"
+        else _host_approved_paper_roots(
+            router, principal=principal, required=group.required_fields,
+            source_type=group.source_type, license=group.license, index=index,
+        )
+    )
     if current.status == "complete":
         raw_alternatives = []
         for route_set in current.route_sets:
@@ -119,6 +184,16 @@ def retrieve_paper_field_coverage(
                 route_set.route_fingerprints,
                 inputs,
             ))
+        status = "complete"
+    elif host_roots:
+        raw_alternatives = [
+            (
+                (route.route_id,),
+                ((route.route_id, route.tool_fingerprint, route.endpoint_fingerprint),),
+                {},
+            )
+            for route in host_roots
+        ]
         status = "complete"
     elif current.status in ("over_k_unranked", "budget_unsatisfied"):
         raw_alternatives = []
@@ -213,8 +288,11 @@ def retrieve_paper_field_coverage(
             raise PolicyViolationError("required producer identifier now hidden")
         selected = tuple(
             field.name for field in visible.output_fields
-            if field.identifier or field.name in matched
-            or field.name in required_source
+            if (
+                (field.identifier and route_id not in index.approved_host_roots)
+                or field.name in matched
+                or field.name in required_source
+            )
         )
         if not selected:
             raise PolicyViolationError("no source-visible required output")
