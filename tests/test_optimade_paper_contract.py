@@ -5,10 +5,18 @@ import httpx
 import pytest
 
 from schemarouter import (
-    AuthorizationPolicy, AuthorizationRule, CapabilityFieldContract,
-    ExecutionPlan, NativeConceptCatalog, NativeDeclaredConcept,
-    NativeSchemaGraphIndex, PrincipalContext, SchemaRouter, ToolCall,
-    UnitNormalizationSpec, compile_paper_typed_tool_plan,
+    AuthorizationPolicy,
+    AuthorizationRule,
+    CapabilityFieldContract,
+    ExecutionPlan,
+    NativeConceptCatalog,
+    NativeDeclaredConcept,
+    NativeSchemaGraphIndex,
+    PrincipalContext,
+    SchemaRouter,
+    ToolCall,
+    UnitNormalizationSpec,
+    compile_paper_typed_tool_plan,
 )
 from schemarouter.adapters import OPTIMADERemoteInvoker
 from schemarouter.adapters.optimade import _tool_from_discovery, review_optimade_paper_tool
@@ -178,7 +186,8 @@ async def test_original_paper_plan_binds_exact_host_id_and_preserves_source_and_
 
     reviewed = _review()
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router, index = _router(reviewed, OPTIMADERemoteInvoker(reviewed, BASE_URL, http_client=client))
+        invoker = OPTIMADERemoteInvoker(reviewed, BASE_URL, http_client=client)
+        router, index = _router(reviewed, invoker)
         catalog = _catalog()
         deferred = compile_paper_typed_tool_plan(
             router, ALIASES[0], principal=ACTOR, catalog=catalog, index=index,
@@ -215,7 +224,8 @@ async def test_standard_executor_applies_only_the_host_reviewed_unit_conversion(
 
     reviewed = _review()
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        router, index = _router(reviewed, OPTIMADERemoteInvoker(reviewed, BASE_URL, http_client=client))
+        invoker = OPTIMADERemoteInvoker(reviewed, BASE_URL, http_client=client)
+        router, index = _router(reviewed, invoker)
         plan = compile_paper_typed_tool_plan(
             router, ALIASES[0], principal=ACTOR, catalog=_catalog(), index=index,
             host_source_arguments={ROOT: {"id": "db/42"}},
