@@ -472,3 +472,44 @@ def test_unknown_query_and_bad_flag_are_not_source_authority():
         AuthorizedPaperFieldFixed5Selector(
             view, CATALOG, _index(router), experimental_indexed_direct=1,
         )
+
+
+@pytest.mark.parametrize("indexed", [False, True])
+def test_paper_projected_tool_definitions_only_disclose_selected_fields(indexed):
+    router = _direct_router()
+    view, index, selector = _prepare(router, indexed=indexed)
+    definitions = selector.projected_tool_definitions(QUERY, view.visible_route_ids)
+    assert len(definitions) == 1
+    full = view.tool_definitions(["complete_0.read"])
+    assert definitions[0]["name"] == full[0]["name"]
+    assert definitions[0]["parameters"] == full[0]["parameters"]
+    assert "status" in definitions[0]["description"]
+    assert "owner" in definitions[0]["description"]
+    assert "not execution authorization" in definitions[0]["description"]
+    assert selector.last_status == "complete"
+    assert len(json.dumps(definitions)) <= len(json.dumps(full)) + 120
+
+
+def test_paper_projection_abstains_when_no_complete_field_plan():
+    router = _direct_router(hidden=True)
+    view, _, selector = _prepare(router)
+    assert selector.projected_tool_definitions(QUERY, view.visible_route_ids) == []
+
+
+def test_paper_projection_refuses_stale_source():
+    router = _direct_router()
+    view, _, selector = _prepare(router)
+    router.add_tool(ToolSpec(
+        name="new_source", endpoints=[EndpointSpec(name="read", read_only=True)],
+    ))
+    with pytest.raises(PolicyViolationError):
+        selector.projected_tool_definitions(QUERY, view.visible_route_ids)
+
+
+def test_paper_projection_never_mutates_original_model_surface():
+    router = _direct_router()
+    view, _, selector = _prepare(router)
+    original = view.tool_definitions(["complete_0.read"])
+    projected = selector.projected_tool_definitions(QUERY, view.visible_route_ids)
+    projected[0]["parameters"]["required"].append("forged")
+    assert view.tool_definitions(["complete_0.read"]) == original
