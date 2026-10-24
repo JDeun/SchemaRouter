@@ -12,12 +12,17 @@ from typing import TYPE_CHECKING, Any, Literal
 from .authorization import PrincipalContext
 from .concept_retrieval import NativeConceptCatalog
 from .errors import PolicyViolationError
+from .executor import _MISSING, RegistryExecutor
 from .field_group_retrieval import _root_envelope_empty
 from .host_field_contract import _policy_contents_digest
-from .models import ToolCall
+from .models import ToolCall, ToolResult
 from .native_graph_index import NativeSchemaGraphIndex, _host_source_input_names
 from .paper_field_retrieval import retrieve_paper_field_coverage
-from .validation import effective_input_schema, validate_json_schema_value
+from .validation import (
+    canonical_field_value_schema,
+    effective_input_schema,
+    validate_json_schema_value,
+)
 
 if TYPE_CHECKING:
     from .runtime import SchemaRouter
@@ -321,3 +326,190 @@ def bind_paper_field_host_inputs(
     except Exception:
         # Do not leak source-private route names or rejected user values.
         raise PolicyViolationError("original ToolCall host input binding rejected") from None
+
+
+def bind_paper_field_producer_result(
+    router: SchemaRouter,
+    query: str,
+    *,
+    principal: PrincipalContext,
+    catalog: NativeConceptCatalog,
+    index: NativeSchemaGraphIndex,
+    plan: PaperFieldToolCallPlan,
+    alternative_index: int,
+    producer_call_index: int,
+    executed_call: ToolCall,
+    result: ToolResult,
+    k: int = 5,
+) -> PaperFieldToolCallPlan:
+    """Bind a host-supplied producer observation into dependent ToolCalls.
+
+    The host MUST supply a result obtained from execution of ``executed_call``
+    under the existing executor's authorization and budget controls. This
+    method verifies the result's declared projection and value contracts, but
+    cannot authenticate where a host-provided object was obtained. It never
+    invokes a tool or grants execution authority. Only original one-hop
+    dependencies (including same-root forks) are supported.
+    """
+    try:
+        witness = router._retrieval_authority_witness()
+        entry_policy = router.authorization_policy
+        if entry_policy is None:
+            raise PolicyViolationError("missing original producer authorization")
+        policy_digest = _policy_contents_digest(entry_policy)
+        principal_digest = principal.model_dump_json()
+        catalog_digest = catalog.model_dump_json()
+        original = compile_paper_field_toolcalls(
+            router, query, principal=principal, catalog=catalog, index=index, k=k,
+        )
+        if (
+            type(plan) is not PaperFieldToolCallPlan
+            or original.status != "complete"
+            or type(alternative_index) is not int
+            or not 0 <= alternative_index < len(original.alternatives)
+            or type(producer_call_index) is not int
+            or type(executed_call) is not ToolCall
+            or type(result) is not ToolResult
+        ):
+            raise PolicyViolationError("invalid original producer observation")
+
+        # A root may already carry explicit host-approved inputs. Reconstruct
+        # that receipt using the public authorizing binder, then reject every
+        # other prebound or caller-modified call/alternative.
+        expected = original
+        submitted_root = plan.alternatives[alternative_index].calls[0]
+        original_root = original.alternatives[alternative_index].calls[0]
+        if submitted_root != original_root:
+            if not original_root.missing_required_arguments:
+                raise PolicyViolationError("untrusted original input receipt")
+            expected = bind_paper_field_host_inputs(
+                router, query, principal=principal, catalog=catalog, index=index,
+                plan=original, alternative_index=alternative_index,
+                host_arguments=dict(submitted_root.arguments), k=k,
+            )
+        if plan != expected:
+            raise PolicyViolationError("original input receipt changed")
+
+        alternative = expected.alternatives[alternative_index]
+        dependencies = tuple(
+            dep for dep in alternative.dependencies
+            if dep.producer_call_index == producer_call_index
+        )
+        if (
+            not dependencies
+            or not 0 <= producer_call_index < len(alternative.calls)
+            or any(dep.consumer_call_index <= producer_call_index for dep in dependencies)
+            or any(dep.producer_call_index != producer_call_index
+                   for dep in alternative.dependencies)
+        ):
+            raise PolicyViolationError("unsupported original producer dependency")
+
+        producer = alternative.calls[producer_call_index]
+        if (
+            not producer.executable
+            or executed_call != producer
+            or result.tool != producer.tool
+            or result.endpoint != producer.endpoint
+            or result.projected_fields != producer.fields
+        ):
+            raise PolicyViolationError("unmatched original producer execution")
+
+        producer_tool = router.registry.get(producer.tool)
+        producer_endpoint = producer_tool.endpoint(producer.endpoint)
+        policy = entry_policy
+        policy.validate(principal, producer_tool, producer_endpoint, producer)
+
+        # A selected field is not evidence of a present result. Recompute
+        # executor-native metadata from the actual projected response; neither
+        # user-declared metadata nor a structural graph edge can supply a value.
+        observation = result.model_copy(deep=True)
+        actual_contracts = RegistryExecutor._result_field_contracts(
+            producer.fields, producer_endpoint, observation.data,
+        )
+        if observation.field_contracts != actual_contracts:
+            raise PolicyViolationError("unmatched original result field contracts")
+
+        updated_calls = [call.model_copy(deep=True) for call in alternative.calls]
+        for dep in dependencies:
+            field = next(
+                (item for item in producer_endpoint.output_fields
+                 if item.name == dep.producer_field), None,
+            )
+            contract = actual_contracts.get(dep.producer_field)
+            if field is None or contract is None or contract.has_observed_value is not True:
+                raise PolicyViolationError("original producer field unobserved")
+
+            value = RegistryExecutor._extract_projection_path(
+                observation.data, field.result_projection_path,
+            )
+            # Bound identifiers are a single native JSON scalar, not a list,
+            # null, container, arbitrary Python object, or a NaN/Infinity.
+            if (
+                value is _MISSING or value is None
+                or type(value) not in {str, int, float, bool}
+                or (type(value) is float and not isfinite(value))
+            ):
+                raise PolicyViolationError("non-scalar original producer value")
+            validate_json_schema_value(
+                value, canonical_field_value_schema(
+                    producer_endpoint, dep.producer_field,
+                ), context="original producer observed value",
+            )
+
+            consumer = updated_calls[dep.consumer_call_index]
+            consumer_tool = router.registry.get(consumer.tool)
+            consumer_endpoint = consumer_tool.endpoint(consumer.endpoint)
+            parameter = next(
+                (item for item in consumer_endpoint.parameters
+                 if item.name == dep.parameter), None,
+            )
+            if (
+                parameter is None
+                or dep.parameter not in consumer.missing_required_arguments
+                or dep.parameter in consumer.arguments
+            ):
+                raise PolicyViolationError("original consumer input not unresolved")
+            validate_json_schema_value(
+                value, parameter.json_schema,
+                context="original consumer bound parameter",
+            )
+            consumer.arguments[dep.parameter] = value
+            consumer.missing_required_arguments.remove(dep.parameter)
+
+        for dep in dependencies:
+            consumer = updated_calls[dep.consumer_call_index]
+            if consumer.missing_required_arguments:
+                raise PolicyViolationError("incomplete original consumer binding")
+            tool = router.registry.get(consumer.tool)
+            endpoint = tool.endpoint(consumer.endpoint)
+            validate_json_schema_value(
+                consumer.arguments, effective_input_schema(endpoint),
+                context="original consumer bound arguments",
+            )
+            policy.validate(principal, tool, endpoint, consumer)
+
+        # No stale policy, owner catalog, source, or caller mutation may be
+        # quietly accepted after the output/value validation callbacks.
+        if (
+            compile_paper_field_toolcalls(
+                router, query, principal=principal, catalog=catalog, index=index,
+                k=k,
+            ) != original
+            or plan != expected
+            or executed_call != producer
+            or result != observation
+            or router.authorization_policy is not entry_policy
+            or _policy_contents_digest(entry_policy) != policy_digest
+            or principal.model_dump_json() != principal_digest
+            or catalog.model_dump_json() != catalog_digest
+        ):
+            raise PolicyViolationError("original producer observation drifted")
+        router._check_retrieval_authority_witness(witness)
+
+        alternatives = list(expected.alternatives)
+        alternatives[alternative_index] = replace(
+            alternative, calls=tuple(updated_calls),
+        )
+        return replace(expected, alternatives=tuple(alternatives))
+    except Exception:
+        raise PolicyViolationError("original producer result binding rejected") from None

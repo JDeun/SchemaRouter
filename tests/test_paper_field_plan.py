@@ -14,19 +14,24 @@ from schemarouter import (
     CapabilityFieldContract,
     DataScopeRule,
     EndpointSpec,
+    ExecutionPlan,
     FieldSpec,
     NativeConceptCatalog,
     NativeDeclaredConcept,
     NativeSchemaGraphIndex,
     NativeSchemaPostingIndex,
     ParameterSpec,
+    RunConfig,
     SchemaRouter,
     ToolCall,
+    ToolResult,
     ToolSpec,
     bind_paper_field_host_inputs,
+    bind_paper_field_producer_result,
     compile_paper_field_toolcalls,
 )
 from schemarouter.errors import PolicyViolationError
+from schemarouter.executor import RegistryExecutor
 from schemarouter.paper_field_retrieval import retrieve_paper_field_coverage
 from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
@@ -243,6 +248,213 @@ def test_host_supplied_root_input_binds_without_inventing_consumer_values():
     assert not bound.executable_authority
     assert not bound.independent_quality_evidence
     assert bound.alternatives[0].dependencies == original.alternatives[0].dependencies
+
+
+def _producer_observation(router, call, data):
+    endpoint = router.registry.get(call.tool).endpoint(call.endpoint)
+    return ToolResult(
+        tool=call.tool, endpoint=call.endpoint, data=data,
+        projected_fields=list(call.fields),
+        field_contracts=RegistryExecutor._result_field_contracts(
+            call.fields, endpoint, data,
+        ),
+    )
+
+
+def _bind_observation(router, catalog, index, plan, observation, *,
+                      executed_call=None, alternative_index=0, producer_call_index=0,
+                      query="lookup username"):
+    if executed_call is None:
+        executed_call = plan.alternatives[alternative_index].calls[producer_call_index]
+    return bind_paper_field_producer_result(
+        router, query, principal=ACTOR, catalog=catalog, index=index,
+        plan=plan, alternative_index=alternative_index,
+        producer_call_index=producer_call_index,
+        executed_call=executed_call, result=observation,
+    )
+
+
+def test_observed_producer_result_binds_real_identifier_only_after_host_root():
+    router, catalog, index = _host_input_fixture()
+    original = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    bound_root = bind_paper_field_host_inputs(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=original, alternative_index=0, host_arguments={"post_id": 42},
+    )
+    root_call = bound_root.alternatives[0].calls[0]
+    observed = _producer_observation(router, root_call, {"userId": 99})
+    result = _bind_observation(router, catalog, index, bound_root, observed)
+    assert result.alternatives[0].calls[0].arguments == {"post_id": 42}
+    assert result.alternatives[0].calls[1].arguments == {"user_id": 99}
+    assert result.alternatives[0].calls[1].missing_required_arguments == []
+    assert result.alternatives[0].calls[1].executable
+    assert bound_root.alternatives[0].calls[1].arguments == {}
+    assert not result.executable_authority
+    assert not result.independent_quality_evidence
+
+
+@pytest.mark.asyncio
+async def test_observed_result_from_existing_executor_binds_consumer_without_invoking_it():
+    router, catalog, index = _host_input_fixture()
+    plan = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    bound = bind_paper_field_host_inputs(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=plan, alternative_index=0, host_arguments={"post_id": 42},
+    )
+    calls = bound.alternatives[0].calls
+    invoked = []
+
+    def posts_invoker(endpoint_name, arguments):
+        invoked.append((endpoint_name, dict(arguments)))
+        return {"userId": arguments["post_id"] + 57}
+
+    router.executor.bind("posts", posts_invoker)
+    observed = (await router.execute(
+        ExecutionPlan(
+            query="lookup username", registry_version=bound.registry_version,
+            calls=[calls[0]],
+        ),
+        config=RunConfig(principal=ACTOR),
+    ))[0]
+    assert invoked == [("by_id", {"post_id": 42})]
+    final = _bind_observation(router, catalog, index, bound, observed)
+    assert final.alternatives[0].calls[1].arguments == {"user_id": 99}
+    assert invoked == [("by_id", {"post_id": 42})]
+
+
+def test_one_observed_root_result_can_bind_both_fork_consumers():
+    router = build_fixture(500)
+    catalog, index = _fork_catalog(), _index(router)
+    plan = compile_paper_field_toolcalls(
+        router, ALIASES[0], principal=ACTOR, catalog=catalog, index=index,
+    )
+    producer = plan.alternatives[0].calls[0]
+    observed = _producer_observation(router, producer, {"customer_id": "C-17"})
+    result = _bind_observation(
+        router, catalog, index, plan, observed, query=ALIASES[0],
+    )
+    for consumer in result.alternatives[0].calls[1:]:
+        assert consumer.arguments == {"customer_id": "C-17"}
+        assert consumer.missing_required_arguments == []
+    assert not result.executable_authority
+
+
+@pytest.mark.parametrize("data", [
+    {}, {"userId": None}, {"userId": True}, {"userId": "99"},
+    {"userId": [99]}, {"userId": {"id": 99}}, {"userId": 2.5},
+])
+def test_observation_rejects_missing_null_or_incompatible_identifier(data):
+    router, catalog, index = _host_input_fixture()
+    plan = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    bound = bind_paper_field_host_inputs(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=plan, alternative_index=0, host_arguments={"post_id": 42},
+    )
+    observed = _producer_observation(router, bound.alternatives[0].calls[0], data)
+    with pytest.raises(PolicyViolationError):
+        _bind_observation(router, catalog, index, bound, observed)
+
+
+@pytest.mark.parametrize("mutation", [
+    "endpoint", "selected_fields", "contract", "unobserved_contract", "wrong_call",
+    "unapproved_call", "extra_contract", "tampered_plan", "wrong_index",
+])
+def test_observation_rejects_unmatched_or_forged_receipt(mutation):
+    router, catalog, index = _host_input_fixture()
+    plan = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    bound = bind_paper_field_host_inputs(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=plan, alternative_index=0, host_arguments={"post_id": 42},
+    )
+    call = bound.alternatives[0].calls[0].model_copy(deep=True)
+    observed = _producer_observation(router, call, {"userId": 99})
+    if mutation == "endpoint":
+        observed.endpoint = "another"
+    elif mutation == "selected_fields":
+        observed.projected_fields = ["another"]
+    elif mutation == "contract":
+        observed.field_contracts["userId"].semantic_id = "forged"
+    elif mutation == "unobserved_contract":
+        observed.field_contracts["userId"].has_observed_value = False
+    elif mutation == "wrong_call":
+        call.arguments["post_id"] = 999
+    elif mutation == "unapproved_call":
+        call.fields = ["private"]
+    elif mutation == "extra_contract":
+        observed.field_contracts["another"] = observed.field_contracts["userId"]
+    elif mutation == "tampered_plan":
+        bound.alternatives[0].calls[1].arguments["user_id"] = 100
+    with pytest.raises(PolicyViolationError):
+        _bind_observation(
+            router, catalog, index, bound, observed, executed_call=call,
+            producer_call_index=1 if mutation == "wrong_index" else 0,
+        )
+
+
+def test_observation_rejects_current_consumer_value_scope_revocation():
+    router = build_fixture(500)
+    catalog, index = _fork_catalog(), _index(router)
+    plan = compile_paper_field_toolcalls(
+        router, ALIASES[0], principal=ACTOR, catalog=catalog, index=index,
+    )
+    producer = plan.alternatives[0].calls[0]
+    observed = _producer_observation(router, producer, {"customer_id": "C-17"})
+    # An original source becomes unavailable after the receipt was compiled.
+    router.planner.availability_predicate = (
+        lambda tool, _endpoint: tool.key != "fork_status"
+    )
+    with pytest.raises(PolicyViolationError):
+        _bind_observation(
+            router, catalog, index, plan, observed, query=ALIASES[0],
+        )
+
+
+@pytest.mark.parametrize("late_change", ["policy", "catalog"])
+def test_observation_fails_closed_on_late_owner_or_policy_change(
+    monkeypatch, late_change,
+):
+    router, catalog, index = _host_input_fixture(root_name="max_hops")
+    initial = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    plan = bind_paper_field_host_inputs(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=initial, alternative_index=0, host_arguments={"max_hops": 99},
+    )
+    root = plan.alternatives[0].calls[0]
+    observed = _producer_observation(router, root, {"userId": 99})
+    original_policy = router.authorization_policy
+    genuine_validate = AuthorizationPolicy.validate
+    changed = False
+
+    def validate_then_change(self, principal, tool, endpoint, call):
+        nonlocal changed
+        genuine_validate(self, principal, tool, endpoint, call)
+        if not changed and self is original_policy and tool.key == "posts":
+            changed = True
+            if late_change == "policy":
+                router.authorization_policy = AuthorizationPolicy(
+                    default_effect="deny",
+                    rules=original_policy.rules,
+                    data_rules=(DataScopeRule(
+                        operation="posts.by_id", roles_any=("reader",), max_hops=1,
+                    ),),
+                )
+            else:
+                catalog.concepts[0].aliases += ("late-owner-alias",)
+
+    monkeypatch.setattr(AuthorizationPolicy, "validate", validate_then_change)
+    with pytest.raises(PolicyViolationError):
+        _bind_observation(router, catalog, index, plan, observed)
+    assert changed
 
 
 @pytest.mark.parametrize("supplied", [

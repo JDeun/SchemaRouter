@@ -447,6 +447,7 @@ from .paper_field_plan import (
     PaperFieldCallAlternative,
     PaperFieldToolCallPlan,
     bind_paper_field_host_inputs,
+    bind_paper_field_producer_result,
     compile_paper_field_toolcalls,
 )
 from .paper_field_retrieval import (
@@ -607,6 +608,7 @@ __all__ = [
     "PaperFieldCallAlternative",
     "PaperFieldToolCallPlan",
     "bind_paper_field_host_inputs",
+    "bind_paper_field_producer_result",
     "compile_paper_field_toolcalls",
     "PaperFieldAlternative",
     "PaperFieldCoverage",

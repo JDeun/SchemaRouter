@@ -63,6 +63,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "PaperFieldCallAlternative",
         "PaperFieldToolCallPlan",
         "bind_paper_field_host_inputs",
+        "bind_paper_field_producer_result",
         "compile_paper_field_toolcalls",
         "NativeIndexedGraphCandidate",
         "NativeIndexedGraphResult",

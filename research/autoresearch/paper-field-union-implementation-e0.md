@@ -325,3 +325,53 @@ subsequent executor invocation only via existing host authority;
 source-native OPTIMADE accepted argument/unit contracts and truly
 independent source-disjoint E2 #1346 still pending. Keep both PRs
 Draft, parent issues open and release HOLD.
+
+## P2 observed producer result binding — 2026-10-24 continuation
+
+Following the host-root input binder, added the **explicit opt-in**
+`bind_paper_field_producer_result` public API on Draft PR #1747.
+It accepts the previously compiled or correctly host-bound P2 recipe,
+one selected producer index, and a **host-reported pair** of the
+actually executed original `ToolCall` plus its `ToolResult`. It replays
+the latest P1/P2 proof and prior host-approved input binding, checks
+the complete producer call identity/fingerprint/arguments/projection,
+and reconstructs the exact executor-native `ResultFieldContract` map
+from the projected observation, including non-null presence. Each
+required identifier must be a **single, finite, JSON-native scalar**
+matching the source canonical schema and consumer parameter schema.
+The populated consumer call must also satisfy the full original input
+schema and the current principal's call-aware authorization/data scope;
+a final complete P1/P2 re-proof rejects source/owner drift and late
+caller mutation. One original producer observation can bind a fork's
+two consumers. No values are inferred from structural graph edges.
+
+**Provenance limitation:** A `ToolResult`/`ToolCall` pair supplied by the
+host is not cryptographically authenticated by this API. The trusted
+host is responsible for obtaining the actual observation through the
+existing executor, whose invocation still enforces its own policy,
+approval, retries and budget. The binding function does **not** call
+any tool, automate the consumer invocation, grant execution authority,
+or claim source-independent reader/LLM E2 quality. Only supported
+source-proven one-hop dependencies are currently materialized.
+
+Tests include real local `SchemaRouter.execute` with an approved
+`RunConfig(principal=...)` and a synthetic bound invoker, verifying that
+the producer is called once and the consumer is **not** invoked by the
+binding API; one-root/two-leaf forks; absent/null/non-scalar/incorrectly
+typed observations; tampered result contracts, executed calls, input
+receipts and source availability. The full independent #1346 E2,
+external OPTIMADE argument/unit admission, protected GitHub Actions,
+and user-facing default behavior remain separate gates. Inspect the
+exact current PR head and workflow conclusions before claims of CI
+completion; retain both PRs Draft, issue owners open and release HOLD.
+
+Independent review then reproduced a **late owner-catalog TOCTOU**:
+mutating approved concept aliases during producer authorization left
+the same final `ToolCall` menu, so re-compilation equality alone did
+not detect the owner-declaration change. Added a failing negative
+regression, plus a policy-replacement counterpart, and pinned the
+source revision/witness, policy identity/content, principal and owner
+catalog **from function entry through final return**, matching the
+compiler's earlier source-stability discipline. Both regressions pass
+locally after the guard; full focused suite and exact-head CI must be
+rechecked after any further review and publication.
