@@ -748,7 +748,9 @@ def review_optimade_paper_tool(
                 if annotation in schema:
                     declared = schema.pop(annotation)
                     if name not in source_units or declared != source_units[name]:
-                        raise SchemaSourceError("OPTIMADE reviewed schema source unit annotation mismatch")
+                        raise SchemaSourceError(
+                            "OPTIMADE reviewed schema source unit annotation mismatch"
+                        )
             field.json_schema = schema
             if name in units:
                 if (
