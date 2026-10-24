@@ -13,6 +13,7 @@ import resource
 import time
 from typing import Any
 
+from schemarouter.concept_retrieval import resolve_native_concepts
 from schemarouter.decisions import CallableDecisionBackend
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.benchmark_indexed_concept_direct_parity_e0 import (
@@ -42,6 +43,17 @@ def benchmark(*, registered_routes: int, iterations: int = 3) -> dict[str, Any]:
     index = NativeSchemaPostingIndex.build(router.registry)
     build_wall_ms = (time.perf_counter_ns() - started) / 1_000_000
     assert index.indexed_route_count == registered_routes
+
+    def direct_lookup(query, *, research_ranker=None):
+        # The independent source oracle checks INPUT-FREE endpoints; a raw
+        # semantic posting hit may be a consumer requiring unavailable args.
+        # Filter before K5, never by trimming an already disclosed menu.
+        group = resolve_native_concepts(query, catalog=CATALOG).field_group
+        return index.lookup(
+            router, query, principal=ACTOR, group=group,
+            input_free_only=True, _research_ranker=research_ranker,
+        )
+
     configure_scope(router, "six")
     authorized = original_source_direct_oracle(router)
     assert authorized == DIRECT_ROUTES
@@ -77,13 +89,8 @@ def benchmark(*, registered_routes: int, iterations: int = 3) -> dict[str, Any]:
     for alias in ALIASES:
         for expected in DIRECT_ROUTES:
             query = f"{alias} {expected.split('.')[0]}"
-            before = index.lookup_concepts(
-                router, query, principal=ACTOR, catalog=CATALOG,
-            )
-            after = index.lookup_concepts(
-                router, query, principal=ACTOR, catalog=CATALOG,
-                _research_ranker=ranker,
-            )
+            before = direct_lookup(query)
+            after = direct_lookup(query, research_ranker=ranker)
             if (
                 before.status != "over_k_unranked"
                 or before.candidates or before.qualified_count != 6
@@ -112,9 +119,7 @@ def benchmark(*, registered_routes: int, iterations: int = 3) -> dict[str, Any]:
             for _ in range(iterations):
                 start_wall = time.perf_counter_ns()
                 start_cpu = time.process_time_ns()
-                a = index.lookup_concepts(
-                    router, query, principal=ACTOR, catalog=CATALOG,
-                )
+                a = direct_lookup(query)
                 default_cpu.append(
                     (time.process_time_ns() - start_cpu) / 1_000_000
                 )
@@ -123,10 +128,7 @@ def benchmark(*, registered_routes: int, iterations: int = 3) -> dict[str, Any]:
                 )
                 start_wall = time.perf_counter_ns()
                 start_cpu = time.process_time_ns()
-                b = index.lookup_concepts(
-                    router, query, principal=ACTOR, catalog=CATALOG,
-                    _research_ranker=ranker,
-                )
+                b = direct_lookup(query, research_ranker=ranker)
                 ranked_cpu.append(
                     (time.process_time_ns() - start_cpu) / 1_000_000
                 )
@@ -142,10 +144,7 @@ def benchmark(*, registered_routes: int, iterations: int = 3) -> dict[str, Any]:
         configure_scope(router, scenario)
         assert len(original_source_direct_oracle(router)) == count
         calls_before = model_calls
-        status = index.lookup_concepts(
-            router, ALIASES[0], principal=ACTOR, catalog=CATALOG,
-            _research_ranker=ranker,
-        )
+        status = direct_lookup(ALIASES[0], research_ranker=ranker)
         if (
             status.qualified_count != count
             or len(status.candidates) != count
