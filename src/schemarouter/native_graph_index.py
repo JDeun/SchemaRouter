@@ -57,7 +57,14 @@ def _host_source_input_names(endpoint: EndpointSpec) -> tuple[str, ...] | None:
         if (
             not param.required
             or param.location in {"header", "body_root"}
-            or not _scalar_contract(param.json_schema)
+            or not (
+                _scalar_contract(param.json_schema)
+                or (
+                    param.name == "id"
+                    and param.location == "path"
+                    and param.json_schema == {"type": "string", "minLength": 1}
+                )
+            )
         ):
             return None
     names = tuple(param.name for param in endpoint.parameters)
