@@ -1,0 +1,104 @@
+name: Indexed Direct Top-K5 Pinned E5 CPU DEV
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_indexed_decision_backend_ranker_e0.py"
+      - "scripts/research_indexed_e5_overflow_cpu_dev.py"
+      - "tests/test_research_indexed_decision_backend_ranker_e0.py"
+      - "tests/test_research_indexed_e5_overflow_cpu_dev.py"
+      - "src/schemarouter/native_semantic_index.py"
+      - "research/autoresearch/paper-indexed-decision-eval-e0.md"
+      - ".github/workflows/research-indexed-direct-e5-cpu-dev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: indexed-direct-e5-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  indexed-direct-no-model-and-boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install local research qualifications
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Check direct indexed selection source and original authorization
+        run: |
+          ruff check scripts/research_indexed_decision_backend_ranker_e0.py scripts/research_indexed_e5_overflow_cpu_dev.py tests/test_research_indexed_decision_backend_ranker_e0.py tests/test_research_indexed_e5_overflow_cpu_dev.py
+          pyright scripts/research_indexed_decision_backend_ranker_e0.py scripts/research_indexed_e5_overflow_cpu_dev.py
+          python -m pytest -q tests/test_research_indexed_decision_backend_ranker_e0.py tests/test_research_indexed_e5_overflow_cpu_dev.py tests/test_native_semantic_index.py
+          python -m scripts.research_indexed_e5_overflow_cpu_dev --mode validate --out artifacts/indexed-direct-dev/no-model.json
+
+  pinned-real-e5-direct-synthetic-dev:
+    needs: indexed-direct-no-model-and-boundary
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install CPU-only pinned-model dependencies
+        run: |
+          python -m pip install "torch>=2.4,<3" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[mcp]" "sentence-transformers>=5.1,<6" "transformers>=4.51,<5"
+      - name: Run actual pinned E5 on the same already-approved native direct routes
+        run: |
+          python -m scripts.research_indexed_e5_overflow_cpu_dev --mode real-e5-cpu --out artifacts/indexed-direct-dev/real-e5-report.json > artifacts/indexed-direct-dev/runtime-output.log
+      - name: Verify evidence tier and publish aggregate only
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/indexed-direct-dev/real-e5-report.json").read_text())
+          assert report["evidence_tier"] == "REAL_PINNED_E5_CPU_DIRECT_INDEX_SYNTHETIC_DEV_ONLY"
+          assert report["real_model_routing_measured"] is True
+          assert report["independent_publisher_gold"] is False
+          assert report["independent_e2_qualified"] is False
+          assert report["agent_task_success_measured"] is False
+          assert report["calibrated_no_fit"] is False
+          assert report["product_default_promoted"] is False
+          assert report["model_input_output_tokens"] is None
+          assert report["model_runtime"]["model_id"] == "intfloat/multilingual-e5-small"
+          assert report["model_runtime"]["model_revision"] == "fd1525a9fd15316a2d503bf26ab031a61d056e98"
+          assert report["model_runtime"]["device"] == "cpu"
+          assert report["synthetic_service_paths"] == 24
+          assert report["supported_case_count"] == 27
+          assert report["ood_case_count"] == 3
+          assert set(report["per_language"]) == {"en", "ko", "ja"}
+          for lang, stats in report["per_language"].items():
+              assert stats["supported_count"] == 9
+              assert 0 <= stats["model_recall_count"] <= 9
+          print(json.dumps({
+              "evidence_tier": report["evidence_tier"],
+              "source_revision": report["source_revision"],
+              "model_revision": report["model_runtime"]["model_revision"],
+              "per_language": report["per_language"],
+              "paired_first5_to_model": report["paired_first5_to_model"],
+              "whole_lookup_latency_ms": report["whole_lookup_latency_ms"],
+          }, ensure_ascii=False))
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: indexed-direct-e5-dev-${{ github.run_id }}
+          path: artifacts/indexed-direct-dev/real-e5-report.json
+          if-no-files-found: error
+          retention-days: 30
