@@ -411,3 +411,23 @@ async def test_new_registry_revision_invalidates_host_root_before_execution() ->
             source_arguments={"post_id": 1},
         )
     assert seen == []
+
+
+def test_host_root_accepts_only_closed_path_string_id_schema() -> None:
+    from schemarouter.native_graph_index import _host_source_input_names
+
+    endpoint = EndpointSpec(
+        name="by_id", read_only=True,
+        parameters=[ParameterSpec(
+            name="id", required=True, location="path",
+            json_schema={"type": "string", "minLength": 1},
+        )],
+        input_schema={
+            "type": "object",
+            "properties": {"id": {"type": "string", "minLength": 1}},
+            "required": ["id"], "additionalProperties": False,
+        },
+    )
+    assert _host_source_input_names(endpoint) == ("id",)
+    endpoint.input_schema["additionalProperties"] = True
+    assert _host_source_input_names(endpoint) is None
