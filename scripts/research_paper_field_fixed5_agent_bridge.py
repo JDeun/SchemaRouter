@@ -131,6 +131,56 @@ class AuthorizedPaperFieldFixed5Selector(AuthorizedConceptGraphFixed5Selector):
         self.last_status = "complete"
         return names
 
+    def projected_observation(
+        self, query: str, source_ids: tuple[str, ...],
+        route_id: str, observation: dict[str, object],
+    ) -> dict[str, object]:
+        """Minimize a host-scoped observation to proved fields only.
+
+        Reuses the original view's scalar/error redaction and byte cap first.
+        The returned object is model context, never a ToolResult or a grant.
+        """
+        import json
+
+        names = self(query, source_ids)
+        if route_id not in names:
+            raise PolicyViolationError("observation route not in proved field plan")
+        plan = compile_paper_field_toolcalls(
+            self.view.router, query,
+            principal=self.view._principal, catalog=self.catalog,
+            index=self.index, k=STRICT_K,
+            experimental_indexed_direct=self.experimental_indexed_direct,
+        )
+        if plan.status != "complete" or len(plan.alternatives) != 1:
+            raise PolicyViolationError("observation field proof changed")
+        calls = plan.alternatives[0].calls
+        if [f"{call.tool}.{call.endpoint}" for call in calls] != names:
+            raise PolicyViolationError("observation route proof changed")
+        call = calls[names.index(route_id)]
+        if not call.fields or not set(call.fields).issubset(
+            self.view._visible_output_names[route_id]
+        ):
+            raise PolicyViolationError("observation selected fields changed")
+        scoped = self.view.project_observation(route_id, observation)
+        projected: dict[str, object] = {"status": scoped["status"]}
+        if scoped["status"] != "ok":
+            projected["error"] = scoped["error"]
+        else:
+            for field_name in call.fields:
+                if field_name in scoped:
+                    projected[field_name] = scoped[field_name]
+        from scripts.research_authorized_agent_tool_surface import (
+            MAX_MODEL_OBSERVATION_JSON_BYTES,
+        )
+        encoded = json.dumps(
+            projected, ensure_ascii=False, separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+        if len(encoded) > MAX_MODEL_OBSERVATION_JSON_BYTES:
+            raise PolicyViolationError("projected observation exceeds research byte cap")
+        self.view.assert_source_unchanged()
+        return projected
+
     def projected_tool_definitions(
         self, query: str, source_ids: tuple[str, ...],
     ) -> list[dict[str, object]]:
