@@ -69,8 +69,8 @@ def retrieve_paper_field_coverage(
     """Prove required response fields BEFORE exposing any K5 route menu.
 
     Direct field-complete endpoints and attested one-hop routes reuse the
-    existing concept/G5 implementation. The ONLY field-split option is an
-    already-qualified two-leaf SAME-root typed fork; arbitrary A+B tools
+    existing concept/G5 implementation. Field splits require 2–4 qualified
+    consumers of ONE original source-owned record ID; arbitrary tools
     cannot be merged based on field-name similarity or shared query text.
 
     An outcome of no_proven_hit is **not calibrated unsupported**.
@@ -123,7 +123,7 @@ def retrieve_paper_field_coverage(
     elif current.status in ("over_k_unranked", "budget_unsatisfied"):
         raw_alternatives = []
         status = current.status
-    elif len(group.required_fields) == 2:
+    elif 2 <= len(group.required_fields) <= k - 1:
         fork = index.lookup_shared_root_forks(
             router, query, principal=principal, group=group, k=k,
         )
@@ -138,25 +138,26 @@ def retrieve_paper_field_coverage(
         raw_alternatives = []
         if status == "complete":
             for candidate in fork.candidates:
-                root, left, right = (
-                    candidate.root_route_id, *candidate.branch_route_ids,
-                )
+                root = candidate.root_route_id
+                branches = candidate.branch_route_ids
                 raw_alternatives.append((
-                    (root, left, right),
+                    (root, *branches),
                     (
                         (root, *candidate.root_fingerprints),
-                        (left, *candidate.branch_fingerprints[0]),
-                        (right, *candidate.branch_fingerprints[1]),
+                        *(
+                            (branch, *fingerprint)
+                            for branch, fingerprint in zip(
+                                branches, candidate.branch_fingerprints, strict=True,
+                            )
+                        ),
                     ),
                     {
-                        left: [(
-                            candidate.branch_input_parameters[0], root,
-                            candidate.root_identifier_field,
-                        )],
-                        right: [(
-                            candidate.branch_input_parameters[1], root,
-                            candidate.root_identifier_field,
-                        )],
+                        branch: [(
+                            parameter, root, candidate.root_identifier_field,
+                        )]
+                        for branch, parameter in zip(
+                            branches, candidate.branch_input_parameters, strict=True,
+                        )
                     },
                 ))
     else:
@@ -232,25 +233,25 @@ def retrieve_paper_field_coverage(
     # not public aliases, planner score or detached benchmark fixture gold.
     projected_alternatives: list[PaperFieldAlternative] = []
     published_routes: set[str] = set()
-    for route_ids, fingerprints, bindings in raw_alternatives:
-        if len(route_ids) != len(set(route_ids)):
-            raise PolicyViolationError("duplicate original route in required-field set")
-        pinned = {route: (tool_fp, endpoint_fp)
-                  for route, tool_fp, endpoint_fp in fingerprints}
-        routes = [project_route(route_id, pinned, bindings) for route_id in route_ids]
-        covered = {
-            semantic_id for route in routes for semantic_id in route.covered_semantic_ids
-        }
-        if set(required) != covered:
-            raise PolicyViolationError("incomplete source-visible required field union")
-        projected_alternatives.append(PaperFieldAlternative(
-            routes=tuple(routes), required_semantic_ids=required,
-        ))
-        published_routes.update(route_ids)
-
-    # This is a second observation, not an atomic transaction with the
-    # provider. Abort rather than disclose a stale route/field projection.
     try:
+        for route_ids, fingerprints, bindings in raw_alternatives:
+            if len(route_ids) != len(set(route_ids)):
+                raise PolicyViolationError("duplicate original route in required-field set")
+            pinned = {route: (tool_fp, endpoint_fp)
+                      for route, tool_fp, endpoint_fp in fingerprints}
+            routes = [project_route(route_id, pinned, bindings) for route_id in route_ids]
+            covered = {
+                semantic_id for route in routes for semantic_id in route.covered_semantic_ids
+            }
+            if set(required) != covered:
+                raise PolicyViolationError("incomplete source-visible required field union")
+            projected_alternatives.append(PaperFieldAlternative(
+                routes=tuple(routes), required_semantic_ids=required,
+            ))
+            published_routes.update(route_ids)
+
+        # A second observation, not an atomic transaction with the provider.
+        # Abort rather than publish a stale original field projection.
         for (_ids, fingerprints, bindings), alternative in zip(
             raw_alternatives, projected_alternatives, strict=True,
         ):

@@ -179,6 +179,41 @@ def test_shared_root_revoked_during_final_projection_cannot_be_published(monkeyp
     assert not root_is_healthy
 
 
+def test_first_publication_projection_redacts_private_source_callback_error(
+    monkeypatch,
+):
+    """An approved lookup is not a license to surface later host exceptions."""
+    router = build_fixture(500)
+    index = _index(router)
+    original_lookup = NativeSchemaGraphIndex.lookup_shared_root_forks
+    fork_proof_finished = False
+    private_message = "private-provider-connection-and-tenant-973"
+
+    def mark_finished(self, *args, **kwargs):
+        nonlocal fork_proof_finished
+        result = original_lookup(self, *args, **kwargs)
+        fork_proof_finished = True
+        return result
+
+    original_view = router._data_scope_endpoint_view
+
+    def fail_after_proof(principal, tool, endpoint):
+        if fork_proof_finished and tool.name == "fork_origin":
+            raise RuntimeError(private_message)
+        return original_view(principal, tool, endpoint)
+
+    monkeypatch.setattr(NativeSchemaGraphIndex, "lookup_shared_root_forks", mark_finished)
+    monkeypatch.setattr(router, "_data_scope_endpoint_view", fail_after_proof)
+    with pytest.raises(PolicyViolationError, match="source eligibility changed") as caught:
+        retrieve_paper_field_coverage(
+            router, ALIASES[0], principal=ACTOR,
+            catalog=_catalog(), index=index,
+        )
+    assert fork_proof_finished
+    assert private_message not in str(caught.value)
+    assert caught.value.__suppress_context__
+
+
 def test_one_route_covers_complete_field_group_before_k5():
     router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(

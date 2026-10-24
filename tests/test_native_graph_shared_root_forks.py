@@ -1,6 +1,8 @@
 """#1560 opt-in E0: one source-owned flat ID branches into two leaf fields."""
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from schemarouter import (
@@ -9,10 +11,13 @@ from schemarouter import (
     DataScopeRule,
     EndpointSpec,
     FieldSpec,
+    NativeConceptCatalog,
+    NativeDeclaredConcept,
     ParameterSpec,
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
+    retrieve_paper_field_coverage,
 )
 from schemarouter.capability_contracts import CapabilityFieldContract
 from schemarouter.errors import PolicyViolationError
@@ -128,6 +133,112 @@ def _index(router: SchemaRouter) -> NativeSchemaGraphIndex:
     return NativeSchemaGraphIndex.build(
         NativeSchemaPostingIndex.build(router.registry),
     )
+
+
+@pytest.mark.parametrize("query", ALIASES)
+@pytest.mark.parametrize("extra_fields", [1, 2])
+def test_original_paper_three_or_four_fields_share_one_attested_root_before_k(
+    query, extra_fields,
+):
+    """N independent leaves need N verified bindings to one original record."""
+    router = _router(noise=50)
+    for name in ("priority", "risk")[:extra_fields]:
+        router.add_tool(_leaf(name, f"crm.{name}", name))
+    fields = GROUP.required_fields + tuple(
+        CapabilityFieldContract(
+            semantic_id=f"crm.{name}", json_schema={"type": "string"},
+        ) for name in ("priority", "risk")[:extra_fields]
+    )
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="crm.full_record", aliases=ALIASES,
+        required_fields=fields, source_type="crm", license="reviewed",
+    ),))
+    index = _index(router)
+    result = retrieve_paper_field_coverage(
+        router, query, principal=ACTOR, catalog=catalog, index=index,
+    )
+    assert result.status == "complete"
+    assert len(result.alternatives) == 1
+    original = result.alternatives[0]
+    expected_routes = {"origin.read", "left.read", "right_0.read"} | {
+        f"{name}.read" for name in ("priority", "risk")[:extra_fields]
+    }
+    assert {route.route_id for route in original.routes} == expected_routes
+    assert original.routes[0].route_id == "origin.read"
+    assert original.routes[0].output_fields == ("customer_id",)
+    assert [route.input_bindings for route in original.routes[1:]] == [
+        (("key", "origin.read", "customer_id"),)
+    ] * (2 + extra_fields)
+    assert set(original.required_semantic_ids) == {
+        f"crm.{name}" for name in ("status", "owner", "priority", "risk")[:2 + extra_fields]
+    }
+    assert not result.executable_authority
+
+
+@pytest.mark.parametrize("defect", [
+    "wrong_owner", "wrong_identifier", "hidden", "wrong_unit", "wrong_qualifier",
+])
+def test_three_field_fork_does_not_join_unapproved_third_leaf(defect):
+    router = _router()
+    third = _leaf("priority", "crm.priority", "priority")
+    required_priority = CapabilityFieldContract(
+        semantic_id="crm.priority", json_schema={"type": "string"},
+    )
+    if defect == "wrong_owner":
+        third.license = "external"
+    if defect == "wrong_identifier":
+        third.endpoint("read").parameters[0].semantic_id = "crm.other_id"
+    if defect == "wrong_unit":
+        third.endpoint("read").output_fields[0].json_schema = {"type": "number"}
+        third.endpoint("read").output_fields[0].unit = "kPa"
+        required_priority = CapabilityFieldContract(
+            semantic_id="crm.priority", json_schema={"type": "number"}, unit="GPa",
+        )
+    if defect == "wrong_qualifier":
+        third.endpoint("read").output_fields[0].qualifiers = {
+            "data_kind": "estimated",
+        }
+        required_priority = CapabilityFieldContract(
+            semantic_id="crm.priority", json_schema={"type": "string"},
+            qualifiers={"data_kind": "measured"},
+        )
+    router.add_tool(third)
+    if defect == "hidden":
+        router.authorization_policy = replace(
+            router.authorization_policy,
+            data_rules=(DataScopeRule(
+                operation="priority.read", roles_any=("reader",),
+                hidden_fields=("priority",),
+            ),),
+        )
+    fields = GROUP.required_fields + (required_priority,)
+    group = NativeDeclaredFieldGroup(
+        aliases=ALIASES, required_fields=fields,
+        source_type="crm", license="reviewed",
+    )
+    result = _index(router).lookup_shared_root_forks(
+        router, ALIASES[0], group=group, principal=ACTOR,
+    )
+    assert result.status == "no_proven_hit"
+    assert result.candidates == ()
+
+
+def test_three_field_fork_over_k_does_not_publish_truncated_route_menu():
+    router = _router()
+    for n in range(6):
+        router.add_tool(_leaf(f"priority_{n}", "crm.priority", "priority"))
+    fields = GROUP.required_fields + (CapabilityFieldContract(
+        semantic_id="crm.priority", json_schema={"type": "string"},
+    ),)
+    group = NativeDeclaredFieldGroup(
+        aliases=ALIASES, required_fields=fields,
+        source_type="crm", license="reviewed",
+    )
+    out = _index(router).lookup_shared_root_forks(
+        router, ALIASES[0], group=group, principal=ACTOR,
+    )
+    assert out.status == "over_k_unranked"
+    assert out.candidates == ()
 
 
 @pytest.mark.parametrize("query", ALIASES)
