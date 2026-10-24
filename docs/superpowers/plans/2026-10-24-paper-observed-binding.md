@@ -61,3 +61,9 @@
 - [x] **Step 2:** Update handoff to distinguish actual executor observation from independent provider authentication/E2.
 - [ ] **Step 3:** Run full Ruff and focused + full repository pytest (record incomplete/blocking tests honestly).
 - [ ] **Step 4:** One whole-branch code review and fix Important/Critical findings RED→GREEN; publish GitHub Draft via exact tree hash and compare head-specific CI.
+
+## Review finding and ruling (2026-10-24)
+
+Independent whole-slice review found a real completeness error: the first observed binding did a **public unfiltered G5 subset lookup** even after P1 source-attested a same-root fork. Six unrelated status-typed one-hop routes triggered `over_k_unranked` while the correct P1 fork stayed complete. A new test reproduced RED then GREEN. **Ruling:** use G5's *existing private source/target bounded fork-arm proof*, but exclusively for the **already P1-selected exact original pair**, before producer execution and before/after its scalar validation; retain public K5 and all original authorization, scope, fingerprint and health checks. Refactored the existing G5 observation scalar checker as a private reusable helper instead of writing a second permissive validator. **Cost if wrong:** could reject valid proven forks or expose unrelated private route counts; the regression asserts only the same three original routes and one root invocation with zero leaves.
+
+Local focused suite covering native observation, P1/P2/public API and new executed-root binding: **159 passed**, Ruff repository-wide green. Full-suite and new SHA-specific CI still to be recorded; independent E2 remains blocked.

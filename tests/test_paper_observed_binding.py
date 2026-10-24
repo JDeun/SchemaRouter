@@ -11,14 +11,20 @@ from schemarouter import (
     FieldSpec,
     NativeConceptCatalog,
     NativeDeclaredConcept,
+    NativeDeclaredFieldGroup,
     NativeSchemaGraphIndex,
     NativeSchemaPostingIndex,
     ParameterSpec,
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
+    retrieve_paper_field_coverage,
 )
-from schemarouter.errors import PolicyViolationError, SchemaValidationError
+from schemarouter.errors import (
+    PolicyViolationError,
+    SchemaValidationError,
+    TransientInvocationError,
+)
 from schemarouter.paper_observed_binding import observe_and_bind_paper_plan
 
 ALIASES = ("customer status and owner", "고객 상태와 담당자", "顧客状態と担当者")
@@ -26,7 +32,7 @@ ACTOR = PrincipalContext(subject="host-researcher", roles=("reader",))
 
 
 def _fixture(*, observed_customer_id="customer-017", source_parameter=False,
-             single_consumer=False, on_source=None):
+             single_consumer=False, noise_count=0, on_source=None):
     seen: list[tuple[str, dict]] = []
     router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny", rules=(AuthorizationRule(
@@ -97,6 +103,45 @@ def _fixture(*, observed_customer_id="customer-017", source_parameter=False,
             raise AssertionError("consumer must not execute during observed binding")
 
         router.add_bound_tool(tool, forbidden)
+
+    # Same status semantic field, but every decoy has a different original
+    # ID contract and NONE can share the real owner's original record root.
+    for n in range(noise_count):
+        decoy_id = f"noise.customer_{n}"
+        router.add_bound_tool(ToolSpec(
+            name=f"noise_root_{n}", source_type="crm", license="reviewed",
+            endpoints=[EndpointSpec(
+                name="read", read_only=True,
+                output_fields=[FieldSpec(
+                    name="foreign_id", semantic_id=decoy_id,
+                    json_schema={"type": "string"}, identifier=True,
+                )],
+                output_schema={
+                    "type": "object",
+                    "properties": {"foreign_id": {"type": "string"}},
+                    "required": ["foreign_id"],
+                },
+            )],
+        ), lambda endpoint, args: {"foreign_id": "unrelated"})
+        router.add_bound_tool(ToolSpec(
+            name=f"noise_status_{n}", source_type="crm", license="reviewed",
+            endpoints=[EndpointSpec(
+                name="read", read_only=True,
+                parameters=[ParameterSpec(
+                    name="foreign_id", semantic_id=decoy_id,
+                    required=True, json_schema={"type": "string"},
+                )],
+                input_schema={
+                    "type": "object", "properties": {
+                        "foreign_id": {"type": "string"},
+                    }, "required": ["foreign_id"],
+                },
+                output_fields=[FieldSpec(
+                    name="status", semantic_id="crm.status",
+                    json_schema={"type": "string"},
+                )],
+            )],
+        ), lambda endpoint, args: {"status": "unrelated"})
 
     catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
         concept_id="crm.customer_details", aliases=ALIASES,
@@ -197,3 +242,96 @@ async def test_source_revokes_consumer_visibility_before_observation_binding():
             router, ALIASES[0], principal=ACTOR, catalog=catalog, index=index,
         )
     assert seen == [("root", {})]
+
+
+@pytest.mark.asyncio
+async def test_p1_complete_fork_still_binds_when_unrelated_one_hops_exceed_k5():
+    """Unrelated same-field paths must not defeat the P1-proven shared root."""
+    router, catalog, index, seen = _fixture(noise_count=6)
+    p1 = retrieve_paper_field_coverage(
+        router, ALIASES[0], principal=ACTOR, catalog=catalog, index=index,
+    )
+    assert p1.status == "complete"
+    assert len(p1.alternatives) == 1
+    assert len(p1.alternatives[0].routes) == 3
+    group = NativeDeclaredFieldGroup(
+        aliases=ALIASES,
+        required_fields=(CapabilityFieldContract(
+            semantic_id="crm.status", json_schema={"type": "string"},
+        ),),
+        source_type="crm", license="reviewed",
+    )
+    assert index.lookup(router, ALIASES[0], group=group, principal=ACTOR).status == (
+        "over_k_unranked"
+    )
+    observed = await observe_and_bind_paper_plan(
+        router, ALIASES[0], principal=ACTOR, catalog=catalog, index=index,
+    )
+    assert seen == [("root", {})]
+    assert observed.plan.status == "ready"
+    assert all(
+        leaf.call.arguments == {"customer_id": "customer-017"}
+        for leaf in observed.plan.calls[1:]
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("bad_id", [None, 42, ["customer-017"], "x" * 4097])
+async def test_bad_observed_identifier_never_publishes_bound_leaves(bad_id):
+    router, catalog, index, seen = _fixture(observed_customer_id=bad_id)
+    with pytest.raises(SchemaValidationError):
+        await observe_and_bind_paper_plan(
+            router, ALIASES[0], principal=ACTOR, catalog=catalog, index=index,
+        )
+    assert seen == [("root", {})]
+
+
+@pytest.mark.asyncio
+async def test_policy_denial_during_producer_return_prevents_binding():
+    def revoke_owner(router):
+        router.authorization_policy = AuthorizationPolicy(
+            default_effect="deny",
+            rules=(
+                AuthorizationRule(
+                    effect="deny", operation="fork_owner.read",
+                    roles_any=("reader",),
+                ),
+                AuthorizationRule(
+                    effect="allow", operation="*.read",
+                    roles_any=("reader",),
+                ),
+            ),
+        )
+
+    router, catalog, index, seen = _fixture(on_source=revoke_owner)
+    with pytest.raises(PolicyViolationError):
+        await observe_and_bind_paper_plan(
+            router, ALIASES[0], principal=ACTOR, catalog=catalog, index=index,
+        )
+    assert seen == [("root", {})]
+
+
+@pytest.mark.asyncio
+async def test_original_producer_transient_failure_is_attempted_only_once():
+    def fail_after_one_attempt(router):
+        raise TransientInvocationError("simulated local producer transient")
+
+    router, catalog, index, seen = _fixture(on_source=fail_after_one_attempt)
+    with pytest.raises(TransientInvocationError):
+        await observe_and_bind_paper_plan(
+            router, ALIASES[0], principal=ACTOR, catalog=catalog, index=index,
+        )
+    assert seen == [("root", {})]
+
+
+@pytest.mark.asyncio
+async def test_unproved_host_parameterized_shared_fork_never_invokes_producer():
+    router, catalog, index, seen = _fixture(source_parameter=True)
+    assert retrieve_paper_field_coverage(
+        router, ALIASES[0], principal=ACTOR, catalog=catalog, index=index,
+    ).status == "no_proven_hit"
+    with pytest.raises(PolicyViolationError):
+        await observe_and_bind_paper_plan(
+            router, ALIASES[0], principal=ACTOR, catalog=catalog, index=index,
+        )
+    assert seen == []
