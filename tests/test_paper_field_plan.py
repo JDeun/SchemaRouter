@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from decimal import Decimal
+from fractions import Fraction
 from pathlib import Path
 
 import pytest
@@ -21,6 +23,7 @@ from schemarouter import (
     SchemaRouter,
     ToolCall,
     ToolSpec,
+    bind_paper_field_host_inputs,
     compile_paper_field_toolcalls,
 )
 from schemarouter.errors import PolicyViolationError
@@ -142,7 +145,7 @@ def test_compiler_never_republishes_hidden_shared_root_identifier():
     assert "customer_id" not in str(plan)
 
 
-def test_host_approved_parameterized_root_is_a_nonexecutable_recipe():
+def _host_input_fixture(*, root_type="integer", root_name="post_id"):
     router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
@@ -154,11 +157,11 @@ def test_host_approved_parameterized_root_is_a_nonexecutable_recipe():
         endpoints=[EndpointSpec(
             name="by_id", read_only=True,
             parameters=[ParameterSpec(
-                name="post_id", required=True, json_schema={"type": "integer"},
+                name=root_name, required=True, json_schema={"type": root_type},
             )],
             input_schema={"type": "object",
-                          "properties": {"post_id": {"type": "integer"}},
-                          "required": ["post_id"]},
+                          "properties": {root_name: {"type": root_type}},
+                          "required": [root_name]},
             output_fields=[FieldSpec(
                 name="userId", identifier=True,
                 semantic_id="crm.user_id", json_schema={"type": "integer"},
@@ -193,6 +196,11 @@ def test_host_approved_parameterized_root_is_a_nonexecutable_recipe():
         NativeSchemaPostingIndex.build(router.registry),
         approved_host_roots=frozenset({"posts.by_id"}),
     )
+    return router, catalog, index
+
+
+def test_host_approved_parameterized_root_is_a_nonexecutable_recipe():
+    router, catalog, index = _host_input_fixture()
     assert retrieve_paper_field_coverage(
         router, "lookup username", principal=ACTOR,
         catalog=catalog, index=index,
@@ -214,6 +222,169 @@ def test_host_approved_parameterized_root_is_a_nonexecutable_recipe():
     assert len(alternative.dependencies) == 1
     assert alternative.dependencies[0].producer_field == "userId"
     assert not plan.executable_authority
+
+
+def test_host_supplied_root_input_binds_without_inventing_consumer_values():
+    router, catalog, index = _host_input_fixture()
+    original = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    bound = bind_paper_field_host_inputs(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=original, alternative_index=0, host_arguments={"post_id": 42},
+    )
+    assert original.alternatives[0].calls[0].arguments == {}
+    assert original.alternatives[0].calls[0].missing_required_arguments == ["post_id"]
+    assert bound.alternatives[0].calls[0].arguments == {"post_id": 42}
+    assert bound.alternatives[0].calls[0].missing_required_arguments == []
+    assert bound.alternatives[0].calls[0].executable
+    assert bound.alternatives[0].calls[1].arguments == {}
+    assert bound.alternatives[0].calls[1].missing_required_arguments == ["user_id"]
+    assert not bound.executable_authority
+    assert not bound.independent_quality_evidence
+    assert bound.alternatives[0].dependencies == original.alternatives[0].dependencies
+
+
+@pytest.mark.parametrize("supplied", [
+    {}, {"post_id": "42"}, {"post_id": None},
+    {"post_id": True}, {"post_id": 42, "unknown": "value"},
+])
+def test_host_input_binding_rejects_missing_wrong_type_and_extra_args(supplied):
+    router, catalog, index = _host_input_fixture()
+    original = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    with pytest.raises(PolicyViolationError):
+        bind_paper_field_host_inputs(
+            router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+            plan=original, alternative_index=0, host_arguments=supplied,
+        )
+    assert original.alternatives[0].calls[0].arguments == {}
+
+
+def test_host_input_binding_rejects_stale_or_tampered_receipt():
+    router, catalog, index = _host_input_fixture()
+    original = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    original.alternatives[0].calls[0].fields.append("hidden")
+    with pytest.raises(PolicyViolationError):
+        bind_paper_field_host_inputs(
+            router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+            plan=original, alternative_index=0, host_arguments={"post_id": 42},
+        )
+
+
+def test_host_input_binding_rejects_unapproved_source_contract():
+    router, catalog, approved_index = _host_input_fixture()
+    original = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog,
+        index=approved_index,
+    )
+    unapproved_index = _index(router)
+    with pytest.raises(PolicyViolationError):
+        bind_paper_field_host_inputs(
+            router, "lookup username", principal=ACTOR, catalog=catalog,
+            index=unapproved_index, plan=original, alternative_index=0,
+            host_arguments={"post_id": 42},
+        )
+
+
+def test_host_input_binding_rejects_values_mutated_during_late_proof(monkeypatch):
+    import schemarouter.paper_field_plan as module
+
+    router, catalog, index = _host_input_fixture()
+    original = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    host_arguments = {"post_id": 42}
+    genuine_validation = module.validate_json_schema_value
+
+    def validate_then_schedule_mutation(value, schema, *, context):
+        genuine_validation(value, schema, context=context)
+
+        def mutate_at_next_source_health(_tool, _endpoint):
+            host_arguments["post_id"] = "forged-after-validation"
+            return True
+
+        router.planner.availability_predicate = mutate_at_next_source_health
+
+    monkeypatch.setattr(module, "validate_json_schema_value", validate_then_schedule_mutation)
+    with pytest.raises(PolicyViolationError):
+        bind_paper_field_host_inputs(
+            router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+            plan=original, alternative_index=0, host_arguments=host_arguments,
+        )
+
+
+@pytest.mark.parametrize("host_value", [
+    float("nan"), float("inf"), float("-inf"), complex(1, 2),
+    Decimal("0.5"), Fraction(1, 3),
+])
+def test_host_number_binding_rejects_non_json_and_nonfinite_values(host_value):
+    router, catalog, index = _host_input_fixture(root_type="number")
+    plan = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    assert plan.status == "complete"
+    with pytest.raises(PolicyViolationError):
+        bind_paper_field_host_inputs(
+            router, "lookup username", principal=ACTOR, catalog=catalog,
+            index=index, plan=plan, alternative_index=0,
+            host_arguments={"post_id": host_value},
+        )
+
+
+def test_host_number_binding_accepts_finite_native_json_number():
+    router, catalog, index = _host_input_fixture(root_type="number")
+    plan = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    bound = bind_paper_field_host_inputs(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=plan, alternative_index=0, host_arguments={"post_id": 2.5},
+    )
+    assert bound.alternatives[0].calls[0].arguments == {"post_id": 2.5}
+
+
+def test_host_binding_enforces_principal_scoped_argument_ceiling():
+    router, catalog, index = _host_input_fixture(root_name="max_hops")
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.*", roles_any=("reader",),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="posts.by_id", roles_any=("reader",), max_hops=2,
+        ),),
+    )
+    plan = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    assert plan.status == "complete"
+    with pytest.raises(PolicyViolationError):
+        bind_paper_field_host_inputs(
+            router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+            plan=plan, alternative_index=0, host_arguments={"max_hops": 99},
+        )
+    safe = bind_paper_field_host_inputs(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=plan, alternative_index=0, host_arguments={"max_hops": 2},
+    )
+    assert safe.alternatives[0].calls[0].arguments == {"max_hops": 2}
+
+
+@pytest.mark.parametrize("index_value", [-1, 1, True])
+def test_host_input_binding_rejects_wrong_alternative(index_value):
+    router, catalog, index = _host_input_fixture()
+    original = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    with pytest.raises(PolicyViolationError):
+        bind_paper_field_host_inputs(
+            router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+            plan=original, alternative_index=index_value, host_arguments={"post_id": 42},
+        )
 
 
 @pytest.mark.parametrize("query", ALIASES)

@@ -5,8 +5,9 @@ or substitutes graph edges for observed output values or host authorization.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from dataclasses import dataclass, replace
+from math import isfinite
+from typing import TYPE_CHECKING, Any, Literal
 
 from .authorization import PrincipalContext
 from .concept_retrieval import NativeConceptCatalog
@@ -16,6 +17,7 @@ from .host_field_contract import _policy_contents_digest
 from .models import ToolCall
 from .native_graph_index import NativeSchemaGraphIndex, _host_source_input_names
 from .paper_field_retrieval import retrieve_paper_field_coverage
+from .validation import effective_input_schema, validate_json_schema_value
 
 if TYPE_CHECKING:
     from .runtime import SchemaRouter
@@ -222,3 +224,100 @@ def compile_paper_field_toolcalls(
         requested_k=proof.requested_k,
         alternatives=tuple(alternatives),
     )
+
+
+def bind_paper_field_host_inputs(
+    router: SchemaRouter,
+    query: str,
+    *,
+    principal: PrincipalContext,
+    catalog: NativeConceptCatalog,
+    index: NativeSchemaGraphIndex,
+    plan: PaperFieldToolCallPlan,
+    alternative_index: int,
+    host_arguments: dict[str, Any],
+    k: int = 5,
+) -> PaperFieldToolCallPlan:
+    """Validate owner-approved root inputs without binding dependent calls.
+
+    The host supplies every value explicitly. No provider call is made and
+    this immutable *outer* receipt is never an executor authorization token.
+    This does not resolve producer-output dependencies or make the whole
+    alternative executable. The existing executor still validates live
+    policy, scope, parameters and source fingerprints at invocation time.
+    """
+    try:
+        original = compile_paper_field_toolcalls(
+            router, query, principal=principal, catalog=catalog, index=index, k=k,
+        )
+        if (
+            type(plan) is not PaperFieldToolCallPlan
+            or plan != original
+            or original.status != "complete"
+            or type(alternative_index) is not int
+            or not 0 <= alternative_index < len(original.alternatives)
+            or type(host_arguments) is not dict
+        ):
+            raise PolicyViolationError("untrusted original ToolCall input receipt")
+        alternative = original.alternatives[alternative_index]
+        root = alternative.calls[0]
+        route_id = f"{root.tool}.{root.endpoint}"
+        endpoint = router.registry.get(root.tool).endpoint(root.endpoint)
+        approved = _host_source_input_names(endpoint)
+        if (
+            route_id not in index.approved_host_roots
+            or approved is None
+            or not approved
+            or set(root.missing_required_arguments) != set(approved)
+            or set(host_arguments) != set(approved)
+        ):
+            raise PolicyViolationError("unapproved original ToolCall input contract")
+
+        # Use the *original* owner schema, never a synthetic/scoped one.
+        # Exact-key and typed validation rejects guessed, partial, optional,
+        # unknown and incorrectly typed input values before publication.
+        # The G5 root envelope permits only scalar host values; isolate them
+        # from caller mutation before any owner/probe callbacks can run.
+        validated_arguments = dict(host_arguments)
+        for parameter in endpoint.parameters:
+            value = validated_arguments[parameter.name]
+            kind = parameter.json_schema["type"]
+            valid = (
+                (kind == "string" and type(value) is str)
+                or (kind == "integer" and type(value) is int)
+                or (kind == "number" and type(value) in {int, float})
+                or (kind == "boolean" and type(value) is bool)
+            )
+            if not valid or (type(value) is float and not isfinite(value)):
+                raise PolicyViolationError("non-JSON original ToolCall host input")
+        validate_json_schema_value(
+            validated_arguments, effective_input_schema(endpoint),
+            context="original ToolCall host arguments",
+        )
+        scoped_root = root.model_copy(deep=True)
+        scoped_root.arguments = validated_arguments
+        scoped_root.missing_required_arguments = []
+        policy = router.authorization_policy
+        if policy is None:
+            raise PolicyViolationError("original ToolCall input authorization missing")
+        policy.validate(
+            principal, router.registry.get(root.tool), endpoint, scoped_root,
+        )
+        # Verify the whole proof/source/permission surface once more after
+        # validation, since external callbacks may revoke owner contracts.
+        if compile_paper_field_toolcalls(
+            router, query, principal=principal, catalog=catalog, index=index, k=k,
+        ) != original or host_arguments != validated_arguments:
+            raise PolicyViolationError("original ToolCall input proof changed")
+
+        updated: list[PaperFieldCallAlternative] = []
+        for position, item in enumerate(original.alternatives):
+            copies = [call.model_copy(deep=True) for call in item.calls]
+            if position == alternative_index:
+                copies[0].arguments = validated_arguments
+                copies[0].missing_required_arguments = []
+            updated.append(replace(item, calls=tuple(copies)))
+        return replace(original, alternatives=tuple(updated))
+    except Exception:
+        # Do not leak source-private route names or rejected user values.
+        raise PolicyViolationError("original ToolCall host input binding rejected") from None

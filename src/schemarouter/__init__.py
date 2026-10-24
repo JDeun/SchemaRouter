@@ -446,6 +446,7 @@ from .paper_field_plan import (
     PaperFieldArgumentDependency,
     PaperFieldCallAlternative,
     PaperFieldToolCallPlan,
+    bind_paper_field_host_inputs,
     compile_paper_field_toolcalls,
 )
 from .paper_field_retrieval import (
@@ -605,6 +606,7 @@ __all__ = [
     "PaperFieldArgumentDependency",
     "PaperFieldCallAlternative",
     "PaperFieldToolCallPlan",
+    "bind_paper_field_host_inputs",
     "compile_paper_field_toolcalls",
     "PaperFieldAlternative",
     "PaperFieldCoverage",

@@ -62,6 +62,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "PaperFieldArgumentDependency",
         "PaperFieldCallAlternative",
         "PaperFieldToolCallPlan",
+        "bind_paper_field_host_inputs",
         "compile_paper_field_toolcalls",
         "NativeIndexedGraphCandidate",
         "NativeIndexedGraphResult",

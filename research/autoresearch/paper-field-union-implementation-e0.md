@@ -258,3 +258,58 @@ this follow-up—do not assume that local results imply green CI.
 
 No changes to the original P2 compiler, live execution, default routing,
 independent E2 or the v0.18 release HOLD were made in this follow-up.
+
+## P2 next incremental step: host-owned root input binding — 2026-10-24
+
+After the prior PR #1747 source commit, a **new opt-in, nonexecuting**
+`bind_paper_field_host_inputs` function was implemented in the same
+`paper_field_plan.py` module. It accepts a previously compiled P2
+recipe, chooses one alternative, and requires the host to supply the
+**exact complete scalar arguments** of its explicitly approved G5
+original source root. It re-derives the entire source-attested P2 proof,
+rejects caller-tampered or stale recipes, confirms the original
+`approved_host_roots` and closed `_host_source_input_names` contract,
+validates concrete values with the original schema under the runtime
+JSON-Schema work budget, then re-proves source/authorization stability.
+Input copies are checked against late callback mutation; a real RED
+regression demonstrated why this is required. The returned selected
+root `ToolCall` may have all required inputs populated, but downstream
+producer→consumer ID arguments remain **unbound**, and the outer plan's
+`executable_authority=False` stays unchanged. No provider invoker or
+executor is called, and this is **not** an independent E2 result.
+
+Independent review of this new binding API reproduced TWO Important
+failures, with no verified Critical: (1) JSON Schema alone treated
+`NaN`, infinity, complex numbers, `Decimal` and `Fraction` as acceptable
+`number` inputs, which are not finite JSON-native scalar values; and
+(2) a host-valid integer `max_hops=99` exceeded the current principal's
+`DataScopeRule(max_hops=2)`, despite being marked bound. Both had genuine
+RED regressions; the binder now requires strict JSON-native primitive
+types with finite floats and validates the populated root call against
+the same current principal-aware `authorization_policy.validate` used
+by the protected execution boundary. This does NOT change shared
+JSON-Schema validation globally or authorize invocation.
+
+The GitHub exact-head run `40042138308` on prior SHA
+`596705b047435815459a5dd3dae750c0eaf6ca32` exposed a second
+distinct documentation gate: `scripts/prepare_korean_docs.py` requires
+new bilingual pages to be listed in
+`docs_ko/translation-manifest.json`, not just the paired audit ledger.
+Added both exact EN source blobs. Local `prepare_korean_docs.py`
+successfully prepared **158 translated pages and zero fallbacks**;
+docs QA + paired ledger pytest and focused P2/native tests passed
+locally (**128 tests including the reviewed numeric/data-scope
+regressions**); the full translation CI-equivalent suite also reported
+**69 passed**. Repository Ruff and P2 Pyright reported clean.
+That previous exact-head Korean translation workflow passed, but
+Docs Browser and Link QA failed before this manifest change; the broad
+CI was still running at observation. The latest *new* head and
+individual workflow conclusions MUST be checked after publishing this
+step; no unpublished/local outcome should be represented as GitHub CI.
+
+**Next #1560:** owner-approved, observed producer result→consumer
+argument value materialization with verified result field contracts;
+subsequent executor invocation only via existing host authority;
+source-native OPTIMADE accepted argument/unit contracts and truly
+independent source-disjoint E2 #1346 still pending. Keep both PRs
+Draft, parent issues open and release HOLD.
