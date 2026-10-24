@@ -8,10 +8,10 @@ import pytest
 from schemarouter.decisions import CallableDecisionBackend
 from scripts.research_indexed_e5_overflow_cpu_dev import (
     ACTOR,
-    K,
     OOD,
     QUERIES,
     SERVICE_NAMES,
+    K,
     _source,
     run,
 )
