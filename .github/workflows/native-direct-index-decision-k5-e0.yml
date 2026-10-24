@@ -34,3 +34,7 @@ jobs:
           ruff check scripts/research_indexed_decision_backend_ranker_e0.py scripts/benchmark_native_posting_ranked_k5_e0.py tests/test_research_indexed_decision_backend_ranker_e0.py tests/test_benchmark_native_posting_ranked_k5_e0.py
           python -m pytest -q tests/test_research_indexed_decision_backend_ranker_e0.py tests/test_benchmark_native_posting_ranked_k5_e0.py tests/test_native_semantic_index.py
           pyright scripts/research_indexed_decision_backend_ranker_e0.py scripts/benchmark_native_posting_ranked_k5_e0.py
+      - name: Profile 5000 original registered routes with paired source-safe K5
+        timeout-minutes: 12
+        run: |
+          python -m scripts.benchmark_native_posting_ranked_k5_e0 --registered-routes 5000 --iterations 3
