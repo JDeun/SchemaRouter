@@ -61,6 +61,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "retrieve_paper_field_coverage",
         "PaperFieldArgumentDependency",
         "PaperFieldCallAlternative",
+        "PaperFieldOutputMetadata",
         "PaperFieldToolCallPlan",
         "bind_paper_field_host_inputs",
         "bind_paper_field_producer_result",

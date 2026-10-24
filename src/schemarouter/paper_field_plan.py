@@ -39,12 +39,35 @@ class PaperFieldArgumentDependency:
 
 
 @dataclass(frozen=True, slots=True)
+class PaperFieldOutputMetadata:
+    """Original AttachMeta declarations for one scoped, selected output field.
+
+    These are source-declared contracts, NOT an observed result, a verified
+    license grant, or independently established provenance.
+    """
+
+    call_index: int
+    field_name: str
+    semantic_id: str | None
+    source_unit: str | None
+    declared_result_unit: str | None
+    dimension: str | None
+    tool_source_type: str | None
+    tool_license: str | None
+    field_source_type: str | None
+    field_license: str | None
+    provider: str | None
+    qualifiers: tuple[tuple[str, str], ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class PaperFieldCallAlternative:
     """Ordered source-native ToolCalls plus unresolved typed dependencies."""
 
     calls: tuple[ToolCall, ...]
     dependencies: tuple[PaperFieldArgumentDependency, ...]
     required_semantic_ids: tuple[str, ...]
+    field_metadata: tuple[PaperFieldOutputMetadata, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,6 +122,7 @@ def compile_paper_field_toolcalls(
         raise PolicyViolationError("original ToolCall source authorization missing")
 
     alternatives: list[PaperFieldCallAlternative] = []
+    scoped_tools: dict[str, bool] = {}
     try:
         for alternative in proof.alternatives:
             route_indexes = {
@@ -109,6 +133,7 @@ def compile_paper_field_toolcalls(
                 raise PolicyViolationError("duplicate original ToolCall route")
             calls: list[ToolCall] = []
             deps: list[PaperFieldArgumentDependency] = []
+            field_metadata: list[PaperFieldOutputMetadata] = []
             for position, route in enumerate(alternative.routes):
                 location = index.field_index.route_locations.get(route.route_id)
                 if location is None:
@@ -130,13 +155,53 @@ def compile_paper_field_toolcalls(
                 visible = router._data_scope_endpoint_view(principal, tool, endpoint)
                 if visible is None:
                     raise PolicyViolationError("original ToolCall source hidden")
-                visible_fields = {field.name for field in visible.output_fields}
+                visible_fields = {field.name: field for field in visible.output_fields}
                 if (
                     not route.output_fields
                     or len(set(route.output_fields)) != len(route.output_fields)
                     or not set(route.output_fields).issubset(visible_fields)
                 ):
                     raise PolicyViolationError("original ToolCall output hidden")
+
+                # AttachMeta comes exclusively from the SAME live, scoped
+                # FieldSpecs as the proved ToolCall.fields. Never rehydrate
+                # broader endpoint metadata or infer a missing unit/license.
+                # The analyzer suppresses shared tool provenance when ANY
+                # authorized sibling endpoint is scoped. A direct route can
+                # be fully visible while its sibling forbids labels echoed
+                # in the provider/license fields. Mirror that tool boundary.
+                if tool.key not in scoped_tools:
+                    restricted = False
+                    for sibling in tool.endpoints:
+                        if not permitted(tool, sibling):
+                            continue
+                        sibling_view = router._data_scope_endpoint_view(
+                            principal, tool, sibling,
+                        )
+                        if sibling_view is not None and sibling_view is not sibling:
+                            restricted = True
+                            break
+                    scoped_tools[tool.key] = restricted
+                scoped = scoped_tools[tool.key]
+                for name in route.output_fields:
+                    field = visible_fields[name]
+                    normalization = field.unit_normalization
+                    field_metadata.append(PaperFieldOutputMetadata(
+                        call_index=position,
+                        field_name=name,
+                        semantic_id=field.semantic_id,
+                        source_unit=field.unit,
+                        declared_result_unit=(
+                            normalization.canonical_unit if normalization else field.unit
+                        ),
+                        dimension=normalization.dimension if normalization else None,
+                        tool_source_type=None if scoped else tool.source_type,
+                        tool_license=None if scoped else tool.license,
+                        field_source_type=field.source_type,
+                        field_license=field.license,
+                        provider=None if scoped else tool.provider,
+                        qualifiers=tuple(sorted(field.qualifiers.items())),
+                    ))
 
                 bound_parameters: set[str] = set()
                 declared_parameters = {param.name: param for param in visible.parameters}
@@ -200,6 +265,7 @@ def compile_paper_field_toolcalls(
             alternatives.append(PaperFieldCallAlternative(
                 calls=tuple(calls), dependencies=tuple(deps),
                 required_semantic_ids=alternative.required_semantic_ids,
+                field_metadata=tuple(field_metadata),
             ))
 
         # The second proof checks the same entire original route set, current

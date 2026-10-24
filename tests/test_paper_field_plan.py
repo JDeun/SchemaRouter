@@ -91,6 +91,134 @@ def _direct_fixture():
     return router
 
 
+def _attach_meta_fixture(*, scoped=False, sibling_scoped=False):
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.*" if sibling_scoped else "*.read",
+            roles_any=("reader",),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="materials.aux" if sibling_scoped else "materials.read",
+            roles_any=("reader",),
+            hidden_fields=("private_excess",),
+        ),) if scoped or sibling_scoped else (),
+    ))
+    endpoints = [EndpointSpec(name="read", read_only=True, output_fields=[
+        FieldSpec(name="structure_id", semantic_id="materials.id",
+                  json_schema={"type": "string"}, identifier=True),
+        FieldSpec(name="formula", semantic_id="materials.formula",
+                  json_schema={"type": "string"},
+                  source_type="optimade", license="field-specific-license"),
+        FieldSpec(name="volume", semantic_id="materials.volume",
+                  json_schema={"type": "number"}, unit="angstrom^3",
+                  qualifiers={"phase": "solid"}),
+        FieldSpec(name="private_excess", semantic_id="secret.hidden",
+                  json_schema={"type": "string"}),
+    ])]
+    if sibling_scoped:
+        endpoints.append(EndpointSpec(name="aux", read_only=True, output_fields=[
+            FieldSpec(name="public_aux", json_schema={"type": "string"}),
+            FieldSpec(name="private_excess", json_schema={"type": "string"}),
+        ]))
+    router.add_tool(ToolSpec(
+        name="materials", provider="local-lab", source_type="optimade",
+        license="locally-reviewed-license",
+        endpoints=endpoints,
+    ))
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="materials.formula_volume", aliases=("formula and volume",),
+        required_fields=(
+            CapabilityFieldContract(
+                semantic_id="materials.formula", json_schema={"type": "string"},
+            ),
+            CapabilityFieldContract(
+                semantic_id="materials.volume", json_schema={"type": "number"},
+                unit="angstrom^3",
+            ),
+        ),
+        source_type="optimade", license="locally-reviewed-license",
+    ),))
+    return router, catalog, _index(router)
+
+
+def test_attach_meta_preserves_visible_source_fields_and_unit_contracts():
+    router, catalog, index = _attach_meta_fixture()
+    plan = compile_paper_field_toolcalls(
+        router, "formula and volume", principal=ACTOR, catalog=catalog, index=index,
+    )
+    assert plan.status == "complete"
+    assert not plan.executable_authority
+    alternative = plan.alternatives[0]
+    assert alternative.calls[0].fields == ["structure_id", "formula", "volume"]
+    assert [meta.field_name for meta in alternative.field_metadata] == [
+        "structure_id", "formula", "volume",
+    ]
+    assert [meta.call_index for meta in alternative.field_metadata] == [0, 0, 0]
+
+    formula = alternative.field_metadata[1]
+    assert formula.semantic_id == "materials.formula"
+    assert formula.provider == "local-lab"
+    assert formula.tool_source_type == "optimade"
+    assert formula.tool_license == "locally-reviewed-license"
+    assert formula.field_source_type == "optimade"
+    assert formula.field_license == "field-specific-license"
+    assert formula.source_unit is None
+    assert formula.declared_result_unit is None
+
+    volume = alternative.field_metadata[2]
+    assert volume.semantic_id == "materials.volume"
+    assert volume.source_unit == "angstrom^3"
+    assert volume.declared_result_unit == "angstrom^3"
+    assert volume.dimension is None
+    assert volume.qualifiers == (("phase", "solid"),)
+    assert volume.field_source_type is None
+    assert volume.field_license is None
+    assert "private_excess" not in str(alternative)
+    assert "secret.hidden" not in str(alternative)
+
+
+def test_attach_meta_cannot_add_hidden_field_to_proof():
+    router, catalog, index = _attach_meta_fixture(scoped=True)
+    plan = compile_paper_field_toolcalls(
+        router, "formula and volume", principal=ACTOR, catalog=catalog, index=index,
+    )
+    original = plan.alternatives[0]
+    assert len(original.field_metadata) == len(original.calls[0].fields)
+    assert {meta.field_name for meta in original.field_metadata} == set(original.calls[0].fields)
+    assert "private_excess" not in str(original)
+    assert "secret.hidden" not in str(original)
+    for metadata in original.field_metadata:
+        assert metadata.tool_source_type is None
+        assert metadata.tool_license is None
+        assert metadata.provider is None
+        assert metadata.field_source_type is None
+        assert metadata.field_license is None
+        assert metadata.qualifiers == ()
+    assert original.field_metadata[2].source_unit == "angstrom^3"
+
+
+def test_attach_meta_sibling_scope_scrubs_shared_tool_labels():
+    router, catalog, index = _attach_meta_fixture(sibling_scoped=True)
+    plan = compile_paper_field_toolcalls(
+        router, "formula and volume", principal=ACTOR, catalog=catalog, index=index,
+    )
+    assert plan.status == "complete"
+    assert [(call.tool, call.endpoint) for call in plan.alternatives[0].calls] == [
+        ("materials", "read"),
+    ]
+    # SchemaRouter's scoped analyzer hides the shared tool's provenance
+    # when ANY accessible sibling endpoint is scoped, even if this read
+    # endpoint itself retains its full field set.
+    for metadata in plan.alternatives[0].field_metadata:
+        assert metadata.tool_source_type is None
+        assert metadata.tool_license is None
+        assert metadata.provider is None
+    # Unlike tool-level labels, this *unrestricted* endpoint's own
+    # selected source fields retain their original per-field contracts.
+    assert plan.alternatives[0].field_metadata[1].field_license == "field-specific-license"
+
+
 def test_compiled_direct_reuses_exact_scoped_field_projection():
     router = _direct_fixture()
     router.authorization_policy = AuthorizationPolicy(
@@ -226,6 +354,12 @@ def test_host_approved_parameterized_root_is_a_nonexecutable_recipe():
     assert not any(call.executable for call in alternative.calls)
     assert len(alternative.dependencies) == 1
     assert alternative.dependencies[0].producer_field == "userId"
+    assert [(meta.call_index, meta.field_name) for meta in alternative.field_metadata] == [
+        (0, "userId"), (1, "username"),
+    ]
+    assert [meta.tool_source_type for meta in alternative.field_metadata] == [
+        "crm", "crm",
+    ]
     assert not plan.executable_authority
 
 
@@ -248,6 +382,7 @@ def test_host_supplied_root_input_binds_without_inventing_consumer_values():
     assert not bound.executable_authority
     assert not bound.independent_quality_evidence
     assert bound.alternatives[0].dependencies == original.alternatives[0].dependencies
+    assert bound.alternatives[0].field_metadata == original.alternatives[0].field_metadata
 
 
 def _producer_observation(router, call, data):
@@ -293,6 +428,25 @@ def test_observed_producer_result_binds_real_identifier_only_after_host_root():
     assert bound_root.alternatives[0].calls[1].arguments == {}
     assert not result.executable_authority
     assert not result.independent_quality_evidence
+    assert result.alternatives[0].field_metadata == original.alternatives[0].field_metadata
+
+
+def test_attach_meta_tampering_invalidates_host_input_receipt():
+    router, catalog, index = _host_input_fixture()
+    original = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    alternative = original.alternatives[0]
+    assert alternative.field_metadata
+    forged_meta = replace(alternative.field_metadata[0], provider="invented-provider")
+    forged = replace(original, alternatives=(replace(
+        alternative, field_metadata=(forged_meta, *alternative.field_metadata[1:]),
+    ),))
+    with pytest.raises(PolicyViolationError, match="binding rejected"):
+        bind_paper_field_host_inputs(
+            router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+            plan=forged, alternative_index=0, host_arguments={"post_id": 42},
+        )
 
 
 @pytest.mark.asyncio

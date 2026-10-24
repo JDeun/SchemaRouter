@@ -445,6 +445,7 @@ from .pairwise import PairwiseDecisionBackend, PairwiseScoreCallable
 from .paper_field_plan import (
     PaperFieldArgumentDependency,
     PaperFieldCallAlternative,
+    PaperFieldOutputMetadata,
     PaperFieldToolCallPlan,
     bind_paper_field_host_inputs,
     bind_paper_field_producer_result,
@@ -606,6 +607,7 @@ def __dir__() -> list[str]:
 __all__ = [
     "PaperFieldArgumentDependency",
     "PaperFieldCallAlternative",
+    "PaperFieldOutputMetadata",
     "PaperFieldToolCallPlan",
     "bind_paper_field_host_inputs",
     "bind_paper_field_producer_result",

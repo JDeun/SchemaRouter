@@ -416,3 +416,78 @@ as a P1 input-free root, and neither should be auto-admitted merely
 because the host trusts the tool. A separate source-owner-reviewed
 argument admission design must establish exact input/output semantics,
 field path, query bounds and unit handling before this is promoted.
+
+## P2 original Algorithm 1 AttachMeta parity — 2026-10-24 continuation
+
+Rechecked the PRIMARY source
+[paper §4 Algorithm 1](https://github.com/JDeun/paper_SchemaRouter/blob/main/paper/schemarouter.tex)
+and [#1535](https://github.com/JDeun/SchemaRouter/issues/1535) /
+[#1560](https://github.com/JDeun/SchemaRouter/issues/1560). The paper's
+`Understand(q)` declares intent, concepts, arguments, source constraint
+and named tool overrides; `Resolve/Rank` selects tool and required field
+groups; `Identifiers ∪ ConceptMatch ∪ FieldsOf` selects field union;
+`AttachMeta` carries source metadata into the output plan. **Typed
+producer/consumer graph execution is an optional product extension, NOT
+the paper's central Algorithm 1 or a substitute for its default
+`Understand/Rank` requirements.** This is why narrow native OPTIMADE
+parameter exceptions were deferred in favor of explicit AttachMeta.
+
+The prior P2 `ToolCall.evidence` is an evidence-requirement/availability
+descriptor, not a literal source/field license or unit declaration.
+`PaperFieldOutputMetadata` now projects each pre-K *proved and selected*
+`ToolCall.fields` item under its call index, with source-owned semantic ID,
+source unit and declared result unit/dimension, tool and field-specific
+source type/license, tool provider, and sorted qualifiers. It is attached
+to each immutable `PaperFieldCallAlternative`, so the already-authorized
+host-input and producer-observation binders preserve exactly the original
+field metadata and reject caller-tampered receipts. There is no new
+public execution method and `executable_authority=False` persists.
+
+**Critical data-scope boundary discovered through a RED test:** scoped
+output descriptors deliberately omit their field-specific source/license
+and qualifiers, and scoped analyzer views suppress tool-level
+provider/source/license labels. Copying original full fields would
+reveal protected labels. The new projection therefore uses ONLY the
+already-proved scoped `visible.output_fields` and, when the endpoint
+has been scoped, suppresses tool source/license/provider as well.
+Independent review then exposed a subtler sibling-endpoint privacy
+boundary: the existing scoped analyzer removes SHARED tool-level
+source/license/provider when **any permitted sibling endpoint** has
+a field restriction, even when the chosen endpoint is unrestricted.
+The first metadata projection omitted this shared-tool rule. A
+RED sibling-scope regression proved the mismatch, then a correction
+mirroring all permitted sibling projections made it GREEN; an
+unauthorized sibling does not trigger that rule.
+Source units that survive the existing denied-label scrubber remain
+visible; all withheld fields remain withheld. Source declarations are
+NOT a verified legal license grant, observed data, provenance proof,
+or performance/accuracy measurement. The existing native FieldGroup
+compatibility checker also currently rejects normalized required
+fields; this metadata API does NOT broaden compatibility or infer
+conversions.
+
+New regression coverage includes an unrestricted source with field vs
+tool license separation, source-unit projection, declared qualifiers,
+same-root multi-call indices, hidden field, sibling-scope and scrubbed private
+metadata, binder preservation and malicious metadata replacement.
+Observed TDD RED: missing `field_metadata` caused two direct failures;
+the first green candidate revealed an expected scoped-redaction
+assertion mismatch and was corrected before accepting the full tests.
+The final broader P2 / source-adapter / data-scope / public API selection
+completed **121 tests passed** after the sibling-scope reviewer fix,
+repository-wide Ruff succeeded, Pyright reported **zero issues**, and
+`git diff --check` was clean. The independent read-only code reviewer
+reproduced the original sibling leak, verified its corrected behavior,
+and found **zero remaining Critical/Important findings**. These are
+local E0 tests, **not** #1346 independent E2.
+
+**Continuation gates:** finish read-only review, commit and publish to
+the existing [Draft #1747](https://github.com/JDeun/SchemaRouter/pull/1747),
+then record that exact SHA and its own GitHub Actions outcomes. Preserve
+the default product route and source admission limits. Future material
+Algorithm 1 parity is still the *default* source-independent query
+`Understand/Rank` + explicit named tool resolution + concept and
+required-field union across a general owner-indexed tool catalog;
+no independently authored end-to-end field gold or answer-quality
+validation exists yet. Keep #1535/#1560 open, #1346 externally blocked,
+and the v0.18 release on HOLD.
