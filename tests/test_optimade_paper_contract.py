@@ -134,6 +134,11 @@ def test_review_rejects_identifier_semantic_aliasing_a_physical_quantity():
         _review(identifier_semantic_id="materials.band_gap")
 
 
+def test_review_requires_source_unit_attestation_even_without_conversion():
+    with pytest.raises(SchemaSourceError, match="source unit"):
+        _review(reviewed_unit_normalizations={}, expected_source_units={})
+
+
 def test_review_rejects_mismatched_source_unit_and_untrusted_unit_annotation():
     with pytest.raises(SchemaSourceError, match="source unit"):
         _review(expected_source_units={"_lab_band_gap": "meV"})
