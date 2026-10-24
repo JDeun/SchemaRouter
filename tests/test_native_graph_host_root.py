@@ -9,6 +9,7 @@ import pytest
 from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
+    DataScopeRule,
     EndpointSpec,
     FieldSpec,
     NativeConceptCatalog,
@@ -209,6 +210,89 @@ def test_paper_compiler_rejects_untrusted_or_partial_host_input(host_values):
             index=_index(router, allow=True),
             host_source_arguments=host_values,
         )
+    assert seen == []
+
+
+def test_paper_host_scalar_respects_live_principal_data_scope_max_hops():
+    """Compiled source arguments must not pass when the executor would reject."""
+    router, seen = _setup(source_params=[ParameterSpec(
+        name="max_hops", required=True, json_schema={"type": "integer"},
+    )])
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.*", roles_any=("reader",),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="posts.by_id", roles_any=("reader",), max_hops=2,
+        ),),
+    )
+    graph = _index(router, allow=True)
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="demo.username", aliases=GROUP.aliases,
+        required_fields=GROUP.required_fields,
+        source_type=GROUP.source_type, license=GROUP.license,
+    ),))
+    with pytest.raises(PolicyViolationError):
+        compile_paper_typed_tool_plan(
+            router, GROUP.aliases[0], principal=ACTOR, catalog=catalog,
+            index=graph,
+            host_source_arguments={"posts.by_id": {"max_hops": 999}},
+        )
+    safe = compile_paper_typed_tool_plan(
+        router, GROUP.aliases[0], principal=ACTOR, catalog=catalog,
+        index=graph, host_source_arguments={"posts.by_id": {"max_hops": 2}},
+    )
+    assert safe.calls[0].call.arguments == {"max_hops": 2}
+    assert not safe.executable_authority
+    assert seen == []
+
+
+def test_paper_host_scalar_cannot_survive_scope_reduction_during_final_proof(
+    monkeypatch,
+):
+    import schemarouter.paper_typed_tool_plan as compiler
+
+    router, seen = _setup(source_params=[ParameterSpec(
+        name="max_hops", required=True, json_schema={"type": "integer"},
+    )])
+
+    def scoped_policy(max_hops):
+        return AuthorizationPolicy(
+            default_effect="deny",
+            rules=(AuthorizationRule(
+                effect="allow", operation="*.*", roles_any=("reader",),
+            ),),
+            data_rules=(DataScopeRule(
+                operation="posts.by_id", roles_any=("reader",), max_hops=max_hops,
+            ),),
+        )
+
+    router.authorization_policy = scoped_policy(10)
+    index = _index(router, allow=True)
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="demo.username", aliases=GROUP.aliases,
+        required_fields=GROUP.required_fields,
+        source_type=GROUP.source_type, license=GROUP.license,
+    ),))
+    original = compiler.retrieve_paper_field_coverage
+    count = 0
+
+    def revoke_after_first_call_check(*args, **kwargs):
+        nonlocal count
+        count += 1
+        if count == 2:
+            router.authorization_policy = scoped_policy(1)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(compiler, "retrieve_paper_field_coverage", revoke_after_first_call_check)
+    with pytest.raises(PolicyViolationError):
+        compile_paper_typed_tool_plan(
+            router, GROUP.aliases[0], principal=ACTOR, catalog=catalog,
+            index=index,
+            host_source_arguments={"posts.by_id": {"max_hops": 2}},
+        )
+    assert count == 2
     assert seen == []
 
 

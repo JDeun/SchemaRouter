@@ -151,12 +151,16 @@ def compile_paper_typed_tool_plan(
                 router, principal, index, route, i, positions,
                 receipts_by_route, edges, permitted, host_inputs.get(route.route_id),
             ))
+        _check_current_call_scopes(router, principal, calls)
         # End-of-compilation second observation of the SAME complete proof,
         # not a substitute for atomic provider snapshots or execution checks.
         if retrieve_paper_field_coverage(
             router, query, principal=principal, catalog=catalog, index=index, k=k,
         ) != proof:
             raise PolicyViolationError("paper field proof changed during compilation")
+        # The P1 proof rechecks visible OUTPUTS, not argument-specific scope.
+        # Re-evaluate the actual typed calls after the final source observation.
+        _check_current_call_scopes(router, principal, calls)
     except Exception:
         # A data scope / health / host callback may include private diagnostics.
         raise PolicyViolationError("paper typed plan source eligibility changed") from None
@@ -185,6 +189,34 @@ def compile_paper_typed_tool_plan(
         calls=tuple(calls),
         bindings=tuple(edges),
     )
+
+
+def _check_current_call_scopes(
+    router: SchemaRouter,
+    principal: PrincipalContext,
+    calls: list[PaperPlanCall],
+) -> None:
+    """Reapply the executor's call-specific data-scope preflight to receipts."""
+    policy = router.authorization_policy
+    if policy is None:
+        raise PolicyViolationError("paper typed call lost its source policy")
+    for item in calls:
+        tool = router.registry.get(item.call.tool)
+        endpoint = tool.endpoint(item.call.endpoint)
+        if (
+            tool.fingerprint != item.call.tool_fingerprint
+            or endpoint.fingerprint != item.call.schema_fingerprint
+        ):
+            raise PolicyViolationError("paper typed call source fingerprint changed")
+        visible = router._data_scope_endpoint_view(principal, tool, endpoint)
+        if visible is None:
+            raise PolicyViolationError("paper typed call source scope hidden")
+        policy.validate_data_scope(principal, tool, endpoint, item.call)
+        if item.call.arguments:
+            validate_json_schema_value(
+                item.call.arguments, visible.input_schema,
+                context="original paper current scoped host inputs",
+            )
 
 
 def _compile_one_route(
