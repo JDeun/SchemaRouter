@@ -648,10 +648,12 @@ Pyright with explicit installed third-party search path **0 errors,
 0 warnings**; bilingual corpus tests **69 passed**, Korean docs
 preparation **158 translated, 0 fallbacks**. A project-wide bare
 pytest had previously timed out at 120s and is still NOT certified
-full-suite green. At first GitHub check prior published P2.1 head
-`ebd2e18` had 13/14 workflows successful and full CI still running;
-this new P2.2 content has **not** been remote-published or verified by
-its own GitHub Actions yet.
+full-suite green. P2.2 was published as exact GitHub commit
+`d232b87a8a8ce2d628407342121aa5bc360515dc` on Draft PR #1747,
+and both #1560 and #1477 received exact-head E0 evidence comments.
+At the first exact-head check, 13/14 workflows succeeded, with the
+repository-wide `CI` workflow still in progress; **do not** infer
+that all checks passed until that workflow completes.
 
 **Limits / next:** this is a **scripted synthetic agent E0** result,
 not a real LLM, provider invocation, token saving or independent
@@ -666,13 +668,25 @@ and v0.18 HOLD.
 **Independent read-only P2.2 review:** one separate reviewer re-ran
 **90 focused tests** and in-memory byte-budget, principal-mutation
 and in-place policy-mutation probes; no Critical or Important
-finding remained. **Minor (deferred):** the three-step fixture
+finding remained. **Minor (at the reviewed SHA):** the three-step fixture
 ScriptedAgent hard-codes `C-42` rather than parsing the preceding
 model-visible observation. The successful E0 sequence therefore
 demonstrates that the *existing executor* accepts source-typed
 arguments in order, NOT an agent's dynamically observed identifier
 reasoning. Require a future observation-reading agent or an actual
 agent/model integration before claiming dataflow intelligence.
+The subsequent LOCAL-only E0 follow-up adds an
+`ObservationBoundAgent` that consumes the harness's actual
+`<tool_response>` message. Two distinct source-returned identifiers
+(`C-42`, `C-73`) now flow into both consumer calls; when the prior
+observation omits an identifier the adapter issues zero downstream
+calls. **4 additional observation-bound RED→GREEN cases passed**;
+the bridge suite now contains **18 tests**, and four related agent
+suites have **120 passed**. This closes the hard-coded fixture gap
+at the *deterministic E0* level; the adapter is still NOT an LLM and
+does not establish empirical model inference, answer quality or cost.
+The follow-up is not part of remote commit `d232b87` until a separately
+verified GitHub head is published.
 Reviewer declined to judge E2/provider/model outcomes, arbitrary
 malicious in-process Python callbacks, generic route namespace
 encoding and cross-thread atomicity; all remain outside this slice.

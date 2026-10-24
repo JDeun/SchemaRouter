@@ -205,6 +205,54 @@ class ScriptedAgent:
         }
 
 
+class ObservationBoundAgent:
+    """Deterministic E0 adapter: consumes tool messages, never task/gold.
+
+    This tests observation-mediated argument flow, not LLM inference.
+    """
+
+    def __init__(self, root: str, left: str, right: str):
+        self.routes = (root, left, right)
+        self.index = 0
+        self.observed_id: str | None = None
+        self.bound_ids: list[str] = []
+
+    def generate(self, messages, tools):
+        del tools
+        if self.index == 0:
+            content = _call(self.routes[0], {})
+        else:
+            last = messages[-1]
+            if last["role"] != "tool":
+                content = "Done."
+            else:
+                payload = last["content"]
+                prefix, suffix = "<tool_response>\n", "\n</tool_response>"
+                if not payload.startswith(prefix) or not payload.endswith(suffix):
+                    raise ValueError("unexpected scoped E0 observation envelope")
+                observation = json.loads(payload[len(prefix):-len(suffix)])
+                if observation.get("status") != "ok":
+                    content = "Done."
+                elif self.index == 1:
+                    visible_id = observation.get("customer_id")
+                    if type(visible_id) is str and visible_id:
+                        self.observed_id = visible_id
+                        self.bound_ids.append(visible_id)
+                        content = _call(self.routes[1], {"customer_id": visible_id})
+                    else:
+                        content = "Done."
+                elif self.index == 2 and self.observed_id is not None:
+                    self.bound_ids.append(self.observed_id)
+                    content = _call(self.routes[2], {"customer_id": self.observed_id})
+                else:
+                    content = "Done."
+        self.index += 1
+        return {
+            "text": content, "input_tokens": 5, "tool_tokens": 7,
+            "output_tokens": 3, "latency_ms": 0.0, "context_overflow": False,
+        }
+
+
 def _call(route, arguments):
     return "<tool_call>" + json.dumps({
         "name": route.replace(".", "__", 1), "arguments": arguments,
@@ -301,7 +349,7 @@ def test_unsupported_no_call_is_safe_but_does_not_calibrate_no_fit():
     assert selector.independent_quality_evidence is False
 
 
-def test_existing_executor_runs_three_step_paper_fork_with_observed_identifier():
+def test_existing_executor_runs_three_step_paper_fork_with_scripted_identifier():
     router = build_fixture(500, mixed_scope=True)
     assert GROUP.source_type is not None and GROUP.license is not None
     catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
@@ -347,6 +395,50 @@ def test_existing_executor_runs_three_step_paper_fork_with_observed_identifier()
     assert row["visible_candidate_counts"] == [3]
     assert row["unauthorized_destructive_executions"] == 0
     assert max(len(tools) for tools in agent.seen) <= 3
+
+
+@pytest.mark.parametrize("customer_id", ["C-42", "C-73"])
+@pytest.mark.parametrize("expose_identifier", [True, False])
+def test_paper_fork_agent_binds_consumer_arguments_from_visible_observation(
+    customer_id, expose_identifier,
+):
+    router = build_fixture(500, mixed_scope=True)
+    assert GROUP.source_type is not None and GROUP.license is not None
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="crm.paper_fork", aliases=ALIASES,
+        required_fields=GROUP.required_fields, source_type=GROUP.source_type,
+        license=GROUP.license,
+    ),))
+    view, _, selector = _prepare(
+        router, catalog, ALIASES[0], ACTOR, indexed=True,
+    )
+    task = {
+        "semantic_task_id": "e0-paper-observation-bound-not-independent",
+        "query": ALIASES[0], "language": "en", "supported": True,
+        "required_routes": [ROOT, LEFT, RIGHT],
+        "executor_fixture": {"steps": [
+            {"route_id": route, "argument_rules": (
+                {} if route == ROOT else {"customer_id": {"eq": customer_id}}
+            ), "observation": (
+                ({"status": "ok", "customer_id": customer_id}
+                 if expose_identifier else {"status": "ok"})
+                if route == ROOT else {"status": "ok", "owner": "member"}
+            )}
+            for route in (ROOT, LEFT, RIGHT)
+        ]},
+    }
+    agent = ObservationBoundAgent(ROOT, LEFT, RIGHT)
+    row = run_generated_episode(
+        agent, router.registry, task, EXPERIMENTAL_FIXED5_CONDITION,
+        experimental_candidate_selector=selector,
+        experimental_agent_tool_surface=view,
+    )
+    assert row["passed"] is expose_identifier
+    assert row["tool_call_count"] == (3 if expose_identifier else 1)
+    assert agent.bound_ids == (
+        [customer_id, customer_id] if expose_identifier else []
+    )
+    assert row["unauthorized_destructive_executions"] == 0
 
 
 def test_forged_offered_routes_owner_mutation_and_source_changes_fail_closed():
