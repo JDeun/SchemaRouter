@@ -167,6 +167,8 @@ async def test_get_refuses_source_record_identity_swap(response_id, response_typ
         call = ToolCall(
             tool="materials", endpoint="get_structures",
             arguments={"id": "db/42"}, fields=["_lab_band_gap"],
+            schema_fingerprint=reviewed.endpoint("get_structures").fingerprint,
+            tool_fingerprint=reviewed.fingerprint,
         )
         with pytest.raises(NonRetryableInvocationError, match="identity"):
             await invoker.invoke_call(call)
