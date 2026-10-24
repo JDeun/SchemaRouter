@@ -65,7 +65,11 @@ def _host_source_input_names(endpoint: EndpointSpec) -> tuple[str, ...] | None:
     if (
         len(set(names)) != len(names)
         or type(schema) is not dict
-        or set(schema) != {"type", "properties", "required"}
+        or set(schema) not in (
+            {"type", "properties", "required"},
+            {"type", "properties", "required", "additionalProperties"},
+        )
+        or schema.get("additionalProperties", False) is not False
         or schema.get("type") != "object"
         or schema.get("properties")
         != {param.name: param.json_schema for param in endpoint.parameters}
@@ -110,7 +114,11 @@ def _native_required_inputs(
     schema = endpoint.input_schema
     if schema and (
         type(schema) is not dict
-        or set(schema) != {"type", "properties", "required"}
+        or set(schema) not in (
+            {"type", "properties", "required"},
+            {"type", "properties", "required", "additionalProperties"},
+        )
+        or schema.get("additionalProperties", False) is not False
         or schema.get("type") != "object"
         or schema.get("properties")
         != {param.name: param.json_schema for param in endpoint.parameters}
