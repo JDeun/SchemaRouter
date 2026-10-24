@@ -28,21 +28,11 @@ def _alias_key(value: str) -> str:
 
 def _scalar_contract(schema: dict) -> bool:
     # Typed comparator does not prove arbitrary enum/pattern/oneOf constraints.
-    if (
+    return (
         type(schema) is dict
         and set(schema) == {"type"}
         and type(schema["type"]) is str
         and schema["type"] in {"string", "integer", "number", "boolean"}
-    ):
-        return True
-    # OPTIMADE GET IDs use one narrow string constraint; do not admit arbitrary
-    # enum/pattern/composition schemas into the native typed graph.
-    return (
-        type(schema) is dict
-        and set(schema) == {"type", "minLength"}
-        and schema.get("type") == "string"
-        and type(schema.get("minLength")) is int
-        and schema["minLength"] == 1
     )
 
 
