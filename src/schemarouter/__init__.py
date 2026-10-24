@@ -442,6 +442,12 @@ from .operation_fit import (
 )
 from .operation_intent import OperationIntentHypothesis, infer_operation_intent
 from .pairwise import PairwiseDecisionBackend, PairwiseScoreCallable
+from .paper_field_retrieval import (
+    PaperFieldAlternative,
+    PaperFieldCoverage,
+    PaperFieldRoute,
+    retrieve_paper_field_coverage,
+)
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
 from .policy import (
     ApprovalCallback,
@@ -590,6 +596,10 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
+    "PaperFieldAlternative",
+    "PaperFieldCoverage",
+    "PaperFieldRoute",
+    "retrieve_paper_field_coverage",
     "NativeConceptGraphSelection",
     "NativeConceptRouteSet",
     "retrieve_authorized_concept_graph",
