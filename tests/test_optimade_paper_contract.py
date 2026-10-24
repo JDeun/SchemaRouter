@@ -203,18 +203,19 @@ async def test_original_paper_plan_binds_exact_host_id_and_preserves_source_and_
         assert len(deferred.calls) == 1
         assert deferred.calls[0].call.missing_required_arguments == ["id"]
         assert deferred.calls[0].call.arguments == {} and seen_urls == []
-        plan = compile_paper_typed_tool_plan(
-            router, ALIASES[1], principal=ACTOR, catalog=catalog, index=index,
-            host_source_arguments={ROOT: {"id": "db/42"}},
-        )
-        assert plan.status == "ready" and plan.executable_authority is False
-        assert plan.calls[0].route_id == ROOT
-        assert plan.calls[0].call.fields == ["_lab_band_gap"]
-        assert plan.calls[0].call.arguments == {"id": "db/42"}
-        field = plan.calls[0].fields_meta[0]
-        assert (field.semantic_id, field.source_unit, field.unit) == (
-            "materials.band_gap", "eV", "J",
-        )
+        for query in ALIASES:
+            plan = compile_paper_typed_tool_plan(
+                router, query, principal=ACTOR, catalog=catalog, index=index,
+                host_source_arguments={ROOT: {"id": "db/42"}},
+            )
+            assert plan.status == "ready" and plan.executable_authority is False
+            assert plan.calls[0].route_id == ROOT
+            assert plan.calls[0].call.fields == ["_lab_band_gap"]
+            assert plan.calls[0].call.arguments == {"id": "db/42"}
+            field = plan.calls[0].fields_meta[0]
+            assert (field.semantic_id, field.source_unit, field.unit) == (
+                "materials.band_gap", "eV", "J",
+            )
         assert seen_urls == []
 
 
