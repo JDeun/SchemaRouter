@@ -44,6 +44,7 @@ class PaperPlanFieldMeta:
 
     name: str
     semantic_id: str | None
+    source_unit: str | None
     unit: str | None
     source_type: str | None
     license: str | None
@@ -259,7 +260,11 @@ def _compile_one_route(
     metadata = tuple(PaperPlanFieldMeta(
         name=f.name,
         semantic_id=f.semantic_id,
-        unit=f.unit,
+        source_unit=f.unit,
+        unit=(
+            f.unit_normalization.canonical_unit
+            if f.unit_normalization is not None else f.unit
+        ),
         source_type=f.source_type or tool.source_type,
         license=f.license or tool.license,
         qualifiers=tuple(sorted(f.qualifiers.items())),
