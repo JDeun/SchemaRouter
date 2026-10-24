@@ -119,7 +119,7 @@ class NativeSchemaPostingIndex:
                 if not tool.source_type or not tool.license:
                     continue
                 for field in endpoint.output_fields:
-                    if _indexable_semantic_field(field):
+                    if field.semantic_id is not None and _indexable_semantic_field(field):
                         semantic.setdefault(field.semantic_id, set()).add(route)
         if registry.version != version:
             raise PolicyViolationError("native index source changed during build")
@@ -320,7 +320,7 @@ class NativeSchemaPostingIndex:
                 locations[route] = (key, endpoint.name)
                 if tool.source_type and tool.license:
                     for field in endpoint.output_fields:
-                        if _indexable_semantic_field(field):
+                        if field.semantic_id is not None and _indexable_semantic_field(field):
                             semantic.setdefault(field.semantic_id, set()).add(route)
         if registry.version != version:
             raise PolicyViolationError("native posting refresh source changed")
