@@ -130,3 +130,60 @@ class AuthorizedPaperFieldFixed5Selector(AuthorizedConceptGraphFixed5Selector):
         self.view.assert_source_unchanged()
         self.last_status = "complete"
         return names
+
+    def projected_tool_definitions(
+        self, query: str, source_ids: tuple[str, ...],
+    ) -> list[dict[str, object]]:
+        """Opt-in minimal model disclosure, never an execution grant.
+
+        Recomputes the proof after selector validation rather than trusting
+        cached, potentially stale field names. Input schemas are preserved.
+        """
+        import copy
+        import json
+
+        names = self(query, source_ids)
+        if not names:
+            return []
+        plan = compile_paper_field_toolcalls(
+            self.view.router, query,
+            principal=self.view._principal, catalog=self.catalog,
+            index=self.index, k=STRICT_K,
+            experimental_indexed_direct=self.experimental_indexed_direct,
+        )
+        self.view.assert_source_unchanged()
+        if plan.status != "complete" or len(plan.alternatives) != 1:
+            raise PolicyViolationError("paper projection proof changed")
+        calls = plan.alternatives[0].calls
+        if [f"{call.tool}.{call.endpoint}" for call in calls] != names:
+            raise PolicyViolationError("paper projection routes changed")
+        original = self.view.tool_definitions(names, k=STRICT_K)
+        projected: list[dict[str, object]] = []
+        for route_id, call, definition in zip(names, calls, original, strict=True):
+            if (
+                not call.fields
+                or len(set(call.fields)) != len(call.fields)
+                or not set(call.fields).issubset(
+                    self.view._visible_output_names[route_id]
+                )
+            ):
+                raise PolicyViolationError("paper projection fields changed")
+            item = copy.deepcopy(definition)
+            # Never retain a full-schema description that may mention
+            # unrelated fields, even if those fields are authorized.
+            item["description"] = (
+                f"Registered source route: {route_id}. "
+                f"Selected output fields: {'; '.join(call.fields)}. "
+                "Selection is not execution authorization."
+            )
+            projected.append(item)
+        encoded = json.dumps(
+            projected, ensure_ascii=False, separators=(",", ":"), allow_nan=False,
+        ).encode("utf-8")
+        from scripts.research_authorized_agent_tool_surface import (
+            MAX_MODEL_TOOL_JSON_BYTES,
+        )
+        if len(encoded) > MAX_MODEL_TOOL_JSON_BYTES:
+            raise ValueError("projected model tool definitions exceed research byte cap")
+        self.view.assert_source_unchanged()
+        return projected
