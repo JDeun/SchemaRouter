@@ -11,10 +11,13 @@ from schemarouter import (
     AuthorizationRule,
     EndpointSpec,
     FieldSpec,
+    NativeConceptCatalog,
+    NativeDeclaredConcept,
     ParameterSpec,
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
+    compile_paper_typed_tool_plan,
 )
 from schemarouter.capability_contracts import CapabilityFieldContract
 from schemarouter.errors import PolicyViolationError, SchemaValidationError
@@ -119,6 +122,46 @@ def _index(router: SchemaRouter, *, allow: bool) -> NativeSchemaGraphIndex:
         NativeSchemaPostingIndex.build(router.registry),
         approved_host_roots=frozenset({ROUTE}) if allow else frozenset(),
     )
+
+
+def test_original_paper_typed_plan_keeps_host_root_and_consumer_inputs_deferred():
+    """Host-approved graph roots still require actual host values at runtime."""
+    router, seen = _setup()
+    graph = _index(router, allow=True)
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="demo.username", aliases=GROUP.aliases,
+        required_fields=GROUP.required_fields,
+        source_type=GROUP.source_type, license=GROUP.license,
+    ),))
+    paper = compile_paper_typed_tool_plan(
+        router, GROUP.aliases[1], principal=ACTOR, catalog=catalog, index=graph,
+    )
+    assert paper.status == "requires_observation"
+    assert not paper.executable_authority
+    assert [entry.route_id for entry in paper.calls] == ["posts.by_id", "users.by_id"]
+    assert paper.calls[0].call.arguments == {}
+    assert paper.calls[0].call.missing_required_arguments == ["post_id"]
+    assert paper.calls[1].call.arguments == {}
+    assert paper.calls[1].call.missing_required_arguments == ["user_id"]
+    assert paper.bindings[0].parameter == "user_id"
+    assert paper.bindings[0].producer_field == "userId"
+    assert seen == []
+
+
+def test_unapproved_host_root_stays_non_proven_in_paper_compiler():
+    router, seen = _setup()
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="demo.username", aliases=GROUP.aliases,
+        required_fields=GROUP.required_fields,
+        source_type=GROUP.source_type, license=GROUP.license,
+    ),))
+    paper = compile_paper_typed_tool_plan(
+        router, GROUP.aliases[0], principal=ACTOR, catalog=catalog,
+        index=_index(router, allow=False),
+    )
+    assert paper.status == "no_proven_hit"
+    assert paper.calls == () and paper.bindings == ()
+    assert seen == []
 
 
 def test_root_with_required_inputs_is_not_discoverable_without_explicit_opt_in() -> None:

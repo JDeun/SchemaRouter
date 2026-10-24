@@ -541,6 +541,7 @@ def test_original_openapi_and_mcp_fork_requires_host_semantic_attestation(
     from schemarouter import (
         NativeConceptCatalog,
         NativeDeclaredConcept,
+        compile_paper_typed_tool_plan,
         retrieve_paper_field_coverage,
     )
 
@@ -588,6 +589,34 @@ def test_original_openapi_and_mcp_fork_requires_host_semantic_attestation(
         else:
             assert paper.status == "no_proven_hit"
             assert paper.alternatives == ()
+        # #1560 must compile the SAME real converter-native source contracts,
+        # without executing remote MCP or synthesizing the original record ID.
+        typed = compile_paper_typed_tool_plan(
+            router, language_query,
+            catalog=catalog, principal=ACTOR, index=idx,
+        )
+        assert not typed.executable_authority
+        if approve_owner_semantics:
+            assert typed.status == "requires_observation"
+            assert typed.calls[0].route_id == "contacts_openapi.read_contact"
+            assert typed.calls[0].call.fields == ["customer_id"]
+            assert {entry.route_id for entry in typed.calls[1:]} == {
+                "status_mcp.read_status", "owner_mcp.read_owner",
+            }
+            assert all(
+                entry.call.arguments == {}
+                and entry.call.missing_required_arguments == ["key"]
+                for entry in typed.calls[1:]
+            )
+            assert {
+                (dep.consumer_call_index, dep.parameter,
+                 dep.producer_call_index, dep.producer_field)
+                for dep in typed.bindings
+            } == {(1, "key", 0, "customer_id"),
+                  (2, "key", 0, "customer_id")}
+        else:
+            assert typed.status == "no_proven_hit"
+            assert typed.calls == () and typed.bindings == ()
     if approve_owner_semantics:
         assert out.status == "complete"
         (fork,) = out.candidates

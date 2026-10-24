@@ -448,6 +448,13 @@ from .paper_field_retrieval import (
     PaperFieldRoute,
     retrieve_paper_field_coverage,
 )
+from .paper_typed_tool_plan import (
+    PaperPlanBinding,
+    PaperPlanCall,
+    PaperPlanFieldMeta,
+    PaperTypedToolPlan,
+    compile_paper_typed_tool_plan,
+)
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
 from .policy import (
     ApprovalCallback,
@@ -596,6 +603,11 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
+    "PaperPlanBinding",
+    "PaperPlanCall",
+    "PaperPlanFieldMeta",
+    "PaperTypedToolPlan",
+    "compile_paper_typed_tool_plan",
     "PaperFieldAlternative",
     "PaperFieldCoverage",
     "PaperFieldRoute",
