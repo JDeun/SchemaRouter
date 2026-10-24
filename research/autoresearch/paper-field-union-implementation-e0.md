@@ -481,9 +481,19 @@ reproduced the original sibling leak, verified its corrected behavior,
 and found **zero remaining Critical/Important findings**. These are
 local E0 tests, **not** #1346 independent E2.
 
-**Continuation gates:** finish read-only review, commit and publish to
-the existing [Draft #1747](https://github.com/JDeun/SchemaRouter/pull/1747),
-then record that exact SHA and its own GitHub Actions outcomes. Preserve
+**Published implementation checkpoint:** the reviewed source/test/ledger
+tree `30195b017ce94ba95b82f2dfa75d1b19e6294b3b` was published
+to [Draft #1747](https://github.com/JDeun/SchemaRouter/pull/1747) as
+[`50951b70306b947a7b943452af85162b054b770d`](https://github.com/JDeun/SchemaRouter/commit/50951b70306b947a7b943452af85162b054b770d).
+At first exact-SHA check, GitHub returned 14 workflows (one successful,
+12 in progress and broad CI pending); do **not** claim these checks green.
+The detailed [#1560 issue checkpoint](https://github.com/JDeun/SchemaRouter/issues/1560#issuecomment-6378089434)
+also records this source SHA, 121 local tests, code review and remaining
+blocked gates. The only next verification is the **current latest PR
+head** and its own GitHub Actions; the documentation-only follow-up
+to this ledger is not itself proof of feature CI.
+
+**Continuation gates:** preserve
 the default product route and source admission limits. Future material
 Algorithm 1 parity is still the *default* source-independent query
 `Understand/Rank` + explicit named tool resolution + concept and
