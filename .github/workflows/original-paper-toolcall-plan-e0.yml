@@ -5,8 +5,10 @@ on:
     paths:
       - "src/schemarouter/paper_field_retrieval.py"
       - "src/schemarouter/paper_typed_tool_plan.py"
+      - "src/schemarouter/paper_observed_binding.py"
       - "src/schemarouter/__init__.py"
       - "tests/test_paper_typed_tool_plan.py"
+      - "tests/test_paper_observed_binding.py"
       - "tests/test_native_graph_shared_root_forks.py"
       - "tests/test_native_graph_host_root.py"
       - "research/autoresearch/paper-toolcall-implementation-e0.md"
@@ -31,5 +33,5 @@ jobs:
         run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1"
       - name: Prove original typed calls and non-executable source bindings
         run: |
-          ruff check src/schemarouter/paper_typed_tool_plan.py tests/test_paper_typed_tool_plan.py tests/test_native_graph_shared_root_forks.py tests/test_native_graph_host_root.py src/schemarouter/__init__.py
-          python -m pytest -q tests/test_paper_typed_tool_plan.py tests/test_native_graph_shared_root_forks.py tests/test_native_graph_host_root.py tests/test_paper_field_retrieval.py
+          ruff check src/schemarouter/paper_typed_tool_plan.py src/schemarouter/paper_observed_binding.py tests/test_paper_typed_tool_plan.py tests/test_paper_observed_binding.py tests/test_native_graph_shared_root_forks.py tests/test_native_graph_host_root.py src/schemarouter/__init__.py
+          python -m pytest -q tests/test_paper_typed_tool_plan.py tests/test_paper_observed_binding.py tests/test_native_graph_shared_root_forks.py tests/test_native_graph_host_root.py tests/test_paper_field_retrieval.py

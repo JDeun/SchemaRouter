@@ -448,6 +448,10 @@ from .paper_field_retrieval import (
     PaperFieldRoute,
     retrieve_paper_field_coverage,
 )
+from .paper_observed_binding import (
+    PaperObservedBinding,
+    observe_and_bind_paper_plan,
+)
 from .paper_typed_tool_plan import (
     PaperPlanBinding,
     PaperPlanCall,
@@ -603,6 +607,8 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
+    "PaperObservedBinding",
+    "observe_and_bind_paper_plan",
     "PaperPlanBinding",
     "PaperPlanCall",
     "PaperPlanFieldMeta",
