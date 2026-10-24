@@ -751,7 +751,10 @@ def review_optimade_paper_tool(
                         raise SchemaSourceError("OPTIMADE reviewed schema source unit annotation mismatch")
             field.json_schema = schema
             if name in units:
-                if field.unit != source_units[name]:
+                if (
+                    not _schema_supports_numeric_unit(field.json_schema)
+                    or field.unit != source_units[name]
+                ):
                     raise SchemaSourceError("OPTIMADE reviewed source unit mismatch")
                 field.unit_normalization = units[name].model_copy(deep=True)
             elif name in source_units and field.unit != source_units[name]:
