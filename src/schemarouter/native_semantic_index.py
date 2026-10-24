@@ -8,8 +8,8 @@ an execution engine, graph path planner, or new lexical ranker.
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass, replace
 from hashlib import sha256
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal
@@ -31,6 +31,8 @@ if TYPE_CHECKING:
     from .runtime import SchemaRouter
 
 STRICT_K = 5
+# Non-production research rankers never receive an unbounded private candidate menu.
+MAX_RESEARCH_RANKABLE_POSTINGS = 32
 
 
 def _indexable_semantic_field(field: FieldSpec) -> bool:
@@ -64,12 +66,16 @@ class IndexedNativeFieldCandidate:
 
 @dataclass(frozen=True, slots=True)
 class IndexedNativeFieldResult:
-    status: Literal["complete", "no_proven_hit", "over_k_unranked"]
+    status: Literal[
+        "complete", "no_proven_hit", "over_k_unranked",
+        "ranked_unverified", "ranker_abstained_unverified",
+    ]
     registry_version: int
     index_snapshot_id: str
     requested_k: int
     qualified_count: int
     candidates: tuple[IndexedNativeFieldCandidate, ...]
+    experimental_ranked: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -360,14 +366,21 @@ class NativeSchemaPostingIndex:
         principal: PrincipalContext,
         k: int = STRICT_K,
         input_free_only: bool = False,
+        _research_ranker: Callable[
+            [str, tuple[IndexedNativeFieldCandidate, ...], int], tuple[int, ...],
+        ] | None = None,
     ) -> IndexedNativeFieldResult:
-        """Conjunctive source-owned FieldGroup lookup with strict no-rank K5.
+        """Conjunctive source-owned lookup with optional bounded E0 ranking.
 
-        An optional direct-only filter rejects consumers with unbound native
-        inputs BEFORE candidate budgeting, never after a Top-K truncation.
+        The default >K result abstains. An explicit research callback can
+        choose *offsets* among at most 32 fully authorized, visible candidates.
+        Such a choice is tagged unverified and confers no execution authority.
+        An optional direct-only filter runs BEFORE candidate budgeting.
         """
         if type(input_free_only) is not bool:
             raise ValueError("indexed direct-only flag must be boolean")
+        if _research_ranker is not None and not callable(_research_ranker):
+            raise ValueError("indexed research ranker must be callable")
         if type(k) is not int or k != STRICT_K:
             raise ValueError("native indexed lookup requires exact K5")
         if type(query) is not str or len(query.encode("utf-8")) > 512:
@@ -385,6 +398,11 @@ class NativeSchemaPostingIndex:
             )
         except (TypeError, ValueError, OverflowError) as exc:
             raise ValueError("invalid current indexed declarations") from exc
+        try:
+            principal_claims = principal.model_dump_json()
+            group_claims = group.model_dump_json()
+        except (TypeError, ValueError, OverflowError, AttributeError) as exc:
+            raise PolicyViolationError("cannot attest indexed lookup declarations") from exc
         if _alias_key(query) not in {_alias_key(a) for a in declaration.aliases}:
             raise ValueError("no host-approved query-to-FieldGroup edge")
         if router.authorization_policy is None:
@@ -463,6 +481,33 @@ class NativeSchemaPostingIndex:
                 endpoint_fingerprint=endpoint.fingerprint,
                 required_output_fields=tuple(sorted(set(matched_names))),
             ))
+        count = len(qualified)
+        ranked_offsets: tuple[int, ...] | None = None
+        if (
+            count > k and _research_ranker is not None
+            and count <= MAX_RESEARCH_RANKABLE_POSTINGS
+        ):
+            # Pass detached read-only-shaped records to an UNTRUSTED ranker.
+            # Never trust returned candidate objects, route names or arbitrary
+            # ranking values: only unique indices into our verified snapshot.
+            offered = tuple(replace(candidate) for candidate in qualified)
+            try:
+                proposed = _research_ranker(query, offered, k)
+            except Exception:
+                raise PolicyViolationError("indexed research ranking failed") from None
+            if (
+                type(proposed) is not tuple
+                or len(proposed) not in (0, k)
+                or any(
+                    type(offset) is not int or not 0 <= offset < count
+                    for offset in proposed
+                )
+                or len(set(proposed)) != len(proposed)
+            ):
+                raise PolicyViolationError(
+                    "indexed ranker returned forged, partial or duplicate offsets"
+                )
+            ranked_offsets = proposed
         # A live availability callable may keep its identity while a
         # later candidate's health probe revokes an earlier candidate.
         # Recheck every already-qualified route, even when >K ultimately
@@ -519,17 +564,40 @@ class NativeSchemaPostingIndex:
             repr(current_policy.data_rules),
         ) != original_policy:
             raise PolicyViolationError("authorization policy changed during indexed lookup")
-        count = len(qualified)
+        try:
+            if (
+                principal.model_dump_json() != principal_claims
+                or group.model_dump_json() != group_claims
+            ):
+                raise PolicyViolationError("indexed lookup declarations changed")
+        except (TypeError, ValueError, OverflowError, AttributeError) as exc:
+            raise PolicyViolationError(
+                "cannot attest current indexed lookup declarations"
+            ) from exc
+        status: Literal[
+            "complete", "no_proven_hit", "over_k_unranked",
+            "ranked_unverified", "ranker_abstained_unverified",
+        ]
+        if count > k:
+            status = (
+                "over_k_unranked" if ranked_offsets is None else
+                "ranked_unverified" if ranked_offsets else
+                "ranker_abstained_unverified"
+            )
+        else:
+            status = "complete" if count else "no_proven_hit"
         return IndexedNativeFieldResult(
-            status=(
-                "over_k_unranked" if count > k else
-                "complete" if count else "no_proven_hit"
-            ),
+            status=status,
             registry_version=self.registry_version,
             index_snapshot_id=self.snapshot_id,
             requested_k=k,
             qualified_count=count,
-            candidates=tuple(qualified) if count <= k else (),
+            candidates=(
+                tuple(qualified[offset] for offset in ranked_offsets)
+                if ranked_offsets is not None else
+                tuple(qualified) if count <= k else ()
+            ),
+            experimental_ranked=ranked_offsets is not None,
         )
 
     def lookup_concepts(
@@ -540,9 +608,13 @@ class NativeSchemaPostingIndex:
         catalog: NativeConceptCatalog,
         principal: PrincipalContext,
         k: int = STRICT_K,
+        _research_ranker: Callable[
+            [str, tuple[IndexedNativeFieldCandidate, ...], int], tuple[int, ...],
+        ] | None = None,
     ) -> IndexedNativeFieldResult:
         """Original query → declared concepts → typed field intersection."""
         resolved = resolve_native_concepts(query, catalog=catalog)
         return self.lookup(
-            router, query, group=resolved.field_group, principal=principal, k=k,
+            router, query, group=resolved.field_group, principal=principal,
+            k=k, _research_ranker=_research_ranker,
         )
