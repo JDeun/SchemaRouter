@@ -1,6 +1,8 @@
 """#1560 opt-in E0: one source-owned flat ID branches into two leaf fields."""
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
 from schemarouter import (
@@ -487,6 +489,77 @@ def test_original_openapi_and_mcp_fork_requires_host_semantic_attestation(
         assert fork.root_identifier_field == "customer_id"
         assert fork.branch_input_parameters == ("key", "key")
         assert not out.executable_authority
+
+
+        # P2 must preserve these *real converter-native* source routes
+        # through a host-driven execution/binding cycle. The invokers are
+        # synthetic local functions: this is not remote provider E2.
+        from schemarouter import (
+            ExecutionPlan,
+            RunConfig,
+            bind_paper_field_producer_result,
+            compile_paper_field_toolcalls,
+        )
+
+        recipe = compile_paper_field_toolcalls(
+            router, ALIASES[0], principal=ACTOR, catalog=catalog, index=idx,
+        )
+        assert recipe.status == "complete"
+        calls = recipe.alternatives[0].calls
+        assert (calls[0].tool, calls[0].endpoint) == (
+            "contacts_openapi", "read_contact",
+        )
+        assert {(call.tool, call.endpoint) for call in calls[1:]} == {
+            ("status_mcp", "read_status"), ("owner_mcp", "read_owner"),
+        }
+        invocations = []
+
+        def contacts_invoker(endpoint_name, arguments):
+            invocations.append(("contacts_openapi", endpoint_name, dict(arguments)))
+            return {"customer_id": "customer-42"}
+
+        def status_invoker(endpoint_name, arguments):
+            invocations.append(("status_mcp", endpoint_name, dict(arguments)))
+            return {"status": "active"}
+
+        def owner_invoker(endpoint_name, arguments):
+            invocations.append(("owner_mcp", endpoint_name, dict(arguments)))
+            return {"owner": "Ada"}
+
+        router.executor.bind("contacts_openapi", contacts_invoker)
+        router.executor.bind("status_mcp", status_invoker)
+        router.executor.bind("owner_mcp", owner_invoker)
+
+        def execute_host_selected(selected_calls):
+            return asyncio.run(router.execute(
+                ExecutionPlan(
+                    query=ALIASES[0], registry_version=recipe.registry_version,
+                    calls=list(selected_calls),
+                ), config=RunConfig(principal=ACTOR),
+            ))
+
+        observed = execute_host_selected(calls[:1])[0]
+        assert invocations == [("contacts_openapi", "read_contact", {})]
+        bound = bind_paper_field_producer_result(
+            router, ALIASES[0], principal=ACTOR, catalog=catalog, index=idx,
+            plan=recipe, alternative_index=0, producer_call_index=0,
+            executed_call=calls[0], result=observed,
+        )
+        assert all(
+            call.arguments == {"key": "customer-42"}
+            for call in bound.alternatives[0].calls[1:]
+        )
+        assert invocations == [("contacts_openapi", "read_contact", {})]
+        responses = execute_host_selected(bound.alternatives[0].calls[1:])
+        assert {response.tool: response.data for response in responses} == {
+            "status_mcp": {"status": "active"},
+            "owner_mcp": {"owner": "Ada"},
+        }
+        assert sorted(invocations[-2:]) == [
+            ("owner_mcp", "read_owner", {"key": "customer-42"}),
+            ("status_mcp", "read_status", {"key": "customer-42"}),
+        ]
+        assert not bound.executable_authority
     else:
         assert out.status == "no_proven_hit"
         assert out.candidates == ()

@@ -375,3 +375,44 @@ catalog **from function entry through final return**, matching the
 compiler's earlier source-stability discipline. Both regressions pass
 locally after the guard; full focused suite and exact-head CI must be
 rechecked after any further review and publication.
+
+## P2 actual native OpenAPI→MCP host-run integration — 2026-10-24
+
+The exact PR #1747 producer-observation commit
+`eb274ac10805a813f19ffc066c6971ea2a3485f7` passed **all 14
+GitHub Actions workflows**, including broad CI, source-coded original
+paper E0 tests, Korean translation and strict Docs Browser/Link QA.
+
+Extended the pre-existing **actual converter-native** OpenAPI original
+contact-ID reader + two independently host-semantic-attested MCP
+status/owner readers in
+`tests/test_native_graph_shared_root_forks.py`. The new integration
+path compiles the P2 recipe from the unchanged P1-qualified original
+fork, explicitly supplies three local host-bound executor invokers,
+executes **only** the OpenAPI producer under `RunConfig(principal=...)`,
+binds the resulting executor `ToolResult` to both consumer parameters,
+asserts no MCP invocation occurred during binding, and then explicitly
+executes both consumer calls via the existing host executor. Exact
+native values are asserted: `customer-42` produces `active` status
+and `Ada` owner. The test respects non-guaranteed relative order of
+the two independent leaves; ordering the leaves by a favorite tool
+name is not part of the original paper or current API contract.
+
+This is a verified **local E0 converter/executor integration**, NOT a
+remote OpenAPI/MCP service session, independent source/reader/task gold,
+retrieved-data token-cost improvement, or LLM answer-quality evidence.
+No production code, default routing, authorization or autonomous
+execution behavior changed. Local focused paper/native/public suite:
+**127 passed**, repository Ruff clean, P2 Pyright 0 issues. Recheck
+the newly published SHA-specific workflows after committing this
+regression; keep both PRs Draft, independent #1346 E2 blocked and
+release HOLD.
+
+**Next source-admission decision:** actual OPTIMADE native
+`get_structures` has a required `id` with a converter-synthesized
+input-schema envelope; `search_structures` has eight optional query
+arguments including an unbounded filter. Neither currently qualifies
+as a P1 input-free root, and neither should be auto-admitted merely
+because the host trusts the tool. A separate source-owner-reviewed
+argument admission design must establish exact input/output semantics,
+field path, query bounds and unit handling before this is promoted.
