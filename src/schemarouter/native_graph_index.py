@@ -272,6 +272,35 @@ def _source_native_graph_contracts(
             empty_root or _host_source_input_names(endpoint) is None
         ):
             raise ValueError("G5 invalid explicit host-approved source route")
+        if host_root and tool.source_type == "optimade":
+            # A provider-discovered OPTIMADE ID is not automatically a trusted
+            # graph root: only the host review receipt may authorize this
+            # bounded minLength=1 ID contract for original-paper planning.
+            review = tool.metadata.get("paper_optimade_review")
+            output_fields = {field.name: field for field in endpoint.output_fields}
+            identifier = next(
+                (parameter for parameter in endpoint.parameters if parameter.name == "id"),
+                None,
+            )
+            if (
+                not isinstance(review, dict)
+                or not isinstance(review.get("source_tool_fingerprint"), str)
+                or not review.get("source_tool_fingerprint")
+                or review.get("source_base_url") != tool.metadata.get("versioned_base_url")
+                or review.get("entry_type") != endpoint.execution_metadata.get("entry_type")
+                or not isinstance(review.get("reviewed_fields"), dict)
+                or any(
+                    name not in output_fields
+                    or output_fields[name].semantic_id != semantic_id
+                    for name, semantic_id in review["reviewed_fields"].items()
+                )
+                or not review.get("identifier_semantic_id")
+                or identifier is None
+                or identifier.semantic_id != review.get("identifier_semantic_id")
+                or output_fields.get("id") is None
+                or output_fields["id"].semantic_id != review.get("identifier_semantic_id")
+            ):
+                raise ValueError("G5 invalid explicit host-approved source route")
         if empty_root or host_root:
             produced = [
                 contract
