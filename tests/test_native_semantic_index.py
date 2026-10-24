@@ -783,3 +783,138 @@ def test_normalized_numeric_posting_journal_delta_matches_full_rebuild():
     assert updated.lookup(
         router, group.aliases[0], principal=ANALYST, group=group,
     ).status == "no_proven_hit"
+
+
+
+@pytest.mark.parametrize("query", ALIASES)
+def test_research_ranker_returns_exact_five_authorized_source_candidates(query):
+    router = _router(many_complete=6)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    seen = []
+
+    def choose(q, offered, k):
+        assert q == query and k == 5
+        seen.extend(candidate.route_id for candidate in offered)
+        assert len(offered) == 7
+        assert all(candidate.required_output_fields == ("priority", "status")
+                   for candidate in offered)
+        return (6, 5, 4, 3, 2)
+
+    chosen = index.lookup(
+        router, query, principal=ANALYST, group=GROUP,
+        _research_ranker=choose,
+    )
+    assert chosen.status == "ranked_unverified"
+    assert chosen.experimental_ranked is True
+    assert chosen.qualified_count == 7
+    assert [candidate.route_id for candidate in chosen.candidates] == [
+        "full_5.read", "full_4.read", "full_3.read", "full_2.read", "full_1.read",
+    ]
+    assert seen == ["complete.read", *(f"full_{i}.read" for i in range(6))]
+    assert index.lookup(
+        router, query, principal=ANALYST, group=GROUP,
+    ).status == "over_k_unranked"
+
+
+@pytest.mark.parametrize("selection", (
+    (0, 1), (0, 0, 1, 2, 3), (0, 1, 2, 3, 7),
+    (True, 1, 2, 3, 4), ["0", "1", "2", "3", "4"],
+    ("complete.read", "full_0.read", "full_1.read", "full_2.read", "full_3.read"),
+    None,
+))
+def test_research_ranker_refuses_partial_duplicate_forged_or_nontuple(selection):
+    router = _router(many_complete=6)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    with pytest.raises(PolicyViolationError, match="forged, partial or duplicate"):
+        index.lookup(
+            router, ALIASES[0], principal=ANALYST, group=GROUP,
+            _research_ranker=lambda _q, _offered, _k: selection,
+        )
+
+
+def test_research_ranker_may_explicitly_abstain_without_disclosing_candidates():
+    router = _router(many_complete=6)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    result = index.lookup(
+        router, ALIASES[0], principal=ANALYST, group=GROUP,
+        _research_ranker=lambda _q, _offered, _k: (),
+    )
+    assert result.status == "ranker_abstained_unverified"
+    assert result.experimental_ranked is True
+    assert result.qualified_count == 7
+    assert result.candidates == ()
+
+
+def test_research_ranker_private_exception_is_sanitized():
+    router = _router(many_complete=6)
+    index = NativeSchemaPostingIndex.build(router.registry)
+
+    def leaking_ranker(_query, _offered, _k):
+        raise RuntimeError("private-source-credentials-must-not-leak")
+
+    with pytest.raises(PolicyViolationError, match="indexed research ranking failed") as exc:
+        index.lookup(
+            router, ALIASES[0], principal=ANALYST, group=GROUP,
+            _research_ranker=leaking_ranker,
+        )
+    assert "private-source-credentials" not in str(exc.value)
+    assert exc.value.__cause__ is None
+
+
+def test_research_ranker_is_not_called_when_candidate_menu_exceeds_32():
+    router = _router(many_complete=33)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    result = index.lookup(
+        router, ALIASES[0], principal=ANALYST, group=GROUP,
+        _research_ranker=lambda *_: pytest.fail("unbounded ranker menu"),
+    )
+    assert result.status == "over_k_unranked"
+    assert result.qualified_count == 34
+    assert result.candidates == ()
+    assert result.experimental_ranked is False
+
+
+def test_research_ranker_rechecks_revoked_health_and_principal_after_callback():
+    router = _router(many_complete=6)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    current = {"full_0.read": True}
+
+    def available(tool, endpoint):
+        return current.get(f"{tool.key}.{endpoint.name}", True)
+
+    router.planner.availability_predicate = available
+
+    def withdraw(_q, _offered, _k):
+        current["full_0.read"] = False
+        return (6, 5, 4, 3, 2)
+
+    with pytest.raises(PolicyViolationError, match="eligibility changed"):
+        index.lookup(
+            router, ALIASES[0], principal=ANALYST, group=GROUP,
+            _research_ranker=withdraw,
+        )
+
+    router.planner.availability_predicate = None
+    live = PrincipalContext(subject="researcher", roles=("analyst",))
+
+    def swap_identity(_q, _offered, _k):
+        object.__setattr__(live, "subject", "another-subject")
+        return (6, 5, 4, 3, 2)
+
+    with pytest.raises(PolicyViolationError, match="declarations changed"):
+        index.lookup(
+            router, ALIASES[0], principal=live, group=GROUP,
+            _research_ranker=swap_identity,
+        )
+
+
+def test_research_ranker_on_concept_lookup_reuses_indexed_field_proof():
+    router = _router(many_complete=6)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    result = index.lookup_concepts(
+        router, "show case status and priority", principal=ANALYST, catalog=CATALOG,
+        _research_ranker=lambda _q, _offered, _k: (0, 1, 2, 3, 4),
+    )
+    assert result.status == "ranked_unverified"
+    assert len(result.candidates) == 5
+    assert result.qualified_count == 7
