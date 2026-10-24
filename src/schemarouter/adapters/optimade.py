@@ -995,6 +995,7 @@ class OPTIMADERemoteInvoker:
         )
         if selected_wire_fields:
             query["response_fields"] = ",".join(selected_wire_fields)
+        entry_id: str | None = None
         if mode == "search":
             query.setdefault("page_limit", 20)
             url = f"{self.base_url}/{entry_type}"
