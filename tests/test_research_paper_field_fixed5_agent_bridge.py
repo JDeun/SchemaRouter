@@ -513,3 +513,34 @@ def test_paper_projection_never_mutates_original_model_surface():
     projected = selector.projected_tool_definitions(QUERY, view.visible_route_ids)
     projected[0]["parameters"]["required"].append("forged")
     assert view.tool_definitions(["complete_0.read"]) == original
+
+
+@pytest.mark.parametrize("indexed", [False, True])
+def test_paper_projected_observation_drops_unselected_scalar(indexed):
+    router = _direct_router()
+    view, _, selector = _prepare(router, indexed=indexed)
+    observed = {"status": "ok", "owner": "Ada", "other": "SECRET"}
+    projected = selector.projected_observation(
+        QUERY, view.visible_route_ids, "complete_0.read", observed,
+    )
+    assert projected == {"status": "ok", "owner": "Ada"}
+    assert "other" not in json.dumps(projected)
+
+
+def test_paper_projected_observation_coarsens_errors():
+    router = _direct_router()
+    view, _, selector = _prepare(router)
+    assert selector.projected_observation(
+        QUERY, view.visible_route_ids, "complete_0.read",
+        {"status": "error", "error": "provider SECRET"},
+    ) == {"status": "error", "error": "provider_call_failed"}
+
+
+def test_paper_projected_observation_rejects_unproved_route():
+    router = _direct_router()
+    view, _, selector = _prepare(router)
+    with pytest.raises(PolicyViolationError):
+        selector.projected_observation(
+            QUERY, view.visible_route_ids, "forged.read",
+            {"status": "ok", "owner": "Ada"},
+        )
