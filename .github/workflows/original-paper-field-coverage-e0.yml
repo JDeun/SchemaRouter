@@ -10,6 +10,8 @@ on:
       - "tests/test_paper_field_plan.py"
       - "scripts/benchmark_paper_indexed_direct_e0.py"
       - "tests/test_benchmark_paper_indexed_direct_e0.py"
+      - "scripts/research_paper_field_fixed5_agent_bridge.py"
+      - "tests/test_research_paper_field_fixed5_agent_bridge.py"
       - "tests/test_paper_field_real_adapters.py"
       - "tests/test_native_graph_shared_root_forks.py"
       - "research/autoresearch/paper-field-union-implementation-e0.md"
@@ -39,7 +41,10 @@ jobs:
           ruff check src/schemarouter/paper_field_retrieval.py tests/test_paper_field_retrieval.py tests/test_paper_field_real_adapters.py src/schemarouter/__init__.py
           ruff check src/schemarouter/paper_field_plan.py tests/test_paper_field_plan.py
           ruff check scripts/benchmark_paper_indexed_direct_e0.py tests/test_benchmark_paper_indexed_direct_e0.py
+          ruff check scripts/research_paper_field_fixed5_agent_bridge.py tests/test_research_paper_field_fixed5_agent_bridge.py
           pyright src/schemarouter/paper_field_retrieval.py src/schemarouter/paper_field_plan.py scripts/benchmark_paper_indexed_direct_e0.py
+          pyright scripts/research_paper_field_fixed5_agent_bridge.py
           python -m pytest -q tests/test_paper_field_retrieval.py tests/test_paper_field_real_adapters.py tests/test_native_graph_shared_root_forks.py tests/test_native_field_group_retrieval.py
           python -m pytest -q tests/test_paper_field_plan.py tests/test_native_graph_host_root.py
           python -m pytest -q tests/test_benchmark_paper_indexed_direct_e0.py
+          python -m pytest -q tests/test_research_paper_field_fixed5_agent_bridge.py

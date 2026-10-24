@@ -71,3 +71,25 @@
 - [ ] Verify focused source-native, public ABI, repository Ruff and Pyright; attempt project-wide pytest and record any failures or timing limits. Commit, independent review, publish existing Draft PR #1747 and log exact GitHub SHA/CI.
 
 **Task 3 verification caveat:** the nine focused source-native/public/translation suites passed **180 tests** on local Python 3.12.14; repository Ruff and Korean documentation preparation passed (158 translated pages, zero fallbacks). Bare local repository Pyright did **not** pass: despite runtime imports succeeding, the checker omitted `.venv/lib/python3.12/site-packages` from its search paths and reported 84 repository-wide diagnostics. A temporary, uncommitted Pyright config explicitly adding the installed packages isolated the **three changed implementation/benchmark files**, exposed and then verified the fix to two Optional fixture attributes, and finished **0 errors / 0 warnings**. This is focused typing only, not repository-wide typing success. Exact-head CI must verify independently. A project-wide bare pytest attempt was limited by `timeout 120s` at exit 124 (no failing assertion reported in the partial progress output, only ~13% finished). This is **NOT** full-suite success. GitHub publication and exact-head CI must be independently recorded. The isolated E0 direct and typed-fork p50/p95 results are in the research ledger; the fork compares **one changed direct-selector prepass**, not two different fork algorithms.
+
+## Task 4: Paper P1/P2 → existing fixed-K agent callback (P2.2)
+
+**Files:** create `scripts/research_paper_field_fixed5_agent_bridge.py`, `tests/test_research_paper_field_fixed5_agent_bridge.py`; do not change `run_generated_episode` or frozen comparators. Spec: P2.2 above.
+
+**Interfaces:** research-only `AuthorizedPaperFieldFixed5Selector(view: AuthorizedAgentToolSurface, catalog: NativeConceptCatalog, index: NativeSchemaGraphIndex, experimental_indexed_direct: bool = False)`; `__call__(query: str, source_ids: tuple[str, ...]) -> list[str]`; `last_status: str | None`, `independent_quality_evidence=False`, `calibrated_no_fit=False`, `executable_authority=False`.
+
+- [x] Write RED direct full-field and valid typed fork callback tests, comparing indexed/no-index mode with original P2 `ToolCall` route IDs. No task gold or custom executor enters the callback.
+- [x] Implement strict source/principal/catalog/index pinning and exact one-alternative, no-ranker, K5 and scoped field validation. Unsupported/ambiguous/over-K/byte-budget conditions never yield partial candidates; do not mutate frozen experiment conditions.
+- [x] Add negative tests for hidden/denied output, forged route list, changed catalog/source, wrong flag type, multiple unranked alternatives and source-native unrelated query. Actual in-place policy change remains protected by the reused scoped-view receipt.
+- [x] Run isolated source-native and callback regression tests; Ruff and focused Pyright. Record actual results and deviations in the research ledger.
+
+## Task 5: Existing `FrozenCorpusExecutor` E0 replay + CI
+
+**Files:** extend `tests/test_research_paper_field_fixed5_agent_bridge.py`; modify `.github/workflows/original-paper-field-coverage-e0.yml`; update `research/autoresearch/paper-field-union-implementation-e0.md` and exact paired documentation/audit source hashes.
+
+**Interfaces:** pass only `experimental_candidate_selector=selector` plus existing `experimental_agent_tool_surface=view` to `run_generated_episode(..., EXPERIMENTAL_FIXED5_CONDITION)`.
+
+- [x] Use existing loop for direct and three-step typed fork E0, unsupported no-call, hidden/denied sources and frozen-condition rejection; existing #1477 failure-matrix tests retain wrong-route/input coverage. The initial missing bridge API failed RED and no second executor was introduced.
+- [x] Implement minimum callback; run focused E0 tests. The scoped model-tool schema remains unprojected beyond the existing principal scope, so no token saving is claimed.
+- [x] Dedicated workflow content check failed RED and passed GREEN after adding bridge paths, Ruff, Pyright and no-model tests; no provider calls or #432 training.
+- [ ] Verify and commit; obtain independent whole-change review. Publish only to existing Draft PR #1747 with exact remote SHA/CI, document #1560 and #1477 checkpoints; keep #1346 independent E2 and v0.18 HOLD.

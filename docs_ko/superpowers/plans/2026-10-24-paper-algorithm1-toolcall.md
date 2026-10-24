@@ -71,3 +71,25 @@
 - [ ] 관련 출처 어댑터·공개 API 테스트, 전체 Ruff, Pyright를 검증하고 프로젝트 전체 pytest를 시도해 실패나 시간 제한을 기록합니다. 커밋·독립 리뷰·기존 Draft PR #1747 게시 후 실제 GitHub SHA와 CI를 기록합니다.
 
 **작업 3 검증 한계:** 출처 기반·공개 API·번역 관련 집중 테스트 **180개**가 로컬 Python 3.12.14에서 통과했고 저장소 Ruff와 한국어 문서 준비(번역 158개, 대체 0개)도 통과했습니다. 다만 설정 없는 로컬 Pyright는 Python 실행 시 의존성 import가 정상임에도 `.venv/lib/python3.12/site-packages`를 검색 경로에 포함하지 않아 저장소 전역에서 진단 84건을 보고했습니다. 설치된 패키지 경로를 명시한 임시(미커밋) 설정으로 **변경된 구현·벤치마크 파일 3개**를 분리 검사한 결과, fixture의 Optional 타입 오류 2건을 발견·수정해 **오류/경고 0건**으로 통과했습니다. 이는 전체 저장소의 타입 검사 성공을 의미하지 않으며 정확한 PR 헤드의 원격 CI에서 별도 확인해야 합니다. 저장소 전체 pytest는 `timeout 120s`에서 종료 코드 124로 중단됐습니다(일부 진행 출력에서 실패 단언은 보이지 않았지만 약 13%만 수행). 따라서 전체 통과라고 주장할 수 없습니다. 실제 GitHub 게시 및 최신 SHA의 CI도 별도 증거가 필요합니다. 직접 조회와 타입 검증 분기의 E0 p50/p95는 연구 기록에 정리했으며, 분기 비교는 **기존 동일 분기 알고리즘 앞의 직접 검색 단계만** 바꾼 실험입니다.
+
+## 작업 4: Paper P1/P2 → 기존 고정 K 에이전트 콜백 (P2.2)
+
+**파일:** `scripts/research_paper_field_fixed5_agent_bridge.py`, `tests/test_research_paper_field_fixed5_agent_bridge.py`를 추가하며 `run_generated_episode`와 기존 동결 비교 조건은 변경하지 않습니다. 상위 설계: P2.2.
+
+**인터페이스:** 연구 전용 `AuthorizedPaperFieldFixed5Selector(view: AuthorizedAgentToolSurface, catalog: NativeConceptCatalog, index: NativeSchemaGraphIndex, experimental_indexed_direct: bool = False)`; `__call__(query: str, source_ids: tuple[str, ...]) -> list[str]`; `last_status: str | None`, `independent_quality_evidence=False`, `calibrated_no_fit=False`, `executable_authority=False`.
+
+- [x] 직접 필수 필드 완성 경로와 타입 검증 분기의 RED 콜백 테스트를 작성하고, 인덱스 모드 양쪽의 원본 P2 `ToolCall` 경로 ID와 일치하는지 확인합니다. 정답이나 별도 실행기는 콜백에 전달하지 않습니다.
+- [x] 출처·주체·선언·인덱스 지문을 고정하고 대안 하나, 랭킹 미검증, K5, 필드 가시성을 엄격히 검증합니다. 미지원·모호함·K 초과·바이트 예산 초과로부터 부분 결과를 반환하지 않습니다.
+- [x] 숨김·거부된 출력, 위조된 경로 목록, 변경된 선언/출처, 잘못된 옵션 자료형, 복수 미랭킹 대안, 무관한 질의를 검증합니다. 권한 정책의 내부 변경은 기존 스코프 뷰 검증 기록으로 보호됩니다.
+- [x] 출처 기반 및 콜백 회귀 테스트와 Ruff·변경 파일 Pyright를 수행하고 실제 결과를 연구 기록에 남깁니다.
+
+## 작업 5: 기존 `FrozenCorpusExecutor` E0 재생과 CI
+
+**파일:** `tests/test_research_paper_field_fixed5_agent_bridge.py` 확장, `.github/workflows/original-paper-field-coverage-e0.yml`, `research/autoresearch/paper-field-union-implementation-e0.md`와 관련 한·영 문서·검토 원장 해시를 갱신합니다.
+
+**인터페이스:** 기존 `run_generated_episode(..., EXPERIMENTAL_FIXED5_CONDITION)`에 `experimental_candidate_selector=selector`, `experimental_agent_tool_surface=view`만 전달합니다.
+
+- [x] 기존 루프의 직접 경로·3단계 타입 검증 분기, 미지원 무호출, 숨김·거부, 동결 조건의 콜백 거부를 테스트했습니다. 새 브리지 부재로 RED가 재현됐고 별도 실행기를 만들지 않았습니다. 잘못된 도구·인자 사례는 기존 #1477 실패 행렬 회귀 테스트를 유지합니다.
+- [x] 최소한의 콜백만 추가해 GREEN을 확인했습니다. 모델 도구 스키마가 P2 필드 최소화로 추가 축소되지 않았다는 한계를 명시했습니다.
+- [x] 전용 CI 경로 감시와 Ruff·Pyright·무모델 테스트를 RED→GREEN으로 추가했습니다. 공급자 호출이나 동결 #432 학습·조정은 하지 않았습니다.
+- [ ] 검증·커밋·독립 코드 리뷰 후 기존 Draft PR #1747에만 게시하고 실제 SHA/CI 및 #1560·#1477 기록을 남깁니다. #1346 독립 E2와 v0.18 배포 보류는 유지합니다.

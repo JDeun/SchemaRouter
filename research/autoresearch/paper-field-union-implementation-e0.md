@@ -599,3 +599,84 @@ timed out after 120s at approximately 13% and is NOT counted as green.
 Check the current published Draft PR #1747 **exact latest SHA** and
 CI before any green or merge claim. Remain Draft, no default change,
 parent issues OPEN and v0.18 HOLD.
+
+## P2.2: Algorithm 1 P1/P2 into existing gold-blind fixed5 agent E0 — 2026-10-24
+
+**Source:** issue #1477 Milestone A already had the existing isolated
+`EVAL-FIXED5-OPTIN` callback, `FrozenCorpusExecutor`, principal-scoped
+`AuthorizedAgentToolSurface`, no-model failure-matrix and sanitized
+stage traces. No duplicate execution loop, agent framework, metric scorer,
+or result loader was created. This step is the previously absent bridge
+between #1560's **original field-complete P1/P2 ToolCall receipt** and
+the already existing independent-of-gold callback surface.
+
+**Implementation:** `scripts/research_paper_field_fixed5_agent_bridge.py`
+adds research-only `AuthorizedPaperFieldFixed5Selector`, reusing the
+existing source-owner catalog digest, principal-view HMAC/policy/source
+checks, indexed source snapshot and original ToolCall compiler. The
+callback gets only the declared query and **principal-visible source
+IDs** and validates every returned route's original tool/endpoint
+fingerprints, scoped output field name subset and fixed K5. Each P2
+call still has empty argument values; the callback returns route IDs
+for model candidate presentation, **not** an execution permission.
+Both default and `experimental_indexed_direct=True` P1/P2 paths work.
+
+**Conservative no-ranker rule:** exactly one complete P2 alternative is
+required. `no_proven_hit`, `over_k_unranked`, budget-unsatisfied and
+unknown declared query yield an empty menu without claiming calibrated
+no-fit; two separately complete alternatives also abstain as
+`multiple_unranked_alternatives`, rather than selecting one by source
+name or stealing evaluator gold. The immutable historical FULL/SR-5/
+SR-10/SR-PROGRESSIVE/ORACLE conditions reject this new callback.
+
+**Evidence (source-native E0 only):** `tests/test_research_paper_field_fixed5_agent_bridge.py`
+executes existing frozen evaluator with a scripted agent on one direct
+source and on an original one-root/two-consumer typed fork with
+observed `customer_id`; no downstream dependency argument is pre-filled
+by P2. It tests complete route parity in both indexed modes, hidden/
+denied fields, forged offered routes, source and owner mutation, K6
+overflow, two valid unranked alternatives, unknown query, invalid
+mode, unsupported no-call and frozen-condition isolation. The
+dedicated original-paper GitHub workflow watches/lints/typechecks/runs
+these files; its regression assertion first failed RED when absent and
+then passed GREEN after wiring.
+
+**Local verification:** dedicated new bridge tests **14 passed**;
+combined existing agent, P1/P2, native fork and bridge suites **189
+passed (26.20s)**; whole repository Ruff passed; changed bridge
+Pyright with explicit installed third-party search path **0 errors,
+0 warnings**; bilingual corpus tests **69 passed**, Korean docs
+preparation **158 translated, 0 fallbacks**. A project-wide bare
+pytest had previously timed out at 120s and is still NOT certified
+full-suite green. At first GitHub check prior published P2.1 head
+`ebd2e18` had 13/14 workflows successful and full CI still running;
+this new P2.2 content has **not** been remote-published or verified by
+its own GitHub Actions yet.
+
+**Limits / next:** this is a **scripted synthetic agent E0** result,
+not a real LLM, provider invocation, token saving or independent
+author-written E2. The model still receives the existing
+principal-scoped full endpoint schema; P2's narrower `ToolCall.fields`
+is only checked, **not yet projected into model-visible schema or
+observations**. A separate native scoped field projector and actual
+model/provider qualification must precede any schema token/cost/answer
+claims. Keep #1535/#1560/#1477 open, #1346 independent E2 blocked
+and v0.18 HOLD.
+
+**Independent read-only P2.2 review:** one separate reviewer re-ran
+**90 focused tests** and in-memory byte-budget, principal-mutation
+and in-place policy-mutation probes; no Critical or Important
+finding remained. **Minor (deferred):** the three-step fixture
+ScriptedAgent hard-codes `C-42` rather than parsing the preceding
+model-visible observation. The successful E0 sequence therefore
+demonstrates that the *existing executor* accepts source-typed
+arguments in order, NOT an agent's dynamically observed identifier
+reasoning. Require a future observation-reading agent or an actual
+agent/model integration before claiming dataflow intelligence.
+Reviewer declined to judge E2/provider/model outcomes, arbitrary
+malicious in-process Python callbacks, generic route namespace
+encoding and cross-thread atomicity; all remain outside this slice.
+The new branch's project-wide bare `pytest -q` was separately
+attempted under `timeout 120s` and returned **124** at approximately
+12% progress without a reported assertion failure. This is explicitly
+**NOT** full-suite success.
