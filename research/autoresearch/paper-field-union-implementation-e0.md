@@ -160,3 +160,537 @@ head, against the original-paper source-attested opt-in path only.
 reviewed optional/required argument binding and OPTIMADE numeric-unit
 canonicalization only under a separately verified trusted contract in
 #1560; preserve strict K5, default routing and #1356 release HOLD.
+
+## P2 source-attested ToolCall projection — 2026-10-24 continuation
+
+Draft PR #1746 P1 head was published through the authenticated GitHub
+connector as `5a530e6440601a9fcc0083730653d246014deac8`, with
+the exact identical tree as local late-revocation fix. The **original-paper
+dedicated workflow #40040143726**, native FieldGroup, G5 typed graph,
+host evidence, research candidate, retrieval fast path and CodeQL all
+reported `success` on that head. The broad `CI` remained `in_progress`
+at the last check; never infer entire CI from the dedicated workflow.
+Issue #1535 has the exact published checkpoint comment.
+
+Follow-on #1560 is on branch
+`feat/1560-paper-field-toolcall-plan-20261024`, published as
+[stacked Draft PR #1747](https://github.com/JDeun/SchemaRouter/pull/1747)
+at initial source SHA `965234e066e87ab1aa0a9399224567dd187f491a`
+based on verified P1 GitHub SHA `5a530e6440601a9fcc0083730653d246014deac8`.
+Spec: `docs/superpowers/specs/2026-10-24-paper-algorithm1-toolcall-design.md`;
+plan: `docs/superpowers/plans/2026-10-24-paper-algorithm1-toolcall.md`.
+New `src/schemarouter/paper_field_plan.py::compile_paper_field_toolcalls`
+composes ONLY original P1-complete, source-scoped routes into existing
+`ToolCall` descriptors, source-first with separate original typed
+`PaperFieldArgumentDependency` receipts. Required consumer ID values
+remain deliberately **unbound** and `ToolCall.executable=False`; producer
+input-free calls and direct reads have no invented arguments. No calls are
+executed; result explicitly carries `executable_authority=False`. All
+P1 no-hit/over-K statuses and fixed K5 are preserved with empty output.
+The original `SchemaRouter.plan/retrieve/execute` functions are untouched.
+
+**P2 reviewer follow-up:** added genuine `DataScopeRule` hidden-field
+and hidden original producer-ID regressions, and actual native
+OpenAPI/MCP compiled source visibility checks across three declared
+EN/KO/JA query aliases. Qualified G5 `approved_host_roots` can prove a
+parameterized producer topology: the compiler now represents such a
+root with its original required input names in
+`ToolCall.missing_required_arguments` and no invented values, alongside
+the consumer's unresolved typed dependency. Source input envelopes
+are checked on the original, fingerprint-pinned endpoint: a scoped
+read-only view may change empty JSON schema presentation without
+altering the original input-free source contract. **No actual concrete
+host inputs, execution or OPTIMADE coercion are implemented.**
+
+IMPORTANT observed red→green: mutations to source-owner aliases or
+policy after the FIRST complete P1 proof but before final compiler
+projection initially slipped through when the selected fields stayed the
+same. Tests reproduced both failures. The compiler now freezes principal,
+catalog, policy and original source witness BEFORE P1 and compares
+the full declaration/proof AFTER the second re-proof. No atomic live
+provider transaction is claimed. P2 test matrix includes direct and
+one-root/two-consumer fork, actual 5000-route index, hidden/denied and
+availability/owner drift, over-K no-public-output, and EN/KO/JA.
+
+Remaining #1560: full source-owner-approved concrete argument binding
+for parameterized roots (including authentic OPTIMADE schema quirks),
+observation-time dependency materialization through the existing
+executor, independently authored #1346 E2. Keep parent issues open,
+Draft PRs unmerged and release HOLD. Next session should inspect the
+latest stacked P2 PR/checks and continue these remaining acceptance
+criteria; see plan ledger and SHA-specific outcomes for exact status.
+
+**CI closure:** P1 #1746 exact-head broad [CI run #40040143730](https://github.com/JDeun/SchemaRouter/actions/runs/40040143730)
+subsequently reported **SUCCESS**. Its exact-head dedicated paper
+workflow and eleven other listed workflows also reported success.
+P2 #1747 Actions were triggered and were **in progress/queued** at
+publication; do not infer their result from P1.
+
+**Dedicated P2 CI regression follow-up:** existing
+`.github/workflows/original-paper-field-coverage-e0.yml` was originally
+triggered only by P1 source/tests and did not execute the P2
+`test_paper_field_plan.py` module. Add source and test path triggers,
+P2 Ruff checking, and the P2 + approved-native-host-root pytest suites
+to the same pinned runner/workflow without changing its protected name.
+An explicit unit test now asserts the workflow coverage; it failed
+before the workflow fix and passed after. Local integrated suite then
+reported **102 passed**, repository Ruff and P2 Pyright green.
+
+## P2 draft CI follow-up: paired Korean documentation — 2026-10-24
+
+The exact PR #1747 head `07206644c1ee9b354d45a4d5a83851cd9ee1ced7`
+(tree `3dc19520a0d38106efa6baf869aae7d286a19207`)
+triggered GitHub Actions. The **Korean Translation Whole-Corpus Coverage
+Report** run `40041770745` failed: one of 69 local-equivalent tests
+reported two new English `docs/superpowers/` pages missing from the
+protected English/Korean paired semantic-spotcheck ledger. This was a
+real CI failure; it was not evidence of an Algorithm 1 compiler defect.
+
+Added equivalent Korean specification and implementation-plan pages under
+`docs_ko/superpowers/`, and registered both exact EN/KO Git blob hashes
+in `audits/ko-direct-semantic-spotcheck-2026-10-12.json`. The ledger
+explicitly identifies the paired reading as **AI-assisted only**;
+independent editorial sign-off remains outstanding under #1202. The
+full translation-workflow pytest invocation now reports **69 passed**
+locally; repository-wide Ruff and `git diff --check` are green. Recheck
+the new published exact GitHub head and every Actions conclusion after
+this follow-up—do not assume that local results imply green CI.
+
+No changes to the original P2 compiler, live execution, default routing,
+independent E2 or the v0.18 release HOLD were made in this follow-up.
+
+## P2 next incremental step: host-owned root input binding — 2026-10-24
+
+After the prior PR #1747 source commit, a **new opt-in, nonexecuting**
+`bind_paper_field_host_inputs` function was implemented in the same
+`paper_field_plan.py` module. It accepts a previously compiled P2
+recipe, chooses one alternative, and requires the host to supply the
+**exact complete scalar arguments** of its explicitly approved G5
+original source root. It re-derives the entire source-attested P2 proof,
+rejects caller-tampered or stale recipes, confirms the original
+`approved_host_roots` and closed `_host_source_input_names` contract,
+validates concrete values with the original schema under the runtime
+JSON-Schema work budget, then re-proves source/authorization stability.
+Input copies are checked against late callback mutation; a real RED
+regression demonstrated why this is required. The returned selected
+root `ToolCall` may have all required inputs populated, but downstream
+producer→consumer ID arguments remain **unbound**, and the outer plan's
+`executable_authority=False` stays unchanged. No provider invoker or
+executor is called, and this is **not** an independent E2 result.
+
+Independent review of this new binding API reproduced TWO Important
+failures, with no verified Critical: (1) JSON Schema alone treated
+`NaN`, infinity, complex numbers, `Decimal` and `Fraction` as acceptable
+`number` inputs, which are not finite JSON-native scalar values; and
+(2) a host-valid integer `max_hops=99` exceeded the current principal's
+`DataScopeRule(max_hops=2)`, despite being marked bound. Both had genuine
+RED regressions; the binder now requires strict JSON-native primitive
+types with finite floats and validates the populated root call against
+the same current principal-aware `authorization_policy.validate` used
+by the protected execution boundary. This does NOT change shared
+JSON-Schema validation globally or authorize invocation.
+
+The GitHub exact-head run `40042138308` on prior SHA
+`596705b047435815459a5dd3dae750c0eaf6ca32` exposed a second
+distinct documentation gate: `scripts/prepare_korean_docs.py` requires
+new bilingual pages to be listed in
+`docs_ko/translation-manifest.json`, not just the paired audit ledger.
+Added both exact EN source blobs. Local `prepare_korean_docs.py`
+successfully prepared **158 translated pages and zero fallbacks**;
+docs QA + paired ledger pytest and focused P2/native tests passed
+locally (**128 tests including the reviewed numeric/data-scope
+regressions**); the full translation CI-equivalent suite also reported
+**69 passed**. Repository Ruff and P2 Pyright reported clean.
+That previous exact-head Korean translation workflow passed, but
+Docs Browser and Link QA failed before this manifest change; the broad
+CI was still running at observation. The latest *new* head and
+individual workflow conclusions MUST be checked after publishing this
+step; no unpublished/local outcome should be represented as GitHub CI.
+
+**Further exact-head CI observation:** GitHub PR #1747 follow-up
+`27712d0ad33392ecc4873b4541d787440fa4f202` passed 12 of its
+14 workflows including dedicated original-paper coverage and Korean
+whole-corpus translation when inspected. Its Docs Browser/Link QA
+**still failed** at the next independent gate: `mkdocs build --strict`
+warned that the two new English `superpowers/` pages were absent from
+the explicit site navigation. Added both original-paper P2 links to
+the **English and Korean** `mkdocs.yml` / `mkdocs.ko.yml` Research
+navigation, separate from G5 records. The broad CI was then still
+in progress. This documentation fix needs another latest-head
+strict-site CI check; do not infer completion from the manifest fix.
+
+**Next #1560:** owner-approved, observed producer result→consumer
+argument value materialization with verified result field contracts;
+subsequent executor invocation only via existing host authority;
+source-native OPTIMADE accepted argument/unit contracts and truly
+independent source-disjoint E2 #1346 still pending. Keep both PRs
+Draft, parent issues open and release HOLD.
+
+## P2 observed producer result binding — 2026-10-24 continuation
+
+Following the host-root input binder, added the **explicit opt-in**
+`bind_paper_field_producer_result` public API on Draft PR #1747.
+It accepts the previously compiled or correctly host-bound P2 recipe,
+one selected producer index, and a **host-reported pair** of the
+actually executed original `ToolCall` plus its `ToolResult`. It replays
+the latest P1/P2 proof and prior host-approved input binding, checks
+the complete producer call identity/fingerprint/arguments/projection,
+and reconstructs the exact executor-native `ResultFieldContract` map
+from the projected observation, including non-null presence. Each
+required identifier must be a **single, finite, JSON-native scalar**
+matching the source canonical schema and consumer parameter schema.
+The populated consumer call must also satisfy the full original input
+schema and the current principal's call-aware authorization/data scope;
+a final complete P1/P2 re-proof rejects source/owner drift and late
+caller mutation. One original producer observation can bind a fork's
+two consumers. No values are inferred from structural graph edges.
+
+**Provenance limitation:** A `ToolResult`/`ToolCall` pair supplied by the
+host is not cryptographically authenticated by this API. The trusted
+host is responsible for obtaining the actual observation through the
+existing executor, whose invocation still enforces its own policy,
+approval, retries and budget. The binding function does **not** call
+any tool, automate the consumer invocation, grant execution authority,
+or claim source-independent reader/LLM E2 quality. Only supported
+source-proven one-hop dependencies are currently materialized.
+
+Tests include real local `SchemaRouter.execute` with an approved
+`RunConfig(principal=...)` and a synthetic bound invoker, verifying that
+the producer is called once and the consumer is **not** invoked by the
+binding API; one-root/two-leaf forks; absent/null/non-scalar/incorrectly
+typed observations; tampered result contracts, executed calls, input
+receipts and source availability. The full independent #1346 E2,
+external OPTIMADE argument/unit admission, protected GitHub Actions,
+and user-facing default behavior remain separate gates. Inspect the
+exact current PR head and workflow conclusions before claims of CI
+completion; retain both PRs Draft, issue owners open and release HOLD.
+
+Independent review then reproduced a **late owner-catalog TOCTOU**:
+mutating approved concept aliases during producer authorization left
+the same final `ToolCall` menu, so re-compilation equality alone did
+not detect the owner-declaration change. Added a failing negative
+regression, plus a policy-replacement counterpart, and pinned the
+source revision/witness, policy identity/content, principal and owner
+catalog **from function entry through final return**, matching the
+compiler's earlier source-stability discipline. Both regressions pass
+locally after the guard; full focused suite and exact-head CI must be
+rechecked after any further review and publication.
+
+## P2 actual native OpenAPI→MCP host-run integration — 2026-10-24
+
+The exact PR #1747 producer-observation commit
+`eb274ac10805a813f19ffc066c6971ea2a3485f7` passed **all 14
+GitHub Actions workflows**, including broad CI, source-coded original
+paper E0 tests, Korean translation and strict Docs Browser/Link QA.
+
+Extended the pre-existing **actual converter-native** OpenAPI original
+contact-ID reader + two independently host-semantic-attested MCP
+status/owner readers in
+`tests/test_native_graph_shared_root_forks.py`. The new integration
+path compiles the P2 recipe from the unchanged P1-qualified original
+fork, explicitly supplies three local host-bound executor invokers,
+executes **only** the OpenAPI producer under `RunConfig(principal=...)`,
+binds the resulting executor `ToolResult` to both consumer parameters,
+asserts no MCP invocation occurred during binding, and then explicitly
+executes both consumer calls via the existing host executor. Exact
+native values are asserted: `customer-42` produces `active` status
+and `Ada` owner. The test respects non-guaranteed relative order of
+the two independent leaves; ordering the leaves by a favorite tool
+name is not part of the original paper or current API contract.
+
+This is a verified **local E0 converter/executor integration**, NOT a
+remote OpenAPI/MCP service session, independent source/reader/task gold,
+retrieved-data token-cost improvement, or LLM answer-quality evidence.
+No production code, default routing, authorization or autonomous
+execution behavior changed. Local focused paper/native/public suite:
+**127 passed**, repository Ruff clean, P2 Pyright 0 issues. Recheck
+the newly published SHA-specific workflows after committing this
+regression; keep both PRs Draft, independent #1346 E2 blocked and
+release HOLD.
+
+**Next source-admission decision:** actual OPTIMADE native
+`get_structures` has a required `id` with a converter-synthesized
+input-schema envelope; `search_structures` has eight optional query
+arguments including an unbounded filter. Neither currently qualifies
+as a P1 input-free root, and neither should be auto-admitted merely
+because the host trusts the tool. A separate source-owner-reviewed
+argument admission design must establish exact input/output semantics,
+field path, query bounds and unit handling before this is promoted.
+
+## P2 original Algorithm 1 AttachMeta parity — 2026-10-24 continuation
+
+Rechecked the PRIMARY source
+[paper §4 Algorithm 1](https://github.com/JDeun/paper_SchemaRouter/blob/main/paper/schemarouter.tex)
+and [#1535](https://github.com/JDeun/SchemaRouter/issues/1535) /
+[#1560](https://github.com/JDeun/SchemaRouter/issues/1560). The paper's
+`Understand(q)` declares intent, concepts, arguments, source constraint
+and named tool overrides; `Resolve/Rank` selects tool and required field
+groups; `Identifiers ∪ ConceptMatch ∪ FieldsOf` selects field union;
+`AttachMeta` carries source metadata into the output plan. **Typed
+producer/consumer graph execution is an optional product extension, NOT
+the paper's central Algorithm 1 or a substitute for its default
+`Understand/Rank` requirements.** This is why narrow native OPTIMADE
+parameter exceptions were deferred in favor of explicit AttachMeta.
+
+The prior P2 `ToolCall.evidence` is an evidence-requirement/availability
+descriptor, not a literal source/field license or unit declaration.
+`PaperFieldOutputMetadata` now projects each pre-K *proved and selected*
+`ToolCall.fields` item under its call index, with source-owned semantic ID,
+source unit and declared result unit/dimension, tool and field-specific
+source type/license, tool provider, and sorted qualifiers. It is attached
+to each immutable `PaperFieldCallAlternative`, so the already-authorized
+host-input and producer-observation binders preserve exactly the original
+field metadata and reject caller-tampered receipts. There is no new
+public execution method and `executable_authority=False` persists.
+
+**Critical data-scope boundary discovered through a RED test:** scoped
+output descriptors deliberately omit their field-specific source/license
+and qualifiers, and scoped analyzer views suppress tool-level
+provider/source/license labels. Copying original full fields would
+reveal protected labels. The new projection therefore uses ONLY the
+already-proved scoped `visible.output_fields` and, when the endpoint
+has been scoped, suppresses tool source/license/provider as well.
+Independent review then exposed a subtler sibling-endpoint privacy
+boundary: the existing scoped analyzer removes SHARED tool-level
+source/license/provider when **any permitted sibling endpoint** has
+a field restriction, even when the chosen endpoint is unrestricted.
+The first metadata projection omitted this shared-tool rule. A
+RED sibling-scope regression proved the mismatch, then a correction
+mirroring all permitted sibling projections made it GREEN; an
+unauthorized sibling does not trigger that rule.
+Source units that survive the existing denied-label scrubber remain
+visible; all withheld fields remain withheld. Source declarations are
+NOT a verified legal license grant, observed data, provenance proof,
+or performance/accuracy measurement. The existing native FieldGroup
+compatibility checker also currently rejects normalized required
+fields; this metadata API does NOT broaden compatibility or infer
+conversions.
+
+New regression coverage includes an unrestricted source with field vs
+tool license separation, source-unit projection, declared qualifiers,
+same-root multi-call indices, hidden field, sibling-scope and scrubbed private
+metadata, binder preservation and malicious metadata replacement.
+Observed TDD RED: missing `field_metadata` caused two direct failures;
+the first green candidate revealed an expected scoped-redaction
+assertion mismatch and was corrected before accepting the full tests.
+The final broader P2 / source-adapter / data-scope / public API selection
+completed **121 tests passed** after the sibling-scope reviewer fix,
+repository-wide Ruff succeeded, Pyright reported **zero issues**, and
+`git diff --check` was clean. The independent read-only code reviewer
+reproduced the original sibling leak, verified its corrected behavior,
+and found **zero remaining Critical/Important findings**. These are
+local E0 tests, **not** #1346 independent E2.
+
+**Published implementation checkpoint:** the reviewed source/test/ledger
+tree `30195b017ce94ba95b82f2dfa75d1b19e6294b3b` was published
+to [Draft #1747](https://github.com/JDeun/SchemaRouter/pull/1747) as
+[`50951b70306b947a7b943452af85162b054b770d`](https://github.com/JDeun/SchemaRouter/commit/50951b70306b947a7b943452af85162b054b770d).
+At first exact-SHA check, GitHub returned 14 workflows (one successful,
+12 in progress and broad CI pending); do **not** claim these checks green.
+The detailed [#1560 issue checkpoint](https://github.com/JDeun/SchemaRouter/issues/1560#issuecomment-6378089434)
+also records this source SHA, 121 local tests, code review and remaining
+blocked gates. The only next verification is the **current latest PR
+head** and its own GitHub Actions; the documentation-only follow-up
+to this ledger is not itself proof of feature CI.
+
+**Continuation gates:** preserve
+the default product route and source admission limits. Future material
+Algorithm 1 parity is still the *default* source-independent query
+`Understand/Rank` + explicit named tool resolution + concept and
+required-field union across a general owner-indexed tool catalog;
+no independently authored end-to-end field gold or answer-quality
+validation exists yet. Keep #1535/#1560 open, #1346 externally blocked,
+and the v0.18 release on HOLD.
+
+## P2.1: existing indexed direct selector through Algorithm 1 P1/P2 — 2026-10-24
+
+**Purpose:** advance #1560's catalog-wide indexed lookup instead of
+adding another LLM classifier or agent graph. Existing P1 queried the
+full scoped planner for a direct conjunctive FieldGroup despite the
+already implemented `NativeSchemaPostingIndex.lookup` and
+`retrieve_authorized_concept_graph(experimental_indexed_direct=True)`.
+The new opt-in `experimental_indexed_direct: bool = False` parameter is
+forwarded through P1 coverage, P2 ToolCall compilation and both
+host/producer observation binders, including EVERY internal re-proof.
+The immutable outer P2 receipt records the selected mode; attempting to
+bind an indexed receipt under the default mode fails closed. No
+new index, schema registry, ranking model, semantic inference, auto
+execution or change to the production default was introduced.
+
+**Measured local source-native E0 parity:** host-declared
+`crm.fork_status ∧ crm.fork_owner` requiring BOTH typed fields;
+principal `reader`; original licensed CRM source; deterministic
+`paper_complete.read` has `request_id,status,owner`. Of 500 or 5000
+registered source-native routes, two are typed CRM G5 support routes
+and the remaining non-target sources repeat an unrelated
+`research.label:string` shape. This E0 fixture stresses catalog size,
+NOT heterogeneous connector variability; NO external provider or LLM is used.
+Both original planner direct search and indexed direct lookup returned
+the identical `PaperFieldAlternative` (and separately the same P2
+`ToolCall`/AttachMeta plan). EN/KO/JA licensed one-original-root/two-
+consumer forks also agreed in field projection and typed dependencies.
+Hidden fields, deny policy, wrong type, stale index, >K unranked and
+invalid flag cases abstain or fail closed. Nothing invokes the tools.
+
+**Sequential warm timing on local Linux Python 3.12.14, 2026-10-24:**
+
+| Registered routes | Warm queries / mode | Planner direct p50 / p95 | Indexed direct p50 / p95 | p50 ratio | Posting+graph cold build | Peak process RSS |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 500 | 20 | 208.8091 / 247.1227 ms | 2.1698 / 2.6985 ms | 96.2× | 80.1936 ms | 58,116 KiB |
+| 5000 | 10 | 3209.0016 / 3369.6213 ms | 2.1984 / 3.4480 ms | 1459.7× | 1105.8794 ms | 150,736 KiB |
+
+**Original typed fork scenario**, using `build_fixture(...,
+mixed_scope=True)` including 1 original `fork_origin.read` source,
+two typed `fork_status.read`/`fork_owner.read` consumers, plus denied,
+hidden, source/license-incompatible and wrong-input-type traps:
+
+| Registered routes | Warm queries / mode | Planner-direct prepass + same fork p50 / p95 | Indexed-direct prepass + same fork p50 / p95 | p50 ratio | Posting+graph cold build | Peak RSS |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 500 | 20 | 101.7841 / 127.2245 ms | 7.9780 / 9.1938 ms | 12.8× | 84.7265 ms | 58,060 KiB |
+| 5000 | 10 | 1578.4390 / 1773.4139 ms | 8.3230 / 9.4867 ms | 189.6× | 1055.9990 ms | 150,620 KiB |
+
+The fork comparator uses the **same existing indexed shared-root
+graph algorithm in both modes**; only its preceding direct FieldGroup
+prepass changes. These fork ratios are therefore savings in the
+overall P1 selection sequence, NOT a new faster fork traversal or
+graph algorithm. The alternatives' source fingerprints, typed edges,
+scoped field projections and full required-field union were equal.
+
+Command: `python -m scripts.benchmark_paper_indexed_direct_e0
+--routes {500|5000} --iterations {20|10} --scenario {direct|fork}`
+(one process at a time),
+using monotonic `perf_counter_ns`, alternating mode order, one warmup
+per mode. The 5000 case also completed a separate 20-iteration E0 run
+with planner/index p50 3256.3642 / 2.3117 ms and cold build 1202.7398
+ms, but that first measurement overlapped the 500-route run. The table
+uses the subsequent isolated measurements. Index construction and
+resident memory are NOT excluded from deployment/cold-start cost.
+These numbers are **source schema discovery latency only**, not
+retrieved DATA-context tokens, OpenAPI/MCP network cost, answer
+accuracy, cross-provider latency or representative product/user traffic.
+Peak RSS is Linux `ru_maxrss` KiB and non-Linux runs now fail closed
+instead of reporting incompatible memory units.
+The existing exhaustive oracle/independent publisher gold #1346 and
+external-agent #1477 E2 remain BLOCKED; this benchmark has no
+statistical promise of ranking/recall/answer-quality superiority.
+
+**Tests/CI:** RED tests first reproduced missing P1 and P2 opt-in
+parameters; a separate RED binder regression required the mode to be
+recorded in the immutable receipt. GREEN tests cover source-owner
+projection and host/observed-result replay. A new bounded benchmark
+script and `tests/test_benchmark_paper_indexed_direct_e0.py` are wired
+into the dedicated original-paper Actions workflow and its path list.
+The workflow now also installs Pyright and typechecks the two changed
+production modules plus the benchmark; a workflow-content test failed
+RED without this coverage and passed after it was added.
+The latest nine-suite local focused run passed **180 tests**; full
+repository Ruff and Korean documentation preparation passed (158
+translated pages, zero fallbacks). Local repository Pyright did NOT
+pass: its diagnostic search paths omitted installed `.venv` third-party
+packages even while Python could import them, yielding 84 largely
+existing unresolved-import and type diagnostics. A temporary uncommitted
+Pyright config with the installed site-packages path narrowed verification
+to the three changed implementation/benchmark files and caught two
+Optional fixture attribute arguments in the new benchmark; after a
+source-fixture assertion, focused Pyright returned **0 errors and 0
+warnings**. This is NOT a successful repository-wide Pyright run.
+Treat exact-head GitHub CI as separate verification. Whole-suite `pytest`
+timed out after 120s at approximately 13% and is NOT counted as green.
+Check the current published Draft PR #1747 **exact latest SHA** and
+CI before any green or merge claim. Remain Draft, no default change,
+parent issues OPEN and v0.18 HOLD.
+
+## P2.2: Algorithm 1 P1/P2 into existing gold-blind fixed5 agent E0 — 2026-10-24
+
+**Source:** issue #1477 Milestone A already had the existing isolated
+`EVAL-FIXED5-OPTIN` callback, `FrozenCorpusExecutor`, principal-scoped
+`AuthorizedAgentToolSurface`, no-model failure-matrix and sanitized
+stage traces. No duplicate execution loop, agent framework, metric scorer,
+or result loader was created. This step is the previously absent bridge
+between #1560's **original field-complete P1/P2 ToolCall receipt** and
+the already existing independent-of-gold callback surface.
+
+**Implementation:** `scripts/research_paper_field_fixed5_agent_bridge.py`
+adds research-only `AuthorizedPaperFieldFixed5Selector`, reusing the
+existing source-owner catalog digest, principal-view HMAC/policy/source
+checks, indexed source snapshot and original ToolCall compiler. The
+callback gets only the declared query and **principal-visible source
+IDs** and validates every returned route's original tool/endpoint
+fingerprints, scoped output field name subset and fixed K5. Each P2
+call still has empty argument values; the callback returns route IDs
+for model candidate presentation, **not** an execution permission.
+Both default and `experimental_indexed_direct=True` P1/P2 paths work.
+
+**Conservative no-ranker rule:** exactly one complete P2 alternative is
+required. `no_proven_hit`, `over_k_unranked`, budget-unsatisfied and
+unknown declared query yield an empty menu without claiming calibrated
+no-fit; two separately complete alternatives also abstain as
+`multiple_unranked_alternatives`, rather than selecting one by source
+name or stealing evaluator gold. The immutable historical FULL/SR-5/
+SR-10/SR-PROGRESSIVE/ORACLE conditions reject this new callback.
+
+**Evidence (source-native E0 only):** `tests/test_research_paper_field_fixed5_agent_bridge.py`
+executes existing frozen evaluator with a scripted agent on one direct
+source and on an original one-root/two-consumer typed fork with
+observed `customer_id`; no downstream dependency argument is pre-filled
+by P2. It tests complete route parity in both indexed modes, hidden/
+denied fields, forged offered routes, source and owner mutation, K6
+overflow, two valid unranked alternatives, unknown query, invalid
+mode, unsupported no-call and frozen-condition isolation. The
+dedicated original-paper GitHub workflow watches/lints/typechecks/runs
+these files; its regression assertion first failed RED when absent and
+then passed GREEN after wiring.
+
+**Local verification:** dedicated new bridge tests **14 passed**;
+combined existing agent, P1/P2, native fork and bridge suites **189
+passed (26.20s)**; whole repository Ruff passed; changed bridge
+Pyright with explicit installed third-party search path **0 errors,
+0 warnings**; bilingual corpus tests **69 passed**, Korean docs
+preparation **158 translated, 0 fallbacks**. A project-wide bare
+pytest had previously timed out at 120s and is still NOT certified
+full-suite green. P2.2 was published as exact GitHub commit
+`d232b87a8a8ce2d628407342121aa5bc360515dc` on Draft PR #1747,
+and both #1560 and #1477 received exact-head E0 evidence comments.
+At the first exact-head check, 13/14 workflows succeeded, with the
+repository-wide `CI` workflow still in progress; **do not** infer
+that all checks passed until that workflow completes.
+
+**Limits / next:** this is a **scripted synthetic agent E0** result,
+not a real LLM, provider invocation, token saving or independent
+author-written E2. The model still receives the existing
+principal-scoped full endpoint schema; P2's narrower `ToolCall.fields`
+is only checked, **not yet projected into model-visible schema or
+observations**. A separate native scoped field projector and actual
+model/provider qualification must precede any schema token/cost/answer
+claims. Keep #1535/#1560/#1477 open, #1346 independent E2 blocked
+and v0.18 HOLD.
+
+**Independent read-only P2.2 review:** one separate reviewer re-ran
+**90 focused tests** and in-memory byte-budget, principal-mutation
+and in-place policy-mutation probes; no Critical or Important
+finding remained. **Minor (at the reviewed SHA):** the three-step fixture
+ScriptedAgent hard-codes `C-42` rather than parsing the preceding
+model-visible observation. The successful E0 sequence therefore
+demonstrates that the *existing executor* accepts source-typed
+arguments in order, NOT an agent's dynamically observed identifier
+reasoning. Require a future observation-reading agent or an actual
+agent/model integration before claiming dataflow intelligence.
+The subsequent LOCAL-only E0 follow-up adds an
+`ObservationBoundAgent` that consumes the harness's actual
+`<tool_response>` message. Two distinct source-returned identifiers
+(`C-42`, `C-73`) now flow into both consumer calls; when the prior
+observation omits an identifier the adapter issues zero downstream
+calls. **4 additional observation-bound RED→GREEN cases passed**;
+the bridge suite now contains **18 tests**, and four related agent
+suites have **120 passed**. This closes the hard-coded fixture gap
+at the *deterministic E0* level; the adapter is still NOT an LLM and
+does not establish empirical model inference, answer quality or cost.
+The follow-up is not part of remote commit `d232b87` until a separately
+verified GitHub head is published.
+Reviewer declined to judge E2/provider/model outcomes, arbitrary
+malicious in-process Python callbacks, generic route namespace
+encoding and cross-thread atomicity; all remain outside this slice.
+The new branch's project-wide bare `pytest -q` was separately
+attempted under `timeout 120s` and returned **124** at approximately
+12% progress without a reported assertion failure. This is explicitly
+**NOT** full-suite success.

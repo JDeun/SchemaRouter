@@ -94,7 +94,8 @@ def test_default_route_ranking_remains_byte_identical_before_and_after_optin():
     assert before == after
 
 
-def test_missing_source_consumer_abstains_without_partial_field_menu():
+@pytest.mark.parametrize("indexed", [False, True])
+def test_missing_source_consumer_abstains_without_partial_field_menu(indexed):
     router = build_fixture(500, mixed_scope=True)
     router.planner.availability_predicate = (
         lambda tool, ep: tool.key != "fork_owner"
@@ -102,6 +103,7 @@ def test_missing_source_consumer_abstains_without_partial_field_menu():
     result = retrieve_paper_field_coverage(
         router, ALIASES[0], principal=ACTOR,
         catalog=_catalog(), index=_index(router),
+        experimental_indexed_direct=indexed,
     )
     assert result.status == "no_proven_hit"
     assert result.alternatives == ()
@@ -126,7 +128,19 @@ def test_never_silently_changes_public_k(k):
         )
 
 
-def test_changed_registry_invalidates_attested_graph():
+@pytest.mark.parametrize("invalid", [1, "true", None, 0.0])
+def test_indexed_direct_requires_strict_bool_before_source_lookup(invalid):
+    router = build_fixture(500)
+    index = _index(router)
+    with pytest.raises(ValueError, match="indexed direct mode must be boolean"):
+        retrieve_paper_field_coverage(
+            router, ALIASES[0], principal=ACTOR, catalog=_catalog(),
+            index=index, experimental_indexed_direct=invalid,
+        )
+
+
+@pytest.mark.parametrize("indexed", [False, True])
+def test_changed_registry_invalidates_attested_graph(indexed):
     router = build_fixture(500)
     index = _index(router)
     router.add_tool(ToolSpec(name="late", endpoints=[
@@ -136,6 +150,7 @@ def test_changed_registry_invalidates_attested_graph():
         retrieve_paper_field_coverage(
             router, ALIASES[0], principal=ACTOR,
             catalog=_catalog(), index=index,
+            experimental_indexed_direct=indexed,
         )
 
 
@@ -218,7 +233,71 @@ def test_one_route_covers_complete_field_group_before_k5():
     )
 
 
-def test_wrong_type_semantic_field_refuses_incomplete_source():
+def test_indexed_direct_proves_same_full_fields_before_k5():
+    """An actual complete source survives the posting intersection; A-only does not."""
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny", rules=(AuthorizationRule(
+            effect="allow", operation="*.read", roles_any=("reader",),
+        ),),
+    ))
+    router.add_tool(ToolSpec(
+        name="partial", source_type="crm", license="host-reviewed-synthetic",
+        endpoints=[EndpointSpec(name="read", read_only=True, output_fields=[
+            FieldSpec(name="status", semantic_id="crm.fork_status",
+                      json_schema={"type": "string"}),
+        ])],
+    ))
+    router.add_tool(ToolSpec(
+        name="complete", source_type="crm", license="host-reviewed-synthetic",
+        endpoints=[EndpointSpec(name="read", read_only=True, output_fields=[
+            FieldSpec(name="request_id", semantic_id="crm.request_id",
+                      json_schema={"type": "string"}, identifier=True),
+            FieldSpec(name="status", semantic_id="crm.fork_status",
+                      json_schema={"type": "string"}),
+            FieldSpec(name="owner", semantic_id="crm.fork_owner",
+                      json_schema={"type": "string"}),
+        ])],
+    ))
+    index = _index(router)
+    indexed = retrieve_paper_field_coverage(
+        router, ALIASES[0], principal=ACTOR, catalog=_catalog(), index=index,
+        experimental_indexed_direct=True,
+    )
+    baseline = retrieve_paper_field_coverage(
+        router, ALIASES[0], principal=ACTOR, catalog=_catalog(), index=index,
+    )
+    assert indexed.status == baseline.status == "complete"
+    assert len(indexed.alternatives) == len(baseline.alternatives) == 1
+    assert indexed.alternatives[0].routes[0].route_id == "complete.read"
+    assert indexed.alternatives[0].routes[0].output_fields == (
+        "request_id", "status", "owner",
+    )
+    assert set(indexed.alternatives[0].required_semantic_ids) == {
+        "crm.fork_status", "crm.fork_owner",
+    }
+    assert indexed.alternatives[0] == baseline.alternatives[0]
+
+
+@pytest.mark.parametrize("query", ALIASES)
+def test_indexed_direct_mode_preserves_proved_native_typed_fork(query):
+    router = build_fixture(500, mixed_scope=True)
+    index = _index(router)
+    indexed = retrieve_paper_field_coverage(
+        router, query, principal=ACTOR, catalog=_catalog(), index=index,
+        experimental_indexed_direct=True,
+    )
+    baseline = retrieve_paper_field_coverage(
+        router, query, principal=ACTOR, catalog=_catalog(), index=index,
+    )
+    assert indexed.status == baseline.status == "complete"
+    assert indexed.alternatives == baseline.alternatives
+    assert {route.route_id for route in indexed.alternatives[0].routes} == {
+        ROOT, LEFT, RIGHT,
+    }
+
+
+@pytest.mark.parametrize("indexed", [False, True])
+def test_wrong_type_semantic_field_refuses_incomplete_source(indexed):
     router = build_fixture(500, mixed_scope=True)
     mismatched = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
         concept_id="crm.customer_fields",
@@ -235,17 +314,20 @@ def test_wrong_type_semantic_field_refuses_incomplete_source():
     result = retrieve_paper_field_coverage(
         router, ALIASES[0], principal=ACTOR,
         catalog=mismatched, index=_index(router),
+        experimental_indexed_direct=indexed,
     )
     assert result.status == "no_proven_hit"
     assert result.alternatives == ()
 
 
-def test_deny_entire_source_never_emits_a_private_candidate():
+@pytest.mark.parametrize("indexed", [False, True])
+def test_deny_entire_source_never_emits_a_private_candidate(indexed):
     router = build_fixture(500)
     router.authorization_policy = AuthorizationPolicy(default_effect="deny")
     result = retrieve_paper_field_coverage(
         router, ALIASES[0], principal=ACTOR,
         catalog=_catalog(), index=_index(router),
+        experimental_indexed_direct=indexed,
     )
     assert result.status == "no_proven_hit"
     assert result.alternatives == ()

@@ -620,8 +620,16 @@
       "source_blob": "4856565cbb9c6dbfd6b2423b8c697e0086a8574f"
     },
     {
+      "path": "superpowers/plans/2026-10-24-paper-algorithm1-toolcall.md",
+      "source_blob": "51c8b840576fb879c00592f10562d553c5cc47b6"
+    },
+    {
       "path": "superpowers/specs/2026-10-22-g5-native-vertical-slice-design.md",
       "source_blob": "d9a40484076fc4a8375ee522542c2ba87194dec5"
+    },
+    {
+      "path": "superpowers/specs/2026-10-24-paper-algorithm1-toolcall-design.md",
+      "source_blob": "e74997c50c6e4a2c0ebae255cb863ad802d25e99"
     },
     {
       "path": "versioning.md",

@@ -1,0 +1,95 @@
+# Original-paper Algorithm 1 ToolCall Projection Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Project source-attested original-paper complete field alternatives into ordered, dependency-aware existing `ToolCall`s without granting execution or fabricating arguments.
+
+**Architecture:** Consume current opt-in `retrieve_paper_field_coverage`, original registry and the same principal-scoped source view. Build nonexecuting structured call recipes by reusing the existing `ToolCall`/evidence contracts and rechecking the original proof before return; keep default product routing untouched.
+
+**Tech Stack:** Python 3.10+, Pydantic v2, SchemaRouter native graph index, pytest, Ruff.
+
+**Spec:** `docs/superpowers/specs/2026-10-24-paper-algorithm1-toolcall-design.md`
+
+## Global Constraints
+
+- Fixed K5; explicit principal, owner-reviewed concept catalog, current source index and policy; no new planner, index, agent or executor.
+- Never manufacture downstream input values from query or structural graph. Dependent `ToolCall.arguments` must remain empty and `missing_required_arguments` must expose source-bound requirements. An approved typed G5 inputful root must similarly expose **missing** original host input parameters, not fabricate values.
+- Exact source-visible original field projection, schema/tool fingerprints and available evidence only; reject private/hidden or drifted source names.
+- Output stays opt-in, nonexecuting, non-authoritative; no default/release/independent-E2 promotion.
+
+## Review Focus
+
+1. A dependent parameter accidentally marked executable despite having no observed producer value — regression `test_compiled_fork_unbound_arguments_remain_nonexecutable`.
+2. A same-name private field leaking in the compiled `ToolCall.fields` — regression `test_compiled_direct_reuses_exact_scoped_field_projection`.
+3. A malformed forward dependency or duplicate binding being projected as an executable plan — regression `test_compiler_rejects_unproved_or_changed_dependency`.
+4. Source scope/availability changing between proof and return — regression `test_compiler_rejects_mid_projection_source_revocation`.
+5. A noncomplete K5 result quietly exposing calls — regression `test_compiler_preserves_no_proven_hit_or_over_k`.
+
+---
+
+## Task 1: Existing ToolCall contracts over proved P1 receipts
+
+**Files:** create `src/schemarouter/paper_field_plan.py`, create `tests/test_paper_field_plan.py`, modify `src/schemarouter/__init__.py` and `tests/test_public_api.py`.
+
+**Interfaces:** `compile_paper_field_toolcalls(router, query, *, principal, catalog, index, k=5) -> PaperFieldToolCallPlan`; `PaperFieldArgumentDependency(consumer_call_index, parameter, producer_call_index, producer_field)`; `PaperFieldCallAlternative(calls, dependencies, required_semantic_ids)`; `PaperFieldToolCallPlan(status, snapshot_id, registry_version, requested_k, alternatives, executable_authority=False, independent_quality_evidence=False)`.
+
+- [x] Write RED tests for exact direct field projection, complete one-root/two-leaf fork with unresolved consumer arguments, and preserving noncomplete source dispositions.
+- [x] Run selected RED tests and confirm missing compilation API as the reason.
+- [x] Implement minimal explicit planner-model composition and source authorization/provenance checks; invoke fresh P1 proof before and after projection.
+- [x] Verify GREEN and add negative RED tests for malformed dependency/late revoked scope/unchanged default; implement corresponding fail-closed guards.
+- [x] Run focused paper/native tests and repository lint; full suite outcome recorded below.
+- [x] Commit isolated work and publish as [stacked Draft PR #1747](https://github.com/JDeun/SchemaRouter/pull/1747) against existing PR #1746; no merge or parent-issue closure.
+
+## Task 2: Later owner-reviewed parameterized sources and native adapter evidence (out of this first slice)
+
+- [ ] Require an explicit host-approved original input contract before permitting any parameterized source/root; no guessed OPTIMADE unit normalization.
+- [ ] Prove concrete root argument validation and existing executor behavior against source-native real adapters; hold independent E2 until #1346 has provenance.
+
+## Implementation ledger
+
+- Plan started after exact-head #1746 P1 dedicated CI succeeded; full `CI` workflow was still in progress. No default release or independent E2 claim.
+- RED: compilation API absent, import collection failed; GREEN: initial 10 public/plan tests then 76 focused paper/native/public-API tests passed, Ruff clean. Added 5,000-source-route fork contract, six-alternative `over_k_unranked`, unbound arguments, exact original projection and unchanged default.
+- Additional observed RED: changing owner catalog aliases or authorization policy **after first P1 proof** preserved the same selected fields and wrongly returned success (two tests failed). GREEN: freeze principal, catalog, policy and source witness before the first proof; compare after the second proof, with late-change regressions passing.
+- Native graph dependencies are structural only; the compiler emits no concrete dependency values. Host-approved typed G5 inputful roots are represented with missing values; concrete host-bound arguments and OPTIMADE optional/required parameter adaptation are explicitly out of this slice.
+- Reviewer found the P2 direct test did not actually use a `DataScopeRule`; added real hidden-field and hidden producer-ID cases plus EN/KO/JA compiled native OpenAPI/MCP scope restriction tests. Actual scoped visibility changed empty input-schema envelope presentation, so compiler must verify input-free roots from the authoritative original endpoint, not the derived scoped view.
+- Reviewer also reproduced valid P1-approved inputful G5 root failure. Added RED native post ID→user ID→username case, then GREEN qualified `approved_host_roots` + `_host_source_input_names` verification and exact **missing** host-root arguments. Unsupported/unreviewed inputful roots still fail closed. Concrete host values remain excluded.
+- Post-review focused verification: **101 passed** (`test_paper_field_plan`, source-native OpenAPI/MCP/OPTIMADE P1 coverage, native fork/G5 host root, native FieldGroup, public ABI). `ruff check .`: **All checks passed**. `pyright src/schemarouter/paper_field_plan.py`: **0 errors, 0 warnings**. Earlier bare pytest was attempted but stopped after lengthy no-progress near 13%, so full-suite-green is **not** claimed.
+- Reviewer verdict: no Critical; two Important findings (real data-scope test gap and approved inputful-root ambiguity) fixed with tests before publishing; one Minor mutable nested `ToolCall` receipt explicitly documented. No independent E2.
+- Publication: GitHub connector commit `965234e066e87ab1aa0a9399224567dd187f491a` has exactly the same tree SHA `76cadecd35695e6c93ede9965abaa5b92a3909bb` as locally verified `c4598fb` and remote P1 parent `5a530e6`. PR #1747 targets the P1 feature branch and remains Draft. Issue #1560 received exact-head status comment. Parent PR #1746 broad exact-head CI run #40040143730 ultimately succeeded; P2 exact-head Actions were still running at publication.
+- Separate CI scope regression RED→GREEN: existing dedicated workflow initially omitted P2 source and test triggers/execution; new `test_dedicated_paper_ci_watches_and_runs_p2_recipe` failed, then workflow was extended to run source-coded P2/G5 host-root pytest and lint. Local integrated focused suite **102 passed**, Ruff all green, P2 Pyright 0 errors. Recheck the **latest updated P2 SHA-specific Actions**, not earlier superseded queued runs.
+
+## Task 3: Existing indexed direct selector through P1/P2 (approved continuation)
+
+**Files:** modify `src/schemarouter/paper_field_retrieval.py`, `src/schemarouter/paper_field_plan.py`; tests `tests/test_paper_field_retrieval.py`, `tests/test_paper_field_plan.py`; E0 metrics in `research/autoresearch/paper-field-union-implementation-e0.md`.
+
+**Interfaces:** append keyword-only `experimental_indexed_direct: bool = False` to `retrieve_paper_field_coverage`, `compile_paper_field_toolcalls`, `bind_paper_field_host_inputs`, `bind_paper_field_producer_result`. Reuse the already shipped `retrieve_authorized_concept_graph(..., experimental_indexed_direct=...)` without changing it.
+
+- [x] Write RED parity tests that call P1/P2 with `experimental_indexed_direct=True` on the same owner-approved direct and G5 fork fixtures; require source route IDs, field projection and required group coverage, excluding arbitrary order. Confirm failing because option is not supported.
+- [x] Implement strict boolean check, pass through the existing indexed direct selector, and forward unchanged mode in every internal fresh source-proof and host/producer binder replay. Default False retains the same source selection and authorization behavior; the opt-in P2 receipt gains an explicit mode field, so its dataclass serialization shape does change.
+- [x] Add RED→GREEN denied/hidden/over-K/stale-source and invalid-type tests, plus an approved host root + observed producer binding indexed-mode end-to-end test (no automatic invocation).
+- [x] Run 500/5000 deterministic direct/fork E0 cost measurement; separate index build from warm lookup, specify Python/Linux and p50/p95. No independent E2 or default ranking claims.
+- [ ] Verify focused source-native, public ABI, repository Ruff and Pyright; attempt project-wide pytest and record any failures or timing limits. Commit, independent review, publish existing Draft PR #1747 and log exact GitHub SHA/CI.
+
+**Task 3 verification caveat:** the nine focused source-native/public/translation suites passed **180 tests** on local Python 3.12.14; repository Ruff and Korean documentation preparation passed (158 translated pages, zero fallbacks). Bare local repository Pyright did **not** pass: despite runtime imports succeeding, the checker omitted `.venv/lib/python3.12/site-packages` from its search paths and reported 84 repository-wide diagnostics. A temporary, uncommitted Pyright config explicitly adding the installed packages isolated the **three changed implementation/benchmark files**, exposed and then verified the fix to two Optional fixture attributes, and finished **0 errors / 0 warnings**. This is focused typing only, not repository-wide typing success. Exact-head CI must verify independently. A project-wide bare pytest attempt was limited by `timeout 120s` at exit 124 (no failing assertion reported in the partial progress output, only ~13% finished). This is **NOT** full-suite success. GitHub publication and exact-head CI must be independently recorded. The isolated E0 direct and typed-fork p50/p95 results are in the research ledger; the fork compares **one changed direct-selector prepass**, not two different fork algorithms.
+
+## Task 4: Paper P1/P2 → existing fixed-K agent callback (P2.2)
+
+**Files:** create `scripts/research_paper_field_fixed5_agent_bridge.py`, `tests/test_research_paper_field_fixed5_agent_bridge.py`; do not change `run_generated_episode` or frozen comparators. Spec: P2.2 above.
+
+**Interfaces:** research-only `AuthorizedPaperFieldFixed5Selector(view: AuthorizedAgentToolSurface, catalog: NativeConceptCatalog, index: NativeSchemaGraphIndex, experimental_indexed_direct: bool = False)`; `__call__(query: str, source_ids: tuple[str, ...]) -> list[str]`; `last_status: str | None`, `independent_quality_evidence=False`, `calibrated_no_fit=False`, `executable_authority=False`.
+
+- [x] Write RED direct full-field and valid typed fork callback tests, comparing indexed/no-index mode with original P2 `ToolCall` route IDs. No task gold or custom executor enters the callback.
+- [x] Implement strict source/principal/catalog/index pinning and exact one-alternative, no-ranker, K5 and scoped field validation. Unsupported/ambiguous/over-K/byte-budget conditions never yield partial candidates; do not mutate frozen experiment conditions.
+- [x] Add negative tests for hidden/denied output, forged route list, changed catalog/source, wrong flag type, multiple unranked alternatives and source-native unrelated query. Actual in-place policy change remains protected by the reused scoped-view receipt.
+- [x] Run isolated source-native and callback regression tests; Ruff and focused Pyright. Record actual results and deviations in the research ledger.
+
+## Task 5: Existing `FrozenCorpusExecutor` E0 replay + CI
+
+**Files:** extend `tests/test_research_paper_field_fixed5_agent_bridge.py`; modify `.github/workflows/original-paper-field-coverage-e0.yml`; update `research/autoresearch/paper-field-union-implementation-e0.md` and exact paired documentation/audit source hashes.
+
+**Interfaces:** pass only `experimental_candidate_selector=selector` plus existing `experimental_agent_tool_surface=view` to `run_generated_episode(..., EXPERIMENTAL_FIXED5_CONDITION)`.
+
+- [x] Use existing loop for direct and three-step typed fork E0, unsupported no-call, hidden/denied sources and frozen-condition rejection; existing #1477 failure-matrix tests retain wrong-route/input coverage. The initial missing bridge API failed RED and no second executor was introduced.
+- [x] Implement minimum callback; run focused E0 tests. The scoped model-tool schema remains unprojected beyond the existing principal scope, so no token saving is claimed.
+- [x] Dedicated workflow content check failed RED and passed GREEN after adding bridge paths, Ruff, Pyright and no-model tests; no provider calls or #432 training.
+- [ ] Verify and commit; obtain independent whole-change review. Publish only to existing Draft PR #1747 with exact remote SHA/CI, document #1560 and #1477 checkpoints; keep #1346 independent E2 and v0.18 HOLD.

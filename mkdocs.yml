@@ -231,6 +231,9 @@ nav:
       - G5 integration records:
           - Source-native concept graph design (2026-10-22): superpowers/specs/2026-10-22-g5-native-vertical-slice-design.md
           - Source-native G5 implementation plan (2026-10-22): superpowers/plans/2026-10-22-g5-native-vertical-slice.md
+      - Original paper Algorithm 1 P2 records:
+          - Source-attested ToolCall design (2026-10-24): superpowers/specs/2026-10-24-paper-algorithm1-toolcall-design.md
+          - ToolCall implementation plan (2026-10-24): superpowers/plans/2026-10-24-paper-algorithm1-toolcall.md
       - Product north star and integrated test matrix: research/product-north-star-and-test-matrix.md
       - Research status: research/routing-status.md
       - Complete experiment index: research/experiment-index.md

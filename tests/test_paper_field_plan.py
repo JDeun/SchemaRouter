@@ -1,0 +1,1015 @@
+"""#1560: P1 original-paper field proof -> nonexecuting native ToolCall recipe."""
+from __future__ import annotations
+
+from dataclasses import replace
+from decimal import Decimal
+from fractions import Fraction
+from pathlib import Path
+
+import pytest
+
+from schemarouter import (
+    AuthorizationPolicy,
+    AuthorizationRule,
+    CapabilityFieldContract,
+    DataScopeRule,
+    EndpointSpec,
+    ExecutionPlan,
+    FieldSpec,
+    NativeConceptCatalog,
+    NativeDeclaredConcept,
+    NativeSchemaGraphIndex,
+    NativeSchemaPostingIndex,
+    ParameterSpec,
+    RunConfig,
+    SchemaRouter,
+    ToolCall,
+    ToolResult,
+    ToolSpec,
+    bind_paper_field_host_inputs,
+    bind_paper_field_producer_result,
+    compile_paper_field_toolcalls,
+)
+from schemarouter.errors import PolicyViolationError
+from schemarouter.executor import RegistryExecutor
+from schemarouter.paper_field_retrieval import retrieve_paper_field_coverage
+from scripts.benchmark_native_fork_fieldgroup_e0 import (
+    ACTOR,
+    ALIASES,
+    GROUP,
+    LEFT,
+    RIGHT,
+    ROOT,
+    build_fixture,
+)
+
+
+def test_dedicated_paper_ci_watches_and_runs_p2_recipe():
+    workflow = (Path(__file__).resolve().parents[1]
+                / ".github/workflows/original-paper-field-coverage-e0.yml")
+    contents = workflow.read_text(encoding="utf-8")
+    assert '"src/schemarouter/paper_field_plan.py"' in contents
+    assert '"tests/test_paper_field_plan.py"' in contents
+    assert '"scripts/benchmark_paper_indexed_direct_e0.py"' in contents
+    assert '"tests/test_benchmark_paper_indexed_direct_e0.py"' in contents
+    assert (
+        "ruff check src/schemarouter/paper_field_plan.py tests/test_paper_field_plan.py"
+        in contents
+    )
+    assert "python -m pytest -q tests/test_paper_field_plan.py" in contents
+    assert "python -m pytest -q tests/test_benchmark_paper_indexed_direct_e0.py" in contents
+    assert (
+        "pyright src/schemarouter/paper_field_retrieval.py "
+        "src/schemarouter/paper_field_plan.py "
+        "scripts/benchmark_paper_indexed_direct_e0.py" in contents
+    )
+
+
+def _index(router):
+    return NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
+
+
+def _fork_catalog():
+    return NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="crm.customer_fields", aliases=ALIASES,
+        required_fields=GROUP.required_fields,
+        source_type=GROUP.source_type, license=GROUP.license,
+    ),))
+
+
+def _direct_fixture():
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny", rules=(AuthorizationRule(
+            effect="allow", operation="*.read", roles_any=("reader",),
+        ),),
+    ))
+    router.add_tool(ToolSpec(
+        name="complete", source_type="crm", license="host-reviewed-synthetic",
+        endpoints=[EndpointSpec(name="read", read_only=True, output_fields=[
+            FieldSpec(name="status", semantic_id="crm.fork_status",
+                      json_schema={"type": "string"}),
+            FieldSpec(name="owner", semantic_id="crm.fork_owner",
+                      json_schema={"type": "string"}),
+            FieldSpec(name="request_id", semantic_id="crm.request_id",
+                      json_schema={"type": "string"}, identifier=True),
+            FieldSpec(name="private_excess", semantic_id="crm.extra",
+                      json_schema={"type": "string"}),
+        ])],
+    ))
+    return router
+
+
+def _attach_meta_fixture(*, scoped=False, sibling_scoped=False):
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.*" if sibling_scoped else "*.read",
+            roles_any=("reader",),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="materials.aux" if sibling_scoped else "materials.read",
+            roles_any=("reader",),
+            hidden_fields=("private_excess",),
+        ),) if scoped or sibling_scoped else (),
+    ))
+    endpoints = [EndpointSpec(name="read", read_only=True, output_fields=[
+        FieldSpec(name="structure_id", semantic_id="materials.id",
+                  json_schema={"type": "string"}, identifier=True),
+        FieldSpec(name="formula", semantic_id="materials.formula",
+                  json_schema={"type": "string"},
+                  source_type="optimade", license="field-specific-license"),
+        FieldSpec(name="volume", semantic_id="materials.volume",
+                  json_schema={"type": "number"}, unit="angstrom^3",
+                  qualifiers={"phase": "solid"}),
+        FieldSpec(name="private_excess", semantic_id="secret.hidden",
+                  json_schema={"type": "string"}),
+    ])]
+    if sibling_scoped:
+        endpoints.append(EndpointSpec(name="aux", read_only=True, output_fields=[
+            FieldSpec(name="public_aux", json_schema={"type": "string"}),
+            FieldSpec(name="private_excess", json_schema={"type": "string"}),
+        ]))
+    router.add_tool(ToolSpec(
+        name="materials", provider="local-lab", source_type="optimade",
+        license="locally-reviewed-license",
+        endpoints=endpoints,
+    ))
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="materials.formula_volume", aliases=("formula and volume",),
+        required_fields=(
+            CapabilityFieldContract(
+                semantic_id="materials.formula", json_schema={"type": "string"},
+            ),
+            CapabilityFieldContract(
+                semantic_id="materials.volume", json_schema={"type": "number"},
+                unit="angstrom^3",
+            ),
+        ),
+        source_type="optimade", license="locally-reviewed-license",
+    ),))
+    return router, catalog, _index(router)
+
+
+def test_attach_meta_preserves_visible_source_fields_and_unit_contracts():
+    router, catalog, index = _attach_meta_fixture()
+    plan = compile_paper_field_toolcalls(
+        router, "formula and volume", principal=ACTOR, catalog=catalog, index=index,
+    )
+    assert plan.status == "complete"
+    assert not plan.executable_authority
+    alternative = plan.alternatives[0]
+    assert alternative.calls[0].fields == ["structure_id", "formula", "volume"]
+    assert [meta.field_name for meta in alternative.field_metadata] == [
+        "structure_id", "formula", "volume",
+    ]
+    assert [meta.call_index for meta in alternative.field_metadata] == [0, 0, 0]
+
+    formula = alternative.field_metadata[1]
+    assert formula.semantic_id == "materials.formula"
+    assert formula.provider == "local-lab"
+    assert formula.tool_source_type == "optimade"
+    assert formula.tool_license == "locally-reviewed-license"
+    assert formula.field_source_type == "optimade"
+    assert formula.field_license == "field-specific-license"
+    assert formula.source_unit is None
+    assert formula.declared_result_unit is None
+
+    volume = alternative.field_metadata[2]
+    assert volume.semantic_id == "materials.volume"
+    assert volume.source_unit == "angstrom^3"
+    assert volume.declared_result_unit == "angstrom^3"
+    assert volume.dimension is None
+    assert volume.qualifiers == (("phase", "solid"),)
+    assert volume.field_source_type is None
+    assert volume.field_license is None
+    assert "private_excess" not in str(alternative)
+    assert "secret.hidden" not in str(alternative)
+
+
+def test_attach_meta_cannot_add_hidden_field_to_proof():
+    router, catalog, index = _attach_meta_fixture(scoped=True)
+    plan = compile_paper_field_toolcalls(
+        router, "formula and volume", principal=ACTOR, catalog=catalog, index=index,
+    )
+    original = plan.alternatives[0]
+    assert len(original.field_metadata) == len(original.calls[0].fields)
+    assert {meta.field_name for meta in original.field_metadata} == set(original.calls[0].fields)
+    assert "private_excess" not in str(original)
+    assert "secret.hidden" not in str(original)
+    for metadata in original.field_metadata:
+        assert metadata.tool_source_type is None
+        assert metadata.tool_license is None
+        assert metadata.provider is None
+        assert metadata.field_source_type is None
+        assert metadata.field_license is None
+        assert metadata.qualifiers == ()
+    assert original.field_metadata[2].source_unit == "angstrom^3"
+
+
+def test_attach_meta_sibling_scope_scrubs_shared_tool_labels():
+    router, catalog, index = _attach_meta_fixture(sibling_scoped=True)
+    plan = compile_paper_field_toolcalls(
+        router, "formula and volume", principal=ACTOR, catalog=catalog, index=index,
+    )
+    assert plan.status == "complete"
+    assert [(call.tool, call.endpoint) for call in plan.alternatives[0].calls] == [
+        ("materials", "read"),
+    ]
+    # SchemaRouter's scoped analyzer hides the shared tool's provenance
+    # when ANY accessible sibling endpoint is scoped, even if this read
+    # endpoint itself retains its full field set.
+    for metadata in plan.alternatives[0].field_metadata:
+        assert metadata.tool_source_type is None
+        assert metadata.tool_license is None
+        assert metadata.provider is None
+    # Unlike tool-level labels, this *unrestricted* endpoint's own
+    # selected source fields retain their original per-field contracts.
+    assert plan.alternatives[0].field_metadata[1].field_license == "field-specific-license"
+
+
+def test_indexed_p2_direct_preserves_fields_metadata_and_source_receipt():
+    router, catalog, index = _attach_meta_fixture(scoped=True)
+    indexed = compile_paper_field_toolcalls(
+        router, "formula and volume", principal=ACTOR, catalog=catalog, index=index,
+        experimental_indexed_direct=True,
+    )
+    baseline = compile_paper_field_toolcalls(
+        router, "formula and volume", principal=ACTOR, catalog=catalog, index=index,
+    )
+    assert indexed.status == baseline.status == "complete"
+    assert indexed.alternatives == baseline.alternatives
+    assert not indexed.executable_authority
+    assert indexed.alternatives[0].calls[0].fields == [
+        "structure_id", "formula", "volume",
+    ]
+
+
+def test_indexed_p2_host_and_observed_producer_receipts_stay_nonexecuting():
+    router, catalog, index = _host_input_fixture()
+    plan = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        experimental_indexed_direct=True,
+    )
+    bound = bind_paper_field_host_inputs(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=plan, alternative_index=0, host_arguments={"post_id": 42},
+        experimental_indexed_direct=True,
+    )
+    observation = _producer_observation(
+        router, bound.alternatives[0].calls[0], {"userId": 99},
+    )
+    result = bind_paper_field_producer_result(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=bound, alternative_index=0, producer_call_index=0,
+        executed_call=bound.alternatives[0].calls[0], result=observation,
+        experimental_indexed_direct=True,
+    )
+    assert result.status == "complete"
+    assert result.alternatives[0].calls[1].arguments == {"user_id": 99}
+    assert result.alternatives[0].field_metadata == plan.alternatives[0].field_metadata
+    assert not result.executable_authority
+
+
+def test_indexed_receipt_cannot_silently_replay_using_default_mode():
+    router, catalog, index = _host_input_fixture()
+    indexed = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        experimental_indexed_direct=True,
+    )
+    assert indexed.experimental_indexed_direct is True
+    with pytest.raises(PolicyViolationError, match="binding rejected"):
+        bind_paper_field_host_inputs(
+            router, "lookup username", principal=ACTOR,
+            catalog=catalog, index=index, plan=indexed,
+            alternative_index=0, host_arguments={"post_id": 42},
+        )
+
+
+def test_indexed_direct_does_not_expose_required_field_hidden_by_scope():
+    router, catalog, index = _attach_meta_fixture()
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.read", roles_any=("reader",),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="materials.read", roles_any=("reader",),
+            hidden_fields=("volume",),
+        ),),
+    )
+    for indexed in (False, True):
+        plan = compile_paper_field_toolcalls(
+            router, "formula and volume", principal=ACTOR,
+            catalog=catalog, index=index,
+            experimental_indexed_direct=indexed,
+        )
+        assert plan.status == "no_proven_hit"
+        assert plan.alternatives == ()
+        assert "materials.volume" not in str(plan)
+
+
+def test_compiled_direct_reuses_exact_scoped_field_projection():
+    router = _direct_fixture()
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.read", roles_any=("reader",),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="complete.read", roles_any=("reader",),
+            hidden_fields=("private_excess",),
+        ),),
+    )
+    index = _index(router)
+    before = router.retrieve_authorized(ALIASES[0], principal=ACTOR, k=5)
+    plan = compile_paper_field_toolcalls(
+        router, ALIASES[0], principal=ACTOR, catalog=_fork_catalog(), index=index,
+    )
+    assert plan.status == "complete"
+    assert not plan.executable_authority
+    assert not plan.independent_quality_evidence
+    assert len(plan.alternatives) == 1
+    alternative = plan.alternatives[0]
+    assert alternative.dependencies == ()
+    assert set(alternative.required_semantic_ids) == {
+        "crm.fork_status", "crm.fork_owner",
+    }
+    assert len(alternative.calls) == 1
+    call = alternative.calls[0]
+    assert isinstance(call, ToolCall)
+    assert (call.tool, call.endpoint) == ("complete", "read")
+    assert call.fields == ["status", "owner", "request_id"]
+    assert call.arguments == {}
+    assert call.missing_required_arguments == []
+    assert call.tool_fingerprint == router.registry.get("complete").fingerprint
+    assert call.schema_fingerprint == router.registry.get("complete").endpoint("read").fingerprint
+    assert router.retrieve_authorized(ALIASES[0], principal=ACTOR, k=5) == before
+
+
+def test_compiler_never_republishes_hidden_shared_root_identifier():
+    router = build_fixture(500)
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.*", roles_any=("reader",),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="fork_origin.read", roles_any=("reader",),
+            hidden_fields=("customer_id",),
+        ),),
+    )
+    plan = compile_paper_field_toolcalls(
+        router, ALIASES[0], principal=ACTOR,
+        catalog=_fork_catalog(), index=_index(router),
+    )
+    assert plan.status == "no_proven_hit"
+    assert plan.alternatives == ()
+    assert "customer_id" not in str(plan)
+
+
+def _host_input_fixture(*, root_type="integer", root_name="post_id"):
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.*", roles_any=("reader",),
+        ),),
+    ))
+    router.add_tool(ToolSpec(
+        name="posts", source_type="crm", license="host-reviewed-synthetic",
+        endpoints=[EndpointSpec(
+            name="by_id", read_only=True,
+            parameters=[ParameterSpec(
+                name=root_name, required=True, json_schema={"type": root_type},
+            )],
+            input_schema={"type": "object",
+                          "properties": {root_name: {"type": root_type}},
+                          "required": [root_name]},
+            output_fields=[FieldSpec(
+                name="userId", identifier=True,
+                semantic_id="crm.user_id", json_schema={"type": "integer"},
+            )],
+        )],
+    ))
+    router.add_tool(ToolSpec(
+        name="users", source_type="crm", license="host-reviewed-synthetic",
+        endpoints=[EndpointSpec(
+            name="by_id", read_only=True,
+            parameters=[ParameterSpec(
+                name="user_id", required=True, semantic_id="crm.user_id",
+                json_schema={"type": "integer"},
+            )],
+            input_schema={"type": "object",
+                          "properties": {"user_id": {"type": "integer"}},
+                          "required": ["user_id"]},
+            output_fields=[FieldSpec(
+                name="username", semantic_id="crm.username",
+                json_schema={"type": "string"},
+            )],
+        )],
+    ))
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="crm.user_name", aliases=("lookup username",),
+        required_fields=(CapabilityFieldContract(
+            semantic_id="crm.username", json_schema={"type": "string"},
+        ),),
+        source_type="crm", license="host-reviewed-synthetic",
+    ),))
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+        approved_host_roots=frozenset({"posts.by_id"}),
+    )
+    return router, catalog, index
+
+
+def test_host_approved_parameterized_root_is_a_nonexecutable_recipe():
+    router, catalog, index = _host_input_fixture()
+    assert retrieve_paper_field_coverage(
+        router, "lookup username", principal=ACTOR,
+        catalog=catalog, index=index,
+    ).status == "complete"
+    plan = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR,
+        catalog=catalog, index=index,
+    )
+    assert plan.status == "complete"
+    alternative = plan.alternatives[0]
+    assert [(call.tool, call.endpoint) for call in alternative.calls] == [
+        ("posts", "by_id"), ("users", "by_id"),
+    ]
+    assert [call.arguments for call in alternative.calls] == [{}, {}]
+    assert [call.missing_required_arguments for call in alternative.calls] == [
+        ["post_id"], ["user_id"],
+    ]
+    assert not any(call.executable for call in alternative.calls)
+    assert len(alternative.dependencies) == 1
+    assert alternative.dependencies[0].producer_field == "userId"
+    assert [(meta.call_index, meta.field_name) for meta in alternative.field_metadata] == [
+        (0, "userId"), (1, "username"),
+    ]
+    assert [meta.tool_source_type for meta in alternative.field_metadata] == [
+        "crm", "crm",
+    ]
+    assert not plan.executable_authority
+
+
+def test_host_supplied_root_input_binds_without_inventing_consumer_values():
+    router, catalog, index = _host_input_fixture()
+    original = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    bound = bind_paper_field_host_inputs(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=original, alternative_index=0, host_arguments={"post_id": 42},
+    )
+    assert original.alternatives[0].calls[0].arguments == {}
+    assert original.alternatives[0].calls[0].missing_required_arguments == ["post_id"]
+    assert bound.alternatives[0].calls[0].arguments == {"post_id": 42}
+    assert bound.alternatives[0].calls[0].missing_required_arguments == []
+    assert bound.alternatives[0].calls[0].executable
+    assert bound.alternatives[0].calls[1].arguments == {}
+    assert bound.alternatives[0].calls[1].missing_required_arguments == ["user_id"]
+    assert not bound.executable_authority
+    assert not bound.independent_quality_evidence
+    assert bound.alternatives[0].dependencies == original.alternatives[0].dependencies
+    assert bound.alternatives[0].field_metadata == original.alternatives[0].field_metadata
+
+
+def _producer_observation(router, call, data):
+    endpoint = router.registry.get(call.tool).endpoint(call.endpoint)
+    return ToolResult(
+        tool=call.tool, endpoint=call.endpoint, data=data,
+        projected_fields=list(call.fields),
+        field_contracts=RegistryExecutor._result_field_contracts(
+            call.fields, endpoint, data,
+        ),
+    )
+
+
+def _bind_observation(router, catalog, index, plan, observation, *,
+                      executed_call=None, alternative_index=0, producer_call_index=0,
+                      query="lookup username"):
+    if executed_call is None:
+        executed_call = plan.alternatives[alternative_index].calls[producer_call_index]
+    return bind_paper_field_producer_result(
+        router, query, principal=ACTOR, catalog=catalog, index=index,
+        plan=plan, alternative_index=alternative_index,
+        producer_call_index=producer_call_index,
+        executed_call=executed_call, result=observation,
+    )
+
+
+def test_observed_producer_result_binds_real_identifier_only_after_host_root():
+    router, catalog, index = _host_input_fixture()
+    original = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    bound_root = bind_paper_field_host_inputs(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=original, alternative_index=0, host_arguments={"post_id": 42},
+    )
+    root_call = bound_root.alternatives[0].calls[0]
+    observed = _producer_observation(router, root_call, {"userId": 99})
+    result = _bind_observation(router, catalog, index, bound_root, observed)
+    assert result.alternatives[0].calls[0].arguments == {"post_id": 42}
+    assert result.alternatives[0].calls[1].arguments == {"user_id": 99}
+    assert result.alternatives[0].calls[1].missing_required_arguments == []
+    assert result.alternatives[0].calls[1].executable
+    assert bound_root.alternatives[0].calls[1].arguments == {}
+    assert not result.executable_authority
+    assert not result.independent_quality_evidence
+    assert result.alternatives[0].field_metadata == original.alternatives[0].field_metadata
+
+
+def test_attach_meta_tampering_invalidates_host_input_receipt():
+    router, catalog, index = _host_input_fixture()
+    original = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    alternative = original.alternatives[0]
+    assert alternative.field_metadata
+    forged_meta = replace(alternative.field_metadata[0], provider="invented-provider")
+    forged = replace(original, alternatives=(replace(
+        alternative, field_metadata=(forged_meta, *alternative.field_metadata[1:]),
+    ),))
+    with pytest.raises(PolicyViolationError, match="binding rejected"):
+        bind_paper_field_host_inputs(
+            router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+            plan=forged, alternative_index=0, host_arguments={"post_id": 42},
+        )
+
+
+@pytest.mark.asyncio
+async def test_observed_result_from_existing_executor_binds_consumer_without_invoking_it():
+    router, catalog, index = _host_input_fixture()
+    plan = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    bound = bind_paper_field_host_inputs(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=plan, alternative_index=0, host_arguments={"post_id": 42},
+    )
+    calls = bound.alternatives[0].calls
+    invoked = []
+
+    def posts_invoker(endpoint_name, arguments):
+        invoked.append((endpoint_name, dict(arguments)))
+        return {"userId": arguments["post_id"] + 57}
+
+    router.executor.bind("posts", posts_invoker)
+    observed = (await router.execute(
+        ExecutionPlan(
+            query="lookup username", registry_version=bound.registry_version,
+            calls=[calls[0]],
+        ),
+        config=RunConfig(principal=ACTOR),
+    ))[0]
+    assert invoked == [("by_id", {"post_id": 42})]
+    final = _bind_observation(router, catalog, index, bound, observed)
+    assert final.alternatives[0].calls[1].arguments == {"user_id": 99}
+    assert invoked == [("by_id", {"post_id": 42})]
+
+
+def test_one_observed_root_result_can_bind_both_fork_consumers():
+    router = build_fixture(500)
+    catalog, index = _fork_catalog(), _index(router)
+    plan = compile_paper_field_toolcalls(
+        router, ALIASES[0], principal=ACTOR, catalog=catalog, index=index,
+    )
+    producer = plan.alternatives[0].calls[0]
+    observed = _producer_observation(router, producer, {"customer_id": "C-17"})
+    result = _bind_observation(
+        router, catalog, index, plan, observed, query=ALIASES[0],
+    )
+    for consumer in result.alternatives[0].calls[1:]:
+        assert consumer.arguments == {"customer_id": "C-17"}
+        assert consumer.missing_required_arguments == []
+    assert not result.executable_authority
+
+
+@pytest.mark.parametrize("data", [
+    {}, {"userId": None}, {"userId": True}, {"userId": "99"},
+    {"userId": [99]}, {"userId": {"id": 99}}, {"userId": 2.5},
+])
+def test_observation_rejects_missing_null_or_incompatible_identifier(data):
+    router, catalog, index = _host_input_fixture()
+    plan = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    bound = bind_paper_field_host_inputs(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=plan, alternative_index=0, host_arguments={"post_id": 42},
+    )
+    observed = _producer_observation(router, bound.alternatives[0].calls[0], data)
+    with pytest.raises(PolicyViolationError):
+        _bind_observation(router, catalog, index, bound, observed)
+
+
+@pytest.mark.parametrize("mutation", [
+    "endpoint", "selected_fields", "contract", "unobserved_contract", "wrong_call",
+    "unapproved_call", "extra_contract", "tampered_plan", "wrong_index",
+])
+def test_observation_rejects_unmatched_or_forged_receipt(mutation):
+    router, catalog, index = _host_input_fixture()
+    plan = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    bound = bind_paper_field_host_inputs(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=plan, alternative_index=0, host_arguments={"post_id": 42},
+    )
+    call = bound.alternatives[0].calls[0].model_copy(deep=True)
+    observed = _producer_observation(router, call, {"userId": 99})
+    if mutation == "endpoint":
+        observed.endpoint = "another"
+    elif mutation == "selected_fields":
+        observed.projected_fields = ["another"]
+    elif mutation == "contract":
+        observed.field_contracts["userId"].semantic_id = "forged"
+    elif mutation == "unobserved_contract":
+        observed.field_contracts["userId"].has_observed_value = False
+    elif mutation == "wrong_call":
+        call.arguments["post_id"] = 999
+    elif mutation == "unapproved_call":
+        call.fields = ["private"]
+    elif mutation == "extra_contract":
+        observed.field_contracts["another"] = observed.field_contracts["userId"]
+    elif mutation == "tampered_plan":
+        bound.alternatives[0].calls[1].arguments["user_id"] = 100
+    with pytest.raises(PolicyViolationError):
+        _bind_observation(
+            router, catalog, index, bound, observed, executed_call=call,
+            producer_call_index=1 if mutation == "wrong_index" else 0,
+        )
+
+
+def test_observation_rejects_current_consumer_value_scope_revocation():
+    router = build_fixture(500)
+    catalog, index = _fork_catalog(), _index(router)
+    plan = compile_paper_field_toolcalls(
+        router, ALIASES[0], principal=ACTOR, catalog=catalog, index=index,
+    )
+    producer = plan.alternatives[0].calls[0]
+    observed = _producer_observation(router, producer, {"customer_id": "C-17"})
+    # An original source becomes unavailable after the receipt was compiled.
+    router.planner.availability_predicate = (
+        lambda tool, _endpoint: tool.key != "fork_status"
+    )
+    with pytest.raises(PolicyViolationError):
+        _bind_observation(
+            router, catalog, index, plan, observed, query=ALIASES[0],
+        )
+
+
+@pytest.mark.parametrize("late_change", ["policy", "catalog"])
+def test_observation_fails_closed_on_late_owner_or_policy_change(
+    monkeypatch, late_change,
+):
+    router, catalog, index = _host_input_fixture(root_name="max_hops")
+    initial = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    plan = bind_paper_field_host_inputs(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=initial, alternative_index=0, host_arguments={"max_hops": 99},
+    )
+    root = plan.alternatives[0].calls[0]
+    observed = _producer_observation(router, root, {"userId": 99})
+    original_policy = router.authorization_policy
+    genuine_validate = AuthorizationPolicy.validate
+    changed = False
+
+    def validate_then_change(self, principal, tool, endpoint, call):
+        nonlocal changed
+        genuine_validate(self, principal, tool, endpoint, call)
+        if not changed and self is original_policy and tool.key == "posts":
+            changed = True
+            if late_change == "policy":
+                router.authorization_policy = AuthorizationPolicy(
+                    default_effect="deny",
+                    rules=original_policy.rules,
+                    data_rules=(DataScopeRule(
+                        operation="posts.by_id", roles_any=("reader",), max_hops=1,
+                    ),),
+                )
+            else:
+                catalog.concepts[0].aliases += ("late-owner-alias",)
+
+    monkeypatch.setattr(AuthorizationPolicy, "validate", validate_then_change)
+    with pytest.raises(PolicyViolationError):
+        _bind_observation(router, catalog, index, plan, observed)
+    assert changed
+
+
+@pytest.mark.parametrize("supplied", [
+    {}, {"post_id": "42"}, {"post_id": None},
+    {"post_id": True}, {"post_id": 42, "unknown": "value"},
+])
+def test_host_input_binding_rejects_missing_wrong_type_and_extra_args(supplied):
+    router, catalog, index = _host_input_fixture()
+    original = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    with pytest.raises(PolicyViolationError):
+        bind_paper_field_host_inputs(
+            router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+            plan=original, alternative_index=0, host_arguments=supplied,
+        )
+    assert original.alternatives[0].calls[0].arguments == {}
+
+
+def test_host_input_binding_rejects_stale_or_tampered_receipt():
+    router, catalog, index = _host_input_fixture()
+    original = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    original.alternatives[0].calls[0].fields.append("hidden")
+    with pytest.raises(PolicyViolationError):
+        bind_paper_field_host_inputs(
+            router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+            plan=original, alternative_index=0, host_arguments={"post_id": 42},
+        )
+
+
+def test_host_input_binding_rejects_unapproved_source_contract():
+    router, catalog, approved_index = _host_input_fixture()
+    original = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog,
+        index=approved_index,
+    )
+    unapproved_index = _index(router)
+    with pytest.raises(PolicyViolationError):
+        bind_paper_field_host_inputs(
+            router, "lookup username", principal=ACTOR, catalog=catalog,
+            index=unapproved_index, plan=original, alternative_index=0,
+            host_arguments={"post_id": 42},
+        )
+
+
+def test_host_input_binding_rejects_values_mutated_during_late_proof(monkeypatch):
+    import schemarouter.paper_field_plan as module
+
+    router, catalog, index = _host_input_fixture()
+    original = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    host_arguments = {"post_id": 42}
+    genuine_validation = module.validate_json_schema_value
+
+    def validate_then_schedule_mutation(value, schema, *, context):
+        genuine_validation(value, schema, context=context)
+
+        def mutate_at_next_source_health(_tool, _endpoint):
+            host_arguments["post_id"] = "forged-after-validation"
+            return True
+
+        router.planner.availability_predicate = mutate_at_next_source_health
+
+    monkeypatch.setattr(module, "validate_json_schema_value", validate_then_schedule_mutation)
+    with pytest.raises(PolicyViolationError):
+        bind_paper_field_host_inputs(
+            router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+            plan=original, alternative_index=0, host_arguments=host_arguments,
+        )
+
+
+@pytest.mark.parametrize("host_value", [
+    float("nan"), float("inf"), float("-inf"), complex(1, 2),
+    Decimal("0.5"), Fraction(1, 3),
+])
+def test_host_number_binding_rejects_non_json_and_nonfinite_values(host_value):
+    router, catalog, index = _host_input_fixture(root_type="number")
+    plan = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    assert plan.status == "complete"
+    with pytest.raises(PolicyViolationError):
+        bind_paper_field_host_inputs(
+            router, "lookup username", principal=ACTOR, catalog=catalog,
+            index=index, plan=plan, alternative_index=0,
+            host_arguments={"post_id": host_value},
+        )
+
+
+def test_host_number_binding_accepts_finite_native_json_number():
+    router, catalog, index = _host_input_fixture(root_type="number")
+    plan = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    bound = bind_paper_field_host_inputs(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=plan, alternative_index=0, host_arguments={"post_id": 2.5},
+    )
+    assert bound.alternatives[0].calls[0].arguments == {"post_id": 2.5}
+
+
+def test_host_binding_enforces_principal_scoped_argument_ceiling():
+    router, catalog, index = _host_input_fixture(root_name="max_hops")
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.*", roles_any=("reader",),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="posts.by_id", roles_any=("reader",), max_hops=2,
+        ),),
+    )
+    plan = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    assert plan.status == "complete"
+    with pytest.raises(PolicyViolationError):
+        bind_paper_field_host_inputs(
+            router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+            plan=plan, alternative_index=0, host_arguments={"max_hops": 99},
+        )
+    safe = bind_paper_field_host_inputs(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+        plan=plan, alternative_index=0, host_arguments={"max_hops": 2},
+    )
+    assert safe.alternatives[0].calls[0].arguments == {"max_hops": 2}
+
+
+@pytest.mark.parametrize("index_value", [-1, 1, True])
+def test_host_input_binding_rejects_wrong_alternative(index_value):
+    router, catalog, index = _host_input_fixture()
+    original = compile_paper_field_toolcalls(
+        router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+    )
+    with pytest.raises(PolicyViolationError):
+        bind_paper_field_host_inputs(
+            router, "lookup username", principal=ACTOR, catalog=catalog, index=index,
+            plan=original, alternative_index=index_value, host_arguments={"post_id": 42},
+        )
+
+
+@pytest.mark.parametrize("indexed", [False, True])
+@pytest.mark.parametrize("query", ALIASES)
+def test_compiled_fork_unbound_arguments_remain_nonexecutable(query, indexed):
+    router = build_fixture(500)
+    plan = compile_paper_field_toolcalls(
+        router, query, principal=ACTOR, catalog=_fork_catalog(), index=_index(router),
+        experimental_indexed_direct=indexed,
+    )
+    assert plan.status == "complete"
+    assert len(plan.alternatives) == 1
+    alternative = plan.alternatives[0]
+    route_ids = [f"{call.tool}.{call.endpoint}" for call in alternative.calls]
+    assert route_ids[0] == ROOT
+    assert set(route_ids[1:]) == {LEFT, RIGHT}
+    assert {
+        f"{call.tool}.{call.endpoint}": call.fields
+        for call in alternative.calls
+    } == {ROOT: ["customer_id"], LEFT: ["status"], RIGHT: ["owner"]}
+    assert all(call.arguments == {} for call in alternative.calls)
+    assert alternative.calls[0].executable
+    assert not alternative.calls[1].executable
+    assert not alternative.calls[2].executable
+    assert alternative.calls[1].missing_required_arguments == ["customer_id"]
+    assert alternative.calls[2].missing_required_arguments == ["customer_id"]
+    assert {(
+        route_ids[dep.consumer_call_index], dep.parameter,
+        route_ids[dep.producer_call_index], dep.producer_field,
+    ) for dep in alternative.dependencies} == {
+        (LEFT, "customer_id", ROOT, "customer_id"),
+        (RIGHT, "customer_id", ROOT, "customer_id"),
+    }
+    assert not plan.executable_authority
+
+
+@pytest.mark.parametrize("indexed", [False, True])
+def test_compiler_preserves_no_proven_hit_or_over_k(indexed):
+    router = build_fixture(500, mixed_scope=True)
+    index = _index(router)
+    router.planner.availability_predicate = lambda tool, ep: tool.key != "fork_owner"
+    missing = compile_paper_field_toolcalls(
+        router, ALIASES[0], principal=ACTOR, catalog=_fork_catalog(), index=index,
+        experimental_indexed_direct=indexed,
+    )
+    assert missing.status == "no_proven_hit"
+    assert missing.alternatives == ()
+
+    all_complete = _direct_fixture()
+    source_fields = all_complete.registry.get("complete").endpoint("read").output_fields
+    for n in range(5):
+        all_complete.add_tool(ToolSpec(
+            name=f"additional_{n}", source_type="crm",
+            license="host-reviewed-synthetic",
+            endpoints=[EndpointSpec(
+                name="read", read_only=True,
+                output_fields=[field.model_copy(deep=True) for field in source_fields],
+            )],
+        ))
+    overflow = compile_paper_field_toolcalls(
+        all_complete, ALIASES[0], principal=ACTOR,
+        catalog=_fork_catalog(), index=_index(all_complete),
+        experimental_indexed_direct=indexed,
+    )
+    assert overflow.status == "over_k_unranked"
+    assert overflow.alternatives == ()
+
+
+def test_compiled_fork_uses_original_5000_route_index_without_rescanning_or_guessing():
+    router = build_fixture(5000)
+    plan = compile_paper_field_toolcalls(
+        router, ALIASES[0], principal=ACTOR, catalog=_fork_catalog(),
+        index=_index(router),
+    )
+    assert plan.status == "complete"
+    assert len(plan.alternatives) == 1
+    assert len(plan.alternatives[0].calls) == 3
+    assert len(plan.alternatives[0].dependencies) == 2
+    assert not plan.executable_authority
+
+
+def test_compiler_rejects_unproved_or_changed_dependency(monkeypatch):
+    router = build_fixture(500)
+    index = _index(router)
+    authentic = retrieve_paper_field_coverage(
+        router, ALIASES[0], principal=ACTOR, catalog=_fork_catalog(), index=index,
+    )
+    alternative = authentic.alternatives[0]
+    leaf = alternative.routes[1]
+    forgery = replace(authentic, alternatives=(replace(
+        alternative, routes=(alternative.routes[0], replace(
+            leaf, input_bindings=(("customer_id", RIGHT, "owner"),),
+        ), alternative.routes[2]),
+    ),))
+    import schemarouter.paper_field_plan as module
+
+    first = True
+
+    def forged_once(*args, **kwargs):
+        nonlocal first
+        if first:
+            first = False
+            return forgery
+        return retrieve_paper_field_coverage(*args, **kwargs)
+
+    monkeypatch.setattr(module, "retrieve_paper_field_coverage", forged_once)
+    with pytest.raises(PolicyViolationError):
+        compile_paper_field_toolcalls(
+            router, ALIASES[0], principal=ACTOR, catalog=_fork_catalog(), index=index,
+        )
+
+
+def test_compiler_rejects_mid_projection_source_revocation(monkeypatch):
+    router = build_fixture(500)
+    index = _index(router)
+    import schemarouter.paper_field_plan as module
+
+    original = retrieve_paper_field_coverage
+    published = False
+
+    def revoke_after_p1(*args, **kwargs):
+        nonlocal published
+        result = original(*args, **kwargs)
+        if not published:
+            published = True
+            router.planner.availability_predicate = (
+                lambda tool, _ep: tool.key != "fork_origin"
+            )
+        return result
+
+    monkeypatch.setattr(module, "retrieve_paper_field_coverage", revoke_after_p1)
+    with pytest.raises(PolicyViolationError):
+        compile_paper_field_toolcalls(
+            router, ALIASES[0], principal=ACTOR, catalog=_fork_catalog(), index=index,
+        )
+    assert published
+
+
+@pytest.mark.parametrize("mutation", ["catalog", "policy"])
+def test_compiler_catches_owner_declaration_or_policy_change_after_first_proof(
+    monkeypatch, mutation,
+):
+    router = _direct_fixture()
+    index = _index(router)
+    catalog = _fork_catalog()
+    import schemarouter.paper_field_plan as module
+
+    first = True
+
+    def late_mutation(*args, **kwargs):
+        nonlocal first
+        result = retrieve_paper_field_coverage(*args, **kwargs)
+        if first:
+            first = False
+            if mutation == "catalog":
+                concept = catalog.concepts[0]
+                concept.aliases += ("reviewed-but-not-current-query",)
+            else:
+                previous = router.authorization_policy
+                router.authorization_policy = AuthorizationPolicy(
+                    default_effect="deny", rules=(*previous.rules, AuthorizationRule(
+                        effect="allow", operation="unrelated.read",
+                        roles_any=("admin",),
+                    )),
+                )
+        return result
+
+    monkeypatch.setattr(module, "retrieve_paper_field_coverage", late_mutation)
+    with pytest.raises(PolicyViolationError):
+        compile_paper_field_toolcalls(
+            router, ALIASES[0], principal=ACTOR, catalog=catalog, index=index,
+        )
+    assert not first
