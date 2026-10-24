@@ -26,8 +26,8 @@ from scripts.benchmark_indexed_concept_direct_parity_e0 import (
     configure_scope,
     original_source_direct_oracle,
 )
-from scripts.research_native_posting_decision_ranker_e0 import (
-    ResearchAuthorizedPostingDecisionRanker,
+from scripts.research_indexed_decision_backend_ranker_e0 import (
+    ResearchAuthorizedIndexedDecisionRanker,
 )
 
 EVIDENCE_TIER = "E0_QUERY_CONTAINS_GOLD_ROUTE_SYNTHETIC_NOT_INDEPENDENT_E2"
@@ -76,7 +76,7 @@ def benchmark(*, registered_routes: int, iterations: int = 3) -> dict[str, Any]:
             {"option_id": option.id} for option in ordered[:5]
         ]}
 
-    ranker = ResearchAuthorizedPostingDecisionRanker(
+    ranker = ResearchAuthorizedIndexedDecisionRanker(
         CallableDecisionBackend(deterministic_query_route_decision),
     )
     default_wall, default_cpu = [], []
