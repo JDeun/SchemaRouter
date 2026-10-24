@@ -1,0 +1,36 @@
+name: Native Direct Index Decision K5 E0
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_native_posting_decision_ranker_e0.py"
+      - "scripts/benchmark_native_posting_ranked_k5_e0.py"
+      - "tests/test_research_native_posting_decision_ranker_e0.py"
+      - "tests/test_benchmark_native_posting_ranked_k5_e0.py"
+      - "src/schemarouter/native_semantic_index.py"
+      - ".github/workflows/native-direct-index-decision-k5-e0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scoped-native-k5-decision:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install source and test tools
+        run: >-
+          python -m pip install . "pytest>=8,<10"
+          "pytest-asyncio>=0.23" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Validate direct source-scoped ranker and paired synthetic E0
+        run: |
+          ruff check scripts/research_native_posting_decision_ranker_e0.py scripts/benchmark_native_posting_ranked_k5_e0.py tests/test_research_native_posting_decision_ranker_e0.py tests/test_benchmark_native_posting_ranked_k5_e0.py
+          python -m pytest -q tests/test_research_native_posting_decision_ranker_e0.py tests/test_benchmark_native_posting_ranked_k5_e0.py tests/test_native_semantic_index.py
+          pyright scripts/research_native_posting_decision_ranker_e0.py scripts/benchmark_native_posting_ranked_k5_e0.py
