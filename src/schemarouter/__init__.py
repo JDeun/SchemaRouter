@@ -442,11 +442,26 @@ from .operation_fit import (
 )
 from .operation_intent import OperationIntentHypothesis, infer_operation_intent
 from .pairwise import PairwiseDecisionBackend, PairwiseScoreCallable
+from .paper_consumer_execution import (
+    PaperExecutedToolSequence,
+    observe_and_execute_paper_plan,
+)
 from .paper_field_retrieval import (
     PaperFieldAlternative,
     PaperFieldCoverage,
     PaperFieldRoute,
     retrieve_paper_field_coverage,
+)
+from .paper_observed_binding import (
+    PaperObservedBinding,
+    observe_and_bind_paper_plan,
+)
+from .paper_typed_tool_plan import (
+    PaperPlanBinding,
+    PaperPlanCall,
+    PaperPlanFieldMeta,
+    PaperTypedToolPlan,
+    compile_paper_typed_tool_plan,
 )
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
 from .policy import (
@@ -596,6 +611,15 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(_LAZY_EXPORTS))
 
 __all__ = [
+    "PaperObservedBinding",
+    "observe_and_bind_paper_plan",
+    "PaperExecutedToolSequence",
+    "observe_and_execute_paper_plan",
+    "PaperPlanBinding",
+    "PaperPlanCall",
+    "PaperPlanFieldMeta",
+    "PaperTypedToolPlan",
+    "compile_paper_typed_tool_plan",
     "PaperFieldAlternative",
     "PaperFieldCoverage",
     "PaperFieldRoute",

@@ -24,13 +24,32 @@ from .field_group_retrieval import (
     _root_envelope_empty,
     _scalar_contract,
 )
-from .models import ToolSpec
+from .models import FieldSpec, ToolSpec
 from .registry import InMemoryRegistry, SQLiteRegistry, ToolRegistry
 
 if TYPE_CHECKING:
     from .runtime import SchemaRouter
 
 STRICT_K = 5
+
+
+def _indexable_semantic_field(field: FieldSpec) -> bool:
+    """Index only declared scalar semantics, including explicit numeric normalization.
+
+    A provider unit string alone cannot create a conversion. Canonicalized fields
+    must carry a source unit and a locally declared UnitNormalizationSpec; the
+    source tool and license remain mandatory in build/refresh. Actual candidate
+    qualification still uses the original scoped canonical comparator.
+    """
+    if field.semantic_id is None or not _scalar_contract(field.json_schema):
+        return False
+    normalization = field.unit_normalization
+    if normalization is None:
+        return True
+    return (
+        field.unit is not None
+        and field.json_schema.get("type") in {"number", "integer"}
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,9 +119,7 @@ class NativeSchemaPostingIndex:
                 if not tool.source_type or not tool.license:
                     continue
                 for field in endpoint.output_fields:
-                    if (field.semantic_id is not None
-                            and field.unit_normalization is None
-                            and _scalar_contract(field.json_schema)):
+                    if field.semantic_id is not None and _indexable_semantic_field(field):
                         semantic.setdefault(field.semantic_id, set()).add(route)
         if registry.version != version:
             raise PolicyViolationError("native index source changed during build")
@@ -303,11 +320,7 @@ class NativeSchemaPostingIndex:
                 locations[route] = (key, endpoint.name)
                 if tool.source_type and tool.license:
                     for field in endpoint.output_fields:
-                        if (
-                            field.semantic_id is not None
-                            and field.unit_normalization is None
-                            and _scalar_contract(field.json_schema)
-                        ):
+                        if field.semantic_id is not None and _indexable_semantic_field(field):
                             semantic.setdefault(field.semantic_id, set()).add(route)
         if registry.version != version:
             raise PolicyViolationError("native posting refresh source changed")

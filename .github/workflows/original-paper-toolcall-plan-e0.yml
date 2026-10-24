@@ -1,0 +1,44 @@
+name: Original Paper Typed ToolCall Plan E0
+
+on:
+  pull_request:
+    paths:
+      - "src/schemarouter/paper_field_retrieval.py"
+      - "src/schemarouter/paper_typed_tool_plan.py"
+      - "src/schemarouter/paper_observed_binding.py"
+      - "src/schemarouter/paper_consumer_execution.py"
+      - "src/schemarouter/adapters/optimade.py"
+      - "src/schemarouter/native_graph_index.py"
+      - "src/schemarouter/field_group_retrieval.py"
+      - "tests/test_optimade_paper_contract.py"
+      - "research/autoresearch/paper-optimade-source-contract-e0-plan.md"
+      - "src/schemarouter/__init__.py"
+      - "tests/test_paper_typed_tool_plan.py"
+      - "tests/test_paper_observed_binding.py"
+      - "tests/test_paper_consumer_execution.py"
+      - "tests/test_native_graph_shared_root_forks.py"
+      - "tests/test_native_graph_host_root.py"
+      - "research/autoresearch/paper-toolcall-implementation-e0.md"
+      - ".github/workflows/original-paper-toolcall-plan-e0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-paper-typed-plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install original source and no-model test tools
+        run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1"
+      - name: Prove original typed calls, observed source bindings and bounded consumers
+        run: |
+          ruff check src/schemarouter/adapters/optimade.py src/schemarouter/native_graph_index.py src/schemarouter/field_group_retrieval.py src/schemarouter/paper_field_retrieval.py src/schemarouter/paper_typed_tool_plan.py src/schemarouter/paper_observed_binding.py src/schemarouter/paper_consumer_execution.py tests/test_paper_typed_tool_plan.py tests/test_paper_observed_binding.py tests/test_paper_consumer_execution.py tests/test_native_graph_shared_root_forks.py tests/test_native_graph_host_root.py tests/test_optimade_paper_contract.py src/schemarouter/__init__.py
+          python -m pytest -q tests/test_paper_typed_tool_plan.py tests/test_paper_observed_binding.py tests/test_paper_consumer_execution.py tests/test_native_graph_shared_root_forks.py tests/test_native_graph_host_root.py tests/test_paper_field_retrieval.py tests/test_optimade_paper_contract.py

@@ -16,6 +16,7 @@ from ..models import (
     ServerProjectionSpec,
     ToolCall,
     ToolSpec,
+    UnitNormalizationSpec,
 )
 from ..network_policy import TRUSTED_INTERNAL_NETWORK_POLICY, NetworkPolicy
 from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile, RefreshProfile
@@ -591,6 +592,12 @@ def _tool_from_discovery(
                             aliases=["identifier", "entry id"],
                         )
                     ],
+                    input_schema={
+                        "type": "object",
+                        "properties": {"id": {"type": "string", "minLength": 1}},
+                        "required": ["id"],
+                        "additionalProperties": False,
+                    },
                     output_fields=fields,
                     output_schema=_output_schema(raw_fields, many=False),
                     method="GET",
@@ -642,6 +649,143 @@ def _tool_from_discovery(
             "inferred_entry_info_identity": inferred_identity,
         },
     )
+
+
+def review_optimade_paper_tool(
+    tool: ToolSpec, *, expected_fingerprint: str,
+    expected_versioned_base_url: str, entry_type: str, license: str,
+    field_semantic_ids: dict[str, str],
+    reviewed_unit_normalizations: dict[str, UnitNormalizationSpec] | None = None,
+    expected_source_units: dict[str, str] | None = None,
+    identifier_semantic_id: str | None = None,
+) -> ToolSpec:
+    """Host-review one original OPTIMADE entry type without mutating discovery."""
+    source = _safe_base_url(expected_versioned_base_url)
+    entry = _validate_entry_type(entry_type)
+    if not isinstance(tool, ToolSpec):
+        raise SchemaSourceError("OPTIMADE owner review requires an original ToolSpec")
+    if "paper_optimade_review" in tool.metadata:
+        raise SchemaSourceError("OPTIMADE source is already reviewed")
+    if (
+        not expected_fingerprint or tool.fingerprint != expected_fingerprint
+        or tool.source_type != "optimade"
+        or tool.metadata.get("adapter") != "optimade"
+        or tool.metadata.get("remote") is not True
+        or tool.metadata.get("versioned_base_url") != source
+        or tool.execution_metadata.get("versioned_base_url") != source
+        or entry in tool.metadata.get("inferred_entry_info_identity", [])
+    ):
+        raise SchemaSourceError("OPTIMADE source fingerprint or identity changed")
+    if (
+        type(license) is not str or not license.strip() or license != license.strip()
+        or len(license) > 256
+        or (tool.license is not None and tool.license != license)
+    ):
+        raise SchemaSourceError("OPTIMADE owner license declaration is invalid")
+    if type(field_semantic_ids) is not dict or not field_semantic_ids:
+        raise SchemaSourceError("OPTIMADE owner field declaration is invalid")
+    if any(
+        type(name) is not str or not name or name in {"id", "type"}
+        or type(semantic) is not str or not semantic or semantic != semantic.strip()
+        for name, semantic in field_semantic_ids.items()
+    ) or len(set(field_semantic_ids.values())) != len(field_semantic_ids):
+        raise SchemaSourceError("OPTIMADE owner field semantic IDs are invalid")
+    if identifier_semantic_id is not None and (
+        type(identifier_semantic_id) is not str or not identifier_semantic_id
+        or identifier_semantic_id != identifier_semantic_id.strip()
+        or identifier_semantic_id in field_semantic_ids.values()
+    ):
+        raise SchemaSourceError("OPTIMADE source identifier semantic declaration is invalid")
+
+    units = {} if reviewed_unit_normalizations is None else reviewed_unit_normalizations
+    source_units = {} if expected_source_units is None else expected_source_units
+    if (
+        type(units) is not dict or not set(units) <= set(field_semantic_ids)
+        or any(not isinstance(value, UnitNormalizationSpec) for value in units.values())
+        or type(source_units) is not dict
+        or not set(units) <= set(source_units)
+        or not set(source_units) <= set(field_semantic_ids)
+        or any(
+            type(value) is not str or not value or value != value.strip()
+            or len(value) > 64 or any(ord(char) < 32 or ord(char) == 127 for char in value)
+            for value in source_units.values()
+        )
+    ):
+        raise SchemaSourceError("OPTIMADE unit review requires exact owner-declared source units")
+
+    reviewed = tool.model_copy(deep=True)
+    token = _endpoint_token(entry)
+    try:
+        search, get = reviewed.endpoint(f"search_{token}"), reviewed.endpoint(f"get_{token}")
+    except (KeyError, ValueError) as exc:
+        raise SchemaSourceError("OPTIMADE owner review entry type is missing") from exc
+    if (
+        search.execution_metadata.get("entry_type") != entry
+        or search.execution_metadata.get("mode") != "search"
+        or get.execution_metadata.get("entry_type") != entry
+        or get.execution_metadata.get("mode") != "get"
+        or len(get.parameters) != 1
+        or (get.parameters[0].name, get.parameters[0].required,
+            get.parameters[0].location, get.parameters[0].json_schema)
+        != ("id", True, "path", {"type": "string", "minLength": 1})
+        or get.input_schema != {
+            "type": "object",
+            "properties": {"id": {"type": "string", "minLength": 1}},
+            "required": ["id"], "additionalProperties": False,
+        }
+    ):
+        raise SchemaSourceError("OPTIMADE reviewed get route lacks exact source ID contract")
+
+    # Discovery may share FieldSpec objects between endpoints: split them first.
+    search.output_fields = [f.model_copy(deep=True) for f in search.output_fields]
+    get.output_fields = [f.model_copy(deep=True) for f in get.output_fields]
+    for endpoint in (search, get):
+        fields = {field.name: field for field in endpoint.output_fields}
+        if not set(field_semantic_ids) <= set(fields):
+            raise SchemaSourceError("OPTIMADE owner review references an unknown field")
+        for name, semantic_id in field_semantic_ids.items():
+            field = fields[name]
+            if field.source_type != "optimade":
+                raise SchemaSourceError("OPTIMADE reviewed field has unknown source type")
+            field.semantic_id = semantic_id
+            schema = dict(field.json_schema)
+            for annotation in ("x-optimade-unit", "unit"):
+                if annotation in schema:
+                    declared = schema.pop(annotation)
+                    if name not in source_units or declared != source_units[name]:
+                        raise SchemaSourceError(
+                            "OPTIMADE reviewed schema source unit annotation mismatch"
+                        )
+            field.json_schema = schema
+            if field.unit is not None:
+                if name not in source_units or field.unit != source_units[name]:
+                    raise SchemaSourceError("OPTIMADE reviewed source unit mismatch")
+            elif name in source_units:
+                raise SchemaSourceError("OPTIMADE reviewed source unit mismatch")
+            if name in units:
+                if not _schema_supports_numeric_unit(field.json_schema):
+                    raise SchemaSourceError("OPTIMADE reviewed source unit requires numeric field")
+                field.unit_normalization = units[name].model_copy(deep=True)
+            else:
+                field.unit_normalization = None
+
+    id_field = next((f for f in get.output_fields if f.name == "id"), None)
+    if id_field is None or id_field.identifier is not True:
+        raise SchemaSourceError("OPTIMADE get source ID lacks identifier declaration")
+    if identifier_semantic_id is not None:
+        id_field.semantic_id = identifier_semantic_id
+        get.parameters[0].semantic_id = identifier_semantic_id
+    reviewed.endpoints = [search, get]
+    reviewed.license = license
+    reviewed.metadata["paper_optimade_review"] = {
+        "source_tool_fingerprint": expected_fingerprint,
+        "source_base_url": source,
+        "entry_type": entry,
+        "reviewed_fields": dict(sorted(field_semantic_ids.items())),
+        "reviewed_source_units": dict(sorted(source_units.items())),
+        "identifier_semantic_id": identifier_semantic_id,
+    }
+    return reviewed
 
 
 class OPTIMADESourceAdapter:
@@ -851,6 +995,7 @@ class OPTIMADERemoteInvoker:
         )
         if selected_wire_fields:
             query["response_fields"] = ",".join(selected_wire_fields)
+        entry_id: str | None = None
         if mode == "search":
             query.setdefault("page_limit", 20)
             url = f"{self.base_url}/{entry_type}"
@@ -922,6 +1067,10 @@ class OPTIMADERemoteInvoker:
         if not isinstance(data, dict):
             raise NonRetryableInvocationError(
                 "OPTIMADE single-entry response must contain a data object"
+            )
+        if data.get("id") != entry_id or data.get("type") != entry_type:
+            raise NonRetryableInvocationError(
+                "OPTIMADE single-entry response identity does not match request"
             )
         return self._flatten_entry(data, call.fields, endpoint)
 

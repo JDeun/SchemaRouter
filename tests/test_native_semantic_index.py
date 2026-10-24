@@ -16,6 +16,7 @@ from schemarouter import (
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
+    UnitNormalizationSpec,
 )
 from schemarouter.errors import PolicyViolationError, RegistrationError
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
@@ -681,3 +682,104 @@ def test_native_postings_first_availability_failure_redacts_private_error(
     assert private_marker not in str(caught.value)
     assert caught.value.__suppress_context__
     assert router.registry.version == index.registry_version
+
+
+
+def _normalized_material_tool():
+    return ToolSpec(
+        name="materials", source_type="optimade", license="reviewed",
+        endpoints=[EndpointSpec(
+            name="read", read_only=True,
+            output_fields=[FieldSpec(
+                name="band_gap", semantic_id="materials.band_gap",
+                json_schema={"type": "number"}, unit="eV",
+                unit_normalization=UnitNormalizationSpec(
+                    dimension="energy", canonical_unit="J",
+                    scale=1.602176634e-19,
+                ),
+            )],
+        )],
+    )
+
+
+def _normalized_material_group(*, unit="J", dimension="energy"):
+    return NativeDeclaredFieldGroup(
+        aliases=("material band gap", "재료 밴드갭", "材料のバンドギャップ"),
+        required_fields=(CapabilityFieldContract(
+            semantic_id="materials.band_gap",
+            json_schema={"type": "number"}, unit=unit,
+            dimension=dimension,
+        ),),
+        source_type="optimade", license="reviewed",
+    )
+
+
+def test_indexed_normalized_numeric_field_respects_canonical_units_and_scope():
+    """Owner-declared normalization creates a posting, never an inferred factor."""
+    group = _normalized_material_group()
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="materials.read",
+            roles_any=("analyst", "viewer"),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="materials.read", roles_any=("viewer",),
+            hidden_fields=("band_gap",),
+        ),),
+    ))
+    router.add_tool(_normalized_material_tool())
+    index = NativeSchemaPostingIndex.build(router.registry)
+    assert index.postings["materials.band_gap"] == ("materials.read",)
+    for query in group.aliases:
+        selected = index.lookup(router, query, principal=ANALYST, group=group)
+        assert selected.status == "complete"
+        assert selected.qualified_count == 1
+        assert selected.candidates[0].required_output_fields == ("band_gap",)
+    hidden = index.lookup(
+        router, group.aliases[0], principal=VIEWER, group=group,
+    )
+    assert hidden.status == "no_proven_hit"
+    assert hidden.candidates == ()
+    for invalid_group in (
+        _normalized_material_group(unit="eV"),
+        _normalized_material_group(dimension="pressure"),
+    ):
+        refused = index.lookup(
+            router, invalid_group.aliases[0], principal=ANALYST,
+            group=invalid_group,
+        )
+        assert refused.status == "no_proven_hit"
+
+
+def test_normalized_numeric_posting_journal_delta_matches_full_rebuild():
+    """Canonicalized semantic postings are removed and added by trusted deltas."""
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="materials.read",
+            roles_any=("analyst",),
+        ),),
+    ))
+    router.add_tool(_normalized_material_tool())
+    original = NativeSchemaPostingIndex.build(router.registry)
+    group = _normalized_material_group()
+    assert original.lookup(
+        router, group.aliases[0], principal=ANALYST, group=group,
+    ).qualified_count == 1
+
+    replacement = _normalized_material_tool()
+    replacement.endpoint("read").output_fields[0].semantic_id = "materials.other"
+    router.registry.register(replacement, replace=True)
+    with pytest.raises(PolicyViolationError, match="stale"):
+        original.lookup(router, group.aliases[0], principal=ANALYST, group=group)
+    updated = NativeSchemaPostingIndex.refresh_from_inmemory_journal(
+        original, router.registry,
+    )
+    rebuilt = NativeSchemaPostingIndex.build(router.registry)
+    assert updated.snapshot_id == rebuilt.snapshot_id
+    assert dict(updated.postings) == dict(rebuilt.postings)
+    assert "materials.band_gap" not in updated.postings
+    assert updated.lookup(
+        router, group.aliases[0], principal=ANALYST, group=group,
+    ).status == "no_proven_hit"

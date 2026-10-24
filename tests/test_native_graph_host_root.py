@@ -9,12 +9,16 @@ import pytest
 from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
+    DataScopeRule,
     EndpointSpec,
     FieldSpec,
+    NativeConceptCatalog,
+    NativeDeclaredConcept,
     ParameterSpec,
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
+    compile_paper_typed_tool_plan,
 )
 from schemarouter.capability_contracts import CapabilityFieldContract
 from schemarouter.errors import PolicyViolationError, SchemaValidationError
@@ -121,6 +125,177 @@ def _index(router: SchemaRouter, *, allow: bool) -> NativeSchemaGraphIndex:
     )
 
 
+def test_original_paper_typed_plan_keeps_host_root_and_consumer_inputs_deferred():
+    """Host-approved graph roots still require actual host values at runtime."""
+    router, seen = _setup()
+    graph = _index(router, allow=True)
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="demo.username", aliases=GROUP.aliases,
+        required_fields=GROUP.required_fields,
+        source_type=GROUP.source_type, license=GROUP.license,
+    ),))
+    paper = compile_paper_typed_tool_plan(
+        router, GROUP.aliases[1], principal=ACTOR, catalog=catalog, index=graph,
+    )
+    assert paper.status == "requires_observation"
+    assert not paper.executable_authority
+    assert [entry.route_id for entry in paper.calls] == ["posts.by_id", "users.by_id"]
+    assert paper.calls[0].call.arguments == {}
+    assert paper.calls[0].call.missing_required_arguments == ["post_id"]
+    assert paper.calls[1].call.arguments == {}
+    assert paper.calls[1].call.missing_required_arguments == ["user_id"]
+    assert paper.bindings[0].parameter == "user_id"
+    assert paper.bindings[0].producer_field == "userId"
+    assert seen == []
+
+
+def test_unapproved_host_root_stays_non_proven_in_paper_compiler():
+    router, seen = _setup()
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="demo.username", aliases=GROUP.aliases,
+        required_fields=GROUP.required_fields,
+        source_type=GROUP.source_type, license=GROUP.license,
+    ),))
+    paper = compile_paper_typed_tool_plan(
+        router, GROUP.aliases[0], principal=ACTOR, catalog=catalog,
+        index=_index(router, allow=False),
+    )
+    assert paper.status == "no_proven_hit"
+    assert paper.calls == () and paper.bindings == ()
+    assert seen == []
+
+
+@pytest.mark.parametrize("query", GROUP.aliases)
+def test_paper_compiler_accepts_only_explicit_validated_host_source_input(query):
+    router, seen = _setup()
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="demo.username", aliases=GROUP.aliases,
+        required_fields=GROUP.required_fields,
+        source_type=GROUP.source_type, license=GROUP.license,
+    ),))
+    plan = compile_paper_typed_tool_plan(
+        router, query, principal=ACTOR, catalog=catalog,
+        index=_index(router, allow=True),
+        host_source_arguments={"posts.by_id": {"post_id": 42}},
+    )
+    assert plan.status == "requires_observation"
+    assert not plan.executable_authority
+    assert plan.calls[0].call.arguments == {"post_id": 42}
+    assert plan.calls[0].call.missing_required_arguments == []
+    assert plan.calls[1].call.arguments == {}
+    assert plan.calls[1].call.missing_required_arguments == ["user_id"]
+    assert seen == []
+
+
+@pytest.mark.parametrize("host_values", [
+    {"posts.by_id": {}},
+    {"posts.by_id": {"post_id": "42"}},
+    {"posts.by_id": {"post_id": True}},
+    {"posts.by_id": {"post_id": 1.5}},
+    {"posts.by_id": {"post_id": 2**72}},
+    {"posts.by_id": {"post_id": 42, "admin": True}},
+    {"users.by_id": {"user_id": 7}},
+    {"unknown.read": {"post_id": 42}},
+])
+def test_paper_compiler_rejects_untrusted_or_partial_host_input(host_values):
+    router, seen = _setup()
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="demo.username", aliases=GROUP.aliases,
+        required_fields=GROUP.required_fields,
+        source_type=GROUP.source_type, license=GROUP.license,
+    ),))
+    with pytest.raises((ValueError, PolicyViolationError)):
+        compile_paper_typed_tool_plan(
+            router, GROUP.aliases[0], principal=ACTOR, catalog=catalog,
+            index=_index(router, allow=True),
+            host_source_arguments=host_values,
+        )
+    assert seen == []
+
+
+def test_paper_host_scalar_respects_live_principal_data_scope_max_hops():
+    """Compiled source arguments must not pass when the executor would reject."""
+    router, seen = _setup(source_params=[ParameterSpec(
+        name="max_hops", required=True, json_schema={"type": "integer"},
+    )])
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.*", roles_any=("reader",),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="posts.by_id", roles_any=("reader",), max_hops=2,
+        ),),
+    )
+    graph = _index(router, allow=True)
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="demo.username", aliases=GROUP.aliases,
+        required_fields=GROUP.required_fields,
+        source_type=GROUP.source_type, license=GROUP.license,
+    ),))
+    with pytest.raises(PolicyViolationError):
+        compile_paper_typed_tool_plan(
+            router, GROUP.aliases[0], principal=ACTOR, catalog=catalog,
+            index=graph,
+            host_source_arguments={"posts.by_id": {"max_hops": 999}},
+        )
+    safe = compile_paper_typed_tool_plan(
+        router, GROUP.aliases[0], principal=ACTOR, catalog=catalog,
+        index=graph, host_source_arguments={"posts.by_id": {"max_hops": 2}},
+    )
+    assert safe.calls[0].call.arguments == {"max_hops": 2}
+    assert not safe.executable_authority
+    assert seen == []
+
+
+def test_paper_host_scalar_cannot_survive_scope_reduction_during_final_proof(
+    monkeypatch,
+):
+    import schemarouter.paper_typed_tool_plan as compiler
+
+    router, seen = _setup(source_params=[ParameterSpec(
+        name="max_hops", required=True, json_schema={"type": "integer"},
+    )])
+
+    def scoped_policy(max_hops):
+        return AuthorizationPolicy(
+            default_effect="deny",
+            rules=(AuthorizationRule(
+                effect="allow", operation="*.*", roles_any=("reader",),
+            ),),
+            data_rules=(DataScopeRule(
+                operation="posts.by_id", roles_any=("reader",), max_hops=max_hops,
+            ),),
+        )
+
+    router.authorization_policy = scoped_policy(10)
+    index = _index(router, allow=True)
+    catalog = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+        concept_id="demo.username", aliases=GROUP.aliases,
+        required_fields=GROUP.required_fields,
+        source_type=GROUP.source_type, license=GROUP.license,
+    ),))
+    original = compiler.retrieve_paper_field_coverage
+    count = 0
+
+    def revoke_after_first_call_check(*args, **kwargs):
+        nonlocal count
+        count += 1
+        if count == 2:
+            router.authorization_policy = scoped_policy(1)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(compiler, "retrieve_paper_field_coverage", revoke_after_first_call_check)
+    with pytest.raises(PolicyViolationError):
+        compile_paper_typed_tool_plan(
+            router, GROUP.aliases[0], principal=ACTOR, catalog=catalog,
+            index=index,
+            host_source_arguments={"posts.by_id": {"max_hops": 2}},
+        )
+    assert count == 2
+    assert seen == []
+
+
 def test_root_with_required_inputs_is_not_discoverable_without_explicit_opt_in() -> None:
     router, seen = _setup()
     graph = _index(router, allow=False)
@@ -192,12 +367,6 @@ async def test_original_empty_root_does_not_accept_extra_host_inputs() -> None:
 
 
 @pytest.mark.parametrize("bad_schema", [
-    {
-        "type": "object",
-        "properties": {"post_id": {"type": "integer"}},
-        "required": ["post_id"],
-        "additionalProperties": False,
-    },
     {"type": "object", "properties": {"post_id": {"type": "integer"}}},
 ])
 def test_explicit_host_root_does_not_strip_or_guess_provider_schema(
@@ -236,3 +405,23 @@ async def test_new_registry_revision_invalidates_host_root_before_execution() ->
             source_arguments={"post_id": 1},
         )
     assert seen == []
+
+
+def test_host_root_accepts_only_closed_path_string_id_schema() -> None:
+    from schemarouter.native_graph_index import _host_source_input_names
+
+    endpoint = EndpointSpec(
+        name="by_id", read_only=True,
+        parameters=[ParameterSpec(
+            name="id", required=True, location="path",
+            json_schema={"type": "string", "minLength": 1},
+        )],
+        input_schema={
+            "type": "object",
+            "properties": {"id": {"type": "string", "minLength": 1}},
+            "required": ["id"], "additionalProperties": False,
+        },
+    )
+    assert _host_source_input_names(endpoint) == ("id",)
+    endpoint.input_schema["additionalProperties"] = True
+    assert _host_source_input_names(endpoint) is None
