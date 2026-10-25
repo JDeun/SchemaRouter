@@ -78,7 +78,8 @@ def run(backend: DecisionBackend | None = None) -> dict[str, Any]:
     )
     # Both arms must use identical original registered schema + principal +
     # policy + FieldGroup + K. First five is a no-model comparator, not gold.
-    first_five = lambda _query, _candidates, k: tuple(range(k))
+    def first_five(_query: str, _candidates: tuple, k: int) -> tuple[int, ...]:
+        return tuple(range(k))
     durations: list[float] = []
     baseline_durations: list[float] = []
     by_language = {
