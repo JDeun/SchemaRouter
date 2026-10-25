@@ -51,3 +51,40 @@ Keep Draft PR, no default route promotion or release approval. Publisher-authore
 source-independent case gold (#1346), paired external-agent E2 (#1477),
 ranking quality, exact current-source permissions, and #1356 release HOLD remain
 requirements.
+
+
+## Follow-up: real DecisionBackend adapter and paired direct-index DEV harness
+
+- `scripts/research_indexed_decision_backend_ranker_e0.py` reuses the existing
+  `DecisionBackend`, `DecisionOption`, `DecisionRequest` and `choose_sync`
+  option-ID verification. The callback accepts **only** 6–32 already scoped
+  `IndexedNativeFieldCandidate` receipts. Backend-visible text consists of the
+  original authorized native route ID, original projected required field names,
+  and source-independent query. Tool/endpoint fingerprints, arguments,
+  credentials, provider invokers, task gold and registry handles are **not**
+  passed. Every serialized model request is capped at 16,384 UTF-8 bytes.
+  Exactly five validated selections or full abstention are accepted; partial,
+  duplicate, forged or model-mutated choices fail closed in the existing
+  `choose_sync` and index proof.
+- `scripts/research_indexed_direct_e5_paired_dev.py` reuses the **already
+  published** 24-service G5 synthetic source and 9 tasks × EN/KO/JA
+  translations plus three OOD prompts. It calls the **real direct
+  `NativeSchemaPostingIndex.lookup`** on identical original registered
+  sources with K5; it checks default overflow, invokes the adapter through
+  the opt-in ranking arm, and computes scorer-only Recall@5, OOD nonempty
+  count and measured in-process lookup p50/p95/p99.
+- `--mode validate` uses a deterministic **no-model first-five** backend;
+  it is merely an executable plumbing/regression control. The separate
+  `--mode real-e5-cpu` explicitly loads the existing pinned
+  `intfloat/multilingual-e5-small` CPU `EmbeddingDecisionBackend` through
+  the project's existing actual-model loader. Only a successful invocation
+  of that mode can label `real_model_routing_measured=True`; tests and
+  ordinary CI NEVER download or run model weights.
+- Even a measured actual-model DEV score is **not** independent validation:
+  24 source routes and gold service names are public/reused, many
+  consumer tools require inputs not bound in direct lookup, the query
+  language conversions were not independently translated or frozen for
+  external publication, and no live native provider/agent/answer is used.
+  Thus full E2 #1477, independent intake #1346, calibration and release
+  #1356 remain HOLD. E5 path comparison must use the same source inventory,
+  per-language strata, permissions, K and explicit no-fit policy.
