@@ -105,7 +105,7 @@ def first_five(
 def _tokens(value: str) -> frozenset[str]:
     """Deliberately simple, language-independent baseline, not a translator."""
     normalized = unicodedata.normalize("NFKC", value).casefold()
-    return frozenset(word for word in re.split(r"[^\w]+", normalized) if word)
+    return frozenset(word for word in re.split(r"[_\W]+", normalized) if word)
 
 
 def lexical_five(
