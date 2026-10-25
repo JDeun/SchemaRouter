@@ -1,6 +1,6 @@
 # Native direct-index K5: genuine pinned E5 paired CPU result (synthetic DEV)
 
-**Evidence tier:** \`REAL_PINNED_E5_CPU_INDEXED_PUBLIC_SYNTHETIC_DEV_ONLY\`
+**Evidence tier:** `REAL_PINNED_E5_CPU_INDEXED_PUBLIC_SYNTHETIC_DEV_ONLY`
 **Issue:** #1560 · **Draft PR:** #1753 · **Fixture:** original synthetic 24-service
 EN/KO/JA G5 cohort (27 supported, 3 unsupported), reused without changing
 gold or source route IDs.
@@ -11,15 +11,15 @@ gold or source route IDs.
   https://github.com/JDeun/SchemaRouter/actions/runs/40146422767
 - Published JSON artifact:
   https://github.com/JDeun/SchemaRouter/actions/runs/40146422767/artifacts/12580722501
-- Artifact digest: \`sha256:0debcc16ba63045293505cc98c82b3333d2181435cef64b67274623cdd293f69\`
-- GitHub PR head for this workflow: \`21ed18233cb543a620013a6c191dcb14537575f8\`.
-- Report's \`git rev-parse HEAD\` on default pull_request checkout:
-  \`fbd8ba3a242581616c3254c8119e325066994641\` (**GitHub PR synthetic
+- Artifact digest: `sha256:0debcc16ba63045293505cc98c82b3333d2181435cef64b67274623cdd293f69`
+- GitHub PR head for this workflow: `21ed18233cb543a620013a6c191dcb14537575f8`.
+- Report's `git rev-parse HEAD` on default pull_request checkout:
+  `fbd8ba3a242581616c3254c8119e325066994641` (**GitHub PR synthetic
   merge checkout**, not to be confused with the source branch head).
 - Original native source snapshot:
-  \`3a127af4bb1cb20cdd517787ce3f5779f5d0b56bb48a3468e9170f2197dcd7b3\`.
-- Model: \`intfloat/multilingual-e5-small\`, revision
-  \`fd1525a9fd15316a2d503bf26ab031a61d056e98\`, Linux x86_64,
+  `3a127af4bb1cb20cdd517787ce3f5779f5d0b56bb48a3468e9170f2197dcd7b3`.
+- Model: `intfloat/multilingual-e5-small`, revision
+  `fd1525a9fd15316a2d503bf26ab031a61d056e98`, Linux x86_64,
   Python 3.12.15, PyTorch CPU 2.14.1+cpu, 384-dimensional encoder.
 - Model load measured ~5723.7 ms (excluded from the per-query times below).
 - Both jobs in the dedicated Actions workflow passed; no-model stage ran
