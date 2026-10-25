@@ -12,10 +12,11 @@ from schemarouter.paper_typed_tool_plan import PaperTypedToolPlan
 from schemarouter.paper_understood_direct_plan import PaperIntentRegistry
 from schemarouter.paper_understood_graph_plan import compile_paper_understood_graph_plan
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
-from scripts.research_paper_scoped_understand_e0 import (
-    PaperScopedModel, analyze_paper_understanding_scoped,
-)
 from scripts.research_paper_refusal_eval_e0 import Decision, decision_from_plan_status
+from scripts.research_paper_scoped_understand_e0 import (
+    PaperScopedModel,
+    analyze_paper_understanding_scoped,
+)
 
 
 async def analyze_and_plan_paper_scoped_e0(
