@@ -20,6 +20,8 @@
 
 **A5 continuation (2026-10-25):** `scripts/research_paper_fixed5_menu_e0.py::paper_plan_fixed5_menu` now projects only authorized direct-plan route receipts into the existing fixed-K model disclosure interface. It refuses to flatten 1/2-hop DAGs, refuses model-derived execution authority, verifies visible route fingerprints and source witness, and reuses the existing model-definition byte cap. **A5 stays unchecked:** this is not an integrated existing-agent episode and lacks full adversarial integration coverage. Verify new HEAD CI before claiming green.
 
+**A5 episode continuation (2026-10-25):** `scripts/research_paper_fixed5_episode_e0.py::run_paper_fixed5_episode_e0` wires a preverified paper plan to the **existing** `run_generated_episode` using `EVAL-FIXED5-OPTIN`, the captured principal-scoped tool surface, repeated route-proof checks, and the host-owned empty-menu terminal. No second executor and no dependency DAG flattening. **A5 stays unchecked** until integration tests with actual scoped fixtures, model callback and observed agent turns are green; new commit CI must be checked. The current episode wrapper does not include separate `Understand(q)` token/time accounting, so A7 is also open.
+
 ### A. Source-safe Algorithm 1 implementation
 - [x] **A1** Host-approved structured `Understand(q)` model callback with scoped source index and strict JSON parsing. Evidence: `scripts/research_paper_scoped_understand_e0.py`. E0 only.
 - [x] **A2** Named direct-tool FieldGroup, principal/source guards, K5 prefilter and typed non-executing plan. Evidence: `paper_understood_direct_plan.py`, #1755.
