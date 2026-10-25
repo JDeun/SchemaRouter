@@ -2,6 +2,13 @@
 
 **2026-10-24 · E0 source-authored diagnostic, not a shipped/default executor.**
 
+
+### E0 scoped refusal measurement continuation (2026-10-25)
+
+- Added `scripts/research_paper_refusal_eval_e0.py` and `tests/test_research_paper_refusal_eval_e0.py` on Draft #1755. This opt-in **measurement** maps actual `PaperTypedToolPlan.status` to offer / abstain / request_arguments / request_observation; unknown statuses fail closed.
+- Independently source-verified supported and unsupported gold are separate denominators; unresolved cases do not become unsupported. Report EN/KO/JA and aggregate false-refusal, false-accept and deferred counts. An offered plan is not successful execution; a deferred plan is neither success nor an immediate refusal.
+- No independent labeled dataset, real-model accuracy, model token/cost, automatic agent execution, calibrated global no-fit, or E2 is claimed. Next: add source-pinned independently reviewed EN/KO/JA gold fixtures, run paired real-model evaluation with current principal snapshots, then check same-head CI and extend research evidence. Keep #1291, #1346, #1477 and #1356 gates intact.
+
 ## ACTIVE CROSS-SESSION RESUME — 2026-10-25 (supersedes older next-step notes below)
 
 **Canonical continuation:** Original-paper Algorithm 1 is now beyond the P2
