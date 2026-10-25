@@ -215,7 +215,9 @@ def test_model_backend_prevents_forged_direct_callback_shapes():
     with pytest.raises(PolicyViolationError, match="bounded scoped"):
         ranker("case status", (candidate,), 5)
     with pytest.raises(ValueError, match="configuration"):
-        ResearchIndexedFieldDecisionRanker(_backend(), max_model_input_bytes=MAX_MODEL_INPUT_BYTES + 1)
+        ResearchIndexedFieldDecisionRanker(
+            _backend(), max_model_input_bytes=MAX_MODEL_INPUT_BYTES + 1,
+        )
 
 
 def test_model_backend_cannot_mutate_host_decision_option_set():
