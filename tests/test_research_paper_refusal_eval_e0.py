@@ -3,6 +3,7 @@ import pytest
 
 from scripts.research_paper_refusal_eval_e0 import Case, decision_from_plan_status, evaluate
 
+
 @pytest.mark.parametrize(("status", "decision"), [
     ("ready", "offer"), ("requires_arguments", "request_arguments"),
     ("requires_observation", "request_observation"),

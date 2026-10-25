@@ -3,6 +3,7 @@ import pytest
 
 from scripts.research_paper_scoped_plan_e0 import analyze_and_plan_paper_scoped_e0
 
+
 @pytest.mark.asyncio
 async def test_rejects_unscoped_view_before_model_invocation():
     calls = []
