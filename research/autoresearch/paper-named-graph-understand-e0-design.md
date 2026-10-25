@@ -35,10 +35,12 @@ understandings retain their existing direct behavior.
 
 - New `compile_paper_understood_graph_plan(router, understanding, *, principal,
   catalog, intent_registry, index, k=5, max_hops=2)`. Only `max_hops` 1 or 2;
-  no unnamed graph discovery. Try direct first to preserve already-valid named
-  zero-hop results, then one hop, then two hops, never upgrading an over-K
-  ambiguity to a weaker arbitrary result. A source-proven path cannot be
-  composed from several partially selected candidates.
+  no unnamed graph discovery. Preserve a ready named zero-hop direct result.
+  If direct requires a host argument, look for an attested 1-/2-hop path;
+  absence of a path is `no_proven_hit` **for this graph API**, while the
+  separate direct API still correctly reports `requires_arguments` for a
+  host who can legitimately supply that value. Never upgrade an over-K
+  ambiguity to a weaker arbitrary result.
 - Exact target route IDs are structurally derived from the indexed source
   `route_locations` for model-requested *tool keys*. The filter grants no
   authority; original graph methods apply principal scope, license, source
@@ -49,6 +51,12 @@ understandings retain their existing direct behavior.
   + final target, with all exact typed field names and input bindings from
   the original proof. The public `K=5` bounds **all exposed route IDs** across
   alternatives, not only targets; >K is an empty `over_k_unranked` plan.
+  Distinct complete paths even under K are an empty `ambiguous_paths` plan,
+  not a fabricated single DAG of incompatible alternatives.
+- G5 validates typed joins and final output source qualifiers; this graph
+  adapter additionally requires the reviewed catalog license on **every**
+  dependency and propagates a model-proposed source-type restriction to
+  **all** dependencies, not just the final target.
 - Every plan remains `requires_observation` when dependencies exist, even
   when all root source input arguments would otherwise be present. No inferred
   provider values or execution authority. No implicit selector promotion:
@@ -58,7 +66,9 @@ understandings retain their existing direct behavior.
   input data scope and availability before returning any receipt. A changed
   callback state raises a generic `PolicyViolationError` with no hidden names.
 - Research-only, default-off. Do not alter fixed #432, release #1356, or
-  external-gated #1346/#1477; no production/empirical E2 claim.
+  external-gated #1346/#1477; no production/empirical E2 claim. No automatic
+  existing-agent selector promotion: the fixed5 *direct* selector still
+  refuses bound plans, and the new API only produces explicit host receipts.
 
 ## Behavioral proof
 

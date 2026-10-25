@@ -33,11 +33,11 @@
 
 **Interfaces:** `NativeSchemaGraphIndex.lookup(..., allowed_target_routes: frozenset[str] | None = None)` and `lookup_two_hop(..., allowed_target_routes: frozenset[str] | None = None)`; never authorize by filter alone.
 
-- [ ] RED: six source-qualified target routes overflow unfiltered K; pre-K one exact sixth target is complete for both 1-/2-hop. Reject malformed filter input.
-- [ ] Run targeted pytest; expect TypeError for missing named argument.
-- [ ] GREEN: bounded filter contract and structural target intersection before source-qualified path expansion in both methods; preserve existing private fork filter behavior.
-- [ ] Run target one-/two-hop G5 tests, source-scope tests, Ruff.
-- [ ] Commit code and tests.
+- [x] RED: six source-qualified target routes overflow unfiltered K; pre-K one exact sixth target is complete for both 1-/2-hop. Reject malformed filter input.
+- [x] Run targeted pytest; 2 expected TypeErrors for missing named argument.
+- [x] GREEN: bounded filter contract and structural target intersection before source-qualified path expansion in both methods; preserve existing private fork filter behavior.
+- [x] Run target one-/two-hop G5 tests, source-scope tests, Ruff: **77 passed**; Ruff pass.
+- [x] Commit code and tests: `172ee12`.
 
 ### Task 2 — Source-owned structured Understand graph plan
 
@@ -45,16 +45,36 @@
 
 **Interfaces:** `compile_paper_understood_graph_plan(router, understanding, *, principal, catalog, intent_registry, index, k=5, max_hops=2) -> PaperTypedToolPlan`.
 
-- [ ] RED: direct still valid; named 1-/2-hop complete binding receipts; named sixth before K; no named tool, denied/hidden/type-unproven, >K, owner/policy drift, parameter hints untrusted; never call execute.
-- [ ] Run targeted pytest; expect missing API import failure.
-- [ ] GREEN: construct exact shared FieldGroup, prove eligible named final routes using existing G5 pre-K filter, materialize P2 receipts in topological order, compare second proof and receipts, fail closed on source changes.
-- [ ] Run new tests + existing paper/G5/agent regressions, repo Ruff, scoped Pyright; whole-suite attempted with bounded wait and limitations reported.
-- [ ] Commit code and tests.
+- [x] RED: named 1-/2-hop complete binding receipts; named sixth before K; no named tool, denied/hidden/type-unproven, path ambiguity, owner/policy drift, parameter hints untrusted; never call execute. RED import failure observed.
+- [x] Run targeted pytest; missing `paper_understood_graph_plan` import failure confirmed.
+- [x] GREEN: shared source-owned FieldGroup, named G5 target pre-K filter, P2 topological receipts, second identical proof and calls, generic fail-closed source checks. Deliberately differentiate a graph no-path from a direct `requires_arguments` path.
+- [x] Further self-review RED→GREEN: an explicit source-type constraint initially leaked a typed dependency from a different source. Added failing test, then restrict every emitted dependency by explicit source type and source-owner license.
+- [x] Run new + paper/G5/scoped-model/agent regressions: **260 passed (10.54s)**; repository Ruff all pass, new graph module Pyright **0 errors**. Whole local `pytest -q`: 75s timeout at ~12% (exit 124), not an overall pass. Older direct file still triggers Pyright's local unresolved `pydantic` import when checked explicitly.
+- [x] Commit code, test and design: `fc4bb7d`.
 
 ### Task 3 — Handoff and published stacked Draft checkpoint
 
 **Files:** Update `research/autoresearch/paper-toolcall-implementation-e0.md`, this plan; Draft #1755 description.
 
-- [ ] Record exact status and behavior through Task 2, distinguish E0 from independent E2.
-- [ ] Publish commits safely to same stacked remote Draft after matching source Git tree, check exact-head CI.
-- [ ] Leave PR Draft/unmerged and #1356 HOLD; final self-review (no subagents authorized).
+- [x] Record exact status and behavior through Task 2 in the canonical E0 handoff, distinguishing this work from independently measured E2.
+- [x] Publish verified code to stacked Draft #1755 with exact matching local/remote Git tree `80222a36617730a14bcacbf2d04dfb082742de35` (remote code commit `ac9115dd5442e9f253b8ffb8ac40037b7781b972`); exact newer docs-head CI must be monitored separately.
+- [x] Leave PR Draft/unmerged and #1356 HARD HOLD; author self-review completed because this environment does not authorize subagents.
+
+## Self-review and decisions — 2026-10-25
+
+- Security-important fix: model source-type qualifier originally applied only
+  to the G5 target, not the typed root/middle. A new regression failed with a
+  foreign source root; all dependencies now obey the explicit requested source
+  and the owner catalog's reviewed license before any typed receipt.
+- Intentional scoped behavior: a named target whose required argument exists
+  but has **no proven graph dependency** returns `no_proven_hit` from the new
+  graph-only API, while the existing direct API may return
+  `requires_arguments`; this preserves the distinction between missing
+  *dependency proof* and nonexistent capability.
+- Intentional no-merge boundary: the existing agent `Fixed5Selector` still
+  refuses plans with `bindings`; presenting this new plan as automatically
+  runnable would be an unsupported authority promotion. A separate future
+  host/agent integration must account for observation and actual arguments.
+- No authorized subagent review; this was an author self-review of changed
+  APIs, source scopes, model hint flow and tests. It is weaker than an
+  independent reviewer and does not lift the stacked Draft/HOLD gates.

@@ -19,9 +19,10 @@ empty-menu terminal), on top of the earlier paper work (#1745–#1753).
 | Existing agent E0 adapter | `scripts/research_authorized_concept_fixed5_agent_bridge.py::AuthorizedPaperUnderstoodDirectFixed5Selector` | The original captured principal-visible lexical menu may still exclude an otherwise index-eligible route |
 | Host-owned no-offered-tool refusal | `run_generated_episode(..., experimental_host_empty_menu_terminal=True)` | Exactly zero model generations and tool attempts on **empty verified menu**, with `REQUEST_MORE_TOOLS` generic benchmark terminal; default off; not global no-fit |
 | Real model callback → structured paper hint (later E0 slice) | `scripts/research_paper_scoped_understand_e0.py::analyze_paper_understanding_scoped` | Explicitly host-approved intent/concept disclosure and source-scoped `catalog_index()` only; no calibrated language understanding; model hints remain untrusted |
-| Outcome taxonomy | `ready`, `requires_arguments`, `no_proven_hit`, `over_k_unranked`, `budget_unsatisfied` | Missing tool proof, K overflow, missing input and semantic absence remain different outcomes |
+| Named `Understand(q)` → source-typed 1/2-hop path (latest E0 slice) | `src/schemarouter/paper_understood_graph_plan.py::compile_paper_understood_graph_plan`; [design](paper-named-graph-understand-e0-design.md), [plan](paper-named-graph-understand-e0-plan.md) | Reuses original G5 joins; non-executing `PaperPlanBinding`, no original agent auto-execution or independent E2 |
+| Outcome taxonomy | `ready`, `requires_arguments`, `requires_observation`, `ambiguous_paths`, `no_proven_hit`, `over_k_unranked`, `budget_unsatisfied` | Missing tool proof, unranked path ambiguity, K overflow, missing input and semantic absence remain different outcomes |
 
-**Exact checkpoint:** local branch
+**Previous direct-selector checkpoint (historical):** local branch
 `feat/1560-paper-understood-direct-e0-20261025`, local Git commit
 `e917341` and Git tree `d53b2cb80c516470bcd693520cfbdd77820fbd87`.
 Published [Draft #1755](https://github.com/JDeun/SchemaRouter/pull/1755)
@@ -51,15 +52,19 @@ Remote Actions/CodeQL and exact SHA remain the authority after changes.
    [new host refusal design](paper-host-empty-menu-refusal-e0-design.md), and
    [host refusal implementation checkpoint](paper-host-empty-menu-refusal-e0-plan.md),
    plus [model response source-scope design](paper-scoped-model-understand-e0-design.md)
-   and [model response implementation plan](paper-scoped-model-understand-e0-plan.md).
+   [model response implementation plan](paper-scoped-model-understand-e0-plan.md),
+   [named graph design](paper-named-graph-understand-e0-design.md) and
+   [named graph plan](paper-named-graph-understand-e0-plan.md).
    These internal, English-only research notes stay out of reviewed bilingual
    `docs/**/*.md` and **must be cited here** on each continuation.
 3. Prioritize **major remaining Algorithm 1 behaviors**, not minute selector
-   tuning: E0 now accepts a bounded **actual model callback** but still lacks
+   tuning: E0 now accepts a bounded **actual model callback**, and named
+   tools can obtain **1/2-hop non-executing typed receipts**. It still lacks
    independently measured EN/KO/JA understanding accuracy and its extra
    model-time/token cost in a same-agent comparison. Continue with an
-   independently justified ranking decision when >K; original source-safe
-   one-/two-hop explicit tool override and host-attested parameter semantics.
+   independently justified ranking decision when >K; explicit host-attested
+   parameter semantics, observed source values and separately guarded
+   existing-agent dependency selection (no automatic execution authority).
    Preserve both supported **false refusal** and unsupported **false accept**
    measurements. For missing-tool refusals distinguish a currently unproved
    *authorized* capability from a globally nonexistent tool. #1291 owns
@@ -73,6 +78,51 @@ Remote Actions/CodeQL and exact SHA remain the authority after changes.
 The sections below record P2 history and remain useful as implementation
 evidence; their older PR heads and next-step instructions are **not** the
 current resumption point.
+
+### Post-checkpoint continuation — model-named 1/2-hop typed G5 plans (2026-10-25, latest)
+
+The original bounded model `Understand(q)` adapter is followed by a new
+**opt-in** `compile_paper_understood_graph_plan`. Explicit exact named tool
+keys narrow the canonical G5 **target routes before K5** for both one-hop
+and two-hop lookups; they never authorize a source or replace the typed graph.
+For a single fully proved path it produces ordinary `PaperPlanCall` receipts
+plus real `PaperPlanBinding` producer-output→consumer-input metadata, with
+status `requires_observation`, no tool execution and no model-derived
+arguments. Multiple complete dependency paths remain `ambiguous_paths` rather
+than an unsafe merged call DAG; >K stays `over_k_unranked` with no receipts.
+G5's owner-typed source proof is preserved, with additional all-dependency
+reviewed-license and explicit source-type constraints. Unrecognized/denied/
+hidden/unhealthy/unsafe or wrong-type dependencies never receive a graph plan.
+
+The existing *direct* plan and fixed5 direct selector have not been changed to
+execute dependencies or to silently trust model hints. With an explicit named
+target requiring inputs, the **graph** API returns `no_proven_hit` if no
+complete typed dependency is proved; the **direct** API can separately
+report `requires_arguments` where legitimate host scalars may still exist.
+Neither means the capability is globally absent. No same-agent empirical
+quality improvement, automatic one-/two-hop source execution, calibrated
+unsupported classifier or independent publisher E2 is established.
+
+New source/test local commits: `172ee12` (G5 pre-K target filter) and
+`fc4bb7d` (graph ToolCall compiler and source constraint self-review fix).
+Published Draft #1755 **code checkpoint**:
+`ac9115dd5442e9f253b8ffb8ac40037b7781b972`, with remote Git tree
+`80222a36617730a14bcacbf2d04dfb082742de35` matching the locally
+verified code snapshot byte-for-byte. This checkpoint is not a merge or a
+release; the newest docs-only branch head can be newer and is tracked in
+the Draft PR itself.
+Local focused paper/G5/scoped-model/agent regression: **260 passed**;
+repository-wide Ruff: **pass**; targeted new graph-module Pyright:
+**0 errors, 0 warnings**. Pyright checking the older direct file together
+still encounters a local unresolved `pydantic` import, so no complete Pyright
+claim. The bounded **75-second full local pytest run timed out at about 12%**
+(exit 124), as in earlier checkpoints. Protected GitHub CI must be read from
+the *new exact branch head* after publishing; do not infer green status from
+the prior model-callback head. Canonical linked work and verification:
+[new design](paper-named-graph-understand-e0-design.md),
+[new implementation plan](paper-named-graph-understand-e0-plan.md),
+[stacked Draft #1755](https://github.com/JDeun/SchemaRouter/pull/1755),
+[issue #1560](https://github.com/JDeun/SchemaRouter/issues/1560).
 
 ### Post-checkpoint continuation — scoped model `Understand(q)` (2026-10-25)
 
