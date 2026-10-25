@@ -2,13 +2,22 @@
 import pytest
 
 from schemarouter import (
-    AuthorizationPolicy, AuthorizationRule, CapabilityFieldContract,
-    EndpointSpec, FieldSpec, NativeConceptCatalog, NativeDeclaredConcept,
-    NativeSchemaGraphIndex, NativeSchemaPostingIndex, PrincipalContext,
-    SchemaRouter, ToolSpec,
+    AuthorizationPolicy,
+    AuthorizationRule,
+    CapabilityFieldContract,
+    EndpointSpec,
+    FieldSpec,
+    NativeConceptCatalog,
+    NativeDeclaredConcept,
+    NativeSchemaGraphIndex,
+    NativeSchemaPostingIndex,
+    PrincipalContext,
+    SchemaRouter,
+    ToolSpec,
 )
 from schemarouter.paper_understood_direct_plan import (
-    PaperIntentDeclaration, PaperIntentRegistry,
+    PaperIntentDeclaration,
+    PaperIntentRegistry,
 )
 from scripts.research_authorized_agent_tool_surface import (
     capture_authorized_agent_tool_surface,
