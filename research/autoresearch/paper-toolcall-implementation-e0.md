@@ -18,6 +18,7 @@ empty-menu terminal), on top of the earlier paper work (#1745–#1753).
 | Original named tool before K | `NativeSchemaPostingIndex.lookup(..., allowed_tool_keys=...)` | Unknown/denied/hidden/unlicensed tools produce `no_proven_hit`; owner schema and principal permissions are still mandatory |
 | Existing agent E0 adapter | `scripts/research_authorized_concept_fixed5_agent_bridge.py::AuthorizedPaperUnderstoodDirectFixed5Selector` | The original captured principal-visible lexical menu may still exclude an otherwise index-eligible route |
 | Host-owned no-offered-tool refusal | `run_generated_episode(..., experimental_host_empty_menu_terminal=True)` | Exactly zero model generations and tool attempts on **empty verified menu**, with `REQUEST_MORE_TOOLS` generic benchmark terminal; default off; not global no-fit |
+| Real model callback → structured paper hint (later E0 slice) | `scripts/research_paper_scoped_understand_e0.py::analyze_paper_understanding_scoped` | Explicitly host-approved intent/concept disclosure and source-scoped `catalog_index()` only; no calibrated language understanding; model hints remain untrusted |
 | Outcome taxonomy | `ready`, `requires_arguments`, `no_proven_hit`, `over_k_unranked`, `budget_unsatisfied` | Missing tool proof, K overflow, missing input and semantic absence remain different outcomes |
 
 **Exact checkpoint:** local branch
@@ -48,11 +49,15 @@ Remote Actions/CodeQL and exact SHA remain the authority after changes.
 2. Read [direct source design](paper-understood-direct-e0-design.md),
    [direct implementation plan](paper-understood-direct-e0-plan.md),
    [new host refusal design](paper-host-empty-menu-refusal-e0-design.md), and
-   [host refusal implementation checkpoint](paper-host-empty-menu-refusal-e0-plan.md).
+   [host refusal implementation checkpoint](paper-host-empty-menu-refusal-e0-plan.md),
+   plus [model response source-scope design](paper-scoped-model-understand-e0-design.md)
+   and [model response implementation plan](paper-scoped-model-understand-e0-plan.md).
    These internal, English-only research notes stay out of reviewed bilingual
    `docs/**/*.md` and **must be cited here** on each continuation.
 3. Prioritize **major remaining Algorithm 1 behaviors**, not minute selector
-   tuning: genuine bounded EN/KO/JA `Understand(q)` evidence; an
+   tuning: E0 now accepts a bounded **actual model callback** but still lacks
+   independently measured EN/KO/JA understanding accuracy and its extra
+   model-time/token cost in a same-agent comparison. Continue with an
    independently justified ranking decision when >K; original source-safe
    one-/two-hop explicit tool override and host-attested parameter semantics.
    Preserve both supported **false refusal** and unsupported **false accept**
@@ -68,6 +73,34 @@ Remote Actions/CodeQL and exact SHA remain the authority after changes.
 The sections below record P2 history and remain useful as implementation
 evidence; their older PR heads and next-step instructions are **not** the
 current resumption point.
+
+### Post-checkpoint continuation — scoped model `Understand(q)` (2026-10-25)
+
+The prior `PaperUnderstanding` API was externally pre-constructed. New
+`analyze_paper_understanding_scoped` takes one **real supplied model callable**
+(synchronous or asynchronous), sends only the current principal-authorized
+`AuthorizedAgentToolSurface.catalog_index()` and an explicitly reviewed
+intent/concept disclosure allowlist, then strictly decodes bounded model JSON.
+Zero authorized routes mean **no model call** and a `None` diagnostic. The
+model's hallucinated named tools still face the original direct selector,
+which cannot offer denied/hidden/wrong-license source routes. It detects
+post-callback policy/source/principal/catalog/intent drift, malformed or
+duplicate-key/oversized/nonfinite output and undeclared IDs, without adopting
+any model-provided parameter value as trusted host input.
+
+This is one E0 **input adapter**, NOT a trained model improvement, full natural
+language intent accuracy, inference latency accounting, independent no-fit or
+real provider execution. The existing `ModelQueryAnalyzer` remains unchanged;
+its unscoped whole-registry prompt is not reused for this privacy-sensitive
+paper research route. Local implementation commit `dd75cfb`; see the new
+research design/plan above for current reproducibility and publication status.
+New scoped pre-model bridge tests and the original paper/native/agent
+regression combined **226 passed**, full repository Ruff passed and targeted
+Pyright 0 errors. The full local pytest run again **timed out after 75 seconds
+at ~12% (exit 124)**, so the remote exact-head CI remains authoritative.
+The external model callback has no in-function deadline or cancellation:
+production hosts must bound it separately. This **E0-only** pre-call's
+CPU/token cost is not included in existing agent evaluator metrics.
 
 ## Source of truth, predecessors and gates
 
