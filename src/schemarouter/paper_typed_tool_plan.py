@@ -69,6 +69,7 @@ class PaperTypedToolPlan:
     status: Literal[
         "ready", "requires_arguments", "requires_observation",
         "no_proven_hit", "over_k_unranked", "budget_unsatisfied",
+        "ambiguous_paths",
     ]
     snapshot_id: str
     registry_version: int

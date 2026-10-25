@@ -114,6 +114,65 @@ class PaperUnderstanding(StrictModel):
         return self
 
 
+def _source_owned_understood_group(
+    understanding: PaperUnderstanding,
+    catalog: NativeConceptCatalog,
+    intent_registry: PaperIntentRegistry,
+) -> tuple[PaperUnderstanding, NativeDeclaredFieldGroup]:
+    """Build a bounded original-paper required field AND from owner declarations.
+
+    Shared by direct and explicitly named typed-graph planning; model strings
+    never become aliases, field contracts or executable input values.
+    """
+    try:
+        approved_hints = PaperUnderstanding.model_validate(
+            understanding.model_dump(mode="python"), strict=True,
+        )
+        approved_intents = PaperIntentRegistry.model_validate(
+            intent_registry.model_dump(mode="python"), strict=True,
+        )
+        approved_catalog = NativeConceptCatalog.model_validate(
+            catalog.model_dump(mode="python"), strict=True,
+        )
+    except (TypeError, ValueError, OverflowError, AttributeError) as exc:
+        raise ValueError("paper understood declarations changed or invalid") from exc
+
+    intent = next((i for i in approved_intents.intents
+                   if i.intent_id == approved_hints.intent_id), None)
+    if intent is None:
+        raise ValueError("unregistered original paper intent")
+    concept_by_id = {c.concept_id: c for c in approved_catalog.concepts}
+    concept_ids = set(intent.required_concept_ids) | set(approved_hints.concept_ids)
+    if not concept_ids <= concept_by_id.keys():
+        raise ValueError("unregistered original paper concept")
+    concepts = [concept_by_id[cid] for cid in sorted(concept_ids)]
+    sources = {(concept.source_type, concept.license) for concept in concepts}
+    if len(sources) != 1:
+        raise ValueError("incompatible source-owned intent concept contracts")
+    source_type, license_id = next(iter(sources))
+
+    demanded = {}
+    for concept in concepts:
+        for field in concept.required_fields:
+            previous = demanded.get(field.semantic_id)
+            if previous is not None and previous != field:
+                raise ValueError("conflicting original paper typed field contracts")
+            demanded[field.semantic_id] = field
+    if not 1 <= len(demanded) <= 8:
+        raise ValueError("original paper intent field group exceeds bound")
+    canonical_query = " ".join(concept.aliases[0] for concept in concepts)
+    if (
+        len(canonical_query) > 256
+        or len(canonical_query.encode("utf-8")) > 512
+    ):
+        raise ValueError("source-owned paper canonical lookup key exceeds bound")
+    return approved_hints, NativeDeclaredFieldGroup(
+        aliases=(canonical_query,),
+        required_fields=tuple(demanded[key] for key in sorted(demanded)),
+        source_type=source_type, license=license_id,
+    )
+
+
 def compile_paper_understood_direct_plan(
     router: SchemaRouter,
     understanding: PaperUnderstanding,
@@ -143,15 +202,6 @@ def compile_paper_understood_direct_plan(
     if not isinstance(understanding, PaperUnderstanding):
         raise ValueError("structured paper understanding required")
     try:
-        approved_hints = PaperUnderstanding.model_validate(
-            understanding.model_dump(mode="python"), strict=True,
-        )
-        approved_intents = PaperIntentRegistry.model_validate(
-            intent_registry.model_dump(mode="python"), strict=True,
-        )
-        approved_catalog = NativeConceptCatalog.model_validate(
-            catalog.model_dump(mode="python"), strict=True,
-        )
         original_hints = understanding.model_dump_json()
         original_intents = intent_registry.model_dump_json()
         original_catalog = catalog.model_dump_json()
@@ -159,41 +209,8 @@ def compile_paper_understood_direct_plan(
     except (TypeError, ValueError, OverflowError, AttributeError) as exc:
         raise ValueError("paper understood declarations changed or invalid") from exc
 
-    intent = next((i for i in approved_intents.intents
-                   if i.intent_id == approved_hints.intent_id), None)
-    if intent is None:
-        raise ValueError("unregistered original paper intent")
-    concept_by_id = {c.concept_id: c for c in approved_catalog.concepts}
-    concept_ids = set(intent.required_concept_ids) | set(approved_hints.concept_ids)
-    if not concept_ids <= concept_by_id.keys():
-        raise ValueError("unregistered original paper concept")
-    concepts = [concept_by_id[cid] for cid in sorted(concept_ids)]
-    sources = {(concept.source_type, concept.license) for concept in concepts}
-    if len(sources) != 1:
-        raise ValueError("incompatible source-owned intent concept contracts")
-    source_type, license_id = next(iter(sources))
-
-    demanded = {}
-    for concept in concepts:
-        for field in concept.required_fields:
-            previous = demanded.get(field.semantic_id)
-            if previous is not None and previous != field:
-                raise ValueError("conflicting original paper typed field contracts")
-            demanded[field.semantic_id] = field
-    if not 1 <= len(demanded) <= 8:
-        raise ValueError("original paper intent field group exceeds bound")
-    # Canonical *internal* lookup key derived only from owner-reviewed labels.
-    # Untrusted model text does not become a forged host-approved alias.
-    canonical_query = " ".join(concept.aliases[0] for concept in concepts)
-    if (
-        len(canonical_query) > 256
-        or len(canonical_query.encode("utf-8")) > 512
-    ):
-        raise ValueError("source-owned paper canonical lookup key exceeds bound")
-    group = NativeDeclaredFieldGroup(
-        aliases=(canonical_query,),
-        required_fields=tuple(demanded[key] for key in sorted(demanded)),
-        source_type=source_type, license=license_id,
+    approved_hints, group = _source_owned_understood_group(
+        understanding, catalog, intent_registry,
     )
 
     witness = router._retrieval_authority_witness()
@@ -228,13 +245,13 @@ def compile_paper_understood_direct_plan(
     # Source constraints can only remove candidates. Their absence does not
     # loosen catalog source/licence requirements already embedded in `group`.
     if approved_hints.source_type is not None and (
-        approved_hints.source_type != source_type
+        approved_hints.source_type != group.source_type
     ):
         return empty("no_proven_hit")
 
     keys = approved_hints.named_tools or None
     first = index.field_index.lookup(
-        router, canonical_query, principal=principal, group=group,
+        router, group.aliases[0], principal=principal, group=group,
         k=k, allowed_tool_keys=keys,
     )
     if first.status != "complete":
@@ -267,7 +284,9 @@ def compile_paper_understood_direct_plan(
                 tool_fingerprint=candidate.tool_fingerprint,
                 endpoint_fingerprint=candidate.endpoint_fingerprint,
                 output_fields=names,
-                covered_semantic_ids=tuple(sorted(demanded)),
+                covered_semantic_ids=tuple(sorted(
+                    field.semantic_id for field in group.required_fields
+                )),
             ))
         positions = {route.route_id: i for i, route in enumerate(routes)}
         originals = {route.route_id: route for route in routes}
@@ -286,7 +305,7 @@ def compile_paper_understood_direct_plan(
     try:
         initial_calls = materialize(first.candidates)
         second = index.field_index.lookup(
-            router, canonical_query, principal=principal, group=group,
+            router, group.aliases[0], principal=principal, group=group,
             k=k, allowed_tool_keys=keys,
         )
         if first != second or materialize(second.candidates) != initial_calls:

@@ -1,0 +1,235 @@
+"""Original-paper named target → source-native one/two-hop typed E0 plans."""
+
+from __future__ import annotations
+
+import pytest
+
+from schemarouter import (
+    AuthorizationPolicy,
+    AuthorizationRule,
+    CapabilityFieldContract,
+    DataScopeRule,
+    EndpointSpec,
+    FieldSpec,
+    NativeConceptCatalog,
+    NativeDeclaredConcept,
+    NativeSchemaGraphIndex,
+    NativeSchemaPostingIndex,
+    ParameterSpec,
+    PrincipalContext,
+    SchemaRouter,
+    ToolSpec,
+)
+from schemarouter.errors import PolicyViolationError
+from schemarouter.paper_typed_tool_plan import PaperPlanBinding
+from schemarouter.paper_understood_direct_plan import (
+    PaperIntentDeclaration,
+    PaperIntentRegistry,
+    PaperUnderstanding,
+)
+from schemarouter.paper_understood_graph_plan import (
+    compile_paper_understood_graph_plan,
+)
+
+ACTOR = PrincipalContext(subject="native-paper", roles=("reader",))
+CATALOG = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+    concept_id="crm.status", aliases=("case status", "문의 상태", "問い合わせ状態"),
+    source_type="crm", license="reviewed",
+    required_fields=(CapabilityFieldContract(
+        semantic_id="crm.status", json_schema={"type": "string"},
+    ),),
+),))
+INTENTS = PaperIntentRegistry(intents=(PaperIntentDeclaration(
+    intent_id="case.lookup", required_concept_ids=("crm.status",),
+),))
+
+
+def _node(
+    name: str, *, input_semantic: str | None = None,
+    output_semantic: str = "crm.status", identifier: bool = False,
+    output_type: str = "string", safe: bool = True,
+) -> ToolSpec:
+    output_name = output_semantic.split(".")[-1]
+    input_name = input_semantic.split(".")[-1] if input_semantic else None
+    parameters = [ParameterSpec(
+        name=input_name, semantic_id=input_semantic, required=True,
+        json_schema={"type": "string"},
+    )] if input_name else []
+    return ToolSpec(
+        name=name, source_type="crm", license="reviewed",
+        endpoints=[EndpointSpec(
+            name="read", read_only=safe, destructive=not safe,
+            parameters=parameters,
+            input_schema={"type": "object", "properties": {
+                input_name: {"type": "string"},
+            }, "required": [input_name]} if input_name else {},
+            output_fields=[FieldSpec(
+                name=output_name, semantic_id=output_semantic,
+                json_schema={"type": output_type}, identifier=identifier,
+            )],
+        )],
+    )
+
+
+def _router(*, hops: int = 1, n_targets: int = 1, deny_middle=False,
+            hidden_middle=False, wrong_middle_type=False,
+            unsafe_target=False) -> SchemaRouter:
+    rules = (AuthorizationRule(
+        effect="deny", operation="middle.read", roles_any=("reader",),
+    ),) if deny_middle else ()
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=rules + (AuthorizationRule(
+            effect="allow", operation="*.read", roles_any=("reader",),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="middle.read", roles_any=("reader",),
+            hidden_fields=("case_id",),
+        ),) if hidden_middle else (),
+    ))
+    router.add_tool(_node(
+        "root", output_semantic="crm.contact_id" if hops == 2 else "crm.case_id",
+        identifier=True,
+    ))
+    if hops == 2:
+        router.add_tool(_node(
+            "middle", input_semantic="crm.contact_id",
+            output_semantic="crm.case_id", identifier=True,
+            output_type="integer" if wrong_middle_type else "string",
+        ))
+    for i in range(n_targets):
+        router.add_tool(_node(
+            f"target_{i}", input_semantic="crm.case_id",
+            safe=not unsafe_target,
+        ))
+    return router
+
+
+def _compile(router, *, named_tools=("target_0",), max_hops=2,
+             hints=None, index=None, source_type=None):
+    return compile_paper_understood_graph_plan(
+        router, PaperUnderstanding(
+            intent_id="case.lookup", named_tools=named_tools,
+            parameter_hints=hints or {}, source_type=source_type,
+        ),
+        principal=ACTOR, catalog=CATALOG, intent_registry=INTENTS,
+        index=index or NativeSchemaGraphIndex.build(
+            NativeSchemaPostingIndex.build(router.registry),
+        ),
+        max_hops=max_hops,
+    )
+
+
+def test_named_one_hop_emits_original_typed_binding_not_model_parameters(monkeypatch):
+    router = _router()
+    monkeypatch.setattr(router, "execute", lambda *a, **kw: pytest.fail("executed"))
+    plan = _compile(router, hints={"case_id": "model-forgery"})
+    assert plan.status == "requires_observation"
+    assert tuple(call.route_id for call in plan.calls) == (
+        "root.read", "target_0.read",
+    )
+    # The value is an original named producer field, never a generated ID.
+    assert plan.bindings == (PaperPlanBinding(1, "case_id", 0, "case_id"),)
+    assert plan.calls[0].call.fields == ["case_id"]
+    assert plan.calls[1].call.fields == ["status"]
+    assert all(call.call.arguments == {} for call in plan.calls)
+    assert plan.executable_authority is False
+
+
+def test_named_two_hop_emits_two_source_typed_dependencies():
+    router = _router(hops=2)
+    plan = _compile(router)
+    assert plan.status == "requires_observation"
+    assert tuple(call.route_id for call in plan.calls) == (
+        "root.read", "middle.read", "target_0.read",
+    )
+    assert [(edge.consumer_call_index, edge.parameter,
+             edge.producer_call_index, edge.producer_field)
+            for edge in plan.bindings] == [
+        (1, "contact_id", 0, "contact_id"),
+        (2, "case_id", 1, "case_id"),
+    ]
+    assert [c.call.fields for c in plan.calls] == [
+        ["contact_id"], ["case_id"], ["status"],
+    ]
+    assert plan.calls[-1].fields_meta[0].semantic_id == "crm.status"
+    assert plan.executable_authority is False
+
+
+def test_explicit_named_sixth_target_survives_graph_fixed_k():
+    router = _router(hops=2, n_targets=6)
+    assert [call.route_id for call in _compile(
+        router, named_tools=("target_5",),
+    ).calls] == ["root.read", "middle.read", "target_5.read"]
+
+
+@pytest.mark.parametrize("reason", [
+    "unknown", "hidden", "denied", "wrong_type", "unsafe",
+])
+def test_named_graph_never_returns_unproved_or_unauthorized_path(reason):
+    router = _router(
+        hops=2, hidden_middle=reason == "hidden",
+        deny_middle=reason == "denied",
+        wrong_middle_type=reason == "wrong_type",
+        unsafe_target=reason == "unsafe",
+    )
+    plan = _compile(router, named_tools=(
+        "unregistered" if reason == "unknown" else "target_0",
+    ))
+    assert plan.status == "no_proven_hit"
+    assert plan.calls == () and plan.bindings == ()
+    assert "middle.read" not in repr(plan)
+
+
+def test_unmentioned_target_retains_no_direct_proof_without_disclosing_graph():
+    router = _router(hops=2)
+    plan = _compile(router, named_tools=())
+    # Without a model-named dependency, the existing direct compiler reports
+    # the real required host argument; it does not discover joins implicitly.
+    assert plan.status == "requires_arguments"
+    assert [call.route_id for call in plan.calls] == ["target_0.read"]
+    assert plan.bindings == ()
+
+
+def test_one_hop_bound_does_not_accidentally_search_two_hop():
+    plan = _compile(_router(hops=2), max_hops=1)
+    assert plan.status == "no_proven_hit" and plan.calls == ()
+
+
+def test_named_source_type_constraint_cannot_disclose_other_source_dependency():
+    router = _router(hops=2)
+    # The target still exactly matches the requested source; the graph root
+    # has an incompatible provider source and must not leak into that plan.
+    root = router.registry.get("root")
+    foreign_root = root.model_copy(update={"source_type": "foreign"})
+    router.registry.unregister("root")
+    router.add_tool(foreign_root)
+    plan = _compile(router, source_type="crm")
+    assert plan.status == "no_proven_hit"
+    assert plan.calls == () and plan.bindings == ()
+
+
+def test_ambiguous_named_dependency_paths_do_not_form_false_combined_toolcall():
+    router = _router(hops=2, n_targets=2)
+    plan = _compile(router, named_tools=("target_0", "target_1"))
+    assert plan.status == "ambiguous_paths"
+    assert plan.calls == () and plan.bindings == ()
+
+
+def test_source_availability_change_during_compilation_aborts(monkeypatch):
+    import schemarouter.paper_understood_graph_plan as module
+
+    router = _router(hops=2)
+    index = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
+    original = module._compile_one_route
+
+    def revoke(*args, **kwargs):
+        result = original(*args, **kwargs)
+        router.planner.availability_predicate = lambda tool, endpoint: (
+            tool.key != "middle"
+        )
+        return result
+
+    monkeypatch.setattr(module, "_compile_one_route", revoke)
+    with pytest.raises(PolicyViolationError, match="changed|eligibility"):
+        _compile(router, index=index)

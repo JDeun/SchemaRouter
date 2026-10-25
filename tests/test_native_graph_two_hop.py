@@ -194,6 +194,66 @@ def test_two_hop_six_authorized_paths_abstain_without_exposing_any_candidate():
     assert result.calibrated_no_fit is False
 
 
+def test_two_hop_explicit_sixth_target_filters_before_k_without_granting_authority():
+    router = _router(n_targets=6)
+    index = _index(router)
+    selected = index.lookup_two_hop(
+        router, ALIASES[0], group=GROUP, principal=ACTOR,
+        allowed_target_routes=frozenset({"target_5.read"}),
+    )
+    assert selected.status == "complete"
+    assert selected.qualified_path_count == 1
+    assert selected.candidates[0].route_ids == (
+        "root.read", "intermediate.read", "target_5.read",
+    )
+    assert index.lookup_two_hop(
+        router, ALIASES[0], group=GROUP, principal=ACTOR,
+        allowed_target_routes=frozenset({"never_registered.read"}),
+    ).status == "no_proven_hit"
+    with pytest.raises(ValueError, match="target"):
+        index.lookup_two_hop(
+            router, ALIASES[0], group=GROUP, principal=ACTOR,
+            allowed_target_routes={"target_5.read"},  # type: ignore[arg-type]
+        )
+
+
+def test_one_hop_explicit_sixth_target_filters_before_k():
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.read", roles_any=("reader",),
+        ),),
+    ))
+    router.add_tool(_node(
+        "root", output_name="case_id", output_semantic="crm.case_id",
+        identifier=True,
+    ))
+    for i in range(6):
+        router.add_tool(_node(
+            f"target_{i}", input_name="case_id", input_semantic="crm.case_id",
+            output_name="status", output_semantic="crm.status",
+        ))
+    index = _index(router)
+    assert index.lookup(router, ALIASES[0], group=GROUP,
+                        principal=ACTOR).status == "over_k_unranked"
+    selected = index.lookup(
+        router, ALIASES[0], group=GROUP, principal=ACTOR,
+        allowed_target_routes=frozenset({"target_5.read"}),
+    )
+    assert selected.status == "complete"
+    assert selected.qualified_path_count == 1
+    assert selected.candidates[0].consumer_route_id == "target_5.read"
+    assert index.lookup(
+        router, ALIASES[0], group=GROUP, principal=ACTOR,
+        allowed_target_routes=frozenset({"unregistered.read"}),
+    ).status == "no_proven_hit"
+    with pytest.raises(ValueError, match="target"):
+        index.lookup(
+            router, ALIASES[0], group=GROUP, principal=ACTOR,
+            allowed_target_routes={"target_5.read"},  # type: ignore[arg-type]
+        )
+
+
 def test_two_hop_does_not_walk_unrelated_registered_native_routes(monkeypatch):
     router = _router(noise=300)
     index = _index(router)

@@ -634,6 +634,7 @@ class NativeSchemaGraphIndex:
         group: NativeDeclaredFieldGroup,
         principal: PrincipalContext,
         k: int = STRICT_K,
+        allowed_target_routes: frozenset[str] | None = None,
         _research_ranker: Callable[
             [str, tuple[NativeIndexedGraphCandidate, ...], int],
             tuple[int, ...],
@@ -642,6 +643,7 @@ class NativeSchemaGraphIndex:
         """Public G5 lookup: strict K5, never exposes private fork arms."""
         return self._lookup_native_paths(
             router, query, group=group, principal=principal, k=k,
+            allowed_target_routes=allowed_target_routes,
             _research_ranker=_research_ranker,
         )
 
@@ -653,6 +655,7 @@ class NativeSchemaGraphIndex:
         group: NativeDeclaredFieldGroup,
         principal: PrincipalContext,
         k: int = STRICT_K,
+        allowed_target_routes: frozenset[str] | None = None,
         _research_ranker: Callable[
             [str, tuple[NativeIndexedGraphCandidate, ...], int],
             tuple[int, ...],
@@ -671,6 +674,15 @@ class NativeSchemaGraphIndex:
         """
         if type(k) is not int or k != STRICT_K:
             raise ValueError("G5 strict fixed K5 required")
+        if allowed_target_routes is not None and (
+            type(allowed_target_routes) is not frozenset
+            or len(allowed_target_routes) > MAX_RESEARCH_RANKABLE_PATHS
+            or any(
+                type(route) is not str or not 1 <= len(route) <= 320
+                for route in allowed_target_routes
+            )
+        ):
+            raise ValueError("G5 invalid bounded target route prefilter")
         if _research_ranker is not None and not callable(_research_ranker):
             raise ValueError("G5 experimental ranker must be callable")
         if type(_fork_arm_internal) is not bool or (
@@ -728,6 +740,10 @@ class NativeSchemaGraphIndex:
         # Every surviving target AND its original source root still gets
         # current authorization, hidden-field and availability checks.
         targets.intersection_update(self.edge_consumer_routes)
+        if allowed_target_routes is not None:
+            # Model/host target IDs only NARROW graph structure before K;
+            # normal principal, scope, source and typed checks still apply.
+            targets.intersection_update(allowed_target_routes)
         if _fork_target_filter is not None:
             # Candidate-only optimization; current authorization is NEVER
             # inferred from route IDs supplied to the private collector.
@@ -1059,6 +1075,7 @@ class NativeSchemaGraphIndex:
         group: NativeDeclaredFieldGroup,
         principal: PrincipalContext,
         k: int = STRICT_K,
+        allowed_target_routes: frozenset[str] | None = None,
     ) -> NativeIndexedTwoHopResult:
         """Opt-in E0: root -> typed intermediary -> target, without execution.
 
@@ -1069,6 +1086,15 @@ class NativeSchemaGraphIndex:
         """
         if type(k) is not int or k != STRICT_K:
             raise ValueError("G5 two-hop strict fixed K5 required")
+        if allowed_target_routes is not None and (
+            type(allowed_target_routes) is not frozenset
+            or len(allowed_target_routes) > MAX_RESEARCH_RANKABLE_PATHS
+            or any(
+                type(route) is not str or not 1 <= len(route) <= 320
+                for route in allowed_target_routes
+            )
+        ):
+            raise ValueError("G5 two-hop invalid bounded target route prefilter")
         if type(query) is not str or len(query.encode("utf-8")) > 512:
             raise ValueError("G5 two-hop invalid bounded query")
         if not isinstance(group, NativeDeclaredFieldGroup):
@@ -1161,6 +1187,8 @@ class NativeSchemaGraphIndex:
         ]
         targets = set.intersection(*wanted) if wanted else set()
         targets.intersection_update(self.edge_consumer_routes)
+        if allowed_target_routes is not None:
+            targets.intersection_update(allowed_target_routes)
         qualified: list[NativeIndexedTwoHopCandidate] = []
 
         # Query the indexed predecessor lists only. This does not enumerate
