@@ -11,6 +11,8 @@ from schemarouter import (
     NativeDeclaredConcept,
     NativeSchemaGraphIndex,
     NativeSchemaPostingIndex,
+    ParameterSpec,
+    PolicyViolationError,
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
@@ -39,7 +41,7 @@ CATALOG = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
 ),))
 
 
-def source():
+def source(*, required_argument=False):
     router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
@@ -51,6 +53,9 @@ def source():
         source_type="crm", license="host-approved",
         endpoints=[EndpointSpec(
             name="read", read_only=True, description="case status",
+            parameters=[ParameterSpec(
+                name="case_id", location="query", required=True,
+            )] if required_argument else [],
             output_fields=[FieldSpec(
                 name="status", semantic_id="case.status",
                 json_schema={"type": "string"},
@@ -139,3 +144,33 @@ async def test_denied_named_tool_never_generates_agent_turn():
     assert decision == "abstain"
     assert row["host_empty_menu_terminal"] is True
     assert row["tool_call_count"] == row["turns"] == 0
+
+
+@pytest.mark.asyncio
+async def test_required_argument_is_not_fabricated_by_scoped_planner():
+    view, index = source(required_argument=True)
+    agent = Agent()
+    decision, row = await evaluate(
+        lambda payload: model_result(), agent, view, index, supported=False,
+    )
+    assert decision == "request_arguments"
+    assert row["tool_call_count"] == 1
+    assert agent.turns >= 1
+    assert row["passed"] is False
+
+
+@pytest.mark.asyncio
+async def test_source_mutation_during_understand_prevents_agent_execution():
+    view, index = source()
+    router = view.router
+
+    class ForbiddenAgent:
+        def generate(self, messages, tools):
+            pytest.fail("mutated source must not reach agent")
+
+    def mutate(payload):
+        router.authorization_policy = AuthorizationPolicy(default_effect="deny")
+        return model_result()
+
+    with pytest.raises(PolicyViolationError):
+        await evaluate(mutate, ForbiddenAgent(), view, index, supported=True)
