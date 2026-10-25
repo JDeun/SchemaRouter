@@ -45,7 +45,8 @@ def compile_paper_understood_graph_plan(
 ) -> PaperTypedToolPlan:
     """Compile one exact model-named target path without source execution.
 
-    A source-proven direct route requiring arguments remains a direct plan.\n    Only explicitly named tools
+    A source-proven direct route requiring arguments remains a direct plan.
+    Only explicitly named tools
     can select a typed dependency target; several complete paths without
     independent ranking produce an empty ``ambiguous_paths`` receipt.
     """
