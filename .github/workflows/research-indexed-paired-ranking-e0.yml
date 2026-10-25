@@ -1,0 +1,58 @@
+name: Native Indexed Paired Top-K5 Research DEV E0
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_indexed_paired_ranking_dev.py"
+      - "tests/test_research_indexed_paired_ranking_dev.py"
+      - "scripts/research_indexed_decision_backend_ranker_e0.py"
+      - "src/schemarouter/native_semantic_index.py"
+      - "research/autoresearch/paper-indexed-paired-ranking-dev-e0.md"
+      - ".github/workflows/research-indexed-paired-ranking-e0.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: indexed-paired-ranking-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  no-model-paired-index-ranking:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install source and E0 test tools
+        run: python -m pip install ".[mcp]" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.9,<1" "pyright>=1.1.400"
+      - name: Check source contracts, paired scorer and type boundary
+        run: |
+          ruff check scripts/research_indexed_paired_ranking_dev.py tests/test_research_indexed_paired_ranking_dev.py
+          pyright scripts/research_indexed_paired_ranking_dev.py
+          python -m pytest -q tests/test_research_indexed_paired_ranking_dev.py tests/test_research_indexed_decision_backend_ranker_e0.py
+      - name: Run independent no-model paired corpus validation
+        run: |
+          python -m scripts.research_indexed_paired_ranking_dev --mode validate             --out artifacts/indexed-paired-dev/validate.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r = json.loads(Path("artifacts/indexed-paired-dev/validate.json").read_text())
+          assert r["evidence_tier"] == "E0_NO_MODEL_INDEXED_SYNTHETIC_DEV_ONLY"
+          assert r["route_count"] == 24 and r["case_count"] == 30
+          assert r["supported_case_count"] == 27 and r["ood_case_count"] == 3
+          assert r["model_used"] is False
+          assert r["real_model_runtime_attested"] is False
+          assert r["independent_publisher_gold"] is False
+          assert r["agent_task_success_measured"] is False
+          assert r["calibrated_no_fit"] is False
+          assert r["product_default_changed"] is False
+          assert r["per_language"]["lexical5"]["en"]["recall_at_5"] == 1.0
+          assert r["per_language"]["lexical5"]["ko"]["recall_at_5"] == 0.0
+          assert r["per_language"]["lexical5"]["ja"]["recall_at_5"] == 0.0
+          PY
