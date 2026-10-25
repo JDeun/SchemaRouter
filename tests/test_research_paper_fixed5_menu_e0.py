@@ -1,5 +1,6 @@
 """Paper plan to existing fixed5 menu must never grant authority."""
 import pytest
+
 from scripts.research_paper_fixed5_menu_e0 import paper_plan_fixed5_menu
 
 

@@ -1,5 +1,6 @@
 """Isolated adapter rejects invalid scope before invoking the agent."""
 import pytest
+
 from scripts.research_paper_fixed5_episode_e0 import run_paper_fixed5_episode_e0
 
 

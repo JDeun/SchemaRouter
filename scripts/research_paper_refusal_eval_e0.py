@@ -36,7 +36,9 @@ def decision_from_plan_status(status: str) -> Decision:
         return "request_arguments"
     if status == "requires_observation":
         return "request_observation"
-    if status in (\n        "no_proven_hit", "over_k_unranked", "budget_unsatisfied", "ambiguous_paths"\n    ):
+    if status in (
+        "no_proven_hit", "over_k_unranked", "budget_unsatisfied", "ambiguous_paths"
+    ):
         return "abstain"
     raise ValueError("unknown or unverified paper plan status")
 
@@ -64,8 +66,14 @@ def evaluate(cases: tuple[Case, ...]) -> dict[str, Metrics]:
         unresolved = sum(c.gold == "unresolved" for c in subset)
         fr = sum(c.gold == "supported" and c.decision == "abstain" for c in subset)
         fa = sum(c.gold == "unsupported" and c.decision == "offer" for c in subset)
-        sd = sum(\n            c.gold == "supported" and c.decision in ("request_arguments", "request_observation")\n            for c in subset\n        )
-        ud = sum(\n            c.gold == "unsupported" and c.decision in ("request_arguments", "request_observation")\n            for c in subset\n        )
+        sd = sum(
+            c.gold == "supported" and c.decision in ("request_arguments", "request_observation")
+            for c in subset
+        )
+        ud = sum(
+            c.gold == "unsupported" and c.decision in ("request_arguments", "request_observation")
+            for c in subset
+        )
         result[language] = Metrics(supported, unsupported, unresolved, fr, fa, sd, ud,
                                    fr / supported if supported else None,
                                    fa / unsupported if unsupported else None)

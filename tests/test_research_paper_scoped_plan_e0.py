@@ -1,5 +1,6 @@
 """Safe boundary tests for the opt-in scoped model/plan adapter."""
 import pytest
+
 from scripts.research_paper_scoped_plan_e0 import analyze_and_plan_paper_scoped_e0
 
 @pytest.mark.asyncio

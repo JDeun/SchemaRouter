@@ -2,8 +2,8 @@
 from types import SimpleNamespace
 
 import pytest
-from schemarouter import PolicyViolationError
 
+from schemarouter import PolicyViolationError
 from scripts import research_paper_fixed5_menu_e0 as module
 
 

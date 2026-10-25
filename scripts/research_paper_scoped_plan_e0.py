@@ -9,8 +9,8 @@ from schemarouter import PolicyViolationError
 from schemarouter.concept_retrieval import NativeConceptCatalog
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.paper_typed_tool_plan import PaperTypedToolPlan
-from schemarouter.paper_understood_direct_plan import PaperIntentRegistry
 from schemarouter.paper_understood_graph_plan import compile_paper_understood_graph_plan
+from schemarouter.paper_understood_direct_plan import PaperIntentRegistry
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
 from scripts.research_paper_scoped_understand_e0 import (
     PaperScopedModel, analyze_paper_understanding_scoped,
