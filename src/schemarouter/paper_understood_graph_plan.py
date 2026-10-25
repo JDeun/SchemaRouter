@@ -45,7 +45,7 @@ def compile_paper_understood_graph_plan(
 ) -> PaperTypedToolPlan:
     """Compile one exact model-named target path without source execution.
 
-    The original direct plan takes precedence. Only explicitly named tools
+    A source-proven direct route requiring arguments remains a direct plan.\n    Only explicitly named tools
     can select a typed dependency target; several complete paths without
     independent ranking produce an empty ``ambiguous_paths`` receipt.
     """
@@ -81,7 +81,7 @@ def compile_paper_understood_graph_plan(
         intent_registry=intent_registry, index=index, k=k,
     )
     if (
-        direct.status not in {"no_proven_hit", "requires_arguments"}
+        direct.status != "no_proven_hit"
         or not approved.named_tools
         or approved.source_type is not None
         and approved.source_type != group.source_type
