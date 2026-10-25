@@ -188,8 +188,17 @@ def test_model_backend_input_is_bounded_before_calling_external_backend():
         _backend(calls=attempts),
         max_model_input_bytes=64,
     )
+    offered = tuple(
+        IndexedNativeFieldCandidate(
+            route_id=f"owner_{i}.read",
+            tool_fingerprint=item.tool_fingerprint,
+            endpoint_fingerprint=item.endpoint_fingerprint,
+            required_output_fields=item.required_output_fields,
+        )
+        for i in range(6)
+    )
     with pytest.raises(PolicyViolationError, match="byte cap"):
-        ranker("case status", (item,) * 6, 5)
+        ranker("case status", offered, 5)
     assert attempts == []
 
 
