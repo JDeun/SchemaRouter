@@ -320,6 +320,7 @@ class AuthorizedAgentToolSurface:
         # task IDs, user query, final generated text or expected gold routes.
         for name in (
             "passed", "task_complete", "supported", "context_overflow",
+            "host_empty_menu_terminal",
         ):
             value = episode_row.get(name)
             if type(value) is bool:

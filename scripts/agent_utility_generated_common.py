@@ -489,6 +489,7 @@ def run_generated_episode(
     experimental_e0_trace_provenance: E0TraceProvenance | None = None,
     experimental_block_unavailable_observation: bool = False,
     experimental_preserve_candidate_order: bool = False,
+    experimental_host_empty_menu_terminal: bool = False,
 ) -> dict[str, Any]:
     """Run one frozen episode.
 
@@ -517,7 +518,21 @@ def run_generated_episode(
     the selector\u0027s validated relevance order to the agent. The historical
     default intentionally retains alphabetical model-visible tool ordering.
     This is a model-presentation hypothesis, NOT calibrated fit/no-fit.
+
+    An opt-in, principal-scoped host guard can terminate with the original
+    generic REQUEST_MORE_TOOLS response when **no verified tools were offered**.
+    It never establishes semantic/global no-fit or changes frozen runs.
     """
+    if (
+        type(experimental_host_empty_menu_terminal) is not bool
+        or (experimental_host_empty_menu_terminal and (
+            condition != EXPERIMENTAL_FIXED5_CONDITION
+            or candidate_condition is not None
+            or experimental_candidate_selector is None
+            or experimental_agent_tool_surface is None
+        ))
+    ):
+        raise ValueError("host empty menu terminal requires scoped fixed5 opt-in")
     if type(experimental_preserve_candidate_order) is not bool:
         raise ValueError("ranked model visibility flag must be boolean")
     if experimental_preserve_candidate_order and (
@@ -632,6 +647,13 @@ def run_generated_episode(
         )
     selection_ms = (time.perf_counter_ns() - selection_started) / 1_000_000
 
+    # Terminal ownership stays in the host: an agent with no verified menu
+    # must not hallucinate a route, issue a speculative request, or write an
+    # unsupported factual answer. This says nothing about global no-fit.
+    host_empty_menu_terminal = (
+        experimental_host_empty_menu_terminal and not visible_routes
+    )
+
     progressive = routing_condition in {"SR-PROGRESSIVE", "SR-PROGRESSIVE-STATIC"}
     state_aware = routing_condition == "SR-5-STATE-AWARE"
     executor = FrozenCorpusExecutor(registry, task)
@@ -650,12 +672,12 @@ def run_generated_episode(
     total_output = 0
     total_tool_tokens = 0
     total_generation_latency = 0.0
-    final_text = ""
+    final_text = "REQUEST_MORE_TOOLS" if host_empty_menu_terminal else ""
     context_overflow = False
     malformed_calls = 0
     expansions = 0
 
-    for turn in range(1, MAX_TURNS + 1):
+    for turn in (() if host_empty_menu_terminal else range(1, MAX_TURNS + 1)):
         if experimental_agent_tool_surface is None:
             model_tools = _visible_tools(registry, visible_routes)
         else:
@@ -952,6 +974,8 @@ def run_generated_episode(
         "attempts": [asdict(attempt) for attempt in attempts],
         "turn_rows": turn_rows,
     }
+    if experimental_host_empty_menu_terminal:
+        episode_record["host_empty_menu_terminal"] = host_empty_menu_terminal
     if experimental_agent_tool_surface is not None:
         # Grader-only raw attempts/gold are consumed AFTER all model turns.
         # Never hand this record, or the HMAC key, to the agent/selector.
