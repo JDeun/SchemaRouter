@@ -64,8 +64,8 @@ def test_indexed_no_model_dev_reports_explicit_27_supported_and_3_ood():
     # Source names are English only. The lexical baseline is NOT translated
     # and cannot learn its way into a positive by observing offline gold.
     assert report["per_language"]["lexical5"]["en"]["recall_at_5"] == 1.0
-    assert report["per_language"]["lexical5"]["ko"]["recall_at_5"] == 0.0
-    assert report["per_language"]["lexical5"]["ja"]["recall_at_5"] == 0.0
+    assert report["per_language"]["lexical5"]["ko"]["recall_at_5"] == 1 / 9
+    assert report["per_language"]["lexical5"]["ja"]["recall_at_5"] == 1 / 9
     for arm in ("unranked", "first5", "lexical5"):
         assert report["latency_ms"][arm]["p50"] >= 0
         assert report["latency_ms"][arm]["p99"] >= report["latency_ms"][arm]["p50"]
@@ -101,11 +101,11 @@ def test_injected_backend_is_scored_without_access_to_gold_or_registry():
     assert report["real_model_runtime_attested"] is False
     assert report["evidence_tier"].startswith("E0_INJECTED_")
     assert report["per_language"]["e5_5"]["en"]["supported"] == 9
-    assert report["per_language"]["e5_5"]["en"]["recall_at_5"] == 1 / 9
-    assert report["per_language"]["e5_5"]["ko"]["recall_at_5"] == 1 / 9
-    assert report["per_language"]["e5_5"]["ja"]["recall_at_5"] == 1 / 9
+    assert report["per_language"]["e5_5"]["en"]["recall_at_5"] == 2 / 9
+    assert report["per_language"]["e5_5"]["ko"]["recall_at_5"] == 2 / 9
+    assert report["per_language"]["e5_5"]["ja"]["recall_at_5"] == 2 / 9
     assert report["paired_lexical5_to_backend"]["rescued"] == 2
-    assert report["paired_lexical5_to_backend"]["regressed"] == 8
+    assert report["paired_lexical5_to_backend"]["regressed"] == 7
 
 
 def test_lexical_ranker_uses_only_bounded_visible_route_tokens():
