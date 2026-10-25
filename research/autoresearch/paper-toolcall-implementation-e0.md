@@ -9,6 +9,36 @@
 - Independently source-verified supported and unsupported gold are separate denominators; unresolved cases do not become unsupported. Report EN/KO/JA and aggregate false-refusal, false-accept and deferred counts. An offered plan is not successful execution; a deferred plan is neither success nor an immediate refusal.
 - No independent labeled dataset, real-model accuracy, model token/cost, automatic agent execution, calibrated global no-fit, or E2 is claimed. Next: add source-pinned independently reviewed EN/KO/JA gold fixtures, run paired real-model evaluation with current principal snapshots, then check same-head CI and extend research evidence. Keep #1291, #1346, #1477 and #1356 gates intact.
 
+## LIVE IMPLEMENTATION CHECKLIST — single source of truth (2026-10-25)
+
+**Use this list at the start of EVERY new session.** Keep completed items checked (do not delete audit history); update the evidence link, exact HEAD and CI state after each change. A checked implementation is **not** an E2 qualification. Do not reopen already completed slices. Prioritize major vertical behavior over micro-tuning.
+
+**Current Draft:** [#1755](https://github.com/JDeun/SchemaRouter/pull/1755) stacked on #1754. Latest verified branch before this checklist: `4b4afe2629dd6bf00af868a81aae9d76437cf580`. Exact-head CI must be rechecked after any commit; do not inherit green from earlier heads.
+
+### A. Source-safe Algorithm 1 implementation
+- [x] **A1** Host-approved structured `Understand(q)` model callback with scoped source index and strict JSON parsing. Evidence: `scripts/research_paper_scoped_understand_e0.py`. E0 only.
+- [x] **A2** Named direct-tool FieldGroup, principal/source guards, K5 prefilter and typed non-executing plan. Evidence: `paper_understood_direct_plan.py`, #1755.
+- [x] **A3** Named one-/two-hop G5 typed dependency plan, conservative ambiguity/overflow, no auto-execution. Evidence: `paper_understood_graph_plan.py`, #1755.
+- [x] **A4** E0 EN/KO/JA outcome accounting and verified-gold denominator guard. Evidence: `scripts/research_paper_refusal_eval_e0.py`, `tests/test_research_paper_refusal_eval_e0.py`; commit `4b4afe26`. This is evaluator mechanics **only**, not model accuracy.
+- [ ] **A5 — NEXT CODE** Integrate the scoped model `Understand(q)` → current direct/graph planner → existing fixed-K agent evaluation adapter as an explicitly opt-in **bounded vertical slice**. Reuse existing executor; preserve host authorization, current source snapshots and no automatic dependency execution. Test supported, unsupported, missing arguments, observed dependencies, mutable policy/source and empty menu.
+- [ ] **A6** Add independently reviewed, source-snapshot-pinned EN/KO/JA supported/unsupported/ambiguous fixtures, with explicit labels, provenance, license and permission conditions. Do not fabricate publisher gold.
+- [ ] **A7** Run paired same-model/same-agent evaluation; report false refusal, false accept, deferred/unknown, tool attempts, wall time and actual input/output tokens separately from schema bytes; repeat on CI Linux Python 3.12. No E2 claim without independent data.
+- [ ] **A8** Independently justified Top-K5 ranking for eligible alternatives and >K overflow, without weakening policy-before-K, deterministic tie handling or rewriting frozen #432 scores.
+- [ ] **A9** Source-attested argument semantics and separately authorized observed 1/2-hop dependency execution through the **existing** agent/executor, with fail-closed mutation, typed binding, provenance and budget tests. Do not create a second executor.
+- [ ] **A10** Calibrate no-fit on independently labeled supported and unsupported requests. A `no_proven_hit` is not proof of globally nonexistent capability. Related #1291 is closed for its prior specific fix; new calibration remains open in this plan.
+
+### B. Product and independent qualification (not solved by E0)
+- [ ] **B1** #1560 full versioned native catalog-wide index, incremental churn/role/availability invalidation and 500/5000 heterogeneous routes with source-authorized exhaustive oracle parity, p50/p95/p99 CPU/RSS/schema bytes.
+- [ ] **B2 — BLOCKED_EXTERNAL** #1346 publisher-authored independent route/field/permission gold and provenance/license validation.
+- [ ] **B3 — BLOCKED_EXTERNAL** #1477 paired independent end-to-end agent E2, actual data-context tokens, answer/task quality, latency and cost.
+- [ ] **B4 — HARD HOLD** #1356 release/default promotion until all independent gates and protected checks are satisfied. Do not merge/release as part of E0 continuation.
+
+### C. Per-session closeout (repeat every session)
+- [ ] **C1** Confirm exact remote HEAD, CI/CodeQL and open Draft PR state **for the latest commit**. A pending workflow is not success.
+- [ ] **C2** Run targeted tests + Ruff; record counts and limitations; full-suite timeout is not green.
+- [ ] **C3** Update this checklist and next actionable item, source/commit evidence, issue #1560 and Draft #1755 description when material work changes. Mark checkboxes only when their stated acceptance is proven.
+- [ ] **C4** Preserve cross-session safety boundaries: source ownership, permissions, no untrusted parameters, no new agent/executor, no E2 or release promotion.
+
 ## ACTIVE CROSS-SESSION RESUME — 2026-10-25 (supersedes older next-step notes below)
 
 **Canonical continuation:** Original-paper Algorithm 1 is now beyond the P2
