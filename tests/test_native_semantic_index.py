@@ -220,6 +220,54 @@ def test_over_k_is_explicit_unranked_and_does_not_publish_arbitrary_five():
     assert outcome.candidates == ()
 
 
+def test_indexed_named_sixth_tool_is_filtered_before_k():
+    """The explicit original tool, not an arbitrary first-five sibling, wins."""
+    router = _router(many_complete=6)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    assert index.lookup(
+        router, ALIASES[0], principal=ANALYST, group=GROUP,
+    ).status == "over_k_unranked"
+
+    chosen = index.lookup(
+        router, ALIASES[0], principal=ANALYST, group=GROUP,
+        allowed_tool_keys=("full_5",),
+    )
+    assert chosen.status == "complete"
+    assert chosen.qualified_count == 1
+    assert [c.route_id for c in chosen.candidates] == ["full_5.read"]
+
+
+def test_indexed_named_unknown_or_hidden_tool_does_not_expose_candidates():
+    router = _router(many_complete=6)
+    index = NativeSchemaPostingIndex.build(router.registry)
+    for tool_names, actor in (
+        (("does_not_exist",), ANALYST),
+        (("denied",), ANALYST),
+        (("complete",), VIEWER),
+    ):
+        result = index.lookup(
+            router, ALIASES[0], principal=actor, group=GROUP,
+            allowed_tool_keys=tool_names,
+        )
+        assert result.status == "no_proven_hit"
+        assert result.candidates == ()
+        assert result.qualified_count == 0
+
+
+@pytest.mark.parametrize("bad", [
+    (), ("complete", "complete"), "complete", (" complete",),
+    ("complete", ""), tuple(f"candidate_{i}" for i in range(6)),
+])
+def test_indexed_named_tool_filter_rejects_malformed_keys(bad):
+    router = _router()
+    index = NativeSchemaPostingIndex.build(router.registry)
+    with pytest.raises(ValueError, match="named tool"):
+        index.lookup(
+            router, ALIASES[0], principal=ANALYST, group=GROUP,
+            allowed_tool_keys=bad,
+        )
+
+
 def test_index_itself_is_immutable_and_cannot_add_a_route():
     router = _router()
     index = NativeSchemaPostingIndex.build(router.registry)

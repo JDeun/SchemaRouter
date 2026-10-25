@@ -366,6 +366,7 @@ class NativeSchemaPostingIndex:
         principal: PrincipalContext,
         k: int = STRICT_K,
         input_free_only: bool = False,
+        allowed_tool_keys: tuple[str, ...] | None = None,
         _research_ranker: Callable[
             [str, tuple[IndexedNativeFieldCandidate, ...], int], tuple[int, ...],
         ] | None = None,
@@ -379,6 +380,18 @@ class NativeSchemaPostingIndex:
         """
         if type(input_free_only) is not bool:
             raise ValueError("indexed direct-only flag must be boolean")
+        if allowed_tool_keys is not None and (
+            type(allowed_tool_keys) is not tuple
+            or not 1 <= len(allowed_tool_keys) <= k
+            or any(
+                type(key) is not str or not 1 <= len(key) <= 160
+                or key != key.strip()
+                or any(ord(char) < 32 or ord(char) == 127 for char in key)
+                for key in allowed_tool_keys
+            )
+            or len(set(allowed_tool_keys)) != len(allowed_tool_keys)
+        ):
+            raise ValueError("invalid bounded named tool override")
         if _research_ranker is not None and not callable(_research_ranker):
             raise ValueError("indexed research ranker must be callable")
         if type(k) is not int or k != STRICT_K:
@@ -434,6 +447,8 @@ class NativeSchemaPostingIndex:
             if location is None:
                 raise PolicyViolationError("indexed registered route missing")
             tool_key, endpoint_name = location
+            if allowed_tool_keys is not None and tool_key not in allowed_tool_keys:
+                continue
             tool = router.registry.get(tool_key)
             endpoint = tool.endpoint(endpoint_name)
             if (tool.fingerprint, endpoint.fingerprint) != revisions:
