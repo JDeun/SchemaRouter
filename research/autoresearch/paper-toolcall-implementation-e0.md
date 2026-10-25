@@ -15,6 +15,9 @@
 
 **Current Draft:** [#1755](https://github.com/JDeun/SchemaRouter/pull/1755) stacked on #1754. Latest verified branch before this checklist: `4b4afe2629dd6bf00af868a81aae9d76437cf580`. Exact-head CI must be rechecked after any commit; do not inherit green from earlier heads.
 
+
+**A5 partial implementation checkpoint (2026-10-25):** `scripts/research_paper_scoped_plan_e0.py` now chains the single host-scoped async model callback into the current direct/one-/two-hop source-proven planner. It returns a bounded non-executing receipt and mapped evaluation decision; rejects an unscoped view and any executable-authority result. **A5 remains unchecked**: the existing fixed-K agent callback/episode has not yet consumed this async result, and full mutation/real-agent regressions are not yet proven. This is not an independent accuracy or E2 claim. New HEAD CI and targeted tests require confirmation.
+
 ### A. Source-safe Algorithm 1 implementation
 - [x] **A1** Host-approved structured `Understand(q)` model callback with scoped source index and strict JSON parsing. Evidence: `scripts/research_paper_scoped_understand_e0.py`. E0 only.
 - [x] **A2** Named direct-tool FieldGroup, principal/source guards, K5 prefilter and typed non-executing plan. Evidence: `paper_understood_direct_plan.py`, #1755.
