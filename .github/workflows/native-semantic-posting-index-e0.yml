@@ -40,3 +40,55 @@ jobs:
           ruff check src/schemarouter/native_semantic_index.py scripts/research_indexed_decision_backend_ranker_e0.py scripts/research_indexed_direct_e5_paired_dev.py tests/test_native_semantic_index.py tests/test_research_indexed_decision_backend_ranker_e0.py tests/test_research_indexed_direct_e5_paired_dev.py
           python -m pytest -q tests/test_native_semantic_index.py tests/test_research_indexed_decision_backend_ranker_e0.py tests/test_research_indexed_direct_e5_paired_dev.py tests/test_native_field_group_retrieval.py tests/test_native_concept_retrieval.py tests/test_public_api.py
           pyright src/schemarouter/native_semantic_index.py scripts/research_indexed_decision_backend_ranker_e0.py scripts/research_indexed_direct_e5_paired_dev.py
+      - name: Execute source-scoped paired K5 DEV study without a model
+        run: |
+          python -m scripts.research_indexed_direct_e5_paired_dev \
+            --mode validate --out artifacts/native-indexed-k5/paired-report.json
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          report = json.loads(
+              Path("artifacts/native-indexed-k5/paired-report.json")
+              .read_text(encoding="utf-8")
+          )
+          assert report["evidence_tier"] == "E0_NO_MODEL_FIRST_FIVE_PUBLIC_SYNTHETIC_DEV_ONLY"
+          assert report["independent_publisher_gold"] is False
+          assert report["real_model_routing_measured"] is False
+          assert report["agent_task_success_measured"] is False
+          assert report["product_default_promoted"] is False
+          assert report["calibrated_no_fit"] is False
+          assert report["supported_cases"] == 27
+          assert report["ood_cases"] == 3
+          assert report["total_lookup_calls_measured"] == 30
+          assert report["baseline_total_lookup_calls_measured"] == 30
+          assert len(report["input_roster_sha256"]) == 64
+          assert all(
+              report[key] >= 0
+              for key in (
+                  "latency_ms_p50", "latency_ms_p95", "latency_ms_p99",
+                  "baseline_latency_ms_p50", "baseline_latency_ms_p95",
+                  "baseline_latency_ms_p99",
+              )
+          )
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open(
+              "a", encoding="utf-8"
+          ) as summary:
+              summary.write(
+                  "### Native indexed K5 paired synthetic DEV (no model)\\n\\n"
+                  "Not an independent evaluation, released model, or production latency SLO.\\n\\n"
+                  f"- First-five Recall@5: {report['baseline_supported_recall_at_5']:.3f}\\n"
+                  f"- Injected research ranker Recall@5: {report['supported_recall_at_5']:.3f}\\n"
+                  f"- OOD nonempty: {report['ood_nonempty']}/{report['ood_cases']}\\n"
+                  f"- Paired DEV lookup p95: "
+                  f"{report['baseline_latency_ms_p95']:.2f}ms first-five, "
+                  f"{report['latency_ms_p95']:.2f}ms experimental\\n"
+              )
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-indexed-k5-paired-e0-${{ github.run_id }}
+          path: artifacts/native-indexed-k5/paired-report.json
+          retention-days: 30
+          if-no-files-found: error
