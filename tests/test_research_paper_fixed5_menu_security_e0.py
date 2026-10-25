@@ -1,7 +1,9 @@
 """Branch-level safety regressions for fixed5 paper plan disclosure."""
 from types import SimpleNamespace
+
 import pytest
 from schemarouter import PolicyViolationError
+
 from scripts import research_paper_fixed5_menu_e0 as module
 
 

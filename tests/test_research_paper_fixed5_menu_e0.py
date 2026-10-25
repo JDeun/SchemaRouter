@@ -10,5 +10,6 @@ def test_rejects_unscoped_view():
 
 def test_menu_adapter_has_no_model_or_invoker_parameter():
     import inspect
+
     parameters = inspect.signature(paper_plan_fixed5_menu).parameters
     assert tuple(parameters) == ("view", "plan")

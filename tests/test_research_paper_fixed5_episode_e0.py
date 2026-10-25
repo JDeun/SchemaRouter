@@ -10,7 +10,9 @@ def test_episode_rejects_unscoped_view():
 
 def test_episode_uses_only_existing_executor():
     import inspect
+
     from scripts import research_paper_fixed5_episode_e0 as module
+
     assert module.run_generated_episode.__module__ == "scripts.agent_utility_generated_common"
     assert tuple(inspect.signature(run_paper_fixed5_episode_e0).parameters) == (
         "agent", "view", "task", "plan",

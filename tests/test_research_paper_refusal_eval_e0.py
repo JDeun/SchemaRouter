@@ -25,7 +25,7 @@ def test_separate_denominators_and_deferred():
     )
     m = evaluate(cases)
     assert (m["all"].false_refusal_rate, m["all"].false_accept_rate) == (0.5, 0.5)
-    assert (m["all"].supported_deferred, m["all"].unsupported_deferred, m["all"].unresolved) == (1, 1, 1)
+    assert (\n        m["all"].supported_deferred, m["all"].unsupported_deferred, m["all"].unresolved\n    ) == (1, 1, 1)
     assert m["ko"].false_refusal == 1
     assert m["ja"].false_accept == 1
 
@@ -39,4 +39,4 @@ def test_duplicate_case_rejected():
         evaluate((c, c))
 
 def test_no_denominator_reports_none():
-    assert evaluate((Case("x", "ja", "unresolved", "abstain", False),))["all"].false_accept_rate is None
+    metrics = evaluate((Case("x", "ja", "unresolved", "abstain", False),))\n    assert metrics["all"].false_accept_rate is None
