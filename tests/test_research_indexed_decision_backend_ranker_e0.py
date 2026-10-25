@@ -19,7 +19,7 @@ from schemarouter.decisions import (
     DecisionResult,
     DecisionSelection,
 )
-from schemarouter.errors import PlanningError, PolicyViolationError
+from schemarouter.errors import PolicyViolationError
 from schemarouter.native_semantic_index import (
     IndexedNativeFieldCandidate,
     NativeSchemaPostingIndex,
