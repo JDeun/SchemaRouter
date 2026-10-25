@@ -84,3 +84,74 @@ async def test_query_mismatch_rejected_before_model(monkeypatch):
             model_visible_intent_ids=(), model_visible_concept_ids=(),
         )
     assert calls == []
+
+
+@pytest.mark.asyncio
+async def test_empty_source_plan_reaches_host_terminal_without_agent(monkeypatch):
+    view = View()
+    calls = []
+
+    async def analyze(model, **kwargs):
+        calls.append("understand")
+        return "abstain", None
+
+    def episode(agent, **kwargs):
+        calls.append("existing_executor")
+        assert kwargs["plan"] is None
+        return {"final_text": "REQUEST_MORE_TOOLS", "turns": []}
+
+    monkeypatch.setattr(module, "analyze_and_plan_paper_scoped_e0", analyze)
+    monkeypatch.setattr(module, "run_paper_fixed5_episode_e0", episode)
+    decision, result = await module.run_paper_scoped_agent_episode_e0(
+        lambda _: {}, object(), view=view, task={"query": view.original_query},
+        catalog=None, intent_registry=None, index=None,
+        model_visible_intent_ids=(), model_visible_concept_ids=(),
+    )
+    assert decision == "abstain"
+    assert result["final_text"] == "REQUEST_MORE_TOOLS"
+    assert calls == ["understand", "existing_executor"]
+
+
+@pytest.mark.asyncio
+async def test_model_analysis_failure_never_reaches_executor(monkeypatch):
+    view = View()
+    calls = []
+
+    async def analyze(model, **kwargs):
+        raise ValueError("invalid model response")
+
+    monkeypatch.setattr(module, "analyze_and_plan_paper_scoped_e0", analyze)
+    monkeypatch.setattr(
+        module, "run_paper_fixed5_episode_e0",
+        lambda *args, **kwargs: calls.append("executor"),
+    )
+    with pytest.raises(ValueError, match="invalid model response"):
+        await module.run_paper_scoped_agent_episode_e0(
+            lambda _: {}, object(), view=view, task={"query": view.original_query},
+            catalog=None, intent_registry=None, index=None,
+            model_visible_intent_ids=(), model_visible_concept_ids=(),
+        )
+    assert calls == []
+
+
+@pytest.mark.asyncio
+async def test_source_drift_during_episode_rejects_result(monkeypatch):
+    view = View()
+
+    async def analyze(model, **kwargs):
+        return "offer", object()
+
+    def episode(agent, **kwargs):
+        view.assert_source_unchanged = lambda: (_ for _ in ()).throw(
+            RuntimeError("post-episode source drift")
+        )
+        return {"outcome": "untrusted"}
+
+    monkeypatch.setattr(module, "analyze_and_plan_paper_scoped_e0", analyze)
+    monkeypatch.setattr(module, "run_paper_fixed5_episode_e0", episode)
+    with pytest.raises(RuntimeError, match="post-episode source drift"):
+        await module.run_paper_scoped_agent_episode_e0(
+            lambda _: {}, object(), view=view, task={"query": view.original_query},
+            catalog=None, intent_registry=None, index=None,
+            model_visible_intent_ids=(), model_visible_concept_ids=(),
+        )
