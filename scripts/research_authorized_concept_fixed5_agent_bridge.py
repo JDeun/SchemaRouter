@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hmac
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from hashlib import sha256
 
@@ -19,6 +20,10 @@ from schemarouter.concept_retrieval import (
     retrieve_authorized_concepts,
 )
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
+from schemarouter.native_semantic_index import (
+    IndexedNativeFieldCandidate,
+    NativeSchemaPostingIndex,
+)
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
 from scripts.research_authorized_fixed5_decision_bridge import _visible_fingerprints
 
@@ -62,6 +67,18 @@ class AuthorizedConceptFixed5Selector:
         )
         self._catalog_digest = _catalog_content_digest(self.catalog)
         self._pinned = _visible_fingerprints(self.view)
+
+    def _assert_catalog_unchanged(self) -> None:
+        """Revalidate the approved ontology after untrusted ranking callbacks."""
+        try:
+            NativeConceptCatalog.model_validate(
+                self.catalog.model_dump(mode="python"), strict=True,
+            )
+            digest = _catalog_content_digest(self.catalog)
+        except (ValueError, TypeError, OverflowError, AttributeError) as exc:
+            raise PolicyViolationError("concept catalog mutated after approval") from exc
+        if not hmac.compare_digest(digest, self._catalog_digest):
+            raise PolicyViolationError("concept catalog mutated after approval")
 
     def __call__(self, query: str, source_ids: tuple[str, ...]) -> list[str]:
         self.view.assert_source_unchanged()
@@ -227,4 +244,102 @@ class AuthorizedConceptGraphFixed5Selector(AuthorizedConceptFixed5Selector):
             return []
         self.view.assert_source_unchanged()
         self.last_status = "complete"
+        return routes
+
+
+@dataclass
+class AuthorizedIndexedFieldFixed5Selector(AuthorizedConceptFixed5Selector):
+    """Research-only direct FieldGroup index → original fixed5 agent callback.
+
+    A complete source-native output field group is not proof that the host can
+    provide mandatory request arguments. Bound-input routes are excluded here;
+    the existing G5 selector handles proved producer→consumer joins instead.
+    The ranker, when provided, chooses only among detached qualified offsets.
+    """
+
+    index: NativeSchemaPostingIndex
+    research_ranker: Callable[
+        [str, tuple[IndexedNativeFieldCandidate, ...], int], tuple[int, ...],
+    ] | None = None
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if type(self.index) is not NativeSchemaPostingIndex:
+            raise ValueError("source-pinned native posting index required")
+        if self.research_ranker is not None and not callable(self.research_ranker):
+            raise ValueError("bounded research ranker must be callable")
+        self.index._assert_source(self.view.router)
+        if self.index.registry_version != self.view.witness[1]:
+            raise PolicyViolationError("indexed selector source revision mismatch")
+
+    def __call__(self, query: str, source_ids: tuple[str, ...]) -> list[str]:
+        self.view.assert_source_unchanged()
+        self._assert_catalog_unchanged()
+        if (
+            type(query) is not str
+            or query != self.view.original_query
+            or type(source_ids) is not tuple
+            or source_ids != self.view.visible_route_ids
+            or len(set(source_ids)) != len(source_ids)
+        ):
+            raise PolicyViolationError("indexed selector query/view mismatch")
+        if _visible_fingerprints(self.view) != self._pinned:
+            raise PolicyViolationError("indexed selector source revision drift")
+
+        try:
+            # Only exact source-owner declared concept mentions qualify.
+            resolve_native_concepts(query, catalog=self.catalog)
+        except ValueError as exc:
+            if str(exc) != "no declared concept in query":
+                raise
+            self.view.assert_source_unchanged()
+            self._assert_catalog_unchanged()
+            self.last_status = "no_declared_concept_not_calibrated_no_fit"
+            return []
+
+        result = self.index.lookup_concepts(
+            self.view.router, query, catalog=self.catalog,
+            principal=self.view._principal, k=STRICT_K,
+            input_free_only=True, _research_ranker=self.research_ranker,
+        )
+        self.view.assert_source_unchanged()
+        self._assert_catalog_unchanged()
+        if _visible_fingerprints(self.view) != self._pinned:
+            raise PolicyViolationError("indexed selector source revision drift")
+        routes = [candidate.route_id for candidate in result.candidates]
+        if (
+            result.requested_k != STRICT_K
+            or result.registry_version != self.view.witness[1]
+            or result.index_snapshot_id != self.index.snapshot_id
+            or len(routes) > STRICT_K
+            or len(set(routes)) != len(routes)
+            or not set(routes).issubset(source_ids)
+            or any(
+                (candidate.tool_fingerprint, candidate.endpoint_fingerprint)
+                != self._pinned[candidate.route_id]
+                for candidate in result.candidates
+            )
+        ):
+            raise PolicyViolationError("indexed selector candidate scope mismatch")
+        if result.status not in {"complete", "ranked_unverified"}:
+            if routes or result.status not in {
+                "no_proven_hit", "over_k_unranked", "ranker_abstained_unverified",
+            }:
+                raise PolicyViolationError("indexed selector returned unsafe abstention")
+            self.last_status = result.status
+            return []
+        if not routes or result.experimental_ranked != (result.status == "ranked_unverified"):
+            raise PolicyViolationError("indexed selector incomplete source evidence")
+        try:
+            self.view.tool_definitions(routes, k=STRICT_K)
+        except ValueError as exc:
+            if "exceed" not in str(exc) or "byte cap" not in str(exc):
+                raise
+            self.view.assert_source_unchanged()
+            self._assert_catalog_unchanged()
+            self.last_status = "budget_unsatisfied"
+            return []
+        self.view.assert_source_unchanged()
+        self._assert_catalog_unchanged()
+        self.last_status = result.status
         return routes

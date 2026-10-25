@@ -608,6 +608,7 @@ class NativeSchemaPostingIndex:
         catalog: NativeConceptCatalog,
         principal: PrincipalContext,
         k: int = STRICT_K,
+        input_free_only: bool = False,
         _research_ranker: Callable[
             [str, tuple[IndexedNativeFieldCandidate, ...], int], tuple[int, ...],
         ] | None = None,
@@ -616,5 +617,5 @@ class NativeSchemaPostingIndex:
         resolved = resolve_native_concepts(query, catalog=catalog)
         return self.lookup(
             router, query, group=resolved.field_group, principal=principal,
-            k=k, _research_ranker=_research_ranker,
+            k=k, input_free_only=input_free_only, _research_ranker=_research_ranker,
         )

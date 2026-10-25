@@ -13,6 +13,7 @@ from schemarouter import (
     NativeConceptCatalog,
     NativeDeclaredConcept,
     NativeDeclaredFieldGroup,
+    ParameterSpec,
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
@@ -150,6 +151,36 @@ def test_indexed_concept_resolution_in_longer_natural_sentences(query):
     assert [candidate.route_id for candidate in actual.candidates] == [
         "complete.read",
     ]
+
+
+def test_indexed_concept_direct_only_excludes_unbound_required_input_before_k():
+    """A typed required-input consumer cannot masquerade as a direct tool."""
+    router = _router()
+    router.add_tool(ToolSpec(
+        name="bound", source_type="crm", license="reviewed",
+        endpoints=[EndpointSpec(
+            name="read", read_only=True,
+            parameters=[ParameterSpec(
+                name="case_id", required=True, json_schema={"type": "string"},
+            )],
+            input_schema={"type": "object", "properties": {
+                "case_id": {"type": "string"},
+            }, "required": ["case_id"]},
+            output_fields=[_field("status", "crm.status")],
+        )],
+    ))
+    index = NativeSchemaPostingIndex.build(router.registry)
+    query = "show case status"
+    all_matches = index.lookup_concepts(
+        router, query, principal=ANALYST, catalog=CATALOG,
+    )
+    direct = index.lookup_concepts(
+        router, query, principal=ANALYST, catalog=CATALOG,
+        input_free_only=True,
+    )
+    assert "bound.read" in {c.route_id for c in all_matches.candidates}
+    assert "bound.read" not in {c.route_id for c in direct.candidates}
+    assert "complete.read" in {c.route_id for c in direct.candidates}
 
 
 def test_hidden_required_field_is_not_leaked_or_satisfied():
