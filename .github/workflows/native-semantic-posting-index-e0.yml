@@ -6,6 +6,8 @@ on:
       - "src/schemarouter/native_semantic_index.py"
       - "src/schemarouter/__init__.py"
       - "tests/test_native_semantic_index.py"
+      - "tests/test_research_indexed_decision_backend_ranker_e0.py"
+      - "scripts/research_indexed_decision_backend_ranker_e0.py"
       - "tests/test_public_api.py"
       - ".github/workflows/native-semantic-posting-index-e0.yml"
       - "research/autoresearch/native-catalog-semantic-index-e0.md"
@@ -33,6 +35,6 @@ jobs:
         run: python -m pip install . "pytest>=8,<10" "pytest-asyncio>=0.23" "ruff>=0.9,<1" "pyright>=1.1.400"
       - name: Validate source-versioned field postings and stable public API
         run: |
-          ruff check src/schemarouter/native_semantic_index.py tests/test_native_semantic_index.py
-          python -m pytest -q tests/test_native_semantic_index.py tests/test_native_field_group_retrieval.py tests/test_native_concept_retrieval.py tests/test_public_api.py
-          pyright src/schemarouter/native_semantic_index.py
+          ruff check src/schemarouter/native_semantic_index.py scripts/research_indexed_decision_backend_ranker_e0.py tests/test_native_semantic_index.py tests/test_research_indexed_decision_backend_ranker_e0.py
+          python -m pytest -q tests/test_native_semantic_index.py tests/test_research_indexed_decision_backend_ranker_e0.py tests/test_native_field_group_retrieval.py tests/test_native_concept_retrieval.py tests/test_public_api.py
+          pyright src/schemarouter/native_semantic_index.py scripts/research_indexed_decision_backend_ranker_e0.py
