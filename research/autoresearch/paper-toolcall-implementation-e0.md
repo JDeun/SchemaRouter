@@ -2,6 +2,73 @@
 
 **2026-10-24 · E0 source-authored diagnostic, not a shipped/default executor.**
 
+## ACTIVE CROSS-SESSION RESUME — 2026-10-25 (supersedes older next-step notes below)
+
+**Canonical continuation:** Original-paper Algorithm 1 is now beyond the P2
+typed plan and observed-execution slice described in this historical handoff.
+Do **not** restart at P1/P2 or open another parallel agent/executor. The active
+stack is **Draft #1754** (native indexed direct FieldGroup → existing fixed-K
+agent) followed by **Draft #1755** (structured paper `Understand` hints →
+intent-required field union → exact named-tool direct receipts → host-owned
+empty-menu terminal), on top of the earlier paper work (#1745–#1753).
+
+| Current surface | Exact resume evidence | Limit |
+| --- | --- | --- |
+| Source-bound typed direct plan | `src/schemarouter/paper_understood_direct_plan.py`; [Draft #1755](https://github.com/JDeun/SchemaRouter/pull/1755) | Untrusted structured hints are already parsed externally; not a validated LLM parser |
+| Original named tool before K | `NativeSchemaPostingIndex.lookup(..., allowed_tool_keys=...)` | Unknown/denied/hidden/unlicensed tools produce `no_proven_hit`; owner schema and principal permissions are still mandatory |
+| Existing agent E0 adapter | `scripts/research_authorized_concept_fixed5_agent_bridge.py::AuthorizedPaperUnderstoodDirectFixed5Selector` | The original captured principal-visible lexical menu may still exclude an otherwise index-eligible route |
+| Host-owned no-offered-tool refusal | `run_generated_episode(..., experimental_host_empty_menu_terminal=True)` | Exactly zero model generations and tool attempts on **empty verified menu**, with `REQUEST_MORE_TOOLS` generic benchmark terminal; default off; not global no-fit |
+| Outcome taxonomy | `ready`, `requires_arguments`, `no_proven_hit`, `over_k_unranked`, `budget_unsatisfied` | Missing tool proof, K overflow, missing input and semantic absence remain different outcomes |
+
+**Exact checkpoint:** local branch
+`feat/1560-paper-understood-direct-e0-20261025`, local Git commit
+`e917341` and Git tree `d53b2cb80c516470bcd693520cfbdd77820fbd87`.
+Published [Draft #1755](https://github.com/JDeun/SchemaRouter/pull/1755)
+head `669c4577c45af5e6ac8cb251da72bfb0c54c2cde` has **the exact same
+Git tree**, despite different local/remote commit metadata. Keep it **Draft**;
+do not merge into the stacked parent or release. Source-proven predecessor
+[Draft #1754](https://github.com/JDeun/SchemaRouter/pull/1754) already passed
+its protected workflow suite before #1755's continuation.
+
+**Tests and protected workflows (latest observed 2026-10-25):** seven related
+paper/agent/posting suites **210 passed**, repository-wide Ruff passed,
+changed research selector Pyright 0 errors. The **entire** local `pytest`
+command still times out at ~12% (85-second cap, exit 124); full local
+Pyright reported 85 environment-wide errors/8 warnings with optional
+imports unresolved, so neither entire local suite is claimed green.
+For the exact remote head `669c4577`, **21/22 GitHub Actions workflows
+were successful and the remaining Python 3.12 full-suite CI run was still
+in progress** when recorded; no final all-green assertion until a new read.
+Remote Actions/CodeQL and exact SHA remain the authority after changes.
+
+**Mandatory immediate next steps, in order:**
+
+1. Check #1755's **exact remote HEAD and remaining protected CI**, fixing any
+   failure by test-first changes; do not infer success from ancestor PRs.
+2. Read [direct source design](paper-understood-direct-e0-design.md),
+   [direct implementation plan](paper-understood-direct-e0-plan.md),
+   [new host refusal design](paper-host-empty-menu-refusal-e0-design.md), and
+   [host refusal implementation checkpoint](paper-host-empty-menu-refusal-e0-plan.md).
+   These internal, English-only research notes stay out of reviewed bilingual
+   `docs/**/*.md` and **must be cited here** on each continuation.
+3. Prioritize **major remaining Algorithm 1 behaviors**, not minute selector
+   tuning: genuine bounded EN/KO/JA `Understand(q)` evidence; an
+   independently justified ranking decision when >K; original source-safe
+   one-/two-hop explicit tool override and host-attested parameter semantics.
+   Preserve both supported **false refusal** and unsupported **false accept**
+   measurements. For missing-tool refusals distinguish a currently unproved
+   *authorized* capability from a globally nonexistent tool. #1291 owns
+   prospective calibrated no-fit and #1477 owns paired independent agent E2.
+4. Continue updating **this canonical handoff**, issue #1560, stacked Draft
+   PR description and exact results after material changes. Independent
+   publisher-authored #1346 and paired #1477 remain `BLOCKED_EXTERNAL`, while
+   [release #1356](https://github.com/JDeun/SchemaRouter/pull/1356) remains
+   **HARD HOLD**. No frozen #432 benchmark rewriting or default promotion.
+
+The sections below record P2 history and remain useful as implementation
+evidence; their older PR heads and next-step instructions are **not** the
+current resumption point.
+
 ## Source of truth, predecessors and gates
 
 - The research objective is the original [SchemaRouter paper §4 Algorithm 1](https://github.com/JDeun/paper_SchemaRouter/blob/main/paper/schemarouter.tex): query understanding, original graph/field selection, explicit `(tool, params, fields, meta)` plan. Source-grounded parity map: [Draft #1745](https://github.com/JDeun/SchemaRouter/pull/1745).
