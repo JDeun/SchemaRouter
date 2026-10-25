@@ -22,6 +22,8 @@
 
 **A5 episode continuation (2026-10-25):** `scripts/research_paper_fixed5_episode_e0.py::run_paper_fixed5_episode_e0` wires a preverified paper plan to the **existing** `run_generated_episode` using `EVAL-FIXED5-OPTIN`, the captured principal-scoped tool surface, repeated route-proof checks, and the host-owned empty-menu terminal. No second executor and no dependency DAG flattening. **A5 stays unchecked** until integration tests with actual scoped fixtures, model callback and observed agent turns are green; new commit CI must be checked. The current episode wrapper does not include separate `Understand(q)` token/time accounting, so A7 is also open.
 
+**A5 test expansion (2026-10-25):** added branch-level `tests/test_research_paper_fixed5_menu_security_e0.py` covering valid direct disclosure, all abstentions, dependency no-flattening, hidden/forged/duplicate routes, untrusted execution authority, bad bindings, and registry revision mismatch. These are isolated monkeypatched contract regressions, **not** a complete real-agent end-to-end proof. Exact-head CI must run before checking A5. Prior head `0e06287f`: 24 success / 4 in progress on first-page PR workflows at check time.
+
 ### A. Source-safe Algorithm 1 implementation
 - [x] **A1** Host-approved structured `Understand(q)` model callback with scoped source index and strict JSON parsing. Evidence: `scripts/research_paper_scoped_understand_e0.py`. E0 only.
 - [x] **A2** Named direct-tool FieldGroup, principal/source guards, K5 prefilter and typed non-executing plan. Evidence: `paper_understood_direct_plan.py`, #1755.
