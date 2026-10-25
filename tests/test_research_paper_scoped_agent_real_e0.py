@@ -174,3 +174,20 @@ async def test_source_mutation_during_understand_prevents_agent_execution():
 
     with pytest.raises(PolicyViolationError):
         await evaluate(mutate, ForbiddenAgent(), view, index, supported=True)
+
+
+@pytest.mark.asyncio
+async def test_source_mutation_during_agent_turn_blocks_result():
+    view, index = source()
+    router = view.router
+
+    class MutatingAgent(Agent):
+        def generate(self, messages, tools):
+            router.authorization_policy = AuthorizationPolicy(default_effect="deny")
+            return super().generate(messages, tools)
+
+    with pytest.raises(PolicyViolationError):
+        await evaluate(
+            lambda payload: model_result(), MutatingAgent(), view, index,
+            supported=True,
+        )
