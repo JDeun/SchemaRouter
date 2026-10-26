@@ -444,7 +444,9 @@ from .operation_intent import OperationIntentHypothesis, infer_operation_intent
 from .pairwise import PairwiseDecisionBackend, PairwiseScoreCallable
 from .paper_consumer_execution import (
     PaperExecutedToolSequence,
+    PaperUnderstoodExecutedGraph,
     observe_and_execute_paper_plan,
+    observe_and_execute_paper_understood_graph,
 )
 from .paper_field_retrieval import (
     PaperFieldAlternative,
@@ -615,6 +617,8 @@ __all__ = [
     "observe_and_bind_paper_plan",
     "PaperExecutedToolSequence",
     "observe_and_execute_paper_plan",
+    "PaperUnderstoodExecutedGraph",
+    "observe_and_execute_paper_understood_graph",
     "PaperPlanBinding",
     "PaperPlanCall",
     "PaperPlanFieldMeta",

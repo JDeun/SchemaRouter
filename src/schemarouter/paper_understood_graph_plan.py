@@ -42,6 +42,7 @@ def compile_paper_understood_graph_plan(
     index: NativeSchemaGraphIndex,
     k: int = 5,
     max_hops: int = 2,
+    host_source_arguments: dict[str, dict[str, Any]] | None = None,
 ) -> PaperTypedToolPlan:
     """Compile one exact model-named target path without source execution.
 
@@ -63,6 +64,17 @@ def compile_paper_understood_graph_plan(
         raise ValueError("paper named graph requires host-approved intents")
     if not isinstance(understanding, PaperUnderstanding):
         raise ValueError("paper named graph requires structured hints")
+    if host_source_arguments is not None and (
+        type(host_source_arguments) is not dict
+        or any(
+            type(route) is not str or type(values) is not dict
+            for route, values in host_source_arguments.items()
+        )
+    ):
+        raise ValueError("invalid explicit paper host root inputs")
+    host_inputs = {
+        route: dict(values) for route, values in (host_source_arguments or {}).items()
+    }
 
     approved, group = _source_owned_understood_group(
         understanding, catalog, intent_registry,
@@ -226,6 +238,8 @@ def compile_paper_understood_graph_plan(
         or len(route_ids) != len(binding_maps)
     ):
         raise PolicyViolationError("paper named graph produced invalid typed routes")
+    if host_source_arguments is not None and set(host_inputs) != {route_ids[0]}:
+        raise PolicyViolationError("paper named graph host inputs are not its source root")
     # G5 proves typed links, but its target FieldGroup qualifier does not
     # constrain upstream source/license. Do not weaken an explicit model
     # source constraint or the owner-reviewed license along dependencies.
@@ -263,7 +277,8 @@ def compile_paper_understood_graph_plan(
         edges: list[PaperPlanBinding] = []
         calls = tuple(_compile_one_route(
             router, principal, index, route, pos, positions, by_route,
-            edges, permitted, None,
+            edges, permitted,
+            host_inputs.get(route.route_id) if pos == 0 else None,
         ) for pos, route in enumerate(route_receipts))
         _check_current_call_scopes(router, principal, list(calls))
         if len(edges) != len(tuple(b for pairs in binding_maps for b in pairs)):

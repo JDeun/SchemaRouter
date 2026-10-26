@@ -2,6 +2,38 @@
 
 **2026-10-24 · E0 source-authored diagnostic, not a shipped/default executor.**
 
+### 2026-10-26 A9 named 1/2-hop observed execution (local E0 implementation)
+
+- Added opt-in `observe_and_execute_paper_understood_graph` in the existing
+  `paper_consumer_execution.py` module. The model only names the target;
+  owner-approved original G5 typed paths still determine root, intermediate,
+  target, required input names, output projections, policy and scope. No
+  model `parameter_hints` become tool arguments.
+- The named compiler accepts explicitly supplied scalar values **only** for
+  its one approved G5 host root; absent inputs refuse before invocation. A
+  pinned current complete named-DAG G5 proof is checked before/after every
+  real `SchemaRouter.execute` call and observation binding. The existing
+  `_materialize_original_observed_edge` validator checks each projected
+  identifier and consumer schema. Empty string identifiers are additionally
+  refused for dependent reads. Each original read-only call uses its own
+  single-call/single-attempt/single-remote-attempt budget; no new executor,
+  autonomous agent loop, parallel fan-out or partial result receipt.
+- The public explicit E0 result remains
+  `provider_provenance_verified=False`, `executable_authority=False`,
+  `independent_e2=False`. **No actual model/agent-triggered automatic graph
+  execution or provider/source-independent semantic E2 is claimed.** A9
+  broader checkbox remains open, including independent semantic/provider
+  qualification and actual agent scheduling. Preserve #1346/#1477 BLOCKED,
+  #1356 release HARD HOLD and Draft #1755 unmerged.
+- Local RED before implementation: **19 failures** (missing callable/host
+  input parameter). GREEN after implementation: **27 A9 tests** and expanded
+  A9/typed-plan/G5 2-hop/host-root/observed-consumer/real scoped-agent
+  regressions **193 passed**, repo Ruff green, changed
+  source-module Pyright 0 errors. Added an explicit CI step to the existing
+  original-paper typed-plan workflow. Exact remote-head CI will be recorded
+  only after publishing. [A9 design](paper-understood-observed-graph-a9-e0-design.md),
+  [A9 plan](paper-understood-observed-graph-a9-e0-plan.md).
+
 ### 2026-10-26 A8 new research-only Understood→ranked direct K5 bridge
 
 - **Prior A7 documentation-only Draft HEAD** `f8b7ff5c156d18ca71da3ab71bb8d914cd4aa5b0`
@@ -222,7 +254,7 @@ docs-only handoff revision; do not inherit green from an earlier head.
 - [ ] **A6** Add independently reviewed, source-snapshot-pinned EN/KO/JA supported/unsupported/ambiguous fixtures, with explicit labels, provenance, license and permission conditions. Do not fabricate publisher gold.
 - [ ] **A7** Run paired same-model/same-agent evaluation; report false refusal, false accept, deferred/unknown, tool attempts, wall time and actual input/output tokens separately from schema bytes; repeat on CI Linux Python 3.12. No E2 claim without independent data.
 - [ ] **A8** Independently justified Top-K5 ranking for eligible alternatives and >K overflow, without weakening policy-before-K, deterministic tie handling or rewriting frozen #432 scores.
-- [ ] **A9** Source-attested argument semantics and separately authorized observed 1/2-hop dependency execution through the **existing** agent/executor, with fail-closed mutation, typed binding, provenance and budget tests. Do not create a second executor.
+- [ ] **A9** Source-attested argument semantics and separately authorized observed 1/2-hop dependency execution through the **existing** agent/executor, with fail-closed mutation, typed binding, provenance and budget tests. **Local A9 E0 source-checked executor slice exists** (`observe_and_execute_paper_understood_graph`, registered real tool bindings and guards); actual model/agent-triggered graph scheduling, independent source semantics/provenance and E2 remain open. Do not create a second executor.
 - [ ] **A10** Calibrate no-fit on independently labeled supported and unsupported requests. A `no_proven_hit` is not proof of globally nonexistent capability. Related #1291 is closed for its prior specific fix; new calibration remains open in this plan.
 
 ### B. Product and independent qualification (not solved by E0)
