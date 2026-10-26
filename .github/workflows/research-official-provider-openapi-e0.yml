@@ -5,11 +5,14 @@ on:
     paths:
       - "scripts/research_official_openapi_snapshot_e0.py"
       - "scripts/research_cross_provider_openapi_e0.py"
+      - "scripts/research_official_openai_get_e0.py"
       - "tests/test_research_official_openapi_snapshot_e0.py"
       - "tests/test_research_cross_provider_openapi_e0.py"
+      - "tests/test_research_official_openai_get_e0.py"
       - "research/fixtures/provider-snapshots/**"
       - "research/autoresearch/official-provider-ollama-openapi-e0.md"
       - "research/autoresearch/official-provider-pirate-weather-e0.md"
+      - "research/autoresearch/official-provider-openai-bounded-get-e0.md"
       - ".github/workflows/research-official-provider-openapi-e0.yml"
       - "src/schemarouter/adapters/openapi.py"
       - "src/schemarouter/native_graph_index.py"
@@ -33,9 +36,9 @@ jobs:
       - name: Install checked-out package and offline source test tools
         run: python -m pip install . "pyyaml>=6,<7" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
       - name: Lint exact pinned source audit
-        run: ruff check scripts/research_official_openapi_snapshot_e0.py tests/test_research_official_openapi_snapshot_e0.py scripts/research_cross_provider_openapi_e0.py tests/test_research_cross_provider_openapi_e0.py
+        run: ruff check scripts/research_official_openapi_snapshot_e0.py tests/test_research_official_openapi_snapshot_e0.py scripts/research_cross_provider_openapi_e0.py tests/test_research_cross_provider_openapi_e0.py scripts/research_official_openai_get_e0.py tests/test_research_official_openai_get_e0.py
       - name: Verify genuine publisher bytes and converter safety
-        run: python -m pytest -q tests/test_research_official_openapi_snapshot_e0.py tests/test_research_cross_provider_openapi_e0.py
+        run: python -m pytest -q tests/test_research_official_openapi_snapshot_e0.py tests/test_research_cross_provider_openapi_e0.py tests/test_research_official_openai_get_e0.py
       - name: Execute no-network safe source receipt and reject promotion
         run: |
           python - <<'PY'
@@ -66,8 +69,21 @@ jobs:
           assert churn["unauthorized_cross_provider_edges"] == 0
           assert churn["provider_runtime_calls"] == 0
           assert churn["independent_e2_qualified"] is False
-          print("Verified two pinned real provider OpenAPIs, 3→2→3 versioned routes, no grant/E2.")
+          from scripts.research_official_openai_get_e0 import audit_official_openai_get_catalog_e0
+          public_bulk = audit_official_openai_get_catalog_e0()
+          assert public_bulk["source_http_operation_count"] == 371
+          assert public_bulk["source_get_operation_count"] == 163
+          assert public_bulk["native_get_route_count"] == 161
+          assert public_bulk["mixed_source_registered_routes"] == 164
+          assert public_bulk["mixed_source_provider_count"] == 3
+          assert public_bulk["required_path_input_route_count"] == 116
+          assert public_bulk["protected_get_route_count"] == 161
+          assert public_bulk["untrusted_semantic_postings"] == 0
+          assert public_bulk["unauthorized_dependency_edges"] == 0
+          assert public_bulk["provider_runtime_calls"] == 0
+          assert public_bulk["independent_e2_qualified"] is False
+          print("Verified three pinned original providers, 164 mixed native routes, no grant/E2.")
           PY
       - name: Preserve proof tier in CI summary
         if: success()
-        run: echo "Official Ollama OpenAPI source is raw SHA-256/Git-blob pinned and offline-only. Publisher-native SOURCE E0, NOT independent gold/E2/permission, no tools executed." >> "$GITHUB_STEP_SUMMARY"
+        run: echo "Original Ollama, Pirate Weather and OpenAI OpenAPI sources are byte/hash pinned and offline-only. Publisher-native SOURCE E0, NOT independent gold/E2/permission, no tools executed." >> "$GITHUB_STEP_SUMMARY"

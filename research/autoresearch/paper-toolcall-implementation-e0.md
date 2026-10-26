@@ -1,5 +1,32 @@
 # Original-paper Algorithm 1 continuation — P2 source-typed ToolCall E0
 
+### 2026-10-26 B1 E0 — third genuine provider, 161 source-preserved native GET routes
+
+- A third original published source, the official OpenAI OpenAPI document at
+  commit `8243cc8f`, adds **237 actual source paths / 371 HTTP operations / 163
+  GET operations**. Only **161 GET paths** are supported by the existing
+  native converter; two query-bearing source paths remain explicitly
+  unsupported, **not silently rewritten**.
+- The full **4,210,167-byte original** and its MIT notice are checked against
+  original upstream Git blob and SHA-256. The deterministic repository gzip
+  container is separately pinned (486,142 bytes), decompressed only after
+  verifying its hash. Each GET projection follows only original local
+  component references and passes the **existing unmodified OpenAPI
+  complexity guard**, with no new converter/index/executor. Direct whole-doc
+  conversion correctly rejects >50,000 nodes; the guard is not weakened.
+- Actual native registry/graph: 161 read-only GET endpoints, including **116
+  routes with preserved mandatory path inputs** and **161 with source-declared
+  authentication**. Together with the two prior official sources, one native
+  registry now contains **164 genuine three-provider routes**, but **zero** approved semantic postings, typed
+  cross-provider joins or execution grants. The provenance/negative tests
+  and offline dedicated Python 3.12 PR workflow are expanded.
+- [Source design, exact pins and limitations](official-provider-openai-bounded-get-e0.md).
+  This is E0 original publisher-*source* scale beyond the earlier 3-route
+  Ollama/Pirate sample, **not** independent field/permission/gold proof,
+  500/5000 heterogeneous E2, actual model/agent utility or release
+  qualification. #1346/#1477 `BLOCKED_EXTERNAL`, #1356 `HARD HOLD` and
+  Draft #1755 unmerged; latest HEAD CI must be qualified separately.
+
 ### 2026-10-26 B1 E0 — authentic two-provider journal removal/restoration
 
 - The existing genuine, byte-pinned Ollama/Pirate Weather source test now
