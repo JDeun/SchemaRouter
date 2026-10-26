@@ -41,6 +41,8 @@ on:
       - "research/autoresearch/paper-a7-understand-metering-plan.md"
       - "research/autoresearch/paper-a7-paired-agent-e0-design.md"
       - "research/autoresearch/paper-a7-paired-agent-e0-plan.md"
+      - "research/autoresearch/paper-a7-counterbalanced-pairs-e0-design.md"
+      - "research/autoresearch/paper-a7-counterbalanced-pairs-e0-plan.md"
       - "research/autoresearch/paper-a8-ranked-direct-e0-design.md"
       - "research/autoresearch/paper-a8-ranked-direct-e0-plan.md"
       - "research/autoresearch/paper-a10-source-pinned-no-fit-design.md"
@@ -76,6 +78,8 @@ jobs:
         run: |
           ruff check scripts/research_paper_scoped_agent_episode_e0.py scripts/research_paper_measured_episode_e0.py scripts/research_paper_paired_agent_e0.py tests/test_research_paper_scoped_agent_real_e0.py tests/test_research_paper_measured_episode_e0.py tests/test_research_paper_paired_agent_e0.py
           python -m pytest -q tests/test_research_paper_scoped_agent_real_e0.py tests/test_research_paper_measured_episode_e0.py tests/test_research_paper_paired_agent_e0.py
+      - name: Verify Algorithm 1 A7 baseline/paper two-order crossover and fail-closed boundaries
+        run: python -m pytest -q tests/test_research_paper_paired_agent_e0.py -k 'counterbalance or counterbalanced or paper_first or execution_order'
       - name: Verify opt-in source-scoped A8 paper K5 research integration on Python 3.12
         run: |
           ruff check scripts/research_paper_ranked_direct_a8_e0.py tests/test_research_paper_ranked_direct_a8_e0.py

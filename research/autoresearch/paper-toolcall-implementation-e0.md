@@ -252,6 +252,27 @@ documentation-only HEAD must run its own 35-check qualification.
   Full A7 independent acceptance remains unchecked.
   [Paired E0 design](paper-a7-paired-agent-e0-design.md),
   [paired implementation plan](paper-a7-paired-agent-e0-plan.md).
+- **A7 order-crossover engineering continuation (2026-10-26):** The existing
+  `run_paper_paired_agent_e0` now has a strict, default-compatible
+  `execution_order` and runs the original fixed5 baseline/paper branches
+  in the requested real order. New opt-in
+  `run_paper_counterbalanced_agent_e0` obtains two fresh same-type Understand
+  callbacks and four distinct, host-config-matched agent instances, then
+  executes *both* baseline→paper and paper→baseline trials against the
+  original source-checked A5/A7 runner. Owner/task/source mutation or any
+  mismatched agent/model factory refuses without a partial crossover record.
+  A separate regression-proven guard **pins owner declarations and original
+  task digest before the model factories themselves run**, preventing a
+  factory from silently rewriting publisher gold or source semantics before
+  either original pair could snapshot them.
+  Only the two existing sanitized per-condition receipts and explicit order
+  labels are returned; no gold, raw query, route identities or provider
+  claims. The original-paper workflow explicitly tests the order and negative
+  cases. **Crossover is E0 source-authored engineering only**: two ordered
+  rehearsals do not eliminate provider caches, authenticate the model or
+  replace pre-registered randomized multicase independent EN/KO/JA E2.
+  [Crossover design](paper-a7-counterbalanced-pairs-e0-design.md),
+  [crossover plan](paper-a7-counterbalanced-pairs-e0-plan.md).
 - These paths use **synthetic DEV fixtures only**, with no provider-observed
   production usage or same-model paired independent gold evaluation. Both
   **A6 and A7 remain unchecked**, #1346/#1477 `BLOCKED_EXTERNAL`, #1356
@@ -366,7 +387,7 @@ docs-only handoff revision; do not inherit green from an earlier head.
 - [x] **A4** E0 EN/KO/JA outcome accounting and verified-gold denominator guard. Evidence: `scripts/research_paper_refusal_eval_e0.py`, `tests/test_research_paper_refusal_eval_e0.py`; commit `4b4afe26`. This is evaluator mechanics **only**, not model accuracy.
 - [x] **A5 — E0 COMPLETE** Integrated scoped model `Understand(q)` → current direct/graph planner → existing fixed-K agent evaluation adapter as an opt-in **bounded vertical slice**. Reuses existing executor, host authorization and pinned source; does not automatically execute dependency DAGs. Verified supported, unsupported, ordinary/typed missing arguments, 1/2-hop observation deferral, mutable policy/source and empty menu; 140 local targeted tests and full protected Python 3.12 6403 passed at head `24a8cb04`. **Not E2 or model accuracy.**
 - [ ] **A6** Add independently reviewed, source-snapshot-pinned EN/KO/JA supported/unsupported/ambiguous fixtures, with explicit labels, provenance, license and permission conditions. **Seven-stream source + per-case native-authority/gold witness-byte intake is implemented E0**, with original four-/five-file compatibility and CI. Real source-owner signatures, verified semantics/permissions/license, independent reviewer and original publisher-authored fixtures have not been supplied; independent qualification remains BLOCKED_EXTERNAL. Do not fabricate publisher gold.
-- [ ] **A7** Run paired same-model/same-agent evaluation; report false refusal, false accept, deferred/unknown, tool attempts, wall time and actual input/output tokens separately from schema bytes; repeat on CI Linux Python 3.12. No E2 claim without independent data.
+- [ ] **A7** Run paired same-model/same-agent evaluation; report false refusal, false accept, deferred/unknown, tool attempts, wall time and actual input/output tokens separately from schema bytes; repeat on CI Linux Python 3.12. **E0 counterbalanced both-order same-agent runner now exists**, retaining original measured token/schema byte separation, source and role guards. Independent model/provider identity, randomized cohort E2, original gold and robust latency bounds remain external; do not claim E2 without them.
 - [ ] **A8** Independently justified Top-K5 ranking for eligible alternatives and >K overflow, without weakening policy-before-K, deterministic tie handling or rewriting frozen #432 scores.
 - [ ] **A9** Source-attested argument semantics and separately authorized observed 1/2-hop dependency execution through the **existing** agent/executor, with fail-closed mutation, typed binding, provenance and budget tests. **Local A9 E0 source-checked executor slice exists** (`observe_and_execute_paper_understood_graph`, registered real tool bindings and guards); actual model/agent-triggered graph scheduling, independent source semantics/provenance and E2 remain open. Do not create a second executor.
 - [ ] **A10** Calibrate no-fit on independently labeled supported and unsupported requests. A `no_proven_hit` is not proof of globally nonexistent capability. **E0 evaluation mechanism implemented (2026-10-26):** `scripts/research_paper_no_fit_calibration_a10_e0.py` now ingests the existing five *exact source-pinned* native intake streams plus complete observed Algorithm 1 statuses. It reports EN/KO/JA supported false refusal, unsupported false accept, deferred and source-unknown counts with separate denominators and host-predeclared minimum/maximum diagnostics; no case IDs, gold or source contents are exported. Synthetic tests and paper CI wiring are present. **Still unchecked:** independent publisher authorship/review/permission, real model outcomes and grounded calibration thresholds are not available; even a perfect synthetic diagnostic cannot qualify E2 or release. Related #1291 remains closed for its prior fix.

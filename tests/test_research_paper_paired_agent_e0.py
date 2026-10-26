@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 from copy import deepcopy
+from dataclasses import asdict
 
 import pytest
 from test_research_paper_scoped_agent_real_e0 import (
@@ -33,6 +34,7 @@ from scripts.research_authorized_agent_tool_surface import (
 from scripts.research_paper_measured_episode_e0 import PaperProviderUsageResponse
 from scripts.research_paper_paired_agent_e0 import (
     HostAgentPairConfiguration,
+    run_paper_counterbalanced_agent_e0,
     run_paper_paired_agent_e0,
 )
 
@@ -66,6 +68,307 @@ def kwargs(view, index, t):
         "index": index, "model_visible_intent_ids": ("case.lookup",),
         "model_visible_concept_ids": ("case.status",),
     }
+
+
+@pytest.mark.asyncio
+async def test_counterbalanced_a7_executes_both_actual_orders_with_fresh_agents():
+    view, index = source()
+    events = []
+    created = []
+    callbacks = []
+
+    class LoggingAgent(Agent):
+        def __init__(self, position):
+            super().__init__()
+            self.position = position
+
+        def generate(self, messages, tools):
+            events.append(f"agent-{self.position}")
+            return super().generate(messages, tools)
+
+    def agents():
+        agent = LoggingAgent(len(created))
+        created.append(agent)
+        return agent, CONFIG
+
+    def models():
+        trial = len(callbacks)
+
+        def model(payload):
+            events.append(f"understand-{trial}")
+            return PaperProviderUsageResponse(model_result(), 41, 7)
+
+        callbacks.append(model)
+        return model
+
+    report = await run_paper_counterbalanced_agent_e0(
+        models, agents, **kwargs(view, index, task()),
+    )
+    assert len(created) == 4 and len(set(map(id, created))) == 4
+    assert len(callbacks) == 2 and callbacks[0] is not callbacks[1]
+    assert all(agent.turns == 2 for agent in created)
+    assert events.index("agent-0") < events.index("understand-0")
+    assert events.index("understand-0") < events.index("agent-1")
+    assert events.index("understand-1") < events.index("agent-3")
+    assert events.index("agent-3") < events.index("agent-2")
+    assert report.baseline_first.execution_order == "baseline_first"
+    assert report.paper_first.execution_order == "paper_first"
+    assert report.baseline_first.baseline["passed"] is True
+    assert report.paper_first.baseline["passed"] is True
+    assert report.baseline_first.paper.episode["passed"] is True
+    assert report.paper_first.paper.episode["passed"] is True
+    assert report.baseline_first.paper.measurement.understand_input_tokens_provider_reported == 41
+    assert report.paper_first.paper.measurement.understand_output_tokens_provider_reported == 7
+    assert report.independent_e2_qualified is False
+    exposed = json.dumps(asdict(report), ensure_ascii=False)
+    assert QUERY not in exposed
+    assert "complete.read" not in exposed
+    assert "required_routes" not in exposed
+    assert '"supported"' not in exposed
+
+
+@pytest.mark.asyncio
+async def test_a7_invalid_execution_order_cannot_invoke_agent_or_understand():
+    view, index = source()
+    calls = []
+
+    def agents():
+        calls.append("agent")
+        return Agent(), CONFIG
+
+    def model(payload):
+        calls.append("model")
+        return model_result()
+
+    with pytest.raises(ValueError, match="execution order"):
+        await run_paper_paired_agent_e0(
+            model, agents, execution_order="paper-and-baseline-in-parallel",
+            **kwargs(view, index, task()),
+        )
+    assert calls == []
+
+
+@pytest.mark.asyncio
+async def test_a7_paper_first_single_pair_really_runs_before_baseline():
+    view, index = source()
+    events = []
+
+    class LoggingAgent(Agent):
+        def __init__(self, role):
+            super().__init__()
+            self.role = role
+
+        def generate(self, messages, tools):
+            events.append(self.role)
+            return super().generate(messages, tools)
+
+    created = []
+
+    def make():
+        agent = LoggingAgent(("baseline", "paper")[len(created)])
+        created.append(agent)
+        return agent, CONFIG
+
+    def model(payload):
+        events.append("understand")
+        return model_result()
+
+    report = await run_paper_paired_agent_e0(
+        model, make, execution_order="paper_first", **kwargs(view, index, task()),
+    )
+    assert events.index("understand") < events.index("paper") < events.index("baseline")
+    assert report.execution_order == "paper_first"
+    assert report.independent_e2_qualified is False
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failure", ("reused", "different_callable_type"))
+async def test_a7_counterbalance_rejects_nonfresh_or_incomparable_models_before_agents(failure):
+    view, index = source()
+
+    def same_callback(payload):
+        return model_result()
+
+    calls = []
+
+    class CallableModel:
+        def __call__(self, payload):
+            raise AssertionError("invalid model must never execute")
+
+    def model_factory():
+        calls.append("model_factory")
+        if failure == "reused":
+            return same_callback
+        return same_callback if len(calls) == 1 else CallableModel()
+
+    def unused_agent_factory():
+        calls.append("agent_factory")
+        return Agent(), CONFIG
+
+    with pytest.raises(ValueError, match="Understand callback"):
+        await run_paper_counterbalanced_agent_e0(
+            model_factory, unused_agent_factory, **kwargs(view, index, task()),
+        )
+    assert calls == ["model_factory", "model_factory"]
+
+
+@pytest.mark.asyncio
+async def test_a7_counterbalance_invalid_scoped_task_refused_before_creating_models():
+    view, index = source()
+    calls = []
+
+    def model_factory():
+        calls.append("model_factory")
+        return lambda payload: model_result()
+
+    def agent_factory():
+        calls.append("agent_factory")
+        return Agent(), CONFIG
+
+    bad_task = task()
+    bad_task["query"] = "different private query"
+    with pytest.raises(ValueError, match="paired task/query mismatch"):
+        await run_paper_counterbalanced_agent_e0(
+            model_factory, agent_factory, **kwargs(view, index, bad_task),
+        )
+    assert calls == []
+
+
+@pytest.mark.asyncio
+async def test_a7_counterbalance_model_factory_cannot_rewrite_private_gold_before_first_pair():
+    view, index = source()
+    original_task = task()
+    calls = []
+
+    def model_factory():
+        calls.append("model_factory")
+        original_task["supported"] = False
+        original_task["required_routes"] = []
+        return lambda payload: model_result()
+
+    def agent_factory():
+        calls.append("agent_factory")
+        return Agent(), CONFIG
+
+    with pytest.raises(ValueError, match="task evidence changed"):
+        await run_paper_counterbalanced_agent_e0(
+            model_factory, agent_factory, **kwargs(view, index, original_task),
+        )
+    assert "agent_factory" not in calls
+
+
+@pytest.mark.asyncio
+async def test_a7_counterbalance_model_factory_cannot_mutate_owner_catalog_before_first_pair():
+    view, index = source()
+    private_catalog = CATALOG.model_copy(deep=True)
+    calls = []
+
+    def model_factory():
+        calls.append("model_factory")
+        private_catalog.concepts[0].required_fields = (
+            CapabilityFieldContract(
+                semantic_id="case.secret", json_schema={"type": "string"},
+            ),
+        )
+        return lambda payload: model_result()
+
+    def agent_factory():
+        calls.append("agent_factory")
+        return Agent(), CONFIG
+
+    with pytest.raises(PolicyViolationError, match="owner declarations changed"):
+        await run_paper_counterbalanced_agent_e0(
+            model_factory, agent_factory,
+            **{**kwargs(view, index, task()), "catalog": private_catalog},
+        )
+    assert "agent_factory" not in calls
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("violation", ("config_drift", "reused_agent"))
+async def test_a7_counterbalance_rejects_cross_trial_agent_drift_without_receipt(violation):
+    view, index = source()
+    agents = []
+
+    def agent_factory():
+        position = len(agents)
+        if violation == "reused_agent" and position == 2:
+            agents.append(agents[0])
+            return agents[0], CONFIG
+        agent = Agent()
+        agents.append(agent)
+        cfg = CONFIG if position < 2 else HostAgentPairConfiguration(
+            agent_revision=CONFIG.agent_revision,
+            model_revision="second-trial-unmatched-model",
+            seed=CONFIG.seed,
+            sampling_parameters=CONFIG.sampling_parameters,
+        )
+        return agent, cfg
+
+    def model_factory():
+        return lambda payload: model_result()
+
+    with pytest.raises(ValueError, match="matching fresh agent"):
+        await run_paper_counterbalanced_agent_e0(
+            model_factory, agent_factory, **kwargs(view, index, task()),
+        )
+    assert agents[0].turns == agents[1].turns == 2
+
+
+@pytest.mark.asyncio
+async def test_a7_counterbalance_paper_first_source_revocation_blocks_baseline_and_output():
+    view, index = source()
+    agents = []
+    created_models = 0
+
+    def agent_factory():
+        agent = Agent()
+        agents.append(agent)
+        return agent, CONFIG
+
+    def model_factory():
+        nonlocal created_models
+        position = created_models
+        created_models += 1
+
+        def model(payload):
+            if position == 1:
+                view.router.authorization_policy = AuthorizationPolicy(default_effect="deny")
+            return model_result()
+
+        return model
+
+    with pytest.raises(PolicyViolationError):
+        await run_paper_counterbalanced_agent_e0(
+            model_factory, agent_factory, **kwargs(view, index, task()),
+        )
+    assert len(agents) == 4
+    assert agents[0].turns == agents[1].turns == 2
+    assert agents[2].turns == 0  # second trial baseline cannot run after revocation
+
+
+@pytest.mark.asyncio
+async def test_a7_counterbalance_understand_failure_in_second_trial_discards_both():
+    view, index = source()
+    created = 0
+
+    def model_factory():
+        nonlocal created
+        i = created
+        created += 1
+
+        def model(payload):
+            if i == 1:
+                raise RuntimeError("synthetic provider unavailable")
+            return model_result()
+
+        return model
+
+    # Existing scoped Understand intentionally redacts raw provider exceptions.
+    with pytest.raises(ModelAnalysisError, match="model understanding failed"):
+        await run_paper_counterbalanced_agent_e0(
+            model_factory, factory, **kwargs(view, index, task()),
+        )
 
 
 @pytest.mark.asyncio

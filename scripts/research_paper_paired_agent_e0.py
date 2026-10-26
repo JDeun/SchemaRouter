@@ -10,7 +10,7 @@ import json
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, replace
-from typing import Any
+from typing import Any, Literal
 
 from schemarouter import InMemoryRegistry, PolicyViolationError
 from schemarouter.concept_retrieval import NativeConceptCatalog
@@ -48,6 +48,17 @@ class PaperPairedAgentE0:
     baseline: dict[str, Any]
     baseline_tool_schema_utf8_bytes_exposed: int
     paper: PaperMeteredAgentEpisode
+    execution_order: Literal["baseline_first", "paper_first"] = "baseline_first"
+    host_declared_matching_agent_configuration: bool = True
+    independent_e2_qualified: bool = False
+
+
+@dataclass(frozen=True)
+class PaperCounterbalancedAgentE0:
+    """Two actual execution orders; unscored E0 observations, not an E2 study."""
+
+    baseline_first: PaperPairedAgentE0
+    paper_first: PaperPairedAgentE0
     host_declared_matching_agent_configuration: bool = True
     independent_e2_qualified: bool = False
 
@@ -55,6 +66,7 @@ class PaperPairedAgentE0:
 PaperAgentFactory = Callable[
     [], tuple[GeneratedEpisodeAgent, HostAgentPairConfiguration],
 ]
+PaperModelFactory = Callable[[], PaperMeteredModel]
 
 
 def _validated_config(value: Any) -> HostAgentPairConfiguration:
@@ -95,6 +107,7 @@ async def run_paper_paired_agent_e0(
     index: NativeSchemaGraphIndex,
     model_visible_intent_ids: tuple[str, ...],
     model_visible_concept_ids: tuple[str, ...],
+    execution_order: Literal["baseline_first", "paper_first"] = "baseline_first",
 ) -> PaperPairedAgentE0:
     """Compare captured authorized ranked K5 with paper K5 on the same case.
 
@@ -103,6 +116,10 @@ async def run_paper_paired_agent_e0(
     its revision claim cannot independently authenticate the external model.
     A failure in either branch discards the whole comparison.
     """
+    if type(execution_order) is not str or execution_order not in (
+        "baseline_first", "paper_first",
+    ):
+        raise ValueError("unsupported paired execution order")
     if not isinstance(view, AuthorizedAgentToolSurface):
         raise ValueError("original principal-scoped view required")
     if not isinstance(view.router.registry, InMemoryRegistry):
@@ -178,21 +195,38 @@ async def run_paper_paired_agent_e0(
             ).encode("utf-8"))
             return baseline_agent.generate(messages, tools)
 
-    baseline = run_generated_episode(
-        BaselineSchemaMeter(), view.router.registry, copy.deepcopy(frozen_task),
-        EXPERIMENTAL_FIXED5_CONDITION,
-        experimental_candidate_selector=select_original_ranked_k5,
-        experimental_agent_tool_surface=view,
-        experimental_host_empty_menu_terminal=True,
-    )
-    assert_original_task()
-    assert_owner_unchanged()
-    paper = await run_paper_measured_agent_episode_e0(
-        model, paper_agent, view=view, task=copy.deepcopy(frozen_task),
-        catalog=catalog, intent_registry=intent_registry, index=index,
-        model_visible_intent_ids=model_visible_intent_ids,
-        model_visible_concept_ids=model_visible_concept_ids,
-    )
+    def run_baseline() -> dict[str, Any]:
+        current_registry = view.router.registry
+        if not isinstance(current_registry, InMemoryRegistry):
+            raise ValueError("paired E0 requires the original in-memory agent registry")
+        result = run_generated_episode(
+            BaselineSchemaMeter(), current_registry, copy.deepcopy(frozen_task),
+            EXPERIMENTAL_FIXED5_CONDITION,
+            experimental_candidate_selector=select_original_ranked_k5,
+            experimental_agent_tool_surface=view,
+            experimental_host_empty_menu_terminal=True,
+        )
+        assert_original_task()
+        assert_owner_unchanged()
+        return result
+
+    async def run_paper() -> PaperMeteredAgentEpisode:
+        result = await run_paper_measured_agent_episode_e0(
+            model, paper_agent, view=view, task=copy.deepcopy(frozen_task),
+            catalog=catalog, intent_registry=intent_registry, index=index,
+            model_visible_intent_ids=model_visible_intent_ids,
+            model_visible_concept_ids=model_visible_concept_ids,
+        )
+        assert_original_task()
+        assert_owner_unchanged()
+        return result
+
+    if execution_order == "baseline_first":
+        baseline = run_baseline()
+        paper = await run_paper()
+    else:
+        paper = await run_paper()
+        baseline = run_baseline()
     assert_original_task()
     assert_owner_unchanged()
     # The original A5 public trace legitimately includes the private grader's
@@ -207,4 +241,106 @@ async def run_paper_paired_agent_e0(
                 if key != "supported"
             },
         ),
+        execution_order=execution_order,
+    )
+
+
+async def run_paper_counterbalanced_agent_e0(
+    model_factory: PaperModelFactory,
+    agent_factory: PaperAgentFactory,
+    *,
+    view: AuthorizedAgentToolSurface,
+    task: dict[str, Any],
+    catalog: NativeConceptCatalog,
+    intent_registry: PaperIntentRegistry,
+    index: NativeSchemaGraphIndex,
+    model_visible_intent_ids: tuple[str, ...],
+    model_visible_concept_ids: tuple[str, ...],
+) -> PaperCounterbalancedAgentE0:
+    """Execute both original A7 orders without leaking any partial result.
+
+    Two new callbacks and four host-matched fresh agents are required; this
+    cannot verify external model identity or eliminate provider cache effects.
+    """
+    if not callable(model_factory) or not callable(agent_factory):
+        raise ValueError("fresh Understand callback and agent factories required")
+    if not isinstance(view, AuthorizedAgentToolSurface):
+        raise ValueError("original principal-scoped view required")
+    if type(task) is not dict or task.get("query") != view.original_query:
+        raise ValueError("paired task/query mismatch")
+    view.assert_source_unchanged()
+    owner_before = _validated_owner_snapshot(intent_registry, catalog)
+    try:
+        json.dumps(task, allow_nan=False)
+        task_before = sha256_json(task)
+    except (TypeError, ValueError, OverflowError, RecursionError):
+        raise ValueError("paired source task cannot be frozen") from None
+
+    def assert_original_pair_evidence() -> None:
+        view.assert_source_unchanged()
+        if _validated_owner_snapshot(intent_registry, catalog) != owner_before:
+            raise PolicyViolationError("paired owner declarations changed")
+        try:
+            if sha256_json(task) != task_before:
+                raise ValueError("paired source task evidence changed")
+        except (TypeError, OverflowError, RecursionError):
+            raise ValueError("paired source task evidence changed") from None
+
+    first_model = model_factory()
+    assert_original_pair_evidence()
+    second_model = model_factory()
+    assert_original_pair_evidence()
+    if (
+        not callable(first_model) or not callable(second_model)
+        or first_model is second_model or type(first_model) is not type(second_model)
+    ):
+        raise ValueError("two fresh comparable Understand callbacks required")
+
+    seen_agents: list[GeneratedEpisodeAgent] = []
+    original_config: HostAgentPairConfiguration | None = None
+    original_agent_type: type[Any] | None = None
+
+    def fresh_matching_agent() -> tuple[GeneratedEpisodeAgent, HostAgentPairConfiguration]:
+        nonlocal original_config, original_agent_type
+        supplied = agent_factory()
+        if type(supplied) is not tuple or len(supplied) != 2:
+            raise ValueError("matching fresh agent configuration required")
+        agent, configuration = supplied
+        valid_configuration = _validated_config(configuration)
+        if (
+            not callable(getattr(agent, "generate", None))
+            or any(agent is previous for previous in seen_agents)
+            or (
+                original_agent_type is not None
+                and type(agent) is not original_agent_type
+            )
+            or (
+                original_config is not None
+                and valid_configuration != original_config
+            )
+        ):
+            raise ValueError("matching fresh agent configuration required")
+        seen_agents.append(agent)
+        original_config = valid_configuration
+        original_agent_type = type(agent)
+        return agent, valid_configuration
+
+    async def run_trial(
+        model: PaperMeteredModel,
+        order: Literal["baseline_first", "paper_first"],
+    ) -> PaperPairedAgentE0:
+        return await run_paper_paired_agent_e0(
+            model, fresh_matching_agent, execution_order=order,
+            view=view, task=task, catalog=catalog, intent_registry=intent_registry,
+            index=index, model_visible_intent_ids=model_visible_intent_ids,
+            model_visible_concept_ids=model_visible_concept_ids,
+        )
+
+    assert_original_pair_evidence()
+    baseline_first = await run_trial(first_model, "baseline_first")
+    assert_original_pair_evidence()
+    paper_first = await run_trial(second_model, "paper_first")
+    assert_original_pair_evidence()
+    return PaperCounterbalancedAgentE0(
+        baseline_first=baseline_first, paper_first=paper_first,
     )
