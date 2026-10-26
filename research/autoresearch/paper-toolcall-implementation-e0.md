@@ -1,5 +1,29 @@
 # Original-paper Algorithm 1 continuation — P2 source-typed ToolCall E0
 
+### 2026-10-26 B1 E0 — authentic Ollama provider OpenAPI bytes, not independent gold
+
+- New verified upstream **Ollama** actual published OpenAPI 3.1 source, commit
+  `66ab8482e08035a3238dff04a5739c4371c61bfe`, original
+  `docs/openapi.yaml` **87,348 bytes**, Git blob
+  `3d0f5db4e71f1cb8331170c4d209902a00dfecc0`, SHA-256
+  `e94c8f02969c6807f431b7d0643eb0f8368f1d1baa719a4edaf07989b758f257`.
+  Original MIT license from the SAME exact upstream revision is retained,
+  with original blob `8e3dc978a7ca8c53f56bbedc5b558116140fc02e`.
+- Offline source audit strictly verifies immutable byte sizes, SHA-256 and
+  original Git blobs before parsing. Selects **original** documented
+  `GET /api/tags` and `GET /api/ps` operations and their response schema
+  components, runs the **existing** OpenAPI ToolSpec compiler, and indexes the
+  resulting two-route native catalog without inventing host-approved license,
+  semantic IDs, policy grants, graph joins or execution permission.
+- Separate exact-head 3.12 workflow includes source tamper tests and an
+  explicit **E0 source-only, no E2** audit receipt. [Reproducibility,
+  license, and limitations](official-provider-ollama-openapi-e0.md).
+  **Full exact-head CI is pending at publication; do not inherit prior CI**.
+- This is the first pinned genuine publisher-native **source** in this B1
+  continuation, NOT 5000 independent provider schemas or publisher-authored
+  cases/gold. #1346/#1477 independently evaluated E2 remain blocked,
+  #1356 release HARD HOLD, PR #1755 Draft and unmerged.
+
 **2026-10-24 · E0 source-authored diagnostic, not a shipped/default executor.**
 
 ### 2026-10-26 B1 E0 — nonempty 1-/2-hop G5 graph source churn
