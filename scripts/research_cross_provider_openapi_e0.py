@@ -19,8 +19,10 @@ from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
 from scripts.research_official_openapi_snapshot_e0 import (
     FIXTURE_DIR,
-    UPSTREAM_COMMIT as OLLAMA_COMMIT,
     compile_official_ollama_snapshot,
+)
+from scripts.research_official_openapi_snapshot_e0 import (
+    UPSTREAM_COMMIT as OLLAMA_COMMIT,
 )
 
 PIRATE_COMMIT = "6c3b4b0d9890d19b2199f8315488e8669c6951c3"
