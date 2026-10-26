@@ -23,8 +23,20 @@
   host input, revocation during finalizer, adversarial observation, malformed
   completion and token/byte bounds); expanded 16-file A9/typed/agent/ABI
   regressions **258 passed**, Ruff green and changed module Pyright 0 errors.
-  Remote exact-head CI still needed; local results alone are **not** final
-  protected qualification.
+  Local unbounded full pytest did **not** complete: the previously known
+  `test_capability_removal.py::test_remove_tool_sync_wrapper` stalled around
+  collection progress 12%; an independent isolated reproduction hit a 20s
+  timeout, so do not claim the full *local* suite green.
+- **A9 answer CODE HEAD qualified on 2026-10-26:** commit
+  `74b9adbbdc2abcc53febdf5be9896d5a04137836`, tree
+  `ae961192d3b30cf2ed0d3771db863a9d9907785f`, passed **35/35 returned
+  PR workflow runs** including the dedicated original-paper A9 test, public
+  ABI, Python 3.10/3.11/3.13/3.14, Qwen CPU DEV and package checks.
+  [Main CI #7187](https://github.com/JDeun/SchemaRouter/actions/runs/40278095040)
+  Python 3.12 reported **6500 passed, 3 skipped in 1091.42s**, core coverage
+  **85.02%** against 84% required. This is exact-head *engineering E0*
+  qualification, **not E2 or independent semantic answer accuracy**.
+  The ensuing docs-only HEAD is a separate commit and must qualify independently.
 - Design [A9 answered graph](paper-scoped-answered-graph-a9-e0-design.md),
   execution [A9 answer plan](paper-scoped-answered-graph-a9-e0-plan.md).
   Original independent A9 source semantics, agent answer accuracy, publisher

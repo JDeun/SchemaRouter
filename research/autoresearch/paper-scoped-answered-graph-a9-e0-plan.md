@@ -65,13 +65,30 @@ tuple[Decision, PaperScopedAnsweredGraph | None]`.
 - [x] Add dedicated A9 answer-presentation tests to original-paper CI paths
   and step; run Ruff and changed source Pyright (**0 errors/warnings**).
 - [x] Verify expanded pytest (**258 passed**), Ruff, whitespace and change set.
-- [ ] Publish all byte-verified changed files onto same Draft #1755 head
+- [x] Publish six byte-verified changed files onto same Draft #1755 head
   with non-force expected-SHA lease; no merge, release or default promotion.
-- [ ] Verify all returned workflows for the exact newly published head, and
-  record exact evidence and remaining A9 / E2 limitations in canonical
-  handoff and GitHub issue/PR.
+- [x] Verify all returned workflows for the exact **CODE HEAD**:
+  `74b9adbbdc2abcc53febdf5be9896d5a04137836`, Git tree
+  `ae961192d3b30cf2ed0d3771db863a9d9907785f`; **35/35 successful**.
+  [CI #7187](https://github.com/JDeun/SchemaRouter/actions/runs/40278095040)
+  Python 3.12 **6500 passed, 3 skipped in 1091.42s**, coverage **85.02%**.
+- [x] Preserve canonical source/agent/E2 limitations and add the exact-head
+  E0 qualification to the handoff. The documentation-only follow-up is a
+  **new HEAD**; it cannot inherit this code-head CI claim.
+- [ ] Check all protected workflow results for the final docs-only HEAD;
+  keep Draft #1755 open and release #1356 blocked.
 
 ## Progress ledger
 
 - 2026-10-26: Design selected under previously granted user direction to
   implement without more approval prompts. Source-captured E0 scope only.
+- 2026-10-26: 18 RED→GREEN new tests; 258 related existing regressions;
+  repo Ruff and changed Pyright 0 errors/warnings. Local full suite stalled
+  on the pre-existing capability-removal sync-wrapper and the isolated
+  reproduction timed out in 20 seconds; only remote CI is full-suite proof.
+- 2026-10-26: Self-review (no separate reviewer dispatched under current
+  coordination constraints): checked final-only scalar projection, exact
+  original tool counts, empty agent tool definitions, source/principal drift
+  after callback, refusal branches, malicious model completion and non-E2
+  output fields. Important open item: independent answer fidelity and
+  source/publisher E2 gold are not available; intentionally not claimed.
