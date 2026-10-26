@@ -16,13 +16,19 @@ from typing import Any
 
 from scripts.inspect_independent_native_e2_intake import (
     MAX_BYTES,
+    SAFE_ID,
     _raw_json,
     inspect_source_pinned_native_cohort,
 )
-from scripts.research_paper_measured_episode_e0 import PaperMeteredAgentEpisode
+from scripts.research_paper_measured_episode_e0 import (
+    PaperMeteredAgentEpisode,
+    PaperStageMeasurement,
+)
 from scripts.research_paper_paired_agent_e0 import PaperPairedAgentE0
 from scripts.research_paper_refusal_eval_e0 import decision_from_plan_status
 from scripts.research_task_disposition_rubric_e0 import KINDS, LANGUAGES
+
+MAX_OBSERVED_AGENT_TOOL_CALLS = 10000
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,18 +60,19 @@ def observation_from_paper_paired_agent_e0(
     the exact input task of that paired run. This is not an E2 receipt.
     """
     if (
-        type(case_id) is not str or not 1 <= len(case_id) <= 128
+        type(case_id) is not str or SAFE_ID.fullmatch(case_id) is None
         or type(paired) is not PaperPairedAgentE0
         or paired.independent_e2_qualified is not False
         or paired.host_declared_matching_agent_configuration is not True
         or type(paired.paper) is not PaperMeteredAgentEpisode
+        or type(paired.paper.measurement) is not PaperStageMeasurement
         or paired.paper.measurement.independent_e2_qualified is not False
         or type(paired.paper.episode) is not dict
         or "supported" in paired.paper.episode
     ):
         raise ValueError("unqualified and sanitized A7 paired result required")
     attempts = paired.paper.episode.get("tool_call_count")
-    if type(attempts) is not int or attempts < 0:
+    if type(attempts) is not int or not 0 <= attempts <= MAX_OBSERVED_AGENT_TOOL_CALLS:
         raise ValueError("actual A7 host tool attempt counter required")
     statuses = {
         "offer": "ready", "abstain": "abstain_unclassified",
@@ -116,6 +123,9 @@ def _summarize(
             if (case["expected_kind"] == "unsupported"
                     and observed.agent_tool_calls > 0):
                 counts["unsupported_observed_tool_attempt_cases"] += 1
+            if (case["expected_kind"] not in ("supported", "unsupported")
+                    and observed.agent_tool_calls > 0):
+                counts["nonbinary_observed_tool_attempt_cases"] += 1
             if decision == "abstain" and observed.agent_tool_calls > 0:
                 counts["plan_abstained_but_agent_attempted"] += 1
             if case["expected_kind"] == "unsupported":
@@ -129,6 +139,8 @@ def _summarize(
         if decision in ("request_arguments", "request_observation"):
             counts["deferred"] += 1
         if case["expected_kind"] == "supported":
+            if decision == "offer" and observed.agent_tool_calls == 0:
+                counts["supported_offer_without_agent_attempt"] += 1
             if decision == "abstain":
                 counts["supported_false_refusal"] += 1
             elif decision == "offer":
@@ -154,7 +166,8 @@ def _summarize(
         "unsupported_false_accept", "unsupported_abstain", "unsupported_deferred",
         "agent_tool_attempts_missing_cases", "agent_tool_attempts_reported_cases",
         "agent_tool_attempts_total", "unsupported_observed_tool_attempt_cases",
-        "plan_abstained_but_agent_attempted",
+        "nonbinary_observed_tool_attempt_cases", "plan_abstained_but_agent_attempted",
+        "supported_offer_without_agent_attempt",
     ):
         result[metric] = counts[metric]
     result["supported_false_refusal_rate"] = (
@@ -204,7 +217,8 @@ def calibrate_source_pinned_paper_no_fit_e0(
             or type(observation.status) is not str
             or (observation.agent_tool_calls is not None
                 and (type(observation.agent_tool_calls) is not int
-                     or observation.agent_tool_calls < 0))
+                     or not 0 <= observation.agent_tool_calls
+                     <= MAX_OBSERVED_AGENT_TOOL_CALLS))
             or observation.case_id in decisions
         ):
             raise ValueError("malformed or duplicate observed plan status")
@@ -227,9 +241,9 @@ def calibrate_source_pinned_paper_no_fit_e0(
         >= limits.min_cases_per_language_and_binary_kind
         for language in LANGUAGES for kind in ("supported", "unsupported")
     )
-    within_limits: bool | None = None
+    plan_within_limits: bool | None = None
     if enough_cases:
-        within_limits = all(
+        plan_within_limits = all(
             (metrics["supported_false_refusal_rate"] is not None
              and metrics["supported_false_refusal_rate"]
              <= limits.max_supported_false_refusal_rate
@@ -237,6 +251,20 @@ def calibrate_source_pinned_paper_no_fit_e0(
              and metrics["unsupported_false_accept_rate"]
              <= limits.max_unsupported_false_accept_rate)
             for metrics in (*by_language.values(), totals)
+        )
+    # A paper plan is not a physical execution. Do not allow the diagnostic
+    # to indicate acceptance until ALL host dispatch counters are available;
+    # unobserved executions are *unknown*, not presumed zero. Even this is
+    # still E0 and never independent end-to-end task quality evidence.
+    host_counters_complete = totals["agent_tool_attempts_missing_cases"] == 0
+    candidate_within_limits: bool | None = None
+    if plan_within_limits is not None and host_counters_complete:
+        candidate_within_limits = bool(
+            plan_within_limits
+            and totals["unsupported_observed_tool_attempt_cases"] == 0
+            and totals["nonbinary_observed_tool_attempt_cases"] == 0
+            and totals["plan_abstained_but_agent_attempted"] == 0
+            and totals["supported_offer_without_agent_attempt"] == 0
         )
 
     return {
@@ -256,7 +284,9 @@ def calibrate_source_pinned_paper_no_fit_e0(
             "max_supported_false_refusal_rate": limits.max_supported_false_refusal_rate,
             "max_unsupported_false_accept_rate": limits.max_unsupported_false_accept_rate,
         },
-        "candidate_within_declared_limits": within_limits,
+        "plan_within_declared_limits": plan_within_limits,
+        "host_tool_attempt_counters_complete": host_counters_complete,
+        "candidate_within_declared_limits": candidate_within_limits,
         "score_scope": "PLAN_STAGE_DIAGNOSTIC_NOT_END_TO_END",
         "source_no_proven_hit_is_global_no_fit": False,
         "global_capability_absence_proven": False,

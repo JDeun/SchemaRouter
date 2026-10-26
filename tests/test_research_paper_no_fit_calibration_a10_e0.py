@@ -109,7 +109,8 @@ def test_complete_source_pinned_multilingual_diagnostic_has_only_aggregates():
     assert report["source_author_license_verified"] is False
     assert report["independent_e2_qualified"] is False
     assert report["global_capability_absence_proven"] is False
-    assert report["candidate_within_declared_limits"] is False
+    assert report["plan_within_declared_limits"] is False
+    assert report["candidate_within_declared_limits"] is None
     assert report["totals"]["supported_false_refusal"] == 3
     assert report["totals"]["unsupported_false_accept"] == 3
     assert report["totals"]["supported_denominator"] == 3
@@ -209,7 +210,7 @@ def test_optional_host_observed_tool_attempts_are_not_guessed_from_plan():
     assert measured_result["totals"]["plan_abstained_but_agent_attempted"] == 1
 
 
-@pytest.mark.parametrize("invalid", [True, -1, 0.5, "1"])
+@pytest.mark.parametrize("invalid", [True, -1, 0.5, "1", 10**100])
 def test_host_tool_attempt_observation_requires_real_nonnegative_integer(invalid):
     source, observations = _fixture()
     with pytest.raises(ValueError):
@@ -225,11 +226,54 @@ def test_perfect_synthetic_outcomes_can_only_pass_unqualified_diagnostic():
             "case-01", "case-02", "case-06", "case-07", "case-11", "case-12"
         } else o for o in observations
     )
-    report = _run(source, observations, NoFitDiagnosticLimits(1, 0.0, 0.0))
+    unmetered = _run(source, observations, NoFitDiagnosticLimits(1, 0.0, 0.0))
+    assert unmetered["plan_within_declared_limits"] is True
+    assert unmetered["candidate_within_declared_limits"] is None
+    measured = tuple(
+        replace(o, agent_tool_calls=1 if o.status == "ready" else 0)
+        for o in observations
+    )
+    report = _run(source, measured, NoFitDiagnosticLimits(1, 0.0, 0.0))
     assert report["candidate_within_declared_limits"] is True
     assert report["gold_independently_reviewed"] is False
     assert report["release_qualified"] is False
     assert report["independent_e2_qualified"] is False
+
+
+def test_perfect_plan_does_not_pass_diagnostic_with_unsafe_host_attempts():
+    source, observations = _fixture()
+    planned = tuple(
+        replace(
+            o,
+            status=("ready" if o.case_id in {"case-01", "case-06", "case-11"}
+                    else "no_proven_hit") if o.case_id in {
+                "case-01", "case-02", "case-06", "case-07", "case-11", "case-12"
+            } else o.status,
+            agent_tool_calls=1 if o.case_id in {"case-01", "case-02", "case-06", "case-11"}
+            else 0,
+        ) for o in observations
+    )
+    result = _run(source, planned, NoFitDiagnosticLimits(1, 0.0, 0.0))
+    assert result["plan_within_declared_limits"] is True
+    assert result["totals"]["unsupported_observed_tool_attempt_cases"] == 1
+    assert result["totals"]["plan_abstained_but_agent_attempted"] == 1
+    assert result["candidate_within_declared_limits"] is False
+
+
+def test_supported_offer_without_host_dispatch_blocks_qualified_diagnostic():
+    source, observations = _fixture()
+    planned = tuple(replace(
+        o,
+        status=("ready" if o.case_id in {"case-01", "case-06", "case-11"}
+                else "no_proven_hit") if o.case_id in {
+            "case-01", "case-02", "case-06", "case-07", "case-11", "case-12"
+        } else o.status,
+        agent_tool_calls=0,
+    ) for o in observations)
+    result = _run(source, planned, NoFitDiagnosticLimits(1, 0.0, 0.0))
+    assert result["totals"]["supported_offer_without_agent_attempt"] == 3
+    assert result["plan_within_declared_limits"] is True
+    assert result["candidate_within_declared_limits"] is False
 
 
 def test_command_line_consumes_exact_streams_without_echoing_private_source(tmp_path):
@@ -307,7 +351,7 @@ def test_paired_decision_projection_is_lossless_about_missing_exact_plan_status(
     assert observed.status == status
 
 
-@pytest.mark.parametrize("invalid", [True, -1, "0", None])
+@pytest.mark.parametrize("invalid", [True, -1, "0", None, 10**100])
 def test_paired_projection_requires_actual_host_call_count(invalid):
     with pytest.raises(ValueError):
         observation_from_paper_paired_agent_e0("case-01", _paired("offer", invalid))
@@ -325,6 +369,10 @@ def test_paired_projection_cannot_elevate_gold_or_independent_e2():
         )))
     with pytest.raises(ValueError):
         observation_from_paper_paired_agent_e0("case-01", _paired("not_plan_decision", 0))
+    with pytest.raises(ValueError):
+        observation_from_paper_paired_agent_e0("case-01", replace(base, paper=replace(
+            base.paper, measurement=None,
+        )))
 
 
 @pytest.mark.asyncio

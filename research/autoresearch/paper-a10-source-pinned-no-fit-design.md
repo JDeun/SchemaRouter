@@ -17,7 +17,12 @@ publisher data are not available locally, so all local fixtures remain E0.
 - Optionally admit exact **host-observed** nonnegative agent tool-attempt
   counters per case. Missing counters remain unknown, never zero; observed
   unsupported dispatch and agent dispatch despite plan abstention are separate
-  diagnostics. The rate denominator is only actually observed cases.
+  diagnostics. The rate denominator is only actually observed cases. A
+  diagnostic `candidate_within_declared_limits` is **null** until every case
+  has a host counter; unsafe unsupported/nonbinary calls, post-abstain calls
+  and supported offers with no observed dispatch prevent a passing diagnostic.
+  The distinct `plan_within_declared_limits` is planning-only and cannot
+  represent task success or a production qualification.
 - The existing A7 paired-run result carries a `Decision` but not the exact
   original paper plan `status`. An explicit A7→A10 adapter may project this
   decision and observed host `tool_call_count` into a case observation. It must
