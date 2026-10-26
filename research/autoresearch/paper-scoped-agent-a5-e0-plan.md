@@ -1,0 +1,69 @@
+# Scoped Paper A5 E0 Completion Plan
+
+> **For agentic workers:** Use the existing source-scoped A5 code and TDD;
+> the original graph contract precedes any newer A5 adapter convenience.
+
+**Goal:** Fix the latest Python 3.12 graph regression while preserving an
+actual bounded source-safe Understand → fixed-K agent E0 vertical slice.
+
+**Architecture:** `analyze_paper_understanding_scoped` produces untrusted
+hints, G5 produces non-executing typed receipts, the A5 adapter narrowly
+handles missing ordinary direct scalars, and the existing
+`run_generated_episode` is the only agent executor.
+
+**Tech Stack:** Python 3.12, Pydantic v2, pytest, Ruff, Pyright, Actions CI.
+
+**Spec:** `research/autoresearch/paper-scoped-agent-a5-e0-design.md`.
+
+## Global constraints
+
+- Exactly K5; no default change, no model parameter authorization.
+- A graph-only missing dependency remains `no_proven_hit`.
+- An unobserved 1/2-hop DAG is not an executable route menu.
+- Source policy, principal, license, availability and fingerprints are authoritative.
+- #1346/#1477 independent E2 blocked; #1356 release HARD HOLD.
+
+## Review focus
+
+1. Named 1/2-hop target must not short-circuit on direct missing inputs.
+2. Missing typed identifier cannot be mistaken for ordinary host scalar.
+3. Denied/hidden intermediate or source mutation cannot disclose partial DAG.
+4. Valid source-only direct input must remain a distinguishable deferred request.
+5. Supported empty-menu episode must record failure with zero tool attempts.
+
+### Task 1: Restore graph-only semantics
+
+**Files:** `src/schemarouter/paper_understood_graph_plan.py`,
+`tests/test_paper_understood_graph_plan.py`.
+
+- [x] RED: previous Python 3.12 exact-head full CI produced 10 related
+  failed graph tests; reproduced locally with the same 10 failures.
+- [x] GREEN: restore `requires_arguments` as an eligible graph lookup,
+  retaining direct `ready` precedence and named-only exploration.
+- [x] Targeted graph regression passes locally.
+
+### Task 2: Preserve a safe A5 direct missing-scalar diagnostic
+
+**Files:** `scripts/research_paper_scoped_plan_e0.py`,
+`tests/test_research_paper_scoped_agent_real_e0.py`.
+
+- [x] RED: missing typed semantic identifier unexpectedly reached the agent.
+- [x] GREEN: recover a single verified direct `requires_arguments` receipt
+  only for all-untyped, source-declared missing inputs and only after graph
+  returns `no_proven_hit`.
+- [x] Add actual one/two-hop fixed5 episodes and verify no DAG flattening,
+  zero generations/attempts, and supported-case fail-closed outcome.
+- [x] Local related scope: 136 passed, Ruff all passed.
+
+### Task 3: Remote exact-head qualification and handoff
+
+**Files:** this plan, canonical
+`research/autoresearch/paper-toolcall-implementation-e0.md`, Draft #1755.
+
+- [ ] Publish atomic source+test+handoff change on Draft #1755 and verify
+  the remote Git tree equals the local checked content.
+- [ ] Verify protected Python 3.12 CI **for the new exact HEAD**, CodeQL,
+  Ruff and typecheck; failures remain open until their actual results pass.
+- [ ] Mark A5 checked in the canonical checklist **only** with matching
+  exact-head CI and source-backed fixture evidence.
+- [ ] Record next A6/A7 work, relevant SHA and issue #1560 checkpoint.

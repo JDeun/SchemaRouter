@@ -41,13 +41,44 @@ CATALOG = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
 ),))
 
 
-def source(*, required_argument=False):
+def source(*, required_argument=False, input_semantic=None, hops=0):
     router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
-            effect="allow", operation="complete.read", roles_any=("viewer",),
+            effect="allow", operation="*.read", roles_any=("viewer",),
         ),),
     ))
+    if hops:
+        root_field = "contact_id" if hops == 2 else "case_id"
+        root_semantic = "case.contact_id" if hops == 2 else "case.id"
+        router.add_tool(ToolSpec(
+            name="root", source_type="crm", license="host-approved",
+            endpoints=[EndpointSpec(
+                name="read", read_only=True,
+                output_fields=[FieldSpec(
+                    name=root_field, semantic_id=root_semantic,
+                    json_schema={"type": "string"}, identifier=True,
+                )],
+            )],
+        ))
+        if hops == 2:
+            router.add_tool(ToolSpec(
+                name="middle", source_type="crm", license="host-approved",
+                endpoints=[EndpointSpec(
+                    name="read", read_only=True,
+                    parameters=[ParameterSpec(
+                        name="contact_id", semantic_id="case.contact_id",
+                        required=True, json_schema={"type": "string"},
+                    )],
+                    input_schema={"type": "object", "properties": {
+                        "contact_id": {"type": "string"},
+                    }, "required": ["contact_id"]},
+                    output_fields=[FieldSpec(
+                        name="case_id", semantic_id="case.id",
+                        json_schema={"type": "string"}, identifier=True,
+                    )],
+                )],
+            ))
     router.add_tool(ToolSpec(
         name="complete", description="case status",
         source_type="crm", license="host-approved",
@@ -55,7 +86,12 @@ def source(*, required_argument=False):
             name="read", read_only=True, description="case status",
             parameters=[ParameterSpec(
                 name="case_id", location="query", required=True,
-            )] if required_argument else [],
+                semantic_id="case.id" if hops else input_semantic,
+                json_schema={"type": "string"},
+            )] if required_argument or hops else [],
+            input_schema={"type": "object", "properties": {
+                "case_id": {"type": "string"},
+            }, "required": ["case_id"]} if hops else {},
             output_fields=[FieldSpec(
                 name="status", semantic_id="case.status",
                 json_schema={"type": "string"},
@@ -156,6 +192,42 @@ async def test_required_argument_is_not_fabricated_by_scoped_planner():
     assert decision == "request_arguments"
     assert row["tool_call_count"] == 1
     assert agent.turns >= 1
+    assert row["passed"] is False
+
+
+@pytest.mark.asyncio
+async def test_missing_typed_dependency_does_not_downgrade_to_host_arguments():
+    view, index = source(required_argument=True, input_semantic="case.id")
+
+    class ForbiddenAgent:
+        def generate(self, messages, tools):
+            pytest.fail("unproved typed dependency must not be offered")
+
+    decision, row = await evaluate(
+        lambda payload: model_result(), ForbiddenAgent(), view, index,
+        supported=False,
+    )
+    assert decision == "abstain"
+    assert row["host_empty_menu_terminal"] is True
+    assert row["tool_call_count"] == row["turns"] == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("hops", [1, 2])
+async def test_observed_dependency_plan_never_flattens_into_agent_menu(hops):
+    view, index = source(hops=hops)
+
+    class ForbiddenAgent:
+        def generate(self, messages, tools):
+            pytest.fail("an unexecuted dependency DAG must not be offered")
+
+    decision, row = await evaluate(
+        lambda payload: model_result(), ForbiddenAgent(), view, index,
+        supported=True,
+    )
+    assert decision == "request_observation"
+    assert row["host_empty_menu_terminal"] is True
+    assert row["tool_call_count"] == row["turns"] == 0
     assert row["passed"] is False
 
 

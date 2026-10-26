@@ -9,7 +9,10 @@ from schemarouter import PolicyViolationError
 from schemarouter.concept_retrieval import NativeConceptCatalog
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.paper_typed_tool_plan import PaperTypedToolPlan
-from schemarouter.paper_understood_direct_plan import PaperIntentRegistry
+from schemarouter.paper_understood_direct_plan import (
+    PaperIntentRegistry,
+    compile_paper_understood_direct_plan,
+)
 from schemarouter.paper_understood_graph_plan import compile_paper_understood_graph_plan
 from scripts.research_authorized_agent_tool_surface import AuthorizedAgentToolSurface
 from scripts.research_paper_refusal_eval_e0 import Decision, decision_from_plan_status
@@ -51,6 +54,24 @@ async def analyze_and_plan_paper_scoped_e0(
         view.router, understanding, principal=view._principal,
         catalog=catalog, intent_registry=intent_registry, index=index,
     )
+    # The graph-only compiler intentionally refuses an unproved dependency.
+    # The existing agent may still request a genuinely scalar source input,
+    # but a typed identifier dependency must never silently become one.
+    if plan.status == "no_proven_hit":
+        direct = compile_paper_understood_direct_plan(
+            view.router, understanding, principal=view._principal,
+            catalog=catalog, intent_registry=intent_registry, index=index,
+        )
+        if direct.status == "requires_arguments" and len(direct.calls) == 1:
+            call = direct.calls[0].call
+            endpoint = view.router.registry.get(call.tool).endpoint(call.endpoint)
+            required = set(call.missing_required_arguments)
+            non_dependency = {
+                parameter.name for parameter in endpoint.parameters
+                if parameter.semantic_id is None
+            }
+            if required and required <= non_dependency:
+                plan = direct
     view.assert_source_unchanged()
     if plan.executable_authority:
         raise PolicyViolationError("paper research plan cannot authorize execution")

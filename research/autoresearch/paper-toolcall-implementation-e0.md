@@ -2,6 +2,44 @@
 
 **2026-10-24 · E0 source-authored diagnostic, not a shipped/default executor.**
 
+### 2026-10-26 A5 regression recovery — local verification, remote qualification pending
+
+- At Draft #1755 head `051705c254ef753b8ca4aaca1816fc050c45dab0`, protected
+  Python 3.12 CI run `40242927433` failed: **10 failed / 6386 passed /
+  3 skipped** (84.83% coverage), while the CI typecheck, Ruff and the
+  separately listed research workflows passed. All ten failures were in
+  `tests/test_paper_understood_graph_plan.py`: the recent direct-plan
+  `requires_arguments` short-circuit had bypassed source-proven 1-/2-hop
+  dependency lookup, ambiguity/overflow and drift checks.
+- The original **graph-only API contract** is restored: a named consumer with
+  missing inputs still undergoes typed G5 path proof; an unproved path is
+  `no_proven_hit`, not a source-executed or implicitly host-filled dependency.
+  The separate A5 scoped-agent bridge can preserve a **single source-proven
+  direct** `requires_arguments` receipt only if **every missing required
+  parameter is source-declared without a dependency `semantic_id`**.
+  Any missing typed identifier stays unoffered, and the graph DAG is never
+  flattened into an agent tool menu. Model `parameter_hints` remain untrusted.
+- Actual principal-scoped source + deterministic existing-agent integration
+  now covers direct execution, named unknown/empty menus, missing ordinary
+  input, missing typed dependency, **actual 1- and 2-hop path receipts with
+  zero agent generations/tool calls**, policy drift in `Understand`, and
+  authorization mutation during an agent turn. These remain **synthetic
+  development** fixtures, not independent publisher E2.
+- Fresh local Python 3.12: **136/136** combined paper/direct/graph/G5/A5
+  regression tests passed; `ruff check .` passed. Local full Pyright with
+  incomplete optional environment reported **85 errors / 8 warnings**,
+  mainly import resolution; the previous remote exact-head typecheck passed.
+  The new commit's exact-head protected CI has **not yet qualified** this
+  recovery. Do not claim full-suite green based on the focused run.
+- A5 remains **unchecked until the new remote exact-head CI verifies** the
+  tested source and the handoff/PR are updated with that SHA. Next substantive
+  work: A6 independently reviewed EN/KO/JA source-native gold, then A7
+  pre-`Understand` model tokens/time and paired actual-agent measurement;
+  A8–A10 and B1 remain open. Never reinterpret E0 as E2.
+- Specific design and completion checklist:
+  [A5 design](paper-scoped-agent-a5-e0-design.md),
+  [A5 plan](paper-scoped-agent-a5-e0-plan.md).
+
 
 ### E0 scoped refusal measurement continuation (2026-10-25)
 
