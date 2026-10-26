@@ -30,6 +30,9 @@ structured, sanitized measurement receipt.
 
 ## Task 2: record evidence / next external stage
 
-- [ ] Document locally verified measurement limits and actual CI head.
+- [x] Documented local usage/latency limits and qualified E0 code head
+  `c4466c08`: 29/29 workflows passed, Linux Python 3.12 6423 passed /
+  3 skipped with 85.00% coverage. Docs-only follow-up commits require a
+  separate HEAD check.
 - [ ] A7 remains unchecked until same-model paired independent evaluation,
   Linux Python3.12 cross-condition evidence and actual provider counts.

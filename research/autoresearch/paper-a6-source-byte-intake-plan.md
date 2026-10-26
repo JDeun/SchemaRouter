@@ -34,6 +34,8 @@ path but no raw source data appears in stdout.
 issue #1560.
 
 - [x] Document locally bound bytes vs unverified third-party identity.
-- [ ] Record red→green, test counts and exact HEAD/CI without checking A6
-  until actual independently authored reviewed fixtures are received.
-- [ ] Keep Draft, external E2 blocks and v0.18 release HARD HOLD.
+- [x] Recorded RED→GREEN, 216 local related tests, and qualified E0 code
+  head `c4466c08` with 29/29 PR workflows, Python 3.12 6423 pass/3 skip.
+  **A6 intentionally remains unchecked** until independently authored,
+  source-verified and reviewed native fixtures are supplied.
+- [x] Kept Draft, external E2 blocks and v0.18 release HARD HOLD.

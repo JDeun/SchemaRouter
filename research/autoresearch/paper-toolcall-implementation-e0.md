@@ -4,6 +4,19 @@
 
 ### 2026-10-26 A6/A7 continuation — byte-pinned intake + separated Understand costs (E0 only)
 
+- **Qualified A6/A7 E0 code HEAD (Draft #1755):**
+  `c4466c0878cec58a95d161681201b067a55579ac`, Git tree
+  `0a46fb70368fd9ae9f10a47666a453efca85acb6`, byte-identical to the
+  locally validated commit. **29/29 returned pull-request workflows passed**
+  on this **exact code head**, including
+  [main CI #7178](https://github.com/JDeun/SchemaRouter/actions/runs/40256503694)
+  with Linux Python 3.12 **6423 passed, 3 skipped in 576.54s** and
+  **85.00% coverage** versus 84% floor. Typecheck, Python 3.10/3.11/3.13/3.14,
+  Windows, documentation and packages passed. Dedicated original paper and
+  native-intake Python 3.12 workflows passed. The prior A5 code head had
+  6403 passed; this is a newer separate result. CodeQL is **not claimed**
+  because its workflow targets `main` PRs, not this stacked Draft target.
+  Any subsequent documentation-only head requires its **own** CI verification.
 - **A6 partial engineering only:** Existing `inspect_unscored_native_cohort`
   already checks EN/KO/JA × five source-native dispositions but accepts a
   **self-declared** inventory SHA without the original bytes. New opt-in
@@ -33,8 +46,10 @@
   production usage or same-model paired independent gold evaluation. Both
   **A6 and A7 remain unchecked**, #1346/#1477 `BLOCKED_EXTERNAL`, #1356
   release/default promotion `HARD HOLD`. The new code requires its own
-  exact-head Python 3.12 protected CI qualification. No CodeQL success is
-  inferred from an older stacked head.
+  separate publisher qualification, regardless of the green code-head CI.
+  A fresh independent reviewer found no unresolved Critical/Important E0
+  defects; source-snapshot validity and full model-quality measurement were
+  expressly outside the reviewed E0 scope.
 
 ### 2026-10-26 A5 E0 completed — verified code head and bounded limits
 
@@ -109,7 +124,13 @@ on its own, not silently inherit code-head CI.
 
 **Use this list at the start of EVERY new session.** Keep completed items checked (do not delete audit history); update the evidence link, exact HEAD and CI state after each change. A checked implementation is **not** an E2 qualification. Do not reopen already completed slices. Prioritize major vertical behavior over micro-tuning.
 
-**Current Draft:** [#1755](https://github.com/JDeun/SchemaRouter/pull/1755) stacked on #1754. Latest **qualified code head**: `24a8cb0448c399f10dbe1dc86c898cbb8d328799`, 28/28 PR workflows successful, full Python 3.12 6403 passed / 3 skipped. Exact-head CI must be rechecked after any later commit; do not inherit green from an earlier head.
+**Current Draft:** [#1755](https://github.com/JDeun/SchemaRouter/pull/1755)
+stacked on #1754. Latest **qualified implementation code head**:
+`c4466c0878cec58a95d161681201b067a55579ac`, 29/29 PR workflows
+successful, Linux Python 3.12 **6423 passed / 3 skipped**, 85.00% coverage;
+the older A5-only head `24a8cb04` has its distinct 28/28, 6403-test result.
+Exact-head CI must be rechecked after any later commit, including a
+docs-only handoff revision; do not inherit green from an earlier head.
 
 **The 2026-10-25 A5 paragraphs below are historical checkpoints. The checked
 2026-10-26 A5 item and qualified-head evidence supersede them.**
