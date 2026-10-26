@@ -2,6 +2,28 @@
 
 **2026-10-24 · E0 source-authored diagnostic, not a shipped/default executor.**
 
+### 2026-10-26 B1 E0 — heterogeneous 500/5000 original-source indexed parity extension
+
+- New opt-in `scripts/benchmark_native_heterogeneous_parity_e0.py` exercises
+  original registered native `ToolSpec` catalogs with four OpenAPI/MCP/
+  OPTIMADE/custom-like source types, typed wrong-license/shape decoys,
+  principal authorization, hidden output, availability and post-registration
+  source schema mutation. No duplicate routing/agent/executor or provider I/O.
+- **Observed local TDD RED→GREEN**: 13 tests; 177 related index/graph/A9
+  regressions passed. Both 500/5000 developer-synthetic catalogs separately
+  passed **96 exact original-source oracle parity checks** over EN/KO/JA
+  aliases and four scenarios. Indexed wall p50/p95/p99 for 5000 routes:
+  **1.313/2.315/2.475ms**, Python 3.12.14 Linux; not a general SLA.
+- Reuses the existing `indexed-concept-direct-parity-e0.yml` matrix
+  (500/5000), with explicit E0/independent-gold gates and a second
+  bounded artifact; no default or release promotion. [Design](native-heterogeneous-5000-e0-design.md)
+  and [plan](native-heterogeneous-5000-e0-plan.md). Full B1 heterogeneous
+  real-provider/permissions/churn/oracle test remains **unchecked**; this
+  source-authored synthetic test does not satisfy #1346/#1477 E2.
+- Latest verified prior HEAD was `bfedf637` 35/35 PR workflows. The new
+  code/docs/workflow publication must receive its **own exact-HEAD CI**.
+  #1560 open; Draft #1755 unmerged; #1356 HARD HOLD.
+
 ### 2026-10-26 A9 E0 — actual observed graph → one tool-free answer generation
 
 - Built research-only `scripts/research_paper_scoped_answered_graph_a9_e0.py`,
