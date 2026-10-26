@@ -2,7 +2,20 @@
 
 **2026-10-24 · E0 source-authored diagnostic, not a shipped/default executor.**
 
-### 2026-10-26 A5 regression recovery — local verification, remote qualification pending
+### 2026-10-26 A5 E0 completed — verified code head and bounded limits
+
+**Qualified code head (Draft #1755):**
+`24a8cb0448c399f10dbe1dc86c898cbb8d328799`, Git tree
+`68731e2770a1eb143bf7901ec6afe60899d27117` (identical to the local
+140-test checkpoint). GitHub Actions for this **exact code HEAD**:
+**28/28 PR-triggered workflows successful**, including main CI run
+[`40251600240`](https://github.com/JDeun/SchemaRouter/actions/runs/40251600240).
+Linux Python 3.12 full suite: **6403 passed, 3 skipped in 783.41s; coverage
+85.00% against 84% floor**. Main CI `typecheck`, Windows smoke and package
+checks also succeeded. CodeQL was **not separately represented** in the 28
+returned PR workflows and must not be claimed independently green without
+its own check evidence. A subsequent documentation-only head must be tracked
+on its own, not silently inherit code-head CI.
 
 - At Draft #1755 head `051705c254ef753b8ca4aaca1816fc050c45dab0`, protected
   Python 3.12 CI run `40242927433` failed: **10 failed / 6386 passed /
@@ -33,8 +46,8 @@
   incomplete optional environment reported **85 errors / 8 warnings**,
   mainly import resolution; the previous remote exact-head typecheck passed.
 - During follow-up review, an **unnamed typed-input bypass** required a
-  second RED→GREEN regression; the resulting additional local test and code
-  fix have **not yet been published to the Draft** or qualified by CI.
+  second RED→GREEN regression; the additional test and code fix were
+  published and qualified in the exact code HEAD above.
   The same review found that counting 33 registry-only named endpoints before
   principal/data-scope filtering returned `budget_unsatisfied` for a denied
   tool, distinguishable from an unknown tool's `no_proven_hit`. A RED→GREEN
@@ -42,10 +55,9 @@
   many-endpoint names. The graph prefilter first applies source/license,
   principal, data-scope, read-only and availability narrowing **before** its
   bounded 32-route cap; the canonical G5 graph still proves actual paths.
-  Do not claim full-suite green based on the focused run.
-- A5 remains **unchecked until the new remote exact-head CI verifies** the
-  tested source and the handoff/PR are updated with that SHA. Next substantive
-  work: A6 independently reviewed EN/KO/JA source-native gold, then A7
+- **A5 checked as an E0 engineering implementation**, not independent E2.
+  The next substantive work is A6 independently reviewed EN/KO/JA
+  source-native gold (external provenance requirement), then A7
   pre-`Understand` model tokens/time and paired actual-agent measurement;
   A8–A10 and B1 remain open. Never reinterpret E0 as E2.
 - Specific design and completion checklist:
@@ -59,11 +71,14 @@
 - Independently source-verified supported and unsupported gold are separate denominators; unresolved cases do not become unsupported. Report EN/KO/JA and aggregate false-refusal, false-accept and deferred counts. An offered plan is not successful execution; a deferred plan is neither success nor an immediate refusal.
 - No independent labeled dataset, real-model accuracy, model token/cost, automatic agent execution, calibrated global no-fit, or E2 is claimed. Next: add source-pinned independently reviewed EN/KO/JA gold fixtures, run paired real-model evaluation with current principal snapshots, then check same-head CI and extend research evidence. Keep #1291, #1346, #1477 and #1356 gates intact.
 
-## LIVE IMPLEMENTATION CHECKLIST — single source of truth (2026-10-25)
+## LIVE IMPLEMENTATION CHECKLIST — single source of truth (2026-10-26)
 
 **Use this list at the start of EVERY new session.** Keep completed items checked (do not delete audit history); update the evidence link, exact HEAD and CI state after each change. A checked implementation is **not** an E2 qualification. Do not reopen already completed slices. Prioritize major vertical behavior over micro-tuning.
 
-**Current Draft:** [#1755](https://github.com/JDeun/SchemaRouter/pull/1755) stacked on #1754. Latest verified branch before this checklist: `4b4afe2629dd6bf00af868a81aae9d76437cf580`. Exact-head CI must be rechecked after any commit; do not inherit green from earlier heads.
+**Current Draft:** [#1755](https://github.com/JDeun/SchemaRouter/pull/1755) stacked on #1754. Latest **qualified code head**: `24a8cb0448c399f10dbe1dc86c898cbb8d328799`, 28/28 PR workflows successful, full Python 3.12 6403 passed / 3 skipped. Exact-head CI must be rechecked after any later commit; do not inherit green from an earlier head.
+
+**The 2026-10-25 A5 paragraphs below are historical checkpoints. The checked
+2026-10-26 A5 item and qualified-head evidence supersede them.**
 
 
 **A5 partial implementation checkpoint (2026-10-25):** `scripts/research_paper_scoped_plan_e0.py` now chains the single host-scoped async model callback into the current direct/one-/two-hop source-proven planner. It returns a bounded non-executing receipt and mapped evaluation decision; rejects an unscoped view and any executable-authority result. **A5 remains unchecked**: the existing fixed-K agent callback/episode has not yet consumed this async result, and full mutation/real-agent regressions are not yet proven. This is not an independent accuracy or E2 claim. New HEAD CI and targeted tests require confirmation.
@@ -81,7 +96,7 @@
 - [x] **A2** Named direct-tool FieldGroup, principal/source guards, K5 prefilter and typed non-executing plan. Evidence: `paper_understood_direct_plan.py`, #1755.
 - [x] **A3** Named one-/two-hop G5 typed dependency plan, conservative ambiguity/overflow, no auto-execution. Evidence: `paper_understood_graph_plan.py`, #1755.
 - [x] **A4** E0 EN/KO/JA outcome accounting and verified-gold denominator guard. Evidence: `scripts/research_paper_refusal_eval_e0.py`, `tests/test_research_paper_refusal_eval_e0.py`; commit `4b4afe26`. This is evaluator mechanics **only**, not model accuracy.
-- [ ] **A5 — NEXT CODE** Integrate the scoped model `Understand(q)` → current direct/graph planner → existing fixed-K agent evaluation adapter as an explicitly opt-in **bounded vertical slice**. Reuse existing executor; preserve host authorization, current source snapshots and no automatic dependency execution. Test supported, unsupported, missing arguments, observed dependencies, mutable policy/source and empty menu.
+- [x] **A5 — E0 COMPLETE** Integrated scoped model `Understand(q)` → current direct/graph planner → existing fixed-K agent evaluation adapter as an opt-in **bounded vertical slice**. Reuses existing executor, host authorization and pinned source; does not automatically execute dependency DAGs. Verified supported, unsupported, ordinary/typed missing arguments, 1/2-hop observation deferral, mutable policy/source and empty menu; 140 local targeted tests and full protected Python 3.12 6403 passed at head `24a8cb04`. **Not E2 or model accuracy.**
 - [ ] **A6** Add independently reviewed, source-snapshot-pinned EN/KO/JA supported/unsupported/ambiguous fixtures, with explicit labels, provenance, license and permission conditions. Do not fabricate publisher gold.
 - [ ] **A7** Run paired same-model/same-agent evaluation; report false refusal, false accept, deferred/unknown, tool attempts, wall time and actual input/output tokens separately from schema bytes; repeat on CI Linux Python 3.12. No E2 claim without independent data.
 - [ ] **A8** Independently justified Top-K5 ranking for eligible alternatives and >K overflow, without weakening policy-before-K, deterministic tie handling or rewriting frozen #432 scores.

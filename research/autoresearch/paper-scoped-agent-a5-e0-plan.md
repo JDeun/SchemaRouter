@@ -63,17 +63,22 @@ handles missing ordinary direct scalars, and the existing
   indistinguishable from unknown under principal scope.
 - [x] Add actual one/two-hop fixed5 episodes and verify no DAG flattening,
   zero generations/attempts, and supported-case fail-closed outcome.
-- [x] Local related scope: 136 passed, Ruff all passed.
+- [x] Final local related scope: 140 passed, Ruff all passed, targeted graph
+  Pyright 0 errors.
 
 ### Task 3: Remote exact-head qualification and handoff
 
 **Files:** this plan, canonical
 `research/autoresearch/paper-toolcall-implementation-e0.md`, Draft #1755.
 
-- [ ] Publish atomic source+test+handoff change on Draft #1755 and verify
-  the remote Git tree equals the local checked content.
-- [ ] Verify protected Python 3.12 CI **for the new exact HEAD**, CodeQL,
-  Ruff and typecheck; failures remain open until their actual results pass.
-- [ ] Mark A5 checked in the canonical checklist **only** with matching
-  exact-head CI and source-backed fixture evidence.
-- [ ] Record next A6/A7 work, relevant SHA and issue #1560 checkpoint.
+- [x] Published atomic source/test/handoff changes on Draft #1755, latest
+  verified code head `24a8cb0448c399f10dbe1dc86c898cbb8d328799`;
+  Git tree `68731e2770a1eb143bf7901ec6afe60899d27117` matches local.
+- [x] Full protected CI for **that exact code HEAD** passed: all 28 returned
+  PR workflows successful, main run `40251600240`, Python 3.12 6403 pass /
+  3 skip, coverage 85.00%, CI typecheck and Ruff pass.
+- [ ] Separately obtain CodeQL check evidence when available; it did not
+  appear among the 28 PR-workflow results returned by the connector.
+- [x] Marked A5 E0 checked in canonical checklist with qualified code-head
+  evidence; docs-only publication has a separate CI lifecycle.
+- [x] Recorded A6/A7 next work, exact qualified SHA and #1560 checkpoint.
