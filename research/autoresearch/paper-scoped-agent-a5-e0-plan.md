@@ -51,6 +51,16 @@ handles missing ordinary direct scalars, and the existing
 - [x] GREEN: recover a single verified direct `requires_arguments` receipt
   only for all-untyped, source-declared missing inputs and only after graph
   returns `no_proven_hit`.
+- [x] Review RED: model omission of `named_tools` bypassed the guard through
+  the graph compiler's existing direct compatibility branch. GREEN: apply
+  the exact same source-declared scalar gate to all A5 `requires_arguments`
+  results; an unproved semantic input now yields empty generic abstention.
+- [x] Verify unnamed ordinary scalar still yields `request_arguments`.
+- [x] Review RED: 33 denied named endpoints returned `budget_unsatisfied`
+  versus `no_proven_hit` for unknown name; GREEN: scope current eligible
+  targets before the G5 route cap, preserving canonical graph authorization.
+- [x] Verify both denied and field-hidden 33-endpoint names remain
+  indistinguishable from unknown under principal scope.
 - [x] Add actual one/two-hop fixed5 episodes and verify no DAG flattening,
   zero generations/attempts, and supported-case fail-closed outcome.
 - [x] Local related scope: 136 passed, Ruff all passed.

@@ -17,7 +17,10 @@
   The separate A5 scoped-agent bridge can preserve a **single source-proven
   direct** `requires_arguments` receipt only if **every missing required
   parameter is source-declared without a dependency `semantic_id`**.
-  Any missing typed identifier stays unoffered, and the graph DAG is never
+  The same restriction applies when the model omits `named_tools` entirely;
+  a read-only review caught that bypass, verified RED, and the bridge now
+  returns generic no-proof abstention for it. Any missing typed identifier
+  stays unoffered, and the graph DAG is never
   flattened into an agent tool menu. Model `parameter_hints` remain untrusted.
 - Actual principal-scoped source + deterministic existing-agent integration
   now covers direct execution, named unknown/empty menus, missing ordinary
@@ -25,12 +28,21 @@
   zero agent generations/tool calls**, policy drift in `Understand`, and
   authorization mutation during an agent turn. These remain **synthetic
   development** fixtures, not independent publisher E2.
-- Fresh local Python 3.12: **136/136** combined paper/direct/graph/G5/A5
+- First local Python 3.12 checkpoint: **136/136** combined paper/direct/graph/G5/A5
   regression tests passed; `ruff check .` passed. Local full Pyright with
   incomplete optional environment reported **85 errors / 8 warnings**,
   mainly import resolution; the previous remote exact-head typecheck passed.
-  The new commit's exact-head protected CI has **not yet qualified** this
-  recovery. Do not claim full-suite green based on the focused run.
+- During follow-up review, an **unnamed typed-input bypass** required a
+  second RED→GREEN regression; the resulting additional local test and code
+  fix have **not yet been published to the Draft** or qualified by CI.
+  The same review found that counting 33 registry-only named endpoints before
+  principal/data-scope filtering returned `budget_unsatisfied` for a denied
+  tool, distinguishable from an unknown tool's `no_proven_hit`. A RED→GREEN
+  regression now requires generic no-proof for both denied and field-hidden
+  many-endpoint names. The graph prefilter first applies source/license,
+  principal, data-scope, read-only and availability narrowing **before** its
+  bounded 32-route cap; the canonical G5 graph still proves actual paths.
+  Do not claim full-suite green based on the focused run.
 - A5 remains **unchecked until the new remote exact-head CI verifies** the
   tested source and the handoff/PR are updated with that SHA. Next substantive
   work: A6 independently reviewed EN/KO/JA source-native gold, then A7

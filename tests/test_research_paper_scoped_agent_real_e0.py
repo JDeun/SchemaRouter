@@ -213,6 +213,35 @@ async def test_missing_typed_dependency_does_not_downgrade_to_host_arguments():
 
 
 @pytest.mark.asyncio
+async def test_unnamed_typed_missing_input_cannot_bypass_a5_scalar_guard():
+    view, index = source(required_argument=True, input_semantic="case.id")
+
+    class ForbiddenAgent:
+        def generate(self, messages, tools):
+            pytest.fail("omitting named_tools must not offer an unproved typed input")
+
+    decision, row = await evaluate(
+        lambda payload: {**model_result(), "named_tools": []},
+        ForbiddenAgent(), view, index, supported=False,
+    )
+    assert decision == "abstain"
+    assert row["host_empty_menu_terminal"] is True
+    assert row["tool_call_count"] == row["turns"] == 0
+
+
+@pytest.mark.asyncio
+async def test_unnamed_ordinary_missing_scalar_remains_deferred_not_absent():
+    view, index = source(required_argument=True)
+    decision, row = await evaluate(
+        lambda payload: {**model_result(), "named_tools": []},
+        Agent(), view, index, supported=False,
+    )
+    assert decision == "request_arguments"
+    assert row["host_empty_menu_terminal"] is False
+    assert row["tool_call_count"] == 1
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("hops", [1, 2])
 async def test_observed_dependency_plan_never_flattens_into_agent_menu(hops):
     view, index = source(hops=hops)

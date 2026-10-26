@@ -181,6 +181,37 @@ def test_named_graph_never_returns_unproved_or_unauthorized_path(reason):
     assert "middle.read" not in repr(plan)
 
 
+@pytest.mark.parametrize("hidden_mode", ["denied", "hidden_field"])
+def test_hidden_many_endpoint_name_is_indistinguishable_from_unknown_name(hidden_mode):
+    router = _router()
+    router.add_tool(ToolSpec(
+        name="secret", source_type="crm", license="reviewed",
+        endpoints=[EndpointSpec(
+            name=f"read_{i}", read_only=True,
+            output_fields=[FieldSpec(
+                name="status", semantic_id="crm.status",
+                json_schema={"type": "string"},
+            )],
+        ) for i in range(33)],
+    ))
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="root.read", roles_any=("reader",),
+        ),) + ((AuthorizationRule(
+            effect="allow", operation="secret.*", roles_any=("reader",),
+        ),) if hidden_mode == "hidden_field" else ()),
+        data_rules=(DataScopeRule(
+            operation="secret.*", roles_any=("reader",),
+            hidden_fields=("status",),
+        ),) if hidden_mode == "hidden_field" else (),
+    )
+    hidden = _compile(router, named_tools=("secret",))
+    unknown = _compile(router, named_tools=("unregistered",))
+    assert hidden.status == unknown.status == "no_proven_hit"
+    assert hidden.calls == unknown.calls == ()
+
+
 def test_unmentioned_target_retains_no_direct_proof_without_disclosing_graph():
     router = _router(hops=2)
     plan = _compile(router, named_tools=())

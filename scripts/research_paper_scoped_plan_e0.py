@@ -22,6 +22,22 @@ from scripts.research_paper_scoped_understand_e0 import (
 )
 
 
+def _source_proves_single_nondependency_input(
+    view: AuthorizedAgentToolSurface, plan: PaperTypedToolPlan,
+) -> bool:
+    """Keep an unproved semantic dependency out of the existing agent menu."""
+    if plan.status != "requires_arguments" or len(plan.calls) != 1 or plan.bindings:
+        return False
+    call = plan.calls[0].call
+    endpoint = view.router.registry.get(call.tool).endpoint(call.endpoint)
+    required = set(call.missing_required_arguments)
+    ordinary = {
+        parameter.name for parameter in endpoint.parameters
+        if parameter.semantic_id is None
+    }
+    return bool(required) and required <= ordinary
+
+
 async def analyze_and_plan_paper_scoped_e0(
     model: PaperScopedModel,
     *,
@@ -62,16 +78,18 @@ async def analyze_and_plan_paper_scoped_e0(
             view.router, understanding, principal=view._principal,
             catalog=catalog, intent_registry=intent_registry, index=index,
         )
-        if direct.status == "requires_arguments" and len(direct.calls) == 1:
-            call = direct.calls[0].call
-            endpoint = view.router.registry.get(call.tool).endpoint(call.endpoint)
-            required = set(call.missing_required_arguments)
-            non_dependency = {
-                parameter.name for parameter in endpoint.parameters
-                if parameter.semantic_id is None
-            }
-            if required and required <= non_dependency:
-                plan = direct
+        if _source_proves_single_nondependency_input(view, direct):
+            plan = direct
+    # The graph compiler also returns a direct missing-input receipt when
+    # understanding did not name a target. Enforce the same A5 disclosure
+    # rule on BOTH entry paths; omission of named_tools cannot bypass it.
+    if plan.status == "requires_arguments" and not _source_proves_single_nondependency_input(
+        view, plan,
+    ):
+        plan = PaperTypedToolPlan(
+            status="no_proven_hit", snapshot_id=plan.snapshot_id,
+            registry_version=plan.registry_version, requested_k=plan.requested_k,
+        )
     view.assert_source_unchanged()
     if plan.executable_authority:
         raise PolicyViolationError("paper research plan cannot authorize execution")

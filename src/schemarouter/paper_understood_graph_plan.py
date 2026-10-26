@@ -124,8 +124,35 @@ def compile_paper_understood_graph_plan(
     )
     if not target_routes:
         return empty("no_proven_hit")
-    if len(target_routes) > 32:
-        return empty("budget_unsatisfied")
+    # Do not expose the cardinality of registry-only/denied named tools via
+    # the structural target budget. Project current principal eligibility
+    # BEFORE the 32-route G5 prefilter cap; the G5 lookup still independently
+    # verifies its original typed graph proof and all route permissions.
+    permitted_targets = router._authorization_predicate(principal)
+    if permitted_targets is None:
+        raise PolicyViolationError("paper named graph lacks current source policy")
+    available = router.planner.availability_predicate
+    scoped_targets: set[str] = set()
+    for route_id in sorted(target_routes):
+        tool_key, endpoint_name = index.field_index.route_locations[route_id]
+        tool = router.registry.get(tool_key)
+        endpoint = tool.endpoint(endpoint_name)
+        if (
+            tool.source_type != group.source_type
+            or tool.license != group.license
+            or not permitted_targets(tool, endpoint)
+            or endpoint.read_only is not True
+            or endpoint.destructive is True
+            or available is not None and not available(tool, endpoint)
+            or router._data_scope_endpoint_view(principal, tool, endpoint) is None
+        ):
+            continue
+        scoped_targets.add(route_id)
+        if len(scoped_targets) > 32:
+            return empty("budget_unsatisfied")
+    target_routes = frozenset(scoped_targets)
+    if not target_routes:
+        return empty("no_proven_hit")
 
     def lookup(hops: int) -> Any:
         if hops == 1:

@@ -27,7 +27,10 @@ dependency DAG, change frozen #432, or claim independent publisher E2.
    scoped A5 adapter** to recover one independently source-proven direct
    receipt only when all missing arguments are ordinary source-declared
    non-dependency parameters (`semantic_id is None`). Never recover from
-   `over_k_unranked`, `ambiguous_paths` or a revoked source.
+   `over_k_unranked`, `ambiguous_paths` or a revoked source. Apply this same
+   condition to a direct `requires_arguments` result when the model leaves
+   `named_tools` empty: intent-only selection is not an alternate execution
+   authority path.
 
 ## Observable acceptance
 
@@ -37,13 +40,18 @@ dependency DAG, change frozen #432, or claim independent publisher E2.
 - One missing source-declared scalar can be diagnosed as
   `request_arguments` without adopting any model-proposed value.
 - A missing source-typed semantic identifier without a proved producer is
-  **not** downgraded into a host scalar request and exposes no tool menu.
+  **not** downgraded into a host scalar request and exposes no tool menu,
+  whether named tools are supplied or omitted.
 - Actual one-hop and two-hop source-proven paths classify as
   `request_observation` but expose zero tools, zero agent generations and
   zero tool attempts until independently authorized observation exists.
 - Unknown/denied paths, model callback mutation, policy/source revocation,
   and mutation during an agent turn fail closed or enter the generic host
   empty-menu terminal. Supported empty-menu tasks do not pass optimistically.
+- The named-target budget must not reveal whether a denied or field-hidden
+  tool exists with over 32 endpoints. Apply principal visibility, current
+  source/license and availability before counting the bounded graph target
+  prefilter, then reverify all proof and source witnesses normally.
 - Keep Draft #1755 stacked and unmerged, release #1356 on HARD HOLD, and
   publisher #1346 / independent agent #1477 externally gated.
 
