@@ -28,3 +28,21 @@ This is adapter COMPILER contract E0 from local documents, not live transport E1
 Next independent tasks are: license/source-pinned real OpenAPI/MCP/OPTIMADE provider snapshots with authentic original schemas and minimal host-reviewed grants; strict required-field and no-fit completeness across domain-disjoint original cases, per-language retrieval/false admission and CPU p50/p95/p99; practical constrained OPTIMADE ID input compatibility only if the host can preserve full provider JSON Schema and prove correctness; and paired external-agent E2 per #1346/#1477.
 
 Do not convert E0 compiler tests or previous fabricated public demo E1 into commercial benchmarks. Historical original #432 negatives remain intact and #1356 v0.18 remains HARD HOLD.
+
+## Versioned native-adapter journal churn (2026-10-26, additional E0 guard)
+
+The same offline OpenAPI, MCP, and OPTIMADE adapter-converted catalog now exercises ten
+parameterized source-contract mutation scenarios (five changes times source-output
+visibility). For each changed MCP source the tests require that the prior G5 snapshot
+fail closed; compare the source-owned in-memory journal refresh with a fresh full
+index build, including exact typed graph edges, counts, pinned snapshot and
+EN/KO/JA scoped lookups; then restore the original reviewed MCP contract and
+require another stale-index refusal plus journal/full rebuild parity. Cases:
+semantic-ID change, source-type change, license change, read-only revocation,
+and description-only revision (which must preserve the valid route). No new
+execution or authority is introduced.
+
+These are locally authored, OFFLINE adapter-compiler contracts and cannot
+prove publisher identity, real provider availability, real 5000 native source
+completeness, independent multilingual gold, or agent/model E2 performance.
+The existing external #1346/#1477 and release #1356 holds remain in force.
