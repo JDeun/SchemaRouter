@@ -3,11 +3,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
+import sys
 from copy import deepcopy
 
 import pytest
 
 from scripts.inspect_independent_native_e2_intake import (
+    inspect_source_pinned_native_cohort,
     inspect_unscored_native_cohort,
 )
 from scripts.research_task_disposition_rubric_e0 import KINDS, LANGUAGES
@@ -167,6 +170,22 @@ def test_duplicate_manifest_json_key_is_never_last_wins():
         inspect_unscored_native_cohort(forged, raw(c), raw(g), raw(d))
 
 
+def test_non_utf8_inventory_manifest_preserves_source_neutral_legacy_parse_error():
+    m, c, g, d = example()
+    with pytest.raises(ValueError, match="malformed JSON contents"):
+        inspect_unscored_native_cohort(b"\xff", raw(c), raw(g), raw(d))
+
+
+def test_malformed_private_source_is_not_chained_as_exception_cause():
+    m, c, g, d = example()
+    malformed = b'{"private":"' + PRIVATE.encode("ascii") + b'",'
+    with pytest.raises(ValueError) as error:
+        inspect_unscored_native_cohort(malformed, raw(c), raw(g), raw(d))
+    assert PRIVATE not in str(error.value)
+    assert error.value.__cause__ is None
+    assert error.value.__suppress_context__ is True
+
+
 def test_bounded_holdout_rows_prevent_adversarial_pairwise_blowup():
     m, c, g, d = example()
     for i in range(16, 258):
@@ -203,3 +222,83 @@ def test_untrusted_duplicate_field_name_is_not_reflected_in_error():
     with pytest.raises(ValueError, match="malformed JSON contents") as error:
         inspect_unscored_native_cohort(raw(m), raw_case, raw(g), raw(d))
     assert PRIVATE not in str(error.value)
+
+
+def test_actual_native_inventory_bytes_must_match_manifest_before_structural_receipt():
+    m, c, g, d = example()
+    source = b'{"native_tool_spec":"' + PRIVATE.encode("utf-8") + b'"}'
+    m["native_tool_inventory_sha256"] = sha(source)
+    report = inspect_source_pinned_native_cohort(
+        raw(m), raw(c), raw(g), raw(d), source,
+    )
+    assert report["native_inventory_bytes_sha256_match"] is True
+    assert report["status"] == "STRUCTURAL_PREFLIGHT_ONLY"
+    assert report["source_author_license_verified"] is False
+    assert report["provider_native_permission_gold_verified"] is False
+    assert report["scoring_authorized"] is False
+    assert report["independent_e2_qualified"] is False
+    assert report["qualification_gate"] == "BLOCKED_EXTERNAL"
+    assert PRIVATE not in json.dumps(report)
+
+
+@pytest.mark.parametrize("submitted", (
+    b'{"native_tool_spec":"changed"}',
+    b"",
+    "not-native-source-bytes",
+    b"x" * (5 * 1024 * 1024 + 1),
+))
+def test_untrusted_or_mismatched_inventory_fails_without_source_leak(submitted):
+    m, c, g, d = example()
+    source = b'{"native_tool_spec":"' + PRIVATE.encode("utf-8") + b'"}'
+    m["native_tool_inventory_sha256"] = sha(source)
+    with pytest.raises(ValueError) as error:
+        inspect_source_pinned_native_cohort(
+            raw(m), raw(c), raw(g), raw(d), submitted,
+        )
+    assert PRIVATE not in str(error.value)
+
+
+def test_incorrect_manifest_source_digest_cannot_be_promoted_to_verified():
+    m, c, g, d = example()
+    with pytest.raises(ValueError, match="native inventory bytes mismatch"):
+        inspect_source_pinned_native_cohort(
+            raw(m), raw(c), raw(g), raw(d), b"actual provider inventory",
+        )
+
+
+def test_cli_native_inventory_opt_in_does_not_expose_private_source(tmp_path):
+    m, c, g, d = example()
+    source = b'{"native":"' + PRIVATE.encode("utf-8") + b'"}'
+    m["native_tool_inventory_sha256"] = sha(source)
+    files = {}
+    for name, value in (
+        ("manifest", raw(m)), ("cases", raw(c)),
+        ("gold", raw(g)), ("development", raw(d)),
+        ("native-inventory", source),
+    ):
+        path = tmp_path / f"{name}.json"
+        path.write_bytes(value)
+        files[name] = path
+    command = [sys.executable, "-m", "scripts.inspect_independent_native_e2_intake"]
+    for name in ("manifest", "cases", "gold", "development"):
+        command.extend((f"--{name}", str(files[name])))
+    legacy = subprocess.run(command, check=True, capture_output=True, text=True)
+    assert "native_inventory_bytes_sha256_match" not in legacy.stdout
+    pinned = subprocess.run(
+        [*command, "--native-inventory", str(files["native-inventory"])],
+        check=True, capture_output=True, text=True,
+    )
+    assert json.loads(pinned.stdout)["native_inventory_bytes_sha256_match"] is True
+    assert PRIVATE not in pinned.stdout + pinned.stderr
+
+    # A failed intake must not echo original source content in stdout or
+    # Python's command-line exception diagnostic on stderr.
+    files["native-inventory"].write_bytes(source + b"-tampered")
+    rejected = subprocess.run(
+        [*command, "--native-inventory", str(files["native-inventory"])],
+        check=False, capture_output=True, text=True,
+    )
+    assert rejected.returncode != 0
+    assert rejected.stdout == ""
+    assert "native inventory bytes mismatch" in rejected.stderr
+    assert PRIVATE not in rejected.stderr

@@ -57,8 +57,6 @@ def _raw_json(raw: bytes, label: str) -> dict[str, Any]:
         )
     except ValueError:
         raise ValueError(f"{label}: malformed JSON contents") from None
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise ValueError(f"{label}: invalid UTF-8 JSON") from exc
     if type(data) is not dict:
         raise ValueError(f"{label}: expected JSON object")
     return data
@@ -214,15 +212,58 @@ def inspect_unscored_native_cohort(
     }
 
 
+def inspect_source_pinned_native_cohort(
+    manifest_bytes: bytes,
+    case_bytes: bytes,
+    gold_bytes: bytes,
+    development_bytes: bytes,
+    native_inventory_bytes: bytes,
+) -> dict[str, Any]:
+    """Bind exact supplied native source bytes; never certify their origin.
+
+    The provider revision, native authority, authorship and license remain
+    self-attested. This cannot authorize scoring or provider execution.
+    """
+    if (
+        type(native_inventory_bytes) is not bytes
+        or not native_inventory_bytes
+        or len(native_inventory_bytes) > MAX_BYTES
+    ):
+        raise ValueError("native inventory: empty, oversized or non-bytes input")
+    manifest = _raw_json(manifest_bytes, "manifest")
+    claimed = manifest.get("native_tool_inventory_sha256")
+    if (
+        type(claimed) is not str
+        or not SHA64.fullmatch(claimed)
+        or claimed != _hash(native_inventory_bytes)
+    ):
+        raise ValueError("native inventory bytes mismatch")
+    receipt = inspect_unscored_native_cohort(
+        manifest_bytes, case_bytes, gold_bytes, development_bytes,
+    )
+    return {**receipt, "native_inventory_bytes_sha256_match": True}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("manifest", "cases", "gold", "development"):
         parser.add_argument("--" + name, required=True, type=Path)
+    parser.add_argument("--native-inventory", type=Path)
     args = parser.parse_args()
-    report = inspect_unscored_native_cohort(
+    original_files = (
         args.manifest.read_bytes(), args.cases.read_bytes(),
         args.gold.read_bytes(), args.development.read_bytes(),
     )
+    if args.native_inventory is None:
+        report = inspect_unscored_native_cohort(*original_files)
+    else:
+        # Bound the fifth stream at the read boundary; no source bytes are
+        # emitted on stdout or in failure strings.
+        with args.native_inventory.open("rb") as handle:
+            native_bytes = handle.read(MAX_BYTES + 1)
+        report = inspect_source_pinned_native_cohort(
+            *original_files, native_bytes,
+        )
     print(json.dumps(report, sort_keys=True, ensure_ascii=False))
 
 

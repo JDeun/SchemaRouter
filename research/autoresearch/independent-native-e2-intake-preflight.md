@@ -23,6 +23,24 @@ python -m scripts.inspect_independent_native_e2_intake \
   --development /secure/e2/development.json
 ```
 
+**A6 optional source-byte hardening (2026-10-26):** pass the verbatim native
+ToolSpec/provider inventory snapshot as a fifth local file using
+`--native-inventory /secure/e2/native-inventory.json`. This binds the actual
+submitted bytes to `native_tool_inventory_sha256` in the manifest, failing
+closed on a different digest, empty/non-byte input or an inventory larger
+than 5 MiB. The new safe report field
+`native_inventory_bytes_sha256_match=true` means **only** that the supplied
+bytes match the submitter's hash claim. The original four-file mode remains
+supported and does *not* emit that field. The code can also be called via
+`inspect_source_pinned_native_cohort(...)`; no source bytes are printed.
+
+It does **not** prove those bytes exist at the asserted upstream provider
+commit or that the submitter owns the data; independent publisher identity,
+native route/field gold, independent review, license, permission and live
+model/provider scoring are still unverified. Until those original artifacts
+and signed author/reviewer approval arrive, **A6 is unchecked and E2 remains
+`BLOCKED_EXTERNAL`**.
+
 The report contains **counts by language and expected kind**, and flags. It contains **no original query, individual ID, route names, role, gold, HMAC key, raw model text or provider results**. Every accepted report *still says* `scoring_authorized=false`, `independent_e2_qualified=false`, `qualification_gate=BLOCKED_EXTERNAL`. This is a *minimum structural barrier*, never a reviewer receipt.
 
 ## What this deliberately cannot certify

@@ -2,6 +2,40 @@
 
 **2026-10-24 · E0 source-authored diagnostic, not a shipped/default executor.**
 
+### 2026-10-26 A6/A7 continuation — byte-pinned intake + separated Understand costs (E0 only)
+
+- **A6 partial engineering only:** Existing `inspect_unscored_native_cohort`
+  already checks EN/KO/JA × five source-native dispositions but accepts a
+  **self-declared** inventory SHA without the original bytes. New opt-in
+  `inspect_source_pinned_native_cohort` / `--native-inventory` compares the
+  actual supplied inventory's bounded verbatim bytes with that digest before
+  issuing the existing *non-scoring* preflight receipt; the old four-file CLI
+  remains compatible. Malformed JSON errors are source-neutral and do not
+  chain the private JSON decoder exception. Design and implementation:
+  [A6 design](paper-a6-source-byte-intake-design.md),
+  [A6 plan](paper-a6-source-byte-intake-plan.md),
+  [general intake](independent-native-e2-intake-preflight.md).
+- **A7 partial engineering only:** New opt-in
+  `scripts/research_paper_measured_episode_e0.py` composes the **existing A5
+  source-scoped episode and exact same agent executor**, meters host-observed
+  `Understand` wall time and canonical JSON UTF-8 bytes for the scoped model
+  request and **per-turn actually offered agent tool schemas**, and keeps
+  existing agent model/token/time counters separate. Strict host-adapter
+  `PaperProviderUsageResponse` enables distinct *provider-reported* input/output
+  tokens; without provider usage they remain `None`, never an inferred zero.
+  No extra model callback, route authority, raw query/route/answer or second
+  agent executor is added. Only the measurement record and existing
+  principal-scoped `public_trace` should be exported; never treat either as
+  independently verified E2. Design and implementation:
+  [A7 design](paper-a7-understand-metering-design.md),
+  [A7 plan](paper-a7-understand-metering-plan.md).
+- These paths use **synthetic DEV fixtures only**, with no provider-observed
+  production usage or same-model paired independent gold evaluation. Both
+  **A6 and A7 remain unchecked**, #1346/#1477 `BLOCKED_EXTERNAL`, #1356
+  release/default promotion `HARD HOLD`. The new code requires its own
+  exact-head Python 3.12 protected CI qualification. No CodeQL success is
+  inferred from an older stacked head.
+
 ### 2026-10-26 A5 E0 completed — verified code head and bounded limits
 
 **Qualified code head (Draft #1755):**
