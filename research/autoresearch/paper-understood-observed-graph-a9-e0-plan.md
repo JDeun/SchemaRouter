@@ -37,9 +37,9 @@ existing registered SchemaRouter executor. Detailed design:
 - [x] Self-review security transitions and handle regressions before publish:
   root/middle/target policy, deep principal owner snapshots, typed route
   contracts and exact one-call budget; empty identifier fail-closed fixed.
-- [ ] Update the canonical resume, issue #1560 and Draft #1755 with exact
+- [x] Update the canonical resume, issue #1560 and Draft #1755 with exact
   passing evidence; publish without merging and wait exact-head CI.
-- [ ] Keep A9 broader qualification and #1356 HOLD explicitly open.
+- [x] Keep A9 broader qualification and #1356 HOLD explicitly open.
 
 **First published A9 head CI forensic result (2026-10-26):** commit
 `1a20df99c7e32a3ab5f7581e4150acb8a42fe081`, tree
@@ -62,7 +62,7 @@ the public ABI expectation. This first remote head is **not green**.
 - [x] GREEN: an opt-in wrapper reuses the **same** scoped model callback and
   A9 observed executor, pins `AuthorizedAgentToolSurface` before/after, and
   requires every planned route to belong to its captured visible route IDs.
-- [ ] Verify focused regressions and update handoff; publish follow-up to
+- [x] Verify focused regressions and update handoff; publish follow-up to
   the **same Draft** only after the preceding exact-head CI is accounted for.
 
 **Task 4 local evidence:** Seven initial missing-module RED tests; seven
@@ -72,3 +72,22 @@ fix, expanded 15-file regression suite **283 passed**, repository Ruff
 green, changed implementation Pyright **0 errors/0 warnings**, Git diff
 whitespace clean. The explicit wrapper leaves the existing A5 fixed5 agent
 unchanged; it does not claim automatic natural-language answer synthesis.
+
+### Exact-head A9 protected CI closeout — 2026-10-26
+
+- **Qualified Draft code HEAD:**
+  `5683426c7ea6adf41d53ec699741e042e2e2db41`, Git tree
+  `5b344964eea83d1f08e7abac634e025bbfe43f09`. **35/35 returned PR
+  workflows completed successfully** for this exact code head, including
+  the original typed-paper A9 Python 3.12 workflow, native graph/ABI checks,
+  fixed5 model Qwen CPU research and cross-platform package checks.
+- [Main CI #7185](https://github.com/JDeun/SchemaRouter/actions/runs/40273198187):
+  Linux Python 3.12 **6482 passed, 3 skipped in 798.88s**, coverage
+  **85.02%**, above the protected 84% floor. Full protected job suite
+  concluded success; **no CodeQL success claim** for the stacked non-main
+  Draft target.
+- This documentation-only update, when published, creates a **new SHA** and
+  needs its **own exact-head CI**. Do not transfer the code-head result to it.
+- A9 external provenance, semantic/agent-output quality and independent E2
+  **remain unchecked**. This checklist confirms the E0 implementation and
+  CI only, not default agent promotion or #1356 release readiness.

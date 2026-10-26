@@ -54,6 +54,24 @@ This is opt-in local code only, **not** default fixed5 agent scheduling,
 publisher provenance, independent E2 or release qualification. Next exact
 published HEAD must rerun and pass protected CI before engineering claim.
 
+**A9 E0 exact qualified code HEAD (2026-10-26):** Draft commit
+`5683426c7ea6adf41d53ec699741e042e2e2db41`, Git tree
+`5b344964eea83d1f08e7abac634e025bbfe43f09`, passed **35/35 returned
+PR workflows**. [Main CI #7185](https://github.com/JDeun/SchemaRouter/actions/runs/40273198187)
+Linux Python 3.12 **6482 passed, 3 skipped in 798.88s**, total coverage
+**85.02%**. Dedicated original-paper typed-plan A9 workflow, original
+native G5, full public ABI, Windows, package/runtime and Qwen E5 CPU DEV
+workflows all passed on **that same code HEAD**. Prior `1a20df99` was
+**red** due its omitted frozen public ABI expectation; do not conflate.
+This evidence qualifies the source-safe *local E0* named G5 observation and
+one-shot scoped model→executor wiring **only**. The broader A9 checkbox
+remains intentionally **unchecked** until actual autonomous-agent answer
+scheduling, independently reviewed source semantics/provider provenance and
+E2 task evidence. #1346/#1477 remain BLOCKED_EXTERNAL, B1 full catalog
+500/5000 and A10 no-fit calibration open, #1356 release **HARD HOLD**.
+CodeQL not triggered/claimed on this stacked non-main Draft. Any later
+documentation-only HEAD must run its own 35-check qualification.
+
 ### 2026-10-26 A8 new research-only Understood→ranked direct K5 bridge
 
 - **Prior A7 documentation-only Draft HEAD** `f8b7ff5c156d18ca71da3ab71bb8d914cd4aa5b0`
