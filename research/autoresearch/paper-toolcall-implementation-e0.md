@@ -1,5 +1,27 @@
 # Original-paper Algorithm 1 continuation — P2 source-typed ToolCall E0
 
+### 2026-10-26 B1 E0 — two genuine provider-native original OpenAPI documents
+
+- Extended the genuine upstream Ollama OpenAPI pin with an **unmodified**
+  Pirate Weather original OpenAPI 3.1 plus Apache 2.0 license, exact upstream
+  commit `6c3b4b0d9890d19b2199f8315488e8669c6951c3`, original source
+  Git blob `1b417160dc385c8d10897d88ec37fa4793d50816`, original
+  license Git blob `261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64`.
+- New [two-provider provenance and negative fixtures](official-provider-pirate-weather-e0.md)
+  use the existing OpenAPI compiler and a single canonical 3-endpoint
+  native index/graph. Required source `api_key` and location input cannot be
+  silently discarded; no credentials are provided or invoked. Neither the
+  upstream license declaration nor public OpenAPI metadata grants execution
+  authority or verified semantic joins.
+- Exact native bytes and separate license bytes must match SHA-256 and Git
+  blob SHA; byte mutation/length tampering fail closed before any adapter
+  registration. The existing dedicated Python 3.12 offline native-provider
+  source CI is extended for both sources.
+- Real *provider-authored schema* **E0 source-only**, NOT independent
+  provider-permission review, publisher-authored query/gold, or model/agent
+  E2. #1346/#1477 `BLOCKED_EXTERNAL`, #1356 `HARD HOLD`.
+  Latest new-head CI results must be checked separately.
+
 ### 2026-10-26 B1 E0 — authentic Ollama provider OpenAPI bytes, not independent gold
 
 - New verified upstream **Ollama** actual published OpenAPI 3.1 source, commit

@@ -4,9 +4,12 @@ on:
   pull_request:
     paths:
       - "scripts/research_official_openapi_snapshot_e0.py"
+      - "scripts/research_cross_provider_openapi_e0.py"
       - "tests/test_research_official_openapi_snapshot_e0.py"
+      - "tests/test_research_cross_provider_openapi_e0.py"
       - "research/fixtures/provider-snapshots/**"
       - "research/autoresearch/official-provider-ollama-openapi-e0.md"
+      - "research/autoresearch/official-provider-pirate-weather-e0.md"
       - ".github/workflows/research-official-provider-openapi-e0.yml"
       - "src/schemarouter/adapters/openapi.py"
       - "src/schemarouter/native_graph_index.py"
@@ -30,9 +33,9 @@ jobs:
       - name: Install checked-out package and offline source test tools
         run: python -m pip install . "pyyaml>=6,<7" "pytest>=8,<10" "pytest-asyncio>=0.23,<2" "ruff>=0.6,<1"
       - name: Lint exact pinned source audit
-        run: ruff check scripts/research_official_openapi_snapshot_e0.py tests/test_research_official_openapi_snapshot_e0.py
+        run: ruff check scripts/research_official_openapi_snapshot_e0.py tests/test_research_official_openapi_snapshot_e0.py scripts/research_cross_provider_openapi_e0.py tests/test_research_cross_provider_openapi_e0.py
       - name: Verify genuine publisher bytes and converter safety
-        run: python -m pytest -q tests/test_research_official_openapi_snapshot_e0.py
+        run: python -m pytest -q tests/test_research_official_openapi_snapshot_e0.py tests/test_research_cross_provider_openapi_e0.py
       - name: Execute no-network safe source receipt and reject promotion
         run: |
           python - <<'PY'
@@ -44,7 +47,14 @@ jobs:
               "source_semantic_reviewed", "provider_live_io", "publisher_gold_verified",
               "independent_e2_qualified", "execution_authority", "default_routing_changed",
           ))
-          print("Verified publisher-authored source bytes; two original OpenAPI GET endpoints; NO E2.")
+          from scripts.research_cross_provider_openapi_e0 import audit_cross_provider_source
+          paired = audit_cross_provider_source()
+          assert paired["registered_native_routes"] == 3
+          assert paired["unauthorized_cross_provider_edges"] == 0
+          assert paired["provider_runtime_calls"] == 0
+          assert paired["independent_e2_qualified"] is False
+          assert paired["execution_authority"] is False
+          print("Verified two authentic original provider OpenAPIs, 3 native routes, no grant/E2.")
           PY
       - name: Preserve proof tier in CI summary
         if: success()
