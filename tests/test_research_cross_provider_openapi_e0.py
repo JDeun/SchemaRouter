@@ -99,12 +99,18 @@ def test_cross_provider_audit_rejects_local_fixture_tampering(
 ) -> None:
     import scripts.research_cross_provider_openapi_e0 as mod
 
-    # The audit must never use a mutable equivalent reserialization.
+    # Both legitimate providers must be present so this tests a poisoned
+    # Pirate Weather source, rather than trivially missing Ollama files.
     source, notice = _bytes()
+    ollama = FIXTURE_DIR / f"ollama-{mod.OLLAMA_COMMIT[:8]}"
+    target_ollama = tmp_path / f"ollama-{mod.OLLAMA_COMMIT[:8]}"
+    for suffix in ("-openapi.yaml", "-LICENSE.txt"):
+        Path(str(target_ollama) + suffix).write_bytes(
+            Path(str(ollama) + suffix).read_bytes()
+        )
     pirate = tmp_path / f"pirate-weather-{PIRATE_COMMIT[:8]}"
     Path(str(pirate) + "-openapi.yaml").write_bytes(source + b" ")
     Path(str(pirate) + "-LICENSE.txt").write_bytes(notice)
     monkeypatch.setattr(mod, "FIXTURE_DIR", tmp_path)
-    with pytest.raises(FileNotFoundError):
-        # Ollama is also required: omitting either provider is invalid.
+    with pytest.raises(ValueError, match="snapshot"):
         audit_cross_provider_source()
