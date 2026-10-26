@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from yaml.nodes import ScalarNode
 
 from schemarouter import AuthorizationPolicy, PrincipalContext, SchemaRouter
 from schemarouter.adapters import tool_from_openapi
@@ -50,6 +51,25 @@ _METHODS = frozenset({"get", "post", "put", "patch", "delete", "head", "options"
 EVIDENCE_TIER = "E0_GENUINE_OPENAI_GET_SOURCE_NATIVE_CATALOG_NO_E2"
 
 
+class _SourceStringTimestampLoader(yaml.SafeLoader):
+    """Keep publisher YAML date-shaped examples as JSON-compatible strings.
+
+    PyYAML SafeLoader otherwise turns bare OpenAPI schema examples such as
+    2024-10-01 into datetime.date; no global YAML loader is modified.
+    """
+
+
+def _literal_yaml_timestamp(loader: yaml.SafeLoader, node: yaml.nodes.Node) -> str:
+    if not isinstance(node, ScalarNode):
+        raise ValueError("original timestamp literal must be a YAML scalar")
+    return loader.construct_scalar(node)
+
+
+_SourceStringTimestampLoader.add_constructor(
+    "tag:yaml.org,2002:timestamp", _literal_yaml_timestamp,
+)
+
+
 def _strict_snapshot(raw: bytes, *, size: int, digest: str, blob: str | None = None) -> None:
     if type(raw) is not bytes or len(raw) != size:
         raise ValueError("pinned provider snapshot length mismatch")
@@ -78,7 +98,7 @@ def parse_pinned_openai_source(compressed: bytes, license_bytes: bytes) -> dict[
         raw_spec, size=ORIGINAL_SPEC_BYTES,
         digest=ORIGINAL_SPEC_SHA256, blob=ORIGINAL_SPEC_BLOB,
     )
-    source = yaml.safe_load(raw_spec.decode("utf-8"))
+    source = yaml.load(raw_spec.decode("utf-8"), Loader=_SourceStringTimestampLoader)
     if not isinstance(source, dict):
         raise ValueError("pinned provider snapshot invalid OpenAPI document")
     info = source.get("info")
@@ -96,7 +116,14 @@ def parse_pinned_openai_source(compressed: bytes, license_bytes: bytes) -> dict[
 
 
 def scope_original_get_source(document: dict[str, Any], path: str) -> dict[str, Any]:
-    """Copy original GET and exactly its transitive local component dependencies.
+    """Preserve the established GET-only source projection API."""
+    return scope_original_http_operation_source(document, path, "get")
+
+
+def scope_original_http_operation_source(
+    document: dict[str, Any], path: str, method: str,
+) -> dict[str, Any]:
+    """Copy one original HTTP operation and its transitive local references.
 
     No string matching to infer schemas and no normalization of invalid paths;
     the production adapter remains the sole native schema converter/validator.
@@ -105,17 +132,17 @@ def scope_original_get_source(document: dict[str, Any], path: str) -> dict[str, 
     components = document.get("components")
     if (
         not isinstance(paths, dict) or not isinstance(components, dict)
-        or not isinstance(path, str) or "?" in path
+        or not isinstance(path, str) or "?" in path or method not in _METHODS
         or not isinstance(paths.get(path), dict)
-        or not isinstance(paths[path].get("get"), dict)
+        or not isinstance(paths[path].get(method), dict)
     ):
-        raise ValueError("original GET path is unsupported")
+        raise ValueError("original HTTP operation path/method is unsupported")
     path_item = paths[path]
     selected = {
         key: deepcopy(value) for key, value in path_item.items()
         if key not in _METHODS
     }
-    selected["get"] = deepcopy(path_item["get"])
+    selected[method] = deepcopy(path_item[method])
     original_schemes = components.get("securitySchemes", {})
     if not isinstance(original_schemes, dict):
         raise ValueError("original security component invalid")

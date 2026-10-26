@@ -1,5 +1,38 @@
 # Original-paper Algorithm 1 continuation — P2 source-typed ToolCall E0
 
+### 2026-10-27 B1 E0 — 355 real OpenAI HTTP operations, native journal churn
+
+- Extended the pinned original OpenAI `8243cc8f` source beyond 161 GETs
+  to the **full 371-operation GET/POST/DELETE inventory**, with exactly
+  bounded original `(path, method)` projections. **Seven** literal
+  query-bearing operations and **nine** non-JSON-only request-body POSTs
+  cannot be faithfully represented by the existing native adapter; they
+  are deliberately excluded, **not silently rewritten or offered**.
+- Original-source convertible subset: **355** actual OpenAI HTTP operations
+  (**161 GET, 142 POST, 52 DELETE**). Combined with exact Ollama and Pirate
+  Weather publisher sources: **358** registered source-native operations in
+  one canonical registry. Preserve each verb, original operationId, path
+  inputs, required JSON body and declared auth; write methods are never
+  marked read-only. An actual original `DELETE /models/{model}` removal and
+  restoration proves **358→357→358** source-owned journal parity with full
+  rebuild and independent original manifest, and stale lookup rejection.
+- A RED→GREEN upstream parser regression now retains bare YAML ISO-date
+  examples as strings instead of PyYAML `datetime.date` objects, without
+  rewriting the byte-pinned provider source or modifying the default global
+  YAML loader. The prior GET audit remains separately tested.
+- [Design/ruling](official-provider-all-http-e0-design.md) and
+  [implementation/test plan](official-provider-all-http-e0-plan.md);
+  dedicated offline Python 3.12 provider-source workflow expanded.
+  **177 related real provider/index/graph tests passed** on local Python 3.12,
+  repository Ruff green; changed-script Pyright 0 errors (2 local YAML source
+  resolution warnings). Repository-wide local pytest reached ~8% and
+  **timed out at the 110-second cap (exit 124); not claimed green**.
+  Exact **new remote HEAD** CI is pending publication
+  and cannot inherit prior HEAD's 36/36 success.
+  No provider execution, independent source-owned semantic gold, model/agent
+  E2 or release/default promotion. A6/A7/A10 and B1 full acceptance remain
+  unchecked; #1346/#1477 BLOCKED_EXTERNAL, #1356 HARD HOLD, #1755 Draft.
+
 ### 2026-10-26 B1 E0 — third genuine provider, 161 source-preserved native GET routes
 
 - A third original published source, the official OpenAI OpenAPI document at
