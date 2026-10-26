@@ -2,6 +2,40 @@
 
 **2026-10-24 · E0 source-authored diagnostic, not a shipped/default executor.**
 
+### 2026-10-26 B1 E0 — mixed-source versioned journal churn and live-scope parity
+
+- New opt-in `scripts/benchmark_native_heterogeneous_churn_e0.py` reuses
+  the existing 500/5000 registered original ToolSpec mixed-source fixture.
+  It exercises license revocation and restoration across **three real
+  registry versions**; the two old-index reads must fail closed, and each
+  source-owned in-memory journal delta must equal a complete graph/posting
+  rebuild and independent exhaustive original-source oracle.
+- At each version, all four policy/scope/health scenarios, both a reader and
+  an unprivileged principal, four distinct source types and EN/KO/JA aliases
+  receive **288 indexed/oracle/rebuild comparisons** per catalog size. A
+  mutable health set changes behind one fixed predicate callable with no
+  source version update; source-exhaustive oracle and both current indexes
+  must immediately agree with **independent expected scenario outcomes**.
+  No model, transport, extra executor or default
+  routing change is introduced.
+- Focused RED→GREEN **16 tests passed in 162.05s** covering separate 500/5000
+  audits, invalid size/sample controls, forged-oracle and stale-journal
+  rejection, common-mode anonymous/hidden-field leak rejection and an
+  unrelated-route manifest-corruption regression. Added
+  both catalog sizes to the existing opt-in direct-parity
+  PR workflow matrix and bounded E0 aggregate evidence artifact.
+  Existing related retrieval/index/graph regressions **185 passed**; repository
+  Ruff and changed-module Pyright **0 errors**, workflow YAML valid. The
+  unbounded local suite is **not green**: a capped run reached 95s at ~8%.
+  [Design](native-heterogeneous-churn-e0-design.md) ·
+  [plan](native-heterogeneous-churn-e0-plan.md).
+- **New B1 code head CI pending publication and qualification.** This E0
+  audit measures index lookups under developer-authored mixed sources,
+  *not* live provider churn, externally verified licenses/permissions,
+  production schema bytes, **nonempty graph-edge churn** or independently
+  labeled E2. B1 remains unchecked,
+  #1346/#1477 remain BLOCKED_EXTERNAL, #1356 HARD HOLD; Draft #1755 stays open.
+
 ### 2026-10-26 B1 E0 — heterogeneous 500/5000 original-source indexed parity extension
 
 - New opt-in `scripts/benchmark_native_heterogeneous_parity_e0.py` exercises
