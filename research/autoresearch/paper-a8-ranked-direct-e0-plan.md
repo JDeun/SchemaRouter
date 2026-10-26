@@ -16,9 +16,15 @@ Date: 2026-10-26. Issue #1560. Stacked Draft #1755.
 - [x] Local Python 3.12: new **12/12** source-safety tests; **190/190**
   focused paper/native regressions. Whole-repository Ruff and changed-script
   Pyright **0 errors/0 warnings**; exact-head remote CI still required.
-- [ ] Publish code + tests + workflow to stacked Draft and qualify its exact
-  GitHub Actions head.
-- [ ] Update issue, PR and canonical handoff with confirmed CI evidence.
+- [x] Published exact reviewed code HEAD
+  `9ea21e4c05e26c2b6a344576c20f5d7f32ac887e`, tree
+  `f411198169790a2f5696a62a6897b5c9b47bfea7` to stacked Draft:
+  **29/29 PR workflows successful**. [CI #7182](https://github.com/JDeun/SchemaRouter/actions/runs/40266138929)
+  Python 3.12 **6448 passed / 3 skipped in 1057.93s**, coverage **85.00%**.
+- [x] Issue #1560, PR #1755, and this canonical handoff contain the A8
+  code boundary and evidence; full A8 acceptance stays open.
+- [ ] Qualify exact GitHub Actions head of this subsequent docs-only
+  closeout commit; previous code-head green is not inherited.
 
 ## Full A8 remains open
 

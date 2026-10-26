@@ -21,10 +21,17 @@
   conservatively `over_k_unranked` at >K. The new response is
   **`ranked_unverified`** (not executable), never a fabricated
   `PaperTypedToolPlan` or independent source/quality proof.
-- Twelve synthetic adversarial tests currently cover >K/denied source,
+- Twelve synthetic adversarial tests cover >K/denied source,
   actual query, named-before-K, >32 refusal, forged choices, unknown
-  source/tool and owner/policy/view mutation. **This A8 slice is pending
-  full local and exact-remote CI.** See
+  source/tool and owner/policy/view mutation. **The exact new A8 code HEAD**
+  `9ea21e4c05e26c2b6a344576c20f5d7f32ac887e`, Git tree
+  `f411198169790a2f5696a62a6897b5c9b47bfea7` matches the reviewed
+  local implementation and passed **29/29 returned PR workflows**.
+  [Main CI #7182](https://github.com/JDeun/SchemaRouter/actions/runs/40266138929)
+  Linux Python 3.12 **6448 passed, 3 skipped in 1057.93s**, **85.00%
+  coverage**. Local 190 relevant tests, repo Ruff and changed-script
+  Pyright also passed; no independent CodeQL claim for this stacked
+  Draft. Any later docs-only head needs its own exact-head checks. See
   [A8 design](paper-a8-ranked-direct-e0-design.md) and
   [A8 implementation plan](paper-a8-ranked-direct-e0-plan.md).
   **A8 checkbox remains unchecked** until an independently justified
@@ -183,8 +190,10 @@ on its own, not silently inherit code-head CI.
 
 **Current Draft:** [#1755](https://github.com/JDeun/SchemaRouter/pull/1755)
 stacked on #1754. Latest **qualified implementation code head**:
-`6f35b57c8f0d2dd0618ccc43b392dd7cff82d7f4`, 29/29 PR workflows
-successful, Linux Python 3.12 **6436 passed / 3 skipped**, 85.00% coverage;
+`9ea21e4c05e26c2b6a344576c20f5d7f32ac887e`, 29/29 PR workflows
+successful, Linux Python 3.12 **6448 passed / 3 skipped**, 85.00% coverage;
+the preceding A7 paired code head `6f35b57c` separately qualified at 6436
+passed and its docs-only HEAD `f8b7ff5c` also passed 29/29;
 the preceding A6/A7 code head `c4466c08` separately qualified at 6423
 passed, and the older A5-only head `24a8cb04` at 6403 passed.
 Exact-head CI must be rechecked after any later commit, including a
