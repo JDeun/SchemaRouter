@@ -8,6 +8,8 @@ Original requests, private gold and tool inventories remain local.
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import hashlib
 import json
 import re
@@ -244,16 +246,113 @@ def inspect_source_pinned_native_cohort(
     return {**receipt, "native_inventory_bytes_sha256_match": True}
 
 
+def _inspect_per_case_witness_bytes(
+    submitted_bytes: bytes,
+    expected_digests: dict[str, str],
+    *,
+    label: str,
+) -> int:
+    """Check original opaque witness bytes without exporting identifiers/gold.
+
+    The separate expected digests already passed the v1 gold/manifest byte
+    checks. Matching these bytes does not authenticate a provider or reviewer.
+    """
+    data = _raw_json(submitted_bytes, label)
+    if set(data) != {"references"}:
+        raise ValueError(f"{label}: expected one private reference collection")
+    rows = data["references"]
+    if type(rows) is not list or len(rows) != len(expected_digests):
+        raise ValueError(f"{label}: incomplete private source references")
+    seen: set[str] = set()
+    for row in rows:
+        if type(row) is not dict or set(row) != {"id", "evidence_base64"}:
+            raise ValueError(f"{label}: malformed reference")
+        case_id = row["id"]
+        payload = row["evidence_base64"]
+        if (
+            type(case_id) is not str
+            or SAFE_ID.fullmatch(case_id) is None
+            or case_id not in expected_digests
+            or case_id in seen
+            or type(payload) is not str
+            or not payload
+        ):
+            raise ValueError(f"{label}: malformed or foreign reference")
+        seen.add(case_id)
+        try:
+            original = base64.b64decode(payload, validate=True)
+        except (ValueError, binascii.Error):
+            raise ValueError(f"{label}: invalid original witness encoding") from None
+        if (
+            not 1 <= len(original) <= 65536
+            or base64.b64encode(original).decode("ascii") != payload
+            or _hash(original) != expected_digests[case_id]
+        ):
+            raise ValueError(f"{label}: witness bytes do not match gold digest")
+    if seen != set(expected_digests):
+        raise ValueError(f"{label}: reference identities differ from cases")
+    return len(seen)
+
+
+def inspect_witness_pinned_native_cohort(
+    manifest_bytes: bytes,
+    case_bytes: bytes,
+    gold_bytes: bytes,
+    development_bytes: bytes,
+    native_inventory_bytes: bytes,
+    native_authority_witness_bytes: bytes,
+    gold_reference_witness_bytes: bytes,
+) -> dict[str, Any]:
+    """Opt-in seven-stream A6 source-byte AND per-case digest binding.
+
+    Untrusted external witnesses are *not* a publisher/reviewer signature,
+    verified source-native semantic gold, license approval or scoring grant.
+    """
+    receipt = inspect_source_pinned_native_cohort(
+        manifest_bytes, case_bytes, gold_bytes, development_bytes,
+        native_inventory_bytes,
+    )
+    gold_rows = _rows(gold_bytes, "gold", GOLD_FIELDS)
+    authority_count = _inspect_per_case_witness_bytes(
+        native_authority_witness_bytes,
+        {row["id"]: row["native_authority_sha256"] for row in gold_rows},
+        label="native authority witnesses",
+    )
+    gold_count = _inspect_per_case_witness_bytes(
+        gold_reference_witness_bytes,
+        {row["id"]: row["gold_reference_sha256"] for row in gold_rows},
+        label="gold reference witnesses",
+    )
+    if authority_count != gold_count or authority_count != receipt["case_count"]:
+        raise ValueError("source evidence case count mismatch")
+    return {
+        **receipt,
+        "native_authority_witness_bytes_sha256_match": True,
+        "gold_reference_witness_bytes_sha256_match": True,
+        "case_witness_pairs_verified_structurally": authority_count,
+        "gold_independently_reviewed": False,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("manifest", "cases", "gold", "development"):
         parser.add_argument("--" + name, required=True, type=Path)
     parser.add_argument("--native-inventory", type=Path)
+    parser.add_argument("--native-authority-witnesses", type=Path)
+    parser.add_argument("--gold-reference-witnesses", type=Path)
     args = parser.parse_args()
     original_files = (
         args.manifest.read_bytes(), args.cases.read_bytes(),
         args.gold.read_bytes(), args.development.read_bytes(),
     )
+    witness_paths = (
+        args.native_authority_witnesses, args.gold_reference_witnesses,
+    )
+    if any(path is not None for path in witness_paths) and (
+        args.native_inventory is None or any(path is None for path in witness_paths)
+    ):
+        raise ValueError("paired private witness collections need a source snapshot")
     if args.native_inventory is None:
         report = inspect_unscored_native_cohort(*original_files)
     else:
@@ -261,9 +360,20 @@ def main() -> None:
         # emitted on stdout or in failure strings.
         with args.native_inventory.open("rb") as handle:
             native_bytes = handle.read(MAX_BYTES + 1)
-        report = inspect_source_pinned_native_cohort(
-            *original_files, native_bytes,
-        )
+        if all(path is not None for path in witness_paths):
+            assert args.native_authority_witnesses is not None
+            assert args.gold_reference_witnesses is not None
+            with args.native_authority_witnesses.open("rb") as handle:
+                authority_bytes = handle.read(MAX_BYTES + 1)
+            with args.gold_reference_witnesses.open("rb") as handle:
+                gold_ref_bytes = handle.read(MAX_BYTES + 1)
+            report = inspect_witness_pinned_native_cohort(
+                *original_files, native_bytes, authority_bytes, gold_ref_bytes,
+            )
+        else:
+            report = inspect_source_pinned_native_cohort(
+                *original_files, native_bytes,
+            )
     print(json.dumps(report, sort_keys=True, ensure_ascii=False))
 
 

@@ -34,6 +34,45 @@ bytes match the submitter's hash claim. The original four-file mode remains
 supported and does *not* emit that field. The code can also be called via
 `inspect_source_pinned_native_cohort(...)`; no source bytes are printed.
 
+**A6 per-case witness hardening (2026-10-26):** a private seven-stream
+intake may additionally supply two separate original evidence files:
+
+5. `native-authority-witnesses.json`: JSON object with only a `references`
+   array. Each record has exactly `id` and `evidence_base64`. The decoded
+   opaque source/permission-authority bytes must hash to the corresponding
+   `native_authority_sha256` in `gold.json`.
+6. `gold-reference-witnesses.json`: same envelope, but original native
+   route/field/argument/expected-answer reference bytes must hash to that
+   case's distinct `gold_reference_sha256`.
+
+Both collections must cover the exact case IDs once each, use canonical
+Base64 without whitespace or alternative padding, contain 1–65,536 original
+bytes per reference and remain under 5 MiB each. Both files are sensitive:
+never commit or print them. An illustrative shape (replace the placeholder
+with actual *private* Base64) is:
+
+```json
+{"references": [{"id": "publisher-original-01", "evidence_base64": "<private canonical base64>"}]}
+```
+
+```bash
+python -m scripts.inspect_independent_native_e2_intake \
+  --manifest /secure/e2/manifest.json \
+  --cases /secure/e2/cases.json \
+  --gold /secure/e2/gold.json \
+  --development /secure/e2/development.json \
+  --native-inventory /secure/e2/native-inventory.json \
+  --native-authority-witnesses /secure/e2/native-authority-witnesses.json \
+  --gold-reference-witnesses /secure/e2/gold-reference-witnesses.json
+```
+
+The report returns only aggregate structurally matched pair counts and two
+byte-match flags, with `gold_independently_reviewed=false`,
+`scoring_authorized=false` and `independent_e2_qualified=false`. The witness
+contents are still submitter-authored: they cannot establish publisher
+identity, independent reviewer, license, native route semantics or permission.
+Real signed upstream author/reviewer proof remains BLOCKED_EXTERNAL.
+
 It does **not** prove those bytes exist at the asserted upstream provider
 commit or that the submitter owns the data; independent publisher identity,
 native route/field gold, independent review, license, permission and live

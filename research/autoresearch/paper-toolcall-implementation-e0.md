@@ -197,6 +197,19 @@ documentation-only HEAD must run its own 35-check qualification.
   [A6 design](paper-a6-source-byte-intake-design.md),
   [A6 plan](paper-a6-source-byte-intake-plan.md),
   [general intake](independent-native-e2-intake-preflight.md).
+- **A6 E0 per-case witness continuation (2026-10-26):** optional
+  `inspect_witness_pinned_native_cohort` and paired private CLI arguments
+  `--native-authority-witnesses` / `--gold-reference-witnesses` now verify
+  separate *original opaque bytes for each individual case* against that
+  case's pinned `native_authority_sha256` / `gold_reference_sha256`. Both
+  collections must exactly match the source-pinned EN/KO/JA × five-label
+  cohort. They are bounded, fail closed on duplicate/foreign/missing or
+  cross-paired evidence, and export no source/gold/route/credential bytes.
+  The existing four-/five-file entrypoints remain unchanged; native-intake
+  CI explicitly checks the seven-stream path. **This is still E0 structural
+  integrity, not independent reviewer, publisher authority or license proof.**
+  [Witness design](paper-a6-per-case-witness-intake-design.md),
+  [witness plan](paper-a6-per-case-witness-intake-plan.md).
 - **A7 partial engineering only:** New opt-in
   `scripts/research_paper_measured_episode_e0.py` composes the **existing A5
   source-scoped episode and exact same agent executor**, meters host-observed
@@ -352,7 +365,7 @@ docs-only handoff revision; do not inherit green from an earlier head.
 - [x] **A3** Named one-/two-hop G5 typed dependency plan, conservative ambiguity/overflow, no auto-execution. Evidence: `paper_understood_graph_plan.py`, #1755.
 - [x] **A4** E0 EN/KO/JA outcome accounting and verified-gold denominator guard. Evidence: `scripts/research_paper_refusal_eval_e0.py`, `tests/test_research_paper_refusal_eval_e0.py`; commit `4b4afe26`. This is evaluator mechanics **only**, not model accuracy.
 - [x] **A5 — E0 COMPLETE** Integrated scoped model `Understand(q)` → current direct/graph planner → existing fixed-K agent evaluation adapter as an opt-in **bounded vertical slice**. Reuses existing executor, host authorization and pinned source; does not automatically execute dependency DAGs. Verified supported, unsupported, ordinary/typed missing arguments, 1/2-hop observation deferral, mutable policy/source and empty menu; 140 local targeted tests and full protected Python 3.12 6403 passed at head `24a8cb04`. **Not E2 or model accuracy.**
-- [ ] **A6** Add independently reviewed, source-snapshot-pinned EN/KO/JA supported/unsupported/ambiguous fixtures, with explicit labels, provenance, license and permission conditions. Do not fabricate publisher gold.
+- [ ] **A6** Add independently reviewed, source-snapshot-pinned EN/KO/JA supported/unsupported/ambiguous fixtures, with explicit labels, provenance, license and permission conditions. **Seven-stream source + per-case native-authority/gold witness-byte intake is implemented E0**, with original four-/five-file compatibility and CI. Real source-owner signatures, verified semantics/permissions/license, independent reviewer and original publisher-authored fixtures have not been supplied; independent qualification remains BLOCKED_EXTERNAL. Do not fabricate publisher gold.
 - [ ] **A7** Run paired same-model/same-agent evaluation; report false refusal, false accept, deferred/unknown, tool attempts, wall time and actual input/output tokens separately from schema bytes; repeat on CI Linux Python 3.12. No E2 claim without independent data.
 - [ ] **A8** Independently justified Top-K5 ranking for eligible alternatives and >K overflow, without weakening policy-before-K, deterministic tie handling or rewriting frozen #432 scores.
 - [ ] **A9** Source-attested argument semantics and separately authorized observed 1/2-hop dependency execution through the **existing** agent/executor, with fail-closed mutation, typed binding, provenance and budget tests. **Local A9 E0 source-checked executor slice exists** (`observe_and_execute_paper_understood_graph`, registered real tool bindings and guards); actual model/agent-triggered graph scheduling, independent source semantics/provenance and E2 remain open. Do not create a second executor.
