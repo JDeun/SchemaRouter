@@ -2,6 +2,35 @@
 
 **2026-10-24 · E0 source-authored diagnostic, not a shipped/default executor.**
 
+### 2026-10-26 A9 E0 — actual observed graph → one tool-free answer generation
+
+- Built research-only `scripts/research_paper_scoped_answered_graph_a9_e0.py`,
+  composing the **existing** scoped Understand → registered 1-/2-hop G5
+  `SchemaRouter.execute` observation with **one** pre-existing agent
+  `generate(messages, [])` call. There are **zero extra tool grants, no new
+  invoker, and no default agent loop**. The agent receives the exact captured
+  user query and **only the last tool's scalar, source-projected output** in
+  bounded JSON; intermediate producer IDs, host root arguments, graph
+  fingerprints, principal identities and other routes are never prompted.
+- Fail closed on incomplete/refused original graph, absent owner-approved root
+  arguments, current source drift, invalid/nonfinite/oversized projected
+  observations, leaked fields, context overflow, malformed/duplicate-key
+  answer JSON, tool-call markup, nonzero tool-schema token accounting and
+  tampered metering. Response is an **unverified answer proposal** with all
+  E2/source/provider/executable authority flags explicitly false.
+- **RED→GREEN local**: 18 new focused tests (1-/2-hop real registered
+  execution, zero-tool agent callback, no upstream IDs, unknown/denied/no
+  host input, revocation during finalizer, adversarial observation, malformed
+  completion and token/byte bounds); expanded 16-file A9/typed/agent/ABI
+  regressions **258 passed**, Ruff green and changed module Pyright 0 errors.
+  Remote exact-head CI still needed; local results alone are **not** final
+  protected qualification.
+- Design [A9 answered graph](paper-scoped-answered-graph-a9-e0-design.md),
+  execution [A9 answer plan](paper-scoped-answered-graph-a9-e0-plan.md).
+  Original independent A9 source semantics, agent answer accuracy, publisher
+  provenance and #1346/#1477 independent E2 **remain unchecked**. Keep Draft
+  #1755 unmerged and #1356 HARD HOLD.
+
 ### 2026-10-26 A9 named 1/2-hop observed execution (local E0 implementation)
 
 - Added opt-in `observe_and_execute_paper_understood_graph` in the existing
