@@ -114,3 +114,34 @@ def test_cross_provider_audit_rejects_local_fixture_tampering(
     monkeypatch.setattr(mod, "FIXTURE_DIR", tmp_path)
     with pytest.raises(ValueError, match="snapshot"):
         audit_cross_provider_source()
+
+
+def test_pinned_real_provider_removal_and_restore_refreshes_canonical_index() -> None:
+    from scripts import research_cross_provider_openapi_e0 as mod
+
+    receipt = mod.audit_cross_provider_churn_e0()
+    assert receipt["stage_route_counts"] == [3, 2, 3]
+    assert receipt["distinct_registry_versions"] == 3
+    assert receipt["distinct_index_snapshots"] == 3
+    assert receipt["stale_index_rejections"] == 2
+    assert receipt["journal_rebuild_matches"] is True
+    assert receipt["untrusted_semantic_postings"] == 0
+    assert receipt["unauthorized_cross_provider_edges"] == 0
+    assert receipt["provider_runtime_calls"] == 0
+    assert receipt["execution_authority"] is False
+    assert receipt["independent_e2_qualified"] is False
+
+
+def test_real_provider_churn_rejects_stale_journal_noop(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from schemarouter.native_graph_index import NativeSchemaGraphIndex
+    from scripts import research_cross_provider_openapi_e0 as mod
+
+    monkeypatch.setattr(
+        NativeSchemaGraphIndex,
+        "refresh_from_inmemory_journal",
+        classmethod(lambda cls, previous, registry: previous),
+    )
+    with pytest.raises(ValueError, match="journal|refresh|snapshot"):
+        mod.audit_cross_provider_churn_e0()

@@ -1,5 +1,22 @@
 # Original-paper Algorithm 1 continuation — P2 source-typed ToolCall E0
 
+### 2026-10-26 B1 E0 — authentic two-provider journal removal/restoration
+
+- The existing genuine, byte-pinned Ollama/Pirate Weather source test now
+  checks **three original native catalog versions (3→2→3 routes)**. Each
+  provider removal/restoration makes the preceding G5 lookup fail closed;
+  the source-owned in-memory posting/G5 journal refresh must exactly match
+  an independent full rebuild and actual original registered endpoint
+  manifest. The unchanged source definitions produce no invented semantic
+  postings, typed cross-provider joins or execution permission.
+- Added a RED→GREEN source-lifecycle regression and a no-op-journal
+  corruption regression; both run in the dedicated offline Python 3.12
+  provider CI. This remains **E0 structural source evidence only**, not
+  owner-reviewed semantic field gold, 500/5000 genuine provider routes,
+  remote execution or E2. Full B1, A6–A10, #1346/#1477 remain open;
+  #1356 `HARD HOLD`, #1755 Draft/unmerged. Exact new-head CI must
+  separately qualify this code and these receipt claims.
+
 ### 2026-10-26 B1 E0 — two genuine provider-native original OpenAPI documents
 
 - Extended the genuine upstream Ollama OpenAPI pin with an **unmodified**

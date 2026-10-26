@@ -15,8 +15,12 @@ import yaml
 
 from schemarouter import AuthorizationPolicy, PrincipalContext, SchemaRouter, ToolSpec
 from schemarouter.adapters import tool_from_openapi
+from schemarouter.capability_contracts import CapabilityFieldContract
+from schemarouter.errors import PolicyViolationError
+from schemarouter.field_group_retrieval import NativeDeclaredFieldGroup
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.native_semantic_index import NativeSchemaPostingIndex
+from schemarouter.registry import unregister_if_current
 from scripts.research_official_openapi_snapshot_e0 import (
     FIXTURE_DIR,
     compile_official_ollama_snapshot,
@@ -152,6 +156,111 @@ def audit_cross_provider_source() -> dict[str, Any]:
         "model_quality_verified": False,
         "execution_authority": False,
         "default_routing_changed": False,
+    }
+
+
+def audit_cross_provider_churn_e0() -> dict[str, Any]:
+    """Exercise real pinned source removal/restoration through the canonical journal.
+
+    The intentionally absent semantic ID is ONLY a stale-read guard probe;
+    it is not a provider-authored concept or a retrieval-quality gold case.
+    """
+    ollama = FIXTURE_DIR / f"ollama-{OLLAMA_COMMIT[:8]}"
+    pirate = FIXTURE_DIR / f"pirate-weather-{PIRATE_COMMIT[:8]}"
+    first = compile_official_ollama_snapshot(
+        Path(str(ollama) + "-openapi.yaml").read_bytes(),
+        Path(str(ollama) + "-LICENSE.txt").read_bytes(),
+    )
+    second = compile_official_pirate_weather_source(
+        Path(str(pirate) + "-openapi.yaml").read_bytes(),
+        Path(str(pirate) + "-LICENSE.txt").read_bytes(),
+    )
+    router = SchemaRouter(authorization_policy=AuthorizationPolicy(default_effect="deny"))
+    router.add_tool(first)
+    router.add_tool(second)
+    index = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
+    principal = PrincipalContext(subject="no-provider-grants", roles=())
+    probe = "unreviewed offline source index guard"
+    unproven_group = NativeDeclaredFieldGroup(
+        aliases=(probe,),
+        required_fields=(CapabilityFieldContract(
+            semantic_id="research.no-publisher-semantic-proof",
+            json_schema={"type": "string"},
+        ),),
+    )
+    original_routes = frozenset(
+        (tool.key, endpoint.name)
+        for tool in (first, second) for endpoint in tool.endpoints
+    )
+    pirate_routes = frozenset((second.key, endpoint.name) for endpoint in second.endpoints)
+    versions: set[int] = set()
+    snapshots: set[str] = set()
+    stage_counts: list[int] = []
+    stale_rejections = 0
+    for stage in ("initial", "removed", "restored"):
+        if stage != "initial":
+            if stage == "removed":
+                # Only the source-owned registry changes. No provider invoker exists.
+                unregister_if_current(
+                    router.registry, second.key,
+                    expected_fingerprint=router.registry.get(second.key).fingerprint,
+                    expected_version=router.registry.version,
+                )
+            else:
+                router.add_tool(second)
+            try:
+                index.lookup(router, probe, group=unproven_group, principal=principal)
+            except PolicyViolationError:
+                stale_rejections += 1
+            else:
+                raise ValueError("stale genuine provider snapshot accepted")
+            index = NativeSchemaGraphIndex.refresh_from_inmemory_journal(
+                index, router.registry,
+            )
+        rebuilt = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
+        lhs, rhs = index.field_index, rebuilt.field_index
+        if (
+            lhs.snapshot_id != rhs.snapshot_id
+            or lhs.registry_version != rhs.registry_version
+            or lhs.indexed_route_count != rhs.indexed_route_count
+            or lhs.route_locations != rhs.route_locations
+            or lhs.route_fingerprints != rhs.route_fingerprints
+            or lhs.tool_fingerprints != rhs.tool_fingerprints
+            or lhs.postings != rhs.postings
+            or index.graph != rebuilt.graph
+            or index.native_root_count != rebuilt.native_root_count
+            or index.native_consumer_count != rebuilt.native_consumer_count
+        ):
+            raise ValueError("genuine provider journal differs from full source rebuild")
+        expected = original_routes - pirate_routes if stage == "removed" else original_routes
+        actual = frozenset(lhs.route_locations.values())
+        if (
+            actual != expected
+            or lhs.indexed_route_count != len(expected)
+            or lhs.postings or index.graph.edges
+            or index.native_root_count or index.native_consumer_count
+        ):
+            raise ValueError("unreviewed provider route or semantic source drift")
+        # The publisher's public OpenAPI/license never grants this principal.
+        if index.lookup(
+            router, probe, group=unproven_group, principal=principal,
+        ).status != "no_proven_hit":
+            raise ValueError("publisher metadata incorrectly promoted to verified retrieval")
+        versions.add(router.registry.version)
+        snapshots.add(lhs.snapshot_id)
+        stage_counts.append(lhs.indexed_route_count)
+    return {
+        "evidence_tier": "E0_TWO_AUTHENTIC_PROVIDER_SOURCE_JOURNAL_CHURN_NO_E2",
+        "stage_route_counts": stage_counts,
+        "distinct_registry_versions": len(versions),
+        "distinct_index_snapshots": len(snapshots),
+        "stale_index_rejections": stale_rejections,
+        "journal_rebuild_matches": True,
+        "untrusted_semantic_postings": len(index.field_index.postings),
+        "unauthorized_cross_provider_edges": len(index.graph.edges),
+        "provider_runtime_calls": 0,
+        "execution_authority": False,
+        "independent_e2_qualified": False,
     }
 
 

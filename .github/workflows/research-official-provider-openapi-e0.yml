@@ -47,14 +47,26 @@ jobs:
               "source_semantic_reviewed", "provider_live_io", "publisher_gold_verified",
               "independent_e2_qualified", "execution_authority", "default_routing_changed",
           ))
-          from scripts.research_cross_provider_openapi_e0 import audit_cross_provider_source
+          from scripts.research_cross_provider_openapi_e0 import (
+              audit_cross_provider_churn_e0,
+              audit_cross_provider_source,
+          )
           paired = audit_cross_provider_source()
           assert paired["registered_native_routes"] == 3
           assert paired["unauthorized_cross_provider_edges"] == 0
           assert paired["provider_runtime_calls"] == 0
           assert paired["independent_e2_qualified"] is False
           assert paired["execution_authority"] is False
-          print("Verified two authentic original provider OpenAPIs, 3 native routes, no grant/E2.")
+          churn = audit_cross_provider_churn_e0()
+          assert churn["stage_route_counts"] == [3, 2, 3]
+          assert churn["stale_index_rejections"] == 2
+          assert churn["distinct_index_snapshots"] == 3
+          assert churn["journal_rebuild_matches"] is True
+          assert churn["untrusted_semantic_postings"] == 0
+          assert churn["unauthorized_cross_provider_edges"] == 0
+          assert churn["provider_runtime_calls"] == 0
+          assert churn["independent_e2_qualified"] is False
+          print("Verified two pinned real provider OpenAPIs, 3→2→3 versioned routes, no grant/E2.")
           PY
       - name: Preserve proof tier in CI summary
         if: success()

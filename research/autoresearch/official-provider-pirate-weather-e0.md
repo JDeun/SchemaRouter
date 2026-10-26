@@ -41,6 +41,16 @@ are retained in `research/fixtures/provider-snapshots/`.
   graph joins, tool execution authority or publisher claims.
 - Negative tests mutate one byte or the length of each pinned source and
   license and require a fail-closed refusal before parsing or indexing.
+- The opt-in `audit_cross_provider_churn_e0()` extends that unchanged genuine
+  two-provider input across three source-owned in-memory catalog versions:
+  both sources (3 routes) → remove Pirate Weather (2) → restore its exact
+  pinned native contract (3). The *old* G5 lookup must reject both version
+  transitions, while the original native source-owned journal refresh and
+  independent full graph/index rebuild must match on each snapshot. The
+  source-only route manifests must match the known original endpoints and
+  must still produce **zero semantic postings, dependency edges or grants**.
+  CI tests also reject a deliberately broken no-op journal refresh. No
+  provider credentials, transport, agent or model are used.
 - Existing Python 3.12 dedicated official-source CI checks both providers
   and the explicit no-E2/no-execution receipt.
 
