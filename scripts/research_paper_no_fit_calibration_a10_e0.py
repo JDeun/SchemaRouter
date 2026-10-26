@@ -236,11 +236,15 @@ def calibrate_source_pinned_paper_no_fit_e0(
         ) for language in LANGUAGES
     }
     totals = _summarize(cases, decisions)
-    enough_cases = all(
-        by_language[language][kind + "_denominator"]
-        >= limits.min_cases_per_language_and_binary_kind
-        for language in LANGUAGES for kind in ("supported", "unsupported")
-    )
+    enough_cases = True
+    for language in LANGUAGES:
+        for kind in ("supported", "unsupported"):
+            denominator = by_language[language][kind + "_denominator"]
+            if (
+                type(denominator) is not int
+                or denominator < limits.min_cases_per_language_and_binary_kind
+            ):
+                enough_cases = False
     plan_within_limits: bool | None = None
     if enough_cases:
         plan_within_limits = all(
