@@ -43,6 +43,32 @@ def test_all_four_native_source_types_resolve_exact_original_routes(registered_r
             assert result.independent_quality_evidence is False
 
 
+@pytest.mark.parametrize("registered_routes", (500, 5000))
+def test_same_semantic_and_type_from_wrong_native_source_is_excluded(registered_routes):
+    """Source-type filtering must survive same-semantic, same-type collisions."""
+    router = build_heterogeneous_fixture(registered_routes)
+    configure_heterogeneous_scope(router, "visible")
+    index = NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
+    for case in CASES:
+        wrong_source = router.registry.get(f"bad_source_{case.tool_name}")
+        assert wrong_source.source_type != case.source_type
+        assert wrong_source.license == "host-reviewed-synthetic"
+        field = wrong_source.endpoints[0].output_fields[0]
+        assert field.semantic_id == case.semantic_id
+        assert field.json_schema == {"type": case.json_type}
+        assert original_heterogeneous_oracle(router, case.concept_id, ACTOR) == (
+            case.route_id,
+        )
+        for query in case.aliases:
+            result = retrieve_authorized_concept_graph(
+                router, query, principal=ACTOR, catalog=CATALOG,
+                index=index, experimental_indexed_direct=True,
+            )
+            assert result.status == "complete"
+            assert result.route_ids == (case.route_id,)
+            assert f"{wrong_source.key}.read" not in result.route_ids
+
+
 @pytest.mark.parametrize("scenario,concept_id", [
     ("hidden", "mcp.document"),
     ("denied", "openapi.temperature"),

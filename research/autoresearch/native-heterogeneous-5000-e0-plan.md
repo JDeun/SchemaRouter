@@ -43,6 +43,10 @@ principal: PrincipalContext) -> tuple[str, ...]`; `audit_heterogeneous(...)`.
   positive fixtures; independently expected original route names.
 - [x] RED: hidden-field, policy-denied, unavailable, bad license/schema
   decoys cannot become valid route witnesses.
+- [x] Reviewer-found RED: identical semantic ID, JSON type, and license under
+  a **wrong native source type** must be excluded in both 500/5000 catalogs.
+  Corrected fixture includes four source-collision decoys within the same
+  exact route counts; 2 new tests observed RED before GREEN.
 - [x] GREEN: minimal single fixture/oracle harness and existing-index queries.
 - [x] Verify test suite and Ruff/Pyright: **13 focused passed**, full-repo
   Ruff and new script Pyright **0 errors, 0 warnings**.
@@ -65,8 +69,11 @@ principal: PrincipalContext) -> tuple[str, ...]`; `audit_heterogeneous(...)`.
   on new source/test and new-script Pyright green; broader checks separately.
 - [x] Wire the opt-in mixed-source audit into the existing indexed-concept
   CI matrix without adding another unconditional desktop/package matrix.
-- [ ] Publish using non-force expected-SHA on Draft #1755 after exact
-  local byte verification, then verify new exact-head protected CI.
+- [x] Initial six-file audit published with non-force expected-SHA to Draft
+  #1755 at `8b079dab`; latest code-review follow-up must be republished and
+  requalified on its **own** commit SHA.
+- [ ] Publish the source-collision review fix using non-force expected-SHA;
+  verify all required protected CI against that newest exact head.
 
 ## Progress ledger
 
@@ -76,3 +83,12 @@ principal: PrincipalContext) -> tuple[str, ...]`; `audit_heterogeneous(...)`.
   cases. 500 and 5000 CLI audit each 96/96; 177 related regressions.
   Workflow YAML parses locally. This remains E0; actual provider-reviewed
   5000 mixed adapters, source-gold and paired E2 remain open.
+- 2026-10-26: Independent review found no runtime routing bug but one Important
+  audit coverage gap: source-type collisions were absent. Added same-semantic,
+  same-type, same-license wrong-source fixtures after observing 2 expected
+  RED tests; 15 focused GREEN, 197 related GREEN, full Ruff and script Pyright
+  GREEN. Both updated 500/5000 CLI audits returned 96/96 exact parity. Local
+  wall p50/p95/p99 were 1.449/2.019/2.408 ms for 500 and
+  1.448/2.210/2.529 ms for 5000 (E0 only, not a throughput/SLO claim).
+  Reviewer also suggested optional broader privacy-serialization and anonymous
+  indexed-boundary test coverage; actual sampled outputs showed no leak.

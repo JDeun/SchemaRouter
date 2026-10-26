@@ -122,7 +122,14 @@ def build_heterogeneous_fixture(registered_routes: int) -> SchemaRouter:
             case.semantic_id, "integer" if case.json_type == "string" else "string",
             field_name=case.field_name,
         ))
-    for i in range(registered_routes - 3 * len(CASES)):
+        # Same semantic ID, JSON type, and license; only the native source
+        # family is wrong. Source-type omission must fail exact parity.
+        other_type = SOURCE_TYPES[(SOURCE_TYPES.index(case.source_type) + 1) % len(SOURCE_TYPES)]
+        router.add_tool(_tool(
+            f"bad_source_{case.tool_name}", other_type,
+            case.semantic_id, case.json_type, field_name=case.field_name,
+        ))
+    for i in range(registered_routes - 4 * len(CASES)):
         router.add_tool(_tool(
             f"unrelated_{i:05d}", SOURCE_TYPES[i % len(SOURCE_TYPES)],
             f"noise.signal_{i % 19}", "string" if i % 2 else "integer",
