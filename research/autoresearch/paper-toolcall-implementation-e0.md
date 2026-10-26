@@ -2,6 +2,38 @@
 
 **2026-10-24 · E0 source-authored diagnostic, not a shipped/default executor.**
 
+### 2026-10-26 B1 E0 — nonempty 1-/2-hop G5 graph source churn
+
+- The preceding 500/5000 mixed-source B1 journal audit had **zero G5 graph
+  edges**, despite strong direct field/posting parity. New opt-in
+  `scripts/benchmark_native_heterogeneous_graph_churn_e0.py` replaces four
+  existing synthetic ToolSpec sources (OpenAPI → MCP → OPTIMADE 2-hop and
+  OpenAPI → custom 1-hop). It requires independent original-source typed
+  edge witnesses and the exact **3→2→3→1→3 edge transitions** over five real
+  registry versions; all four old-index lookups must fail closed.
+- Six live principal/hidden-field/denied-route/availability scopes × two
+  principals × EN/KO/JA produce **180 1-hop + 180 2-hop** independently
+  enumerated path checks per catalog size, with both explicit typed bindings
+  verified. Four same-predicate root/middle health flips are also checked.
+  Canonical incremental graph/posting refresh must exactly equal full rebuild
+  *and* a separate source-only edge oracle, preventing vacuous agreement.
+- The nonempty RED test uncovered a real canonical incremental accounting
+  defect: an unchanged 2-hop intermediary that consumed and produced typed
+  identifiers incorrectly increased `native_root_count` after a root change.
+  Fixed by counting only producers with no required inputs. Source edges
+  themselves were unaffected. [Design](native-heterogeneous-graph-churn-e0-design.md) ·
+  [plan](native-heterogeneous-graph-churn-e0-plan.md).
+- Local related scoped source/graph/SQLite-journal regressions **375 passed in
+  190.70s**; strengthened nonempty acceptance tests **9 passed in 10.96s**
+  after independent review, and both 500/5000 executable CLI audits emitted
+  gated counts. Repository Ruff green, changed-module Pyright 0 errors,
+  YAML parse and `git diff --check` clean. Full unbounded local suite was not
+  rerun; exact published HEAD must pass its own CI before qualification.
+- **E0 only**: source graph, host oracle, mixed provider-*like* ToolSpec,
+  zero execution/model calls and no independent provider/publisher gold;
+  B1 E2, #1346/#1477 remain BLOCKED_EXTERNAL, #1356 HARD HOLD and
+  Draft #1755 unmerged. Exact-head CI must be verified after publication.
+
 ### 2026-10-26 B1 E0 — mixed-source versioned journal churn and live-scope parity
 
 - New opt-in `scripts/benchmark_native_heterogeneous_churn_e0.py` reuses
@@ -29,11 +61,15 @@
   unbounded local suite is **not green**: a capped run reached 95s at ~8%.
   [Design](native-heterogeneous-churn-e0-design.md) ·
   [plan](native-heterogeneous-churn-e0-plan.md).
-- **New B1 code head CI pending publication and qualification.** This E0
-  audit measures index lookups under developer-authored mixed sources,
-  *not* live provider churn, externally verified licenses/permissions,
-  production schema bytes, **nonempty graph-edge churn** or independently
-  labeled E2. B1 remains unchecked,
+- **Prior B1 direct-churn HEAD CI qualified:** commit `2828af8ea9e6f9d7b33fcc708e94d204f01f899e`
+  passed **35/35 workflows**, including [dedicated 500/5000 matrix
+  run](https://github.com/JDeun/SchemaRouter/actions/runs/40307241489);
+  [main CI](https://github.com/JDeun/SchemaRouter/actions/runs/40307240978)
+  reported Python 3.12 **6600 passed, 3 skipped; 85.02% coverage**. The
+  *following nonempty graph-edge churn patch is separately gated on its own
+  exact HEAD*. These B1 E0 audits still do not prove live provider churn,
+  externally verified licenses/permissions, production schema bytes or
+  independently labeled E2. B1 remains unchecked,
   #1346/#1477 remain BLOCKED_EXTERNAL, #1356 HARD HOLD; Draft #1755 stays open.
 
 ### 2026-10-26 B1 E0 — heterogeneous 500/5000 original-source indexed parity extension

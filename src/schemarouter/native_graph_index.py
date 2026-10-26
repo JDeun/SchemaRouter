@@ -589,7 +589,7 @@ class NativeSchemaGraphIndex:
             route for route in previous.approved_host_roots
             if old.route_locations.get(route, ("", ""))[0] in changed
         }
-        roots = sum(bool(contract.produces) for contract in kept)
+        roots = sum(bool(contract.produces) and not contract.requires for contract in kept)
         consumers = sum(bool(contract.requires) for contract in kept)
         for key in changed_tool_keys:
             if key not in field_index.tool_fingerprints:
