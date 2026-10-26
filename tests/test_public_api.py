@@ -63,6 +63,8 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "observe_and_bind_paper_plan",
         "PaperExecutedToolSequence",
         "observe_and_execute_paper_plan",
+            "PaperUnderstoodExecutedGraph",
+            "observe_and_execute_paper_understood_graph",
         "PaperPlanBinding",
         "PaperPlanCall",
         "PaperPlanFieldMeta",

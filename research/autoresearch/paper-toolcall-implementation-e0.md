@@ -34,6 +34,26 @@
   only after publishing. [A9 design](paper-understood-observed-graph-a9-e0-design.md),
   [A9 plan](paper-understood-observed-graph-a9-e0-plan.md).
 
+**A9 first remote-head failure and next scope (2026-10-26):** Published
+commit `1a20df99c7e32a3ab5f7581e4150acb8a42fe081` had **29/35 workflows
+successful, 6 failed**. Root-cause analysis of [CI #7184](https://github.com/JDeun/SchemaRouter/actions/runs/40270899439)
+and the other five failed job logs confirmed **one shared public API ABI
+expectation failure**: the two deliberate public A9 symbols were absent
+from `tests/test_public_api.py`'s frozen `__all__` set. This was reproduced
+locally RED and corrected; do **not** inherit old green from A8 or falsely
+claim A9 full CI green at this checkpoint. A further explicit scoped
+`Understand(q)` → graph bridge in
+`scripts/research_paper_scoped_observed_graph_a9_e0.py` reuses the one-shot
+captured-model callback, validates every named DAG route against the same
+captured principal-visible inventory, defers missing host inputs before
+I/O and runs the real A9 source-checked executor. **7 new RED→GREEN
+end-to-end tests** cover 1-/2-hop, no-menu/unknown-tool, forged model
+inputs, source mutation and root-argument deferral. Expanded 15-file
+regressions **283 passed**, Ruff green, changed-source Pyright 0 errors.
+This is opt-in local code only, **not** default fixed5 agent scheduling,
+publisher provenance, independent E2 or release qualification. Next exact
+published HEAD must rerun and pass protected CI before engineering claim.
+
 ### 2026-10-26 A8 new research-only Understood→ranked direct K5 bridge
 
 - **Prior A7 documentation-only Draft HEAD** `f8b7ff5c156d18ca71da3ab71bb8d914cd4aa5b0`

@@ -43,3 +43,14 @@ A9 E0 can be marked as a **bounded source-proven local execution slice** only
 after RED/GREEN tests, targeted regressions, Ruff/Pyright and exact remote
 CI. The broader A9 item stays unchecked until agent-triggered provenance and
 independent/source-attested behavior are demonstrated beyond this local API.
+
+## Next vertical slice: actual captured Understand → bounded DAG executor
+
+Connect the existing one-shot `analyze_paper_understanding_scoped` model
+callback (which exposes only a captured authorized route menu) to the A9
+original G5 executor bridge. The host must see the **same** captured visible
+routes as the selected DAG before invoking a producer. An empty scoped menu,
+unrecognized tool, ambiguous/unproved DAG or missing approved source-root
+input makes zero registered executor calls. This opt-in wrapper is **not** a
+replacement for the existing fixed5 agent episode, does not synthesize an
+answer, and does not promote graph calls to a general model-controlled loop.

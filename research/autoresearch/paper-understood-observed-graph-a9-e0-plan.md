@@ -40,3 +40,35 @@ existing registered SchemaRouter executor. Detailed design:
 - [ ] Update the canonical resume, issue #1560 and Draft #1755 with exact
   passing evidence; publish without merging and wait exact-head CI.
 - [ ] Keep A9 broader qualification and #1356 HOLD explicitly open.
+
+**First published A9 head CI forensic result (2026-10-26):** commit
+`1a20df99c7e32a3ab5f7581e4150acb8a42fe081`, tree
+`966934f8595cf253a94347ae81ff169e69d2b938` had **29 successful and
+6 failed** workflow runs. [CI #7184](https://github.com/JDeun/SchemaRouter/actions/runs/40270899439)
+and five other workflows all failed the *same* intentionally frozen
+`tests/test_public_api.py::test_public_framework_exports_are_intentional_and_stable`
+comparison: the two newly public A9 names were missing from its expected
+`__all__`. Example minimum-dependencies job had **6394 passed, 11 skipped,
+2 deselected, 1 failed** (the public ABI list), not an execution regression.
+Verified local RED in `tests/test_public_api.py`, then explicitly updated
+the public ABI expectation. This first remote head is **not green**.
+
+### Task 4 — Scoped one-shot model → existing observed executor (next E0 slice)
+
+- [x] RED: registered 1-/2-hop end-to-end with one scoped Understand model
+  call; missing host inputs/unknown target/empty captured menu trigger no I/O.
+- [x] RED: mutations during model analysis/tool execution, source-scope
+  mismatch and model parameter forgeries cannot execute a foreign input.
+- [x] GREEN: an opt-in wrapper reuses the **same** scoped model callback and
+  A9 observed executor, pins `AuthorizedAgentToolSurface` before/after, and
+  requires every planned route to belong to its captured visible route IDs.
+- [ ] Verify focused regressions and update handoff; publish follow-up to
+  the **same Draft** only after the preceding exact-head CI is accounted for.
+
+**Task 4 local evidence:** Seven initial missing-module RED tests; seven
+GREEN real scoped one/two-hop integrations in
+`scripts/research_paper_scoped_observed_graph_a9_e0.py`. Following the ABI
+fix, expanded 15-file regression suite **283 passed**, repository Ruff
+green, changed implementation Pyright **0 errors/0 warnings**, Git diff
+whitespace clean. The explicit wrapper leaves the existing A5 fixed5 agent
+unchanged; it does not claim automatic natural-language answer synthesis.
