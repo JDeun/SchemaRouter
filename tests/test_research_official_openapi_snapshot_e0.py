@@ -17,10 +17,10 @@ from scripts.research_official_openapi_snapshot_e0 import (
     SCHEMA_GIT_BLOB,
     SCHEMA_SHA256,
     UPSTREAM_COMMIT,
+    _scoped_original_document,
     audit_official_ollama_snapshot,
     compile_official_ollama_snapshot,
     parse_pinned_ollama_source,
-    _scoped_original_document,
 )
 
 

@@ -33,7 +33,10 @@ REVIEWED_READS = {
     "/api/ps": ("ps", "PsResponse"),
 }
 REFERENCED_SCHEMAS = ("ModelSummary", "ListResponse", "Ps", "PsResponse")
-FIXTURE_DIR = Path(__file__).resolve().parent.parent / "research" / "fixtures" / "provider-snapshots"
+FIXTURE_DIR = (
+    Path(__file__).resolve().parent.parent
+    / "research" / "fixtures" / "provider-snapshots"
+)
 
 
 def _pin(raw: bytes, *, size: int, sha256: str, git_blob: str) -> None:
