@@ -32,6 +32,12 @@ and canonical `paper-toolcall-implementation-e0.md`.
 - [x] Independent reviewer approved E0 Draft engineering (no Critical or
   Important outstanding); a separate read-only review ran 447 scoped tests
   and rechecked authorization, gold redaction, sampling and owner drift.
-- [ ] Publish exact remote Draft tree and qualify CI on Linux Python3.12.
-- [ ] Update issue #1560, Draft #1755, canonical handoff; full A7 stays
-  unchecked without authentic provider/independent paired qualification.
+- [x] Publish exact remote Draft code HEAD `6f35b57c8f0d2dd0618ccc43b392dd7cff82d7f4`,
+  tree `b179d92d558b8fb60fcf0afa08373ec9d364233d`, matching local
+  reviewed tree. **29/29 PR workflows successful**; [main CI #7180](https://github.com/JDeun/SchemaRouter/actions/runs/40263102244)
+  Linux Python 3.12 **6436 passed / 3 skipped**, coverage **85.00%**.
+- [x] Update issue #1560 and Draft #1755 with the code and qualification
+  evidence; canonical handoff updated in this docs-only follow-up. Full A7
+  remains unchecked without authentic provider/independent paired data.
+- [ ] Confirm exact-head CI for this subsequent documentation-only commit;
+  previous code-head green cannot be inherited silently.

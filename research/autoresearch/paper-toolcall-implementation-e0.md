@@ -42,7 +42,7 @@
   independently verified E2. Design and implementation:
   [A7 design](paper-a7-understand-metering-design.md),
   [A7 plan](paper-a7-understand-metering-plan.md).
-- **A7 same-agent paired E0 continuation (latest work, code review/CI required):**
+- **A7 same-agent paired E0 continuation (qualified engineering code HEAD):**
   `scripts/research_paper_paired_agent_e0.py` composes original
   principal-scoped authorized ranked first K5 from one frozen source capture
   against the existing measured paper K5, each using the **same fixed5
@@ -58,7 +58,16 @@
   owner/sampling/gold-redaction tests verified E0 behavior. Local 229 related
   tests, repository Ruff, changed-script Pyright 0 errors; an independent
   reviewer additionally ran 447 scoped tests and found no remaining
-  Critical/Important defects. Publication and exact-head CI still required.
+  Critical/Important defects. **Exact published Draft code HEAD**
+  `6f35b57c8f0d2dd0618ccc43b392dd7cff82d7f4`, Git tree
+  `b179d92d558b8fb60fcf0afa08373ec9d364233d` matches the local
+  reviewed six-file implementation; **29/29 returned PR workflows passed**.
+  [Main CI #7180](https://github.com/JDeun/SchemaRouter/actions/runs/40263102244)
+  ran Linux Python 3.12 **6436 passed, 3 skipped in 637.13s** with
+  **85.00% coverage**, and the repository CI typecheck, dedicated original
+  paper, native ranker and experimental CPU workflows completed successfully.
+  CodeQL is not claimed separately green for this stacked Draft target.
+  Full A7 independent acceptance remains unchecked.
   [Paired E0 design](paper-a7-paired-agent-e0-design.md),
   [paired implementation plan](paper-a7-paired-agent-e0-plan.md).
 - These paths use **synthetic DEV fixtures only**, with no provider-observed
@@ -145,9 +154,10 @@ on its own, not silently inherit code-head CI.
 
 **Current Draft:** [#1755](https://github.com/JDeun/SchemaRouter/pull/1755)
 stacked on #1754. Latest **qualified implementation code head**:
-`c4466c0878cec58a95d161681201b067a55579ac`, 29/29 PR workflows
-successful, Linux Python 3.12 **6423 passed / 3 skipped**, 85.00% coverage;
-the older A5-only head `24a8cb04` has its distinct 28/28, 6403-test result.
+`6f35b57c8f0d2dd0618ccc43b392dd7cff82d7f4`, 29/29 PR workflows
+successful, Linux Python 3.12 **6436 passed / 3 skipped**, 85.00% coverage;
+the preceding A6/A7 code head `c4466c08` separately qualified at 6423
+passed, and the older A5-only head `24a8cb04` at 6403 passed.
 Exact-head CI must be rechecked after any later commit, including a
 docs-only handoff revision; do not inherit green from an earlier head.
 
