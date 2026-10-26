@@ -42,6 +42,25 @@
   independently verified E2. Design and implementation:
   [A7 design](paper-a7-understand-metering-design.md),
   [A7 plan](paper-a7-understand-metering-plan.md).
+- **A7 same-agent paired E0 continuation (latest work, code review/CI required):**
+  `scripts/research_paper_paired_agent_e0.py` composes original
+  principal-scoped authorized ranked first K5 from one frozen source capture
+  against the existing measured paper K5, each using the **same fixed5
+  executor** with fresh agent instances and matching **host-declared**
+  agent/model/seed configuration. It deep-freezes tasks across both runs,
+  prohibits nonfinite evidence, rechecks role/policy/source and reports
+  sanitized distinct baseline/paper tool-schema JSON bytes, agent tokens and
+  paper model-callback usage. No gold is supplied to the callbacks. Baseline
+  runs first, so warm-cache effects prevent scientific latency claims; host
+  matching configuration does **not authenticate** an external model.
+  The old agent presents selected K5 tool definitions alphabetically; only
+  **membership** is native-ranked. New actual >K/denied-route and cross-branch
+  owner/sampling/gold-redaction tests verified E0 behavior. Local 229 related
+  tests, repository Ruff, changed-script Pyright 0 errors; an independent
+  reviewer additionally ran 447 scoped tests and found no remaining
+  Critical/Important defects. Publication and exact-head CI still required.
+  [Paired E0 design](paper-a7-paired-agent-e0-design.md),
+  [paired implementation plan](paper-a7-paired-agent-e0-plan.md).
 - These paths use **synthetic DEV fixtures only**, with no provider-observed
   production usage or same-model paired independent gold evaluation. Both
   **A6 and A7 remain unchecked**, #1346/#1477 `BLOCKED_EXTERNAL`, #1356
