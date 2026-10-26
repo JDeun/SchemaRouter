@@ -18,6 +18,13 @@ publisher data are not available locally, so all local fixtures remain E0.
   counters per case. Missing counters remain unknown, never zero; observed
   unsupported dispatch and agent dispatch despite plan abstention are separate
   diagnostics. The rate denominator is only actually observed cases.
+- The existing A7 paired-run result carries a `Decision` but not the exact
+  original paper plan `status`. An explicit A7→A10 adapter may project this
+  decision and observed host `tool_call_count` into a case observation. It must
+  translate `abstain` to **`abstain_unclassified`**, not `no_proven_hit`;
+  the independent coordinator remains responsible for joining the exact
+  source case identity. The adapter never elevates self-declared same-agent
+  configuration or E0 result to independently qualified evidence.
 - Use explicit, preselected rate limits to give a diagnostic `within_limits`
   answer only when denominators are large enough. No fitting on the evaluation
   cohort and no automatic tuning of production thresholds.

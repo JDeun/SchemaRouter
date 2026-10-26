@@ -19,6 +19,8 @@ from scripts.inspect_independent_native_e2_intake import (
     _raw_json,
     inspect_source_pinned_native_cohort,
 )
+from scripts.research_paper_measured_episode_e0 import PaperMeteredAgentEpisode
+from scripts.research_paper_paired_agent_e0 import PaperPairedAgentE0
 from scripts.research_paper_refusal_eval_e0 import decision_from_plan_status
 from scripts.research_task_disposition_rubric_e0 import KINDS, LANGUAGES
 
@@ -39,6 +41,47 @@ class NoFitDiagnosticLimits:
     min_cases_per_language_and_binary_kind: int
     max_supported_false_refusal_rate: float
     max_unsupported_false_accept_rate: float
+
+
+def observation_from_paper_paired_agent_e0(
+    case_id: str, paired: PaperPairedAgentE0,
+) -> PaperPlanObservation:
+    """Project real A7 host attempt count and *coarse* paper disposition.
+
+    The A7 paired result does not retain the exact planner status. In
+    particular, `abstain` must NOT be relabeled `no_proven_hit`. The offline
+    coordinator is solely responsible for associating the source case ID with
+    the exact input task of that paired run. This is not an E2 receipt.
+    """
+    if (
+        type(case_id) is not str or not 1 <= len(case_id) <= 128
+        or type(paired) is not PaperPairedAgentE0
+        or paired.independent_e2_qualified is not False
+        or paired.host_declared_matching_agent_configuration is not True
+        or type(paired.paper) is not PaperMeteredAgentEpisode
+        or paired.paper.measurement.independent_e2_qualified is not False
+        or type(paired.paper.episode) is not dict
+        or "supported" in paired.paper.episode
+    ):
+        raise ValueError("unqualified and sanitized A7 paired result required")
+    attempts = paired.paper.episode.get("tool_call_count")
+    if type(attempts) is not int or attempts < 0:
+        raise ValueError("actual A7 host tool attempt counter required")
+    statuses = {
+        "offer": "ready", "abstain": "abstain_unclassified",
+        "request_arguments": "requires_arguments",
+        "request_observation": "requires_observation",
+    }
+    decision = paired.paper.decision
+    if type(decision) is not str or decision not in statuses:
+        raise ValueError("unknown A7 paired agent decision")
+    return PaperPlanObservation(case_id, statuses[decision], attempts)
+
+
+def _decision_from_observed_status(status: str) -> str:
+    if status == "abstain_unclassified":
+        return "abstain"
+    return decision_from_plan_status(status)
 
 
 def _validated_limits(limits: NoFitDiagnosticLimits) -> NoFitDiagnosticLimits:
@@ -64,7 +107,7 @@ def _summarize(
         counts[case["expected_kind"] + "_denominator"] += 1
         observed = observations[case["id"]]
         status = observed.status
-        decision = decision_from_plan_status(status)
+        decision = _decision_from_observed_status(status)
         if observed.agent_tool_calls is None:
             counts["agent_tool_attempts_missing_cases"] += 1
         else:
@@ -79,6 +122,8 @@ def _summarize(
                 counts["unsupported_with_observed_tool_attempts"] += 1
         if status == "no_proven_hit":
             counts["source_no_proven_hit"] += 1
+        if status == "abstain_unclassified":
+            counts["unclassified_abstention"] += 1
         if status == "ambiguous_paths":
             counts["ambiguous_paths"] += 1
         if decision in ("request_arguments", "request_observation"):
@@ -104,7 +149,7 @@ def _summarize(
         kind + "_denominator": counts[kind + "_denominator"] for kind in KINDS
     }
     for metric in (
-        "source_no_proven_hit", "ambiguous_paths", "deferred",
+        "source_no_proven_hit", "unclassified_abstention", "ambiguous_paths", "deferred",
         "supported_false_refusal", "supported_offer", "supported_deferred",
         "unsupported_false_accept", "unsupported_abstain", "unsupported_deferred",
         "agent_tool_attempts_missing_cases", "agent_tool_attempts_reported_cases",
@@ -164,7 +209,7 @@ def calibrate_source_pinned_paper_no_fit_e0(
         ):
             raise ValueError("malformed or duplicate observed plan status")
         try:
-            decision_from_plan_status(observation.status)
+            _decision_from_observed_status(observation.status)
         except ValueError:
             raise ValueError("unknown observed paper plan status") from None
         decisions[observation.case_id] = observation

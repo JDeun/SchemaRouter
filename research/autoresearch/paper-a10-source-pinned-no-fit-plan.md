@@ -23,3 +23,12 @@
 4. Run targeted suites, Ruff and compilation; verify exact remote HEAD before
    publishing to existing Draft PR #1755, check latest-head CI and preserve
    #1346/#1477/#1356 external/release gates.
+
+## Task 3 — connect existing A7 observed episode to A10 (follow-up)
+
+1. Add failing tests for the existing paired result's decision/actual tool
+   count projection, including `abstain_unclassified` semantics.
+2. Implement a strict projection using the current A7 `PaperPairedAgentE0`;
+   reject missing/forged counters and unsupported decision types.
+3. Run A7+A10 integration regression suites and publish as a separate new
+   commit only after exact-head CI/status assessment of the existing PR.

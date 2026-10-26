@@ -8,12 +8,28 @@ import sys
 from dataclasses import replace
 
 import pytest
+from test_research_paper_paired_agent_e0 import (
+    factory as a7_factory,
+)
+from test_research_paper_paired_agent_e0 import (
+    kwargs as a7_kwargs,
+)
+from test_research_paper_paired_agent_e0 import (
+    task as a7_task,
+)
+from test_research_paper_scoped_agent_real_e0 import model_result, source
 
+from scripts.research_paper_measured_episode_e0 import (
+    PaperMeteredAgentEpisode,
+    PaperStageMeasurement,
+)
 from scripts.research_paper_no_fit_calibration_a10_e0 import (
     NoFitDiagnosticLimits,
     PaperPlanObservation,
     calibrate_source_pinned_paper_no_fit_e0,
+    observation_from_paper_paired_agent_e0,
 )
+from scripts.research_paper_paired_agent_e0 import PaperPairedAgentE0, run_paper_paired_agent_e0
 from scripts.research_task_disposition_rubric_e0 import KINDS, LANGUAGES
 
 SECRET = "SENSITIVE-PUBLISHER-SECRET-FOR-LEAK-CHECK"
@@ -242,3 +258,83 @@ def test_command_line_consumes_exact_streams_without_echoing_private_source(tmp_
     assert receipt["qualification_gate"] == "BLOCKED_EXTERNAL"
     assert SECRET not in process.stdout
     assert "case-01" not in process.stdout
+
+
+def _paired(decision: str, attempts: int) -> PaperPairedAgentE0:
+    measurement = PaperStageMeasurement(
+        understand_called=True, understand_model_callback_wall_latency_ms=1.0,
+        understand_request_utf8_bytes=1,
+        understand_input_tokens_provider_reported=None,
+        understand_output_tokens_provider_reported=None,
+        agent_input_tokens_reported=0, agent_output_tokens_reported=0,
+        agent_tool_schema_tokens_reported=0,
+        agent_tool_schema_utf8_bytes_exposed=0,
+        agent_wall_latency_ms=0.0, total_wall_latency_ms=1.0,
+    )
+    return PaperPairedAgentE0(
+        baseline={}, baseline_tool_schema_utf8_bytes_exposed=0,
+        paper=PaperMeteredAgentEpisode(
+            decision=decision, episode={"tool_call_count": attempts},
+            measurement=measurement,
+        ),
+    )
+
+
+def test_actual_paired_A7_case_projection_preserves_unclassified_abstain():
+    source, observations = _fixture()
+    paired = _paired("abstain", 1)
+    actual = observation_from_paper_paired_agent_e0("case-02", paired)
+    assert actual == PaperPlanObservation("case-02", "abstain_unclassified", 1)
+    scored = tuple(actual if o.case_id == actual.case_id else o for o in observations)
+    result = _run(source, scored)
+    assert result["totals"]["source_no_proven_hit"] == 6
+    assert result["totals"]["unclassified_abstention"] == 1
+    assert result["totals"]["unsupported_observed_tool_attempt_cases"] == 1
+    assert result["totals"]["plan_abstained_but_agent_attempted"] == 1
+    assert result["totals"]["unsupported_false_accept"] == 2
+
+
+@pytest.mark.parametrize(("decision", "status"), (
+    ("offer", "ready"),
+    ("request_arguments", "requires_arguments"),
+    ("request_observation", "requires_observation"),
+    ("abstain", "abstain_unclassified"),
+))
+def test_paired_decision_projection_is_lossless_about_missing_exact_plan_status(
+    decision, status,
+):
+    observed = observation_from_paper_paired_agent_e0("case-01", _paired(decision, 0))
+    assert observed.status == status
+
+
+@pytest.mark.parametrize("invalid", [True, -1, "0", None])
+def test_paired_projection_requires_actual_host_call_count(invalid):
+    with pytest.raises(ValueError):
+        observation_from_paper_paired_agent_e0("case-01", _paired("offer", invalid))
+
+
+def test_paired_projection_cannot_elevate_gold_or_independent_e2():
+    base = _paired("offer", 0)
+    with pytest.raises(ValueError):
+        observation_from_paper_paired_agent_e0(
+            "case-01", replace(base, independent_e2_qualified=True),
+        )
+    with pytest.raises(ValueError):
+        observation_from_paper_paired_agent_e0("case-01", replace(base, paper=replace(
+            base.paper, episode={"tool_call_count": 0, "supported": True},
+        )))
+    with pytest.raises(ValueError):
+        observation_from_paper_paired_agent_e0("case-01", _paired("not_plan_decision", 0))
+
+
+@pytest.mark.asyncio
+async def test_real_a7_pair_produces_host_observed_a10_candidate_without_gold():
+    view, index = source()
+    pair = await run_paper_paired_agent_e0(
+        lambda _payload: model_result(), a7_factory,
+        **a7_kwargs(view, index, a7_task()),
+    )
+    observed = observation_from_paper_paired_agent_e0("source-matched-by-host", pair)
+    assert observed.status == "ready"
+    assert observed.agent_tool_calls == pair.paper.episode["tool_call_count"] == 1
+    assert "supported" not in pair.paper.episode
