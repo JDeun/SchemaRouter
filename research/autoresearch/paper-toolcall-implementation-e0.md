@@ -2,6 +2,35 @@
 
 **2026-10-24 · E0 source-authored diagnostic, not a shipped/default executor.**
 
+### 2026-10-26 A8 new research-only Understood→ranked direct K5 bridge
+
+- **Prior A7 documentation-only Draft HEAD** `f8b7ff5c156d18ca71da3ab71bb8d914cd4aa5b0`
+  passed **29/29 PR workflows**, including
+  [main CI #7181](https://github.com/JDeun/SchemaRouter/actions/runs/40264271416)
+  Linux Python 3.12 **6436 passed, 3 skipped in 1033.42s** with
+  **85.00% coverage**. It contains no A8 bridge implementation; the
+  following new A8 code requires its own distinct CI qualification.
+- `scripts/research_paper_ranked_direct_a8_e0.py` connects the already
+  validated host-owner `PaperUnderstanding` concept/intent FieldGroup to
+  the **existing native direct index's opt-in Top-K5 research ranker**.
+  The original trusted alias proves field eligibility, whereas the actual
+  captured natural-language query informs experimental ranking. Only
+  originally captured principal-visible authorized routes reach that
+  callback; catalog, policy, principal and hints are checked after it.
+  Current `compile_paper_understood_direct_plan` remains unmodified,
+  conservatively `over_k_unranked` at >K. The new response is
+  **`ranked_unverified`** (not executable), never a fabricated
+  `PaperTypedToolPlan` or independent source/quality proof.
+- Twelve synthetic adversarial tests currently cover >K/denied source,
+  actual query, named-before-K, >32 refusal, forged choices, unknown
+  source/tool and owner/policy/view mutation. **This A8 slice is pending
+  full local and exact-remote CI.** See
+  [A8 design](paper-a8-ranked-direct-e0-design.md) and
+  [A8 implementation plan](paper-a8-ranked-direct-e0-plan.md).
+  **A8 checkbox remains unchecked** until an independently justified
+  actual ranker and its EN/KO/JA/OOD quality study exist. #1346/#1477
+  external E2 and #1356 release HOLD unchanged.
+
 ### 2026-10-26 A6/A7 continuation — byte-pinned intake + separated Understand costs (E0 only)
 
 - **Qualified A6/A7 E0 code HEAD (Draft #1755):**
