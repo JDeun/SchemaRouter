@@ -5,8 +5,10 @@ This adapter never executes typed plan calls or dependency bindings.
 """
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import Any
 
+from schemarouter import PolicyViolationError
 from schemarouter.concept_retrieval import NativeConceptCatalog
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
 from schemarouter.paper_understood_direct_plan import PaperIntentRegistry
@@ -29,6 +31,7 @@ async def run_paper_scoped_agent_episode_e0(
     index: NativeSchemaGraphIndex,
     model_visible_intent_ids: tuple[str, ...],
     model_visible_concept_ids: tuple[str, ...],
+    host_source_arguments: dict[str, dict[str, Any]] | None = None,
 ) -> tuple[Decision, dict[str, Any]]:
     """Perform one scoped model analysis before the unchanged frozen executor.
 
@@ -39,6 +42,13 @@ async def run_paper_scoped_agent_episode_e0(
         raise ValueError("principal-scoped source view required")
     if type(task) is not dict or task.get("query") != view.original_query:
         raise ValueError("episode task/query mismatch")
+    original_host_inputs = deepcopy(host_source_arguments)
+
+    def check_host_inputs() -> None:
+        if host_source_arguments != original_host_inputs:
+            raise PolicyViolationError("paper episode host source inputs changed")
+
+    check_host_inputs()
     view.assert_source_unchanged()
     decision, plan = await analyze_and_plan_paper_scoped_e0(
         model,
@@ -48,10 +58,13 @@ async def run_paper_scoped_agent_episode_e0(
         index=index,
         model_visible_intent_ids=model_visible_intent_ids,
         model_visible_concept_ids=model_visible_concept_ids,
+        host_source_arguments=host_source_arguments,
     )
+    check_host_inputs()
     view.assert_source_unchanged()
     episode = run_paper_fixed5_episode_e0(
         agent, view=view, task=task, plan=plan,
     )
     view.assert_source_unchanged()
+    check_host_inputs()
     return decision, episode

@@ -8,6 +8,7 @@ Model parameter hints never become executable or host-approved arguments.
 from __future__ import annotations
 
 import math
+from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import Field, model_validator
@@ -182,6 +183,7 @@ def compile_paper_understood_direct_plan(
     intent_registry: PaperIntentRegistry,
     index: NativeSchemaGraphIndex,
     k: int = 5,
+    host_source_arguments: dict[str, dict[str, Any]] | None = None,
 ) -> PaperTypedToolPlan:
     """Plan field-complete original *direct* tools from structured hints.
 
@@ -201,6 +203,20 @@ def compile_paper_understood_direct_plan(
         raise ValueError("host-approved intent registry required")
     if not isinstance(understanding, PaperUnderstanding):
         raise ValueError("structured paper understanding required")
+    if host_source_arguments is not None and (
+        type(host_source_arguments) is not dict
+        or len(host_source_arguments) > k
+        or any(
+            type(route) is not str or not _bounded_name(route)
+            or type(values) is not dict or not 1 <= len(values) <= 4
+            for route, values in host_source_arguments.items()
+        )
+    ):
+        raise ValueError("invalid explicit paper host direct arguments")
+    # Values are supplied by the trusted host, never from model hints. Their
+    # types, source-root eligibility and current principal-scoped schema are
+    # checked by the original typed compiler for every materialization.
+    host_inputs = deepcopy(host_source_arguments or {})
     try:
         original_hints = understanding.model_dump_json()
         original_intents = intent_registry.model_dump_json()
@@ -230,6 +246,8 @@ def compile_paper_understood_direct_plan(
             or catalog.model_dump_json() != original_catalog
             or intent_registry.model_dump_json() != original_intents
             or understanding.model_dump_json() != original_hints
+            or host_source_arguments is not None
+            and host_source_arguments != host_inputs
         ):
             raise PolicyViolationError("paper understood owner or authority changed")
 
@@ -255,9 +273,13 @@ def compile_paper_understood_direct_plan(
         k=k, allowed_tool_keys=keys,
     )
     if first.status != "complete":
+        if host_inputs:
+            raise ValueError("host direct arguments require a proved source route")
         if first.status not in ("no_proven_hit", "over_k_unranked"):
             raise PolicyViolationError("unverified paper selection status")
         return empty(first.status)
+    if not host_inputs.keys() <= {candidate.route_id for candidate in first.candidates}:
+        raise ValueError("host direct arguments name an unproved source route")
 
     def materialize(candidates):
         permitted = router._authorization_predicate(principal)
@@ -294,7 +316,7 @@ def compile_paper_understood_direct_plan(
         calls = [
             _compile_one_route(
                 router, principal, index, route, i, positions, originals,
-                edges, permitted, None,
+                edges, permitted, host_inputs.get(route.route_id),
             ) for i, route in enumerate(routes)
         ]
         if edges:

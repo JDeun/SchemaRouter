@@ -106,7 +106,7 @@ def _router(*, hops: int = 1, n_targets: int = 1, deny_middle=False,
 
 
 def _compile(router, *, named_tools=("target_0",), max_hops=2,
-             hints=None, index=None, source_type=None):
+             hints=None, index=None, source_type=None, host_source_arguments=None):
     return compile_paper_understood_graph_plan(
         router, PaperUnderstanding(
             intent_id="case.lookup", named_tools=named_tools,
@@ -117,7 +117,27 @@ def _compile(router, *, named_tools=("target_0",), max_hops=2,
             NativeSchemaPostingIndex.build(router.registry),
         ),
         max_hops=max_hops,
+        host_source_arguments=host_source_arguments,
     )
+
+
+def test_named_graph_prefers_source_approved_direct_root_argument():
+    """A standalone typed direct route must not defer to an invented G5 producer."""
+    router = _router()
+    router.add_tool(_node("direct", input_semantic="crm.case_id", identifier=True))
+    index = NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+        approved_host_roots=frozenset({"direct.read"}),
+    )
+    plan = _compile(
+        router, named_tools=("direct",), index=index,
+        hints={"case_id": "untrusted"},
+        host_source_arguments={"direct.read": {"case_id": "owner-id"}},
+    )
+    assert plan.status == "ready"
+    assert [receipt.route_id for receipt in plan.calls] == ["direct.read"]
+    assert plan.calls[0].call.arguments == {"case_id": "owner-id"}
+    assert plan.bindings == ()
 
 
 def test_named_one_hop_emits_original_typed_binding_not_model_parameters(monkeypatch):

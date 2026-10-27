@@ -5,6 +5,9 @@ non-executing receipt, not an executable agent tool menu.
 """
 from __future__ import annotations
 
+from copy import deepcopy
+from typing import Any
+
 from schemarouter import PolicyViolationError
 from schemarouter.concept_retrieval import NativeConceptCatalog
 from schemarouter.native_graph_index import NativeSchemaGraphIndex
@@ -47,6 +50,7 @@ async def analyze_and_plan_paper_scoped_e0(
     index: NativeSchemaGraphIndex,
     model_visible_intent_ids: tuple[str, ...],
     model_visible_concept_ids: tuple[str, ...],
+    host_source_arguments: dict[str, dict[str, Any]] | None = None,
 ) -> tuple[Decision, PaperTypedToolPlan | None]:
     """Exactly one scoped Understand call followed by a reauthorized plan.
 
@@ -57,6 +61,19 @@ async def analyze_and_plan_paper_scoped_e0(
         raise ValueError("current principal-scoped view required")
     if not isinstance(index, NativeSchemaGraphIndex):
         raise ValueError("source-pinned graph index required")
+    if host_source_arguments is not None and (
+        type(host_source_arguments) is not dict
+        or any(type(route) is not str or type(values) is not dict
+               for route, values in host_source_arguments.items())
+    ):
+        raise ValueError("explicit host source arguments required")
+    pinned_host_inputs = deepcopy(host_source_arguments)
+
+    def check_host_inputs() -> None:
+        if host_source_arguments != pinned_host_inputs:
+            raise PolicyViolationError("scoped paper host source arguments changed")
+
+    check_host_inputs()
     view.assert_source_unchanged()
     understanding = await analyze_paper_understanding_scoped(
         model, view=view, intent_registry=intent_registry, catalog=catalog,
@@ -64,11 +81,13 @@ async def analyze_and_plan_paper_scoped_e0(
         model_visible_concept_ids=model_visible_concept_ids,
     )
     view.assert_source_unchanged()
+    check_host_inputs()
     if understanding is None:
         return "abstain", None
     plan = compile_paper_understood_graph_plan(
         view.router, understanding, principal=view._principal,
         catalog=catalog, intent_registry=intent_registry, index=index,
+        host_source_arguments=pinned_host_inputs,
     )
     # The graph-only compiler intentionally refuses an unproved dependency.
     # The existing agent may still request a genuinely scalar source input,
@@ -77,6 +96,7 @@ async def analyze_and_plan_paper_scoped_e0(
         direct = compile_paper_understood_direct_plan(
             view.router, understanding, principal=view._principal,
             catalog=catalog, intent_registry=intent_registry, index=index,
+            host_source_arguments=pinned_host_inputs,
         )
         if _source_proves_single_nondependency_input(view, direct):
             plan = direct
@@ -91,6 +111,7 @@ async def analyze_and_plan_paper_scoped_e0(
             registry_version=plan.registry_version, requested_k=plan.requested_k,
         )
     view.assert_source_unchanged()
+    check_host_inputs()
     if plan.executable_authority:
         raise PolicyViolationError("paper research plan cannot authorize execution")
     if plan.status == "requires_observation" and not plan.bindings:

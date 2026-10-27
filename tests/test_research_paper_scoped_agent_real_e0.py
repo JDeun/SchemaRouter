@@ -27,6 +27,7 @@ from scripts.research_authorized_agent_tool_surface import (
 from scripts.research_paper_scoped_agent_episode_e0 import (
     run_paper_scoped_agent_episode_e0,
 )
+from scripts.research_paper_scoped_plan_e0 import analyze_and_plan_paper_scoped_e0
 
 QUERY = "Please show case status"
 INTENTS = PaperIntentRegistry(intents=(PaperIntentDeclaration(
@@ -41,7 +42,8 @@ CATALOG = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
 ),))
 
 
-def source(*, required_argument=False, input_semantic=None, hops=0):
+def source(*, required_argument=False, input_semantic=None, hops=0,
+           host_direct=False):
     router = SchemaRouter(authorization_policy=AuthorizationPolicy(
         default_effect="deny",
         rules=(AuthorizationRule(
@@ -91,11 +93,14 @@ def source(*, required_argument=False, input_semantic=None, hops=0):
             )] if required_argument or hops else [],
             input_schema={"type": "object", "properties": {
                 "case_id": {"type": "string"},
-            }, "required": ["case_id"]} if hops else {},
+            }, "required": ["case_id"]} if hops or host_direct else {},
             output_fields=[FieldSpec(
                 name="status", semantic_id="case.status",
                 json_schema={"type": "string"},
-            )],
+            )] + ([FieldSpec(
+                name="case_id", semantic_id="case.id",
+                json_schema={"type": "string"}, identifier=True,
+            )] if host_direct else []),
         )],
     ))
     view = capture_authorized_agent_tool_surface(
@@ -104,8 +109,45 @@ def source(*, required_argument=False, input_semantic=None, hops=0):
     )
     index = NativeSchemaGraphIndex.build(
         NativeSchemaPostingIndex.build(router.registry),
+        approved_host_roots=frozenset({"complete.read"}) if host_direct else frozenset(),
     )
     return view, index
+
+
+@pytest.mark.asyncio
+async def test_actual_scoped_model_can_plan_proved_host_direct_scalar():
+    """The host value, unlike the model hint, becomes the typed direct input."""
+    view, index = source(required_argument=True, host_direct=True)
+    decision, plan = await analyze_and_plan_paper_scoped_e0(
+        lambda payload: {**model_result(), "parameter_hints": {"case_id": "forged"}},
+        view=view, catalog=CATALOG, intent_registry=INTENTS, index=index,
+        model_visible_intent_ids=("case.lookup",),
+        model_visible_concept_ids=("case.status",),
+        host_source_arguments={"complete.read": {"case_id": "host-42"}},
+    )
+    assert decision == "offer"
+    assert plan is not None and plan.status == "ready" and not plan.bindings
+    assert len(plan.calls) == 1
+    assert plan.calls[0].call.arguments == {"case_id": "host-42"}
+    assert plan.executable_authority is False
+
+
+@pytest.mark.asyncio
+async def test_model_callback_cannot_mutate_host_direct_inputs_mid_episode():
+    view, index = source(required_argument=True, host_direct=True)
+    host_inputs = {"complete.read": {"case_id": "host-42"}}
+
+    def model(payload):
+        host_inputs["complete.read"]["case_id"] = "forged-after-await"
+        return model_result()
+
+    with pytest.raises(PolicyViolationError, match="host|source|changed"):
+        await analyze_and_plan_paper_scoped_e0(
+            model, view=view, catalog=CATALOG, intent_registry=INTENTS,
+            index=index, model_visible_intent_ids=("case.lookup",),
+            model_visible_concept_ids=("case.status",),
+            host_source_arguments=host_inputs,
+        )
 
 
 class Agent:

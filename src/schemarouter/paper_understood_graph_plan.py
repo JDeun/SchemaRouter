@@ -92,6 +92,18 @@ def compile_paper_understood_graph_plan(
         router, understanding, principal=principal, catalog=catalog,
         intent_registry=intent_registry, index=index, k=k,
     )
+    direct_routes = {call.route_id for call in direct.calls}
+    if host_inputs and host_inputs.keys() <= direct_routes:
+        # A declared scalar root is a direct tool, not a graph dependency.
+        # Reuse the same exact original-source host-input validator, only
+        # after proving the complete principal-visible direct route.
+        direct = compile_paper_understood_direct_plan(
+            router, understanding, principal=principal, catalog=catalog,
+            intent_registry=intent_registry, index=index, k=k,
+            host_source_arguments=host_source_arguments,
+        )
+    elif host_inputs and direct.status == "ready":
+        raise ValueError("paper graph host arguments do not match direct proof")
     if (
         direct.status not in {"no_proven_hit", "requires_arguments"}
         or not approved.named_tools

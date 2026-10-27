@@ -122,16 +122,20 @@ def _router():
     return router
 
 
-def _index(router):
-    return NativeSchemaGraphIndex.build(NativeSchemaPostingIndex.build(router.registry))
+def _index(router, *, approved_host_roots=frozenset()):
+    return NativeSchemaGraphIndex.build(
+        NativeSchemaPostingIndex.build(router.registry),
+        approved_host_roots=approved_host_roots,
+    )
 
 
 def _compile(router, understanding, *, principal=ANALYST, catalog=None,
-             intents=None, index=None):
+             intents=None, index=None, host_source_arguments=None):
     return compile_paper_understood_direct_plan(
         router, understanding, principal=principal,
         catalog=catalog or _catalog(), intent_registry=intents or _intents(),
         index=index or _index(router),
+        host_source_arguments=host_source_arguments,
     )
 
 
@@ -201,6 +205,43 @@ def test_untrusted_parameter_hints_never_bind_original_toolcall():
     assert plan.calls[0].call.arguments == {}
     assert plan.calls[0].call.missing_required_arguments == ["case_id"]
     assert plan.executable_authority is False
+
+
+def test_owner_approved_direct_scalar_is_bound_without_trusting_model_hint():
+    """Regression: direct Understand previously ignored even approved host roots."""
+    router = _router()
+    index = _index(router, approved_host_roots=frozenset({"parameterized.read"}))
+    plan = _compile(router, _understanding(
+        named_tools=("parameterized",), hints={"case_id": "model-forgery"},
+    ), index=index, host_source_arguments={
+        "parameterized.read": {"case_id": "trusted-42"},
+    })
+    assert plan.status == "ready"
+    assert len(plan.calls) == 1 and plan.bindings == ()
+    assert plan.calls[0].call.arguments == {"case_id": "trusted-42"}
+    assert plan.calls[0].call.missing_required_arguments == []
+    assert plan.executable_authority is False
+
+
+@pytest.mark.parametrize("arguments", [
+    {"parameterized.read": {}},
+    {"parameterized.read": {"case_id": "ok", "private": "bad"}},
+    {"unknown.read": {"case_id": "ok"}},
+    {"full_5.read": {"case_id": "ok"}},
+])
+def test_direct_arguments_must_match_original_approved_route_and_closed_schema(arguments):
+    router = _router()
+    index = _index(router, approved_host_roots=frozenset({"parameterized.read"}))
+    with pytest.raises((ValueError, PolicyViolationError)):
+        _compile(router, _understanding(named_tools=("parameterized",)),
+                 index=index, host_source_arguments=arguments)
+
+
+def test_unapproved_direct_source_root_cannot_bind_arguments():
+    router = _router()
+    with pytest.raises(PolicyViolationError):
+        _compile(router, _understanding(named_tools=("parameterized",)),
+                 host_source_arguments={"parameterized.read": {"case_id": "ok"}})
 
 
 def test_understood_unregistered_intent_or_concept_is_rejected():

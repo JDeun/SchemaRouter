@@ -1,5 +1,35 @@
 # Original-paper Algorithm 1 continuation — P2 source-typed ToolCall E0
 
+### 2026-10-27 P2/A5 gap closure — trusted direct host-source scalar wiring (E0)
+
+- A previously **unwired** Algorithm 1 branch discarded explicit host-owned
+  scalar values when a structured `Understand(q)` named a direct original
+  source route. It therefore returned `requires_arguments` even with a valid
+  original G5-approved host root. The opt-in direct compiler now forwards
+  only separately supplied `host_source_arguments` through the existing
+  `_compile_one_route` and live per-call scope validation. The original
+  route, registered scalar envelope, current principal, field visibility,
+  policy, health, license and fingerprint remain authoritative. Untrusted
+  model `parameter_hints` still **never** bind a ToolCall.
+- Named graph planning now forwards approved values **only** to a source-
+  verified direct route; otherwise it retains the proven producer/consumer
+  path and existing host-root checks. The scoped A5 model→plan→fixed5
+  episode entrypoints accept the same optional host mapping and reject
+  mutations across the asynchronous model and episode boundaries. This is
+  an opt-in *non-executing typed receipt*, not an agent-derived parameter
+  extraction engine or implicit tool invocation grant.
+- New RED→GREEN tests exercise a real registered direct root, model-value
+  forgery, closed typed arguments, unknown/non-root input, direct-vs-graph
+  selection and mutation during the model callback. Full related paper,
+  native G5 and opt-in fixed5 agent regression: **663 passed**; whole-repo
+  Ruff passed. Full local pytest and exact new GitHub Actions checks are
+  **not yet qualified** for this branch. [Implementation plan](paper-direct-host-arguments-wiring-e0-plan.md).
+- Remaining major behaviors remain unchanged: source-authored independent
+  `Understand(q)`/binding accuracy, qualified >K ranker, default-path
+  promotion, genuine external agent E2 and independently approved
+  publisher semantics. #1346/#1477 BLOCKED_EXTERNAL, #1356 HARD HOLD;
+  Draft #1755 remains unmerged.
+
 ### 2026-10-27 B1 E1 — unhinted real-provider multilingual route/field planning baseline
 
 - Extend the preceding real 3-provider registration (Crossref HTTP JSON,
