@@ -1865,6 +1865,16 @@ latency is included; no prechange speedup, relevance accuracy, independent
 real-provider transport or publisher gold can be inferred. These values
 are specific to this local source-owned fixture and current machine.
 
+Initial exact-head GitHub Draft #1798 CI diagnosed **26 failures** caused by
+pytest setup abort, not a ranking assertion: with `filterwarnings=["error"]`,
+GitHub's `pytest-asyncio` emits `PytestDeprecationWarning` when the fixture
+loop scope is unspecified. Set `asyncio_default_fixture_loop_scope="function"`
+and require pytest-asyncio ≥0.24 in the development extra; a new exact-head
+run must be verified after this fix. The whole local repository suite was
+attempted but interrupted during unrelated long-running tests at roughly
+12% and **must not** be represented as fully green; 228 adjacent regression
+tests did pass independently.
+
 **E0 mechanism evidence**
 does not replace publisher-authorized 500/5,000 mixed-provider task-gold,
 real model/provider data, A6/A7/A8, default promotion or the #1356 release
