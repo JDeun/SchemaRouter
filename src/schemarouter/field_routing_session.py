@@ -1,7 +1,8 @@
 """Prepared schema-only field routing over host-owned provider contracts.
 
 One reusable public entry point for the original-paper P1/P2 proof path.
-Neither discovery nor compilation invokes providers or retrieves data rows.
+Schema lookup never invokes *data* providers or retrieves records; the
+optional model-assisted method calls only the application's supplied model.
 """
 from __future__ import annotations
 

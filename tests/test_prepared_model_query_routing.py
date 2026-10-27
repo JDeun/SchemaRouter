@@ -8,18 +8,30 @@ import pytest
 from schemarouter import (
     AuthorizationPolicy,
     AuthorizationRule,
+    CapabilityFieldContract,
+    NativeConceptCatalog,
+    NativeDeclaredConcept,
     PaperIntentDeclaration,
     PaperIntentRegistry,
 )
 from schemarouter.errors import ModelAnalysisError, PolicyViolationError
-from tests.test_prepared_understood_routing import (
+from scripts.benchmark_native_fork_fieldgroup_e0 import (
     ACTOR,
-    CATALOG,
-    INTENTS,
     RIGHT,
     ROOT,
     build_fixture,
 )
+
+CATALOG = NativeConceptCatalog(concepts=(NativeDeclaredConcept(
+    concept_id="crm.owner", aliases=("customer owner", "고객 담당자", "顧客担当者"),
+    source_type="crm", license="host-reviewed-synthetic",
+    required_fields=(CapabilityFieldContract(
+        semantic_id="crm.fork_owner", json_schema={"type": "string"},
+    ),),
+),))
+INTENTS = PaperIntentRegistry(intents=(PaperIntentDeclaration(
+    intent_id="crm.owner_lookup", required_concept_ids=("crm.owner",),
+),))
 
 
 @pytest.mark.asyncio
