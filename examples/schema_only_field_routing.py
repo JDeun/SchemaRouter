@@ -10,6 +10,7 @@ from schemarouter import (
     FieldSpec,
     NativeConceptCatalog,
     NativeDeclaredConcept,
+    ParameterSpec,
     PrincipalContext,
     SchemaRouter,
     ToolSpec,
@@ -29,6 +30,16 @@ def main() -> None:
         name="directory", source_type="host-owned", license="internal",
         endpoints=[EndpointSpec(
             name="lookup", read_only=True,
+            parameters=[ParameterSpec(
+                name="customer_id", required=True, location="query",
+                json_schema={"type": "string"},
+            )],
+            input_schema={
+                "type": "object",
+                "properties": {"customer_id": {"type": "string"}},
+                "required": ["customer_id"],
+                "additionalProperties": False,
+            },
             output_fields=[
                 FieldSpec(name="status", semantic_id="customer.status",
                           json_schema={"type": "string"}),
@@ -54,7 +65,10 @@ def main() -> None:
         source_type="host-owned", license="internal",
     ),))
 
-    session = router.prepare_field_routing(catalog=catalog)  # index once
+    session = router.prepare_field_routing(
+        catalog=catalog,
+        approved_host_roots=frozenset({"directory.lookup"}),
+    )  # index once, only this explicit host input route is approved
     principal = PrincipalContext(subject="example-reader", roles=("reader",))
     fields = session.discover("고객 상태와 담당자", principal=principal)
     print("status:", fields.status)
@@ -63,10 +77,16 @@ def main() -> None:
             print("route / selected schema fields:", route.route_id, route.output_fields)
 
     # Optional metadata and argument-shape inspection, not data fetching.
-    plan = session.compile("customer status and owner", principal=principal)
+    plan = session.compile(
+        "customer status and owner", principal=principal,
+        host_source_arguments={
+            "directory.lookup": {"customer_id": "host-supplied-customer-1"},
+        },
+    )
     print("plan status:", plan.status, "executable:", plan.executable_authority)
     for route in plan.calls:
         print("field metadata:", route.route_id, route.fields_meta)
+        print("input parameter shapes:", route.route_id, route.parameters_meta)
 
 
 if __name__ == "__main__":

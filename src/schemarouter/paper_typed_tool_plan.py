@@ -52,6 +52,20 @@ class PaperPlanFieldMeta:
 
 
 @dataclass(frozen=True, slots=True)
+class PaperPlanParameterMeta:
+    """Minimal current-source input shape; no raw provider annotations.
+
+    `json_types` is a conservative label tuple, not an executable schema.
+    Empty means the source has no safely exposable primitive type.
+    """
+
+    name: str
+    required: bool
+    location: str
+    json_types: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class PaperPlanCall:
     """One original route and its standard, explicitly incomplete ToolCall."""
 
@@ -60,6 +74,7 @@ class PaperPlanCall:
     source_type: str | None
     license: str | None
     fields_meta: tuple[PaperPlanFieldMeta, ...]
+    parameters_meta: tuple[PaperPlanParameterMeta, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -216,12 +231,60 @@ def _check_current_call_scopes(
         visible = router._data_scope_endpoint_view(principal, tool, endpoint)
         if visible is None:
             raise PolicyViolationError("paper typed call source scope hidden")
+        if item.parameters_meta != _paper_public_parameters(visible):
+            raise PolicyViolationError("paper typed call parameter scope changed")
         policy.validate_data_scope(principal, tool, endpoint, item.call)
         if item.call.arguments:
             validate_json_schema_value(
                 item.call.arguments, visible.input_schema,
                 context="original paper current scoped host inputs",
             )
+
+
+_SAFE_JSON_TYPES = frozenset({
+    "array", "boolean", "integer", "null", "number", "object", "string",
+})
+
+
+def _paper_public_parameters(
+    visible: EndpointSpec,
+) -> tuple[PaperPlanParameterMeta, ...]:
+    """Project only safe type labels from the current scoped endpoint.
+
+    Never copy provider JSON Schema, wire/header aliases, semantic IDs,
+    enums, defaults, descriptions or nested metadata into public receipts.
+    """
+    declared_required = visible.input_schema.get("required", ())
+    required = (
+        set(declared_required)
+        if type(declared_required) in (list, tuple)
+        else set()
+    )
+    projected: list[PaperPlanParameterMeta] = []
+    seen: set[str] = set()
+    for parameter in visible.parameters:
+        if parameter.name in seen:
+            raise PolicyViolationError("duplicate original paper input parameter")
+        seen.add(parameter.name)
+        raw_type = parameter.json_schema.get("type")
+        if type(raw_type) is str and raw_type in _SAFE_JSON_TYPES:
+            json_types = (raw_type,)
+        elif (
+            type(raw_type) is list
+            and 1 <= len(raw_type) <= len(_SAFE_JSON_TYPES)
+            and all(type(item) is str and item in _SAFE_JSON_TYPES
+                    for item in raw_type)
+        ):
+            json_types = tuple(dict.fromkeys(raw_type))
+        else:
+            json_types = ()
+        projected.append(PaperPlanParameterMeta(
+            name=parameter.name,
+            required=parameter.required or parameter.name in required,
+            location=parameter.location,
+            json_types=json_types,
+        ))
+    return tuple(projected)
 
 
 def _compile_one_route(
@@ -360,4 +423,5 @@ def _compile_one_route(
         source_type=tool.source_type,
         license=tool.license,
         fields_meta=metadata,
+        parameters_meta=_paper_public_parameters(visible),
     )

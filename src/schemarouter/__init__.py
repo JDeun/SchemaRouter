@@ -482,6 +482,7 @@ from .paper_typed_tool_plan import (
     PaperPlanBinding,
     PaperPlanCall,
     PaperPlanFieldMeta,
+    PaperPlanParameterMeta,
     PaperTypedToolPlan,
     compile_paper_typed_tool_plan,
 )
@@ -644,6 +645,7 @@ __all__ = [
     "PaperPlanBinding",
     "PaperPlanCall",
     "PaperPlanFieldMeta",
+    "PaperPlanParameterMeta",
     "PaperTypedToolPlan",
     "compile_paper_typed_tool_plan",
     "PaperFieldAlternative",

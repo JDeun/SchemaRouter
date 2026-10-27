@@ -1487,3 +1487,27 @@ calibrate policy-safe Top-K routing and abstention against independent task
 gold; make the product UX explain complete/abstaining field plans. Avoid
 further provider-specific adapters unless needed to prove an uncovered generic
 capability or an independently authorized E2 benchmark.
+
+## 2026-10-27 — #1773 safe parameter-shape receipt in original P2
+
+The prepared schema-only session from #1771 exposed complete **output fields**
+but not current source **input parameter shapes**. A host application could
+otherwise be forced back to inspecting arbitrary, possibly scope-hidden raw
+`ParameterSpec` from the registry. Implemented one core fix, not a provider
+adapter: immutable `PaperPlanParameterMeta` within each `PaperPlanCall`.
+
+Public values are only original canonical parameter name, required boolean,
+public location and bounded primitive JSON type labels. Raw JSON schemas,
+provider wire aliases, descriptions, semantic ID text, enums, examples,
+defaults and nested private annotations are never copied. The same minimal
+projection is rechecked in both current-scope verification passes; a changed
+scoped parameter cannot leave a stale receipt visible. This is **not** a
+trusted executable validation schema; original source rules still govern any
+separately authorized call.
+
+TDD initially reproduced missing `.parameters_meta` on a real 500-route fork,
+and showed that changing the current parameter location went undetected by
+`_check_current_call_scopes`. The new source-only metadata tests cover both,
+plus source annotations that mention private/unselected fields. Legacy P2
+plans and default router retrieval stay opt-in and non-executing. Issue #1773
+and the stacked Draft based on #1772 document the remaining CI evidence.

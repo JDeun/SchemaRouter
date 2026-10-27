@@ -144,7 +144,10 @@ dependencies a caller would need, without fetching provider records), opt into
 your own registered capability schemas, then call
 `session.discover(query, principal=reader)` for field-complete alternatives or
 `session.compile(query, principal=reader)` for typed, non-executing call shapes
-and source/unit/license metadata. The caller supplies an explicit authorization
+and source/unit/license field metadata. Each compiled route also provides
+`parameters_meta` (safe input names, required flags, locations, JSON type
+labels), without exposing raw schema annotations or supplying argument values.
+The caller supplies an explicit authorization
 policy and reviewed semantic concept catalog. Undeclared or conflicting
 concept aliases raise `ValueError` (no guessed mapping). Schema changes
 require a fresh session, and neither result grants execution permission. See the runnable
