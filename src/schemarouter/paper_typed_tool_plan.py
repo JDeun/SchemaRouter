@@ -56,7 +56,7 @@ class PaperPlanParameterMeta:
     """Minimal current-source input shape; no raw provider annotations.
 
     `json_types` is a conservative label tuple, not an executable schema.
-    Empty means the source has no safely exposable primitive type.
+    Empty means the source has no safely exposable basic JSON type label.
     """
 
     name: str

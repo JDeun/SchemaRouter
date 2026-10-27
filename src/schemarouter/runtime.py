@@ -625,6 +625,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
             )
             if (
                 mapped_field in hidden_field_names
+                or _scoped_echoes_denied_label(parameter.name, denied_markers)
                 or (
                     parameter.name.startswith("filter__")
                     and mapped_field not in scope.visible_fields
@@ -807,6 +808,7 @@ class SchemaRouter(NativeProviderConvenienceMixin):
                 )
                 if (
                     mapped_field in hidden_field_names
+                    or _scoped_echoes_denied_label(parameter.name, denied_markers)
                     or (
                         parameter.name.startswith("filter__")
                         and mapped_field not in scope.visible_fields

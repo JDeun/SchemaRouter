@@ -1511,3 +1511,12 @@ and showed that changing the current parameter location went undetected by
 plus source annotations that mention private/unselected fields. Legacy P2
 plans and default router retrieval stay opt-in and non-executing. Issue #1773
 and the stacked Draft based on #1772 document the remaining CI evidence.
+
+Review follow-up: the shared current-principal scope projection also now
+rejects a parameter whose canonical name echoes a denied output field's
+**declared alias**, including the direct schema view and legacy retrieval
+projection. This closes a pre-existing scoped-label collision rather than
+changing the original provider validation contract. A matching-scope TDD
+canary reproduced the leaked alias before the guard was added. Live scope
+drift tests additionally cover location, effective requiredness, JSON type,
+parameter removal, and parameter rename.

@@ -11,6 +11,7 @@ from schemarouter import (
     NativeDeclaredConcept,
     NativeSchemaGraphIndex,
     NativeSchemaPostingIndex,
+    ParameterSpec,
     SchemaRouter,
 )
 from schemarouter.errors import PolicyViolationError
@@ -109,8 +110,46 @@ def test_private_wire_descriptions_and_unselected_fields_never_enter_parameter_r
     assert selected.parameters_meta[0].json_types == ("string",)
 
 
+def test_denied_field_alias_cannot_survive_as_scoped_input_parameter_name():
+    """An input's canonical name may repeat a separately denied field alias."""
+    secret_alias = "owner_private_token_alias"
+    router = build_fixture(500)
+    tool = router.registry.get("fork_owner")
+    endpoint = tool.endpoints[0]
+    endpoint.output_fields.append(type(endpoint.output_fields[0])(
+        name="private_token", aliases=[secret_alias],
+        json_schema={"type": "string"},
+    ))
+    endpoint.parameters.append(ParameterSpec(
+        name=secret_alias, required=False,
+        json_schema={"type": "string"},
+    ))
+    router.add_tool(tool, replace=True)
+    router.authorization_policy = AuthorizationPolicy(
+        default_effect="deny",
+        rules=(AuthorizationRule(
+            effect="allow", operation="*.read", roles_any=("reader",),
+        ),),
+        data_rules=(DataScopeRule(
+            operation="fork_owner.read", roles_any=("reader",),
+            visible_fields=("owner",),
+        ),),
+    )
+
+    scoped = router._data_scope_endpoint_view(
+        ACTOR, router.registry.get("fork_owner"),
+        router.registry.get("fork_owner").endpoints[0],
+    )
+    assert scoped is not None
+    assert [p.name for p in scoped.parameters] == ["customer_id"]
+    assert secret_alias not in repr(scoped)
+
+
+@pytest.mark.parametrize("parameter_change", [
+    "location", "required", "json_type", "removed", "renamed",
+])
 def test_changed_live_parameter_projection_cannot_keep_stale_public_metadata(
-    monkeypatch,
+    monkeypatch, parameter_change,
 ):
     router: SchemaRouter = build_fixture(500)
     plan = router.prepare_field_routing(catalog=_catalog()).compile(
@@ -122,7 +161,19 @@ def test_changed_live_parameter_projection_cannot_keep_stale_public_metadata(
         visible = original(principal, tool, endpoint)
         if visible is not None and tool.key == "fork_owner":
             visible = visible.model_copy(deep=True)
-            visible.parameters[0].location = "query"
+            if parameter_change == "location":
+                visible.parameters[0].location = "query"
+            elif parameter_change == "required":
+                visible.parameters[0].required = False
+                visible.input_schema = {
+                    **visible.input_schema, "required": [],
+                }
+            elif parameter_change == "json_type":
+                visible.parameters[0].json_schema = {"type": "integer"}
+            elif parameter_change == "removed":
+                visible.parameters.clear()
+            elif parameter_change == "renamed":
+                visible.parameters[0].name = "different_customer_id"
         return visible
 
     monkeypatch.setattr(router, "_data_scope_endpoint_view", revised_scope)
